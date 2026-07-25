@@ -26,6 +26,10 @@ import {
 import { registerAutoUpdaterHandlers } from './updater-events'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
 import {
+  isAutoUpdateEnabled,
+  RELEASE_LATEST_DOWNLOAD_URL
+} from './updater-release-feed-source'
+import {
   compareVersions,
   isBenignCheckFailure,
   isMissingUpdateManifestFailure,
@@ -1102,7 +1106,7 @@ async function pinDefaultReleaseFeed(
   } else {
     clearPrereleaseFallbackContext()
     clearPublishingWindowLastGoodCheck()
-    const url = 'https://github.com/stablyai/orca/releases/latest/download'
+    const url = RELEASE_LATEST_DOWNLOAD_URL
     console.info(
       `[updater] release feed fallback: current=${currentVersion} includePrerelease=${includePrerelease} → ${url}`
     )
@@ -1212,6 +1216,9 @@ function runBackgroundUpdateCheck(
 }
 
 export function checkForUpdates(): void {
+  if (!isAutoUpdateEnabled()) {
+    return
+  }
   // Why: span records only check launch (always Success), not outcome; dashboards must filter `updater.outcome === 'launched'`, not this span's success rate.
   void withUpdaterSpan({ stage: 'check' }, async (span) => {
     span.setAttribute('updater.outcome', 'launched')
@@ -1234,7 +1241,7 @@ function enableIncludePrerelease(): void {
 
 /** Menu-triggered check — delegates feedback to renderer toasts via userInitiated flag */
 export function checkForUpdatesFromMenu(options?: UpdateCheckOptions): void {
-  if (!app.isPackaged || is.dev) {
+  if (!isAutoUpdateEnabled() || !app.isPackaged || is.dev) {
     sendStatus({ state: 'not-available', userInitiated: true })
     return
   }
@@ -1411,6 +1418,12 @@ export function setupAutoUpdater(
     installMode?: UpdateInstallMode
   }
 ): void {
+  // Muster fork: no release feed exists yet; registering handlers would let a manual or
+  // scheduled check reach the upstream Orca feed. See updater-release-feed-source.ts.
+  if (!isAutoUpdateEnabled()) {
+    mainWindowRef = mainWindow
+    return
+  }
   mainWindowRef = mainWindow
   onBeforeQuitCleanup = opts?.onBeforeQuit ?? null
   persistLastUpdateCheckAt = opts?.setLastUpdateCheckAt ?? null
@@ -1459,7 +1472,7 @@ export function setupAutoUpdater(
   // Why: generic provider avoids the native GitHub provider's RC-channel filtering; per-check repinning to a concrete /releases/download/<tag>/ URL avoids /latest redirect drift between check and download.
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://github.com/stablyai/orca/releases/latest/download'
+    url: RELEASE_LATEST_DOWNLOAD_URL
   })
 
   if (autoUpdaterInitialized) {

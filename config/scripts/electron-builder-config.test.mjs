@@ -70,18 +70,18 @@ describe('electron-builder config', () => {
           to: 'computer-use-windows/runtime.ps1'
         }),
         expect.objectContaining({
-          from: 'native/windows-cli-launcher/.build/orca.exe',
-          to: 'bin/orca.exe'
+          from: 'native/windows-cli-launcher/.build/muster.exe',
+          to: 'bin/muster.exe'
         })
       ])
     )
   })
 
   // Why: the Windows CLI shim is delivered only via extraResources to
-  // resources/bin/orca.cmd (beside the native resources/bin/orca.exe). If the
+  // resources/bin/muster.cmd (beside the native resources/bin/muster.exe). If the
   // source tree is also packed into app.asar it gets extracted by
-  // asarUnpack:['resources/**'] to app.asar.unpacked/resources/win32/bin/orca.cmd,
-  // a duplicate with no adjacent orca.exe that fails to launch (#7351).
+  // asarUnpack:['resources/**'] to app.asar.unpacked/resources/win32/bin/muster.cmd,
+  // a duplicate with no adjacent muster.exe that fails to launch (#7351).
   it('keeps the Windows CLI shim source tree out of app.asar', () => {
     expect(electronBuilderConfig.files).toEqual(
       expect.arrayContaining(['!resources/win32{,/**/*}'])
@@ -90,8 +90,8 @@ describe('electron-builder config', () => {
     expect(electronBuilderConfig.win.extraResources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          from: 'resources/win32/bin/orca.cmd',
-          to: 'bin/orca.cmd'
+          from: 'resources/win32/bin/muster.cmd',
+          to: 'bin/muster.cmd'
         })
       ])
     )
@@ -132,16 +132,16 @@ describe('electron-builder config', () => {
   })
 
   it('matches the Linux desktop entry to Electron window class', () => {
-    expect(electronBuilderConfig.linux.desktop.entry.StartupWMClass).toBe('orca')
+    expect(electronBuilderConfig.linux.desktop.entry.StartupWMClass).toBe('muster')
   })
 
   it('uses AppImage and deb as local Linux targets without changing existing artifact names', () => {
     expect(electronBuilderConfig.linux.target).toEqual(['AppImage', 'deb'])
-    expect(electronBuilderConfig.appImage.artifactName).toBe('orca-linux.${ext}')
-    expect(electronBuilderConfig.deb.artifactName).toBe('orca-ide_${version}_${arch}.${ext}')
+    expect(electronBuilderConfig.appImage.artifactName).toBe('muster-linux.${ext}')
+    expect(electronBuilderConfig.deb.artifactName).toBe('muster_${version}_${arch}.${ext}')
     expect(electronBuilderConfig.rpm).toMatchObject({
-      packageName: 'orca-ide',
-      artifactName: 'orca-ide-${version}.${arch}.${ext}'
+      packageName: 'muster',
+      artifactName: 'muster-${version}.${arch}.${ext}'
     })
   })
 
@@ -152,7 +152,7 @@ describe('electron-builder config', () => {
       delete require.cache[configPath]
       process.env.ORCA_LINUX_ARM64_RELEASE = '1'
       expect(require('../electron-builder.config.cjs').appImage.artifactName).toBe(
-        'orca-linux-arm64.${ext}'
+        'muster-linux-arm64.${ext}'
       )
     } finally {
       if (original === undefined) {

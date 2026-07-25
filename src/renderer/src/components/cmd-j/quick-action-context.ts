@@ -32,6 +32,7 @@ export type CmdJQuickActionContext = {
   openCreateWorkspace: () => void
   deleteActiveWorkspace: () => void
   openAddQuickCommand: () => void
+  openSitesPage: () => void
 }
 
 export function resolveCmdJActiveGroupId(
@@ -134,6 +135,7 @@ export function buildCmdJQuickActionContext(args: {
   openCreateWorkspace: () => void
   deleteActiveWorkspace: () => void
   openAddQuickCommand: () => void
+  openSitesPage: () => void
 }): CmdJQuickActionContext {
   const activeWorktreeId = args.state.activeWorktreeId
   const activeWorktree = activeWorktreeId
@@ -165,7 +167,8 @@ export function buildCmdJQuickActionContext(args: {
     openNewTerminalTab: args.openNewTerminalTab,
     openCreateWorkspace: args.openCreateWorkspace,
     deleteActiveWorkspace: args.deleteActiveWorkspace,
-    openAddQuickCommand: args.openAddQuickCommand
+    openAddQuickCommand: args.openAddQuickCommand,
+    openSitesPage: args.openSitesPage
   }
 }
 

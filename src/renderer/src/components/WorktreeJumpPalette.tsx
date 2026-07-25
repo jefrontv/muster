@@ -905,6 +905,11 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
     openSettingsPage()
   }, [openSettingsPage, openSettingsTarget])
 
+  const openSitesPage = useAppStore((state) => state.openSitesPage)
+  const openSitesPageAction = useCallback(() => {
+    openSitesPage()
+  }, [openSitesPage])
+
   const buildQuickActionContext = useCallback(
     () =>
       buildCmdJQuickActionContext({
@@ -915,7 +920,8 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
         openNewTerminalTab: openNewTerminalTabInActiveWorkspace,
         openCreateWorkspace: openCreateWorkspaceAction,
         deleteActiveWorkspace: deleteActiveWorkspaceAction,
-        openAddQuickCommand: openAddQuickCommandAction
+        openAddQuickCommand: openAddQuickCommandAction,
+        openSitesPage: openSitesPageAction
       }),
     [
       deleteActiveWorkspaceAction,
@@ -923,7 +929,8 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
       openCreateWorkspaceAction,
       openNewBrowserTabInActiveWorkspace,
       openNewMarkdownInActiveWorkspace,
-      openNewTerminalTabInActiveWorkspace
+      openNewTerminalTabInActiveWorkspace,
+      openSitesPageAction
     ]
   )
 

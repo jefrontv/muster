@@ -40,6 +40,9 @@ import { registerSettingsHandlers } from './settings'
 import { registerDiagnosticsHandlers } from './diagnostics'
 import { registerSkillsHandlers } from './skills'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
+import { registerSiteHandlers } from './sites'
+import { registerSiteRunHandlers } from './site-runs'
+import { registerSiteStackHandlers } from './site-stacks'
 import { registerWorkspacePortHandlers } from './workspace-ports'
 import { registerLocalhostWorktreeLabelHandlers } from './localhost-worktree-labels'
 import { registerAutomationHandlers } from './automations'
@@ -191,6 +194,9 @@ export function registerCoreHandlers(
   registerEmulatorFrameStreamHandlers()
   registerEmulatorVideoStreamHandlers()
   registerWorkspaceSpaceHandlers(store)
+  registerSiteHandlers(store)
+  registerSiteRunHandlers(store)
+  registerSiteStackHandlers(store)
   registerWorkspacePortHandlers(store)
   registerLocalhostWorktreeLabelHandlers(store)
   if (commitMessageAgentEnv) {

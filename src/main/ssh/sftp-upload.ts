@@ -28,7 +28,7 @@ export function uploadFile(
   sftp: SFTPWrapper,
   localPath: string,
   remotePath: string,
-  options?: { exclusive?: boolean }
+  options?: { exclusive?: boolean; onProgress?: (transferred: number, total: number) => void }
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let settled = false
@@ -86,6 +86,17 @@ export function uploadFile(
         readStream = handle.createReadStream()
         readStream.on('error', onReadError)
         readStream.pipe(writeStream)
+        // Why: attach the counter after pipe(), or the 'data' listener resumes the stream
+        // before the write target is wired and the first chunks are dropped.
+        const onProgress = options?.onProgress
+        if (onProgress) {
+          let transferred = 0
+          onProgress(0, openedStat.size)
+          readStream.on('data', (chunk: string | Buffer) => {
+            transferred += typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length
+            onProgress(transferred, openedStat.size)
+          })
+        }
       })
       .catch((err: unknown) => settle(reject, err))
   })

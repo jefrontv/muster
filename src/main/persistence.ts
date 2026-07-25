@@ -66,6 +66,7 @@ import type {
   WorkspaceSessionPatch,
   WorkspaceSessionState
 } from '../shared/types'
+import type { Site } from '../shared/site-types'
 import {
   deriveGlobalWindowsRuntimeDefaultFromLegacySettings,
   normalizeProjectRuntimePreference
@@ -4673,6 +4674,49 @@ export class Store {
   removeSparsePreset(repoId: string, presetId: string): void {
     const existing = this.state.sparsePresetsByRepo[repoId] ?? []
     this.state.sparsePresetsByRepo[repoId] = existing.filter((entry) => entry.id !== presetId)
+    this.scheduleSave()
+  }
+
+  // ── Sites (WordPress deploy/import) ───────────────────────────────
+
+  listSites(): Site[] {
+    return [...(this.state.sites ?? [])].sort((left, right) =>
+      left.displayName.localeCompare(right.displayName)
+    )
+  }
+
+  getSite(siteId: string): Site | null {
+    return (this.state.sites ?? []).find((site) => site.id === siteId) ?? null
+  }
+
+  /** Path is the site's real identity (ocsites keys presets on it), so lookups must be path-safe. */
+  findSiteByPath(sitePath: string): Site | null {
+    const target = normalizeRuntimePathForComparison(sitePath)
+    return (
+      (this.state.sites ?? []).find(
+        (site) => normalizeRuntimePathForComparison(site.path) === target
+      ) ?? null
+    )
+  }
+
+  upsertSite(site: Site): Site {
+    const sites = this.state.sites ?? []
+    const index = sites.findIndex((entry) => entry.id === site.id)
+    this.state.sites = index === -1 ? [...sites, site] : sites.map((e, i) => (i === index ? site : e))
+    this.scheduleSave()
+    return site
+  }
+
+  updateSite(siteId: string, updates: Partial<Omit<Site, 'id'>>): Site | null {
+    const existing = this.getSite(siteId)
+    if (!existing) {
+      return null
+    }
+    return this.upsertSite({ ...existing, ...updates, id: existing.id })
+  }
+
+  removeSite(siteId: string): void {
+    this.state.sites = (this.state.sites ?? []).filter((site) => site.id !== siteId)
     this.scheduleSave()
   }
 

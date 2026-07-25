@@ -18,7 +18,7 @@ import { commonPropsSchema, validate } from './validator'
 
 // Compile-time feature flag, independent of the build-identity gate — both must be satisfied to transmit.
 // NOTE: config/scripts/verify-telemetry-constants.mjs greps `const TELEMETRY_ENABLED = true|false`; keep that shape or update its regex.
-const TELEMETRY_ENABLED = true
+const TELEMETRY_ENABLED = false
 
 // Eligible to transmit only if CI injected BOTH build-identity and write key; either alone fails closed, with no runtime env-var override (dev/contributor builds get `null`).
 // The `globalThis` reads are for vitest, which skips electron-vite's `define` pass — resolving to `IS_OFFICIAL_BUILD === false` there.

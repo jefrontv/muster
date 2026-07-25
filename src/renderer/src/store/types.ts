@@ -12,6 +12,7 @@ import type { LinearSlice } from './slices/linear'
 import type { PreflightSlice } from './slices/preflight'
 import type { JiraSlice } from './slices/jira'
 import type { EditorSlice } from './slices/editor'
+import type { SitesSlice } from './slices/sites'
 import type { StatsSlice } from './slices/stats'
 import type { MemorySlice } from './slices/memory'
 import type { WorkspaceSpaceSlice } from './slices/workspace-space'
@@ -53,6 +54,7 @@ export type AppState = RepoSlice &
   PreflightSlice &
   JiraSlice &
   EditorSlice &
+  SitesSlice &
   StatsSlice &
   MemorySlice &
   WorkspaceSpaceSlice &

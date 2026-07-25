@@ -318,6 +318,7 @@ const AutomationsPage = lazy(() => import('./components/automations/AutomationsP
 const ActivityPrototypePage = lazy(() => import('./components/activity/ActivityPrototypePage'))
 const Settings = lazy(() => import('./components/settings/Settings'))
 const SkillsPage = lazy(() => import('./components/skills/SkillsPage'))
+const SitesPage = lazy(() => import('./components/sites/SitesPage'))
 const WorkspaceSpacePage = lazy(() => import('./components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('./components/mobile/MobilePage'))
 const QuickOpen = lazy(() => import('./components/QuickOpen'))
@@ -2251,6 +2252,7 @@ function App(): React.JSX.Element {
                             >
                               {activeView === 'settings' ? <Settings /> : null}
                               {activeView === 'skills' ? <SkillsPage /> : null}
+                              {activeView === 'sites' ? <SitesPage /> : null}
                               {activeView === 'tasks' ? <TaskPage /> : null}
                               {activeView === 'automations' ? <AutomationsPage /> : null}
                               {activeView === 'activity' ? <ActivityPrototypePage /> : null}

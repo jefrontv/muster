@@ -111,6 +111,7 @@ import { maybeRedirectPackagedCliEntryLaunch } from './startup/packaged-cli-entr
 import { startFirstWindowStartupServices } from './startup/first-window-startup-services'
 import { createWslCliReconciliationStartupBarrier } from './startup/wsl-cli-reconciliation-startup-barrier'
 import { getDevInstanceIdentity } from './startup/dev-instance-identity'
+import { registerSiteBindUrlSchemes } from './sites/bind-url-scheme'
 import { hydrateShellPath, mergePathSegments } from './startup/hydrate-shell-path'
 import {
   acquireSingleInstanceLock,
@@ -1796,6 +1797,7 @@ app.whenReady().then(async () => {
   electronApp.setAppUserModelId(devInstanceIdentity.appUserModelId)
   // Why: setName drives the macOS safeStorage Keychain item name; use the stable appName (not per-branch `name`) so dev branches share one key and don't re-prompt.
   app.setName(devInstanceIdentity.appName)
+  registerSiteBindUrlSchemes(is.dev)
 
   // Why: managed WSL launchers live outside the Windows app bundle, so keep their launcher/bridge contract synced across app updates.
   managedWslCliReconciliationStatus = 'pending'

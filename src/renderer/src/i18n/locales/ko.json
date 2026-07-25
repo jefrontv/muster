@@ -12632,8 +12632,13 @@
                 "removeWorktree": "작업 트리 제거",
                 "trashWorktree": "워크트리 휴지통으로 이동",
                 "addQuickCommand": "빠른 명령 추가",
-                "newQuickCommand": "새로운 빠른 명령"
-              }
+                "newQuickCommand": "새로운 빠른 명령",
+                "sites": "sites",
+                "deploy": "deploy",
+                "wordpress": "wordpress"
+              },
+              "openSites": "Sites",
+              "openSitesDescription": "Manage WordPress sites, environments, and deployments."
             }
           },
           "palette": {
@@ -13572,6 +13577,84 @@
           },
           "undo": "실행 취소",
           "widthOption": "{{value0}} px"
+        }
+      },
+      "sites": {
+        "SiteDetailPanel": {
+          "missingCheckout": "This folder is not on disk. Reconnect the drive or update the path.",
+          "localSection": "Local environment",
+          "environments": "Environments",
+          "addEnvironment": "Add",
+          "removeEnvironment": "Remove environment",
+          "branchResolution": "Branch {{branch}} targets {{environment}}.",
+          "noBranch": "No git branch detected; runs will ask for confirmation.",
+          "confirmationRequired": "The branch does not match an environment, so a run must be confirmed.",
+          "noEnvironments": "This site has no environments yet.",
+          "localDomain": "Local domain",
+          "localDomainHint": "acme.local",
+          "localWpRoot": "WordPress subpath",
+          "localWpRootHint": "app/public",
+          "dbUser": "Local DB user",
+          "dbUserHint": "root",
+          "dbSocket": "Local DB socket",
+          "dbSocketHint": "/…/mysql/mysqld.sock"
+        },
+        "SiteEnvironmentSection": {
+          "sshPassword": "SSH password",
+          "dbPassword": "Database password",
+          "secretSet": "Stored",
+          "secretUnset": "Not set",
+          "secretReplace": "Enter a new value to replace",
+          "secretEnter": "Enter value",
+          "secretSave": "Save",
+          "secretClear": "Clear",
+          "importSteps": "Import steps",
+          "deploySteps": "Deploy steps",
+          "hostname": "SSH host",
+          "username": "SSH user",
+          "rootPath": "Remote root",
+          "liveDomain": "Live domain",
+          "deployCommand": "Build command",
+          "themeDistPath": "Theme dist path",
+          "exportDatabase": "Pull/import server DB",
+          "exportFiles": "Pull server files",
+          "wpUploadRewrite": "WP upload rewrite",
+          "wpSearchReplace": "WP search replace",
+          "gitPullOnServer": "Git pull on server",
+          "clearServerCache": "Clear server cache",
+          "deployThemes": "Deploy theme dist",
+          "hostnameHint": "dedicated-11.example.com",
+          "usernameHint": "acme",
+          "rootPathHint": "public_html",
+          "liveDomainHint": "acme.com",
+          "deployCommandHint": "npm ci && npm run build:prod",
+          "themeDistPathHint": "wp-content/themes/<theme>/dist"
+        },
+        "SiteRow": {
+          "missingPath": "Checkout folder is missing",
+          "noEnvironment": "No environment",
+          "environmentCount": "{{count}} envs"
+        },
+        "SitesPage": {
+          "importNotFound": "No ocsites configuration found at ~/.config/ocsites.",
+          "importDone": "Imported {{created}} new and updated {{updated}} sites, {{secrets}} passwords migrated.",
+          "importSecretFailures": "{{count}} passwords could not be migrated.",
+          "back": "Back",
+          "title": "Sites",
+          "count": "{{count}} configured",
+          "import": "Import from ocsites",
+          "search": "Search sites",
+          "loading": "Loading sites…",
+          "empty": "No sites yet. Import an existing ocsites configuration to get started.",
+          "selectPrompt": "Select a site."
+        },
+        "SiteRunConsole": {
+          "confirmTitle": "Confirm target",
+          "confirmBody": "Branch {{branch}} does not match an environment. This run would target {{environment}}. Continue?",
+          "confirmRun": "Run anyway",
+          "import": "Import",
+          "deploy": "Deploy",
+          "cancel": "Cancel"
         }
       }
     },

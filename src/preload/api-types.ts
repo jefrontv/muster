@@ -9,6 +9,27 @@ import type {
   HostedReviewProvider
 } from '../shared/hosted-review'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
+import type {
+  OcsitesImportApplyResult,
+  Site,
+  SiteEnvironment,
+  SiteResult,
+  SiteRunGroup,
+  SiteSecretKind,
+  SiteSummary
+} from '../shared/site-types'
+import type {
+  SiteActiveRun,
+  SiteRun,
+  SiteRunEvent,
+  SiteRunLogPage
+} from '../shared/site-run-types'
+import type {
+  LocalWpControlOutcome,
+  LocalWpMigrationPlan,
+  LocalWpMigrationResult,
+  LocalWpStackDetection
+} from '../shared/site-stack-types'
 import type { DashboardSnapshot, DashboardRevealAgentArgs } from '../shared/dashboard-snapshot'
 import type {
   TerminalPreviewConnectResult,
@@ -723,6 +744,98 @@ export type ExportApi = {
   >
 }
 
+/**
+ * WordPress site management (the ocsites port). Secrets are write-only: `setSecret` stores a
+ * password, and nothing reads one back — the renderer only ever sees SiteSummary.secrets booleans.
+ */
+export type SitesApi = {
+  list: () => Promise<SiteResult<SiteSummary[]>>
+  get: (siteId: string) => Promise<SiteResult<SiteSummary>>
+  create: (args: {
+    path: string
+    displayName?: string
+    repoId?: string | null
+  }) => Promise<SiteResult<SiteSummary>>
+  update: (args: {
+    siteId: string
+    patch: Partial<
+      Pick<
+        Site,
+        | 'displayName'
+        | 'localWpRoot'
+        | 'localDomain'
+        | 'localStack'
+        | 'dbUser'
+        | 'dbSocket'
+        | 'dbPort'
+        | 'phpVersion'
+        | 'activeEnvironment'
+        | 'notes'
+        | 'searchReplaceTimeoutSeconds'
+      >
+    >
+  }) => Promise<SiteResult<SiteSummary>>
+  remove: (siteId: string) => Promise<SiteResult<null>>
+  linkRepo: (args: { siteId: string; repoId: string | null }) => Promise<SiteResult<SiteSummary>>
+  setSecret: (args: {
+    siteId: string
+    environment: string
+    kind: SiteSecretKind
+    value: string
+  }) => Promise<SiteResult<null>>
+  upsertEnvironment: (args: {
+    siteId: string
+    name: string
+    patch?: Partial<SiteEnvironment>
+  }) => Promise<SiteResult<SiteSummary>>
+  renameEnvironment: (args: {
+    siteId: string
+    from: string
+    to: string
+  }) => Promise<SiteResult<SiteSummary>>
+  removeEnvironment: (args: { siteId: string; name: string }) => Promise<SiteResult<SiteSummary>>
+  importFromOcsites: () => Promise<SiteResult<OcsitesImportApplyResult & { found: boolean }>>
+}
+
+/** Import/deploy runs. Long-lived and cancellable; progress arrives on `onEvent`. */
+export type SiteRunsApi = {
+  start: (args: {
+    siteId: string
+    group: SiteRunGroup
+    environment?: string
+    runId?: string
+  }) => Promise<SiteResult<SiteRun>>
+  cancel: (runId: string) => Promise<SiteResult<boolean>>
+  list: (args: { siteId: string; limit?: number }) => Promise<SiteResult<SiteRun[]>>
+  readLog: (args: {
+    siteId: string
+    runId: string
+    lines?: number
+  }) => Promise<SiteResult<SiteRunLogPage>>
+  /** Current in-flight runs plus their last progress, so a remounted panel recovers its state. */
+  active: () => Promise<SiteResult<SiteActiveRun[]>>
+  onEvent: (callback: (event: SiteRunEvent) => void) => () => void
+}
+
+/** A site's local WordPress stack. macOS-only; every call returns a structured result elsewhere. */
+export type SiteStacksApi = {
+  detect: (siteId: string) => Promise<SiteResult<LocalWpStackDetection>>
+  resolveSocket: (siteId: string) => Promise<SiteResult<string>>
+  start: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
+  stop: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
+  previewMigration: (args: {
+    siteId: string
+    domain: string
+    force?: boolean
+  }) => Promise<SiteResult<LocalWpMigrationPlan>>
+  /** Destructive: show the preview and take an explicit confirmation before calling this. */
+  runMigration: (args: {
+    siteId: string
+    domain: string
+    force?: boolean
+  }) => Promise<SiteResult<LocalWpMigrationResult>>
+}
+
 export type StatsApi = {
   getSummary: () => Promise<StatsSummary>
 }
@@ -1286,6 +1399,9 @@ export type PreloadApi = {
     cancel: () => Promise<boolean>
     onProgress: (callback: (progress: WorkspaceSpaceScanProgress) => void) => () => void
   }
+  sites: SitesApi
+  siteRuns: SiteRunsApi
+  siteStacks: SiteStacksApi
   workspacePorts: {
     scan: (args: WorkspacePortScanRequest) => Promise<WorkspacePortScanResult>
     kill: (args: WorkspacePortKillRequest) => Promise<WorkspacePortKillResult>

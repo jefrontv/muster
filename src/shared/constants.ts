@@ -409,6 +409,7 @@ export function getDefaultPersistedState(homedir: string): PersistedState {
     projectGroups: [],
     folderWorkspaces: [],
     sparsePresetsByRepo: {},
+    sites: [],
     worktreeMeta: {},
     worktreeLineageById: {},
     workspaceLineageByChildKey: {},

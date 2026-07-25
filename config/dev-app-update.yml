@@ -1,4 +1,5 @@
-provider: github
-owner: stablyai
-repo: orca
-updaterCacheDirName: orca-updater
+# Muster fork: auto-update is disabled (src/main/updater-release-feed-source.ts).
+# This file only exists because electron-updater reads it in dev; the host can never resolve.
+provider: generic
+url: https://releases.muster.invalid/releases/latest/download
+updaterCacheDirName: muster-updater

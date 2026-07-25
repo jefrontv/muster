@@ -87,12 +87,23 @@ export function fastGetViaSftp(
   sftp: SFTPWrapper,
   sourcePath: string,
   destinationPath: string,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal; onProgress?: (transferred: number, total: number) => void }
 ): Promise<void> {
-  return waitForSftpCallback<void>(
-    (callback) => sftp.fastGet(sourcePath, destinationPath, callback),
-    options
-  )
+  const onProgress = options?.onProgress
+  return waitForSftpCallback<void>((callback) => {
+    // Why: keep the 3-argument call shape when no progress is wanted — existing SFTP fakes
+    // and ssh2's own overload resolution both key off arity.
+    if (!onProgress) {
+      sftp.fastGet(sourcePath, destinationPath, callback)
+      return
+    }
+    sftp.fastGet(
+      sourcePath,
+      destinationPath,
+      { step: (transferred, _chunk, total) => onProgress(transferred, total) },
+      callback
+    )
+  }, options)
 }
 
 export function readDirViaSftp(

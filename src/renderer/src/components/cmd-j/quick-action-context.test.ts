@@ -108,7 +108,8 @@ describe('Cmd+J quick action context', () => {
       openNewTerminalTab: async () => {},
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
-      openAddQuickCommand: () => {}
+      openAddQuickCommand: () => {},
+    openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     expect(
@@ -142,7 +143,8 @@ describe('Cmd+J quick action context', () => {
       openNewTerminalTab: async () => {},
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
-      openAddQuickCommand: () => {}
+      openAddQuickCommand: () => {},
+    openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     for (const actionId of workspaceActions) {
@@ -222,7 +224,8 @@ describe('Cmd+J quick action context', () => {
       openNewTerminalTab: async () => {},
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
-      openAddQuickCommand: () => {}
+      openAddQuickCommand: () => {},
+    openSitesPage: () => {}
     })
 
     expect(context.activeGroupId).toBe('first-group')
@@ -248,7 +251,8 @@ describe('Cmd+J quick action context', () => {
       openNewTerminalTab: async () => {},
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
-      openAddQuickCommand: () => {}
+      openAddQuickCommand: () => {},
+    openSitesPage: () => {}
     })
 
     expect(context.isLoading).toBe(true)
@@ -268,7 +272,8 @@ describe('Cmd+J quick action context', () => {
       },
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
-      openAddQuickCommand: () => {}
+      openAddQuickCommand: () => {},
+    openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     await expect(action?.run(context)).resolves.toEqual({
@@ -292,7 +297,8 @@ describe('Cmd+J quick action context', () => {
       deleteActiveWorkspace: () => {
         calls.push('delete')
       },
-      openAddQuickCommand: () => {}
+      openAddQuickCommand: () => {},
+    openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     await expect(action?.run(context)).resolves.toEqual({ status: 'ok' })

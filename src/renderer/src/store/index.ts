@@ -14,6 +14,7 @@ import { createLinearSlice } from './slices/linear'
 import { createPreflightSlice } from './slices/preflight'
 import { createJiraSlice } from './slices/jira'
 import { createEditorSlice } from './slices/editor'
+import { createSitesSlice } from './slices/sites'
 import { createStatsSlice } from './slices/stats'
 import { createMemorySlice } from './slices/memory'
 import { createWorkspaceSpaceSlice } from './slices/workspace-space'
@@ -63,6 +64,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createPreflightSlice(...a),
   ...createJiraSlice(...a),
   ...createEditorSlice(...a),
+  ...createSitesSlice(...a),
   ...createStatsSlice(...a),
   ...createMemorySlice(...a),
   ...createWorkspaceSpaceSlice(...a),

@@ -9,6 +9,7 @@ import type {
 } from '../../../../shared/types'
 import type { OpenFile } from './editor'
 import { createRepoSlice } from './repos'
+import { createSitesSlice } from './sites'
 import { createSparsePresetsSlice } from './sparse-presets'
 import { createWorktreeSlice } from './worktrees'
 import { createTerminalSlice } from './terminals'
@@ -61,6 +62,7 @@ export const TEST_REPO = {
 export function createTestStore() {
   return create<AppState>()((...a) => ({
     ...createRepoSlice(...a),
+    ...createSitesSlice(...a),
     ...createSparsePresetsSlice(...a),
     ...createWorktreeSlice(...a),
     ...createTerminalSlice(...a),

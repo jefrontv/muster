@@ -4,6 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { preloadE2EConfig } from './e2e-config'
 import { glApi } from './gitlab'
 import type { AppIdentity } from '../shared/app-identity'
+import type { SiteRunEvent } from '../shared/site-run-types'
 import type { DashboardSnapshot, DashboardRevealAgentArgs } from '../shared/dashboard-snapshot'
 import type {
   TerminalPreviewConnectResult,
@@ -782,6 +783,43 @@ const api = {
       return () => ipcRenderer.removeListener('workspaceSpace:progress', listener)
     }
   } satisfies PreloadApi['workspaceSpace'],
+
+  sites: {
+    list: () => ipcRenderer.invoke('sites:list'),
+    get: (siteId) => ipcRenderer.invoke('sites:get', siteId),
+    create: (args) => ipcRenderer.invoke('sites:create', args),
+    update: (args) => ipcRenderer.invoke('sites:update', args),
+    remove: (siteId) => ipcRenderer.invoke('sites:remove', siteId),
+    linkRepo: (args) => ipcRenderer.invoke('sites:linkRepo', args),
+    setSecret: (args) => ipcRenderer.invoke('sites:setSecret', args),
+    upsertEnvironment: (args) => ipcRenderer.invoke('sites:upsertEnvironment', args),
+    renameEnvironment: (args) => ipcRenderer.invoke('sites:renameEnvironment', args),
+    removeEnvironment: (args) => ipcRenderer.invoke('sites:removeEnvironment', args),
+    importFromOcsites: () => ipcRenderer.invoke('sites:importFromOcsites')
+  } satisfies PreloadApi['sites'],
+
+  siteRuns: {
+    start: (args) => ipcRenderer.invoke('siteRuns:start', args),
+    cancel: (runId) => ipcRenderer.invoke('siteRuns:cancel', runId),
+    list: (args) => ipcRenderer.invoke('siteRuns:list', args),
+    readLog: (args) => ipcRenderer.invoke('siteRuns:readLog', args),
+    active: () => ipcRenderer.invoke('siteRuns:active'),
+    onEvent: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: SiteRunEvent): void =>
+        callback(event)
+      ipcRenderer.on('siteRuns:event', listener)
+      return () => ipcRenderer.removeListener('siteRuns:event', listener)
+    }
+  } satisfies PreloadApi['siteRuns'],
+
+  siteStacks: {
+    detect: (siteId) => ipcRenderer.invoke('siteStacks:detect', siteId),
+    resolveSocket: (siteId) => ipcRenderer.invoke('siteStacks:resolveSocket', siteId),
+    start: (siteId) => ipcRenderer.invoke('siteStacks:start', siteId),
+    stop: (siteId) => ipcRenderer.invoke('siteStacks:stop', siteId),
+    previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
+    runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args)
+  } satisfies PreloadApi['siteStacks'],
 
   workspacePorts: {
     scan: (args) => ipcRenderer.invoke('workspacePorts:scan', args),

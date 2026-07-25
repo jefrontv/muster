@@ -94,6 +94,10 @@ docs/**
 !docs/reference/headless-linux-server.md
 !docs/reference/linux-glibc-compatibility.md
 
+# Muster fork docs — tracked (fork-owned planning + integration docs).
+!docs/muster/
+!docs/muster/**
+
 # Stably CLI (only docs/ are tracked)
 .stably/*
 !.stably/docs/

@@ -604,61 +604,77 @@ export type UISlice = {
   unacknowledgeAgents: (paneKeys: string[]) => void
   activeView: TopLevelView
   previousViewBeforeTasks:
-    | 'terminal'
-    | 'settings'
     | 'activity'
     | 'automations'
-    | 'space'
-    | 'skills'
     | 'mobile'
+    | 'settings'
+    | 'sites'
+    | 'skills'
+    | 'space'
+    | 'terminal'
   previousViewBeforeSettings:
-    | 'terminal'
-    | 'tasks'
     | 'activity'
     | 'automations'
-    | 'space'
-    | 'skills'
     | 'mobile'
+    | 'sites'
+    | 'skills'
+    | 'space'
+    | 'tasks'
+    | 'terminal'
   previousViewBeforeActivity:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
     | 'automations'
-    | 'space'
-    | 'skills'
     | 'mobile'
+    | 'settings'
+    | 'sites'
+    | 'skills'
+    | 'space'
+    | 'tasks'
+    | 'terminal'
   previousViewBeforeAutomations:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
     | 'activity'
-    | 'space'
-    | 'skills'
     | 'mobile'
+    | 'settings'
+    | 'sites'
+    | 'skills'
+    | 'space'
+    | 'tasks'
+    | 'terminal'
   previousViewBeforeSpace:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
     | 'activity'
     | 'automations'
-    | 'skills'
     | 'mobile'
+    | 'settings'
+    | 'sites'
+    | 'skills'
+    | 'tasks'
+    | 'terminal'
   previousViewBeforeSkills:
+    | 'activity'
+    | 'automations'
+    | 'mobile'
+    | 'settings'
+    | 'sites'
+    | 'space'
+    | 'tasks'
+    | 'terminal'
+  previousViewBeforeSites:
     | 'terminal'
     | 'settings'
     | 'tasks'
     | 'activity'
     | 'automations'
     | 'space'
+    | 'skills'
     | 'mobile'
   previousViewBeforeMobile:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
     | 'activity'
     | 'automations'
-    | 'space'
+    | 'settings'
+    | 'sites'
     | 'skills'
+    | 'space'
+    | 'tasks'
+    | 'terminal'
   setActiveView: (view: UISlice['activeView']) => void
   taskPageData: {
     preselectedRepoId?: string
@@ -733,6 +749,8 @@ export type UISlice = {
   closeSpacePage: () => void
   openSkillsPage: () => void
   closeSkillsPage: () => void
+  openSitesPage: () => void
+  closeSitesPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISlice['newWorkspaceDraft']>) => void
@@ -1217,6 +1235,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   previousViewBeforeAutomations: 'terminal',
   previousViewBeforeSpace: 'terminal',
   previousViewBeforeSkills: 'terminal',
+  previousViewBeforeSites: 'terminal',
   previousViewBeforeMobile: 'terminal',
   setActiveView: (view) => set({ activeView: view }),
   taskPageData: {},
@@ -1462,6 +1481,16 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   closeSkillsPage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeSkills
+    })),
+  openSitesPage: () =>
+    set((state) => ({
+      activeView: 'sites',
+      previousViewBeforeSites:
+        state.activeView === 'sites' ? state.previousViewBeforeSites : state.activeView
+    })),
+  closeSitesPage: () =>
+    set((state) => ({
+      activeView: state.previousViewBeforeSites
     })),
   openMobilePage: () =>
     set((state) => ({

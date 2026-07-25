@@ -1,12 +1,12 @@
 {
-  "name": "orca",
+  "name": "muster",
   "version": "1.4.156-rc.1",
   "description": "Next-gen IDE for parallel agentic development",
-  "homepage": "https://github.com/stablyai/orca",
+  "homepage": "https://github.com/stablyai/orca#muster-fork",
   "author": "stablyai",
   "bin": {
-    "orca": "./out/cli/index.js",
-    "orca-dev": "./config/scripts/orca-dev.mjs"
+    "muster": "./out/cli/index.js",
+    "muster-dev": "./config/scripts/orca-dev.mjs"
   },
   "main": "./out/main/index.js",
   "scripts": {
@@ -118,6 +118,7 @@
     "electron-updater": "^6.8.9",
     "i18next": "^26.3.1",
     "jsonc-parser": "^3.3.1",
+    "mysql2": "^3.23.1",
     "node-pty": "^1.1.0",
     "posthog-node": "^5.33.3",
     "qrcode": "^1.5.4",

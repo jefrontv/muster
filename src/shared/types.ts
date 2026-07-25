@@ -3,6 +3,7 @@ import type { ExecutionHostId } from './execution-host'
 import type { RemovedSshTargetTombstone, SshRemotePtyLease, SshTarget } from './ssh-types'
 import type { Automation, AutomationExecutionTargetType, AutomationRun } from './automations-types'
 import type { WorkspaceSource } from './workspace-source'
+import type { Site } from './site-types'
 import type { GitHubProjectSettings } from './github-project-types'
 import type {
   AgentStatusState,
@@ -3206,6 +3207,7 @@ export type TopLevelView =
   | 'automations'
   | 'space'
   | 'skills'
+  | 'sites'
   | 'mobile'
 
 export type PersistedUIState = {
@@ -3459,6 +3461,8 @@ export type PersistedState = {
   folderWorkspaces: FolderWorkspace[]
   /** Sparse-checkout presets keyed by repoId. */
   sparsePresetsByRepo: Record<string, SparsePreset[]>
+  /** WordPress sites (the ocsites port). Keyed by their own id; linked to a Repo by `repoId`. */
+  sites: Site[]
   /** Per paired device last tab selection by worktree; keeps mobile navigation across host restarts. */
   mobileClientTabSelectionsByDeviceId?: PersistedMobileClientTabSelections
   worktreeMeta: Record<string, WorktreeMeta>

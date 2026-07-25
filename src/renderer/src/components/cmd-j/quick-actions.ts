@@ -58,6 +58,26 @@ async function runWorkspaceAction(
 // stay inside their Settings panes where explanatory UI and failure states fit.
 export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] => [
   {
+    id: 'open-sites',
+    kind: 'action',
+    title: translate('auto.components.cmd.j.quick.actions.openSites', 'Sites'),
+    description: translate(
+      'auto.components.cmd.j.quick.actions.openSitesDescription',
+      'Manage WordPress sites, environments, and deployments.'
+    ),
+    icon: Globe,
+    verbKeywords: [
+      translate('auto.components.cmd.j.quick.actions.verbs.sites', 'sites'),
+      translate('auto.components.cmd.j.quick.actions.verbs.deploy', 'deploy'),
+      translate('auto.components.cmd.j.quick.actions.verbs.wordpress', 'wordpress')
+    ],
+    isAvailable: () => ({ available: true }),
+    run: async (ctx) => {
+      ctx.openSitesPage()
+      return { status: 'ok' }
+    }
+  },
+  {
     id: 'new-browser-tab',
     kind: 'action',
     title: translate('auto.components.cmd.j.quick.actions.892bfa9339', 'New Browser Tab'),

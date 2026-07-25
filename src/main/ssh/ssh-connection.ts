@@ -168,6 +168,12 @@ export class SshConnection {
     return this.cachedPassphrase != null || this.cachedPassword != null
   }
 
+  // Why: site runs authenticate from a stored credential with no window attached, so the
+  // password must be seeded before connect() instead of arriving via onCredentialRequest.
+  useStoredPassword(password: string): void {
+    this.cachedPassword = password
+  }
+
   async exec(cmd: string, options?: SshExecOptions): Promise<ClientChannel> {
     if (options?.signal?.aborted) {
       throw createSshOperationAbortError()
@@ -1128,6 +1134,17 @@ export class SshConnection {
           this.hostKeyFingerprint = `SHA256:${digest}`
         }
         return true
+      }
+
+      // Why: shared WordPress hosts commonly offer keyboard-interactive instead of plain
+      // password auth. ssh2 only tries it when asked, so mirror paramiko's automatic fallback
+      // whenever a password is already in hand — never for key/agent-only connections.
+      const passwordForPrompts = config.password
+      if (typeof passwordForPrompts === 'string') {
+        config.tryKeyboard = true
+        client.on('keyboard-interactive', (_name, _instructions, _lang, prompts, finish) => {
+          finish(prompts.map(() => passwordForPrompts))
+        })
       }
 
       const cleanupStartupListeners = (): void => {
