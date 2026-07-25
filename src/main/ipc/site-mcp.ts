@@ -23,6 +23,8 @@ import type {
   SiteMcpToolInfo,
   SiteMcpWriteResult
 } from '../../shared/site-mcp-types'
+import type { Store } from '../persistence'
+import { autoRegisterSiteMcpServers } from '../sites/site-mcp-autoregister'
 import { failure } from './sites-result'
 
 export type { SiteMcpStatus, SiteMcpToolInfo, SiteMcpWriteResult }
@@ -43,9 +45,20 @@ function readArgs(args: unknown): { rootPath: string; configPath: string } {
   }
 }
 
-export function registerSiteMcpHandlers(): void {
+export function registerSiteMcpHandlers(store: Store): void {
   for (const channel of SITE_MCP_CHANNELS) {
     ipcMain.removeHandler(channel)
+  }
+
+  // Repair every already-registered entry whose command points at a moved or upgraded build, so
+  // an agent's site tools keep working across app updates without anyone re-registering by hand.
+  try {
+    const repaired = autoRegisterSiteMcpServers(store)
+    if (repaired.repaired.length > 0) {
+      console.info(`[site-mcp] refreshed ${repaired.repaired.length} stale MCP registration(s)`)
+    }
+  } catch (error) {
+    console.warn('[site-mcp] auto-registration skipped', error)
   }
 
   ipcMain.handle('siteMcp:status', (_event, args: unknown): SiteResult<SiteMcpStatus> => {

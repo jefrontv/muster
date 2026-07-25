@@ -202,7 +202,7 @@ export function registerCoreHandlers(
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)
   registerSiteBindHandlers(store)
-  registerSiteMcpHandlers()
+  registerSiteMcpHandlers(store)
   registerWorkspacePortHandlers(store)
   registerLocalhostWorktreeLabelHandlers(store)
   if (commitMessageAgentEnv) {

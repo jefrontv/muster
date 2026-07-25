@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SiteResult } from '../../shared/site-types'
+import type { Store } from '../persistence'
 import { isPlainJsonObject } from '../sites/mcp/site-mcp-jsonrpc'
 
 const { handlers, removed } = vi.hoisted(() => ({
@@ -61,11 +62,14 @@ function readServerNames(path: string): string[] {
 
 let root = ''
 
+// Auto-registration walks the store's sites; an empty list keeps these tests about the IPC seam.
+const emptyStore = { listSites: () => [] } as unknown as Store
+
 beforeEach(() => {
   handlers.clear()
   removed.length = 0
   root = mkdtempSync(join(tmpdir(), 'muster-mcp-'))
-  registerSiteMcpHandlers()
+  registerSiteMcpHandlers(emptyStore)
 })
 
 describe('siteMcp:status', () => {

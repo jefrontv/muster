@@ -125,6 +125,7 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
     notifications: {
       enabled: true,
       agentTaskComplete: true,
+      siteRunComplete: true,
       terminalBell: false,
       suppressWhenFocused: true,
       customSoundId: 'system',

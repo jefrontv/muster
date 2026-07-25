@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { GlobalSettings } from '../../../../shared/types'
 import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
-import { BellRing, Bot, Siren } from 'lucide-react'
+import { BellRing, Bot, Globe, Siren } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   MacNotificationPermissionCard,
@@ -159,6 +159,25 @@ export function NotificationsPane({
         onToggle={() =>
           void updateNotificationSettings({
             terminalBell: !notificationSettings.terminalBell
+          })
+        }
+      />
+
+      <NotificationSettingToggle
+        icon={<Globe className="size-4" />}
+        label={translate(
+          'auto.components.settings.NotificationsPane.siteRunComplete',
+          'Site Import / Deploy'
+        )}
+        description={translate(
+          'auto.components.settings.NotificationsPane.siteRunCompleteDescription',
+          'A WordPress import or deploy finishes, fails, or is cancelled.'
+        )}
+        checked={notificationSettings.siteRunComplete}
+        disabled={!notificationSettings.enabled}
+        onToggle={() =>
+          void updateNotificationSettings({
+            siteRunComplete: !notificationSettings.siteRunComplete
           })
         }
       />

@@ -6107,7 +6107,9 @@
           "274af61bc0": "system",
           "6e6df3a09a": "Choose Custom File",
           "76e02467b8": "Change Custom File",
-          "d3756cf5bc": "disabled"
+          "d3756cf5bc": "disabled",
+          "siteRunComplete": "Site Import / Deploy",
+          "siteRunCompleteDescription": "A WordPress import or deploy finishes, fails, or is cancelled."
         },
         "OpenAiTranscriptionKeyDialog": {
           "fa83512e48": "Save Key",
@@ -13724,7 +13726,12 @@
           "stillRunning": "running…",
           "durationHoursMinutes": "{{hours}}h {{minutes}}m",
           "durationMinutesSeconds": "{{minutes}}m {{seconds}}s",
-          "durationSeconds": "{{seconds}}s"
+          "durationSeconds": "{{seconds}}s",
+          "openInEditor": "Open full log"
+        },
+        "openSiteRunLog": {
+          "noWorkspace": "Open a workspace first — run logs open as an editor tab.",
+          "notAuthorized": "Could not open the run log."
         }
       }
     },

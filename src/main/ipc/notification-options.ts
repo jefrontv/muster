@@ -33,6 +33,16 @@ export function buildNotificationOptions(args: NotificationDispatchRequest): {
     }
   }
 
+  if (args.source === 'site-run-complete') {
+    const run = args.siteRun
+    const verb = run?.group === 'deploy' ? 'Deploy' : 'Import'
+    const outcome = run?.status === 'succeeded' ? 'finished' : (run?.status ?? 'ended')
+    return {
+      title: `${verb} ${outcome}: ${run?.siteName ?? 'site'}`,
+      body: run?.environment ? `Environment: ${run.environment}` : 'WordPress site run'
+    }
+  }
+
   if (args.source === 'test') {
     return {
       title: 'Orca notifications are on',

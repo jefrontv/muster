@@ -6032,7 +6032,9 @@
           "274af61bc0": "系统",
           "6e6df3a09a": "选择自定义文件",
           "76e02467b8": "更改自定义文件",
-          "d3756cf5bc": "已禁用"
+          "d3756cf5bc": "已禁用",
+          "siteRunComplete": "Site Import / Deploy",
+          "siteRunCompleteDescription": "A WordPress import or deploy finishes, fails, or is cancelled."
         },
         "OpenAiTranscriptionKeyDialog": {
           "fa83512e48": "保存密钥",
@@ -13701,7 +13703,12 @@
           "stillRunning": "running…",
           "durationHoursMinutes": "{{hours}}h {{minutes}}m",
           "durationMinutesSeconds": "{{minutes}}m {{seconds}}s",
-          "durationSeconds": "{{seconds}}s"
+          "durationSeconds": "{{seconds}}s",
+          "openInEditor": "Open full log"
+        },
+        "openSiteRunLog": {
+          "noWorkspace": "Open a workspace first — run logs open as an editor tab.",
+          "notAuthorized": "Could not open the run log."
         }
       }
     },

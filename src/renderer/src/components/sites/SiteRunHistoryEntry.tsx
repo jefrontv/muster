@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronRight, FileText, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteRun, SiteRunLogPage } from '../../../../shared/site-run-types'
@@ -6,6 +6,7 @@ import { translate } from '@/i18n/i18n'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { openSiteRunLog } from './open-site-run-log'
 import { RUN_STATUS_BADGE, RUN_STATUS_TONE, runDuration } from './site-run-history-format'
 
 /** The stored log can be long; a tail is what the browser shows, the file keeps everything. */
@@ -114,6 +115,19 @@ export function SiteRunHistoryEntry({
                         'auto.components.sites.SiteRunHistoryEntry.jumpToFirstError',
                         'Jump to first error'
                       )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={!run.logPath}
+                  onClick={() => void openSiteRunLog(run)}
+                >
+                  <FileText className="size-3.5" />
+                  {translate(
+                    'auto.components.sites.SiteRunHistoryEntry.openInEditor',
+                    'Open full log'
+                  )}
                 </Button>
                 {page.truncatedEarlier > 0 ? (
                   <span className="text-xs text-muted-foreground">

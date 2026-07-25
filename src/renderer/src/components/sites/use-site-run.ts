@@ -19,6 +19,22 @@ export type SiteRunState = {
   error: string | null
 }
 
+function notifyRunFinished(run: SiteRun | null, runId: string, status: string): void {
+  if (!run) {
+    return
+  }
+  void window.api.notifications.dispatch({
+    source: 'site-run-complete',
+    notificationId: `site-run:${runId}`,
+    siteRun: {
+      siteName: run.siteName,
+      group: run.group,
+      environment: run.environment,
+      status
+    }
+  })
+}
+
 const IDLE: SiteRunState = { run: null, lines: [], progress: null, starting: false, error: null }
 
 /**
@@ -32,6 +48,8 @@ export function useSiteRun(siteId: string | null): SiteRunState & {
 } {
   const [state, setState] = useState<SiteRunState>(IDLE)
   const runIdRef = useRef<string | null>(null)
+  // Mirrors state.run so the event listener can read it without resubscribing on every change.
+  const runRef = useRef<SiteRun | null>(null)
 
   useEffect(() => {
     setState(IDLE)
@@ -68,6 +86,13 @@ export function useSiteRun(siteId: string | null): SiteRunState & {
       if (event.runId !== runIdRef.current) {
         return
       }
+      if (event.type === 'status' && event.status !== 'running') {
+        // Outside the state updater: React may invoke an updater twice, and this has a side
+        // effect. A deploy runs for minutes so the user has almost certainly looked away;
+        // notifications are renderer-initiated by design and every enabled/focus/cooldown gate
+        // lives behind dispatch, so it is correct to fire unconditionally here.
+        notifyRunFinished(runRef.current, event.runId, event.status)
+      }
       setState((previous) => {
         if (event.type === 'log') {
           const lines = [...previous.lines, event.line]
@@ -88,6 +113,10 @@ export function useSiteRun(siteId: string | null): SiteRunState & {
     })
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    runRef.current = state.run
+  }, [state.run])
 
   const start = useCallback(
     async (group: SiteRunGroup, environment?: string): Promise<void> => {

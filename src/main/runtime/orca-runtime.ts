@@ -166,7 +166,8 @@ import type {
   TuiAgent,
   WorkspaceCreateTelemetrySource,
   WorkspaceSessionState,
-  DirEntry
+  DirEntry,
+  NotificationEventSource
 } from '../../shared/types'
 import { assertWorktreeUnlockedForRemoval } from '../../shared/worktree-removal'
 import {
@@ -2343,7 +2344,7 @@ type ResolvedWorktreeInFlight = {
 // events after it — idempotent, no duplicate local pushes.
 export type MobileNotificationDispatchEvent = {
   type: 'notification'
-  source: 'agent-task-complete' | 'terminal-bell' | 'test'
+  source: NotificationEventSource
   title: string
   body: string
   worktreeId?: string
