@@ -5,6 +5,7 @@ import { preloadE2EConfig } from './e2e-config'
 import { glApi } from './gitlab'
 import type { AppIdentity } from '../shared/app-identity'
 import type { SiteRunEvent } from '../shared/site-run-types'
+import type { PendingSiteBind } from '../shared/site-bind-types'
 import type { DashboardSnapshot, DashboardRevealAgentArgs } from '../shared/dashboard-snapshot'
 import type {
   TerminalPreviewConnectResult,
@@ -820,6 +821,45 @@ const api = {
     previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
     runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args)
   } satisfies PreloadApi['siteStacks'],
+
+  siteTools: {
+    syncUploads: (args) => ipcRenderer.invoke('siteTools:syncUploads', args),
+    syncUploadsSubdir: (args) => ipcRenderer.invoke('siteTools:syncUploadsSubdir', args),
+    syncPlugin: (args) => ipcRenderer.invoke('siteTools:syncPlugin', args),
+    fetchPaths: (args) => ipcRenderer.invoke('siteTools:fetchPaths', args),
+    runWpCli: (args) => ipcRenderer.invoke('siteTools:runWpCli', args),
+    comparePlugins: (args) => ipcRenderer.invoke('siteTools:comparePlugins', args),
+    testConnection: (args) => ipcRenderer.invoke('siteTools:testConnection', args),
+    checkHealth: (args) => ipcRenderer.invoke('siteTools:checkHealth', args),
+    wordpressVersion: (args) => ipcRenderer.invoke('siteTools:wordpressVersion', args),
+    activeTheme: (args) => ipcRenderer.invoke('siteTools:activeTheme', args),
+    findFile: (args) => ipcRenderer.invoke('siteTools:findFile', args)
+  } satisfies PreloadApi['siteTools'],
+
+  siteBind: {
+    pending: () => ipcRenderer.invoke('siteBind:pending'),
+    dismiss: (requestId) => ipcRenderer.invoke('siteBind:dismiss', requestId),
+    confirm: (args) => ipcRenderer.invoke('siteBind:confirm', args),
+    generate: (fields) => ipcRenderer.invoke('siteBind:generate', fields),
+    onRequest: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, pending: PendingSiteBind): void =>
+        callback(pending)
+      ipcRenderer.on('siteBind:request', listener)
+      return () => ipcRenderer.removeListener('siteBind:request', listener)
+    }
+  } satisfies PreloadApi['siteBind'],
+
+  siteBitbucket: {
+    status: () => ipcRenderer.invoke('siteBitbucket:status'),
+    setCredentials: (args) => ipcRenderer.invoke('siteBitbucket:setCredentials', args),
+    listRepos: (args) => ipcRenderer.invoke('siteBitbucket:listRepos', args)
+  } satisfies PreloadApi['siteBitbucket'],
+
+  siteMcp: {
+    status: (args) => ipcRenderer.invoke('siteMcp:status', args),
+    register: (args) => ipcRenderer.invoke('siteMcp:register', args),
+    unregister: (args) => ipcRenderer.invoke('siteMcp:unregister', args)
+  } satisfies PreloadApi['siteMcp'],
 
   workspacePorts: {
     scan: (args) => ipcRenderer.invoke('workspacePorts:scan', args),

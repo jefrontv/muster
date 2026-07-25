@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
 import { SiteRunConsole } from './SiteRunConsole'
+import { SiteRunHistory } from './SiteRunHistory'
 
 type SiteDetailPanelProps = {
   summary: SiteSummary
@@ -174,6 +175,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
       </section>
 
       <SiteRunConsole summary={summary} />
+      <SiteRunHistory siteId={site.id} />
     </div>
   )
 }

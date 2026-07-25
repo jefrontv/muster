@@ -112,6 +112,8 @@ import { startFirstWindowStartupServices } from './startup/first-window-startup-
 import { createWslCliReconciliationStartupBarrier } from './startup/wsl-cli-reconciliation-startup-barrier'
 import { getDevInstanceIdentity } from './startup/dev-instance-identity'
 import { registerSiteBindUrlSchemes } from './sites/bind-url-scheme'
+import { extractSiteBindUrl } from './sites/site-bind-url'
+import { handleSiteBindUrl } from './ipc/site-bind'
 import { hydrateShellPath, mergePathSegments } from './startup/hydrate-shell-path'
 import {
   acquireSingleInstanceLock,
@@ -633,6 +635,40 @@ if (!hasSingleInstanceLock) {
   // Why: a false-negative lock loss otherwise looks like a silent crash on packaged macOS; `open --stderr` can capture this line.
   logSingleInstanceLockFailure()
   app.quit()
+}
+
+// `muster://configure?…` bind links. Registered at module scope because macOS delivers `open-url`
+// before `whenReady`; handleSiteBindUrl buffers a link that arrives before the IPC handlers exist
+// and replays it on registration. The URL itself is NEVER logged — it can carry a plaintext
+// password — so only the returned reason is ever surfaced.
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  const outcome = handleSiteBindUrl(url)
+  if (!outcome.ok) {
+    console.warn(`[site-bind] rejected link: ${outcome.error}`)
+  }
+  requestDesktopActivation()
+})
+
+// Warm start on Windows/Linux: the second process' argv arrives here. A separate listener from
+// the single-instance activation one so that contract stays untouched.
+if (hasSingleInstanceLock) {
+  app.on('second-instance', (_event, argv) => {
+    const url = extractSiteBindUrl(argv)
+    if (!url) {
+      return
+    }
+    const outcome = handleSiteBindUrl(url)
+    if (!outcome.ok) {
+      console.warn(`[site-bind] rejected link: ${outcome.error}`)
+    }
+  })
+
+  // Cold start on Windows/Linux: the link is in this process' own argv, not an event.
+  const coldStartBindUrl = extractSiteBindUrl(process.argv)
+  if (coldStartBindUrl) {
+    handleSiteBindUrl(coldStartBindUrl)
+  }
 }
 
 // Why: when another process holds the lock we've already quit; skip file-writing side effects so this transient process never touches userData.

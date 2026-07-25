@@ -3,6 +3,7 @@
 //
 // The admin password is only ever put in the request body — it is never logged and never returned.
 
+import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 import { isLocalWpSupported, LOCALWP_UNSUPPORTED_PLATFORM, type LocalWpHost } from './localwp-host'
 import {
   readLocalWpConnectionInfo,
@@ -51,6 +52,8 @@ const postGraphql: LocalWpGraphqlPost = async (url, authToken, body) => {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   })
   if (!response.ok) {
+    // An unread body can crash the process from inside undici; see unread-response-body.ts.
+    await cancelUnreadResponseBody(response)
     throw new Error(`LocalWP API error ${response.status}: ${response.statusText}`)
   }
   return response.json()

@@ -111,6 +111,23 @@ export function deleteSiteSecrets(siteId: string): void {
   }
 }
 
+/**
+ * Re-encrypts a whole environment's secrets under a new environment name. Secret files are keyed
+ * on the environment, so every rename or duplicate must carry them across or the next run fails
+ * on a missing credential that the user believes is still stored.
+ */
+export function copySiteEnvironmentSecrets(siteId: string, from: string, to: string): void {
+  if (from === to) {
+    return
+  }
+  for (const kind of ['ssh', 'db'] as const) {
+    const value = getSiteSecret(siteId, from, kind)
+    if (value !== null) {
+      setSiteSecret(siteId, to, kind, value)
+    }
+  }
+}
+
 export function deleteSiteEnvironmentSecrets(siteId: string, environment: string): void {
   for (const kind of ['ssh', 'db'] as const) {
     rmSync(secretPath(siteId, environment, kind), { force: true })

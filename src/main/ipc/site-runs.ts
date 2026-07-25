@@ -55,6 +55,8 @@ function isStartArgs(value: unknown): value is StartArgs {
 }
 
 let service: SiteRunService | null = null
+/** Set by registerSiteRunHandlers; keeps the subscriber set private to that closure. */
+let addSubscriber: ((sender: WebContents) => void) | null = null
 
 /**
  * The job factory is injectable so the IPC seam can be exercised against a scripted job. In
@@ -87,6 +89,7 @@ export function registerSiteRunHandlers(
     }
   })
   service = runs
+  addSubscriber = (sender) => subscribers.add(sender)
   // Fail-open GC for the 30-day / 200-per-site retention, once per registration.
   try {
     pruneSiteRuns(baseDir)
@@ -166,4 +169,21 @@ export function registerSiteRunHandlers(
 /** Abort every in-flight run — called on app quit so no ssh or mysqldump outlives the window. */
 export function cancelAllSiteRuns(): void {
   service?.cancelAll()
+}
+
+/**
+ * The shared run registry, or null before registerSiteRunHandlers has run. Never cache the
+ * result: a re-register replaces the service, and a stale one emits into a dead subscriber set.
+ */
+export function getSiteRunService(): SiteRunService | null {
+  return service
+}
+
+/**
+ * Adds a renderer to the siteRuns:event stream. A caller that starts a run through
+ * getSiteRunService() rather than siteRuns:start MUST call this with its own event.sender,
+ * otherwise the run it started streams to nobody.
+ */
+export function subscribeSiteRunEvents(sender: WebContents): void {
+  addSubscriber?.(sender)
 }

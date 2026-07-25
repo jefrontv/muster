@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { WebContents } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SiteRunEvent } from '../../shared/site-run-types'
 import type { Site, SiteSummary } from '../../shared/site-types'
@@ -29,7 +30,12 @@ vi.mock('../sites/site-summary', () => ({
 }))
 
 import { SiteRunCancelledError } from '../sites/pipeline-contract'
-import { registerSiteRunHandlers, type SiteRunJobFactory } from './site-runs'
+import {
+  getSiteRunService,
+  registerSiteRunHandlers,
+  subscribeSiteRunEvents,
+  type SiteRunJobFactory
+} from './site-runs'
 
 // A scripted stand-in for the real import/deploy pipelines. It announces a stage, emits progress,
 // then parks on the abort signal, so these tests exercise the IPC seam (streaming, remount
@@ -245,7 +251,7 @@ describe('staged run over IPC', () => {
   })
 
   it('stops sending to a destroyed renderer', async () => {
-    registerSiteRunHandlers(store())
+    registerSiteRunHandlers(store(), scriptedJob)
     await invoke('siteRuns:start', { siteId: 'site-1', group: 'import', runId: 'gone' })
     await Promise.resolve()
     const beforeDestroy = events.length
@@ -259,5 +265,29 @@ describe('staged run over IPC', () => {
       expect(active.value).toEqual([])
     })
     expect(events.length).toBe(beforeDestroy)
+  })
+
+  // Phase 10 tools start runs on the shared registry instead of through siteRuns:start.
+  it('exposes the shared service and streams to a renderer that subscribed directly', async () => {
+    registerSiteRunHandlers(store(), scriptedJob)
+    const runs = getSiteRunService()
+    expect(runs).not.toBeNull()
+
+    // A renderer that has never called a siteRuns channel receives nothing until it subscribes.
+    subscribeSiteRunEvents(sender() as unknown as WebContents)
+    const run = runs?.start({
+      runId: 'tool-run',
+      siteId: 'site-1',
+      siteName: 'Acme',
+      group: 'import',
+      environment: 'main',
+      branch: 'main',
+      job: async (context) => context.log('tool step')
+    })
+    expect(run?.id).toBe('tool-run')
+    await runs?.waitFor('tool-run')
+    expect(events.some((event) => event.type === 'log' && event.line.text === 'tool step')).toBe(
+      true
+    )
   })
 })

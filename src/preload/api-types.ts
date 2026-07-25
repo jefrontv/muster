@@ -18,18 +18,25 @@ import type {
   SiteSecretKind,
   SiteSummary
 } from '../shared/site-types'
-import type {
-  SiteActiveRun,
-  SiteRun,
-  SiteRunEvent,
-  SiteRunLogPage
-} from '../shared/site-run-types'
+import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../shared/site-run-types'
 import type {
   LocalWpControlOutcome,
   LocalWpMigrationPlan,
   LocalWpMigrationResult,
   LocalWpStackDetection
 } from '../shared/site-stack-types'
+import type { SiteBindApi, SiteBitbucketApi } from '../shared/site-bind-types'
+import type { SiteMcpStatus, SiteMcpWriteResult } from '../shared/site-mcp-types'
+import type {
+  PluginComparison,
+  RemoteFileSearch,
+  RemoteFileSearchKind,
+  SiteActiveTheme,
+  SiteConnectionReport,
+  SiteWordPressVersions,
+  WpCliLocation,
+  WpCliResult
+} from '../shared/site-tool-types'
 import type { DashboardSnapshot, DashboardRevealAgentArgs } from '../shared/dashboard-snapshot'
 import type {
   TerminalPreviewConnectResult,
@@ -836,6 +843,101 @@ export type SiteStacksApi = {
   }) => Promise<SiteResult<LocalWpMigrationResult>>
 }
 
+/**
+ * Operational tools ported from ocsites. The four sync calls return a SiteRun and stream through
+ * the existing `siteRuns` surface; the rest answer inline.
+ */
+/** The built-in MCP server: what it exposes, and whether a project has it registered. */
+export type SiteMcpApi = {
+  status: (args?: { rootPath?: string }) => Promise<SiteResult<SiteMcpStatus>>
+  register: (args: {
+    rootPath: string
+    configPath?: string
+  }) => Promise<SiteResult<SiteMcpWriteResult>>
+  unregister: (args: {
+    rootPath: string
+    configPath?: string
+  }) => Promise<SiteResult<SiteMcpWriteResult>>
+}
+
+export type SiteToolsApi = {
+  syncUploads: (args: {
+    siteId: string
+    environment?: string
+    confirm?: boolean
+    backup?: boolean
+    maxZipSizeMb?: number
+    timeoutMs?: number
+  }) => Promise<SiteResult<SiteRun>>
+  syncUploadsSubdir: (args: {
+    siteId: string
+    subdir: string
+    environment?: string
+    confirm?: boolean
+    backup?: boolean
+    maxZipSizeMb?: number
+    timeoutMs?: number
+  }) => Promise<SiteResult<SiteRun>>
+  syncPlugin: (args: {
+    siteId: string
+    plugin: string
+    environment?: string
+    confirm?: boolean
+    backup?: boolean
+    timeoutMs?: number
+  }) => Promise<SiteResult<SiteRun>>
+  fetchPaths: (args: {
+    siteId: string
+    paths: string[]
+    environment?: string
+    confirm?: boolean
+    extract?: boolean
+    cleanupDownload?: boolean
+    maxZipSizeMb?: number
+    timeoutMs?: number
+  }) => Promise<SiteResult<SiteRun>>
+  /** `args` is argv, not a command line — the runner never sees a shell string. */
+  runWpCli: (args: {
+    siteId: string
+    args: string[]
+    location: WpCliLocation
+    environment?: string
+    allowWrites?: boolean
+    timeoutMs?: number
+  }) => Promise<SiteResult<WpCliResult>>
+  comparePlugins: (args: {
+    siteId: string
+    environment?: string
+  }) => Promise<SiteResult<PluginComparison>>
+  testConnection: (args: {
+    siteId: string
+    environment?: string
+  }) => Promise<SiteResult<SiteConnectionReport>>
+  checkHealth: (args: {
+    siteId: string
+    environment?: string
+  }) => Promise<SiteResult<SiteConnectionReport>>
+  wordpressVersion: (args: {
+    siteId: string
+    environment?: string
+  }) => Promise<SiteResult<SiteWordPressVersions>>
+  activeTheme: (args: {
+    siteId: string
+    location: WpCliLocation
+    environment?: string
+  }) => Promise<SiteResult<SiteActiveTheme>>
+  findFile: (args: {
+    siteId: string
+    pattern: string
+    path?: string
+    environment?: string
+    kind?: RemoteFileSearchKind
+    maxMatches?: number
+    maxSizeBytes?: number
+    maxDepth?: number
+  }) => Promise<SiteResult<RemoteFileSearch>>
+}
+
 export type StatsApi = {
   getSummary: () => Promise<StatsSummary>
 }
@@ -1402,6 +1504,10 @@ export type PreloadApi = {
   sites: SitesApi
   siteRuns: SiteRunsApi
   siteStacks: SiteStacksApi
+  siteTools: SiteToolsApi
+  siteBind: SiteBindApi
+  siteBitbucket: SiteBitbucketApi
+  siteMcp: SiteMcpApi
   workspacePorts: {
     scan: (args: WorkspacePortScanRequest) => Promise<WorkspacePortScanResult>
     kill: (args: WorkspacePortKillRequest) => Promise<WorkspacePortKillResult>

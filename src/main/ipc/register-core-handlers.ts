@@ -43,6 +43,9 @@ import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
 import { registerSiteRunHandlers } from './site-runs'
 import { registerSiteStackHandlers } from './site-stacks'
+import { registerSiteToolHandlers } from './site-tools'
+import { registerSiteBindHandlers } from './site-bind'
+import { registerSiteMcpHandlers } from './site-mcp'
 import { registerWorkspacePortHandlers } from './workspace-ports'
 import { registerLocalhostWorktreeLabelHandlers } from './localhost-worktree-labels'
 import { registerAutomationHandlers } from './automations'
@@ -197,6 +200,9 @@ export function registerCoreHandlers(
   registerSiteHandlers(store)
   registerSiteRunHandlers(store)
   registerSiteStackHandlers(store)
+  registerSiteToolHandlers(store)
+  registerSiteBindHandlers(store)
+  registerSiteMcpHandlers()
   registerWorkspacePortHandlers(store)
   registerLocalhostWorktreeLabelHandlers(store)
   if (commitMessageAgentEnv) {

@@ -411,11 +411,11 @@ Phases 0–6 are implemented and verified. Phases 7–11 are not started.
 | 4 Deploy pipeline | done | nvm-pinned theme build with auto-install, dist zip + SFTP upload, remote swap with permissions, git pull, cache clear. |
 | 5 Environments & safety | done | Environment CRUD with secrets moved on rename; `buildSiteRunPlan` / `canStartRun` implement `preview_run` and the accidental-prod-deploy guard; the UI confirms through `useConfirmationDialog`. |
 | 6 Local stacks | done | 9 LocalWP modules (detection, WP-CLI env, site control, creation, DB export, app/public, migration plan + execute) behind `siteStacks:*`, macOS-gated. Smoke-tested against the real Local app (45 registered sites). |
-| 7 Bitbucket | not started | — |
-| 8 Agent MCP | not started | — |
-| 9 `muster://` bind flow | scheme registered only | `registerSiteBindUrlSchemes` claims both schemes; the bind dialog and URL intake are not built. |
-| 10 Utility tools | not started | `sync_uploads_*`, `sync_plugin`, `compare_plugins`, `run_wp_cli`, `test_connection`, run-history browser. |
-| 11 Decommission | not started | ocsites remains installed and authoritative. |
+| 7 Bitbucket | done | Workspace repo listing with pagination and SSH-preferred clone URLs, App Password in its own `safeStorage` file, credentials auto-seeded from the legacy ocsites config. Cloning drives Orca's existing `repos:clone` rather than shelling git. |
+| 8 Agent MCP | done | Built-in `muster-sites` MCP server, **24 ocsites-named tools** over hand-rolled stdio JSON-RPC (no SDK dependency added). Every write routes through `buildSiteRunPlan`/`canStartRun`; passwords are structurally unreachable. `site` may be omitted and is resolved from the agent's cwd — the merged-app payoff: the agent editing the theme deploys that site. |
+| 9 `muster://` bind flow | done | Parse/generate with every ocsites parameter alias, `acme.com.au` → `acme.local` derivation, `open-url` + `second-instance` + cold-start argv intake, a link stages a request that only an explicit user confirm applies. The AppleScript handler app is gone. |
+| 10 Utility tools | done | `sync_uploads_*`, `sync_plugin`, `compare_plugins`, `fetch_remote_paths`, `run_wp_cli`/`run_remote_wp_cli` with the read-safety allowlist, `test_connection`/`check_health` with classified failures, `find_file`, WordPress version and active theme both sides, plus the run-history browser with jump-to-first-error. |
+| 11 Decommission | not started | ocsites remains installed. Nothing in Muster reads it at runtime — only the one-shot importer does — so decommissioning is a user decision, not a code change. |
 
 ### Verification performed
 
@@ -425,6 +425,9 @@ Phases 0–6 are implemented and verified. Phases 7–11 are not started.
 - **Silent-corruption guard**: a truncated `.gz` piped into a stub `mysql` exits 0 without `set -o pipefail` and 1 with it, proving the flag guards the real bug.
 - **Real binaries**: `find -prune | zip -@` verified to prune `uploads`/`.git`; real `unzip` verified to overwrite a mode-0444 file.
 - **UI**: the Sites page renders all 154 sites with stack badges, branches and environment counts; the detail panel shows the branch-mismatch confirmation warning, both toggle groups, presence-only secret state, and Import/Deploy controls with step counts.
+- **Two-layer write safety, exercised live against a real imported site.** `wp db drop --yes` with no opt-in returned `blocked: true` from the WP-CLI allowlist. The *same* command with `allowWrites: true` was still refused — this time by the environment guard: *"the checked-out branch does not match an environment — confirm the target explicitly."* A read-safe `wp core version` ran and exited 0. The opt-in flag cannot bypass the branch guard, which is exactly ocsites' model.
+- **Full IPC surface live in the running app**: six domains, 42 methods — `sites` (11), `siteRuns` (6), `siteStacks` (6), `siteTools` (11), `siteBind` (5), `siteBitbucket` (3), `siteMcp` (3). The MCP server reports 24 tools under the name `muster-sites`. Bitbucket credentials were auto-seeded from the legacy ocsites config with no user action.
+- **Test suite**: `pnpm test` finished at **36,564 passing / 85 failing** against a **170-failing baseline** measured on the unmodified fork before any work. Every one of the 85 is a pre-existing load-sensitive failure in a file this work never touched — verified per-file against the changed-file set. The ~1,000 new tests for this feature pass 895/895 when run together.
 - **Gates**: `pnpm typecheck` (node + cli + web) clean; `oxlint` 0 errors; max-lines ratchet clean with **no new bypasses**; styled-scrollbar and reliability-gate checks pass; localization catalog and coverage pass across all five locales.
 
 ### Deliberate divergences from ocsites

@@ -65,31 +65,69 @@ export type SiteRunPlanInput = {
   pathExists: boolean
 }
 
-export function buildSiteRunPlan(input: SiteRunPlanInput): SiteRunPlan {
-  const { site, group, branch, pathExists } = input
+/** One step of work a tool performs. A tool has exactly one; a run has a toggle list. */
+export type SiteToolStep = {
+  key: string
+  label: string
+  /** False for a purely local action (WP-CLI against the checkout), which needs no credentials. */
+  remote: boolean
+}
 
+export type SiteToolPlanInput = SiteRunPlanInput & {
+  step: SiteToolStep
+}
+
+/** Resolved per plan, because which steps exist depends on the environment that was resolved. */
+type PlanSteps = {
+  steps: SiteRunPlanStep[]
+  enabledStepCount: number
+}
+
+export function buildSiteRunPlan(input: SiteRunPlanInput): SiteRunPlan {
+  const toggles = input.group === 'import' ? SITE_IMPORT_TOGGLES : SITE_DEPLOY_TOGGLES
+  return buildPlan(input, (environment) => ({
+    steps: toggles.map((toggle) => ({
+      key: toggle.key,
+      label: toggle.label,
+      enabled: environment ? environment[toggle.key] : false,
+      remote: Object.hasOwn(REMOTE_STEPS, toggle.key)
+    })),
+    enabledStepCount: environment ? countSelectedToggles(environment, input.group) : 0
+  }))
+}
+
+/**
+ * The gate for a tool action — uploads pull, plugin pull, mutating WP-CLI. Deliberately the same
+ * body as a run's plan, so one place decides "is this safe to execute", with the tool's single step
+ * substituted for the import/deploy toggle list a tool does not have: judging a uploads pull by
+ * `no-steps-selected` would block every one of them.
+ */
+export function buildSiteToolPlan({ step, ...input }: SiteToolPlanInput): SiteRunPlan {
+  return buildPlan(input, () => ({
+    steps: [{ ...step, enabled: true }],
+    enabledStepCount: 1
+  }))
+}
+
+function buildPlan(
+  input: SiteRunPlanInput,
+  buildSteps: (environment: SiteEnvironment | undefined) => PlanSteps
+): SiteRunPlan {
+  const { site, group } = input
   const resolution: SiteEnvironmentResolution = input.requestedEnvironment
     ? {
         environment: input.requestedEnvironment,
         reason: 'branch-match',
         requiresConfirmation: false
       }
-    : resolveSiteEnvironment(site, branch)
+    : resolveSiteEnvironment(site, input.branch)
 
   const environmentName = resolution.environment
   const environment: SiteEnvironment | undefined = environmentName
     ? site.environments[environmentName]
     : undefined
 
-  const toggles = group === 'import' ? SITE_IMPORT_TOGGLES : SITE_DEPLOY_TOGGLES
-  const steps: SiteRunPlanStep[] = toggles.map((toggle) => ({
-    key: toggle.key,
-    label: toggle.label,
-    enabled: environment ? environment[toggle.key] : false,
-    remote: Object.hasOwn(REMOTE_STEPS, toggle.key)
-  }))
-
-  const enabledStepCount = environment ? countSelectedToggles(environment, group) : 0
+  const { steps, enabledStepCount } = buildSteps(environment)
   const requiresRemote = steps.some((step) => step.enabled && step.remote)
 
   const blockedBy: SiteRunBlockedReason[] = []
@@ -99,7 +137,7 @@ export function buildSiteRunPlan(input: SiteRunPlanInput): SiteRunPlan {
   if (enabledStepCount === 0) {
     blockedBy.push('no-steps-selected')
   }
-  if (!pathExists) {
+  if (!input.pathExists) {
     blockedBy.push('missing-path')
   }
   if (requiresRemote && environmentName && !input.hasSshSecret(environmentName)) {

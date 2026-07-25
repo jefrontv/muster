@@ -13678,6 +13678,53 @@
           "import": "Import",
           "deploy": "Deploy",
           "cancel": "Cancel"
+        },
+        "SiteBindDialog": {
+          "title": "Configure a site from a link",
+          "description": "A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.",
+          "willStore": "What will be stored",
+          "chooseFolder": "Which local folder should this bind to?",
+          "browse": "Choose a folder…",
+          "cloneHeading": "Not cloned yet",
+          "cloneHint": "Clone the repository first, then bind the new checkout.",
+          "clone": "Clone into a folder…",
+          "cloning": "Cloning…",
+          "noCandidates": "No local checkout matches this repository yet.",
+          "passwordNotice": "The link carries an SSH password. It is stored in your OS keychain and never shown again.",
+          "noPasswordNotice": "The link carries no password, so no credential will be stored.",
+          "updatesExisting": "This folder already has a site record; confirming updates it.",
+          "confirm": "Bind this site",
+          "confirming": "Binding…",
+          "cancel": "Cancel",
+          "boundToast": "Site configured",
+          "secretFailedToast": "Site configured, but the password could not be stored",
+          "cloneFailedToast": "Clone failed",
+          "reponame": "Repository",
+          "hostname": "SSH host",
+          "username": "SSH user",
+          "rootPath": "Remote root",
+          "liveDomain": "Live domain",
+          "localDomain": "Local domain",
+          "environment": "Environment",
+          "deployCommand": "Build command",
+          "themeDistPath": "Theme dist path",
+          "notes": "Notes"
+        },
+        "SiteRunHistory": {
+          "title": "Run history",
+          "refresh": "Refresh run history",
+          "loading": "Loading run history…",
+          "empty": "No runs recorded for this site yet."
+        },
+        "SiteRunHistoryEntry": {
+          "noErrors": "No errors logged",
+          "jumpToFirstError": "Jump to first error",
+          "truncated": "{{count}} earlier lines not shown",
+          "emptyLog": "This run recorded no output.",
+          "stillRunning": "running…",
+          "durationHoursMinutes": "{{hours}}h {{minutes}}m",
+          "durationMinutesSeconds": "{{minutes}}m {{seconds}}s",
+          "durationSeconds": "{{seconds}}s"
         }
       }
     },

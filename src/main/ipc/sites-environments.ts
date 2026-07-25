@@ -11,9 +11,8 @@ import {
 } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import {
-  deleteSiteEnvironmentSecrets,
-  getSiteSecret,
-  setSiteSecret
+  copySiteEnvironmentSecrets,
+  deleteSiteEnvironmentSecrets
 } from '../sites/site-secret-store'
 import { buildSiteSummary } from '../sites/site-summary'
 import { isSiteEnvironmentName, isSiteEnvironmentPatch } from './sites-payload-validation'
@@ -123,11 +122,6 @@ function moveEnvironmentSecrets(site: Site, from: string, to: string): void {
   if (from === to) {
     return
   }
-  for (const kind of ['ssh', 'db'] as const) {
-    const value = getSiteSecret(site.id, from, kind)
-    if (value !== null) {
-      setSiteSecret(site.id, to, kind, value)
-    }
-  }
+  copySiteEnvironmentSecrets(site.id, from, to)
   deleteSiteEnvironmentSecrets(site.id, from)
 }
