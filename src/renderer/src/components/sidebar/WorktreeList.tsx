@@ -6616,11 +6616,16 @@ const WorktreeList = React.memo(function WorktreeList({
     }
   }, [handleRevealCurrentWorkspaceRequest])
 
+  // Why folderWorkspaces is in the list: "filters hid everything" must mean there is no content of
+  // any kind left. Folder workspaces are rows in their own right and are not filtered by the
+  // sleeping/repo/host filters, so omitting them showed "No workspaces found" over a populated
+  // sidebar the moment any filter went active.
   const filtersHideAllRows =
     hasFilters &&
     worktrees.length === 0 &&
     placeholderRepoIds.size === 0 &&
-    importedWorktreesByRepo.size === 0
+    importedWorktreesByRepo.size === 0 &&
+    folderWorkspaces.length === 0
   // Why: when active filters hide every row, the Clear Filters empty state must win over Project Group headers.
   if (rows.length === 0 || filtersHideAllRows) {
     return (

@@ -1061,6 +1061,17 @@ describe('WorktreeList lineage child card renderer', () => {
       'aria-activedescendant="worktree-list-option-folder%3Afolder-workspace-1"'
     )
   })
+  it('keeps folder workspaces on screen while a filter is active', async () => {
+    // Regression: "filters hid everything" used to be decided from worktrees, placeholders and
+    // imports alone. A sidebar holding only folder workspaces therefore flipped to the Clear
+    // Filters empty state the moment any filter went active — including the sleeping filter,
+    // which is on by default.
+    setFolderWorkspaceFixtureState()
+    const markup = await renderWorktreeListMarkup()
+
+    expect(markup).not.toContain('No workspaces found')
+    expect(markup).toContain('folder-workspace-1')
+  })
 
   it('keeps folder workspace cards one compact step under their group header', async () => {
     setFolderWorkspaceFixtureState()
