@@ -10,6 +10,7 @@ const baseState: TaskPageListChromeVisibilityState = {
   hasGitHubDetail: false,
   hasGitLabDetail: false,
   hasJiraDetail: false,
+  hasActiveCollabDetail: false,
   hasLinearIssueDetail: false,
   hasLinearProjectContext: false,
   hasLinearViewContext: false

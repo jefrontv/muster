@@ -3,6 +3,12 @@ import { getExecutionHostLabel } from '../../../shared/execution-host'
 import type { ExecutionHostScope } from '../../../shared/execution-host'
 import type { ExecutionHostHealth } from '../../../shared/execution-host-registry'
 import type { SshConnectionStatus } from '../../../shared/ssh-types'
+import {
+  formatLongList,
+  formatShortList,
+  getSshStatusLabel,
+  uniqueLabels
+} from './task-source-label-format'
 import type { TaskProvider } from '../../../shared/types'
 import type { TaskProviderIdentity, TaskSourceContext } from '../../../shared/task-source-context'
 
@@ -45,6 +51,7 @@ export function getTaskSourceContextSummary(args: {
   selectedRepoCount?: number
   linearWorkspaceName?: string | null
   jiraSiteName?: string | null
+  activeCollabAccountName?: string | null
 }): TaskSourceContextSummary {
   switch (args.provider) {
     case 'github':
@@ -60,6 +67,15 @@ export function getTaskSourceContextSummary(args: {
     case 'jira':
       return getAccountBackedTaskSourceSummary(args.providerLabel, {
         accountLabel: args.jiraSiteName,
+        accountHostId: args.accountHostId,
+        hostLabelById: args.hostLabelById,
+        hostAvailability: args.hostAvailability
+      })
+    // Account-backed like Linear and Jira: one token addresses one instance, so there is no
+    // per-repo fan-out and no site picker to summarise.
+    case 'activecollab':
+      return getAccountBackedTaskSourceSummary(args.providerLabel, {
+        accountLabel: args.activeCollabAccountName,
         accountHostId: args.accountHostId,
         hostLabelById: args.hostLabelById,
         hostAvailability: args.hostAvailability
@@ -198,21 +214,9 @@ function getProviderIdentityLabel(
       return identity.workspaceName ?? identity.workspaceId ?? null
     case 'jira':
       return identity.siteUrl ?? identity.siteId ?? null
+    case 'activecollab':
+      return identity.projectName ?? identity.instanceUrl ?? null
   }
-}
-
-function uniqueLabels(labels: readonly (string | null | undefined)[]): string[] {
-  const seen = new Set<string>()
-  const result: string[] = []
-  for (const label of labels) {
-    const trimmed = label?.trim()
-    if (!trimmed || seen.has(trimmed)) {
-      continue
-    }
-    seen.add(trimmed)
-    result.push(trimmed)
-  }
-  return result
 }
 
 function getUnavailableHosts(
@@ -284,33 +288,4 @@ function getAvailabilityLabel(
     return unavailableHosts[0].statusLabel
   }
   return `${unavailableHosts.length} unavailable`
-}
-
-function getSshStatusLabel(status: SshConnectionStatus): string {
-  switch (status) {
-    case 'connected':
-      return 'connected'
-    case 'connecting':
-    case 'deploying-relay':
-    case 'reconnecting':
-      return 'connecting'
-    case 'auth-failed':
-      return 'auth needed'
-    case 'reconnection-failed':
-    case 'error':
-      return 'connection issue'
-    case 'disconnected':
-      return 'disconnected'
-  }
-}
-
-function formatShortList(labels: readonly string[]): string {
-  if (labels.length <= 2) {
-    return labels.join(', ')
-  }
-  return `${labels[0]} +${labels.length - 1}`
-}
-
-function formatLongList(labels: readonly string[]): string {
-  return labels.join(', ')
 }

@@ -2981,11 +2981,21 @@ export class Store {
         })
         const visibleTaskProvidersDefaultedForJira =
           parsed.settings?.visibleTaskProvidersDefaultedForJira === true
-        const migratedVisibleTaskProviders = visibleTaskProvidersDefaultedForJira
+        const jiraMigratedVisibleTaskProviders = visibleTaskProvidersDefaultedForJira
           ? rawTaskProviderSettings.visibleTaskProviders
           : rawTaskProviderSettings.visibleTaskProviders.includes('jira')
             ? rawTaskProviderSettings.visibleTaskProviders
             : [...rawTaskProviderSettings.visibleTaskProviders, 'jira' as const]
+        // Why a second flag rather than reusing the Jira one: line ~3160 stamps that flag true on
+        // every load, so every existing profile already carries it. Reusing it would mean the
+        // append below never fires and no existing user would ever see ActiveCollab.
+        const visibleTaskProvidersDefaultedForActiveCollab =
+          parsed.settings?.visibleTaskProvidersDefaultedForActiveCollab === true
+        const migratedVisibleTaskProviders = visibleTaskProvidersDefaultedForActiveCollab
+          ? jiraMigratedVisibleTaskProviders
+          : jiraMigratedVisibleTaskProviders.includes('activecollab')
+            ? jiraMigratedVisibleTaskProviders
+            : [...jiraMigratedVisibleTaskProviders, 'activecollab' as const]
         const taskProviderSettings = normalizeTaskProviderSettings({
           visibleTaskProviders: migratedVisibleTaskProviders,
           defaultTaskSource: rawTaskProviderSettings.defaultTaskSource
@@ -3006,7 +3016,10 @@ export class Store {
         if (migratePrimarySelectionPlatformDefault || stampPrimarySelectionTerminalDefaults) {
           this.loadNeedsSave = true
         }
-        if (!visibleTaskProvidersDefaultedForJira) {
+        if (
+          !visibleTaskProvidersDefaultedForJira ||
+          !visibleTaskProvidersDefaultedForActiveCollab
+        ) {
           this.loadNeedsSave = true
         }
         const claudeAgentTeamsDefaultDisabledMigrated =
@@ -3158,6 +3171,7 @@ export class Store {
             defaultTaskSource: taskProviderSettings.defaultTaskSource,
             visibleTaskProviders: taskProviderSettings.visibleTaskProviders,
             visibleTaskProvidersDefaultedForJira: true,
+            visibleTaskProvidersDefaultedForActiveCollab: true,
             terminalShortcutPolicy: normalizeTerminalShortcutPolicy(
               parsed.settings?.terminalShortcutPolicy
             ),
@@ -5393,6 +5407,7 @@ export class Store {
       sanitizedUpdates.visibleTaskProviders = taskProviderSettings.visibleTaskProviders
       if ('visibleTaskProviders' in updates) {
         sanitizedUpdates.visibleTaskProvidersDefaultedForJira = true
+        sanitizedUpdates.visibleTaskProvidersDefaultedForActiveCollab = true
       }
     }
     if ('autoRenameBranchFromWork' in updates || 'autoRenameBranchFromWorkDefaultedOn' in updates) {

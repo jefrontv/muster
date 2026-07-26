@@ -313,6 +313,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     defaultTaskSource: 'github',
     visibleTaskProviders: [...TASK_PROVIDERS],
     visibleTaskProvidersDefaultedForJira: true,
+    visibleTaskProvidersDefaultedForActiveCollab: true,
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     opencodeSessionCookie: '',

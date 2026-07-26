@@ -343,13 +343,17 @@ export type FolderWorkspace = {
 }
 
 export type FolderWorkspaceLinkedTask = {
-  provider: 'github' | 'gitlab' | 'linear' | 'jira'
+  // Kept as an inline union rather than TaskProvider: this shape is persisted, so a provider only
+  // belongs here once its links can actually be round-tripped.
+  provider: 'github' | 'gitlab' | 'linear' | 'jira' | 'activecollab'
   type: 'issue' | 'pr' | 'mr'
   number: number
   title: string
   url: string
   linearIdentifier?: string
   jiraIdentifier?: string
+  /** `<projectId>/<taskId>` — ActiveCollab task numbers are only unique within a project. */
+  activeCollabIdentifier?: string
   repoId?: string
 }
 
@@ -2847,6 +2851,8 @@ export type GlobalSettings = {
   visibleTaskProviders: TaskProvider[]
   /** Why: one-shot guard to make Jira visible for existing profiles once, without re-adding after a later opt-out. */
   visibleTaskProvidersDefaultedForJira: boolean
+  /** Why a second flag: the Jira one is stamped true on every load, so it can never gate a later provider. */
+  visibleTaskProvidersDefaultedForActiveCollab: boolean
   /** Persisted repo selection (cross-repo tasks view). null = sticky-all (includes future-added repos);
    *  string[] = frozen curated subset (ineligible ids dropped on load; empty after drop is treated as null). */
   defaultRepoSelection: string[] | null

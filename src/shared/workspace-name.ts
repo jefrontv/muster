@@ -46,9 +46,11 @@ export type WorkspaceIntentWorkItem = {
   type: 'issue' | 'pr' | 'mr'
   number: number
   title: string
-  provider?: 'github' | 'gitlab' | 'linear' | 'jira'
+  provider?: 'github' | 'gitlab' | 'linear' | 'jira' | 'activecollab'
   linearIdentifier?: string
   jiraIdentifier?: string
+  /** `<projectId>/<taskId>` — ActiveCollab task numbers are only unique within a project. */
+  activeCollabIdentifier?: string
 }
 
 export type WorkspaceIntentName = {

@@ -20,7 +20,8 @@ export function normalizeFolderWorkspaceLinkedTask(
     raw.provider !== 'github' &&
     raw.provider !== 'gitlab' &&
     raw.provider !== 'linear' &&
-    raw.provider !== 'jira'
+    raw.provider !== 'jira' &&
+    raw.provider !== 'activecollab'
   ) {
     return null
   }

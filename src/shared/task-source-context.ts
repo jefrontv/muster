@@ -9,7 +9,12 @@ import {
 import type { GlobalSettings, ProjectProviderIdentity, Repo } from './types'
 import { githubRepoIdentityKey } from './github-repository-identity-key'
 
-export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira'
+// Duplicated from ./task-providers rather than imported: this module already imports GlobalSettings,
+// ProjectProviderIdentity and Repo from ./types, and ./types re-exports TaskProvider from
+// ./task-providers — importing it back would close a cycle. It MUST stay in sync with the canonical
+// union: if it drifts, normalizeTaskProvider below returns null and the whole task-source context is
+// silently dropped at runtime with no type error.
+export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira' | 'activecollab'
 
 export type GitHubTaskProviderIdentity = ProjectProviderIdentity & {
   provider: 'github'
@@ -38,11 +43,21 @@ export type JiraTaskProviderIdentity = {
   projectKey?: string | null
 }
 
+export type ActiveCollabTaskProviderIdentity = {
+  provider: 'activecollab'
+  /** The instance this token addresses. One token = one instance, so there is no site picker. */
+  instanceUrl?: string | null
+  /** ActiveCollab project id, as a string for parity with the other identities. */
+  projectId?: string | null
+  projectName?: string | null
+}
+
 export type TaskProviderIdentity =
   | GitHubTaskProviderIdentity
   | GitLabTaskProviderIdentity
   | LinearTaskProviderIdentity
   | JiraTaskProviderIdentity
+  | ActiveCollabTaskProviderIdentity
 
 export type TaskSourceContext = {
   kind: 'task-source'
@@ -183,6 +198,7 @@ function normalizeTaskProvider(value: string): TaskProvider | null {
     case 'gitlab':
     case 'linear':
     case 'jira':
+    case 'activecollab':
       return value
     default:
       return null
@@ -217,6 +233,10 @@ function providerIdentityCachePart(identity: TaskProviderIdentity | null | undef
       return [identity.workspaceId, identity.teamId ?? identity.teamKey].filter(Boolean).join('/')
     case 'jira':
       return [identity.siteId ?? identity.siteUrl, identity.projectKey].filter(Boolean).join('/')
+    case 'activecollab':
+      // One token addresses one instance, so the instance URL only disambiguates a user who has
+      // reconnected to a different host; the project id is what actually scopes the cache.
+      return [identity.instanceUrl, identity.projectId].filter(Boolean).join('/')
   }
 }
 

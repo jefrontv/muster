@@ -1,6 +1,12 @@
-export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira'
+export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira' | 'activecollab'
 
-export const TASK_PROVIDERS: readonly TaskProvider[] = ['github', 'gitlab', 'linear', 'jira']
+export const TASK_PROVIDERS: readonly TaskProvider[] = [
+  'github',
+  'gitlab',
+  'linear',
+  'jira',
+  'activecollab'
+]
 
 const TASK_PROVIDER_SET = new Set<TaskProvider>(TASK_PROVIDERS)
 
@@ -94,18 +100,24 @@ function isTaskProviderAvailable(
   provider: TaskProvider,
   availability: TaskProviderAvailability
 ): boolean {
-  if (provider === 'github') {
-    return true
+  // Why a switch and not the if/else chain this replaced: that chain ended in a bare
+  // `return availability.linearConnected`, so any provider added without its own branch was
+  // silently gated on Linear being connected — no type error, no lint error, just a provider
+  // missing from the Tasks chrome. A switch with no default makes the next omission a build error.
+  switch (provider) {
+    case 'github':
+      return true
+    case 'gitlab':
+      return availability.gitlabInstalled
+    // Jira and ActiveCollab can both be connected from the Tasks surface itself, so hiding them
+    // while disconnected would remove the entry point for first-time setup.
+    case 'jira':
+      return true
+    case 'activecollab':
+      return true
+    case 'linear':
+      return availability.linearConnected
   }
-  if (provider === 'gitlab') {
-    return availability.gitlabInstalled
-  }
-  // Why: Jira can be connected from the Tasks surface itself, so hiding it
-  // when disconnected would remove the entry point for first-time setup.
-  if (provider === 'jira') {
-    return true
-  }
-  return availability.linearConnected
 }
 
 export function resolveVisibleTaskProvider(

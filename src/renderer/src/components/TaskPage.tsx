@@ -7927,6 +7927,8 @@ export default function TaskPage(): React.JSX.Element {
     hasGitHubDetail: Boolean(dialogWorkItem),
     hasGitLabDetail: Boolean(gitlabDialogItem),
     hasJiraDetail: Boolean(selectedJiraIssue),
+    // Phase 1 ships the data layer only; no ActiveCollab detail pane exists to keep open yet.
+    hasActiveCollabDetail: false,
     hasLinearIssueDetail: Boolean(selectedLinearIssue),
     hasLinearProjectContext: Boolean(selectedLinearProject),
     hasLinearViewContext: Boolean(selectedLinearCustomView)
