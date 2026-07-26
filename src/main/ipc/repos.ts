@@ -163,7 +163,7 @@ function alignRepoWithRequestedProject(
   return buildProjectHostSetupResult(store, repo)
 }
 
-async function addLocalRepoFromPath(
+export async function addLocalRepoFromPath(
   store: Store,
   path: string,
   kind: 'git' | 'folder' = 'git'

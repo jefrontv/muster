@@ -13,6 +13,7 @@ import type {
   OcsitesImportApplyResult,
   Site,
   SiteEnvironment,
+  SiteRepoLinkResult,
   SiteResult,
   SiteRunGroup,
   SiteSecretKind,
@@ -801,7 +802,11 @@ export type SitesApi = {
     to: string
   }) => Promise<SiteResult<SiteSummary>>
   removeEnvironment: (args: { siteId: string; name: string }) => Promise<SiteResult<SiteSummary>>
-  importFromOcsites: () => Promise<SiteResult<OcsitesImportApplyResult & { found: boolean }>>
+  importFromOcsites: () => Promise<
+    SiteResult<OcsitesImportApplyResult & { found: boolean; repos: SiteRepoLinkResult }>
+  >
+  /** Binds on-disk sites to sidebar projects. Re-runnable when a volume comes back online. */
+  linkRepos: () => Promise<SiteResult<SiteRepoLinkResult>>
 }
 
 /** Import/deploy runs. Long-lived and cancellable; progress arrives on `onEvent`. */

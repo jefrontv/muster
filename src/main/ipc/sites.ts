@@ -11,6 +11,7 @@ import type { Store } from '../persistence'
 import { importOcsitesConfig } from '../sites/ocsites-config-import'
 import { applyOcsitesImport, type OcsitesImportApplyResult } from '../sites/ocsites-import-apply'
 import { deleteSiteSecrets, setSiteSecret } from '../sites/site-secret-store'
+import { linkSitesToRepos, type SiteRepoLinkResult } from '../sites/site-repo-link'
 import { buildSiteSummaries, buildSiteSummary } from '../sites/site-summary'
 import { registerSiteEnvironmentHandlers } from './sites-environments'
 import {
@@ -31,7 +32,8 @@ const SITE_CHANNELS = [
   'sites:remove',
   'sites:linkRepo',
   'sites:setSecret',
-  'sites:importFromOcsites'
+  'sites:importFromOcsites',
+  'sites:linkRepos'
 ] as const
 
 export function registerSiteHandlers(store: Store): void {
@@ -182,15 +184,29 @@ export function registerSiteHandlers(store: Store): void {
 
   ipcMain.handle(
     'sites:importFromOcsites',
-    async (): Promise<SiteResult<OcsitesImportApplyResult & { found: boolean }>> => {
+    async (): Promise<
+      SiteResult<OcsitesImportApplyResult & { found: boolean; repos: SiteRepoLinkResult }>
+    > => {
       try {
         const report = importOcsitesConfig()
-        return { ok: true, value: { ...applyOcsitesImport(store, report), found: report.found } }
+        const applied = applyOcsitesImport(store, report)
+        // Sites the user can actually open should appear in the sidebar without a second step.
+        const repos = await linkSitesToRepos(store)
+        return { ok: true, value: { ...applied, found: report.found, repos } }
       } catch (error) {
         return failure(error)
       }
     }
   )
+
+  // Re-runnable on its own: picks up sites whose volume was offline at import time.
+  ipcMain.handle('sites:linkRepos', async (): Promise<SiteResult<SiteRepoLinkResult>> => {
+    try {
+      return { ok: true, value: await linkSitesToRepos(store) }
+    } catch (error) {
+      return failure(error)
+    }
+  })
 
   registerSiteEnvironmentHandlers(store)
 }

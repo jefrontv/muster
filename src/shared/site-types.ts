@@ -136,6 +136,14 @@ export type SiteSecretFailure = {
   reason: string
 }
 
+/** Outcome of binding sites to sidebar projects. */
+export type SiteRepoLinkResult = {
+  eligible: number
+  added: number
+  linked: number
+  skipped: { path: string; reason: string }[]
+}
+
 /** Outcome of importing the legacy ~/.config/ocsites configuration. */
 export type OcsitesImportApplyResult = {
   created: number

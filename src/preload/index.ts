@@ -796,7 +796,8 @@ const api = {
     upsertEnvironment: (args) => ipcRenderer.invoke('sites:upsertEnvironment', args),
     renameEnvironment: (args) => ipcRenderer.invoke('sites:renameEnvironment', args),
     removeEnvironment: (args) => ipcRenderer.invoke('sites:removeEnvironment', args),
-    importFromOcsites: () => ipcRenderer.invoke('sites:importFromOcsites')
+    importFromOcsites: () => ipcRenderer.invoke('sites:importFromOcsites'),
+    linkRepos: () => ipcRenderer.invoke('sites:linkRepos')
   } satisfies PreloadApi['sites'],
 
   siteRuns: {

@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type {
   OcsitesImportApplyResult,
+  SiteRepoLinkResult,
   Site,
   SiteEnvironment,
   SiteSecretKind,
@@ -50,8 +51,9 @@ export type SitesSlice = {
   renameSiteEnvironment: (siteId: string, from: string, to: string) => Promise<string | null>
   removeSiteEnvironment: (siteId: string, name: string) => Promise<string | null>
   importSitesFromOcsites: () => Promise<
-    (OcsitesImportApplyResult & { found: boolean }) | { error: string }
+    (OcsitesImportApplyResult & { found: boolean; repos: SiteRepoLinkResult }) | { error: string }
   >
+  linkSiteRepos: () => Promise<SiteRepoLinkResult | { error: string }>
 }
 
 /** Replaces one summary in place so the list does not reorder while the user is editing it. */
@@ -147,6 +149,19 @@ export const createSitesSlice: StateCreator<AppState, [], [], SitesSlice> = (set
         return { error: result.error }
       }
       await get().fetchSites()
+      // Newly added projects only reach the sidebar once the repo list refetches.
+      await get().fetchRepos()
+      return result.value
+    },
+
+    linkSiteRepos: async () => {
+      const result = await window.api.sites.linkRepos()
+      if (!result.ok) {
+        set({ sitesError: result.error })
+        return { error: result.error }
+      }
+      await get().fetchSites()
+      await get().fetchRepos()
       return result.value
     }
   }

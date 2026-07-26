@@ -1,4 +1,4 @@
-import { ArrowLeft, DownloadCloud, Globe, Search } from 'lucide-react'
+import { ArrowLeft, DownloadCloud, FolderPlus, Globe, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -21,6 +21,7 @@ export default function SitesPage(): React.JSX.Element {
   const selectSite = useAppStore((state) => state.selectSite)
   const setSiteQuery = useAppStore((state) => state.setSiteQuery)
   const importSitesFromOcsites = useAppStore((state) => state.importSitesFromOcsites)
+  const linkSiteRepos = useAppStore((state) => state.linkSiteRepos)
   const [importing, setImporting] = useState(false)
 
   useEffect(() => {
@@ -46,6 +47,26 @@ export default function SitesPage(): React.JSX.Element {
   const visibleSites = useMemo(() => filterSites(sites, query), [sites, query])
   const selected = sites.find((entry) => entry.site.id === selectedSiteId) ?? null
 
+  const runLinkRepos = async (): Promise<void> => {
+    setImporting(true)
+    try {
+      const result = await linkSiteRepos()
+      if ('error' in result) {
+        toast.error(result.error)
+        return
+      }
+      toast.success(
+        translate(
+          'auto.components.sites.SitesPage.linkedProjects',
+          '{{added}} added, {{linked}} already present.',
+          { added: result.added, linked: result.linked }
+        )
+      )
+    } finally {
+      setImporting(false)
+    }
+  }
+
   const runImport = async (): Promise<void> => {
     setImporting(true)
     try {
@@ -70,6 +91,15 @@ export default function SitesPage(): React.JSX.Element {
           { created: result.created, updated: result.updated, secrets: result.secretsStored }
         )
       )
+      if (result.repos.added > 0) {
+        toast.success(
+          translate(
+            'auto.components.sites.SitesPage.projectsAdded',
+            '{{count}} projects added to the sidebar.',
+            { count: result.repos.added }
+          )
+        )
+      }
       if (result.secretsFailed.length > 0) {
         toast.warning(
           translate(
@@ -102,6 +132,16 @@ export default function SitesPage(): React.JSX.Element {
             })}
           </span>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 gap-1.5"
+          disabled={importing}
+          onClick={() => void runLinkRepos()}
+        >
+          <FolderPlus className="size-3.5" />
+          {translate('auto.components.sites.SitesPage.addToSidebar', 'Add to sidebar')}
+        </Button>
         <Button
           variant="outline"
           size="sm"
