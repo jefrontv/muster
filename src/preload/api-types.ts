@@ -2996,6 +2996,8 @@ export type PreloadApi = {
     }) => Promise<{ success: boolean; error?: string }>
     generateCommitMessage: (args: {
       worktreePath: string
+      /** Raw (unstripped) worktree meta key; validated against worktreePath in main. */
+      worktreeId?: string
       repoId?: string
       connectionId?: string
       sourceControlAiResolvedParams?: ResolvedSourceControlAiGenerationParams
@@ -3024,6 +3026,8 @@ export type PreloadApi = {
     }) => Promise<void>
     generatePullRequestFields: (args: {
       worktreePath: string
+      /** Raw (unstripped) worktree meta key; validated against worktreePath in main. */
+      worktreeId?: string
       repoId?: string
       base: string
       title: string
