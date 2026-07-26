@@ -14,6 +14,37 @@ import { Label } from '../ui/label'
 import { translate } from '@/i18n/i18n'
 import type { BitbucketAuthCredentialStatus } from '../../../../shared/bitbucket-auth-types'
 
+/**
+ * The minimum token scopes for the three endpoints the client calls: `/user` (auth probe),
+ * `/repositories/…/pullrequests`, and `/repositories/…/commit/…/statuses/build`.
+ *
+ * Names are Atlassian API token scopes, not the legacy App Password checkbox labels. An App
+ * Password needs the equivalent Account: Read, Repositories: Read, Pull requests: Read.
+ */
+const BITBUCKET_REQUIRED_SCOPES: readonly { name: string; reason: string }[] = [
+  {
+    name: 'read:user:bitbucket',
+    reason: translate(
+      'auto.components.settings.BitbucketCredentialDialog.scopeUser',
+      'Confirms the token works and shows the connected account.'
+    )
+  },
+  {
+    name: 'read:repository:bitbucket',
+    reason: translate(
+      'auto.components.settings.BitbucketCredentialDialog.scopeRepository',
+      'Resolves the repository and reads commit build statuses.'
+    )
+  },
+  {
+    name: 'read:pullrequest:bitbucket',
+    reason: translate(
+      'auto.components.settings.BitbucketCredentialDialog.scopePullRequest',
+      'Reads pull requests for the current branch.'
+    )
+  }
+]
+
 type BitbucketCredentialDialogProps = {
   open: boolean
   status: BitbucketAuthCredentialStatus | null
@@ -123,6 +154,26 @@ export function BitbucketCredentialDialog({
               }
             }}
           />
+        </div>
+
+        {/* Why list these: an API token created with no scopes still authenticates against /user,
+            so the card would read "Connected" while every pull-request lookup returned empty.
+            Scope names verified against Atlassian's API token permissions reference. */}
+        <div className="rounded-md border border-border/60 bg-muted/30 p-2.5">
+          <p className="text-[11px] font-medium">
+            {translate(
+              'auto.components.settings.BitbucketCredentialDialog.scopesTitle',
+              'Select these permissions when creating the token'
+            )}
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {BITBUCKET_REQUIRED_SCOPES.map((scope) => (
+              <li key={scope.name} className="flex gap-2 text-[11px] text-muted-foreground">
+                <code className="shrink-0 font-mono text-foreground/80">{scope.name}</code>
+                <span className="min-w-0">{scope.reason}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {error ? <p className="text-xs text-destructive">{error}</p> : null}

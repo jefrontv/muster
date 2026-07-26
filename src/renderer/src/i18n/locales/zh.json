@@ -9424,7 +9424,11 @@
           "disconnect": "Disconnect",
           "save": "Save",
           "emailPlaceholder": "you@example.com",
-          "tokenPlaceholder": "ATATT..."
+          "tokenPlaceholder": "ATATT...",
+          "scopeUser": "Confirms the token works and shows the connected account.",
+          "scopeRepository": "Resolves the repository and reads commit build statuses.",
+          "scopePullRequest": "Reads pull requests for the current branch.",
+          "scopesTitle": "Select these permissions when creating the token"
         }
       },
       "right": {
