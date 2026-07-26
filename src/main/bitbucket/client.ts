@@ -15,6 +15,7 @@ import {
   type HostedReviewExecutionOptions
 } from '../source-control/hosted-review-git-options'
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
+import { getStoredBitbucketCredential } from './credential-store'
 
 const DEFAULT_API_BASE_URL = 'https://api.bitbucket.org/2.0'
 const REQUEST_TIMEOUT_MS = 5000
@@ -44,12 +45,50 @@ function envValue(name: string): string | null {
 }
 
 function getAuthConfig(): BitbucketAuthConfig {
-  return {
-    baseUrl: envValue('ORCA_BITBUCKET_API_BASE_URL') ?? DEFAULT_API_BASE_URL,
+  const baseUrl = envValue('ORCA_BITBUCKET_API_BASE_URL') ?? DEFAULT_API_BASE_URL
+  // Why env first: an operator setting these in the launch environment is making a deliberate
+  // per-process override (CI, a scratch token), and that should beat whatever is in the keychain.
+  const envConfig: BitbucketAuthConfig = {
+    baseUrl,
     accessToken: envValue('ORCA_BITBUCKET_ACCESS_TOKEN'),
     email: envValue('ORCA_BITBUCKET_EMAIL'),
     apiToken: envValue('ORCA_BITBUCKET_API_TOKEN')
   }
+  if (hasAuth(envConfig)) {
+    return envConfig
+  }
+  const stored = getStoredBitbucketCredential()
+  if (!stored) {
+    return envConfig
+  }
+  return {
+    baseUrl,
+    accessToken: stored.accessToken.length > 0 ? stored.accessToken : null,
+    email: stored.email.length > 0 ? stored.email : null,
+    apiToken: stored.apiToken.length > 0 ? stored.apiToken : null
+  }
+}
+
+/**
+ * Whether launch-environment variables already supply credentials. The settings form uses this to
+ * disable editing, because getAuthConfig lets the environment win and a saved credential would
+ * silently have no effect.
+ */
+export function getBitbucketEnvironmentAuthStatus(): {
+  configured: boolean
+  method: 'api-token' | 'access-token' | null
+  email: string | null
+} {
+  const accessToken = envValue('ORCA_BITBUCKET_ACCESS_TOKEN')
+  const email = envValue('ORCA_BITBUCKET_EMAIL')
+  const apiToken = envValue('ORCA_BITBUCKET_API_TOKEN')
+  if (accessToken) {
+    return { configured: true, method: 'access-token', email: null }
+  }
+  if (email && apiToken) {
+    return { configured: true, method: 'api-token', email }
+  }
+  return { configured: false, method: null, email: null }
 }
 
 function hasAuth(config: BitbucketAuthConfig): boolean {
@@ -98,6 +137,15 @@ async function requestJson<T>(
   throwOnFailure = false
 ): Promise<T | null> {
   const config = getAuthConfig()
+  // Why: without credentials Bitbucket answers a private repo with 404, not 401, so an
+  // unconfigured install produced a stream of "Bitbucket request failed: HTTP 404" that read as a
+  // missing repo. Fail closed and say what is actually wrong.
+  if (!hasAuth(config)) {
+    if (throwOnFailure) {
+      throw new Error('Bitbucket is not configured. Add credentials in Settings → Integrations.')
+    }
+    return null
+  }
   try {
     const response = await fetch(apiUrl(path, options.searchParams), {
       headers: {

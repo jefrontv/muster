@@ -44,6 +44,7 @@ import { registerSiteHandlers } from './sites'
 import { registerSiteRunHandlers } from './site-runs'
 import { registerSiteStackHandlers } from './site-stacks'
 import { registerSiteToolHandlers } from './site-tools'
+import { registerBitbucketAuthHandlers } from './bitbucket-auth'
 import { registerSiteBindHandlers } from './site-bind'
 import { registerSiteMcpHandlers } from './site-mcp'
 import { registerWorkspacePortHandlers } from './workspace-ports'
@@ -202,6 +203,7 @@ export function registerCoreHandlers(
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)
   registerSiteBindHandlers(store)
+  registerBitbucketAuthHandlers()
   registerSiteMcpHandlers(store)
   registerWorkspacePortHandlers(store)
   registerLocalhostWorktreeLabelHandlers(store)

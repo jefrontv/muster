@@ -1206,6 +1206,11 @@ const api = {
       restart: () => ipcRenderer.invoke('pty:management:restart')
     }
   },
+  bitbucketAuth: {
+    status: () => ipcRenderer.invoke('bitbucketAuth:status'),
+    setCredentials: (input) => ipcRenderer.invoke('bitbucketAuth:setCredentials', input),
+    clear: () => ipcRenderer.invoke('bitbucketAuth:clear')
+  } satisfies PreloadApi['bitbucketAuth'],
 
   feedback: {
     submit: (args: {

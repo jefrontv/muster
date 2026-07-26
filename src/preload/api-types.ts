@@ -26,6 +26,7 @@ import type {
   LocalWpMigrationResult,
   LocalWpStackDetection
 } from '../shared/site-stack-types'
+import type { BitbucketAuthApi } from '../shared/bitbucket-auth-types'
 import type { SiteBindApi, SiteBitbucketApi } from '../shared/site-bind-types'
 import type { SiteMcpStatus, SiteMcpWriteResult } from '../shared/site-mcp-types'
 import type {
@@ -1512,6 +1513,7 @@ export type PreloadApi = {
   siteTools: SiteToolsApi
   siteBind: SiteBindApi
   siteBitbucket: SiteBitbucketApi
+  bitbucketAuth: BitbucketAuthApi
   siteMcp: SiteMcpApi
   workspacePorts: {
     scan: (args: WorkspacePortScanRequest) => Promise<WorkspacePortScanResult>

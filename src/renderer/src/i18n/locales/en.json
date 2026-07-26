@@ -8978,7 +8978,13 @@
                   "63a7f47392": "ORCA_BITBUCKET_EMAIL",
                   "24ac1c69dc": "Bitbucket status is not available in this runtime yet.",
                   "a924e8dcd1": "Pull requests and build statuses via Bitbucket Cloud API tokens.",
-                  "0fa5629dad": "Pull requests and build statuses"
+                  "0fa5629dad": "Pull requests and build statuses",
+                  "fromEnv": "Credentials come from environment variables, which take priority over anything saved here.",
+                  "needsSetup": "Connect with your Atlassian account email and an API token.",
+                  "connected": "Credentials are saved in your OS keychain.",
+                  "authFailed": "Saved credentials could not authenticate. Check the token and its repository permissions.",
+                  "change": "Change credentials",
+                  "connect": "Connect"
                 }
               }
             }
@@ -9430,6 +9436,18 @@
           "serviceManagerHelp": "Update Muster through the service manager that starts this server.",
           "unpackedHelp": "Development builds must be updated from their source checkout.",
           "legacyHelp": "Update this server manually once to enable remote updates."
+        },
+        "BitbucketCredentialDialog": {
+          "title": "Bitbucket",
+          "description": "Your Atlassian account email and an API token. Used to read pull requests and build statuses.",
+          "email": "Email",
+          "token": "API token",
+          "tokenSet": "Token saved — enter a new one to replace it",
+          "storage": "Stored in your OS keychain via Electron encrypted storage. Never written in plain text.",
+          "disconnect": "Disconnect",
+          "save": "Save",
+          "emailPlaceholder": "you@example.com",
+          "tokenPlaceholder": "ATATT..."
         }
       },
       "right": {

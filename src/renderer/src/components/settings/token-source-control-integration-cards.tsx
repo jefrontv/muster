@@ -1,13 +1,34 @@
+import { useCallback, useEffect, useState } from 'react'
 import { ExternalLink, GitPullRequestArrow } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
 import { usePreflightCardStatuses } from './source-control-preflight-card-status'
+import { BitbucketCredentialDialog } from './BitbucketCredentialDialog'
+import type { BitbucketAuthCredentialStatus } from '../../../../shared/bitbucket-auth-types'
 import { translate } from '@/i18n/i18n'
 
 export function BitbucketIntegrationCard(): React.JSX.Element {
   const { statuses, unavailable, refresh } = usePreflightCardStatuses('bitbucket')
   const status = unavailable ? 'unavailable' : statuses.bitbucketStatus
   const connected = status === 'connected'
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [credential, setCredential] = useState<BitbucketAuthCredentialStatus | null>(null)
+
+  const syncCredential = useCallback(async (): Promise<void> => {
+    const api = window.api.bitbucketAuth
+    if (!api) {
+      return
+    }
+    setCredential(await api.status())
+  }, [])
+
+  useEffect(() => {
+    void syncCredential()
+  }, [syncCredential])
+
+  // Why: the credential lives on the machine running the app. On a remote runtime the preflight
+  // probe resolves against that host's keychain, so a locally saved token would not apply.
+  const editable = !unavailable && !credential?.fromEnvironment
 
   return (
     <IntegrationCardShell
@@ -42,58 +63,50 @@ export function BitbucketIntegrationCard(): React.JSX.Element {
               : 'Auth failed'
       }
     >
-      {status !== 'checking' && !connected ? (
+      {status !== 'checking' ? (
         <IntegrationCardDetails>
           <p className="text-xs text-muted-foreground">
-            {status === 'unavailable' ? (
-              translate(
-                'auto.components.settings.token.source.control.integration.cards.24ac1c69dc',
-                'Bitbucket status is not available in this runtime yet.'
-              )
-            ) : status === 'not-configured' ? (
-              <>
-                {translate(
-                  'auto.components.settings.token.source.control.integration.cards.7bbc9c64f0',
-                  'Set'
-                )}{' '}
-                <span className="font-mono text-[11px]">
-                  {translate(
-                    'auto.components.settings.token.source.control.integration.cards.63a7f47392',
-                    'ORCA_BITBUCKET_EMAIL'
-                  )}
-                </span>{' '}
-                {translate(
-                  'auto.components.settings.token.source.control.integration.cards.fc71a0e7aa',
-                  'and'
-                )}{' '}
-                <span className="font-mono text-[11px]">
-                  {translate(
-                    'auto.components.settings.token.source.control.integration.cards.19416c874c',
-                    'ORCA_BITBUCKET_API_TOKEN'
-                  )}
-                </span>
-                {translate(
-                  'auto.components.settings.token.source.control.integration.cards.087feb92f1',
-                  ', or set'
-                )}{' '}
-                <span className="font-mono text-[11px]">
-                  {translate(
-                    'auto.components.settings.token.source.control.integration.cards.e63fe8f627',
-                    'ORCA_BITBUCKET_ACCESS_TOKEN'
-                  )}
-                </span>
-                .
-              </>
-            ) : (
-              translate(
-                'auto.components.settings.token.source.control.integration.cards.6154b02093',
-                'Bitbucket credentials are configured but could not authenticate. Check the token and repository permissions, then restart Muster if environment variables changed.'
-              )
-            )}
+            {status === 'unavailable'
+              ? translate(
+                  'auto.components.settings.token.source.control.integration.cards.24ac1c69dc',
+                  'Bitbucket status is not available in this runtime yet.'
+                )
+              : credential?.fromEnvironment
+                ? translate(
+                    'auto.components.settings.token.source.control.integration.cards.fromEnv',
+                    'Credentials come from environment variables, which take priority over anything saved here.'
+                  )
+                : status === 'not-configured'
+                  ? translate(
+                      'auto.components.settings.token.source.control.integration.cards.needsSetup',
+                      'Connect with your Atlassian account email and an API token.'
+                    )
+                  : connected
+                    ? translate(
+                        'auto.components.settings.token.source.control.integration.cards.connected',
+                        'Credentials are saved in your OS keychain.'
+                      )
+                    : translate(
+                        'auto.components.settings.token.source.control.integration.cards.authFailed',
+                        'Saved credentials could not authenticate. Check the token and its repository permissions.'
+                      )}
           </p>
           <div className="flex items-center gap-2">
+            {editable ? (
+              <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+                {connected
+                  ? translate(
+                      'auto.components.settings.token.source.control.integration.cards.change',
+                      'Change credentials'
+                    )
+                  : translate(
+                      'auto.components.settings.token.source.control.integration.cards.connect',
+                      'Connect'
+                    )}
+              </Button>
+            ) : null}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() =>
                 window.api.shell.openUrl(
@@ -114,6 +127,25 @@ export function BitbucketIntegrationCard(): React.JSX.Element {
               )}
             </Button>
           </div>
+          <BitbucketCredentialDialog
+            open={dialogOpen}
+            status={credential}
+            onOpenChange={setDialogOpen}
+            onSave={async (input) => {
+              const result = await window.api.bitbucketAuth.setCredentials(input)
+              if ('error' in result) {
+                return result.error
+              }
+              await syncCredential()
+              refresh()
+              return null
+            }}
+            onClear={async () => {
+              await window.api.bitbucketAuth.clear()
+              await syncCredential()
+              refresh()
+            }}
+          />
         </IntegrationCardDetails>
       ) : null}
     </IntegrationCardShell>
