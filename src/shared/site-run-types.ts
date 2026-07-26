@@ -60,3 +60,14 @@ export type SiteRunLogPage = {
   /** Index into `lines` of the first error, or -1. Drives ocsites' `e` jump-to-first-error key. */
   firstErrorIndex: number
 }
+
+/**
+ * Why a run cannot start. Lives in shared/ because both the run console and the guided setup
+ * dialog render it, and the run planner in main is the single producer.
+ */
+export type SiteRunBlockedReason =
+  | 'no-environment'
+  | 'no-steps-selected'
+  | 'unmatched-branch'
+  | 'missing-ssh-credentials'
+  | 'missing-path'

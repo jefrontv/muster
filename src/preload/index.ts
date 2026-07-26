@@ -850,6 +850,11 @@ const api = {
     }
   } satisfies PreloadApi['siteBind'],
 
+  siteSetup: {
+    plan: (args) => ipcRenderer.invoke('siteSetup:plan', args),
+    cloneTargets: (args) => ipcRenderer.invoke('siteSetup:cloneTargets', args)
+  } satisfies PreloadApi['siteSetup'],
+
   siteBitbucket: {
     status: () => ipcRenderer.invoke('siteBitbucket:status'),
     setCredentials: (args) => ipcRenderer.invoke('siteBitbucket:setCredentials', args),

@@ -4,6 +4,7 @@
 // they answer the same question. Both the UI and the agent-facing MCP tools call this before any
 // run, so there is exactly one place that decides "is this safe to execute".
 
+import type { SiteRunBlockedReason } from '../../shared/site-run-types'
 import {
   countSelectedToggles,
   resolveSiteEnvironment,
@@ -24,12 +25,7 @@ export type SiteRunPlanStep = {
   remote: boolean
 }
 
-export type SiteRunBlockedReason =
-  | 'no-environment'
-  | 'no-steps-selected'
-  | 'unmatched-branch'
-  | 'missing-ssh-credentials'
-  | 'missing-path'
+export type { SiteRunBlockedReason }
 
 export type SiteRunPlan = {
   siteId: string

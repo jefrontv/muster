@@ -13760,6 +13760,29 @@
         "openSiteRunLog": {
           "noWorkspace": "Open a workspace first — run logs open as an editor tab.",
           "notAuthorized": "Could not open the run log."
+        },
+        "SiteSetupContinuation": {
+          "title": "Finish setting up",
+          "description": "The site is saved. These optional steps get it running locally.",
+          "loading": "Checking what this site needs…",
+          "stackHeading": "Local WordPress",
+          "stackBody": "Register this folder with LocalWP so it can be served and given a database.",
+          "stackAction": "Set up LocalWP",
+          "stackPreviewing": "Checking…",
+          "stackRunning": "Setting up…",
+          "stackConfirm": "Run setup",
+          "stackDone": "LocalWP site created",
+          "stackDomainLabel": "Local domain",
+          "importHeading": "Import from the server",
+          "importBody": "Pull the remote database and files down to this checkout.",
+          "importAction": "Run import now",
+          "importStarting": "Starting…",
+          "importStarted": "Import started — progress is on the site page.",
+          "importSteps": "{{count}} steps enabled",
+          "overrideAction": "Run anyway",
+          "skip": "Skip",
+          "done": "Done",
+          "unavailable": "Not available"
         }
       }
     },
