@@ -3,7 +3,6 @@ import { buildWorktreeComparator, sortWorktreesSmart } from './smart-sort'
 import { getWorktreeIdsWithLiveAgent, isInactiveWorkspace } from '@/lib/worktree-activity-state'
 import { useAppStore } from '@/store'
 import { getAllWorktreesFromState, getRepoMapFromState } from '@/store/selectors'
-import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../shared/constants'
 import {
   ALL_EXECUTION_HOSTS_SCOPE,
   getSettingsFocusedExecutionHostId,
@@ -54,7 +53,12 @@ export type SidebarFilterState = {
  */
 export function sidebarHasActiveFilters(state: SidebarFilterState): boolean {
   return (
-    state.showSleepingWorkspaces !== DEFAULT_SHOW_SLEEPING_WORKSPACES ||
+    // Why not compared against the default: hiding sleeping workspaces is the one filter that can
+    // empty a fully-populated sidebar on its own — on a cold launch nothing is awake yet, so every
+    // workspace is sleeping. Now that hiding is the shipped default, comparing against the default
+    // would report "no filters" for the exact state that hides everything, and the Clear Filters
+    // escape hatch would never render. Same reasoning as hideDefaultBranchWorkspace below.
+    !state.showSleepingWorkspaces ||
     state.filterRepoIds.length > 0 ||
     state.hideDefaultBranchWorkspace ||
     state.hideAutomationGeneratedWorkspaces ||
@@ -85,7 +89,10 @@ export type ClearFilterActions = {
  */
 export function computeClearFilterActions(state: SidebarFilterState): ClearFilterActions {
   return {
-    resetShowSleepingWorkspaces: state.showSleepingWorkspaces !== DEFAULT_SHOW_SLEEPING_WORKSPACES,
+    // Mirrors sidebarHasActiveFilters: "clear" has to mean "show me everything", so it is driven
+    // by the filter being on, not by how it compares to the startup default. Resetting to the
+    // default would now be a no-op that leaves the sidebar exactly as empty as it was.
+    resetShowSleepingWorkspaces: !state.showSleepingWorkspaces,
     resetFilterRepoIds: state.filterRepoIds.length > 0,
     resetHideDefaultBranchWorkspace: state.hideDefaultBranchWorkspace,
     resetHideAutomationGeneratedWorkspaces: state.hideAutomationGeneratedWorkspaces,

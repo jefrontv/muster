@@ -7,7 +7,6 @@ import {
 } from './visible-worktrees'
 import type { Repo, TerminalTab, Worktree, WorktreeLineage } from '../../../../shared/types'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
-import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../shared/constants'
 
 function makeTab(id: string, worktreeId: string, ptyId: string | null): TerminalTab {
   return {
@@ -95,9 +94,9 @@ type FilterState = Parameters<typeof sidebarHasActiveFilters>[0]
 
 function filterState(overrides: Partial<FilterState> = {}): FilterState {
   return {
-    // Why the constant rather than a literal: "no filters" means "sitting at the default", so
-    // these cases must follow the default rather than pin whichever value it happens to hold.
-    showSleepingWorkspaces: DEFAULT_SHOW_SLEEPING_WORKSPACES,
+    // "No filters active" means showing everything, which is deliberately NOT the same as the
+    // startup default — the shipped default hides sleeping workspaces.
+    showSleepingWorkspaces: true,
     filterRepoIds: [],
     hideDefaultBranchWorkspace: false,
     hideAutomationGeneratedWorkspaces: false,
@@ -736,12 +735,10 @@ describe('sidebarHasActiveFilters', () => {
     )
   })
 
-  it('returns true when sleeping visibility differs from the default', () => {
-    expect(
-      sidebarHasActiveFilters(
-        filterState({ showSleepingWorkspaces: !DEFAULT_SHOW_SLEEPING_WORKSPACES })
-      )
-    ).toBe(true)
+  it('reports the sleeping filter as active whenever it is hiding, default or not', () => {
+    // Regression: comparing against the default reported "no filters" for the one state that can
+    // empty a populated sidebar, so the Clear Filters escape hatch never rendered.
+    expect(sidebarHasActiveFilters(filterState({ showSleepingWorkspaces: false }))).toBe(true)
   })
 
   it('returns true when only filterRepoIds is non-empty', () => {
@@ -816,7 +813,7 @@ describe('computeClearFilterActions', () => {
     expect(
       computeClearFilterActions(
         filterState({
-          showSleepingWorkspaces: !DEFAULT_SHOW_SLEEPING_WORKSPACES,
+          showSleepingWorkspaces: false,
           filterRepoIds: ['repo1', 'repo2'],
           hideDefaultBranchWorkspace: true,
           hideAutomationGeneratedWorkspaces: true,

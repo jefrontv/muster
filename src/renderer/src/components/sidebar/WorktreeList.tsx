@@ -69,7 +69,6 @@ import type {
   WorkspaceStatus,
   WorkspaceStatusDefinition
 } from '../../../../shared/types'
-import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../shared/constants'
 import { buildWorktreeComparator, compareWorktreeSortLabel } from './smart-sort'
 import {
   buildAttentionByWorktree,
@@ -6506,7 +6505,9 @@ const WorktreeList = React.memo(function WorktreeList({
   const clearFilters = useCallback(() => {
     const actions = computeClearFilterActions(filterState)
     if (actions.resetShowSleepingWorkspaces) {
-      setShowSleepingWorkspaces(DEFAULT_SHOW_SLEEPING_WORKSPACES)
+      // Clear Filters means "show everything", not "return to the startup default"
+      // — the default now hides sleeping, so resetting to it would clear nothing.
+      setShowSleepingWorkspaces(true)
     }
     if (actions.resetFilterRepoIds) {
       setFilterRepoIds([])

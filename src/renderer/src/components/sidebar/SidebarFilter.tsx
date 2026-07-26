@@ -113,7 +113,9 @@ const SidebarFilter = React.memo(function SidebarFilter({
   const allSelected = canFilterRepos && selectedCount === repos.length
 
   const clearAll = useCallback(() => {
-    setShowSleepingWorkspaces(DEFAULT_SHOW_SLEEPING_WORKSPACES)
+    // Clear Filters means "show everything", not "return to the startup default"
+    // — the default now hides sleeping, so resetting to it would clear nothing.
+    setShowSleepingWorkspaces(true)
     setHideDefaultBranchWorkspace(false)
     setHideAutomationGeneratedWorkspaces(false)
     setFilterRepoIds([])
