@@ -9,7 +9,7 @@ describe('dev-instance-identity', () => {
       isDev: false,
       devLabel: null,
       dockBadgeLabel: null,
-      appUserModelId: 'com.stablyai.orca'
+      appUserModelId: 'au.com.efront.muster'
     })
   })
 
@@ -41,7 +41,7 @@ describe('dev-instance-identity', () => {
     })
     expect(identity.name).toBe('Muster: nwparker/dev-indicator')
     expect(identity.dockBadgeLabel).toBeNull()
-    expect(identity.appUserModelId).toMatch(/^com\.stablyai\.orca\.dev\.[a-f0-9]{10}$/)
+    expect(identity.appUserModelId).toMatch(/^au\.com\.efront\.muster\.dev\.[a-f0-9]{10}$/)
   })
 
   it('includes the branch when it differs from the worktree basename', () => {
@@ -66,5 +66,22 @@ describe('dev-instance-identity', () => {
     expect(identity.devLabel).toBe('manual label')
     expect(identity.name).toBe('Muster: feature/other')
     expect(identity.dockBadgeLabel).toBeNull()
+  })
+  it('drops the dev suffix when the branch just repeats the product name', () => {
+    // Why: the suffix disambiguates concurrent branches. On a branch literally named
+    // `muster` it produced "Muster: muster", which reads as a bug in the title bar.
+    const identity = getDevInstanceIdentity(true, {
+      ORCA_DEV_REPO_ROOT: '/repo/muster-ui',
+      ORCA_DEV_WORKTREE_NAME: 'muster-ui',
+      ORCA_DEV_BRANCH: 'muster'
+    })
+
+    expect(identity.name).toBe('Muster')
+    // The branch is still recorded; only the window title drops the redundant half.
+    expect(identity.devBranch).toBe('muster')
+  })
+
+  it('ignores case when deciding the suffix is redundant', () => {
+    expect(getDevInstanceIdentity(true, { ORCA_DEV_BRANCH: 'MUSTER' }).name).toBe('Muster')
   })
 })

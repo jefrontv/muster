@@ -35,6 +35,17 @@ export function scoreSite(summary: SiteSummary, query: string): number {
   return path.includes(needle) ? 100 : 0
 }
 
+/**
+ * Drops sites whose checkout is gone. A missing folder means an unmounted volume or a deleted
+ * project, and neither can be opened, imported, or deployed — so the row is noise.
+ *
+ * Hiding is presentation-only and reversible: the preset keeps its config and the site returns
+ * on the next refresh once the path is back.
+ */
+export function sitesOnDisk(sites: SiteSummary[]): SiteSummary[] {
+  return sites.filter((summary) => summary.pathExists)
+}
+
 export function filterSites(sites: SiteSummary[], query: string): SiteSummary[] {
   const trimmed = query.trim()
   if (trimmed.length === 0) {

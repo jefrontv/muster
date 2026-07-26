@@ -13652,7 +13652,9 @@
           "selectPrompt": "Select a site.",
           "linkedProjects": "{{added}} added, {{linked}} already present.",
           "projectsAdded": "{{count}} projects added to the sidebar.",
-          "addToSidebar": "Add to sidebar"
+          "addToSidebar": "Add to sidebar",
+          "countOnDisk": "{{count}} on disk · {{hidden}} missing",
+          "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh."
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",

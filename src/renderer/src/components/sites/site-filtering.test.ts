@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { SiteSummary } from '../../../../shared/site-types'
-import { filterSites, scoreSite } from './site-filtering'
+import { filterSites, scoreSite, sitesOnDisk } from './site-filtering'
 
-function summary(displayName: string, path = `/Sites/${displayName}`): SiteSummary {
+function summary(
+  displayName: string,
+  path = `/Sites/${displayName}`,
+  pathExists = true
+): SiteSummary {
   return {
     site: {
       id: displayName,
@@ -21,7 +25,7 @@ function summary(displayName: string, path = `/Sites/${displayName}`): SiteSumma
       notes: '',
       searchReplaceTimeoutSeconds: 600
     },
-    pathExists: true,
+    pathExists,
     branch: null,
     resolvedEnvironment: {
       environment: null,
@@ -77,5 +81,34 @@ describe('filterSites', () => {
 
   it('is case-insensitive', () => {
     expect(filterSites(sites, 'ACME')).toHaveLength(1)
+  })
+})
+
+describe('sitesOnDisk', () => {
+  it('drops sites whose checkout folder is gone', () => {
+    const kept = summary('present')
+    const result = sitesOnDisk([kept, summary('unmounted', '/Volumes/gone/unmounted', false)])
+
+    expect(result).toEqual([kept])
+  })
+
+  it('keeps every site when all checkouts exist', () => {
+    const sites = [summary('a'), summary('b')]
+
+    expect(sitesOnDisk(sites)).toEqual(sites)
+  })
+
+  it('returns an empty list when no checkout exists', () => {
+    const sites = [summary('a', '/gone/a', false), summary('b', '/gone/b', false)]
+
+    expect(sitesOnDisk(sites)).toEqual([])
+  })
+
+  it('composes with search so a missing site cannot be surfaced by querying its name', () => {
+    const sites = [summary('acme-live'), summary('acme-dead', '/gone/acme-dead', false)]
+
+    expect(filterSites(sitesOnDisk(sites), 'acme').map((entry) => entry.site.displayName)).toEqual([
+      'acme-live'
+    ])
   })
 })

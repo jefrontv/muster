@@ -1065,7 +1065,7 @@
         "76a95f7f47": "作成",
         "f05d237049": "まずプロジェクトを追加",
         "f9eaa9e12d": "プロジェクトを追加",
-        "6ca6ff404e": "ORCA",
+        "6ca6ff404e": "MUSTER",
         "520304a067": "Muster のロゴ",
         "ce44fad849": "依存関係が欠落している",
         "c1cf168479": "隠れる",
@@ -13652,7 +13652,9 @@
           "selectPrompt": "Select a site.",
           "linkedProjects": "{{added}} added, {{linked}} already present.",
           "projectsAdded": "{{count}} projects added to the sidebar.",
-          "addToSidebar": "Add to sidebar"
+          "addToSidebar": "Add to sidebar",
+          "countOnDisk": "{{count}} on disk · {{hidden}} missing",
+          "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh."
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",

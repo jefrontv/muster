@@ -1,4 +1,4 @@
-import { AlertTriangle, GitBranch, Server } from 'lucide-react'
+import { GitBranch, Server } from 'lucide-react'
 import type React from 'react'
 import type { SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
@@ -18,7 +18,7 @@ const STACK_LABELS: Record<SiteSummary['site']['localStack'], string> = {
 }
 
 export function SiteRow({ summary, selected, onSelect }: SiteRowProps): React.JSX.Element {
-  const { site, branch, resolvedEnvironment, pathExists } = summary
+  const { site, branch, resolvedEnvironment } = summary
   const environmentCount = Object.keys(site.environments).length
 
   return (
@@ -33,15 +33,6 @@ export function SiteRow({ summary, selected, onSelect }: SiteRowProps): React.JS
     >
       <div className="flex min-w-0 items-center gap-2">
         <span className="truncate text-sm font-medium">{site.displayName}</span>
-        {!pathExists ? (
-          <AlertTriangle
-            className="size-3.5 shrink-0 text-destructive"
-            aria-label={translate(
-              'auto.components.sites.SiteRow.missingPath',
-              'Checkout folder is missing'
-            )}
-          />
-        ) : null}
         <Badge variant="secondary" className="shrink-0">
           {STACK_LABELS[site.localStack]}
         </Badge>

@@ -63,8 +63,16 @@ function formatDevInstanceLabel(branch, worktreeName) {
   return branch || worktreeName || null
 }
 
+const APP_NAME = 'Muster'
+
+// Why: the suffix tells concurrent dev branches apart. On a branch literally named `muster` it
+// just repeats the product name, so the menu bar reads "Muster: muster". Mirrors the same guard
+// in src/main/startup/dev-instance-identity.ts, which this env value overrides.
 function createDockTitle(branch, label) {
-  return `Muster: ${branch || label || 'dev'}`
+  const suffix = branch || label
+  return suffix && suffix.toLowerCase() !== APP_NAME.toLowerCase()
+    ? `${APP_NAME}: ${suffix}`
+    : APP_NAME
 }
 
 function seedDevInstanceIdentityEnv() {

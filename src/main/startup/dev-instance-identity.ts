@@ -72,12 +72,18 @@ export function getDevInstanceIdentity(
     cleanEnvValue(env.ORCA_DEV_WORKTREE_NAME) ??
     cleanEnvValue(path.basename(repoRoot ?? process.cwd()))
   const devLabel = cleanEnvValue(env.ORCA_DEV_INSTANCE_LABEL) ?? formatLabel(branch, worktreeName)
+  // Why: the suffix exists to tell concurrent dev branches apart. When it just repeats the
+  // product name (branch literally named `muster`) it adds nothing and reads as "Muster: muster".
+  const devSuffix = branch ?? devLabel
   const dockTitle =
-    cleanEnvValue(env.ORCA_DEV_DOCK_TITLE) ?? `${BASE_APP_NAME}: ${branch ?? devLabel ?? 'dev'}`
+    cleanEnvValue(env.ORCA_DEV_DOCK_TITLE) ??
+    (devSuffix && devSuffix.toLowerCase() !== BASE_APP_NAME.toLowerCase()
+      ? `${BASE_APP_NAME}: ${devSuffix}`
+      : BASE_APP_NAME)
 
   return {
     name: dockTitle,
-    // Why: one stable Keychain key ('Orca Dev Safe Storage') for all dev
+    // Why: one stable Keychain key ('Muster Dev Safe Storage') for all dev
     // branches; the per-branch identity still shows via `name` (window title,
     // app menu, renderer label).
     appName: `${BASE_APP_NAME} Dev`,

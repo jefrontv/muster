@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Muster">
+  <title>Muster</title>
+  <!--
+    macOS app icon geometry: Big Sur sizes the squircle to 824 of a 1024 canvas, leaving a
+    transparent 100px margin so the tile lines up with system icons in the Dock. The mark is the
+    512-unit logo from resources/muster-logo.svg, scaled into that tile.
+  -->
+  <g transform="translate(100 100) scale(1.609375)">
+    <rect width="512" height="512" rx="114" fill="#0E0E14"/>
+    <rect x="6" y="6" width="500" height="500" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="12"/>
+    <g fill="#F5F5F7">
+      <circle cx="150" cy="172" r="22"/>
+      <rect x="196" y="152" width="188" height="40" rx="20"/>
+
+      <circle cx="150" cy="256" r="22" fill="#22D3EE"/>
+      <rect x="196" y="236" width="140" height="40" rx="20" fill="#22D3EE"/>
+
+      <circle cx="150" cy="340" r="22" fill-opacity=".4"/>
+      <rect x="196" y="320" width="188" height="40" rx="20" fill-opacity=".4"/>
+    </g>
+  </g>
+</svg>

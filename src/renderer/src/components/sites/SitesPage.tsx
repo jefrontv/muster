@@ -6,7 +6,7 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { filterSites } from './site-filtering'
+import { filterSites, sitesOnDisk } from './site-filtering'
 import { SiteDetailPanel } from './SiteDetailPanel'
 import { SiteRow } from './SiteRow'
 
@@ -44,8 +44,11 @@ export default function SitesPage(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
   }, [closeSitesPage])
 
-  const visibleSites = useMemo(() => filterSites(sites, query), [sites, query])
-  const selected = sites.find((entry) => entry.site.id === selectedSiteId) ?? null
+  // A site whose folder is gone can't be opened, imported, or deployed, so it never reaches the list.
+  const availableSites = useMemo(() => sitesOnDisk(sites), [sites])
+  const offDiskCount = sites.length - availableSites.length
+  const visibleSites = useMemo(() => filterSites(availableSites, query), [availableSites, query])
+  const selected = availableSites.find((entry) => entry.site.id === selectedSiteId) ?? null
 
   const runLinkRepos = async (): Promise<void> => {
     setImporting(true)
@@ -127,9 +130,15 @@ export default function SitesPage(): React.JSX.Element {
             {translate('auto.components.sites.SitesPage.title', 'Sites')}
           </span>
           <span className="text-xs text-muted-foreground">
-            {translate('auto.components.sites.SitesPage.count', '{{count}} configured', {
-              count: sites.length
-            })}
+            {offDiskCount > 0
+              ? translate(
+                  'auto.components.sites.SitesPage.countOnDisk',
+                  '{{count}} on disk · {{hidden}} missing',
+                  { count: availableSites.length, hidden: offDiskCount }
+                )
+              : translate('auto.components.sites.SitesPage.count', '{{count}} configured', {
+                  count: availableSites.length
+                })}
           </span>
         </div>
         <Button
@@ -179,12 +188,18 @@ export default function SitesPage(): React.JSX.Element {
                 {translate('auto.components.sites.SitesPage.loading', 'Loading sites…')}
               </p>
             ) : null}
-            {!sitesLoading && sites.length === 0 ? (
+            {!sitesLoading && availableSites.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted-foreground">
-                {translate(
-                  'auto.components.sites.SitesPage.empty',
-                  'No sites yet. Import an existing ocsites configuration to get started.'
-                )}
+                {offDiskCount > 0
+                  ? translate(
+                      'auto.components.sites.SitesPage.allMissing',
+                      'All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.',
+                      { count: offDiskCount }
+                    )
+                  : translate(
+                      'auto.components.sites.SitesPage.empty',
+                      'No sites yet. Import an existing ocsites configuration to get started.'
+                    )}
               </p>
             ) : null}
             {visibleSites.map((summary) => (
