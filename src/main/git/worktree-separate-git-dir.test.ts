@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { initBareGitRepo, initGitRepoOnMain } from './git-test-fixture'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type * as GitRunner from './runner'
@@ -36,10 +37,7 @@ function git(cwd: string, args: string[]): string {
 
 async function createCommittedRepo(root: string, name: string): Promise<string> {
   const repoPath = path.join(root, name)
-  execFileSync('git', ['init', '--quiet', repoPath])
-  git(repoPath, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
-  git(repoPath, ['config', 'user.email', 'test@example.com'])
-  git(repoPath, ['config', 'user.name', 'Test User'])
+  initGitRepoOnMain(repoPath)
   await writeFile(path.join(repoPath, 'README.md'), `${name}\n`)
   git(repoPath, ['add', 'README.md'])
   git(repoPath, ['commit', '--quiet', '-m', 'initial'])
@@ -81,7 +79,7 @@ async function createBareRepo(): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), 'orca-bare-worktree-'))
   tempRoots.push(root)
   const repoPath = path.join(root, 'repo.git')
-  execFileSync('git', ['init', '--bare', '--quiet', repoPath])
+  initBareGitRepo(repoPath)
   return realpath(repoPath)
 }
 

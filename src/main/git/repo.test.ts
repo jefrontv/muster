@@ -1,8 +1,9 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { initGitRepoWithCommit as initRepo } from './git-test-fixture'
 
 import {
   buildSearchBaseRefsArgv,
@@ -20,34 +21,6 @@ import {
 function git(cwd: string, args: string[]): string {
   return execFileSync('git', args, { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] })
 }
-
-// Why: `git init` + config + commit is five process spawns, and under full-suite
-// parallelism macOS spawn cost degrades ~20x from Gatekeeper validation. Build the
-// repo shape once per file, then clone it with a plain directory copy (zero spawns).
-let repoTemplateDir: string | null = null
-
-function buildRepoTemplate(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'orca-repo-template-'))
-  git(dir, ['init', '--quiet'])
-  // Why: `--initial-branch=main` needs git >= 2.28; symbolic-ref before the first commit forces `main` on any git version.
-  git(dir, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
-  git(dir, ['config', 'user.email', 'test@test.com'])
-  git(dir, ['config', 'user.name', 'Test'])
-  git(dir, ['commit', '--allow-empty', '-m', 'initial', '--quiet'])
-  return dir
-}
-
-function initRepo(dir: string): void {
-  repoTemplateDir ??= buildRepoTemplate()
-  cpSync(repoTemplateDir, dir, { recursive: true })
-}
-
-afterAll(() => {
-  if (repoTemplateDir) {
-    rmSync(repoTemplateDir, { recursive: true, force: true })
-    repoTemplateDir = null
-  }
-})
 
 /** Create a remote-tracking ref via `update-ref`, avoiding a live remote. */
 function createRemoteRef(mainDir: string, shortName: string, sha: string): void {

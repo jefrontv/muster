@@ -7,7 +7,7 @@
  */
 import { vi } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdtempSync, renameSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { RelayDispatcher } from './dispatcher'
@@ -84,24 +84,38 @@ export function createMockDispatcher(): MockDispatcher {
 
 // Why: `git init` plus two `git config` calls is three process spawns per test, and
 // macOS spawn cost degrades roughly 20x under full-suite parallelism because
-// Gatekeeper revalidates each binary. Build the identical repo shape once per worker,
-// then stamp it out with a directory copy so per-test setup costs zero spawns.
-let gitInitTemplate: string | null = null
+// Gatekeeper revalidates each binary. Stamp the repo from a disk-cached template so
+// per-test setup costs zero spawns. The cache lives on disk, not in module scope,
+// because Vitest re-imports modules per test file.
+const RELAY_TEMPLATE_VERSION = 'v1'
+const RELAY_TEMPLATE_DIR = join(tmpdir(), `relay-git-fixture-template-${RELAY_TEMPLATE_VERSION}`)
 
-function buildGitInitTemplate(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'relay-git-template-'))
-  execFileSync('git', ['init'], { cwd: dir, stdio: 'pipe' })
-  execFileSync('git', ['config', 'user.email', TEST_GIT_USER_EMAIL], { cwd: dir, stdio: 'pipe' })
-  execFileSync('git', ['config', 'user.name', TEST_GIT_USER_NAME], { cwd: dir, stdio: 'pipe' })
-  process.once('exit', () => {
-    rmSync(dir, { recursive: true, force: true })
+function relayTemplate(): string {
+  if (existsSync(RELAY_TEMPLATE_DIR)) {
+    return RELAY_TEMPLATE_DIR
+  }
+  // Why: build private then rename so no worker reads a half-written template.
+  const staging = mkdtempSync(join(tmpdir(), '.relay-git-template-'))
+  execFileSync('git', ['init'], { cwd: staging, stdio: 'pipe' })
+  execFileSync('git', ['config', 'user.email', TEST_GIT_USER_EMAIL], {
+    cwd: staging,
+    stdio: 'pipe'
   })
-  return dir
+  execFileSync('git', ['config', 'user.name', TEST_GIT_USER_NAME], {
+    cwd: staging,
+    stdio: 'pipe'
+  })
+  try {
+    renameSync(staging, RELAY_TEMPLATE_DIR)
+  } catch {
+    // Lost the race; the winner's copy is byte-identical.
+    rmSync(staging, { recursive: true, force: true })
+  }
+  return RELAY_TEMPLATE_DIR
 }
 
 export function gitInit(dir: string): void {
-  gitInitTemplate ??= buildGitInitTemplate()
-  cpSync(gitInitTemplate, dir, { recursive: true })
+  cpSync(relayTemplate(), dir, { recursive: true })
 }
 
 export function gitCommit(dir: string, message: string): void {

@@ -9,6 +9,7 @@ import {
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { initBareGitRepo, initMinimalGitRepo } from './git-test-fixture'
 import * as path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { getGitRepoRoot, isGitRepo, normalizeGitRepoRootForInputPath } from './repo'
@@ -38,7 +39,7 @@ describe('isGitRepo', () => {
 
   it('accepts bare git repositories', () => {
     const bareRepo = path.join(tmpDir, 'bare.git')
-    git(tmpDir, ['init', '--bare', '--quiet', bareRepo])
+    initBareGitRepo(bareRepo)
 
     expect(isGitRepo(bareRepo)).toBe(true)
   })
@@ -50,7 +51,7 @@ describe('isGitRepo', () => {
     // still be recognized rather than silently downgraded to a plain folder.
     const realRepo = path.join(tmpDir, 'real')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
 
     withGitUnavailable(() => {
       expect(isGitRepo(realRepo)).toBe(true)
@@ -61,7 +62,7 @@ describe('isGitRepo', () => {
     const realRepo = path.join(tmpDir, 'nested-real')
     const nestedDir = path.join(realRepo, 'packages', 'web')
     mkdirSync(nestedDir, { recursive: true })
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
 
     withGitUnavailable(() => {
       expect(isGitRepo(nestedDir)).toBe(true)
@@ -72,7 +73,7 @@ describe('isGitRepo', () => {
     const realRepo = path.join(tmpDir, 'nested-root-real')
     const nestedDir = path.join(realRepo, 'packages', 'web')
     mkdirSync(nestedDir, { recursive: true })
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
 
     withGitUnavailable(() => {
       expect(getGitRepoRoot(nestedDir)).toBe(realRepo)
@@ -84,7 +85,7 @@ describe('isGitRepo', () => {
     const nestedDir = path.join(realRepo, 'packages', 'web')
     const symlinkedNestedDir = path.join(tmpDir, 'linked-nested')
     mkdirSync(nestedDir, { recursive: true })
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     symlinkSync(nestedDir, symlinkedNestedDir, process.platform === 'win32' ? 'junction' : 'dir')
 
     withGitUnavailable(() => {
@@ -101,7 +102,7 @@ describe('isGitRepo', () => {
     const symlinkedOutsideDir = path.join(realRepo, 'links', 'outside')
     mkdirSync(path.dirname(symlinkedOutsideDir), { recursive: true })
     mkdirSync(outsideDir)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     symlinkSync(outsideDir, symlinkedOutsideDir, process.platform === 'win32' ? 'junction' : 'dir')
 
     withGitUnavailable(() => {
@@ -116,8 +117,8 @@ describe('isGitRepo', () => {
     const symlinkedTargetDir = path.join(sourceRepo, 'links', 'target')
     mkdirSync(path.dirname(symlinkedTargetDir), { recursive: true })
     mkdirSync(targetNestedDir, { recursive: true })
-    git(sourceRepo, ['init', '--quiet'])
-    git(targetRepo, ['init', '--quiet'])
+    initMinimalGitRepo(sourceRepo)
+    initMinimalGitRepo(targetRepo)
     symlinkSync(
       targetNestedDir,
       symlinkedTargetDir,
@@ -138,7 +139,7 @@ describe('isGitRepo', () => {
     const realRepo = path.join(tmpDir, 'linked-main')
     const linkedWorktree = path.join(tmpDir, 'linked-worktree')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     git(realRepo, [
       '-c',
       'user.name=Muster Test',
@@ -179,7 +180,7 @@ describe('isGitRepo', () => {
     const realRepo = path.join(tmpDir, 'outer-real')
     const nestedDir = path.join(realRepo, 'packages', 'web')
     mkdirSync(nestedDir, { recursive: true })
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     writeFileSync(path.join(nestedDir, '.git'), 'not a gitdir file')
 
     withGitUnavailable(() => {
@@ -219,7 +220,7 @@ describe('isGitRepo', () => {
   it('rejects a regular repository admin directory when git itself cannot be run', () => {
     const realRepo = path.join(tmpDir, 'admin-dir')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
 
     withGitUnavailable(() => {
       expect(isGitRepo(path.join(realRepo, '.git'))).toBe(false)
@@ -229,7 +230,7 @@ describe('isGitRepo', () => {
   it('rejects a case-insensitive .git admin directory alias when git itself cannot be run', () => {
     const realRepo = path.join(tmpDir, 'admin-dir-uppercase')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     const uppercaseAdminDir = path.join(realRepo, '.GIT')
     try {
       realpathSync.native(uppercaseAdminDir)
@@ -245,7 +246,7 @@ describe('isGitRepo', () => {
   it('rejects a regular repository admin directory when core.bare uses alternate false spelling', () => {
     const realRepo = path.join(tmpDir, 'admin-dir-no')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     git(realRepo, ['config', 'core.bare', 'no'])
 
     withGitUnavailable(() => {
@@ -256,7 +257,7 @@ describe('isGitRepo', () => {
   it('rejects a regular repository admin directory when core.bare is empty false', () => {
     const realRepo = path.join(tmpDir, 'admin-dir-empty-false')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     const configPath = path.join(realRepo, '.git', 'config')
     writeFileSync(configPath, readFileSync(configPath, 'utf8').replace(/bare = false/, 'bare ='))
 
@@ -268,7 +269,7 @@ describe('isGitRepo', () => {
   it('rejects a regular repository admin directory when core.bare false has inline comments', () => {
     const realRepo = path.join(tmpDir, 'admin-dir-commented-false')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     const configPath = path.join(realRepo, '.git', 'config')
     const config = readFileSync(configPath, 'utf8')
     writeFileSync(configPath, config.replace(/bare = false/, 'bare = false # regular worktree'))
@@ -287,7 +288,7 @@ describe('isGitRepo', () => {
   it('rejects a regular repository admin directory when core.bare is quoted false', () => {
     const realRepo = path.join(tmpDir, 'admin-dir-quoted-false')
     mkdirSync(realRepo)
-    git(realRepo, ['init', '--quiet'])
+    initMinimalGitRepo(realRepo)
     const configPath = path.join(realRepo, '.git', 'config')
     writeFileSync(
       configPath,
@@ -323,7 +324,7 @@ describe('isGitRepo', () => {
 
   it('preserves bare repository paths when no worktree root exists', () => {
     const bareRepo = path.join(tmpDir, 'bare.git')
-    git(tmpDir, ['init', '--bare', '--quiet', bareRepo])
+    initBareGitRepo(bareRepo)
 
     expect(getGitRepoRoot(bareRepo)).toBe(bareRepo)
   })

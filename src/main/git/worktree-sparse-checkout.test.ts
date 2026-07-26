@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtemp, mkdir, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { initGitRepoOnMain } from './git-test-fixture'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { listWorktrees, parseCoreSparseCheckoutFlag } from './worktree'
@@ -16,10 +17,7 @@ async function createRepoWithTwoDirs(): Promise<string> {
   tempRoots.push(root)
   const repoPath = path.join(root, 'repo')
 
-  execFileSync('git', ['init', '--quiet', repoPath])
-  git(repoPath, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
-  git(repoPath, ['config', 'user.email', 'test@example.com'])
-  git(repoPath, ['config', 'user.name', 'Test User'])
+  initGitRepoOnMain(repoPath)
   await mkdir(path.join(repoPath, 'keep'), { recursive: true })
   await writeFile(path.join(repoPath, 'keep', 'file.txt'), 'keep\n')
   await mkdir(path.join(repoPath, 'drop'), { recursive: true })

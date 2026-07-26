@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { initGitRepo } from './git-test-fixture'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { getStatus, stageFile } from './status'
@@ -10,9 +11,7 @@ const tempRoots: string[] = []
 async function createRepo(): Promise<string> {
   const repo = await mkdtemp(path.join(tmpdir(), 'orca-status-cquoted-'))
   tempRoots.push(repo)
-  execFileSync('git', ['init', '-q'], { cwd: repo })
-  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo })
-  execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: repo })
+  initGitRepo(repo)
   return repo
 }
 

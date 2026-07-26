@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtemp, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { initGitRepoWithCommit } from './git-test-fixture'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { listWorktrees, removeWorktree } from './worktree'
@@ -20,11 +21,7 @@ async function createRepoWithNewlineWorktree(): Promise<{
   const repoPath = path.join(root, 'repo')
   const requestedWorktreePath = path.join(root, 'linked\nworktree')
 
-  execFileSync('git', ['init', '--quiet', repoPath])
-  git(repoPath, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
-  git(repoPath, ['config', 'user.email', 'test@example.com'])
-  git(repoPath, ['config', 'user.name', 'Test User'])
-  git(repoPath, ['commit', '--allow-empty', '--quiet', '-m', 'initial'])
+  initGitRepoWithCommit(repoPath)
   git(repoPath, ['worktree', 'add', '--quiet', '-b', 'feature/newline', requestedWorktreePath])
 
   return {
@@ -42,11 +39,7 @@ async function createRepoWithLockedDeletedWorktree(): Promise<{
   const repoPath = path.join(root, 'repo')
   const requestedWorktreePath = path.join(root, 'locked deleted worktree')
 
-  execFileSync('git', ['init', '--quiet', repoPath])
-  git(repoPath, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
-  git(repoPath, ['config', 'user.email', 'test@example.com'])
-  git(repoPath, ['config', 'user.name', 'Test User'])
-  git(repoPath, ['commit', '--allow-empty', '--quiet', '-m', 'initial'])
+  initGitRepoWithCommit(repoPath)
   git(repoPath, [
     'worktree',
     'add',
@@ -75,11 +68,7 @@ async function createRepoWithPrunableWorktree(): Promise<{
   const repoPath = path.join(root, 'repo')
   const requestedWorktreePath = path.join(root, 'stale-worktree')
 
-  execFileSync('git', ['init', '--quiet', repoPath])
-  git(repoPath, ['symbolic-ref', 'HEAD', 'refs/heads/main'])
-  git(repoPath, ['config', 'user.email', 'test@example.com'])
-  git(repoPath, ['config', 'user.name', 'Test User'])
-  git(repoPath, ['commit', '--allow-empty', '--quiet', '-m', 'initial'])
+  initGitRepoWithCommit(repoPath)
   git(repoPath, ['worktree', 'add', '--quiet', '-b', 'feature/stale', requestedWorktreePath])
 
   const worktreePath = await realpath(requestedWorktreePath)

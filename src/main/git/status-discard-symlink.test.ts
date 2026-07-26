@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtemp, mkdir, rm, symlink, writeFile, access, readFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { tmpdir } from 'node:os'
+import { initGitRepo } from './git-test-fixture'
 import { bulkDiscardChanges, discardChanges } from './status'
 
 const tempRoots: string[] = []
@@ -20,9 +21,7 @@ async function createRepoWithOutsideDirectory(): Promise<{
 
   await mkdir(repo)
   await mkdir(outsideDir)
-  execFileSync('git', ['init', '-q'], { cwd: repo })
-  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo })
-  execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: repo })
+  initGitRepo(repo)
   await writeFile(path.join(repo, '.gitkeep'), '')
   execFileSync('git', ['add', '.gitkeep'], { cwd: repo })
   execFileSync('git', ['commit', '-q', '-m', 'initial'], { cwd: repo })

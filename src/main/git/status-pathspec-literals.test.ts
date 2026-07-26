@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { initGitRepo } from './git-test-fixture'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { bulkStageFiles, bulkUnstageFiles, stageFile, unstageFile } from './status'
@@ -16,9 +17,7 @@ function gitLiteralPathspec(filePath: string): string {
 async function createRepoWithGlobNamedFiles(): Promise<string> {
   const repo = await mkdtemp(path.join(tmpdir(), 'orca-status-pathspec-'))
   tempRoots.push(repo)
-  execFileSync('git', ['init', '-q'], { cwd: repo })
-  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo })
-  execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: repo })
+  initGitRepo(repo)
   await writeFile(path.join(repo, globNamedFile), 'selected')
   await writeFile(path.join(repo, globMatchedFile), 'keep')
   execFileSync('git', ['add', gitLiteralPathspec(globNamedFile), globMatchedFile], { cwd: repo })
