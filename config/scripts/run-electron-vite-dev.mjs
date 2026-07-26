@@ -105,6 +105,33 @@ function setPlistValue(plistPath, key, value) {
   execFileSync('/usr/bin/plutil', ['-replace', key, '-string', value, plistPath])
 }
 
+/**
+ * Declare the site-bind URL schemes on the dev wrapper.
+ *
+ * Why: on macOS `app.setAsDefaultProtocolClient` can only bind a scheme the bundle already
+ * declares — its optional path/args arguments are Windows-only. Without CFBundleURLTypes the
+ * runtime call silently no-ops, LaunchServices has no claimant, and `open muster://…` either does
+ * nothing or wakes a stale wrapper that starts bare Electron with no entry script.
+ *
+ * With the declaration present the running instance is the registered handler, so macOS delivers
+ * `open-url` to the live process instead of relaunching the bundle.
+ */
+function setDevBundleUrlSchemes(plistPath, schemes) {
+  execFileSync('/usr/bin/plutil', [
+    '-replace',
+    'CFBundleURLTypes',
+    '-json',
+    JSON.stringify([
+      {
+        CFBundleTypeRole: 'Viewer',
+        CFBundleURLName: 'Muster Site Bind',
+        CFBundleURLSchemes: schemes
+      }
+    ]),
+    plistPath
+  ])
+}
+
 function sanitizeMacAppBundleName(value) {
   return (
     Array.from(value, (char) => {
@@ -139,7 +166,7 @@ function prepareMacDevElectronApp() {
   // v6: bundle the notification-status helper (real permission readout) and
   // ad-hoc re-sign after plist edits so Notification Center accepts the
   // bundle; bumping forces stale cached copies to be recreated.
-  const bundleLayoutVersion = 'dock-title-app-preserve-framework-symlinks-v6'
+  const bundleLayoutVersion = 'dock-title-app-preserve-framework-symlinks-v7-url-schemes'
   const hash = createHash('sha1')
     .update(
       `${sourceAppPath}\0${electronVersion ?? ''}\0${title}\0${identityKey}\0${bundleLayoutVersion}`
@@ -216,6 +243,9 @@ function prepareMacDevElectronApp() {
   setPlistValue(plistPath, 'CFBundleName', title)
   setPlistValue(plistPath, 'CFBundleDisplayName', title)
   setPlistValue(plistPath, 'CFBundleIdentifier', bundleId)
+  // Only `muster` is declared: claiming `ocsites` here would let a dev build outrank an installed
+  // OcsitesHandler.app, which src/main/sites/bind-url-scheme.ts deliberately avoids.
+  setDevBundleUrlSchemes(plistPath, ['muster'])
 
   // Why: the notification-status helper reads the app's real macOS
   // notification authorization (UNUserNotificationCenter has no Electron

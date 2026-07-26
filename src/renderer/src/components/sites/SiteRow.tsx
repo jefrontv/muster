@@ -11,8 +11,9 @@ type SiteRowProps = {
   onSelect: (siteId: string) => void
 }
 
-const STACK_LABELS: Record<SiteSummary['site']['localStack'], string> = {
-  plain: 'Plain',
+// Why only the managed stacks: "Plain" is the absence of a local stack, so badging it adds a chip
+// to most rows while telling the user nothing. MAMP and LocalWP change how the site is run.
+const STACK_LABELS: Partial<Record<SiteSummary['site']['localStack'], string>> = {
   mamp: 'MAMP',
   localwp: 'LocalWP'
 }
@@ -33,9 +34,11 @@ export function SiteRow({ summary, selected, onSelect }: SiteRowProps): React.JS
     >
       <div className="flex min-w-0 items-center gap-2">
         <span className="truncate text-sm font-medium">{site.displayName}</span>
-        <Badge variant="secondary" className="shrink-0">
-          {STACK_LABELS[site.localStack]}
-        </Badge>
+        {STACK_LABELS[site.localStack] ? (
+          <Badge variant="secondary" className="shrink-0">
+            {STACK_LABELS[site.localStack]}
+          </Badge>
+        ) : null}
       </div>
       <div className="flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
         <span className="truncate font-mono">{site.path}</span>

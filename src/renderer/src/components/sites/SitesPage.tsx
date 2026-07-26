@@ -130,15 +130,9 @@ export default function SitesPage(): React.JSX.Element {
             {translate('auto.components.sites.SitesPage.title', 'Sites')}
           </span>
           <span className="text-xs text-muted-foreground">
-            {offDiskCount > 0
-              ? translate(
-                  'auto.components.sites.SitesPage.countOnDisk',
-                  '{{count}} on disk · {{hidden}} missing',
-                  { count: availableSites.length, hidden: offDiskCount }
-                )
-              : translate('auto.components.sites.SitesPage.count', '{{count}} configured', {
-                  count: availableSites.length
-                })}
+            {translate('auto.components.sites.SitesPage.count', '{{count}} configured', {
+              count: availableSites.length
+            })}
           </span>
         </div>
         <Button
