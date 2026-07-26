@@ -212,7 +212,7 @@ function configureSharedProjectCompatibilityMocks(
   }
   const sharedLocalProject: Project = {
     id: sharedProjectId,
-    displayName: 'Orca',
+    displayName: 'Muster',
     badgeColor: '#000',
     sourceRepoIds: ['local-repo'],
     localWindowsRuntimePreference: { kind: 'windows-host' },
@@ -221,7 +221,7 @@ function configureSharedProjectCompatibilityMocks(
   }
   const sharedRemoteProject: Project = {
     id: sharedProjectId,
-    displayName: 'Orca',
+    displayName: 'Muster',
     badgeColor: '#111',
     sourceRepoIds: ['remote-repo'],
     ...(options.remoteProjectRuntimePreference

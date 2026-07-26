@@ -208,7 +208,7 @@ export class RuntimeClient {
 
     throw new RuntimeClientError(
       'runtime_open_timeout',
-      'Timed out waiting for an Orca desktop window. The runtime may still be running headlessly.'
+      'Timed out waiting for a Muster desktop window. The runtime may still be running headlessly.'
     )
   }
 }
@@ -216,7 +216,7 @@ export class RuntimeClient {
 function throwDesktopActivationBlocked(): never {
   throw new RuntimeClientError(
     'desktop_activation_blocked',
-    'Orca is running headlessly, but it cannot open a desktop window safely because the persistent terminal provider is unavailable. Quit Orca normally and start the app again; do not use open -n.'
+    'Muster is running headlessly, but it cannot open a desktop window safely because the persistent terminal provider is unavailable. Quit Muster normally and start the app again; do not use open -n.'
   )
 }
 

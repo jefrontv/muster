@@ -317,7 +317,7 @@ describe('filterAiVaultSessions', () => {
     const projectSession = { ...baseSession, id: 'claude:project', cwd: '/repo/project' }
     const otherSession = { ...baseSession, id: 'claude:other', cwd: '/repo/other' }
     const sessionProjectById = new Map([
-      [projectSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Orca' }],
+      [projectSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Muster' }],
       [otherSession.id, { kind: 'repo' as const, key: 'project:other', label: 'Other' }]
     ])
 
@@ -351,9 +351,9 @@ describe('filterAiVaultSessions', () => {
 
   it('matches repo: queries against resolved project labels before folder fallback', () => {
     const sessionProjectById = new Map([
-      [baseSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Canonical Orca' }]
+      [baseSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Canonical Muster' }]
     ])
-    const projectLabelByKey = new Map([['project:orca', 'Canonical Orca']])
+    const projectLabelByKey = new Map([['project:orca', 'Canonical Muster']])
 
     expect(
       filterAiVaultSessions([baseSession], {
@@ -541,7 +541,7 @@ describe('deriveAiVaultScopeSessionPaths', () => {
             projects: [
               {
                 id: 'orca',
-                displayName: 'Orca',
+                displayName: 'Muster',
                 badgeColor: '#2563eb',
                 sourceRepoIds: ['repo1', 'repo2'],
                 createdAt: 1,
@@ -602,7 +602,7 @@ describe('deriveAiVaultScopeSessionPaths', () => {
             projects: [
               {
                 id: 'orca',
-                displayName: 'Orca',
+                displayName: 'Muster',
                 badgeColor: '#2563eb',
                 sourceRepoIds: ['repo1', 'repo2'],
                 createdAt: 1,
@@ -680,17 +680,17 @@ describe('groupAiVaultSessions', () => {
     const sessionProjectById = new Map(
       sessions.map((session) => [
         session.id,
-        { kind: 'repo' as const, key: 'project:orca', label: 'Orca' }
+        { kind: 'repo' as const, key: 'project:orca', label: 'Muster' }
       ])
     )
-    const projectLabelByKey = new Map([['project:orca', 'Canonical Orca']])
+    const projectLabelByKey = new Map([['project:orca', 'Canonical Muster']])
 
     expect(
       groupAiVaultSessions(sessions, 'project', {
         sessionProjectById,
         projectLabelByKey
       })
-    ).toEqual([{ key: 'project:orca', label: 'Canonical Orca', sessions }])
+    ).toEqual([{ key: 'project:orca', label: 'Canonical Muster', sessions }])
   })
 
   it('falls back to folder grouping when project metadata is unavailable', () => {

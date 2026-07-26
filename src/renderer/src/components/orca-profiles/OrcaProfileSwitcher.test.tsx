@@ -175,8 +175,8 @@ describe('OrcaProfileSwitcher', () => {
     })
     const html = renderToStaticMarkup(<OrcaProfileSwitcher />)
 
-    expect(html).toContain('Sign in to Orca')
-    expect(html).not.toContain('Orca account')
+    expect(html).toContain('Sign in to Muster')
+    expect(html).not.toContain('Muster account')
     expect(html).not.toContain('Signed out')
     expect(html).not.toContain('Personal')
     expect(html).not.toContain('>Local<')

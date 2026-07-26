@@ -227,7 +227,7 @@ describe('SkillFreshnessUpdateDialog', () => {
     await rerender()
 
     expect(mocks.terminalCommits).toContainEqual(['npx skills update orca-cli --global', true])
-    expect(container?.textContent).toContain('All installed Orca skills are up to date.')
+    expect(container?.textContent).toContain('All installed Muster skills are up to date.')
     expect(container?.querySelector('[data-testid="update-terminal"]')).toBeNull()
   })
 
@@ -273,7 +273,7 @@ describe('SkillFreshnessUpdateDialog', () => {
     mocks.loading = false
     await rerender()
 
-    expect(container?.textContent).toContain('All installed Orca skills are up to date.')
+    expect(container?.textContent).toContain('All installed Muster skills are up to date.')
     expect(container?.querySelector('[data-testid="update-terminal"]')?.textContent).toBe(
       'npx skills update orca-cli --global'
     )
@@ -295,7 +295,7 @@ describe('SkillFreshnessUpdateDialog', () => {
     mocks.loading = true
     await rerender()
 
-    expect(container?.textContent).toContain('Checking installed Orca skills')
+    expect(container?.textContent).toContain('Checking installed Muster skills')
     expect(container?.querySelector('[data-testid="update-terminal"]')).toBe(firstTerminal)
     expect(terminalWrapper?.hasAttribute('inert')).toBe(true)
     terminalInput?.blur()
@@ -329,7 +329,7 @@ describe('SkillFreshnessUpdateDialog', () => {
     await openViaRequest()
 
     expect(container?.textContent).toContain('Could not inspect installed skills.')
-    expect(container?.textContent).not.toContain('Checking installed Orca skills')
+    expect(container?.textContent).not.toContain('Checking installed Muster skills')
     expect(container?.querySelector('[data-testid="update-terminal"]')).toBeNull()
   })
 
@@ -391,7 +391,7 @@ describe('SkillFreshnessUpdateDialog', () => {
     await openViaRequest()
 
     expect(container?.textContent).toContain(
-      'read-only location, so Orca left it out of the update'
+      'read-only location, so Muster left it out of the update'
     )
     expect(container?.textContent).toContain('Read only')
   })

@@ -17,7 +17,7 @@ describe('hasNativeFileDragTypes', () => {
     expect(hasNativeFileDragTypes(['Files'])).toBe(true)
   })
 
-  it('rejects internal Orca file moves and URL/text drags', () => {
+  it('rejects internal Muster file moves and URL/text drags', () => {
     expect(hasNativeFileDragTypes(['Files', ORCA_INTERNAL_FILE_DRAG_TYPE])).toBe(false)
     expect(hasNativeFileDragTypes(['text/uri-list'])).toBe(false)
     expect(hasNativeFileDragTypes(['text/plain'])).toBe(false)

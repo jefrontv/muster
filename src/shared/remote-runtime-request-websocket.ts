@@ -52,7 +52,7 @@ export function openRemoteRuntimeWebSocket(
   const onError = (): void => {
     callbacks.onError(
       ws,
-      remoteRuntimeUnavailableError('Could not connect to the remote Orca runtime.')
+      remoteRuntimeUnavailableError('Could not connect to the remote Muster runtime.')
     )
   }
   const onClose = (code: number, reason: Buffer): void => callbacks.onClose(ws, code, reason)
@@ -61,7 +61,7 @@ export function openRemoteRuntimeWebSocket(
       callbacks.onError(
         ws,
         invalidRemoteRuntimeResponseError(
-          'Remote Orca runtime returned an unexpected binary frame.'
+          'Remote Muster runtime returned an unexpected binary frame.'
         )
       )
       return

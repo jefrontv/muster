@@ -47,12 +47,12 @@ const RemoveFolderDialog = React.memo(function RemoveFolderDialog() {
   const description = sshHostLabel
     ? translate(
         'auto.components.sidebar.RemoveFolderDialog.removeDescriptionSsh',
-        'This only removes {{name}} from Orca. Its files stay on {{host}} — re-add that SSH host to recover it.',
+        'This only removes {{name}} from Muster. Its files stay on {{host}} — re-add that SSH host to recover it.',
         { name: NAME_TOKEN, host: sshHostLabel }
       )
     : translate(
         'auto.components.sidebar.RemoveFolderDialog.removeDescriptionLocal',
-        'This only removes {{name}} from Orca. It is still on your disk.',
+        'This only removes {{name}} from Muster. It is still on your disk.',
         { name: NAME_TOKEN }
       )
   const [descriptionBeforeName, descriptionAfterName] = description.split(NAME_TOKEN)

@@ -153,8 +153,7 @@ vi.mock('./updater-prerelease-feed', () => ({
       ? { tags: result, state: result.length > 0 ? 'ready' : 'no-newer' }
       : result
   },
-  getReleaseDownloadUrl: (tag: string) =>
-    `https://releases.muster.invalid/releases/download/${tag}`
+  getReleaseDownloadUrl: (tag: string) => `https://releases.muster.invalid/releases/download/${tag}`
 }))
 
 describe('updater', () => {
@@ -1326,7 +1325,7 @@ describe('updater', () => {
       'updater:status',
       expect.objectContaining({
         state: 'error',
-        message: 'Could not restart to install the update. Quit and reopen Orca, then try again.'
+        message: 'Could not restart to install the update. Quit and reopen Muster, then try again.'
       })
     )
   })

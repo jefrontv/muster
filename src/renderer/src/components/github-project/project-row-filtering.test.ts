@@ -78,7 +78,7 @@ describe('filterProjectTableRowsByOpenRepos', () => {
     expect(filtered.totalCount).toBe(1)
   })
 
-  it('keeps rows while any of multiple Orca repos map to the slug', () => {
+  it('keeps rows while any of multiple Muster repos map to the slug', () => {
     const rows = [row('visible', 'acme/orca')]
     const filtered = filterProjectTableRowsByOpenRepos(table(rows), () => [
       repo('repo-1'),
@@ -162,7 +162,7 @@ describe('resolveSelectedProjectRowRepo', () => {
     expect(resolution.status).toBe('invalid_slug')
   })
 
-  it('reports no global match when Orca has no repo for the slug', () => {
+  it('reports no global match when Muster has no repo for the slug', () => {
     const resolution = resolveSelectedProjectRowRepo({
       row: row('missing', 'acme/orca'),
       lookupSlug: () => [],

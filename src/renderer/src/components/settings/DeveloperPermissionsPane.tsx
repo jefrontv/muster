@@ -320,13 +320,13 @@ export function DeveloperPermissionsPane(): React.JSX.Element {
             <ShieldCheck className="size-4" />
             {translate(
               'auto.components.settings.DeveloperPermissionsPane.6f011b9bf6',
-              "Terminal tools inherit Orca's macOS privacy envelope."
+              "Terminal tools inherit Muster's macOS privacy envelope."
             )}
           </div>
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.DeveloperPermissionsPane.6326a4c5cc',
-              'Use these controls when a CLI, local app, or automation tool needs macOS privacy access. Orca does not ask at startup.'
+              'Use these controls when a CLI, local app, or automation tool needs macOS privacy access. Muster does not ask at startup.'
             )}
           </p>
         </div>

@@ -49,7 +49,7 @@ import {
   signOutCurrentOrcaProfile
 } from './profile-cloud-service'
 
-describe('Orca cloud dev auth service', () => {
+describe('Muster cloud dev auth service', () => {
   beforeEach(() => {
     userDataPath = mkdtempSync(join(tmpdir(), 'orca-cloud-dev-auth-'))
     beginOrcaCloudPkceFlowMock.mockReset()

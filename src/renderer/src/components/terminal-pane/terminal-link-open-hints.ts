@@ -9,7 +9,7 @@ export function getTerminalFileOpenHint(): string {
 }
 
 export function getTerminalOrcaFileOpenHint(): string {
-  return isMacPlatform() ? '⌘+click to open in Orca' : 'Ctrl+click to open in Orca'
+  return isMacPlatform() ? '⌘+click to open in Muster' : 'Ctrl+click to open in Muster'
 }
 
 // Why: detected local .html/.htm file paths keep the same modifier gate as

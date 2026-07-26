@@ -71,7 +71,7 @@ export class LinuxLidSleepAssertion {
         'systemd-inhibit',
         [
           '--what=sleep:handle-lid-switch',
-          '--who=Orca',
+          '--who=Muster',
           '--why=Agents are working',
           '--mode=block',
           'sleep',

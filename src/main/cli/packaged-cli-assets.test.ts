@@ -65,7 +65,7 @@ describe('packaged CLI assets', () => {
     async () => {
       const root = await mkdtemp(join(tmpdir(), 'orca-linux-cli-'))
       try {
-        const appDir = join(root, 'Orca')
+        const appDir = join(root, 'Muster')
         const resourcesDir = join(appDir, 'resources')
         const launcherDir = join(resourcesDir, 'bin')
         const cliDir = join(resourcesDir, 'app.asar.unpacked', 'out', 'cli')
@@ -117,10 +117,10 @@ printf 'arg=%s\\n' "$@"
   itRunsUnixShell('runs the AppImage CLI wrapper through APPDIR at runtime', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-appimage-cli-'))
     try {
-      const appDir = join(root, 'Orca.AppDir')
+      const appDir = join(root, 'Muster.AppDir')
       const cliDir = join(appDir, 'resources', 'app.asar.unpacked', 'out', 'cli')
       const cliPath = join(cliDir, 'index.js')
-      const appImagePath = join(root, "Orca's AppImage.AppImage")
+      const appImagePath = join(root, "Muster's AppImage.AppImage")
       const commandPath = join(root, 'orca-ide')
       await mkdir(cliDir, { recursive: true })
       await writeFile(

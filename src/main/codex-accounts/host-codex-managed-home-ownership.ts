@@ -82,7 +82,7 @@ export function assertOwnedHostCodexManagedHomePath({
   try {
     markerIsRegularFile = lstatSync(markerPath).isFile()
   } catch (error) {
-    throw new Error('Managed Codex home is missing Orca ownership marker.', { cause: error })
+    throw new Error('Managed Codex home is missing Muster ownership marker.', { cause: error })
   }
   if (!markerIsRegularFile) {
     throw new Error('Managed Codex home ownership marker is not a regular file.')

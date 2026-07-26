@@ -9,7 +9,7 @@ function cliStatus(overrides: Partial<CliInstallStatus> = {}): CliInstallStatus 
     commandPath: '/usr/local/bin/orca',
     pathDirectory: '/usr/local/bin',
     pathConfigured: true,
-    launcherPath: '/Applications/Orca.app/Contents/MacOS/orca',
+    launcherPath: '/Applications/Muster.app/Contents/MacOS/orca',
     installMethod: 'symlink',
     supported: true,
     state: 'installed',

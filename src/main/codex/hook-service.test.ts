@@ -130,7 +130,7 @@ function localManagedCodexEvents(): string[] {
 }
 
 describe('CodexHookService', () => {
-  it('installs PermissionRequest with trust so Codex approval prompts reach Orca', () => {
+  it('installs PermissionRequest with trust so Codex approval prompts reach Muster', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     mkdirSync(systemCodexHome, { recursive: true })
     writeFileSync(
@@ -370,7 +370,7 @@ describe('CodexHookService', () => {
     }
   )
 
-  it('keeps hooks isolated by Orca userData instead of mutating system ~/.codex', () => {
+  it('keeps hooks isolated by Muster userData instead of mutating system ~/.codex', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     const systemHooksPath = join(systemCodexHome, 'hooks.json')
     const existingSystemHooks = '{"hooks":{"Stop":[{"hooks":[{"command":"user-hook"}]}]}}\n'
@@ -830,7 +830,7 @@ describe('CodexHookService', () => {
     expect(stopCommands).not.toContain('user-hook-old')
   })
 
-  it('refreshes runtime user hooks without installing Orca-managed hooks', () => {
+  it('refreshes runtime user hooks without installing Muster-managed hooks', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     const systemHooksPath = join(systemCodexHome, 'hooks.json')
     mkdirSync(systemCodexHome, { recursive: true })
@@ -900,7 +900,7 @@ describe('CodexHookService', () => {
     expect(runtimeToml).not.toContain(':permission_request:0:0')
   })
 
-  it('removes legacy Orca-managed hooks from system ~/.codex during install', () => {
+  it('removes legacy Muster-managed hooks from system ~/.codex during install', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     const systemHooksPath = join(systemCodexHome, 'hooks.json')
     const legacyScriptPath = join(
@@ -970,7 +970,7 @@ describe('CodexHookService', () => {
     expect(systemToml).not.toContain(':session_start:0:0')
   })
 
-  it('removes very large legacy Orca-managed hook lists from system ~/.codex', () => {
+  it('removes very large legacy Muster-managed hook lists from system ~/.codex', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     const systemHooksPath = join(systemCodexHome, 'hooks.json')
     const legacyScriptPath = join(
@@ -1011,7 +1011,7 @@ describe('CodexHookService', () => {
     expect(systemHooks.hooks.Stop).toBeUndefined()
   }, 30_000)
 
-  it('removes the legacy Orca Codex profile file when it only contains managed hooks', () => {
+  it('removes the legacy Muster Codex profile file when it only contains managed hooks', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     const profilePath = join(systemCodexHome, 'orca-agent-status.config.toml')
     mkdirSync(systemCodexHome, { recursive: true })
@@ -1034,7 +1034,7 @@ describe('CodexHookService', () => {
     expect(existsSync(profilePath)).toBe(false)
   })
 
-  it('removes only the legacy Orca block from a user-edited Codex profile file', () => {
+  it('removes only the legacy Muster block from a user-edited Codex profile file', () => {
     const systemCodexHome = join(tmpHome, '.codex')
     const profilePath = join(systemCodexHome, 'orca-agent-status.config.toml')
     mkdirSync(systemCodexHome, { recursive: true })

@@ -60,7 +60,7 @@ export function getDeleteWorktreeToastCopy(
         ),
         description: translate(
           'auto.components.sidebar.delete.worktree.toast.905fc8efac',
-          'Git already removed this workspace. Use Force Delete to clear it from Orca.'
+          'Git already removed this workspace. Use Force Delete to clear it from Muster.'
         ),
         isDestructive: false
       }

@@ -21,13 +21,13 @@ function getConnectLabel(authStatus: OrcaProfileAuthStatus | null, connecting: b
   if (authStatus?.configured !== true) {
     return translate(
       'auto.components.orca.profiles.switcher.cloud.unavailable',
-      'Orca sign-in unavailable'
+      'Muster sign-in unavailable'
     )
   }
   if (authStatus.state === 'reconnect-required') {
     return translate('auto.components.orca.profiles.switcher.signInAgain', 'Sign in again')
   }
-  return translate('auto.components.orca.profiles.switcher.signIn', 'Sign in to Orca')
+  return translate('auto.components.orca.profiles.switcher.signIn', 'Sign in to Muster')
 }
 
 export function OrcaProfileCloudMenuItems({

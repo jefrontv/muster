@@ -4,10 +4,10 @@ import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getBrowserUsePaneSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.browser.use.search.50f0860e18', 'Enable Orca CLI'),
+    title: translate('auto.components.settings.browser.use.search.50f0860e18', 'Enable Muster CLI'),
     description: translate(
       'auto.components.settings.browser.use.search.890ddf943d',
-      'Register the Orca CLI so agents can drive the browser.'
+      'Register the Muster CLI so agents can drive the browser.'
     ),
     keywords: [
       ...translateSearchKeyword(
@@ -33,7 +33,7 @@ export const getBrowserUsePaneSearchEntries = createLocalizedCatalog(() => [
     ),
     description: translate(
       'auto.components.settings.browser.use.search.a7e82445fa',
-      "Install the Browser Use skill so agents can operate Orca's browser."
+      "Install the Browser Use skill so agents can operate Muster's browser."
     ),
     keywords: [
       ...translateSearchKeyword(

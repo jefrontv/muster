@@ -65,7 +65,7 @@ function SummaryHeadline({
         <Loader2 className="size-4 animate-spin" />
         {translate(
           'auto.components.skills.SkillFreshnessUpdateDialog.checking',
-          'Checking installed Orca skills…'
+          'Checking installed Muster skills…'
         )}
       </div>
     )
@@ -75,7 +75,7 @@ function SummaryHeadline({
       <p className="text-xs text-muted-foreground">
         {translate(
           'auto.components.skills.SkillFreshnessUpdateDialog.none',
-          'No installed Orca skills found.'
+          'No installed Muster skills found.'
         )}
       </p>
     )
@@ -86,7 +86,7 @@ function SummaryHeadline({
         <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
         {translate(
           'auto.components.skills.SkillFreshnessUpdateDialog.success',
-          'All installed Orca skills are up to date.'
+          'All installed Muster skills are up to date.'
         )}
       </div>
     )
@@ -98,7 +98,7 @@ function SummaryHeadline({
           <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
           {translate(
             'auto.components.skills.SkillFreshnessUpdateDialog.attention',
-            'Some installed Orca skills were left out of the update.'
+            'Some installed Muster skills were left out of the update.'
           )}
         </div>
         <p className="text-xs text-muted-foreground">
@@ -298,7 +298,7 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
               command={terminalCommand}
               title={translate(
                 'auto.components.skills.SkillFreshnessUpdateDialog.terminalTitle',
-                'Update Orca skills'
+                'Update Muster skills'
               )}
               description={translate(
                 'auto.components.skills.SkillFreshnessUpdateDialog.terminalDescription',
@@ -306,7 +306,7 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
               )}
               ariaLabel={translate(
                 'auto.components.skills.SkillFreshnessUpdateDialog.terminalAria',
-                'Orca skill update terminal'
+                'Muster skill update terminal'
               )}
               worktreeId="skill-freshness-update-terminal"
               terminalHeightPx={200}

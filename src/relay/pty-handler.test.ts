@@ -209,7 +209,7 @@ describe('PtyHandler', () => {
     expect(handler.activePtyCount).toBe(1)
   })
 
-  it("does not forward Orca's own NODE_ENV into the spawned shell", async () => {
+  it("does not forward Muster's own NODE_ENV into the spawned shell", async () => {
     // Why: NODE_ENV in the relay host process is a build-mode flag, not the
     // user's; leaking it breaks `next build` and Vitest in the terminal.
     const previous = process.env.NODE_ENV
@@ -2138,7 +2138,7 @@ describe('PtyHandler', () => {
     }
     expect(spawnEnv.name).toBe('xterm-256color')
     expect(spawnEnv.env.TERM).toBe('xterm-256color')
-    expect(spawnEnv.env.TERM_PROGRAM).toBe('Orca')
+    expect(spawnEnv.env.TERM_PROGRAM).toBe('Muster')
   })
 
   it('uses the safe terminal default when TERM is deleted without a custom value', async () => {
@@ -2299,7 +2299,7 @@ describe('PtyHandler', () => {
     expect(callArgs.env.ORCA_AGENT_HOOK_PORT).toBe('12345')
     expect(callArgs.env.ORCA_AGENT_HOOK_TOKEN).toBe('abc-uuid')
     expect(callArgs.env.TERM).toBe('xterm-256color')
-    expect(callArgs.env.TERM_PROGRAM).toBe('Orca')
+    expect(callArgs.env.TERM_PROGRAM).toBe('Muster')
   })
 
   it('fences both revived worktree identity and cwd with rollback', async () => {

@@ -86,7 +86,7 @@ export function OrcaProfileOrgMemberRow({
           <TooltipContent side="top">
             {translate(
               'auto.components.orca.profiles.org.members.not.signed.in',
-              "They haven't signed in to Orca yet."
+              "They haven't signed in to Muster yet."
             )}
           </TooltipContent>
         </Tooltip>

@@ -4,11 +4,11 @@ import { GLOBAL_FLAGS } from '../args'
 export const SKILL_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['skills', 'list'],
-    summary: 'List version-matched skill guides bundled with this Orca CLI',
+    summary: 'List version-matched skill guides bundled with this Muster CLI',
     usage: 'orca skills list [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
     notes: [
-      'Reads bundled guide metadata locally without contacting the Orca runtime.',
+      'Reads bundled guide metadata locally without contacting the Muster runtime.',
       'With --json, prints a topics array of canonical names and one-line descriptions.'
     ]
   },
@@ -20,7 +20,7 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS, 'topic', 'full'],
     positionalArgs: ['topic'],
     notes: [
-      'Reads bundled guide content locally without contacting the Orca runtime.',
+      'Reads bundled guide content locally without contacting the Muster runtime.',
       'Use --full to include bundled reference documents when the guide provides them.',
       'Use --json for a deterministic object containing canonical topic metadata and content.'
     ],

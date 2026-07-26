@@ -193,7 +193,7 @@ describe('active agent note send', () => {
     })
   })
 
-  it('offers the active terminal send target for an Orca-launched agent before hooks report', () => {
+  it('offers the active terminal send target for a Muster-launched agent before hooks report', () => {
     testState.appState.tabsByWorktree = {
       'wt-1': [{ id: 'tab-1', launchAgent: 'codex' }]
     }
@@ -1350,10 +1350,10 @@ describe('active agent note send', () => {
     expect(
       activeAgentNotesSendFailureMessage('partial-submit-failed', { explicitTarget: true })
     ).toBe(
-      'The notes may already be pasted in the selected terminal, but Orca could not submit them.'
+      'The notes may already be pasted in the selected terminal, but Muster could not submit them.'
     )
     expect(activeAgentNotesSendFailureMessage('partial-submit-failed')).toBe(
-      'The notes may already be pasted in the active terminal, but Orca could not submit them.'
+      'The notes may already be pasted in the active terminal, but Muster could not submit them.'
     )
   })
 

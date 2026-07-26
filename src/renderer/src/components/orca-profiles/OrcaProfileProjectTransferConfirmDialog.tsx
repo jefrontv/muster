@@ -112,12 +112,12 @@ export function OrcaProfileProjectTransferConfirmDialog({
             {mode === 'move'
               ? translate(
                   'auto.components.orca.profiles.project.transfer.confirm.move.description',
-                  'Move {{repoName}} to {{targetName}}. Orca removes it from {{activeProfileName}}, keeps files in place, and relaunches into {{targetName}}.',
+                  'Move {{repoName}} to {{targetName}}. Muster removes it from {{activeProfileName}}, keeps files in place, and relaunches into {{targetName}}.',
                   { activeProfileName, repoName, targetName }
                 )
               : translate(
                   'auto.components.orca.profiles.project.transfer.confirm.copy.description',
-                  'Copy {{repoName}} to {{targetName}}. Both profiles will point at the same files with separate Orca metadata.',
+                  'Copy {{repoName}} to {{targetName}}. Both profiles will point at the same files with separate Muster metadata.',
                   { repoName, targetName }
                 )}
           </DialogDescription>

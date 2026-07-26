@@ -86,7 +86,7 @@ describe('installLinuxBareOrcaDispatcher', () => {
 
   it('execs the stable AppImage (not the ephemeral mount) when running from an AppImage', async () => {
     const { homePath, resourcesPath } = await makeFixture()
-    const appImagePath = join(homePath, 'Applications', 'Orca.AppImage')
+    const appImagePath = join(homePath, 'Applications', 'Muster.AppImage')
 
     const result = await installLinuxBareOrcaDispatcher({ resourcesPath, homePath, appImagePath })
 

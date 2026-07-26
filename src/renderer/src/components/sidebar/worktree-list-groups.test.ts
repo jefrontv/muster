@@ -86,7 +86,7 @@ const remoteWorktree: Worktree = {
 
 const project: Project = {
   id: 'github:stablyai/orca',
-  displayName: 'Orca',
+  displayName: 'Muster',
   badgeColor: '#737373',
   sourceRepoIds: [repo.id, remoteRepo.id],
   createdAt: 1,
@@ -431,7 +431,7 @@ describe('buildRows with pinned worktrees', () => {
     )
 
     expect(rows).toMatchObject([
-      { type: 'header', key: 'project:github:stablyai/orca', label: 'Orca', count: 2 },
+      { type: 'header', key: 'project:github:stablyai/orca', label: 'Muster', count: 2 },
       { type: 'item', worktree: { id: worktree.id }, hostContextLabel: LOCAL_HOST_LABEL },
       { type: 'item', worktree: { id: remoteWorktree.id }, hostContextLabel: 'gpu-vm' }
     ])
@@ -885,7 +885,7 @@ describe('buildRows with pinned worktrees', () => {
     expect(headers).toHaveLength(1)
     expect(headers[0]).toMatchObject({
       key: 'project:github:stablyai/orca',
-      label: 'Orca',
+      label: 'Muster',
       count: 2
     })
   })
@@ -1060,7 +1060,7 @@ describe('buildRows with pinned worktrees', () => {
     expect(rows.filter((row) => row.type === 'header')).toMatchObject([
       {
         key: 'project:github:stablyai/orca',
-        label: 'Orca',
+        label: 'Muster',
         count: 2
       }
     ])
@@ -1119,13 +1119,13 @@ describe('buildRows with pinned worktrees', () => {
     )
 
     expect(rows).toMatchObject([
-      { type: 'header', key: 'project:github:stablyai/orca', label: 'Orca', count: 2 },
+      { type: 'header', key: 'project:github:stablyai/orca', label: 'Muster', count: 2 },
       { type: 'item', worktree: { id: worktree.id }, hostContextLabel: LOCAL_HOST_LABEL },
       { type: 'item', worktree: { id: runtimeWorktree.id }, hostContextLabel: 'dev box' }
     ])
   })
 
-  it('shows distinct Orca server names when status grouping mixes runtime hosts', () => {
+  it('shows distinct Muster server names when status grouping mixes runtime hosts', () => {
     const firstRepo: Repo = {
       ...repo,
       id: 'repo-runtime-a',
@@ -1218,7 +1218,7 @@ describe('buildRows with pinned worktrees', () => {
     )
 
     expect(rows).toMatchObject([
-      { type: 'header', key: 'project:github:stablyai/orca', label: 'Orca', count: 2 },
+      { type: 'header', key: 'project:github:stablyai/orca', label: 'Muster', count: 2 },
       { type: 'item', worktree: { id: worktree.id } },
       { type: 'item', worktree: { id: secondLocalWorktree.id } }
     ])

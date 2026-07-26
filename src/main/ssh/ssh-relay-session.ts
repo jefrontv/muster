@@ -670,7 +670,7 @@ export class SshRelaySession {
   private wireUpRemoteOrcaCli(mux: SshChannelMultiplexer): void {
     mux.onRequest('orca.cli', async (params) => {
       if (!this.runtime) {
-        throw new Error('Orca runtime is unavailable')
+        throw new Error('Muster runtime is unavailable')
       }
       const argv = Array.isArray(params.argv)
         ? params.argv.filter((item): item is string => typeof item === 'string')

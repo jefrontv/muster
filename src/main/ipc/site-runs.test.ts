@@ -44,14 +44,11 @@ const scriptedJob: SiteRunJobFactory = () => async (context) => {
   context.status('Connecting')
   context.progress({ label: 'Connecting', transferred: 1024, total: 4096 })
   await new Promise<void>((_resolve, reject) => {
-    context.signal.addEventListener(
-      'abort',
-      () => reject(new SiteRunCancelledError()),
-      { once: true }
-    )
+    context.signal.addEventListener('abort', () => reject(new SiteRunCancelledError()), {
+      once: true
+    })
   })
 }
-
 
 const SITE: Site = {
   id: 'site-1',
@@ -116,7 +113,11 @@ beforeEach(() => {
     site: SITE,
     pathExists: true,
     branch: 'main',
-    resolvedEnvironment: { environment: 'main', reason: 'branch-match', requiresConfirmation: false },
+    resolvedEnvironment: {
+      environment: 'main',
+      reason: 'branch-match',
+      requiresConfirmation: false
+    },
     secrets: {},
     importSelectedCount: 2,
     deploySelectedCount: 0

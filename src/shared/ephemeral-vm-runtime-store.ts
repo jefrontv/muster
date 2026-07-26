@@ -157,7 +157,7 @@ function readEphemeralVmRuntimeStore(userDataPath: string): EphemeralVmRuntimeSt
   } catch {
     throw new EphemeralVmRuntimeStoreError(
       'runtime_error',
-      `Could not read Orca ephemeral VM runtimes at ${path}; the file is invalid.`
+      `Could not read Muster ephemeral VM runtimes at ${path}; the file is invalid.`
     )
   }
 }
@@ -174,7 +174,7 @@ function writeEphemeralVmRuntimeStore(userDataPath: string, store: EphemeralVmRu
     if (error instanceof JsonStringifyByteLimitError) {
       throw new EphemeralVmRuntimeStoreError(
         'runtime_error',
-        `Could not write Orca ephemeral VM runtimes at ${path}; the store exceeds its durable capacity.`
+        `Could not write Muster ephemeral VM runtimes at ${path}; the store exceeds its durable capacity.`
       )
     }
     throw error

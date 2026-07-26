@@ -258,7 +258,7 @@ export class ClaudeRuntimeAuthService {
     if (activeAccount.managedAuthRuntime === 'wsl') {
       if (!this.getOwnedManagedAuthPath(activeAccount)) {
         console.warn(
-          '[claude-runtime-auth] Active WSL managed account is not owned by Orca, restoring system default'
+          '[claude-runtime-auth] Active WSL managed account is not owned by Muster, restoring system default'
         )
         const nextSelection = setSelectedClaudeAccountIdForTarget(
           normalizeClaudeRuntimeSelection(settings),
@@ -296,7 +296,7 @@ export class ClaudeRuntimeAuthService {
 
     if (!this.getOwnedManagedAuthPath(activeAccount)) {
       console.warn(
-        '[claude-runtime-auth] Active managed account is not owned by Orca, restoring system default'
+        '[claude-runtime-auth] Active managed account is not owned by Muster, restoring system default'
       )
       if (this.lastSyncedAccountId !== null) {
         if (
@@ -1024,7 +1024,7 @@ export class ClaudeRuntimeAuthService {
   ): Promise<void> {
     const managedAuthPath = this.getOwnedManagedAuthPath(account)
     if (!managedAuthPath) {
-      throw new Error('Managed Claude auth storage is not owned by Orca.')
+      throw new Error('Managed Claude auth storage is not owned by Muster.')
     }
     if (process.platform === 'darwin') {
       await writeManagedClaudeKeychainCredentials(account.id, credentialsJson)

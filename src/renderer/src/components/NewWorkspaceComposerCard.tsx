@@ -767,13 +767,13 @@ function WorkspaceRunTargetCombobox({
                         <div className="truncate text-sm">
                           {translate(
                             'auto.components.NewWorkspaceComposerCard.addRemoteOrcaServer',
-                            'Add Remote Orca Server'
+                            'Add Remote Muster Server'
                           )}
                         </div>
                         <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
                           {translate(
                             'auto.components.NewWorkspaceComposerCard.addRemoteOrcaServerHint',
-                            'Pair another Orca runtime'
+                            'Pair another Muster runtime'
                           )}
                         </div>
                       </div>

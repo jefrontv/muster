@@ -105,7 +105,7 @@ describe('parseClaudeUsageRecord', () => {
 })
 
 describe('Claude usage aggregation', () => {
-  it('attributes Orca worktree usage and preserves multi-location session breakdowns', async () => {
+  it('attributes Muster worktree usage and preserves multi-location session breakdowns', async () => {
     const attributed = await attributeClaudeUsageTurns(
       [
         {

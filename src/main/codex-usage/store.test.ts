@@ -164,7 +164,7 @@ describe('CodexUsageStore', () => {
     expect(writeFileSync).toHaveBeenCalledTimes(1)
   })
 
-  it('reports no data for Orca scope when only non-Orca Codex usage exists', async () => {
+  it('reports no data for Muster scope when only non-Muster Codex usage exists', async () => {
     const store = createStoreWithState({
       sessions: [
         {
@@ -585,7 +585,7 @@ describe('CodexUsageStore', () => {
     expect(breakdown.find((row) => row.key === 'gpt-5.2-codex')?.sessions).toBe(1)
   })
 
-  it('uses only Orca-scoped models when projecting mixed-scope sessions', async () => {
+  it('uses only Muster-scoped models when projecting mixed-scope sessions', async () => {
     const store = createStoreWithState({
       sessions: [
         {

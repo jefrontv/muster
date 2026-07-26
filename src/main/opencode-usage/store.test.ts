@@ -149,7 +149,7 @@ describe('OpenCodeUsageStore', () => {
     vi.useRealTimers()
   })
 
-  it('reports no data for Orca scope when only non-Orca OpenCode usage exists', async () => {
+  it('reports no data for Muster scope when only non-Muster OpenCode usage exists', async () => {
     const store = createStoreWithState({
       sessions: [
         makeSession({

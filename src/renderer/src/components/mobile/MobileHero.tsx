@@ -135,7 +135,7 @@ export function HeroFlow({
               <p className="mp-lead-sm">
                 {translate(
                   'auto.components.mobile.MobileHero.e75647ace0',
-                  'Scan the QR with your phone or open the install link to grab Orca Mobile.'
+                  'Scan the QR with your phone or open the install link to grab Muster Mobile.'
                 )}
               </p>
               <div className="mp-tab-toggle">
@@ -236,7 +236,10 @@ export function HeroFlow({
                 {getDeviceLabel()}.
               </h2>
               <p className="mp-lead-sm">
-                {translate('auto.components.mobile.MobileHero.d1495e5e64', 'Open Orca Mobile, tap')}{' '}
+                {translate(
+                  'auto.components.mobile.MobileHero.d1495e5e64',
+                  'Open Muster Mobile, tap'
+                )}{' '}
                 <strong>
                   {translate('auto.components.mobile.MobileHero.3aa7bb2d8b', 'Pair Desktop')}
                 </strong>

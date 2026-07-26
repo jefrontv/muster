@@ -238,7 +238,7 @@ export function AgentPermissionsSetting({
         }
         description={translate(
           'auto.components.settings.AgentsPane.agentPermissionsDescription',
-          'Choose whether Orca launches agents with fewer permission prompts or with manual checks.'
+          'Choose whether Muster launches agents with fewer permission prompts or with manual checks.'
         )}
         action={
           <SettingsSegmentedControl<AgentPermissionMode>

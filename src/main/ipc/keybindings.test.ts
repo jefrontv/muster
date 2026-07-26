@@ -75,7 +75,7 @@ describe('registerKeybindingHandlers', () => {
     expect(authorizeExternalPathMock).toHaveBeenCalledWith(snapshot.path)
   })
 
-  it('authorizes the keybindings file before opening it outside Orca', async () => {
+  it('authorizes the keybindings file before opening it outside Muster', async () => {
     openPathMock.mockResolvedValue('')
     registerKeybindingHandlers({ ensureFile: vi.fn(() => snapshot) } as never)
 

@@ -8,15 +8,17 @@ const RECOVERABLE_CODES = new Set([
   'timeout'
 ])
 
+// Why: matched against `error.message.toLowerCase()`, so these must track the product name used
+// in the thrown strings. Renaming display text without renaming these silently stops recovery.
 const RECOVERABLE_MESSAGE_FRAGMENTS = [
-  'could not connect to the remote orca runtime',
-  'remote orca runtime closed the connection',
-  'remote orca runtime connection closed',
-  'remote orca runtime is not connected',
+  'could not connect to the remote muster runtime',
+  'remote muster runtime closed the connection',
+  'remote muster runtime connection closed',
+  'remote muster runtime is not connected',
   'remote runtime connection closed',
   'remote runtime subscription closed before it started',
   'remote terminal stream is not connected',
-  'timed out waiting for the remote orca runtime'
+  'timed out waiting for the remote muster runtime'
 ]
 
 export function isRecoverableRemoteRuntimeConnectionError(

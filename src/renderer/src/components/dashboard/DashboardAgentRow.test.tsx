@@ -131,7 +131,7 @@ describe('DashboardAgentRow', () => {
       makeAgent(
         {},
         {
-          prompt: 'You are working inside Orca, a multi-agent IDE.',
+          prompt: 'You are working inside Muster, a multi-agent IDE.',
           orchestration: {
             taskId: 'task-1',
             dispatchId: 'ctx-1',
@@ -143,7 +143,7 @@ describe('DashboardAgentRow', () => {
     )
 
     expect(markup).toContain('Fix checkout race')
-    expect(markup).not.toContain('You are working inside Orca')
+    expect(markup).not.toContain('You are working inside Muster')
   })
 
   it('shows the active model beside the agent label', () => {

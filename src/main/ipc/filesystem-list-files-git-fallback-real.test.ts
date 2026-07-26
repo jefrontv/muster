@@ -44,7 +44,7 @@ async function initRepo(repoPath: string): Promise<void> {
   await mkdir(repoPath, { recursive: true })
   await execFile('git', ['init', '-q', repoPath])
   await execFile('git', ['config', 'user.email', 'orca@example.invalid'], { cwd: repoPath })
-  await execFile('git', ['config', 'user.name', 'Orca Test'], { cwd: repoPath })
+  await execFile('git', ['config', 'user.name', 'Muster Test'], { cwd: repoPath })
 }
 
 describe('filesystem-list-files real git fallback', () => {

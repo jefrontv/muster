@@ -26,12 +26,15 @@ export function OrcaProfileSignOutConfirmDialog({
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>
-            {translate('auto.components.orca.profiles.signout.confirm.title', 'Sign out of Orca?')}
+            {translate(
+              'auto.components.orca.profiles.signout.confirm.title',
+              'Sign out of Muster?'
+            )}
           </DialogTitle>
           <DialogDescription>
             {translate(
               'auto.components.orca.profiles.signout.confirm.description',
-              "You'll be signed out of Orca on this device. Your local projects and worktrees won't be affected."
+              "You'll be signed out of Muster on this device. Your local projects and worktrees won't be affected."
             )}
           </DialogDescription>
         </DialogHeader>

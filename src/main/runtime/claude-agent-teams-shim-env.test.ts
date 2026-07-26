@@ -16,7 +16,7 @@ afterEach(async () => {
 })
 
 describe('claude agent teams shim env', () => {
-  it('writes a private tmux shim that calls the Orca shim command', async () => {
+  it('writes a private tmux shim that calls the Muster shim command', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-agent-teams-shim-'))
     roots.push(root)
 

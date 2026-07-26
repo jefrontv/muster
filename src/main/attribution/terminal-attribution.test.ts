@@ -86,7 +86,7 @@ describe('applyTerminalAttributionEnv', () => {
     const repo = join(root, 'repo')
     mkdirSync(repo)
     runGit(repo, ['init'])
-    runGit(repo, ['config', 'user.name', 'Orca Test'])
+    runGit(repo, ['config', 'user.name', 'Muster Test'])
     runGit(repo, ['config', 'user.email', 'orca-test@example.com'])
     writeFileSync(join(repo, 'README.md'), 'initial\n')
     runGit(repo, ['add', 'README.md'])
@@ -106,12 +106,12 @@ describe('applyTerminalAttributionEnv', () => {
     runGit(repo, ['commit', '--dry-run', '-m', 'second'], attributionEnv)
 
     expect(runGit(repo, ['rev-parse', 'HEAD']).trim()).toBe(beforeHead)
-    expect(runGit(repo, ['log', '-1', '--format=%B'])).not.toContain('Co-authored-by: Orca')
+    expect(runGit(repo, ['log', '-1', '--format=%B'])).not.toContain('Co-authored-by: Muster')
 
     runGit(repo, ['commit', '-m', 'second'], attributionEnv)
     expect(runGit(repo, ['rev-parse', 'HEAD']).trim()).not.toBe(beforeHead)
     expect(runGit(repo, ['log', '-1', '--format=%B'])).toContain(
-      'Co-authored-by: Orca <help@stably.ai>'
+      'Co-authored-by: Muster <help@stably.ai>'
     )
   })
 
@@ -120,7 +120,7 @@ describe('applyTerminalAttributionEnv', () => {
     const repo = join(root, 'repo')
     mkdirSync(repo)
     runGit(repo, ['init'])
-    runGit(repo, ['config', 'user.name', 'Orca Test'])
+    runGit(repo, ['config', 'user.name', 'Muster Test'])
     runGit(repo, ['config', 'user.email', 'orca-test@example.com'])
     writeFileSync(join(repo, 'README.md'), 'initial\n')
     runGit(repo, ['add', 'README.md'])
@@ -134,7 +134,7 @@ describe('applyTerminalAttributionEnv', () => {
     runGit(repo, ['commit', '-n', '-m', 'initial'], attributionEnv)
 
     expect(runGit(repo, ['log', '-1', '--format=%B'])).toContain(
-      'Co-authored-by: Orca <help@stably.ai>'
+      'Co-authored-by: Muster <help@stably.ai>'
     )
   })
 
@@ -143,7 +143,7 @@ describe('applyTerminalAttributionEnv', () => {
     const repo = join(root, 'repo')
     mkdirSync(repo)
     runGit(repo, ['init'])
-    runGit(repo, ['config', 'user.name', 'Orca Test'])
+    runGit(repo, ['config', 'user.name', 'Muster Test'])
     runGit(repo, ['config', 'user.email', 'orca-test@example.com'])
     writeFileSync(join(repo, 'README.md'), 'initial\n')
     runGit(repo, ['add', 'README.md'])
@@ -159,7 +159,7 @@ describe('applyTerminalAttributionEnv', () => {
     runGit(repo, ['commit', '-am', 'combined message'], attributionEnv)
 
     expect(runGit(repo, ['log', '-1', '--format=%B'])).toContain(
-      'Co-authored-by: Orca <help@stably.ai>'
+      'Co-authored-by: Muster <help@stably.ai>'
     )
   })
 
@@ -168,7 +168,7 @@ describe('applyTerminalAttributionEnv', () => {
     const repo = join(root, 'repo')
     mkdirSync(repo)
     runGit(repo, ['init'])
-    runGit(repo, ['config', 'user.name', 'Orca Test'])
+    runGit(repo, ['config', 'user.name', 'Muster Test'])
     runGit(repo, ['config', 'user.email', 'orca-test@example.com'])
     writeFileSync(join(repo, 'README.md'), 'initial\n')
     runGit(repo, ['add', 'README.md'])
@@ -182,7 +182,7 @@ describe('applyTerminalAttributionEnv', () => {
     runGit(repo, ['-c', 'core.quotePath=false', 'commit', '-m', 'initial'], attributionEnv)
 
     expect(runGit(repo, ['log', '-1', '--format=%B'])).toContain(
-      'Co-authored-by: Orca <help@stably.ai>'
+      'Co-authored-by: Muster <help@stably.ai>'
     )
   })
 
@@ -192,7 +192,7 @@ describe('applyTerminalAttributionEnv', () => {
     const messagePath = join(root, 'message.txt')
     mkdirSync(repo)
     runGit(repo, ['init'])
-    runGit(repo, ['config', 'user.name', 'Orca Test'])
+    runGit(repo, ['config', 'user.name', 'Muster Test'])
     runGit(repo, ['config', 'user.email', 'orca-test@example.com'])
     writeFileSync(join(repo, 'README.md'), 'initial\n')
     writeFileSync(messagePath, 'initial from file\n')
@@ -207,7 +207,7 @@ describe('applyTerminalAttributionEnv', () => {
     runGit(repo, ['commit', '-F', messagePath], attributionEnv)
 
     expect(runGit(repo, ['log', '-1', '--format=%B'])).toContain(
-      'Co-authored-by: Orca <help@stably.ai>'
+      'Co-authored-by: Muster <help@stably.ai>'
     )
     expect(readFileSync(messagePath, 'utf8')).toBe('initial from file\n')
   })
@@ -248,7 +248,7 @@ exit 1
         })
       ).toThrow()
 
-      expect(readFileSync(argsPath, 'utf8')).not.toContain('Co-authored-by: Orca')
+      expect(readFileSync(argsPath, 'utf8')).not.toContain('Co-authored-by: Muster')
     }
   )
 
@@ -296,7 +296,7 @@ exit 1
         env: cleanAttributionEnv(attributionEnv)
       })
 
-      expect(readFileSync(argsPath, 'utf8')).not.toContain('Co-authored-by: Orca')
+      expect(readFileSync(argsPath, 'utf8')).not.toContain('Co-authored-by: Muster')
     }
   )
 
@@ -305,7 +305,7 @@ exit 1
     const repo = join(root, 'repo')
     mkdirSync(repo)
     runGit(repo, ['init'])
-    runGit(repo, ['config', 'user.name', 'Orca Test'])
+    runGit(repo, ['config', 'user.name', 'Muster Test'])
     runGit(repo, ['config', 'user.email', 'orca-test@example.com'])
     const hookPath = join(repo, '.git', 'hooks', 'commit-msg')
     const hookCounterPath = join(repo, 'hook-count')
@@ -318,7 +318,7 @@ if [[ -f "${hookCounterPath}" ]]; then
   count="$(cat "${hookCounterPath}")"
 fi
 printf '%s\\n' "$((count + 1))" >"${hookCounterPath}"
-grep -Fq 'Co-authored-by: Orca <help@stably.ai>' "$1"
+grep -Fq 'Co-authored-by: Muster <help@stably.ai>' "$1"
 `,
       'utf8'
     )
@@ -336,7 +336,7 @@ grep -Fq 'Co-authored-by: Orca <help@stably.ai>' "$1"
 
     expect(readFileSync(hookCounterPath, 'utf8').trim()).toBe('1')
     expect(runGit(repo, ['log', '-1', '--format=%B'])).toContain(
-      'Co-authored-by: Orca <help@stably.ai>'
+      'Co-authored-by: Muster <help@stably.ai>'
     )
   })
 
@@ -385,7 +385,7 @@ exit 1
 
     expect(existsSync(commitPath)).toBe(true)
     expect(existsSync(amendPath)).toBe(false)
-    expect(readFileSync(argsPath, 'utf8')).toContain('Co-authored-by: Orca <help@stably.ai>')
+    expect(readFileSync(argsPath, 'utf8')).toContain('Co-authored-by: Muster <help@stably.ai>')
   })
 
   posixSubprocessIt('passes editor-based commits through without attribution', () => {

@@ -46,7 +46,7 @@ describe('WSL CLI registration registry', () => {
   })
 
   it('skips a registered distro already reconciled by this build against this launcher', async () => {
-    const reconciled = { target: 'C:\\Orca\\resources\\bin\\orca.exe', appVersion: '1.4.138' }
+    const reconciled = { target: 'C:\\Muster\\resources\\bin\\orca.exe', appVersion: '1.4.138' }
     await recordWslCliRegistrationObservations(userDataPath, [
       { distro: 'Ubuntu', inspected: true, managed: true, reconciled }
     ])

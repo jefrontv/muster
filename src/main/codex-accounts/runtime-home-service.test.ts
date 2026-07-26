@@ -1006,7 +1006,7 @@ describe('CodexRuntimeHomeService', () => {
     expect(existsSync(runtimeAuthPath)).toBe(false)
   })
 
-  it('returns the Orca-managed runtime home for Codex launch and rate-limit preparation', async () => {
+  it('returns the Muster-managed runtime home for Codex launch and rate-limit preparation', async () => {
     const markerPath = join(
       testState.userDataDir,
       'codex-session-backfill',

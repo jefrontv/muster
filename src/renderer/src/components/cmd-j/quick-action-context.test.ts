@@ -109,7 +109,7 @@ describe('Cmd+J quick action context', () => {
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
       openAddQuickCommand: () => {},
-    openSitesPage: () => {}
+      openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     expect(
@@ -144,7 +144,7 @@ describe('Cmd+J quick action context', () => {
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
       openAddQuickCommand: () => {},
-    openSitesPage: () => {}
+      openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     for (const actionId of workspaceActions) {
@@ -225,7 +225,7 @@ describe('Cmd+J quick action context', () => {
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
       openAddQuickCommand: () => {},
-    openSitesPage: () => {}
+      openSitesPage: () => {}
     })
 
     expect(context.activeGroupId).toBe('first-group')
@@ -252,7 +252,7 @@ describe('Cmd+J quick action context', () => {
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
       openAddQuickCommand: () => {},
-    openSitesPage: () => {}
+      openSitesPage: () => {}
     })
 
     expect(context.isLoading).toBe(true)
@@ -273,7 +273,7 @@ describe('Cmd+J quick action context', () => {
       openCreateWorkspace: () => {},
       deleteActiveWorkspace: () => {},
       openAddQuickCommand: () => {},
-    openSitesPage: () => {}
+      openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     await expect(action?.run(context)).resolves.toEqual({
@@ -298,7 +298,7 @@ describe('Cmd+J quick action context', () => {
         calls.push('delete')
       },
       openAddQuickCommand: () => {},
-    openSitesPage: () => {}
+      openSitesPage: () => {}
     } satisfies CmdJQuickActionContext
 
     await expect(action?.run(context)).resolves.toEqual({ status: 'ok' })

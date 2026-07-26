@@ -377,7 +377,7 @@ describe('Codex WSL runtime hook install', () => {
     }
   )
 
-  it('installs trusted WSL hooks and removes only Orca entries when disabled', () => {
+  it('installs trusted WSL hooks and removes only Muster entries when disabled', () => {
     const plan = createTestPlan()
     const userCommand = '/bin/sh /home/alice/user-hook.sh'
     writeFileSync(

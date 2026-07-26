@@ -11,11 +11,11 @@ vi.mock('electron', () => ({
   }
 }))
 
-describe('Orca cloud auth config', () => {
+describe('Muster cloud auth config', () => {
   it('reports unconfigured without both API URL and client ID', () => {
     expect(getOrcaCloudAuthConfig({})).toEqual({
       configured: false,
-      setupMessage: 'Orca Cloud sign-in is not configured for this build.'
+      setupMessage: 'Muster Cloud sign-in is not configured for this build.'
     })
   })
 

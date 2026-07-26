@@ -22,7 +22,7 @@ import {
 } from '../agent-hooks/installer-utils-remote'
 
 const HERMES_PLUGIN_NAME = 'orca-status'
-const HERMES_PLUGIN_MARKER = 'Managed by Orca. Do not edit; changes may be overwritten.'
+const HERMES_PLUGIN_MARKER = 'Managed by Muster. Do not edit; changes may be overwritten.'
 
 const HERMES_EVENTS = [
   'on_session_start',
@@ -200,7 +200,7 @@ function getPluginFilesState(pluginDir = getPluginDir()): {
     return {
       present: true,
       managed,
-      detail: managed ? null : 'Hermes orca-status plugin exists but is not Orca-managed'
+      detail: managed ? null : 'Hermes orca-status plugin exists but is not Muster-managed'
     }
   } catch (error) {
     return {
@@ -272,8 +272,8 @@ function getPluginManifest(): string {
     `# ${HERMES_PLUGIN_MARKER}`,
     `name: ${HERMES_PLUGIN_NAME}`,
     'version: 1.0.0',
-    'description: "Reports Hermes Agent lifecycle events to Orca."',
-    'author: "Orca"',
+    'description: "Reports Hermes Agent lifecycle events to Muster."',
+    'author: "Muster"',
     'kind: standalone',
     'provides_hooks:',
     ...HERMES_EVENTS.map((event) => `  - ${event}`),

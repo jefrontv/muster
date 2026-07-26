@@ -210,7 +210,7 @@ describe('web runtime environment identity', () => {
 
     await expect(
       globals.window.api.runtimeEnvironments.resolve({ selector: 'web-server-a' })
-    ).rejects.toThrow('Unknown Orca runtime environment: web-server-a')
+    ).rejects.toThrow('Unknown Muster runtime environment: web-server-a')
   })
 
   it('keeps pairing state separate from generic Active Server settings writes', async () => {
@@ -282,7 +282,7 @@ describe('web runtime environment identity', () => {
       globals.window.api.settings.setActiveRuntimeEnvironmentPreference({
         environmentId: 'unknown-server'
       })
-    ).rejects.toThrow('Unknown Orca runtime environment: unknown-server')
+    ).rejects.toThrow('Unknown Muster runtime environment: unknown-server')
     expect(JSON.parse(globals.storage.getItem('orca.web.settings.v1') ?? '{}')).toMatchObject({
       activeRuntimeEnvironmentId: paired.environment.id
     })
@@ -317,7 +317,7 @@ describe('web runtime environment identity', () => {
 
     await expect(
       globals.window.api.runtimeEnvironments.resolve({ selector: 'web-server-old' })
-    ).rejects.toThrow('Unknown Orca runtime environment: web-server-old')
+    ).rejects.toThrow('Unknown Muster runtime environment: web-server-old')
   })
 })
 
@@ -2404,7 +2404,7 @@ describe('web worktree preload API', () => {
     })
 
     await expect(serverAList).rejects.toThrow(
-      'The paired Orca server changed while the request was in progress.'
+      'The paired Muster server changed while the request was in progress.'
     )
     await expect(globals.window.api.worktrees.listAll()).resolves.toMatchObject([
       { id: 'worktree-b', runtimeOwnerEnvironmentId: paired.environment.id }
@@ -2523,7 +2523,7 @@ describe('web worktree preload API', () => {
     })
 
     await expect(detected).rejects.toThrow(
-      'The paired Orca server changed while the request was in progress.'
+      'The paired Muster server changed while the request was in progress.'
     )
     expect(runtimeCalls).toEqual(['worktree.detectedList'])
   })

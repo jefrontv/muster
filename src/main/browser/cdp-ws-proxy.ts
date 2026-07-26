@@ -502,7 +502,7 @@ export class CdpWsProxy {
     if (unsupportedParam) {
       this.sendError(
         clientId,
-        `Page.reload parameter "${unsupportedParam}" is not supported for Orca tab reloads`,
+        `Page.reload parameter "${unsupportedParam}" is not supported for Muster tab reloads`,
         client
       )
       return

@@ -156,12 +156,12 @@ export function OrcaProfileOrgMembersDialog({
             {orgName
               ? translate(
                   'auto.components.orca.profiles.org.members.subtitle.named',
-                  'People in {{orgName}} who can collaborate on Orca.',
+                  'People in {{orgName}} who can collaborate on Muster.',
                   { orgName }
                 )
               : translate(
                   'auto.components.orca.profiles.org.members.subtitle.default',
-                  'People in your organization who can collaborate on Orca.'
+                  'People in your organization who can collaborate on Muster.'
                 )}
           </DialogDescription>
         </DialogHeader>

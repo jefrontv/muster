@@ -481,8 +481,8 @@ describe('runRemoteOrcaCli', () => {
     )
 
     expect(result.exitCode).toBe(1)
-    expect(result.stderr).toContain('Unsupported SSH Orca CLI command: worktree list')
-    expect(result.stderr).toContain('full Orca CLI bridge unavailable')
+    expect(result.stderr).toContain('Unsupported SSH Muster CLI command: worktree list')
+    expect(result.stderr).toContain('full Muster CLI bridge unavailable')
   })
 
   it('does not parse Android --activity values as Linear boolean flags', async () => {
@@ -500,7 +500,7 @@ describe('runRemoteOrcaCli', () => {
 
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain(
-      'Unsupported SSH Orca CLI command: emulator launch com.acme.app'
+      'Unsupported SSH Muster CLI command: emulator launch com.acme.app'
     )
     expect(result.stderr).not.toContain('com.acme.app .MainActivity')
   })

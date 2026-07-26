@@ -8,40 +8,40 @@ const ROOT_HELP_TEXT = `orca
 Usage: orca <command> [options]
 
 Startup:
-  open                      Launch Orca and wait for the runtime to be reachable
-  serve                     Start a headless Orca runtime server
+  open                      Launch Muster and wait for the runtime to be reachable
+  serve                     Start a headless Muster runtime server
   status                    Show app/runtime/graph readiness
 
 Diagnostics:
-  diagnostics memory        Collect a memory snapshot for Orca and managed terminals
+  diagnostics memory        Collect a memory snapshot for Muster and managed terminals
 
 Agent Discovery:
   agent-context             Print the machine-readable command schema for agents
 
 Skills:
-  skills list               List version-matched skill guides bundled with this Orca CLI
+  skills list               List version-matched skill guides bundled with this Muster CLI
   skills get                Print a version-matched skill guide as Markdown
 
 Environments:
-  environment add           Save a remote Orca runtime from a pairing code
-  environment list          List saved remote Orca runtimes
-  environment show          Show one saved remote Orca runtime
-  environment rm            Remove a saved remote Orca runtime
+  environment add           Save a remote Muster runtime from a pairing code
+  environment list          List saved remote Muster runtimes
+  environment show          Show one saved remote Muster runtime
+  environment rm            Remove a saved remote Muster runtime
 
 Environment Recipes:
   vm recipe doctor          Validate a per-workspace environment recipe
 
 Automations:
-  automations list          List scheduled Orca automations
-  automations show          Show one Orca automation
-  automations create        Create a scheduled Orca automation
-  automations edit          Edit an Orca automation
-  automations remove        Remove an Orca automation and its run history
-  automations run           Run an Orca automation now
+  automations list          List scheduled Muster automations
+  automations show          Show one Muster automation
+  automations create        Create a scheduled Muster automation
+  automations edit          Edit a Muster automation
+  automations remove        Remove a Muster automation and its run history
+  automations run           Run a Muster automation now
   automations runs          List automation run history
 
 Projects:
-  project list              List durable projects known to Orca
+  project list              List durable projects known to Muster
   project setups            List project host setups
   project setup-existing-folder Make a project available on a host by importing an existing folder
   project setup-clone       Make a project available on a host by cloning a repository
@@ -50,28 +50,28 @@ Projects:
   project setup-delete      Remove a project host setup
 
 Repos:
-  repo list                 List repos registered in Orca
-  repo add                  Add a project to Orca by filesystem path
+  repo list                 List repos registered in Muster
+  repo add                  Add a project to Muster by filesystem path
   repo show                 Show one registered repo
   repo set-base-ref         Set the repo's default base ref for future worktrees
   repo search-refs          Search branch/tag refs within a repo
 
 Worktrees:
-  worktree list             List Orca-managed worktrees
+  worktree list             List Muster-managed worktrees
   worktree show             Show one worktree
-  worktree current          Show the Orca-managed worktree for the current directory
-  worktree create           Create a new Orca-managed worktree
-  worktree set              Update Orca metadata for a worktree
-  worktree rm               Remove a worktree from Orca and git
+  worktree current          Show the Muster-managed worktree for the current directory
+  worktree create           Create a new Muster-managed worktree
+  worktree set              Update Muster metadata for a worktree
+  worktree rm               Remove a worktree from Muster and git
   worktree ps               Show a compact orchestration summary across worktrees
 
 Files:
-  file open                 Open a workspace file in the Orca editor
-  file diff                 Open a workspace file diff in the Orca editor
+  file open                 Open a workspace file in the Muster editor
+  file diff                 Open a workspace file diff in the Muster editor
   file open-changed         Open all git-changed files for a workspace
 
 Terminals:
-  terminal list             List live Orca-managed terminals
+  terminal list             List live Muster-managed terminals
   terminal show             Show terminal metadata and preview
   terminal read             Read bounded terminal output
   terminal send             Send input to a live terminal
@@ -121,7 +121,7 @@ Linear:
   linear                    Read Linear ticket context for agents
 
 Mobile Emulator (iOS Simulator):
-  emulator list             List available/running emulators (Orca-managed + raw serve-sim)
+  emulator list             List available/running emulators (Muster-managed + raw serve-sim)
   emulator attach <device>  Attach/start helper and make active for the worktree
   emulator tap <x> <y>      Tap at normalized 0..1 coords (preferred for single taps)
   emulator type <text>      Type text (US ASCII only)
@@ -256,12 +256,12 @@ Wait Options:
 
 Output Options:
   --json                    Emit machine-readable JSON instead of human text
-  --pairing-code <code>      Connect to a remote Orca runtime using an orca://pair?... code
+  --pairing-code <code>      Connect to a remote Muster runtime using an orca://pair?... code
   --environment <selector>   Connect using a saved environment id or name
   --help                    Show this help message
 
 Behavior:
-  Most commands require a running Orca runtime. If Orca is not open yet, run \`orca open\` first.
+  Most commands require a running Muster runtime. If Muster is not open yet, run \`orca open\` first.
   Remote runtime access can also be supplied with ORCA_PAIRING_CODE or ORCA_ENVIRONMENT.
   Use selectors for discovery and handles for repeated live terminal operations.
 
@@ -481,19 +481,19 @@ export function formatFlagHelp(flag: string): string {
     agent: '--agent <id>          Launch a known TUI agent in the first terminal',
     'base-branch': '--base-branch <ref>    Base branch/ref to create the worktree from',
     command: '--command <text>       Command to run in the terminal on startup',
-    comment: '--comment <text>       Comment stored in Orca metadata',
+    comment: '--comment <text>       Comment stored in Muster metadata',
     cursor: '--cursor <n>           Line cursor from a previous read (returns only new output)',
     action: '--action <name>       Secondary accessibility action name',
-    activate: '--activate             Reveal the new worktree in the Orca app',
+    activate: '--activate             Reveal the new worktree in the Muster app',
     app: '--app <app>            App name, bundle ID, or pid:N',
     direction:
       '--direction <dir>      Direction: up|down|left|right for scroll, horizontal|vertical for split',
-    'display-name': '--display-name <name>  Override the Orca display name',
+    'display-name': '--display-name <name>  Override the Muster display name',
     'element-index': '--element-index <n>   Element index from get-app-state',
     title: '--title <text>         Custom title for the terminal tab (omit to reset)',
     enter: '--enter                Append Enter after sending text',
     force: '--force                Force worktree removal when supported',
-    focus: '--focus                Reveal the created terminal session in Orca',
+    focus: '--focus                Reveal the created terminal session in Muster',
     for: '--for exit|tui-idle    Wait condition to satisfy',
     'from-element-index': '--from-element-index <n> Source element index from get-app-state',
     'from-x': '--from-x <x>           Source window-local x coordinate',
@@ -576,7 +576,7 @@ export function formatFlagHelp(flag: string): string {
   }
 
   if (flag === 'current') {
-    return '--current              Use the current Orca worktree linked Linear issue'
+    return '--current              Use the current Muster worktree linked Linear issue'
   }
   if (flag === 'comments') {
     return '--comments             Include threaded Linear comments'

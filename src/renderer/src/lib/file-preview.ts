@@ -6,7 +6,7 @@ import { findSiblingGroupId } from '@/store/slices/tabs'
 
 export type PreviewableLanguage = 'html'
 export const REMOTE_FILE_BROWSER_UNSUPPORTED_MESSAGE =
-  'Open in Orca Browser is only available for local files.'
+  'Open in Muster Browser is only available for local files.'
 
 export type WorkspaceFileBrowserOpenTarget =
   | {

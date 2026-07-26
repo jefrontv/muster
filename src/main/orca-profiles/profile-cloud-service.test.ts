@@ -102,7 +102,7 @@ function mockSuccessfulConnect(expiresAt = futureExpiresAt()): void {
   } satisfies OrcaCloudSessionExchangeResponse)
 }
 
-describe('Orca cloud profile service', () => {
+describe('Muster cloud profile service', () => {
   beforeEach(() => {
     userDataPath = mkdtempSync(join(tmpdir(), 'orca-cloud-service-'))
     beginOrcaCloudPkceFlowMock.mockReset()
@@ -190,7 +190,7 @@ describe('Orca cloud profile service', () => {
       state: 'unconfigured',
       persistence: 'encrypted',
       cloud: cloudSummary,
-      setupMessage: 'Orca Cloud sign-in is not configured for this build.'
+      setupMessage: 'Muster Cloud sign-in is not configured for this build.'
     })
     expect(getCurrentOrcaProfileAuthStatus(userDataPath).organizations).toBeUndefined()
     expect(getCurrentOrcaProfileAuthStatus(userDataPath).capabilities).toBeUndefined()

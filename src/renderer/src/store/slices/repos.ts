@@ -496,7 +496,7 @@ async function assertProjectHostSetupRuntimeCapability(
   await assertRuntimeEnvironmentCapability(
     target.environmentId,
     PROJECT_HOST_SETUP_RUNTIME_CAPABILITY,
-    'The selected Orca server does not support project host setup yet. Update Orca on the server and try again.',
+    'The selected Muster server does not support project host setup yet. Update Muster on the server and try again.',
     15_000
   )
 }
@@ -511,7 +511,7 @@ async function assertProjectHostSetupMutationRuntimeCapabilities(
   await assertRuntimeEnvironmentCapability(
     target.environmentId,
     WORKSPACE_RUN_CONTEXT_RUNTIME_CAPABILITY,
-    'The selected Orca server does not support explicit workspace run hosts yet. Update Orca on the server and try again.',
+    'The selected Muster server does not support explicit workspace run hosts yet. Update Muster on the server and try again.',
     15_000
   )
 }
@@ -1355,7 +1355,7 @@ async function fetchRuntimeAddProjectPathStatus(args: {
     FOLDER_WORKSPACE_PATH_STATUS_RUNTIME_CAPABILITY,
     translate(
       'auto.store.slices.repos.2975400634',
-      'Update Orca server to open non-Git folders on this runtime.'
+      'Update Muster server to open non-Git folders on this runtime.'
     ),
     15_000
   )
@@ -2449,7 +2449,7 @@ export const createRepoSlice: StateCreator<AppState, [], [], RepoSlice> = (set, 
       if (stillExists) {
         failedProjectRemovals.push({
           projectId,
-          reason: 'Project remained in Orca after removeProject completed.'
+          reason: 'Project remained in Muster after removeProject completed.'
         })
       } else {
         removedProjectIds.push(projectId)

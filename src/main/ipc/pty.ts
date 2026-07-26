@@ -4709,7 +4709,7 @@ export function registerPtyHandlers(
         }
         const relayResultId = getRelayPtyId(args.connectionId, result.id)
         if (store && args.connectionId) {
-          // Why: remote PTYs live in the SSH relay grace window after Orca detaches; persist IDs immediately so reconnect reattaches instead of spawning a fresh shell.
+          // Why: remote PTYs live in the SSH relay grace window after Muster detaches; persist IDs immediately so reconnect reattaches instead of spawning a fresh shell.
           store.upsertSshRemotePtyLease({
             targetId: args.connectionId,
             ptyId: relayResultId,

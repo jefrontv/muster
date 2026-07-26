@@ -15,7 +15,7 @@ import {
 } from '../agent-hooks/installer-utils-remote'
 
 const AMP_PLUGIN_FILE = 'orca-agent-status.ts'
-const AMP_PLUGIN_MARKER = 'Managed by Orca. Do not edit; changes may be overwritten.'
+const AMP_PLUGIN_MARKER = 'Managed by Muster. Do not edit; changes may be overwritten.'
 
 type PluginFileState =
   | { kind: 'absent' }
@@ -87,7 +87,7 @@ function statusFromState(pluginPath: string, state: PluginFileState): AgentHookI
         state: 'partial',
         configPath: pluginPath,
         managedHooksPresent: false,
-        detail: 'Amp Orca status plugin exists but is not Orca-managed'
+        detail: 'Amp Muster status plugin exists but is not Muster-managed'
       }
     case 'error':
       return {
@@ -175,7 +175,7 @@ function getAmpPluginSource(): string {
     '}',
     '',
     'function resolveHookCoords(): HookCoords {',
-    '  // Why: Amp sessions can outlive an Orca restart; the endpoint file is',
+    '  // Why: Amp sessions can outlive a Muster restart; the endpoint file is',
     '  // rewritten on each start, so read it per event before falling back to env.',
     '  const fileEnv = readEndpointFile() ?? {}',
     '  return {',
@@ -242,7 +242,7 @@ function getAmpPluginSource(): string {
     '      })',
     '    })',
     '  } catch {',
-    '    // Why: Orca status reporting must never affect the Amp run.',
+    '    // Why: Muster status reporting must never affect the Amp run.',
     '  } finally {',
     '    clearTimeout(timeout)',
     '  }',
@@ -271,7 +271,7 @@ function getAmpPluginSource(): string {
     '}',
     'function enqueuePost(hookEventName: string, payload: Record<string, unknown>): void {',
     '  // Why: keep hook callbacks non-blocking without retaining unbounded',
-    '  // payload closures when Orca is down and each POST waits for timeout.',
+    '  // payload closures when Muster is down and each POST waits for timeout.',
     '  if (postQueue.length >= MAX_PENDING_POSTS) {',
     '    postQueue.shift()',
     '  }',

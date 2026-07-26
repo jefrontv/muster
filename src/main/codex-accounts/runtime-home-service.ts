@@ -1504,7 +1504,7 @@ export class CodexRuntimeHomeService {
           this.lastWrittenAuthJson = runtimeAuth
           return
         }
-        // Why: mirror external logins/logouts into Orca's runtime home so unmanaged Codex sessions keep matching the current system-default state.
+        // Why: mirror external logins/logouts into Muster's runtime home so unmanaged Codex sessions keep matching the current system-default state.
         this.captureSystemDefaultSnapshot({ force: true })
         this.writeRuntimeAuth(systemDefaultAuth)
       }
@@ -1525,7 +1525,7 @@ export class CodexRuntimeHomeService {
     }
 
     if (options.detectExternalLogin && !existsSync(runtimeAuthPath)) {
-      // Why: with Orca owning CODEX_HOME, a deleted runtime auth.json is a local logout, not a cue to restore the user's real ~/.codex snapshot.
+      // Why: with Muster owning CODEX_HOME, a deleted runtime auth.json is a local logout, not a cue to restore the user's real ~/.codex snapshot.
       this.persistRuntimeLogoutMarker()
       this.lastWrittenAuthJson = null
       return
@@ -1579,7 +1579,7 @@ export class CodexRuntimeHomeService {
   }
 
   private clearRuntimeAuthAfterSystemDefaultLogout(runtimeAuthPath: string): void {
-    // Why: a vanished ~/.codex auth means external logout for unmanaged sessions, even if runtime auth already refreshed in Orca's CODEX_HOME.
+    // Why: a vanished ~/.codex auth means external logout for unmanaged sessions, even if runtime auth already refreshed in Muster's CODEX_HOME.
     rmSync(runtimeAuthPath, { force: true })
     this.captureSystemDefaultSnapshot({ force: true })
     this.persistRuntimeLogoutMarker()

@@ -1,5 +1,5 @@
-const MANAGED_MARKER = '# Orca managed WSL CLI launcher'
-const BRIDGE_MANAGED_MARKER = '# Orca managed WSL CLI PowerShell bridge'
+const MANAGED_MARKER = '# Muster managed WSL CLI launcher'
+const BRIDGE_MANAGED_MARKER = '# Muster managed WSL CLI PowerShell bridge'
 
 export function buildWslLauncher(
   windowsLauncherPath: string,
@@ -17,7 +17,7 @@ if command -v powershell.exe >/dev/null 2>&1; then
 elif [ -x /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe ]; then
   ORCA_POWERSHELL=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
 else
-  echo "Orca WSL CLI requires Windows interop and could not find powershell.exe." >&2
+  echo "Muster WSL CLI requires Windows interop and could not find powershell.exe." >&2
   exit 1
 fi
 # Why: a shell can outlive a deleted worktree; keep explicit CLI selectors and

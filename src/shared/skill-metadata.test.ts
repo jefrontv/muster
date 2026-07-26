@@ -10,7 +10,7 @@ description: >-
   keep worktree comments current.
 ---
 
-# Orca CLI
+# Muster CLI
 `)
 
     expect(summary).toEqual({

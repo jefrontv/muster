@@ -4702,7 +4702,8 @@ export class Store {
   upsertSite(site: Site): Site {
     const sites = this.state.sites ?? []
     const index = sites.findIndex((entry) => entry.id === site.id)
-    this.state.sites = index === -1 ? [...sites, site] : sites.map((e, i) => (i === index ? site : e))
+    this.state.sites =
+      index === -1 ? [...sites, site] : sites.map((e, i) => (i === index ? site : e))
     this.scheduleSave()
     return site
   }

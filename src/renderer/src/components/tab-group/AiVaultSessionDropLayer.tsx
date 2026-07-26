@@ -226,7 +226,7 @@ export default function AiVaultSessionDropLayer({
         .then((result) => {
           const startup = result.useRealCodexHome ? payload.realHomeStartup : payload
           if (!startup) {
-            throw new Error('Orca could not prepare this legacy Codex session. Retry resume.')
+            throw new Error('Muster could not prepare this legacy Codex session. Retry resume.')
           }
           const providerSession = getAiVaultAgentProviderSession({
             agent: payload.agent,

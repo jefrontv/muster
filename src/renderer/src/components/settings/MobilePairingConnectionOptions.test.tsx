@@ -65,13 +65,13 @@ describe('MobilePairingConnectionOptions', () => {
 
   afterEach(() => cleanup())
 
-  it('shows a compact Sign in row when Orca Relay is selected and signed out', async () => {
+  it('shows a compact Sign in row when Muster Relay is selected and signed out', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<MobilePairingConnectionOptions value="automatic" onChange={onChange} />)
 
     expect(screen.getByTestId('anywhere-sign-in-panel')).toBeVisible()
-    expect(screen.getByText('Sign in to use Orca Mobile Relay.')).toBeVisible()
+    expect(screen.getByText('Sign in to use Muster Mobile Relay.')).toBeVisible()
     // Why: do not surface build-setup diagnostics in the pairing flow.
     expect(screen.queryByText(/not configured for this build/i)).toBeNull()
 
@@ -109,7 +109,7 @@ describe('MobilePairingConnectionOptions', () => {
     const onChange = vi.fn()
     render(<MobilePairingConnectionOptions value="automatic" onChange={onChange} />)
 
-    screen.getByRole('radio', { name: /Orca Relay/i }).focus()
+    screen.getByRole('radio', { name: /Muster Relay/i }).focus()
     await user.keyboard('{ArrowDown}')
     expect(onChange).toHaveBeenCalledWith('local-only')
   })
@@ -126,7 +126,7 @@ describe('MobilePairingConnectionOptions', () => {
       screen.getByText('Phone must be on this Wi‑Fi or your Tailscale. No sign-in.')
     ).toBeVisible()
 
-    await user.click(screen.getByRole('radio', { name: /Orca Relay/i }))
+    await user.click(screen.getByRole('radio', { name: /Muster Relay/i }))
     expect(onChange).toHaveBeenCalledWith('automatic')
   })
 
@@ -140,7 +140,7 @@ describe('MobilePairingConnectionOptions', () => {
     expect(screen.getByTestId('anywhere-sign-in-panel')).toBeVisible()
   })
 
-  it('shows relay status when signed in on Orca Relay', async () => {
+  it('shows relay status when signed in on Muster Relay', async () => {
     mocks.state = {
       orcaProfileAuthStatus: {
         activeProfileId: 'profile-1',

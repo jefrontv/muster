@@ -1197,7 +1197,7 @@ function Settings(): React.JSX.Element {
                   )}
                   description={translate(
                     'auto.components.settings.Settings.21f09426ea',
-                    'Optional. Orca works with your existing provider logins; add accounts only if you want Orca to help switch between them.'
+                    'Optional. Muster works with your existing provider logins; add accounts only if you want Muster to help switch between them.'
                   )}
                   badge={translate(
                     'auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf',
@@ -1223,7 +1223,7 @@ function Settings(): React.JSX.Element {
                   title={translate('auto.components.settings.Settings.00c3a7950d', 'Orchestration')}
                   description={translate(
                     'auto.components.settings.Settings.475980f53d',
-                    'Coordinate multiple coding agents through Orca.'
+                    'Coordinate multiple coding agents through Muster.'
                   )}
                   searchEntries={getSectionSearchEntries('orchestration')}
                 >
@@ -1285,7 +1285,7 @@ function Settings(): React.JSX.Element {
                   )}
                   description={translate(
                     'auto.components.settings.Settings.6855b0f77d',
-                    'Finish the core workflows that make Orca useful for parallel agent work.'
+                    'Finish the core workflows that make Muster useful for parallel agent work.'
                   )}
                   searchEntries={getSectionSearchEntries('setup-guide')}
                   bodyClassName="overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none"
@@ -1471,7 +1471,7 @@ function Settings(): React.JSX.Element {
                     )}
                     description={translate(
                       'auto.components.settings.Settings.01f9d36292',
-                      'Configure mobile emulator support for Orca and coding agents.'
+                      'Configure mobile emulator support for Muster and coding agents.'
                     )}
                     searchEntries={getSectionSearchEntries('mobile-emulator')}
                   >
@@ -1584,7 +1584,7 @@ function Settings(): React.JSX.Element {
                   title={translate('auto.components.settings.Settings.954a8f5aef', 'Stats & Usage')}
                   description={translate(
                     'auto.components.settings.Settings.8acf3f22e0',
-                    'Orca stats plus Claude, Codex, OpenCode token analytics and Grok subscription usage.'
+                    'Muster stats plus Claude, Codex, OpenCode token analytics and Grok subscription usage.'
                   )}
                   searchEntries={getSectionSearchEntries('stats')}
                 >
@@ -1595,18 +1595,18 @@ function Settings(): React.JSX.Element {
                   id="servers"
                   title={translate(
                     'auto.components.settings.Settings.bd0181eeca',
-                    'Remote Orca Servers'
+                    'Remote Muster Servers'
                   )}
                   badge="Beta"
                   description={
                     isWebClient
                       ? translate(
                           'auto.components.settings.Settings.7686cb5c36',
-                          'Connect this browser to a saved Orca server.'
+                          'Connect this browser to a saved Muster server.'
                         )
                       : translate(
                           'auto.components.settings.Settings.b5ee17826b',
-                          'Pair remote Orca runtimes for persistent sessions, richer remote state, and web or mobile handoff.'
+                          'Pair remote Muster runtimes for persistent sessions, richer remote state, and web or mobile handoff.'
                         )
                   }
                   searchEntries={getSectionSearchEntries('servers')}

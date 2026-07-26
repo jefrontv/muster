@@ -251,7 +251,7 @@ describe('browserManager', () => {
     expect(shellOpenExternalMock).not.toHaveBeenCalled()
   })
 
-  it('keeps plain links current and routes explicit new-tab gestures to Orca tabs', async () => {
+  it('keeps plain links current and routes explicit new-tab gestures to Muster tabs', async () => {
     const rendererSendMock = vi.fn()
     const executeJavaScriptInIsolatedWorldMock = vi.fn().mockResolvedValue(undefined)
     const guest = {
@@ -1045,7 +1045,7 @@ describe('browserManager', () => {
     expect(restoreScript).toContain('state.setActiveTabType("terminal");')
   })
 
-  it('does not focus the Orca window while preparing a screenshot', async () => {
+  it('does not focus the Muster window while preparing a screenshot', async () => {
     const rendererExecuteJavaScriptMock = vi.fn().mockResolvedValueOnce({
       prevTabType: 'terminal',
       prevActiveWorktreeId: 'wt-1',
@@ -1095,7 +1095,7 @@ describe('browserManager', () => {
     expect(browserWindowFromWebContentsMock).not.toHaveBeenCalled()
   })
 
-  it('offers opening a link in another Orca browser tab from the guest context menu', () => {
+  it('offers opening a link in another Muster browser tab from the guest context menu', () => {
     const rendererSendMock = vi.fn()
     const guest = {
       id: 104,

@@ -1930,10 +1930,10 @@ function App(): React.JSX.Element {
                 <ContextMenuTrigger asChild>
                   <div
                     className="titlebar-app-name"
-                    aria-label={translate('auto.App.5096cbbc86', 'Orca')}
+                    aria-label={translate('auto.App.5096cbbc86', 'Muster')}
                   >
                     <span className="titlebar-app-name-main">
-                      {translate('auto.App.5096cbbc86', 'Orca')}
+                      {translate('auto.App.5096cbbc86', 'Muster')}
                     </span>
                   </div>
                 </ContextMenuTrigger>
@@ -2250,7 +2250,7 @@ function App(): React.JSX.Element {
                               title={translate('auto.App.b7a714db1e', 'This page hit an error.')}
                               description={translate(
                                 'auto.App.03a14f6b5b',
-                                'Retry the page or navigate to another Orca surface.'
+                                'Retry the page or navigate to another Muster surface.'
                               )}
                             >
                               {activeView === 'settings' ? <Settings /> : null}

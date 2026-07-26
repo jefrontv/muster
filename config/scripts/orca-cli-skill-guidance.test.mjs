@@ -21,8 +21,8 @@ describe('orca CLI skill guidance', () => {
   it('keeps independent worktree lineage separate from Git base selection', () => {
     const skill = readSkill()
 
-    expect(skill).toContain('`--no-parent` only controls Orca lineage')
-    expect(skill).toContain('omit `--base-branch` so Orca uses the repo default base')
+    expect(skill).toContain('`--no-parent` only controls Muster lineage')
+    expect(skill).toContain('omit `--base-branch` so Muster uses the repo default base')
     expect(skill).toContain('Never base it on the current feature branch')
   })
 
@@ -131,7 +131,7 @@ describe('orca CLI install stub', () => {
   it('does not mistake resolution or execution failures for an older binary', () => {
     const stub = readSkill(stubPath).replace(/\s+/gu, ' ')
 
-    // Falling through can silently pair a version-matched guide with the wrong Orca build.
+    // Falling through can silently pair a version-matched guide with the wrong Muster build.
     expect(stub).toContain('report its exact error and stop')
     expect(stub).toContain('Do not fall through to another executable')
     expect(stub).toContain('Another failure is not proof of an older binary')

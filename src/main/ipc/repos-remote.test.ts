@@ -1742,7 +1742,7 @@ describe('repos:add + repos:clone', () => {
     expect(result).toHaveProperty('repo.badgeColor', DEFAULT_REPO_BADGE_COLOR)
   })
 
-  it('defaults new git repos:add records to hiding non-Orca worktrees', async () => {
+  it('defaults new git repos:add records to hiding non-Muster worktrees', async () => {
     const result = await handlers.get('repos:add')!(null, { path: '/tmp/from-add', kind: 'git' })
 
     expect(mockStore.addRepo).toHaveBeenCalledWith(

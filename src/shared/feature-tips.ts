@@ -33,7 +33,7 @@ export const FEATURE_TIPS = [
     id: 'orca-cli',
     priority: 'new',
     eyebrow: 'Tip',
-    title: 'Let agents drive Orca with the Orca CLI',
+    title: 'Let agents drive Muster with the Muster CLI',
     description: 'Enable agents to coordinate child worktrees and communicate between worktrees.',
     action: 'setup-cli',
     ctaLabel: 'Install CLI & Skills',
@@ -58,7 +58,7 @@ export const FEATURE_TIPS = [
     eyebrow: 'Tip',
     title: 'Voice Dictation is here',
     description:
-      'Speak into any focused pane and Orca will transcribe it. Press the dictation shortcut to start and stop.',
+      'Speak into any focused pane and Muster will transcribe it. Press the dictation shortcut to start and stop.',
     action: 'enable-voice',
     ctaLabel: 'Set Up Voice',
     completedByFeatureInteractions: ['voice-dictation']

@@ -328,7 +328,7 @@ export function UpdateCard() {
         ? {
             variant: 'http1Compatibility',
             title: translate('auto.components.UpdateCard.1339b82cee', 'HTTP/2 Download Blocked'),
-            summary: 'Orca can retry through HTTP/1.1 compatibility mode.',
+            summary: 'Muster can retry through HTTP/1.1 compatibility mode.',
             explainer: translate(
               'auto.components.UpdateCard.90559b14e3',
               'This turns on a process-wide Electron networking switch after restart. Use it for corporate VPNs or proxies that reject HTTP/2 update downloads.'
@@ -349,7 +349,7 @@ export function UpdateCard() {
               title: translate('auto.components.UpdateCard.5b309b19f3', "Update Wasn't Installed"),
               summary: translate(
                 'auto.components.UpdateCard.092f09fc14',
-                "The installer's publisher doesn't match Orca, so we stopped the update. Don't install this download; check official releases for a corrected version."
+                "The installer's publisher doesn't match Muster, so we stopped the update. Don't install this download; check official releases for a corrected version."
               ),
               detail: status.message,
               // Why: linking the rejected version would let users bypass the publisher check by re-running it.
@@ -772,7 +772,7 @@ function SimpleCardContent({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {translate('auto.components.UpdateCard.05ad78a6d1', 'Orca v{{value0}} is ready.', {
+        {translate('auto.components.UpdateCard.05ad78a6d1', 'Muster v{{value0}} is ready.', {
           value0: version
         })}
       </p>
@@ -872,9 +872,13 @@ function DownloadingContent({
       <p className="text-sm text-muted-foreground">
         {release
           ? release.description
-          : translate('auto.components.UpdateCard.93794ea932', 'Orca v{{value0}} is downloading.', {
-              value0: version
-            })}
+          : translate(
+              'auto.components.UpdateCard.93794ea932',
+              'Muster v{{value0}} is downloading.',
+              {
+                value0: version
+              }
+            )}
       </p>
 
       <button
@@ -1062,7 +1066,7 @@ function ReadyToInstallContent({
       <p className="text-sm text-muted-foreground">
         {translate(
           'auto.components.UpdateCard.6714206e5a',
-          "Orca v{{value0}} is downloaded. Restart when you're ready.",
+          "Muster v{{value0}} is downloaded. Restart when you're ready.",
           { value0: version }
         )}
       </p>

@@ -561,7 +561,7 @@ describe('resolveCodexGrantEntryPath', () => {
   })
 
   it('redirects app.asar to unpacked without double-unpacking an existing path', () => {
-    const resourcesDir = join('/Applications', 'Orca.app', 'Contents', 'Resources')
+    const resourcesDir = join('/Applications', 'Muster.app', 'Contents', 'Resources')
     const expected = join(resourcesDir, 'app.asar.unpacked', 'out', 'main', 'codex', entryName)
     for (const archiveDir of ['app.asar', 'app.asar.unpacked']) {
       const moduleDir = join(resourcesDir, archiveDir, 'out', 'main', 'chunks')

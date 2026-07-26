@@ -110,7 +110,7 @@ describe('lifecycle reconciliation', () => {
       type: 'worker_done',
       priority: 'high',
       subject: 'Rejected worker_done: Done',
-      body: expect.stringContaining('Orca rejected this worker_done')
+      body: expect.stringContaining('Muster rejected this worker_done')
     })
     const persisted = db.getMessageById(message.id)
     expect(JSON.parse(persisted?.payload ?? '{}')).toMatchObject({

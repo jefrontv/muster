@@ -5,8 +5,8 @@ import {
   maybeRedirectPackagedCliEntryLaunch
 } from './packaged-cli-entry-redirect'
 
-const resourcesPath = 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\resources'
-const execPath = 'C:\\Users\\me\\AppData\\Local\\Programs\\Orca\\Orca.exe'
+const resourcesPath = 'C:\\Users\\me\\AppData\\Local\\Programs\\Muster\\resources'
+const execPath = 'C:\\Users\\me\\AppData\\Local\\Programs\\Muster\\Muster.exe'
 const cliEntryPath = win32.join(resourcesPath, 'app.asar.unpacked', 'out', 'cli', 'index.js')
 
 describe('packaged CLI entry redirect', () => {
@@ -89,11 +89,11 @@ describe('packaged CLI entry redirect', () => {
     const spawn = vi.fn()
 
     const result = maybeRedirectPackagedCliEntryLaunch({
-      argv: ['C:\\dev\\Orca.exe', cliEntryPath, 'status'],
+      argv: ['C:\\dev\\Muster.exe', cliEntryPath, 'status'],
       platform: 'win32',
       isPackaged: false,
       resourcesPath,
-      execPath: 'C:\\dev\\Orca.exe',
+      execPath: 'C:\\dev\\Muster.exe',
       exists: () => true,
       spawn: spawn as never
     })
@@ -119,7 +119,7 @@ describe('packaged CLI entry redirect', () => {
 
       expect(result).toEqual({ redirected: true, status: 1 })
       expect(stderrWrite).toHaveBeenCalledWith(
-        `Unable to locate the Orca CLI entrypoint at ${cliEntryPath}\n`
+        `Unable to locate the Muster CLI entrypoint at ${cliEntryPath}\n`
       )
       expect(spawn).not.toHaveBeenCalled()
     } finally {
@@ -147,7 +147,7 @@ describe('packaged CLI entry redirect', () => {
 
       expect(result).toEqual({ redirected: true, status: 1 })
       expect(stderrWrite).toHaveBeenCalledWith(
-        'Unable to start the Orca CLI through Electron node mode.\n'
+        'Unable to start the Muster CLI through Electron node mode.\n'
       )
       expect(spawn).not.toHaveBeenCalled()
     } finally {

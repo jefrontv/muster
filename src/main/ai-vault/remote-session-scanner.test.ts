@@ -101,7 +101,7 @@ function jsonLines(records: unknown[]): string {
 }
 
 describe('scanRemoteAiVaultSessions', () => {
-  it('parses remote default and Orca-managed Codex homes with SSH host ids', async () => {
+  it('parses remote default and Muster-managed Codex homes with SSH host ids', async () => {
     const provider = new MemoryRemoteProvider()
     provider.addFile(
       '/home/ada/.codex/session_index.jsonl',

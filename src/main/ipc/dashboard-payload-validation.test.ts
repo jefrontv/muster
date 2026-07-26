@@ -18,7 +18,7 @@ const SNAPSHOT = {
       worktreeId: 'worktree-1',
       tabId: 'tab-1',
       leafId: 'leaf-1',
-      repoName: 'Orca',
+      repoName: 'Muster',
       worktreeName: 'Dashboard',
       startedAt: 1_699_999_000_000,
       finishedAt: null,

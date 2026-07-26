@@ -3829,7 +3829,7 @@ export default function ChecksPanel(): React.JSX.Element {
       reviewState.autoRetryAt !== undefined && reviewState.autoRetryAt > Date.now()
         ? translate(
             'auto.components.right.sidebar.ChecksPanel.review.auto_retry',
-            'Orca will retry at {{time}}.',
+            'Muster will retry at {{time}}.',
             { time: new Date(reviewState.autoRetryAt).toLocaleTimeString() }
           )
         : null

@@ -257,7 +257,7 @@ export async function fetchKimiRateLimits(): Promise<ProviderRateLimits> {
     // policy) until the user next runs Kimi and the CLI refreshes the file.
     return result(
       'error',
-      'Kimi session expired — run kimi on the computer running Orca, then retry usage.',
+      'Kimi session expired — run kimi on the computer running Muster, then retry usage.',
       { failureKind: 'delegated-refresh-required', source: 'oauth' }
     )
   }

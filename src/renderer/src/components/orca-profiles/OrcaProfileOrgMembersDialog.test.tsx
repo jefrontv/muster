@@ -127,7 +127,7 @@ describe('OrcaProfileOrgMembersDialog', () => {
     expect(removeButtons).toHaveLength(3)
     expect(removeButtons.filter((button) => button.disabled)).toHaveLength(2)
     // Never-signed-in explanation is present.
-    expect(screen.getByText("They haven't signed in to Orca yet.")).toBeTruthy()
+    expect(screen.getByText("They haven't signed in to Muster yet.")).toBeTruthy()
   })
 
   it('renders a read-only roster for non-managers', async () => {

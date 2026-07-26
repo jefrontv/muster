@@ -53,7 +53,7 @@ export function buildDispatchPreamble(params: PreambleParams): string {
     workerKind: params.workerKind ?? 'prompt-returning-agent'
   })
 
-  const header = `You are working inside Orca, a multi-agent IDE. You are a dispatched worker.
+  const header = `You are working inside Muster, a multi-agent IDE. You are a dispatched worker.
 Your coordinator's terminal handle is: ${params.coordinatorHandle}
 Your task ID is: ${params.taskId}
 
@@ -158,7 +158,7 @@ do NOT run a sleep/poll loop, and do NOT keep calling
 completion and expects no further output.
 
 Exit the shell after completion. Bare-shell workers have no idle agent
-prompt for Orca to reuse; if the coordinator has more for you it will
+prompt for Muster to reuse; if the coordinator has more for you it will
 dispatch or prompt another worker with a fresh TASK block.`
   }
 

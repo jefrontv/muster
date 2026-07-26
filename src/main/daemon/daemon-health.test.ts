@@ -312,15 +312,15 @@ describe('parseWindowsProcessIdentityJson', () => {
   it('parses command line and start time from the CIM query output', () => {
     expect(
       parseWindowsProcessIdentityJson(
-        '{"cmd":"Orca.exe daemon-entry.js","start":1700000000000}\r\n'
+        '{"cmd":"Muster.exe daemon-entry.js","start":1700000000000}\r\n'
       )
-    ).toEqual({ commandLine: 'Orca.exe daemon-entry.js', startedAtMs: 1_700_000_000_000 })
+    ).toEqual({ commandLine: 'Muster.exe daemon-entry.js', startedAtMs: 1_700_000_000_000 })
   })
 
   it('returns a null start time when CreationDate was unavailable', () => {
     expect(
-      parseWindowsProcessIdentityJson('{"cmd":"Orca.exe daemon-entry.js","start":null}')
-    ).toEqual({ commandLine: 'Orca.exe daemon-entry.js', startedAtMs: null })
+      parseWindowsProcessIdentityJson('{"cmd":"Muster.exe daemon-entry.js","start":null}')
+    ).toEqual({ commandLine: 'Muster.exe daemon-entry.js', startedAtMs: null })
   })
 
   it('returns null for a missing process or inaccessible command line', () => {

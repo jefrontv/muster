@@ -178,7 +178,7 @@ describe('remote server update execution', () => {
     )
     expect(result).toMatchObject({
       phase: 'failed',
-      error: 'The server updater did not offer the requested Orca version.'
+      error: 'The server updater did not offer the requested Muster version.'
     })
   })
 

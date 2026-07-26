@@ -153,7 +153,7 @@ describe('SshGitProvider', () => {
     mux.request.mockRejectedValueOnce(methodNotFound)
 
     await expect(provider.getSubmoduleStatus('/home/user/repo', 'vendor/lib')).rejects.toThrow(
-      'SSH submodule diff support is unavailable on this relay. Reconnect the SSH target to update Orca on the host, then try again.'
+      'SSH submodule diff support is unavailable on this relay. Reconnect the SSH target to update Muster on the host, then try again.'
     )
   })
 
@@ -227,7 +227,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.clone(['clone', '--progress', '--', 'url', 'repo'], '/home/user')
     ).rejects.toThrow(
-      'SSH clone support is unavailable on this relay. Reconnect the SSH target to update Orca on the host, then try again.'
+      'SSH clone support is unavailable on this relay. Reconnect the SSH target to update Muster on the host, then try again.'
     )
   })
 
@@ -920,7 +920,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.fetchGitLabMergeRequestHead('/home/user/repo', 'origin', 42)
     ).rejects.toThrow(
-      'This SSH host is running an older Orca relay that cannot fetch merge request heads. Reconnect to deploy the latest relay, then try again.'
+      'This SSH host is running an older Muster relay that cannot fetch merge request heads. Reconnect to deploy the latest relay, then try again.'
     )
   })
 
@@ -964,7 +964,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.fetchGitHubPullRequestHead('/home/user/repo', 'origin', 42)
     ).rejects.toThrow(
-      'This SSH host is running an older Orca relay that cannot fetch pull request heads. Reconnect to deploy the latest relay, then try again.'
+      'This SSH host is running an older Muster relay that cannot fetch pull request heads. Reconnect to deploy the latest relay, then try again.'
     )
   })
 
@@ -1492,7 +1492,7 @@ describe('SshGitProvider', () => {
     await expect(
       provider.forceDeletePreservedBranch('/home/user/repo', 'you/fix-auth', 'abc123')
     ).rejects.toThrow(
-      'This SSH host is running an older Orca relay that cannot delete preserved branches. Reconnect to deploy the latest relay, then try again.'
+      'This SSH host is running an older Muster relay that cannot delete preserved branches. Reconnect to deploy the latest relay, then try again.'
     )
   })
 

@@ -96,7 +96,7 @@ export function OrchestrationPane(): React.JSX.Element {
         )}
         description={translate(
           'auto.components.settings.OrchestrationPane.9bedd2a6e5',
-          'Enables agents to hand off context and coordinate work through Orca.'
+          'Enables agents to hand off context and coordinate work through Muster.'
         )}
         command={orchestrationInstallCommand}
         installedCommand={orchestrationUpdateCommand}

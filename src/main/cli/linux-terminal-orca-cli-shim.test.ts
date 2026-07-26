@@ -78,7 +78,7 @@ describe('ensureLinuxTerminalOrcaCliShimDir', () => {
 
   it('execs the stable AppImage (not the ephemeral mount) when running from an AppImage', async () => {
     const { userDataPath, resourcesPath } = await makeFixture()
-    const appImagePath = join(userDataPath, 'Applications', 'Orca.AppImage')
+    const appImagePath = join(userDataPath, 'Applications', 'Muster.AppImage')
 
     const shimDir = ensureLinuxTerminalOrcaCliShimDir({
       userDataPath,

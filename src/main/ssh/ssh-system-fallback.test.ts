@@ -348,7 +348,7 @@ describe('spawnSystemSsh', () => {
     expect(args).toContain('deploy@krb-host')
   })
 
-  it('does not inject Orca ControlMaster flags when ssh config already owns muxing', () => {
+  it('does not inject Muster ControlMaster flags when ssh config already owns muxing', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', source: 'ssh-config' }), {
       resolvedConfig: createResolvedConfig({
         controlMaster: 'auto',
@@ -362,7 +362,7 @@ describe('spawnSystemSsh', () => {
     expect(args).toContain('deploy@workbox')
   })
 
-  it('injects Orca ControlMaster flags when ssh config only sets ControlPersist', () => {
+  it('injects Muster ControlMaster flags when ssh config only sets ControlPersist', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', source: 'ssh-config' }), {
       resolvedConfig: createResolvedConfig({
         controlMaster: 'no',
@@ -374,7 +374,7 @@ describe('spawnSystemSsh', () => {
     expect(args).not.toContain('-S')
   })
 
-  it('injects Orca ControlMaster flags when ssh config only sets ControlPath', () => {
+  it('injects Muster ControlMaster flags when ssh config only sets ControlPath', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', source: 'ssh-config' }), {
       resolvedConfig: createResolvedConfig({
         controlMaster: 'no',
@@ -386,7 +386,7 @@ describe('spawnSystemSsh', () => {
     expect(args).not.toContain('-S')
   })
 
-  it('injects Orca ControlMaster flags when ssh config omits ControlPath', () => {
+  it('injects Muster ControlMaster flags when ssh config omits ControlPath', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', source: 'ssh-config' }), {
       resolvedConfig: createResolvedConfig({
         controlMaster: 'auto'
@@ -397,7 +397,7 @@ describe('spawnSystemSsh', () => {
     expect(args).not.toContain('-S')
   })
 
-  it('does not inject Orca ControlMaster flags for unresolved ssh-config targets', () => {
+  it('does not inject Muster ControlMaster flags for unresolved ssh-config targets', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', source: 'ssh-config' }))
 
     expectNoOrcaControlMasterArgs(args)
@@ -405,7 +405,7 @@ describe('spawnSystemSsh', () => {
     expect(args).toContain('deploy@workbox')
   })
 
-  it('does not inject Orca ControlMaster flags for unresolved legacy config aliases', () => {
+  it('does not inject Muster ControlMaster flags for unresolved legacy config aliases', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', host: 'resolved.example.com' }))
 
     expectNoOrcaControlMasterArgs(args)
@@ -413,7 +413,7 @@ describe('spawnSystemSsh', () => {
     expect(args).toContain('deploy@workbox')
   })
 
-  it('can inject Orca ControlMaster flags for ssh-config targets with resolved config', () => {
+  it('can inject Muster ControlMaster flags for ssh-config targets with resolved config', () => {
     const args = buildSshArgs(createTarget({ configHost: 'workbox', source: 'ssh-config' }), {
       resolvedConfig: createResolvedConfig()
     })
@@ -431,7 +431,7 @@ describe('spawnSystemSsh', () => {
     expectNoOrcaControlMasterArgs(args)
   })
 
-  it('adds keepalive options to Orca-owned ControlMaster connections', () => {
+  it('adds keepalive options to Muster-owned ControlMaster connections', () => {
     const args = buildSshArgs(createTarget(), { resolvedConfig: createResolvedConfig() })
 
     expectOrcaControlMasterArgs(args)

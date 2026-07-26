@@ -74,7 +74,7 @@ describe('mergeSnapshotAndSessions', () => {
     const browser = {
       id: 'browser-1',
       worktreeId: worktree.id,
-      title: 'Orca docs',
+      title: 'Muster docs',
       url: 'https://docs.orca.dev',
       loading: false,
       faviconUrl: null,

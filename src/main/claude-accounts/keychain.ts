@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 
 const ACTIVE_CLAUDE_SERVICE = 'Claude Code-credentials'
-const ORCA_CLAUDE_SERVICE = 'Orca Claude Code Managed Credentials'
+const ORCA_CLAUDE_SERVICE = 'Muster Claude Code Managed Credentials'
 const KEYCHAIN_COMMAND_TIMEOUT_MS = 3_000
 
 type SecurityCommandResult = {

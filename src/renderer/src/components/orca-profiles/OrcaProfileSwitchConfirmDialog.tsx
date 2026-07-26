@@ -87,7 +87,7 @@ export function OrcaProfileSwitchConfirmDialog({
           <DialogDescription>
             {translate(
               'auto.components.orca.profiles.switch.confirm.description',
-              'Switching to {{targetName}} will relaunch Orca and reload the workspace for {{activeProfileName}}.',
+              'Switching to {{targetName}} will relaunch Muster and reload the workspace for {{activeProfileName}}.',
               { activeProfileName, targetName }
             )}
           </DialogDescription>

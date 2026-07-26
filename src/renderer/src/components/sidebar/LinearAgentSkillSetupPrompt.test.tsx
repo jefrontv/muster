@@ -127,11 +127,11 @@ function cliStatus(overrides: Partial<CliInstallStatus>): CliInstallStatus {
     commandPath: '/usr/local/bin/orca',
     pathDirectory: '/usr/local/bin',
     pathConfigured: true,
-    launcherPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+    launcherPath: '/Applications/Muster.app/Contents/MacOS/Muster',
     installMethod: 'symlink',
     supported: true,
     state: 'installed',
-    currentTarget: '/Applications/Orca.app/Contents/MacOS/Orca',
+    currentTarget: '/Applications/Muster.app/Contents/MacOS/Muster',
     unsupportedReason: null,
     detail: null,
     ...overrides
@@ -238,7 +238,7 @@ describe('LinearAgentSkillSetupPrompt', () => {
     const rendered = await renderPrompt({ linked: true, remote: false })
 
     expect(rendered.textContent).toContain('Set up Linear agent skill')
-    expect(rendered.textContent).toContain('Orca CLI and Linear agent skill are missing')
+    expect(rendered.textContent).toContain('Muster CLI and Linear agent skill are missing')
     expect(rendered.textContent).toContain('Install it for host agent handoffs')
     expect(mocks.useInstalledAgentSkillNames).toHaveBeenCalledWith(
       LINEAR_AGENT_SKILL_NAMES,
@@ -459,7 +459,7 @@ describe('LinearAgentSkillSetupPrompt', () => {
     expect(document.body.textContent).toContain(
       'Enable agents to read and edit the attached Linear ticket.'
     )
-    expect(document.body.textContent).toContain('Orca CLI and Linear agent skill are missing.')
+    expect(document.body.textContent).toContain('Muster CLI and Linear agent skill are missing.')
     expect(document.body.textContent).toContain('Mock install')
     // Why: the permanent opt-out is an EyeOff icon (no visible text); the casual
     // dismiss is the dialog ×. Neither "Not now" nor any dismiss label shows as text.
@@ -695,7 +695,7 @@ describe('LinearAgentSkillSetupPrompt', () => {
     expect(document.body.textContent).toContain(
       'Enable agents to read and edit the attached Linear ticket.'
     )
-    expect(document.body.textContent).toContain('Orca CLI is missing.')
+    expect(document.body.textContent).toContain('Muster CLI is missing.')
     expect(document.body.textContent).not.toContain('Linear ticket access is ready')
   })
 
@@ -738,7 +738,7 @@ describe('LinearAgentSkillSetupPrompt', () => {
     expect(document.body.textContent).toContain(
       'Enable agents to read and edit the attached Linear ticket.'
     )
-    expect(document.body.textContent).toContain('Orca CLI is missing.')
+    expect(document.body.textContent).toContain('Muster CLI is missing.')
     expect(document.body.textContent).not.toContain('Linear ticket access is ready')
   })
 
@@ -778,7 +778,7 @@ describe('LinearAgentSkillSetupPrompt', () => {
       'Enable agents to read and edit the attached Linear ticket.'
     )
     expect(document.body.textContent).toContain('Linear agent skill is missing.')
-    expect(document.body.textContent).not.toContain('Orca CLI is missing.')
+    expect(document.body.textContent).not.toContain('Muster CLI is missing.')
   })
 
   it('ignores older same-context CLI refreshes that finish after a newer Re-check', async () => {

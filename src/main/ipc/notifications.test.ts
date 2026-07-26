@@ -282,7 +282,7 @@ describe('registerNotificationHandlers', () => {
     expect(notificationCtorMock).not.toHaveBeenCalled()
   })
 
-  it('suppresses active-worktree notifications while Orca is focused', async () => {
+  it('suppresses active-worktree notifications while Muster is focused', async () => {
     getAllWindowsMock.mockReturnValue([
       {
         isDestroyed: () => false,
@@ -415,8 +415,8 @@ describe('registerNotificationHandlers', () => {
       const handler = getDispatchHandler()
       expect(await handler({}, { source: 'test' })).toEqual({ delivered: true })
       expect(notificationCtorMock).toHaveBeenCalledWith({
-        title: 'Orca notifications are on',
-        body: 'This is a test notification from Orca.',
+        title: 'Muster notifications are on',
+        body: 'This is a test notification from Muster.',
         sound: 'default'
       })
     } finally {
@@ -443,8 +443,8 @@ describe('registerNotificationHandlers', () => {
       const handler = getDispatchHandler()
       expect(await handler({}, { source: 'test' })).toEqual({ delivered: true })
       expect(notificationCtorMock).toHaveBeenCalledWith({
-        title: 'Orca notifications are on',
-        body: 'This is a test notification from Orca.',
+        title: 'Muster notifications are on',
+        body: 'This is a test notification from Muster.',
         silent: true
       })
     } finally {
@@ -1091,8 +1091,8 @@ describe('registerNotificationHandlers', () => {
     const handler = getDispatchHandler()
     expect(await handler({}, { source: 'test' })).toEqual({ delivered: true })
     expect(notificationCtorMock).toHaveBeenCalledWith({
-      title: 'Orca notifications are on',
-      body: 'This is a test notification from Orca.',
+      title: 'Muster notifications are on',
+      body: 'This is a test notification from Muster.',
       silent: true
     })
   })
@@ -1619,8 +1619,8 @@ describe('triggerStartupNotificationRegistration', () => {
 
     expect(store.updateUI).toHaveBeenCalledWith({ notificationPermissionRequested: true })
     expect(notificationCtorMock).toHaveBeenCalledWith({
-      title: 'Orca is ready to notify you',
-      body: 'Allow notifications so Orca can alert you when agents finish or terminals need attention.'
+      title: 'Muster is ready to notify you',
+      body: 'Allow notifications so Muster can alert you when agents finish or terminals need attention.'
     })
     expect(notificationShowMock).toHaveBeenCalledTimes(1)
   })

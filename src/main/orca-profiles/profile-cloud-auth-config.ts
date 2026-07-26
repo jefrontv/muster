@@ -84,7 +84,7 @@ export function getOrcaCloudAuthConfig(
   if (!apiBaseUrl || !clientId) {
     return {
       configured: false,
-      setupMessage: 'Orca Cloud sign-in is not configured for this build.'
+      setupMessage: 'Muster Cloud sign-in is not configured for this build.'
     }
   }
 

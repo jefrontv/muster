@@ -48,7 +48,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
           <p className="text-sm font-medium">
             {translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.9b49d892e3',
-              'Enable Orca CLI'
+              'Enable Muster CLI'
             )}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -77,7 +77,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
             <p className="text-[11px] leading-snug text-muted-foreground">
               {translate(
                 'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.3d34423e88',
-                'Registering the Orca CLI'
+                'Registering the Muster CLI'
               )}{' '}
               {setup.cliInstallStatus?.commandPath ? (
                 <code className="rounded bg-muted px-1 py-0.5">
@@ -134,7 +134,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
           <p className="text-sm font-medium">
             {translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.21f5687c07',
-              'Orca CLI skill'
+              'Muster CLI skill'
             )}
           </p>
           <AgentSkillSetupPanel
@@ -143,7 +143,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
             className="min-w-0"
             title={translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.21f5687c07',
-              'Orca CLI skill'
+              'Muster CLI skill'
             )}
             description={translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.64fb057667',
@@ -152,11 +152,11 @@ export function MobileEmulatorAgentSetupGuideSteps({
             command={ORCA_CLI_SKILL_INSTALL_COMMAND}
             terminalTitle={translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.5c59ea96ca',
-              'Mobile emulator Orca CLI skill setup'
+              'Mobile emulator Muster CLI skill setup'
             )}
             terminalAriaLabel={translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.bff5341ac3',
-              'Mobile emulator Orca CLI skill install terminal'
+              'Mobile emulator Muster CLI skill install terminal'
             )}
             terminalWorktreeId={terminalWorktreeId}
             installed={setup.cliSkillInstalled}
@@ -170,7 +170,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
             }
             openingHint={translate(
               'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.3941719a56',
-              'Checking Orca CLI before opening skill setup.'
+              'Checking Muster CLI before opening skill setup.'
             )}
             onBeforeOpenTerminal={async () => {
               recordFeatureInteraction('mobile-emulator-agent-setup')

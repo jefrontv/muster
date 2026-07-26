@@ -198,7 +198,7 @@ describe('agent process recognition', () => {
     ).toEqual({ agent: 'gemini', processName: 'gemini' })
   })
 
-  it('recognizes only the agent subcommand of the generic Orca CLI', () => {
+  it('recognizes only the agent subcommand of the generic Muster CLI', () => {
     expect(recognizeAgentProcessFromCommandLine('orca claude-teams')).toEqual({
       agent: 'claude-agent-teams',
       processName: 'orca'

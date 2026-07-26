@@ -39,7 +39,7 @@ describe('ClaudeUsageStore', () => {
     vi.setSystemTime(new Date('2026-04-09T12:00:00.000-04:00'))
   })
 
-  it('reports no data for Orca scope when only non-Orca usage exists', async () => {
+  it('reports no data for Muster scope when only non-Muster usage exists', async () => {
     const store = createStoreWithState({
       sessions: [
         {

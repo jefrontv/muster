@@ -115,16 +115,16 @@ describe('CliSection project runtime defaults', () => {
     const getInstallStatus = vi.fn().mockResolvedValue({
       platform: 'win32',
       commandName: 'orca',
-      commandPath: 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe',
-      pathDirectory: 'C:\\Program Files\\Orca\\resources\\bin',
+      commandPath: 'C:\\Program Files\\Muster\\resources\\bin\\orca.exe',
+      pathDirectory: 'C:\\Program Files\\Muster\\resources\\bin',
       pathConfigured: null,
-      launcherPath: 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe',
+      launcherPath: 'C:\\Program Files\\Muster\\resources\\bin\\orca.exe',
       installMethod: 'wrapper',
       supported: true,
       state: 'installed',
-      currentTarget: 'C:\\Program Files\\Orca\\resources\\bin\\orca.exe',
+      currentTarget: 'C:\\Program Files\\Muster\\resources\\bin\\orca.exe',
       unsupportedReason: null,
-      detail: 'Orca could not read the Windows user PATH registry value.'
+      detail: 'Muster could not read the Windows user PATH registry value.'
     })
     Object.assign(window, {
       api: {

@@ -1,30 +1,30 @@
 ---
 name: orchestration
 description: >-
-  Use Orca orchestration for structured multi-agent coordination: threaded
+  Use Muster orchestration for structured multi-agent coordination: threaded
   messages, blocking ask/reply flows, task dispatch, worker_done/escalation
   waits, task DAGs, decision gates, coordinator loops, or decomposing work
   across agents. Use `orca-cli` instead for full ownership handoffs, including
   requests phrased as "hand off", "handoff", "handover", "give this to another
   agent", or "another worktree" when the user did not explicitly ask to
   supervise, monitor, wait for results, or coordinate a DAG. Use `orca-cli` for
-  ordinary terminal control, lightweight terminal prompts, shell commands, Orca
+  ordinary terminal control, lightweight terminal prompts, shell commands, Muster
   worktree management, reading or waiting on terminals, and automation of the
-  browser embedded inside Orca. Use Computer Use for browser windows, webviews,
-  Orca app UI, or desktop UI outside Orca's embedded browser.
+  browser embedded inside Muster. Use Computer Use for browser windows, webviews,
+  Muster app UI, or desktop UI outside Muster's embedded browser.
 ---
 
-# Orca Inter-Agent Orchestration
+# Muster Inter-Agent Orchestration
 
-Orchestration is Orca's structured coordination layer for agent messages, task ownership, dispatch state, and worker completion tracking.
+Orchestration is Muster's structured coordination layer for agent messages, task ownership, dispatch state, and worker completion tracking.
 
 Use this skill when coordination state matters. For lightweight terminal prompts or basic worktree/terminal/built-in-browser control, use `orca-cli`.
 
 ## Tool Boundary
 
-If a task says to use Orca orchestration, the coordinator must create Orca runtime state with `orca orchestration task-create` and `orca orchestration dispatch --inject` or `orca orchestration run`.
+If a task says to use Muster orchestration, the coordinator must create Muster runtime state with `orca orchestration task-create` and `orca orchestration dispatch --inject` or `orca orchestration run`.
 
-Do not substitute non-Orca subagent tools, generic agent-spawn APIs, or chat-only parallel worker features. Those may create useful workers, but they do not create Orca task/dispatch provenance, injected lifecycle preambles, `worker_done` authority, or decision gates.
+Do not substitute non-Muster subagent tools, generic agent-spawn APIs, or chat-only parallel worker features. Those may create useful workers, but they do not create Muster task/dispatch provenance, injected lifecycle preambles, `worker_done` authority, or decision gates.
 
 Before claiming a worker was orchestrated, verify the task/dispatch exists:
 
@@ -33,7 +33,7 @@ orca orchestration task-list --json
 orca orchestration dispatch-show --task <task_id> --json
 ```
 
-If the work was accidentally run outside Orca orchestration, say so plainly. To repair provenance, rerun or revalidate the needed work through a fresh Orca terminal plus injected dispatch; do not retroactively describe the external worker as orchestrated.
+If the work was accidentally run outside Muster orchestration, say so plainly. To repair provenance, rerun or revalidate the needed work through a fresh Muster terminal plus injected dispatch; do not retroactively describe the external worker as orchestrated.
 
 ## When To Use
 
@@ -49,7 +49,7 @@ Do not use orchestration merely because the user says "hand off", "handoff", "ha
 - `orca status --json` should show a running runtime.
 - `orca` must be on PATH (`orca-ide` on Linux).
 - The orchestration experimental feature must be enabled in Settings > Experimental.
-- `orca orchestration` commands are RPC calls to the running Orca runtime.
+- `orca orchestration` commands are RPC calls to the running Muster runtime.
 
 ## Ownership
 
@@ -87,7 +87,7 @@ orca orchestration inbox [--limit <n>] [--json]
 
 Rules:
 
-- Omit `--from` unless impersonating another terminal; Orca auto-resolves it from the current terminal.
+- Omit `--from` unless impersonating another terminal; Muster auto-resolves it from the current terminal.
 - `check` and `check --unread` return unread matches and mark them read. Use `--peek` for unread matches without consuming them; use `--all` for read and unread history without consuming anything. If an older CLI rejects `--peek` as an unknown flag, use `--all` and filter unread rows yourself.
 - Message **one** live agent handle per worker. Use `startupTerminal.handle` from the create response when present; if it is missing or later returns `terminal_handle_stale`, re-resolve with `orca terminal list --worktree ... --json` and continue with the replacement only.
 - `orca orchestration check --unread --inject --json` renders unread mail for the agent terminal that runs it; it does not remotely wake another terminal. Use `orchestration dispatch --inject` to deliver a tracked task, or `terminal send` when an existing agent needs a free-form prompt.
@@ -154,7 +154,7 @@ New top-level worktree handoff:
 orca worktree create --name <task-name> --no-parent --agent codex --prompt "<task brief>" --json
 ```
 
-Before creating a new worktree from an active feature branch, decide and state whether the desired Orca lineage is child or top-level. Use child worktree lineage only when the new work is conceptually stacked under or dependent on the active worktree. For independent repo-wide fixes, standalone feature work, or unrelated follow-up tasks, create a top-level worktree with `--no-parent`.
+Before creating a new worktree from an active feature branch, decide and state whether the desired Muster lineage is child or top-level. Use child worktree lineage only when the new work is conceptually stacked under or dependent on the active worktree. For independent repo-wide fixes, standalone feature work, or unrelated follow-up tasks, create a top-level worktree with `--no-parent`.
 
 Existing terminal handoff:
 
@@ -179,7 +179,7 @@ orca terminal send --terminal <handle> --text "<task brief>" --enter --json
 
 Wait only for `tui-idle` when needed to avoid losing the prompt. Do not monitor task completion.
 
-`--no-parent` only controls Orca lineage; it does not choose the Git base. If the work should start from the repo default base, omit `--base-branch` so Orca uses that default, or explicitly pass the repo default base (`origin/main`, `origin/master`, or the `orca repo show --repo <selector> --json` value); never base it on the current feature branch unless the user explicitly asks for stacked work or "branch from current". Put current-branch context in the prompt instead.
+`--no-parent` only controls Muster lineage; it does not choose the Git base. If the work should start from the repo default base, omit `--base-branch` so Muster uses that default, or explicitly pass the repo default base (`origin/main`, `origin/master`, or the `orca repo show --repo <selector> --json` value); never base it on the current feature branch unless the user explicitly asks for stacked work or "branch from current". Put current-branch context in the prompt instead.
 
 ## Worker Terminals
 
@@ -193,7 +193,7 @@ orca orchestration dispatch --task <task_id> --to <handle> --inject --json
 
 Reuse an idle agent in the required worktree only if the prompt allows reuse; otherwise create a fresh terminal there. Create a new worktree only when the user explicitly requests one or a concrete checkout or filesystem conflict makes sharing unsafe or impossible; if the user did not request it, state that conflict before running `worktree create`. Independent tasks, parallel execution, convenience, or a preference for separate checkouts are not isolation requirements.
 
-When a new worktree is allowed, use child lineage for isolated work that is stacked under or dependent on the active worktree, and use `--no-parent` when it is not stacked. Decide the Git base separately: `--no-parent` makes the worktree top-level in Orca, while omitted `--base-branch` uses the repo default base.
+When a new worktree is allowed, use child lineage for isolated work that is stacked under or dependent on the active worktree, and use `--no-parent` when it is not stacked. Decide the Git base separately: `--no-parent` makes the worktree top-level in Muster, while omitted `--base-branch` uses the repo default base.
 
 ```bash
 orca worktree create --name <task-name> --agent codex --json
@@ -203,7 +203,7 @@ orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 60000 --json
 orca orchestration dispatch --task <task_id> --to <handle> --inject --json
 ```
 
-For new-worktree workers, read the id and `startupTerminal.handle` from `worktree create`. Use that as the sole worker handle when present; otherwise use `terminal list` to resolve the agent handle. Omit `--repo` only inside an Orca-managed worktree; otherwise pass `--repo <selector>`.
+For new-worktree workers, read the id and `startupTerminal.handle` from `worktree create`. Use that as the sole worker handle when present; otherwise use `terminal list` to resolve the agent handle. Omit `--repo` only inside a Muster-managed worktree; otherwise pass `--repo <selector>`.
 
 **For an allowed new worktree, use agent-first:** `--agent` reveals the new worktree and launches the selected agent **in its first terminal**, without adding a separate fallback shell for that worker. Repo setup or default-terminal settings may still add tabs or splits. Do **not** run bare `worktree create` and then `terminal create --command <agent>` for the same worker when agent-first create is available: without configured default tabs, that two-step path leaves a fallback shell + agent pair. Only use it when custom agent argv is required (for example Codex model/effort flags) or when an older CLI rejects `--agent`; if you must, message only the agent handle. Configured default tabs are intentional surfaces, so close a prior terminal only after `terminal list` or `terminal show` confirms it is an unused shell. Do not run `worktree create` when the task must stay in the current worktree.
 

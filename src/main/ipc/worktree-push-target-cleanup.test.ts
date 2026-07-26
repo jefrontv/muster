@@ -68,7 +68,7 @@ function removeCalls(exec: ExecMock): string[][] {
 }
 
 describe('cleanupUnusedWorktreePushTargetRemoteWithExec', () => {
-  it('removes an Orca-created fork remote that nothing else uses', async () => {
+  it('removes a Muster-created fork remote that nothing else uses', async () => {
     const exec = makeExec()
     await cleanupUnusedWorktreePushTargetRemoteWithExec(
       REPO_PATH,
@@ -80,7 +80,7 @@ describe('cleanupUnusedWorktreePushTargetRemoteWithExec', () => {
     expect(removeCalls(exec)).toEqual([['remote', 'remove', FORK_REMOTE]])
   })
 
-  it('keeps a remote Orca did not create (remoteCreated falsy)', async () => {
+  it('keeps a remote Muster did not create (remoteCreated falsy)', async () => {
     const exec = makeExec()
     await cleanupUnusedWorktreePushTargetRemoteWithExec(
       REPO_PATH,

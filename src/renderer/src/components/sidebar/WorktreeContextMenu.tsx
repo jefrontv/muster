@@ -1004,7 +1004,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                   : removesProject
                     ? translate(
                         'auto.components.sidebar.WorktreeContextMenu.f5ac91531d',
-                        'Remove Project from Orca'
+                        'Remove Project from Muster'
                       )
                     : translate('auto.components.sidebar.WorktreeContextMenu.f4475537d8', 'Delete')}
           </DropdownMenuItem>

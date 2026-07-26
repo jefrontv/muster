@@ -96,7 +96,7 @@ function makeSettings(overrides: Partial<GlobalSettings> = {}): GlobalSettings {
 }
 
 describe('worktree ownership classification', () => {
-  it('treats explicit Orca metadata as managed even outside the workspace root', () => {
+  it('treats explicit Muster metadata as managed even outside the workspace root', () => {
     const repo = makeRepo()
     const settings = makeSettings()
     expect(
@@ -110,7 +110,7 @@ describe('worktree ownership classification', () => {
     ).toBe('orca-managed')
   })
 
-  it('treats nested Orca workspace paths without metadata as external', () => {
+  it('treats nested Muster workspace paths without metadata as external', () => {
     const repo = makeRepo()
     const settings = makeSettings()
     const layouts = buildKnownOrcaWorkspaceLayouts(settings, repo)
@@ -132,7 +132,7 @@ describe('worktree ownership classification', () => {
     ).toBe('external')
   })
 
-  it('treats explicit Orca creation layout metadata as managed', () => {
+  it('treats explicit Muster creation layout metadata as managed', () => {
     const repo = makeRepo()
     const settings = makeSettings()
     expect(
@@ -148,7 +148,7 @@ describe('worktree ownership classification', () => {
     ).toBe('orca-managed')
   })
 
-  it('does not treat metadata-free nested workspace paths as Orca-managed for new repos', () => {
+  it('does not treat metadata-free nested workspace paths as Muster-managed for new repos', () => {
     const repo = makeRepo({ externalWorktreeVisibility: 'hide' })
     const settings = makeSettings()
     const detected = toDetectedWorktree({
@@ -165,7 +165,7 @@ describe('worktree ownership classification', () => {
     expect(detected.visible).toBe(false)
   })
 
-  it('does not treat generic discovery metadata on nested workspace paths as Orca-managed', () => {
+  it('does not treat generic discovery metadata on nested workspace paths as Muster-managed', () => {
     const repo = makeRepo({ externalWorktreeVisibility: 'hide' })
     const settings = makeSettings()
     const detected = toDetectedWorktree({
@@ -292,7 +292,7 @@ describe('worktree ownership classification', () => {
 
   it('handles Windows drive casing and separators', () => {
     const repo = makeRepo({ path: 'C:\\repos\\App' })
-    const settings = makeSettings({ workspaceDir: 'C:\\Orca\\Workspaces' })
+    const settings = makeSettings({ workspaceDir: 'C:\\Muster\\Workspaces' })
     expect(
       classifyWorktreeOwnership({
         repo,
@@ -463,7 +463,7 @@ describe('agent scratch worktrees', () => {
     ).toBe('agent-scratch')
   })
 
-  it('keeps strong Orca metadata authoritative over the scratch path match', () => {
+  it('keeps strong Muster metadata authoritative over the scratch path match', () => {
     const repo = makeRepo()
     const settings = makeSettings()
     expect(
@@ -477,7 +477,7 @@ describe('agent scratch worktrees', () => {
     ).toBe('orca-managed')
   })
 
-  it('hides agent scratch even when the repo shows non-Orca worktrees', () => {
+  it('hides agent scratch even when the repo shows non-Muster worktrees', () => {
     for (const repo of [
       makeRepo({ externalWorktreeVisibility: 'show' }),
       makeRepo({ addedAt: EXTERNAL_WORKTREE_VISIBILITY_ROLLOUT_AT - 1 })

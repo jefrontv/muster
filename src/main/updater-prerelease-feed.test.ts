@@ -25,9 +25,9 @@ function buildManifest(tag: string): string {
   return [
     `version: ${version}`,
     'files:',
-    `  - url: Orca-${version}-arm64-mac.zip`,
+    `  - url: Muster-${version}-arm64-mac.zip`,
     '    sha512: test',
-    `path: Orca-${version}-arm64-mac.zip`
+    `path: Muster-${version}-arm64-mac.zip`
   ].join('\n')
 }
 
@@ -145,7 +145,7 @@ describe('fetchNewerReleaseTag', () => {
         `https://releases.muster.invalid/releases/download/v1.4.1/${manifestName}`
       ])
       expect(assetUrls).toEqual([
-        'https://releases.muster.invalid/releases/download/v1.4.1/Orca-1.4.1-arm64-mac.zip'
+        'https://releases.muster.invalid/releases/download/v1.4.1/Muster-1.4.1-arm64-mac.zip'
       ])
     }
   )

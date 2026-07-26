@@ -59,7 +59,7 @@ afterEach(() => {
 describe('UpdateCard Windows signature failures', () => {
   it('does not offer the rejected version as a manual publisher-check bypass', () => {
     const message =
-      'New version 1.4.200 is not signed by the application owner: publisherNames: Orca'
+      'New version 1.4.200 is not signed by the application owner: publisherNames: Muster'
     renderAfterAvailableStatus()
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))

@@ -58,7 +58,7 @@ describe('shouldOfferDaemonRestart', () => {
   it('matches stale daemon node-pty install failures', () => {
     expect(
       shouldOfferDaemonRestart(
-        "Daemon's node-pty install is gone (worktree deleted?). Restart Orca. node-pty: posix_spawn failed: ENOENT (errno 2, No such file or directory) - helper='/Applications/Orca.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/build/Release/spawn-helper'"
+        "Daemon's node-pty install is gone (worktree deleted?). Restart Muster. node-pty: posix_spawn failed: ENOENT (errno 2, No such file or directory) - helper='/Applications/Muster.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/build/Release/spawn-helper'"
       )
     ).toBe(true)
   })
@@ -66,7 +66,7 @@ describe('shouldOfferDaemonRestart', () => {
   it('matches stale daemon cwd failures', () => {
     expect(
       shouldOfferDaemonRestart(
-        "Daemon's working directory is gone (worktree deleted?). Restart Orca. node-pty: daemon_cwd failed: ENOENT (errno 2, No such file or directory) - cwd='<unavailable>'"
+        "Daemon's working directory is gone (worktree deleted?). Restart Muster. node-pty: daemon_cwd failed: ENOENT (errno 2, No such file or directory) - cwd='<unavailable>'"
       )
     ).toBe(true)
   })

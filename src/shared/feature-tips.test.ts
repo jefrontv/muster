@@ -92,7 +92,7 @@ describe('feature tips', () => {
 
     expect(cliTip).toMatchObject({
       action: 'setup-cli',
-      title: 'Let agents drive Orca with the Orca CLI',
+      title: 'Let agents drive Muster with the Muster CLI',
       ctaLabel: 'Install CLI & Skills'
     })
     expect(cliTip?.description).toContain('coordinate child worktrees')

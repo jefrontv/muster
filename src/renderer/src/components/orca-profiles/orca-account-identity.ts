@@ -13,7 +13,7 @@ export function getOrcaAccountIdentity(
       title:
         cloud?.displayName?.trim() ||
         cloud?.email ||
-        translate('auto.components.orca.profiles.switcher.accountTitle', 'Orca account'),
+        translate('auto.components.orca.profiles.switcher.accountTitle', 'Muster account'),
       subtitle:
         cloud?.activeOrgName ||
         (cloud?.displayName && cloud.email
@@ -26,7 +26,7 @@ export function getOrcaAccountIdentity(
       title:
         cloud?.displayName?.trim() ||
         cloud?.email ||
-        translate('auto.components.orca.profiles.switcher.accountTitle', 'Orca account'),
+        translate('auto.components.orca.profiles.switcher.accountTitle', 'Muster account'),
       subtitle: translate(
         'auto.components.orca.profiles.switcher.accountSignInRequired',
         'Sign-in required'
@@ -34,7 +34,7 @@ export function getOrcaAccountIdentity(
     }
   }
   return {
-    title: translate('auto.components.orca.profiles.switcher.accountTitle', 'Orca account'),
+    title: translate('auto.components.orca.profiles.switcher.accountTitle', 'Muster account'),
     subtitle: translate('auto.components.orca.profiles.switcher.accountSignedOut', 'Signed out')
   }
 }

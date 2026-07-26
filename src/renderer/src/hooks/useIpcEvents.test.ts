@@ -1799,7 +1799,7 @@ describe('useIpcEvents updater integration', () => {
     const createFloatingWorkspaceTerminalTab = vi.fn()
     const createWebRuntimeSessionTerminal = vi.fn().mockResolvedValue({
       status: 'failed',
-      message: 'The workspace is not connected to a remote Orca host.'
+      message: 'The workspace is not connected to a remote Muster host.'
     })
     const focusRuntimeTerminalSurface = vi.fn(() => false)
     const focusTerminalTabSurface = vi.fn()

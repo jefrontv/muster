@@ -341,7 +341,7 @@ describe('SshRelaySession agent hooks over a fake relay transport', () => {
     })
   })
 
-  it('drops malformed remote hook notifications at Orca main before caching', async () => {
+  it('drops malformed remote hook notifications at Muster main before caching', async () => {
     relay = createFakeRelay()
     vi.mocked(deployAndLaunchRelay).mockResolvedValue({
       transport: relay.transport,

@@ -1,34 +1,34 @@
 ---
 name: orca-cli
 description: >-
-  Use the public `orca` CLI to operate Orca-managed worktrees, folder contexts,
+  Use the public `orca` CLI to operate Muster-managed worktrees, folder contexts,
   terminals, repos, automations, worktree comments, and the browser embedded
-  inside the Orca app. Use when the user says "$orca-cli", "use orca cli",
-  "Orca worktree", "child worktree", "cardStatus", "spawn codex/claude in a worktree",
-  "read/wait/send Orca terminal", "terminal send", "full handoff", "handover",
-  "give this to another agent", "another worktree", "Orca browser", or
-  "control the browser inside Orca". Prefer this over raw `git worktree`, ad hoc
-  PTYs, Playwright, or Computer Use when the task touches Orca-managed state.
-  Use Computer Use for browser windows, webviews, or desktop UI outside Orca's
+  inside the Muster app. Use when the user says "$orca-cli", "use orca cli",
+  "Muster worktree", "child worktree", "cardStatus", "spawn codex/claude in a worktree",
+  "read/wait/send Muster terminal", "terminal send", "full handoff", "handover",
+  "give this to another agent", "another worktree", "Muster browser", or
+  "control the browser inside Muster". Prefer this over raw `git worktree`, ad hoc
+  PTYs, Playwright, or Computer Use when the task touches Muster-managed state.
+  Use Computer Use for browser windows, webviews, or desktop UI outside Muster's
   embedded browser.
 ---
 
-# Orca CLI
+# Muster CLI
 
-Use `orca` when Orca's running editor/runtime is the source of truth. Inside Orca-managed terminals, `orca` always resolves to the Orca CLI on every platform. In any other shell on Linux, use `orca-ide` wherever this file says `orca` — outside Orca's terminals, bare `orca` on Linux is usually the GNOME Orca screen reader (`/usr/bin/orca`), and running it starts speech on the user's machine.
+Use `orca` when Muster's running editor/runtime is the source of truth. Inside Muster-managed terminals, `orca` always resolves to the Muster CLI on every platform. In any other shell on Linux, use `orca-ide` wherever this file says `orca` — outside Muster's terminals, bare `orca` on Linux is usually the GNOME Orca screen reader (`/usr/bin/orca`), and running it starts speech on the user's machine.
 
-**Dev builds (`pnpm dev`):** after `pnpm build:cli`, the dev CLI is exposed as `orca-dev` (the global shim points at this checkout's wrapper + out/cli). Inside a dev Orca's terminals use `orca-dev emulator ...` (or `./config/scripts/orca-dev.mjs emulator ...` for worktree-local invocation that does not depend on the /usr/local/bin symlink). Plain `orca` targets any installed production Orca. The app's own agent preambles use `orca-dev` automatically in dev mode.
+**Dev builds (`pnpm dev`):** after `pnpm build:cli`, the dev CLI is exposed as `orca-dev` (the global shim points at this checkout's wrapper + out/cli). Inside a dev Muster's terminals use `orca-dev emulator ...` (or `./config/scripts/orca-dev.mjs emulator ...` for worktree-local invocation that does not depend on the /usr/local/bin symlink). Plain `orca` targets any installed production Muster. The app's own agent preambles use `orca-dev` automatically in dev mode.
 
-Use plain shell tools when Orca state does not matter.
+Use plain shell tools when Muster state does not matter.
 
 ## Start Here
 
 Choose the executable once for the current session:
 
-- If the `ORCA_CLI_COMMAND` environment variable is set, use its value. Orca exports this
+- If the `ORCA_CLI_COMMAND` environment variable is set, use its value. Muster exports this
   for managed WSL sessions.
 - Otherwise, in a dev checkout whose session exposes `ORCA_DEV_REPO_ROOT`, use `orca-dev`.
-- Otherwise, on Linux outside an Orca-managed terminal, use `orca-ide`. Never use bare
+- Otherwise, on Linux outside a Muster-managed terminal, use `orca-ide`. Never use bare
   `orca` there because it normally resolves to the GNOME screen reader.
 - Otherwise, use `orca`.
 
@@ -45,7 +45,7 @@ ORCA terminal list --json
 Keep using that same executable for every later command so dev sessions do not reach a
 production CLI and Linux never falls through to the GNOME screen reader.
 
-If Orca is not running, start it:
+If Muster is not running, start it:
 
 ```text
 ORCA open --json
@@ -74,7 +74,7 @@ Custom Codex model/effort handoff:
 
 **Extra first terminal:** when no repo default-terminal configuration supplies a primary terminal, bare `worktree create` (no `--agent`) opens a fallback shell before the later `terminal create --command ...` adds the agent. Configured default tabs are materialized instead and may run real commands. Prefer `--agent` whenever the built-in launcher is enough. When custom argv forces the two-step path, target the agent handle only; close a prior terminal only after `terminal list` or `terminal show` confirms it is an unused shell.
 
-The create result's `worktree.id` already contains both pieces Orca needs: `<repoId>::<worktreePath>`. Copy that whole value into the next command; do not shorten it to the repo id.
+The create result's `worktree.id` already contains both pieces Muster needs: `<repoId>::<worktreePath>`. Copy that whole value into the next command; do not shorten it to the repo id.
 
 ```text
 ORCA worktree create --name <task-name> --no-parent --json
@@ -91,7 +91,7 @@ ORCA terminal send --terminal <handle> --text "<task brief>" --enter --json
 
 ## Worktrees
 
-An Orca worktree is Orca's tracked view of a repo checkout, its metadata, terminals, browser tabs, and UI state.
+A Muster worktree is Muster's tracked view of a repo checkout, its metadata, terminals, browser tabs, and UI state.
 
 Think of its id as a two-part address: `<repoId>::<worktreePath>`. For example, `repo-123::/Users/me/orca/fix-login` means “the `fix-login` checkout inside repo `repo-123`.” Always copy the complete `id` field from `orca worktree create --json` or `orca worktree list --json`; `repo-123` alone identifies only the repo.
 
@@ -122,17 +122,17 @@ Selectors:
 
 - `id:<repoId>::<worktreePath>`, `name:<displayName>`, `path:<absolutePath>`, `branch:<branchName>`, `issue:<number>`
 - The full id is the exact `<repo-id>::<path>` value returned by `orca worktree create --json` or `orca worktree list --json`; a bare repo id is not a worktree id.
-- `active` / `current` for the enclosing Orca-managed worktree from the shell cwd
+- `active` / `current` for the enclosing Muster-managed worktree from the shell cwd
 - For `worktree create --parent-worktree` only, folder/worktree parent context keys are also valid: `folder:<folderId>`, `worktree:<repoId>::<worktreePath>`, `id:folder:<folderId>`, `id:worktree:<repoId>::<worktreePath>`
 
 Lineage rules:
 
-- When creating from inside an Orca-managed worktree or folder context, Orca infers the current parent context when it can.
+- When creating from inside a Muster-managed worktree or folder context, Muster infers the current parent context when it can.
 - Use `--parent-worktree active` when the child worktree relationship should be explicit.
 - Use `--parent-worktree folder:<folderId>` or `--parent-worktree worktree:<repoId>::<worktreePath>` when a folder or worktree parent context should be explicit.
 - Use `--no-parent` only when the new work is independent.
-- `--no-parent` only controls Orca lineage; it does not choose the Git base. For independent top-level work, omit `--base-branch` so Orca uses the repo default base, or explicitly pass the repo default base. Never base it on the current feature branch unless the user asks for stacked work or "branch from current".
-- If `--repo` is omitted, Orca infers the repo from the current Orca worktree when possible.
+- `--no-parent` only controls Muster lineage; it does not choose the Git base. For independent top-level work, omit `--base-branch` so Muster uses the repo default base, or explicitly pass the repo default base. Never base it on the current feature branch unless the user asks for stacked work or "branch from current".
+- If `--repo` is omitted, Muster infers the repo from the current Muster worktree when possible.
 
 Agent/setup flags:
 
@@ -143,19 +143,19 @@ ORCA worktree create --name task --setup skip --json
 ORCA worktree create --name task --run-hooks --json
 ```
 
-- `--agent <id>` launches that agent **in the first terminal** (Orca docs: *"`--agent` launches the selected agent in the first terminal"*); `--prompt <text>` sends initial work to it. Known ids include `claude`, `codex`, `omp`, `pi`, `grok`, and other installed TUI agents.
+- `--agent <id>` launches that agent **in the first terminal** (Muster docs: *"`--agent` launches the selected agent in the first terminal"*); `--prompt <text>` sends initial work to it. Known ids include `claude`, `codex`, `omp`, `pi`, `grok`, and other installed TUI agents.
 - **Prefer agent-first create for agent workers.** `orca worktree create --agent <id> --prompt "..."` puts the agent in the worktree's first terminal without adding a separate fallback shell for that worker. Repo setup or default-terminal settings may still add tabs or splits. Without configured default tabs, the bare-create fallback shell plus a later `terminal create --command <agent>` is an anti-pattern for ordinary agent worktrees — use `--agent` instead of “create worktree, then open agent.” Configured default tabs are intentional surfaces; never treat one as disposable without verifying that it is an unused shell.
 - After create, use exactly one agent handle: `startupTerminal.handle` from the create response when present, or the matching result from `orca terminal list --worktree id:<repoId>::<newWorktreePath> --json` (or `name:<displayName>`) when the response omits it. If a handle later returns `terminal_handle_stale`, re-list it; never dual-send to old and replacement handles.
 - `--setup run|skip|inherit` controls repo setup hooks. Default is `inherit`, which follows the repo's setup policy.
 - `--run-hooks` is a legacy alias for `--setup run`; it also reveals/activates the new worktree.
 - `--agent`, `--activate`, and `--run-hooks` reveal the new worktree. Plain create stays in the background.
-- Let Orca choose setup terminal placement from repo settings, including tab vs split behavior. Do not manually create extra setup terminals when `--agent` already owns the first tab.
+- Let Muster choose setup terminal placement from repo settings, including tab vs split behavior. Do not manually create extra setup terminals when `--agent` already owns the first tab.
 - If an older installed CLI rejects `--agent`, `--prompt`, or `--setup`, create the worktree normally, then run `orca terminal create --worktree <selector> --command "<requested-agent>"` and `orca terminal send` if a prompt is needed. This can leave a fallback shell when no default tabs are configured; close it only after confirming it is unused.
 - `worktree create` creates a new checkout. For a fresh agent in the **current** checkout (no new worktree), use `orca terminal create --worktree active --command "codex" --json` — that path does not create a second worktree shell.
 
 ## Worktree Comments
 
-A worktree comment is the short status text shown in Orca's workspace list/card for quick progress visibility.
+A worktree comment is the short status text shown in Muster's workspace list/card for quick progress visibility.
 
 Coding agents should update the active worktree comment at meaningful checkpoints:
 
@@ -163,7 +163,7 @@ Coding agents should update the active worktree comment at meaningful checkpoint
 ORCA worktree set --worktree active --comment "fix implemented; running integration tests" --json
 ```
 
-Update after meaningful state changes such as repro, fix, validation, handoff, or blocker. Keep comments short/current; failures are best-effort unless Orca state was requested.
+Update after meaningful state changes such as repro, fix, validation, handoff, or blocker. Keep comments short/current; failures are best-effort unless Muster state was requested.
 
 Card status uses `--workspace-status <id>`; defaults are `todo`, `in-progress`, `in-review`, `completed`.
 
@@ -200,13 +200,13 @@ Terminal rules:
 - For structured coordination, invoke the `orchestration` skill; it uses `orca orchestration ...` commands for messages, handoffs, task DAGs, dispatches, inbox/reply flows, and coordinator loops. A receiving agent can run `orca orchestration check --unread --inject` to render its unread mail in agent-readable form; this checks the caller's inbox and does not remotely deliver input to another terminal.
 - Use `terminal create --worktree active --command "<agent>"` for a fresh agent in the current worktree. Use `worktree create --agent <agent>` only for a separate checkout (agent in the first terminal — do not also `terminal create` the same agent).
 - Use `terminal wait --for tui-idle` for agent CLIs such as Claude Code, Gemini, Codex, OMP, Pi, and Grok; always pass `--timeout-ms`.
-- Terminal handles are runtime-scoped. Use `startupTerminal.handle` as the sole agent handle when `worktree create --agent` returns it; if Orca restarts, omits the handle, or returns `terminal_handle_stale`, reacquire with `terminal list` and continue with the replacement only.
+- Terminal handles are runtime-scoped. Use `startupTerminal.handle` as the sole agent handle when `worktree create --agent` returns it; if Muster restarts, omits the handle, or returns `terminal_handle_stale`, reacquire with `terminal list` and continue with the replacement only.
 - For long output, use cursor reads. After a limited tail preview, page from `oldestCursor`; after a cursor read, continue with `nextCursor` while `limited` is true and `nextCursor !== latestCursor`.
 - `--direction horizontal` splits left/right. `--direction vertical` splits top/bottom.
 
 ## Automations
 
-An automation is a scheduled Orca prompt run by a chosen provider against either a repo-created worktree or an existing workspace.
+An automation is a scheduled Muster prompt run by a chosen provider against either a repo-created worktree or an existing workspace.
 
 ```text
 ORCA automations list --json
@@ -222,13 +222,13 @@ ORCA automations remove <automationId> --json
 
 Schedules accept `hourly`, `daily`, `weekdays`, `weekly`, 5-field cron, or RRULE. Use `--time <HH:MM>` with `daily`/`weekdays`/`weekly`, and `--day <0-6>` only with `weekly` where Sunday is `0`.
 
-Use `--repo <selector>` for a new worktree per run, or `--workspace <selector>` / `--workspace-mode existing` for an existing Orca worktree. `--repo` and `--workspace` are mutually exclusive. Use `--reuse-session` only for existing-workspace automations; if the previous terminal is gone, Orca falls back to a fresh session. Prefer `--disabled` while testing setup.
+Use `--repo <selector>` for a new worktree per run, or `--workspace <selector>` / `--workspace-mode existing` for an existing Muster worktree. `--repo` and `--workspace` are mutually exclusive. Use `--reuse-session` only for existing-workspace automations; if the previous terminal is gone, Muster falls back to a fresh session. Prefer `--disabled` while testing setup.
 
 ## Built-In Browser
 
-The built-in browser is Orca's embedded browser tab surface, scoped to Orca worktrees; it is not Chrome/Safari or desktop app UI.
+The built-in browser is Muster's embedded browser tab surface, scoped to Muster worktrees; it is not Chrome/Safari or desktop app UI.
 
-These commands control only Orca's embedded browser tabs. For external Chrome/Safari/webviews or Orca app chrome/settings, use the Computer Use skill/tool. If the user explicitly asks for Orca CLI desktop control, use `orca computer ...`; do not use browser commands for desktop UI.
+These commands control only Muster's embedded browser tabs. For external Chrome/Safari/webviews or Muster app chrome/settings, use the Computer Use skill/tool. If the user explicitly asks for Muster CLI desktop control, use `orca computer ...`; do not use browser commands for desktop UI.
 
 Use a snapshot-interact-re-snapshot loop:
 
@@ -282,7 +282,7 @@ Browser rules:
 - Refs like `@e1` are assigned by `snapshot`, scoped to one tab, and invalidated by navigation or tab switch.
 - Browser commands default to the current worktree and its active tab. Use `--worktree all` only intentionally.
 - For concurrent browser work, run `orca tab list --json`, read `tabs[].browserPageId`, and pass `--page <browserPageId>` on later commands.
-- Use typed tab commands (`orca tab list/create/close/switch`), not `orca exec --command "tab ..."`, so Orca keeps UI state synchronized.
+- Use typed tab commands (`orca tab list/create/close/switch`), not `orca exec --command "tab ..."`, so Muster keeps UI state synchronized.
 - Prefer `wait --text`, `--url`, `--selector`, or `--load` after async page changes instead of bare timeouts.
 - Less common workflows can use typed commands above or `orca exec --command "<agent-browser command>"` passthrough.
 - If `fill` or `type` fails on a custom input, try `orca focus --element @e1 --json` then `orca inserttext --text "text" --json`.
@@ -299,7 +299,7 @@ Confirm `orca status --json` unless already checked this turn, then choose the n
 
 ## Mobile Emulator (iOS Simulator via serve-sim)
 
-The mobile emulator surface is workspace-scoped like browser tabs (active per worktree for unqualified; explicit --worktree/--device/--emulator for targeting). Always prefer `orca emulator ...` over raw `npx serve-sim` or simctl when inside Orca (the bridge owns lifecycle, scoping, and registration with the live pane).
+The mobile emulator surface is workspace-scoped like browser tabs (active per worktree for unqualified; explicit --worktree/--device/--emulator for targeting). Always prefer `orca emulator ...` over raw `npx serve-sim` or simctl when inside Muster (the bridge owns lifecycle, scoping, and registration with the live pane).
 
 See the dedicated `orca-emulator` skill for the full table (tap/type/gesture/button/rotate/camera/permissions/ax/list/attach/exec/kill + --json + gotchas like tap preferred, normalized 0-1, name->UDID early resolve in bridge, US ASCII type, camera one-time builds, stale state cleanup, no auto-focus on attach except --focus flag mirroring browser exactly, AX via HTTP endpoint from state).
 

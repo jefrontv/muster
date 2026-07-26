@@ -19,7 +19,7 @@ function issue(overrides: Partial<LinearIssue> = {}): LinearIssue {
     description: '',
     url: 'https://linear.app/orca/issue/ORC-1/sync-the-board',
     state: { name: 'Todo', type: 'unstarted', color: '#999' },
-    team: { id: 'team-1', name: 'Orca', key: 'ORC' },
+    team: { id: 'team-1', name: 'Muster', key: 'ORC' },
     labels: [],
     labelIds: [],
     priority: 0,

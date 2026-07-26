@@ -889,7 +889,7 @@ async function prepareCodexSessionResumeForLaunch(args: {
   if (!sessionSource) {
     if (args.providerSession.transcriptPath) {
       throw new Error(
-        'Orca could not verify the originating Codex session file, so automatic resume was stopped to avoid using a different account.'
+        'Muster could not verify the originating Codex session file, so automatic resume was stopped to avoid using a different account.'
       )
     }
     return null
@@ -1377,9 +1377,9 @@ async function presentRendererRecoveryPrompt(recentRecoveryCount: number): Promi
     buttons: ['Reload', 'Quit'],
     defaultId: 0,
     cancelId: 1,
-    title: 'Orca keeps failing to load',
+    title: 'Muster keeps failing to load',
     message: 'The app window crashed repeatedly and stopped reloading automatically.',
-    detail: `Orca tried to recover ${recentRecoveryCount} times in a row without success. This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch Orca.`
+    detail: `Muster tried to recover ${recentRecoveryCount} times in a row without success. This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch Muster.`
   }
   const { response } = window
     ? await dialog.showMessageBox(window, options)

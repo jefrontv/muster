@@ -365,7 +365,7 @@ describe('buildNewWorkspaceProjectOptions', () => {
         kind: 'project',
         id: 'orca',
         projectId: 'orca',
-        displayName: 'Orca',
+        displayName: 'Muster',
         badgeColor: '#111111',
         detail: 'stablyai/orca'
       },

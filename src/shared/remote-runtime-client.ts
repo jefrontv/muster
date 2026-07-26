@@ -59,8 +59,8 @@ function formatRemoteRuntimeCloseMessage(code: number, reason: Buffer): string {
     suffixParts.push(reasonText)
   }
   return suffixParts.length > 0
-    ? `Remote Orca runtime closed the connection (${suffixParts.join(': ')}).`
-    : 'Remote Orca runtime closed the connection.'
+    ? `Remote Muster runtime closed the connection (${suffixParts.join(': ')}).`
+    : 'Remote Muster runtime closed the connection.'
 }
 
 export type RemoteRuntimeSubscription = {
@@ -129,7 +129,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
         ok: false,
         error: new RemoteRuntimeClientError(
           'runtime_timeout',
-          'Timed out waiting for the remote Orca runtime to respond.'
+          'Timed out waiting for the remote Muster runtime to respond.'
         )
       })
     }
@@ -195,7 +195,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
         ok: false,
         error: new RemoteRuntimeClientError(
           'remote_runtime_unavailable',
-          'Could not connect to the remote Orca runtime.'
+          'Could not connect to the remote Muster runtime.'
         )
       })
     }
@@ -221,7 +221,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an unexpected binary frame.'
+            'Remote Muster runtime returned an unexpected binary frame.'
           )
         })
         return
@@ -239,7 +239,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an undecryptable frame.'
+            'Remote Muster runtime returned an undecryptable frame.'
           )
         })
         return
@@ -267,7 +267,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE handshake frame.'
+            'Remote Muster runtime returned an invalid E2EE handshake frame.'
           )
         })
         return
@@ -281,7 +281,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an unexpected E2EE handshake frame.'
+            'Remote Muster runtime returned an unexpected E2EE handshake frame.'
           )
         })
         return
@@ -299,7 +299,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE auth frame.'
+            'Remote Muster runtime returned an invalid E2EE auth frame.'
           )
         })
         return
@@ -316,7 +316,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             code,
-            'Remote Orca runtime rejected the pairing token.'
+            'Remote Muster runtime rejected the pairing token.'
           )
         })
         return
@@ -329,7 +329,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'remote_runtime_unavailable',
-            'Remote Orca runtime request was released before it could be sent.'
+            'Remote Muster runtime request was released before it could be sent.'
           )
         })
         return
@@ -346,7 +346,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid response frame.'
+            'Remote Muster runtime returned an invalid response frame.'
           )
         })
         return
@@ -361,7 +361,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid response frame.'
+            'Remote Muster runtime returned an invalid response frame.'
           )
         })
         return
@@ -372,7 +372,7 @@ export async function sendRemoteRuntimeRequest<TResult>(
           ok: false,
           error: new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned a mismatched response id.'
+            'Remote Muster runtime returned a mismatched response id.'
           )
         })
         return
@@ -447,7 +447,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
       fail(
         new RemoteRuntimeClientError(
           'runtime_timeout',
-          'Timed out waiting for the remote Orca runtime subscription to start.'
+          'Timed out waiting for the remote Muster runtime subscription to start.'
         )
       )
     }, timeoutMs)
@@ -478,7 +478,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
             fail(
               new RemoteRuntimeClientError(
                 'remote_runtime_unavailable',
-                'Remote Orca runtime send buffer overflow; reconnecting.'
+                'Remote Muster runtime send buffer overflow; reconnecting.'
               )
             )
         })
@@ -545,7 +545,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
       fail(
         new RemoteRuntimeClientError(
           'remote_runtime_unavailable',
-          'Could not connect to the remote Orca runtime.'
+          'Could not connect to the remote Muster runtime.'
         )
       )
     }
@@ -584,7 +584,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an undecryptable frame.'
+            'Remote Muster runtime returned an undecryptable frame.'
           )
         )
         return
@@ -626,7 +626,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'remote_runtime_unavailable',
-            'Remote Orca runtime stopped responding; the stream connection was reset.'
+            'Remote Muster runtime stopped responding; the stream connection was reset.'
           )
         )
         try {
@@ -647,7 +647,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE handshake frame.'
+            'Remote Muster runtime returned an invalid E2EE handshake frame.'
           )
         )
         return
@@ -660,7 +660,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an unexpected E2EE handshake frame.'
+            'Remote Muster runtime returned an unexpected E2EE handshake frame.'
           )
         )
         return
@@ -677,7 +677,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid E2EE auth frame.'
+            'Remote Muster runtime returned an invalid E2EE auth frame.'
           )
         )
         return
@@ -690,7 +690,9 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
           (authenticated as { error?: { code?: unknown } }).error?.code === 'unauthorized'
             ? 'unauthorized'
             : 'invalid_runtime_response'
-        fail(new RemoteRuntimeClientError(code, 'Remote Orca runtime rejected the pairing token.'))
+        fail(
+          new RemoteRuntimeClientError(code, 'Remote Muster runtime rejected the pairing token.')
+        )
         return
       }
       state = 'ready'
@@ -706,7 +708,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an invalid response frame.'
+            'Remote Muster runtime returned an invalid response frame.'
           )
         )
         return
@@ -720,7 +722,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned a mismatched response id.'
+            'Remote Muster runtime returned a mismatched response id.'
           )
         )
         return
@@ -733,7 +735,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned binary data before authentication.'
+            'Remote Muster runtime returned binary data before authentication.'
           )
         )
         return
@@ -743,7 +745,7 @@ export async function subscribeRemoteRuntimeRequest<TResult>(
         fail(
           new RemoteRuntimeClientError(
             'invalid_runtime_response',
-            'Remote Orca runtime returned an undecryptable binary frame.'
+            'Remote Muster runtime returned an undecryptable binary frame.'
           )
         )
         return

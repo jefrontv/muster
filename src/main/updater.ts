@@ -25,10 +25,7 @@ import {
 } from './update-install-exit-watchdog'
 import { registerAutoUpdaterHandlers } from './updater-events'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
-import {
-  isAutoUpdateEnabled,
-  RELEASE_LATEST_DOWNLOAD_URL
-} from './updater-release-feed-source'
+import { isAutoUpdateEnabled, RELEASE_LATEST_DOWNLOAD_URL } from './updater-release-feed-source'
 import {
   compareVersions,
   isBenignCheckFailure,
@@ -558,7 +555,7 @@ function deferHeadlessServeInstall(phase: 'download' | 'install', version: strin
     )
   }
   sendErrorStatus(
-    'This orca serve process was not started by an update-capable supervisor. Keep it running and update Orca through its service manager.',
+    'This orca serve process was not started by an update-capable supervisor. Keep it running and update Muster through its service manager.',
     true
   )
   return true
@@ -638,7 +635,7 @@ async function performQuitAndInstall(): Promise<void> {
           }
         )
         sendErrorStatus(
-          'Could not prepare the supervised server restart. Orca remains running.',
+          'Could not prepare the supervised server restart. Muster remains running.',
           true
         )
         resetQuitForUpdateState()
@@ -693,7 +690,7 @@ async function performQuitAndInstall(): Promise<void> {
       }
     )
     sendErrorStatus(
-      'Could not restart to install the update. Quit and reopen Orca, then try again.'
+      'Could not restart to install the update. Quit and reopen Muster, then try again.'
     )
   }
 }
@@ -718,7 +715,9 @@ function handleQuitAndInstallFailure(): boolean {
     level: 'warn',
     message: 'Update install could not start; recovered app state'
   })
-  sendErrorStatus('Could not restart to install the update. Quit and reopen Orca, then try again.')
+  sendErrorStatus(
+    'Could not restart to install the update. Quit and reopen Muster, then try again.'
+  )
   return true
 }
 

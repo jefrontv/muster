@@ -170,7 +170,7 @@ export function buildRemediation(
     return {
       summary: 'GitHub CLI (`gh`) is not installed or not on PATH.',
       detail:
-        'Orca uses `gh` to talk to GitHub Projects. Install it from cli.github.com, then sign in.',
+        'Muster uses `gh` to talk to GitHub Projects. Install it from cli.github.com, then sign in.',
       commands: [
         {
           label: translate(
@@ -196,8 +196,8 @@ export function buildRemediation(
     return {
       summary: `\`${varName}\` is set in your environment, so \`gh\` is using that token instead of your keyring login. \`gh auth refresh\` cannot modify env-supplied tokens — that's why running it didn't help.`,
       detail: IS_WINDOWS
-        ? `Find where \`${varName}\` is set (System or User environment variables, or your PowerShell profile), remove it, then restart Orca so the new environment is picked up.${fallback}`
-        : `Find where \`${varName}\` is exported (commonly \`~/.zshrc\`, \`~/.zshenv\`, \`~/.bashrc\`, \`~/.profile\`, or your shell's secrets manager), remove it, then restart Orca so the new environment is picked up.${fallback}`,
+        ? `Find where \`${varName}\` is set (System or User environment variables, or your PowerShell profile), remove it, then restart Muster so the new environment is picked up.${fallback}`
+        : `Find where \`${varName}\` is exported (commonly \`~/.zshrc\`, \`~/.zshenv\`, \`~/.bashrc\`, \`~/.profile\`, or your shell's secrets manager), remove it, then restart Muster so the new environment is picked up.${fallback}`,
       commands: [findEnvVarCommand(varName), unsetEnvVarCommand(varName)],
       docsUrl: 'https://cli.github.com/manual/gh_help_environment'
     }
@@ -209,10 +209,10 @@ export function buildRemediation(
   if (diag.envTokenInProcess && (!active || diag.missingScopes.length > 0)) {
     const varName = diag.envTokenInProcess
     return {
-      summary: `Orca inherited \`${varName}\` from your shell, and \`gh\` is using that token. \`gh auth refresh\` doesn't apply to env-supplied tokens.`,
-      detail: `Unset \`${varName}\` in the shell that launches Orca${
+      summary: `Muster inherited \`${varName}\` from your shell, and \`gh\` is using that token. \`gh auth refresh\` doesn't apply to env-supplied tokens.`,
+      detail: `Unset \`${varName}\` in the shell that launches Muster${
         IS_WINDOWS ? ' (or in your user environment variables)' : ' (or in your shell rc file)'
-      }, then restart Orca.`,
+      }, then restart Muster.`,
       commands: [findEnvVarCommand(varName), unsetEnvVarCommand(varName)],
       docsUrl: 'https://cli.github.com/manual/gh_help_environment'
     }

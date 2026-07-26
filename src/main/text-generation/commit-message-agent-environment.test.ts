@@ -113,18 +113,18 @@ describe('prepareLocalCommitMessageAgentEnv', () => {
   it('sets CODEX_HOME for host managed Codex accounts', async () => {
     const result = await prepareLocalCommitMessageAgentEnv('codex', {
       prepareForCodexLaunch: () =>
-        'C:\\Users\\tester\\AppData\\Roaming\\Orca\\codex-accounts\\a\\home'
+        'C:\\Users\\tester\\AppData\\Roaming\\Muster\\codex-accounts\\a\\home'
     })
 
     expect(result).toEqual({
       ok: true,
       env: expect.objectContaining({
-        CODEX_HOME: 'C:\\Users\\tester\\AppData\\Roaming\\Orca\\codex-accounts\\a\\home'
+        CODEX_HOME: 'C:\\Users\\tester\\AppData\\Roaming\\Muster\\codex-accounts\\a\\home'
       })
     })
   })
 
-  it('strips a nested-Orca CODEX_HOME override when the launch resolves to the real home', async () => {
+  it('strips a nested-Muster CODEX_HOME override when the launch resolves to the real home', async () => {
     process.env.CODEX_HOME = '/managed/runtime/home'
     process.env.ORCA_CODEX_HOME = '/managed/runtime/home'
 

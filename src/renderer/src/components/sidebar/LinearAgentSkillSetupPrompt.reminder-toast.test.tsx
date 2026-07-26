@@ -99,11 +99,11 @@ function cliStatus(overrides: Partial<CliInstallStatus>): CliInstallStatus {
     commandPath: '/usr/local/bin/orca',
     pathDirectory: '/usr/local/bin',
     pathConfigured: true,
-    launcherPath: '/Applications/Orca.app/Contents/MacOS/Orca',
+    launcherPath: '/Applications/Muster.app/Contents/MacOS/Muster',
     installMethod: 'symlink',
     supported: true,
     state: 'installed',
-    currentTarget: '/Applications/Orca.app/Contents/MacOS/Orca',
+    currentTarget: '/Applications/Muster.app/Contents/MacOS/Muster',
     unsupportedReason: null,
     detail: null,
     ...overrides
@@ -217,11 +217,11 @@ describe('LinearAgentSkillSetupPrompt reminder toast', () => {
       'Enable agents to read and edit the attached Linear ticket.'
     )
     expect(toast.warning).toHaveBeenCalledWith(
-      'Orca CLI and Linear skill are missing',
+      'Muster CLI and Linear skill are missing',
       expect.objectContaining({
         id: 'linear-agent-skill-setup-orca.linearTicketsSkill.setupDismissed.host',
         description:
-          'Install the Orca CLI and the Linear skill to enable your agents to read and edit Linear tasks.',
+          'Install the Muster CLI and the Linear skill to enable your agents to read and edit Linear tasks.',
         action: {
           label: 'Set up',
           onClick: expect.any(Function)
@@ -230,15 +230,15 @@ describe('LinearAgentSkillSetupPrompt reminder toast', () => {
     )
   })
 
-  it('does not repeat the Orca CLI in CLI-only reminder toast copy', async () => {
+  it('does not repeat the Muster CLI in CLI-only reminder toast copy', async () => {
     mocks.skillState.installed = true
     await snoozeInitialModal({ linked: true, remote: false, surface: 'modal' })
     await renderPrompt({ linked: true, remote: false, surface: 'modal' })
 
     expect(toast.warning).toHaveBeenCalledWith(
-      'Orca CLI is missing',
+      'Muster CLI is missing',
       expect.objectContaining({
-        description: 'Install the Orca CLI to enable your agents to read and edit Linear tasks.'
+        description: 'Install the Muster CLI to enable your agents to read and edit Linear tasks.'
       })
     )
   })
@@ -248,10 +248,10 @@ describe('LinearAgentSkillSetupPrompt reminder toast', () => {
     await renderPrompt({ linked: true, remote: true, surface: 'modal' })
 
     expect(toast.warning).toHaveBeenCalledWith(
-      'Orca CLI and Linear skill are missing',
+      'Muster CLI and Linear skill are missing',
       expect.objectContaining({
         description:
-          'Install the Orca CLI and the Linear skill to enable your agents to read and edit Linear tasks. Remote agent environments may need their own setup.'
+          'Install the Muster CLI and the Linear skill to enable your agents to read and edit Linear tasks. Remote agent environments may need their own setup.'
       })
     )
   })
@@ -273,10 +273,10 @@ describe('LinearAgentSkillSetupPrompt reminder toast', () => {
     await renderPrompt(wslProps)
 
     expect(toast.warning).toHaveBeenCalledWith(
-      'Orca CLI and Linear skill are missing',
+      'Muster CLI and Linear skill are missing',
       expect.objectContaining({
         description:
-          'Install the Orca CLI and the Linear skill to enable your agents to read and edit Linear tasks. This setup runs in the selected WSL agent runtime.'
+          'Install the Muster CLI and the Linear skill to enable your agents to read and edit Linear tasks. This setup runs in the selected WSL agent runtime.'
       })
     )
   })
