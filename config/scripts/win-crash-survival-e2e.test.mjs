@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { parseArgs } from '../../tools/win-crash-survival-e2e/cli-args.mjs'
 import { buildCrashAssertions } from '../../tools/win-crash-survival-e2e/crash-assertions.mjs'
@@ -11,36 +12,44 @@ import {
 import { quotePowerShellLiteral } from '../../tools/win-update-e2e/powershell-runner.mjs'
 import { closeApp, resolveElectronMainPid } from '../../tools/win-update-e2e/app-driver.mjs'
 import { isPidAlive } from '../../tools/win-update-e2e/daemon-processes.mjs'
+import { workflowIsActive } from './parked-workflow.mjs'
+
+const projectDir = resolve(import.meta.dirname, '../..')
+const crashWorkflowActive = workflowIsActive(projectDir, 'win-crash-survival-e2e.yml')
 
 describe('win-crash-survival-e2e proof contracts', () => {
-  it('keeps the packaged proof wired as a targeted pull-request gate', () => {
-    const workflow = readFileSync('.github/workflows/win-crash-survival-e2e.yml', 'utf8')
-    expect(workflow).toMatch(/^  pull_request:/m)
-    expect(workflow).not.toMatch(/^  push:/m)
-    expect(workflow).toContain("- 'src/main/daemon/**'")
-    expect(workflow).toContain("- 'src/main/index.ts'")
-    expect(workflow).toContain("- 'src/main/ipc/pty*.ts'")
-    expect(workflow).toContain("- 'src/main/startup/first-window-startup-services.ts'")
-    expect(workflow).toContain("- 'src/main/window/attach-main-window-services.ts'")
-    expect(workflow).toContain("- 'src/preload/**'")
-    expect(workflow).toContain("- 'src/renderer/src/components/terminal-pane/**'")
-    expect(workflow).toContain("- 'src/renderer/src/store/slices/terminals.ts'")
-    expect(workflow).toContain("- '!src/**/*.test.*'")
-    expect(workflow).toContain("- '!src/**/*.bench.*'")
-    expect(workflow).toContain('--expect "$env:EXPECT"')
-    expect(workflow).toContain('exit $LASTEXITCODE')
-    expect(workflow).toContain("'!config/**/*.test.*'")
-    expect(workflow).toContain("'!src/**/*.test.*'")
-    expect(workflow).toContain("'!src/**/*.bench.*'")
-    expect(workflow).toContain("'!config/reliability-gates.jsonc'")
-    expect(workflow).toContain("'resources/**'")
-    expect(workflow).toContain('cache: pnpm')
-    expect(workflow.indexOf('- name: Setup Node.js')).toBeGreaterThan(
-      workflow.indexOf('- name: Setup pnpm')
-    )
-    expect(workflow).toContain("if: steps.cache-installer.outputs.cache-hit != 'true'")
-    expect(workflow).toContain('crash-survival-electron-builder-')
-  })
+  // Gated: this workflow is parked in this fork (.github/workflows-upstream-disabled/README.md).
+  it.skipIf(!crashWorkflowActive)(
+    'keeps the packaged proof wired as a targeted pull-request gate',
+    () => {
+      const workflow = readFileSync('.github/workflows/win-crash-survival-e2e.yml', 'utf8')
+      expect(workflow).toMatch(/^  pull_request:/m)
+      expect(workflow).not.toMatch(/^  push:/m)
+      expect(workflow).toContain("- 'src/main/daemon/**'")
+      expect(workflow).toContain("- 'src/main/index.ts'")
+      expect(workflow).toContain("- 'src/main/ipc/pty*.ts'")
+      expect(workflow).toContain("- 'src/main/startup/first-window-startup-services.ts'")
+      expect(workflow).toContain("- 'src/main/window/attach-main-window-services.ts'")
+      expect(workflow).toContain("- 'src/preload/**'")
+      expect(workflow).toContain("- 'src/renderer/src/components/terminal-pane/**'")
+      expect(workflow).toContain("- 'src/renderer/src/store/slices/terminals.ts'")
+      expect(workflow).toContain("- '!src/**/*.test.*'")
+      expect(workflow).toContain("- '!src/**/*.bench.*'")
+      expect(workflow).toContain('--expect "$env:EXPECT"')
+      expect(workflow).toContain('exit $LASTEXITCODE')
+      expect(workflow).toContain("'!config/**/*.test.*'")
+      expect(workflow).toContain("'!src/**/*.test.*'")
+      expect(workflow).toContain("'!src/**/*.bench.*'")
+      expect(workflow).toContain("'!config/reliability-gates.jsonc'")
+      expect(workflow).toContain("'resources/**'")
+      expect(workflow).toContain('cache: pnpm')
+      expect(workflow.indexOf('- name: Setup Node.js')).toBeGreaterThan(
+        workflow.indexOf('- name: Setup pnpm')
+      )
+      expect(workflow).toContain("if: steps.cache-installer.outputs.cache-hit != 'true'")
+      expect(workflow).toContain('crash-survival-electron-builder-')
+    }
+  )
 
   it('requires the full survival oracle, including daemon identity and reattach', () => {
     const base = {

@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
+import { workflowIsActive } from './parked-workflow.mjs'
 
 const projectDir = resolve(import.meta.dirname, '../..')
+const computerE2eActive = workflowIsActive(projectDir, 'computer-e2e.yml')
 
 describe('computer-use e2e workflow', () => {
   it('runs computer-use e2e files serially because they share desktop focus', () => {
@@ -37,7 +39,11 @@ describe('computer-use e2e workflow', () => {
     expect(windowsStoreE2e).not.toMatch(/const one = findRoleIndex/)
     expect(windowsStoreE2e).not.toMatch(/for \(const index of \[one, plus, two, equals\]\)/)
   })
+})
 
+// Gated: these all read `computer-e2e.yml`, parked out of `.github/workflows/` by this fork.
+// See .github/workflows-upstream-disabled/README.md; restoring the workflow re-arms them.
+describe.skipIf(!computerE2eActive)('computer-use e2e workflow (computer-e2e.yml)', () => {
   it('triggers on computer-use shared contracts, scripts, and agent skill changes', () => {
     const workflow = parse(
       readFileSync(join(projectDir, '.github/workflows/computer-e2e.yml'), 'utf8')
