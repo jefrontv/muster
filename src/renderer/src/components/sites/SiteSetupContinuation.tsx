@@ -63,6 +63,10 @@ export function SiteSetupContinuation({
   const [stack, setStack] = useState<StageOutcome>('idle')
   const [importState, setImportState] = useState<StageOutcome>('idle')
   const [error, setError] = useState('')
+  // Defaults chosen for a throwaway local install: the account only ever exists inside LocalWP.
+  // ocsites hardcoded the same shape (a house email plus 'admin').
+  const [adminEmail, setAdminEmail] = useState('')
+  const [adminPassword, setAdminPassword] = useState('admin')
   const [cert, setCert] = useState<LocalWpCertStatus | null>(null)
   const [trusting, setTrusting] = useState(false)
 
@@ -79,6 +83,7 @@ export function SiteSetupContinuation({
       }
       setPlan(result.value)
       setDomain(result.value.stack.suggestedDomain)
+      setAdminEmail(`admin@${result.value.stack.suggestedDomain || 'localhost'}`)
       // Already-LocalWP sites have a domain from the start, so the certificate stage is
       // answerable before the user touches anything.
       const domainNow = result.value.stack.suggestedDomain.trim()
@@ -151,13 +156,18 @@ export function SiteSetupContinuation({
     try {
       // Preview first even though we do not render the plan: it is the call that reports a
       // conflicting site or an unusable domain, so it turns a mid-migration failure into a message.
-      const preview = await window.api.siteStacks.previewMigration({ siteId, domain })
+      const credentials = {
+        domain,
+        adminEmail: adminEmail.trim(),
+        adminPassword: adminPassword.trim()
+      }
+      const preview = await window.api.siteStacks.previewMigration({ siteId, ...credentials })
       if (!preview.ok) {
         setError(preview.error)
         setStack('idle')
         return
       }
-      const migrated = await window.api.siteStacks.runMigration({ siteId, domain })
+      const migrated = await window.api.siteStacks.runMigration({ siteId, ...credentials })
       if (!migrated.ok) {
         setError(migrated.error)
         setStack('idle')
@@ -207,32 +217,69 @@ export function SiteSetupContinuation({
             ) : null}
           </div>
           {stack === 'idle' || stack === 'busy' ? (
-            <div className="flex items-center gap-2 pl-6.5">
-              <label className="sr-only" htmlFor="setup-local-domain">
-                {strings.stackDomainLabel}
-              </label>
-              <Input
-                id="setup-local-domain"
-                className="h-8 font-mono text-xs"
-                value={domain}
-                disabled={stack === 'busy'}
-                onChange={(event) => setDomain(event.target.value)}
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={stack === 'busy' || domain.trim().length === 0}
-                onClick={() => void runStack()}
-              >
-                {stack === 'busy' ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin" />
-                    {strings.stackRunning}
-                  </>
-                ) : (
-                  strings.stackAction
-                )}
-              </Button>
+            <div className="space-y-1.5 pl-6.5">
+              {/* LocalWP creates a real WordPress install, so it needs the wp-admin account up
+                  front. These were the fields ocsites prompted for; omitting them is why the
+                  migration used to fail with "adminEmail must be a non-empty string". */}
+              <div className="grid grid-cols-2 gap-1.5">
+                <label className="sr-only" htmlFor="setup-local-domain">
+                  {strings.stackDomainLabel}
+                </label>
+                <Input
+                  id="setup-local-domain"
+                  className="h-8 font-mono text-xs"
+                  placeholder={strings.stackDomainLabel}
+                  value={domain}
+                  disabled={stack === 'busy'}
+                  onChange={(event) => setDomain(event.target.value)}
+                />
+                <label className="sr-only" htmlFor="setup-admin-email">
+                  {strings.stackAdminEmail}
+                </label>
+                <Input
+                  id="setup-admin-email"
+                  className="h-8 font-mono text-xs"
+                  placeholder={strings.stackAdminEmail}
+                  value={adminEmail}
+                  disabled={stack === 'busy'}
+                  onChange={(event) => setAdminEmail(event.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="sr-only" htmlFor="setup-admin-password">
+                  {strings.stackAdminPassword}
+                </label>
+                <Input
+                  id="setup-admin-password"
+                  className="h-8 font-mono text-xs"
+                  placeholder={strings.stackAdminPassword}
+                  value={adminPassword}
+                  disabled={stack === 'busy'}
+                  onChange={(event) => setAdminPassword(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  disabled={
+                    stack === 'busy' ||
+                    domain.trim().length === 0 ||
+                    adminEmail.trim().length === 0 ||
+                    adminPassword.trim().length === 0
+                  }
+                  onClick={() => void runStack()}
+                >
+                  {stack === 'busy' ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      {strings.stackRunning}
+                    </>
+                  ) : (
+                    strings.stackAction
+                  )}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground/70">{strings.stackAdminHint}</p>
             </div>
           ) : null}
         </div>

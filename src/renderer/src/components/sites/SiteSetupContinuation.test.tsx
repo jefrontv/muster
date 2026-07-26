@@ -126,8 +126,16 @@ describe('SiteSetupContinuation', () => {
     await act(async () => {
       findButton('Set up LocalWP')?.click()
     })
-    expect(previewMock).toHaveBeenCalledWith({ siteId: SITE_ID, domain: 'acme.local' })
-    expect(migrateMock).toHaveBeenCalledWith({ siteId: SITE_ID, domain: 'acme.local' })
+    // Regression: the admin account was omitted, so every migration died on
+    // "adminEmail must be a non-empty string" before LocalWP was ever contacted.
+    const expected = {
+      siteId: SITE_ID,
+      domain: 'acme.local',
+      adminEmail: 'admin@acme.local',
+      adminPassword: 'admin'
+    }
+    expect(previewMock).toHaveBeenCalledWith(expected)
+    expect(migrateMock).toHaveBeenCalledWith(expected)
   })
 
   it('does not migrate when the preview rejects the domain', async () => {

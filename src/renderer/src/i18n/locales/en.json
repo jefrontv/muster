@@ -13787,7 +13787,10 @@
           "certHeading": "HTTPS certificate",
           "certAction": "Trust certificate",
           "certTrusting": "Trusting…",
-          "certTrusted": "Trusted — the local site loads over https without a warning."
+          "certTrusted": "Trusted — the local site loads over https without a warning.",
+          "stackAdminEmail": "Admin email",
+          "stackAdminPassword": "Admin password",
+          "stackAdminHint": "The WordPress admin account LocalWP creates. Local only — it never reaches the server."
         },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"

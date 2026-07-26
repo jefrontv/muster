@@ -45,6 +45,18 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackDomainLabel',
     'Local domain'
   ),
+  stackAdminEmail: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAdminEmail',
+    'Admin email'
+  ),
+  stackAdminPassword: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAdminPassword',
+    'Admin password'
+  ),
+  stackAdminHint: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAdminHint',
+    'The WordPress admin account LocalWP creates. Local only — it never reaches the server.'
+  ),
   certHeading: translate(
     'auto.components.sites.SiteSetupContinuation.certHeading',
     'HTTPS certificate'
