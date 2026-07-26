@@ -15,13 +15,13 @@ const BOOLEAN_FLAGS = new Set(['--keep-profile'])
 const USAGE = `
 win-crash-survival-e2e — packaged crash-survival proof harness (Windows only)
 
-Proves that force-killing ONLY Orca's main process (a real crash, no tree-kill)
+Proves that force-killing ONLY Muster's main process (a real crash, no tree-kill)
 leaves the detached terminal daemon + its pwsh shell alive, with no pwsh FailFast
 (0xE9 "No process is on the other end of the pipe"), and that a relaunch ADOPTS
 the surviving daemon instead of forking a new one. See #7742.
 
 Usage:
-  node tools/win-crash-survival-e2e/run.mjs --expect <profile> [--exe-path <Orca.exe>] [options]
+  node tools/win-crash-survival-e2e/run.mjs --expect <profile> [--exe-path <Muster.exe>] [options]
 
 Required:
   --expect <profile>       Assertion profile:
@@ -34,8 +34,8 @@ Required:
                              on a fixed build this profile is EXPECTED to fail.
 
 Options:
-  --exe-path <path>        Installed Orca.exe to drive (default: the per-user
-                           install under %LOCALAPPDATA%\\Programs\\Orca). The
+  --exe-path <path>        Installed Muster.exe to drive (default: the per-user
+                           install under %LOCALAPPDATA%\\Programs\\Muster). The
                            harness NEVER installs/uninstalls — it only launches
                            this exe against an isolated userData dir.
   --soak-seconds <n>       Post-crash observation window before relaunch (default: 8)
@@ -81,7 +81,7 @@ function validate(opts, exePathFlagPresent, argv) {
     errors.push('--exe-path requires a path value')
   } else if (!opts.exePath) {
     errors.push(
-      'No installed Orca.exe found under %LOCALAPPDATA%\\Programs — pass --exe-path <Orca.exe>'
+      'No installed Muster.exe found under %LOCALAPPDATA%\\Programs — pass --exe-path <Muster.exe>'
     )
   } else if (!existsSync(opts.exePath)) {
     errors.push(`--exe-path does not exist: ${opts.exePath}`)

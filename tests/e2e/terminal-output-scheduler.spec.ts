@@ -395,6 +395,8 @@ test.describe('Terminal output scheduler', () => {
       })
       .toBe(true)
 
-    expect(await getTerminalContent(orcaPage)).not.toContain('Orca skipped hidden terminal output')
+    expect(await getTerminalContent(orcaPage)).not.toContain(
+      'Muster skipped hidden terminal output'
+    )
   })
 })

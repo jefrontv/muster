@@ -28,7 +28,7 @@ describe('computer-use e2e workflow', () => {
     expect(cliDriver).toContain('ORCA_DEV_USER_DATA_PATH')
     expect(cliDriver).toContain('orca-computer-runtime-')
     expect(cliDriver).toContain('retryMissingRuntimeMetadata')
-    expect(cliDriver).toContain('Could not read Orca runtime metadata')
+    expect(cliDriver).toContain('Could not read Muster runtime metadata')
     expect(cliDriver).toContain("'serve', '--no-pairing', '--json'")
 
     expect(windowsStoreE2e).toMatch(

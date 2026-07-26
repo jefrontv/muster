@@ -150,7 +150,7 @@ function createIdleRepo(worktreeCount) {
   run('git', ['init'], { cwd: repoDir })
   run('git', ['config', 'user.email', 'idle-cpu@test.local'], { cwd: repoDir })
   run('git', ['config', 'user.name', 'Idle CPU Benchmark'], { cwd: repoDir })
-  writeFileSync(path.join(repoDir, 'README.md'), '# Orca idle CPU benchmark\n')
+  writeFileSync(path.join(repoDir, 'README.md'), '# Muster idle CPU benchmark\n')
   writeFileSync(
     path.join(repoDir, 'package.json'),
     `${JSON.stringify({ private: true }, null, 2)}\n`

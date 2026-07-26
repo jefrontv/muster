@@ -14,8 +14,8 @@ import { spawnSync } from 'node:child_process'
 import { assertWin32 } from './platform-guard.mjs'
 import { runCommandSync } from './powershell-runner.mjs'
 
-const PRODUCT_NAME = 'Orca'
-const EXE_NAME = 'Orca.exe'
+const PRODUCT_NAME = 'Muster'
+const EXE_NAME = 'Muster.exe'
 
 /** Programs root that per-user oneClick NSIS installs into. */
 function programsRoot() {
@@ -191,7 +191,7 @@ export function silentUninstall(installDir, { allowDefaultLocation = false } = {
   if (!allowDefaultLocation && pathsEqual(resolved, path.join(programsRoot(), PRODUCT_NAME))) {
     throw new Error(
       `Refusing to uninstall the default install location "${resolved}" — this is where a ` +
-        `developer's REAL Orca lives. Isolated mode must target a separate --install-dir.`
+        `developer's REAL Muster lives. Isolated mode must target a separate --install-dir.`
     )
   }
   const exe = path.join(resolved, EXE_NAME)

@@ -140,7 +140,7 @@ function parseSecrets(raw: string) {
 
 function requireNativeSecretStore(): void {
   if (Platform.OS === 'web') {
-    throw new Error('Orca Relay pairing requires a native secret store')
+    throw new Error('Muster Relay pairing requires a native secret store')
   }
 }
 

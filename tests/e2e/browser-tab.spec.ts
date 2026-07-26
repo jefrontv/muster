@@ -461,7 +461,7 @@ test.describe('Browser Tab', () => {
     }
   })
 
-  test('plain links stay current while explicit new-tab gestures activate Orca tabs', async ({
+  test('plain links stay current while explicit new-tab gestures activate Muster tabs', async ({
     electronApp,
     orcaPage
   }) => {

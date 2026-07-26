@@ -110,7 +110,9 @@ describe('ensure-native-runtime', () => {
         })
 
         expect(result.status, result.stderr).toBe(0)
-        expect(result.stderr).toContain("expected build/Release so Orca's node-pty patch is active")
+        expect(result.stderr).toContain(
+          "expected build/Release so Muster's node-pty patch is active"
+        )
         expect(readFileSync(logPath, 'utf8')).toContain('pnpm rebuild node-pty\n')
       } finally {
         rmSync(projectDir, { recursive: true, force: true })

@@ -104,7 +104,7 @@ function createLocalRepoFixture() {
   mkdirSync(repoPath, { recursive: true })
   git(repoPath, 'init', '--initial-branch=main')
   git(repoPath, 'config', 'user.email', 'bench@orca.local')
-  git(repoPath, 'config', 'user.name', 'Orca Bench')
+  git(repoPath, 'config', 'user.name', 'Muster Bench')
   writeFileSync(path.join(repoPath, 'README.md'), '# cold-park fixture\n')
   git(repoPath, 'add', '.')
   git(repoPath, 'commit', '-m', 'init', '--no-gpg-sign')
@@ -119,7 +119,7 @@ function createLocalRepoFixture() {
 
 async function setupWorkspaces(page, fixture) {
   return await runWithTimeout(
-    'fixture registration in Orca',
+    'fixture registration in Muster',
     () =>
       page.evaluate(
         async ({ repoPath, importedWorktreePaths }) => {

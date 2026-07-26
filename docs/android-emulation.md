@@ -2,7 +2,7 @@
 
 ## Problem
 
-Orca ships a built-in mobile emulator surface (live pane + `orca emulator` CLI +
+Muster ships a built-in mobile emulator surface (live pane + `orca emulator` CLI +
 agent skill), but it is **iOS Simulator only and macOS only**:
 
 - `src/main/emulator/emulator-availability.ts:32` hard-returns "unavailable" for
@@ -51,7 +51,7 @@ What is iOS-bound and needs an Android sibling:
 - Android emulation on **Windows, Linux, and macOS** (macOS users choose iOS or
   Android in the same pane).
 - **Full AVD lifecycle**: discover installed AVDs via the SDK, boot/shutdown
-  them from Orca, and attach to already-running emulators + physical `adb`
+  them from Muster, and attach to already-running emulators + physical `adb`
   devices.
 - **Live ~60fps pane** via scrcpy H.264 decoded in the renderer with WebCodecs.
 - Control parity: tap, swipe/gesture, type, hardware buttons (Back, Home,
@@ -267,7 +267,7 @@ New `skills/orca-emulator-android/SKILL.md`, mirroring
 - Prerequisites: Android Studio / SDK installed, `ANDROID_HOME` (or
   `ANDROID_SDK_ROOT`) set, at least one AVD or a connected device.
 - The `orca emulator ...` command table (shared CLI; Android examples).
-- Gotchas: Orca handles pixel ↔ normalized conversion (agents always pass 0–1);
+- Gotchas: Muster handles pixel ↔ normalized conversion (agents always pass 0–1);
   adb device/serial targeting; no camera injection in v1; scrcpy version
   coupling.
 - Cross-reference from the iOS skill's "When NOT to use" (which already
@@ -329,7 +329,7 @@ the iOS tests mock serve-sim (`serve-sim-*.test.ts`, `emulator-bridge.test.ts`).
 
 Electron validation (manual, on a machine with the Android SDK):
 
-- Boot an AVD from Orca; confirm the live pane streams and is responsive.
+- Boot an AVD from Muster; confirm the live pane streams and is responsive.
 - tap / swipe / type / Back / Home / Recents / rotate.
 - `ax`, `install` + `launch`, `permissions grant`, `logcat`.
 - Cross-platform smoke on Windows (primary driver) and macOS (iOS + Android

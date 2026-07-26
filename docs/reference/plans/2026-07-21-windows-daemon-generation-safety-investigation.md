@@ -6,7 +6,7 @@ Investigation and completion snapshot: 2026-07-21 16:59 PDT
 Branch baseline: `OrcaWin/issue-9749-windows-daemon-generation-safety` at
 `937a2015e`, 40 commits after `v1.4.148-rc.1`. This document is the hard gate
 before a reproduction harness or production change. GitHub access during the
-investigation was read-only, and no installed Orca daemon, pipe, token, process,
+investigation was read-only, and no installed Muster daemon, pipe, token, process,
 or terminal session was contacted or changed.
 
 ## Findings
@@ -53,7 +53,7 @@ pipes, with a live canary and a stale-mirror canary in each generation. Each
 canary records the PTY-root and descendant PID/start identity independently.
 The fixture refuses cleanup outside its exact temporary root and terminates
 only recorded fixture process incarnations; it never enumerates or connects to
-installed Orca endpoints.
+installed Muster endpoints.
 
 The Electron-as-Node reconnect client performs three production
 `DaemonPtyAdapter`/`DaemonPtyRouter.discoverLegacySessions` bursts, reattaches
@@ -460,7 +460,7 @@ contradicting the close-safety result:
   integration passed; no terminal-close assertion failed in this E2E.
 
 All diagnostic downloads and worktree-local E2E temp roots were removed by
-their exact verified paths. No installed Orca daemon pipe or real user terminal
+their exact verified paths. No installed Muster daemon pipe or real user terminal
 was discovered, greeted, stopped, or mutated during these runs.
 
 ## Internal review-until-clean and final native evidence
@@ -607,13 +607,13 @@ source-text assertion that does not match CRLF on Windows.
 | Cross-platform, SSH, WSL, remote-server, and multiple-client compatibility                                                                  | 215 deterministic tests cover remote runtime/server, shared control, SSH provider, WSL host context, and PTY transport. Platform-specific fixture behavior is runtime-gated.                                                                                                                                                                                       | Deterministic proof complete; live Linux SSH/WSL unavailable             |
 | Practical Electron restart behavior                                                                                                         | A real isolated Electron application created a daemon-backed terminal, wrote and restored output across clean app quit/relaunch, preserved the exact daemon PID, and accepted both keyboard and direct terminal input after reattachment.                                                                                                                          | Proven on native Windows (`electron-headless`, 24.0 s)                   |
 | Internal review-until-clean and final gates                                                                                                 | The original three review rounds and both additional PR review loops are clean. The latest loop fixed four oracle/performance/gate gaps, then completed a clean full-diff re-review. Typecheck, lint, format, reliability manifest, max-lines ratchet, Electron build, native harness, and focused suites pass apart from the documented untouched baselines.      | Proven                                                                   |
-| Public GitHub and real daemon safety                                                                                                        | No public GitHub mutation occurred. Fixture guards reject non-temporary roots and known Orca user-data paths; no installed pipe/token/session was discovered or contacted.                                                                                                                                                                                         | Proven                                                                   |
+| Public GitHub and real daemon safety                                                                                                        | No public GitHub mutation occurred. Fixture guards reject non-temporary roots and known Muster user-data paths; no installed pipe/token/session was discovered or contacted.                                                                                                                                                                                         | Proven                                                                   |
 
 Live Linux SSH validation remains an explicit gap: the required throwaway
 Docker target is unavailable on this runner (`docker` is not installed and no
 Docker Desktop process or standard executable path exists), and `wsl.exe`
 reports that WSL is not installed. A real remote or localhost was deliberately
-not substituted. The Orca worktree comment was updated through the scoped
+not substituted. The Muster worktree comment was updated through the scoped
 `worktree set --comment` CLI with the investigation, RED reproduction,
 root-cause, implementation, native-validation, and clean-review milestones.
 No terminal or daemon command was issued through the CLI, and no public GitHub

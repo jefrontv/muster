@@ -269,7 +269,7 @@ function loadNodePtyNativeModule() {
   assertNodePtyWindowsConptyRuntime(native?.dir)
   if (requiresPatchedNodePtySourceBuild() && !isNodePtyReleaseBuildDir(native?.dir)) {
     throw new Error(
-      `node-pty resolved to ${native.dir}; expected build/Release so Orca's node-pty patch is active`
+      `node-pty resolved to ${native.dir}; expected build/Release so Muster's node-pty patch is active`
     )
   }
 }

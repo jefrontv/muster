@@ -122,7 +122,7 @@ async function addRealOrcaRepo(page: Page, repoPath: string): Promise<string> {
     await state.fetchRepos()
     const repo = store.getState().repos.find((candidate) => candidate.path === repoPath)
     if (!repo) {
-      throw new Error(`Real Orca repo did not load: ${repoPath}`)
+      throw new Error(`Real Muster repo did not load: ${repoPath}`)
     }
 
     await store.getState().updateRepo(repo.id, {
@@ -140,7 +140,7 @@ async function addRealOrcaRepo(page: Page, repoPath: string): Promise<string> {
       (candidate) => candidate.path === repoPath
     )
     if (!worktree) {
-      throw new Error(`Real Orca worktree did not load: ${repoPath}`)
+      throw new Error(`Real Muster worktree did not load: ${repoPath}`)
     }
 
     nextState.updateSettings({
@@ -199,7 +199,7 @@ async function createWorkspaceThroughComposer(page: Page, workspaceName: string)
         }, workspaceName),
       {
         timeout: 60_000,
-        message: `Workspace ${workspaceName} did not appear in the real Orca repo`
+        message: `Workspace ${workspaceName} did not appear in the real Muster repo`
       }
     )
     .not.toBeNull()
@@ -220,7 +220,7 @@ async function createWorkspaceThroughComposer(page: Page, workspaceName: string)
   await expect
     .poll(() => getActiveWorktreeId(page), {
       timeout: 30_000,
-      message: 'Created real Orca workspace did not become active'
+      message: 'Created real Muster workspace did not become active'
     })
     .toBe(createdId)
   expect(createdId).not.toBe(previousWorktreeId)
@@ -575,7 +575,7 @@ test.describe('Codex skill preview terminal artifact repro @headful', () => {
     createdWorktreeIds.length = 0
   })
 
-  test('captures the real Orca repo setup-split Codex skill preview overpaint before any click', async ({
+  test('captures the real Muster repo setup-split Codex skill preview overpaint before any click', async ({
     electronApp,
     orcaPage
   }, testInfo) => {

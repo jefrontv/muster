@@ -2,11 +2,11 @@
 
 ## Problem
 
-Issue #4560 reports that Orca CLI / orchestration cannot be used with a Droid agent. Droid is already a first-class launchable agent in `src/shared/tui-agent-config.ts:240`, title detection token-matches Droid in `src/shared/agent-detection.ts:38` and `src/shared/agent-detection.ts:397`, and `--inject` accepts a detected running agent through `runtime.isTerminalRunningAgent` in `src/main/runtime/rpc/methods/orchestration.ts:429`. The gap found locally is that orchestration agent groups are hardcoded to `claude`, `openclaude`, `codex`, `opencode`, and `gemini` in `src/main/runtime/orchestration/groups.ts:7`, so `@droid` resolves to no recipients.
+Issue #4560 reports that Muster CLI / orchestration cannot be used with a Droid agent. Droid is already a first-class launchable agent in `src/shared/tui-agent-config.ts:240`, title detection token-matches Droid in `src/shared/agent-detection.ts:38` and `src/shared/agent-detection.ts:397`, and `--inject` accepts a detected running agent through `runtime.isTerminalRunningAgent` in `src/main/runtime/rpc/methods/orchestration.ts:429`. The gap found locally is that orchestration agent groups are hardcoded to `claude`, `openclaude`, `codex`, `opencode`, and `gemini` in `src/main/runtime/orchestration/groups.ts:7`, so `@droid` resolves to no recipients.
 
 ## Root Cause
 
-The orchestration group resolver has its own closed list of addressable agent-name groups instead of deriving from the agent set that Orca can launch and recognize. Droid was added to the catalog and status paths, but not to this separate group list.
+The orchestration group resolver has its own closed list of addressable agent-name groups instead of deriving from the agent set that Muster can launch and recognize. Droid was added to the catalog and status paths, but not to this separate group list.
 
 ## Non-Goals
 

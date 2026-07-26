@@ -45,7 +45,7 @@ function writeStreamingTui(scriptPath: string): void {
       '  writeFileSync(heartbeatPath, String(frame))',
       '  const body = [',
       "    '╭────────────────────────────────────────────────────╮',",
-      "    `│ Orca warm reattach frame ${String(frame).padStart(6, '0')} 🟢 │`,",
+      "    `│ Muster warm reattach frame ${String(frame).padStart(6, '0')} 🟢 │`,",
       "    '├────────────────────────────────────────────────────┤',",
       '    `│ REATTACH_FRAME_${frame} live daemon output             │`,',
       "    '╰────────────────────────────────────────────────────╯'",

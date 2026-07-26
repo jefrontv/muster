@@ -35,9 +35,9 @@ text:
 An independent symptom can prefix user input with `[I`, the printable tail of the standard terminal
 focus-in report `CSI I`.
 
-The OSC text is an Orca-generated reply to the agent's OSC 10/11 foreground/background query. The
+The OSC text is a Muster-generated reply to the agent's OSC 10/11 foreground/background query. The
 agent can issue that query before a daemon-backed `spawn()` resolves to the renderer, and waits only
-about 100 ms for the answer. Orca therefore has a short-lived main-side startup responder in
+about 100 ms for the answer. Muster therefore has a short-lived main-side startup responder in
 addition to the normal renderer/model query authorities. On affected ConPTY timing, the reply sent
 to the PTY is returned as cooked output with its ESC bytes removed. The current ingestion order
 records that cooked echo in the authoritative runtime model before any renderer-bound filtering.
@@ -126,7 +126,7 @@ The transaction therefore has three installations of the same shared state machi
   `SshPtyProvider` is only an RPC proxy and never sanitizes relay output.
 
 Electron main receives already-classified daemon data. A remote-runtime desktop client does not
-reinterpret the stream; the remote Orca host owns its transaction. WSL sessions follow their actual
+reinterpret the stream; the remote Muster host owns its transaction. WSL sessions follow their actual
 provider owner but never enable the native-Windows compatibility projection.
 
 Fresh-session creation carries startup-transaction intent atomically. Daemon `createOrAttach`
@@ -311,7 +311,7 @@ Projection matching cannot prove provenance. An application can print the same p
 the candidate position, causing a false-positive removal while the later real echo remains visible.
 This is the central drawback of the workaround. It is accepted only if the real provider harness
 shows a stable, immediate projection inside the narrow registered-agent startup window; otherwise
-Orca disables the projection and keeps the visible output rather than risking deletion.
+Muster disables the projection and keeps the visible output rather than risking deletion.
 
 When the projection is enabled, the exact-collision behavior is explicit: the first identical
 anchored candidate is removed and a later real echo is allowed through. The test fixture must assert
@@ -321,7 +321,7 @@ Unknown, delayed, or interleaved transformations pass through visibly.
 
 ## Decision 4: Preserve ConPTY Focus Protocol
 
-Orca must deliver the ConPTY bootstrap `?1004h`/`?9001h` to live terminal emulators unchanged. It
+Muster must deliver the ConPTY bootstrap `?1004h`/`?9001h` to live terminal emulators unchanged. It
 must not remove, reorder, or fabricate transport bootstrap modes.
 
 The `[I` investigation gets a deterministic harness before a behavior change. The harness must
@@ -361,7 +361,7 @@ view should emit input immediately.
 - Reattach to a live agent may rehydrate application-owned focus mode, but never transport-only
   bootstrap ownership.
 - Snapshot serialization/replay must not mutate live ownership trackers.
-- A snapshot containing an OSC query or an old Orca reply never produces a provider write.
+- A snapshot containing an OSC query or an old Muster reply never produces a provider write.
 - Model and renderer snapshots must both be free of matched cooked reply projections.
 
 Any future focus ownership metadata must be explicit; it cannot be inferred from serialized
@@ -386,7 +386,7 @@ Safety is asymmetric:
 - WSL: normal Linux terminal semantics; no ConPTY echo or focus workaround.
 - SSH: the same ingress/query ownership ordering, but no native Windows echo projection unless the
   remote host protocol later supplies explicit equivalent evidence.
-- Remote runtime: the remote Orca host owns ingestion and must implement the same contract there;
+- Remote runtime: the remote Muster host owns ingestion and must implement the same contract there;
   desktop local main does not reinterpret its stream.
 - Mobile/web views: consume the sanitized authoritative model stream and retain exactly-one query
   response authority through the existing terminal-driver election.

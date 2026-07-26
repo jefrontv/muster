@@ -28,7 +28,7 @@ const validSignature = {
 
 function withTempFile(callback) {
   const dir = mkdtempSync(join(tmpdir(), 'orca-inner-signature-'))
-  const filePath = join(dir, 'Orca.exe')
+  const filePath = join(dir, 'Muster.exe')
   writeFileSync(filePath, 'placeholder executable')
 
   try {
@@ -93,7 +93,7 @@ describe('verify-windows-inner-signature', () => {
 
   it('rejects missing, nonexistent, and directory executable paths before PowerShell', () => {
     expect(() => validateExecutablePath('')).toThrow(/Usage:/)
-    expect(() => validateExecutablePath(join(tmpdir(), 'missing-Orca.exe'))).toThrow(
+    expect(() => validateExecutablePath(join(tmpdir(), 'missing-Muster.exe'))).toThrow(
       /does not exist/
     )
 
@@ -167,26 +167,30 @@ describe('verify-windows-inner-signature', () => {
       return { status: 0, stdout: JSON.stringify(validSignature), stderr: '' }
     }
 
-    expect(getPowerShellSignatureJson('C:\\Path With Spaces\\Orca.exe', spawnSyncImpl)).toBe(
+    expect(getPowerShellSignatureJson('C:\\Path With Spaces\\Muster.exe', spawnSyncImpl)).toBe(
       JSON.stringify(validSignature)
     )
     expect(calls[0].command).toBe('pwsh')
     expect(calls[0].args).toContain('-Command')
-    expect(calls[0].args.at(-1)).not.toBe('C:\\Path With Spaces\\Orca.exe')
+    expect(calls[0].args.at(-1)).not.toBe('C:\\Path With Spaces\\Muster.exe')
     expect(calls[0].options).toEqual(
       expect.objectContaining({
         encoding: 'utf8',
         env: expect.objectContaining({
-          ORCA_WINDOWS_INNER_EXECUTABLE: 'C:\\Path With Spaces\\Orca.exe'
+          ORCA_WINDOWS_INNER_EXECUTABLE: 'C:\\Path With Spaces\\Muster.exe'
         })
       })
     )
 
     expect(() =>
-      getPowerShellSignatureJson('Orca.exe', () => ({ status: 0, stdout: '{}', stderr: 'warning' }))
+      getPowerShellSignatureJson('Muster.exe', () => ({
+        status: 0,
+        stdout: '{}',
+        stderr: 'warning'
+      }))
     ).toThrow(/stderr/)
     expect(() =>
-      getPowerShellSignatureJson('Orca.exe', () => ({ status: 7, stdout: '', stderr: '' }))
+      getPowerShellSignatureJson('Muster.exe', () => ({ status: 7, stdout: '', stderr: '' }))
     ).toThrow(/exit code 7/)
   })
 

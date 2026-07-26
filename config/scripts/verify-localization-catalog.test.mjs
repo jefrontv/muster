@@ -36,7 +36,7 @@ describe('verify-localization-catalog', () => {
   it('bootstraps missing catalog entries from string fallbacks', async () => {
     const { root, localesDir } = makeProject({
       sourceText:
-        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Orca' })\n"
+        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Muster' })\n"
     })
 
     await expect(verifyLocalizationCatalog(root, { fix: false })).resolves.toBe(1)
@@ -53,7 +53,7 @@ describe('verify-localization-catalog', () => {
   it('repairs stale locale keys and interpolation mismatches', async () => {
     const { root, localesDir } = makeProject({
       sourceText:
-        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Orca' })\n",
+        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Muster' })\n",
       enCatalog: { auto: { example: { greeting: 'Hello {{name}}' } } },
       esCatalog: {
         auto: {

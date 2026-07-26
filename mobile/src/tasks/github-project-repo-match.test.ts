@@ -12,7 +12,7 @@ const repos = [
 
 describe('GitHub project repo matching', () => {
   it('normalizes owner/repo slugs case-insensitively', () => {
-    expect(normalizeGitHubRepositorySlug(' StablyAI/Orca ')).toBe('stablyai/orca')
+    expect(normalizeGitHubRepositorySlug(' StablyAI/Muster ')).toBe('stablyai/orca')
     expect(normalizeGitHubRepositorySlug('orca')).toBeNull()
     expect(normalizeGitHubRepositorySlug('stablyai/orca/extra')).toBeNull()
   })

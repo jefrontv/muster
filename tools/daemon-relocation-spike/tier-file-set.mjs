@@ -86,7 +86,7 @@ export function resolveTierFileSet(inv, tier) {
   }
 
   // Core: exe + runtime data blobs live next to Orca.exe in win-unpacked.
-  addFile(inv.hostExe, 'Orca.exe')
+  addFile(inv.hostExe, 'Muster.exe')
   for (const entry of inv.runtimeData) {
     addFile(entry, entry.name)
   }

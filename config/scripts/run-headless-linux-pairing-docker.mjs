@@ -196,7 +196,7 @@ async function validateAuthenticatedPairing() {
   )
   assert(
     typeof statusResult?.runtime?.appVersion === 'string',
-    'paired server did not report its Orca app version'
+    'paired server did not report its Muster app version'
   )
   assert(
     statusResult?.runtime?.capabilities?.includes('updater.remote-control.v1'),
@@ -301,7 +301,7 @@ async function waitForReady(name, startupTimeoutMs) {
 
 function hasCompleteReadyContract(stdout) {
   if (
-    stdout.includes('Orca server ready\n') &&
+    stdout.includes('Muster server ready\n') &&
     (stdout.includes('\nPairing URL: ') || stdout.includes('\nPairing guidance: '))
   ) {
     return true

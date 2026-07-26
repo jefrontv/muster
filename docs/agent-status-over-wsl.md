@@ -27,12 +27,12 @@ sidebar after v1.4.124. Diagnosis split it into a regression and a pre-existing 
   fallback was not restored.
 - The **class gap** is that agent hooks have never worked from inside WSL for any agent.
   Two scoped PRs fixed it for OMP alone (merged, live-validated on a Windows+WSL2-NAT rig):
-  - PR `7642` — Orca-managed WSL shells wrap interactive `omp` invocations with
+  - PR `7642` — Muster-managed WSL shells wrap interactive `omp` invocations with
     `--extension "$ORCA_OMP_STATUS_EXTENSION"` (the env var is WSLENV `/p`-translated so
     the WSL process reads the extension out of the Windows filesystem via `/mnt/c`).
   - PR `7641` — when the extension's loopback POST cannot connect, it delivers via
     Windows-side `/mnt/c/Windows/System32/curl.exe` (a Windows process, so *its*
-    `127.0.0.1` is the loopback Orca actually binds). Fire-and-forget spawn,
+    `127.0.0.1` is the loopback Muster actually binds). Fire-and-forget spawn,
     `--noproxy 127.0.0.1`, memoized WSL/curl probes, load-tolerant timeouts
     (`--connect-timeout 3 --max-time 10`; 0.5s dropped events under load).
 
@@ -45,7 +45,7 @@ Windows+WSL story.
 ### Gap A — transport
 
 The hook listener binds `127.0.0.1` only, deliberately (`src/main/agent-hooks/server.ts`,
-`listen(0, '127.0.0.1')`; auth via `X-Orca-Agent-Hook-Token`, 403 otherwise). Every hook
+`listen(0, '127.0.0.1')`; auth via `X-Muster-Agent-Hook-Token`, 403 otherwise). Every hook
 client POSTs to a hardcoded `http://127.0.0.1:$ORCA_AGENT_HOOK_PORT/hook/<source>`.
 
 WSL2 under default **NAT** networking is a VM with its own network namespace. Microsoft's
@@ -86,7 +86,7 @@ shell hooks still execute inside WSL and then hit Gap A regardless.
 Endpoint file contract: `writeEndpointFile` (`src/shared/agent-hook-listener.ts`) emits
 exactly four keys (`ORCA_AGENT_HOOK_PORT/TOKEN/ENV/VERSION`) to `endpoint.env` (POSIX) /
 `endpoint.cmd` (Windows) — **no host field**. Shell clients source it to refresh stale
-coords after an Orca restart; node clients parse it. It is never executed as a delivery
+coords after a Muster restart; node clients parse it. It is never executed as a delivery
 script. Clients prefer endpoint-FILE coords over env (restart re-coordination) — any
 transport change must preserve that property.
 
@@ -121,7 +121,7 @@ clients were already given** (`$ORCA_AGENT_HOOK_PORT` — free inside WSL, since
 only exists on the Windows side). Unmodified clients then deliver successfully with
 **zero client changes**; the reporter's diagnostic relay in GH `7565` proved this shape
 live. Forward each parsed envelope to the Windows host over the relay's **own stdio**
-(Orca spawns it via `wsl.exe`, so it owns that pipe). Ingest through the existing trust
+(Muster spawns it via `wsl.exe`, so it owns that pipe). Ingest through the existing trust
 boundary: `agentHookServer.ingestRemote` (`src/main/agent-hooks/server.ts`), envelope
 shape `src/shared/agent-hook-relay.ts` — identical to the SSH relay, which runs a
 loopback-only receiver on the remote box and forwards over the SSH control channel.
@@ -134,9 +134,9 @@ bind `127.0.0.1:0`, write a **WSL-side endpoint file**, and point WSL PTYs'
 The relay writes that WSL-side endpoint file in **both** modes so restart re-coordination
 never depends on `/mnt/c` translation being readable.
 
-Lifecycle: one relay per distro **per Orca instance** (concurrent instances have distinct
+Lifecycle: one relay per distro **per Muster instance** (concurrent instances have distinct
 ports, so guest listeners never collide); **ensure** — not just start — whenever a WSL PTY
-exists: first spawn *and* daemon-PTY reattach after an Orca restart (WSL PTYs survive in
+exists: first spawn *and* daemon-PTY reattach after a Muster restart (WSL PTYs survive in
 the daemon; the new instance has a new port + token and must respawn the relay before
 surviving agents re-coordinate). The relay **exits when its stdin closes**: a lingering
 guest listener would let WSL's own Windows→WSL forwarder grab the freed Windows-side port
@@ -213,7 +213,7 @@ On a default-config Windows 11 + WSL2 **NAT** machine: launch **Codex or Claude*
 (explicitly not OMP) in a WSL worktree → live hook-driven worktree-card row with status
 transitions and a completion notification; hook listener still bound to Windows loopback
 only; zero per-client transport changes; hooks installed WSL-side automatically (no manual
-config); harmless under mirrored networking and inert on non-WSL platforms. After an Orca
+config); harmless under mirrored networking and inert on non-WSL platforms. After a Muster
 restart with the WSL agent still running (daemon-surviving PTY), status events resume
 without relaunching the agent.
 
@@ -241,7 +241,7 @@ two fixes:
    `isWslHookRelayConnectionId`, while still rejecting WSL-stamped events against
    SSH-owned repos. Provenance stays stamped (it made the drop diagnosable in the first
    place).
-3. **Codex reads a redirected home.** Orca launches WSL Codex with `CODEX_HOME` pointed at
+3. **Codex reads a redirected home.** Muster launches WSL Codex with `CODEX_HOME` pointed at
    the managed runtime home (`~/.local/share/orca/codex-runtime-home/home`), so installing
    hooks to `~/.codex` left Codex dark. The installers now accept an explicit codex home;
    the trust write into `config.toml` is deferred while that file doesn't exist (the
@@ -256,7 +256,7 @@ Four independent review lenses over the full diff; confirmed findings fixed:
 
 - **Endpoint identity (all 4 reviewers)**: the guest endpoint dir was keyed by the
   ephemeral Windows hook port, so a daemon-surviving agent kept sourcing the DEAD
-  `port-P1` file after an Orca restart — breaking the restart-resume acceptance criterion
+  `port-P1` file after a Muster restart — breaking the restart-resume acceptance criterion
   and regressing shipped OMP recovery. Now keyed by a restart-stable instance key
   (hash of the Windows endpoint file path = userData + namespace, crossed via
   `ORCA_WSL_HOOK_INSTANCE`): the restarted instance's relay REWRITES the same file, which
@@ -268,7 +268,7 @@ Four independent review lenses over the full diff; confirmed findings fixed:
   counters only reset after 2 min of stable uptime, so connect-then-die loops escalate to
   the 10-min cap instead of cycling every 10s.
 - **Install-dir versioning**: the guest install dir is namespaced by bundle version, so
-  concurrent Orca instances with different bundles (dev + prod) never reinstall over each
+  concurrent Muster instances with different bundles (dev + prod) never reinstall over each
   other; tmp files carry the guest PID. The install spawn also gained the 30s timeout it
   was missing (a wedged wsl.exe could previously pin the state machine at 'starting'
   forever).

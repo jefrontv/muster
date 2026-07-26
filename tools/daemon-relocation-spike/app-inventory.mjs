@@ -14,7 +14,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
 export const RUNTIME_DATA_FILES = ['icudtl.dat', 'snapshot_blob.bin', 'v8_context_snapshot.bin']
-export const HOST_EXE = 'Orca.exe'
+export const HOST_EXE = 'Muster.exe'
 
 // Windows arch dir names node-pty prebuilds ship under; build/Release is the
 // packaged rebuild location and takes precedence.

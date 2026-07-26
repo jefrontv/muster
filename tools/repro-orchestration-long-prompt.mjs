@@ -474,12 +474,12 @@ async function main() {
     console.log(`Usage:
   node tools/repro-orchestration-long-prompt.mjs [--mode codex-like|wire] [--size-kb 80]
 
-The parent mode requires a running Orca runtime and creates temporary Orca
+The parent mode requires a running Muster runtime and creates temporary Muster
 terminals. The fake worker records whether orchestration dispatch delivered a
 long prompt in a safe agent-input contract.
 
 Options:
-  --cli <path>         Orca CLI command (default: ORCA_REPRO_CLI or orca)
+  --cli <path>         Muster CLI command (default: ORCA_REPRO_CLI or orca)
   --worktree <path>   Worktree path for temporary terminals (default: cwd)
   --timeout-ms <n>    Wait budget for terminal/report operations
   --keep-terminals    Leave temporary terminals open for inspection

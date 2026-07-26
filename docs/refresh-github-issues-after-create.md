@@ -12,7 +12,7 @@ Issue https://github.com/stablyai/orca-internal/issues/101 reports that the GitH
 
 ## Root Cause
 
-The post-create flow forces only Orca's renderer-side work-item cache. It does not bypass the GitHub CLI REST cache used by the main-process recent work-item fetch, so the refreshed request can reuse stale `gh api --cache 120s` data.
+The post-create flow forces only Muster's renderer-side work-item cache. It does not bypass the GitHub CLI REST cache used by the main-process recent work-item fetch, so the refreshed request can reuse stale `gh api --cache 120s` data.
 
 ## Non-Goals
 
@@ -78,7 +78,7 @@ The post-create flow forces only Orca's renderer-side work-item cache. It does n
 - Search query active: queried paths already use `gh issue list` / `gh pr list` rather than cached REST calls, so no behavior change is required.
 - Pagination: next-page fetches use queried/cursor paths and do not populate the renderer work-items cache, so `noCache` is page-0-only.
 - Concurrent windows: the creating window refreshes immediately; other renderer windows keep their own cache until their next refresh, landing probe, or TTL expiry. This change should not introduce cross-window invalidation.
-- External GitHub mutations: external issue changes still rely on existing TTL/manual refresh behavior; this fix only guarantees freshness for Orca-originated create flows.
+- External GitHub mutations: external issue changes still rely on existing TTL/manual refresh behavior; this fix only guarantees freshness for Muster-originated create flows.
 - Network/auth errors: existing partial-failure handling and banners remain unchanged.
 
 ## Test Plan

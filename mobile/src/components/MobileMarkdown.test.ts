@@ -4,11 +4,11 @@ import { parseMobileMarkdown } from './mobile-markdown-parser'
 
 describe('parseMobileMarkdown', () => {
   it('parses GFM tables into table blocks', () => {
-    expect(parseMobileMarkdown('| Name | State |\n| --- | --- |\n| Orca | Open |')).toEqual([
+    expect(parseMobileMarkdown('| Name | State |\n| --- | --- |\n| Muster | Open |')).toEqual([
       {
         type: 'table',
         headers: ['Name', 'State'],
-        rows: [['Orca', 'Open']]
+        rows: [['Muster', 'Open']]
       }
     ])
   })
@@ -26,8 +26,8 @@ describe('parseMobileMarkdown', () => {
   it('normalizes common README HTML into readable Markdown preview text', () => {
     const normalized = normalizeMobileMarkdownPreviewHtml(`
 <h1 align="center">
-  <a href="https://onOrca.dev"><img src="resources/build/icon.png" alt="Orca" width="64" /></a>
-  Orca
+  <a href="https://onOrca.dev"><img src="resources/build/icon.png" alt="Muster" width="64" /></a>
+  Muster
 </h1>
 
 <p align="center">
@@ -37,7 +37,7 @@ describe('parseMobileMarkdown', () => {
 </p>
 `)
 
-    expect(normalized).toContain('# [Orca](https://onOrca.dev)')
+    expect(normalized).toContain('# [Muster](https://onOrca.dev)')
     expect(normalized).toContain('[GitHub stars](https://github.com/stablyai/orca/stargazers)')
     expect(normalized).toContain('**The AI Orchestrator**')
     expect(normalized).not.toContain('<h1')

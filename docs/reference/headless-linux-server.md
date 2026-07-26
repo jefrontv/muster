@@ -3,11 +3,11 @@
 Use this guide when you want to run `orca serve` on a Linux machine without a
 desktop session, such as an Ubuntu VPS or a remote build box.
 
-`orca serve` starts the Orca runtime without opening the desktop window. On
+`orca serve` starts the Muster runtime without opening the desktop window. On
 Linux, the packaged AppImage still needs the libraries that Electron expects at
-startup. Current Orca builds start Xvfb automatically for `orca serve` when no
+startup. Current Muster builds start Xvfb automatically for `orca serve` when no
 `DISPLAY` is set, but Xvfb must be installed first. A separate D-Bus session is
-not required. When `DISPLAY` is set, Orca uses that display instead of starting
+not required. When `DISPLAY` is set, Muster uses that display instead of starting
 a competing Xvfb process.
 
 The supported deployment matrix covers Ubuntu 20.04, 22.04, and 24.04 and
@@ -36,7 +36,7 @@ cd /opt/orca
 
 Docker commonly has no FUSE device. Use `--appimage-extract` once or
 `--appimage-extract-and-run`; neither requires a privileged container. The
-extract-and-run wrapper can print extracted paths before Orca starts, so
+extract-and-run wrapper can print extracted paths before Muster starts, so
 automation that requires stdout to contain only the ready JSON should extract
 once and invoke `squashfs-root/AppRun`.
 
@@ -74,7 +74,7 @@ LIBGL_ALWAYS_SOFTWARE=1 /opt/orca/orca-linux.AppImage serve \
 ```
 
 `--pairing-address` is only the address advertised to clients. It does not
-change the listener bind address. Orca binds its WebSocket listener, then
+change the listener bind address. Muster binds its WebSocket listener, then
 combines the actual bound port with the advertised host when the address omits
 a port. Use a reachable LAN/Tailscale hostname or IP, or a complete reverse
 proxy URL such as `https://orca.example.com/runtime` (`http(s)` is normalized
@@ -85,7 +85,7 @@ The command writes one ready block to stdout after the listener bind and
 pairing initialization complete:
 
 ```text
-Orca server ready
+Muster server ready
 Bound endpoint: ws://0.0.0.0:6768
 Advertised endpoint: ws://100.64.1.20:6768
 Pairing URL: orca://pair?code=...
@@ -146,13 +146,13 @@ sudo chown root:root /opt/orca /opt/orca/orca-linux.AppImage
 sudo chmod 755 /opt/orca /opt/orca/orca-linux.AppImage
 ```
 
-For most hosts, one `orca serve` service is enough because Orca starts Xvfb on
+For most hosts, one `orca serve` service is enough because Muster starts Xvfb on
 display `:99` when no display exists:
 
 ```ini
 # /etc/systemd/system/orca-serve.service
 [Unit]
-Description=Orca runtime server
+Description=Muster runtime server
 After=network-online.target
 Wants=network-online.target
 
@@ -198,12 +198,12 @@ error, or missing library.
 ## Managed Xvfb Service
 
 If you prefer to own the virtual display lifecycle in systemd, run Xvfb as a
-separate service and set `DISPLAY=:99` for Orca.
+separate service and set `DISPLAY=:99` for Muster.
 
 ```ini
 # /etc/systemd/system/orca-xvfb.service
 [Unit]
-Description=Virtual X display for Orca
+Description=Virtual X display for Muster
 After=network-online.target
 Wants=network-online.target
 
@@ -220,12 +220,12 @@ WantedBy=multi-user.target
 If `command -v Xvfb` returned a different path, update `ExecStart` to that
 absolute path.
 
-Then add the display dependency to the Orca service:
+Then add the display dependency to the Muster service:
 
 ```ini
 # /etc/systemd/system/orca-serve.service
 [Unit]
-Description=Orca runtime server
+Description=Muster runtime server
 After=network-online.target orca-xvfb.service
 Wants=network-online.target orca-xvfb.service
 
@@ -281,7 +281,7 @@ user, especially when the listener is reachable beyond localhost.
 - An omitted advertised port uses the actual bound port, including a fallback
   port selected after a collision. An explicit proxy port is preserved. A port
   mismatch therefore means the supplied external routing is wrong, not that
-  Orca changes it.
+  Muster changes it.
 - Reverse proxies must support WebSocket upgrade and route the advertised path.
   Use `wss://` or `https://` when TLS terminates at the proxy; do not advertise
   `ws://` through an HTTPS-only endpoint.
@@ -293,13 +293,13 @@ user, especially when the listener is reachable beyond localhost.
   did not reach serve mode; confirm the AppImage version and exact argument
   order, especially `--no-sandbox serve`.
 
-If you later install the desktop CLI from Orca settings, use that CLI for normal
+If you later install the desktop CLI from Muster settings, use that CLI for normal
 shell workflows. Keep the AppImage path in systemd so service restarts do not
 depend on an interactive shell profile.
 
 ## Upgrade
 
-`orca serve` never updates itself. In headless mode Orca wires up no auto-updater
+`orca serve` never updates itself. In headless mode Muster wires up no auto-updater
 at all — the built-in updater only runs in the desktop GUI, and no paired mobile
 or web client can trigger it remotely. Upgrading is always a deliberate step:
 replace the AppImage and restart the service.
@@ -307,12 +307,12 @@ replace the AppImage and restart the service.
 Two facts make this safe and predictable:
 
 - **State lives in the service user's home, not next to the binary.** Persisted
-  data is under `/home/orca/.config/` (Orca uses both an `orca` and an `Orca`
+  data is under `/home/orca/.config/` (Muster uses both an `orca` and an `Muster`
   directory there), fully independent of `/opt/orca/orca-linux.AppImage`.
   Replacing the binary never touches projects, worktree metadata, terminal
   history, orchestration state, or paired-device keys — so mobile and web
   clients reconnect after an upgrade without re-pairing.
-- **New builds migrate old state on load.** Orca loads older `orca-data.json`
+- **New builds migrate old state on load.** Muster loads older `orca-data.json`
   state into the current schema and writes it back in the current shape, so a
   forward upgrade needs no manual data step.
 
@@ -320,7 +320,7 @@ Rolling back is the case that needs care — see [Roll back](#roll-back).
 
 ### Record the version you deploy
 
-Orca has no headless version command: there is no `--version` flag or `version`
+Muster has no headless version command: there is no `--version` flag or `version`
 subcommand, and `orca serve` prints only its endpoint. Choose a release tag
 explicitly instead of following the `latest` URL, and record it next to the
 binary so upgrades are auditable. The steps below keep that record in
@@ -349,9 +349,9 @@ sudo du -sh /home/orca/.config
 df -h /opt/orca /home/orca
 ```
 
-`/opt/orca` needs room for the compressed Orca profile archive, the staged
+`/opt/orca` needs room for the compressed Muster profile archive, the staged
 build, and the rollback binary. A rollback extracts the old profile and preserves
-the post-upgrade Orca profile directories, so `/home` needs room for both copies.
+the post-upgrade Muster profile directories, so `/home` needs room for both copies.
 
 Run the following block as one Bash script so its fail-fast and recovery traps
 remain active for the whole operation:
@@ -362,7 +362,7 @@ set -euo pipefail
 # Replace this example with the release tag you intend to deploy
 ORCA_VERSION=v1.4.147
 
-# Select the release asset on the server where Orca runs
+# Select the release asset on the server where Muster runs
 case "$(uname -m)" in
   x86_64)
     ORCA_ASSET=orca-linux.AppImage
@@ -454,23 +454,23 @@ sudo chmod 644 /opt/orca/VERSION.new
 ORCA_SERVICE_STOPPED=1
 sudo systemctl stop orca-serve.service
 
-# Add only Orca-owned profile directories, then publish the complete bundle
+# Add only Muster-owned profile directories, then publish the complete bundle
 ORCA_PROFILE_DIRS=()
-for profile_dir in orca Orca; do
+for profile_dir in orca Muster; do
   if sudo test -L "/home/orca/.config/$profile_dir"; then
-    echo "Refusing symlinked Orca profile: /home/orca/.config/$profile_dir" >&2
+    echo "Refusing symlinked Muster profile: /home/orca/.config/$profile_dir" >&2
     exit 1
   fi
   if sudo test -d "/home/orca/.config/$profile_dir"; then
-    if [[ "$profile_dir" == Orca ]] && \
-      sudo test /home/orca/.config/orca -ef /home/orca/.config/Orca; then
+    if [[ "$profile_dir" == Muster ]] && \
+      sudo test /home/orca/.config/orca -ef /home/orca/.config/Muster; then
       continue
     fi
     ORCA_PROFILE_DIRS+=("$profile_dir")
   fi
 done
 if ((${#ORCA_PROFILE_DIRS[@]} == 0)); then
-  echo 'No Orca profile directory found under /home/orca/.config' >&2
+  echo 'No Muster profile directory found under /home/orca/.config' >&2
   exit 1
 fi
 sudo tar czf "$ORCA_ROLLBACK_NEW/profile.tgz" \
@@ -487,7 +487,7 @@ ORCA_SERVICE_STOPPED=0
 trap - EXIT
 ```
 
-The profile archive created in step 3 captures both Orca profile directory names
+The profile archive created in step 3 captures both Muster profile directory names
 when present without rewinding unrelated tools under `/home/orca/.config`. The
 `.ready` suffix is published only after the prior binary, version record, and
 profile archive are complete. If you run the managed Xvfb unit, only
@@ -499,7 +499,7 @@ profile archive are complete. If you run the managed Xvfb unit, only
 sudo journalctl -u orca-serve.service -f
 ```
 
-A healthy start prints one `Orca server ready` block with the actual bound and
+A healthy start prints one `Muster server ready` block with the actual bound and
 advertised endpoints. Verify those values rather than assuming the configured
 port, because a collision can select a fallback port.
 Confirm a client reconnects before you discard the backup. The timestamped
@@ -632,26 +632,26 @@ trap restart_after_rollback_error EXIT
 
 if [[ "$(sudo stat -c %d "$ORCA_RESTORE")" != \
   "$(sudo stat -c %d /home/orca/.config)" ]]; then
-  echo 'Refusing rollback because staging and the Orca profile are on different filesystems' >&2
+  echo 'Refusing rollback because staging and the Muster profile are on different filesystems' >&2
   exit 1
 fi
 sudo tar xzf "$ORCA_ROLLBACK/profile.tgz" -C "$ORCA_RESTORE"
 ORCA_RESTORE_DIRS=()
-for profile_dir in orca Orca; do
+for profile_dir in orca Muster; do
   if sudo test -L "$ORCA_RESTORE/$profile_dir"; then
     echo "Rollback bundle contains a symlinked profile: $profile_dir" >&2
     exit 1
   fi
   if sudo test -d "$ORCA_RESTORE/$profile_dir"; then
-    if [[ "$profile_dir" == Orca ]] && \
-      sudo test "$ORCA_RESTORE/orca" -ef "$ORCA_RESTORE/Orca"; then
+    if [[ "$profile_dir" == Muster ]] && \
+      sudo test "$ORCA_RESTORE/orca" -ef "$ORCA_RESTORE/Muster"; then
       continue
     fi
     ORCA_RESTORE_DIRS+=("$profile_dir")
   fi
 done
 if ((${#ORCA_RESTORE_DIRS[@]} == 0)); then
-  echo "Rollback bundle has no Orca profile directories: $ORCA_ROLLBACK" >&2
+  echo "Rollback bundle has no Muster profile directories: $ORCA_ROLLBACK" >&2
   exit 1
 fi
 for profile_dir in "${ORCA_RESTORE_DIRS[@]}"; do
@@ -670,16 +670,16 @@ fi
 ORCA_SERVICE_STOPPED=1
 sudo systemctl stop orca-serve.service
 
-# Preserve and replace only Orca-owned profile directories
+# Preserve and replace only Muster-owned profile directories
 ORCA_CURRENT_DIRS=()
-for profile_dir in orca Orca; do
+for profile_dir in orca Muster; do
   if sudo test -L "/home/orca/.config/$profile_dir"; then
-    echo "Refusing symlinked Orca profile: /home/orca/.config/$profile_dir" >&2
+    echo "Refusing symlinked Muster profile: /home/orca/.config/$profile_dir" >&2
     exit 1
   fi
   if sudo test -d "/home/orca/.config/$profile_dir"; then
-    if [[ "$profile_dir" == Orca ]] && \
-      sudo test /home/orca/.config/orca -ef /home/orca/.config/Orca; then
+    if [[ "$profile_dir" == Muster ]] && \
+      sudo test /home/orca/.config/orca -ef /home/orca/.config/Muster; then
       continue
     fi
     ORCA_CURRENT_DIRS+=("$profile_dir")

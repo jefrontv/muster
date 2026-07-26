@@ -376,7 +376,7 @@ test.describe('Terminal Panes', () => {
     await expect(orcaPage.locator('.pane-title-text', { hasText: title })).toHaveCount(1)
   })
 
-  test('Set Title editor renders in Orca overlay while terminal reserves title space', async ({
+  test('Set Title editor renders in Muster overlay while terminal reserves title space', async ({
     orcaPage
   }) => {
     const title = `Reserved overlay title ${Date.now()}`

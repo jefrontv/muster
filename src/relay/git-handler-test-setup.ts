@@ -7,6 +7,9 @@
  */
 import { vi } from 'vitest'
 import { execFileSync } from 'node:child_process'
+import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { RelayDispatcher } from './dispatcher'
 
 const TEST_GIT_USER_EMAIL = 'test@test.com'
@@ -79,10 +82,26 @@ export function createMockDispatcher(): MockDispatcher {
   }
 }
 
-export function gitInit(dir: string): void {
+// Why: `git init` plus two `git config` calls is three process spawns per test, and
+// macOS spawn cost degrades roughly 20x under full-suite parallelism because
+// Gatekeeper revalidates each binary. Build the identical repo shape once per worker,
+// then stamp it out with a directory copy so per-test setup costs zero spawns.
+let gitInitTemplate: string | null = null
+
+function buildGitInitTemplate(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'relay-git-template-'))
   execFileSync('git', ['init'], { cwd: dir, stdio: 'pipe' })
   execFileSync('git', ['config', 'user.email', TEST_GIT_USER_EMAIL], { cwd: dir, stdio: 'pipe' })
   execFileSync('git', ['config', 'user.name', TEST_GIT_USER_NAME], { cwd: dir, stdio: 'pipe' })
+  process.once('exit', () => {
+    rmSync(dir, { recursive: true, force: true })
+  })
+  return dir
+}
+
+export function gitInit(dir: string): void {
+  gitInitTemplate ??= buildGitInitTemplate()
+  cpSync(gitInitTemplate, dir, { recursive: true })
 }
 
 export function gitCommit(dir: string, message: string): void {

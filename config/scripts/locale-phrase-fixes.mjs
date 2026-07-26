@@ -169,11 +169,11 @@ export const LOCALE_PHRASE_FIXES = {
       whenEnIncludes: 'Listening for shortcut'
     },
     { pattern: /寻找捷径/g, replacement: '搜索快捷键', whenEnIncludes: 'Find shortcuts' },
-    { pattern: /连接到Orca/g, replacement: '连接到 Orca', whenEnIncludes: 'Connect to Orca' },
+    { pattern: /连接到Orca/g, replacement: '连接到 Muster', whenEnIncludes: 'Connect to Muster' },
     {
       pattern: /开始使用Orca/g,
-      replacement: '开始使用 Orca',
-      whenEnIncludes: 'get started with Orca'
+      replacement: '开始使用 Muster',
+      whenEnIncludes: 'get started with Muster'
     },
     { pattern: /本机桌面/g, replacement: '原生桌面', whenEnIncludes: 'Native desktop' },
     { pattern: /当前的/g, replacement: '当前', whenEnIncludes: 'Current' },

@@ -34,7 +34,7 @@ class ReproductionObservedError extends Error {
 
 async function setupAppFixture(page, fixture, gpuMode, sourceControl) {
   return await runWithTimeout(
-    'fixture registration in Orca',
+    'fixture registration in Muster',
     () =>
       page.evaluate(
         async ({ repoPath, plainPath, importedWorktreePaths, mode, openSourceControl }) => {

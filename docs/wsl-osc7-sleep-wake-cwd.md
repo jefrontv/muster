@@ -10,7 +10,7 @@ On native Windows, a WSL terminal can persist a fake UNC current working directo
 - `HistoryReader.restoreFromIncrementalLog` creates a third context-free emulator. A log containing the OSC 7 can therefore re-create the bad CWD even if the base checkpoint is valid.
 - `DaemonPtyAdapter.doSpawn` prefers `restoreInfo.cwd` over the requested worktree CWD. `pty-subprocess.ts` later validates the fake UNC and rejects it before spawning WSL.
 
-Reproduction on Windows 11 build 26200, WSL 2.3.26.0, Ubuntu 24.04.1 LTS, and Orca 1.4.144-rc.4:
+Reproduction on Windows 11 build 26200, WSL 2.3.26.0, Ubuntu 24.04.1 LTS, and Muster 1.4.144-rc.4:
 
 1. Open a terminal in `\\wsl.localhost\Ubuntu\home\<user>\...`.
 2. Emit `OSC 7;file://<machine-hostname>/home/<user>/...`.
@@ -20,7 +20,7 @@ Both triggered attempts failed. The saved CWD became `\\<machine-hostname>\home\
 
 ## Root cause and invariant
 
-OSC 7 authority semantics follow the PTY's execution environment, not Electron's host OS. A native Windows shell may legitimately mean `\\server\share` by `file://server/share`; a WSL shell means a POSIX pathname inside its already-known distro. Orca currently classifies local WSL PTYs as generic Win32 PTYs.
+OSC 7 authority semantics follow the PTY's execution environment, not Electron's host OS. A native Windows shell may legitimately mean `\\server\share` by `file://server/share`; a WSL shell means a POSIX pathname inside its already-known distro. Muster currently classifies local WSL PTYs as generic Win32 PTYs.
 
 The fix must establish one immutable `wslDistro: string | null` per PTY incarnation before any OSC 7 bytes or recovered history are parsed. The same value must drive daemon live parsing, incremental-history replay, runtime parsing, and legacy CWD recovery. URI authority must never select a distro.
 

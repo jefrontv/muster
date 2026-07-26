@@ -2,7 +2,7 @@
 
 ## Problem
 
-GitHub issue [#5864](https://github.com/stablyai/orca/issues/5864) reports that Orca on Windows v0.14.80 fails to delete a workspace created from a project `+` button:
+GitHub issue [#5864](https://github.com/stablyai/orca/issues/5864) reports that Muster on Windows v0.14.80 fails to delete a workspace created from a project `+` button:
 
 `Error invoking remote method 'worktrees:remove': Error: Refusing to delete unregistered worktree path: C:/Users/andy/orca/workspaces/ops-tools/packaging-improvements-2`
 
@@ -16,7 +16,7 @@ Relevant flow:
 
 ## Root Cause
 
-Delete is right to refuse arbitrary paths. This bug is a false negative in the proof step: Orca asks Git for the authoritative registered worktree list, but the list does not contain an entry equivalent to the project-created target.
+Delete is right to refuse arbitrary paths. This bug is a false negative in the proof step: Muster asks Git for the authoritative registered worktree list, but the list does not contain an entry equivalent to the project-created target.
 
 Do not fix this by adding another path-normalization layer after the list. `findRegisteredDeletableWorktree` delegates to `areWorktreePathsEqual`, which already treats `C:/...`, `C:\...`, and drive-case variants as equal while keeping POSIX/WSL paths distinct. `git/worktree.removeWorktree` has a similar comparator for its fallback branch lookup.
 
@@ -84,8 +84,8 @@ Runtime RPC follows the same rule after selector resolution, and exact-ID fallba
 - Main worktree deletion is still rejected.
 - Parent worktree deletion is still rejected if another registered worktree is nested inside it.
 - Existing unregistered directories are still rejected, even with `force`.
-- Already-missing Orca-known worktrees still clean metadata only.
-- Orphaned Orca-created worktree directories still require proof through the `.git` file before recursive deletion.
+- Already-missing Muster-known worktrees still clean metadata only.
+- Orphaned Muster-created worktree directories still require proof through the `.git` file before recursive deletion.
 - Multi-window IPC deletes coalesce only for the same exact worktree ID and options. Equivalent Windows paths with different IDs, or IPC/runtime deletes racing each other, must degrade to safe missing/orphan handling or a protected error.
 - External Git mutation between list and `git worktree remove` is handled by the existing missing/orphan branches; keep those branches under the same captured runtime options.
 - Project runtime setting changes during an in-flight delete affect only later deletes.

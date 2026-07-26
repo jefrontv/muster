@@ -66,7 +66,7 @@ describe('extractGitHubIssueSourceFallback', () => {
     })
   })
 
-  it('uses the Orca repo display name when the PR source is unavailable', () => {
+  it('uses the Muster repo display name when the PR source is unavailable', () => {
     expect(
       extractGitHubIssueSourceFallback(
         { id: 'repo-1', path: '/work/orca', displayName: 'orca' },

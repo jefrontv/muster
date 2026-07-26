@@ -22,7 +22,7 @@ import { findDaemonProcesses } from './daemon-processes.mjs'
  */
 export function findAppProcesses() {
   const command = [
-    `$procs = @(Get-CimInstance Win32_Process -Filter "Name = 'Orca.exe'" -ErrorAction SilentlyContinue |`,
+    `$procs = @(Get-CimInstance Win32_Process -Filter "Name = 'Muster.exe'" -ErrorAction SilentlyContinue |`,
     `  Where-Object { -not ($_.CommandLine -match 'daemon-entry\\.js') })`,
     `$out = @($procs | ForEach-Object {`,
     `  [pscustomobject]@{ pid = $_.ProcessId; path = $_.ExecutablePath; commandLine = $_.CommandLine } })`,
@@ -32,10 +32,10 @@ export function findAppProcesses() {
   // query must abort the run rather than look like "no Orca is running".
   const { stdout, stderr, code, error } = runCommandSync(command)
   if (error) {
-    throw new Error(`Failed to query Orca app processes: ${error.message}`)
+    throw new Error(`Failed to query Muster app processes: ${error.message}`)
   }
   if (code !== 0) {
-    throw new Error(`Failed to query Orca app processes (exit ${code}): ${stderr || stdout}`)
+    throw new Error(`Failed to query Muster app processes (exit ${code}): ${stderr || stdout}`)
   }
   const trimmed = stdout.trim()
   if (!trimmed) {
@@ -47,7 +47,7 @@ export function findAppProcesses() {
     return Array.isArray(arr) ? arr : arr ? [arr] : []
   } catch (parseError) {
     throw new Error(
-      `Orca app process query returned invalid JSON: ${parseError.message}\n` +
+      `Muster app process query returned invalid JSON: ${parseError.message}\n` +
         `stdout:\n${trimmed}\nstderr:\n${stderr}`
     )
   }
@@ -96,7 +96,7 @@ export function preflight({ baselinePath, allowExistingInstall = false, installD
     if (inTarget.length > 0) {
       const listing = inTarget.map((p) => `  pid ${p.pid}: ${p.path}`).join('\n')
       throw new Error(
-        `Refusing to run: ${inTarget.length} Orca app process(es) are running from the ` +
+        `Refusing to run: ${inTarget.length} Muster app process(es) are running from the ` +
           `isolated target dir ${installDir} that this harness did not start. Close them ` +
           `first (this harness never kills pre-existing user processes):\n${listing}`
       )
@@ -104,7 +104,7 @@ export function preflight({ baselinePath, allowExistingInstall = false, installD
     const elsewhere = appProcesses.filter((p) => !(p.path && isPathUnder(p.path, installDir)))
     if (elsewhere.length > 0) {
       warnings.push(
-        `${elsewhere.length} Orca app process(es) are running from outside the isolated ` +
+        `${elsewhere.length} Muster app process(es) are running from outside the isolated ` +
           `target dir (pids: ${elsewhere.map((p) => p.pid).join(', ')}). Isolated mode never ` +
           `touches them; proceeding.`
       )
@@ -112,7 +112,7 @@ export function preflight({ baselinePath, allowExistingInstall = false, installD
   } else if (appProcesses.length > 0) {
     const listing = appProcesses.map((p) => `  pid ${p.pid}: ${p.commandLine}`).join('\n')
     throw new Error(
-      `Refusing to run: ${appProcesses.length} Orca app process(es) are already ` +
+      `Refusing to run: ${appProcesses.length} Muster app process(es) are already ` +
         `running that this harness did not start. Close them first (this harness ` +
         `never kills pre-existing user processes):\n${listing}`
     )
@@ -127,11 +127,11 @@ export function preflight({ baselinePath, allowExistingInstall = false, installD
         ? `Refusing to run: an install already exists in the isolated target dir ` +
             `${existingInstall}. Pass --allow-existing-install to overwrite it (isolated mode ` +
             `never touches the real install elsewhere), or point --install-dir at an empty dir.`
-        : `Refusing to run: an Orca install already exists at ${existingInstall}. ` +
+        : `Refusing to run: a Muster install already exists at ${existingInstall}. ` +
             `This run would silently OVERWRITE it with the --from/--to versions and ` +
-            `leave the --to version installed — destroying a real Orca install on a ` +
+            `leave the --to version installed — destroying a real Muster install on a ` +
             `developer machine. Pass --allow-existing-install to proceed anyway ` +
-            `(your prior build will NOT be restored), or uninstall Orca first. Clean ` +
+            `(your prior build will NOT be restored), or uninstall Muster first. Clean ` +
             `machines (CI/VM) never hit this.`
     )
   }

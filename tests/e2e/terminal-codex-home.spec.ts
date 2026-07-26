@@ -27,7 +27,7 @@ test.describe('Terminal Codex runtime home', () => {
     await ensureTerminalVisible(orcaPage)
   })
 
-  test('terminal process receives the Orca-managed Codex home', async ({ orcaPage }) => {
+  test('terminal process receives the Muster-managed Codex home', async ({ orcaPage }) => {
     await waitForActiveTerminalManager(orcaPage)
     const ptyId = await waitForActivePanePtyId(orcaPage)
     const marker = `__ORCA_CODEX_HOME_E2E_${Date.now()}__`
@@ -50,7 +50,7 @@ test.describe('Terminal Codex runtime home', () => {
             /[\\/]codex-runtime-home[\\/]home$/.test(probe.codexHome)
           )
         },
-        { timeout: 15_000, message: 'Terminal did not expose Orca-managed Codex home env' }
+        { timeout: 15_000, message: 'Terminal did not expose Muster-managed Codex home env' }
       )
       .toBe(true)
 

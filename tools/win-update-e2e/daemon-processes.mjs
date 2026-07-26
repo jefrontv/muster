@@ -23,7 +23,7 @@ const DAEMON_ENTRY_MARKER = 'daemon-entry.js'
 export function defaultUserDataDir() {
   const appData =
     process.env.APPDATA ?? path.join(process.env.USERPROFILE ?? '', 'AppData', 'Roaming')
-  return path.join(appData, 'Orca')
+  return path.join(appData, 'Muster')
 }
 
 /**

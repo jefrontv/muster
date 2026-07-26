@@ -82,7 +82,7 @@ export default function PairScanScreen() {
       const offer = decodePairingUrl(data)
       if (!offer) {
         setStatus('error')
-        setErrorMessage('Not a valid Orca QR code')
+        setErrorMessage('Not a valid Muster QR code')
         processingRef.current = false
         return
       }
@@ -229,7 +229,7 @@ export default function PairScanScreen() {
           </Text>
           <Text style={styles.subtitle}>
             {canAskAgain
-              ? 'Scan the QR code from Orca on your desktop, or paste the pairing code instead.'
+              ? 'Scan the QR code from Muster on your desktop, or paste the pairing code instead.'
               : 'Enable camera access in Settings, or paste the pairing code instead.'}
           </Text>
           <Pressable
@@ -268,7 +268,7 @@ export default function PairScanScreen() {
       </Pressable>
 
       <View style={styles.steps}>
-        <Step number={1} text="Open Orca on your computer" />
+        <Step number={1} text="Open Muster on your computer" />
         <Step number={2} text="Go to Settings → Mobile" />
         <Step number={3} text="Scan the QR code" />
       </View>

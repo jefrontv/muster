@@ -72,7 +72,7 @@ v23 and older ──> existing reattach behavior; no automatic retirement
 ```
 
 An end user with live terminals should notice no change. An end user who quits with no daemon-backed
-terminals should no longer accumulate the new v24 generation. If Orca crashes or loses its socket,
+terminals should no longer accumulate the new v24 generation. If Muster crashes or loses its socket,
 live terminals still keep the daemon alive indefinitely. An empty daemon exits immediately; a later
 app restart launches a fresh daemon instead of reusing an empty process.
 
@@ -193,7 +193,7 @@ steady-state disk writes. Results are recorded in the PR body.
 ### Local performance regression screen
 
 The final local host was not quiet enough for publication-grade absolute numbers: load averages were
-17-38 and unrelated Orca, browser, simulator, and VM processes occupied several cores. A paired
+17-38 and unrelated Muster, browser, simulator, and VM processes occupied several cores. A paired
 same-host screen still found no large regression. Five `main` v23 samples were bracketed by ten v24
 branch samples; medians across sample medians were:
 

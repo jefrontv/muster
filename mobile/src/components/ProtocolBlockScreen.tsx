@@ -21,10 +21,10 @@ export function ProtocolBlockScreen({ verdict }: Props) {
     ? { label: mobileUpdateTarget.label, url: mobileUpdateTarget.url }
     : { label: 'Open GitHub Releases', url: RELEASES_URL }
 
-  const title = isMobileTooOld ? 'Update Orca Mobile' : 'Update Orca on your computer'
+  const title = isMobileTooOld ? 'Update Muster Mobile' : 'Update Muster on your computer'
   const body = isMobileTooOld
-    ? `This desktop needs a newer Orca Mobile app. Update Orca Mobile from ${mobileUpdateTarget.storeName}, then try this host again.`
-    : 'This paired desktop app is too old for your current Orca Mobile app. Update Orca on your computer, then try this host again.'
+    ? `This desktop needs a newer Muster Mobile app. Update Muster Mobile from ${mobileUpdateTarget.storeName}, then try this host again.`
+    : 'This paired desktop app is too old for your current Muster Mobile app. Update Muster on your computer, then try this host again.'
   const recoveryNote =
     'Already updated? Go back to Hosts and refresh the connection. If this message stays, remove this host and pair it again.'
 

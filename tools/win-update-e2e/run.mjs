@@ -569,7 +569,7 @@ async function teardown({
   // — uninstalling would remove a build we did not put there.
   if (hadPreexistingInstall) {
     console.log(
-      '\n*** NOTE: an Orca install existed before this run. It was OVERWRITTEN and the\n' +
+      '\n*** NOTE: a Muster install existed before this run. It was OVERWRITTEN and the\n' +
         '    --to version is now installed. Your prior build was NOT restored — reinstall\n' +
         '    your intended build if needed. Skipping uninstall. ***\n'
     )

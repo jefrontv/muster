@@ -59,7 +59,7 @@ async function activateTestRepository(
     await window.api.repos.add({ path: targetRepoPath })
     const store = window.__store
     if (!store) {
-      throw new Error('Orca store unavailable')
+      throw new Error('Muster store unavailable')
     }
     await store.getState().fetchRepos()
     const repo = store

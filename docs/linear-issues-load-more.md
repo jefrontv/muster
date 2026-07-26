@@ -10,7 +10,7 @@
 
 ## Goal
 
-Let users browse more issues from the Linear Issues All tab inside Orca with an explicit "Load more" action. Apply the same plain-list behavior to Assigned, Created, and Completed because they share the same store/runtime/main read path.
+Let users browse more issues from the Linear Issues All tab inside Muster with an explicit "Load more" action. Apply the same plain-list behavior to Assigned, Created, and Completed because they share the same store/runtime/main read path.
 
 ## Non-Goals
 
@@ -101,7 +101,7 @@ Let users browse more issues from the Linear Issues All tab inside Orca with an 
 - The notice stays a compact footer matching existing bordered, muted Linear collection notices.
 - The load-more action is visually secondary, keyboard reachable, and does not resize or overlap the issue list on narrow widths.
 - While loading more, existing rows remain visible and the button clearly shows progress/disabled state.
-- Copy is direct: users should understand Orca can fetch more without opening Linear.
+- Copy is direct: users should understand Muster can fetch more without opening Linear.
 
 ## Review Screenshots
 

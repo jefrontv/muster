@@ -2,7 +2,7 @@
 
 ## Problem
 
-Credential files Orca writes on Windows (runtime env auth store, device registry,
+Credential files Muster writes on Windows (runtime env auth store, device registry,
 e2ee keypair) must end up readable only by the current user, SYSTEM, and
 Administrators. On POSIX this is a one-line `chmodSync`, but `writeFileSync`'s
 `mode` option is a no-op on Windows, so the NTFS ACL has to be rewritten by
@@ -71,7 +71,7 @@ be reproduced in the cross-platform e2e harness; verify it manually on Windows.
 
 Pre-req: a Windows client paired to a remote `orca serve` runtime.
 
-Watcher (PowerShell, run before launching Orca):
+Watcher (PowerShell, run before launching Muster):
 
 ```powershell
 while ($true) {

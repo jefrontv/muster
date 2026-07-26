@@ -107,6 +107,6 @@ export async function deleteMobileRelayCredentialBundle(hostId: string): Promise
 
 function requireNativeSecretStore(): void {
   if (Platform.OS === 'web') {
-    throw new Error('Orca Relay credentials require a native secret store')
+    throw new Error('Muster Relay credentials require a native secret store')
   }
 }

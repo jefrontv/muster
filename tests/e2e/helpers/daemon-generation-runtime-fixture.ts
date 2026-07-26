@@ -64,7 +64,7 @@ function assertDisposableRoot(rootDir: string): void {
   }
   for (const userDataDir of knownOrcaUserDataDirs()) {
     if (isEqualToOrInside(rootDir, userDataDir)) {
-      throw new Error('Refusing daemon-generation fixture inside real Orca user data')
+      throw new Error('Refusing daemon-generation fixture inside real Muster user data')
     }
   }
 }

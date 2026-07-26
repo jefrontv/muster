@@ -33,14 +33,14 @@ export function discoverInstallRegistryState() {
     `$uninstallName = $null; $displayName = $null; $displayVersion = $null`,
     `foreach ($k in @(Get-ChildItem $un -ErrorAction SilentlyContinue)) {`,
     `  $dn = $k.GetValue('DisplayName'); $il = $k.GetValue('InstallLocation')`,
-    `  if ($dn -eq 'Orca' -or ($il -and $il -match '\\\\Programs\\\\orca')) {`,
+    `  if ($dn -eq 'Muster' -or ($il -and $il -match '\\\\Programs\\\\orca')) {`,
     `    $uninstallName = $k.PSChildName; $displayName = $dn; $displayVersion = $k.GetValue('DisplayVersion')`,
     `  }`,
     `}`,
     `$appName = $null; $installLocation = $null`,
     `foreach ($k in @(Get-ChildItem 'HKCU:\\Software' -ErrorAction SilentlyContinue)) {`,
     `  $il = $k.GetValue('InstallLocation'); $sn = $k.GetValue('ShortcutName')`,
-    `  if ($il -and ($sn -eq 'Orca' -or $il -match 'orca')) {`,
+    `  if ($il -and ($sn -eq 'Muster' -or $il -match 'orca')) {`,
     `    $appName = $k.PSChildName; $installLocation = $il`,
     `  }`,
     `}`,
@@ -256,8 +256,8 @@ function printMismatchWarning(manifest, expected, actual) {
   console.error('!! WIN-UPDATE-E2E: REGISTRY RESTORE VERIFICATION FAILED')
   console.error(`!! Expected InstallLocation: ${expected ?? '(none / no pre-existing install)'}`)
   console.error(`!! Actual   InstallLocation: ${actual ?? '(none)'}`)
-  console.error('!! Your REAL Orca install pointer may be hijacked to the test directory.')
-  console.error('!! The next real Orca update could install into the test location.')
+  console.error('!! Your REAL Muster install pointer may be hijacked to the test directory.')
+  console.error('!! The next real Muster update could install into the test location.')
   console.error('!! Recover manually by running these command(s) in an elevated-free shell:')
   for (const cmd of recovery) {
     console.error(`!!   ${cmd}`)
@@ -307,6 +307,6 @@ function regDelete(keyPath) {
 if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
   console.log('[registry-shortcut-backup] discovered install registry state:')
   console.log(JSON.stringify(discoverInstallRegistryState(), null, 2))
-  console.log('[registry-shortcut-backup] Orca shortcuts that would be backed up:')
+  console.log('[registry-shortcut-backup] Muster shortcuts that would be backed up:')
   console.log(JSON.stringify(discoverOrcaShortcuts(), null, 2))
 }

@@ -134,4 +134,4 @@ Bring the GitHub Tasks list status menu closer to GitHub:
   4. Tasks header/search smoke.
 - Residual risks:
   - Duplicate target search is limited to loaded Tasks cache candidates, with exact-number fallback for unloaded same-repository issues.
-  - Other open Orca windows may show stale status until their normal GitHub Tasks data refresh runs.
+  - Other open Muster windows may show stale status until their normal GitHub Tasks data refresh runs.
