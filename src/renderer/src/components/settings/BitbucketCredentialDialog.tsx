@@ -12,6 +12,7 @@ import {
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import type { BitbucketAuthCredentialStatus } from '../../../../shared/bitbucket-auth-types'
 
 /**
@@ -21,29 +22,34 @@ import type { BitbucketAuthCredentialStatus } from '../../../../shared/bitbucket
  * Names are Atlassian API token scopes, not the legacy App Password checkbox labels. An App
  * Password needs the equivalent Account: Read, Repositories: Read, Pull requests: Read.
  */
-const BITBUCKET_REQUIRED_SCOPES: readonly { name: string; reason: string }[] = [
-  {
-    name: 'read:user:bitbucket',
-    reason: translate(
-      'auto.components.settings.BitbucketCredentialDialog.scopeUser',
-      'Confirms the token works and shows the connected account.'
-    )
-  },
-  {
-    name: 'read:repository:bitbucket',
-    reason: translate(
-      'auto.components.settings.BitbucketCredentialDialog.scopeRepository',
-      'Resolves the repository and reads commit build statuses.'
-    )
-  },
-  {
-    name: 'read:pullrequest:bitbucket',
-    reason: translate(
-      'auto.components.settings.BitbucketCredentialDialog.scopePullRequest',
-      'Reads pull requests for the current branch.'
-    )
-  }
-]
+// Why a catalog getter rather than a plain const: module-scope translate() runs at import time,
+// so the English strings would be frozen into the bundle before a locale is chosen and would
+// never refresh after a language change. createLocalizedCatalog re-builds per active locale.
+const getBitbucketRequiredScopes = createLocalizedCatalog(
+  (): readonly { name: string; reason: string }[] => [
+    {
+      name: 'read:user:bitbucket',
+      reason: translate(
+        'auto.components.settings.BitbucketCredentialDialog.scopeUser',
+        'Confirms the token works and shows the connected account.'
+      )
+    },
+    {
+      name: 'read:repository:bitbucket',
+      reason: translate(
+        'auto.components.settings.BitbucketCredentialDialog.scopeRepository',
+        'Resolves the repository and reads commit build statuses.'
+      )
+    },
+    {
+      name: 'read:pullrequest:bitbucket',
+      reason: translate(
+        'auto.components.settings.BitbucketCredentialDialog.scopePullRequest',
+        'Reads pull requests for the current branch.'
+      )
+    }
+  ]
+)
 
 type BitbucketCredentialDialogProps = {
   open: boolean
@@ -167,7 +173,7 @@ export function BitbucketCredentialDialog({
             )}
           </p>
           <ul className="mt-1.5 space-y-1">
-            {BITBUCKET_REQUIRED_SCOPES.map((scope) => (
+            {getBitbucketRequiredScopes().map((scope) => (
               <li key={scope.name} className="flex gap-2 text-[11px] text-muted-foreground">
                 <code className="shrink-0 font-mono text-foreground/80">{scope.name}</code>
                 <span className="min-w-0">{scope.reason}</span>

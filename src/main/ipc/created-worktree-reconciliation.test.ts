@@ -44,7 +44,10 @@ describe('findCreatedWorktree', () => {
       branch: 'refs/heads/other'
     }
 
-    expect(findCreatedWorktree([created], 'c:/users/orca/feature', 'feature', 'win32')).toBe(
+    // Both spellings must name the SAME directory: the only differences under test are the drive
+    // letter's case, the slash direction, and segment case. (The orca->muster rebrand renamed the
+    // listed path but not this one, which quietly turned this into a mismatch test.)
+    expect(findCreatedWorktree([created], 'c:/users/muster/feature', 'feature', 'win32')).toBe(
       created
     )
   })

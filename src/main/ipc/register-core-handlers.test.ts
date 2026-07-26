@@ -132,10 +132,24 @@ const {
   registerEmulatorVideoStreamHandlersMock: vi.fn()
 }))
 
+// Why a working ipcMain and not just `app`: this suite mocks the registrars it asserts on, but the
+// rest still run for real, and every one of them opens with the removeHandler/handle prologue.
+// Without these the first unmocked registrar throws and the arg-passing assertions never run.
 vi.mock('electron', () => ({
   app: {
-    getPath: getPathMock
-  }
+    getPath: getPathMock,
+    on: vi.fn(),
+    once: vi.fn(),
+    whenReady: vi.fn(() => Promise.resolve())
+  },
+  ipcMain: {
+    handle: vi.fn(),
+    removeHandler: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    removeAllListeners: vi.fn()
+  },
+  BrowserWindow: { getAllWindows: vi.fn(() => []), fromWebContents: vi.fn(() => null) }
 }))
 
 vi.mock('../../shared/runtime-environment-store', () => ({
@@ -448,7 +462,9 @@ describe('registerCoreHandlers', () => {
   })
 
   it('passes the store through to handler registrars that need it', async () => {
-    const store = { marker: 'store' }
+    // getRepos/listSites because the site-roots watcher derives its watch set at registration.
+    // The marker still identifies the object for the pass-through assertions below.
+    const store = { marker: 'store', getRepos: () => [], listSites: () => [] }
     const runtime = { marker: 'runtime', getAgentBrowserBridge: () => null }
     const stats = { marker: 'stats' }
     const claudeUsage = { marker: 'claudeUsage' }

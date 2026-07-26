@@ -129,9 +129,12 @@ describe('onboarding flow persistence', () => {
       customSoundVolume: 60
     })
 
+    // Exhaustive on purpose: it catches a new notification default silently reaching completed
+    // onboarding. siteRunComplete is the ocsites import/deploy notification, off by default.
     expect(notifications).toEqual({
       enabled: true,
       agentTaskComplete: true,
+      siteRunComplete: false,
       terminalBell: true,
       suppressWhenFocused: false,
       customSoundId: 'two-tone',
