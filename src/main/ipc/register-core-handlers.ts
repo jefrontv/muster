@@ -49,6 +49,7 @@ import { registerBitbucketAuthHandlers } from './bitbucket-auth'
 import { registerSiteBindHandlers } from './site-bind'
 import { registerSiteCloneSourceHandlers } from './site-clone-sources'
 import { registerSiteSetupHandlers } from './site-setup'
+import { registerLocalWpCertHandlers } from './localwp-cert'
 import { registerSiteMcpHandlers } from './site-mcp'
 import { registerWorkspacePortHandlers } from './workspace-ports'
 import { registerLocalhostWorktreeLabelHandlers } from './localhost-worktree-labels'
@@ -209,6 +210,7 @@ export function registerCoreHandlers(
   registerSiteBindHandlers(store)
   registerSiteCloneSourceHandlers(store)
   registerSiteSetupHandlers(store)
+  registerLocalWpCertHandlers()
   registerBitbucketAuthHandlers()
   registerSiteMcpHandlers(store)
   registerWorkspacePortHandlers(store)

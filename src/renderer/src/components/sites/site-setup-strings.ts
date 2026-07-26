@@ -45,6 +45,19 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackDomainLabel',
     'Local domain'
   ),
+  certHeading: translate(
+    'auto.components.sites.SiteSetupContinuation.certHeading',
+    'HTTPS certificate'
+  ),
+  certAction: translate(
+    'auto.components.sites.SiteSetupContinuation.certAction',
+    'Trust certificate'
+  ),
+  certTrusting: translate('auto.components.sites.SiteSetupContinuation.certTrusting', 'Trusting…'),
+  certTrusted: translate(
+    'auto.components.sites.SiteSetupContinuation.certTrusted',
+    'Trusted — the local site loads over https without a warning.'
+  ),
   importHeading: translate(
     'auto.components.sites.SiteSetupContinuation.importHeading',
     'Import from the server'

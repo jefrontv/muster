@@ -13783,7 +13783,11 @@
           "overrideAction": "Run anyway",
           "skip": "Skip",
           "done": "Done",
-          "unavailable": "Not available"
+          "unavailable": "Not available",
+          "certHeading": "HTTPS certificate",
+          "certAction": "Trust certificate",
+          "certTrusting": "Trusting…",
+          "certTrusted": "Trusted — the local site loads over https without a warning."
         },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"
@@ -13804,7 +13808,17 @@
           "privateLabel": "Private",
           "clonedToast": "Site added",
           "failedToast": "Could not add the site",
-          "destinationPrefix": "Clones into"
+          "destinationPrefix": "Clones into",
+          "confirmTitle": "Clone this repository?",
+          "confirmInto": "Clones into",
+          "confirmNext": "Afterwards you can set it up as a LocalWP site, trust its HTTPS certificate, and pull the server content down.",
+          "confirmAction": "Clone repository",
+          "back": "Back",
+          "cloningTitle": "Cloning",
+          "cloneStarting": "Starting clone…",
+          "cloneRegistering": "Registering the site…",
+          "setupTitle": "Finish setting up",
+          "done": "Done"
         }
       }
     },

@@ -17,6 +17,25 @@ export const getSiteCloneSourceStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.CloneSource.destinationPrefix',
     'Clones into'
   ),
+  confirmTitle: translate(
+    'auto.components.sites.CloneSource.confirmTitle',
+    'Clone this repository?'
+  ),
+  confirmInto: translate('auto.components.sites.CloneSource.confirmInto', 'Clones into'),
+  confirmNext: translate(
+    'auto.components.sites.CloneSource.confirmNext',
+    'Afterwards you can set it up as a LocalWP site, trust its HTTPS certificate, and pull the server content down.'
+  ),
+  confirmAction: translate('auto.components.sites.CloneSource.confirmAction', 'Clone repository'),
+  back: translate('auto.components.sites.CloneSource.back', 'Back'),
+  cloningTitle: translate('auto.components.sites.CloneSource.cloningTitle', 'Cloning'),
+  cloneStarting: translate('auto.components.sites.CloneSource.cloneStarting', 'Starting clone…'),
+  cloneRegistering: translate(
+    'auto.components.sites.CloneSource.cloneRegistering',
+    'Registering the site…'
+  ),
+  setupTitle: translate('auto.components.sites.CloneSource.setupTitle', 'Finish setting up'),
+  done: translate('auto.components.sites.CloneSource.done', 'Done'),
   loading: translate('auto.components.sites.CloneSource.loading', 'Loading repositories…'),
   empty: translate('auto.components.sites.CloneSource.empty', 'No repositories match.'),
   noProviders: translate(

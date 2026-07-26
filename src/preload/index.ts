@@ -868,6 +868,11 @@ const api = {
     cloneTargets: (args) => ipcRenderer.invoke('siteSetup:cloneTargets', args)
   } satisfies PreloadApi['siteSetup'],
 
+  localwpCert: {
+    status: (args) => ipcRenderer.invoke('localwpCert:status', args),
+    trust: (args) => ipcRenderer.invoke('localwpCert:trust', args)
+  } satisfies PreloadApi['localwpCert'],
+
   siteBitbucket: {
     status: () => ipcRenderer.invoke('siteBitbucket:status'),
     setCredentials: (args) => ipcRenderer.invoke('siteBitbucket:setCredentials', args),

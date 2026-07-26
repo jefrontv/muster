@@ -9,13 +9,14 @@
 // off to the run console on the site page, which already streams logs and supports cancel — a
 // second log viewer here would be a worse copy of it.
 
-import { Check, Database, HardDrive, Loader2 } from 'lucide-react'
+import { Check, Database, HardDrive, Loader2, ShieldCheck } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import type { SiteSetupPlan, SiteSetupStage } from '../../../../shared/site-setup-flow-types'
 import { findSetupStage } from '../../../../shared/site-setup-flow-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import { getSiteSetupStrings } from './site-setup-strings'
 
 type StageOutcome = 'idle' | 'busy' | 'done' | 'skipped'
@@ -62,6 +63,8 @@ export function SiteSetupContinuation({
   const [stack, setStack] = useState<StageOutcome>('idle')
   const [importState, setImportState] = useState<StageOutcome>('idle')
   const [error, setError] = useState('')
+  const [cert, setCert] = useState<LocalWpCertStatus | null>(null)
+  const [trusting, setTrusting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +79,15 @@ export function SiteSetupContinuation({
       }
       setPlan(result.value)
       setDomain(result.value.stack.suggestedDomain)
+      // Already-LocalWP sites have a domain from the start, so the certificate stage is
+      // answerable before the user touches anything.
+      const domainNow = result.value.stack.suggestedDomain.trim()
+      if (domainNow.length > 0) {
+        const status = await window.api.localwpCert?.status({ domain: domainNow })
+        if (!cancelled && status?.ok) {
+          setCert(status.value)
+        }
+      }
     })()
     return () => {
       cancelled = true
@@ -103,6 +115,36 @@ export function SiteSetupContinuation({
   const stackStage = findSetupStage(plan, 'stack')
   const importStage = findSetupStage(plan, 'import')
 
+  // Why a separate probe rather than a field on the plan: the certificate only exists after
+  // LocalWP has served the site over https once, so this answer changes during the dialog's
+  // lifetime while the rest of the plan does not.
+  const refreshCert = async (forDomain: string): Promise<void> => {
+    if (forDomain.trim().length === 0) {
+      return
+    }
+    const result = await window.api.localwpCert?.status({ domain: forDomain.trim() })
+    if (result?.ok) {
+      setCert(result.value)
+    }
+  }
+
+  const runTrustCert = async (): Promise<void> => {
+    setTrusting(true)
+    setError('')
+    try {
+      const result = await window.api.localwpCert.trust({ domain: domain.trim() })
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      if (!result.value.ok) {
+        setError(result.value.message)
+      }
+      await refreshCert(domain)
+    } finally {
+      setTrusting(false)
+    }
+  }
   const runStack = async (): Promise<void> => {
     setStack('busy')
     setError('')
@@ -122,6 +164,9 @@ export function SiteSetupContinuation({
         return
       }
       setStack('done')
+      // The migration is what gives the site its local domain, so the certificate question only
+      // becomes answerable now.
+      void refreshCert(domain)
     } catch (migrationError) {
       setError(migrationError instanceof Error ? migrationError.message : String(migrationError))
       setStack('idle')
@@ -198,6 +243,43 @@ export function SiteSetupContinuation({
           reason={stackStage?.reason ?? strings.unavailable}
         />
       )}
+
+      {/* HTTPS sits between the stack and the import: it only means anything once LocalWP owns the
+          site, and an untrusted certificate is what makes the local URL warn in the browser. */}
+      {cert && cert.supported && cert.exists && !cert.trusted ? (
+        <div className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="text-sm font-medium">{strings.certHeading}</p>
+            <p className="text-xs text-muted-foreground">{cert.reason}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={trusting}
+            onClick={() => void runTrustCert()}
+          >
+            {trusting ? strings.certTrusting : strings.certAction}
+          </Button>
+        </div>
+      ) : null}
+      {cert && cert.supported && cert.trusted ? (
+        <div className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="text-sm font-medium">{strings.certHeading}</p>
+            <p className="text-xs text-muted-foreground">{strings.certTrusted}</p>
+          </div>
+          <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+        </div>
+      ) : null}
+      {cert && cert.supported && !cert.exists ? (
+        <UnavailableRow
+          icon={<ShieldCheck className="size-4" />}
+          heading={strings.certHeading}
+          reason={cert.reason}
+        />
+      ) : null}
 
       {plan.import.ready || plan.import.confirmable ? (
         <div className="space-y-2 rounded-md border border-border px-3 py-2.5">

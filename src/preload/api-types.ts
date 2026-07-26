@@ -30,6 +30,7 @@ import type { BitbucketAuthApi } from '../shared/bitbucket-auth-types'
 import type { SiteBindApi, SiteBitbucketApi } from '../shared/site-bind-types'
 import type { SiteCloneSourcesApi } from '../shared/site-clone-sources-api-types'
 import type { SiteSetupApi } from '../shared/site-setup-api-types'
+import type { LocalWpCertApi } from '../shared/localwp-cert-types'
 import type { SiteRootsApi } from '../shared/site-roots-api-types'
 import type { SiteMcpStatus, SiteMcpWriteResult } from '../shared/site-mcp-types'
 import type {
@@ -1517,6 +1518,7 @@ export type PreloadApi = {
   siteTools: SiteToolsApi
   siteBind: SiteBindApi
   siteSetup: SiteSetupApi
+  localwpCert: LocalWpCertApi
   siteBitbucket: SiteBitbucketApi
   siteCloneSources: SiteCloneSourcesApi
   bitbucketAuth: BitbucketAuthApi
