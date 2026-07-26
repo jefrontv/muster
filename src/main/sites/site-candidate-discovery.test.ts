@@ -134,6 +134,25 @@ describe('discoverSiteCandidates', () => {
     ])
   })
 
+  // Local puts the checkout at the WordPress root, so a top-level-only probe called every one of
+  // these folders "not a repository" — which is the bulk of the user's sites.
+  it('reports isGitRepo for a LocalWP site whose repository sits under app/public', async () => {
+    const root = await tempRoot()
+    await makeLocalWpSite(join(root, 'client-site'))
+    await makeGitRepo(join(root, 'client-site', 'app', 'public'))
+
+    const result = await discover({ roots: [root], configuredPaths: [] })
+
+    expect(result.candidates).toEqual([
+      {
+        path: join(root, 'client-site'),
+        displayName: 'client-site',
+        kind: 'localwp',
+        isGitRepo: true
+      }
+    ])
+  })
+
   it('excludes configured paths, including a trailing-slash spelling', async () => {
     const root = await tempRoot()
     await makeGitRepo(join(root, 'already-added'))

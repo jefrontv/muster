@@ -29,6 +29,7 @@ import {
 } from './bitbucket-credential-store'
 import { fetchBitbucketJson, listBitbucketWorkspaceRepos } from './bitbucket-workspace-repos'
 import { getGithubCloneSourceStatus, listGithubCloneSourceRepos } from './github-clone-source'
+import { probeRepoRemoteKeys } from './repo-remote-probe'
 import { discoverSiteCandidates } from './site-candidate-discovery'
 import {
   buildExistingSiteFootprint,
@@ -116,6 +117,7 @@ async function resolveProvider(
 }
 
 async function buildStoreFootprint(store: CloneSourceStore): Promise<ExistingSiteFootprint> {
+  const repos = store.getRepos()
   const sitePaths = store.listSites().map((site) => site.path)
   // The on-disk sweep matters as much as the store records: a folder nobody has adopted yet still
   // occupies the name a clone would want, and is exactly the case the store cannot see.
@@ -124,11 +126,29 @@ async function buildStoreFootprint(store: CloneSourceStore): Promise<ExistingSit
     primaryRoot: derivePrimarySiteRoot(store),
     configuredPaths: sitePaths
   })
-  return buildExistingSiteFootprint({
-    repos: store.getRepos(),
+  const footprint = buildExistingSiteFootprint({
+    repos,
     sitePaths,
     discoveredPaths: discovered.candidates.map((candidate) => candidate.path)
   })
+
+  // Why read remotes off disk as well: it is the only signal that covers LocalWP. Local keeps the
+  // checkout under app/public and names the folder after the client, so the folder name matches no
+  // repo, and the stored gitRemoteIdentity is almost always absent — of two dozen linked LocalWP
+  // sites exactly one carries a canonical key. Registered repos are probed too: their stored key
+  // already counts, but one extra read each recovers the roughly half that have no stored identity.
+  const probePaths = new Set<string>(sitePaths)
+  for (const repo of repos) {
+    probePaths.add(repo.path)
+  }
+  for (const candidate of discovered.candidates) {
+    probePaths.add(candidate.path)
+  }
+  const remoteKeys = new Set(footprint.remoteKeys)
+  for (const key of await probeRepoRemoteKeys([...probePaths])) {
+    remoteKeys.add(key)
+  }
+  return { ...footprint, remoteKeys }
 }
 
 export async function listCloneSourceRepos(

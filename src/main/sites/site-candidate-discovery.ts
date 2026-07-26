@@ -3,7 +3,7 @@
 // Separate from project-groups/nested-repo-discovery on purpose: that scanner answers "which git
 // repos live under the one folder the user just picked" with a deep, gitignore-aware traversal, and
 // it is allowed to be slow because a human is waiting on a dialog. This one answers "what is on
-// disk right now" and reruns on every watch tick, so it stays one listing per root plus three
+// disk right now" and reruns on every watch tick, so it stays one listing per root plus four
 // cheap existence probes per child.
 import { readdir, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
@@ -73,10 +73,11 @@ async function classifyDirectory(
   dirPath: string,
   filesystem: SiteCandidateFilesystem
 ): Promise<ClassifiedDirectory | null> {
-  const [hasLocalWpConfig, hasWpConfig, hasGitEntry] = await Promise.all([
+  const [hasLocalWpConfig, hasWpConfig, hasGitEntry, hasNestedGitEntry] = await Promise.all([
     filesystem.pathExists(filesystem.joinPath(localWpWordPressRoot(dirPath), 'wp-config.php')),
     filesystem.pathExists(filesystem.joinPath(dirPath, 'wp-config.php')),
-    filesystem.pathExists(filesystem.joinPath(dirPath, '.git'))
+    filesystem.pathExists(filesystem.joinPath(dirPath, '.git')),
+    filesystem.pathExists(filesystem.joinPath(localWpWordPressRoot(dirPath), '.git'))
   ])
   // Why: a LocalWP site keeps the WordPress install two levels down, so it can also carry a
   // top-level wp-config.php left over from a migration. Local's layout is the more specific
@@ -90,7 +91,12 @@ async function classifyDirectory(
         : null
   // Why: isGitRepo is reported independently of kind because a WordPress install is very often
   // also a repo, and the caller decides separately whether to offer repo actions.
-  return kind ? { kind, isGitRepo: hasGitEntry } : null
+  //
+  // Why the second probe: a LocalWP site's checkout is the WordPress root under app/public, never
+  // the folder Local manages, so a top-level-only test reports every one of them as not a repo.
+  // The kind chain deliberately still reads the top-level entry: a nested repo under a folder with
+  // no wp-config anywhere is not a site, and must not become a candidate on that signal alone.
+  return kind ? { kind, isGitRepo: hasGitEntry || hasNestedGitEntry } : null
 }
 
 function dedupeRoots(roots: string[]): string[] {

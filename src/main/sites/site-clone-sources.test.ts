@@ -13,7 +13,8 @@ const {
   listBitbucketWorkspaceRepos,
   getGithubCloneSourceStatus,
   listGithubCloneSourceRepos,
-  discoverSiteCandidates
+  discoverSiteCandidates,
+  probeRepoRemoteKeys
 } = vi.hoisted(() => ({
   getBitbucketCredentialRecord: vi.fn(),
   getBitbucketCredentials: vi.fn(),
@@ -21,7 +22,8 @@ const {
   listBitbucketWorkspaceRepos: vi.fn(),
   getGithubCloneSourceStatus: vi.fn(),
   listGithubCloneSourceRepos: vi.fn(),
-  discoverSiteCandidates: vi.fn()
+  discoverSiteCandidates: vi.fn(),
+  probeRepoRemoteKeys: vi.fn()
 }))
 
 // Each host module owns its own tests. What is under test here is the seam: ordering, the
@@ -40,9 +42,11 @@ vi.mock('./github-clone-source', () => ({
   getGithubCloneSourceStatus,
   listGithubCloneSourceRepos
 }))
-// The candidate scanner has its own tests. Mocking it keeps this file off the real disk while
-// still letting an on-disk-but-unadopted folder participate in the exclusion.
+// The candidate scanner and the on-disk remote probe have their own tests. Mocking them keeps this
+// file off the real disk while still letting an unadopted folder, and a repo identified only by the
+// remote in its config, participate in the exclusion.
 vi.mock('./site-candidate-discovery', () => ({ discoverSiteCandidates }))
+vi.mock('./repo-remote-probe', () => ({ probeRepoRemoteKeys }))
 
 import {
   listCloneSourceProviders,
@@ -112,6 +116,7 @@ beforeEach(() => {
     scannedAt: 0,
     truncated: false
   })
+  probeRepoRemoteKeys.mockResolvedValue(new Set())
 })
 
 describe('listCloneSourceProviders', () => {
@@ -426,10 +431,59 @@ describe('listCloneSourceRepos exclusions', () => {
     expect(result.repos).toEqual([])
   })
 
-  // The footprint costs a directory sweep, so an unconfigured or broken provider must not pay it.
+  // The whole reason the on-disk probe exists: a LocalWP site named after the client, added before
+  // gitRemoteIdentity was ever captured. The stored key is absent and the folder name matches no
+  // repo, so the config on disk is the only thing left that can identify it.
+  it('drops a repo matched only by a remote read off disk', async () => {
+    listBitbucketWorkspaceRepos.mockResolvedValue(
+      bitbucketResult({
+        repos: [
+          bitbucketRepo({
+            slug: 'pacific-holdings',
+            fullName: 'acme/pacific-holdings',
+            cloneUrl: 'https://bitbucket.org/acme/pacific-holdings.git'
+          })
+        ]
+      })
+    )
+    probeRepoRemoteKeys.mockResolvedValue(new Set(['bitbucket.org/acme/pacific-holdings']))
+
+    const result = await listCloneSourceRepos(
+      store([{ path: '/nowhere/117pacific' }], ['/nowhere/117pacific']),
+      'bitbucket'
+    )
+
+    expect(result.repos).toEqual([])
+  })
+
+  it('probes registered repos, configured sites and folders only the scan found', async () => {
+    listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: [bitbucketRepo()] }))
+    discoverSiteCandidates.mockResolvedValue({
+      roots: [],
+      primaryRoot: '',
+      candidates: [
+        { path: '/nowhere/unadopted', displayName: 'unadopted', kind: 'localwp', isGitRepo: true }
+      ],
+      scannedAt: 0,
+      truncated: false
+    })
+
+    await listCloneSourceRepos(store([{ path: '/nowhere/repo' }], ['/nowhere/site']), 'bitbucket')
+
+    expect(probeRepoRemoteKeys).toHaveBeenCalledTimes(1)
+    expect([...probeRepoRemoteKeys.mock.calls[0][0]].sort()).toEqual([
+      '/nowhere/repo',
+      '/nowhere/site',
+      '/nowhere/unadopted'
+    ])
+  })
+
+  // The footprint costs a directory sweep and a read per folder, so an unconfigured or broken
+  // provider must not pay for either.
   it('skips the footprint entirely when the provider returned nothing', async () => {
     await listCloneSourceRepos(store(), 'bitbucket')
 
     expect(discoverSiteCandidates).not.toHaveBeenCalled()
+    expect(probeRepoRemoteKeys).not.toHaveBeenCalled()
   })
 })
