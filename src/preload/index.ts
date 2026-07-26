@@ -5,6 +5,7 @@ import { preloadE2EConfig } from './e2e-config'
 import { glApi } from './gitlab'
 import type { AppIdentity } from '../shared/app-identity'
 import type { SiteRunEvent } from '../shared/site-run-types'
+import type { SiteRootsChangedEvent } from '../shared/site-discovery-types'
 import type { PendingSiteBind } from '../shared/site-bind-types'
 import type { DashboardSnapshot, DashboardRevealAgentArgs } from '../shared/dashboard-snapshot'
 import type {
@@ -813,6 +814,18 @@ const api = {
       return () => ipcRenderer.removeListener('siteRuns:event', listener)
     }
   } satisfies PreloadApi['siteRuns'],
+
+  siteRoots: {
+    list: () => ipcRenderer.invoke('siteRoots:list'),
+    discover: () => ipcRenderer.invoke('siteRoots:discover'),
+    refresh: () => ipcRenderer.invoke('siteRoots:refresh'),
+    onChanged: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: SiteRootsChangedEvent): void =>
+        callback(event)
+      ipcRenderer.on('siteRoots:changed', listener)
+      return () => ipcRenderer.removeListener('siteRoots:changed', listener)
+    }
+  } satisfies PreloadApi['siteRoots'],
 
   siteStacks: {
     detect: (siteId) => ipcRenderer.invoke('siteStacks:detect', siteId),

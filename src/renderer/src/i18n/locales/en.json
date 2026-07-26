@@ -13699,7 +13699,8 @@
           "projectsAdded": "{{count}} projects added to the sidebar.",
           "addToSidebar": "Add to sidebar",
           "countOnDisk": "{{count}} on disk · {{hidden}} missing",
-          "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh."
+          "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.",
+          "discoveredHeading": "Found on disk ({{count}})"
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
@@ -13783,6 +13784,9 @@
           "skip": "Skip",
           "done": "Done",
           "unavailable": "Not available"
+        },
+        "DiscoveredSiteRow": {
+          "notConfigured": "Not configured"
         }
       }
     },

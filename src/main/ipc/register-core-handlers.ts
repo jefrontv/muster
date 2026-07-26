@@ -42,6 +42,7 @@ import { registerSkillsHandlers } from './skills'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
 import { registerSiteRunHandlers } from './site-runs'
+import { registerSiteRootsHandlers } from './site-roots'
 import { registerSiteStackHandlers } from './site-stacks'
 import { registerSiteToolHandlers } from './site-tools'
 import { registerBitbucketAuthHandlers } from './bitbucket-auth'
@@ -201,6 +202,7 @@ export function registerCoreHandlers(
   registerWorkspaceSpaceHandlers(store)
   registerSiteHandlers(store)
   registerSiteRunHandlers(store)
+  registerSiteRootsHandlers(store)
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)
   registerSiteBindHandlers(store)

@@ -7,8 +7,10 @@ import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { filterSites, sitesOnDisk } from './site-filtering'
+import { DiscoveredSiteRow } from './DiscoveredSiteRow'
 import { SiteDetailPanel } from './SiteDetailPanel'
 import { SiteRow } from './SiteRow'
+import type { DiscoveredSiteCandidate } from '../../../../shared/site-discovery-types'
 
 export default function SitesPage(): React.JSX.Element {
   const closeSitesPage = useAppStore((state) => state.closeSitesPage)
@@ -24,9 +26,30 @@ export default function SitesPage(): React.JSX.Element {
   const linkSiteRepos = useAppStore((state) => state.linkSiteRepos)
   const [importing, setImporting] = useState(false)
 
+  const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
+  const [adopting, setAdopting] = useState('')
+
   useEffect(() => {
     void fetchSites()
   }, [fetchSites])
+
+  // Why re-run on the watcher event rather than only on mount: this list is the whole point of the
+  // live view — a folder created in Finder while the page is open has to appear without a reload.
+  useEffect(() => {
+    let disposed = false
+    const load = async (): Promise<void> => {
+      const result = await window.api.siteRoots?.discover()
+      if (!disposed && result?.ok) {
+        setDiscovered(result.value.candidates)
+      }
+    }
+    void load()
+    const unsubscribe = window.api.siteRoots?.onChanged(() => void load())
+    return () => {
+      disposed = true
+      unsubscribe?.()
+    }
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -49,6 +72,38 @@ export default function SitesPage(): React.JSX.Element {
   const offDiskCount = sites.length - availableSites.length
   const visibleSites = useMemo(() => filterSites(availableSites, query), [availableSites, query])
   const selected = availableSites.find((entry) => entry.site.id === selectedSiteId) ?? null
+
+  // Main already excludes anything with a Site record, so this only has to survive the race where
+  // a site was adopted but the discovery result predates the refetch.
+  const configuredPaths = useMemo(() => new Set(sites.map((entry) => entry.site.path)), [sites])
+  const visibleDiscovered = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return discovered.filter(
+      (candidate) =>
+        !configuredPaths.has(candidate.path) &&
+        (needle.length === 0 ||
+          candidate.displayName.toLowerCase().includes(needle) ||
+          candidate.path.toLowerCase().includes(needle))
+    )
+  }, [discovered, configuredPaths, query])
+
+  const adopt = async (candidate: DiscoveredSiteCandidate): Promise<void> => {
+    setAdopting(candidate.path)
+    try {
+      const result = await window.api.sites.create({
+        path: candidate.path,
+        displayName: candidate.displayName
+      })
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      await fetchSites()
+      selectSite(result.value.site.id)
+    } finally {
+      setAdopting('')
+    }
+  }
 
   const runLinkRepos = async (): Promise<void> => {
     setImporting(true)
@@ -204,6 +259,28 @@ export default function SitesPage(): React.JSX.Element {
                 onSelect={selectSite}
               />
             ))}
+            {visibleDiscovered.length > 0 ? (
+              <>
+                <p className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                  {translate(
+                    'auto.components.sites.SitesPage.discoveredHeading',
+                    'Found on disk ({{count}})',
+                    { count: visibleDiscovered.length }
+                  )}
+                </p>
+                {visibleDiscovered.map((candidate) => (
+                  <DiscoveredSiteRow
+                    key={candidate.path}
+                    candidate={candidate}
+                    onConfigure={(entry) => {
+                      if (adopting.length === 0) {
+                        void adopt(entry)
+                      }
+                    }}
+                  />
+                ))}
+              </>
+            ) : null}
           </div>
         </aside>
 

@@ -91,6 +91,7 @@ import { LinkRoutingPreferenceDialogProvider } from './components/link-routing-p
 import RecentTabSwitcher from './components/tab-bar/RecentTabSwitcher'
 import { useGitStatusPolling } from './components/right-sidebar/useGitStatusPolling'
 import { useEditorExternalWatch } from './hooks/useEditorExternalWatch'
+import { useSiteRootsRefresh } from './lib/use-site-roots-refresh'
 import { useAutoAckViewedAgent } from './hooks/useAutoAckViewedAgent'
 import { useDashboardPopoutBridge } from './components/dashboard/useDashboardPopoutBridge'
 import { useUnreadDockBadge } from './hooks/useUnreadDockBadge'
@@ -730,6 +731,9 @@ function App(): React.JSX.Element {
   useGitStatusPolling({ enabled: workspaceSessionReady })
   // Why: wire file-change watching at App level so the editor keeps hearing FS changes when Explorer unmounts (right-sidebar switches to Source Control/Checks).
   useEditorExternalWatch()
+  // Why App level: the site/project lists must stop going stale even while the Sites page is
+  // closed, and the sidebar reads the same repo list this refetches.
+  useSiteRootsRefresh()
   useGlobalFileDrop()
   useAutoAckViewedAgent()
   useDashboardPopoutBridge(settings?.experimentalAgentDashboardPopout === true)
