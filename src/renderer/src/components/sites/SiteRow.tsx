@@ -4,10 +4,13 @@ import type { SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { formatSitePathForRow } from './site-path-display'
 
 type SiteRowProps = {
   summary: SiteSummary
   selected: boolean
+  /** Watched roots, so the row can drop the prefix every sibling repeats. */
+  roots: readonly string[]
   onSelect: (siteId: string) => void
 }
 
@@ -18,9 +21,10 @@ const STACK_LABELS: Partial<Record<SiteSummary['site']['localStack'], string>> =
   localwp: 'LocalWP'
 }
 
-export function SiteRow({ summary, selected, onSelect }: SiteRowProps): React.JSX.Element {
+export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): React.JSX.Element {
   const { site, branch, resolvedEnvironment } = summary
   const environmentCount = Object.keys(site.environments).length
+  const location = formatSitePathForRow(site.path, roots)
 
   return (
     <button
@@ -28,20 +32,24 @@ export function SiteRow({ summary, selected, onSelect }: SiteRowProps): React.JS
       onClick={() => onSelect(site.id)}
       aria-current={selected ? 'true' : undefined}
       className={cn(
-        'flex w-full flex-col gap-1 rounded-md px-3 py-2 text-left transition-colors',
+        'flex w-full flex-col gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
         selected ? 'bg-accent' : 'hover:bg-accent'
       )}
     >
       <div className="flex min-w-0 items-center gap-2">
-        <span className="truncate text-sm font-medium">{site.displayName}</span>
+        {/* Why the location sits inline and dimmed: for the common case it is empty, and the name
+            must not shift down a line just because a sibling happens to be nested. */}
+        <span className="truncate text-sm font-medium">
+          {location.length > 0 ? (
+            <span className="font-normal text-muted-foreground">{location}</span>
+          ) : null}
+          {site.displayName}
+        </span>
         {STACK_LABELS[site.localStack] ? (
           <Badge variant="secondary" className="shrink-0">
             {STACK_LABELS[site.localStack]}
           </Badge>
         ) : null}
-      </div>
-      <div className="flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
-        <span className="truncate font-mono">{site.path}</span>
       </div>
       <div className="flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
         {branch ? (

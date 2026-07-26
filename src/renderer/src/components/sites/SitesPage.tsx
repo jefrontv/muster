@@ -27,6 +27,7 @@ export default function SitesPage(): React.JSX.Element {
   const [importing, setImporting] = useState(false)
 
   const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
+  const [roots, setRoots] = useState<string[]>([])
   const [adopting, setAdopting] = useState('')
 
   useEffect(() => {
@@ -41,6 +42,9 @@ export default function SitesPage(): React.JSX.Element {
       const result = await window.api.siteRoots?.discover()
       if (!disposed && result?.ok) {
         setDiscovered(result.value.candidates)
+        // The same call already reports the roots, so the rows can shorten their paths without a
+        // second round trip.
+        setRoots(result.value.roots)
       }
     }
     void load()
@@ -256,6 +260,7 @@ export default function SitesPage(): React.JSX.Element {
                 key={summary.site.id}
                 summary={summary}
                 selected={summary.site.id === selectedSiteId}
+                roots={roots}
                 onSelect={selectSite}
               />
             ))}
@@ -272,6 +277,7 @@ export default function SitesPage(): React.JSX.Element {
                   <DiscoveredSiteRow
                     key={candidate.path}
                     candidate={candidate}
+                    roots={roots}
                     onConfigure={(entry) => {
                       if (adopting.length === 0) {
                         void adopt(entry)
