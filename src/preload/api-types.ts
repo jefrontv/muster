@@ -28,6 +28,7 @@ import type {
 } from '../shared/site-stack-types'
 import type { BitbucketAuthApi } from '../shared/bitbucket-auth-types'
 import type { SiteBindApi, SiteBitbucketApi } from '../shared/site-bind-types'
+import type { SiteCloneSourcesApi } from '../shared/site-clone-sources-api-types'
 import type { SiteSetupApi } from '../shared/site-setup-api-types'
 import type { SiteRootsApi } from '../shared/site-roots-api-types'
 import type { SiteMcpStatus, SiteMcpWriteResult } from '../shared/site-mcp-types'
@@ -1517,6 +1518,7 @@ export type PreloadApi = {
   siteBind: SiteBindApi
   siteSetup: SiteSetupApi
   siteBitbucket: SiteBitbucketApi
+  siteCloneSources: SiteCloneSourcesApi
   bitbucketAuth: BitbucketAuthApi
   siteMcp: SiteMcpApi
   workspacePorts: {

@@ -13764,6 +13764,23 @@
         },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"
+        },
+        "CloneSource": {
+          "trigger": "New site",
+          "title": "New site from a repository",
+          "description": "Pick a repository from a connected git host. Muster clones it and adds it as a site.",
+          "search": "Search repositories",
+          "loading": "Loading repositories…",
+          "empty": "No repositories match.",
+          "noProviders": "No git hosts are connected yet.",
+          "truncated": "Showing the most recent repositories. Search to narrow the list.",
+          "chooseFolder": "Clone into…",
+          "cloning": "Cloning…",
+          "adding": "Adding site…",
+          "cancel": "Cancel",
+          "privateLabel": "Private",
+          "clonedToast": "Site added",
+          "failedToast": "Could not add the site"
         }
       }
     },

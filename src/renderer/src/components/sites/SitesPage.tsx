@@ -1,4 +1,4 @@
-import { ArrowLeft, DownloadCloud, FolderPlus, Globe, Search } from 'lucide-react'
+import { ArrowLeft, DownloadCloud, FolderPlus, GitBranchPlus, Globe, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -7,7 +7,9 @@ import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { filterSites, sitesOnDisk } from './site-filtering'
+import { AddSiteFromGitDialog } from './AddSiteFromGitDialog'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
+import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteDetailPanel } from './SiteDetailPanel'
 import { SiteRow } from './SiteRow'
 import type { DiscoveredSiteCandidate } from '../../../../shared/site-discovery-types'
@@ -29,6 +31,7 @@ export default function SitesPage(): React.JSX.Element {
   const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
   const [roots, setRoots] = useState<string[]>([])
   const [adopting, setAdopting] = useState('')
+  const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
 
   useEffect(() => {
     void fetchSites()
@@ -194,6 +197,10 @@ export default function SitesPage(): React.JSX.Element {
             })}
           </span>
         </div>
+        <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setCloneDialogOpen(true)}>
+          <GitBranchPlus className="size-3.5" />
+          {getSiteCloneSourceStrings().trigger}
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -215,6 +222,16 @@ export default function SitesPage(): React.JSX.Element {
           {translate('auto.components.sites.SitesPage.import', 'Import from ocsites')}
         </Button>
       </header>
+
+      <AddSiteFromGitDialog
+        open={cloneDialogOpen}
+        roots={roots}
+        onOpenChange={setCloneDialogOpen}
+        onAdded={(siteId) => {
+          void fetchSites()
+          selectSite(siteId)
+        }}
+      />
 
       {sitesError ? (
         <p className="shrink-0 border-b border-border bg-destructive/10 px-5 py-2 text-xs text-destructive">

@@ -874,6 +874,11 @@ const api = {
     listRepos: (args) => ipcRenderer.invoke('siteBitbucket:listRepos', args)
   } satisfies PreloadApi['siteBitbucket'],
 
+  siteCloneSources: {
+    providers: () => ipcRenderer.invoke('siteCloneSources:providers'),
+    repos: (args) => ipcRenderer.invoke('siteCloneSources:repos', args)
+  } satisfies PreloadApi['siteCloneSources'],
+
   siteMcp: {
     status: (args) => ipcRenderer.invoke('siteMcp:status', args),
     register: (args) => ipcRenderer.invoke('siteMcp:register', args),
