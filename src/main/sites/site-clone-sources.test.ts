@@ -12,14 +12,16 @@ const {
   getBitbucketCredentialStatus,
   listBitbucketWorkspaceRepos,
   getGithubCloneSourceStatus,
-  listGithubCloneSourceRepos
+  listGithubCloneSourceRepos,
+  discoverSiteCandidates
 } = vi.hoisted(() => ({
   getBitbucketCredentialRecord: vi.fn(),
   getBitbucketCredentials: vi.fn(),
   getBitbucketCredentialStatus: vi.fn(),
   listBitbucketWorkspaceRepos: vi.fn(),
   getGithubCloneSourceStatus: vi.fn(),
-  listGithubCloneSourceRepos: vi.fn()
+  listGithubCloneSourceRepos: vi.fn(),
+  discoverSiteCandidates: vi.fn()
 }))
 
 // Each host module owns its own tests. What is under test here is the seam: ordering, the
@@ -38,8 +40,15 @@ vi.mock('./github-clone-source', () => ({
   getGithubCloneSourceStatus,
   listGithubCloneSourceRepos
 }))
+// The candidate scanner has its own tests. Mocking it keeps this file off the real disk while
+// still letting an on-disk-but-unadopted folder participate in the exclusion.
+vi.mock('./site-candidate-discovery', () => ({ discoverSiteCandidates }))
 
-import { listCloneSourceProviders, listCloneSourceRepos } from './site-clone-sources'
+import {
+  listCloneSourceProviders,
+  listCloneSourceRepos,
+  type CloneSourceStore
+} from './site-clone-sources'
 
 const GITHUB_CONFIGURED: CloneSourceProvider = {
   id: 'github',
@@ -72,6 +81,15 @@ function bitbucketResult(
   }
 }
 
+// Every path sits under a root that does not exist, so root derivation yields nothing and the real
+// site-roots-watcher never reaches a real directory — the trick ipc/site-roots.test.ts already uses.
+function store(
+  repos: { path: string; gitRemoteIdentity?: { canonicalKey: string } | null }[] = [],
+  sitePaths: string[] = []
+): CloneSourceStore {
+  return { getRepos: () => repos, listSites: () => sitePaths.map((path) => ({ path })) }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   getBitbucketCredentialStatus.mockReturnValue({
@@ -87,6 +105,13 @@ beforeEach(() => {
   getBitbucketCredentials.mockReturnValue({ username: 'jake', appPassword: 'secret' })
   listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult())
   getGithubCloneSourceStatus.mockResolvedValue(GITHUB_CONFIGURED)
+  discoverSiteCandidates.mockResolvedValue({
+    roots: [],
+    primaryRoot: '',
+    candidates: [],
+    scannedAt: 0,
+    truncated: false
+  })
 })
 
 describe('listCloneSourceProviders', () => {
@@ -177,7 +202,7 @@ describe('listCloneSourceProviders', () => {
 
 describe('listCloneSourceRepos', () => {
   it('lists Bitbucket against the stored workspace and credentials', async () => {
-    await listCloneSourceRepos('bitbucket')
+    await listCloneSourceRepos(store(), 'bitbucket')
 
     expect(listBitbucketWorkspaceRepos).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -190,7 +215,7 @@ describe('listCloneSourceRepos', () => {
   it('maps Bitbucket repos onto the shared shape, keeping the SSH clone URL', async () => {
     listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: [bitbucketRepo()] }))
 
-    expect(await listCloneSourceRepos('bitbucket')).toEqual({
+    expect(await listCloneSourceRepos(store(), 'bitbucket')).toEqual({
       provider: 'bitbucket',
       repos: [
         {
@@ -218,7 +243,7 @@ describe('listCloneSourceRepos', () => {
       })
     )
 
-    const result = await listCloneSourceRepos('bitbucket')
+    const result = await listCloneSourceRepos(store(), 'bitbucket')
     expect(result.repos.map((repo) => repo.fullName)).toEqual(['acme/website'])
   })
 
@@ -227,7 +252,7 @@ describe('listCloneSourceRepos', () => {
       bitbucketResult({ repos: [bitbucketRepo({ fullName: '' })] })
     )
 
-    expect((await listCloneSourceRepos('bitbucket')).repos[0].fullName).toBe('website')
+    expect((await listCloneSourceRepos(store(), 'bitbucket')).repos[0].fullName).toBe('website')
   })
 
   it('reports a missing or unparseable push date as null instead of NaN', async () => {
@@ -237,10 +262,9 @@ describe('listCloneSourceRepos', () => {
       })
     )
 
-    expect((await listCloneSourceRepos('bitbucket')).repos.map((repo) => repo.updatedAt)).toEqual([
-      null,
-      null
-    ])
+    expect(
+      (await listCloneSourceRepos(store(), 'bitbucket')).repos.map((repo) => repo.updatedAt)
+    ).toEqual([null, null])
   })
 
   it('surfaces a Bitbucket listing failure as an error on an otherwise valid result', async () => {
@@ -248,7 +272,7 @@ describe('listCloneSourceRepos', () => {
       bitbucketResult({ error: 'Bitbucket rejected the stored App Password.' })
     )
 
-    expect(await listCloneSourceRepos('bitbucket')).toEqual({
+    expect(await listCloneSourceRepos(store(), 'bitbucket')).toEqual({
       provider: 'bitbucket',
       repos: [],
       error: 'Bitbucket rejected the stored App Password.',
@@ -265,7 +289,7 @@ describe('listCloneSourceRepos', () => {
       })
     )
 
-    const result = await listCloneSourceRepos('bitbucket')
+    const result = await listCloneSourceRepos(store(), 'bitbucket')
     expect(result.repos).toHaveLength(CLONE_SOURCE_REPO_LIMIT)
     expect(result.truncated).toBe(true)
   })
@@ -288,13 +312,124 @@ describe('listCloneSourceRepos', () => {
     }
     listGithubCloneSourceRepos.mockResolvedValue(githubResult)
 
-    expect(await listCloneSourceRepos('github')).toBe(githubResult)
+    expect(await listCloneSourceRepos(store(), 'github')).toEqual(githubResult)
     expect(listBitbucketWorkspaceRepos).not.toHaveBeenCalled()
   })
 
   it('throws for a provider it does not know, so the IPC layer can convert it', async () => {
     await expect(
-      listCloneSourceRepos('gitlab' as Parameters<typeof listCloneSourceRepos>[0])
+      listCloneSourceRepos(store(), 'gitlab' as Parameters<typeof listCloneSourceRepos>[1])
     ).rejects.toThrow(TypeError)
+  })
+})
+
+describe('listCloneSourceRepos exclusions', () => {
+  it('drops a repo the store already has, matched on its canonical remote key', async () => {
+    listBitbucketWorkspaceRepos.mockResolvedValue(
+      bitbucketResult({
+        repos: [
+          bitbucketRepo(),
+          bitbucketRepo({
+            slug: 'api',
+            fullName: 'acme/api',
+            cloneUrl: 'git@bitbucket.org:acme/api.git'
+          })
+        ]
+      })
+    )
+
+    const result = await listCloneSourceRepos(
+      store([
+        {
+          path: '/nowhere/renamed-locally',
+          gitRemoteIdentity: { canonicalKey: 'bitbucket.org/acme/website' }
+        }
+      ]),
+      'bitbucket'
+    )
+
+    expect(result.repos.map((repo) => repo.fullName)).toEqual(['acme/api'])
+  })
+
+  it('drops a repo whose slug already names a folder the scan found on disk', async () => {
+    listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: [bitbucketRepo()] }))
+    discoverSiteCandidates.mockResolvedValue({
+      roots: [],
+      primaryRoot: '',
+      candidates: [
+        { path: '/nowhere/website', displayName: 'website', kind: 'git', isGitRepo: true }
+      ],
+      scannedAt: 0,
+      truncated: false
+    })
+
+    expect((await listCloneSourceRepos(store(), 'bitbucket')).repos).toEqual([])
+  })
+
+  // The whole point of ordering the two steps: capping first spends the page on rows that are then
+  // filtered away, so a user with 400 repos and 200 already here would see 100 instead of 200.
+  it('excludes before the cap, so a page the host could fill stays full', async () => {
+    const hostRepos = Array.from({ length: CLONE_SOURCE_REPO_LIMIT * 2 }, (_unused, index) =>
+      bitbucketRepo({
+        slug: `repo-${index}`,
+        fullName: `acme/repo-${index}`,
+        cloneUrl: `git@bitbucket.org:acme/repo-${index}.git`
+      })
+    )
+    listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: hostRepos }))
+    const alreadyHere = hostRepos
+      .filter((_unused, index) => index % 2 === 0)
+      .map((repo) => ({ path: `/nowhere/${repo.slug}` }))
+
+    const result = await listCloneSourceRepos(store(alreadyHere), 'bitbucket')
+
+    expect(result.repos).toHaveLength(CLONE_SOURCE_REPO_LIMIT)
+    expect(result.repos.map((repo) => repo.fullName)).toEqual(
+      hostRepos.filter((_unused, index) => index % 2 === 1).map((repo) => repo.fullName)
+    )
+  })
+
+  it('keeps truncated describing the host, not the page that survived filtering', async () => {
+    const hostRepos = Array.from({ length: CLONE_SOURCE_REPO_LIMIT + 1 }, (_unused, index) =>
+      bitbucketRepo({ slug: `repo-${index}`, fullName: `acme/repo-${index}` })
+    )
+    listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: hostRepos }))
+
+    const result = await listCloneSourceRepos(
+      store(hostRepos.slice(1).map((repo) => ({ path: `/nowhere/${repo.slug}` }))),
+      'bitbucket'
+    )
+
+    expect(result.repos.map((repo) => repo.fullName)).toEqual(['acme/repo-0'])
+    expect(result.truncated).toBe(true)
+  })
+
+  it('filters the GitHub list against the same footprint', async () => {
+    listGithubCloneSourceRepos.mockResolvedValue({
+      provider: 'github',
+      repos: [
+        {
+          provider: 'github',
+          fullName: 'acme/api',
+          cloneUrl: 'git@github.com:acme/api.git',
+          description: '',
+          updatedAt: null,
+          isPrivate: false
+        }
+      ],
+      error: '',
+      truncated: false
+    })
+
+    const result = await listCloneSourceRepos(store([], ['/nowhere/api']), 'github')
+
+    expect(result.repos).toEqual([])
+  })
+
+  // The footprint costs a directory sweep, so an unconfigured or broken provider must not pay it.
+  it('skips the footprint entirely when the provider returned nothing', async () => {
+    await listCloneSourceRepos(store(), 'bitbucket')
+
+    expect(discoverSiteCandidates).not.toHaveBeenCalled()
   })
 })

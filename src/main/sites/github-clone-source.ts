@@ -168,7 +168,10 @@ export async function listGithubCloneSourceRepos(): Promise<CloneSourceListResul
     provider: 'github',
     // Count the raw page, not the usable repos: the host had more than the cap either way.
     truncated: payload.length > CLONE_SOURCE_REPO_LIMIT,
-    repos: repos.slice(0, CLONE_SOURCE_REPO_LIMIT),
+    // Deliberately uncapped, matching the Bitbucket source. The single cap lives in
+    // listCloneSourceRepos and runs AFTER already-present repos are excluded; capping here too
+    // would spend a slot on a repo the user already has and then drop it, shrinking the page.
+    repos,
     error: ''
   }
 }

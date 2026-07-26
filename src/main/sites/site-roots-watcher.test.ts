@@ -6,6 +6,7 @@ import {
   type SiteRootsChangedEvent
 } from '../../shared/site-discovery-types'
 import {
+  derivePrimarySiteRoot,
   deriveSiteRoots,
   startSiteRootsWatcher,
   type SiteRootsStore,
@@ -205,6 +206,36 @@ describe('deriveSiteRoots', () => {
     expect(roots).toHaveLength(SITE_ROOTS_MAX)
     expect(roots).toContain('/projects')
     expect(roots).toEqual([...roots].sort())
+  })
+})
+
+describe('derivePrimarySiteRoot', () => {
+  it('reports the densest root even when it sorts last in the watched set', () => {
+    const { store } = createStore([
+      '/Users/jake/stray',
+      ...Array.from({ length: 5 }, (_unused, index) => `/Users/jake/Documents/Sites/repo-${index}`)
+    ])
+
+    // The pair the renderer needs to keep apart: `roots` is alphabetical for stable rendering, so
+    // its first entry is the one-off stray, not the folder holding every project.
+    expect(deriveSiteRoots(store, () => true)[0]).toBe('/Users/jake')
+    expect(derivePrimarySiteRoot(store, () => true)).toBe('/Users/jake/Documents/Sites')
+  })
+
+  it('breaks a density tie the same way the watched set does', () => {
+    const { store } = createStore(['/beta/api', '/alpha/api'])
+
+    expect(derivePrimarySiteRoot(store, () => true)).toBe('/alpha')
+  })
+
+  it('skips a densest root that is not on disk', () => {
+    const { store } = createStore(['/ejected/a', '/ejected/b', '/projects/api'])
+
+    expect(derivePrimarySiteRoot(store, (candidate) => candidate === '/projects')).toBe('/projects')
+  })
+
+  it('reports an empty string when no root exists yet, so the caller asks instead of guessing', () => {
+    expect(derivePrimarySiteRoot(createStore().store, () => true)).toBe('')
   })
 })
 

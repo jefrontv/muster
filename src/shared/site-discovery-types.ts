@@ -39,6 +39,12 @@ export type DiscoveredSiteCandidate = {
 
 export type SiteDiscoveryResult = {
   roots: string[]
+  /**
+   * Where a new site should land by default: the root accounting for the most existing projects.
+   * `roots` is sorted alphabetically for stable rendering, so its first entry is NOT this — the
+   * densest root has to be reported separately. Empty only when no root exists yet.
+   */
+  primaryRoot: string
   /** Never includes a path that already has a Site record — the caller merges, it does not dedupe. */
   candidates: DiscoveredSiteCandidate[]
   scannedAt: number

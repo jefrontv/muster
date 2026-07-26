@@ -68,6 +68,7 @@ async function invoke<T>(channel: string, sendingTo: Sender = sender()): Promise
 
 const EMPTY_DISCOVERY: SiteDiscoveryResult = {
   roots: [],
+  primaryRoot: '',
   candidates: [],
   scannedAt: 0,
   truncated: false
@@ -99,14 +100,18 @@ describe('registerSiteRootsHandlers', () => {
     ])
   })
 
-  it('hands the scanner the derived roots and the configured site paths', async () => {
+  it('hands the scanner the derived roots, the densest one, and the configured site paths', async () => {
     // The paths do not exist, so no root survives derivation — which is exactly the contract the
     // scanner has to tolerate, and it keeps the test off the real filesystem.
     registerSiteRootsHandlers(store(['/nowhere/api'], ['/nowhere/acme']))
 
     expect(await invoke('siteRoots:list')).toEqual({ ok: true, value: [] })
     expect(await invoke('siteRoots:discover')).toEqual({ ok: true, value: EMPTY_DISCOVERY })
-    expect(discoverMock).toHaveBeenCalledWith({ roots: [], configuredPaths: ['/nowhere/acme'] })
+    expect(discoverMock).toHaveBeenCalledWith({
+      roots: [],
+      primaryRoot: '',
+      configuredPaths: ['/nowhere/acme']
+    })
   })
 
   it('returns a tagged failure instead of throwing when a scan blows up', async () => {

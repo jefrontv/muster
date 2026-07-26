@@ -119,24 +119,30 @@ function* collectParentDirectories(store: SiteRootsStore): Generator<string> {
   }
 }
 
+/** A candidate root and how many repo/site entries voted for it. Ordered by `rankSiteRoots`. */
+type RankedSiteRoot = { root: string; entries: number }
+
 /**
- * The parent directories worth watching: deduped, de-nested, ranked by how many entries they
- * account for, and capped at `SITE_ROOTS_MAX`.
+ * Candidate roots in descending density order, deduped and filtered to what is actually on disk.
  *
- * Nesting resolves towards the deepest root. Depth-1 means an ancestor never covers a descendant's
- * children anyway, so keeping the ancestor would trade a real projects folder for its parent — and
- * the ancestors that turn up in practice are `$HOME` and `/Users`, whose direntry churn is constant
- * and has nothing to do with projects.
+ * Density, not mere presence: the cap has to keep the parent holding 70 repos ahead of three
+ * one-off strays, so every entry votes for its parent. Ties break on path so the order is stable.
  *
- * `directoryExists` is injected so the ranking can be exercised without touching a disk.
+ * No ancestor/descendant collapse. These watches are depth-1, so a root and a root nested inside
+ * it observe disjoint sets of directory entries — neither can stand in for the other. Dropping
+ * the ancestor looks tidy and is actively wrong: one repo checked out at
+ * `<Sites>/mpac/<repo>` makes `<Sites>/mpac` a root, which would evict `<Sites>` itself and
+ * blind the watcher to the 150 projects living directly under it.
+ *
+ * The churn worry that motivated collapsing (watching `$HOME` or `/Users`) is already handled by
+ * ranking on density: a stray repo in the home directory earns one vote and loses the cap to any
+ * real projects folder.
  */
-export function deriveSiteRoots(
+function rankSiteRoots(
   store: SiteRootsStore,
-  directoryExists: (candidate: string) => boolean = directoryExistsOnDisk
-): string[] {
-  // Density, not mere presence: the cap has to keep the parent holding 70 repos ahead of three
-  // one-off strays, so every entry votes for its parent.
-  const byKey = new Map<string, { root: string; entries: number }>()
+  directoryExists: (candidate: string) => boolean
+): RankedSiteRoot[] {
+  const byKey = new Map<string, RankedSiteRoot>()
   for (const parent of collectParentDirectories(store)) {
     const key = normalizeRuntimePathForComparison(parent)
     const existing = byKey.get(key)
@@ -147,21 +153,41 @@ export function deriveSiteRoots(
     byKey.set(key, { root: parent, entries: 1 })
   }
 
-  // No ancestor/descendant collapse. These watches are depth-1, so a root and a root nested inside
-  // it observe disjoint sets of directory entries — neither can stand in for the other. Dropping
-  // the ancestor looks tidy and is actively wrong: one repo checked out at
-  // `<Sites>/mpac/<repo>` makes `<Sites>/mpac` a root, which would evict `<Sites>` itself and
-  // blind the watcher to the 150 projects living directly under it.
-  //
-  // The churn worry that motivated collapsing (watching `$HOME` or `/Users`) is already handled by
-  // ranking on density: a stray repo in the home directory earns one vote and loses the cap to any
-  // real projects folder.
   return [...byKey.values()]
     .filter((entry) => directoryExists(entry.root))
     .sort((left, right) => right.entries - left.entries || (left.root < right.root ? -1 : 1))
+}
+
+/**
+ * The parent directories worth watching: deduped, ranked by how many entries they account for,
+ * capped at `SITE_ROOTS_MAX`, then alphabetised.
+ *
+ * The trailing sort is what makes the watched set render stably, and it is also why the densest
+ * root is not `roots[0]` — `derivePrimarySiteRoot` reports that separately.
+ *
+ * `directoryExists` is injected so the ranking can be exercised without touching a disk.
+ */
+export function deriveSiteRoots(
+  store: SiteRootsStore,
+  directoryExists: (candidate: string) => boolean = directoryExistsOnDisk
+): string[] {
+  return rankSiteRoots(store, directoryExists)
     .slice(0, SITE_ROOTS_MAX)
     .map((entry) => entry.root)
     .sort()
+}
+
+/**
+ * Where a new project should land: the root accounting for the most existing ones. Empty when the
+ * user has no root yet, which the caller must treat as "ask, do not guess".
+ *
+ * Never capped: the densest root is rank 0, so `SITE_ROOTS_MAX` cannot exclude it.
+ */
+export function derivePrimarySiteRoot(
+  store: SiteRootsStore,
+  directoryExists: (candidate: string) => boolean = directoryExistsOnDisk
+): string {
+  return rankSiteRoots(store, directoryExists)[0]?.root ?? ''
 }
 
 export function startSiteRootsWatcher(

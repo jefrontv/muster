@@ -13,6 +13,10 @@ export const getSiteCloneSourceStrings = createLocalizedCatalog(() => ({
     'Pick a repository from a connected git host. Muster clones it and adds it as a site.'
   ),
   search: translate('auto.components.sites.CloneSource.search', 'Search repositories'),
+  destinationPrefix: translate(
+    'auto.components.sites.CloneSource.destinationPrefix',
+    'Clones into'
+  ),
   loading: translate('auto.components.sites.CloneSource.loading', 'Loading repositories…'),
   empty: translate('auto.components.sites.CloneSource.empty', 'No repositories match.'),
   noProviders: translate(

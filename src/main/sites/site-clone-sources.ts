@@ -9,6 +9,10 @@
 //     leave a user who has never opened Settings with an empty dialog and no way to learn why.
 //   * A provider that blows up degrades to `configured: false` carrying its own message. One broken
 //     host must not blank out the other, which is the whole reason the picker lists both.
+//
+// The list is also filtered against what the user already has (site-clone-source-exclusions.ts).
+// That belongs here rather than in the renderer: it is the same fact as "cloning there would
+// collide", so main owns it and every window gets the same answer.
 
 import {
   CLONE_SOURCE_REPO_LIMIT,
@@ -25,6 +29,26 @@ import {
 } from './bitbucket-credential-store'
 import { fetchBitbucketJson, listBitbucketWorkspaceRepos } from './bitbucket-workspace-repos'
 import { getGithubCloneSourceStatus, listGithubCloneSourceRepos } from './github-clone-source'
+import { discoverSiteCandidates } from './site-candidate-discovery'
+import {
+  buildExistingSiteFootprint,
+  isAlreadyPresent,
+  type ExistingSiteFootprint
+} from './site-clone-source-exclusions'
+import { derivePrimarySiteRoot, deriveSiteRoots } from './site-roots-watcher'
+
+/**
+ * The slice of `Store` the exclusion needs. Structural so a test supplies two arrays instead of a
+ * persistence file, and so it stays obvious that nothing here writes.
+ */
+export type CloneSourceStore = {
+  getRepos: () => readonly {
+    path: string
+    connectionId?: string | null
+    gitRemoteIdentity?: { canonicalKey: string } | null
+  }[]
+  listSites: () => readonly { path: string }[]
+}
 
 /** Display order in the picker. Bitbucket first: it is the one ocsites shipped with. */
 export const CLONE_SOURCE_PROVIDER_IDS = ['bitbucket', 'github'] as const
@@ -91,9 +115,48 @@ async function resolveProvider(
   }
 }
 
+async function buildStoreFootprint(store: CloneSourceStore): Promise<ExistingSiteFootprint> {
+  const sitePaths = store.listSites().map((site) => site.path)
+  // The on-disk sweep matters as much as the store records: a folder nobody has adopted yet still
+  // occupies the name a clone would want, and is exactly the case the store cannot see.
+  const discovered = await discoverSiteCandidates({
+    roots: deriveSiteRoots(store),
+    primaryRoot: derivePrimarySiteRoot(store),
+    configuredPaths: sitePaths
+  })
+  return buildExistingSiteFootprint({
+    repos: store.getRepos(),
+    sitePaths,
+    discoveredPaths: discovered.candidates.map((candidate) => candidate.path)
+  })
+}
+
 export async function listCloneSourceRepos(
+  store: CloneSourceStore,
   provider: CloneSourceProviderId
 ): Promise<CloneSourceListResult> {
+  const listed = await listProviderRepos(provider)
+  // Nothing to filter, and the footprint costs a directory sweep — so do not pay for it when the
+  // provider is unconfigured or its lookup failed.
+  if (listed.repos.length === 0) {
+    return listed
+  }
+
+  const footprint = await buildStoreFootprint(store)
+  const usable = listed.repos.filter((repo) => !isAlreadyPresent(repo, footprint))
+  return {
+    ...listed,
+    // Cap after the exclusion, never before. Capping first would spend the page on repos the user
+    // already has and then filter them away, collapsing a full page into a handful.
+    //
+    // `truncated` is left exactly as the provider reported it: it means "the host had more repos
+    // than we show", which is a fact about the host and does not change because rows were hidden.
+    repos:
+      usable.length > CLONE_SOURCE_REPO_LIMIT ? usable.slice(0, CLONE_SOURCE_REPO_LIMIT) : usable
+  }
+}
+
+async function listProviderRepos(provider: CloneSourceProviderId): Promise<CloneSourceListResult> {
   if (provider === 'bitbucket') {
     return listBitbucketCloneSourceRepos()
   }
@@ -113,12 +176,13 @@ async function listBitbucketCloneSourceRepos(): Promise<CloneSourceListResult> {
     fetchJson: fetchBitbucketJson
   })
   const usable = toCloneSourceRepos(result)
-  const truncated = usable.length > CLONE_SOURCE_REPO_LIMIT
   return {
     provider: 'bitbucket',
-    repos: truncated ? usable.slice(0, CLONE_SOURCE_REPO_LIMIT) : usable,
+    // Uncapped: `listCloneSourceRepos` caps once, after the exclusion. Truncation is still measured
+    // here, on the full mapped list, so it reports the host's size and not the filter's.
+    repos: usable,
     error: result.error,
-    truncated
+    truncated: usable.length > CLONE_SOURCE_REPO_LIMIT
   }
 }
 

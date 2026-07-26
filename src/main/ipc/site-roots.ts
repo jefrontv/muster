@@ -14,6 +14,7 @@ import type { SiteResult } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { discoverSiteCandidates } from '../sites/site-candidate-discovery'
 import {
+  derivePrimarySiteRoot,
   siteRootsEqual,
   startSiteRootsWatcher,
   type SiteRootsWatcherHandle
@@ -86,6 +87,9 @@ export function registerSiteRootsHandlers(store: Store): void {
         ok: true,
         value: await discoverSiteCandidates({
           roots: roots.getRoots(),
+          // Derived separately because `getRoots()` is alphabetical for stable rendering, so its
+          // first entry is not the densest root the renderer needs as a clone destination.
+          primaryRoot: derivePrimarySiteRoot(store),
           // The renderer merges discovery against its own site list, so main only has to keep the
           // already-configured checkouts out of the candidate set.
           configuredPaths: store.listSites().map((site) => site.path)

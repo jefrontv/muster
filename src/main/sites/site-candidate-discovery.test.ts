@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, describe, expect, it } from 'vitest'
-import { SITE_CANDIDATES_MAX } from '../../shared/site-discovery-types'
+import { SITE_CANDIDATES_MAX, type SiteDiscoveryResult } from '../../shared/site-discovery-types'
 import { discoverSiteCandidates } from './site-candidate-discovery'
 
 let tempDirs: string[] = []
@@ -57,13 +57,23 @@ afterEach(async () => {
   tempDirs = []
 })
 
+/**
+ * The primary root only rides through to the result, so every case that asserts on candidates gets
+ * a plausible one for free; the passthrough case at the end checks it against the real signature.
+ */
+async function discover(
+  args: Omit<Parameters<typeof discoverSiteCandidates>[0], 'primaryRoot'>
+): Promise<SiteDiscoveryResult> {
+  return discoverSiteCandidates({ ...args, primaryRoot: args.roots[0] ?? '' })
+}
+
 describe('discoverSiteCandidates', () => {
   it('classifies a LocalWP site as localwp even when a stray top-level wp-config.php exists', async () => {
     const root = await tempRoot()
     await makeLocalWpSite(join(root, 'client-site'))
     await writeFile(join(root, 'client-site', 'wp-config.php'), '<?php\n')
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates).toEqual([
       {
@@ -81,7 +91,7 @@ describe('discoverSiteCandidates', () => {
     const root = await tempRoot()
     await makeWordPress(join(root, 'blog'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => [candidate.displayName, candidate.kind])).toEqual([
       ['blog', 'wordpress']
@@ -92,7 +102,7 @@ describe('discoverSiteCandidates', () => {
     const root = await tempRoot()
     await makeGitRepo(join(root, 'tooling'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => [candidate.displayName, candidate.kind])).toEqual([
       ['tooling', 'git']
@@ -104,7 +114,7 @@ describe('discoverSiteCandidates', () => {
     await mkdir(join(root, 'screenshots'), { recursive: true })
     await makeGitRepo(join(root, 'tooling'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => candidate.displayName)).toEqual(['tooling'])
   })
@@ -116,7 +126,7 @@ describe('discoverSiteCandidates', () => {
     await makeLocalWpSite(join(root, 'local-site'))
     await makeGitRepo(join(root, 'local-site'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => [candidate.kind, candidate.isGitRepo])).toEqual([
       ['wordpress', true],
@@ -129,7 +139,7 @@ describe('discoverSiteCandidates', () => {
     await makeGitRepo(join(root, 'already-added'))
     await makeGitRepo(join(root, 'brand-new'))
 
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: [root],
       configuredPaths: [`${join(root, 'already-added')}/`]
     })
@@ -138,7 +148,7 @@ describe('discoverSiteCandidates', () => {
   })
 
   it('excludes a configured path spelled with different case on case-insensitive paths', async () => {
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: ['C:/Sites'],
       configuredPaths: ['c:\\sites\\Alpha\\'],
       filesystem: fakeFilesystem({
@@ -157,7 +167,7 @@ describe('discoverSiteCandidates', () => {
     await makeGitRepo(join(root, 'vendor'))
     await makeGitRepo(join(root, 'real-project'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => candidate.displayName)).toEqual(['real-project'])
   })
@@ -169,7 +179,7 @@ describe('discoverSiteCandidates', () => {
     await symlink(join(outside, 'linked-project'), join(root, 'linked-project'), 'dir')
     await makeGitRepo(join(root, 'real-project'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => candidate.displayName)).toEqual(['real-project'])
   })
@@ -180,7 +190,7 @@ describe('discoverSiteCandidates', () => {
       { length: total },
       (_unused, index) => `project-${String(index).padStart(4, '0')}`
     )
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: ['/workspace'],
       configuredPaths: [],
       filesystem: fakeFilesystem({
@@ -198,7 +208,7 @@ describe('discoverSiteCandidates', () => {
       { length: SITE_CANDIDATES_MAX },
       (_unused, index) => `project-${String(index).padStart(4, '0')}`
     )
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: ['/workspace'],
       configuredPaths: [],
       filesystem: fakeFilesystem({
@@ -216,7 +226,7 @@ describe('discoverSiteCandidates', () => {
     await makeGitRepo(join(root, 'survivor'))
     const missingRoot = join(root, 'ejected-volume', 'gone')
 
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: [missingRoot, root],
       configuredPaths: []
     })
@@ -232,7 +242,7 @@ describe('discoverSiteCandidates', () => {
       files: new Set(['/workspace/alpha/.git', '/workspace/beta/.git'])
     })
 
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: ['/workspace'],
       configuredPaths: [],
       signal: controller.signal,
@@ -254,7 +264,7 @@ describe('discoverSiteCandidates', () => {
     const root = await tempRoot()
     await makeGitRepo(join(root, 'never-scanned'))
 
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: [root],
       configuredPaths: [],
       signal: AbortSignal.abort()
@@ -269,7 +279,7 @@ describe('discoverSiteCandidates', () => {
     await makeGitRepo(join(root, 'Alpha'))
     await makeGitRepo(join(root, 'beta'))
 
-    const result = await discoverSiteCandidates({ roots: [root], configuredPaths: [] })
+    const result = await discover({ roots: [root], configuredPaths: [] })
 
     expect(result.candidates.map((candidate) => candidate.displayName)).toEqual([
       'Alpha',
@@ -282,12 +292,27 @@ describe('discoverSiteCandidates', () => {
     const root = await tempRoot()
     await makeGitRepo(join(root, 'solo'))
 
-    const result = await discoverSiteCandidates({
+    const result = await discover({
       roots: [root, `${root}/`],
       configuredPaths: []
     })
 
     expect(result.roots).toEqual([root])
     expect(result.candidates.map((candidate) => candidate.displayName)).toEqual(['solo'])
+  })
+
+  // The densest root is not roots[0] — roots is alphabetical — so it has to survive as its own
+  // field for the renderer to know where a clone would land.
+  it('reports the primary root it was given, independent of the alphabetical root list', async () => {
+    const root = await tempRoot()
+    await makeGitRepo(join(root, 'solo'))
+
+    const result = await discoverSiteCandidates({
+      roots: [root],
+      primaryRoot: '/Users/jake/Documents/Sites',
+      configuredPaths: []
+    })
+
+    expect(result.primaryRoot).toBe('/Users/jake/Documents/Sites')
   })
 })

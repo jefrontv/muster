@@ -13780,7 +13780,8 @@
           "cancel": "Cancel",
           "privateLabel": "Private",
           "clonedToast": "Site added",
-          "failedToast": "Could not add the site"
+          "failedToast": "Could not add the site",
+          "destinationPrefix": "Clones into"
         }
       }
     },

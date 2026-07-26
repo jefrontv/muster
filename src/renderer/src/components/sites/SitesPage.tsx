@@ -30,6 +30,8 @@ export default function SitesPage(): React.JSX.Element {
 
   const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
   const [roots, setRoots] = useState<string[]>([])
+  // Where a new clone lands. Separate from `roots`, which is alphabetical for stable rendering.
+  const [primaryRoot, setPrimaryRoot] = useState('')
   const [adopting, setAdopting] = useState('')
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
 
@@ -48,6 +50,7 @@ export default function SitesPage(): React.JSX.Element {
         // The same call already reports the roots, so the rows can shorten their paths without a
         // second round trip.
         setRoots(result.value.roots)
+        setPrimaryRoot(result.value.primaryRoot)
       }
     }
     void load()
@@ -225,7 +228,7 @@ export default function SitesPage(): React.JSX.Element {
 
       <AddSiteFromGitDialog
         open={cloneDialogOpen}
-        roots={roots}
+        destinationRoot={primaryRoot}
         onOpenChange={setCloneDialogOpen}
         onAdded={(siteId) => {
           void fetchSites()

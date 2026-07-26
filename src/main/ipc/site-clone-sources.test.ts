@@ -4,6 +4,7 @@ import type {
   CloneSourceProvider
 } from '../../shared/site-clone-source-types'
 import type { SiteResult } from '../../shared/site-types'
+import type { Store } from '../persistence'
 import type { isCloneSourceProviderId as CloneSourceProviderIdGuard } from '../sites/site-clone-sources'
 
 const { handlers, removed, listCloneSourceProviders, listCloneSourceRepos } = vi.hoisted(() => ({
@@ -57,6 +58,12 @@ const REPOS: CloneSourceListResult = {
   truncated: false
 }
 
+// Only the two readers the registry's exclusion touches; the rest of Store is irrelevant here.
+const STORE = {
+  getRepos: () => [],
+  listSites: () => []
+} as unknown as Store
+
 async function call<T>(channel: string, args?: unknown): Promise<SiteResult<T>> {
   const handler = handlers.get(channel)
   if (!handler) {
@@ -71,7 +78,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   listCloneSourceProviders.mockResolvedValue(PROVIDERS)
   listCloneSourceRepos.mockResolvedValue(REPOS)
-  registerSiteCloneSourceHandlers()
+  registerSiteCloneSourceHandlers(STORE)
 })
 
 describe('registerSiteCloneSourceHandlers', () => {
@@ -101,7 +108,7 @@ describe('registerSiteCloneSourceHandlers', () => {
       ok: true,
       value: REPOS
     })
-    expect(listCloneSourceRepos).toHaveBeenCalledWith('github')
+    expect(listCloneSourceRepos).toHaveBeenCalledWith(STORE, 'github')
   })
 
   it('returns a failure for an unknown provider instead of throwing', async () => {

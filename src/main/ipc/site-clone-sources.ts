@@ -14,6 +14,7 @@ import type {
   CloneSourceProvider
 } from '../../shared/site-clone-source-types'
 import type { SiteResult } from '../../shared/site-types'
+import type { Store } from '../persistence'
 import {
   isCloneSourceProviderId,
   listCloneSourceProviders,
@@ -23,7 +24,7 @@ import { failure } from './sites-result'
 
 const SITE_CLONE_SOURCE_CHANNELS = ['siteCloneSources:providers', 'siteCloneSources:repos'] as const
 
-export function registerSiteCloneSourceHandlers(): void {
+export function registerSiteCloneSourceHandlers(store: Store): void {
   for (const channel of SITE_CLONE_SOURCE_CHANNELS) {
     ipcMain.removeHandler(channel)
   }
@@ -51,7 +52,9 @@ export function registerSiteCloneSourceHandlers(): void {
             'siteCloneSources:repos requires { provider: "bitbucket" | "github" }'
           )
         }
-        return { ok: true, value: await listCloneSourceRepos(input.provider) }
+        // The store is what "already have it" is measured against, so the registry filters the
+        // list before it ever reaches the picker.
+        return { ok: true, value: await listCloneSourceRepos(store, input.provider) }
       } catch (error) {
         return failure(error)
       }

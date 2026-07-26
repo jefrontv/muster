@@ -296,7 +296,7 @@ describe('listGithubCloneSourceRepos', () => {
     )
   })
 
-  it('marks the list truncated and caps it when gh fills the limit+1 page', async () => {
+  it('reports truncation but leaves capping to the registry', async () => {
     const entries = Array.from({ length: CLONE_SOURCE_REPO_LIMIT + 1 }, (_, index) => ({
       nameWithOwner: `octocat/repo-${String(index).padStart(3, '0')}`,
       sshUrl: `git@github.com:octocat/repo-${index}.git`,
@@ -308,12 +308,13 @@ describe('listGithubCloneSourceRepos', () => {
     const result = await listGithubCloneSourceRepos()
 
     expect(result.truncated).toBe(true)
-    expect(result.repos).toHaveLength(CLONE_SOURCE_REPO_LIMIT)
-    // Newest survives the cap, oldest is the one dropped.
+    // Uncapped on purpose: listCloneSourceRepos excludes repos the user already has and only then
+    // applies the single cap. Capping here as well would drop a usable repo per already-present one.
+    expect(result.repos).toHaveLength(CLONE_SOURCE_REPO_LIMIT + 1)
+    // Newest first is still this module's job.
     expect(result.repos[0].fullName).toBe(
       `octocat/repo-${String(CLONE_SOURCE_REPO_LIMIT).padStart(3, '0')}`
     )
-    expect(result.repos.some((repo) => repo.fullName === 'octocat/repo-000')).toBe(false)
   })
 
   it('returns an empty list with no error when gh is not connected', async () => {

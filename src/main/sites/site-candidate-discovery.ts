@@ -116,6 +116,12 @@ function dedupeRoots(roots: string[]): string[] {
  */
 export async function discoverSiteCandidates(args: {
   roots: string[]
+  /**
+   * Where a new project should land, reported straight back on the result. Supplied rather than
+   * derived here: ranking roots by density is the watcher's job, and reaching for the store would
+   * cost this module its purity for a value it never reads.
+   */
+  primaryRoot: string
   /** Paths that already have a Site record; these must be excluded from `candidates`. */
   configuredPaths: Iterable<string>
   signal?: AbortSignal
@@ -190,6 +196,7 @@ export async function discoverSiteCandidates(args: {
 
   return {
     roots,
+    primaryRoot: args.primaryRoot,
     candidates,
     scannedAt: Date.now(),
     truncated

@@ -207,7 +207,7 @@ export function registerCoreHandlers(
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)
   registerSiteBindHandlers(store)
-  registerSiteCloneSourceHandlers()
+  registerSiteCloneSourceHandlers(store)
   registerSiteSetupHandlers(store)
   registerBitbucketAuthHandlers()
   registerSiteMcpHandlers(store)

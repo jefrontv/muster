@@ -33,8 +33,8 @@ import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 
 type AddSiteFromGitDialogProps = {
   open: boolean
-  /** Watched roots; the first is offered as the clone destination so the site lands where the rest live. */
-  roots: readonly string[]
+  /** The configured sites directory. Clones land here; empty means the user has no root yet. */
+  destinationRoot: string
   onOpenChange: (open: boolean) => void
   onAdded: (siteId: string) => void
 }
@@ -51,7 +51,7 @@ function matchesQuery(repo: CloneSourceRepo, query: string): boolean {
 
 export function AddSiteFromGitDialog({
   open,
-  roots,
+  destinationRoot,
   onOpenChange,
   onAdded
 }: AddSiteFromGitDialogProps): React.JSX.Element {
@@ -112,11 +112,12 @@ export function AddSiteFromGitDialog({
 
   const addRepo = useCallback(
     async (repo: CloneSourceRepo): Promise<void> => {
-      // Seed the picker at the folder the user's other sites live in; an empty object lets the OS
-      // choose when no root is known yet.
-      const destination = await window.api.shell.pickDirectory(
-        roots[0] ? { defaultPath: roots[0] } : {}
-      )
+      // No folder prompt. The sites directory is already known, every other site lives in it, and
+      // repos that would collide there are filtered out of this list upstream — so asking the user
+      // to re-pick the same folder for every clone was pure friction. `destinationRoot` is only
+      // empty on a machine with no projects yet, which is the one case worth a prompt.
+      const destination =
+        destinationRoot.length > 0 ? destinationRoot : await window.api.shell.pickDirectory({})
       if (!destination) {
         return
       }
@@ -142,7 +143,7 @@ export function AddSiteFromGitDialog({
         setBusyRepo('')
       }
     },
-    [roots, strings, onAdded, onOpenChange]
+    [destinationRoot, strings, onAdded, onOpenChange]
   )
 
   const activeProvider = providers.find((provider) => provider.id === active) ?? null
@@ -153,7 +154,16 @@ export function AddSiteFromGitDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{strings.title}</DialogTitle>
-          <DialogDescription>{strings.description}</DialogDescription>
+          <DialogDescription>
+            {destinationRoot.length > 0 ? (
+              <>
+                {strings.destinationPrefix}{' '}
+                <span className="font-mono text-foreground/80">{destinationRoot}</span>
+              </>
+            ) : (
+              strings.description
+            )}
+          </DialogDescription>
         </DialogHeader>
 
         {providers.length === 0 ? (
