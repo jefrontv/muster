@@ -1320,19 +1320,28 @@ describe('Store', () => {
     expect(store.getUI().groupBy).toBe('workspace-status')
   })
 
-  it('defaults projectOrderBy to manual when absent, even with recent sortBy', async () => {
+  it('defaults projectOrderBy to recent when absent', async () => {
     writeDataFile({
       schemaVersion: 1,
       ui: { sortBy: 'recent' }
     })
     const store = await createStore()
-    expect(store.getUI().projectOrderBy).toBe('manual')
+    expect(store.getUI().projectOrderBy).toBe('recent')
   })
 
-  it('falls back invalid projectOrderBy to manual', async () => {
+  it('falls back invalid projectOrderBy to the default', async () => {
     writeDataFile({
       schemaVersion: 1,
       ui: { projectOrderBy: 'bogus' }
+    })
+    const store = await createStore()
+    expect(store.getUI().projectOrderBy).toBe('recent')
+  })
+
+  it('preserves an explicit manual projectOrderBy against the recent default', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      ui: { projectOrderBy: 'manual' }
     })
     const store = await createStore()
     expect(store.getUI().projectOrderBy).toBe('manual')
