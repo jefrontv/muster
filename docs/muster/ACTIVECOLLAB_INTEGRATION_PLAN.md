@@ -40,8 +40,7 @@ Both reference implementations independently hit the same walls. These are load-
 | Server-side filtering on tasks is **not implemented** | Filter client-side. Do not trust `assignee_id`/`completed` query params |
 | `/tasks/{id}/comments` **500s on the efront instance** | Read comments from the inline array on `GET projects/{p}/tasks/{t}`; the dedicated endpoint is a fallback only |
 | Timestamps are **epoch ints on read, `"YYYY-MM-DD"` strings on write** | Bidirectional codec, not a single Date type |
-| `due_on` is UTC midnight | Re-anchor to the local calendar or every due date is off by one for AU users |
-| `0` is the null sentinel for `assignee_id`, `task_list_id`, `job_type_id`, `label_id` | `0` is not "user 0" |
+| `due_on` is UTC midnight | Re-anchor to the local calendar day. Verified against five live values, all exactly `00:00:00Z`. The naive `new Date(sec*1000).getDate()` only drifts **west** of UTC (US Pacific reads a day early); AEST and UTC are unaffected, so a test pinned to an AU timezone passes vacuously |
 | Labels read as objects, write as **name strings**, and a write **replaces the whole set** | Round-trip needs normalisation; partial label updates must merge client-side |
 | Clearing a field needs an explicit `null`, not omission | — |
 | Attachment `download_url` embeds a literal `--DOWNLOAD-TOKEN--` sentinel | Substituting it puts the token in a URL — redact before logging |

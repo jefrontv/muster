@@ -1,0 +1,224 @@
+// Reads for the ActiveCollab task provider: assigned tasks, the project list, and task detail.
+//
+// Three server behaviours are absorbed here rather than leaked to callers:
+//   - Task filtering is not implemented server-side. `completed`/`assignee_id`/`search` query
+//     params are accepted and ignored, so completed tasks are dropped client-side.
+//   - Collections cap at 100 rows per page whatever limit is asked for, and the page totals live in
+//     response headers. `hasMore` therefore comes from the headers, never from the array length.
+//   - `GET projects/{p}/tasks/{t}/comments` 500s on the target instance, so comments are read from
+//     the inline array on the task-detail response and the dedicated endpoint is a fallback only.
+
+import {
+  ACTIVECOLLAB_PAGE_SIZE,
+  type ActiveCollabComment,
+  type ActiveCollabProject,
+  type ActiveCollabTask,
+  type ActiveCollabTaskDetail,
+  type ActiveCollabTaskPage
+} from '../../shared/activecollab-types'
+import { acEpochToLocalDay, acIsRecord, acLabels, acNullableId } from './codecs'
+import type { AcHttpClient, AcResponse } from './http'
+
+function asText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+/** Epoch seconds to epoch ms. `0` and null both mean unset, which is not 1970. */
+function epochMs(value: unknown): number | null {
+  const seconds = asNumber(value)
+  return seconds !== null && seconds > 0 ? seconds * 1000 : null
+}
+
+/**
+ * Collections arrive either bare (`/projects`) or inside a keyed envelope (`/users/{id}/tasks`
+ * answers `{ tasks, subtasks, ... }`), so the expected key is tried and a bare array accepted.
+ * Nothing else is guessed: taking "the first array value" would silently serve `subtasks`.
+ */
+function collectionOf(payload: unknown, key: string): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload
+  }
+  const wrapped = acIsRecord(payload) ? payload[key] : undefined
+  return Array.isArray(wrapped) ? wrapped : []
+}
+
+/**
+ * Some payloads carry no assignee name at all. Left null rather than joined against `/users`: a
+ * per-task join costs a request per row for a label the list can render without.
+ */
+function assigneeNameOf(row: Record<string, unknown>): string | null {
+  const direct = asText(row.assignee_name)
+  if (direct.length > 0) {
+    return direct
+  }
+  const names = row.assignee_names
+  const first = Array.isArray(names) ? asText(names[0]) : ''
+  return first.length > 0 ? first : null
+}
+
+function normaliseTask(value: unknown): ActiveCollabTask | null {
+  if (!acIsRecord(value)) {
+    return null
+  }
+  const id = asNumber(value.id)
+  if (id === null) {
+    return null
+  }
+  const projectId = asNumber(value.project_id) ?? 0
+  return {
+    id,
+    projectId,
+    projectName: asText(value.project_name),
+    taskNumber: asNumber(value.task_number) ?? 0,
+    name: asText(value.name),
+    bodyHtml: asText(value.body),
+    // `is_completed` and `completed_on` disagree on some rows; either one closes the task.
+    isCompleted: value.is_completed === true || epochMs(value.completed_on) !== null,
+    dueOn: acEpochToLocalDay(asNumber(value.due_on)),
+    createdOn: epochMs(value.created_on),
+    updatedOn: epochMs(value.updated_on),
+    assigneeId: acNullableId(value.assignee_id),
+    assigneeName: assigneeNameOf(value),
+    labels: acLabels(value.labels),
+    commentCount: asNumber(value.comments_count) ?? 0,
+    urlPath: asText(value.url_path) || `/projects/${projectId}/tasks/${id}`,
+    taskListId: acNullableId(value.task_list_id)
+  }
+}
+
+function normaliseComment(value: unknown): ActiveCollabComment | null {
+  if (!acIsRecord(value)) {
+    return null
+  }
+  const id = asNumber(value.id)
+  if (id === null) {
+    return null
+  }
+  return {
+    id,
+    bodyHtml: asText(value.body),
+    // Comments get a plain-text rendering that tasks do not; the HTML stands in when it is absent.
+    bodyPlainText: asText(value.body_plain_text) || asText(value.body),
+    createdOn: epochMs(value.created_on),
+    createdById: acNullableId(value.created_by_id),
+    // The wire carries an author id, never an author object. Null beats inventing a join.
+    createdByName: asText(value.created_by_name) || null
+  }
+}
+
+function normaliseComments(payload: unknown): ActiveCollabComment[] {
+  const comments: ActiveCollabComment[] = []
+  for (const entry of collectionOf(payload, 'comments')) {
+    const comment = normaliseComment(entry)
+    if (comment !== null) {
+      comments.push(comment)
+    }
+  }
+  return comments
+}
+
+/**
+ * Derived from the `X-Angie-Pagination*` headers, never from how many rows came back: the server
+ * caps every page at 100 whatever limit was asked for, and completed tasks are filtered off after
+ * the response lands, so a short list proves nothing about whether another page exists.
+ */
+function hasMorePages(
+  response: AcResponse<unknown>,
+  requestedPage: number,
+  rowCount: number
+): boolean {
+  const perPage =
+    response.perPage !== null && response.perPage > 0 ? response.perPage : ACTIVECOLLAB_PAGE_SIZE
+  if (response.totalItems !== null) {
+    const page = response.page !== null && response.page > 0 ? response.page : requestedPage
+    return page * perPage < response.totalItems
+  }
+  // Headers absent: a page that came back full is the only one that can have a successor.
+  return rowCount >= perPage
+}
+
+export async function listAssignedTasks(args: {
+  http: AcHttpClient
+  userId: number
+  page?: number
+}): Promise<ActiveCollabTaskPage> {
+  const page = args.page !== undefined && args.page > 1 ? Math.trunc(args.page) : 1
+  const response = await args.http.request<unknown>(`users/${args.userId}/tasks`, {
+    query: { page }
+  })
+  const rows = collectionOf(response.data, 'tasks')
+  const tasks: ActiveCollabTask[] = []
+  for (const row of rows) {
+    const task = normaliseTask(row)
+    // Client-side because the server ignores a `completed` filter and returns closed tasks anyway.
+    if (task !== null && !task.isCompleted) {
+      tasks.push(task)
+    }
+  }
+  return {
+    tasks,
+    totalItems: response.totalItems,
+    hasMore: hasMorePages(response, page, rows.length)
+  }
+}
+
+export async function listProjects(args: { http: AcHttpClient }): Promise<ActiveCollabProject[]> {
+  const response = await args.http.request<unknown>('projects')
+  const projects: ActiveCollabProject[] = []
+  for (const entry of collectionOf(response.data, 'projects')) {
+    if (!acIsRecord(entry)) {
+      continue
+    }
+    const id = asNumber(entry.id)
+    if (id === null) {
+      continue
+    }
+    projects.push({
+      id,
+      name: asText(entry.name),
+      isCompleted: entry.is_completed === true || epochMs(entry.completed_on) !== null,
+      // Already on the list payload, so a sidebar badge costs no extra request.
+      openTaskCount: asNumber(entry.count_tasks)
+    })
+  }
+  return projects
+}
+
+/**
+ * Fallback only. The dedicated endpoint 500s on the target instance ("Failed to match path"), so a
+ * failure degrades to an empty thread: the task itself already loaded and losing its comments must
+ * not lose the whole detail view.
+ */
+async function readFallbackComments(
+  http: AcHttpClient,
+  taskPath: string
+): Promise<ActiveCollabComment[]> {
+  try {
+    return normaliseComments((await http.request<unknown>(`${taskPath}/comments`)).data)
+  } catch {
+    return []
+  }
+}
+
+export async function getTaskDetail(args: {
+  http: AcHttpClient
+  projectId: number
+  taskId: number
+}): Promise<ActiveCollabTaskDetail> {
+  const taskPath = `projects/${args.projectId}/tasks/${args.taskId}`
+  const payload = (await args.http.request<unknown>(taskPath)).data
+  // Single-object reads are wrapped as `{ single: {...}, comments: [...], <sidecars> }`.
+  const task = normaliseTask(acIsRecord(payload) ? (payload.single ?? payload) : payload)
+  if (task === null) {
+    throw new Error(`ActiveCollab task ${args.taskId} was not found in project ${args.projectId}.`)
+  }
+  const inline = normaliseComments(payload)
+  return {
+    task,
+    comments: inline.length > 0 ? inline : await readFallbackComments(args.http, taskPath)
+  }
+}
