@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getDefaultUIState } from '../../../shared/constants'
+import {
+  DEFAULT_HIDE_SLEEPING_WORKSPACES,
+  DEFAULT_SHOW_SLEEPING_WORKSPACES,
+  getDefaultUIState
+} from '../../../shared/constants'
 import type { PersistedUIState } from '../../../shared/types'
 import {
   getStartupErrorFallbackUI,
@@ -55,8 +59,15 @@ describe('startup UI hydration fallback', () => {
     expect(hydratePersistedUI.mock.calls[0][0].sidebarWidth).toBe(280)
     expect(hydratePersistedUI.mock.calls[0][0].groupBy).toBe('repo')
     expect(hydratePersistedUI.mock.calls[0][0].sortBy).toBe('name')
-    expect(hydratePersistedUI.mock.calls[0][0].hideSleepingWorkspaces).toBe(false)
-    expect(hydratePersistedUI.mock.calls[0][0].showSleepingWorkspaces).toBe(true)
+    // The contract is "the fallback carries the shipped defaults, and the two forms stay
+    // inverses" — pinning literals here just re-asserts whichever way the default happens to point.
+    expect(hydratePersistedUI.mock.calls[0][0].hideSleepingWorkspaces).toBe(
+      DEFAULT_HIDE_SLEEPING_WORKSPACES
+    )
+    expect(hydratePersistedUI.mock.calls[0][0].showSleepingWorkspaces).toBe(
+      DEFAULT_SHOW_SLEEPING_WORKSPACES
+    )
+    expect(DEFAULT_SHOW_SLEEPING_WORKSPACES).toBe(!DEFAULT_HIDE_SLEEPING_WORKSPACES)
   })
 
   it('does not mark UI hydrated after the startup effect has been cancelled', () => {

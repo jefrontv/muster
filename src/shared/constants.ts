@@ -48,8 +48,11 @@ export {
 
 export const SCHEMA_VERSION = 1
 export const DEFAULT_APP_FONT_FAMILY = 'Geist'
-export const DEFAULT_SHOW_SLEEPING_WORKSPACES = true
-export const DEFAULT_HIDE_SLEEPING_WORKSPACES = false
+// Sleeping workspaces are hidden by default: the sidebar's job is what you are working on now, and
+// a long tail of dormant worktrees buries that. Both forms exist because profiles persisted the
+// negative key first; they must always stay each other's inverse.
+export const DEFAULT_SHOW_SLEEPING_WORKSPACES = false
+export const DEFAULT_HIDE_SLEEPING_WORKSPACES = true
 export const DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE: AgentActivityDisplayMode = 'compact'
 
 export function normalizeAgentActivityDisplayMode(value: unknown): AgentActivityDisplayMode {

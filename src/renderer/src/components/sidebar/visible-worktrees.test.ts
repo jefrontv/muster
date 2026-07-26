@@ -7,6 +7,7 @@ import {
 } from './visible-worktrees'
 import type { Repo, TerminalTab, Worktree, WorktreeLineage } from '../../../../shared/types'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
+import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../shared/constants'
 
 function makeTab(id: string, worktreeId: string, ptyId: string | null): TerminalTab {
   return {
@@ -94,7 +95,9 @@ type FilterState = Parameters<typeof sidebarHasActiveFilters>[0]
 
 function filterState(overrides: Partial<FilterState> = {}): FilterState {
   return {
-    showSleepingWorkspaces: true,
+    // Why the constant rather than a literal: "no filters" means "sitting at the default", so
+    // these cases must follow the default rather than pin whichever value it happens to hold.
+    showSleepingWorkspaces: DEFAULT_SHOW_SLEEPING_WORKSPACES,
     filterRepoIds: [],
     hideDefaultBranchWorkspace: false,
     hideAutomationGeneratedWorkspaces: false,
@@ -733,8 +736,12 @@ describe('sidebarHasActiveFilters', () => {
     )
   })
 
-  it('returns true when sleeping workspaces are hidden', () => {
-    expect(sidebarHasActiveFilters(filterState({ showSleepingWorkspaces: false }))).toBe(true)
+  it('returns true when sleeping visibility differs from the default', () => {
+    expect(
+      sidebarHasActiveFilters(
+        filterState({ showSleepingWorkspaces: !DEFAULT_SHOW_SLEEPING_WORKSPACES })
+      )
+    ).toBe(true)
   })
 
   it('returns true when only filterRepoIds is non-empty', () => {
@@ -809,7 +816,7 @@ describe('computeClearFilterActions', () => {
     expect(
       computeClearFilterActions(
         filterState({
-          showSleepingWorkspaces: false,
+          showSleepingWorkspaces: !DEFAULT_SHOW_SLEEPING_WORKSPACES,
           filterRepoIds: ['repo1', 'repo2'],
           hideDefaultBranchWorkspace: true,
           hideAutomationGeneratedWorkspaces: true,

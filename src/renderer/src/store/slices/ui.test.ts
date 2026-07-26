@@ -1,7 +1,11 @@
 /* eslint-disable max-lines */
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDefaultUIState, getWorktreeCardModeProperties } from '../../../../shared/constants'
+import {
+  DEFAULT_SHOW_SLEEPING_WORKSPACES,
+  getDefaultUIState,
+  getWorktreeCardModeProperties
+} from '../../../../shared/constants'
 import type {
   GitHubWorkItem,
   JiraIssue,
@@ -713,10 +717,11 @@ describe('createUISlice hydratePersistedUI', () => {
     expect(getDefaultUIState().rightSidebarOpen).toBe(true)
   })
 
-  it('defaults to showing sleeping workspaces', () => {
+  it('defaults to hiding sleeping workspaces', () => {
     const store = createUIStore()
 
-    expect(store.getState().showSleepingWorkspaces).toBe(true)
+    expect(store.getState().showSleepingWorkspaces).toBe(DEFAULT_SHOW_SLEEPING_WORKSPACES)
+    expect(DEFAULT_SHOW_SLEEPING_WORKSPACES).toBe(false)
   })
 
   it('defaults workspace host scope to all hosts', () => {
@@ -1302,19 +1307,19 @@ describe('createUISlice hydratePersistedUI', () => {
     expect(store.getState().showSleepingWorkspaces).toBe(false)
   })
 
-  it('ignores legacy hidden-sleeping preference so existing users start with sleeping visible', () => {
+  it('ignores the legacy positive-form key so the shipped default wins', () => {
     const store = createUIStore()
 
     store.getState().hydratePersistedUI(
       makePersistedUI({
-        showSleepingWorkspaces: false
+        showSleepingWorkspaces: !DEFAULT_SHOW_SLEEPING_WORKSPACES
       })
     )
 
-    expect(store.getState().showSleepingWorkspaces).toBe(true)
+    expect(store.getState().showSleepingWorkspaces).toBe(DEFAULT_SHOW_SLEEPING_WORKSPACES)
   })
 
-  it('ignores the legacy show-inactive filter so existing users start with sleeping visible', () => {
+  it('ignores the legacy show-inactive filter so the shipped default wins', () => {
     const store = createUIStore()
 
     store.getState().hydratePersistedUI(
@@ -1324,7 +1329,7 @@ describe('createUISlice hydratePersistedUI', () => {
       })
     )
 
-    expect(store.getState().showSleepingWorkspaces).toBe(true)
+    expect(store.getState().showSleepingWorkspaces).toBe(DEFAULT_SHOW_SLEEPING_WORKSPACES)
   })
 
   it('restores the hide-default-branch filter from persisted UI state', () => {

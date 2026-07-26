@@ -2443,7 +2443,8 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
         projectOrderBy: ui.projectOrderBy,
         // Why: Active-only was retired; force the old flag off so an old profile can't invisibly narrow the workspace list.
         showActiveOnly: false,
-        // Why: ignore older positive-form keys so old profiles start from the new default (sleeping workspaces visible).
+        // Why: read only the persisted negative form, so a profile that never chose picks up the
+        // current default (sleeping workspaces hidden) while an explicit choice still wins.
         showSleepingWorkspaces: !(ui.hideSleepingWorkspaces ?? DEFAULT_HIDE_SLEEPING_WORKSPACES),
         workspaceHostScope: normalizeExecutionHostScope(ui.workspaceHostScope),
         visibleWorkspaceHostIds: normalizeHydratedVisibleWorkspaceHostIds(ui),
