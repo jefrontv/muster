@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Muster">
+  <title>Muster (Watercolor)</title>
+  <!--
+    The "Watercolor Muster" dock variant. Same geometry and glyph as muster-icon.svg so it reads as
+    the same product; the tile is a set of blurred colour blooms clipped to the squircle, which is
+    how the wash effect is produced without shipping a raster source.
+    Big Sur squircle: 824 of a 1024 canvas, leaving a transparent 100px margin.
+  -->
+  <defs>
+    <clipPath id="tile">
+      <rect width="512" height="512" rx="114"/>
+    </clipPath>
+    <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="52"/>
+    </filter>
+  </defs>
+  <g transform="translate(100 100) scale(1.609375)">
+    <g clip-path="url(#tile)">
+      <rect width="512" height="512" fill="#141425"/>
+      <g filter="url(#bloom)">
+        <circle cx="120" cy="110" r="170" fill="#6366F1" fill-opacity=".85"/>
+        <circle cx="430" cy="150" r="150" fill="#22D3EE" fill-opacity=".7"/>
+        <circle cx="150" cy="420" r="160" fill="#A855F7" fill-opacity=".65"/>
+        <circle cx="420" cy="440" r="170" fill="#0EA5E9" fill-opacity=".7"/>
+        <circle cx="280" cy="270" r="130" fill="#38BDF8" fill-opacity=".45"/>
+      </g>
+      <!-- Darkened centre so the glyph keeps contrast wherever the blooms land. -->
+      <rect width="512" height="512" fill="#0B0B16" fill-opacity=".32"/>
+    </g>
+    <rect x="6" y="6" width="500" height="500" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity=".16" stroke-width="12"/>
+    <g fill="#FFFFFF">
+      <circle cx="150" cy="172" r="22"/>
+      <rect x="196" y="152" width="188" height="40" rx="20"/>
+
+      <circle cx="150" cy="256" r="22" fill="#7DF9FF"/>
+      <rect x="196" y="236" width="140" height="40" rx="20" fill="#7DF9FF"/>
+
+      <circle cx="150" cy="340" r="22" fill-opacity=".45"/>
+      <rect x="196" y="320" width="188" height="40" rx="20" fill-opacity=".45"/>
+    </g>
+  </g>
+</svg>

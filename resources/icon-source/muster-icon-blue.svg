@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Muster">
+  <title>Muster (Blue)</title>
+  <!--
+    The "Blue Muster" dock variant. Same geometry and glyph as muster-icon.svg — only the tile
+    changes — so every icon option reads as the same product rather than three unrelated marks.
+    Big Sur squircle: 824 of a 1024 canvas, leaving a transparent 100px margin.
+  -->
+  <defs>
+    <linearGradient id="blueTile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4C8DFF"/>
+      <stop offset="1" stop-color="#1D4FD8"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(100 100) scale(1.609375)">
+    <rect width="512" height="512" rx="114" fill="url(#blueTile)"/>
+    <rect x="6" y="6" width="500" height="500" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity=".16" stroke-width="12"/>
+    <g fill="#FFFFFF">
+      <circle cx="150" cy="172" r="22"/>
+      <rect x="196" y="152" width="188" height="40" rx="20"/>
+
+      <circle cx="150" cy="256" r="22" fill="#A5F3FC"/>
+      <rect x="196" y="236" width="140" height="40" rx="20" fill="#A5F3FC"/>
+
+      <circle cx="150" cy="340" r="22" fill-opacity=".45"/>
+      <rect x="196" y="320" width="188" height="40" rx="20" fill-opacity=".45"/>
+    </g>
+  </g>
+</svg>

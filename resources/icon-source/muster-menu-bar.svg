@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 14" role="img" aria-label="Muster">
+  <title>Muster menu bar</title>
+  <!--
+    macOS template image: black pixels plus alpha only — the system tints it for light/dark menu
+    bars and for the attention state, so any colour here would be discarded.
+    22x14 is the logical size; @2x is the same artwork at 44x28.
+
+    The glyph is deliberately right-aligned into x >= 13. In dev builds stampTrayDevBadge() wipes
+    everything left of x = 12 and stamps a pixel-caps "DEV" there. The old orca artwork spanned the
+    full width, so its tail survived into the badge area and made "DEV" read as "DEU"; keeping the
+    mark clear of that column removes the collision instead of masking it.
+  -->
+  <g fill="#000000">
+    <circle cx="14.2" cy="3.1" r="1.25"/>
+    <rect x="16.6" y="1.95" width="4.7" height="2.3" rx="1.15"/>
+
+    <circle cx="14.2" cy="7" r="1.25"/>
+    <rect x="16.6" y="5.85" width="3.1" height="2.3" rx="1.15"/>
+
+    <circle cx="14.2" cy="10.9" r="1.25"/>
+    <rect x="16.6" y="9.75" width="4.7" height="2.3" rx="1.15"/>
+  </g>
+</svg>

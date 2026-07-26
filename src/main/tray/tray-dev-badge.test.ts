@@ -62,6 +62,26 @@ describe('stampTrayDevBadge', () => {
     expect(maxX).toBeLessThan(width)
     expect(maxY).toBeLessThan(height)
   })
+  it('tapers the V so the badge cannot read as "DEU"', () => {
+    createFromBitmapMock.mockClear()
+    const width = 22
+    const height = 14
+    stampTrayDevBadge(fakeTemplate(width, height) as never)
+
+    const [bitmap] = createFromBitmapMock.mock.calls[0]
+    const opaque = (x: number, y: number): boolean => bitmap[(y * width + x) * 4 + 3] === 0xff
+
+    // The V is the last glyph: columns 8-10, rows 3-7 (BADGE_OFFSET_Y = 3).
+    // A U keeps both outer strokes to the floor; a V must drop them and leave
+    // only the centre column on the final two rows.
+    expect(opaque(8, 3)).toBe(true)
+    expect(opaque(10, 3)).toBe(true)
+    for (const row of [6, 7]) {
+      expect(opaque(8, row)).toBe(false)
+      expect(opaque(10, row)).toBe(false)
+      expect(opaque(9, row)).toBe(true)
+    }
+  })
 
   it('reads and scales the requested Retina representation', () => {
     const opaque = (buffer: Buffer): number => {

@@ -1,13 +1,17 @@
 import { nativeImage, type NativeImage } from 'electron'
 
 // Why: a 5px-tall pixel-caps "DEV" is the smallest text that stays legible in
-// the 14pt menu-bar template; it fills the empty area left of the orca glyph
+// the 14pt menu-bar template; it fills the empty area left of the Muster glyph
 // so the status item keeps the exact production footprint.
-const DEV_BADGE_ROWS = ['##..###.#.#', '#.#.#...#.#', '#.#.##..#.#', '#.#.#...#.#', '##..###..#.']
+//
+// The V tapers over its last two rows (`#.#` x3 then `.#.` x2). A 3px-wide V
+// whose strokes run full height and meet only on the final row is
+// indistinguishable from a U at this size — that, not the artwork beside it,
+// is why the badge used to read "DEU". The menu-bar template is also kept
+// clear of this column so nothing can bleed back into the text.
+const DEV_BADGE_ROWS = ['##..###.#.#', '#.#.#...#.#', '#.#.##..#.#', '#.#.#....#.', '##..###..#.']
 const BADGE_OFFSET_X = 0
 const BADGE_OFFSET_Y = 3
-// Why: the orca tail's antialiased pixels touch the V's right stroke and make
-// "DEV" read as "DEU"; clearing a margin around the badge keeps it legible.
 const BADGE_CLEAR_MARGIN = 1
 
 /**
