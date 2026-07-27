@@ -1,38 +1,13 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { LoaderCircle, Send } from 'lucide-react'
+import React, { useMemo } from 'react'
 
 import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
 import CommentMarkdown, { type ActiveCollabHtmlOptions } from '@/components/sidebar/CommentMarkdown'
-import { Button } from '@/components/ui/button'
-import {
-  getCommentBodySubmitState,
-  hasBoundedCommentBodyText
-} from '@/lib/comment-body-submit-state'
 import { translate } from '@/i18n/i18n'
 import type { ActiveCollabComment } from '../../../shared/activecollab-types'
+import { ActiveCollabCommentComposer } from './activecollab-comment-composer'
 import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
 import { ActiveCollabTaskSectionHeading } from './activecollab-task-section-heading'
 import { activeCollabStamp } from './activecollab-task-timestamps'
-
-/**
- * ActiveCollab stores comment bodies as HTML, so the composer's plain text is escaped and wrapped
- * rather than posted raw — otherwise a typed `<b>` would become live markup on the instance.
- */
-export function activeCollabCommentBodyHtml(text: string): string {
-  return text
-    .split(/\n{2,}/)
-    .map((paragraph) =>
-      paragraph
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/\n/g, '<br>')
-    )
-    .filter((paragraph) => paragraph.length > 0)
-    .map((paragraph) => `<p>${paragraph}</p>`)
-    .join('')
-}
 
 /**
  * Newest first, because the composer sits at the TOP of the discussion. Proximity should track
@@ -120,17 +95,7 @@ export function ActiveCollabCommentThread({
   busy,
   onSubmit
 }: ActiveCollabCommentThreadProps): React.JSX.Element {
-  const [draft, setDraft] = useState('')
   const ordered = useMemo(() => sortActiveCollabCommentsNewestFirst(comments), [comments])
-
-  const submit = useCallback(() => {
-    const state = getCommentBodySubmitState(draft)
-    if (state.status !== 'ready') {
-      return
-    }
-    onSubmit(activeCollabCommentBodyHtml(state.body))
-    setDraft('')
-  }, [draft, onSubmit])
 
   return (
     <section className="px-4 py-4">
@@ -141,39 +106,8 @@ export function ActiveCollabCommentThread({
 
       {/* Composer first: replying is the action you came here to take, so it should not require
           scrolling past the whole history to reach. Newest-first below it means the message you
-          are most likely replying to stays on screen while you type.
-
-          Stacked, not side-by-side: the button used to sit `self-end` beside a two-row textarea,
-          which left it floating against the field's bottom corner aligned to nothing. Full-width
-          input with the action beneath it is the shape every other composer in the app uses. */}
-      <div className="mt-2 flex flex-col gap-2">
-        <textarea
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={translate(
-            'auto.components.activecollab.task_workspace.comment_placeholder',
-            'Add an ActiveCollab comment...'
-          )}
-          rows={3}
-          disabled={disabled}
-          aria-label={translate(
-            'auto.components.activecollab.task_workspace.comment_label',
-            'New comment'
-          )}
-          className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
-        />
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            onClick={submit}
-            disabled={disabled || !hasBoundedCommentBodyText(draft)}
-            className="gap-2"
-          >
-            {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
-            {translate('auto.components.activecollab.task_workspace.comment_submit', 'Comment')}
-          </Button>
-        </div>
-      </div>
+          are most likely replying to stays on screen while you type. */}
+      <ActiveCollabCommentComposer disabled={disabled} busy={busy} onSubmit={onSubmit} />
 
       {comments.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">

@@ -76,10 +76,14 @@ function ActiveCollabTaskGroupSection({
   const headingId = `activecollab-task-group-${group.projectId}`
   return (
     // Why the group reads as a block: a plain `border-t` at the same weight as the row dividers
-    // made a project boundary indistinguishable from a task boundary. The heading now sits in its
-    // own tinted band and the rows below it are divided more faintly than the band, so the eye
-    // ranks "new project" above "next task" instead of seeing one uniform stack of hairlines.
-    <section className="pb-1.5 last:pb-0">
+    // made a project boundary indistinguishable from a task boundary. The heading sits in its own
+    // tinted band and the rows below it are divided more faintly, so the eye ranks "new project"
+    // above "next task" instead of seeing one uniform stack of hairlines.
+    //
+    // No padding on the section: trailing space sits OUTSIDE the <ul>, so hovering the last row of
+    // a group highlighted the row and then left a dead strip beneath it before the next heading,
+    // which read as a broken hover. The heading's own band is the separator; it needs no help.
+    <section>
       <h3
         id={headingId}
         className="sticky top-0 z-10 flex items-center justify-between gap-2 border-y border-border/60 bg-muted/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground backdrop-blur-sm"

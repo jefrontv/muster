@@ -14,7 +14,8 @@ import type {
   ActiveCollabTask,
   ActiveCollabTaskDetail,
   ActiveCollabTaskPage,
-  ActiveCollabTaskUpdate
+  ActiveCollabTaskUpdate,
+  ActiveCollabUser
 } from './activecollab-types'
 
 /**
@@ -108,4 +109,9 @@ export type ActiveCollabApi = {
   }) => Promise<ActiveCollabResult<ActiveCollabComment | null>>
   /** The label vocabulary a `updateTask` label edit chooses from. */
   listLabels: () => Promise<ActiveCollabResult<ActiveCollabLabel[]>>
+  /**
+   * The @mention roster. Fetched lazily — a comment written without an `@` never asks for it —
+   * and answered from the same credential-keyed window that labels assignees.
+   */
+  listUsers: () => Promise<ActiveCollabResult<ActiveCollabUser[]>>
 }

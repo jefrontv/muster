@@ -30,7 +30,8 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabCompleteTask: vi.fn(),
   activeCollabReopenTask: vi.fn(),
   activeCollabPostComment: vi.fn(),
-  activeCollabListLabels: vi.fn()
+  activeCollabListLabels: vi.fn(),
+  activeCollabListUsers: vi.fn()
 }))
 
 function createTestStore() {

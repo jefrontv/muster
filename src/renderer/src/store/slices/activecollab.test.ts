@@ -32,6 +32,7 @@ const completeTask = vi.fn()
 const reopenTask = vi.fn()
 const postComment = vi.fn()
 const listLabels = vi.fn()
+const listUsers = vi.fn()
 
 vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabStatus: (...args: unknown[]) => status(...args),
@@ -44,7 +45,8 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabCompleteTask: (...args: unknown[]) => completeTask(...args),
   activeCollabReopenTask: (...args: unknown[]) => reopenTask(...args),
   activeCollabPostComment: (...args: unknown[]) => postComment(...args),
-  activeCollabListLabels: (...args: unknown[]) => listLabels(...args)
+  activeCollabListLabels: (...args: unknown[]) => listLabels(...args),
+  activeCollabListUsers: (...args: unknown[]) => listUsers(...args)
 }))
 
 function createTestStore() {
@@ -230,6 +232,24 @@ describe('createActiveCollabSlice caching', () => {
     expect(Object.keys(state.activeCollabTaskDetailCache)).toEqual([implicitDetailKey(1)])
     expect(state.activeCollabProjectCache[`${prefix}::projects`]?.data?.[0]?.name).toBe('Alpha')
     expect(state.activeCollabLabelCache[`${prefix}::labels`]?.data?.[0]?.name).toBe('urgent')
+  })
+
+  it('reads the @mention roster once per credential window, however many callers ask', async () => {
+    const store = createTestStore()
+    const prefix = getProviderRuntimeContextKey(null)
+    listUsers.mockResolvedValue({ ok: true, value: [{ id: 407, name: 'Jake Varrese' }] })
+
+    // Two composers typing `@` at once, then a third `@` after both settled.
+    await Promise.all([
+      store.getState().listActiveCollabUsers(),
+      store.getState().listActiveCollabUsers()
+    ])
+    await store.getState().listActiveCollabUsers()
+
+    expect(listUsers).toHaveBeenCalledTimes(1)
+    expect(store.getState().activeCollabUserCache[`${prefix}::users`]?.data).toEqual([
+      { id: 407, name: 'Jake Varrese' }
+    ])
   })
 })
 

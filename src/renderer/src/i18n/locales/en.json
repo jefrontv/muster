@@ -13922,7 +13922,8 @@
           "add_labels": "Add labels",
           "assignee": "Assignee",
           "labels": "Labels",
-          "assignee_unresolved": "Assigned (name unavailable)"
+          "assignee_unresolved": "Assigned (name unavailable)",
+          "mention_menu": "Mention a person"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",

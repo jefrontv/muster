@@ -1,4 +1,5 @@
-// The user roster, read for exactly one purpose: putting a NAME on a task's `assignee_id`.
+// The user roster. Read for two purposes: putting a NAME on a task's `assignee_id`, and offering
+// the comment composer somebody to @mention.
 //
 // ActiveCollab 8.0.31 omits `assignee_name` AND `assignee_names` from every task row — verified
 // against projects.efront.com.au, where 0 of 11 rows carrying a positive `assignee_id` shipped
@@ -9,17 +10,14 @@
 // the same 176 rows) and answers with no `X-Angie-Pagination*` headers at all, unlike `/projects`.
 // Paging it would re-fetch the identical roster forever.
 //
-// Not exposed over IPC, and never returned to the renderer: the assignee label is the only thing
-// the fix needs, and publishing an entire instance's roster is a far wider surface than that.
+// The roster IS now reachable from the renderer, via `activecollab:listUsers`. An @mention menu
+// cannot filter a list it cannot see. It is served out of the SAME credential-keyed window in
+// name-directory.ts that the assignee join already fills, so exposing it costs no extra request,
+// and the shape stays at id-plus-name: no emails, avatars or permissions cross the bridge.
 
+import type { ActiveCollabUser } from '../../shared/activecollab-types'
 import { acCollection, acIsRecord, acNullableId } from './codecs'
 import type { AcHttpClient } from './http'
-
-/** Just enough to label an assignee. Emails, avatars and permissions are deliberately not carried. */
-export type ActiveCollabUser = {
-  id: number
-  name: string
-}
 
 function asText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''

@@ -66,7 +66,8 @@ const CHANNELS = [
   'activecollab:completeTask',
   'activecollab:reopenTask',
   'activecollab:postComment',
-  'activecollab:listLabels'
+  'activecollab:listLabels',
+  'activecollab:listUsers'
 ]
 
 /** Every channel that needs a stored credential, so one loop can prove the whole surface. */
@@ -82,7 +83,8 @@ const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   { channel: 'activecollab:completeTask', args: { taskId: 509323 } },
   { channel: 'activecollab:reopenTask', args: { taskId: 509323 } },
   { channel: 'activecollab:postComment', args: { taskId: 509323, bodyHtml: '<p>Hi</p>' } },
-  { channel: 'activecollab:listLabels', args: undefined }
+  { channel: 'activecollab:listLabels', args: undefined },
+  { channel: 'activecollab:listUsers', args: undefined }
 ]
 
 const CREDENTIAL = {
@@ -476,6 +478,55 @@ describe('name resolution', () => {
     ])
 
     expect(pathCounts()).toMatchObject({ projects: 1, users: 1, 'users/42/tasks': 2 })
+  })
+
+  it('serves the @mention roster off the same window, so no second /users read happens', async () => {
+    serveDirectory({ tasks: [NAMELESS_ROW] })
+
+    // The order a real session takes: open the list, then type `@` in the comment composer.
+    await invoke('activecollab:listAssignedTasks')
+    await invoke('activecollab:listUsers')
+    await invoke('activecollab:listUsers')
+
+    expect(pathCounts()).toMatchObject({ users: 1 })
+  })
+
+  it('answers listUsers with id-and-name rows, sorted, and nothing else about the person', async () => {
+    requestMock.mockImplementation(async (path: string) => ({
+      data:
+        path === 'users'
+          ? {
+              users: [
+                { id: 407, display_name: 'Jake Varrese', email: 'jake@example.com' },
+                { id: 12, display_name: 'Ada Lovelace', email: 'ada@example.com' }
+              ]
+            }
+          : [],
+      totalItems: null,
+      page: null,
+      perPage: null
+    }))
+
+    await expect(invoke('activecollab:listUsers')).resolves.toEqual({
+      ok: true,
+      value: [
+        { id: 12, name: 'Ada Lovelace' },
+        { id: 407, name: 'Jake Varrese' }
+      ]
+    })
+  })
+
+  it('answers an empty roster rather than a failure when /users is refused', async () => {
+    requestMock.mockImplementation(async (path: string) => {
+      if (path === 'users') {
+        throw new ActiveCollabApiError('Access denied', 403, true)
+      }
+      return { data: [], totalItems: null, page: null, perPage: null }
+    })
+
+    // A mention menu with nobody in it is a dead menu; a reconnect prompt over a comment box is a
+    // lie about the connection, which is still live for every other operation.
+    await expect(invoke('activecollab:listUsers')).resolves.toEqual({ ok: true, value: [] })
   })
 
   it('still answers the tasks when the roster read fails', async () => {

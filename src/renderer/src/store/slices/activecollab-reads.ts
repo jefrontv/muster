@@ -5,7 +5,8 @@ import type { CacheEntry } from './github'
 import type {
   ActiveCollabLabel,
   ActiveCollabProject,
-  ActiveCollabTaskDetail
+  ActiveCollabTaskDetail,
+  ActiveCollabUser
 } from '../../../../shared/activecollab-types'
 import type {
   ActiveCollabResult,
@@ -15,7 +16,8 @@ import {
   activeCollabGetTaskDetail,
   activeCollabListAssignedTasks,
   activeCollabListLabels,
-  activeCollabListProjects
+  activeCollabListProjects,
+  activeCollabListUsers
 } from '@/runtime/runtime-activecollab-client'
 import {
   canWriteActiveCollabReadResult,
@@ -50,6 +52,10 @@ export type ActiveCollabReadActions = {
   listActiveCollabLabels: (
     options?: ActiveCollabReadOptions
   ) => Promise<ActiveCollabResult<ActiveCollabLabel[]>>
+  /** The @mention roster. Only ever called once an author actually types `@`. */
+  listActiveCollabUsers: (
+    options?: ActiveCollabReadOptions
+  ) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
 }
 
 type InflightMap<T> = Map<string, ActiveCollabInflightRead<ActiveCollabResult<T>>>
@@ -58,6 +64,7 @@ const inflightTaskPages: InflightMap<ActiveCollabTaskPageRows> = new Map()
 const inflightProjects: InflightMap<ActiveCollabProject[]> = new Map()
 const inflightTaskDetails: InflightMap<ActiveCollabTaskDetail> = new Map()
 const inflightLabels: InflightMap<ActiveCollabLabel[]> = new Map()
+const inflightUsers: InflightMap<ActiveCollabUser[]> = new Map()
 
 /** Discarded on connect/disconnect so a superseded fetch cannot be joined by a fresh caller. */
 export function clearActiveCollabInflightReads(): void {
@@ -65,6 +72,7 @@ export function clearActiveCollabInflightReads(): void {
   inflightProjects.clear()
   inflightTaskDetails.clear()
   inflightLabels.clear()
+  inflightUsers.clear()
   clearActiveCollabAttachmentImageFetches()
 }
 
@@ -196,6 +204,21 @@ export function createActiveCollabReadActions(
         selectCache: (s) => s.activeCollabLabelCache,
         writeCache: (cache) => ({ activeCollabLabelCache: cache }),
         fetch: () => activeCollabListLabels(scope.settings)
+      })
+    },
+
+    listActiveCollabUsers: async (options) => {
+      const scope = getActiveCollabReadScope(get().settings, options?.sourceContext)
+      return runCachedRead<ActiveCollabUser[]>({
+        set,
+        get,
+        scope,
+        cacheKey: scopedCacheKey(scope, 'users'),
+        force: options?.force ?? false,
+        inflight: inflightUsers,
+        selectCache: (s) => s.activeCollabUserCache,
+        writeCache: (cache) => ({ activeCollabUserCache: cache }),
+        fetch: () => activeCollabListUsers(scope.settings)
       })
     }
   }

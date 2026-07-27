@@ -19,6 +19,9 @@ import {
 import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
 import type { ActiveCollabLabel, ActiveCollabTask } from '../../../shared/activecollab-types'
 
+/** Chips shown inline before the rest collapse into a `+N`. See the row's derivation comment. */
+const ROW_LABEL_LIMIT = 2
+
 const DUE_TONE_CLASS: Record<ActiveCollabDueStatus, string> = {
   overdue: 'text-destructive',
   today: 'text-foreground',
@@ -147,6 +150,13 @@ export function ActiveCollabTaskRow({
   // day early east of UTC.
   const due = formatActiveCollabDueDate(task.dueOn)
   const status = task.dueOn !== null && due ? activeCollabDueStatus(task.dueOn, now) : null
+  // Two chips is what fits beside a truncated title at the narrowest pane width; the rest collapse
+  // into a count whose tooltip still names them, and the row's aria-label lists every label
+  // regardless, so capping is presentation-only and hides nothing from assistive tech.
+  const visibleLabels = task.labels.slice(0, ROW_LABEL_LIMIT)
+  const hiddenLabels = task.labels.slice(ROW_LABEL_LIMIT)
+  const hiddenLabelCount = hiddenLabels.length
+  const hiddenLabelNames = hiddenLabels.map((label) => label.name).join(', ')
 
   return (
     <li>
@@ -157,26 +167,38 @@ export function ActiveCollabTaskRow({
         aria-label={taskRowAccessibleName(task, due, status)}
         onClick={() => onSelect({ projectId: task.projectId, taskId: task.id })}
         className={cn(
-          'grid min-h-14 w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
+          // Why a FIXED height rather than a minimum: labels used to wrap onto a second line, so a
+          // labelled row stood taller than a bare one and the list scanned as an uneven stack.
+          // Everything now sits on one line and every row is exactly h-12.
+          'grid h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
           // Selected outranks hover instead of matching it, so pointing at a row never looks like
           // selecting one.
           selected ? 'bg-accent hover:bg-accent' : 'hover:bg-accent/40'
         )}
       >
-        <span className="min-w-0">
-          <span className="flex min-w-0 items-baseline gap-2">
-            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
-              #{task.taskNumber}
-            </span>
-            <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
-              {task.name}
-            </span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+            #{task.taskNumber}
           </span>
-          {task.labels.length > 0 ? (
-            <span className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1">
-              {task.labels.map((label) => (
+          <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
+            {task.name}
+          </span>
+          {visibleLabels.length > 0 ? (
+            // shrink-0 so the chips keep their shape and the TITLE truncates instead; capped at
+            // ROW_LABEL_LIMIT so a task carrying six labels cannot crowd the name out entirely.
+            <span className="flex shrink-0 items-center gap-1">
+              {visibleLabels.map((label) => (
                 <ActiveCollabLabelChip key={label.id} label={label} />
               ))}
+              {hiddenLabelCount > 0 ? (
+                <span
+                  aria-hidden="true"
+                  title={hiddenLabelNames}
+                  className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+                >
+                  +{hiddenLabelCount}
+                </span>
+              ) : null}
             </span>
           ) : null}
         </span>

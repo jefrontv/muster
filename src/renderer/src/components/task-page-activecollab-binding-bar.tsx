@@ -86,6 +86,13 @@ export function ActiveCollabProjectBindingBar({
         loading={projectsLoading}
         errorMessage={projectsError}
         selectedProjectId={scoped ? status.binding.projectId : null}
+        // Why louder when unbound: bound and missing are STATUS, but unbound is an offer, and as a
+        // quiet outline button beside muted text it read as chrome — users asked how binding was
+        // even done. Tinting it while it is the one useful action here makes the offer legible
+        // without leaving a permanently shouty control behind once a binding exists.
+        triggerClassName={
+          scoped ? undefined : 'border-primary/50 text-foreground hover:bg-primary/10'
+        }
         label={
           scoped
             ? translate('auto.components.activecollab.project_binding.change', 'Change project')

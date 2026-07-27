@@ -24,6 +24,16 @@ export type ActiveCollabConnectionStatus = {
   reason: string
 }
 
+/**
+ * A mentionable person. Id addresses them in a `new_mention` span, name is what the author types.
+ * Email is deliberately absent: the composer matches on the name it inserts, and shipping every
+ * colleague's address to the renderer widens the roster's blast radius for no matching power.
+ */
+export type ActiveCollabUser = {
+  id: number
+  name: string
+}
+
 export type ActiveCollabLabel = {
   id: number
   name: string

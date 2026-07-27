@@ -119,5 +119,10 @@ export const ACTIVECOLLAB_METHODS: RpcMethod[] = [
     name: 'activecollab.listLabels',
     params: null,
     handler: async (_params, { runtime }) => runtime.activeCollabListLabels()
+  }),
+  defineMethod({
+    name: 'activecollab.listUsers',
+    params: null,
+    handler: async (_params, { runtime }) => runtime.activeCollabListUsers()
   })
 ]

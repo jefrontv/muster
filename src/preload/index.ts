@@ -1926,7 +1926,8 @@ const api = {
     completeTask: (args) => ipcRenderer.invoke('activecollab:completeTask', args),
     reopenTask: (args) => ipcRenderer.invoke('activecollab:reopenTask', args),
     postComment: (args) => ipcRenderer.invoke('activecollab:postComment', args),
-    listLabels: () => ipcRenderer.invoke('activecollab:listLabels')
+    listLabels: () => ipcRenderer.invoke('activecollab:listLabels'),
+    listUsers: () => ipcRenderer.invoke('activecollab:listUsers')
   } satisfies PreloadApi['activecollab'],
 
   // Why: deliberately loose — main's validator (src/main/telemetry/validator.ts) is the single enforcement point; call sites use the typed wrappers in src/renderer/src/lib/telemetry.ts.

@@ -15,7 +15,8 @@ import type {
   ActiveCollabTask,
   ActiveCollabTaskDetail,
   ActiveCollabTaskPage,
-  ActiveCollabTaskUpdate
+  ActiveCollabTaskUpdate,
+  ActiveCollabUser
 } from '../../../shared/activecollab-types'
 import type {
   ActiveCollabAttachmentImage,
@@ -206,5 +207,13 @@ export async function activeCollabListLabels(
     settings,
     OPERATION_TIMEOUT_MS,
     () => window.api.activecollab.listLabels()
+  )
+}
+
+export async function activeCollabListUsers(
+  settings?: RuntimeActiveCollabSettings
+): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
+  return callActiveCollab('activecollab.listUsers', undefined, settings, OPERATION_TIMEOUT_MS, () =>
+    window.api.activecollab.listUsers()
   )
 }

@@ -7,7 +7,8 @@ import type {
   ActiveCollabLabel,
   ActiveCollabProject,
   ActiveCollabTask,
-  ActiveCollabTaskDetail
+  ActiveCollabTaskDetail,
+  ActiveCollabUser
 } from '../../../../shared/activecollab-types'
 
 /** One assigned-task page, flattened so the list reads rows and paging out of a single entry. */
@@ -23,9 +24,10 @@ export type ActiveCollabCacheState = {
   activeCollabProjectCache: Record<string, CacheEntry<ActiveCollabProject[]>>
   activeCollabTaskDetailCache: Record<string, CacheEntry<ActiveCollabTaskDetail>>
   activeCollabLabelCache: Record<string, CacheEntry<ActiveCollabLabel[]>>
+  activeCollabUserCache: Record<string, CacheEntry<ActiveCollabUser[]>>
 }
 
-/** Only these two hold task rows; projects and labels are vocabulary, not per-task state. */
+/** Only these two hold task rows; projects, labels and people are vocabulary, not per-task state. */
 type TaskCaches = Pick<
   ActiveCollabCacheState,
   'activeCollabTaskPageCache' | 'activeCollabTaskDetailCache'

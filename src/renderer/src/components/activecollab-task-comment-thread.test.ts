@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  activeCollabCommentBodyHtml,
-  sortActiveCollabCommentsNewestFirst
-} from './activecollab-task-comment-thread'
+import { activeCollabCommentBodyHtml } from './activecollab-comment-mentions'
+import { sortActiveCollabCommentsNewestFirst } from './activecollab-task-comment-thread'
 import type { ActiveCollabComment } from '../../../shared/activecollab-types'
 
 function comment(id: number, createdOn: number | null): ActiveCollabComment {
@@ -42,7 +40,7 @@ describe('sortActiveCollabCommentsNewestFirst', () => {
     const rows = [comment(1, 1_000), comment(2, 2_000), comment(3, null), comment(4, 2_000)]
     const expected = sortActiveCollabCommentsNewestFirst(rows).map((c) => c.id)
 
-    expect(sortActiveCollabCommentsNewestFirst([...rows].reverse()).map((c) => c.id)).toEqual(
+    expect(sortActiveCollabCommentsNewestFirst(rows.toReversed()).map((c) => c.id)).toEqual(
       expected
     )
     expect(

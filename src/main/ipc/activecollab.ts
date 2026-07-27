@@ -25,7 +25,8 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
-  ActiveCollabTaskPage
+  ActiveCollabTaskPage,
+  ActiveCollabUser
 } from '../../shared/activecollab-types'
 import { ActiveCollabAttachmentError, getAttachmentImage } from '../activecollab/attachment-image'
 import { connectActiveCollab } from '../activecollab/auth'
@@ -78,7 +79,8 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:completeTask',
   'activecollab:reopenTask',
   'activecollab:postComment',
-  'activecollab:listLabels'
+  'activecollab:listLabels',
+  'activecollab:listUsers'
 ] as const
 
 function toFailure(error: unknown): ActiveCollabFailure {
@@ -286,6 +288,24 @@ export function acListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>>
   return guard(async () => listLabels({ http: acClient().http }))
 }
 
+/**
+ * The @mention roster, served out of the name directory rather than a second `/users` read.
+ *
+ * That collection is ALREADY fetched behind a credential-keyed, TTL'd, in-flight-shared window to
+ * label assignees, and every path that reaches a comment composer — the task list, then the task
+ * detail — warms it on the way in. Fetching it again here would double a 176-row request to answer
+ * with the identical rows, and give the renderer a roster that could disagree with the assignee
+ * labels beside it. Sorted by name so a capped suggestion list is stable between keystrokes.
+ */
+export function acListUsers(): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
+  return guard(async () => {
+    const directory = await acClient().names()
+    return [...directory.users]
+      .map(([id, name]) => ({ id, name }))
+      .sort((left, right) => left.name.localeCompare(right.name))
+  })
+}
+
 export function registerActiveCollabHandlers(): void {
   for (const channel of ACTIVECOLLAB_CHANNELS) {
     ipcMain.removeHandler(channel)
@@ -309,4 +329,5 @@ export function registerActiveCollabHandlers(): void {
   ipcMain.handle('activecollab:reopenTask', async (_event, args: unknown) => acReopenTask(args))
   ipcMain.handle('activecollab:postComment', async (_event, args: unknown) => acPostComment(args))
   ipcMain.handle('activecollab:listLabels', async () => acListLabels())
+  ipcMain.handle('activecollab:listUsers', async () => acListUsers())
 }

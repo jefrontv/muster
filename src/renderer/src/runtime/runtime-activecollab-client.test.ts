@@ -10,6 +10,7 @@ import {
   activeCollabListAssignedTasks,
   activeCollabListLabels,
   activeCollabListProjects,
+  activeCollabListUsers,
   activeCollabPostComment,
   activeCollabReopenTask,
   activeCollabStatus,
@@ -38,7 +39,8 @@ const bridge = {
   completeTask: vi.fn(),
   reopenTask: vi.fn(),
   postComment: vi.fn(),
-  listLabels: vi.fn()
+  listLabels: vi.fn(),
+  listUsers: vi.fn()
 }
 const runtimeEnvironmentCall = vi.fn<(args: RuntimeEnvironmentCallRequest) => Promise<unknown>>()
 const runtimeEnvironmentTransportCall = vi.fn()
@@ -88,6 +90,7 @@ describe('runtime ActiveCollab client local transport', () => {
     await activeCollabReopenTask({ taskId: 509323 }, LOCAL)
     await activeCollabPostComment({ taskId: 509323, bodyHtml: '<p>Shipped</p>' }, LOCAL)
     await activeCollabListLabels(LOCAL)
+    await activeCollabListUsers(LOCAL)
 
     expect(bridge.status).toHaveBeenCalledWith()
     expect(bridge.connect).toHaveBeenCalledWith(connectArgs)
@@ -101,6 +104,7 @@ describe('runtime ActiveCollab client local transport', () => {
     expect(bridge.reopenTask).toHaveBeenCalledWith({ taskId: 509323 })
     expect(bridge.postComment).toHaveBeenCalledWith({ taskId: 509323, bodyHtml: '<p>Shipped</p>' })
     expect(bridge.listLabels).toHaveBeenCalledWith()
+    expect(bridge.listUsers).toHaveBeenCalledWith()
     expect(runtimeEnvironmentCall).not.toHaveBeenCalled()
   })
 
@@ -135,6 +139,7 @@ describe('runtime ActiveCollab client remote transport', () => {
     await activeCollabReopenTask({ taskId: 509323 }, REMOTE)
     await activeCollabPostComment({ taskId: 509323, bodyHtml: '<p>Shipped</p>' }, REMOTE)
     await activeCollabListLabels(REMOTE)
+    await activeCollabListUsers(REMOTE)
 
     const methods = runtimeEnvironmentCall.mock.calls.map(([args]) => args.method)
 
@@ -150,7 +155,8 @@ describe('runtime ActiveCollab client remote transport', () => {
       'activecollab.completeTask',
       'activecollab.reopenTask',
       'activecollab.postComment',
-      'activecollab.listLabels'
+      'activecollab.listLabels',
+      'activecollab.listUsers'
     ])
     for (const op of Object.values(bridge)) {
       expect(op).not.toHaveBeenCalled()
