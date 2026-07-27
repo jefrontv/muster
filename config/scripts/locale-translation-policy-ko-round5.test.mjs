@@ -147,14 +147,6 @@ describe('locale-translation-policy ko round 5', () => {
     // A wrong space before the 에 particle is re-glued onto the Latin term.
     expect(
       repairTranslatedValue({
-        key: 'auto.components.StarNagCard.cf82170065',
-        enValue: 'Could not star the repo. Make sure',
-        localeValue: 'repo 에 스타를 표시할 수 없습니다. 다음을 확인하세요',
-        locale: 'ko'
-      })
-    ).toBe('repo에 스타를 표시할 수 없습니다. 다음을 확인하세요')
-    expect(
-      repairTranslatedValue({
         key: 'auto.components.github.project.ProjectCell.4b5b871da8',
         enValue: 'No labels in this repo.',
         localeValue: '이 repo 에는 라벨이 없습니다.',

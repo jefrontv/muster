@@ -1453,11 +1453,20 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
   const isSetupCheckPending = Boolean(repoId) && checkedHooksRepoId !== repoId
   const shouldWaitForSetupCheck = Boolean(selectedRepo) && selectedRepoIsGit && isSetupCheckPending
 
-  // Why: blank name with no other seed → globally-unique creature name so workspaces don't collide across repos or on a literal default.
+  // Why: last resort when no branch resolves — globally-unique creature beats a colliding literal.
   const fallbackCreatureName = useMemo(
     () => getSuggestedCreatureName(worktreesByRepo),
     [worktreesByRepo]
   )
+  // Why: a blank name should inherit the branch the user works from — the chosen Start-from
+  // ref, else the selected repo's main-worktree branch (empty string on detached HEAD).
+  const seedBranchName = useMemo(() => {
+    const startFrom = baseBranch?.trim()
+    if (startFrom) {
+      return startFrom
+    }
+    return worktreesByRepo[repoId]?.find((worktree) => worktree.isMainWorktree)?.branch ?? ''
+  }, [baseBranch, repoId, worktreesByRepo])
   const workspaceSeedName = useMemo(
     () =>
       getWorkspaceSeedName({
@@ -1465,9 +1474,10 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
         prompt: agentPrompt,
         linkedIssueNumber: parsedLinkedIssueNumber,
         linkedPR,
+        branchName: seedBranchName,
         fallbackName: fallbackCreatureName
       }),
-    [agentPrompt, fallbackCreatureName, linkedPR, name, parsedLinkedIssueNumber]
+    [agentPrompt, fallbackCreatureName, linkedPR, name, parsedLinkedIssueNumber, seedBranchName]
   )
   // Why: exclude Linear — its starts may carry only a neutral issue ref, whereas repo issue-command templates are product-authored workflow direction.
   const shouldApplyLinkedOnlyTemplate =
@@ -3713,6 +3723,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
         prompt: '',
         linkedIssueNumber: parsedLinkedIssueNumber,
         linkedPR,
+        branchName: seedBranchName,
         fallbackName: fallbackCreatureName
       })
       if (!repoId || !selectedRepo) {
@@ -4078,6 +4089,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
       branchNameOverridePreservesNameEdits,
       clearNewWorkspaceDraft,
       fallbackCreatureName,
+      seedBranchName,
       effectiveLinkedPR,
       linkedGitLabIssue,
       linkedGitLabMR,

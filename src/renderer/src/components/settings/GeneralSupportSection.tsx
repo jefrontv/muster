@@ -79,9 +79,6 @@ export function GeneralSupportSection({
     if (mountedRef.current) {
       setStarState('starred')
     }
-    // Why: clicking star anywhere should also permanently mute the
-    // threshold-based nag so the user isn't re-prompted via the popup.
-    await window.api.starNag.complete()
   }
 
   return (

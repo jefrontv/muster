@@ -13,6 +13,7 @@ import { createHostedReviewSlice } from './slices/hosted-review'
 import { createLinearSlice } from './slices/linear'
 import { createPreflightSlice } from './slices/preflight'
 import { createJiraSlice } from './slices/jira'
+import { createActiveCollabSlice } from './slices/activecollab'
 import { createEditorSlice } from './slices/editor'
 import { createSitesSlice } from './slices/sites'
 import { createStatsSlice } from './slices/stats'
@@ -63,6 +64,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createLinearSlice(...a),
   ...createPreflightSlice(...a),
   ...createJiraSlice(...a),
+  ...createActiveCollabSlice(...a),
   ...createEditorSlice(...a),
   ...createSitesSlice(...a),
   ...createStatsSlice(...a),

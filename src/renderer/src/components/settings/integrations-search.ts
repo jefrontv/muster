@@ -205,5 +205,38 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
         'disconnect'
       )
     ]
+  },
+  {
+    title: translate(
+      'auto.components.settings.integrations.search.activecollab_title',
+      'ActiveCollab Integration'
+    ),
+    description: translate(
+      'auto.components.settings.integrations.search.activecollab_description',
+      'Connect ActiveCollab by exchanging your email and password for a token.'
+    ),
+    keywords: [
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.activecollab_keyword',
+        'activecollab',
+        { aliases: ['active collab'], englishOnly: true }
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.c450244ad7',
+        'integration'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.20540996ef',
+        'credentials'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.3c3d3d8ffa',
+        'connect'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.a626990bd2',
+        'disconnect'
+      )
+    ]
   }
 ])

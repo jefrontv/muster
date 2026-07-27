@@ -81,16 +81,9 @@ function GitHubStarButton({ hasRepos }: { hasRepos: boolean }): React.JSX.Elemen
     }
     setState('starred') // optimistic
     const ok = await window.api.gh.starOrca('landing')
-    if (!ok) {
-      if (mountedRef.current) {
-        setState('web-fallback')
-      }
-      return
+    if (!ok && mountedRef.current) {
+      setState('web-fallback')
     }
-    // Why: starring from any entry point mutes the threshold-based nag.
-    // Without this the background notification could still fire on the next
-    // threshold crossing, which would feel like a bug to the user.
-    await window.api.starNag.complete()
   }
 
   // Hide once the user has already starred and added a repo.

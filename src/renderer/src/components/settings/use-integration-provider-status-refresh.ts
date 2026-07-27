@@ -11,8 +11,11 @@ export function useIntegrationProviderStatusRefresh(): void {
   const linearStatusContextKey = useAppStore((s) => s.linearStatusContextKey)
   const jiraStatusChecked = useAppStore((s) => s.jiraStatusChecked)
   const jiraStatusContextKey = useAppStore((s) => s.jiraStatusContextKey)
+  const activeCollabStatusChecked = useAppStore((s) => s.activeCollabStatusChecked)
+  const activeCollabStatusContextKey = useAppStore((s) => s.activeCollabStatusContextKey)
   const checkLinearConnection = useAppStore((s) => s.checkLinearConnection)
   const checkJiraConnection = useAppStore((s) => s.checkJiraConnection)
+  const checkActiveCollabConnection = useAppStore((s) => s.checkActiveCollabConnection)
   const refreshPreflightStatus = useAppStore((s) => s.refreshPreflightStatus)
   const expectedPreflightContextKey = useAppStore((s) =>
     localPreflightContextKey(getLocalPreflightContext(s))
@@ -21,6 +24,7 @@ export function useIntegrationProviderStatusRefresh(): void {
   const preflightStatusCurrent = preflightStatusContextKey === expectedPreflightContextKey
   const linearStatusCurrent = linearStatusContextKey === providerRuntimeContextKey
   const jiraStatusCurrent = jiraStatusContextKey === providerRuntimeContextKey
+  const activeCollabStatusCurrent = activeCollabStatusContextKey === providerRuntimeContextKey
 
   useEffect(() => {
     if (!linearStatusCurrent || !linearStatusChecked) {
@@ -29,15 +33,22 @@ export function useIntegrationProviderStatusRefresh(): void {
     if (!jiraStatusCurrent || !jiraStatusChecked) {
       void checkJiraConnection()
     }
+    if (!activeCollabStatusCurrent || !activeCollabStatusChecked) {
+      void checkActiveCollabConnection()
+    }
     if (!preflightStatusCurrent || !preflightStatusChecked) {
       void refreshPreflightStatus()
     }
   }, [
     checkJiraConnection,
+    checkActiveCollabConnection,
     checkLinearConnection,
     jiraStatusChecked,
     jiraStatusCurrent,
     jiraStatusContextKey,
+    activeCollabStatusChecked,
+    activeCollabStatusCurrent,
+    activeCollabStatusContextKey,
     linearStatusChecked,
     linearStatusCurrent,
     linearStatusContextKey,

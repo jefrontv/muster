@@ -160,7 +160,6 @@ inline src/main/ssh/ssh-connection.test.ts
 inline src/main/ssh/ssh-connection.ts
 inline src/main/ssh/ssh-relay-deploy.ts
 inline src/main/ssh/ssh-relay-session.ts
-inline src/main/star-nag/service.test.ts
 inline src/main/text-generation/commit-message-text-generation.test.ts
 inline src/main/text-generation/commit-message-text-generation.ts
 inline src/main/updater.test.ts

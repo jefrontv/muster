@@ -60,22 +60,11 @@ export class StatsCollector {
   // wins so a slow in-flight async write can't clobber a newer sync flush.
   private writeGeneration = 0
   private lastCommittedGeneration = 0
-  // Why: star-nag lives in its own service but needs to observe the running
-  // agent-spawned counter. A lightweight listener avoids cyclic imports and
-  // keeps StatsCollector unaware of how the counter is consumed.
-  private agentStartListeners: ((totalAgentsSpawned: number) => void)[] = []
 
   constructor() {
     const data = this.load()
     this.events = data.events
     this.aggregates = data.aggregates
-  }
-
-  onAgentStarted(listener: (totalAgentsSpawned: number) => void): () => void {
-    this.agentStartListeners.push(listener)
-    return () => {
-      this.agentStartListeners = this.agentStartListeners.filter((l) => l !== listener)
-    }
   }
 
   getTotalAgentsSpawned(): number {
@@ -193,17 +182,6 @@ export class StatsCollector {
     switch (event.type) {
       case 'agent_start':
         this.aggregates.totalAgentsSpawned++
-        // Why: notify listeners synchronously AFTER increment so observers
-        // see the post-increment count. Listener errors are swallowed to
-        // keep stat recording robust — a buggy listener must not lose the
-        // event from the on-disk log.
-        for (const listener of this.agentStartListeners) {
-          try {
-            listener(this.aggregates.totalAgentsSpawned)
-          } catch (err) {
-            console.error('[stats] agent-start listener threw:', err)
-          }
-        }
         break
       case 'pr_created':
         this.aggregates.totalPRsCreated++

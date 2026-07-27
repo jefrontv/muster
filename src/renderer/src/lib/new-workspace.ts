@@ -200,18 +200,26 @@ export function getSetupConfig(
   return null
 }
 
+/**
+ * Resolve the workspace/branch seed. Precedence: `explicitName` → `pr-<n>` →
+ * `issue-<n>` → slugified `prompt` → `branchName` → `fallbackName` → `'workspace'`.
+ */
 export function getWorkspaceSeedName(args: {
   explicitName: string
   prompt: string
   linkedIssueNumber: number | null
   linkedPR: number | null
-  /** Why: when none of the other seed sources produce a name, the composer
-   *  supplies a repo-scoped unique marine-creature name so blank submissions
-   *  still get a distinct, readable workspace rather than a collision-prone
-   *  "workspace" literal that git would append numeric suffixes to. */
+  /** Why: a blank name should inherit the branch the user is already working from —
+   *  the composer passes its Start-from base branch, else the selected repo's
+   *  main-worktree branch. Accepts a raw ref (`refs/heads/x`); a detached HEAD or
+   *  unslugifiable ref yields nothing and falls through to `fallbackName`. */
+  branchName?: string
+  /** Why: last resort before the collision-prone "workspace" literal that git would
+   *  append numeric suffixes to — the composer supplies a repo-scoped unique
+   *  marine-creature name for when no branch is resolvable. */
   fallbackName?: string
 }): string {
-  const { explicitName, prompt, linkedIssueNumber, linkedPR, fallbackName } = args
+  const { explicitName, prompt, linkedIssueNumber, linkedPR, branchName, fallbackName } = args
   if (explicitName.trim()) {
     return explicitName.trim()
   }
@@ -231,6 +239,13 @@ export function getWorkspaceSeedName(args: {
     if (slug) {
       return slug
     }
+  }
+  // Why: Worktree.branch carries the raw porcelain ref (`refs/heads/x`; empty when detached).
+  const branchSeed = branchName
+    ? slugifyForWorkspaceName(branchName.replace(/^refs\/heads\//, ''))
+    : ''
+  if (branchSeed) {
+    return branchSeed
   }
   if (fallbackName && fallbackName.trim()) {
     return fallbackName.trim()

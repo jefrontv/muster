@@ -3349,18 +3349,6 @@ export type PersistedUIState = {
   _inlineAgentsDefaultedForAllUsers?: boolean
   /** One-shot migration flag for split-out card properties, set once so later deliberate unchecks of Linear issue/Ports stick across restarts. */
   _expandedWorktreeCardPropertiesDefaulted?: boolean
-  /** totalAgentsSpawned snapshot at first sighting of the current app version, so the nag counts agents since last update (not from zero). */
-  starNagBaselineAgents?: number | null
-  /** App version that set the current baseline; a version change re-captures the baseline on next spawn, restarting the nag countdown. */
-  starNagAppVersion?: string | null
-  /** Next agents-since-baseline threshold that fires the star-nag; starts at 35, doubles per dismissal without starring. */
-  starNagNextThreshold?: number
-  /** Once the user has starred Orca (any entry point), permanently suppress the nag. */
-  starNagCompleted?: boolean
-  /** Timestamp until which nonterminal dismissals suppress threshold prompts (force-show bypasses for dev/testing). */
-  starNagDeferredUntil?: number | null
-  /** App version that consumed the first value-moment ask; main-owned so remote/web clients can't spoof the once-per-version cap. */
-  starNagAgentValueMomentAppVersion?: string | null
   trustedOrcaHooks?: PersistedTrustedOrcaHooks
   setupScriptPromptDismissedRepoIds?: string[]
   /** Pet overlay visibility, separate from the experimentalPet settings flag so "Hide pet" is a reversible dismiss; absent = true. */

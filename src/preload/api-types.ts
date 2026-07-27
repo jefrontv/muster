@@ -2348,22 +2348,6 @@ export type PreloadApi = {
     }) => Promise<JiraProjectStatusOrder>
   }
   activecollab: ActiveCollabApi
-  starNag: {
-    onShow: (
-      callback: (payload?: { mode?: 'gh' | 'web'; surface?: 'card' | 'toast' }) => void
-    ) => () => void
-    onHide: (callback: () => void) => () => void
-    dismiss: () => Promise<void>
-    later: () => Promise<void>
-    complete: () => Promise<void>
-    disable: () => Promise<void>
-    openWeb: () => Promise<void>
-    starOrca: () => Promise<boolean>
-    forceShow: () => Promise<void>
-    agentValueMoment: () => Promise<{ status: 'ready'; mode: 'gh' | 'web' } | { status: 'skipped' }>
-    showAgentValueMoment: () => Promise<void>
-    onboardingCompleted: () => Promise<void>
-  }
   /** Fire-and-forget track. Loose IPC typing on purpose — the main-side validator enforces;
    *  renderer sites should import `track<N>()` from lib/telemetry.ts, not reach here. */
   telemetryTrack: (name: string, props: Record<string, unknown>) => Promise<void>

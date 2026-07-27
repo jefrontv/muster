@@ -57,9 +57,6 @@ import {
   useSystemPrefersDark
 } from './components/terminal-pane/use-system-prefers-dark'
 import RightSidebar from './components/right-sidebar'
-import { StarNagCard } from './components/StarNagCard'
-import { StarNagAgentValueMomentObserver } from './components/star-nag/StarNagAgentValueMomentObserver'
-import { StarNagToastHost } from './components/star-nag/StarNagToastHost'
 import { SkillFreshnessNudge } from './components/skills/SkillFreshnessNudge'
 import { SkillFreshnessUpdateDialog } from './components/skills/SkillFreshnessUpdateDialog'
 import { TelemetryFirstLaunchSurface } from './components/TelemetryFirstLaunchSurface'
@@ -2510,23 +2507,6 @@ function App(): React.JSX.Element {
                 </RecoverableRenderErrorBoundary>
               </Suspense>
             ) : null}
-            <RecoverableRenderErrorBoundary
-              boundaryId="overlay.star-nag"
-              surface="overlay"
-              resetKey={activeView}
-              compact
-            >
-              <StarNagCard />
-            </RecoverableRenderErrorBoundary>
-            <RecoverableRenderErrorBoundary
-              boundaryId="overlay.star-nag-toast"
-              surface="overlay"
-              resetKey={activeView}
-              compact
-            >
-              <StarNagToastHost />
-            </RecoverableRenderErrorBoundary>
-            <StarNagAgentValueMomentObserver />
             {/* Why: mount at App root to render once per session; internal cohort gate limits it to pre-telemetry users — see telemetry-plan.md §First-launch experience. */}
             <RecoverableRenderErrorBoundary
               boundaryId="overlay.telemetry-first-launch"

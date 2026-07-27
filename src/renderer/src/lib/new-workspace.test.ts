@@ -215,6 +215,55 @@ describe('getWorkspaceSeedName', () => {
   })
 })
 
+describe('getWorkspaceSeedName branch fallback', () => {
+  const seed = (overrides: Partial<Parameters<typeof getWorkspaceSeedName>[0]>): string =>
+    getWorkspaceSeedName({
+      explicitName: '',
+      prompt: '',
+      linkedIssueNumber: null,
+      linkedPR: null,
+      branchName: 'refs/heads/muster',
+      fallbackName: 'nautilus',
+      ...overrides
+    })
+
+  it('uses the current branch instead of the creature name', () => {
+    expect(seed({})).toBe('muster')
+    expect(seed({ branchName: 'main' })).toBe('main')
+  })
+
+  it('strips refs/heads/ and slugifies the branch into a git-safe seed', () => {
+    expect(seed({ branchName: 'refs/heads/feature/Add Thing' })).toBe('feature-add-thing')
+    expect(seed({ branchName: 'feature/Add Thing' })).toBe('feature-add-thing')
+    expect(seed({ branchName: 'refs/heads/release/../v2' })).not.toMatch(/\.{2,}/)
+  })
+
+  it('prefers an explicit name over the branch', () => {
+    expect(seed({ explicitName: 'my-workspace' })).toBe('my-workspace')
+    expect(seed({ explicitName: '   ' })).toBe('muster')
+  })
+
+  it('prefers a linked PR, linked issue, and sluggable prompt over the branch', () => {
+    expect(seed({ linkedPR: 42 })).toBe('pr-42')
+    expect(seed({ linkedIssueNumber: 7 })).toBe('issue-7')
+    expect(seed({ prompt: 'Fix login' })).toBe('fix-login')
+    expect(seed({ prompt: '🚀' })).toBe('muster')
+  })
+
+  it('falls back to the creature name for a detached HEAD or unslugifiable branch', () => {
+    expect(seed({ branchName: '' })).toBe('nautilus')
+    expect(seed({ branchName: 'refs/heads/' })).toBe('nautilus')
+    expect(seed({ branchName: '🚀' })).toBe('nautilus')
+    expect(seed({ branchName: 'main' })).toBe('main')
+  })
+
+  it('keeps the creature name ahead of the "workspace" literal', () => {
+    expect(seed({ branchName: '' })).toBe('nautilus')
+    expect(seed({ branchName: '', fallbackName: undefined })).toBe('workspace')
+    expect(seed({ fallbackName: undefined })).toBe('muster')
+  })
+})
+
 describe('isGitLabIssueUrl', () => {
   it('detects canonical and self-hosted GitLab issue URLs', () => {
     expect(isGitLabIssueUrl('https://gitlab.com/group/project/-/issues/123')).toBe(true)

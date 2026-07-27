@@ -273,6 +273,9 @@
         "jira": {
           "856083302c": "더 새로운 요청이 있어 Jira 연결 요청을 건너뛰었습니다."
         },
+        "activecollab": {
+          "4b7e2a9c15": "더 새로운 요청이 있어 ActiveCollab 연결 요청을 건너뛰었습니다."
+        },
         "linear": {
           "37d36984d0": "더 새로운 요청이 있어 Linear 연결 요청을 건너뛰었습니다."
         },
@@ -1468,22 +1471,6 @@
       },
       "SelectedTextCopyMenu": {
         "9b40d7b018": "복사"
-      },
-      "StarNagCard": {
-        "92b0f9d921": "인증된 후 다시 시도하세요.",
-        "cd8c34aac1": "gh",
-        "cf82170065": "repo에 스타를 표시할 수 없습니다. 다음을 확인하세요",
-        "30c36231c1": "Orca는 오픈 소스입니다. 오늘 도움이 되었다면 GitHub 스타가 다른 개발자가 Orca를 찾는 데 도움이 됩니다.",
-        "b5e685e4d9": "닫기",
-        "5f6df21046": "Orca를 즐기고 있나요?",
-        "2d67b6c849": "GitHub에서 별표 주기",
-        "af3c9bbb37": "스타 표시 중…",
-        "68a41bc3aa": "별표를 추가할 수 없음:",
-        "996bf76e46": "브라우저에서 GitHub를 열어 완료하세요.",
-        "d32015fec7": "여는 중...",
-        "157bb5ecbb": "GitHub 열기",
-        "8c967b4d15": "나중에",
-        "73dfd4eb8d": "다시 묻지 않기"
       },
       "TaskPage": {
         "513cddfa7a": "확인 중…",
@@ -8024,7 +8011,9 @@
             "41ccade05c": "gh",
             "b79c21bd42": "GitHub",
             "7166b9090c": "gh CLI를 통한 GitHub 인증.",
-            "f16e41cc72": "GitHub 연동"
+            "f16e41cc72": "GitHub 연동",
+            "activecollab_title": "ActiveCollab Integration",
+            "activecollab_description": "Connect ActiveCollab by exchanging your email and password for a token."
           }
         },
         "jira": {
@@ -9429,6 +9418,21 @@
           "scopeRepository": "Resolves the repository and reads commit build statuses.",
           "scopePullRequest": "Reads pull requests for the current branch.",
           "scopesTitle": "Select these permissions when creating the token"
+        },
+        "activecollab": {
+          "integration": {
+            "card": {
+              "credentials_remote": "Exchange your ActiveCollab URL, email, and password once for a long-lived token. The password is never stored; the token is held by the selected remote runtime with runtime-supported encryption.",
+              "credentials_local": "Exchange your ActiveCollab URL, email, and password once for a long-lived token. The password is never stored; the token is kept locally, encrypted when local runtime storage supports it.",
+              "connected_description": "One instance connected with a stored token.",
+              "checking_description": "Checking ActiveCollab access before showing setup actions.",
+              "description": "Browse assigned tasks and start work from ActiveCollab.",
+              "reconnect": "Reconnect",
+              "connect": "Connect ActiveCollab",
+              "unknown_account": "Connected account",
+              "disconnect_label": "Disconnect ActiveCollab"
+            }
+          }
         }
       },
       "right": {
@@ -13370,22 +13374,6 @@
       "ShortcutKeyCombo": {
         "07eb4985a1": "{{value0}} 두 번 누르기"
       },
-      "star": {
-        "nag": {
-          "StarNagToastHost": {
-            "starredThanks": "별표를 눌러주셔서 감사합니다!",
-            "githubOpened": "GitHub 열림",
-            "opening": "여는 중…",
-            "starring": "별표 누르는 중…",
-            "openGithub": "GitHub 열기",
-            "starOnGithub": "GitHub에서 별표 누르기",
-            "onboardingCompleted": "온보딩 완료!",
-            "body": "Orca가 마음에 드신다면 GitHub 별표가 다른 개발자가 Orca를 발견하는 데 도움이 됩니다.",
-            "dismiss": "닫기",
-            "later": "Later"
-          }
-        }
-      },
       "nativeChat": {
         "contextMenu": {
           "copy": "복사"
@@ -13799,6 +13787,33 @@
           "cloneRegistering": "Registering the site…",
           "setupTitle": "Finish setting up",
           "done": "Done"
+        }
+      },
+      "activecollab": {
+        "connect": {
+          "dialog": {
+            "exchange_remote": "The password is used once to obtain the token and is never stored. Only the token reaches the selected remote runtime, kept there with runtime-supported encryption.",
+            "exchange_local": "The password is used once to obtain the token and is never stored. Only the token is kept locally, encrypted when local runtime storage supports it.",
+            "error_instance_url": "Enter the full ActiveCollab URL, starting with http:// or https://.",
+            "title": "Connect ActiveCollab",
+            "description": "Muster exchanges your email and password for a long-lived ActiveCollab token once. The password itself is never stored.",
+            "done": "Done",
+            "instance_url_label": "ActiveCollab URL",
+            "instance_url_placeholder": "https://projects.example.com",
+            "email_label": "Email",
+            "email_placeholder": "you@example.com",
+            "password_label": "Password",
+            "cancel": "Cancel",
+            "exchanging": "Exchanging…",
+            "connect": "Connect"
+          }
+        },
+        "failure": {
+          "auth": "ActiveCollab rejected those credentials. Enter your email and password again to reconnect.",
+          "not_configured": "ActiveCollab is not connected yet. Exchange your instance URL, email, and password for a token to continue.",
+          "invalid_request": "ActiveCollab rejected the request. Check that the instance URL points at your ActiveCollab root.",
+          "api": "ActiveCollab returned an error that reconnecting will not fix: {{value0}}",
+          "unknown": "Could not reach ActiveCollab: {{value0}}"
         }
       }
     },
