@@ -29,6 +29,11 @@ function createSettings(): GlobalSettings {
       enabled: true,
       agentTaskComplete: true,
       terminalBell: true,
+      siteRunComplete: true,
+      activeCollabAssigned: false,
+      activeCollabComments: true,
+      activeCollabDue: false,
+      activeCollabUpdated: false,
       suppressWhenFocused: true,
       customSoundId: 'system',
       customSoundPath: null,
@@ -57,6 +62,18 @@ describe('NotificationsPane', () => {
     expect(getNotificationSoundOptions(null).map((option) => option.title)).toEqual(
       expect.arrayContaining(['System Default', 'Two Tone', 'Bong', 'Ding'])
     )
+  })
+
+  it('mounts the ActiveCollab toggle group inside the pane', () => {
+    const html = renderToStaticMarkup(
+      <NotificationsPane settings={createSettings()} updateSettings={vi.fn()} />
+    )
+
+    expect(html).toContain('ActiveCollab Tasks')
+    expect(html).toContain('Task Assigned To You')
+    expect(html).toContain('New Comments')
+    expect(html).toContain('Due Date Getting Closer')
+    expect(html).toContain('Task Details Edited')
   })
 
   it('resets the volume draft only when the persisted volume changes', () => {

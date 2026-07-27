@@ -31,9 +31,12 @@ function stubHttp(routes: Record<string, Reply | ActiveCollabApiError>): StubHtt
           perPage: route.perPage ?? null
         }
       },
-      // Nothing under test here downloads bytes; attachment-image.test.ts stubs the real thing.
+      // Nothing under test here moves bytes; the attachment tests stub the real transports.
       requestBinary(): never {
         throw new Error('requestBinary is not stubbed for task reads')
+      },
+      requestStream(): never {
+        throw new Error('requestStream is not stubbed for task reads')
       }
     }
   }

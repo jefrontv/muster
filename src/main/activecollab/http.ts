@@ -34,6 +34,15 @@ export type AcBinaryResponse =
   | { ok: false; reason: 'unsupported-media'; mimeType: string }
   | { ok: false; reason: 'too-large' }
 
+/**
+ * The response body handed over UNREAD, for a caller that will spool it somewhere rather than hold
+ * it. The caller owns the stream and MUST read or cancel it. Null when there was no body at all.
+ */
+export type AcStreamResponse = {
+  mimeType: string
+  body: ReadableStream<Uint8Array> | null
+}
+
 export type AcFetch = (input: string, init: RequestInit) => Promise<Response>
 
 export type AcHttpClient = {
@@ -43,6 +52,11 @@ export type AcHttpClient = {
    * replaying a download costs far more than replaying a JSON read, and the caller can ask again.
    */
   requestBinary(path: string, options: AcBinaryRequest): Promise<AcBinaryResponse>
+  /**
+   * The same authenticated GET with the body left UNBUFFERED, for a payload that can dwarf any
+   * inline cap — a download writes it straight to disk instead of holding it twice.
+   */
+  requestStream(path: string, options?: { signal?: AbortSignal }): Promise<AcStreamResponse>
 }
 
 export type AcHttpArgs = {
@@ -325,16 +339,23 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
     }
   }
 
-  async function requestBinary(path: string, options: AcBinaryRequest): Promise<AcBinaryResponse> {
+  /** The authenticated GET both binary paths start from, with a non-2xx already turned into a
+   * mapped, redacted `ActiveCollabApiError` so neither caller repeats that decision. */
+  async function fetchAuthorizedBinary(path: string, signal?: AbortSignal): Promise<Response> {
     const headers: Record<string, string> = { Accept: '*/*' }
     if (token) {
       headers['X-Angie-AuthApiToken'] = token
     }
-    const init: RequestInit = { method: 'GET', headers, signal: options.signal }
+    const init: RequestInit = { method: 'GET', headers, signal }
     const response = await acFetchOnce(fetchImpl, acUrl(baseUrl, path, undefined), init, token)
     if (!response.ok) {
       throw acError(response.status, await acReadBody(response), token)
     }
+    return response
+  }
+
+  async function requestBinary(path: string, options: AcBinaryRequest): Promise<AcBinaryResponse> {
+    const response = await fetchAuthorizedBinary(path, options.signal)
     const mimeType = acMimeEssence(response.headers.get('content-type'))
     if (!options.acceptMime(mimeType)) {
       // Refused on the header alone: a 200 MB video must not be buffered just to be rejected.
@@ -344,5 +365,13 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
     return acReadBounded(response, options.maxBytes, mimeType)
   }
 
-  return { request, requestBinary }
+  async function requestStream(
+    path: string,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<AcStreamResponse> {
+    const response = await fetchAuthorizedBinary(path, options.signal)
+    return { mimeType: acMimeEssence(response.headers.get('content-type')), body: response.body }
+  }
+
+  return { request, requestBinary, requestStream }
 }

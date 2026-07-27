@@ -51,6 +51,10 @@ describe('onboarding flow persistence', () => {
       agentTaskComplete: false,
       siteRunComplete: false,
       terminalBell: false,
+      activeCollabAssigned: false,
+      activeCollabComments: false,
+      activeCollabDue: false,
+      activeCollabUpdated: false,
       suppressWhenFocused: false,
       customSoundId: 'two-tone',
       customSoundPath: null,
@@ -58,12 +62,18 @@ describe('onboarding flow persistence', () => {
     })
 
     // Exhaustive on purpose: it catches a new notification default silently reaching completed
-    // onboarding. siteRunComplete is the ocsites import/deploy notification, off by default.
+    // onboarding. siteRunComplete is the ocsites import/deploy notification, off by default, and the
+    // four activeCollab* kinds must stay off — finishing onboarding cannot start polling a work
+    // server nobody has connected.
     expect(notifications).toEqual({
       enabled: true,
       agentTaskComplete: true,
       siteRunComplete: false,
       terminalBell: true,
+      activeCollabAssigned: false,
+      activeCollabComments: false,
+      activeCollabDue: false,
+      activeCollabUpdated: false,
       suppressWhenFocused: false,
       customSoundId: 'two-tone',
       customSoundPath: null,

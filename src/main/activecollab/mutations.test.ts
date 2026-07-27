@@ -31,9 +31,12 @@ function stubHttp(routes: Record<string, Reply | ActiveCollabApiError>): StubHtt
           perPage: route.perPage ?? null
         }
       },
-      // No write downloads bytes; attachment-image.test.ts stubs the real binary path.
+      // No write moves bytes; attachment-image.test.ts and attachment-download.test.ts stub those.
       requestBinary(): never {
         throw new Error('requestBinary is not stubbed for task writes')
+      },
+      requestStream(): never {
+        throw new Error('requestStream is not stubbed for task writes')
       }
     }
   }

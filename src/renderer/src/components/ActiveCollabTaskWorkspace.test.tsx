@@ -640,7 +640,7 @@ describe('ActiveCollabTaskWorkspace attachments', () => {
     expect(container.querySelectorAll('[data-activecollab-mention]').length).toBeGreaterThan(0)
   })
 
-  it('renders a non-image attachment as a chip and never fetches it', async () => {
+  it('renders a non-image attachment as a download button and never fetches it as an image', async () => {
     mocks.fetchTaskDetail.mockResolvedValue({
       ok: true,
       value: { ...DETAIL, attachments: [FILE_ATTACHMENT] }
@@ -650,8 +650,11 @@ describe('ActiveCollabTaskWorkspace attachments', () => {
 
     const chip = container.querySelector('[data-activecollab-attachment-chip]')
     expect(chip?.textContent).toContain(FILE_ATTACHMENT.name)
+    // A link would need a tokenised instance URL in the DOM; the download runs in main instead.
     expect(chip?.querySelector('a')).toBeNull()
-    expect(chip?.querySelector('button')).toBeNull()
+    expect(chip?.querySelector<HTMLButtonElement>('button')?.getAttribute('aria-label')).toBe(
+      `Download ${FILE_ATTACHMENT.name}`
+    )
     expect(mocks.getAttachmentImage).not.toHaveBeenCalled()
   })
 

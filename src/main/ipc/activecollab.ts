@@ -12,6 +12,10 @@
 // the UI needs to pick between "reconnect", "fix your input", and "the server is unwell".
 //
 // No siteId appears anywhere: one ActiveCollab token addresses exactly one instance.
+//
+// The change notifier's lifecycle hangs off this file: connect and disconnect are what start and
+// stop its poll loop, and every write below folds its own echo into the notifier's snapshot so the
+// next poll does not tell the user about their own edit — see ../activecollab/task-snapshot-store.ts.
 
 import { ipcMain } from 'electron'
 import type {
@@ -45,6 +49,12 @@ import {
 } from '../activecollab/mutations'
 import { getTaskDetail, listAssignedTasks, listProjects } from '../activecollab/tasks'
 import {
+  refreshAcTaskNotifications,
+  startAcTaskNotifications
+} from '../activecollab/task-notification-service'
+import { acClearTaskSnapshot, acFoldLocalTaskWrite } from '../activecollab/task-snapshot-store'
+import type { Store } from '../persistence'
+import {
   boundedText,
   InvalidRequestError,
   MAX_BODY,
@@ -59,6 +69,7 @@ import {
 } from './activecollab-argument-validation'
 import { acClient, guard, toFailure } from './activecollab-operation-context'
 import { acListProjectMembers, acListUsers } from './activecollab-people'
+import { acDownloadAttachment } from './activecollab-attachment-download'
 import { _resetPreflightCache } from './preflight'
 
 const ACTIVECOLLAB_CHANNELS = [
@@ -69,6 +80,7 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:listProjects',
   'activecollab:getTaskDetail',
   'activecollab:getAttachmentImage',
+  'activecollab:downloadAttachment',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
@@ -106,6 +118,8 @@ export async function acConnect(
     // A new account must not inherit the previous one's names or project memberships.
     resetAcNameDirectoryCache()
     resetAcProjectMembersCache()
+    // A different account may have different toggles, and the previous one's loop is now pointless.
+    refreshAcTaskNotifications()
     return { ok: true, value: result.connection }
   } catch (error) {
     return toFailure(error)
@@ -118,6 +132,9 @@ export function acDisconnect(): Promise<ActiveCollabResult<ActiveCollabConnectio
     _resetPreflightCache()
     resetAcNameDirectoryCache()
     resetAcProjectMembersCache()
+    // The tasks of a credential the user just removed are not ours to keep, and nothing left to poll.
+    acClearTaskSnapshot()
+    refreshAcTaskNotifications()
     return getActiveCollabConnectionStatus()
   })
 }
@@ -172,6 +189,8 @@ export function acUpdateTask(args: unknown): Promise<ActiveCollabResult<ActiveCo
     // same names the read path resolved — otherwise every edit blanks the heading it just fixed.
     const task = await updateTask({ http, projectId, taskId, update })
     await acResolveTaskNames(directory, [task])
+    // Own write: fold the echo in now, so the poll that observes it has nothing to report.
+    acFoldLocalTaskWrite({ taskId, task, dueOn: update.dueOn })
     return task
   })
 }
@@ -185,6 +204,7 @@ export function acCompleteTask(
     const directory = names()
     const task = await completeTask({ http, taskId })
     await acResolveTaskNames(directory, [task])
+    acFoldLocalTaskWrite({ taskId, task })
     return task
   })
 }
@@ -196,6 +216,7 @@ export function acReopenTask(args: unknown): Promise<ActiveCollabResult<ActiveCo
     const directory = names()
     const task = await reopenTask({ http, taskId })
     await acResolveTaskNames(directory, [task])
+    acFoldLocalTaskWrite({ taskId, task })
     return task
   })
 }
@@ -210,7 +231,10 @@ export function acPostComment(
     if (bodyHtml.trim() === '') {
       throw new InvalidRequestError('bodyHtml is required.')
     }
-    return postComment({ http: acClient().http, taskId, bodyHtml })
+    const comment = await postComment({ http: acClient().http, taskId, bodyHtml })
+    // The posted comment carries no task row, so the count this app just added is folded by hand.
+    acFoldLocalTaskWrite({ taskId, postedComments: 1 })
+    return comment
   })
 }
 
@@ -218,7 +242,7 @@ export function acListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>>
   return guard(async () => listLabels({ http: acClient().http }))
 }
 
-export function registerActiveCollabHandlers(): void {
+export function registerActiveCollabHandlers(store: Store): void {
   for (const channel of ACTIVECOLLAB_CHANNELS) {
     ipcMain.removeHandler(channel)
   }
@@ -236,6 +260,10 @@ export function registerActiveCollabHandlers(): void {
   ipcMain.handle('activecollab:getAttachmentImage', async (_event, args: unknown) =>
     acGetAttachmentImage(args)
   )
+  // The only handler that needs its event: the save dialog is parented to the calling window.
+  ipcMain.handle('activecollab:downloadAttachment', async (event, args: unknown) =>
+    acDownloadAttachment(args, event.sender)
+  )
   ipcMain.handle('activecollab:updateTask', async (_event, args: unknown) => acUpdateTask(args))
   ipcMain.handle('activecollab:completeTask', async (_event, args: unknown) => acCompleteTask(args))
   ipcMain.handle('activecollab:reopenTask', async (_event, args: unknown) => acReopenTask(args))
@@ -245,4 +273,8 @@ export function registerActiveCollabHandlers(): void {
   ipcMain.handle('activecollab:listProjectMembers', async (_event, args: unknown) =>
     acListProjectMembers(args)
   )
+
+  // Polls only while connected with at least one toggle on; the service's refresh() decides that,
+  // so registering is cheap for the vast majority who never connect ActiveCollab.
+  startAcTaskNotifications({ store, fetchPage: (page) => acListAssignedTasks({ page }) })
 }

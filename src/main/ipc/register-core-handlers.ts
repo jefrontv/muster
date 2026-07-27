@@ -163,7 +163,7 @@ export function registerCoreHandlers(
   registerHostedReviewHandlers(store, stats)
   registerLinearHandlers()
   registerJiraHandlers()
-  registerActiveCollabHandlers()
+  registerActiveCollabHandlers(store)
   registerFeedbackHandlers()
   if (crashReports) {
     registerCrashReportingHandlers(crashReports)

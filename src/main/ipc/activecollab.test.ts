@@ -27,8 +27,14 @@ const {
   resetPreflightMock: vi.fn()
 }))
 
+// `dialog`/`shell`/`app` exist only because the download op imports them; every assertion here
+// stops at the credential check, before a save dialog could open.
 vi.mock('electron', () => ({
-  ipcMain: { handle: handleMock, removeHandler: removeHandlerMock }
+  ipcMain: { handle: handleMock, removeHandler: removeHandlerMock },
+  app: { getPath: () => '/tmp/downloads' },
+  dialog: { showSaveDialog: vi.fn() },
+  shell: { showItemInFolder: vi.fn() },
+  BrowserWindow: { fromWebContents: () => null }
 }))
 
 // The error class stays real: the failure mapping branches on `instanceof` and on `isAuthError`,
@@ -49,11 +55,27 @@ vi.mock('../activecollab/auth', () => ({ connectActiveCollab: connectMock }))
 
 vi.mock('./preflight', () => ({ _resetPreflightCache: resetPreflightMock }))
 
+// The notifier is proved in activecollab-write-echo.test.ts. Stubbed here so this file's module
+// graph stays clear of the notification stack, which pulls in the tray, sound assets and a window.
+vi.mock('../activecollab/task-notification-service', () => ({
+  startAcTaskNotifications: vi.fn(),
+  refreshAcTaskNotifications: vi.fn()
+}))
+
+vi.mock('../activecollab/task-snapshot-store', () => ({
+  acClearTaskSnapshot: vi.fn(),
+  acFoldLocalTaskWrite: vi.fn()
+}))
+
 import { AC_MAX_ATTACHMENT_IMAGE_BYTES } from '../activecollab/attachment-image'
 import { ActiveCollabApiError } from '../activecollab/http'
 import { resetAcNameDirectoryCache } from '../activecollab/name-directory'
 import { resetAcProjectMembersCache } from '../activecollab/project-members'
 import { registerActiveCollabHandlers } from './activecollab'
+import type { Store } from '../persistence'
+
+/** Registration only hands the store to the (stubbed) notifier, so it needs no real state. */
+const STORE_STUB = {} as unknown as Store
 
 const CHANNELS = [
   'activecollab:status',
@@ -63,6 +85,7 @@ const CHANNELS = [
   'activecollab:listProjects',
   'activecollab:getTaskDetail',
   'activecollab:getAttachmentImage',
+  'activecollab:downloadAttachment',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
@@ -78,6 +101,10 @@ const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   { channel: 'activecollab:listProjects', args: undefined },
   { channel: 'activecollab:getTaskDetail', args: { projectId: 3790, taskId: 509323 } },
   { channel: 'activecollab:getAttachmentImage', args: { attachmentId: 249086 } },
+  {
+    channel: 'activecollab:downloadAttachment',
+    args: { attachmentId: 249087, name: 'brief.pdf' }
+  },
   {
     channel: 'activecollab:updateTask',
     args: { projectId: 3790, taskId: 509323, update: { name: 'Renamed' } }
@@ -138,7 +165,8 @@ function invoke(channel: string, args?: unknown): Promise<unknown> {
   if (!call) {
     throw new Error(`No handler registered for ${channel}`)
   }
-  return (call[1] as Handler)(null, args)
+  // A real ipcMain handler always gets an event; the download op reads `sender` off it.
+  return (call[1] as Handler)({ sender: undefined }, args)
 }
 
 /** Narrowed so a failing assertion reports the tagged failure instead of "undefined". */
@@ -178,7 +206,7 @@ beforeEach(() => {
   // Module-level and credential-keyed by design, so each test starts from a cold directory.
   resetAcNameDirectoryCache()
   resetAcProjectMembersCache()
-  registerActiveCollabHandlers()
+  registerActiveCollabHandlers(STORE_STUB)
 })
 
 describe('registerActiveCollabHandlers', () => {

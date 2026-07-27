@@ -12,16 +12,20 @@ import type { AppState } from '@/store/types'
 import { createActiveCollabSlice } from '@/store/slices/activecollab'
 import { clearActiveCollabAttachmentImageFetches } from '@/store/slices/activecollab-attachment-images'
 import type {
+  ActiveCollabAttachmentDownload,
   ActiveCollabAttachmentImage,
   ActiveCollabResult
 } from '../../../shared/activecollab-api-types'
 import type { ActiveCollabAttachment } from '../../../shared/activecollab-types'
 
 type ImageResult = ActiveCollabResult<ActiveCollabAttachmentImage>
+type DownloadResult = ActiveCollabResult<ActiveCollabAttachmentDownload>
 
 const holder = vi.hoisted(() => ({
   state: null as unknown,
-  getAttachmentImage: vi.fn<(args: { attachmentId: number }) => Promise<ImageResult>>()
+  getAttachmentImage: vi.fn<(args: { attachmentId: number }) => Promise<ImageResult>>(),
+  downloadAttachment:
+    vi.fn<(args: { attachmentId: number; name: string }) => Promise<DownloadResult>>()
 }))
 
 vi.mock('@/store', () => ({
@@ -43,7 +47,9 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabPostComment: vi.fn(),
   activeCollabListLabels: vi.fn(),
   activeCollabListUsers: vi.fn(),
-  activeCollabListProjectMembers: vi.fn()
+  activeCollabListProjectMembers: vi.fn(),
+  activeCollabDownloadAttachment: (args: { attachmentId: number; name: string }) =>
+    holder.downloadAttachment(args)
 }))
 
 import { ActiveCollabAttachmentGrid } from './activecollab-attachment-grid'
@@ -77,6 +83,16 @@ beforeEach(() => {
   holder.getAttachmentImage.mockResolvedValue({
     ok: true,
     value: { dataUrl: DATA_URL, mimeType: 'image/png' }
+  })
+  holder.downloadAttachment.mockReset()
+  holder.downloadAttachment.mockResolvedValue({
+    ok: true,
+    value: {
+      status: 'saved',
+      filePath: '/Users/jake/Downloads/brief.pdf',
+      fileName: 'brief.pdf',
+      directory: '/Users/jake/Downloads'
+    }
   })
   const store = create<AppState>()(
     (...a) =>
@@ -112,6 +128,27 @@ function remount(): void {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
+}
+
+function downloadButton(name = FILE.name): HTMLButtonElement {
+  const button = container.querySelector<HTMLButtonElement>(`button[aria-label="Download ${name}"]`)
+  if (button === null) {
+    throw new Error(`No download button for ${name}`)
+  }
+  return button
+}
+
+/**
+ * A native `<button>` is what makes Enter and Space activate the chip; happy-dom does not
+ * synthesise the click those keys produce, so the test focuses it the way a keyboard user would
+ * and then fires the activation the platform would fire.
+ */
+async function activateFromKeyboard(button: HTMLButtonElement): Promise<void> {
+  button.focus()
+  expect(document.activeElement).toBe(button)
+  await act(async () => {
+    button.click()
+  })
 }
 
 describe('ActiveCollabAttachmentGrid', () => {
@@ -183,14 +220,122 @@ describe('ActiveCollabAttachmentGrid', () => {
     expect(container.querySelectorAll('img')).toHaveLength(1)
   })
 
-  it('renders a non-image as an inert named chip and never fetches it', async () => {
+  it('renders a non-image as a download button and never asks for its bytes as an image', async () => {
     await mount([FILE])
 
-    const chip = container.querySelector('[data-activecollab-attachment-chip]')
-    expect(chip?.textContent).toContain(FILE.name)
+    const button = downloadButton()
+    expect(button.type).toBe('button')
+    expect(button.disabled).toBe(false)
+    expect(button.textContent).toContain(FILE.name)
     expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('a')).toBeNull()
-    expect(container.querySelector('button')).toBeNull()
     expect(holder.getAttachmentImage).not.toHaveBeenCalled()
+  })
+
+  it('downloads from the keyboard and reports where the file went', async () => {
+    await mount([FILE])
+
+    await activateFromKeyboard(downloadButton())
+
+    expect(holder.downloadAttachment).toHaveBeenCalledWith({
+      attachmentId: FILE.id,
+      name: FILE.name
+    })
+    expect(container.querySelector('[role="status"]')?.textContent).toContain(
+      '/Users/jake/Downloads'
+    )
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+  })
+
+  it('shows progress and refuses a second transfer while one is running', async () => {
+    const pending = Promise.withResolvers<DownloadResult>()
+    holder.downloadAttachment.mockReturnValue(pending.promise)
+
+    await mount([FILE])
+    await activateFromKeyboard(downloadButton())
+
+    const button = downloadButton()
+    expect(button.disabled).toBe(true)
+    expect(button.getAttribute('aria-busy')).toBe('true')
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('Downloading')
+
+    await act(async () => {
+      button.click()
+    })
+    expect(holder.downloadAttachment).toHaveBeenCalledTimes(1)
+
+    pending.resolve({ ok: false, kind: 'unknown', error: 'gave up', status: null })
+    await act(async () => {})
+  })
+
+  it('leaves every sibling live while one attachment is downloading', async () => {
+    const pending = Promise.withResolvers<DownloadResult>()
+    holder.downloadAttachment.mockReturnValueOnce(pending.promise)
+    const other: ActiveCollabAttachment = { ...FILE, id: 249088, name: 'icons.zip' }
+
+    await mount([FILE, other])
+    await activateFromKeyboard(downloadButton())
+
+    expect(downloadButton().disabled).toBe(true)
+    expect(downloadButton(other.name).disabled).toBe(false)
+
+    pending.resolve({ ok: true, value: { status: 'cancelled' } })
+    await act(async () => {})
+  })
+
+  it('explains a failed download with the shared recovery copy', async () => {
+    holder.downloadAttachment.mockResolvedValue({
+      ok: false,
+      kind: 'auth',
+      error: 'Token expired',
+      status: 401
+    })
+
+    await mount([FILE])
+    await activateFromKeyboard(downloadButton())
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'ActiveCollab rejected those credentials'
+    )
+  })
+
+  it('stops the spinner and explains itself when the bridge rejects outright', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    holder.downloadAttachment.mockRejectedValue(new Error('bridge died'))
+
+    await mount([FILE])
+    await activateFromKeyboard(downloadButton())
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('bridge died')
+    expect(downloadButton().disabled).toBe(false)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('treats a dismissed save dialog as no news at all', async () => {
+    holder.downloadAttachment.mockResolvedValue({ ok: true, value: { status: 'cancelled' } })
+
+    await mount([FILE])
+    await activateFromKeyboard(downloadButton())
+
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+    expect(container.querySelector('[role="status"]')).toBeNull()
+    // Back to idle, so the user can try again immediately.
+    expect(downloadButton().disabled).toBe(false)
+  })
+
+  it('opens the lightbox for an image instead of downloading it', async () => {
+    await mount([IMAGE])
+
+    const thumbnail = container.querySelector<HTMLButtonElement>(
+      `button[aria-label="Open ${IMAGE.name}"]`
+    )
+    expect(thumbnail).not.toBeNull()
+    await act(async () => {
+      thumbnail?.click()
+    })
+
+    expect(document.querySelector('[data-slot="dialog-content"]')).not.toBeNull()
+    expect(holder.downloadAttachment).not.toHaveBeenCalled()
+    expect(container.querySelector('button[aria-label^="Download "]')).toBeNull()
   })
 })

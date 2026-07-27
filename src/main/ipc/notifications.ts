@@ -17,6 +17,7 @@ import type {
   NotificationDispatchRequest,
   NotificationDispatchResult,
   NotificationDismissResult,
+  NotificationEventSource,
   NotificationPermissionStatusResult,
   NotificationSettings,
   NotificationSoundDataResult
@@ -306,6 +307,41 @@ function reserveNotificationCooldown(
   return true
 }
 
+// Why: every source that has its own switch, so the gate is one lookup instead of one `||` per kind.
+type NotificationSourceToggle = {
+  [K in keyof NotificationSettings]: NotificationSettings[K] extends boolean ? K : never
+}[keyof NotificationSettings]
+
+const NOTIFICATION_TOGGLE_BY_SOURCE: Partial<
+  Record<NotificationEventSource, NotificationSourceToggle>
+> = {
+  'agent-task-complete': 'agentTaskComplete',
+  'terminal-bell': 'terminalBell',
+  'site-run-complete': 'siteRunComplete',
+  'activecollab-assigned': 'activeCollabAssigned',
+  'activecollab-comments': 'activeCollabComments',
+  'activecollab-due': 'activeCollabDue',
+  'activecollab-updated': 'activeCollabUpdated'
+}
+
+// Why: the ActiveCollab poller runs in main, so the gates below have to be reachable without a
+// renderer round trip; set on registration, so a dispatch before that is a no-op, not a crash.
+let mainNotificationDispatch:
+  | ((
+      args: NotificationDispatchRequest
+    ) => NotificationDispatchResult | Promise<NotificationDispatchResult>)
+  | null = null
+
+/** Dispatch from the main process, through the same settings gates the renderer path uses. */
+export async function dispatchMainProcessNotification(
+  args: NotificationDispatchRequest
+): Promise<NotificationDispatchResult> {
+  if (mainNotificationDispatch === null) {
+    return { delivered: false, reason: 'not-supported' }
+  }
+  return mainNotificationDispatch(args)
+}
+
 export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntimeService): void {
   const recentDesktopNotifications = new Map<string, number>()
   const recentMobileNotifications = new Map<string, number>()
@@ -386,199 +422,197 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
     return { dismissed }
   })
 
-  ipcMain.removeHandler('notifications:dispatch')
-  ipcMain.handle(
-    'notifications:dispatch',
-    (
-      _event,
-      args: NotificationDispatchRequest
-    ): NotificationDispatchResult | Promise<NotificationDispatchResult> => {
-      // Why: light the tray attention dot before the cooldown/focus/enabled gates so they can't hold it back (clears on window show/restore; see index.ts).
-      if (
-        args.source === 'agent-task-complete' ||
-        args.source === 'terminal-bell' ||
-        args.source === 'site-run-complete'
-      ) {
-        const activeWindow = BrowserWindow.getAllWindows().find((win) => !win.isDestroyed()) ?? null
-        if (!isMainWindowVisible(activeWindow)) {
-          setTrayAttention(true)
-        }
+  // Why: one body, two entry points — the IPC handler below and dispatchMainProcessNotification.
+  const dispatchNotificationRequest = (
+    args: NotificationDispatchRequest
+  ): NotificationDispatchResult | Promise<NotificationDispatchResult> => {
+    // Why: light the tray attention dot before the cooldown/focus/enabled gates so they can't hold it back (clears on window show/restore; see index.ts).
+    if (args.source !== 'test') {
+      const activeWindow = BrowserWindow.getAllWindows().find((win) => !win.isDestroyed()) ?? null
+      if (!isMainWindowVisible(activeWindow)) {
+        setTrayAttention(true)
       }
-
-      const settings = store.getSettings().notifications
-      if (!settings.enabled) {
-        return { delivered: false, reason: 'disabled' }
-      }
-
-      if (
-        (args.source === 'agent-task-complete' && !settings.agentTaskComplete) ||
-        (args.source === 'terminal-bell' && !settings.terminalBell) ||
-        (args.source === 'site-run-complete' && !settings.siteRunComplete)
-      ) {
-        return { delivered: false, reason: 'source-disabled' }
-      }
-
-      const notificationOptions = buildNotificationOptions(args)
-
-      // Why: desktop focus only means this computer sees the worktree; the paired phone may still need the alert.
-      if (runtime && args.source !== 'test') {
-        const dedupeKey = args.worktreeId ?? args.worktreeLabel ?? 'global'
-        if (reserveNotificationCooldown(recentMobileNotifications, dedupeKey, Date.now())) {
-          runtime.dispatchMobileNotification({
-            type: 'notification',
-            source: args.source,
-            title: notificationOptions.title,
-            body: notificationOptions.body,
-            worktreeId: args.worktreeId,
-            ...(args.notificationId ? { notificationId: args.notificationId } : {})
-          })
-        }
-      }
-
-      const browserWindow =
-        BrowserWindow.getAllWindows().find((window) => !window.isDestroyed()) ?? null
-      if (
-        settings.suppressWhenFocused &&
-        args.isActiveWorktree &&
-        browserWindow &&
-        browserWindow.isFocused()
-      ) {
-        return { delivered: false, reason: 'suppressed-focus' }
-      }
-
-      // Why: the Settings test button is an explicit, often-repeated user action, so it bypasses burst dedupe.
-      if (args.source !== 'test') {
-        // Dedupe by worktree, not source — agent-finish and terminal-bell often fire in one chunk; surface only the first.
-        const dedupeKey = args.worktreeId ?? args.worktreeLabel ?? 'global'
-        if (!reserveNotificationCooldown(recentDesktopNotifications, dedupeKey, Date.now())) {
-          return { delivered: false, reason: 'cooldown' }
-        }
-      }
-
-      if (!Notification.isSupported()) {
-        return { delivered: false, reason: 'not-supported' }
-      }
-
-      function deliverNativeNotification():
-        | NotificationDispatchResult
-        | Promise<NotificationDispatchResult> {
-        if (getEffectiveNotificationSoundId(settings) !== 'system') {
-          notificationOptions.silent = true
-        } else if (process.platform === 'darwin') {
-          // Why: macOS treats an unset sound as silent, so request Electron's default when using the OS sound.
-          notificationOptions.sound = 'default'
-        }
-        const notification = new Notification(notificationOptions)
-        if (args.notificationId) {
-          const previous = activeNotificationsById.get(args.notificationId)
-          if (previous) {
-            previous.notification.close()
-            previous.release()
-          }
-        }
-
-        // Why: prevent GC from collecting the notification and its click handler while it's still visible.
-        let clickHandler: (() => void) | null = null
-        let failedHandler: ((_event: unknown, error?: string) => void) | null = null
-        const entryForId: { notification: Notification; release: () => void } | null =
-          args.notificationId ? { notification, release: () => {} } : null
-        const release = retainNotificationUntilRelease(notification, () => {
-          if (clickHandler) {
-            notification.removeListener('click', clickHandler)
-            clickHandler = null
-          }
-          if (failedHandler) {
-            notification.removeListener('failed', failedHandler)
-            failedHandler = null
-          }
-          if (
-            args.notificationId &&
-            activeNotificationsById.get(args.notificationId) === entryForId
-          ) {
-            activeNotificationsById.delete(args.notificationId)
-          }
-        })
-        if (entryForId && args.notificationId) {
-          entryForId.release = release
-          activeNotificationsById.set(args.notificationId, entryForId)
-        }
-
-        failedHandler = (_event, error) => {
-          // Why: Electron 42's macOS backend reports unsigned/delivery failures here; release now, not after the fallback timer.
-          logNativeNotificationFailure(args.source, error)
-          // Why: feeds the permission card's evidence.
-          lastObservedDeliveryOutcome = 'failed'
-          release()
-        }
-        notification.on('failed', failedHandler)
-
-        // Why: worktreeId is formatted "repoId::worktreePath"; without the separator we can't extract a repoId, so skip the click-to-navigate binding.
-        if (args.worktreeId && args.worktreeId.includes('::')) {
-          const repoId = getRepoIdFromWorktreeId(args.worktreeId)
-          clickHandler = () => {
-            release()
-            const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
-            if (!win) {
-              return
-            }
-            if (process.platform === 'darwin') {
-              app.focus({ steal: true })
-            }
-            if (win.isMinimized()) {
-              win.restore()
-            }
-            win.focus()
-            win.webContents.send('ui:activateWorktree', {
-              repoId,
-              worktreeId: args.worktreeId
-            })
-            // Why: focusTerminal targets the pane by stable leafId so split-pane notifications land on the exact pane.
-            const paneTarget = args.paneKey ? parsePaneKey(args.paneKey) : null
-            if (paneTarget) {
-              win.webContents.send('ui:focusTerminal', {
-                tabId: paneTarget.tabId,
-                worktreeId: args.worktreeId,
-                leafId: paneTarget.leafId,
-                ackPaneKeyOnSuccess: args.paneKey,
-                flashFocusedPane: true,
-                scrollToBottomIfOutputSinceLastView: true
-              })
-            }
-          }
-          notification.on('click', clickHandler)
-        }
-
-        const displayConfirmation = args.requireDisplayConfirmation
-          ? waitForNotificationDisplay(notification)
-          : null
-        notification.show()
-
-        if (displayConfirmation) {
-          return displayConfirmation.then((displayed) => {
-            if (!displayed) {
-              release()
-              return { delivered: false, reason: 'not-displayed' }
-            }
-            lastObservedDeliveryOutcome = 'delivered'
-            return { delivered: true }
-          })
-        }
-
-        return { delivered: true }
-      }
-
-      if (process.platform !== 'darwin') {
-        return deliverNativeNotification()
-      }
-      // Why: macOS silently swallows notifications while permission is denied/undecided (verified macOS 26); skip so the renderer can show a fallback.
-      return readNotificationAuthorizationStatus().then((authorization) => {
-        if (authorization === 'denied' || authorization === 'not-determined') {
-          lastObservedDeliveryOutcome = 'failed'
-          return { delivered: false, reason: 'blocked-by-system' }
-        }
-        return deliverNativeNotification()
-      })
     }
+
+    const settings = store.getSettings().notifications
+    if (!settings.enabled) {
+      return { delivered: false, reason: 'disabled' }
+    }
+
+    const sourceToggle = NOTIFICATION_TOGGLE_BY_SOURCE[args.source]
+    if (sourceToggle !== undefined && !settings[sourceToggle]) {
+      return { delivered: false, reason: 'source-disabled' }
+    }
+
+    const notificationOptions = buildNotificationOptions(args)
+
+    // Why: desktop focus only means this computer sees the worktree; the paired phone may still need the alert.
+    if (runtime && args.source !== 'test') {
+      const dedupeKey = args.dedupeKey ?? args.worktreeId ?? args.worktreeLabel ?? 'global'
+      if (reserveNotificationCooldown(recentMobileNotifications, dedupeKey, Date.now())) {
+        runtime.dispatchMobileNotification({
+          type: 'notification',
+          source: args.source,
+          title: notificationOptions.title,
+          body: notificationOptions.body,
+          worktreeId: args.worktreeId,
+          ...(args.notificationId ? { notificationId: args.notificationId } : {})
+        })
+      }
+    }
+
+    const browserWindow =
+      BrowserWindow.getAllWindows().find((window) => !window.isDestroyed()) ?? null
+    // Why: an ActiveCollab change carries no worktree, so focus alone decides — the window in
+    // front of the user is the one that will show them the task.
+    const focusSuppressible =
+      args.isActiveWorktree === true || args.source.startsWith('activecollab-')
+    if (
+      settings.suppressWhenFocused &&
+      focusSuppressible &&
+      browserWindow &&
+      browserWindow.isFocused()
+    ) {
+      return { delivered: false, reason: 'suppressed-focus' }
+    }
+
+    // Why: the Settings test button is an explicit, often-repeated user action, so it bypasses burst dedupe.
+    if (args.source !== 'test') {
+      // Dedupe by worktree, not source — agent-finish and terminal-bell often fire in one chunk; surface only the first.
+      const dedupeKey = args.dedupeKey ?? args.worktreeId ?? args.worktreeLabel ?? 'global'
+      if (!reserveNotificationCooldown(recentDesktopNotifications, dedupeKey, Date.now())) {
+        return { delivered: false, reason: 'cooldown' }
+      }
+    }
+
+    if (!Notification.isSupported()) {
+      return { delivered: false, reason: 'not-supported' }
+    }
+
+    function deliverNativeNotification():
+      | NotificationDispatchResult
+      | Promise<NotificationDispatchResult> {
+      if (getEffectiveNotificationSoundId(settings) !== 'system') {
+        notificationOptions.silent = true
+      } else if (process.platform === 'darwin') {
+        // Why: macOS treats an unset sound as silent, so request Electron's default when using the OS sound.
+        notificationOptions.sound = 'default'
+      }
+      const notification = new Notification(notificationOptions)
+      if (args.notificationId) {
+        const previous = activeNotificationsById.get(args.notificationId)
+        if (previous) {
+          previous.notification.close()
+          previous.release()
+        }
+      }
+
+      // Why: prevent GC from collecting the notification and its click handler while it's still visible.
+      let clickHandler: (() => void) | null = null
+      let failedHandler: ((_event: unknown, error?: string) => void) | null = null
+      const entryForId: { notification: Notification; release: () => void } | null =
+        args.notificationId ? { notification, release: () => {} } : null
+      const release = retainNotificationUntilRelease(notification, () => {
+        if (clickHandler) {
+          notification.removeListener('click', clickHandler)
+          clickHandler = null
+        }
+        if (failedHandler) {
+          notification.removeListener('failed', failedHandler)
+          failedHandler = null
+        }
+        if (
+          args.notificationId &&
+          activeNotificationsById.get(args.notificationId) === entryForId
+        ) {
+          activeNotificationsById.delete(args.notificationId)
+        }
+      })
+      if (entryForId && args.notificationId) {
+        entryForId.release = release
+        activeNotificationsById.set(args.notificationId, entryForId)
+      }
+
+      failedHandler = (_event, error) => {
+        // Why: Electron 42's macOS backend reports unsigned/delivery failures here; release now, not after the fallback timer.
+        logNativeNotificationFailure(args.source, error)
+        // Why: feeds the permission card's evidence.
+        lastObservedDeliveryOutcome = 'failed'
+        release()
+      }
+      notification.on('failed', failedHandler)
+
+      // Why: worktreeId is formatted "repoId::worktreePath"; without the separator we can't extract a repoId, so skip the click-to-navigate binding.
+      if (args.worktreeId && args.worktreeId.includes('::')) {
+        const repoId = getRepoIdFromWorktreeId(args.worktreeId)
+        clickHandler = () => {
+          release()
+          const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+          if (!win) {
+            return
+          }
+          if (process.platform === 'darwin') {
+            app.focus({ steal: true })
+          }
+          if (win.isMinimized()) {
+            win.restore()
+          }
+          win.focus()
+          win.webContents.send('ui:activateWorktree', {
+            repoId,
+            worktreeId: args.worktreeId
+          })
+          // Why: focusTerminal targets the pane by stable leafId so split-pane notifications land on the exact pane.
+          const paneTarget = args.paneKey ? parsePaneKey(args.paneKey) : null
+          if (paneTarget) {
+            win.webContents.send('ui:focusTerminal', {
+              tabId: paneTarget.tabId,
+              worktreeId: args.worktreeId,
+              leafId: paneTarget.leafId,
+              ackPaneKeyOnSuccess: args.paneKey,
+              flashFocusedPane: true,
+              scrollToBottomIfOutputSinceLastView: true
+            })
+          }
+        }
+        notification.on('click', clickHandler)
+      }
+
+      const displayConfirmation = args.requireDisplayConfirmation
+        ? waitForNotificationDisplay(notification)
+        : null
+      notification.show()
+
+      if (displayConfirmation) {
+        return displayConfirmation.then((displayed) => {
+          if (!displayed) {
+            release()
+            return { delivered: false, reason: 'not-displayed' }
+          }
+          lastObservedDeliveryOutcome = 'delivered'
+          return { delivered: true }
+        })
+      }
+
+      return { delivered: true }
+    }
+
+    if (process.platform !== 'darwin') {
+      return deliverNativeNotification()
+    }
+    // Why: macOS silently swallows notifications while permission is denied/undecided (verified macOS 26); skip so the renderer can show a fallback.
+    return readNotificationAuthorizationStatus().then((authorization) => {
+      if (authorization === 'denied' || authorization === 'not-determined') {
+        lastObservedDeliveryOutcome = 'failed'
+        return { delivered: false, reason: 'blocked-by-system' }
+      }
+      return deliverNativeNotification()
+    })
+  }
+  mainNotificationDispatch = dispatchNotificationRequest
+  ipcMain.removeHandler('notifications:dispatch')
+  ipcMain.handle('notifications:dispatch', (_event, args: NotificationDispatchRequest) =>
+    dispatchNotificationRequest(args)
   )
 
   // Why: return the path so the preload's path-keyed cache skips the 10MB IPC round-trip on repeat dispatches.

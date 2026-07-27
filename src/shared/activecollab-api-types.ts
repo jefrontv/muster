@@ -70,6 +70,17 @@ export type ActiveCollabAttachmentImage = {
   mimeType: string
 }
 
+/**
+ * The outcome of saving an attachment to disk. The bytes are NOT here: main streamed them into the
+ * file itself, and only the result crosses the bridge.
+ *
+ * Dismissing the save dialog answers `ok: true` with `cancelled`, not a failure. The user changing
+ * their mind is a normal outcome and must not surface as an error.
+ */
+export type ActiveCollabAttachmentDownload =
+  | { status: 'saved'; filePath: string; fileName: string; directory: string }
+  | { status: 'cancelled' }
+
 export type ActiveCollabApi = {
   /** Never fails in practice: "not connected" and "cannot decrypt" are both `ok: true` states. */
   status: () => Promise<ActiveCollabResult<ActiveCollabConnectionStatus>>
@@ -90,6 +101,18 @@ export type ActiveCollabApi = {
   getAttachmentImage: (args: {
     attachmentId: number
   }) => Promise<ActiveCollabResult<ActiveCollabAttachmentImage>>
+  /**
+   * Saves one attachment to a path the user picks, then reveals it.
+   *
+   * LOCAL ONLY, with no runtime RPC twin: the save dialog and the reveal both belong to this
+   * window, so a remote runtime would write the file to its own disk and hand back a path nothing
+   * here can open. Unlike {@link getAttachmentImage} this carries no payload in either direction,
+   * which is why it has no size cap worth mentioning to a caller and works for a large archive.
+   */
+  downloadAttachment: (args: {
+    attachmentId: number
+    name: string
+  }) => Promise<ActiveCollabResult<ActiveCollabAttachmentDownload>>
   /**
    * `update.labelNames` is a FULL REPLACEMENT set — the API overwrites the task's labels — so a
    * caller adding one label sends the merged list, not the addition.

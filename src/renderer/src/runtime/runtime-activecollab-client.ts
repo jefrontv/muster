@@ -19,6 +19,7 @@ import type {
   ActiveCollabUser
 } from '../../../shared/activecollab-types'
 import type {
+  ActiveCollabAttachmentDownload,
   ActiveCollabAttachmentImage,
   ActiveCollabConnectArgs,
   ActiveCollabResult,
@@ -160,6 +161,34 @@ export async function activeCollabGetAttachmentImage(
     OPERATION_TIMEOUT_MS,
     () => window.api.activecollab.getAttachmentImage(args)
   )
+}
+
+/**
+ * The one operation here that never consults the runtime target, and so takes no `settings`.
+ *
+ * A download ends at a save dialog and a file on THIS machine. Routing it to a remote host would
+ * write the file over there and answer with a path the user cannot open, so the local bridge is
+ * the only correct transport — the same reason PDF export and browser downloads stay local. The
+ * throw barrier is kept, because a rejected bridge call would still strip the `kind` the UI needs.
+ */
+export async function activeCollabDownloadAttachment(args: {
+  attachmentId: number
+  name: string
+}): Promise<ActiveCollabResult<ActiveCollabAttachmentDownload>> {
+  try {
+    const result = await window.api.activecollab.downloadAttachment(args)
+    if (!isActiveCollabResult<ActiveCollabAttachmentDownload>(result)) {
+      throw new Error('activecollab.downloadAttachment returned a malformed response.')
+    }
+    return result
+  } catch (error) {
+    return {
+      ok: false,
+      kind: 'unknown',
+      error: error instanceof Error ? error.message : String(error),
+      status: null
+    }
+  }
 }
 
 export async function activeCollabUpdateTask(

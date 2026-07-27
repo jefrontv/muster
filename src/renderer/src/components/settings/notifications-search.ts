@@ -1,6 +1,7 @@
 import { translate } from '@/i18n/i18n'
 import { translateSearchKeyword } from './settings-search-keywords'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
+import { activeCollabNotificationSearchEntries } from './activecollab-notifications-search'
 
 export const getNotificationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
@@ -79,6 +80,7 @@ export const getNotificationsPaneSearchEntries = createLocalizedCatalog(() => [
       )
     ]
   },
+  ...activeCollabNotificationSearchEntries(),
   {
     title: translate(
       'auto.components.settings.notifications.search.96562a72c6',

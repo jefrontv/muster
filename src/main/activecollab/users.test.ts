@@ -21,6 +21,9 @@ function stubHttp(data: unknown): StubHttp {
       },
       requestBinary(): never {
         throw new Error('requestBinary is not stubbed for the user roster')
+      },
+      requestStream(): never {
+        throw new Error('requestStream is not stubbed for the user roster')
       }
     }
   }
@@ -118,6 +121,9 @@ describe('listUsers', () => {
       },
       requestBinary(): never {
         throw new Error('requestBinary is not stubbed for the user roster')
+      },
+      requestStream(): never {
+        throw new Error('requestStream is not stubbed for the user roster')
       }
     }
 

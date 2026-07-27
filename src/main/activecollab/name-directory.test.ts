@@ -41,6 +41,9 @@ function stubHttp(routes: Record<string, Route>, gate?: Promise<void>): StubHttp
       },
       requestBinary(): never {
         throw new Error('requestBinary is not stubbed for the name directory')
+      },
+      requestStream(): never {
+        throw new Error('requestStream is not stubbed for the name directory')
       }
     }
   }

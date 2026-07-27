@@ -135,6 +135,11 @@ export function getDefaultNotificationSettings(): NotificationSettings {
     agentTaskComplete: true,
     siteRunComplete: true,
     terminalBell: false,
+    // Off until asked for: turning one on starts polling a third-party work server.
+    activeCollabAssigned: false,
+    activeCollabComments: false,
+    activeCollabDue: false,
+    activeCollabUpdated: false,
     suppressWhenFocused: true,
     customSoundId: 'system',
     customSoundPath: null,

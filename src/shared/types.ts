@@ -2355,6 +2355,19 @@ export type NotificationSettings = {
   terminalBell: boolean
   /** Import/deploy runs; they take minutes, so completion is worth surfacing. */
   siteRunComplete: boolean
+  /**
+   * The four ActiveCollab change kinds. ActiveCollab has no webhooks and no incremental API, so
+   * each is only observable by polling the user's work server. All default false: a user who never
+   * connects ActiveCollab must never be polled on its behalf.
+   */
+  /** A task newly assigned to you. */
+  activeCollabAssigned: boolean
+  /** New comments on a task assigned to you. */
+  activeCollabComments: boolean
+  /** A due date entering or reaching a nearer bucket (this week → tomorrow → today → overdue). */
+  activeCollabDue: boolean
+  /** Task details edited with no comment delta — a comment already explains its own bump. */
+  activeCollabUpdated: boolean
   suppressWhenFocused: boolean
   customSoundId:
     | 'system'
@@ -3024,6 +3037,10 @@ export type NotificationEventSource =
   | 'agent-task-complete'
   | 'terminal-bell'
   | 'site-run-complete'
+  | 'activecollab-assigned'
+  | 'activecollab-comments'
+  | 'activecollab-due'
+  | 'activecollab-updated'
   | 'test'
 
 export type NotificationDispatchRequest = {
@@ -3043,6 +3060,21 @@ export type NotificationDispatchRequest = {
   agentState?: AgentStatusState
   /** Set for `site-run-complete`: what finished, and how it ended. */
   siteRun?: { siteName: string; group: 'import' | 'deploy'; environment: string; status: string }
+  /** Set for the `activecollab-*` sources: the task that changed, and what changed about it. */
+  activeCollab?: {
+    taskName: string
+    projectName: string
+    /** Comments that arrived; set for `activecollab-comments`. */
+    newComments?: number
+    /** Due phrase, e.g. "Overdue"; set for `activecollab-assigned` and `activecollab-due`. */
+    duePhrase?: string
+  }
+  /**
+   * Burst-dedupe key, when the worktree is the wrong grain. ActiveCollab changes carry no worktree,
+   * so without one key per task-and-kind a poll returning three of them would deliver only the
+   * first.
+   */
+  dedupeKey?: string
   agentPrompt?: string
   agentToolName?: string
   agentToolInput?: string

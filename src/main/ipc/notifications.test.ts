@@ -309,6 +309,93 @@ describe('registerNotificationHandlers', () => {
     expect(notificationCtorMock).not.toHaveBeenCalled()
   })
 
+  describe('ActiveCollab changes', () => {
+    function registerWithActiveCollab(overrides: Record<string, unknown>): void {
+      registerNotificationHandlers({
+        getSettings: () => ({
+          notifications: {
+            enabled: true,
+            agentTaskComplete: true,
+            terminalBell: true,
+            suppressWhenFocused: true,
+            activeCollabAssigned: false,
+            activeCollabComments: false,
+            activeCollabDue: false,
+            activeCollabUpdated: false,
+            ...overrides
+          }
+        })
+      } as never)
+    }
+
+    const COMMENT_CHANGE = {
+      source: 'activecollab-comments',
+      dedupeKey: 'activecollab:1:comments',
+      activeCollab: { taskName: 'Fix the header', projectName: 'Muster', newComments: 2 }
+    }
+
+    it('is silent while its own toggle is off, even with notifications enabled', async () => {
+      registerWithActiveCollab({})
+
+      expect(await getDispatchHandler()({}, COMMENT_CHANGE)).toEqual({
+        delivered: false,
+        reason: 'source-disabled'
+      })
+      expect(notificationCtorMock).not.toHaveBeenCalled()
+    })
+
+    it('names the task and the change once its toggle is on', async () => {
+      registerWithActiveCollab({ activeCollabComments: true })
+
+      expect(await getDispatchHandler()({}, COMMENT_CHANGE)).toEqual({ delivered: true })
+      expect(notificationCtorMock).toHaveBeenCalledWith(
+        expectedNativeNotificationOptions({
+          title: '2 new comments: Fix the header',
+          body: 'Muster'
+        })
+      )
+    })
+
+    it('is suppressed while Muster is focused, though it carries no worktree', async () => {
+      getAllWindowsMock.mockReturnValue([
+        { isDestroyed: () => false, isFocused: () => true } as never
+      ])
+      registerWithActiveCollab({ activeCollabComments: true })
+
+      expect(await getDispatchHandler()({}, COMMENT_CHANGE)).toEqual({
+        delivered: false,
+        reason: 'suppressed-focus'
+      })
+    })
+
+    it('dedupes per task and kind, so one poll can report several tasks', async () => {
+      registerWithActiveCollab({ activeCollabComments: true, activeCollabDue: true })
+      const handler = getDispatchHandler()
+
+      expect(await handler({}, COMMENT_CHANGE)).toEqual({ delivered: true })
+      expect(
+        await handler({}, { ...COMMENT_CHANGE, dedupeKey: 'activecollab:2:comments' })
+      ).toEqual({ delivered: true })
+      expect(
+        await handler(
+          {},
+          {
+            source: 'activecollab-due',
+            dedupeKey: 'activecollab:1:due',
+            activeCollab: {
+              taskName: 'Fix the header',
+              projectName: 'Muster',
+              duePhrase: 'Overdue'
+            }
+          }
+        )
+      ).toEqual({ delivered: true })
+
+      // The same task and kind twice inside the burst window is still one banner.
+      expect(await handler({}, COMMENT_CHANGE)).toEqual({ delivered: false, reason: 'cooldown' })
+    })
+  })
+
   describe('minimized tray attention dot', () => {
     function registerEnabledNotifications(): void {
       registerNotificationHandlers({

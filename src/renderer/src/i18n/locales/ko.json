@@ -8209,7 +8209,15 @@
             "72539aede4": "시스템",
             "51ae2183e1": "데스크탑",
             "0534c76311": "Muster 데스크톱 알림용 마스터 스위치입니다.",
-            "4a210b2f72": "알림 활성화"
+            "4a210b2f72": "알림 활성화",
+            "activeCollabAssigned": "Task Assigned To You",
+            "activeCollabAssignedDescription": "Notify when a task you were not assigned before shows up on your ActiveCollab list.",
+            "activeCollabComments": "New Comments",
+            "activeCollabCommentsDescription": "Notify when someone comments on an ActiveCollab task assigned to you.",
+            "activeCollabDue": "Due Date Getting Closer",
+            "activeCollabDueDescription": "Notify when an assigned ActiveCollab task moves into a nearer due window, up to overdue.",
+            "activeCollabUpdated": "Task Details Edited",
+            "activeCollabUpdatedDescription": "Notify when an assigned ActiveCollab task is edited without a new comment."
           }
         },
         "orchestration": {
@@ -9488,6 +9496,18 @@
             "install_ok": "Wrote the \"{{value0}}\" entry to {{value1}}.",
             "seed_ok": "Wrote credentials for {{value0}} to {{value1}}."
           }
+        },
+        "ActiveCollabNotificationSection": {
+          "group": "ActiveCollab Tasks",
+          "groupDescription": "ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every 3 minutes in the background while any of these are on.",
+          "assigned": "Task Assigned To You",
+          "assignedDescription": "A task you were not assigned before shows up on your ActiveCollab task list.",
+          "comments": "New Comments",
+          "commentsDescription": "Someone posts a comment on a task assigned to you.",
+          "due": "Due Date Getting Closer",
+          "dueDescription": "An assigned task moves into a nearer due window — this week, then tomorrow, then today, then overdue.",
+          "updated": "Task Details Edited",
+          "updatedDescription": "An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed."
         }
       },
       "right": {
@@ -13942,7 +13962,10 @@
           "open_image": "Open {{value0}}",
           "previous_image": "Previous image",
           "image_position": "{{value0}} of {{value1}}",
-          "next_image": "Next image"
+          "next_image": "Next image",
+          "download": "Download {{value0}}",
+          "downloading": "Downloading…",
+          "download_saved": "Saved to {{value0}}"
         },
         "project_binding": {
           "search": "Search ActiveCollab projects...",

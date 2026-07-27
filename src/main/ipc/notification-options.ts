@@ -43,6 +43,10 @@ export function buildNotificationOptions(args: NotificationDispatchRequest): {
     }
   }
 
+  if (args.source.startsWith('activecollab-')) {
+    return buildActiveCollabNotificationOptions(args)
+  }
+
   if (args.source === 'test') {
     return {
       title: 'Muster notifications are on',
@@ -56,6 +60,42 @@ export function buildNotificationOptions(args: NotificationDispatchRequest): {
   }
 
   return buildAgentTaskCompleteFallbackNotificationOptions(args)
+}
+
+/**
+ * Task name first: it is the only part that tells the reader WHICH of their tasks this is, and a
+ * macOS banner truncates the tail. The project follows in the body, because two tasks called
+ * "Homepage" in two projects are otherwise the same notification.
+ */
+function buildActiveCollabNotificationOptions(args: NotificationDispatchRequest): {
+  title: string
+  body: string
+} {
+  const task = args.activeCollab
+  const name = normalizeNotificationText(task?.taskName, NOTIFICATION_TITLE_CONTEXT_MAX_LENGTH)
+  const taskName = name.length > 0 ? name : 'a task'
+  const project = normalizeNotificationText(
+    task?.projectName,
+    NOTIFICATION_TITLE_CONTEXT_MAX_LENGTH
+  )
+  const body = project.length > 0 ? project : 'ActiveCollab'
+  if (args.source === 'activecollab-comments') {
+    const count = task?.newComments ?? 1
+    return {
+      title: `${count} new comment${count === 1 ? '' : 's'}: ${taskName}`,
+      body
+    }
+  }
+  if (args.source === 'activecollab-due') {
+    return { title: `${task?.duePhrase ?? 'Due soon'}: ${taskName}`, body }
+  }
+  if (args.source === 'activecollab-updated') {
+    return { title: `Task updated: ${taskName}`, body }
+  }
+  return {
+    title: `Assigned to you: ${taskName}`,
+    body: task?.duePhrase ? `${body} · ${task.duePhrase}` : body
+  }
 }
 
 function buildAgentTaskCompleteNotificationOptions(

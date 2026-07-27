@@ -9,6 +9,7 @@ import {
   useMacNotificationPermissionState
 } from '@/components/notifications/mac-notification-permission-card'
 import { NotificationSettingToggle } from './NotificationSettingToggle'
+import { ActiveCollabNotificationSection } from './ActiveCollabNotificationSection'
 import { NotificationSoundSection } from './NotificationSoundSection'
 import {
   createNotificationVolumeDraftState,
@@ -180,6 +181,14 @@ export function NotificationsPane({
             siteRunComplete: !notificationSettings.siteRunComplete
           })
         }
+      />
+
+      <Separator />
+
+      <ActiveCollabNotificationSection
+        notificationSettings={notificationSettings}
+        notificationsEnabled={notificationSettings.enabled}
+        onUpdateNotificationSettings={updateNotificationSettings}
       />
 
       <Separator />

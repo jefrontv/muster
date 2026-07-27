@@ -40,6 +40,9 @@ function stubHttp(routes: Record<string, Route>, gate?: Promise<void>): StubHttp
       },
       requestBinary(): never {
         throw new Error('requestBinary is not stubbed for project members')
+      },
+      requestStream(): never {
+        throw new Error('requestStream is not stubbed for project members')
       }
     }
   }
@@ -200,7 +203,8 @@ describe('degradation', () => {
         }
         return http.client.request<T>(path, options)
       },
-      requestBinary: http.client.requestBinary
+      requestBinary: http.client.requestBinary,
+      requestStream: http.client.requestStream
     }
     let clock = 1_000_000
     const loader = acProjectMembers({

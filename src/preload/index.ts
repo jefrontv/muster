@@ -1922,6 +1922,7 @@ const api = {
     listProjects: () => ipcRenderer.invoke('activecollab:listProjects'),
     getTaskDetail: (args) => ipcRenderer.invoke('activecollab:getTaskDetail', args),
     getAttachmentImage: (args) => ipcRenderer.invoke('activecollab:getAttachmentImage', args),
+    downloadAttachment: (args) => ipcRenderer.invoke('activecollab:downloadAttachment', args),
     updateTask: (args) => ipcRenderer.invoke('activecollab:updateTask', args),
     completeTask: (args) => ipcRenderer.invoke('activecollab:completeTask', args),
     reopenTask: (args) => ipcRenderer.invoke('activecollab:reopenTask', args),
