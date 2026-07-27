@@ -1,5 +1,5 @@
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
-import { acIsRecord } from './codecs'
+import { acIsRecord, acMimeEssence } from './codecs'
 
 export type AcRequestOptions = {
   method?: 'GET' | 'POST' | 'PUT'
@@ -17,10 +17,32 @@ export type AcResponse<T> = {
   perPage: number | null
 }
 
+export type AcBinaryRequest = {
+  /** Hard ceiling on buffered bytes, enforced against what ACTUALLY arrives. */
+  maxBytes: number
+  /** Consulted on the response Content-Type before a single body byte is buffered. */
+  acceptMime: (mimeType: string) => boolean
+  signal?: AbortSignal
+}
+
+/**
+ * Transport faults still THROW `ActiveCollabApiError` so a 401 keeps mapping to "reconnect". Only
+ * the two policy refusals come back as data, because phrasing them belongs to the caller.
+ */
+export type AcBinaryResponse =
+  | { ok: true; mimeType: string; bytes: Uint8Array }
+  | { ok: false; reason: 'unsupported-media'; mimeType: string }
+  | { ok: false; reason: 'too-large' }
+
 export type AcFetch = (input: string, init: RequestInit) => Promise<Response>
 
 export type AcHttpClient = {
   request<T>(path: string, options?: AcRequestOptions): Promise<AcResponse<T>>
+  /**
+   * One-shot authenticated GET of a binary body, bounded by `maxBytes`. Deliberately not retried:
+   * replaying a download costs far more than replaying a JSON read, and the caller can ask again.
+   */
+  requestBinary(path: string, options: AcBinaryRequest): Promise<AcBinaryResponse>
 }
 
 export type AcHttpArgs = {
@@ -220,6 +242,48 @@ async function acFetchOnce(
   }
 }
 
+/**
+ * Buffer at most `maxBytes`, counting the bytes that ACTUALLY arrive. Content-Length is never
+ * trusted: it can lie, it is absent under chunked encoding, and a truncated header must not be
+ * able to talk us into holding a body larger than the cap.
+ */
+async function acReadBounded(
+  response: Response,
+  maxBytes: number,
+  mimeType: string
+): Promise<AcBinaryResponse> {
+  const body = response.body
+  if (body === null) {
+    return { ok: true, mimeType, bytes: new Uint8Array(0) }
+  }
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  try {
+    for (;;) {
+      const chunk = await reader.read()
+      if (chunk.done) {
+        break
+      }
+      total += chunk.value.byteLength
+      if (total > maxBytes) {
+        await reader.cancel()
+        return { ok: false, reason: 'too-large' }
+      }
+      chunks.push(chunk.value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return { ok: true, mimeType, bytes }
+}
+
 export function createAcHttp(args: AcHttpArgs): AcHttpClient {
   const baseUrl = normalizeAcBaseUrl(args.baseUrl)
   const token = args.token
@@ -261,5 +325,24 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
     }
   }
 
-  return { request }
+  async function requestBinary(path: string, options: AcBinaryRequest): Promise<AcBinaryResponse> {
+    const headers: Record<string, string> = { Accept: '*/*' }
+    if (token) {
+      headers['X-Angie-AuthApiToken'] = token
+    }
+    const init: RequestInit = { method: 'GET', headers, signal: options.signal }
+    const response = await acFetchOnce(fetchImpl, acUrl(baseUrl, path, undefined), init, token)
+    if (!response.ok) {
+      throw acError(response.status, await acReadBody(response), token)
+    }
+    const mimeType = acMimeEssence(response.headers.get('content-type'))
+    if (!options.acceptMime(mimeType)) {
+      // Refused on the header alone: a 200 MB video must not be buffered just to be rejected.
+      await cancelUnreadResponseBody(response)
+      return { ok: false, reason: 'unsupported-media', mimeType }
+    }
+    return acReadBounded(response, options.maxBytes, mimeType)
+  }
+
+  return { request, requestBinary }
 }

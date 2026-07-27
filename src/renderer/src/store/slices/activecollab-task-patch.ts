@@ -125,6 +125,7 @@ export function appendActiveCollabCommentInCaches(
 ): Partial<TaskCaches> {
   return editTaskCaches(state, taskId, cachePrefix, {
     detail: (detail) => ({
+      ...detail,
       task: { ...detail.task, commentCount: detail.task.commentCount + 1 },
       comments: [...detail.comments, comment]
     }),

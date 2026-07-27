@@ -6862,7 +6862,9 @@
           "dd67a1b6e1": "タスクのソース ピッカーとサイドバーのショートカットに GitLab を表示します。",
           "7c5d7fdc20": "GitLab",
           "1db47236cd": "タスクのソース ピッカーとサイドバーのショートカットに GitHub を表示します。",
-          "e14063e727": "GitHub"
+          "e14063e727": "GitHub",
+          "activecollabLabel": "ActiveCollab",
+          "activecollabDescription": "Show ActiveCollab in the Tasks source picker and sidebar shortcuts."
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "ペイン分割線の太さ。",
@@ -13846,7 +13848,15 @@
           "empty_title": "No tasks assigned",
           "empty_body": "Nothing open is assigned to you in ActiveCollab right now.",
           "list_label": "ActiveCollab tasks assigned to you",
-          "load_more": "Load more tasks"
+          "load_more": "Load more tasks",
+          "row_overdue": "overdue {{value0}}",
+          "row_due_today": "due today {{value0}}",
+          "due_overdue": "Overdue",
+          "due_today": "Today"
+        },
+        "attachments": {
+          "retry": "Retry",
+          "loading": "Loading {{value0}}"
         }
       },
       "TaskPageActiveCollabPanel": {

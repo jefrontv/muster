@@ -30,6 +30,10 @@ function stubHttp(routes: Record<string, Reply | ActiveCollabApiError>): StubHtt
           page: route.page ?? null,
           perPage: route.perPage ?? null
         }
+      },
+      // Nothing under test here downloads bytes; attachment-image.test.ts stubs the real thing.
+      requestBinary(): never {
+        throw new Error('requestBinary is not stubbed for task reads')
       }
     }
   }
@@ -67,6 +71,30 @@ const COMMENT = {
   created_on: CREATED_ON,
   created_by_id: 42
 }
+
+// The pair verified on the target instance, hanging off task 509311 in project 5849.
+const TASK_ATTACHMENTS = [
+  {
+    id: 249086,
+    class: 'LocalAttachment',
+    name: 'screenshot.jpg',
+    mime_type: 'image/jpeg',
+    size: 560295,
+    md5: 'd41d8cd98f00b204e9800998ecf8427e',
+    url_path: '/attachments/249086',
+    parent_type: 'Task',
+    parent_id: 509311
+  },
+  {
+    id: 249087,
+    class: 'LocalAttachment',
+    name: 'diagram.png',
+    mime_type: 'image/png',
+    size: 29789,
+    parent_type: 'Task',
+    parent_id: 509311
+  }
+]
 
 describe('listAssignedTasks', () => {
   it('normalises a task row into the shape the rest of Muster consumes', async () => {
@@ -234,7 +262,8 @@ describe('getTaskDetail', () => {
         createdOn: CREATED_ON * 1000,
         createdById: 42,
         // Only an author id is on the wire, so no name is invented.
-        createdByName: null
+        createdByName: null,
+        attachments: []
       }
     ])
     expect(http.calls.map((call) => call.path)).toEqual(['projects/3790/tasks/509323'])
@@ -276,5 +305,51 @@ describe('getTaskDetail', () => {
     await expect(
       getTaskDetail({ http: http.client, projectId: 3790, taskId: 509323 })
     ).rejects.toThrow('ActiveCollab task 509323 was not found in project 3790.')
+  })
+
+  it('reads task attachments from the top-level sidecar and comment attachments from the row', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks/509323': {
+        data: {
+          single: OPEN_TASK,
+          comments: [{ ...COMMENT, attachments: [TASK_ATTACHMENTS[1]] }],
+          attachments: TASK_ATTACHMENTS
+        }
+      }
+    })
+
+    const detail = await getTaskDetail({ http: http.client, projectId: 3790, taskId: 509323 })
+
+    expect(detail.attachments).toEqual([
+      { id: 249086, name: 'screenshot.jpg', mimeType: 'image/jpeg', size: 560295, isImage: true },
+      { id: 249087, name: 'diagram.png', mimeType: 'image/png', size: 29789, isImage: true }
+    ])
+    // A comment carries its own list, never the task's.
+    expect(detail.comments[0].attachments).toEqual([
+      { id: 249087, name: 'diagram.png', mimeType: 'image/png', size: 29789, isImage: true }
+    ])
+  })
+
+  it('reads attachments nested on the task record when the envelope has no sidecar', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks/509323': {
+        data: { single: { ...OPEN_TASK, attachments: TASK_ATTACHMENTS }, comments: [COMMENT] }
+      }
+    })
+
+    const detail = await getTaskDetail({ http: http.client, projectId: 3790, taskId: 509323 })
+
+    expect(detail.attachments.map((attachment) => attachment.id)).toEqual([249086, 249087])
+    expect(detail.comments[0].attachments).toEqual([])
+  })
+
+  it('answers an empty list when the payload carries no attachments at all', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks/509323': { data: { single: OPEN_TASK, comments: [COMMENT] } }
+    })
+
+    await expect(
+      getTaskDetail({ http: http.client, projectId: 3790, taskId: 509323 })
+    ).resolves.toMatchObject({ attachments: [] })
   })
 })

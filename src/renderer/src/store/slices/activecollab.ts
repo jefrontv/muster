@@ -25,6 +25,12 @@ import {
 } from './activecollab-cache'
 import { activeCollabSupersededFailure } from './activecollab-failure'
 import {
+  createActiveCollabAttachmentImageActions,
+  EMPTY_ACTIVECOLLAB_ATTACHMENT_IMAGES,
+  type ActiveCollabAttachmentImageActions,
+  type ActiveCollabAttachmentImageState
+} from './activecollab-attachment-images'
+import {
   clearActiveCollabInflightReads,
   createActiveCollabReadActions,
   type ActiveCollabReadActions
@@ -52,6 +58,9 @@ const EMPTY_CACHES: ActiveCollabCacheState = {
   activeCollabLabelCache: {}
 }
 
+/** Reset alongside the row caches, but kept apart: image bytes have their own size budget. */
+const EMPTY_IMAGES = EMPTY_ACTIVECOLLAB_ATTACHMENT_IMAGES
+
 let statusReadGeneration = 0
 
 export type ActiveCollabConnectionState = {
@@ -65,7 +74,9 @@ export type ActiveCollabConnectionState = {
 
 export type ActiveCollabSlice = ActiveCollabConnectionState &
   ActiveCollabCacheState &
+  ActiveCollabAttachmentImageState &
   ActiveCollabReadActions &
+  ActiveCollabAttachmentImageActions &
   ActiveCollabWriteActions & {
     checkActiveCollabConnection: () => Promise<void>
     connectActiveCollab: (
@@ -84,7 +95,9 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
   activeCollabConnecting: false,
   activeCollabLastError: null,
   ...EMPTY_CACHES,
+  ...EMPTY_IMAGES,
   ...createActiveCollabReadActions(set, get),
+  ...createActiveCollabAttachmentImageActions(set, get),
   ...createActiveCollabWriteActions(set, get),
 
   checkActiveCollabConnection: async () => {
@@ -148,6 +161,7 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
     // adds a round trip that can land later and overwrite a correct state with a staler one.
     set({
       ...EMPTY_CACHES,
+      ...EMPTY_IMAGES,
       activeCollabStatus: { configured: true, connection: result.value, reason: '' },
       activeCollabStatusChecked: true,
       activeCollabStatusContextKey: contextKey,
@@ -172,6 +186,7 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
     clearActiveCollabInflightReads()
     set({
       ...EMPTY_CACHES,
+      ...EMPTY_IMAGES,
       activeCollabStatus: result.ok ? result.value : DISCONNECTED_STATUS,
       activeCollabStatusChecked: true,
       activeCollabStatusContextKey: contextKey,

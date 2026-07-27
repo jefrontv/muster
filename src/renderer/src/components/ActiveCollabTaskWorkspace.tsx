@@ -1,11 +1,13 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { LoaderCircle, RefreshCw } from 'lucide-react'
 
+import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
 import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
-import CommentMarkdown from '@/components/sidebar/CommentMarkdown'
+import CommentMarkdown, { type ActiveCollabHtmlOptions } from '@/components/sidebar/CommentMarkdown'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
+import { useAppStore } from '@/store'
 import type { ActiveCollabFailure } from '../../../shared/activecollab-api-types'
 import { ActiveCollabCommentThread } from './activecollab-task-comment-thread'
 import { useActiveCollabTaskDetail } from './activecollab-task-detail-state'
@@ -52,6 +54,10 @@ export function ActiveCollabTaskWorkspace({
     projectId,
     taskId
   )
+  // Mentions, callouts and unauthenticable inline images all resolve against the instance. Kept
+  // stable so a write-pending rerender does not reparse every body through CommentMarkdown.
+  const instanceUrl = useAppStore((s) => s.activeCollabStatus.connection?.instanceUrl ?? null)
+  const activeCollabHtml = useMemo<ActiveCollabHtmlOptions>(() => ({ instanceUrl }), [instanceUrl])
   const writes = useActiveCollabTaskWrites({
     projectId,
     taskId,
@@ -89,7 +95,7 @@ export function ActiveCollabTaskWorkspace({
     )
   }
 
-  const { task, comments } = detail
+  const { task, comments, attachments } = detail
   const body = task.bodyHtml.trim()
   // A failed write or a failed refetch leaves the loaded task on screen.
   const notice = writes.failure ?? failure
@@ -127,6 +133,7 @@ export function ActiveCollabTaskWorkspace({
             <CommentMarkdown
               content={body}
               variant="document"
+              activeCollabHtml={activeCollabHtml}
               className="text-[14px] leading-relaxed"
             />
           ) : (
@@ -137,10 +144,12 @@ export function ActiveCollabTaskWorkspace({
               )}
             </p>
           )}
+          <ActiveCollabAttachmentGrid attachments={attachments} />
         </section>
 
         <ActiveCollabCommentThread
           comments={comments}
+          activeCollabHtml={activeCollabHtml}
           disabled={writes.pending !== null}
           busy={writes.pending === 'comment'}
           onSubmit={(bodyHtml) => void writes.addComment(bodyHtml)}

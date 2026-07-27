@@ -18,6 +18,7 @@ import type {
   ActiveCollabTaskUpdate
 } from '../../../shared/activecollab-types'
 import type {
+  ActiveCollabAttachmentImage,
   ActiveCollabConnectArgs,
   ActiveCollabResult,
   ActiveCollabTaskRef
@@ -144,6 +145,19 @@ export async function activeCollabGetTaskDetail(
 ): Promise<ActiveCollabResult<ActiveCollabTaskDetail>> {
   return callActiveCollab('activecollab.getTaskDetail', args, settings, OPERATION_TIMEOUT_MS, () =>
     window.api.activecollab.getTaskDetail(args)
+  )
+}
+
+export async function activeCollabGetAttachmentImage(
+  args: { attachmentId: number },
+  settings?: RuntimeActiveCollabSettings
+): Promise<ActiveCollabResult<ActiveCollabAttachmentImage>> {
+  return callActiveCollab(
+    'activecollab.getAttachmentImage',
+    args,
+    settings,
+    OPERATION_TIMEOUT_MS,
+    () => window.api.activecollab.getAttachmentImage(args)
   )
 }
 

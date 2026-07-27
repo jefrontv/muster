@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import { LoaderCircle, Send } from 'lucide-react'
 
-import CommentMarkdown from '@/components/sidebar/CommentMarkdown'
+import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
+import CommentMarkdown, { type ActiveCollabHtmlOptions } from '@/components/sidebar/CommentMarkdown'
 import { Button } from '@/components/ui/button'
 import {
   getCommentBodySubmitState,
@@ -32,6 +33,8 @@ export function activeCollabCommentBodyHtml(text: string): string {
 
 type ActiveCollabCommentThreadProps = {
   comments: ActiveCollabComment[]
+  /** Instance context, so a comment body resolves mentions and images like the task body does. */
+  activeCollabHtml: ActiveCollabHtmlOptions
   disabled: boolean
   busy: boolean
   onSubmit: (bodyHtml: string) => void
@@ -39,6 +42,7 @@ type ActiveCollabCommentThreadProps = {
 
 export function ActiveCollabCommentThread({
   comments,
+  activeCollabHtml,
   disabled,
   busy,
   onSubmit
@@ -93,8 +97,10 @@ export function ActiveCollabCommentThread({
               <div className="px-3 py-2">
                 <CommentMarkdown
                   content={comment.bodyHtml}
+                  activeCollabHtml={activeCollabHtml}
                   className="text-[13px] leading-relaxed"
                 />
+                <ActiveCollabAttachmentGrid attachments={comment.attachments} />
               </div>
             </article>
           ))}

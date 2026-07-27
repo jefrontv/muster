@@ -13,8 +13,17 @@ import {
   isTrustedCompactImageSrc,
   type CommentMarkdownLinkClickHandler
 } from './comment-markdown-element-renderers'
+import {
+  activeCollabMarkdownComponents,
+  activeCollabMarkdownTagNames
+} from './comment-markdown-activecollab-elements'
+import {
+  rehypeActiveCollabHtml,
+  type ActiveCollabHtmlOptions
+} from './comment-markdown-activecollab-html'
 
 export type { CommentMarkdownLinkClickHandler } from './comment-markdown-element-renderers'
+export type { ActiveCollabHtmlOptions } from './comment-markdown-activecollab-html'
 
 type MarkdownPlugins = NonNullable<React.ComponentProps<typeof Markdown>['rehypePlugins']>
 type UrlTransform = NonNullable<React.ComponentProps<typeof Markdown>['urlTransform']>
@@ -179,12 +188,22 @@ const commentMarkdownSanitizeSchema = {
 // `<br />`). Parse it, then sanitize immediately before React renders it.
 const rehypePlugins: MarkdownPlugins = [rehypeRaw, [rehypeSanitize, commentMarkdownSanitizeSchema]]
 
+// Why: ActiveCollab bodies carry mentions and callouts as `class`, which the schema above strips.
+// The pre-sanitise transform consumes those classes and re-emits two attribute-free tags, so the
+// widening is exactly two element names — never `class` itself.
+const activeCollabSanitizeSchema = {
+  ...commentMarkdownSanitizeSchema,
+  tagNames: [...commentMarkdownSanitizeSchema.tagNames, ...activeCollabMarkdownTagNames]
+}
+
 type CommentMarkdownProps = React.ComponentPropsWithoutRef<'div'> & {
   content: string
   variant?: 'compact' | 'document'
   githubRepo?: GitHubRepoReference | null
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
+  /** Opts a provider body into the ActiveCollab mention/callout/inline-image handling. */
+  activeCollabHtml?: ActiveCollabHtmlOptions | null
 }
 
 // Why forwardRef + rest props: Radix's HoverCardTrigger asChild merges a ref
@@ -199,23 +218,37 @@ const CommentMarkdown = React.memo(
       githubRepo,
       onLinkClick,
       allowFileUriLinks = false,
+      activeCollabHtml,
       ...rest
     },
     ref
   ) {
+    const activeCollabInstanceUrl = activeCollabHtml ? activeCollabHtml.instanceUrl : null
+    const usesActiveCollabHtml = activeCollabHtml != null
     const components = React.useMemo(() => {
-      if (!onLinkClick) {
-        return variant === 'document'
+      const base = onLinkClick
+        ? variant === 'document'
+          ? createDocumentCommentMarkdownComponents(onLinkClick)
+          : createCompactCommentMarkdownComponents(onLinkClick)
+        : variant === 'document'
           ? documentCommentMarkdownComponents
           : compactCommentMarkdownComponents
-      }
-      return variant === 'document'
-        ? createDocumentCommentMarkdownComponents(onLinkClick)
-        : createCompactCommentMarkdownComponents(onLinkClick)
-    }, [variant, onLinkClick])
+      return usesActiveCollabHtml ? { ...base, ...activeCollabMarkdownComponents } : base
+    }, [variant, onLinkClick, usesActiveCollabHtml])
     const activeRemarkPlugins = React.useMemo(
       () => (githubRepo ? [...remarkPlugins, remarkGitHubReferences(githubRepo)] : remarkPlugins),
       [githubRepo]
+    )
+    const activeRehypePlugins = React.useMemo(
+      () =>
+        usesActiveCollabHtml
+          ? ([
+              rehypeRaw,
+              rehypeActiveCollabHtml({ instanceUrl: activeCollabInstanceUrl }),
+              [rehypeSanitize, activeCollabSanitizeSchema]
+            ] as MarkdownPlugins)
+          : rehypePlugins,
+      [usesActiveCollabHtml, activeCollabInstanceUrl]
     )
 
     return (
@@ -233,7 +266,7 @@ const CommentMarkdown = React.memo(
       >
         <Markdown
           remarkPlugins={activeRemarkPlugins}
-          rehypePlugins={rehypePlugins}
+          rehypePlugins={activeRehypePlugins}
           components={components}
           urlTransform={
             allowFileUriLinks ? commentMarkdownFileUriUrlTransform : commentMarkdownUrlTransform

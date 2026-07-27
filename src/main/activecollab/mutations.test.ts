@@ -30,6 +30,10 @@ function stubHttp(routes: Record<string, Reply | ActiveCollabApiError>): StubHtt
           page: route.page ?? null,
           perPage: route.perPage ?? null
         }
+      },
+      // No write downloads bytes; attachment-image.test.ts stubs the real binary path.
+      requestBinary(): never {
+        throw new Error('requestBinary is not stubbed for task writes')
       }
     }
   }
@@ -236,7 +240,8 @@ describe('postComment', () => {
       bodyPlainText: 'Shipped',
       createdOn: 1769385600000,
       createdById: 42,
-      createdByName: null
+      createdByName: null,
+      attachments: []
     })
   })
 

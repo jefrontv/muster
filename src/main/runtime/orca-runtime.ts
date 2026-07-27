@@ -700,6 +700,7 @@ import {
   acCompleteTask,
   acConnect,
   acDisconnect,
+  acGetAttachmentImage,
   acGetTaskDetail,
   acListAssignedTasks,
   acListLabels,
@@ -709,7 +710,10 @@ import {
   acStatus,
   acUpdateTask
 } from '../ipc/activecollab'
-import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
+import type {
+  ActiveCollabAttachmentImage,
+  ActiveCollabResult
+} from '../../shared/activecollab-api-types'
 import type {
   ActiveCollabComment,
   ActiveCollabConnection,
@@ -29920,6 +29924,12 @@ export class OrcaRuntimeService {
 
   activeCollabGetTaskDetail(args: unknown): Promise<ActiveCollabResult<ActiveCollabTaskDetail>> {
     return acGetTaskDetail(args)
+  }
+
+  activeCollabGetAttachmentImage(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabAttachmentImage>> {
+    return acGetAttachmentImage(args)
   }
 
   activeCollabUpdateTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {

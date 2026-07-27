@@ -31,6 +31,7 @@ import {
   type ActiveCollabStoreGet,
   type ActiveCollabStoreSet
 } from './activecollab-cache'
+import { clearActiveCollabAttachmentImageFetches } from './activecollab-attachment-images'
 import { shouldRefreshStatusAfterFailure } from './activecollab-failure'
 import type { ActiveCollabTaskPageRows } from './activecollab-task-patch'
 
@@ -64,6 +65,7 @@ export function clearActiveCollabInflightReads(): void {
   inflightProjects.clear()
   inflightTaskDetails.clear()
   inflightLabels.clear()
+  clearActiveCollabAttachmentImageFetches()
 }
 
 async function runCachedRead<T>(args: {

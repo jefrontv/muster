@@ -2,12 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 
 import { ActiveCollabConnectDialog } from '@/components/activecollab-connect-dialog'
-import { formatActiveCollabDueDate } from '@/components/activecollab-task-due-date'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Button } from '@/components/ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
-import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { getActiveCollabReadScope } from '@/store/slices/activecollab-cache'
 import { selectActiveCollabAssignedTasks } from './task-page-activecollab-cache-selectors'
@@ -15,11 +13,15 @@ import {
   deriveActiveCollabTaskListState,
   type ActiveCollabTaskListError
 } from './task-page-activecollab-load-state'
+import {
+  groupActiveCollabTasksByProject,
+  type ActiveCollabTaskGroup
+} from './task-page-activecollab-task-grouping'
+import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
 import type {
   ActiveCollabFailure,
   ActiveCollabTaskRef
 } from '../../../shared/activecollab-api-types'
-import type { ActiveCollabLabel, ActiveCollabTask } from '../../../shared/activecollab-types'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 
 type ActiveCollabTaskListProps = {
@@ -45,98 +47,46 @@ const INITIAL_LOAD: ActiveCollabTaskListLoad = {
 }
 
 /**
- * Everything the row shows also has to be announced, so the label carries the project, due day, and
- * labels that the visual row splits across columns.
+ * A project heading and its tasks are one unit for assistive tech: the heading names the group's
+ * list through `aria-labelledby`, so entering the list announces the project instead of leaving the
+ * rows as an unlabelled run. The count is decoration — the list element already reports its length,
+ * and folding a bare number into the heading text would have it read as part of the project name.
  */
-function taskRowAccessibleName(task: ActiveCollabTask, dueLabel: string | null): string {
-  const parts = [
-    translate('auto.components.activecollab.task_list.row_name', '{{value0}} in {{value1}}', {
-      value0: task.name,
-      value1: task.projectName
-    })
-  ]
-  if (dueLabel) {
-    parts.push(
-      translate('auto.components.activecollab.task_list.row_due', 'due {{value0}}', {
-        value0: dueLabel
-      })
-    )
-  }
-  if (task.labels.length > 0) {
-    parts.push(
-      translate('auto.components.activecollab.task_list.row_labels', 'labels {{value0}}', {
-        value0: task.labels.map((label) => label.name).join(', ')
-      })
-    )
-  }
-  return parts.join(', ')
-}
-
-function ActiveCollabLabelChip({ label }: { label: ActiveCollabLabel }): React.JSX.Element {
-  // Instance-defined hex, so it can only be an inline style; null falls back to the neutral chip.
-  return (
-    <span
-      data-testid="activecollab-task-label"
-      className={cn(
-        'max-w-[120px] shrink-0 truncate rounded-full border px-1.5 py-0.5 text-[10px]',
-        !label.color && 'border-border/50 bg-muted/35 text-muted-foreground'
-      )}
-      style={label.color ? { borderColor: label.color, color: label.color } : undefined}
-    >
-      {label.name}
-    </span>
-  )
-}
-
-function ActiveCollabTaskRow({
+function ActiveCollabTaskGroupSection({
+  group,
+  now,
   onSelect,
-  selected,
-  task
+  selectedTaskId
 }: {
+  group: ActiveCollabTaskGroup
+  now: number
   onSelect: (ref: ActiveCollabTaskRef) => void
-  selected: boolean
-  task: ActiveCollabTask
+  selectedTaskId: number | null
 }): React.JSX.Element {
-  // `dueOn` is already anchored to the local calendar day; re-deriving it from UTC would read a
-  // day early east of UTC.
-  const due = formatActiveCollabDueDate(task.dueOn)
-
+  const headingId = `activecollab-task-group-${group.projectId}`
   return (
-    <li>
-      <button
-        type="button"
-        aria-current={selected ? 'true' : undefined}
-        aria-label={taskRowAccessibleName(task, due?.label ?? null)}
-        onClick={() => onSelect({ projectId: task.projectId, taskId: task.id })}
-        className={cn(
-          'grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
-          selected && 'bg-accent'
-        )}
+    <section className="border-t border-border/50 first:border-t-0">
+      <h3
+        id={headingId}
+        className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/50 bg-background/95 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur"
       >
-        <span className="min-w-0">
-          <span className="block truncate text-[13px] font-medium text-foreground">
-            {task.name}
-          </span>
-          <span className="mt-1 flex min-w-0 items-center gap-1.5">
-            <span className="min-w-0 truncate text-[11px] text-muted-foreground">
-              {task.projectName}
-            </span>
-            {task.labels.map((label) => (
-              <ActiveCollabLabelChip key={label.id} label={label} />
-            ))}
-          </span>
+        <span className="min-w-0 truncate">{group.projectName}</span>
+        <span aria-hidden="true" className="shrink-0 tabular-nums">
+          {group.tasks.length}
         </span>
-        {due ? (
-          <time dateTime={due.iso} className="shrink-0 text-[12px] text-muted-foreground">
-            {due.label}
-          </time>
-        ) : (
-          <span className="shrink-0 text-[12px] text-muted-foreground">
-            {translate('auto.components.activecollab.task_list.no_due_date', 'No due date')}
-          </span>
-        )}
-      </button>
-    </li>
+      </h3>
+      <ul aria-labelledby={headingId} className="divide-y divide-border/50">
+        {group.tasks.map((task) => (
+          <ActiveCollabTaskRow
+            key={task.id}
+            now={now}
+            onSelect={onSelect}
+            selected={task.id === selectedTaskId}
+            task={task}
+          />
+        ))}
+      </ul>
+    </section>
   )
 }
 
@@ -244,12 +194,16 @@ export function ActiveCollabTaskList({
     failure: scoped ? load.failure : null
   })
 
+  // One clock reading feeds every row, so a render that straddles midnight cannot label two tasks
+  // due the same day differently.
+  const now = Date.now()
+  const groups = useMemo(() => groupActiveCollabTasksByProject(rows.tasks), [rows.tasks])
   const retry = useCallback(() => void loadPage(1, true), [loadPage])
   const openConnect = useCallback(() => setConnectOpen(true), [])
   const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <ActiveCollabConnectDialog
         open={connectOpen}
         onOpenChange={setConnectOpen}
@@ -288,23 +242,24 @@ export function ActiveCollabTaskList({
 
       {state.kind === 'ready' ? (
         <>
-          <ul
-            role="list"
+          <div
+            role="group"
             aria-label={translate(
               'auto.components.activecollab.task_list.list_label',
               'ActiveCollab tasks assigned to you'
             )}
-            className="divide-y divide-border/50"
+            className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto"
           >
-            {state.tasks.map((task) => (
-              <ActiveCollabTaskRow
-                key={task.id}
+            {groups.map((group) => (
+              <ActiveCollabTaskGroupSection
+                key={group.projectId}
+                group={group}
+                now={now}
                 onSelect={onSelect}
-                selected={task.id === selectedTaskId}
-                task={task}
+                selectedTaskId={selectedTaskId}
               />
             ))}
-          </ul>
+          </div>
           {state.hasMore ? (
             <div className="border-t border-border/50 p-2">
               <Button

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { acDateForWrite, acEpochToLocalDay, acLabelNames, acLabels, acNullableId } from './codecs'
+import {
+  acAttachments,
+  acDateForWrite,
+  acEpochToLocalDay,
+  acLabelNames,
+  acLabels,
+  acMimeEssence,
+  acNullableId
+} from './codecs'
 
 // 2026-07-27T00:00:00Z — a real `due_on` from the target instance, and like
 // every other one it is exactly UTC midnight.
@@ -191,5 +199,79 @@ describe('acLabelNames', () => {
         { id: 0, name: 'Backend', color: null }
       ])
     ).toEqual(['Urgent', 'Backend'])
+  })
+})
+
+describe('acMimeEssence', () => {
+  it('strips parameters and case so a Content-Type can be matched against the allowlist', () => {
+    expect(acMimeEssence('image/JPEG; charset=binary')).toBe('image/jpeg')
+    expect(acMimeEssence('  image/png  ')).toBe('image/png')
+    expect(acMimeEssence(';')).toBe('')
+    expect(acMimeEssence(null)).toBe('')
+    expect(acMimeEssence(42)).toBe('')
+  })
+})
+
+describe('acAttachments', () => {
+  // The live row shape from the target instance, tokenised URL sentinels and all.
+  const ATTACHMENT = {
+    id: 249086,
+    class: 'LocalAttachment',
+    name: '  screenshot.jpg  ',
+    mime_type: 'image/jpeg',
+    size: 560295,
+    md5: 'd41d8cd98f00b204e9800998ecf8427e',
+    url_path: '/attachments/249086',
+    thumbnail_url: 'https://projects.example.com/p?token=--THUMBNAIL-TOKEN--&width=--WIDTH--',
+    preview_url: 'https://projects.example.com/p?token=--PREVIEW-TOKEN--',
+    download_url: 'https://projects.example.com/p?token=--DOWNLOAD-TOKEN--',
+    parent_type: 'Task',
+    parent_id: 509311
+  }
+
+  it('normalises the live row and carries no tokenised URL forward', () => {
+    const attachments = acAttachments([ATTACHMENT])
+
+    expect(attachments).toEqual([
+      { id: 249086, name: 'screenshot.jpg', mimeType: 'image/jpeg', size: 560295, isImage: true }
+    ])
+    // Those URLs only work once the API token is pasted into them, so nothing downstream may see
+    // them and be tempted to try.
+    expect(JSON.stringify(attachments)).not.toContain('TOKEN--')
+  })
+
+  it('marks what the renderer will inline and refuses what it will not', () => {
+    const rows = [
+      { id: 1, mime_type: 'image/jpeg' },
+      { id: 2, mime_type: 'image/png' },
+      { id: 3, mime_type: 'image/gif' },
+      { id: 4, mime_type: 'image/webp' },
+      { id: 5, mime_type: 'application/pdf' },
+      // An image by mime type, but markup with a scripting surface — deliberately not inlined.
+      { id: 6, mime_type: 'image/svg+xml' }
+    ]
+
+    expect(acAttachments(rows).map((attachment) => attachment.isImage)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ])
+  })
+
+  it('drops rows with no usable id and tolerates anything that is not an array', () => {
+    expect(
+      acAttachments([{ id: 0 }, { id: -1 }, { mime_type: 'image/png' }, 'nope', null])
+    ).toEqual([])
+    expect(acAttachments(undefined)).toEqual([])
+    expect(acAttachments({ attachments: [ATTACHMENT] })).toEqual([])
+  })
+
+  it('falls back to neutral values when name, size and mime type are absent or nonsense', () => {
+    expect(acAttachments([{ id: 5, size: -3, name: 7 }])).toEqual([
+      { id: 5, name: '', mimeType: '', size: 0, isImage: false }
+    ])
   })
 })

@@ -90,7 +90,8 @@ function comment(id: number): ActiveCollabComment {
     bodyPlainText: 'hi',
     createdOn: 1,
     createdById: 7,
-    createdByName: 'Jake'
+    createdByName: 'Jake',
+    attachments: []
   }
 }
 
@@ -121,8 +122,10 @@ function pageEntry(tasks: ActiveCollabTask[]): CacheEntry<ActiveCollabTaskPageRo
   }
 }
 
-function detailEntry(detail: ActiveCollabTaskDetail): CacheEntry<ActiveCollabTaskDetail> {
-  return { data: detail, fetchedAt: Date.now() }
+function detailEntry(
+  detail: Omit<ActiveCollabTaskDetail, 'attachments'>
+): CacheEntry<ActiveCollabTaskDetail> {
+  return { data: { attachments: [], ...detail }, fetchedAt: Date.now() }
 }
 
 const implicitPageKey = (): string => `${getProviderRuntimeContextKey(null)}::tasks::assigned::1`
@@ -294,12 +297,15 @@ describe('createActiveCollabSlice cache eviction', () => {
     const seeded: Record<string, CacheEntry<ActiveCollabTaskDetail>> = {}
     for (let index = 0; index < MAX_CACHE_ENTRIES; index += 1) {
       seeded[`seed::detail::${index}`] = {
-        data: { task: task(1_000 + index), comments: [] },
+        data: { task: task(1_000 + index), comments: [], attachments: [] },
         fetchedAt: 1_000 + index
       }
     }
     store.setState({ activeCollabTaskDetailCache: seeded })
-    getTaskDetail.mockResolvedValue({ ok: true, value: { task: task(1), comments: [] } })
+    getTaskDetail.mockResolvedValue({
+      ok: true,
+      value: { task: task(1), comments: [], attachments: [] }
+    })
 
     await store.getState().fetchActiveCollabTaskDetail({ projectId: 12, taskId: 1 })
 

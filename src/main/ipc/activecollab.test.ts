@@ -7,6 +7,7 @@ const {
   handleMock,
   removeHandlerMock,
   requestMock,
+  requestBinaryMock,
   createAcHttpMock,
   getCredentialMock,
   getStatusMock,
@@ -17,6 +18,7 @@ const {
   handleMock: vi.fn(),
   removeHandlerMock: vi.fn(),
   requestMock: vi.fn(),
+  requestBinaryMock: vi.fn(),
   createAcHttpMock: vi.fn(),
   getCredentialMock: vi.fn(),
   getStatusMock: vi.fn(),
@@ -47,7 +49,9 @@ vi.mock('../activecollab/auth', () => ({ connectActiveCollab: connectMock }))
 
 vi.mock('./preflight', () => ({ _resetPreflightCache: resetPreflightMock }))
 
+import { AC_MAX_ATTACHMENT_IMAGE_BYTES } from '../activecollab/attachment-image'
 import { ActiveCollabApiError } from '../activecollab/http'
+import { resetAcNameDirectoryCache } from '../activecollab/name-directory'
 import { registerActiveCollabHandlers } from './activecollab'
 
 const CHANNELS = [
@@ -57,6 +61,7 @@ const CHANNELS = [
   'activecollab:listAssignedTasks',
   'activecollab:listProjects',
   'activecollab:getTaskDetail',
+  'activecollab:getAttachmentImage',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
@@ -69,6 +74,7 @@ const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   { channel: 'activecollab:listAssignedTasks', args: undefined },
   { channel: 'activecollab:listProjects', args: undefined },
   { channel: 'activecollab:getTaskDetail', args: { projectId: 3790, taskId: 509323 } },
+  { channel: 'activecollab:getAttachmentImage', args: { attachmentId: 249086 } },
   {
     channel: 'activecollab:updateTask',
     args: { projectId: 3790, taskId: 509323, update: { name: 'Renamed' } }
@@ -149,8 +155,14 @@ beforeEach(() => {
   removeHandlerMock.mockReset()
   requestMock.mockReset()
   requestMock.mockResolvedValue({ data: {}, totalItems: null, page: null, perPage: null })
+  requestBinaryMock.mockReset()
+  requestBinaryMock.mockResolvedValue({
+    ok: true,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([1, 2, 3])
+  })
   createAcHttpMock.mockReset()
-  createAcHttpMock.mockReturnValue({ request: requestMock })
+  createAcHttpMock.mockReturnValue({ request: requestMock, requestBinary: requestBinaryMock })
   getCredentialMock.mockReset()
   getCredentialMock.mockReturnValue(CREDENTIAL)
   getStatusMock.mockReset()
@@ -158,6 +170,8 @@ beforeEach(() => {
   clearCredentialMock.mockReset()
   connectMock.mockReset()
   resetPreflightMock.mockReset()
+  // Module-level and credential-keyed by design, so each test starts from a cold directory.
+  resetAcNameDirectoryCache()
   registerActiveCollabHandlers()
 })
 
@@ -258,7 +272,13 @@ describe('argument validation', () => {
       channel: 'activecollab:updateTask',
       args: { projectId: 3790, taskId: 509323, update: { dueOn: '2026-07-27' } }
     },
-    { name: 'non-numeric page', channel: 'activecollab:listAssignedTasks', args: { page: 'two' } }
+    { name: 'non-numeric page', channel: 'activecollab:listAssignedTasks', args: { page: 'two' } },
+    {
+      name: 'zero attachment id',
+      channel: 'activecollab:getAttachmentImage',
+      args: { attachmentId: 0 }
+    },
+    { name: 'missing attachment id', channel: 'activecollab:getAttachmentImage', args: {} }
   ]
 
   for (const { name, channel, args } of rejected) {
@@ -373,6 +393,184 @@ describe('failure kinds', () => {
     requestMock.mockRejectedValue(new Error('socket hang up'))
     const failure = failureOf(await invoke('activecollab:listProjects'))
     expect(failure).toEqual({ kind: 'unknown', error: 'socket hang up', status: null })
+  })
+})
+
+describe('name resolution', () => {
+  // What the wire actually sends: neither name, on either endpoint. Verified against
+  // ActiveCollab 8.0.31, where 0 of 11 assigned rows carried `project_name` or `assignee_name`.
+  const NAMELESS_ROW = { ...TASK_ROW, project_name: undefined, assignee_id: 407 }
+
+  function serveDirectory(taskPayload: unknown): void {
+    requestMock.mockImplementation(async (path: string) => {
+      const data =
+        path === 'projects'
+          ? [{ id: 3790, name: 'Website Rebuild' }]
+          : path === 'users'
+            ? { users: [{ id: 407, display_name: 'Jake Varrese' }] }
+            : taskPayload
+      return { data, totalItems: null, page: null, perPage: null }
+    })
+  }
+
+  function pathCounts(): Record<string, number> {
+    const counts: Record<string, number> = {}
+    for (const [path] of requestMock.mock.calls) {
+      counts[path as string] = (counts[path as string] ?? 0) + 1
+    }
+    return counts
+  }
+
+  it('fills in both names the list view renders', async () => {
+    serveDirectory({ tasks: [NAMELESS_ROW] })
+
+    const result = await invoke('activecollab:listAssignedTasks')
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { tasks: [{ projectName: 'Website Rebuild', assigneeName: 'Jake Varrese' }] }
+    })
+  })
+
+  it('fills in both names on the detail pane that used to read "Unassigned"', async () => {
+    serveDirectory({ single: NAMELESS_ROW })
+
+    const result = await invoke('activecollab:getTaskDetail', { projectId: 3790, taskId: 509323 })
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: {
+        task: { projectName: 'Website Rebuild', assigneeId: 407, assigneeName: 'Jake Varrese' }
+      }
+    })
+  })
+
+  it('fills in both names on the row a write echoes back into the caches', async () => {
+    serveDirectory({ single: NAMELESS_ROW })
+
+    const result = await invoke('activecollab:completeTask', { taskId: 509323 })
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { projectName: 'Website Rebuild', assigneeName: 'Jake Varrese' }
+    })
+  })
+
+  it('reads each collection once across a page of rows and a follow-up detail call', async () => {
+    serveDirectory({
+      tasks: Array.from({ length: 40 }, (_, i) => ({ ...NAMELESS_ROW, id: i + 1 }))
+    })
+
+    await invoke('activecollab:listAssignedTasks')
+    await invoke('activecollab:getTaskDetail', { projectId: 3790, taskId: 509323 })
+
+    expect(pathCounts()).toMatchObject({ projects: 1, users: 1 })
+  })
+
+  it('reads each collection once when two operations run concurrently', async () => {
+    serveDirectory({ tasks: [NAMELESS_ROW] })
+
+    await Promise.all([
+      invoke('activecollab:listAssignedTasks'),
+      invoke('activecollab:listAssignedTasks', { page: 2 })
+    ])
+
+    expect(pathCounts()).toMatchObject({ projects: 1, users: 1, 'users/42/tasks': 2 })
+  })
+
+  it('still answers the tasks when the roster read fails', async () => {
+    requestMock.mockImplementation(async (path: string) => {
+      if (path === 'users') {
+        throw new ActiveCollabApiError('Access denied', 403, true)
+      }
+      const data =
+        path === 'projects' ? [{ id: 3790, name: 'Website Rebuild' }] : { tasks: [NAMELESS_ROW] }
+      return { data, totalItems: null, page: null, perPage: null }
+    })
+
+    const result = await invoke('activecollab:listAssignedTasks')
+
+    // An admin-gated roster must not become a reconnect prompt over a list that loaded fine.
+    expect(result).toMatchObject({
+      ok: true,
+      value: { tasks: [{ projectName: 'Website Rebuild', assigneeId: 407, assigneeName: null }] }
+    })
+  })
+
+  it('still answers the tasks when the project read fails', async () => {
+    requestMock.mockImplementation(async (path: string) => {
+      if (path === 'projects') {
+        throw new ActiveCollabApiError('Service unavailable', 503, false)
+      }
+      const data =
+        path === 'users'
+          ? { users: [{ id: 407, display_name: 'Jake Varrese' }] }
+          : { tasks: [NAMELESS_ROW] }
+      return { data, totalItems: null, page: null, perPage: null }
+    })
+
+    const result = await invoke('activecollab:listAssignedTasks')
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { tasks: [{ projectName: '', assigneeName: 'Jake Varrese' }] }
+    })
+  })
+
+  it('clears the directory on disconnect, so the next account gets its own names', async () => {
+    serveDirectory({ tasks: [NAMELESS_ROW] })
+    await invoke('activecollab:listAssignedTasks')
+
+    await invoke('activecollab:disconnect')
+    await invoke('activecollab:listAssignedTasks')
+
+    expect(pathCounts()).toMatchObject({ projects: 2, users: 2 })
+  })
+})
+
+describe('attachment images', () => {
+  it('answers a data URL built in main, with the token nowhere in it', async () => {
+    const result = await invoke('activecollab:getAttachmentImage', { attachmentId: 249087 })
+
+    expect(result).toEqual({
+      ok: true,
+      value: { dataUrl: 'data:image/png;base64,AQID', mimeType: 'image/png' }
+    })
+    // The renderer gets bytes, never a credentialled URL.
+    expect(JSON.stringify(result)).not.toContain(CREDENTIAL.token)
+    const [path, options] = requestBinaryMock.mock.calls[0]
+    expect(path).toBe('attachments/249087/download')
+    expect(options.maxBytes).toBe(AC_MAX_ATTACHMENT_IMAGE_BYTES)
+  })
+
+  it('refuses a non-image as invalid-request, not as a reconnect prompt or a retryable fault', async () => {
+    requestBinaryMock.mockResolvedValue({
+      ok: false,
+      reason: 'unsupported-media',
+      mimeType: 'application/pdf'
+    })
+
+    const failure = failureOf(await invoke('activecollab:getAttachmentImage', { attachmentId: 7 }))
+
+    expect(failure.kind).toBe('invalid-request')
+    expect(failure.error).toContain('application/pdf')
+  })
+
+  it('refuses an oversized attachment as invalid-request', async () => {
+    requestBinaryMock.mockResolvedValue({ ok: false, reason: 'too-large' })
+
+    const failure = failureOf(await invoke('activecollab:getAttachmentImage', { attachmentId: 8 }))
+
+    expect(failure.kind).toBe('invalid-request')
+    expect(failure.error).toContain('inline limit')
+  })
+
+  it('still tags a rejected token as auth so the UI prompts a reconnect', async () => {
+    requestBinaryMock.mockRejectedValue(new ActiveCollabApiError('Token expired', 401, true))
+
+    const failure = failureOf(await invoke('activecollab:getAttachmentImage', { attachmentId: 9 }))
+
+    expect(failure).toEqual({ kind: 'auth', error: 'Token expired', status: 401 })
   })
 })
 

@@ -13,9 +13,9 @@
 
 import { ipcMain } from 'electron'
 import type {
+  ActiveCollabAttachmentImage,
   ActiveCollabFailure,
-  ActiveCollabResult,
-  ActiveCollabTaskRef
+  ActiveCollabResult
 } from '../../shared/activecollab-api-types'
 import type {
   ActiveCollabComment,
@@ -25,11 +25,10 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
-  ActiveCollabTaskPage,
-  ActiveCollabTaskUpdate
+  ActiveCollabTaskPage
 } from '../../shared/activecollab-types'
+import { ActiveCollabAttachmentError, getAttachmentImage } from '../activecollab/attachment-image'
 import { connectActiveCollab } from '../activecollab/auth'
-import { acIsRecord } from '../activecollab/codecs'
 import {
   clearActiveCollabCredential,
   getActiveCollabConnectionStatus,
@@ -38,6 +37,12 @@ import {
 } from '../activecollab/credential-store'
 import { ActiveCollabApiError, createAcHttp, type AcHttpClient } from '../activecollab/http'
 import {
+  acNameDirectory,
+  acResolveTaskNames,
+  resetAcNameDirectoryCache,
+  type AcNameDirectoryLoader
+} from '../activecollab/name-directory'
+import {
   completeTask,
   listLabels,
   postComment,
@@ -45,6 +50,20 @@ import {
   updateTask
 } from '../activecollab/mutations'
 import { getTaskDetail, listAssignedTasks, listProjects } from '../activecollab/tasks'
+import {
+  boundedText,
+  InvalidRequestError,
+  MAX_BODY,
+  MAX_EMAIL,
+  MAX_SECRET,
+  MAX_URL,
+  NotConfiguredError,
+  pageNumber,
+  positiveId,
+  record,
+  taskRef,
+  taskUpdate
+} from './activecollab-argument-validation'
 import { _resetPreflightCache } from './preflight'
 
 const ACTIVECOLLAB_CHANNELS = [
@@ -54,114 +73,13 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:listAssignedTasks',
   'activecollab:listProjects',
   'activecollab:getTaskDetail',
+  'activecollab:getAttachmentImage',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
   'activecollab:postComment',
   'activecollab:listLabels'
 ] as const
-
-// ActiveCollab's own columns are far shorter than any of these. The bounds exist so a hostile or
-// wedged renderer cannot stream megabytes into a request body or the credential file.
-const MAX_URL = 2_048
-const MAX_EMAIL = 320
-const MAX_SECRET = 1_024
-const MAX_NAME = 512
-const MAX_BODY = 65_536
-const MAX_LABEL_NAME = 128
-const MAX_LABELS = 64
-
-/** A malformed call, rejected before the credential is read or any request is built. */
-class InvalidRequestError extends Error {}
-
-/** Nothing usable is stored, so there is no instance to address. */
-class NotConfiguredError extends Error {}
-
-function record(value: unknown): Record<string, unknown> {
-  return acIsRecord(value) ? value : {}
-}
-
-function positiveId(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
-    throw new InvalidRequestError(`${field} must be a positive integer.`)
-  }
-  return value
-}
-
-function boundedText(value: unknown, field: string, max: number): string {
-  if (typeof value !== 'string') {
-    throw new InvalidRequestError(`${field} must be a string.`)
-  }
-  if (value.length > max) {
-    throw new InvalidRequestError(`${field} exceeds ${max} characters.`)
-  }
-  return value
-}
-
-/** Clamped rather than rejected: a stale list asking for page 0 should read page 1, not fail. */
-function pageNumber(value: unknown): number {
-  if (value === undefined || value === null) {
-    return 1
-  }
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new InvalidRequestError('page must be a finite number.')
-  }
-  return Math.max(1, Math.trunc(value))
-}
-
-function taskRef(args: unknown): ActiveCollabTaskRef {
-  const input = record(args)
-  return {
-    projectId: positiveId(input.projectId, 'projectId'),
-    taskId: positiveId(input.taskId, 'taskId')
-  }
-}
-
-function labelNames(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    throw new InvalidRequestError('update.labelNames must be an array of label names.')
-  }
-  if (value.length > MAX_LABELS) {
-    throw new InvalidRequestError(`update.labelNames exceeds ${MAX_LABELS} entries.`)
-  }
-  return value.map((entry) => boundedText(entry, 'update.labelNames entry', MAX_LABEL_NAME))
-}
-
-/**
- * Rebuilt key by key rather than passed through. An omitted key has to stay omitted — ActiveCollab
- * reads absent as "leave alone" and null as "clear" — and spreading untrusted JSON would smuggle
- * unvalidated fields straight into the PUT body.
- */
-function taskUpdate(value: unknown): ActiveCollabTaskUpdate {
-  const input = record(value)
-  const update: ActiveCollabTaskUpdate = {}
-  if (input.name !== undefined) {
-    update.name = boundedText(input.name, 'update.name', MAX_NAME)
-  }
-  if (input.bodyHtml !== undefined) {
-    update.bodyHtml = boundedText(input.bodyHtml, 'update.bodyHtml', MAX_BODY)
-  }
-  if (input.assigneeId !== undefined) {
-    update.assigneeId =
-      input.assigneeId === null ? null : positiveId(input.assigneeId, 'update.assigneeId')
-  }
-  if (input.dueOn !== undefined) {
-    if (
-      input.dueOn !== null &&
-      (typeof input.dueOn !== 'number' || !Number.isFinite(input.dueOn))
-    ) {
-      throw new InvalidRequestError('update.dueOn must be epoch milliseconds or null.')
-    }
-    update.dueOn = input.dueOn
-  }
-  if (input.labelNames !== undefined) {
-    update.labelNames = labelNames(input.labelNames)
-  }
-  if (Object.keys(update).length === 0) {
-    throw new InvalidRequestError('update requires at least one field.')
-  }
-  return update
-}
 
 function toFailure(error: unknown): ActiveCollabFailure {
   if (error instanceof ActiveCollabApiError) {
@@ -177,7 +95,9 @@ function toFailure(error: unknown): ActiveCollabFailure {
   if (error instanceof NotConfiguredError) {
     return { ok: false, kind: 'not-configured', error: error.message, status: null }
   }
-  if (error instanceof InvalidRequestError) {
+  // A policy refusal — not an image, or past the size cap — reads the same to the renderer as a
+  // malformed argument: non-retryable, and no reason to prompt a reconnect.
+  if (error instanceof InvalidRequestError || error instanceof ActiveCollabAttachmentError) {
     return { ok: false, kind: 'invalid-request', error: error.message, status: null }
   }
   return {
@@ -196,7 +116,7 @@ async function guard<T>(call: () => Promise<T>): Promise<ActiveCollabResult<T>> 
   }
 }
 
-type AcContext = { http: AcHttpClient; userId: number }
+type AcContext = { http: AcHttpClient; userId: number; names: AcNameDirectoryLoader }
 
 /**
  * Built per call, never cached: a reconnect can replace the credential at any moment, and a cached
@@ -214,9 +134,17 @@ function acClient(): AcContext {
   if (credential === null) {
     throw new NotConfiguredError(getActiveCollabConnectionStatus().reason)
   }
+  const http = createAcHttp({ baseUrl: credential.instanceUrl, token: credential.token })
+  // The CLIENT is per call; the name directory behind `names` is shared, keyed on the credential
+  // identity below, so a page of rows costs one `/projects` and one `/users` per cache window.
   return {
-    http: createAcHttp({ baseUrl: credential.instanceUrl, token: credential.token }),
-    userId: credential.userId
+    http,
+    userId: credential.userId,
+    names: acNameDirectory({
+      http,
+      instanceUrl: credential.instanceUrl,
+      userId: credential.userId
+    })
   }
 }
 
@@ -245,6 +173,8 @@ export async function acConnect(
     }
     // The integrations card caches its preflight result and would keep reporting "not connected".
     _resetPreflightCache()
+    // A new account must not inherit the previous one's project and user names.
+    resetAcNameDirectoryCache()
     return { ok: true, value: result.connection }
   } catch (error) {
     return toFailure(error)
@@ -255,6 +185,7 @@ export function acDisconnect(): Promise<ActiveCollabResult<ActiveCollabConnectio
   return guard(async () => {
     clearActiveCollabCredential()
     _resetPreflightCache()
+    resetAcNameDirectoryCache()
     return getActiveCollabConnectionStatus()
   })
 }
@@ -264,8 +195,12 @@ export function acListAssignedTasks(
 ): Promise<ActiveCollabResult<ActiveCollabTaskPage>> {
   return guard(async () => {
     const page = pageNumber(record(args).page)
-    const { http, userId } = acClient()
-    return listAssignedTasks({ http, userId, page })
+    const { http, userId, names } = acClient()
+    // Started before the task read, not after: on a cold cache the two round trips overlap.
+    const directory = names()
+    const result = await listAssignedTasks({ http, userId, page })
+    await acResolveTaskNames(directory, result.tasks)
+    return result
   })
 }
 
@@ -278,7 +213,20 @@ export function acGetTaskDetail(
 ): Promise<ActiveCollabResult<ActiveCollabTaskDetail>> {
   return guard(async () => {
     const { projectId, taskId } = taskRef(args)
-    return getTaskDetail({ http: acClient().http, projectId, taskId })
+    const { http, names } = acClient()
+    const directory = names()
+    const detail = await getTaskDetail({ http, projectId, taskId })
+    await acResolveTaskNames(directory, [detail.task])
+    return detail
+  })
+}
+
+export function acGetAttachmentImage(
+  args: unknown
+): Promise<ActiveCollabResult<ActiveCollabAttachmentImage>> {
+  return guard(async () => {
+    const attachmentId = positiveId(record(args).attachmentId, 'attachmentId')
+    return getAttachmentImage({ http: acClient().http, attachmentId })
   })
 }
 
@@ -286,7 +234,13 @@ export function acUpdateTask(args: unknown): Promise<ActiveCollabResult<ActiveCo
   return guard(async () => {
     const { projectId, taskId } = taskRef(args)
     const update = taskUpdate(record(args).update)
-    return updateTask({ http: acClient().http, projectId, taskId, update })
+    const { http, names } = acClient()
+    const directory = names()
+    // The echoed row is patched straight into the renderer's caches, so it has to arrive with the
+    // same names the read path resolved — otherwise every edit blanks the heading it just fixed.
+    const task = await updateTask({ http, projectId, taskId, update })
+    await acResolveTaskNames(directory, [task])
+    return task
   })
 }
 
@@ -295,14 +249,22 @@ export function acCompleteTask(
 ): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
   return guard(async () => {
     const taskId = positiveId(record(args).taskId, 'taskId')
-    return completeTask({ http: acClient().http, taskId })
+    const { http, names } = acClient()
+    const directory = names()
+    const task = await completeTask({ http, taskId })
+    await acResolveTaskNames(directory, [task])
+    return task
   })
 }
 
 export function acReopenTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
   return guard(async () => {
     const taskId = positiveId(record(args).taskId, 'taskId')
-    return reopenTask({ http: acClient().http, taskId })
+    const { http, names } = acClient()
+    const directory = names()
+    const task = await reopenTask({ http, taskId })
+    await acResolveTaskNames(directory, [task])
+    return task
   })
 }
 
@@ -338,6 +300,9 @@ export function registerActiveCollabHandlers(): void {
   ipcMain.handle('activecollab:listProjects', async () => acListProjects())
   ipcMain.handle('activecollab:getTaskDetail', async (_event, args: unknown) =>
     acGetTaskDetail(args)
+  )
+  ipcMain.handle('activecollab:getAttachmentImage', async (_event, args: unknown) =>
+    acGetAttachmentImage(args)
   )
   ipcMain.handle('activecollab:updateTask', async (_event, args: unknown) => acUpdateTask(args))
   ipcMain.handle('activecollab:completeTask', async (_event, args: unknown) => acCompleteTask(args))

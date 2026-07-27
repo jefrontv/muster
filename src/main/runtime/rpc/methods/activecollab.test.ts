@@ -25,6 +25,7 @@ function makeRuntime(): OrcaRuntimeService {
     activeCollabListAssignedTasks: vi.fn(),
     activeCollabListProjects: vi.fn(),
     activeCollabGetTaskDetail: vi.fn(),
+    activeCollabGetAttachmentImage: vi.fn(),
     activeCollabUpdateTask: vi.fn(),
     activeCollabCompleteTask: vi.fn(),
     activeCollabReopenTask: vi.fn(),
@@ -67,6 +68,9 @@ describe('activecollab RPC methods', () => {
     await dispatcher.dispatch(
       makeRequest('activecollab.getTaskDetail', { projectId: 3790, taskId: 509323 })
     )
+    await dispatcher.dispatch(
+      makeRequest('activecollab.getAttachmentImage', { attachmentId: 249086 })
+    )
     await dispatcher.dispatch(makeRequest('activecollab.listLabels'))
 
     expect(runtime.activeCollabListAssignedTasks).toHaveBeenNthCalledWith(2, { page: 2 })
@@ -75,6 +79,7 @@ describe('activecollab RPC methods', () => {
       projectId: 3790,
       taskId: 509323
     })
+    expect(runtime.activeCollabGetAttachmentImage).toHaveBeenCalledWith({ attachmentId: 249086 })
     expect(runtime.activeCollabListLabels).toHaveBeenCalled()
   })
 
@@ -117,10 +122,16 @@ describe('activecollab RPC methods', () => {
     const missingBody = await dispatcher.dispatch(
       makeRequest('activecollab.postComment', { taskId: 509323, bodyHtml: '' })
     )
+    const badAttachment = await dispatcher.dispatch(
+      makeRequest('activecollab.getAttachmentImage', { attachmentId: 'nope' })
+    )
 
     expect(errorOf(missingId).code).toBe('invalid_argument')
     expect(errorOf(missingBody).code).toBe('invalid_argument')
     expect(errorOf(missingBody).message).toMatch(/comment body/i)
+    // Code only: requiredNumber's custom text is unreachable — zod rejects the NaN before it.
+    expect(errorOf(badAttachment).code).toBe('invalid_argument')
+    expect(runtime.activeCollabGetAttachmentImage).not.toHaveBeenCalled()
     expect(runtime.activeCollabCompleteTask).not.toHaveBeenCalled()
     expect(runtime.activeCollabPostComment).not.toHaveBeenCalled()
   })

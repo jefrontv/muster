@@ -19,7 +19,14 @@ import type {
   ActiveCollabTask,
   ActiveCollabTaskUpdate
 } from '../../shared/activecollab-types'
-import { acDateForWrite, acEpochToLocalDay, acIsRecord, acLabels, acNullableId } from './codecs'
+import {
+  acAttachments,
+  acDateForWrite,
+  acEpochToLocalDay,
+  acIsRecord,
+  acLabels,
+  acNullableId
+} from './codecs'
 import type { AcHttpClient } from './http'
 
 type Row = Record<string, unknown>
@@ -44,8 +51,9 @@ function unwrapSingle(payload: unknown): unknown {
 }
 
 /**
- * Left null rather than joined against `/users`: a per-write join costs a request for a label the
- * caller already has from the row it was rendering.
+ * The name the echoed ROW carried, or null. A write echoes the same nameless shape a read does,
+ * so the caller in `ipc/activecollab.ts` runs the cached id-to-name join over the result — the
+ * echoed row is patched straight into the renderer's caches and must not blank a resolved name.
  */
 function assigneeNameOf(row: Row): string | null {
   const direct = asText(row.assignee_name)
@@ -109,7 +117,8 @@ function normaliseComment(value: unknown): ActiveCollabComment | null {
     createdOn: epochMs(value.created_on),
     createdById: acNullableId(value.created_by_id),
     // The wire carries an author id, never an author object. Null beats inventing a join.
-    createdByName: asText(value.created_by_name) || null
+    createdByName: asText(value.created_by_name) || null,
+    attachments: acAttachments(value.attachments)
   }
 }
 

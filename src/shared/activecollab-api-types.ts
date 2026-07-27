@@ -58,6 +58,17 @@ export type ActiveCollabTaskRef = {
   taskId: number
 }
 
+/**
+ * An attachment's bytes, already inlined. Built in MAIN from an authenticated fetch: a raw
+ * instance URL in the renderer cannot authenticate, and a tokenised one would leak the credential
+ * into the DOM, the devtools network pane, and every crash report.
+ */
+export type ActiveCollabAttachmentImage = {
+  /** `data:<mime>;base64,…`, assignable straight to an `<img src>`. */
+  dataUrl: string
+  mimeType: string
+}
+
 export type ActiveCollabApi = {
   /** Never fails in practice: "not connected" and "cannot decrypt" are both `ok: true` states. */
   status: () => Promise<ActiveCollabResult<ActiveCollabConnectionStatus>>
@@ -71,6 +82,13 @@ export type ActiveCollabApi = {
   listAssignedTasks: (args?: { page?: number }) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>
   listProjects: () => Promise<ActiveCollabResult<ActiveCollabProject[]>>
   getTaskDetail: (args: ActiveCollabTaskRef) => Promise<ActiveCollabResult<ActiveCollabTaskDetail>>
+  /**
+   * One image attachment, inlined. Non-images and anything past the size cap answer an
+   * `invalid-request` failure rather than being buffered or silently base64'd.
+   */
+  getAttachmentImage: (args: {
+    attachmentId: number
+  }) => Promise<ActiveCollabResult<ActiveCollabAttachmentImage>>
   /**
    * `update.labelNames` is a FULL REPLACEMENT set — the API overwrites the task's labels — so a
    * caller adding one label sends the merged list, not the addition.

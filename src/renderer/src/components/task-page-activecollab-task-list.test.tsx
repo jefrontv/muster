@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest'
 
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
@@ -53,13 +53,21 @@ vi.mock('@/components/activecollab-connect-dialog', () => ({
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { ActiveCollabTaskList } from './task-page-activecollab-task-list'
 
+function dueLabel(dueOn: number): string {
+  return new Date(dueOn).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
 // Local midnight on 14 Mar 2026 — exactly what the codec hands back for a `due_on` of that day.
 const DUE_ON = new Date(2026, 2, 14).getTime()
-const DUE_LABEL = new Date(DUE_ON).toLocaleDateString(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric'
-})
+// Pinned either side of any possible "now", so the overdue/upcoming split never depends on the
+// wall clock the suite happens to run at.
+const FUTURE_DUE_ON = new Date(2099, 2, 14).getTime()
+const DUE_LABEL = dueLabel(DUE_ON)
+const FUTURE_DUE_LABEL = dueLabel(FUTURE_DUE_ON)
 
 const URGENT: ActiveCollabLabel = { id: 11, name: 'URGENT', color: '#ff6600' }
 const UNCOLOURED: ActiveCollabLabel = { id: 12, name: 'backlog', color: null }
@@ -179,7 +187,7 @@ describe('ActiveCollabTaskList load states', () => {
     servePages(pageRows(1, [taskFixture()], false))
     await renderList()
 
-    expect(screen.getByRole('list', { name: 'ActiveCollab tasks assigned to you' })).toBeVisible()
+    expect(screen.getByRole('list', { name: 'Muster UI' })).toBeVisible()
     expect(screen.getAllByRole('listitem')).toHaveLength(1)
     expect(screen.queryByTestId('activecollab-task-list-skeleton')).not.toBeInTheDocument()
     expect(screen.queryByText('No tasks assigned')).not.toBeInTheDocument()
@@ -248,15 +256,24 @@ describe('ActiveCollabTaskList failure recovery', () => {
 
 describe('ActiveCollabTaskList row content', () => {
   it('names each row with its task, project, due day, and labels', async () => {
-    servePages(pageRows(1, [taskFixture({ dueOn: DUE_ON, labels: [URGENT, UNCOLOURED] })], false))
+    servePages(
+      pageRows(1, [taskFixture({ dueOn: FUTURE_DUE_ON, labels: [URGENT, UNCOLOURED] })], false)
+    )
     await renderList()
 
     expect(
       screen.getByRole('button', {
-        name: `Ship the codec in Muster UI, due ${DUE_LABEL}, labels URGENT, backlog`
+        name: `Ship the codec in Muster UI, due ${FUTURE_DUE_LABEL}, labels URGENT, backlog`
       })
     ).toBeInTheDocument()
-    expect(screen.getByText('Muster UI')).toBeInTheDocument()
+  })
+
+  it('leaves the project to the group heading instead of printing it on the row', async () => {
+    servePages(pageRows(1, [taskFixture()], false))
+    await renderList()
+
+    expect(rowButtons()[0]).not.toHaveTextContent('Muster UI')
+    expect(screen.getByRole('heading', { level: 3 })).toHaveAccessibleName('Muster UI')
   })
 
   it('renders the local calendar day without re-projecting it through UTC', async () => {
@@ -269,6 +286,25 @@ describe('ActiveCollabTaskList row content', () => {
     expect(due).toHaveTextContent(DUE_LABEL)
   })
 
+  it('flags a past due date as overdue in words, not only in colour', async () => {
+    servePages(pageRows(1, [taskFixture({ dueOn: DUE_ON })], false))
+    await renderList()
+
+    expect(screen.getByText('Overdue')).toBeInTheDocument()
+    expect(rowButtons()[0]).toHaveAccessibleName(
+      `Ship the codec in Muster UI, overdue ${DUE_LABEL}`
+    )
+  })
+
+  it('leaves an upcoming due date unbadged', async () => {
+    servePages(pageRows(1, [taskFixture({ dueOn: FUTURE_DUE_ON })], false))
+    await renderList()
+
+    expect(screen.queryByText('Overdue')).not.toBeInTheDocument()
+    expect(screen.queryByText('Today')).not.toBeInTheDocument()
+    expect(document.body.querySelector('time')).toHaveTextContent(FUTURE_DUE_LABEL)
+  })
+
   it('says so when a task has no due date', async () => {
     servePages(pageRows(1, [taskFixture()], false))
     await renderList()
@@ -277,25 +313,137 @@ describe('ActiveCollabTaskList row content', () => {
     expect(document.body.querySelector('time')).toBeNull()
   })
 
-  it('paints each label with its own colour and falls back when the instance has none', async () => {
+  it('fills each label with its colour and keeps the text legible on it', async () => {
     servePages(pageRows(1, [taskFixture({ labels: [URGENT, UNCOLOURED] })], false))
     await renderList()
 
     const [coloured, neutral] = screen.getAllByTestId('activecollab-task-label')
     expect(coloured).toHaveTextContent('URGENT')
-    expect(coloured).toHaveStyle({ borderColor: '#ff6600', color: '#ff6600' })
+    // #ff6600 AS TEXT was the legibility complaint; as a fill it takes black text.
+    expect(coloured).toHaveStyle({ backgroundColor: '#ff6600', color: '#000000' })
     expect(neutral).toHaveTextContent('backlog')
     expect(neutral).not.toHaveAttribute('style')
     expect(neutral).toHaveClass('text-muted-foreground')
   })
 
   it('marks the selected row as current', async () => {
-    servePages(pageRows(1, [taskFixture({ id: 501 }), taskFixture({ id: 502 })], false))
+    servePages(
+      pageRows(1, [taskFixture({ id: 501, name: 'First' }), taskFixture({ id: 502 })], false)
+    )
     await renderList(502)
 
-    const [first, second] = rowButtons()
-    expect(first).not.toHaveAttribute('aria-current')
-    expect(second).toHaveAttribute('aria-current', 'true')
+    // Undated rows sort newest-first, so 502 leads its group.
+    const [top, bottom] = rowButtons()
+    expect(top).toHaveAttribute('aria-current', 'true')
+    expect(bottom).not.toHaveAttribute('aria-current')
+  })
+})
+
+describe('ActiveCollabTaskList project grouping', () => {
+  it('files each task under its own project', async () => {
+    servePages(
+      pageRows(
+        1,
+        [
+          taskFixture({ id: 1, name: 'Zephyr task', projectId: 20, projectName: 'Zephyr' }),
+          taskFixture({ id: 2, name: 'Alpha task', projectId: 10, projectName: 'Alpha' }),
+          taskFixture({ id: 3, name: 'Alpha other', projectId: 10, projectName: 'Alpha' })
+        ],
+        false
+      )
+    )
+    await renderList()
+
+    const alpha = screen.getByRole('list', { name: 'Alpha' })
+    const zephyr = screen.getByRole('list', { name: 'Zephyr' })
+    expect(within(alpha).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(zephyr).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(zephyr).getByText('Zephyr task')).toBeInTheDocument()
+  })
+
+  it('ties each group heading to its own list for assistive tech', async () => {
+    servePages(pageRows(1, [taskFixture({ projectId: 10, projectName: 'Alpha' })], false))
+    await renderList()
+
+    const heading = screen.getByRole('heading', { level: 3 })
+    expect(heading).toHaveAccessibleName('Alpha')
+    expect(screen.getByRole('list', { name: 'Alpha' })).toHaveAttribute(
+      'aria-labelledby',
+      heading.id
+    )
+  })
+
+  it('shows a per-group count without folding it into the heading name', async () => {
+    servePages(
+      pageRows(
+        1,
+        [
+          taskFixture({ id: 1, projectId: 10, projectName: 'Alpha' }),
+          taskFixture({ id: 2, projectId: 10, projectName: 'Alpha' }),
+          taskFixture({ id: 3, projectId: 20, projectName: 'Zephyr' })
+        ],
+        false
+      )
+    )
+    await renderList()
+
+    const [alpha, zephyr] = screen.getAllByRole('heading', { level: 3 })
+    expect(alpha).toHaveTextContent('2')
+    expect(alpha).toHaveAccessibleName('Alpha')
+    expect(zephyr).toHaveTextContent('1')
+  })
+
+  it('orders groups A to Z and rows by due date whatever order the page arrived in', async () => {
+    servePages(
+      pageRows(
+        1,
+        [
+          taskFixture({
+            id: 5,
+            name: 'Zephyr later',
+            projectId: 20,
+            projectName: 'Zephyr',
+            dueOn: FUTURE_DUE_ON
+          }),
+          taskFixture({ id: 6, name: 'Alpha undated', projectId: 10, projectName: 'Alpha' }),
+          taskFixture({
+            id: 7,
+            name: 'Zephyr sooner',
+            projectId: 20,
+            projectName: 'Zephyr',
+            dueOn: DUE_ON
+          }),
+          taskFixture({
+            id: 8,
+            name: 'Alpha dated',
+            projectId: 10,
+            projectName: 'Alpha',
+            dueOn: DUE_ON
+          })
+        ],
+        false
+      )
+    )
+    await renderList()
+
+    const headings = screen.getAllByRole('heading', { level: 3 })
+    expect(headings[0]).toHaveAccessibleName('Alpha')
+    expect(headings[1]).toHaveAccessibleName('Zephyr')
+    expect(rowButtons().map((row) => row.getAttribute('aria-label'))).toEqual([
+      `Alpha dated in Alpha, overdue ${DUE_LABEL}`,
+      'Alpha undated in Alpha',
+      `Zephyr sooner in Zephyr, overdue ${DUE_LABEL}`,
+      `Zephyr later in Zephyr, due ${FUTURE_DUE_LABEL}`
+    ])
+  })
+
+  it('still renders sensibly when every task belongs to one project', async () => {
+    servePages(pageRows(1, [taskFixture({ id: 1 }), taskFixture({ id: 2, name: 'Second' })], false))
+    await renderList()
+
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1)
+    expect(screen.getAllByRole('list')).toHaveLength(1)
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
   })
 })
 

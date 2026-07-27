@@ -5,6 +5,7 @@ import {
   activeCollabCompleteTask,
   activeCollabConnect,
   activeCollabDisconnect,
+  activeCollabGetAttachmentImage,
   activeCollabGetTaskDetail,
   activeCollabListAssignedTasks,
   activeCollabListLabels,
@@ -32,6 +33,7 @@ const bridge = {
   listAssignedTasks: vi.fn(),
   listProjects: vi.fn(),
   getTaskDetail: vi.fn(),
+  getAttachmentImage: vi.fn(),
   updateTask: vi.fn(),
   completeTask: vi.fn(),
   reopenTask: vi.fn(),
@@ -80,6 +82,7 @@ describe('runtime ActiveCollab client local transport', () => {
     await activeCollabListAssignedTasks({ page: 2 }, LOCAL)
     await activeCollabListProjects(LOCAL)
     await activeCollabGetTaskDetail(ref, LOCAL)
+    await activeCollabGetAttachmentImage({ attachmentId: 249086 }, LOCAL)
     await activeCollabUpdateTask({ ...ref, update: { dueOn: null } }, LOCAL)
     await activeCollabCompleteTask({ taskId: 509323 }, LOCAL)
     await activeCollabReopenTask({ taskId: 509323 }, LOCAL)
@@ -92,6 +95,7 @@ describe('runtime ActiveCollab client local transport', () => {
     expect(bridge.listAssignedTasks).toHaveBeenCalledWith({ page: 2 })
     expect(bridge.listProjects).toHaveBeenCalledWith()
     expect(bridge.getTaskDetail).toHaveBeenCalledWith(ref)
+    expect(bridge.getAttachmentImage).toHaveBeenCalledWith({ attachmentId: 249086 })
     expect(bridge.updateTask).toHaveBeenCalledWith({ ...ref, update: { dueOn: null } })
     expect(bridge.completeTask).toHaveBeenCalledWith({ taskId: 509323 })
     expect(bridge.reopenTask).toHaveBeenCalledWith({ taskId: 509323 })
@@ -125,6 +129,7 @@ describe('runtime ActiveCollab client remote transport', () => {
     await activeCollabListAssignedTasks({ page: 2 }, REMOTE)
     await activeCollabListProjects(REMOTE)
     await activeCollabGetTaskDetail(ref, REMOTE)
+    await activeCollabGetAttachmentImage({ attachmentId: 249086 }, REMOTE)
     await activeCollabUpdateTask({ ...ref, update: { dueOn: null } }, REMOTE)
     await activeCollabCompleteTask({ taskId: 509323 }, REMOTE)
     await activeCollabReopenTask({ taskId: 509323 }, REMOTE)
@@ -140,6 +145,7 @@ describe('runtime ActiveCollab client remote transport', () => {
       'activecollab.listAssignedTasks',
       'activecollab.listProjects',
       'activecollab.getTaskDetail',
+      'activecollab.getAttachmentImage',
       'activecollab.updateTask',
       'activecollab.completeTask',
       'activecollab.reopenTask',

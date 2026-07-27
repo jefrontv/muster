@@ -1,4 +1,4 @@
-import type { ActiveCollabLabel } from '../../shared/activecollab-types'
+import type { ActiveCollabAttachment, ActiveCollabLabel } from '../../shared/activecollab-types'
 
 // Every ActiveCollab wire quirk is absorbed here so nothing above this file has
 // to know that `0` means "unset", that dates are UTC midnight on read and
@@ -10,6 +10,20 @@ import type { ActiveCollabLabel } from '../../shared/activecollab-types'
  */
 export function acIsRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/**
+ * Collections arrive either bare (`/projects`, `/users`) or inside a keyed envelope
+ * (`/users/{id}/tasks` answers `{ tasks, subtasks, ... }`), so the expected key is tried and a
+ * bare array accepted. Nothing else is guessed: taking "the first array value" would silently
+ * serve `subtasks`.
+ */
+export function acCollection(payload: unknown, key: string): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload
+  }
+  const wrapped = acIsRecord(payload) ? payload[key] : undefined
+  return Array.isArray(wrapped) ? wrapped : []
 }
 
 /**
@@ -101,4 +115,64 @@ function acLabel(entry: unknown): ActiveCollabLabel | null {
 /** Writes replace the whole label set and take bare names, never objects. */
 export function acLabelNames(labels: ActiveCollabLabel[]): string[] {
   return labels.map((label) => label.name)
+}
+
+/** `image/JPEG; charset=binary` → `image/jpeg`. Parameters and case are noise to every caller. */
+export function acMimeEssence(value: unknown): string {
+  if (typeof value !== 'string') {
+    return ''
+  }
+  const separator = value.indexOf(';')
+  return (separator === -1 ? value : value.slice(0, separator)).trim().toLowerCase()
+}
+
+// Which mime types the renderer will INLINE, which is narrower than "is an image": SVG is
+// deliberately absent because it is markup with a scripting surface, and nothing an ActiveCollab
+// task carries needs it inlined. Static table rather than a Set — this list never changes.
+export const AC_INLINE_IMAGE_MIME: Record<string, true | undefined> = {
+  'image/png': true,
+  'image/jpeg': true,
+  'image/gif': true,
+  'image/webp': true,
+  'image/bmp': true,
+  'image/avif': true
+}
+
+/**
+ * Attachments arrive inline on task and comment rows as
+ * `{ id, class, name, mime_type, size, md5, url_path, thumbnail_url, preview_url, … }`. The three
+ * URL fields are dropped on purpose: each carries a literal `--DOWNLOAD-TOKEN--` sentinel that is
+ * only usable by pasting the API token into it, which is exactly the exposure we refuse.
+ */
+export function acAttachments(value: unknown): ActiveCollabAttachment[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  const attachments: ActiveCollabAttachment[] = []
+  for (const entry of value) {
+    const attachment = acAttachment(entry)
+    if (attachment !== null) {
+      attachments.push(attachment)
+    }
+  }
+  return attachments
+}
+
+function acAttachment(entry: unknown): ActiveCollabAttachment | null {
+  if (!acIsRecord(entry)) {
+    return null
+  }
+  const id = acNullableId(entry.id)
+  if (id === null) {
+    return null
+  }
+  const mimeType = acMimeEssence(entry.mime_type)
+  const size = typeof entry.size === 'number' && Number.isFinite(entry.size) ? entry.size : 0
+  return {
+    id,
+    name: typeof entry.name === 'string' ? entry.name.trim() : '',
+    mimeType,
+    size: size > 0 ? Math.trunc(size) : 0,
+    isImage: AC_INLINE_IMAGE_MIME[mimeType] === true
+  }
 }

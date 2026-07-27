@@ -62,6 +62,19 @@ export type ActiveCollabTask = {
   taskListId: number | null
 }
 
+/**
+ * A file hanging off a task or a comment. Attachments arrive INLINE on the task-detail payload —
+ * there is no reachable per-task attachments endpoint on the target instance.
+ */
+export type ActiveCollabAttachment = {
+  id: number
+  name: string
+  mimeType: string
+  size: number
+  /** True when mimeType is an image/* the renderer is willing to inline. */
+  isImage: boolean
+}
+
 export type ActiveCollabComment = {
   id: number
   bodyHtml: string
@@ -70,12 +83,15 @@ export type ActiveCollabComment = {
   createdOn: number | null
   createdById: number | null
   createdByName: string | null
+  attachments: ActiveCollabAttachment[]
 }
 
 /** Task plus the parts that only arrive on the detail response. */
 export type ActiveCollabTaskDetail = {
   task: ActiveCollabTask
   comments: ActiveCollabComment[]
+  /** The task's own attachments; a comment carries its own list. */
+  attachments: ActiveCollabAttachment[]
 }
 
 export type ActiveCollabTaskPage = {
