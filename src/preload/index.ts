@@ -890,6 +890,12 @@ const api = {
     unregister: (args) => ipcRenderer.invoke('siteMcp:unregister', args)
   } satisfies PreloadApi['siteMcp'],
 
+  activecollabMcp: {
+    status: () => ipcRenderer.invoke('activecollabMcp:status'),
+    install: (args) => ipcRenderer.invoke('activecollabMcp:install', args),
+    seedCredentials: () => ipcRenderer.invoke('activecollabMcp:seedCredentials')
+  } satisfies PreloadApi['activecollabMcp'],
+
   workspacePorts: {
     scan: (args) => ipcRenderer.invoke('workspacePorts:scan', args),
     kill: (args) => ipcRenderer.invoke('workspacePorts:kill', args),
@@ -1897,6 +1903,22 @@ const api = {
       siteId?: string
     }): Promise<JiraProjectStatusOrder> => ipcRenderer.invoke('jira:getProjectStatusOrder', args)
   },
+
+  // 1:1 with the `activecollab:*` channels in src/main/ipc/activecollab.ts. No siteId: one token
+  // addresses one instance, so there is nothing to select.
+  activecollab: {
+    status: () => ipcRenderer.invoke('activecollab:status'),
+    connect: (args) => ipcRenderer.invoke('activecollab:connect', args),
+    disconnect: () => ipcRenderer.invoke('activecollab:disconnect'),
+    listAssignedTasks: (args) => ipcRenderer.invoke('activecollab:listAssignedTasks', args),
+    listProjects: () => ipcRenderer.invoke('activecollab:listProjects'),
+    getTaskDetail: (args) => ipcRenderer.invoke('activecollab:getTaskDetail', args),
+    updateTask: (args) => ipcRenderer.invoke('activecollab:updateTask', args),
+    completeTask: (args) => ipcRenderer.invoke('activecollab:completeTask', args),
+    reopenTask: (args) => ipcRenderer.invoke('activecollab:reopenTask', args),
+    postComment: (args) => ipcRenderer.invoke('activecollab:postComment', args),
+    listLabels: () => ipcRenderer.invoke('activecollab:listLabels')
+  } satisfies PreloadApi['activecollab'],
 
   starNag: {
     onShow: (

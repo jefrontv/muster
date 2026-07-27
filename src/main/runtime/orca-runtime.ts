@@ -697,6 +697,30 @@ import {
   updateIssue as updateJiraIssue
 } from '../jira/issues'
 import {
+  acCompleteTask,
+  acConnect,
+  acDisconnect,
+  acGetTaskDetail,
+  acListAssignedTasks,
+  acListLabels,
+  acListProjects,
+  acPostComment,
+  acReopenTask,
+  acStatus,
+  acUpdateTask
+} from '../ipc/activecollab'
+import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
+import type {
+  ActiveCollabComment,
+  ActiveCollabConnection,
+  ActiveCollabConnectionStatus,
+  ActiveCollabLabel,
+  ActiveCollabProject,
+  ActiveCollabTask,
+  ActiveCollabTaskDetail,
+  ActiveCollabTaskPage
+} from '../../shared/activecollab-types'
+import {
   clearProjectItemFieldValue,
   getProjectViewTable,
   getWorkItemDetailsBySlug,
@@ -29866,6 +29890,56 @@ export class OrcaRuntimeService {
     siteId?: string
   ): ReturnType<typeof getJiraProjectStatusOrder> {
     return getJiraProjectStatusOrder(projectKey, siteId)
+  }
+
+  // ── ActiveCollab integration ──
+  //
+  // Thin forwarders. Argument validation, clamping and the credential lookup live in the shared
+  // `ac*` operations so this transport and the ipcMain channels enforce one set of rules; the
+  // params arrive as `unknown` because they crossed the RPC boundary as ambient JSON.
+
+  activeCollabStatus(): Promise<ActiveCollabResult<ActiveCollabConnectionStatus>> {
+    return acStatus()
+  }
+
+  activeCollabConnect(args: unknown): Promise<ActiveCollabResult<ActiveCollabConnection>> {
+    return acConnect(args)
+  }
+
+  activeCollabDisconnect(): Promise<ActiveCollabResult<ActiveCollabConnectionStatus>> {
+    return acDisconnect()
+  }
+
+  activeCollabListAssignedTasks(args?: unknown): Promise<ActiveCollabResult<ActiveCollabTaskPage>> {
+    return acListAssignedTasks(args)
+  }
+
+  activeCollabListProjects(): Promise<ActiveCollabResult<ActiveCollabProject[]>> {
+    return acListProjects()
+  }
+
+  activeCollabGetTaskDetail(args: unknown): Promise<ActiveCollabResult<ActiveCollabTaskDetail>> {
+    return acGetTaskDetail(args)
+  }
+
+  activeCollabUpdateTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
+    return acUpdateTask(args)
+  }
+
+  activeCollabCompleteTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
+    return acCompleteTask(args)
+  }
+
+  activeCollabReopenTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
+    return acReopenTask(args)
+  }
+
+  activeCollabPostComment(args: unknown): Promise<ActiveCollabResult<ActiveCollabComment | null>> {
+    return acPostComment(args)
+  }
+
+  activeCollabListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>> {
+    return acListLabels()
   }
 
   // ── Browser automation ──

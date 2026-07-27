@@ -16,6 +16,7 @@ import { registerGitLabHandlers } from './gitlab'
 import { registerHostedReviewHandlers } from './hosted-review'
 import { registerLinearHandlers } from './linear'
 import { registerJiraHandlers } from './jira'
+import { registerActiveCollabHandlers } from './activecollab'
 import { registerFeedbackHandlers } from './feedback'
 import { registerCrashReportingHandlers } from './crash-reporting'
 import { registerExportHandlers } from './export'
@@ -51,6 +52,7 @@ import { registerSiteCloneSourceHandlers } from './site-clone-sources'
 import { registerSiteSetupHandlers } from './site-setup'
 import { registerLocalWpCertHandlers } from './localwp-cert'
 import { registerSiteMcpHandlers } from './site-mcp'
+import { registerActiveCollabMcpHandlers } from './activecollab-mcp'
 import { registerWorkspacePortHandlers } from './workspace-ports'
 import { registerLocalhostWorktreeLabelHandlers } from './localhost-worktree-labels'
 import { registerAutomationHandlers } from './automations'
@@ -160,6 +162,7 @@ export function registerCoreHandlers(
   registerHostedReviewHandlers(store, stats)
   registerLinearHandlers()
   registerJiraHandlers()
+  registerActiveCollabHandlers()
   registerFeedbackHandlers()
   if (crashReports) {
     registerCrashReportingHandlers(crashReports)
@@ -213,6 +216,7 @@ export function registerCoreHandlers(
   registerLocalWpCertHandlers()
   registerBitbucketAuthHandlers()
   registerSiteMcpHandlers(store)
+  registerActiveCollabMcpHandlers()
   registerWorkspacePortHandlers(store)
   registerLocalhostWorktreeLabelHandlers(store)
   if (commitMessageAgentEnv) {

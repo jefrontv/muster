@@ -33,6 +33,8 @@ import type { SiteSetupApi } from '../shared/site-setup-api-types'
 import type { LocalWpCertApi } from '../shared/localwp-cert-types'
 import type { SiteRootsApi } from '../shared/site-roots-api-types'
 import type { SiteMcpStatus, SiteMcpWriteResult } from '../shared/site-mcp-types'
+import type { ActiveCollabMcpApi } from '../shared/activecollab-mcp-types'
+import type { ActiveCollabApi } from '../shared/activecollab-api-types'
 import type {
   PluginComparison,
   RemoteFileSearch,
@@ -1523,6 +1525,7 @@ export type PreloadApi = {
   siteCloneSources: SiteCloneSourcesApi
   bitbucketAuth: BitbucketAuthApi
   siteMcp: SiteMcpApi
+  activecollabMcp: ActiveCollabMcpApi
   workspacePorts: {
     scan: (args: WorkspacePortScanRequest) => Promise<WorkspacePortScanResult>
     kill: (args: WorkspacePortKillRequest) => Promise<WorkspacePortKillResult>
@@ -2344,6 +2347,7 @@ export type PreloadApi = {
       siteId?: string
     }) => Promise<JiraProjectStatusOrder>
   }
+  activecollab: ActiveCollabApi
   starNag: {
     onShow: (
       callback: (payload?: { mode?: 'gh' | 'web'; surface?: 'card' | 'toast' }) => void
