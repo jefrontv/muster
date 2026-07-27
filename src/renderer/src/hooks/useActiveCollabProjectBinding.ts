@@ -1,6 +1,10 @@
-// Owns the ActiveCollab project binding for whichever Muster project is currently in scope: the
-// project-list read that verifies it, the write that sets or clears it, and the write-back that
-// keeps the cached display name honest after an upstream rename.
+// Owns the ActiveCollab project binding for an EXPLICIT Muster project: the project-list read that
+// verifies it, the write that sets or clears it, and the write-back that keeps the cached display
+// name honest after an upstream rename.
+//
+// The target is a parameter, not something this hook infers. Every surface that can change a
+// binding — the sidebar project menu, its bind dialog, the Tasks bar shortcut — names the project
+// it is acting on, so a write can never land somewhere the user did not aim.
 //
 // The project list is fetched lazily. An unbound user pays nothing until they open the picker; a
 // bound one pays one request per Tasks-page visit, which is also the only way to learn that the
@@ -8,7 +12,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
-import { selectActiveCollabBindingProject } from '@/components/activecollab-binding-target-project'
 import {
   activeCollabBindingNameDrift,
   resolveActiveCollabBindingStatus,
@@ -20,7 +23,7 @@ import type { ActiveCollabProject } from '../../../shared/activecollab-types'
 import type { Project } from '../../../shared/types'
 
 export type ActiveCollabProjectBindingController = {
-  /** The Muster project a binding would attach to; null when nothing is in scope. */
+  /** The Muster project this controller writes to; null when the caller has nothing in scope. */
   targetProject: Project | null
   status: ActiveCollabBindingStatus
   projects: readonly ActiveCollabProject[] | null
@@ -31,6 +34,15 @@ export type ActiveCollabProjectBindingController = {
   clear: () => void
 }
 
+export type ActiveCollabProjectBindingOptions = {
+  /**
+   * Verify a stored binding against the instance on mount. The sidebar menu opts out: it only
+   * reports the persisted name and offers unbind, and opening a project's ⋯ menu must not cost an
+   * ActiveCollab request.
+   */
+  verifyOnMount?: boolean
+}
+
 type ProjectListState = {
   projects: readonly ActiveCollabProject[] | null
   loading: boolean
@@ -39,11 +51,10 @@ type ProjectListState = {
 
 const INITIAL_PROJECT_LIST: ProjectListState = { projects: null, loading: false, error: null }
 
-export function useActiveCollabProjectBinding(): ActiveCollabProjectBindingController {
-  const projects = useAppStore((s) => s.projects)
-  const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
-  const activeRepoId = useAppStore((s) => s.activeRepoId)
-  const getKnownWorktreeById = useAppStore((s) => s.getKnownWorktreeById)
+export function useActiveCollabProjectBinding(
+  targetProject: Project | null,
+  { verifyOnMount = true }: ActiveCollabProjectBindingOptions = {}
+): ActiveCollabProjectBindingController {
   const updateProject = useAppStore((s) => s.updateProject)
   const listActiveCollabProjects = useAppStore((s) => s.listActiveCollabProjects)
   const mountedRef = useMountedRef()
@@ -52,16 +63,6 @@ export function useActiveCollabProjectBinding(): ActiveCollabProjectBindingContr
   // Guards the local state machine only. The slice already coalesces concurrent reads, but two
   // callers arriving in the same tick would otherwise both flip `loading` and both write back.
   const inflightRef = useRef(false)
-
-  const targetProject = useMemo(
-    () =>
-      selectActiveCollabBindingProject({
-        projects,
-        activeWorktree: activeWorktreeId ? getKnownWorktreeById(activeWorktreeId) : null,
-        activeRepoId
-      }),
-    [activeRepoId, activeWorktreeId, getKnownWorktreeById, projects]
-  )
 
   const status = useMemo(
     () =>
@@ -111,12 +112,12 @@ export function useActiveCollabProjectBinding(): ActiveCollabProjectBindingContr
   const bound = Boolean(targetProject?.activeCollabBinding)
   const verifyAttemptedRef = useRef(false)
   useEffect(() => {
-    if (!bound || verifyAttemptedRef.current) {
+    if (!verifyOnMount || !bound || verifyAttemptedRef.current) {
       return
     }
     verifyAttemptedRef.current = true
     void loadProjects()
-  }, [bound, loadProjects])
+  }, [bound, loadProjects, verifyOnMount])
 
   // Keyed by the exact rename this attempt is for, so a failed write is not retried in a loop and a
   // later, different rename still gets one attempt.

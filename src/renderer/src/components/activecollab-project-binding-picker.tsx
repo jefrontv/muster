@@ -8,6 +8,10 @@
 //
 // Presentational: the caller owns the fetch, so the same list can be verified on mount for a bound
 // project and lazily loaded when an unbound user first opens the picker.
+//
+// Two shells over one list: `ActiveCollabProjectPicker` is the popover the Tasks bar drops beside
+// its status line, and `ActiveCollabProjectPickerList` is the bare list the sidebar's bind dialog
+// renders directly. Same filtering, same ordering, same selection semantics.
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Check, ChevronsUpDown, LoaderCircle } from 'lucide-react'
 
@@ -18,15 +22,24 @@ import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { ActiveCollabProject } from '../../../shared/activecollab-types'
 
-type ActiveCollabProjectPickerProps = {
+type ActiveCollabProjectPickerListProps = {
   projects: readonly ActiveCollabProject[] | null
   loading: boolean
   errorMessage: string | null
   selectedProjectId: number | null
+  /** Lets the popover shell defer focus to a frame after its open animation. */
+  inputRef?: React.Ref<HTMLInputElement>
+  autoFocusInput?: boolean
+  onSelect: (project: ActiveCollabProject) => void
+}
+
+type ActiveCollabProjectPickerProps = Omit<
+  ActiveCollabProjectPickerListProps,
+  'inputRef' | 'autoFocusInput'
+> & {
   label: string
   triggerClassName?: string
   onOpen: () => void
-  onSelect: (project: ActiveCollabProject) => void
 }
 
 /**
@@ -42,19 +55,94 @@ function compareProjects(a: ActiveCollabProject, b: ActiveCollabProject): number
   return name === 0 ? a.id - b.id : name
 }
 
-export function ActiveCollabProjectPicker({
+export function ActiveCollabProjectPickerList({
   projects,
   loading,
   errorMessage,
   selectedProjectId,
+  inputRef,
+  autoFocusInput = false,
+  onSelect
+}: ActiveCollabProjectPickerListProps): React.JSX.Element {
+  const [query, setQuery] = useState('')
+  const [commandValue, setCommandValue] = useState('')
+
+  const filtered = useMemo(() => {
+    const sorted = [...(projects ?? [])].sort(compareProjects)
+    const needle = query.trim().toLowerCase()
+    return needle ? sorted.filter((project) => project.name.toLowerCase().includes(needle)) : sorted
+  }, [projects, query])
+
+  return (
+    <Command shouldFilter={false} value={commandValue} onValueChange={setCommandValue}>
+      <CommandInput
+        ref={inputRef}
+        autoFocus={autoFocusInput}
+        value={query}
+        onValueChange={setQuery}
+        placeholder={translate(
+          'auto.components.activecollab.project_binding.search',
+          'Search ActiveCollab projects...'
+        )}
+      />
+      <CommandList className="max-h-72">
+        {errorMessage ? (
+          <p className="px-3 py-6 text-center text-xs text-destructive">{errorMessage}</p>
+        ) : null}
+        {!errorMessage && loading && filtered.length === 0 ? (
+          <div className="flex items-center justify-center py-6">
+            <LoaderCircle className="size-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : null}
+        {!errorMessage && !loading && filtered.length === 0 ? (
+          <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+            {translate(
+              'auto.components.activecollab.project_binding.no_matches',
+              'No ActiveCollab projects match your search.'
+            )}
+          </p>
+        ) : null}
+        {filtered.map((project) => (
+          <button
+            key={project.id}
+            type="button"
+            role="option"
+            aria-selected={project.id === selectedProjectId}
+            onMouseEnter={() => setCommandValue(String(project.id))}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onSelect(project)}
+            className={cn(
+              'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground',
+              commandValue === String(project.id) && 'bg-accent text-accent-foreground'
+            )}
+          >
+            <Check
+              className={cn(
+                'size-3 shrink-0 text-foreground',
+                project.id === selectedProjectId ? 'opacity-100' : 'opacity-0'
+              )}
+            />
+            <span className="min-w-0 flex-1 truncate">{project.name}</span>
+            {project.isCompleted ? (
+              <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+                {translate('auto.components.activecollab.project_binding.completed', 'Completed')}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </CommandList>
+    </Command>
+  )
+}
+
+export function ActiveCollabProjectPicker({
   label,
   triggerClassName,
   onOpen,
-  onSelect
+  onSelect,
+  ...list
 }: ActiveCollabProjectPickerProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [commandValue, setCommandValue] = useState('')
   const inputRef = useRef<HTMLInputElement | null>(null)
   const focusFrameRef = useRef<number | null>(null)
 
@@ -80,19 +168,12 @@ export function ActiveCollabProjectPicker({
       setOpen(nextOpen)
       if (!nextOpen) {
         cancelFocusFrame()
-        setQuery('')
         return
       }
       onOpen()
     },
     [cancelFocusFrame, onOpen]
   )
-
-  const filtered = useMemo(() => {
-    const sorted = [...(projects ?? [])].sort(compareProjects)
-    const needle = query.trim().toLowerCase()
-    return needle ? sorted.filter((project) => project.name.toLowerCase().includes(needle)) : sorted
-  }, [projects, query])
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -121,69 +202,14 @@ export function ActiveCollabProjectPicker({
           })
         }}
       >
-        <Command shouldFilter={false} value={commandValue} onValueChange={setCommandValue}>
-          <CommandInput
-            ref={setInputNode}
-            value={query}
-            onValueChange={setQuery}
-            placeholder={translate(
-              'auto.components.activecollab.project_binding.search',
-              'Search ActiveCollab projects...'
-            )}
-          />
-          <CommandList className="max-h-72">
-            {errorMessage ? (
-              <p className="px-3 py-6 text-center text-xs text-destructive">{errorMessage}</p>
-            ) : null}
-            {!errorMessage && loading && filtered.length === 0 ? (
-              <div className="flex items-center justify-center py-6">
-                <LoaderCircle className="size-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : null}
-            {!errorMessage && !loading && filtered.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-                {translate(
-                  'auto.components.activecollab.project_binding.no_matches',
-                  'No ActiveCollab projects match your search.'
-                )}
-              </p>
-            ) : null}
-            {filtered.map((project) => (
-              <button
-                key={project.id}
-                type="button"
-                role="option"
-                aria-selected={project.id === selectedProjectId}
-                onMouseEnter={() => setCommandValue(String(project.id))}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  onSelect(project)
-                  setOpen(false)
-                }}
-                className={cn(
-                  'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground',
-                  commandValue === String(project.id) && 'bg-accent text-accent-foreground'
-                )}
-              >
-                <Check
-                  className={cn(
-                    'size-3 shrink-0 text-foreground',
-                    project.id === selectedProjectId ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
-                <span className="min-w-0 flex-1 truncate">{project.name}</span>
-                {project.isCompleted ? (
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {translate(
-                      'auto.components.activecollab.project_binding.completed',
-                      'Completed'
-                    )}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </CommandList>
-        </Command>
+        <ActiveCollabProjectPickerList
+          {...list}
+          inputRef={setInputNode}
+          onSelect={(project) => {
+            onSelect(project)
+            setOpen(false)
+          }}
+        />
       </PopoverContent>
     </Popover>
   )

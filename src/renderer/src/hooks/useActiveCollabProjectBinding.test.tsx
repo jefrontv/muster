@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ActiveCollabProject } from '../../../shared/activecollab-types'
 import type { ActiveCollabResult } from '../../../shared/activecollab-api-types'
-import type { Project, Worktree } from '../../../shared/types'
+import type { Project } from '../../../shared/types'
 import type { ActiveCollabProjectBindingController } from './useActiveCollabProjectBinding'
 
 const BINDING = { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
@@ -26,10 +26,6 @@ function musterProject(overrides: Partial<Project> = {}): Project {
 }
 
 const mocks = vi.hoisted(() => ({
-  projects: [] as Project[],
-  activeWorktreeId: null as string | null,
-  activeRepoId: null as string | null,
-  worktree: null as Pick<Worktree, 'projectId' | 'repoId'> | null,
   updateProject: vi.fn<(id: string, updates: unknown) => Promise<boolean>>(),
   listActiveCollabProjects: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabProject[]>>>()
 }))
@@ -37,10 +33,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/store', () => ({
   useAppStore: (selector: (state: unknown) => unknown) =>
     selector({
-      projects: mocks.projects,
-      activeWorktreeId: mocks.activeWorktreeId,
-      activeRepoId: mocks.activeRepoId,
-      getKnownWorktreeById: () => mocks.worktree,
       updateProject: mocks.updateProject,
       listActiveCollabProjects: mocks.listActiveCollabProjects
     })
@@ -49,9 +41,11 @@ vi.mock('@/store', () => ({
 import { useActiveCollabProjectBinding } from './useActiveCollabProjectBinding'
 
 let controller: ActiveCollabProjectBindingController | null = null
+let target: Project | null = null
+let verifyOnMount = true
 
 function Probe(): React.JSX.Element {
-  const value = useActiveCollabProjectBinding()
+  const value = useActiveCollabProjectBinding(target, { verifyOnMount })
   controller = value
   return (
     <div>
@@ -73,10 +67,8 @@ async function renderProbe(): Promise<void> {
 
 beforeEach(() => {
   controller = null
-  mocks.projects = [musterProject()]
-  mocks.activeWorktreeId = 'wt-1'
-  mocks.activeRepoId = null
-  mocks.worktree = { projectId: 'github:acme/site', repoId: 'repo-site' }
+  target = musterProject()
+  verifyOnMount = true
   mocks.updateProject.mockReset()
   mocks.updateProject.mockResolvedValue(true)
   mocks.listActiveCollabProjects.mockReset()
@@ -100,7 +92,7 @@ describe('useActiveCollabProjectBinding', () => {
   })
 
   it('verifies a stored binding against the instance on mount', async () => {
-    mocks.projects = [musterProject({ activeCollabBinding: BINDING })]
+    target = musterProject({ activeCollabBinding: BINDING })
     mocks.listActiveCollabProjects.mockResolvedValue({
       ok: true,
       value: [upstream(3790, 'Website Rebuild')]
@@ -116,7 +108,7 @@ describe('useActiveCollabProjectBinding', () => {
   // ActiveCollab has no change feed, so a rename is only ever discovered by comparing the cached
   // name against a fresh list. The write-back is what stops the stale name persisting forever.
   it('writes back the display name after an upstream rename', async () => {
-    mocks.projects = [musterProject({ activeCollabBinding: BINDING })]
+    target = musterProject({ activeCollabBinding: BINDING })
     mocks.listActiveCollabProjects.mockResolvedValue({
       ok: true,
       value: [upstream(3790, 'Website Rebuild 2026')]
@@ -136,7 +128,7 @@ describe('useActiveCollabProjectBinding', () => {
   })
 
   it('reports a vanished project without touching the stored binding', async () => {
-    mocks.projects = [musterProject({ activeCollabBinding: BINDING })]
+    target = musterProject({ activeCollabBinding: BINDING })
     mocks.listActiveCollabProjects.mockResolvedValue({ ok: true, value: [upstream(1, 'Other')] })
 
     await renderProbe()
@@ -148,7 +140,7 @@ describe('useActiveCollabProjectBinding', () => {
   // A failed read is not evidence the project is gone; treating it as such would accuse a healthy
   // binding of being broken every time the instance blips.
   it('keeps a binding unverified when the projects read fails', async () => {
-    mocks.projects = [musterProject({ activeCollabBinding: BINDING })]
+    target = musterProject({ activeCollabBinding: BINDING })
     mocks.listActiveCollabProjects.mockResolvedValue({
       ok: false,
       kind: 'unknown',
@@ -169,7 +161,7 @@ describe('useActiveCollabProjectBinding', () => {
   // failure — which leaves `projects` null — re-fired the effect on its own state change and
   // hammered the instance in a tight loop. Verification is one-shot; recovery is user-initiated.
   it('does not retry a failed verification on its own, but the picker can', async () => {
-    mocks.projects = [musterProject({ activeCollabBinding: BINDING })]
+    target = musterProject({ activeCollabBinding: BINDING })
     mocks.listActiveCollabProjects.mockResolvedValue({
       ok: false,
       kind: 'unknown',
@@ -210,7 +202,7 @@ describe('useActiveCollabProjectBinding', () => {
     expect(mocks.listActiveCollabProjects).toHaveBeenCalledTimes(1)
   })
 
-  it('binds the chosen project to the Muster project in scope', async () => {
+  it('binds the chosen project to the target it was handed', async () => {
     await renderProbe()
 
     await act(async () => {
@@ -225,7 +217,7 @@ describe('useActiveCollabProjectBinding', () => {
   })
 
   it('clears with an explicit null so the unbind cannot be read as "leave it alone"', async () => {
-    mocks.projects = [musterProject({ activeCollabBinding: BINDING })]
+    target = musterProject({ activeCollabBinding: BINDING })
     await renderProbe()
 
     await act(async () => {
@@ -237,9 +229,8 @@ describe('useActiveCollabProjectBinding', () => {
     })
   })
 
-  it('writes nothing when no Muster project is in scope', async () => {
-    mocks.projects = []
-    mocks.worktree = null
+  it('writes nothing when the caller has no Muster project in scope', async () => {
+    target = null
     await renderProbe()
 
     expect(controller?.targetProject).toBeNull()
@@ -249,5 +240,31 @@ describe('useActiveCollabProjectBinding', () => {
     })
 
     expect(mocks.updateProject).not.toHaveBeenCalled()
+  })
+
+  // The sidebar's ⋯ menu only reports the persisted name and offers unbind, so opening it must not
+  // spend an ActiveCollab request. The write path is still the shared one.
+  it('skips the mount verification when the caller opts out', async () => {
+    target = musterProject({ activeCollabBinding: BINDING })
+    verifyOnMount = false
+
+    await renderProbe()
+
+    expect(mocks.listActiveCollabProjects).not.toHaveBeenCalled()
+    expect(screen.getByTestId('kind')).toHaveTextContent('unverified')
+  })
+
+  // The whole point of the rework: a binding lands on the project the caller named, not on
+  // whatever the app happens to be pointed at.
+  it('writes to the handed target even when it is not the one the app is showing', async () => {
+    target = musterProject({ id: 'github:acme/charlotte', displayName: '201-charlotte' })
+    await renderProbe()
+
+    await act(async () => {
+      controller?.bind(upstream(4100, 'Zebra Migration'))
+    })
+
+    expect(mocks.updateProject).toHaveBeenCalledTimes(1)
+    expect(mocks.updateProject.mock.calls[0]?.[0]).toBe('github:acme/charlotte')
   })
 })

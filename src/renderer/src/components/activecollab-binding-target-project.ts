@@ -1,9 +1,11 @@
-// Which Muster project an ActiveCollab binding applies to right now.
+// Which Muster project the CURRENT Tasks view corresponds to.
 //
-// The Tasks page is a full-window surface with no project of its own, so "the project I am working
-// in" has to come from the app around it. The active workspace is that signal — it is what the
-// sidebar highlights and what the user means by "this project" — with the last-active repo as the
-// fallback for the moments before a workspace is picked.
+// REPORTING ONLY. A binding is set from the project the user pointed at — the sidebar's project
+// actions menu — so this no longer decides where a write lands. The Tasks page is a full-window
+// surface with no project of its own, so it still has to name the project scoping the list and
+// pre-target the bar's bind shortcut. The active workspace is that signal — it is what the sidebar
+// highlights and what the user means by "this project" — with the last-active repo as the fallback
+// for the moments before a workspace is picked.
 import type { Project, Worktree } from '../../../shared/types'
 
 export type ActiveCollabBindingTargetInput = {
@@ -34,8 +36,25 @@ export function selectActiveCollabBindingProject({
       return byId
     }
   }
-  const repoId = activeWorktree?.repoId || activeRepoId
-  if (!repoId) {
+  return selectProjectForRepoId(projects, activeWorktree?.repoId || activeRepoId)
+}
+
+/**
+ * The Muster project a repo row belongs to. The sidebar's project header IS a repo row, so this is
+ * the one rule every entry point resolves through: the reporting fallback above, the sidebar menu
+ * that names its target, and the bind dialog that writes to it.
+ *
+ * `projects` is tolerated as nullish on purpose. This runs inside the sidebar's per-row render, and
+ * the projects slice can be absent before it hydrates — a bare `.find` there took the whole
+ * WorktreeList down with "Cannot read properties of undefined". A sidebar must not fail to draw
+ * because an unrelated slice has not arrived; the honest answer while it is missing is "no project
+ * yet", which is exactly `null`.
+ */
+export function selectProjectForRepoId(
+  projects: readonly Project[] | null | undefined,
+  repoId: string | null | undefined
+): Project | null {
+  if (!repoId || !projects) {
     return null
   }
   return projects.find((project) => project.sourceRepoIds.includes(repoId)) ?? null

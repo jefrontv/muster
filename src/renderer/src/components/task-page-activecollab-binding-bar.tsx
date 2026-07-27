@@ -1,10 +1,14 @@
-// The always-visible statement of what the ActiveCollab list is scoped to, and the only place a
-// binding is set or cleared.
+// Reports what the ActiveCollab list is scoped to, and offers a shortcut for changing it.
 //
 // It renders in every state — including unbound — because the alternative is a list that silently
 // shows either one project or all of them with nothing on screen saying which. A binding whose
 // project has vanished upstream gets the loudest treatment: the list underneath it is empty, and
 // an empty list with no explanation is the failure this bar exists to prevent.
+//
+// The shortcut NAMES the Muster project it will write to. This bar follows the active workspace, so
+// an unnamed "Bind project" button was a write aimed by whatever the user last opened — clicking it
+// could not be anything but a surprise. The unhurried route is the project's own ⋯ menu in the
+// sidebar, which this bar points at while unbound.
 import React from 'react'
 import { Link2Off } from 'lucide-react'
 
@@ -22,8 +26,8 @@ function bindingMessage(status: ActiveCollabBindingStatus, musterProjectName: st
   switch (status.kind) {
     case 'unbound':
       return translate(
-        'auto.components.activecollab.project_binding.unbound',
-        'Showing every task assigned to you. Bind an ActiveCollab project to {{value0}} to narrow it.',
+        'auto.components.activecollab.project_binding.unscoped',
+        'Nothing is scoping this list — showing every task assigned to you. Bind {{value0}} here, or from its ⋯ menu in the sidebar.',
         { value0: musterProjectName }
       )
     case 'missing':
@@ -96,7 +100,11 @@ export function ActiveCollabProjectBindingBar({
         label={
           scoped
             ? translate('auto.components.activecollab.project_binding.change', 'Change project')
-            : translate('auto.components.activecollab.project_binding.bind', 'Bind project')
+            : translate(
+                'auto.components.activecollab.project_binding.bind_named',
+                'Bind {{value0}}…',
+                { value0: targetProject.displayName }
+              )
         }
         onOpen={ensureProjects}
         onSelect={bind}

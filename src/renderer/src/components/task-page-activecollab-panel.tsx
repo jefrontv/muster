@@ -15,6 +15,7 @@ import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { ActiveCollabTaskList } from '@/components/task-page-activecollab-task-list'
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
 import { ActiveCollabProjectBindingBar } from '@/components/task-page-activecollab-binding-bar'
+import { useActiveCollabBindingTargetProject } from '@/hooks/useActiveCollabBindingTargetProject'
 import { useActiveCollabProjectBinding } from '@/hooks/useActiveCollabProjectBinding'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -52,8 +53,9 @@ export function TaskPageActiveCollabPanel({
   }, [])
 
   // The binding is resolved here rather than inside the list because two children need it: the bar
-  // that names and edits it, and the list that scopes its rows to it.
-  const binding = useActiveCollabProjectBinding()
+  // that names and edits it, and the list that scopes its rows to it. The Tasks page reports on
+  // whatever project the app is pointed at; the sidebar is where a project is aimed at explicitly.
+  const binding = useActiveCollabProjectBinding(useActiveCollabBindingTargetProject())
 
   if (!statusChecked) {
     return (

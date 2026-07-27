@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { selectActiveCollabBindingProject } from './activecollab-binding-target-project'
+import {
+  selectActiveCollabBindingProject,
+  selectProjectForRepoId
+} from './activecollab-binding-target-project'
 import type { Project } from '../../../shared/types'
 
 function project(id: string, sourceRepoIds: string[]): Project {
@@ -78,5 +81,19 @@ describe('selectActiveCollabBindingProject', () => {
         activeRepoId: null
       })
     ).toBeNull()
+  })
+})
+
+describe('selectProjectForRepoId', () => {
+  it('finds the project that owns a sidebar repo row', () => {
+    expect(selectProjectForRepoId(PROJECTS, 'repo-site')?.id).toBe('github:acme/site')
+  })
+
+  it('resolves nothing for a repo no project claims', () => {
+    expect(selectProjectForRepoId(PROJECTS, 'repo-unknown')).toBeNull()
+  })
+
+  it('resolves nothing without a repo id', () => {
+    expect(selectProjectForRepoId(PROJECTS, null)).toBeNull()
   })
 })

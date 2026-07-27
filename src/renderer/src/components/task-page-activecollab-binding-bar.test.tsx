@@ -67,18 +67,25 @@ afterEach(() => {
 })
 
 describe('ActiveCollabProjectBindingBar', () => {
-  it('says the list is unscoped and offers to bind', () => {
+  it('says the list is unscoped and names the project its shortcut will bind', () => {
     renderBar()
 
     expect(
       screen.getByText(
-        'Showing every task assigned to you. Bind an ActiveCollab project to acme-site to narrow it.'
+        'Nothing is scoping this list — showing every task assigned to you. Bind acme-site here, or from its ⋯ menu in the sidebar.'
       )
     ).toBeInTheDocument()
-    expect(screen.getByTestId('project-picker')).toHaveTextContent('Bind project')
+    // The shortcut writes to the active workspace's project, so it has to say which one that is.
+    expect(screen.getByTestId('project-picker')).toHaveTextContent('Bind acme-site…')
     expect(screen.getByTestId('project-picker')).toHaveAttribute('data-selected', 'null')
     // Nothing to clear yet.
     expect(screen.queryByRole('button', { name: 'Show all tasks' })).not.toBeInTheDocument()
+  })
+
+  it('names the project in the shortcut even when it is not the one the bar was last on', () => {
+    renderBar({ targetProject: { ...MUSTER_PROJECT, displayName: '201-charlotte' } })
+
+    expect(screen.getByTestId('project-picker')).toHaveTextContent('Bind 201-charlotte…')
   })
 
   it('names both sides of a live binding and offers to clear it', () => {

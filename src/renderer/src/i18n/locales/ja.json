@@ -4850,6 +4850,17 @@
           "cancel": "キャンセル",
           "forget": "Orcaから削除",
           "reconnectAndDelete": "再接続して削除"
+        },
+        "activecollab_binding": {
+          "dialog_title": "Bind an ActiveCollab project",
+          "dialog_bound": "{{value0}} currently shows tasks from {{value1}}. Pick a different project to move it.",
+          "dialog_unbound": "Tasks shown for {{value0}} will be narrowed to the project you pick.",
+          "retry": "Try again",
+          "bound_to": "ActiveCollab: {{value0}}",
+          "change": "Change ActiveCollab project…",
+          "bind": "Bind ActiveCollab project…",
+          "unbind": "Unbind from project",
+          "disconnected": "Connect ActiveCollab in Settings to pick a project."
         }
       },
       "shared": {
@@ -13929,13 +13940,13 @@
           "search": "Search ActiveCollab projects...",
           "no_matches": "No ActiveCollab projects match your search.",
           "completed": "Completed",
-          "unbound": "Showing every task assigned to you. Bind an ActiveCollab project to {{value0}} to narrow it.",
           "missing": "{{value0}} is no longer available in ActiveCollab. Pick another project, or show every assigned task.",
           "scoped": "{{value0}} is showing tasks from {{value1}}.",
           "no_target": "Open a workspace to bind an ActiveCollab project to it.",
           "change": "Change project",
-          "bind": "Bind project",
-          "clear": "Show all tasks"
+          "clear": "Show all tasks",
+          "unscoped": "Nothing is scoping this list — showing every task assigned to you. Bind {{value0}} here, or from its ⋯ menu in the sidebar.",
+          "bind_named": "Bind {{value0}}…"
         }
       },
       "TaskPageActiveCollabPanel": {
