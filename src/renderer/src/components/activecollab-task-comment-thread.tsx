@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { LoaderCircle, Send } from 'lucide-react'
 
 import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
@@ -34,6 +34,29 @@ export function activeCollabCommentBodyHtml(text: string): string {
     .join('')
 }
 
+/**
+ * Oldest first, so a thread reads top-to-bottom and the newest comment lands directly above the
+ * composer you are about to reply in. ActiveCollab returns comments newest-first, which puts the
+ * latest message furthest from the reply box and makes the conversation read backwards.
+ *
+ * Total, not merely stable: `createdOn` is nullable and two comments can share a timestamp, so a
+ * comparator that returned 0 for distinct rows would let them swap between renders. Undated
+ * comments sort to the end (they are almost always a local echo of a just-posted reply) and id
+ * ascending is the final tiebreak, which matches post order because ActiveCollab ids increase.
+ */
+export function sortActiveCollabCommentsOldestFirst(
+  comments: readonly ActiveCollabComment[]
+): ActiveCollabComment[] {
+  return [...comments].sort((left, right) => {
+    const leftAt = left.createdOn ?? Number.POSITIVE_INFINITY
+    const rightAt = right.createdOn ?? Number.POSITIVE_INFINITY
+    if (leftAt !== rightAt) {
+      return leftAt - rightAt
+    }
+    return left.id - right.id
+  })
+}
+
 type ActiveCollabCommentThreadProps = {
   comments: ActiveCollabComment[]
   /** Instance context, so a comment body resolves mentions and images like the task body does. */
@@ -56,8 +79,12 @@ function ActiveCollabCommentCard({
 }): React.JSX.Element {
   const posted = activeCollabStamp(comment.createdOn, 'date-time')
   return (
-    <article className="rounded-md border border-border/50 bg-muted/20">
-      <div className="flex min-w-0 items-center gap-2 border-b border-border/40 px-3 py-2">
+    // Why the heavier surface: at `border-border/50` over `bg-muted/20` the card edge was invisible
+    // against the pane in the dark theme, so three replies read as one run of text. The card now
+    // carries its own fill and a full-strength border, and the author band is tinted a step darker
+    // so "who spoke" separates from "what they said" without another rule.
+    <article className="overflow-hidden rounded-md border border-border bg-card shadow-sm">
+      <div className="flex min-w-0 items-center gap-2 border-b border-border bg-muted/50 px-3 py-1.5">
         <ActiveCollabPersonBadge name={comment.createdByName} />
         <span className="min-w-0 truncate text-[13px] font-semibold text-foreground">
           {comment.createdByName ??
@@ -92,6 +119,7 @@ export function ActiveCollabCommentThread({
   onSubmit
 }: ActiveCollabCommentThreadProps): React.JSX.Element {
   const [draft, setDraft] = useState('')
+  const ordered = useMemo(() => sortActiveCollabCommentsOldestFirst(comments), [comments])
 
   const submit = useCallback(() => {
     const state = getCommentBodySubmitState(draft)
@@ -114,8 +142,8 @@ export function ActiveCollabCommentThread({
           {translate('auto.components.activecollab.task_workspace.no_comments', 'No comments yet.')}
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {comments.map((comment) => (
+        <div className="flex flex-col gap-2.5">
+          {ordered.map((comment) => (
             <ActiveCollabCommentCard
               key={comment.id}
               comment={comment}
