@@ -21,9 +21,11 @@ import { ActiveCollabMentionMenu } from './activecollab-comment-mention-menu'
 import {
   acceptActiveCollabMention,
   activeCollabCommentBodyHtml,
+  activeCollabMentionPeople,
   activeCollabMentionSuggestions,
   activeCollabMentionToken,
   withActiveCollabMentionPick,
+  type ActiveCollabMentionPeople,
   type ActiveCollabMentionPick
 } from './activecollab-comment-mentions'
 
@@ -33,12 +35,17 @@ import {
  * Enter is deliberately NOT a submit key and is only intercepted while the menu is open: this is a
  * multi-line composer whose Post action is the button, so a plain Enter has to keep typing a
  * newline. The menu takes Up/Down/Enter/Tab/Escape and nothing else.
+ *
+ * `projectId` narrows the suggestions to the people on the task's project — seven, against the 176
+ * accounts on the instance — falling back to the full roster when that membership cannot be read.
  */
 export function ActiveCollabCommentComposer({
+  projectId,
   disabled,
   busy,
   onSubmit
 }: {
+  projectId: number | null
   disabled: boolean
   busy: boolean
   onSubmit: (bodyHtml: string) => void
@@ -46,16 +53,18 @@ export function ActiveCollabCommentComposer({
   const [draft, setDraft] = useState('')
   const [caret, setCaret] = useState(0)
   const [picked, setPicked] = useState<readonly ActiveCollabMentionPick[]>([])
-  const [users, setUsers] = useState<readonly ActiveCollabUser[]>([])
+  const [people, setPeople] = useState<ActiveCollabMentionPeople>({ users: [], scoped: true })
   const [activeIndex, setActiveIndex] = useState(0)
   const [dismissedAt, setDismissedAt] = useState<number | null>(null)
 
+  const listProjectMembers = useAppStore((s) => s.listActiveCollabProjectMembers)
   const listUsers = useAppStore((s) => s.listActiveCollabUsers)
   const currentUserId = useAppStore((s) => s.activeCollabStatus.connection?.userId ?? null)
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const pendingCaret = useRef<number | null>(null)
-  const rosterRequested = useRef(false)
+  /** Which project the people list was last asked for; `undefined` until the first `@`. */
+  const requestedFor = useRef<number | null | undefined>(undefined)
   const listboxId = useId()
 
   const token = useMemo(
@@ -66,28 +75,38 @@ export function ActiveCollabCommentComposer({
     if (token === null || token.at === dismissedAt) {
       return []
     }
-    return activeCollabMentionSuggestions({ users, query: token.query, currentUserId })
-  }, [token, dismissedAt, users, currentUserId])
+    return activeCollabMentionSuggestions({
+      users: people.users,
+      query: token.query,
+      currentUserId
+    })
+  }, [token, dismissedAt, people, currentUserId])
   const highlighted = Math.min(activeIndex, Math.max(suggestions.length - 1, 0))
 
-  // The roster is fetched on the FIRST `@` and never on mount: a comment written without a mention
-  // must not cost a 176-row request. One attempt per mount — retrying a refused `/users` on every
-  // keystroke would turn one failure into a request storm, and leaving the pane is the retry.
+  // The people list is fetched on the FIRST `@` and never on mount: a comment written without a
+  // mention must not cost a request at all. One attempt per PROJECT — retrying a refused read on
+  // every keystroke would turn one failure into a request storm, and leaving the pane is the retry
+  // — but the pane reuses this component across tasks, so a new project must be read afresh rather
+  // than offering the previous task's colleagues.
   useEffect(() => {
-    if (token === null || rosterRequested.current) {
+    if (token === null || requestedFor.current === projectId) {
       return
     }
-    rosterRequested.current = true
+    requestedFor.current = projectId
     let live = true
-    void listUsers().then((result) => {
-      if (live && result.ok) {
-        setUsers(result.value)
+    void activeCollabMentionPeople({
+      projectId,
+      listProjectMembers: (id) => listProjectMembers(id),
+      listUsers: () => listUsers()
+    }).then((resolved) => {
+      if (live) {
+        setPeople(resolved)
       }
     })
     return () => {
       live = false
     }
-  }, [token, listUsers])
+  }, [token, projectId, listProjectMembers, listUsers])
 
   // A narrowed list must not leave the highlight pointing at whoever now occupies the old row.
   const tokenKey = token === null ? null : `${token.at}:${token.query}`
@@ -210,6 +229,7 @@ export function ActiveCollabCommentComposer({
             users={suggestions}
             activeIndex={highlighted}
             listboxId={listboxId}
+            scoped={people.scoped}
             onPick={pick}
           />
         ) : null}

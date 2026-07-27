@@ -794,7 +794,6 @@ export type UISlice = {
     | 'workspace-cleanup'
     | 'project-added'
     | 'worktree-visibility'
-    | 'activecollab-bind-project'
     | 'setup-guide'
     | 'feature-wall'
     | 'feature-tips'

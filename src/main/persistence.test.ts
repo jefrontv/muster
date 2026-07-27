@@ -594,77 +594,10 @@ describe('Store', () => {
     })
   })
 
-  it('persists an ActiveCollab project binding and reloads it', async () => {
-    writeDataFile({
-      ...getDefaultPersistedState(testState.dir),
-      projects: [makeProject({ id: 'project-1', sourceRepoIds: ['r1'] })],
-      projectHostSetups: [makeProjectHostSetup({ id: 'setup-1', projectId: 'project-1' })]
-    })
-    const store = await createStore()
-
-    const updated = store.updateProject('project-1', {
-      activeCollabBinding: { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
-    })
-
-    expect(updated?.activeCollabBinding).toEqual({
-      projectId: 3790,
-      projectName: 'Website Rebuild',
-      boundAt: 1700
-    })
-    store.flush()
-    const reloaded = await createStore()
-    expect(reloaded.getProjects()[0]?.activeCollabBinding).toEqual({
-      projectId: 3790,
-      projectName: 'Website Rebuild',
-      boundAt: 1700
-    })
-  })
-
-  it('clears an ActiveCollab project binding on an explicit null', async () => {
-    writeDataFile({
-      ...getDefaultPersistedState(testState.dir),
-      projects: [
-        makeProject({
-          id: 'project-1',
-          sourceRepoIds: ['r1'],
-          activeCollabBinding: { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
-        })
-      ],
-      projectHostSetups: [makeProjectHostSetup({ id: 'setup-1', projectId: 'project-1' })]
-    })
-    const store = await createStore()
-
-    expect(store.updateProject('project-1', { activeCollabBinding: null })).not.toHaveProperty(
-      'activeCollabBinding'
-    )
-
-    store.flush()
-    const reloaded = await createStore()
-    expect(reloaded.getProjects()[0]?.activeCollabBinding).toBeUndefined()
-  })
-
-  it('leaves an ActiveCollab binding alone when a different project field is updated', async () => {
-    const binding = { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
-    writeDataFile({
-      ...getDefaultPersistedState(testState.dir),
-      projects: [
-        makeProject({ id: 'project-1', sourceRepoIds: ['r1'], activeCollabBinding: binding })
-      ],
-      projectHostSetups: [makeProjectHostSetup({ id: 'setup-1', projectId: 'project-1' })]
-    })
-    const store = await createStore()
-
-    const updated = store.updateProject('project-1', {
-      localWindowsRuntimePreference: { kind: 'windows-host' }
-    })
-
-    expect(updated?.activeCollabBinding).toEqual(binding)
-  })
-
-  // Projects are rebuilt from repos on every load, so a binding on a REPO-BACKED project only
-  // survives if the rebuild carries it across. The runtime-preference test above uses a
-  // setup-only project, which never goes through that path.
-  it('carries an ActiveCollab binding across the repo-backed project rebuild', async () => {
+  // Projects are rebuilt from repos on every load, so a preference on a REPO-BACKED project only
+  // survives if the rebuild carries it across. The test above uses a setup-only project, which
+  // never goes through that path.
+  it('carries a Windows runtime preference across the repo-backed project rebuild', async () => {
     writeDataFile({
       ...getDefaultPersistedState(testState.dir),
       repos: [makeRepo({ id: 'r1', path: '/repo', displayName: 'Repo' })],
@@ -672,7 +605,7 @@ describe('Store', () => {
         makeProject({
           id: 'repo:r1',
           sourceRepoIds: ['r1'],
-          activeCollabBinding: { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
+          localWindowsRuntimePreference: { kind: 'wsl', distro: 'Ubuntu' }
         })
       ]
     })
@@ -681,27 +614,8 @@ describe('Store', () => {
 
     expect(store.getProjects()[0]).toMatchObject({
       id: 'repo:r1',
-      activeCollabBinding: { projectId: 3790, projectName: 'Website Rebuild' }
+      localWindowsRuntimePreference: { kind: 'wsl', distro: 'Ubuntu' }
     })
-  })
-
-  it('drops a malformed ActiveCollab binding rather than storing it', async () => {
-    writeDataFile({
-      ...getDefaultPersistedState(testState.dir),
-      projects: [makeProject({ id: 'project-1', sourceRepoIds: ['r1'] })],
-      projectHostSetups: [makeProjectHostSetup({ id: 'setup-1', projectId: 'project-1' })]
-    })
-    const store = await createStore()
-
-    const updated = store.updateProject('project-1', {
-      activeCollabBinding: {
-        projectId: 0,
-        projectName: 'Impossible',
-        boundAt: 1700
-      }
-    })
-
-    expect(updated?.activeCollabBinding).toBeUndefined()
   })
 
   it('migrates legacy WSL agent settings into the global Windows runtime default', async () => {

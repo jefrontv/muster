@@ -705,12 +705,12 @@ import {
   acListAssignedTasks,
   acListLabels,
   acListProjects,
-  acListUsers,
   acPostComment,
   acReopenTask,
   acStatus,
   acUpdateTask
 } from '../ipc/activecollab'
+import { acListProjectMembers, acListUsers } from '../ipc/activecollab-people'
 import type {
   ActiveCollabAttachmentImage,
   ActiveCollabResult
@@ -29956,6 +29956,10 @@ export class OrcaRuntimeService {
 
   activeCollabListUsers(): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
     return acListUsers()
+  }
+
+  activeCollabListProjectMembers(args: unknown): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
+    return acListProjectMembers(args)
   }
 
   // ── Browser automation ──

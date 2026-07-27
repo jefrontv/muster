@@ -28,15 +28,17 @@ import { listUsers } from './users'
  * nobody notices, while capping the cost at two extra requests per window no matter how many rows
  * or concurrent readers there are. A newly created project still resolves within one refresh cycle
  * of a coffee break.
+ *
+ * Exported because project-members.ts caches on the same terms: one directory policy, not two.
  */
-const AC_NAME_TTL_MS = 5 * 60_000
+export const AC_DIRECTORY_TTL_MS = 5 * 60_000
 
 /**
  * A window that FAILED expires far sooner: a transient 500 or a dropped connection must not blank
  * every name for five minutes, but retrying per call would turn one bad window into a request per
  * row. Thirty seconds lets the next poll recover.
  */
-const AC_NAME_RETRY_TTL_MS = 30_000
+export const AC_DIRECTORY_RETRY_TTL_MS = 30_000
 
 const AC_NO_NAMES: ReadonlyMap<number, string> = new Map()
 
@@ -106,12 +108,12 @@ function acBeginLoad(http: AcHttpClient, key: string, startedAt: number): AcName
       const current = acNameCache.get(key)
       // Shorten only OUR OWN entry: a disconnect or a later window may already have replaced it.
       if (current?.directory === directory) {
-        current.expiresAt = startedAt + AC_NAME_RETRY_TTL_MS
+        current.expiresAt = startedAt + AC_DIRECTORY_RETRY_TTL_MS
       }
     }
     return load.directory
   })
-  return { expiresAt: startedAt + AC_NAME_TTL_MS, directory }
+  return { expiresAt: startedAt + AC_DIRECTORY_TTL_MS, directory }
 }
 
 /**

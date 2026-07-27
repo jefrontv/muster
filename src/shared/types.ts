@@ -37,7 +37,6 @@ import type { TerminalCustomTheme } from './terminal-custom-themes'
 import type { UiLanguage } from './ui-language'
 import type { ForkSyncMode } from './git-fork-sync'
 import type { GitRemoteIdentity } from './git-remote-identity'
-import type { ActiveCollabProjectBinding } from './activecollab-project-binding'
 import type {
   GlobalWindowsRuntimeDefault,
   LocalWindowsRuntimePreference
@@ -120,13 +119,6 @@ export type Project = {
   gitRemoteIdentity?: GitRemoteIdentity
   /** Local Windows projects inherit the global runtime default unless this override is set. */
   localWindowsRuntimePreference?: LocalWindowsRuntimePreference
-  /**
-   * User-chosen ActiveCollab project this Muster project tracks. Unlike `providerIdentity`, which
-   * the repo projection derives from the git remote, this cannot be inferred from anything on disk
-   * — ActiveCollab is account-backed, not repo-backed — so it is carried across every rebuild by
-   * `carryProjectUserOwnedFields`.
-   */
-  activeCollabBinding?: ActiveCollabProjectBinding
   sourceRepoIds: string[]
   createdAt: number
   updatedAt: number
@@ -134,16 +126,7 @@ export type Project = {
 
 export type ProjectUpdateArgs = {
   projectId: string
-  updates: Partial<Pick<Project, 'localWindowsRuntimePreference'>> & {
-    /**
-     * `null` clears the binding, an omitted key leaves it alone. Explicitly nullable rather than
-     * copying the runtime-preference convention of "present but `undefined`": that convention
-     * survives only because structured clone and zod both happen to keep a key whose value is
-     * `undefined`, and a clear that silently degrades into a no-op is invisible until a user
-     * complains their unbind did not stick.
-     */
-    activeCollabBinding?: ActiveCollabProjectBinding | null
-  }
+  updates: Partial<Pick<Project, 'localWindowsRuntimePreference'>>
 }
 
 export type ProjectHostSetupState = 'ready' | 'not-set-up' | 'setting-up' | 'error' | 'unsupported'

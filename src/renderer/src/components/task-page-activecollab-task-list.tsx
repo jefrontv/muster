@@ -18,26 +18,16 @@ import {
   type ActiveCollabTaskGroup
 } from './task-page-activecollab-task-grouping'
 import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
-import {
-  activeCollabBindingDisplayName,
-  filterActiveCollabTasksForBinding,
-  type ActiveCollabBindingStatus
-} from './activecollab-project-binding-state'
 import type {
   ActiveCollabFailure,
   ActiveCollabTaskRef
 } from '../../../shared/activecollab-api-types'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 
-/** Module-level so the default prop keeps one identity and cannot churn the memos below. */
-const UNBOUND_STATUS: ActiveCollabBindingStatus = { kind: 'unbound' }
-
 type ActiveCollabTaskListProps = {
   onSelect: (ref: ActiveCollabTaskRef) => void
   selectedTaskId?: number | null
   sourceContext?: TaskSourceContext | null
-  /** Scopes the rows to one ActiveCollab project. Client-side: the fetch stays account-wide. */
-  bindingStatus?: ActiveCollabBindingStatus
 }
 
 type ActiveCollabTaskListLoad = {
@@ -138,13 +128,11 @@ function ActiveCollabListError({
 }
 
 // Why: one token addresses one instance, so this list has no site selector — the slice answers
-// with every open task assigned to the connected user, and the only axes are paging and the
-// caller's project binding, which narrows those rows here rather than at the request.
+// with every open task assigned to the connected user, and paging is the only axis.
 export function ActiveCollabTaskList({
   onSelect,
   selectedTaskId = null,
-  sourceContext = null,
-  bindingStatus = UNBOUND_STATUS
+  sourceContext = null
 }: ActiveCollabTaskListProps): React.JSX.Element {
   const listAssignedTasks = useAppStore((s) => s.listActiveCollabAssignedTasks)
   const taskPageCache = useAppStore((s) => s.activeCollabTaskPageCache)
@@ -210,17 +198,9 @@ export function ActiveCollabTaskList({
     () => selectActiveCollabAssignedTasks(taskPageCache, cachePrefix, requestedPages),
     [cachePrefix, requestedPages, taskPageCache]
   )
-  // Narrowed here rather than at the request: `listAssignedTasks` is account-scoped and
-  // ActiveCollab implements no server-side task filter, so a bound project can only hide rows that
-  // were already paged in.
-  const visibleTasks = useMemo(
-    () => filterActiveCollabTasksForBinding(rows.tasks, bindingStatus),
-    [bindingStatus, rows.tasks]
-  )
-  const bindingScopeName = activeCollabBindingDisplayName(bindingStatus)
   const loading = scoped ? load.loading : true
   const state = deriveActiveCollabTaskListState({
-    tasks: visibleTasks,
+    tasks: rows.tasks,
     hasMore: rows.hasMore,
     loading,
     failure: scoped ? load.failure : null
@@ -229,13 +209,14 @@ export function ActiveCollabTaskList({
   // One clock reading feeds every row, so a render that straddles midnight cannot label two tasks
   // due the same day differently.
   const now = Date.now()
-  const groups = useMemo(() => groupActiveCollabTasksByProject(visibleTasks), [visibleTasks])
+  const groups = useMemo(() => groupActiveCollabTasksByProject(rows.tasks), [rows.tasks])
   const retry = useCallback(() => void loadPage(1, true), [loadPage])
   const openConnect = useCallback(() => setConnectOpen(true), [])
   const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
-  // Why the footer outlives the `ready` state: under a binding a whole page can be other projects'
-  // tasks, so "empty" is not the end of the list. Hiding paging there would strand the user on
-  // "nothing here" while the pages holding their tasks were never requested.
+  // Why the footer outlives the `ready` state: `listAssignedTasks` filters completed tasks
+  // client-side, so a server page can arrive with every row already dropped while later pages still
+  // hold open work. Gating paging on a non-empty list would strand the user on "nothing here" with
+  // those pages never requested.
   const canLoadMore = rows.hasMore && (state.kind === 'ready' || state.kind === 'empty')
 
   return (
@@ -265,34 +246,13 @@ export function ActiveCollabTaskList({
         <div className="px-4 py-10 text-center">
           <ActiveCollabIcon className="mx-auto mb-3 size-7 text-muted-foreground/60" />
           <p className="text-sm font-medium text-foreground">
-            {bindingScopeName
-              ? translate(
-                  'auto.components.activecollab.task_list.empty_scoped_title',
-                  'No tasks in {{value0}}',
-                  { value0: bindingScopeName }
-                )
-              : translate(
-                  'auto.components.activecollab.task_list.empty_title',
-                  'No tasks assigned'
-                )}
+            {translate('auto.components.activecollab.task_list.empty_title', 'No tasks assigned')}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {!bindingScopeName
-              ? translate(
-                  'auto.components.activecollab.task_list.empty_body',
-                  'Nothing open is assigned to you in ActiveCollab right now.'
-                )
-              : rows.hasMore
-                ? translate(
-                    'auto.components.activecollab.task_list.empty_scoped_more',
-                    'None of the tasks loaded so far belong to {{value0}}. Load more to keep looking.',
-                    { value0: bindingScopeName }
-                  )
-                : translate(
-                    'auto.components.activecollab.task_list.empty_scoped_body',
-                    'Nothing open is assigned to you in {{value0}} right now.',
-                    { value0: bindingScopeName }
-                  )}
+            {translate(
+              'auto.components.activecollab.task_list.empty_body',
+              'Nothing open is assigned to you in ActiveCollab right now.'
+            )}
           </p>
         </div>
       ) : null}

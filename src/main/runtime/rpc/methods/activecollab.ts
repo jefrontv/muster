@@ -40,6 +40,10 @@ const AttachmentRef = z.object({
   attachmentId: requiredNumber('Attachment id is required')
 })
 
+const ProjectRef = z.object({
+  projectId: requiredNumber('Project id is required')
+})
+
 const TaskUpdate = z.object({
   projectId: requiredNumber('Project id is required'),
   taskId: requiredNumber('Task id is required'),
@@ -124,5 +128,10 @@ export const ACTIVECOLLAB_METHODS: RpcMethod[] = [
     name: 'activecollab.listUsers',
     params: null,
     handler: async (_params, { runtime }) => runtime.activeCollabListUsers()
+  }),
+  defineMethod({
+    name: 'activecollab.listProjectMembers',
+    params: ProjectRef,
+    handler: async (params, { runtime }) => runtime.activeCollabListProjectMembers(params)
   })
 ]

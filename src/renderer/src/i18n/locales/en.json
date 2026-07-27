@@ -13934,7 +13934,11 @@
           "assignee": "Assignee",
           "labels": "Labels",
           "assignee_unresolved": "Assigned (name unavailable)",
-          "mention_menu": "Mention a person"
+          "mention_menu": "Mention a person",
+          "search_people": "Search people...",
+          "unassign": "Unassign",
+          "no_people": "No people match.",
+          "mention_menu_unscoped": "All people — project members unavailable"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -13957,7 +13961,11 @@
         },
         "attachments": {
           "retry": "Retry",
-          "loading": "Loading {{value0}}"
+          "loading": "Loading {{value0}}",
+          "open_image": "Open {{value0}}",
+          "previous_image": "Previous image",
+          "image_position": "{{value0}} of {{value1}}",
+          "next_image": "Next image"
         },
         "project_binding": {
           "search": "Search ActiveCollab projects...",

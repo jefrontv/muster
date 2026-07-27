@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 //
 // Mounts the composer against the REAL store slice with only the runtime client mocked, so the
-// "roster is fetched lazily, and once" claim is proved through the cache that actually enforces it
-// rather than against a stub action.
+// "people are fetched lazily, and once per project" claim is proved through the cache that
+// actually enforces it rather than against a stub action.
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -19,7 +19,8 @@ type UsersResult = ActiveCollabResult<ActiveCollabUser[]>
 
 const holder = vi.hoisted(() => ({
   state: null as unknown,
-  listUsers: vi.fn<() => Promise<UsersResult>>()
+  listUsers: vi.fn<() => Promise<UsersResult>>(),
+  listProjectMembers: vi.fn<(args: { projectId: number }) => Promise<UsersResult>>()
 }))
 
 vi.mock('@/store', () => ({
@@ -39,7 +40,8 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabReopenTask: vi.fn(),
   activeCollabPostComment: vi.fn(),
   activeCollabListLabels: vi.fn(),
-  activeCollabListUsers: () => holder.listUsers()
+  activeCollabListUsers: () => holder.listUsers(),
+  activeCollabListProjectMembers: (args: { projectId: number }) => holder.listProjectMembers(args)
 }))
 
 import { ActiveCollabCommentComposer } from './activecollab-comment-composer'
@@ -47,6 +49,10 @@ import { ActiveCollabCommentComposer } from './activecollab-comment-composer'
 const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace' }
 const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing' }
 const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese' }
+/** On the instance roster but NOT on the project: the person scoping has to keep out. */
+const GRACE: ActiveCollabUser = { id: 7, name: 'Grace Hopper' }
+
+const PROJECT_ID = 5937
 
 /** Jake is the CONNECTED user throughout, so every suggestion list must exclude him. */
 const CONNECTION = {
@@ -65,7 +71,9 @@ beforeEach(() => {
   // The slice's in-flight map outlives any one store, so isolate it like the DOM container.
   clearActiveCollabInflightReads()
   holder.listUsers.mockReset()
-  holder.listUsers.mockResolvedValue({ ok: true, value: [ADA, ALAN, JAKE] })
+  holder.listUsers.mockResolvedValue({ ok: true, value: [ADA, ALAN, GRACE, JAKE] })
+  holder.listProjectMembers.mockReset()
+  holder.listProjectMembers.mockResolvedValue({ ok: true, value: [ADA, ALAN, JAKE] })
   const store = create<AppState>()(
     (...a) =>
       ({
@@ -88,10 +96,11 @@ afterEach(() => {
   container.remove()
 })
 
-async function mount(): Promise<void> {
+async function mount(projectId: number | null = PROJECT_ID): Promise<void> {
   await act(async () => {
     root.render(
       <ActiveCollabCommentComposer
+        projectId={projectId}
         disabled={false}
         busy={false}
         onSubmit={(bodyHtml) => posted.push(bodyHtml)}
@@ -145,22 +154,42 @@ async function clickOption(index: number): Promise<void> {
 }
 
 describe('ActiveCollabCommentComposer roster fetching', () => {
-  it('never asks for the roster while the author writes a comment with no @', async () => {
+  it('never asks for anyone while the author writes a comment with no @', async () => {
     await mount()
     await type('Shipped the header fix')
 
+    expect(holder.listProjectMembers).not.toHaveBeenCalled()
     expect(holder.listUsers).not.toHaveBeenCalled()
     expect(options()).toEqual([])
   })
 
-  it('fetches the roster once, however many characters the author types after the @', async () => {
+  it('fetches project members once, however many characters follow the @', async () => {
     await mount()
     await type('Ping @')
     await type('Ping @a')
     await type('Ping @al')
     await type('Ping @ala')
 
+    expect(holder.listProjectMembers).toHaveBeenCalledTimes(1)
+    // Members answered, so the instance-wide roster is never touched.
+    expect(holder.listUsers).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the full roster when the project members cannot be read', async () => {
+    // An empty menu would read as "nobody exists" and block a legitimate mention, so a failed
+    // members read must widen to the instance roster rather than suggesting no one.
+    holder.listProjectMembers.mockResolvedValue({
+      ok: false,
+      kind: 'api',
+      error: 'members unavailable',
+      status: 500
+    })
+
+    await mount()
+    await type('Ping @')
+
     expect(holder.listUsers).toHaveBeenCalledTimes(1)
+    expect(options().length).toBeGreaterThan(0)
   })
 })
 

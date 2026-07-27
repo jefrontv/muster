@@ -2,7 +2,7 @@
 // provider ships no avatar for.
 
 import { translate } from '@/i18n/i18n'
-import type { ActiveCollabTask } from '../../../shared/activecollab-types'
+import type { ActiveCollabTask, ActiveCollabUser } from '../../../shared/activecollab-types'
 
 /**
  * THREE states, not two. An assignee id whose name the directory could not resolve is still
@@ -14,14 +14,24 @@ export type ActiveCollabAssignee =
   | { kind: 'named'; name: string }
   | { kind: 'unresolved' }
 
+/**
+ * `roster` is the assignee picker's lazily-fetched user list. Once it has been paid for, an id the
+ * task payload could not name often resolves after all — ActiveCollab 8 omits `assignee_name` from
+ * task rows — so the honest-but-useless `unresolved` state collapses into a real name.
+ */
 export function resolveActiveCollabAssignee(
-  task: Pick<ActiveCollabTask, 'assigneeId' | 'assigneeName'>
+  task: Pick<ActiveCollabTask, 'assigneeId' | 'assigneeName'>,
+  roster: readonly ActiveCollabUser[] = []
 ): ActiveCollabAssignee {
   if (task.assigneeId === null) {
     return { kind: 'unassigned' }
   }
   const name = task.assigneeName?.trim()
-  return name ? { kind: 'named', name } : { kind: 'unresolved' }
+  if (name) {
+    return { kind: 'named', name }
+  }
+  const joined = roster.find((user) => user.id === task.assigneeId)?.name.trim()
+  return joined ? { kind: 'named', name: joined } : { kind: 'unresolved' }
 }
 
 export function activeCollabAssigneeLabel(assignee: ActiveCollabAssignee): string {

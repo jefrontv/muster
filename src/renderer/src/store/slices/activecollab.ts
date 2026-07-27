@@ -56,7 +56,8 @@ const EMPTY_CACHES: ActiveCollabCacheState = {
   activeCollabProjectCache: {},
   activeCollabTaskDetailCache: {},
   activeCollabLabelCache: {},
-  activeCollabUserCache: {}
+  activeCollabUserCache: {},
+  activeCollabProjectMemberCache: {}
 }
 
 /** Reset alongside the row caches, but kept apart: image bytes have their own size budget. */

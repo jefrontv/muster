@@ -16,7 +16,8 @@ import type {
   ActiveCollabComment,
   ActiveCollabLabel,
   ActiveCollabTask,
-  ActiveCollabTaskDetail
+  ActiveCollabTaskDetail,
+  ActiveCollabUser
 } from '../../../shared/activecollab-types'
 
 type DetailResult = ActiveCollabResult<ActiveCollabTaskDetail>
@@ -30,7 +31,9 @@ const mocks = vi.hoisted(() => ({
   updateTask: vi.fn(),
   completeTask: vi.fn<(args: { taskId: number }) => Promise<TaskResult>>(),
   reopenTask: vi.fn(),
-  postComment: vi.fn()
+  postComment: vi.fn(),
+  listUsers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>(),
+  listProjectMembers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>()
 }))
 
 vi.mock('@/store', () => ({
@@ -52,7 +55,9 @@ vi.mock('@/store', () => ({
       updateActiveCollabTask: mocks.updateTask,
       completeActiveCollabTask: mocks.completeTask,
       reopenActiveCollabTask: mocks.reopenTask,
-      postActiveCollabComment: mocks.postComment
+      postActiveCollabComment: mocks.postComment,
+      listActiveCollabUsers: mocks.listUsers,
+      listActiveCollabProjectMembers: mocks.listProjectMembers
     })
 }))
 
@@ -122,6 +127,8 @@ beforeEach(() => {
   }
   mocks.fetchTaskDetail.mockResolvedValue({ ok: true, value: DETAIL })
   mocks.listLabels.mockResolvedValue({ ok: true, value: LABELS })
+  mocks.listUsers.mockResolvedValue({ ok: true, value: [] })
+  mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [] })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)

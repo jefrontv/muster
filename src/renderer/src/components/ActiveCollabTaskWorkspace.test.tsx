@@ -15,7 +15,8 @@ import type {
   ActiveCollabLabel,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
-  ActiveCollabTaskUpdate
+  ActiveCollabTaskUpdate,
+  ActiveCollabUser
 } from '../../../shared/activecollab-types'
 
 type DetailResult = ActiveCollabResult<ActiveCollabTaskDetail>
@@ -34,7 +35,9 @@ const mocks = vi.hoisted(() => ({
   getAttachmentImage:
     vi.fn<
       (args: { attachmentId: number }) => Promise<ActiveCollabResult<ActiveCollabAttachmentImage>>
-    >()
+    >(),
+  listUsers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>(),
+  listProjectMembers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>()
 }))
 
 vi.mock('@/store', () => ({
@@ -56,7 +59,9 @@ vi.mock('@/store', () => ({
       updateActiveCollabTask: mocks.updateTask,
       completeActiveCollabTask: mocks.completeTask,
       reopenActiveCollabTask: mocks.reopenTask,
-      postActiveCollabComment: mocks.postComment
+      postActiveCollabComment: mocks.postComment,
+      listActiveCollabUsers: mocks.listUsers,
+      listActiveCollabProjectMembers: mocks.listProjectMembers
     })
 }))
 
@@ -151,6 +156,8 @@ beforeEach(() => {
     ok: true,
     value: { dataUrl: IMAGE_DATA_URL, mimeType: 'image/png' }
   })
+  mocks.listUsers.mockResolvedValue({ ok: true, value: [] })
+  mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [] })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -436,6 +443,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     expect(buttonByLabel('Complete task').disabled).toBe(true)
     expect(dueDateInput().disabled).toBe(true)
     expect(buttonWith('Edit labels').disabled).toBe(true)
+    expect(buttonByLabel('Assignee').disabled).toBe(true)
     expect(container.querySelector('textarea')?.disabled).toBe(true)
 
     await act(async () => {
@@ -444,6 +452,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
 
     expect(buttonByLabel('Reopen task').disabled).toBe(false)
     expect(dueDateInput().disabled).toBe(false)
+    expect(buttonByLabel('Assignee').disabled).toBe(false)
   })
 })
 

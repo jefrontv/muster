@@ -16,7 +16,42 @@
 // `@Jake Varrese` elsewhere in the body also becomes a mention for the picked Jake — including when
 // the author meant a different Jake. Documented by test rather than papered over.
 
+import type { ActiveCollabResult } from '../../../shared/activecollab-api-types'
 import type { ActiveCollabUser } from '../../../shared/activecollab-types'
+
+/** People to offer, and whether they are the project's members or the whole-instance fallback. */
+export type ActiveCollabMentionPeople = {
+  users: readonly ActiveCollabUser[]
+  scoped: boolean
+}
+
+/**
+ * The people this composer should offer: the members of the task's project, or the whole roster
+ * when that cannot be delivered.
+ *
+ * The fallback is the point of this function. A members read that fails, or answers a membership
+ * the roster cannot name anybody from, must NOT produce an empty menu — that reads as "nobody
+ * exists" and blocks a mention the author is entitled to make, for a reason they can neither see
+ * nor fix. A worse list that works beats a correct-looking list of nobody, and `scoped: false`
+ * carries the difference to the menu so it can say which one this is.
+ *
+ * Costs one request in the normal case: the roster is only asked for when the members read did not
+ * answer with people.
+ */
+export async function activeCollabMentionPeople(args: {
+  projectId: number | null
+  listProjectMembers: (projectId: number) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+  listUsers: () => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+}): Promise<ActiveCollabMentionPeople> {
+  if (args.projectId !== null && args.projectId > 0) {
+    const members = await args.listProjectMembers(args.projectId)
+    if (members.ok && members.value.length > 0) {
+      return { users: members.value, scoped: true }
+    }
+  }
+  const roster = await args.listUsers()
+  return { users: roster.ok ? roster.value : [], scoped: false }
+}
 
 /** One resolved mention: the name as it appears in the draft, and who it addresses. */
 export type ActiveCollabMentionPick = {

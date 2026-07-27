@@ -16,6 +16,7 @@ import {
   activeCollabGetTaskDetail,
   activeCollabListAssignedTasks,
   activeCollabListLabels,
+  activeCollabListProjectMembers,
   activeCollabListProjects,
   activeCollabListUsers
 } from '@/runtime/runtime-activecollab-client'
@@ -56,6 +57,14 @@ export type ActiveCollabReadActions = {
   listActiveCollabUsers: (
     options?: ActiveCollabReadOptions
   ) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+  /**
+   * The people on one project. Same laziness as the roster, and an `ok: true` EMPTY value is a real
+   * answer meaning "offer the roster instead" — see `ActiveCollabApi.listProjectMembers`.
+   */
+  listActiveCollabProjectMembers: (
+    projectId: number,
+    options?: ActiveCollabReadOptions
+  ) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
 }
 
 type InflightMap<T> = Map<string, ActiveCollabInflightRead<ActiveCollabResult<T>>>
@@ -65,6 +74,7 @@ const inflightProjects: InflightMap<ActiveCollabProject[]> = new Map()
 const inflightTaskDetails: InflightMap<ActiveCollabTaskDetail> = new Map()
 const inflightLabels: InflightMap<ActiveCollabLabel[]> = new Map()
 const inflightUsers: InflightMap<ActiveCollabUser[]> = new Map()
+const inflightProjectMembers: InflightMap<ActiveCollabUser[]> = new Map()
 
 /** Discarded on connect/disconnect so a superseded fetch cannot be joined by a fresh caller. */
 export function clearActiveCollabInflightReads(): void {
@@ -73,6 +83,7 @@ export function clearActiveCollabInflightReads(): void {
   inflightTaskDetails.clear()
   inflightLabels.clear()
   inflightUsers.clear()
+  inflightProjectMembers.clear()
   clearActiveCollabAttachmentImageFetches()
 }
 
@@ -219,6 +230,21 @@ export function createActiveCollabReadActions(
         selectCache: (s) => s.activeCollabUserCache,
         writeCache: (cache) => ({ activeCollabUserCache: cache }),
         fetch: () => activeCollabListUsers(scope.settings)
+      })
+    },
+
+    listActiveCollabProjectMembers: async (projectId, options) => {
+      const scope = getActiveCollabReadScope(get().settings, options?.sourceContext)
+      return runCachedRead<ActiveCollabUser[]>({
+        set,
+        get,
+        scope,
+        cacheKey: scopedCacheKey(scope, `members::${projectId}`),
+        force: options?.force ?? false,
+        inflight: inflightProjectMembers,
+        selectCache: (s) => s.activeCollabProjectMemberCache,
+        writeCache: (cache) => ({ activeCollabProjectMemberCache: cache }),
+        fetch: () => activeCollabListProjectMembers({ projectId }, scope.settings)
       })
     }
   }

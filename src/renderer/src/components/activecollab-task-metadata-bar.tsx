@@ -3,16 +3,16 @@ import React from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
+import { ActiveCollabTaskAssigneeField } from './activecollab-task-assignee-field'
 import { ActiveCollabTaskDueDateField } from './activecollab-task-due-date-field'
 import { ActiveCollabLabelChip, ActiveCollabLabelEditor } from './activecollab-task-label-editor'
-import { activeCollabAssigneeLabel, resolveActiveCollabAssignee } from './activecollab-task-people'
-import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
 import type { ActiveCollabTaskWriteField } from './activecollab-task-writes'
 
 type ActiveCollabTaskMetadataBarProps = {
   task: ActiveCollabTask
   pending: ActiveCollabTaskWriteField | null
   onDueOnChange: (dueOn: number | null) => void
+  onAssigneeIdChange: (assigneeId: number | null) => void
   onLabelNamesChange: (labelNames: string[]) => void
 }
 
@@ -29,27 +29,23 @@ export function ActiveCollabTaskMetadataBar({
   task,
   pending,
   onDueOnChange,
+  onAssigneeIdChange,
   onLabelNamesChange
 }: ActiveCollabTaskMetadataBarProps): React.JSX.Element {
   const busy = pending !== null
-  const assignee = resolveActiveCollabAssignee(task)
 
   return (
     <dl className="grid flex-none grid-cols-[5.25rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 border-b border-border/60 px-4 py-3">
       <dt className={META_LABEL}>
         {translate('auto.components.activecollab.task_workspace.assignee', 'Assignee')}
       </dt>
-      <dd className="flex min-w-0 items-center gap-2 text-[12px]">
-        <ActiveCollabPersonBadge name={assignee.kind === 'named' ? assignee.name : null} />
-        <span
-          data-testid="activecollab-task-assignee"
-          className={cn(
-            'min-w-0 truncate',
-            assignee.kind === 'named' ? 'text-foreground' : 'text-muted-foreground'
-          )}
-        >
-          {activeCollabAssigneeLabel(assignee)}
-        </span>
+      <dd className="flex min-w-0 items-center text-[12px]">
+        <ActiveCollabTaskAssigneeField
+          task={task}
+          disabled={busy}
+          busy={pending === 'assignee'}
+          onChange={onAssigneeIdChange}
+        />
       </dd>
 
       <dt className={META_LABEL}>

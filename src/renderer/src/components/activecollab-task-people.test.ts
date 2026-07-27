@@ -31,6 +31,39 @@ describe('resolveActiveCollabAssignee', () => {
       kind: 'unresolved'
     })
   })
+
+  it('names an otherwise-unresolvable id from the picker roster', () => {
+    expect(
+      resolveActiveCollabAssignee({ assigneeId: 407, assigneeName: null }, [
+        { id: 12, name: 'Ada Lovelace' },
+        { id: 407, name: 'Jake Varrese' }
+      ])
+    ).toEqual({ kind: 'named', name: 'Jake Varrese' })
+  })
+
+  it('stays unresolved when the roster does not carry the id', () => {
+    expect(
+      resolveActiveCollabAssignee({ assigneeId: 90210, assigneeName: null }, [
+        { id: 407, name: 'Jake Varrese' }
+      ])
+    ).toEqual({ kind: 'unresolved' })
+  })
+
+  it('never lets a roster name override the one the task shipped', () => {
+    expect(
+      resolveActiveCollabAssignee({ assigneeId: 407, assigneeName: 'Jacob Varrese' }, [
+        { id: 407, name: 'Jake Varrese' }
+      ])
+    ).toEqual({ kind: 'named', name: 'Jacob Varrese' })
+  })
+
+  it('is unassigned regardless of the roster when there is no assignee id', () => {
+    expect(
+      resolveActiveCollabAssignee({ assigneeId: null, assigneeName: null }, [
+        { id: 407, name: 'Jake Varrese' }
+      ])
+    ).toEqual({ kind: 'unassigned' })
+  })
 })
 
 describe('activeCollabAssigneeLabel', () => {

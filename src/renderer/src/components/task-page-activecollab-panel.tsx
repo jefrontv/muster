@@ -14,9 +14,6 @@ import { Button } from '@/components/ui/button'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { ActiveCollabTaskList } from '@/components/task-page-activecollab-task-list'
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
-import { ActiveCollabProjectBindingBar } from '@/components/task-page-activecollab-binding-bar'
-import { useActiveCollabBindingTargetProject } from '@/hooks/useActiveCollabBindingTargetProject'
-import { useActiveCollabProjectBinding } from '@/hooks/useActiveCollabProjectBinding'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
@@ -51,11 +48,6 @@ export function TaskPageActiveCollabPanel({
   const handleSelect = useCallback((ref: ActiveCollabTaskRef) => {
     setSelected(ref)
   }, [])
-
-  // The binding is resolved here rather than inside the list because two children need it: the bar
-  // that names and edits it, and the list that scopes its rows to it. The Tasks page reports on
-  // whatever project the app is pointed at; the sidebar is where a project is aimed at explicitly.
-  const binding = useActiveCollabProjectBinding(useActiveCollabBindingTargetProject())
 
   if (!statusChecked) {
     return (
@@ -93,9 +85,7 @@ export function TaskPageActiveCollabPanel({
   return (
     <div className="flex min-h-0 max-h-full flex-1 gap-3 overflow-hidden">
       <div className="flex min-h-0 max-h-full min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border/50 bg-background shadow-sm">
-        <ActiveCollabProjectBindingBar {...binding} />
         <ActiveCollabTaskList
-          bindingStatus={binding.status}
           onSelect={handleSelect}
           selectedTaskId={selected?.taskId ?? null}
           sourceContext={sourceContext}

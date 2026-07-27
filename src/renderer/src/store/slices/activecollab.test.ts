@@ -33,6 +33,7 @@ const reopenTask = vi.fn()
 const postComment = vi.fn()
 const listLabels = vi.fn()
 const listUsers = vi.fn()
+const listProjectMembers = vi.fn()
 
 vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabStatus: (...args: unknown[]) => status(...args),
@@ -46,7 +47,8 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabReopenTask: (...args: unknown[]) => reopenTask(...args),
   activeCollabPostComment: (...args: unknown[]) => postComment(...args),
   activeCollabListLabels: (...args: unknown[]) => listLabels(...args),
-  activeCollabListUsers: (...args: unknown[]) => listUsers(...args)
+  activeCollabListUsers: (...args: unknown[]) => listUsers(...args),
+  activeCollabListProjectMembers: (...args: unknown[]) => listProjectMembers(...args)
 }))
 
 function createTestStore() {
@@ -249,6 +251,28 @@ describe('createActiveCollabSlice caching', () => {
     expect(listUsers).toHaveBeenCalledTimes(1)
     expect(store.getState().activeCollabUserCache[`${prefix}::users`]?.data).toEqual([
       { id: 407, name: 'Jake Varrese' }
+    ])
+  })
+
+  it('reads a project membership once per project, and keeps two projects apart', async () => {
+    const store = createTestStore()
+    const prefix = getProviderRuntimeContextKey(null)
+    listProjectMembers.mockImplementation(async (args: { projectId: number }) => ({
+      ok: true,
+      value: [{ id: args.projectId, name: `Member of ${args.projectId}` }]
+    }))
+
+    await Promise.all([
+      store.getState().listActiveCollabProjectMembers(5937),
+      store.getState().listActiveCollabProjectMembers(5937)
+    ])
+    await store.getState().listActiveCollabProjectMembers(5937)
+    await store.getState().listActiveCollabProjectMembers(3790)
+
+    expect(listProjectMembers).toHaveBeenCalledTimes(2)
+    expect(Object.keys(store.getState().activeCollabProjectMemberCache).sort()).toEqual([
+      `${prefix}::members::3790`,
+      `${prefix}::members::5937`
     ])
   })
 })

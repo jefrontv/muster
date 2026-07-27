@@ -42,7 +42,8 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabReopenTask: vi.fn(),
   activeCollabPostComment: vi.fn(),
   activeCollabListLabels: vi.fn(),
-  activeCollabListUsers: vi.fn()
+  activeCollabListUsers: vi.fn(),
+  activeCollabListProjectMembers: vi.fn()
 }))
 
 import { ActiveCollabAttachmentGrid } from './activecollab-attachment-grid'

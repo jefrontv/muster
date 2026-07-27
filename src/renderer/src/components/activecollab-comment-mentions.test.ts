@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
+import type { ActiveCollabResult } from '../../../shared/activecollab-api-types'
 import {
   acceptActiveCollabMention,
   activeCollabCommentBodyHtml,
+  activeCollabMentionPeople,
   activeCollabMentionSuggestions,
   activeCollabMentionToken,
   withActiveCollabMentionPick,
@@ -240,5 +242,78 @@ describe('activeCollabCommentBodyHtml', () => {
     activeCollabCommentBodyHtml('@Jake Varrese', picked)
 
     expect(picked.map((pick) => pick.id)).toEqual([900, 407])
+  })
+})
+
+describe('activeCollabMentionPeople', () => {
+  const MEMBERS = [ADA, JAKE]
+
+  function reads(
+    members: ActiveCollabResult<ActiveCollabUser[]>,
+    roster: ActiveCollabResult<ActiveCollabUser[]> = { ok: true, value: ROSTER }
+  ) {
+    const calls: string[] = []
+    return {
+      calls,
+      projectId: 5937,
+      listProjectMembers: async (projectId: number) => {
+        calls.push(`members:${projectId}`)
+        return members
+      },
+      listUsers: async () => {
+        calls.push('users')
+        return roster
+      }
+    }
+  }
+
+  it('offers the project members, and never reads the roster it did not need', async () => {
+    const args = reads({ ok: true, value: MEMBERS })
+
+    await expect(activeCollabMentionPeople(args)).resolves.toEqual({
+      users: MEMBERS,
+      scoped: true
+    })
+    expect(args.calls).toEqual(['members:5937'])
+  })
+
+  it('falls back to the whole roster when the membership read FAILS', async () => {
+    // The failure the ticket is about: an empty menu reads as "nobody exists" and blocks a mention
+    // the author is entitled to make, for a reason they can neither see nor fix.
+    const args = reads({ ok: false, kind: 'api', error: 'Service unavailable', status: 503 })
+
+    await expect(activeCollabMentionPeople(args)).resolves.toEqual({
+      users: ROSTER,
+      scoped: false
+    })
+    expect(args.calls).toEqual(['members:5937', 'users'])
+  })
+
+  it('falls back to the whole roster when the membership comes back EMPTY', async () => {
+    const args = reads({ ok: true, value: [] })
+
+    await expect(activeCollabMentionPeople(args)).resolves.toEqual({
+      users: ROSTER,
+      scoped: false
+    })
+  })
+
+  it('goes straight to the roster when there is no project to scope to', async () => {
+    const args = { ...reads({ ok: true, value: MEMBERS }), projectId: null }
+
+    await expect(activeCollabMentionPeople(args)).resolves.toEqual({
+      users: ROSTER,
+      scoped: false
+    })
+    expect(args.calls).toEqual(['users'])
+  })
+
+  it('answers nobody only when BOTH reads fail, which is the one case with nothing to show', async () => {
+    const args = reads(
+      { ok: true, value: [] },
+      { ok: false, kind: 'auth', error: 'Access denied', status: 403 }
+    )
+
+    await expect(activeCollabMentionPeople(args)).resolves.toEqual({ users: [], scoped: false })
   })
 })

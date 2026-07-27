@@ -52,6 +52,7 @@ vi.mock('./preflight', () => ({ _resetPreflightCache: resetPreflightMock }))
 import { AC_MAX_ATTACHMENT_IMAGE_BYTES } from '../activecollab/attachment-image'
 import { ActiveCollabApiError } from '../activecollab/http'
 import { resetAcNameDirectoryCache } from '../activecollab/name-directory'
+import { resetAcProjectMembersCache } from '../activecollab/project-members'
 import { registerActiveCollabHandlers } from './activecollab'
 
 const CHANNELS = [
@@ -67,7 +68,8 @@ const CHANNELS = [
   'activecollab:reopenTask',
   'activecollab:postComment',
   'activecollab:listLabels',
-  'activecollab:listUsers'
+  'activecollab:listUsers',
+  'activecollab:listProjectMembers'
 ]
 
 /** Every channel that needs a stored credential, so one loop can prove the whole surface. */
@@ -84,7 +86,8 @@ const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   { channel: 'activecollab:reopenTask', args: { taskId: 509323 } },
   { channel: 'activecollab:postComment', args: { taskId: 509323, bodyHtml: '<p>Hi</p>' } },
   { channel: 'activecollab:listLabels', args: undefined },
-  { channel: 'activecollab:listUsers', args: undefined }
+  { channel: 'activecollab:listUsers', args: undefined },
+  { channel: 'activecollab:listProjectMembers', args: { projectId: 5937 } }
 ]
 
 const CREDENTIAL = {
@@ -174,6 +177,7 @@ beforeEach(() => {
   resetPreflightMock.mockReset()
   // Module-level and credential-keyed by design, so each test starts from a cold directory.
   resetAcNameDirectoryCache()
+  resetAcProjectMembersCache()
   registerActiveCollabHandlers()
 })
 
@@ -527,6 +531,76 @@ describe('name resolution', () => {
     // A mention menu with nobody in it is a dead menu; a reconnect prompt over a comment box is a
     // lie about the connection, which is still live for every other operation.
     await expect(invoke('activecollab:listUsers')).resolves.toEqual({ ok: true, value: [] })
+  })
+
+  it('answers listProjectMembers with only the project people, named off the same roster', async () => {
+    requestMock.mockImplementation(async (path: string) => {
+      if (path === 'users') {
+        return {
+          data: {
+            users: [
+              { id: 407, display_name: 'Jake Varrese' },
+              { id: 12, display_name: 'Ada Lovelace' },
+              { id: 88, display_name: 'Alan Turing' }
+            ]
+          },
+          totalItems: null,
+          page: null,
+          perPage: null
+        }
+      }
+      // The verified 8.0.31 envelope: bare user ids under `single.members`.
+      const data = path === 'projects/5937' ? { single: { members: [12, 407] } } : []
+      return { data, totalItems: null, page: null, perPage: null }
+    })
+
+    // Alan is on the instance but not on the project, so he must not be offered.
+    await expect(invoke('activecollab:listProjectMembers', { projectId: 5937 })).resolves.toEqual({
+      ok: true,
+      value: [
+        { id: 12, name: 'Ada Lovelace' },
+        { id: 407, name: 'Jake Varrese' }
+      ]
+    })
+  })
+
+  it('reads a project membership once per project, and reuses the already-warm roster', async () => {
+    requestMock.mockImplementation(async (path: string) => {
+      const data =
+        path === 'users'
+          ? { users: [{ id: 407, display_name: 'Jake Varrese' }] }
+          : path.startsWith('projects/')
+            ? { single: { members: [407] } }
+            : []
+      return { data, totalItems: null, page: null, perPage: null }
+    })
+
+    await Promise.all([
+      invoke('activecollab:listProjectMembers', { projectId: 5937 }),
+      invoke('activecollab:listProjectMembers', { projectId: 5937 })
+    ])
+    await invoke('activecollab:listProjectMembers', { projectId: 5937 })
+    await invoke('activecollab:listProjectMembers', { projectId: 3790 })
+
+    // One read per project per window, however many callers; the roster is paid for exactly once.
+    expect(pathCounts()).toMatchObject({ 'projects/5937': 1, 'projects/3790': 1, users: 1 })
+  })
+
+  it('answers an empty membership rather than a failure when the project read is refused', async () => {
+    requestMock.mockImplementation(async (path: string) => {
+      if (path.startsWith('projects/')) {
+        throw new ActiveCollabApiError('Access denied', 403, true)
+      }
+      const data = path === 'users' ? { users: [{ id: 407, display_name: 'Jake' }] } : []
+      return { data, totalItems: null, page: null, perPage: null }
+    })
+
+    // Empty is the renderer's cue to offer the whole roster. A tagged failure would instead put a
+    // reconnect prompt over a comment box whose connection is fine.
+    await expect(invoke('activecollab:listProjectMembers', { projectId: 5937 })).resolves.toEqual({
+      ok: true,
+      value: []
+    })
   })
 
   it('still answers the tasks when the roster read fails', async () => {

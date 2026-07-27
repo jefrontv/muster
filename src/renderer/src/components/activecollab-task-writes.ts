@@ -11,7 +11,12 @@ import type {
   ActiveCollabResult
 } from '../../../shared/activecollab-api-types'
 
-export type ActiveCollabTaskWriteField = 'completion' | 'labels' | 'dueDate' | 'comment'
+export type ActiveCollabTaskWriteField =
+  | 'completion'
+  | 'labels'
+  | 'dueDate'
+  | 'assignee'
+  | 'comment'
 
 export type ActiveCollabTaskWrites = {
   /** Non-null while a write is in flight; the pane disables every control off this. */
@@ -22,6 +27,8 @@ export type ActiveCollabTaskWrites = {
   setLabelNames: (labelNames: string[]) => Promise<void>
   /** Epoch ms for the local calendar day, or an explicit null to clear the date. */
   setDueOn: (dueOn: number | null) => Promise<void>
+  /** A user id, or an explicit null to unassign. */
+  setAssigneeId: (assigneeId: number | null) => Promise<void>
   addComment: (bodyHtml: string) => Promise<void>
 }
 
@@ -109,11 +116,19 @@ export function useActiveCollabTaskWrites(
     [onTask, runWrite, updateTask]
   )
 
+  const setAssigneeId = useCallback(
+    (assigneeId: number | null) =>
+      // Explicit null, never an omitted key: `ActiveCollabTaskUpdate` leaves absent fields alone,
+      // so omitting `assigneeId` would make Unassign a silent no-op.
+      runWrite('assignee', (ids) => updateTask({ ...ids, update: { assigneeId } }), onTask),
+    [onTask, runWrite, updateTask]
+  )
+
   const addComment = useCallback(
     (bodyHtml: string) =>
       runWrite('comment', (ids) => postComment({ taskId: ids.taskId, bodyHtml }), onComment),
     [onComment, postComment, runWrite]
   )
 
-  return { pending, failure, setCompleted, setLabelNames, setDueOn, addComment }
+  return { pending, failure, setCompleted, setLabelNames, setDueOn, setAssigneeId, addComment }
 }

@@ -25,6 +25,8 @@ export type ActiveCollabCacheState = {
   activeCollabTaskDetailCache: Record<string, CacheEntry<ActiveCollabTaskDetail>>
   activeCollabLabelCache: Record<string, CacheEntry<ActiveCollabLabel[]>>
   activeCollabUserCache: Record<string, CacheEntry<ActiveCollabUser[]>>
+  /** Keyed per project id, so two open tasks on different projects do not share a member list. */
+  activeCollabProjectMemberCache: Record<string, CacheEntry<ActiveCollabUser[]>>
 }
 
 /** Only these two hold task rows; projects, labels and people are vocabulary, not per-task state. */

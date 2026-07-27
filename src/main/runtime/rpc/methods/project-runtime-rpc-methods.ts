@@ -40,18 +40,10 @@ const LocalWindowsRuntimePreference = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('wsl'), distro: requiredString('Missing WSL distro') })
 ])
 
-const ActiveCollabProjectBinding = z.object({
-  projectId: z.number().int().positive(),
-  projectName: requiredString('Missing ActiveCollab project name'),
-  boundAt: z.number()
-})
-
 const ProjectUpdate = z.object({
   projectId: requiredString('Missing project ID'),
   updates: z.object({
-    localWindowsRuntimePreference: LocalWindowsRuntimePreference.optional(),
-    /** `null` clears the binding; an omitted key leaves it alone. */
-    activeCollabBinding: ActiveCollabProjectBinding.nullish()
+    localWindowsRuntimePreference: LocalWindowsRuntimePreference.optional()
   })
 })
 

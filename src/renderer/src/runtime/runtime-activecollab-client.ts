@@ -217,3 +217,16 @@ export async function activeCollabListUsers(
     window.api.activecollab.listUsers()
   )
 }
+
+export async function activeCollabListProjectMembers(
+  args: { projectId: number },
+  settings?: RuntimeActiveCollabSettings
+): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
+  return callActiveCollab(
+    'activecollab.listProjectMembers',
+    args,
+    settings,
+    OPERATION_TIMEOUT_MS,
+    () => window.api.activecollab.listProjectMembers(args)
+  )
+}

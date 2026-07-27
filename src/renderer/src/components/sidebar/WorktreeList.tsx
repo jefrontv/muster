@@ -279,7 +279,6 @@ import { useHostHeaderDrag } from './host-header-drag'
 import { buildSidebarHostOptions } from './sidebar-host-options'
 import { HostSectionHeaderMenu } from './HostSectionHeaderMenu'
 import { ProjectHeaderActions } from './ProjectHeaderActions'
-import { ProjectActiveCollabBindingMenuItems } from './ProjectActiveCollabBindingMenuItems'
 import { translate } from '@/i18n/i18n'
 import { folderWorkspaceKey, getActiveSidebarWorkspaceId } from '../../../../shared/workspace-scope'
 import { getHostDisplayLabelOverrides } from '../../../../shared/host-setting-overrides'
@@ -4639,7 +4638,6 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                                 )}
                               </DropdownMenuItem>
                             ) : null}
-                            <ProjectActiveCollabBindingMenuItems repoId={row.repo.id} />
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               variant="destructive"

@@ -31,7 +31,8 @@ function makeRuntime(): OrcaRuntimeService {
     activeCollabReopenTask: vi.fn(),
     activeCollabPostComment: vi.fn(),
     activeCollabListLabels: vi.fn(),
-    activeCollabListUsers: vi.fn()
+    activeCollabListUsers: vi.fn(),
+    activeCollabListProjectMembers: vi.fn()
   } as unknown as OrcaRuntimeService
 }
 
@@ -74,6 +75,7 @@ describe('activecollab RPC methods', () => {
     )
     await dispatcher.dispatch(makeRequest('activecollab.listLabels'))
     await dispatcher.dispatch(makeRequest('activecollab.listUsers'))
+    await dispatcher.dispatch(makeRequest('activecollab.listProjectMembers', { projectId: 5937 }))
 
     expect(runtime.activeCollabListAssignedTasks).toHaveBeenNthCalledWith(2, { page: 2 })
     expect(runtime.activeCollabListProjects).toHaveBeenCalled()
@@ -84,6 +86,7 @@ describe('activecollab RPC methods', () => {
     expect(runtime.activeCollabGetAttachmentImage).toHaveBeenCalledWith({ attachmentId: 249086 })
     expect(runtime.activeCollabListLabels).toHaveBeenCalled()
     expect(runtime.activeCollabListUsers).toHaveBeenCalled()
+    expect(runtime.activeCollabListProjectMembers).toHaveBeenCalledWith({ projectId: 5937 })
   })
 
   it('routes the writes, preserving a null that clears a field', async () => {

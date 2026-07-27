@@ -1,23 +1,15 @@
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: image surface size is measured with ResizeObserver and DOM refs, which are external layout systems outside render derivation. */
 import { Image as ImageIcon, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type JSX, useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import ImageViewerPopup from './ImageViewerPopup'
 import PdfViewer from './PdfViewer'
-import {
-  type ApplyImageViewerZoomChange,
-  applyAnchoredImageViewerZoomChange,
-  applyImageSurfaceWheel,
-  getElementSurfaceSize,
-  getImageLayoutStyle
-} from './image-viewer-dom-zoom'
+import { useImageViewerZoomSurface } from './image-viewer-zoom-surface'
 import {
   IMAGE_VIEWER_ZOOM_STEP,
   MAX_IMAGE_VIEWER_ZOOM,
   MIN_IMAGE_VIEWER_ZOOM,
-  type ImageViewerImageDimensions,
-  type ImageViewerSurfaceSize,
-  getZoomedImageLayoutSize
+  type ImageViewerImageDimensions
 } from './image-viewer-zoom'
 import { translate } from '@/i18n/i18n'
 import { buildImageDataUri } from '../../../../shared/image-data-uri'
@@ -38,31 +30,33 @@ export default function ImageViewer({
   layout = 'fill'
 }: ImageViewerProps): JSX.Element {
   const [isPopupOpen, setIsPopupOpen] = useState(false)
-  const [inlineZoom, setInlineZoom] = useState(1)
-  const [popupZoom, setPopupZoom] = useState(1)
-  const inlineSurfaceRef = useRef<HTMLDivElement | null>(null)
-  const popupSurfaceRef = useRef<HTMLDivElement | null>(null)
-  const [inlineSurfaceSize, setInlineSurfaceSize] = useState<ImageViewerSurfaceSize | null>(null)
-  const [popupSurfaceSize, setPopupSurfaceSize] = useState<ImageViewerSurfaceSize | null>(null)
   const [imageDimensions, setImageDimensions] = useState<ImageViewerImageDimensions | null>(null)
   const [failedPreviewSrc, setFailedPreviewSrc] = useState<string | null>(null)
 
   const filename = useMemo(() => filePath.split(/[/\\]/).pop() || filePath, [filePath])
   const cleanedContent = useMemo(() => content.replace(/\s/g, ''), [content])
-  const imageStateKey = `${filePath}\n${mimeType}\n${cleanedContent}`
-  const [lastImageStateKey, setLastImageStateKey] = useState(imageStateKey)
-  if (lastImageStateKey !== imageStateKey) {
-    setLastImageStateKey(imageStateKey)
-    setInlineZoom(1)
-    setPopupZoom(1)
-    setImageDimensions(null)
-  }
-  const isPdf = mimeType === 'application/pdf'
   const isIntrinsicLayout = layout === 'intrinsic'
   const previewSrc = useMemo(
     () => buildImageDataUri(mimeType, cleanedContent),
     [cleanedContent, mimeType]
   )
+
+  const inlineSurface = useImageViewerZoomSurface({
+    imageDimensions,
+    fitToSurface: !isIntrinsicLayout,
+    measureKey: previewSrc
+  })
+  const popupSurface = useImageViewerZoomSurface({ imageDimensions, active: isPopupOpen })
+
+  const imageStateKey = `${filePath}\n${mimeType}\n${cleanedContent}`
+  const [lastImageStateKey, setLastImageStateKey] = useState(imageStateKey)
+  if (lastImageStateKey !== imageStateKey) {
+    setLastImageStateKey(imageStateKey)
+    inlineSurface.setZoom(1)
+    popupSurface.setZoom(1)
+    setImageDimensions(null)
+  }
+  const isPdf = mimeType === 'application/pdf'
   const imageError =
     (previewSrc === null && cleanedContent.length > 0) ||
     (previewSrc !== null && failedPreviewSrc === previewSrc)
@@ -76,45 +70,13 @@ export default function ImageViewer({
     }
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }, [cleanedContent])
-  const inlineZoomPercent = Math.round(inlineZoom * 100)
-  const inlineImageLayoutSize = useMemo(
-    () =>
-      isIntrinsicLayout
-        ? null
-        : getZoomedImageLayoutSize({
-            imageDimensions,
-            surfaceSize: inlineSurfaceSize,
-            zoom: inlineZoom
-          }),
-    [imageDimensions, inlineSurfaceSize, inlineZoom, isIntrinsicLayout]
-  )
-  const popupImageLayoutSize = useMemo(
-    () =>
-      getZoomedImageLayoutSize({
-        imageDimensions,
-        surfaceSize: popupSurfaceSize,
-        zoom: popupZoom
-      }),
-    [imageDimensions, popupSurfaceSize, popupZoom]
-  )
-  const inlineImageLayoutStyle = useMemo(
-    () => getImageLayoutStyle(inlineImageLayoutSize),
-    [inlineImageLayoutSize]
-  )
-  const popupImageLayoutStyle = useMemo(
-    () => getImageLayoutStyle(popupImageLayoutSize),
-    [popupImageLayoutSize]
-  )
-  const applyInlineZoomChange = useCallback<ApplyImageViewerZoomChange>((getNextZoom, anchor) => {
-    applyAnchoredImageViewerZoomChange(inlineSurfaceRef.current, setInlineZoom, getNextZoom, anchor)
-  }, [])
-  const applyPopupZoomChange = useCallback<ApplyImageViewerZoomChange>((getNextZoom, anchor) => {
-    applyAnchoredImageViewerZoomChange(popupSurfaceRef.current, setPopupZoom, getNextZoom, anchor)
-  }, [])
+  const inlineZoom = inlineSurface.zoom
+  const applyInlineZoomChange = inlineSurface.applyZoomChange
+  const setPopupZoom = popupSurface.setZoom
   const openPopup = useCallback(() => {
     setPopupZoom(inlineZoom)
     setIsPopupOpen(true)
-  }, [inlineZoom])
+  }, [inlineZoom, setPopupZoom])
   const handlePopupOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
@@ -122,92 +84,8 @@ export default function ImageViewer({
       }
       setIsPopupOpen(open)
     },
-    [inlineZoom]
+    [inlineZoom, setPopupZoom]
   )
-  const handleInlineImageSurfaceWheel = useCallback(
-    (event: WheelEvent) => {
-      applyImageSurfaceWheel(event, applyInlineZoomChange)
-    },
-    [applyInlineZoomChange]
-  )
-  const handlePopupImageSurfaceWheel = useCallback(
-    (event: WheelEvent) => {
-      applyImageSurfaceWheel(event, applyPopupZoomChange)
-    },
-    [applyPopupZoomChange]
-  )
-  const setInlineSurfaceRef = useCallback(
-    (surface: HTMLDivElement | null) => {
-      if (inlineSurfaceRef.current) {
-        inlineSurfaceRef.current.removeEventListener('wheel', handleInlineImageSurfaceWheel)
-      }
-      inlineSurfaceRef.current = surface
-      if (surface) {
-        setInlineSurfaceSize(getElementSurfaceSize(surface))
-        // Why: Chromium exposes trackpad pinch as ctrl-wheel and requires a
-        // native non-passive listener to stop browser/app zoom.
-        surface.addEventListener('wheel', handleInlineImageSurfaceWheel, { passive: false })
-      } else {
-        setInlineSurfaceSize(null)
-      }
-    },
-    [handleInlineImageSurfaceWheel]
-  )
-  const setPopupSurfaceRef = useCallback(
-    (surface: HTMLDivElement | null) => {
-      if (popupSurfaceRef.current) {
-        popupSurfaceRef.current.removeEventListener('wheel', handlePopupImageSurfaceWheel)
-      }
-      popupSurfaceRef.current = surface
-      if (surface) {
-        setPopupSurfaceSize(getElementSurfaceSize(surface))
-        surface.addEventListener('wheel', handlePopupImageSurfaceWheel, { passive: false })
-      } else {
-        setPopupSurfaceSize(null)
-      }
-    },
-    [handlePopupImageSurfaceWheel]
-  )
-
-  useEffect(() => {
-    const surface = inlineSurfaceRef.current
-    if (!surface) {
-      setInlineSurfaceSize(null)
-      return
-    }
-
-    const updateSize = () => setInlineSurfaceSize(getElementSurfaceSize(surface))
-    updateSize()
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-
-    const observer = new ResizeObserver(updateSize)
-    observer.observe(surface)
-    return () => observer.disconnect()
-  }, [previewSrc])
-
-  useEffect(() => {
-    if (!isPopupOpen) {
-      setPopupSurfaceSize(null)
-      return
-    }
-
-    const surface = popupSurfaceRef.current
-    if (!surface) {
-      return
-    }
-
-    const updateSize = () => setPopupSurfaceSize(getElementSurfaceSize(surface))
-    updateSize()
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-
-    const observer = new ResizeObserver(updateSize)
-    observer.observe(surface)
-    return () => observer.disconnect()
-  }, [isPopupOpen])
 
   if (isPdf) {
     return <PdfViewer content={cleanedContent} filePath={filePath} />
@@ -250,7 +128,7 @@ export default function ImageViewer({
     <>
       <div className={cn('flex min-h-0 flex-col', isIntrinsicLayout ? 'h-auto' : 'h-full')}>
         <div
-          ref={setInlineSurfaceRef}
+          ref={inlineSurface.setSurfaceRef}
           className={cn(
             'cursor-pointer bg-muted/20',
             isIntrinsicLayout
@@ -273,7 +151,7 @@ export default function ImageViewer({
               style={
                 isIntrinsicLayout
                   ? { transform: `scale(${inlineZoom})`, transformOrigin: 'center center' }
-                  : inlineImageLayoutStyle
+                  : inlineSurface.imageLayoutStyle
               }
             >
               <img
@@ -283,7 +161,7 @@ export default function ImageViewer({
                   'object-contain',
                   isIntrinsicLayout
                     ? 'block h-auto max-h-none max-w-full'
-                    : inlineImageLayoutSize
+                    : inlineSurface.imageLayoutSize
                       ? 'block h-full w-full'
                       : 'block max-h-full max-w-full'
                 )}
@@ -332,7 +210,7 @@ export default function ImageViewer({
             >
               <ZoomIn size={14} />
             </button>
-            <span className="ml-1 tabular-nums">{inlineZoomPercent}%</span>
+            <span className="ml-1 tabular-nums">{inlineSurface.zoomPercent}%</span>
           </div>
           <span className="min-w-0 truncate" title={filename}>
             {filename}
@@ -347,14 +225,21 @@ export default function ImageViewer({
       </div>
       <ImageViewerPopup
         filename={filename}
-        imageLayoutSize={popupImageLayoutSize}
-        imageLayoutStyle={popupImageLayoutStyle}
+        imageLayoutStyle={popupSurface.imageLayoutStyle}
         isOpen={isPopupOpen}
         onOpenChange={handlePopupOpenChange}
-        previewUrl={previewSrc}
-        setSurfaceRef={setPopupSurfaceRef}
-        zoomPercent={Math.round(popupZoom * 100)}
-      />
+        setSurfaceRef={popupSurface.setSurfaceRef}
+        zoomPercent={popupSurface.zoomPercent}
+      >
+        <img
+          src={previewSrc}
+          alt={filename}
+          className={cn(
+            'object-contain',
+            popupSurface.imageLayoutSize ? 'block h-full w-full' : 'block max-h-full max-w-full'
+          )}
+        />
+      </ImageViewerPopup>
     </>
   )
 }

@@ -38,6 +38,8 @@ type ActiveCollabCommentThreadProps = {
   comments: ActiveCollabComment[]
   /** Instance context, so a comment body resolves mentions and images like the task body does. */
   activeCollabHtml: ActiveCollabHtmlOptions
+  /** Scopes the composer's @mention suggestions to the people on this project. */
+  projectId: number | null
   disabled: boolean
   busy: boolean
   onSubmit: (bodyHtml: string) => void
@@ -91,6 +93,7 @@ function ActiveCollabCommentCard({
 export function ActiveCollabCommentThread({
   comments,
   activeCollabHtml,
+  projectId,
   disabled,
   busy,
   onSubmit
@@ -107,7 +110,12 @@ export function ActiveCollabCommentThread({
       {/* Composer first: replying is the action you came here to take, so it should not require
           scrolling past the whole history to reach. Newest-first below it means the message you
           are most likely replying to stays on screen while you type. */}
-      <ActiveCollabCommentComposer disabled={disabled} busy={busy} onSubmit={onSubmit} />
+      <ActiveCollabCommentComposer
+        projectId={projectId}
+        disabled={disabled}
+        busy={busy}
+        onSubmit={onSubmit}
+      />
 
       {comments.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">

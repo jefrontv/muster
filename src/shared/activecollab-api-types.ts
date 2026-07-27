@@ -110,8 +110,19 @@ export type ActiveCollabApi = {
   /** The label vocabulary a `updateTask` label edit chooses from. */
   listLabels: () => Promise<ActiveCollabResult<ActiveCollabLabel[]>>
   /**
-   * The @mention roster. Fetched lazily — a comment written without an `@` never asks for it —
-   * and answered from the same credential-keyed window that labels assignees.
+   * The @mention roster for the whole instance. Fetched lazily — a comment written without an `@`
+   * never asks for it — and answered from the same credential-keyed window that labels assignees.
    */
   listUsers: () => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+  /**
+   * The members of one project, named, so a mention menu offers the people on the task rather than
+   * all 176 accounts on the instance.
+   *
+   * An EMPTY array is a real answer and NOT an error: a fetch fault, a membership the roster cannot
+   * name, and a project with no members all arrive this way, and the caller is expected to fall
+   * back to {@link listUsers} rather than present a menu that reads as "nobody exists".
+   */
+  listProjectMembers: (args: {
+    projectId: number
+  }) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
 }

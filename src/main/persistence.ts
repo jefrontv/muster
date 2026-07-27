@@ -73,7 +73,6 @@ import {
 } from '../shared/project-execution-runtime'
 import { projectHostSetupProjectionFromRepos } from '../shared/project-host-setup-projection'
 import { carryProjectUserOwnedFields } from '../shared/project-user-owned-fields'
-import { normalizeActiveCollabProjectBinding } from '../shared/activecollab-project-binding'
 import type { GitRemoteIdentity } from '../shared/git-remote-identity'
 import {
   buildTaskSourceContextFromRepo,
@@ -3803,16 +3802,6 @@ export class Store {
         project.localWindowsRuntimePreference = normalizeProjectRuntimePreference(
           updates.localWindowsRuntimePreference
         )
-      }
-    }
-    if ('activeCollabBinding' in updates) {
-      // Normalised on write as well as on read: the renderer can be an older or newer build than
-      // main across an in-place upgrade, so main is the only place both directions pass through.
-      const binding = normalizeActiveCollabProjectBinding(updates.activeCollabBinding)
-      if (binding) {
-        project.activeCollabBinding = binding
-      } else {
-        delete project.activeCollabBinding
       }
     }
     project.updatedAt = Date.now()

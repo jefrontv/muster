@@ -7,7 +7,7 @@ vi.mock('electron', () => ({ app: { getPath: () => '/tmp/orca-profile-state-test
 
 import { rebuildRepoBackedProjectState } from './profile-project-state-file'
 
-const BINDING = { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
+const WSL: Project['localWindowsRuntimePreference'] = { kind: 'wsl', distro: 'Ubuntu' }
 
 function repo(overrides: Partial<Repo> = {}): Repo {
   return {
@@ -30,7 +30,7 @@ function stateWith(projects: Project[], repos: Repo[]): PersistedState {
 // re-derive projects from repos, and a field carried by only one survives on this machine and
 // vanishes on profile import — the failure mode that looks like it works.
 describe('rebuildRepoBackedProjectState', () => {
-  it('carries an ActiveCollab binding across the rebuild', () => {
+  it('carries the Windows runtime preference across the rebuild', () => {
     const rebuilt = rebuildRepoBackedProjectState(
       stateWith(
         [
@@ -41,7 +41,7 @@ describe('rebuildRepoBackedProjectState', () => {
             sourceRepoIds: ['repo-1'],
             createdAt: 1,
             updatedAt: 1,
-            activeCollabBinding: BINDING
+            localWindowsRuntimePreference: WSL
           }
         ],
         [repo()]
@@ -51,13 +51,13 @@ describe('rebuildRepoBackedProjectState', () => {
     expect(rebuilt.projects).toHaveLength(1)
     expect(rebuilt.projects[0]).toMatchObject({
       id: 'repo:repo-1',
-      activeCollabBinding: BINDING
+      localWindowsRuntimePreference: WSL
     })
   })
 
-  it('leaves a project with no binding without one', () => {
+  it('leaves a project with no preference without one', () => {
     const rebuilt = rebuildRepoBackedProjectState(stateWith([], [repo()]))
 
-    expect(rebuilt.projects[0]?.activeCollabBinding).toBeUndefined()
+    expect(rebuilt.projects[0]?.localWindowsRuntimePreference).toBeUndefined()
   })
 })

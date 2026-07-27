@@ -3,7 +3,9 @@
 // The exported `ac*` functions are the whole provider surface: each validates untrusted arguments,
 // builds an AcHttpClient from the stored credential, and answers a tagged result. The ipcMain
 // handlers (local window) and OrcaRuntimeService (remote host, over runtime RPC) both call them,
-// so the boundary rules are written once instead of once per transport.
+// so the boundary rules are written once instead of once per transport. The per-call context they
+// share lives in activecollab-operation-context.ts; the two people reads live in
+// activecollab-people.ts, which needs that context too.
 //
 // Nothing here throws. A malformed argument, a missing credential and a rejected token are all
 // results the renderer branches on — an unhandled rejection crossing the bridge loses the reason
@@ -14,7 +16,6 @@
 import { ipcMain } from 'electron'
 import type {
   ActiveCollabAttachmentImage,
-  ActiveCollabFailure,
   ActiveCollabResult
 } from '../../shared/activecollab-api-types'
 import type {
@@ -25,24 +26,16 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
-  ActiveCollabTaskPage,
-  ActiveCollabUser
+  ActiveCollabTaskPage
 } from '../../shared/activecollab-types'
-import { ActiveCollabAttachmentError, getAttachmentImage } from '../activecollab/attachment-image'
 import { connectActiveCollab } from '../activecollab/auth'
 import {
   clearActiveCollabCredential,
-  getActiveCollabConnectionStatus,
-  getActiveCollabCredential,
-  type ActiveCollabCredentialRecord
+  getActiveCollabConnectionStatus
 } from '../activecollab/credential-store'
-import { ActiveCollabApiError, createAcHttp, type AcHttpClient } from '../activecollab/http'
-import {
-  acNameDirectory,
-  acResolveTaskNames,
-  resetAcNameDirectoryCache,
-  type AcNameDirectoryLoader
-} from '../activecollab/name-directory'
+import { acResolveTaskNames, resetAcNameDirectoryCache } from '../activecollab/name-directory'
+import { resetAcProjectMembersCache } from '../activecollab/project-members'
+import { getAttachmentImage } from '../activecollab/attachment-image'
 import {
   completeTask,
   listLabels,
@@ -58,13 +51,14 @@ import {
   MAX_EMAIL,
   MAX_SECRET,
   MAX_URL,
-  NotConfiguredError,
   pageNumber,
   positiveId,
   record,
   taskRef,
   taskUpdate
 } from './activecollab-argument-validation'
+import { acClient, guard, toFailure } from './activecollab-operation-context'
+import { acListProjectMembers, acListUsers } from './activecollab-people'
 import { _resetPreflightCache } from './preflight'
 
 const ACTIVECOLLAB_CHANNELS = [
@@ -80,75 +74,9 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:reopenTask',
   'activecollab:postComment',
   'activecollab:listLabels',
-  'activecollab:listUsers'
+  'activecollab:listUsers',
+  'activecollab:listProjectMembers'
 ] as const
-
-function toFailure(error: unknown): ActiveCollabFailure {
-  if (error instanceof ActiveCollabApiError) {
-    // A rejected token means reconnect; anything else is the instance misbehaving and is worth
-    // retrying. Collapsing the two would put a reconnect prompt in front of a 503.
-    return {
-      ok: false,
-      kind: error.isAuthError ? 'auth' : 'api',
-      error: error.message,
-      status: error.status
-    }
-  }
-  if (error instanceof NotConfiguredError) {
-    return { ok: false, kind: 'not-configured', error: error.message, status: null }
-  }
-  // A policy refusal — not an image, or past the size cap — reads the same to the renderer as a
-  // malformed argument: non-retryable, and no reason to prompt a reconnect.
-  if (error instanceof InvalidRequestError || error instanceof ActiveCollabAttachmentError) {
-    return { ok: false, kind: 'invalid-request', error: error.message, status: null }
-  }
-  return {
-    ok: false,
-    kind: 'unknown',
-    error: error instanceof Error ? error.message : String(error),
-    status: null
-  }
-}
-
-async function guard<T>(call: () => Promise<T>): Promise<ActiveCollabResult<T>> {
-  try {
-    return { ok: true, value: await call() }
-  } catch (error) {
-    return toFailure(error)
-  }
-}
-
-type AcContext = { http: AcHttpClient; userId: number; names: AcNameDirectoryLoader }
-
-/**
- * Built per call, never cached: a reconnect can replace the credential at any moment, and a cached
- * client would keep addressing the previous instance with the previous token.
- */
-function acClient(): AcContext {
-  let credential: ActiveCollabCredentialRecord | null = null
-  try {
-    credential = getActiveCollabCredential()
-  } catch {
-    // A keychain refusal and an absent file are the same story to the user — reconnect — and
-    // getActiveCollabConnectionStatus() already phrases which of the two happened.
-    credential = null
-  }
-  if (credential === null) {
-    throw new NotConfiguredError(getActiveCollabConnectionStatus().reason)
-  }
-  const http = createAcHttp({ baseUrl: credential.instanceUrl, token: credential.token })
-  // The CLIENT is per call; the name directory behind `names` is shared, keyed on the credential
-  // identity below, so a page of rows costs one `/projects` and one `/users` per cache window.
-  return {
-    http,
-    userId: credential.userId,
-    names: acNameDirectory({
-      http,
-      instanceUrl: credential.instanceUrl,
-      userId: credential.userId
-    })
-  }
-}
 
 export function acStatus(): Promise<ActiveCollabResult<ActiveCollabConnectionStatus>> {
   return guard(async () => getActiveCollabConnectionStatus())
@@ -175,8 +103,9 @@ export async function acConnect(
     }
     // The integrations card caches its preflight result and would keep reporting "not connected".
     _resetPreflightCache()
-    // A new account must not inherit the previous one's project and user names.
+    // A new account must not inherit the previous one's names or project memberships.
     resetAcNameDirectoryCache()
+    resetAcProjectMembersCache()
     return { ok: true, value: result.connection }
   } catch (error) {
     return toFailure(error)
@@ -188,6 +117,7 @@ export function acDisconnect(): Promise<ActiveCollabResult<ActiveCollabConnectio
     clearActiveCollabCredential()
     _resetPreflightCache()
     resetAcNameDirectoryCache()
+    resetAcProjectMembersCache()
     return getActiveCollabConnectionStatus()
   })
 }
@@ -288,24 +218,6 @@ export function acListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>>
   return guard(async () => listLabels({ http: acClient().http }))
 }
 
-/**
- * The @mention roster, served out of the name directory rather than a second `/users` read.
- *
- * That collection is ALREADY fetched behind a credential-keyed, TTL'd, in-flight-shared window to
- * label assignees, and every path that reaches a comment composer — the task list, then the task
- * detail — warms it on the way in. Fetching it again here would double a 176-row request to answer
- * with the identical rows, and give the renderer a roster that could disagree with the assignee
- * labels beside it. Sorted by name so a capped suggestion list is stable between keystrokes.
- */
-export function acListUsers(): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
-  return guard(async () => {
-    const directory = await acClient().names()
-    return [...directory.users]
-      .map(([id, name]) => ({ id, name }))
-      .sort((left, right) => left.name.localeCompare(right.name))
-  })
-}
-
 export function registerActiveCollabHandlers(): void {
   for (const channel of ACTIVECOLLAB_CHANNELS) {
     ipcMain.removeHandler(channel)
@@ -330,4 +242,7 @@ export function registerActiveCollabHandlers(): void {
   ipcMain.handle('activecollab:postComment', async (_event, args: unknown) => acPostComment(args))
   ipcMain.handle('activecollab:listLabels', async () => acListLabels())
   ipcMain.handle('activecollab:listUsers', async () => acListUsers())
+  ipcMain.handle('activecollab:listProjectMembers', async (_event, args: unknown) =>
+    acListProjectMembers(args)
+  )
 }

@@ -111,6 +111,7 @@ export function ActiveCollabTaskWorkspace({
         task={task}
         pending={writes.pending}
         onDueOnChange={(dueOn) => void writes.setDueOn(dueOn)}
+        onAssigneeIdChange={(assigneeId) => void writes.setAssigneeId(assigneeId)}
         onLabelNamesChange={(labelNames) => void writes.setLabelNames(labelNames)}
       />
 
@@ -149,6 +150,7 @@ export function ActiveCollabTaskWorkspace({
         <ActiveCollabCommentThread
           comments={comments}
           activeCollabHtml={activeCollabHtml}
+          projectId={projectId}
           disabled={writes.pending !== null}
           busy={writes.pending === 'comment'}
           onSubmit={(bodyHtml) => void writes.addComment(bodyHtml)}
