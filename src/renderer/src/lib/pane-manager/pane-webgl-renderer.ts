@@ -7,6 +7,7 @@ import {
   resetTerminalWebglAutoDecision
 } from './terminal-webgl-auto-policy'
 import { safeFitAndThen } from './pane-fit'
+import { releaseAbandonedSynchronizedOutput } from './terminal-synchronized-output-release'
 
 export const ENABLE_WEBGL_RENDERER = true
 let suggestedRendererType: 'dom' | undefined
@@ -128,6 +129,10 @@ export function resetWebglTextureAtlas(pane: ManagedPaneInternal): void {
     return
   }
   try {
+    // Why first: a TUI hidden mid-`?2026h` leaves synchronized output latched,
+    // and RenderService buffers every refresh while it holds — so the repaint
+    // below would render nothing at all. See terminal-synchronized-output-release.
+    releaseAbandonedSynchronizedOutput(pane.terminal)
     // Why: rapid TUI redraws can corrupt xterm's WebGL glyph atlas without a
     // context-loss event. Clearing the atlas preserves GPU rendering and forces
     // a fresh paint when the pane becomes visible/focused again.
