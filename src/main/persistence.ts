@@ -247,6 +247,7 @@ import {
   readTerminalScrollbackSnapshotSync,
   type TerminalScrollbackSnapshotStorage
 } from './terminal-scrollback-snapshots'
+import { normalizeConfiguredSiteRoots } from './sites/site-roots-config'
 import { track } from './telemetry/client'
 import { getCohortAtEmit } from './telemetry/cohort-classifier'
 import { isStartupDiagnosticsEnabled, logStartupDiagnostic } from './startup/startup-diagnostics'
@@ -4697,6 +4698,25 @@ export class Store {
     return [...(this.state.sites ?? [])].sort((left, right) =>
       left.displayName.localeCompare(right.displayName)
     )
+  }
+
+  /**
+   * The folders the user chose to source sites from, in their order.
+   *
+   * Lives here rather than in GlobalSettings on purpose: these are machine-local absolute paths
+   * with a reachability concept, and GlobalSettings is the surface that gets diffed against config
+   * files and synced to web/mobile clients, where a remote host would clobber them. `sites` is
+   * already a top-level slice for the same reason.
+   *
+   * Empty is the normal unconfigured state — site-roots-watcher derives roots instead.
+   */
+  getConfiguredSiteRoots(): string[] {
+    return normalizeConfiguredSiteRoots(this.state.siteRoots)
+  }
+
+  setConfiguredSiteRoots(roots: readonly string[]): void {
+    this.state.siteRoots = normalizeConfiguredSiteRoots(roots)
+    this.scheduleSave()
   }
 
   getSite(siteId: string): Site | null {

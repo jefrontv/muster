@@ -10,23 +10,27 @@ import { translate } from '@/i18n/i18n'
 import type { ActiveCollabLabel } from '../../../shared/activecollab-types'
 import type { ActiveCollabFailure } from '../../../shared/activecollab-api-types'
 import { hasActiveCollabLabel, toggleActiveCollabLabelName } from './activecollab-task-label-set'
+import { activeCollabLabelChipStyle } from './task-page-activecollab-row-presentation'
 
 // The instance ships ~1600 labels; rendering them all janks the popover, so the list is filtered
 // and capped and the user narrows with the search field.
 const MAX_VISIBLE_LABELS = 40
 
+/**
+ * Same filled, contrast-checked chip the assigned-task list paints, so one label looks like itself
+ * on both surfaces. The instance's arbitrary hex becomes the FILL and the text is picked against it;
+ * a null style means the hex was unusable and the neutral token chip stands in.
+ */
 export function ActiveCollabLabelChip({ label }: { label: ActiveCollabLabel }): React.JSX.Element {
+  const style = activeCollabLabelChipStyle(label.color)
   return (
     <span
-      className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-border/60 px-2 py-0.5 text-[11px] font-medium text-foreground"
-      // Provider-supplied hex, so it cannot come from a design token.
-      style={label.color ? { borderColor: label.color } : undefined}
+      className={cn(
+        'inline-flex w-fit max-w-[11rem] shrink-0 items-center truncate rounded-full border px-2 py-0.5 text-[11px] font-medium',
+        !style && 'border-border/60 bg-muted/35 text-muted-foreground'
+      )}
+      style={style ?? undefined}
     >
-      <span
-        aria-hidden
-        className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
-        style={label.color ? { backgroundColor: label.color } : undefined}
-      />
       {label.name}
     </span>
   )
@@ -156,16 +160,21 @@ export function ActiveCollabLabelEditor({
   busy,
   onChange
 }: ActiveCollabLabelEditorProps): React.JSX.Element {
+  // A task with no labels needs "Add", not "Edit" — there is nothing to edit yet.
+  const label =
+    labels.length > 0
+      ? translate('auto.components.activecollab.task_workspace.edit_labels', 'Edit labels')
+      : translate('auto.components.activecollab.task_workspace.add_labels', 'Add labels')
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted/40 disabled:opacity-50"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-border/70 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:border-border hover:bg-muted/40 disabled:cursor-default disabled:opacity-50"
         >
           <Tag className="size-3" />
-          {translate('auto.components.activecollab.task_workspace.edit_labels', 'Edit labels')}
+          {label}
           {busy ? <LoaderCircle className="size-3 animate-spin" /> : null}
         </button>
       </PopoverTrigger>

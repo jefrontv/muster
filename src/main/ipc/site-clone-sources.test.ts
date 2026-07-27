@@ -58,10 +58,11 @@ const REPOS: CloneSourceListResult = {
   truncated: false
 }
 
-// Only the two readers the registry's exclusion touches; the rest of Store is irrelevant here.
+// Only the readers the registry's exclusion touches; the rest of Store is irrelevant here.
 const STORE = {
   getRepos: () => [],
-  listSites: () => []
+  listSites: () => [],
+  getConfiguredSiteRoots: () => []
 } as unknown as Store
 
 async function call<T>(channel: string, args?: unknown): Promise<SiteResult<T>> {

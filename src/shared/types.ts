@@ -3465,6 +3465,12 @@ export type PersistedState = {
   sparsePresetsByRepo: Record<string, SparsePreset[]>
   /** WordPress sites (the ocsites port). Keyed by their own id; linked to a Repo by `repoId`. */
   sites: Site[]
+  /**
+   * User-managed site-discovery roots, in the user's display order. Absent or empty means the
+   * roots are derived from `repos`/`sites` instead (see main/sites/site-roots-watcher.ts).
+   * Optional so an existing data file needs no migration.
+   */
+  siteRoots?: string[]
   /** Per paired device last tab selection by worktree; keeps mobile navigation across host restarts. */
   mobileClientTabSelectionsByDeviceId?: PersistedMobileClientTabSelections
   worktreeMeta: Record<string, WorktreeMeta>

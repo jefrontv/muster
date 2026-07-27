@@ -1,10 +1,12 @@
 // Live view of what is actually on disk under the folders that hold the user's projects.
 //
-// Muster has no configured "sites root" — projects are added one at a time — so the roots are
-// derived: the distinct parent directories of the repos and sites already known. That is why the
-// root set is recomputed rather than stored, and why it can change while the app is running.
+// Two sources of roots, in precedence order:
+//   - the user's configured list (SiteRootEntry), persisted in order and never silently pruned
+//   - when that list is empty, the derived set: the distinct parent directories of the repos and
+//     sites already known, recomputed rather than stored, so it can change while the app is running
 //
-// Two separate concerns share this file because they are two halves of one feature:
+// Three separate concerns share this file because they are three parts of one feature:
+//   - which folders the user chose to source sites from (SiteRootEntry)
 //   - watching those roots so the lists stop going stale (SiteRootsChangedEvent)
 //   - listing the site-shaped folders found in them (SiteDiscoveryResult)
 
@@ -14,13 +16,26 @@ export type SiteRootsChangeReason =
   | 'watch'
   /** The periodic safety-net sweep — covers filesystems where fs.watch misses events. */
   | 'sweep'
-  /** A repo or site was added/removed, so the derived root set itself moved. */
+  /** The root set moved: the user edited the configured list, or a repo/site moved the derived one. */
   | 'roots-changed'
 
 export type SiteRootsChangedEvent = {
   reason: SiteRootsChangeReason
   roots: string[]
   at: number
+}
+
+/**
+ * One entry of the user's configured root list.
+ *
+ * `missing` rather than removal: a path on an unmounted volume is a correct configuration the
+ * machine cannot reach right now. Dropping it would destroy the user's setting the first time they
+ * ejected a drive, so it persists, renders as unreachable, and resolves again when the volume
+ * returns — the `⚠ missing` marker ocsites shows in its settings screen.
+ */
+export type SiteRootEntry = {
+  path: string
+  missing: boolean
 }
 
 /**
@@ -38,11 +53,13 @@ export type DiscoveredSiteCandidate = {
 }
 
 export type SiteDiscoveryResult = {
+  /** The roots actually scanned, in the order they were scanned. */
   roots: string[]
   /**
-   * Where a new site should land by default: the root accounting for the most existing projects.
-   * `roots` is sorted alphabetically for stable rendering, so its first entry is NOT this — the
-   * densest root has to be reported separately. Empty only when no root exists yet.
+   * Where a new site should land by default. With a configured list that is its first reachable
+   * entry; otherwise the derived root accounting for the most existing projects. Either way
+   * `roots` is not ordered by it — the derived set is alphabetical for stable rendering — so the
+   * destination has to be reported separately. Empty means "ask, do not guess".
    */
   primaryRoot: string
   /** Never includes a path that already has a Site record — the caller merges, it does not dedupe. */
@@ -58,7 +75,10 @@ export const SITE_ROOT_SCAN_DEPTH = 1
 export const SITE_ROOTS_DEBOUNCE_MS = 400
 /** Safety net for filesystems where fs.watch is unreliable (network shares, some virtual FS). */
 export const SITE_ROOTS_SWEEP_MS = 60_000
-/** Guards against a user whose repos are scattered across dozens of unrelated parents. */
+/**
+ * One cap for both root sets: it guards the derived set against repos scattered over dozens of
+ * unrelated parents, and the configured list against a hand-edited data file.
+ */
 export const SITE_ROOTS_MAX = 12
 /** Keeps one pathological directory from turning the Sites page into a file browser. */
 export const SITE_CANDIDATES_MAX = 500

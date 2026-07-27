@@ -1,9 +1,8 @@
 import React, { useCallback, useMemo } from 'react'
-import { LoaderCircle, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 
 import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
 import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
-import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import CommentMarkdown, { type ActiveCollabHtmlOptions } from '@/components/sidebar/CommentMarkdown'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -11,13 +10,20 @@ import { useAppStore } from '@/store'
 import type { ActiveCollabFailure } from '../../../shared/activecollab-api-types'
 import { ActiveCollabCommentThread } from './activecollab-task-comment-thread'
 import { useActiveCollabTaskDetail } from './activecollab-task-detail-state'
+import { ActiveCollabTaskHeader } from './activecollab-task-header'
 import { ActiveCollabTaskMetadataBar } from './activecollab-task-metadata-bar'
+import { ActiveCollabTaskSectionHeading } from './activecollab-task-section-heading'
+import { ActiveCollabTaskSkeleton } from './activecollab-task-skeleton'
 import { useActiveCollabTaskWrites } from './activecollab-task-writes'
 
 export type ActiveCollabTaskWorkspaceProps = {
   projectId: number | null
   taskId: number | null
 }
+
+// One class list for every state the pane can be in, so a skeleton, a failure and a loaded task all
+// occupy the same box.
+const PANE_CLASS = 'flex h-full min-h-0 flex-col overflow-hidden bg-background'
 
 function ActiveCollabFailureNotice({
   failure,
@@ -45,12 +51,15 @@ function ActiveCollabFailureNotice({
 /**
  * Detail surface for one ActiveCollab task. Selection is lifted: the pane takes the ids and renders
  * nothing without them, so it never has to know how the list picked them.
+ *
+ * Anatomy, top to bottom: identity and completion (`ActiveCollabTaskHeader`), then the named fields
+ * (`ActiveCollabTaskMetadataBar`), then a scrolling half holding Description and Discussion.
  */
 export function ActiveCollabTaskWorkspace({
   projectId,
   taskId
 }: ActiveCollabTaskWorkspaceProps): React.JSX.Element | null {
-  const { status, detail, failure, reload, replaceTask, appendComment } = useActiveCollabTaskDetail(
+  const { detail, failure, reload, replaceTask, appendComment } = useActiveCollabTaskDetail(
     projectId,
     taskId
   )
@@ -73,25 +82,14 @@ export function ActiveCollabTaskWorkspace({
     return null
   }
 
-  if (status === 'failed' && failure) {
-    return (
-      <div className="flex h-full min-h-0 flex-col justify-center bg-background px-4 py-6">
+  if (!detail) {
+    // Nothing to keep on screen: either the first read is still out, or it failed outright.
+    return failure ? (
+      <div className={`${PANE_CLASS} justify-center px-4 py-6`}>
         <ActiveCollabFailureNotice failure={failure} onRetry={retry} />
       </div>
-    )
-  }
-
-  if (!detail) {
-    return (
-      <div
-        role="status"
-        className="flex h-full min-h-0 items-center justify-center bg-background py-8"
-      >
-        <LoaderCircle className="size-4 animate-spin text-muted-foreground" />
-        <span className="sr-only">
-          {translate('auto.components.activecollab.task_workspace.loading', 'Loading task')}
-        </span>
-      </div>
+    ) : (
+      <ActiveCollabTaskSkeleton />
     )
   }
 
@@ -101,22 +99,17 @@ export function ActiveCollabTaskWorkspace({
   const notice = writes.failure ?? failure
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="flex-none border-b border-border/50 bg-muted/30 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-          <ActiveCollabIcon className="size-3" />
-          <span className="font-mono">#{task.taskNumber}</span>
-          <span className="min-w-0 truncate">{task.projectName}</span>
-        </div>
-        <h2 className="mt-1 text-[20px] font-semibold leading-tight text-foreground">
-          {task.name}
-        </h2>
-      </div>
+    <div className={PANE_CLASS}>
+      <ActiveCollabTaskHeader
+        task={task}
+        disabled={writes.pending !== null}
+        completing={writes.pending === 'completion'}
+        onCompletedChange={(completed) => void writes.setCompleted(completed)}
+      />
 
       <ActiveCollabTaskMetadataBar
         task={task}
         pending={writes.pending}
-        onCompletedChange={(completed) => void writes.setCompleted(completed)}
         onDueOnChange={(dueOn) => void writes.setDueOn(dueOn)}
         onLabelNamesChange={(labelNames) => void writes.setLabelNames(labelNames)}
       />
@@ -129,6 +122,12 @@ export function ActiveCollabTaskWorkspace({
 
       <div className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek">
         <section className="border-b border-border/40 px-4 py-4">
+          <ActiveCollabTaskSectionHeading
+            label={translate(
+              'auto.components.activecollab.task_workspace.description',
+              'Description'
+            )}
+          />
           {body ? (
             <CommentMarkdown
               content={body}

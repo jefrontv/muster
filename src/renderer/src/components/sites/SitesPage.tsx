@@ -1,4 +1,12 @@
-import { ArrowLeft, DownloadCloud, FolderPlus, GitBranchPlus, Globe, Search } from 'lucide-react'
+import {
+  ArrowLeft,
+  DownloadCloud,
+  FolderCog,
+  FolderPlus,
+  GitBranchPlus,
+  Globe,
+  Search
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -11,6 +19,7 @@ import { AddSiteFromGitDialog } from './AddSiteFromGitDialog'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteDetailPanel } from './SiteDetailPanel'
+import { SiteRootsDialog } from './SiteRootsDialog'
 import { SiteRow } from './SiteRow'
 import type { DiscoveredSiteCandidate } from '../../../../shared/site-discovery-types'
 
@@ -30,10 +39,11 @@ export default function SitesPage(): React.JSX.Element {
 
   const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
   const [roots, setRoots] = useState<string[]>([])
-  // Where a new clone lands. Separate from `roots`, which is alphabetical for stable rendering.
+  // Where a new clone lands. Separate from `roots`, whose order is the scan order, not a ranking.
   const [primaryRoot, setPrimaryRoot] = useState('')
   const [adopting, setAdopting] = useState('')
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
+  const [rootsDialogOpen, setRootsDialogOpen] = useState(false)
 
   useEffect(() => {
     void fetchSites()
@@ -200,6 +210,15 @@ export default function SitesPage(): React.JSX.Element {
             })}
           </span>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 gap-1.5"
+          onClick={() => setRootsDialogOpen(true)}
+        >
+          <FolderCog className="size-3.5" />
+          {translate('auto.components.sites.SitesPage.folders', 'Folders')}
+        </Button>
         <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setCloneDialogOpen(true)}>
           <GitBranchPlus className="size-3.5" />
           {getSiteCloneSourceStrings().trigger}
@@ -234,6 +253,12 @@ export default function SitesPage(): React.JSX.Element {
           void fetchSites()
           selectSite(siteId)
         }}
+      />
+
+      <SiteRootsDialog
+        open={rootsDialogOpen}
+        onOpenChange={setRootsDialogOpen}
+        effectiveRoots={roots}
       />
 
       {sitesError ? (
@@ -271,7 +296,7 @@ export default function SitesPage(): React.JSX.Element {
                     )
                   : translate(
                       'auto.components.sites.SitesPage.empty',
-                      'No sites yet. Import an existing ocsites configuration to get started.'
+                      'No sites yet. Point Folders at the directory your sites live in, or import an existing ocsites configuration.'
                     )}
               </p>
             ) : null}

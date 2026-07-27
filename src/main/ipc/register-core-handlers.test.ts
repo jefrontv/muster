@@ -470,9 +470,14 @@ describe('registerCoreHandlers', () => {
   })
 
   it('passes the store through to handler registrars that need it', async () => {
-    // getRepos/listSites because the site-roots watcher derives its watch set at registration.
-    // The marker still identifies the object for the pass-through assertions below.
-    const store = { marker: 'store', getRepos: () => [], listSites: () => [] }
+    // getRepos/listSites/getConfiguredSiteRoots because the site-roots watcher resolves its watch
+    // set at registration. The marker still identifies the object for the pass-through assertions.
+    const store = {
+      marker: 'store',
+      getRepos: () => [],
+      listSites: () => [],
+      getConfiguredSiteRoots: () => []
+    }
     const runtime = { marker: 'runtime', getAgentBrowserBridge: () => null }
     const stats = { marker: 'stats' }
     const claudeUsage = { marker: 'claudeUsage' }

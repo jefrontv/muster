@@ -39,8 +39,12 @@ import {
 import { derivePrimarySiteRoot, deriveSiteRoots } from './site-roots-watcher'
 
 /**
- * The slice of `Store` the exclusion needs. Structural so a test supplies two arrays instead of a
- * persistence file, and so it stays obvious that nothing here writes.
+ * The slice of `Store` the exclusion needs. Structural so a test supplies two arrays and a list
+ * instead of a persistence file, and so it stays obvious that nothing here writes.
+ *
+ * `getConfiguredSiteRoots` is here because the picker must exclude against the same folders the
+ * Sites page scans; deriving a second, different root set would offer a clone of a repo already
+ * sitting in a configured root.
  */
 export type CloneSourceStore = {
   getRepos: () => readonly {
@@ -49,6 +53,7 @@ export type CloneSourceStore = {
     gitRemoteIdentity?: { canonicalKey: string } | null
   }[]
   listSites: () => readonly { path: string }[]
+  getConfiguredSiteRoots: () => readonly string[]
 }
 
 /** Display order in the picker. Bitbucket first: it is the one ocsites shipped with. */

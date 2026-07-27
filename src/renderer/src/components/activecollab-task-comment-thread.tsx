@@ -10,6 +10,9 @@ import {
 } from '@/lib/comment-body-submit-state'
 import { translate } from '@/i18n/i18n'
 import type { ActiveCollabComment } from '../../../shared/activecollab-types'
+import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
+import { ActiveCollabTaskSectionHeading } from './activecollab-task-section-heading'
+import { activeCollabStamp } from './activecollab-task-timestamps'
 
 /**
  * ActiveCollab stores comment bodies as HTML, so the composer's plain text is escaped and wrapped
@@ -40,6 +43,47 @@ type ActiveCollabCommentThreadProps = {
   onSubmit: (bodyHtml: string) => void
 }
 
+/**
+ * One comment, attributed. The author leads the card so a thread can be scanned by who spoke rather
+ * than by reading each body; the timestamp trails it because it only matters once you care who.
+ */
+function ActiveCollabCommentCard({
+  comment,
+  activeCollabHtml
+}: {
+  comment: ActiveCollabComment
+  activeCollabHtml: ActiveCollabHtmlOptions
+}): React.JSX.Element {
+  const posted = activeCollabStamp(comment.createdOn, 'date-time')
+  return (
+    <article className="rounded-md border border-border/50 bg-muted/20">
+      <div className="flex min-w-0 items-center gap-2 border-b border-border/40 px-3 py-2">
+        <ActiveCollabPersonBadge name={comment.createdByName} />
+        <span className="min-w-0 truncate text-[13px] font-semibold text-foreground">
+          {comment.createdByName ??
+            translate('auto.components.activecollab.task_workspace.unknown', 'Unknown')}
+        </span>
+        {posted ? (
+          <time
+            dateTime={posted.iso}
+            className="ml-auto shrink-0 text-[11px] text-muted-foreground"
+          >
+            {posted.label}
+          </time>
+        ) : null}
+      </div>
+      <div className="px-3 py-2">
+        <CommentMarkdown
+          content={comment.bodyHtml}
+          activeCollabHtml={activeCollabHtml}
+          className="text-[13px] leading-relaxed"
+        />
+        <ActiveCollabAttachmentGrid attachments={comment.attachments} />
+      </div>
+    </article>
+  )
+}
+
 export function ActiveCollabCommentThread({
   comments,
   activeCollabHtml,
@@ -60,14 +104,10 @@ export function ActiveCollabCommentThread({
 
   return (
     <section className="px-4 py-4">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-[13px] font-medium text-foreground">
-          {translate('auto.components.activecollab.task_workspace.comments', 'Comments')}
-        </span>
-        {comments.length > 0 ? (
-          <span className="text-[12px] text-muted-foreground">{comments.length}</span>
-        ) : null}
-      </div>
+      <ActiveCollabTaskSectionHeading
+        label={translate('auto.components.activecollab.task_workspace.discussion', 'Discussion')}
+        count={comments.length}
+      />
 
       {comments.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -76,33 +116,11 @@ export function ActiveCollabCommentThread({
       ) : (
         <div className="flex flex-col gap-3">
           {comments.map((comment) => (
-            <article key={comment.id} className="rounded-md border border-border/50 bg-muted/20">
-              <div className="flex min-w-0 items-center gap-2 border-b border-border/40 px-3 py-2">
-                <span className="truncate text-[13px] font-semibold text-foreground">
-                  {comment.createdByName ??
-                    translate('auto.components.activecollab.task_workspace.unknown', 'Unknown')}
-                </span>
-                {comment.createdOn !== null ? (
-                  <time
-                    dateTime={new Date(comment.createdOn).toISOString()}
-                    className="shrink-0 text-[12px] text-muted-foreground"
-                  >
-                    {new Date(comment.createdOn).toLocaleString(undefined, {
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
-                    })}
-                  </time>
-                ) : null}
-              </div>
-              <div className="px-3 py-2">
-                <CommentMarkdown
-                  content={comment.bodyHtml}
-                  activeCollabHtml={activeCollabHtml}
-                  className="text-[13px] leading-relaxed"
-                />
-                <ActiveCollabAttachmentGrid attachments={comment.attachments} />
-              </div>
-            </article>
+            <ActiveCollabCommentCard
+              key={comment.id}
+              comment={comment}
+              activeCollabHtml={activeCollabHtml}
+            />
           ))}
         </div>
       )}

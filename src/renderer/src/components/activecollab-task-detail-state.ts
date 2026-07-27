@@ -15,6 +15,11 @@ import type { ActiveCollabFailure } from '../../../shared/activecollab-api-types
 export type ActiveCollabTaskDetailStatus = 'idle' | 'loading' | 'loaded' | 'failed'
 
 export type ActiveCollabTaskDetailState = {
+  /**
+   * `loading` is the FIRST read of a task and nothing else — it is what the pane draws a skeleton
+   * for. A task this pane has already shown goes straight back to `loaded` from {@link seen} while
+   * its refresh runs, and a refetch over a visible task stays `loaded` throughout.
+   */
   status: ActiveCollabTaskDetailStatus
   detail: ActiveCollabTaskDetail | null
   /**
@@ -33,6 +38,12 @@ export type ActiveCollabTaskDetailHandle = ActiveCollabTaskDetailState & {
 
 const IDLE: ActiveCollabTaskDetailState = { status: 'idle', detail: null, failure: null }
 
+/**
+ * Bounded, because the pane outlives every selection made through it. Insertion order is recency, so
+ * the oldest entry goes when the map is full.
+ */
+const MAX_SEEN_DETAILS = 24
+
 export function useActiveCollabTaskDetail(
   projectId: number | null,
   taskId: number | null
@@ -41,6 +52,9 @@ export function useActiveCollabTaskDetail(
   const [state, setState] = useState<ActiveCollabTaskDetailState>(IDLE)
   // Bumped per read so a superseded answer — selection moved on, or a slower refetch — is dropped.
   const requestRef = useRef(0)
+  // Every task this pane has rendered, so switching back to one is instant instead of a skeleton
+  // over content the user was reading a moment ago.
+  const seenRef = useRef(new Map<string, ActiveCollabTaskDetail>())
 
   const read = useCallback(
     async (force: boolean): Promise<void> => {
@@ -70,9 +84,33 @@ export function useActiveCollabTaskDetail(
       setState(IDLE)
       return
     }
-    setState({ status: 'loading', detail: null, failure: null })
+    const seen = seenRef.current.get(`${projectId}:${taskId}`)
+    setState(
+      seen
+        ? { status: 'loaded', detail: seen, failure: null }
+        : { status: 'loading', detail: null, failure: null }
+    )
     void read(false)
   }, [projectId, taskId, read])
+
+  // After commit rather than inside the updaters above: an updater can run twice, and this is the
+  // one place every settled detail — first read, refetch, write echo — passes through.
+  useEffect(() => {
+    const detail = state.detail
+    if (!detail) {
+      return
+    }
+    const seen = seenRef.current
+    const key = `${detail.task.projectId}:${detail.task.id}`
+    seen.delete(key)
+    seen.set(key, detail)
+    if (seen.size > MAX_SEEN_DETAILS) {
+      const oldest = seen.keys().next()
+      if (!oldest.done) {
+        seen.delete(oldest.value)
+      }
+    }
+  }, [state.detail])
 
   const replaceTask = useCallback((task: ActiveCollabTask): void => {
     setState((prev) =>

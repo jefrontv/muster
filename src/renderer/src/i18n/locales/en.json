@@ -13684,14 +13684,15 @@
           "import": "Import from ocsites",
           "search": "Search sites",
           "loading": "Loading sites…",
-          "empty": "No sites yet. Import an existing ocsites configuration to get started.",
+          "empty": "No sites yet. Point Folders at the directory your sites live in, or import an existing ocsites configuration.",
           "selectPrompt": "Select a site.",
           "linkedProjects": "{{added}} added, {{linked}} already present.",
           "projectsAdded": "{{count}} projects added to the sidebar.",
           "addToSidebar": "Add to sidebar",
           "countOnDisk": "{{count}} on disk · {{hidden}} missing",
           "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.",
-          "discoveredHeading": "Found on disk ({{count}})"
+          "discoveredHeading": "Found on disk ({{count}})",
+          "folders": "Folders"
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
@@ -13813,6 +13814,17 @@
           "cloneRegistering": "Registering the site…",
           "setupTitle": "Finish setting up",
           "done": "Done"
+        },
+        "SiteRootsDialog": {
+          "title": "Site folders",
+          "description": "Sites are listed from these folders, in this order. New clones land in the first one that is reachable.",
+          "missing": "Missing",
+          "moveUp": "Move up",
+          "moveDown": "Move down",
+          "remove": "Remove",
+          "derived": "No folders chosen yet, so Muster is using the parent folders of the projects you already have: {{roots}}. Add one to take over.",
+          "none": "No folders chosen, and there are no projects to infer one from. Add the folder your sites live in.",
+          "add": "Add folder"
         }
       },
       "activecollab": {
@@ -13859,7 +13871,17 @@
           "complete": "Complete task",
           "unassigned": "Unassigned",
           "due_date": "Due date",
-          "clear_due_date": "Clear due date"
+          "clear_due_date": "Clear due date",
+          "description": "Description",
+          "discussion": "Discussion",
+          "set_due_date": "Set...",
+          "overdue": "Overdue",
+          "task_number": "Task #{{value0}}",
+          "created_on": "Created {{value0}}",
+          "add_labels": "Add labels",
+          "assignee": "Assignee",
+          "labels": "Labels",
+          "assignee_unresolved": "Assigned (name unavailable)"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",

@@ -1,10 +1,11 @@
 // Keeps the folders that hold the user's projects under observation, so the Sites page stops
 // showing a snapshot taken the last time someone opened a dialog.
 //
-// Muster has no configured "sites root": projects are added one at a time, so the roots are derived
-// (shared/site-discovery-types.ts) — the distinct parent directories of the repos and sites already
-// in the store. That set moves while the app is running, which is why nothing here is cached beyond
-// the current derivation and why `refreshRoots` exists at all.
+// Two sources, in precedence order. The user's configured list (site-roots-config.ts) wins when it
+// has entries. When it is empty the roots are derived — the distinct parent directories of the
+// repos and sites already in the store — because a user who never opened the folder settings must
+// still see their sites. Either set moves while the app is running, which is why nothing here is
+// cached beyond the current resolution and why `refreshRoots` exists at all.
 //
 // Depth-1 only, never recursive. A recursive watch on a WordPress checkout descends node_modules,
 // vendor and wp-content/uploads — tens of thousands of handles for information this feature never
@@ -20,14 +21,16 @@ import {
   type SiteRootsChangedEvent,
   type SiteRootsChangeReason
 } from '../../shared/site-discovery-types'
+import { normalizeConfiguredSiteRoots } from './site-roots-config'
 
 /**
- * The slice of `Store` this module reads. Structural so a test supplies two arrays instead of a
- * persistence file, and so it stays obvious that nothing here touches anything but the paths.
+ * The slice of `Store` this module reads. Structural so a test supplies two arrays and a list
+ * instead of a persistence file, and so it stays obvious that nothing here writes.
  */
 export type SiteRootsStore = {
   getRepos: () => readonly { path: string; connectionId?: string | null }[]
   listSites: () => readonly { path: string }[]
+  getConfiguredSiteRoots: () => readonly string[]
 }
 
 /**
@@ -159,11 +162,18 @@ function rankSiteRoots(
 }
 
 /**
- * The parent directories worth watching: deduped, ranked by how many entries they account for,
- * capped at `SITE_ROOTS_MAX`, then alphabetised.
+ * The roots to scan and watch: the user's configured list when it has entries, otherwise the
+ * derived parent directories — deduped, ranked by how many entries they account for, capped at
+ * `SITE_ROOTS_MAX`, then alphabetised.
  *
- * The trailing sort is what makes the watched set render stably, and it is also why the densest
- * root is not `roots[0]` — `derivePrimarySiteRoot` reports that separately.
+ * A configured root is returned even when it is unreachable. Existence filtering belongs to the
+ * derived set, where a stale parent is noise; in the configured list an ejected volume is the
+ * user's setting, and dropping it here would make the watched set silently disagree with the
+ * folder list the user is looking at. Scanning and watching both tolerate a dead root already.
+ *
+ * The trailing sort on the derived branch is what makes that set render stably, and it is also why
+ * the densest root is not `roots[0]` — `derivePrimarySiteRoot` reports that separately. The
+ * configured branch keeps the user's order instead, which is itself the preference.
  *
  * `directoryExists` is injected so the ranking can be exercised without touching a disk.
  */
@@ -171,6 +181,10 @@ export function deriveSiteRoots(
   store: SiteRootsStore,
   directoryExists: (candidate: string) => boolean = directoryExistsOnDisk
 ): string[] {
+  const configured = normalizeConfiguredSiteRoots(store.getConfiguredSiteRoots())
+  if (configured.length > 0) {
+    return configured
+  }
   return rankSiteRoots(store, directoryExists)
     .slice(0, SITE_ROOTS_MAX)
     .map((entry) => entry.root)
@@ -178,8 +192,13 @@ export function deriveSiteRoots(
 }
 
 /**
- * Where a new project should land: the root accounting for the most existing ones. Empty when the
- * user has no root yet, which the caller must treat as "ask, do not guess".
+ * Where a new project should land: the first reachable configured root, or — with nothing
+ * configured — the derived root accounting for the most existing projects. Empty when the user has
+ * no usable root, which the caller must treat as "ask, do not guess".
+ *
+ * A configured list whose every entry is offline reports empty rather than falling back to a
+ * derived parent: the user named where their projects go, so cloning somewhere else because a
+ * drive is unplugged would be a surprise, and asking costs one dialog.
  *
  * Never capped: the densest root is rank 0, so `SITE_ROOTS_MAX` cannot exclude it.
  */
@@ -187,6 +206,10 @@ export function derivePrimarySiteRoot(
   store: SiteRootsStore,
   directoryExists: (candidate: string) => boolean = directoryExistsOnDisk
 ): string {
+  const configured = normalizeConfiguredSiteRoots(store.getConfiguredSiteRoots())
+  if (configured.length > 0) {
+    return configured.find((root) => directoryExists(root)) ?? ''
+  }
   return rankSiteRoots(store, directoryExists)[0]?.root ?? ''
 }
 

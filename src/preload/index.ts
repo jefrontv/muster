@@ -817,8 +817,12 @@ const api = {
 
   siteRoots: {
     list: () => ipcRenderer.invoke('siteRoots:list'),
+    configured: () => ipcRenderer.invoke('siteRoots:configured'),
     discover: () => ipcRenderer.invoke('siteRoots:discover'),
     refresh: () => ipcRenderer.invoke('siteRoots:refresh'),
+    add: (path) => ipcRenderer.invoke('siteRoots:add', path),
+    remove: (path) => ipcRenderer.invoke('siteRoots:remove', path),
+    reorder: (args) => ipcRenderer.invoke('siteRoots:reorder', args),
     onChanged: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, event: SiteRootsChangedEvent): void =>
         callback(event)

@@ -182,6 +182,14 @@ function buttonWith(text: string): HTMLButtonElement {
   return found as HTMLButtonElement
 }
 
+// The completion toggle is paired with the title as an icon-only checkbox, so it is named by its
+// accessible label rather than by visible text.
+function buttonByLabel(label: string): HTMLButtonElement {
+  const found = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
+  expect(found, `no button labelled "${label}"`).toBeTruthy()
+  return found as HTMLButtonElement
+}
+
 function labelRow(name: string): HTMLButtonElement {
   const found = Array.from(
     container.querySelectorAll<HTMLButtonElement>('button[aria-pressed]')
@@ -367,7 +375,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     mocks.completeTask.mockResolvedValue({ ok: true, value: null })
     await mount()
 
-    await click(buttonWith('Complete task'))
+    await click(buttonByLabel('Complete task'))
 
     expect(mocks.completeTask).toHaveBeenCalledWith({ taskId: TASK_ID })
     expect(mocks.fetchTaskDetail).toHaveBeenLastCalledWith(
@@ -382,10 +390,10 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     mocks.completeTask.mockResolvedValue({ ok: true, value: { ...TASK, isCompleted: true } })
     await mount()
 
-    await click(buttonWith('Complete task'))
+    await click(buttonByLabel('Complete task'))
 
     expect(mocks.fetchTaskDetail).toHaveBeenCalledTimes(1)
-    expect(buttonWith('Reopen task')).toBeTruthy()
+    expect(buttonByLabel('Reopen task')).toBeTruthy()
   })
 
   it('reopens a completed task through the reopen action', async () => {
@@ -396,7 +404,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     mocks.reopenTask.mockResolvedValue({ ok: true, value: TASK })
     await mount()
 
-    await click(buttonWith('Reopen task'))
+    await click(buttonByLabel('Reopen task'))
 
     expect(mocks.reopenTask).toHaveBeenCalledWith({ taskId: TASK_ID })
     expect(mocks.completeTask).not.toHaveBeenCalled()
@@ -411,7 +419,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     })
     await mount()
 
-    await click(buttonWith('Complete task'))
+    await click(buttonByLabel('Complete task'))
 
     expect(alertText()).toContain('Task is locked')
     expect(container.textContent).toContain(TASK.name)
@@ -423,9 +431,9 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     mocks.completeTask.mockReturnValue(pending.promise)
     await mount()
 
-    await click(buttonWith('Complete task'))
+    await click(buttonByLabel('Complete task'))
 
-    expect(buttonWith('Complete task').disabled).toBe(true)
+    expect(buttonByLabel('Complete task').disabled).toBe(true)
     expect(dueDateInput().disabled).toBe(true)
     expect(buttonWith('Edit labels').disabled).toBe(true)
     expect(container.querySelector('textarea')?.disabled).toBe(true)
@@ -434,7 +442,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
       pending.resolve({ ok: true, value: { ...TASK, isCompleted: true } })
     })
 
-    expect(buttonWith('Reopen task').disabled).toBe(false)
+    expect(buttonByLabel('Reopen task').disabled).toBe(false)
     expect(dueDateInput().disabled).toBe(false)
   })
 })

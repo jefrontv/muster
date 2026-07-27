@@ -1,0 +1,113 @@
+import React from 'react'
+import { Check, LoaderCircle } from 'lucide-react'
+
+import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { translate } from '@/i18n/i18n'
+import { cn } from '@/lib/utils'
+import type { ActiveCollabTask } from '../../../shared/activecollab-types'
+import { activeCollabStamp } from './activecollab-task-timestamps'
+
+// A drawn dot rather than a typed middot: the identity line is decoration between localized
+// fragments, and punctuation as text would need translating.
+const DOT = 'size-1 shrink-0 rounded-full bg-muted-foreground/40'
+
+type ActiveCollabTaskHeaderProps = {
+  task: ActiveCollabTask
+  /** Any write in flight; the toggle locks with the rest of the pane. */
+  disabled: boolean
+  completing: boolean
+  onCompletedChange: (completed: boolean) => void
+}
+
+/**
+ * Task identity and completion.
+ *
+ * The checkbox is paired with the title rather than parked in a control row, because completion is a
+ * statement about THIS task and reads as one when it sits on the title's baseline. Completed state
+ * is also carried by the struck-through title, so it survives without hovering the toggle.
+ */
+export function ActiveCollabTaskHeader({
+  task,
+  disabled,
+  completing,
+  onCompletedChange
+}: ActiveCollabTaskHeaderProps): React.JSX.Element {
+  const created = activeCollabStamp(task.createdOn, 'date')
+  const toggleLabel = task.isCompleted
+    ? translate('auto.components.activecollab.task_workspace.reopen', 'Reopen task')
+    : translate('auto.components.activecollab.task_workspace.complete', 'Complete task')
+
+  return (
+    <header className="flex-none border-b border-border/50 bg-muted/30 px-4 py-3">
+      <div className="flex items-start gap-2.5">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-pressed={task.isCompleted}
+                aria-label={toggleLabel}
+                disabled={disabled}
+                onClick={() => onCompletedChange(!task.isCompleted)}
+                className={cn(
+                  'mt-px flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50',
+                  task.isCompleted
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : // A ghost check on hover: the affordance is discoverable without a label.
+                      'border-border text-transparent hover:border-foreground/40 hover:text-muted-foreground'
+                )}
+              >
+                {completing ? (
+                  <LoaderCircle className="size-3 animate-spin text-muted-foreground" />
+                ) : (
+                  <Check className="size-3" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{toggleLabel}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <div className="min-w-0 flex-1">
+          <h2
+            className={cn(
+              'text-[17px] font-semibold leading-snug',
+              task.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+            )}
+          >
+            {task.name}
+          </h2>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <ActiveCollabIcon className="size-3 shrink-0" />
+              <span className="min-w-0 truncate font-medium text-foreground/80">
+                {task.projectName}
+              </span>
+            </span>
+            <span aria-hidden="true" className={DOT} />
+            <span className="shrink-0 font-mono">
+              {translate(
+                'auto.components.activecollab.task_workspace.task_number',
+                'Task #{{value0}}',
+                { value0: task.taskNumber }
+              )}
+            </span>
+            {created ? (
+              <>
+                <span aria-hidden="true" className={DOT} />
+                <time dateTime={created.iso} className="shrink-0">
+                  {translate(
+                    'auto.components.activecollab.task_workspace.created_on',
+                    'Created {{value0}}',
+                    { value0: created.label }
+                  )}
+                </time>
+              </>
+            ) : null}
+          </p>
+        </div>
+      </div>
+    </header>
+  )
+}

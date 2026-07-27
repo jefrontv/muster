@@ -91,7 +91,11 @@ function store(
   repos: { path: string; gitRemoteIdentity?: { canonicalKey: string } | null }[] = [],
   sitePaths: string[] = []
 ): CloneSourceStore {
-  return { getRepos: () => repos, listSites: () => sitePaths.map((path) => ({ path })) }
+  return {
+    getRepos: () => repos,
+    listSites: () => sitePaths.map((path) => ({ path })),
+    getConfiguredSiteRoots: () => []
+  }
 }
 
 beforeEach(() => {

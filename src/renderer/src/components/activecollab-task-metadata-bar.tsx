@@ -1,102 +1,75 @@
 import React from 'react'
-import { CalendarDays, CircleCheck, LoaderCircle, RotateCcw, UserRound, X } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
+import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
-import {
-  activeCollabDueDateFromInput,
-  formatActiveCollabDueDate
-} from './activecollab-task-due-date'
+import { ActiveCollabTaskDueDateField } from './activecollab-task-due-date-field'
 import { ActiveCollabLabelChip, ActiveCollabLabelEditor } from './activecollab-task-label-editor'
+import { activeCollabAssigneeLabel, resolveActiveCollabAssignee } from './activecollab-task-people'
+import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
 import type { ActiveCollabTaskWriteField } from './activecollab-task-writes'
 
 type ActiveCollabTaskMetadataBarProps = {
   task: ActiveCollabTask
   pending: ActiveCollabTaskWriteField | null
-  onCompletedChange: (completed: boolean) => void
   onDueOnChange: (dueOn: number | null) => void
   onLabelNamesChange: (labelNames: string[]) => void
 }
 
+const META_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground'
+
+/**
+ * Assignee, due date and labels as a labelled two-column list.
+ *
+ * Each value gets a name, because unlabelled chrome forces the reader to guess: an undifferentiated
+ * row of controls made a date box, an assignee and two label chips look like four peer buttons.
+ * Completion is NOT here — it belongs with the title, not among the fields it does not resemble.
+ */
 export function ActiveCollabTaskMetadataBar({
   task,
   pending,
-  onCompletedChange,
   onDueOnChange,
   onLabelNamesChange
 }: ActiveCollabTaskMetadataBarProps): React.JSX.Element {
   const busy = pending !== null
-  const due = formatActiveCollabDueDate(task.dueOn)
+  const assignee = resolveActiveCollabAssignee(task)
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/60 px-4 py-2.5">
-      <Button
-        size="xs"
-        variant="outline"
-        disabled={busy}
-        onClick={() => onCompletedChange(!task.isCompleted)}
-        className="gap-1.5"
-      >
-        {pending === 'completion' ? (
-          <LoaderCircle className="size-3.5 animate-spin" />
-        ) : task.isCompleted ? (
-          <RotateCcw className="size-3.5" />
-        ) : (
-          <CircleCheck className="size-3.5" />
-        )}
-        {task.isCompleted
-          ? translate('auto.components.activecollab.task_workspace.reopen', 'Reopen task')
-          : translate('auto.components.activecollab.task_workspace.complete', 'Complete task')}
-      </Button>
+    <dl className="grid flex-none grid-cols-[5.25rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 border-b border-border/60 px-4 py-3">
+      <dt className={META_LABEL}>
+        {translate('auto.components.activecollab.task_workspace.assignee', 'Assignee')}
+      </dt>
+      <dd className="flex min-w-0 items-center gap-2 text-[12px]">
+        <ActiveCollabPersonBadge name={assignee.kind === 'named' ? assignee.name : null} />
+        <span
+          data-testid="activecollab-task-assignee"
+          className={cn(
+            'min-w-0 truncate',
+            assignee.kind === 'named' ? 'text-foreground' : 'text-muted-foreground'
+          )}
+        >
+          {activeCollabAssigneeLabel(assignee)}
+        </span>
+      </dd>
 
-      <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <UserRound className="size-3.5" />
-        {task.assigneeName ??
-          translate('auto.components.activecollab.task_workspace.unassigned', 'Unassigned')}
-      </span>
-
-      <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <CalendarDays className="size-3.5" />
-        <input
-          type="date"
-          // `task.dueOn` is already anchored to the local calendar day; reading it with local
-          // getters keeps the day the instance stored.
-          value={due?.iso ?? ''}
+      <dt className={META_LABEL}>
+        {translate('auto.components.activecollab.task_workspace.due_date', 'Due date')}
+      </dt>
+      <dd className="min-w-0">
+        <ActiveCollabTaskDueDateField
+          // Remount per task so the `Set...` affordance never carries over.
+          key={task.id}
+          dueOn={task.dueOn}
           disabled={busy}
-          aria-label={translate('auto.components.activecollab.task_workspace.due_date', 'Due date')}
-          onChange={(event) => {
-            const value = event.target.value
-            if (value === '') {
-              // An explicit null CLEARS the date; omitting the key would leave it alone.
-              onDueOnChange(null)
-              return
-            }
-            const picked = activeCollabDueDateFromInput(value)
-            if (picked !== null) {
-              onDueOnChange(picked)
-            }
-          }}
-          className="rounded-md border border-input bg-transparent px-1.5 py-0.5 text-[11px] outline-none focus-visible:border-ring disabled:opacity-50"
+          busy={pending === 'dueDate'}
+          onChange={onDueOnChange}
         />
-        {due ? (
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => onDueOnChange(null)}
-            aria-label={translate(
-              'auto.components.activecollab.task_workspace.clear_due_date',
-              'Clear due date'
-            )}
-          >
-            <X className="size-3" />
-          </Button>
-        ) : null}
-        {pending === 'dueDate' ? <LoaderCircle className="size-3 animate-spin" /> : null}
-      </span>
+      </dd>
 
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <dt className={cn(META_LABEL, 'self-start pt-1')}>
+        {translate('auto.components.activecollab.task_workspace.labels', 'Labels')}
+      </dt>
+      <dd className="flex min-w-0 flex-wrap items-center gap-1.5">
         {task.labels.map((label) => (
           <ActiveCollabLabelChip key={label.id} label={label} />
         ))}
@@ -106,7 +79,7 @@ export function ActiveCollabTaskMetadataBar({
           busy={pending === 'labels'}
           onChange={onLabelNamesChange}
         />
-      </div>
-    </div>
+      </dd>
+    </dl>
   )
 }

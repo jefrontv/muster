@@ -16,13 +16,18 @@ import {
 
 const NOW = 1_700_000_000_000
 
-function createStore(repoPaths: string[] = [], sitePaths: string[] = []) {
-  const state = { repos: [...repoPaths], sites: [...sitePaths] }
+function createStore(
+  repoPaths: string[] = [],
+  sitePaths: string[] = [],
+  configured: string[] = []
+) {
+  const state = { repos: [...repoPaths], sites: [...sitePaths], configured: [...configured] }
   return {
     state,
     store: {
       getRepos: () => state.repos.map((path) => ({ path })),
-      listSites: () => state.sites.map((path) => ({ path }))
+      listSites: () => state.sites.map((path) => ({ path })),
+      getConfiguredSiteRoots: () => state.configured
     } satisfies SiteRootsStore
   }
 }
@@ -179,7 +184,8 @@ describe('deriveSiteRoots', () => {
   it('ignores a repo that lives on an ssh host', () => {
     const store: SiteRootsStore = {
       getRepos: () => [{ path: '/projects/api' }, { path: '/srv/www/site', connectionId: 'ssh-1' }],
-      listSites: () => []
+      listSites: () => [],
+      getConfiguredSiteRoots: () => []
     }
 
     expect(deriveSiteRoots(store, () => true)).toEqual(['/projects'])
@@ -206,6 +212,33 @@ describe('deriveSiteRoots', () => {
     expect(roots).toHaveLength(SITE_ROOTS_MAX)
     expect(roots).toContain('/projects')
     expect(roots).toEqual([...roots].sort())
+  })
+
+  it('returns the configured list in the user order, ignoring the derived parents entirely', () => {
+    const { store } = createStore(
+      ['/projects/api'],
+      ['/sites/acme'],
+      ['/Volumes/work', '/Users/jake/Documents/Sites']
+    )
+
+    expect(deriveSiteRoots(store, () => true)).toEqual([
+      '/Volumes/work',
+      '/Users/jake/Documents/Sites'
+    ])
+  })
+
+  it('keeps a configured root that is not on disk, unlike a derived one', () => {
+    const { store } = createStore(['/projects/api'], [], ['/Volumes/ejected'])
+
+    expect(deriveSiteRoots(store, () => false)).toEqual(['/Volumes/ejected'])
+  })
+
+  it('falls back to derivation the moment the configured list empties', () => {
+    const { state, store } = createStore(['/projects/api'], [], ['/Volumes/work'])
+
+    expect(deriveSiteRoots(store, () => true)).toEqual(['/Volumes/work'])
+    state.configured = []
+    expect(deriveSiteRoots(store, () => true)).toEqual(['/projects'])
   })
 })
 
@@ -237,6 +270,26 @@ describe('derivePrimarySiteRoot', () => {
   it('reports an empty string when no root exists yet, so the caller asks instead of guessing', () => {
     expect(derivePrimarySiteRoot(createStore().store, () => true)).toBe('')
   })
+
+  it('prefers the first reachable configured root over the densest derived one', () => {
+    const { store } = createStore(
+      Array.from({ length: 5 }, (_unused, index) => `/projects/repo-${index}`),
+      [],
+      ['/Volumes/ejected', '/Volumes/work']
+    )
+
+    expect(derivePrimarySiteRoot(store, (candidate) => candidate !== '/Volumes/ejected')).toBe(
+      '/Volumes/work'
+    )
+  })
+
+  it('asks rather than guessing when every configured root is offline', () => {
+    // Falling through to a derived parent here would clone into a folder the user never named,
+    // just because a drive was unplugged.
+    const { store } = createStore(['/projects/api'], [], ['/Volumes/ejected'])
+
+    expect(derivePrimarySiteRoot(store, (candidate) => candidate === '/projects')).toBe('')
+  })
 })
 
 describe('startSiteRootsWatcher', () => {
@@ -245,6 +298,27 @@ describe('startSiteRootsWatcher', () => {
 
     expect(harness.fs.openRoots()).toEqual(['/projects', '/sites'])
     expect(harness.fs.opened.every((watcher) => watcher.recursive === false)).toBe(true)
+
+    harness.handle.stop()
+  })
+
+  it('moves its handles onto the configured list when the user chooses folders', () => {
+    const harness = createHarness(['/projects/api'])
+
+    expect(harness.fs.openRoots()).toEqual(['/projects'])
+
+    harness.state.configured = ['/Volumes/work']
+    harness.handle.refreshRoots()
+
+    expect(harness.fs.openRoots()).toEqual(['/Volumes/work'])
+    expect(harness.handle.getRoots()).toEqual(['/Volumes/work'])
+    expect(harness.reasons()).toEqual(['roots-changed'])
+
+    // Emptying it hands the watch set straight back to derivation, no restart required.
+    harness.state.configured = []
+    harness.handle.refreshRoots()
+
+    expect(harness.fs.openRoots()).toEqual(['/projects'])
 
     harness.handle.stop()
   })
