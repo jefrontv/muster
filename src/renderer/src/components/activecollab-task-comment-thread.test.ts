@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   activeCollabCommentBodyHtml,
-  sortActiveCollabCommentsOldestFirst
+  sortActiveCollabCommentsNewestFirst
 } from './activecollab-task-comment-thread'
 import type { ActiveCollabComment } from '../../../shared/activecollab-types'
 
@@ -18,45 +18,44 @@ function comment(id: number, createdOn: number | null): ActiveCollabComment {
   }
 }
 
-describe('sortActiveCollabCommentsOldestFirst', () => {
-  it('reverses the API order so the newest comment lands nearest the composer', () => {
-    // The live instance returns newest first — this is the exact shape observed on task 492982.
-    const newestFirst = [comment(3, 3_000), comment(2, 2_000), comment(1, 1_000)]
+describe('sortActiveCollabCommentsNewestFirst', () => {
+  it('puts the newest comment first, next to the composer above it', () => {
+    const shuffled = [comment(2, 2_000), comment(1, 1_000), comment(3, 3_000)]
 
-    expect(sortActiveCollabCommentsOldestFirst(newestFirst).map((c) => c.id)).toEqual([1, 2, 3])
+    expect(sortActiveCollabCommentsNewestFirst(shuffled).map((c) => c.id)).toEqual([3, 2, 1])
   })
 
-  it('sorts undated comments last so a local echo does not jump to the top of the thread', () => {
-    const withEcho = [comment(9, null), comment(1, 1_000), comment(2, 2_000)]
+  it('sorts an undated comment first, because it is the local echo of a just-posted reply', () => {
+    const withEcho = [comment(1, 1_000), comment(9, null), comment(2, 2_000)]
 
-    expect(sortActiveCollabCommentsOldestFirst(withEcho).map((c) => c.id)).toEqual([1, 2, 9])
+    expect(sortActiveCollabCommentsNewestFirst(withEcho).map((c) => c.id)).toEqual([9, 2, 1])
   })
 
-  it('is total, not merely stable: equal timestamps resolve by id in post order', () => {
+  it('is total, not merely stable: equal timestamps resolve by id, newest post first', () => {
     // Two comments posted inside the same second must not swap between renders.
-    const sameSecond = [comment(7, 5_000), comment(4, 5_000), comment(6, 5_000)]
+    const sameSecond = [comment(4, 5_000), comment(7, 5_000), comment(6, 5_000)]
 
-    expect(sortActiveCollabCommentsOldestFirst(sameSecond).map((c) => c.id)).toEqual([4, 6, 7])
+    expect(sortActiveCollabCommentsNewestFirst(sameSecond).map((c) => c.id)).toEqual([7, 6, 4])
   })
 
   it('returns one order regardless of input permutation', () => {
     const rows = [comment(1, 1_000), comment(2, 2_000), comment(3, null), comment(4, 2_000)]
-    const expected = sortActiveCollabCommentsOldestFirst(rows).map((c) => c.id)
+    const expected = sortActiveCollabCommentsNewestFirst(rows).map((c) => c.id)
 
-    expect(sortActiveCollabCommentsOldestFirst([...rows].reverse()).map((c) => c.id)).toEqual(
+    expect(sortActiveCollabCommentsNewestFirst([...rows].reverse()).map((c) => c.id)).toEqual(
       expected
     )
     expect(
-      sortActiveCollabCommentsOldestFirst([rows[2], rows[0], rows[3], rows[1]]).map((c) => c.id)
+      sortActiveCollabCommentsNewestFirst([rows[2], rows[0], rows[3], rows[1]]).map((c) => c.id)
     ).toEqual(expected)
   })
 
   it('does not mutate the caller array', () => {
-    const rows = [comment(3, 3_000), comment(1, 1_000)]
+    const rows = [comment(1, 1_000), comment(3, 3_000)]
 
-    sortActiveCollabCommentsOldestFirst(rows)
+    sortActiveCollabCommentsNewestFirst(rows)
 
-    expect(rows.map((c) => c.id)).toEqual([3, 1])
+    expect(rows.map((c) => c.id)).toEqual([1, 3])
   })
 })
 
