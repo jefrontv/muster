@@ -1,6 +1,10 @@
 # ActiveCollab × Muster — Integration Design
 
-Status: **design agreed, phase 1 in progress**
+Status: **shipped** — every goal below is implemented and verified live against `https://projects.efront.com.au`
+(commits `4d0a1b72c` … `b364ff369`). Two API facts recorded here were later disproved on the live
+instance and are corrected in place: task rows carry neither `project_name` nor `assignee_name`, so both
+are joined client-side from cached `/projects` and `/users` maps; and `/users` is NOT capped at 100 rows
+here — it returns the full roster and ignores `?page`, so paging it would loop forever.
 Author: recon from `active-collab-mcp` (Python), `active-collab-notifications` (Swift/CollabBar), and a full
 trace of Muster's existing Jira provider.
 
