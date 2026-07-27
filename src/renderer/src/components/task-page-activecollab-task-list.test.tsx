@@ -20,6 +20,8 @@ type RenderedList = {
   onSelect: Mock<(ref: ActiveCollabTaskRef) => void>
   user: UserEvent
   rerender: () => Promise<void>
+  /** Re-renders with a different binding scope, as clearing or changing a binding does. */
+  rerenderWith: (bindingStatus: ActiveCollabBindingStatus | undefined) => Promise<void>
 }
 
 const mocks = vi.hoisted(() => ({
@@ -52,6 +54,13 @@ vi.mock('@/components/activecollab-connect-dialog', () => ({
 
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { ActiveCollabTaskList } from './task-page-activecollab-task-list'
+import type { ActiveCollabBindingStatus } from './activecollab-project-binding-state'
+
+const BOUND: ActiveCollabBindingStatus = {
+  kind: 'bound',
+  binding: { projectId: 3790, projectName: 'Muster UI', boundAt: 1700 },
+  upstreamName: 'Muster UI'
+}
 
 function dueLabel(dueOn: number): string {
   return new Date(dueOn).toLocaleDateString(undefined, {
@@ -124,22 +133,32 @@ function serveFailure(kind: ActiveCollabFailure['kind'], error = 'gateway down')
   mocks.listAssignedTasks.mockResolvedValue({ ok: false, kind, error, status: 502 })
 }
 
-async function renderList(selectedTaskId: number | null = null): Promise<RenderedList> {
+async function renderList(
+  selectedTaskId: number | null = null,
+  bindingStatus?: ActiveCollabBindingStatus
+): Promise<RenderedList> {
   const onSelect = vi.fn<(ref: ActiveCollabTaskRef) => void>()
   const user = userEvent.setup()
   // A fresh element each time: React bails out of re-rendering an identical element reference,
   // which would silently hide the scope change under test.
-  const view = await act(async () =>
-    render(<ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />)
+  const elementFor = (scope: ActiveCollabBindingStatus | undefined): React.JSX.Element => (
+    <ActiveCollabTaskList
+      bindingStatus={scope}
+      onSelect={onSelect}
+      selectedTaskId={selectedTaskId}
+    />
   )
+  const view = await act(async () => render(elementFor(bindingStatus)))
+  const rerenderWith = async (scope: ActiveCollabBindingStatus | undefined): Promise<void> => {
+    await act(async () => {
+      view.rerender(elementFor(scope))
+    })
+  }
   return {
     onSelect,
     user,
-    rerender: async () => {
-      await act(async () => {
-        view.rerender(<ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />)
-      })
-    }
+    rerender: () => rerenderWith(bindingStatus),
+    rerenderWith
   }
 }
 
@@ -558,5 +577,94 @@ describe('ActiveCollabTaskList runtime scope', () => {
 
     expect(screen.getByText('Remote task')).toBeInTheDocument()
     expect(screen.queryByText(/local instance died/)).not.toBeInTheDocument()
+  })
+})
+
+describe('ActiveCollabTaskList project binding scope', () => {
+  const OTHER_PROJECT = { projectId: 4100, projectName: 'Zebra Migration' }
+
+  it('shows every project when nothing is bound', async () => {
+    servePages(
+      pageRows(1, [taskFixture({ id: 1 }), taskFixture({ id: 2, ...OTHER_PROJECT })], false)
+    )
+    await renderList()
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getByRole('list', { name: 'Zebra Migration' })).toBeVisible()
+  })
+
+  it('keeps only the bound project rows', async () => {
+    servePages(
+      pageRows(1, [taskFixture({ id: 1 }), taskFixture({ id: 2, ...OTHER_PROJECT })], false)
+    )
+    await renderList(null, BOUND)
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+    expect(screen.getByRole('list', { name: 'Muster UI' })).toBeVisible()
+    expect(screen.queryByRole('list', { name: 'Zebra Migration' })).not.toBeInTheDocument()
+  })
+
+  it('names the bound project in the empty state instead of claiming nothing is assigned', async () => {
+    servePages(pageRows(1, [taskFixture({ id: 2, ...OTHER_PROJECT })], false))
+    await renderList(null, BOUND)
+
+    expect(screen.getByText('No tasks in Muster UI')).toBeInTheDocument()
+    expect(
+      screen.getByText('Nothing open is assigned to you in Muster UI right now.')
+    ).toBeInTheDocument()
+    expect(screen.queryByText('No tasks assigned')).not.toBeInTheDocument()
+  })
+
+  // The load-bearing consequence of filtering client-side over a server-paged list: a full page
+  // can be entirely other projects' tasks, so `empty` no longer means "exhausted". If paging were
+  // gated on the list being non-empty, the user would be stranded on "no tasks" with their own
+  // rows sitting on page two, unrequested.
+  it('keeps paging reachable when a whole page filters down to nothing', async () => {
+    servePages(
+      pageRows(1, [taskFixture({ id: 2, ...OTHER_PROJECT })], true),
+      pageRows(2, [taskFixture({ id: 3, name: 'Scoped task' })], false)
+    )
+    const { user } = await renderList(null, BOUND)
+
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0)
+    expect(
+      screen.getByText(
+        'None of the tasks loaded so far belong to Muster UI. Load more to keep looking.'
+      )
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Load more tasks/ }))
+
+    expect(mocks.listAssignedTasks).toHaveBeenNthCalledWith(2, { page: 2 }, expect.anything())
+    expect(screen.getByText('Scoped task')).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+  })
+
+  // A binding whose project vanished upstream: rows must not silently widen back to the whole
+  // account. The bar above the list carries the explanation.
+  it('renders nothing for a binding whose project no longer exists', async () => {
+    servePages(
+      pageRows(1, [taskFixture({ id: 1 }), taskFixture({ id: 2, ...OTHER_PROJECT })], false)
+    )
+    await renderList(null, {
+      kind: 'missing',
+      binding: { projectId: 999_999, projectName: 'Deleted Project', boundAt: 1700 }
+    })
+
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0)
+    expect(screen.getByText('No tasks in Deleted Project')).toBeInTheDocument()
+  })
+
+  it('widens back to every task when the binding is cleared', async () => {
+    servePages(
+      pageRows(1, [taskFixture({ id: 1 }), taskFixture({ id: 2, ...OTHER_PROJECT })], false)
+    )
+    const { rerenderWith } = await renderList(null, BOUND)
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+
+    await rerenderWith({ kind: 'unbound' })
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getByRole('list', { name: 'Zebra Migration' })).toBeVisible()
   })
 })

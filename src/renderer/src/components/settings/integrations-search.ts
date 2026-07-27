@@ -238,5 +238,37 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
         'disconnect'
       )
     ]
+  },
+  {
+    title: translate(
+      'auto.components.settings.integrations.search.activecollab_mcp_title',
+      'ActiveCollab MCP'
+    ),
+    description: translate(
+      'auto.components.settings.integrations.search.activecollab_mcp_description',
+      'Install the ActiveCollab MCP server into Claude Code, Codex, or Cursor.'
+    ),
+    keywords: [
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.activecollab_keyword',
+        'activecollab',
+        { aliases: ['active collab'], englishOnly: true }
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.activecollab_mcp_keyword',
+        'mcp',
+        { aliases: ['model context protocol'], englishOnly: true }
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.activecollab_mcp_agents_keyword',
+        'claude code',
+        { aliases: ['codex', 'cursor'], englishOnly: true }
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.activecollab_mcp_install_keyword',
+        'install',
+        { aliases: ['setup'], englishOnly: true }
+      )
+    ]
   }
 ])

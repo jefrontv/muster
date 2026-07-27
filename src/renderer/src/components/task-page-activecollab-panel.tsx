@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { ActiveCollabTaskList } from '@/components/task-page-activecollab-task-list'
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
+import { ActiveCollabProjectBindingBar } from '@/components/task-page-activecollab-binding-bar'
+import { useActiveCollabProjectBinding } from '@/hooks/useActiveCollabProjectBinding'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
@@ -49,6 +51,10 @@ export function TaskPageActiveCollabPanel({
     setSelected(ref)
   }, [])
 
+  // The binding is resolved here rather than inside the list because two children need it: the bar
+  // that names and edits it, and the list that scopes its rows to it.
+  const binding = useActiveCollabProjectBinding()
+
   if (!statusChecked) {
     return (
       <div className="mt-4 flex items-center justify-center py-14">
@@ -80,19 +86,31 @@ export function TaskPageActiveCollabPanel({
     )
   }
 
+  const hasSelection = selected !== null
+
   return (
     <div className="flex min-h-0 max-h-full flex-1 gap-3 overflow-hidden">
-      <div className="flex min-h-0 max-h-full flex-1 flex-col overflow-hidden rounded-md border border-border/50 bg-background shadow-sm">
+      <div className="flex min-h-0 max-h-full min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border/50 bg-background shadow-sm">
+        <ActiveCollabProjectBindingBar {...binding} />
         <ActiveCollabTaskList
+          bindingStatus={binding.status}
           onSelect={handleSelect}
           selectedTaskId={selected?.taskId ?? null}
           sourceContext={sourceContext}
         />
       </div>
-      <ActiveCollabTaskWorkspace
-        projectId={selected?.projectId ?? null}
-        taskId={selected?.taskId ?? null}
-      />
+      {hasSelection ? (
+        // Why NO `key` here: keying on the task id remounts the pane on every switch, which throws
+        // away the detail cache that suppresses the loading skeleton for an already-read task. The
+        // slide belongs to the panel ARRIVING (no selection -> selection), not to its contents
+        // changing, so mounting once and letting the pane swap tasks in place is both correct and
+        // what the skeleton work depends on.
+        // Why a bounded width: the pane's own class list is `h-full` with no basis, so as a bare
+        // flex sibling it sized to its content and a long task body pushed the list off-screen.
+        <aside className="flex min-h-0 max-h-full w-[42%] min-w-[320px] max-w-[620px] shrink-0 flex-col overflow-hidden rounded-md border border-border/50 bg-background shadow-sm duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none">
+          <ActiveCollabTaskWorkspace projectId={selected.projectId} taskId={selected.taskId} />
+        </aside>
+      ) : null}
     </div>
   )
 }

@@ -157,7 +157,7 @@ export function ActiveCollabTaskRow({
         aria-label={taskRowAccessibleName(task, due, status)}
         onClick={() => onSelect({ projectId: task.projectId, taskId: task.id })}
         className={cn(
-          'grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
+          'grid min-h-14 w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
           // Selected outranks hover instead of matching it, so pointing at a row never looks like
           // selecting one.
           selected ? 'bg-accent hover:bg-accent' : 'hover:bg-accent/40'

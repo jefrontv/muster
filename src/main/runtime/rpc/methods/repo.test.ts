@@ -43,6 +43,69 @@ describe('repo RPC methods', () => {
     })
   })
 
+  // Remote hosts take the RPC path rather than IPC, so the binding needs its own crossing here: a
+  // zod object drops undeclared keys silently, and a binding that never reaches the runtime would
+  // look set in the renderer and be gone on reload.
+  it('carries an ActiveCollab project binding to the runtime server', async () => {
+    const binding = { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
+    const runtime = {
+      getRuntimeId: () => 'test-runtime',
+      updateProject: vi.fn().mockReturnValue({ id: 'project-1', activeCollabBinding: binding })
+    } as unknown as OrcaRuntimeService
+    const dispatcher = new RpcDispatcher({ runtime, methods: REPO_METHODS })
+
+    const response = await dispatcher.dispatch(
+      makeRequest('project.update', {
+        projectId: 'project-1',
+        updates: { activeCollabBinding: binding }
+      })
+    )
+
+    expect(runtime.updateProject).toHaveBeenCalledWith('project-1', {
+      activeCollabBinding: binding
+    })
+    expect(response).toMatchObject({
+      ok: true,
+      result: { project: { activeCollabBinding: binding } }
+    })
+  })
+
+  it('carries an explicit ActiveCollab unbind to the runtime server', async () => {
+    const runtime = {
+      getRuntimeId: () => 'test-runtime',
+      updateProject: vi.fn().mockReturnValue({ id: 'project-1' })
+    } as unknown as OrcaRuntimeService
+    const dispatcher = new RpcDispatcher({ runtime, methods: REPO_METHODS })
+
+    await dispatcher.dispatch(
+      makeRequest('project.update', {
+        projectId: 'project-1',
+        updates: { activeCollabBinding: null }
+      })
+    )
+
+    const [, updates] = vi.mocked(runtime.updateProject).mock.calls[0] ?? []
+    expect(updates).toHaveProperty('activeCollabBinding', null)
+  })
+
+  it('rejects an ActiveCollab binding the API could never have produced', async () => {
+    const runtime = {
+      getRuntimeId: () => 'test-runtime',
+      updateProject: vi.fn()
+    } as unknown as OrcaRuntimeService
+    const dispatcher = new RpcDispatcher({ runtime, methods: REPO_METHODS })
+
+    const response = await dispatcher.dispatch(
+      makeRequest('project.update', {
+        projectId: 'project-1',
+        updates: { activeCollabBinding: { projectId: 0, projectName: '', boundAt: 1 } }
+      })
+    )
+
+    expect(response).toMatchObject({ ok: false })
+    expect(runtime.updateProject).not.toHaveBeenCalled()
+  })
+
   it('creates a repo on the runtime server', async () => {
     const runtime = {
       getRuntimeId: () => 'test-runtime',

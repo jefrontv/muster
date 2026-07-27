@@ -233,3 +233,4 @@ function ProviderAccountScopeRow({ scope }: { scope: ReturnType<typeof getProvid
 
 export { JiraIntegrationCard } from './jira-integration-card'
 export { ActiveCollabIntegrationCard } from './activecollab-integration-card'
+export { ActiveCollabMcpInstallCard } from './activecollab-mcp-install-card'

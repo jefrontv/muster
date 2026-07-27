@@ -531,6 +531,8 @@ function mergeProjectCompatibilityProject(base: Project, overlay: Project): Proj
     'localWindowsRuntimePreference' in overlay
       ? overlay.localWindowsRuntimePreference
       : base.localWindowsRuntimePreference
+  const activeCollabBinding =
+    'activeCollabBinding' in overlay ? overlay.activeCollabBinding : base.activeCollabBinding
   const project: Project = {
     ...base,
     ...overlay,
@@ -543,6 +545,13 @@ function mergeProjectCompatibilityProject(base: Project, overlay: Project): Proj
     delete project.localWindowsRuntimePreference
   } else {
     project.localWindowsRuntimePreference = localWindowsRuntimePreference
+  }
+  // Why: the repo projection never carries a binding, so a projected overlay must leave the
+  // persisted one alone rather than let the spread above blank it.
+  if (activeCollabBinding === undefined) {
+    delete project.activeCollabBinding
+  } else {
+    project.activeCollabBinding = activeCollabBinding
   }
   return project
 }
@@ -581,6 +590,16 @@ function mergeUpdatedProjectCompatibilityProject(
       delete project.localWindowsRuntimePreference
     } else {
       project.localWindowsRuntimePreference = localWindowsRuntimePreference
+    }
+  }
+  if ('activeCollabBinding' in updates) {
+    // Why: same asymmetry as above — main answers with one host's record, and an unbind must win
+    // over the cross-host merge that would otherwise resurrect the binding from `base`.
+    const activeCollabBinding = updated.activeCollabBinding ?? updates.activeCollabBinding
+    if (activeCollabBinding) {
+      project.activeCollabBinding = activeCollabBinding
+    } else {
+      delete project.activeCollabBinding
     }
   }
   return project

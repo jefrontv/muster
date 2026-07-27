@@ -687,10 +687,19 @@ const LocalWindowsRuntimePreferenceIpcArgs = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('wsl'), distro: z.string().min(1) })
 ])
 
+const ActiveCollabProjectBindingIpcArgs = z.object({
+  projectId: z.number().int().positive(),
+  projectName: z.string().min(1),
+  boundAt: z.number()
+})
+
 const ProjectUpdateIpcArgs = z.object({
   projectId: z.string().min(1),
   updates: z.object({
-    localWindowsRuntimePreference: LocalWindowsRuntimePreferenceIpcArgs.optional()
+    localWindowsRuntimePreference: LocalWindowsRuntimePreferenceIpcArgs.optional(),
+    // Nullable as well as optional: `null` is how the renderer asks for a clear, and an omitted key
+    // must stay "leave it alone" so a runtime-preference write cannot drop the binding.
+    activeCollabBinding: ActiveCollabProjectBindingIpcArgs.nullish()
   })
 })
 

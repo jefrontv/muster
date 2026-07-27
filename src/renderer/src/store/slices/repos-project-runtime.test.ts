@@ -323,3 +323,65 @@ describe('repo slice project runtime updates', () => {
     expect(store.getState().projects[0]?.localWindowsRuntimePreference).toBeUndefined()
   })
 })
+
+describe('repo slice ActiveCollab project binding updates', () => {
+  const binding = { projectId: 3790, projectName: 'Website Rebuild', boundAt: 1700 }
+  const project: Project = {
+    id: 'project-1',
+    displayName: 'Project',
+    badgeColor: '#000',
+    sourceRepoIds: ['local-repo'],
+    createdAt: 1,
+    updatedAt: 1
+  }
+
+  it('stores the binding returned by main', async () => {
+    projectsUpdate.mockResolvedValue({ ...project, activeCollabBinding: binding })
+    const store = createTestStore()
+    store.setState({ projects: [project] })
+
+    await store.getState().updateProject(project.id, { activeCollabBinding: binding })
+
+    expect(store.getState().projects[0]?.activeCollabBinding).toEqual(binding)
+  })
+
+  // The cross-host merge preserves metadata one host's record omits, which is right for everything
+  // except a deliberate clear: without the explicit unbind branch it would carry the binding
+  // straight back off `base` and the user's "Show all tasks" would appear to do nothing.
+  it('drops the binding on an explicit unbind even though the response omits it', async () => {
+    projectsUpdate.mockResolvedValue({ ...project })
+    const store = createTestStore()
+    store.setState({ projects: [{ ...project, activeCollabBinding: binding }] })
+
+    await store.getState().updateProject(project.id, { activeCollabBinding: null })
+
+    expect(store.getState().projects[0]?.activeCollabBinding).toBeUndefined()
+  })
+
+  it('leaves an existing binding alone when another field is updated', async () => {
+    projectsUpdate.mockResolvedValue({
+      ...project,
+      activeCollabBinding: binding,
+      localWindowsRuntimePreference: { kind: 'windows-host' }
+    })
+    const store = createTestStore()
+    store.setState({ projects: [{ ...project, activeCollabBinding: binding }] })
+
+    await store.getState().updateProject(project.id, {
+      localWindowsRuntimePreference: { kind: 'windows-host' }
+    })
+
+    expect(store.getState().projects[0]?.activeCollabBinding).toEqual(binding)
+  })
+
+  it('refreshes the cached display name after an upstream rename', async () => {
+    const renamed = { ...binding, projectName: 'Website Rebuild 2026' }
+    projectsUpdate.mockResolvedValue({ ...project, activeCollabBinding: renamed })
+    const store = createTestStore()
+    store.setState({ projects: [{ ...project, activeCollabBinding: binding }] })
+
+    await store.getState().updateProject(project.id, { activeCollabBinding: renamed })
+
+    expect(store.getState().projects[0]?.activeCollabBinding).toEqual(renamed)
+  })
+})

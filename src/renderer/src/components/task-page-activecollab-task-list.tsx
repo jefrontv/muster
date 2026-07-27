@@ -18,16 +18,26 @@ import {
   type ActiveCollabTaskGroup
 } from './task-page-activecollab-task-grouping'
 import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
+import {
+  activeCollabBindingDisplayName,
+  filterActiveCollabTasksForBinding,
+  type ActiveCollabBindingStatus
+} from './activecollab-project-binding-state'
 import type {
   ActiveCollabFailure,
   ActiveCollabTaskRef
 } from '../../../shared/activecollab-api-types'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 
+/** Module-level so the default prop keeps one identity and cannot churn the memos below. */
+const UNBOUND_STATUS: ActiveCollabBindingStatus = { kind: 'unbound' }
+
 type ActiveCollabTaskListProps = {
   onSelect: (ref: ActiveCollabTaskRef) => void
   selectedTaskId?: number | null
   sourceContext?: TaskSourceContext | null
+  /** Scopes the rows to one ActiveCollab project. Client-side: the fetch stays account-wide. */
+  bindingStatus?: ActiveCollabBindingStatus
 }
 
 type ActiveCollabTaskListLoad = {
@@ -65,17 +75,24 @@ function ActiveCollabTaskGroupSection({
 }): React.JSX.Element {
   const headingId = `activecollab-task-group-${group.projectId}`
   return (
-    <section className="border-t border-border/50 first:border-t-0">
+    // Why the group reads as a block: a plain `border-t` at the same weight as the row dividers
+    // made a project boundary indistinguishable from a task boundary. The heading now sits in its
+    // own tinted band and the rows below it are divided more faintly than the band, so the eye
+    // ranks "new project" above "next task" instead of seeing one uniform stack of hairlines.
+    <section className="pb-1.5 last:pb-0">
       <h3
         id={headingId}
-        className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/50 bg-background/95 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur"
+        className="sticky top-0 z-10 flex items-center justify-between gap-2 border-y border-border/60 bg-muted/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground backdrop-blur-sm"
       >
         <span className="min-w-0 truncate">{group.projectName}</span>
-        <span aria-hidden="true" className="shrink-0 tabular-nums">
+        <span
+          aria-hidden="true"
+          className="shrink-0 rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] tabular-nums"
+        >
           {group.tasks.length}
         </span>
       </h3>
-      <ul aria-labelledby={headingId} className="divide-y divide-border/50">
+      <ul aria-labelledby={headingId} className="divide-y divide-border/30">
         {group.tasks.map((task) => (
           <ActiveCollabTaskRow
             key={task.id}
@@ -116,12 +133,14 @@ function ActiveCollabListError({
   )
 }
 
-// Why: one token addresses one instance, so this list has no site or project selector — the slice
-// answers with every open task assigned to the connected user and paging is the only axis.
+// Why: one token addresses one instance, so this list has no site selector — the slice answers
+// with every open task assigned to the connected user, and the only axes are paging and the
+// caller's project binding, which narrows those rows here rather than at the request.
 export function ActiveCollabTaskList({
   onSelect,
   selectedTaskId = null,
-  sourceContext = null
+  sourceContext = null,
+  bindingStatus = UNBOUND_STATUS
 }: ActiveCollabTaskListProps): React.JSX.Element {
   const listAssignedTasks = useAppStore((s) => s.listActiveCollabAssignedTasks)
   const taskPageCache = useAppStore((s) => s.activeCollabTaskPageCache)
@@ -187,20 +206,33 @@ export function ActiveCollabTaskList({
     () => selectActiveCollabAssignedTasks(taskPageCache, cachePrefix, requestedPages),
     [cachePrefix, requestedPages, taskPageCache]
   )
+  // Narrowed here rather than at the request: `listAssignedTasks` is account-scoped and
+  // ActiveCollab implements no server-side task filter, so a bound project can only hide rows that
+  // were already paged in.
+  const visibleTasks = useMemo(
+    () => filterActiveCollabTasksForBinding(rows.tasks, bindingStatus),
+    [bindingStatus, rows.tasks]
+  )
+  const bindingScopeName = activeCollabBindingDisplayName(bindingStatus)
+  const loading = scoped ? load.loading : true
   const state = deriveActiveCollabTaskListState({
-    tasks: rows.tasks,
+    tasks: visibleTasks,
     hasMore: rows.hasMore,
-    loading: scoped ? load.loading : true,
+    loading,
     failure: scoped ? load.failure : null
   })
 
   // One clock reading feeds every row, so a render that straddles midnight cannot label two tasks
   // due the same day differently.
   const now = Date.now()
-  const groups = useMemo(() => groupActiveCollabTasksByProject(rows.tasks), [rows.tasks])
+  const groups = useMemo(() => groupActiveCollabTasksByProject(visibleTasks), [visibleTasks])
   const retry = useCallback(() => void loadPage(1, true), [loadPage])
   const openConnect = useCallback(() => setConnectOpen(true), [])
   const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
+  // Why the footer outlives the `ready` state: under a binding a whole page can be other projects'
+  // tasks, so "empty" is not the end of the list. Hiding paging there would strand the user on
+  // "nothing here" while the pages holding their tasks were never requested.
+  const canLoadMore = rows.hasMore && (state.kind === 'ready' || state.kind === 'empty')
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -229,52 +261,72 @@ export function ActiveCollabTaskList({
         <div className="px-4 py-10 text-center">
           <ActiveCollabIcon className="mx-auto mb-3 size-7 text-muted-foreground/60" />
           <p className="text-sm font-medium text-foreground">
-            {translate('auto.components.activecollab.task_list.empty_title', 'No tasks assigned')}
+            {bindingScopeName
+              ? translate(
+                  'auto.components.activecollab.task_list.empty_scoped_title',
+                  'No tasks in {{value0}}',
+                  { value0: bindingScopeName }
+                )
+              : translate(
+                  'auto.components.activecollab.task_list.empty_title',
+                  'No tasks assigned'
+                )}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {translate(
-              'auto.components.activecollab.task_list.empty_body',
-              'Nothing open is assigned to you in ActiveCollab right now.'
-            )}
+            {!bindingScopeName
+              ? translate(
+                  'auto.components.activecollab.task_list.empty_body',
+                  'Nothing open is assigned to you in ActiveCollab right now.'
+                )
+              : rows.hasMore
+                ? translate(
+                    'auto.components.activecollab.task_list.empty_scoped_more',
+                    'None of the tasks loaded so far belong to {{value0}}. Load more to keep looking.',
+                    { value0: bindingScopeName }
+                  )
+                : translate(
+                    'auto.components.activecollab.task_list.empty_scoped_body',
+                    'Nothing open is assigned to you in {{value0}} right now.',
+                    { value0: bindingScopeName }
+                  )}
           </p>
         </div>
       ) : null}
 
       {state.kind === 'ready' ? (
-        <>
-          <div
-            role="group"
-            aria-label={translate(
-              'auto.components.activecollab.task_list.list_label',
-              'ActiveCollab tasks assigned to you'
-            )}
-            className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto"
+        <div
+          role="group"
+          aria-label={translate(
+            'auto.components.activecollab.task_list.list_label',
+            'ActiveCollab tasks assigned to you'
+          )}
+          className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto"
+        >
+          {groups.map((group) => (
+            <ActiveCollabTaskGroupSection
+              key={group.projectId}
+              group={group}
+              now={now}
+              onSelect={onSelect}
+              selectedTaskId={selectedTaskId}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {canLoadMore ? (
+        <div className="border-t border-border/50 p-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={loading}
+            onClick={() => void loadPage(rows.loadedPages + 1)}
           >
-            {groups.map((group) => (
-              <ActiveCollabTaskGroupSection
-                key={group.projectId}
-                group={group}
-                now={now}
-                onSelect={onSelect}
-                selectedTaskId={selectedTaskId}
-              />
-            ))}
-          </div>
-          {state.hasMore ? (
-            <div className="border-t border-border/50 p-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                disabled={state.loadingMore}
-                onClick={() => void loadPage(rows.loadedPages + 1)}
-              >
-                {state.loadingMore ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
-                {translate('auto.components.activecollab.task_list.load_more', 'Load more tasks')}
-              </Button>
-            </div>
-          ) : null}
-        </>
+            {loading ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
+            {translate('auto.components.activecollab.task_list.load_more', 'Load more tasks')}
+          </Button>
+        </div>
       ) : null}
     </div>
   )

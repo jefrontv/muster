@@ -5,6 +5,7 @@ import { dirname } from 'node:path'
 import { getDefaultPersistedState, getDefaultWorkspaceSession } from '../../shared/constants'
 import type { ExecutionHostId } from '../../shared/execution-host'
 import { projectHostSetupProjectionFromRepos } from '../../shared/project-host-setup-projection'
+import { carryProjectUserOwnedFields } from '../../shared/project-user-owned-fields'
 import type {
   PersistedState,
   Project,
@@ -121,16 +122,9 @@ export function rebuildRepoBackedProjectState(state: TransferProfileState): Tran
       ...project,
       sourceRepoIds: project.sourceRepoIds.filter((repoId) => currentRepoIds.has(repoId))
     }))
-  const projectedProjects = projection.projects.map((project) => {
-    const existingProject = existingProjectsById.get(project.id)
-    return existingProject?.localWindowsRuntimePreference
-      ? {
-          ...project,
-          localWindowsRuntimePreference: existingProject.localWindowsRuntimePreference,
-          updatedAt: Math.max(project.updatedAt, existingProject.updatedAt)
-        }
-      : project
-  })
+  const projectedProjects = projection.projects.map((project) =>
+    carryProjectUserOwnedFields(project, existingProjectsById.get(project.id))
+  )
   return {
     ...state,
     projects: [...projectedProjects, ...independentProjects],

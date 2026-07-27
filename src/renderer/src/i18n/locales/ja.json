@@ -8053,7 +8053,9 @@
             "7166b9090c": "gh CLI を介した GitHub 認証。",
             "f16e41cc72": "GitHub 連携",
             "activecollab_title": "ActiveCollab Integration",
-            "activecollab_description": "Connect ActiveCollab by exchanging your email and password for a token."
+            "activecollab_description": "Connect ActiveCollab by exchanging your email and password for a token.",
+            "activecollab_mcp_title": "ActiveCollab MCP",
+            "activecollab_mcp_description": "Install the ActiveCollab MCP server into Claude Code, Codex, or Cursor."
           }
         },
         "jira": {
@@ -9435,6 +9437,45 @@
               "unknown_account": "Connected account",
               "disconnect_label": "Disconnect ActiveCollab"
             }
+          },
+          "mcp": {
+            "agent_missing_status": "Agent not detected",
+            "agent_missing_detail": "Muster did not find this agent on this machine. Installing anyway writes the config file shown below, which the agent picks up once it exists.",
+            "agent_missing_action": "Install anyway",
+            "agent_unconfigured_status": "Not configured by Muster",
+            "agent_unconfigured_detail": "Muster has not written its \"{{value0}}\" entry here. If you already added an ActiveCollab MCP server under a different key, Muster cannot see it — open the config below before installing so you do not end up with two.",
+            "agent_unconfigured_action": "Install",
+            "agent_stale_status": "Muster entry out of date",
+            "agent_stale_detail": "An \"{{value0}}\" entry is already here, but it points at a different command than Muster would write now.",
+            "agent_stale_action": "Update entry",
+            "agent_current_status": "Installed and current",
+            "agent_current_detail": "The \"{{value0}}\" entry matches what Muster would write now.",
+            "agent_current_action": "Rewrite entry",
+            "agent_http_note": "Connects over HTTP, so it needs no local binary — the entry stays inert until the MCP server is running.",
+            "agent_binary_required": "activecollab-mcp is not installed, so this agent would be pointed at nothing.",
+            "copied_hint": "Copied command.",
+            "copy_failed": "Failed to copy command.",
+            "binary_label": "activecollab-mcp server",
+            "binary_found": "Installed",
+            "binary_missing": "Not installed",
+            "binary_missing_help": "Install the server, then re-check. Agents that reach it over HTTP can still be configured now.",
+            "copy_hint_label": "Copy install command",
+            "credentials_label": "Server credentials",
+            "credentials_written": "File written",
+            "credentials_absent": "No file yet",
+            "credentials_help": "This writes your ActiveCollab token to a file on disk, readable only by your user account, so the MCP server can authenticate without a second login.",
+            "credentials_rewrite": "Rewrite credential file",
+            "credentials_write": "Write credential file",
+            "card_name": "ActiveCollab MCP",
+            "card_description": "Give your coding agents the ActiveCollab MCP server so they can read and edit tasks directly.",
+            "status_unavailable": "Status unavailable",
+            "status_no_binary": "Server not installed",
+            "status_setup": "Setup needed",
+            "status_current": "Up to date",
+            "recheck": "Re-check",
+            "install_failed": "The agent config was not written.",
+            "install_ok": "Wrote the \"{{value0}}\" entry to {{value1}}.",
+            "seed_ok": "Wrote credentials for {{value0}} to {{value1}}."
           }
         }
       },
@@ -13874,11 +13915,26 @@
           "row_overdue": "overdue {{value0}}",
           "row_due_today": "due today {{value0}}",
           "due_overdue": "Overdue",
-          "due_today": "Today"
+          "due_today": "Today",
+          "empty_scoped_title": "No tasks in {{value0}}",
+          "empty_scoped_more": "None of the tasks loaded so far belong to {{value0}}. Load more to keep looking.",
+          "empty_scoped_body": "Nothing open is assigned to you in {{value0}} right now."
         },
         "attachments": {
           "retry": "Retry",
           "loading": "Loading {{value0}}"
+        },
+        "project_binding": {
+          "search": "Search ActiveCollab projects...",
+          "no_matches": "No ActiveCollab projects match your search.",
+          "completed": "Completed",
+          "unbound": "Showing every task assigned to you. Bind an ActiveCollab project to {{value0}} to narrow it.",
+          "missing": "{{value0}} is no longer available in ActiveCollab. Pick another project, or show every assigned task.",
+          "scoped": "{{value0}} is showing tasks from {{value1}}.",
+          "no_target": "Open a workspace to bind an ActiveCollab project to it.",
+          "change": "Change project",
+          "bind": "Bind project",
+          "clear": "Show all tasks"
         }
       },
       "TaskPageActiveCollabPanel": {
