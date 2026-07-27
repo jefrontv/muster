@@ -6,28 +6,18 @@
 // so neither the stored key nor the folder name matches the repo. Reading the config is the only
 // signal that covers them.
 //
-// No `git` subprocess. Opening the picker sweeps every site root at once, so spawning per folder
-// would mean hundreds of processes for a value that is one file read away.
-//
-// Best effort throughout: these are user directories that may be ejected, permission-denied or
-// half-written. Every failure costs one missing key, never a rejection.
+// The on-disk reads, the candidate order and the bounded sweep all live in project-git-dir-probe.
 
-import { readFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
 import { normalizeGitRemoteUrl } from '../../shared/git-remote-identity'
-import { localWpWordPressRoot } from './localwp-host'
-
-/**
- * Enough parallelism to hide read latency across a few hundred folders without holding a few
- * hundred descriptors open at once.
- */
-const DEFAULT_PROBE_CONCURRENCY = 16
+import {
+  readProjectGitDirFile,
+  sweepProjectPaths,
+  type ProjectPathSweepOptions
+} from './project-git-dir-probe'
 
 /** `[remote "origin"]`. Git treats section names as case-insensitive; subsection names are not. */
 const REMOTE_SECTION_PATTERN = /^\[\s*remote\s+"([^"]*)"\s*\]$/i
 const URL_ASSIGNMENT_PATTERN = /^url\s*=\s*(.+)$/i
-/** The `.git` file form used by worktrees and submodules: `gitdir: <path>`. */
-const GITDIR_POINTER_PATTERN = /^\s*gitdir:\s*(.+)$/m
 
 /**
  * Only `[remote "..."] url = ...` is of interest, so every other section is skipped wholesale
@@ -67,48 +57,12 @@ function findRemoteUrl(configText: string): string | null {
 }
 
 /**
- * `.git` is a directory holding `config` almost everywhere, and a file pointing at one inside a
- * worktree or submodule. `workDir` is the directory containing the entry, which is what git
- * resolves a relative `gitdir:` against.
- */
-async function readGitConfig(gitEntryPath: string, workDir: string): Promise<string | null> {
-  try {
-    // Read the directory case first: it is the common one, and its failure is also how the file
-    // form is discovered, so the usual path costs a single syscall.
-    return await readFile(join(gitEntryPath, 'config'), 'utf-8')
-  } catch {
-    // Not a directory, or a directory with no config. Either way, try the pointer form.
-  }
-  let pointerText: string
-  try {
-    pointerText = await readFile(gitEntryPath, 'utf-8')
-  } catch {
-    return null
-  }
-  const target = GITDIR_POINTER_PATTERN.exec(pointerText)?.[1]?.trim()
-  if (target === undefined || target.length === 0) {
-    return null
-  }
-  try {
-    // One hop only: git always points a `.git` file at a real git directory, so a pointer to
-    // another pointer is corruption rather than a chain worth walking.
-    return await readFile(join(resolve(workDir, target), 'config'), 'utf-8')
-  } catch {
-    return null
-  }
-}
-
-/**
- * Order matters and is not a preference. A LocalWP site has no top-level repository at all — the
- * checkout is the WordPress root two levels down — while an ordinary project has only the top-level
- * one, so the two probes are mutually exclusive in practice and the first hit is the answer.
+ * A config naming no usable remote is not an answer, so the walk keeps pulling candidates: a
+ * LocalWP-shaped folder can carry a top-level repository that names no host alongside the real
+ * checkout nested under it.
  */
 async function probeRemoteKey(dirPath: string): Promise<string | null> {
-  for (const workDir of [dirPath, localWpWordPressRoot(dirPath)]) {
-    const configText = await readGitConfig(join(workDir, '.git'), workDir)
-    if (configText === null) {
-      continue
-    }
+  for await (const configText of readProjectGitDirFile(dirPath, 'config')) {
     const remoteUrl = findRemoteUrl(configText)
     // normalizeGitRemoteUrl returns null for a local filesystem remote, which names no host and so
     // can never match a repo a git host offered.
@@ -123,36 +77,14 @@ async function probeRemoteKey(dirPath: string): Promise<string | null> {
 /** Canonical remote keys discovered on disk for the given directories. Best effort. */
 export async function probeRepoRemoteKeys(
   paths: readonly string[],
-  options?: { concurrency?: number; signal?: AbortSignal }
+  options?: ProjectPathSweepOptions
 ): Promise<Set<string>> {
   const keys = new Set<string>()
-  const requested = Math.trunc(options?.concurrency ?? DEFAULT_PROBE_CONCURRENCY)
-  // A zero or nonsense limit would silently probe nothing, which reads as "no repo is here".
-  const concurrency =
-    Number.isFinite(requested) && requested >= 1 ? requested : DEFAULT_PROBE_CONCURRENCY
-  let nextIndex = 0
-
-  async function probeNext(): Promise<void> {
-    while (nextIndex < paths.length) {
-      if (options?.signal?.aborted) {
-        return
-      }
-      const dirPath = paths[nextIndex]
-      nextIndex += 1
-      if (dirPath === undefined || dirPath.length === 0) {
-        continue
-      }
-      try {
-        const key = await probeRemoteKey(dirPath)
-        if (key !== null) {
-          keys.add(key)
-        }
-      } catch {
-        // One malformed path must not cost the other few hundred their answer.
-      }
+  await sweepProjectPaths(paths, options, async (dirPath) => {
+    const key = await probeRemoteKey(dirPath)
+    if (key !== null) {
+      keys.add(key)
     }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, paths.length) }, () => probeNext()))
+  })
   return keys
 }

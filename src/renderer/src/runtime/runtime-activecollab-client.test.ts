@@ -213,9 +213,12 @@ describe('runtime ActiveCollab client failure handling', () => {
   it('converts a rejecting local bridge into an unknown failure', async () => {
     bridge.getTaskDetail.mockRejectedValue(new Error('socket hang up'))
 
-    await expect(
-      activeCollabGetTaskDetail({ projectId: 1, taskId: 2 }, LOCAL)
-    ).resolves.toEqual({ ok: false, kind: 'unknown', error: 'socket hang up', status: null })
+    await expect(activeCollabGetTaskDetail({ projectId: 1, taskId: 2 }, LOCAL)).resolves.toEqual({
+      ok: false,
+      kind: 'unknown',
+      error: 'socket hang up',
+      status: null
+    })
   })
 
   it('converts a throwing local bridge into an unknown failure', async () => {

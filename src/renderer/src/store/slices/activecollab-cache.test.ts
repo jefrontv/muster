@@ -93,9 +93,7 @@ describe('activeCollab read scope', () => {
     expect(scope.explicitSource).toBe(true)
     expect(scope.settings).toBe(context)
     expect(scope.cachePrefix).toBe(getTaskSourceCacheScope(context))
-    expect(scopedCacheKey(scope, 'projects')).toBe(
-      `${getTaskSourceCacheScope(context)}::projects`
-    )
+    expect(scopedCacheKey(scope, 'projects')).toBe(`${getTaskSourceCacheScope(context)}::projects`)
   })
 
   it('separates two source contexts that differ only by runtime host', () => {

@@ -114,9 +114,7 @@ function unwrap<T>(result: ActiveCollabResult<T>): T {
   return result.value
 }
 
-function pageEntry(
-  tasks: ActiveCollabTask[]
-): CacheEntry<ActiveCollabTaskPageRows> {
+function pageEntry(tasks: ActiveCollabTask[]): CacheEntry<ActiveCollabTaskPageRows> {
   return {
     data: { tasks, hasMore: false, totalItems: tasks.length, page: 1 },
     fetchedAt: Date.now()
@@ -127,8 +125,7 @@ function detailEntry(detail: ActiveCollabTaskDetail): CacheEntry<ActiveCollabTas
   return { data: detail, fetchedAt: Date.now() }
 }
 
-const implicitPageKey = (): string =>
-  `${getProviderRuntimeContextKey(null)}::tasks::assigned::1`
+const implicitPageKey = (): string => `${getProviderRuntimeContextKey(null)}::tasks::assigned::1`
 const implicitDetailKey = (taskId: number): string =>
   `${getProviderRuntimeContextKey(null)}::detail::12::${taskId}`
 
@@ -248,9 +245,9 @@ describe('createActiveCollabSlice scope isolation', () => {
     expect(local.tasks[0]?.name).toBe('Local task')
     expect(remote.tasks[0]?.name).toBe('Remote task')
     expect(Object.keys(store.getState().activeCollabTaskPageCache)).toHaveLength(2)
-    expect(store.getState().activeCollabTaskPageCache[implicitPageKey()]?.data?.tasks[0]?.name).toBe(
-      'Local task'
-    )
+    expect(
+      store.getState().activeCollabTaskPageCache[implicitPageKey()]?.data?.tasks[0]?.name
+    ).toBe('Local task')
   })
 
   it('keeps two source contexts in separate cache scopes', async () => {
@@ -266,12 +263,12 @@ describe('createActiveCollabSlice scope isolation', () => {
 
     const cache = store.getState().activeCollabTaskPageCache
     expect(listAssignedTasks).toHaveBeenCalledTimes(2)
-    expect(cache[`${getTaskSourceCacheScope(alpha)}::tasks::assigned::1`]?.data?.tasks[0]?.name).toBe(
-      'Alpha task'
-    )
-    expect(cache[`${getTaskSourceCacheScope(beta)}::tasks::assigned::1`]?.data?.tasks[0]?.name).toBe(
-      'Beta task'
-    )
+    expect(
+      cache[`${getTaskSourceCacheScope(alpha)}::tasks::assigned::1`]?.data?.tasks[0]?.name
+    ).toBe('Alpha task')
+    expect(
+      cache[`${getTaskSourceCacheScope(beta)}::tasks::assigned::1`]?.data?.tasks[0]?.name
+    ).toBe('Beta task')
     expect(listAssignedTasks).toHaveBeenNthCalledWith(1, { page: 1 }, alpha)
   })
 
@@ -331,9 +328,7 @@ describe('createActiveCollabSlice optimistic patch propagation', () => {
     })
     completeTask.mockResolvedValue({ ok: true, value: task(1, { isCompleted: true }) })
 
-    await store
-      .getState()
-      .completeActiveCollabTask({ taskId: 1 }, { sourceContext: context })
+    await store.getState().completeActiveCollabTask({ taskId: 1 }, { sourceContext: context })
 
     const state = store.getState()
     const firstPage = state.activeCollabTaskPageCache[`${scope}::tasks::assigned::1`]
@@ -347,9 +342,9 @@ describe('createActiveCollabSlice optimistic patch propagation', () => {
     // The row is authoritative, the thread beside it is not.
     expect(detail?.data?.comments).toHaveLength(1)
     expect(detail?.fetchedAt).toBe(0)
-    expect(state.activeCollabTaskDetailCache[`${scope}::detail::12::2`]?.data?.task.isCompleted).toBe(
-      false
-    )
+    expect(
+      state.activeCollabTaskDetailCache[`${scope}::detail::12::2`]?.data?.task.isCompleted
+    ).toBe(false)
     expect(state.activeCollabLastError).toBeNull()
   })
 
@@ -413,8 +408,9 @@ describe('createActiveCollabSlice optimistic patch propagation', () => {
     const detail = store.getState().activeCollabTaskDetailCache[key]
     expect(detail?.data?.comments.map((row) => row.id)).toEqual([9, 10])
     expect(detail?.data?.task.commentCount).toBe(3)
-    expect(store.getState().activeCollabTaskPageCache[implicitPageKey()]?.data?.tasks[0]
-      ?.commentCount).toBe(3)
+    expect(
+      store.getState().activeCollabTaskPageCache[implicitPageKey()]?.data?.tasks[0]?.commentCount
+    ).toBe(3)
   })
 })
 

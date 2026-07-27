@@ -1812,7 +1812,8 @@
         "jiraToggleSortDirection": "Sort {{value0}}",
         "75a38d7df8": "GitHub data is temporarily unavailable. Its API may be down, rate-limited, or unreachable. Please try again shortly.",
         "noGithubSourceDetected": "No GitHub source detected for",
-        "noGithubSourceDetectedHint": "it may have no GitHub remote, or the source could not be resolved."
+        "noGithubSourceDetectedHint": "it may have no GitHub remote, or the source could not be resolved.",
+        "activecollabLabel": "ActiveCollab"
       },
       "Terminal": {
         "73768427cf": "Close",
@@ -13837,7 +13838,44 @@
           "invalid_request": "ActiveCollab rejected the request. Check that the instance URL points at your ActiveCollab root.",
           "api": "ActiveCollab returned an error that reconnecting will not fix: {{value0}}",
           "unknown": "Could not reach ActiveCollab: {{value0}}"
+        },
+        "task_workspace": {
+          "retry": "Retry",
+          "loading": "Loading task",
+          "no_body": "No description provided.",
+          "comments": "Comments",
+          "no_comments": "No comments yet.",
+          "unknown": "Unknown",
+          "comment_placeholder": "Add an ActiveCollab comment...",
+          "comment_label": "New comment",
+          "comment_submit": "Comment",
+          "filter_labels": "Filter labels",
+          "no_labels": "No labels match.",
+          "labels_truncated": "Showing {{value0}} of {{value1}} — keep typing to narrow.",
+          "edit_labels": "Edit labels",
+          "reopen": "Reopen task",
+          "complete": "Complete task",
+          "unassigned": "Unassigned",
+          "due_date": "Due date",
+          "clear_due_date": "Clear due date"
+        },
+        "task_list": {
+          "row_name": "{{value0}} in {{value1}}",
+          "row_due": "due {{value0}}",
+          "row_labels": "labels {{value0}}",
+          "no_due_date": "No due date",
+          "connect": "Connect ActiveCollab",
+          "retry": "Try again",
+          "empty_title": "No tasks assigned",
+          "empty_body": "Nothing open is assigned to you in ActiveCollab right now.",
+          "list_label": "ActiveCollab tasks assigned to you",
+          "load_more": "Load more tasks"
         }
+      },
+      "TaskPageActiveCollabPanel": {
+        "connectHeading": "Connect your ActiveCollab account",
+        "connectBody": "Browse and start work on your assigned ActiveCollab tasks directly from here.",
+        "connectAction": "Connect"
       }
     },
     "i18n": {

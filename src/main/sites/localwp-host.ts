@@ -13,6 +13,9 @@ import path from 'node:path'
 import process from 'node:process'
 import { streamCommand } from '../lib/stream-command'
 
+// Pure path arithmetic, hoisted to shared/ so reading the layout costs none of the machinery above.
+export { localWpWordPressRoot } from '../../shared/localwp-paths'
+
 export const LOCALWP_UNSUPPORTED_PLATFORM = 'LocalWP integration is only available on macOS.'
 
 /** Probes must be bounded: a wedged Local app must never hang the main process. */
@@ -154,11 +157,6 @@ export function localWpSocketPath(host: LocalWpHost, siteId: string): string {
 
 export function localWpServicesDirectory(host: LocalWpHost): string {
   return path.join(localWpSupportDirectory(host), 'lightning-services')
-}
-
-/** LocalWP nests the WordPress root two levels under the site folder it manages. */
-export function localWpWordPressRoot(sitePath: string): string {
-  return path.join(sitePath, 'app', 'public')
 }
 
 export async function readLocalWpJsonRecord(

@@ -87,6 +87,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import TaskProjectSourceCombobox from '@/components/task-project-source-combobox'
 import { JiraConnectDialog } from '@/components/jira-connect-dialog'
+import { ActiveCollabConnectDialog } from '@/components/activecollab-connect-dialog'
+import { TaskPageActiveCollabPanel } from '@/components/task-page-activecollab-panel'
 import { LinearApiKeyDialog } from '@/components/linear-api-key-dialog'
 import { LinearScopeSelector } from '@/components/linear-scope-selector'
 import RepoBadgeLabel from '@/components/repo/RepoBadgeLabel'
@@ -5740,6 +5742,7 @@ export default function TaskPage(): React.JSX.Element {
 
   const [linearConnectOpen, setLinearConnectOpen] = useState(false)
   const [jiraConnectOpen, setJiraConnectOpen] = useState(false)
+  const [activeCollabConnectOpen, setActiveCollabConnectOpen] = useState(false)
   useContextualTour(
     'tasks',
     !dialogWorkItem &&
@@ -9945,6 +9948,12 @@ export default function TaskPage(): React.JSX.Element {
                 />
               </div>
             )
+          ) : taskSource === 'activecollab' ? (
+            <TaskPageActiveCollabPanel
+              onConnect={() => {
+                setActiveCollabConnectOpen(true)
+              }}
+            />
           ) : taskSource === 'linear' && selectedLinearIssue ? (
             <LinearIssueWorkspace
               issue={selectedLinearIssue}
@@ -12426,6 +12435,10 @@ export default function TaskPage(): React.JSX.Element {
       />
 
       <JiraConnectDialog open={jiraConnectOpen} onOpenChange={setJiraConnectOpen} />
+      <ActiveCollabConnectDialog
+        open={activeCollabConnectOpen}
+        onOpenChange={setActiveCollabConnectOpen}
+      />
     </div>
   )
 }

@@ -1,0 +1,414 @@
+// @vitest-environment happy-dom
+
+import '@testing-library/jest-dom/vitest'
+
+import { act, cleanup, render, screen } from '@testing-library/react'
+import userEvent, { type UserEvent } from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+
+import type { CacheEntry } from '@/store/slices/github'
+import type { ActiveCollabTaskPageRows } from '@/store/slices/activecollab-task-patch'
+import type {
+  ActiveCollabFailure,
+  ActiveCollabResult,
+  ActiveCollabTaskRef
+} from '../../../shared/activecollab-api-types'
+import type { ActiveCollabLabel, ActiveCollabTask } from '../../../shared/activecollab-types'
+
+type ListResult = ActiveCollabResult<ActiveCollabTaskPageRows>
+type RenderedList = {
+  onSelect: Mock<(ref: ActiveCollabTaskRef) => void>
+  user: UserEvent
+  rerender: () => Promise<void>
+}
+
+const mocks = vi.hoisted(() => ({
+  listAssignedTasks:
+    vi.fn<
+      (
+        args?: { page?: number },
+        options?: { force?: boolean }
+      ) => Promise<ActiveCollabResult<ActiveCollabTaskPageRows>>
+    >(),
+  cache: {} as Record<string, CacheEntry<ActiveCollabTaskPageRows>>,
+  settings: { activeRuntimeEnvironmentId: null as string | null }
+}))
+
+vi.mock('@/store', () => ({
+  useAppStore: (selector: (state: unknown) => unknown) =>
+    selector({
+      listActiveCollabAssignedTasks: mocks.listAssignedTasks,
+      activeCollabTaskPageCache: mocks.cache,
+      settings: mocks.settings
+    })
+}))
+
+// The real dialog portals through Radix; a stand-in keeps the assertion on whether the list opened
+// the connect path at all.
+vi.mock('@/components/activecollab-connect-dialog', () => ({
+  ActiveCollabConnectDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="connect-dialog" /> : null
+}))
+
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
+import { ActiveCollabTaskList } from './task-page-activecollab-task-list'
+
+// Local midnight on 14 Mar 2026 — exactly what the codec hands back for a `due_on` of that day.
+const DUE_ON = new Date(2026, 2, 14).getTime()
+const DUE_LABEL = new Date(DUE_ON).toLocaleDateString(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+})
+
+const URGENT: ActiveCollabLabel = { id: 11, name: 'URGENT', color: '#ff6600' }
+const UNCOLOURED: ActiveCollabLabel = { id: 12, name: 'backlog', color: null }
+
+function taskFixture(overrides: Partial<ActiveCollabTask> = {}): ActiveCollabTask {
+  return {
+    id: 501,
+    projectId: 3790,
+    projectName: 'Muster UI',
+    taskNumber: 12,
+    name: 'Ship the codec',
+    bodyHtml: '<p>body</p>',
+    isCompleted: false,
+    dueOn: null,
+    createdOn: null,
+    updatedOn: null,
+    assigneeId: 42,
+    assigneeName: 'Ada Lovelace',
+    labels: [],
+    commentCount: 0,
+    urlPath: '/projects/3790/tasks/501',
+    taskListId: null,
+    ...overrides
+  }
+}
+
+function pageRows(
+  page: number,
+  tasks: ActiveCollabTask[],
+  hasMore: boolean
+): ActiveCollabTaskPageRows {
+  return { tasks, hasMore, totalItems: null, page }
+}
+
+/** Writes the page into the mocked cache under the live scope, exactly as the slice does. */
+function servePage(rows: ActiveCollabTaskPageRows): ListResult {
+  const prefix = getProviderRuntimeContextKey(mocks.settings)
+  mocks.cache = {
+    ...mocks.cache,
+    [`${prefix}::tasks::assigned::${rows.page}`]: { data: rows, fetchedAt: Date.now() }
+  }
+  return { ok: true, value: rows }
+}
+
+function servePages(...pages: ActiveCollabTaskPageRows[]): void {
+  mocks.listAssignedTasks.mockImplementation(async (args) => {
+    const wanted = args?.page ?? 1
+    const rows = pages.find((candidate) => candidate.page === wanted)
+    return rows ? servePage(rows) : { ok: false, kind: 'api', error: 'no such page', status: 404 }
+  })
+}
+
+function serveFailure(kind: ActiveCollabFailure['kind'], error = 'gateway down'): void {
+  mocks.listAssignedTasks.mockResolvedValue({ ok: false, kind, error, status: 502 })
+}
+
+async function renderList(selectedTaskId: number | null = null): Promise<RenderedList> {
+  const onSelect = vi.fn<(ref: ActiveCollabTaskRef) => void>()
+  const user = userEvent.setup()
+  // A fresh element each time: React bails out of re-rendering an identical element reference,
+  // which would silently hide the scope change under test.
+  const view = await act(async () =>
+    render(<ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />)
+  )
+  return {
+    onSelect,
+    user,
+    rerender: async () => {
+      await act(async () => {
+        view.rerender(<ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />)
+      })
+    }
+  }
+}
+
+function rowButtons(): HTMLElement[] {
+  return screen.getAllByRole('listitem').map((item) => {
+    const button = item.querySelector('button')
+    if (!button) {
+      throw new Error('list row is missing its activation button')
+    }
+    return button
+  })
+}
+
+beforeEach(() => {
+  mocks.listAssignedTasks.mockReset()
+  mocks.cache = {}
+  mocks.settings = { activeRuntimeEnvironmentId: null }
+})
+
+afterEach(cleanup)
+
+describe('ActiveCollabTaskList load states', () => {
+  it('shows the skeleton and nothing else while the first page is in flight', async () => {
+    mocks.listAssignedTasks.mockReturnValue(new Promise<ListResult>(() => {}))
+    await renderList()
+
+    expect(screen.getByTestId('activecollab-task-list-skeleton')).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.queryByText('No tasks assigned')).not.toBeInTheDocument()
+  })
+
+  it('distinguishes a settled empty page from the loading skeleton', async () => {
+    servePages(pageRows(1, [], false))
+    await renderList()
+
+    expect(screen.getByText('No tasks assigned')).toBeInTheDocument()
+    expect(
+      screen.getByText('Nothing open is assigned to you in ActiveCollab right now.')
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('activecollab-task-list-skeleton')).not.toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
+
+  it('renders rows as a real list once a page lands', async () => {
+    servePages(pageRows(1, [taskFixture()], false))
+    await renderList()
+
+    expect(screen.getByRole('list', { name: 'ActiveCollab tasks assigned to you' })).toBeVisible()
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+    expect(screen.queryByTestId('activecollab-task-list-skeleton')).not.toBeInTheDocument()
+    expect(screen.queryByText('No tasks assigned')).not.toBeInTheDocument()
+  })
+
+  it('replaces the rows with the described failure when nothing loaded', async () => {
+    serveFailure('api')
+    await renderList()
+
+    expect(
+      screen.getByText(
+        'ActiveCollab returned an error that reconnecting will not fix: gateway down'
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('activecollab-task-list-skeleton')).not.toBeInTheDocument()
+  })
+})
+
+describe('ActiveCollabTaskList failure recovery', () => {
+  it('offers the connect path for an auth failure and opens the dialog', async () => {
+    serveFailure('auth', 'invalid token')
+    const { user } = await renderList()
+
+    expect(
+      screen.getByText(
+        'ActiveCollab rejected those credentials. Enter your email and password again to reconnect.'
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('connect-dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Connect ActiveCollab' }))
+    expect(screen.getByTestId('connect-dialog')).toBeInTheDocument()
+  })
+
+  it('offers connect for a not-configured failure', async () => {
+    serveFailure('not-configured', 'no token stored')
+    await renderList()
+
+    expect(screen.getByRole('button', { name: 'Connect ActiveCollab' })).toBeInTheDocument()
+  })
+
+  it('withholds the connect path from an api failure, leaving only a retry', async () => {
+    serveFailure('api')
+    await renderList()
+
+    expect(screen.queryByRole('button', { name: 'Connect ActiveCollab' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  })
+
+  it('forces a fresh read when the retry is pressed', async () => {
+    serveFailure('api')
+    const { user } = await renderList()
+
+    mocks.listAssignedTasks.mockClear()
+    servePages(pageRows(1, [taskFixture()], false))
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(mocks.listAssignedTasks).toHaveBeenCalledWith(
+      { page: 1 },
+      expect.objectContaining({ force: true })
+    )
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+  })
+})
+
+describe('ActiveCollabTaskList row content', () => {
+  it('names each row with its task, project, due day, and labels', async () => {
+    servePages(pageRows(1, [taskFixture({ dueOn: DUE_ON, labels: [URGENT, UNCOLOURED] })], false))
+    await renderList()
+
+    expect(
+      screen.getByRole('button', {
+        name: `Ship the codec in Muster UI, due ${DUE_LABEL}, labels URGENT, backlog`
+      })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Muster UI')).toBeInTheDocument()
+  })
+
+  it('renders the local calendar day without re-projecting it through UTC', async () => {
+    servePages(pageRows(1, [taskFixture({ dueOn: DUE_ON })], false))
+    await renderList()
+
+    const due = document.body.querySelector('time')
+    // A UTC round trip would report 2026-03-13 for any positive offset.
+    expect(due).toHaveAttribute('dateTime', '2026-03-14')
+    expect(due).toHaveTextContent(DUE_LABEL)
+  })
+
+  it('says so when a task has no due date', async () => {
+    servePages(pageRows(1, [taskFixture()], false))
+    await renderList()
+
+    expect(screen.getByText('No due date')).toBeInTheDocument()
+    expect(document.body.querySelector('time')).toBeNull()
+  })
+
+  it('paints each label with its own colour and falls back when the instance has none', async () => {
+    servePages(pageRows(1, [taskFixture({ labels: [URGENT, UNCOLOURED] })], false))
+    await renderList()
+
+    const [coloured, neutral] = screen.getAllByTestId('activecollab-task-label')
+    expect(coloured).toHaveTextContent('URGENT')
+    expect(coloured).toHaveStyle({ borderColor: '#ff6600', color: '#ff6600' })
+    expect(neutral).toHaveTextContent('backlog')
+    expect(neutral).not.toHaveAttribute('style')
+    expect(neutral).toHaveClass('text-muted-foreground')
+  })
+
+  it('marks the selected row as current', async () => {
+    servePages(pageRows(1, [taskFixture({ id: 501 }), taskFixture({ id: 502 })], false))
+    await renderList(502)
+
+    const [first, second] = rowButtons()
+    expect(first).not.toHaveAttribute('aria-current')
+    expect(second).toHaveAttribute('aria-current', 'true')
+  })
+})
+
+describe('ActiveCollabTaskList activation', () => {
+  it('reports the project and task ids on a mouse click', async () => {
+    servePages(pageRows(1, [taskFixture({ id: 509323, projectId: 3790 })], false))
+    const { onSelect, user } = await renderList()
+
+    await user.click(rowButtons()[0])
+
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith({ projectId: 3790, taskId: 509323 })
+  })
+
+  it('activates a focused row from the keyboard', async () => {
+    servePages(
+      pageRows(
+        1,
+        [
+          taskFixture({ id: 509323, projectId: 3790 }),
+          taskFixture({ id: 509324, projectId: 4001, name: 'Second task' })
+        ],
+        false
+      )
+    )
+    const { onSelect, user } = await renderList()
+
+    await user.tab()
+    expect(rowButtons()[0]).toHaveFocus()
+    await user.keyboard('{Enter}')
+    expect(onSelect).toHaveBeenNthCalledWith(1, { projectId: 3790, taskId: 509323 })
+
+    await user.tab()
+    expect(rowButtons()[1]).toHaveFocus()
+    await user.keyboard(' ')
+    expect(onSelect).toHaveBeenNthCalledWith(2, { projectId: 4001, taskId: 509324 })
+  })
+})
+
+describe('ActiveCollabTaskList paging', () => {
+  it('never offers a next page when the server says there is none', async () => {
+    servePages(pageRows(1, [taskFixture()], false))
+    await renderList()
+
+    expect(screen.queryByRole('button', { name: /Load more tasks/ })).not.toBeInTheDocument()
+    expect(mocks.listAssignedTasks).toHaveBeenCalledTimes(1)
+    expect(mocks.listAssignedTasks).toHaveBeenCalledWith({ page: 1 }, expect.anything())
+  })
+
+  it('requests page two and appends its rows when hasMore is set', async () => {
+    servePages(
+      pageRows(1, [taskFixture({ id: 1, name: 'First' })], true),
+      pageRows(2, [taskFixture({ id: 2, name: 'Second' })], false)
+    )
+    const { user } = await renderList()
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: /Load more tasks/ }))
+
+    expect(mocks.listAssignedTasks).toHaveBeenNthCalledWith(2, { page: 2 }, expect.anything())
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: /Load more tasks/ })).not.toBeInTheDocument()
+  })
+
+  it('keeps the loaded rows on screen when the next page fails', async () => {
+    servePages(pageRows(1, [taskFixture({ id: 1 })], true))
+    const { user } = await renderList()
+
+    await user.click(screen.getByRole('button', { name: /Load more tasks/ }))
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+    expect(
+      screen.getByText(
+        'ActiveCollab returned an error that reconnecting will not fix: no such page'
+      )
+    ).toBeInTheDocument()
+  })
+})
+
+describe('ActiveCollabTaskList runtime scope', () => {
+  it('drops the previous environment rows and reloads when the runtime changes', async () => {
+    servePages(pageRows(1, [taskFixture({ name: 'Local task' })], false))
+    const { rerender } = await renderList()
+    expect(screen.getByText('Local task')).toBeInTheDocument()
+
+    mocks.settings = { activeRuntimeEnvironmentId: 'remote-1' }
+    mocks.listAssignedTasks.mockReturnValue(new Promise<ListResult>(() => {}))
+    await rerender()
+
+    // The local scope's page is still cached, but it belongs to an instance this list left.
+    expect(screen.queryByText('Local task')).not.toBeInTheDocument()
+    expect(screen.getByTestId('activecollab-task-list-skeleton')).toBeInTheDocument()
+    expect(mocks.listAssignedTasks).toHaveBeenCalledTimes(2)
+  })
+
+  it('ignores a read that resolves after the runtime moved on', async () => {
+    let settleLocal: ((result: ListResult) => void) | null = null
+    mocks.listAssignedTasks.mockReturnValueOnce(
+      new Promise<ListResult>((resolve) => {
+        settleLocal = resolve
+      })
+    )
+    const { rerender } = await renderList()
+
+    mocks.settings = { activeRuntimeEnvironmentId: 'remote-1' }
+    servePages(pageRows(1, [taskFixture({ name: 'Remote task' })], false))
+    await rerender()
+
+    await act(async () => {
+      settleLocal?.({ ok: false, kind: 'api', error: 'local instance died', status: 500 })
+    })
+
+    expect(screen.getByText('Remote task')).toBeInTheDocument()
+    expect(screen.queryByText(/local instance died/)).not.toBeInTheDocument()
+  })
+})

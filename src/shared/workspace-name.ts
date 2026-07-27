@@ -261,3 +261,21 @@ export function resolveWorkspaceCreateName(args: {
 }): string {
   return args.draft?.trim() || args.fallback
 }
+
+/**
+ * Which branch a blank workspace name inherits. Precedence: the Start-from ref the user picked,
+ * else the selected project's main-worktree branch, else a branch read off disk — a LocalWP site
+ * keeps its checkout under `app/public`, so it classifies as a folder project and that worktree
+ * row carries nothing. Resolving to `''` is not a failure; callers fall back to their own name.
+ */
+export function resolveWorkspaceSeedBranchName(args: {
+  baseBranch: string | null | undefined
+  mainWorktreeBranch: string
+  probedHeadBranch: string
+}): string {
+  const startFrom = args.baseBranch?.trim()
+  if (startFrom) {
+    return startFrom
+  }
+  return args.mainWorktreeBranch || args.probedHeadBranch
+}

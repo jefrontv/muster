@@ -884,6 +884,10 @@ const api = {
     repos: (args) => ipcRenderer.invoke('siteCloneSources:repos', args)
   } satisfies PreloadApi['siteCloneSources'],
 
+  repoHeadBranch: {
+    probe: (args) => ipcRenderer.invoke('repoHeadBranch:probe', args)
+  } satisfies PreloadApi['repoHeadBranch'],
+
   siteMcp: {
     status: (args) => ipcRenderer.invoke('siteMcp:status', args),
     register: (args) => ipcRenderer.invoke('siteMcp:register', args),

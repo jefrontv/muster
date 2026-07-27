@@ -1,0 +1,468 @@
+// @vitest-environment happy-dom
+
+import { act, type ReactNode } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type {
+  ActiveCollabResult,
+  ActiveCollabTaskRef
+} from '../../../shared/activecollab-api-types'
+import type {
+  ActiveCollabComment,
+  ActiveCollabLabel,
+  ActiveCollabTask,
+  ActiveCollabTaskDetail,
+  ActiveCollabTaskUpdate
+} from '../../../shared/activecollab-types'
+
+type DetailResult = ActiveCollabResult<ActiveCollabTaskDetail>
+type TaskResult = ActiveCollabResult<ActiveCollabTask | null>
+type CommentResult = ActiveCollabResult<ActiveCollabComment | null>
+type UpdateArgs = ActiveCollabTaskRef & { update: ActiveCollabTaskUpdate }
+
+const mocks = vi.hoisted(() => ({
+  fetchTaskDetail:
+    vi.fn<(ref: ActiveCollabTaskRef, options?: { force?: boolean }) => Promise<DetailResult>>(),
+  listLabels: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabLabel[]>>>(),
+  updateTask: vi.fn<(args: UpdateArgs) => Promise<TaskResult>>(),
+  completeTask: vi.fn<(args: { taskId: number }) => Promise<TaskResult>>(),
+  reopenTask: vi.fn<(args: { taskId: number }) => Promise<TaskResult>>(),
+  postComment: vi.fn<(args: { taskId: number; bodyHtml: string }) => Promise<CommentResult>>()
+}))
+
+vi.mock('@/store', () => ({
+  useAppStore: (selector: (state: unknown) => unknown) =>
+    selector({
+      fetchActiveCollabTaskDetail: mocks.fetchTaskDetail,
+      listActiveCollabLabels: mocks.listLabels,
+      updateActiveCollabTask: mocks.updateTask,
+      completeActiveCollabTask: mocks.completeTask,
+      reopenActiveCollabTask: mocks.reopenTask,
+      postActiveCollabComment: mocks.postComment
+    })
+}))
+
+// Radix portals popover content out of the container and unmounts it while closed; a structural
+// stand-in keeps the label picker in the tree so its own markup can be asserted.
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  PopoverTrigger: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  PopoverContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>
+}))
+
+import { ActiveCollabTaskWorkspace } from './ActiveCollabTaskWorkspace'
+
+const PROJECT_ID = 3790
+const TASK_ID = 509323
+const DUE_ON = new Date(2026, 6, 27).getTime()
+
+const VOCABULARY: ActiveCollabLabel[] = [
+  { id: 1, name: 'Blocked', color: '#ff0000' },
+  { id: 2, name: 'Urgent', color: null },
+  { id: 3, name: 'Deferred', color: '#00ff00' }
+]
+
+const TASK: ActiveCollabTask = {
+  id: TASK_ID,
+  projectId: PROJECT_ID,
+  projectName: 'Efront Website',
+  taskNumber: 42,
+  name: 'Ship the ActiveCollab pane',
+  bodyHtml: '<p>Ping <span class="mention mention-user">Ada Lovelace</span> when it lands.</p>',
+  isCompleted: false,
+  dueOn: DUE_ON,
+  createdOn: null,
+  updatedOn: null,
+  assigneeId: 7,
+  assigneeName: 'Grace Hopper',
+  labels: [VOCABULARY[0], VOCABULARY[1]],
+  commentCount: 1,
+  urlPath: '/projects/3790/tasks/509323',
+  taskListId: null
+}
+
+const COMMENT: ActiveCollabComment = {
+  id: 9,
+  bodyHtml: '<p>Reviewed by <span class="mention mention-user">Ada Lovelace</span>.</p>',
+  bodyPlainText: 'Reviewed by Ada Lovelace.',
+  createdOn: Date.UTC(2026, 6, 20, 3, 0),
+  createdById: 7,
+  createdByName: 'Ada Lovelace'
+}
+
+const DETAIL: ActiveCollabTaskDetail = { task: TASK, comments: [COMMENT] }
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((settle) => {
+    resolve = settle
+  })
+  return { promise, resolve }
+}
+
+let container: HTMLDivElement
+let root: Root
+
+beforeEach(() => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  for (const mock of Object.values(mocks)) {
+    mock.mockReset()
+  }
+  mocks.fetchTaskDetail.mockResolvedValue({ ok: true, value: DETAIL })
+  mocks.listLabels.mockResolvedValue({ ok: true, value: VOCABULARY })
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
+})
+
+afterEach(() => {
+  act(() => {
+    root.unmount()
+  })
+  container.remove()
+})
+
+async function mount(
+  props: { projectId: number | null; taskId: number | null } = {
+    projectId: PROJECT_ID,
+    taskId: TASK_ID
+  }
+): Promise<void> {
+  await act(async () => {
+    root.render(<ActiveCollabTaskWorkspace {...props} />)
+  })
+}
+
+function buttonWith(text: string): HTMLButtonElement {
+  const found = Array.from(container.querySelectorAll('button')).find((candidate) =>
+    candidate.textContent?.includes(text)
+  )
+  expect(found, `no button containing "${text}"`).toBeTruthy()
+  return found as HTMLButtonElement
+}
+
+function labelRow(name: string): HTMLButtonElement {
+  const found = Array.from(
+    container.querySelectorAll<HTMLButtonElement>('button[aria-pressed]')
+  ).find((candidate) => candidate.textContent?.trim() === name)
+  expect(found, `no label row for "${name}"`).toBeTruthy()
+  return found as HTMLButtonElement
+}
+
+function dueDateInput(): HTMLInputElement {
+  const input = container.querySelector<HTMLInputElement>('input[type="date"]')
+  expect(input).toBeTruthy()
+  return input as HTMLInputElement
+}
+
+function alertText(): string | null {
+  return container.querySelector('[role="alert"]')?.textContent ?? null
+}
+
+async function click(element: HTMLElement): Promise<void> {
+  await act(async () => {
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  })
+}
+
+function typeInto(element: HTMLInputElement | HTMLTextAreaElement, value: string): void {
+  act(() => {
+    const prototype =
+      element instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype
+    Object.getOwnPropertyDescriptor(prototype, 'value')?.set?.call(element, value)
+    element.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+describe('ActiveCollabTaskWorkspace selection', () => {
+  it('renders nothing and reads nothing without a selection', async () => {
+    await mount({ projectId: null, taskId: null })
+
+    expect(container.innerHTML).toBe('')
+    expect(mocks.fetchTaskDetail).not.toHaveBeenCalled()
+  })
+
+  it('renders nothing when only half a reference is supplied', async () => {
+    await mount({ projectId: PROJECT_ID, taskId: null })
+
+    expect(container.innerHTML).toBe('')
+    expect(mocks.fetchTaskDetail).not.toHaveBeenCalled()
+  })
+})
+
+describe('ActiveCollabTaskWorkspace load states', () => {
+  it('shows a loading state until the detail read settles', async () => {
+    const pending = deferred<DetailResult>()
+    mocks.fetchTaskDetail.mockReturnValue(pending.promise)
+
+    await mount()
+    expect(container.querySelector('[role="status"]')).toBeTruthy()
+    expect(container.textContent).not.toContain(TASK.name)
+
+    await act(async () => {
+      pending.resolve({ ok: true, value: DETAIL })
+    })
+    expect(container.querySelector('[role="status"]')).toBeNull()
+    expect(container.textContent).toContain(TASK.name)
+  })
+
+  it('renders the task identity, assignee, due date, and labels once loaded', async () => {
+    await mount()
+
+    expect(mocks.fetchTaskDetail).toHaveBeenCalledWith(
+      { projectId: PROJECT_ID, taskId: TASK_ID },
+      { force: false }
+    )
+    expect(container.textContent).toContain('Ship the ActiveCollab pane')
+    expect(container.textContent).toContain('Efront Website')
+    expect(container.textContent).toContain('#42')
+    expect(container.textContent).toContain('Grace Hopper')
+    // Already anchored to the local calendar day upstream — rendered as-is, not re-shifted.
+    expect(dueDateInput().value).toBe('2026-07-27')
+    const chips = Array.from(container.querySelectorAll('span[style*="border-color"]'))
+    expect(chips.some((chip) => chip.textContent?.includes('Blocked'))).toBe(true)
+  })
+
+  it('surfaces the shared failure copy when the detail read fails', async () => {
+    mocks.fetchTaskDetail.mockResolvedValue({
+      ok: false,
+      kind: 'auth',
+      error: 'Invalid token',
+      status: 401
+    })
+
+    await mount()
+
+    expect(alertText()).toContain('ActiveCollab rejected those credentials')
+    expect(container.textContent).not.toContain(TASK.name)
+  })
+
+  it('retries a failed detail read with a forced refetch', async () => {
+    mocks.fetchTaskDetail.mockResolvedValue({
+      ok: false,
+      kind: 'unknown',
+      error: 'offline',
+      status: null
+    })
+    await mount()
+    mocks.fetchTaskDetail.mockResolvedValue({ ok: true, value: DETAIL })
+
+    await click(buttonWith('Retry'))
+
+    expect(mocks.fetchTaskDetail).toHaveBeenLastCalledWith(
+      { projectId: PROJECT_ID, taskId: TASK_ID },
+      { force: true }
+    )
+    expect(container.textContent).toContain(TASK.name)
+  })
+})
+
+describe('ActiveCollabTaskWorkspace label writes', () => {
+  it('sends the MERGED label set when adding one label, never the addition alone', async () => {
+    mocks.updateTask.mockResolvedValue({ ok: true, value: { ...TASK, labels: VOCABULARY } })
+    await mount()
+
+    await click(labelRow('Deferred'))
+
+    expect(mocks.updateTask).toHaveBeenCalledTimes(1)
+    expect(mocks.updateTask).toHaveBeenCalledWith({
+      projectId: PROJECT_ID,
+      taskId: TASK_ID,
+      update: { labelNames: ['Blocked', 'Urgent', 'Deferred'] }
+    })
+  })
+
+  it('sends the remaining labels when removing one', async () => {
+    mocks.updateTask.mockResolvedValue({ ok: true, value: { ...TASK, labels: [VOCABULARY[1]] } })
+    await mount()
+
+    await click(labelRow('Blocked'))
+
+    expect(mocks.updateTask).toHaveBeenCalledWith({
+      projectId: PROJECT_ID,
+      taskId: TASK_ID,
+      update: { labelNames: ['Urgent'] }
+    })
+  })
+})
+
+describe('ActiveCollabTaskWorkspace due-date writes', () => {
+  it('clears a due date with an explicit null rather than an omitted key', async () => {
+    mocks.updateTask.mockResolvedValue({ ok: true, value: { ...TASK, dueOn: null } })
+    await mount()
+
+    const clear = container.querySelector<HTMLButtonElement>('button[aria-label="Clear due date"]')
+    expect(clear).toBeTruthy()
+    await click(clear as HTMLButtonElement)
+
+    const args = mocks.updateTask.mock.calls[0]?.[0]
+    expect(args).toEqual({
+      projectId: PROJECT_ID,
+      taskId: TASK_ID,
+      update: { dueOn: null }
+    })
+    expect('dueOn' in (args?.update ?? {})).toBe(true)
+  })
+
+  it('writes the picked local calendar day as epoch milliseconds', async () => {
+    mocks.updateTask.mockResolvedValue({ ok: true, value: TASK })
+    await mount()
+
+    typeInto(dueDateInput(), '2026-08-03')
+    await act(async () => {})
+
+    expect(mocks.updateTask).toHaveBeenCalledWith({
+      projectId: PROJECT_ID,
+      taskId: TASK_ID,
+      update: { dueOn: new Date(2026, 7, 3).getTime() }
+    })
+  })
+})
+
+describe('ActiveCollabTaskWorkspace write settlement', () => {
+  it('refetches instead of erroring when a write lands but echoes no row', async () => {
+    mocks.completeTask.mockResolvedValue({ ok: true, value: null })
+    await mount()
+
+    await click(buttonWith('Complete task'))
+
+    expect(mocks.completeTask).toHaveBeenCalledWith({ taskId: TASK_ID })
+    expect(mocks.fetchTaskDetail).toHaveBeenLastCalledWith(
+      { projectId: PROJECT_ID, taskId: TASK_ID },
+      { force: true }
+    )
+    expect(alertText()).toBeNull()
+    expect(container.textContent).toContain(TASK.name)
+  })
+
+  it('applies an echoed row without a second read', async () => {
+    mocks.completeTask.mockResolvedValue({ ok: true, value: { ...TASK, isCompleted: true } })
+    await mount()
+
+    await click(buttonWith('Complete task'))
+
+    expect(mocks.fetchTaskDetail).toHaveBeenCalledTimes(1)
+    expect(buttonWith('Reopen task')).toBeTruthy()
+  })
+
+  it('reopens a completed task through the reopen action', async () => {
+    mocks.fetchTaskDetail.mockResolvedValue({
+      ok: true,
+      value: { ...DETAIL, task: { ...TASK, isCompleted: true } }
+    })
+    mocks.reopenTask.mockResolvedValue({ ok: true, value: TASK })
+    await mount()
+
+    await click(buttonWith('Reopen task'))
+
+    expect(mocks.reopenTask).toHaveBeenCalledWith({ taskId: TASK_ID })
+    expect(mocks.completeTask).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a write failure without destroying the loaded task', async () => {
+    mocks.completeTask.mockResolvedValue({
+      ok: false,
+      kind: 'api',
+      error: 'Task is locked',
+      status: 500
+    })
+    await mount()
+
+    await click(buttonWith('Complete task'))
+
+    expect(alertText()).toContain('Task is locked')
+    expect(container.textContent).toContain(TASK.name)
+    expect(dueDateInput().value).toBe('2026-07-27')
+  })
+
+  it('disables every control while a write is in flight', async () => {
+    const pending = deferred<TaskResult>()
+    mocks.completeTask.mockReturnValue(pending.promise)
+    await mount()
+
+    await click(buttonWith('Complete task'))
+
+    expect(buttonWith('Complete task').disabled).toBe(true)
+    expect(dueDateInput().disabled).toBe(true)
+    expect(buttonWith('Edit labels').disabled).toBe(true)
+    expect(container.querySelector('textarea')?.disabled).toBe(true)
+
+    await act(async () => {
+      pending.resolve({ ok: true, value: { ...TASK, isCompleted: true } })
+    })
+
+    expect(buttonWith('Reopen task').disabled).toBe(false)
+    expect(dueDateInput().disabled).toBe(false)
+  })
+})
+
+describe('ActiveCollabTaskWorkspace comments', () => {
+  it('posts the composed comment as escaped HTML and appends the echoed row', async () => {
+    const posted: ActiveCollabComment = {
+      ...COMMENT,
+      id: 10,
+      bodyHtml: '<p>Shipped</p>',
+      bodyPlainText: 'Shipped',
+      createdByName: 'Grace Hopper'
+    }
+    mocks.postComment.mockResolvedValue({ ok: true, value: posted })
+    await mount()
+
+    const textarea = container.querySelector('textarea') as HTMLTextAreaElement
+    typeInto(textarea, 'Ping <b>Ada</b>\n\nsecond line')
+    await click(buttonWith('Comment'))
+
+    expect(mocks.postComment).toHaveBeenCalledWith({
+      taskId: TASK_ID,
+      bodyHtml: '<p>Ping &lt;b&gt;Ada&lt;/b&gt;</p><p>second line</p>'
+    })
+    expect(container.textContent).toContain('Shipped')
+  })
+
+  it('refetches when a posted comment echoes no row', async () => {
+    mocks.postComment.mockResolvedValue({ ok: true, value: null })
+    await mount()
+
+    typeInto(container.querySelector('textarea') as HTMLTextAreaElement, 'Shipped')
+    await click(buttonWith('Comment'))
+
+    expect(mocks.fetchTaskDetail).toHaveBeenLastCalledWith(
+      { projectId: PROJECT_ID, taskId: TASK_ID },
+      { force: true }
+    )
+    expect(alertText()).toBeNull()
+  })
+})
+
+describe('ActiveCollabTaskWorkspace provider HTML', () => {
+  const hostile =
+    '<p>Ping <span class="mention mention-user">Ada Lovelace</span> now.</p>' +
+    '<script>globalThis.activeCollabPwned = true</script>' +
+    '<img src="x" onerror="globalThis.activeCollabPwned = true">'
+
+  it('renders task and comment HTML through the sanitizing markdown renderer', async () => {
+    mocks.fetchTaskDetail.mockResolvedValue({
+      ok: true,
+      value: {
+        task: { ...TASK, bodyHtml: hostile },
+        comments: [{ ...COMMENT, bodyHtml: hostile }]
+      }
+    })
+
+    await mount()
+
+    // The mention element survives, so the HTML was parsed rather than escaped into text.
+    const mentions = Array.from(container.querySelectorAll('span')).filter((span) =>
+      span.textContent?.includes('Ada Lovelace')
+    )
+    expect(mentions.length).toBeGreaterThanOrEqual(2)
+    // ...and the executable parts do not.
+    expect(container.querySelector('script')).toBeNull()
+    expect(container.querySelector('[onerror]')).toBeNull()
+    expect(container.innerHTML).not.toContain('onerror')
+    expect((globalThis as Record<string, unknown>).activeCollabPwned).toBeUndefined()
+  })
+})

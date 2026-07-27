@@ -5,6 +5,7 @@ import {
   getLinkedWorkItemWorkspaceName,
   getWorkspaceIntentName,
   resolveWorkspaceCreateName,
+  resolveWorkspaceSeedBranchName,
   slugifyForWorkspaceName
 } from './workspace-name'
 
@@ -299,5 +300,48 @@ describe('resolveWorkspaceCreateName', () => {
   it('uses the stable fallback when the draft is blank', () => {
     expect(resolveWorkspaceCreateName({ draft: '   ', fallback: 'pr-9' })).toBe('pr-9')
     expect(resolveWorkspaceCreateName({ draft: undefined, fallback: 'issue-4' })).toBe('issue-4')
+  })
+})
+
+describe('resolveWorkspaceSeedBranchName', () => {
+  it('keeps the chosen Start-from ref ahead of everything else', () => {
+    expect(
+      resolveWorkspaceSeedBranchName({
+        baseBranch: '  release/2.0  ',
+        mainWorktreeBranch: 'refs/heads/main',
+        probedHeadBranch: 'staging'
+      })
+    ).toBe('release/2.0')
+  })
+
+  it('prefers the main worktree branch over one read off disk', () => {
+    expect(
+      resolveWorkspaceSeedBranchName({
+        baseBranch: '   ',
+        mainWorktreeBranch: 'refs/heads/main',
+        probedHeadBranch: 'staging'
+      })
+    ).toBe('refs/heads/main')
+  })
+
+  // The LocalWP case: a folder project's worktree row carries no branch at all.
+  it('falls to the probed branch only when the worktree row carries none', () => {
+    expect(
+      resolveWorkspaceSeedBranchName({
+        baseBranch: null,
+        mainWorktreeBranch: '',
+        probedHeadBranch: 'staging'
+      })
+    ).toBe('staging')
+  })
+
+  it('resolves to nothing when no source has a branch, leaving the caller its fallback', () => {
+    expect(
+      resolveWorkspaceSeedBranchName({
+        baseBranch: undefined,
+        mainWorktreeBranch: '',
+        probedHeadBranch: ''
+      })
+    ).toBe('')
   })
 })

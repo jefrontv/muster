@@ -83,7 +83,10 @@ import {
   getLinearLinkedWorkItemBranchName,
   isLinearLinkedWorkItem
 } from '@/lib/linear-linked-work-item'
-import { getLinearIssueWorkspaceName } from '../../../shared/workspace-name'
+import {
+  getLinearIssueWorkspaceName,
+  resolveWorkspaceSeedBranchName
+} from '../../../shared/workspace-name'
 import {
   getFullComposerCreateDisabled,
   getQuickComposerCreateDisabled
@@ -179,6 +182,7 @@ import {
 } from './composer-branch-selection'
 import { isCurrentComposerDropOwner } from './composer-drop-owner'
 import { applyComposerNativeFileDrop } from './composer-native-file-drop'
+import { useFolderProjectHeadBranch } from './useFolderProjectHeadBranch'
 import {
   collectComposerDropUploadResult,
   shouldReportComposerDropUploadFailure
@@ -1458,15 +1462,23 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
     () => getSuggestedCreatureName(worktreesByRepo),
     [worktreesByRepo]
   )
+  const mainWorktreeBranch = useMemo(
+    () => worktreesByRepo[repoId]?.find((worktree) => worktree.isMainWorktree)?.branch ?? '',
+    [repoId, worktreesByRepo]
+  )
+  // Why: a LocalWP site keeps its checkout at app/public, so it classifies as a folder project and
+  // its worktree row carries no branch; read HEAD off disk before conceding to the creature name.
+  const headBranchProbePath =
+    selectedRepo && !selectedRepoIsGit && !selectedRepoIsRemote && !mainWorktreeBranch
+      ? selectedRepo.path
+      : null
+  const probedHeadBranch = useFolderProjectHeadBranch(headBranchProbePath)
   // Why: a blank name should inherit the branch the user works from — the chosen Start-from
-  // ref, else the selected repo's main-worktree branch (empty string on detached HEAD).
-  const seedBranchName = useMemo(() => {
-    const startFrom = baseBranch?.trim()
-    if (startFrom) {
-      return startFrom
-    }
-    return worktreesByRepo[repoId]?.find((worktree) => worktree.isMainWorktree)?.branch ?? ''
-  }, [baseBranch, repoId, worktreesByRepo])
+  // ref, else the selected repo's main-worktree branch, else the branch found on disk.
+  const seedBranchName = useMemo(
+    () => resolveWorkspaceSeedBranchName({ baseBranch, mainWorktreeBranch, probedHeadBranch }),
+    [baseBranch, mainWorktreeBranch, probedHeadBranch]
+  )
   const workspaceSeedName = useMemo(
     () =>
       getWorkspaceSeedName({
