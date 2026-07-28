@@ -20,16 +20,28 @@ import { createActiveCollabSlice } from '@/store/slices/activecollab'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { clearActiveCollabInflightReads } from '@/store/slices/activecollab-reads'
 import type { AppState } from '@/store/types'
-import type { ActiveCollabResult } from '../../../shared/activecollab-api-types'
+import type {
+  ActiveCollabResult,
+  ActiveCollabStagedFile,
+  ActiveCollabUploadedFile
+} from '../../../shared/activecollab-api-types'
+import type { NativeFileDropPayload } from '../../../shared/native-file-drop'
 import type { ActiveCollabUser } from '../../../shared/activecollab-types'
 
+type StagedFile = ActiveCollabStagedFile
 type UsersResult = ActiveCollabResult<ActiveCollabUser[]>
+type StagedResult = ActiveCollabResult<ActiveCollabStagedFile[]>
+type UploadResult = ActiveCollabResult<ActiveCollabUploadedFile[]>
 
 const holder = vi.hoisted(() => ({
   state: null as unknown,
   editor: null as Editor | null,
   listUsers: vi.fn<() => Promise<UsersResult>>(),
-  listProjectMembers: vi.fn<(args: { projectId: number }) => Promise<UsersResult>>()
+  listProjectMembers: vi.fn<(args: { projectId: number }) => Promise<UsersResult>>(),
+  pickAttachments: vi.fn<() => Promise<StagedResult>>(),
+  describeAttachments: vi.fn<(args: { paths: string[] }) => Promise<StagedResult>>(),
+  uploadAttachments: vi.fn<(args: { paths: string[] }) => Promise<UploadResult>>(),
+  drop: null as ((payload: NativeFileDropPayload) => void) | null
 }))
 
 vi.mock('@/store', () => ({
@@ -62,7 +74,13 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabPostComment: vi.fn(),
   activeCollabListLabels: vi.fn(),
   activeCollabListUsers: () => holder.listUsers(),
-  activeCollabListProjectMembers: (args: { projectId: number }) => holder.listProjectMembers(args)
+  activeCollabListProjectMembers: (args: { projectId: number }) => holder.listProjectMembers(args),
+  activeCollabDownloadAttachment: vi.fn(),
+  activeCollabPickCommentAttachments: () => holder.pickAttachments(),
+  activeCollabDescribeCommentAttachments: (args: { paths: string[] }) =>
+    holder.describeAttachments(args),
+  activeCollabUploadCommentAttachments: (args: { paths: string[] }) =>
+    holder.uploadAttachments(args)
 }))
 
 import { ActiveCollabCommentComposer } from './activecollab-comment-composer'
@@ -86,6 +104,9 @@ const CONNECTION = {
 let container: HTMLDivElement
 let root: Root
 let posted: string[]
+let postedCodes: string[][]
+/** Flipped by the "post fails after the upload landed" case; every other test posts cleanly. */
+let postLands: boolean
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -96,6 +117,21 @@ beforeEach(() => {
   holder.listUsers.mockResolvedValue({ ok: true, value: [ADA, ALAN, GRACE, JAKE] })
   holder.listProjectMembers.mockReset()
   holder.listProjectMembers.mockResolvedValue({ ok: true, value: [ADA, ALAN, JAKE] })
+  holder.pickAttachments.mockReset().mockResolvedValue({ ok: true, value: [] })
+  holder.describeAttachments.mockReset().mockResolvedValue({ ok: true, value: [] })
+  holder.uploadAttachments.mockReset().mockResolvedValue({ ok: true, value: [] })
+  holder.drop = null
+  // The native drop router lives in preload; the composer only subscribes to what it relays.
+  window.api = {
+    ui: {
+      onFileDrop: (callback: (payload: NativeFileDropPayload) => void) => {
+        holder.drop = callback
+        return () => {
+          holder.drop = null
+        }
+      }
+    }
+  } as never
   const store = create<AppState>()(
     (...a) =>
       ({
@@ -106,6 +142,8 @@ beforeEach(() => {
   )
   holder.state = store.getState()
   posted = []
+  postedCodes = []
+  postLands = true
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -132,7 +170,11 @@ async function mount({
           projectId={projectId}
           disabled={disabled}
           busy={busy}
-          onSubmit={(bodyHtml) => posted.push(bodyHtml)}
+          onSubmit={async (bodyHtml, attachmentCodes) => {
+            posted.push(bodyHtml)
+            postedCodes.push(attachmentCodes)
+            return postLands
+          }}
         />
       </TooltipProvider>
     )
@@ -198,6 +240,46 @@ async function post(): Promise<void> {
   await act(async () => {
     submitButton().dispatchEvent(new MouseEvent('click', { bubbles: true }))
   })
+  // The click starts an upload-then-post chain; a second flush lets both awaits settle.
+  await act(async () => {})
+}
+
+function staged(name: string, size: number, rejected: 'too-large' | null = null): StagedFile {
+  return { path: `/tmp/${name}`, name, size, rejected }
+}
+
+function attachButton(): HTMLButtonElement {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === 'Attach Files'
+  )
+  if (button === undefined) {
+    throw new Error('attach button missing')
+  }
+  return button
+}
+
+/** Every staged row's visible text, so a name, a size and a refusal are all covered at once. */
+function stagedRows(): string[] {
+  return [...container.querySelectorAll('li')].map((row) => row.textContent?.trim() ?? '')
+}
+
+function stripAlert(): string | null {
+  return container.querySelector('[role="alert"]')?.textContent ?? null
+}
+
+async function attachViaPicker(...files: StagedFile[]): Promise<void> {
+  holder.pickAttachments.mockResolvedValue({ ok: true, value: files })
+  await act(async () => {
+    attachButton().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  })
+  await act(async () => {})
+}
+
+async function dropFiles(target: string, paths: string[]): Promise<void> {
+  await act(async () => {
+    holder.drop?.({ paths, target } as NativeFileDropPayload)
+  })
+  await act(async () => {})
 }
 
 describe('ActiveCollabCommentComposer layout', () => {
@@ -571,5 +653,222 @@ describe('ActiveCollabCommentComposer while a write is in flight', () => {
 
     expect(editor().isEditable).toBe(true)
     expect(toolbarButton('Bold').disabled).toBe(false)
+  })
+})
+
+describe('ActiveCollabCommentComposer attachments', () => {
+  const AC_PNG = { path: '/tmp/ac.png', name: 'ac.png', size: 1927, rejected: null }
+  const CODE = 'FVz6RyPOo4mwh4NUVxoPLjg0tcHuBQt8AS2ggGVv'
+
+  function uploaded(...codes: string[]): UploadResult {
+    return {
+      ok: true,
+      value: codes.map((code, index) => ({
+        path: `/tmp/f${index}`,
+        name: `f${index}`,
+        size: 1,
+        code
+      }))
+    }
+  }
+
+  it('marks itself as the drop target the preload router addresses, and lights up on a file drag', async () => {
+    // Without the marker the router resolves the drop to whatever ancestor claims it — usually the
+    // editor — and the files never reach this composer.
+    await mount()
+    const surface = container.querySelector<HTMLElement>(
+      '[data-native-file-drop-target="activecollab-comment"]'
+    )
+    expect(surface).not.toBeNull()
+
+    const drag = new Event('dragover', { bubbles: true })
+    Object.defineProperty(drag, 'dataTransfer', { value: { types: ['Files'] } })
+    await act(async () => {
+      surface?.dispatchEvent(drag)
+    })
+    expect(container.querySelector('.border-dashed')?.className).toContain('bg-accent/40')
+
+    // The router swallows the drop in the capture phase, so the highlight clears from there too.
+    await act(async () => {
+      document.dispatchEvent(new Event('drop', { bubbles: true }))
+    })
+    expect(container.querySelector('.border-dashed')?.className).not.toContain('bg-accent/40')
+  })
+
+  it('stages a picked file with its name and its size', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG)
+
+    expect(stagedRows()).toEqual(['ac.png1.88 KB'])
+  })
+
+  it('stages a dropped file, and ignores a drop addressed to any other target', async () => {
+    await mount()
+    holder.describeAttachments.mockResolvedValue({ ok: true, value: [AC_PNG] })
+
+    // The chat composer's own drop target must not reach this composer.
+    await dropFiles('composer', ['/tmp/ac.png'])
+    expect(holder.describeAttachments).not.toHaveBeenCalled()
+    expect(stagedRows()).toEqual([])
+
+    await dropFiles('activecollab-comment', ['/tmp/ac.png'])
+    expect(holder.describeAttachments).toHaveBeenCalledWith({ paths: ['/tmp/ac.png'] })
+    expect(stagedRows()).toEqual(['ac.png1.88 KB'])
+  })
+
+  it('stages the same path once, however many times it is attached', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG)
+    await attachViaPicker(AC_PNG)
+
+    expect(stagedRows()).toHaveLength(1)
+  })
+
+  it('removes a staged file before posting, and then posts without it', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG, staged('brief.pdf', 2048))
+    holder.uploadAttachments.mockResolvedValue(uploaded(CODE))
+
+    const remove = container.querySelector<HTMLButtonElement>('button[aria-label="Remove ac.png"]')
+    await act(async () => {
+      remove?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(stagedRows()).toEqual(['brief.pdf2.00 KB'])
+    await type('Shipped')
+    await post()
+    expect(holder.uploadAttachments).toHaveBeenCalledWith({ paths: ['/tmp/brief.pdf'] })
+  })
+
+  it('uploads first and sends the codes with the comment', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG)
+    holder.uploadAttachments.mockResolvedValue(uploaded(CODE))
+
+    await type('Shipped')
+    await post()
+
+    expect(holder.uploadAttachments).toHaveBeenCalledWith({ paths: ['/tmp/ac.png'] })
+    expect(posted).toEqual(['<p>Shipped</p>'])
+    expect(postedCodes).toEqual([[CODE]])
+  })
+
+  it('sends no codes and uploads nothing when nothing is staged', async () => {
+    await mount()
+    await type('Shipped')
+    await post()
+
+    expect(holder.uploadAttachments).not.toHaveBeenCalled()
+    expect(postedCodes).toEqual([[]])
+  })
+
+  it('clears the staged files with the draft once the comment lands', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG)
+    holder.uploadAttachments.mockResolvedValue(uploaded(CODE))
+
+    await type('Shipped')
+    await post()
+
+    expect(stagedRows()).toEqual([])
+    expect(editor().getText()).toBe('')
+  })
+
+  it('keeps the typed comment and the staged files when the upload is refused', async () => {
+    // The one outcome that must never cost someone their words: the instance answered 200 with an
+    // empty array, main called it a refusal, and nothing may be posted or cleared.
+    await mount()
+    await attachViaPicker(AC_PNG)
+    holder.uploadAttachments.mockResolvedValue({
+      ok: false,
+      kind: 'invalid-request',
+      error: 'ActiveCollab rejected the upload of "ac.png".',
+      status: null
+    })
+
+    await type('Shipped the header fix')
+    await post()
+
+    expect(posted).toEqual([])
+    expect(editor().getText()).toBe('Shipped the header fix')
+    expect(stagedRows()).toEqual(['ac.png1.88 KB'])
+    expect(stripAlert()).toContain('rejected the upload')
+  })
+
+  it('says so distinctly when the files uploaded but the comment did not post', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG)
+    holder.uploadAttachments.mockResolvedValue(uploaded(CODE))
+    postLands = false
+
+    await type('Shipped')
+    await post()
+
+    expect(postedCodes).toEqual([[CODE]])
+    expect(stripAlert()).toContain('uploaded but the comment did not post')
+    expect(editor().getText()).toBe('Shipped')
+    expect(stagedRows()).toEqual(['ac.png1.88 KB'])
+  })
+
+  it('leaves a failed post with no attachments to the pane, not to the strip', async () => {
+    await mount()
+    postLands = false
+
+    await type('Shipped')
+    await post()
+
+    expect(stripAlert()).toBeNull()
+    expect(editor().getText()).toBe('Shipped')
+  })
+
+  it('refuses to post while an upload is in flight', async () => {
+    await mount()
+    await attachViaPicker(AC_PNG)
+    const pending = Promise.withResolvers<UploadResult>()
+    holder.uploadAttachments.mockReturnValue(pending.promise)
+
+    await type('Shipped')
+    await act(async () => {
+      submitButton().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(submitButton().disabled).toBe(true)
+    expect(attachButton().disabled).toBe(true)
+    expect(posted).toEqual([])
+
+    pending.resolve(uploaded(CODE))
+    await act(async () => {})
+    expect(posted).toEqual(['<p>Shipped</p>'])
+  })
+
+  it('refuses to post while a file that can never be sent is staged', async () => {
+    await mount()
+    await attachViaPicker(staged('huge.bin', 70_000_000, 'too-large'))
+
+    await type('Shipped')
+
+    expect(stagedRows()).toEqual(['huge.binToo large to send'])
+    expect(submitButton().disabled).toBe(true)
+    await post()
+    expect(holder.uploadAttachments).not.toHaveBeenCalled()
+    expect(posted).toEqual([])
+  })
+
+  it('reports a refused picker without staging anything', async () => {
+    await mount()
+    holder.pickAttachments.mockResolvedValue({
+      ok: false,
+      kind: 'not-configured',
+      error: 'Reconnect ActiveCollab.',
+      status: null
+    })
+
+    await act(async () => {
+      attachButton().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    await act(async () => {})
+
+    expect(stagedRows()).toEqual([])
+    expect(stripAlert()).toBe('Reconnect ActiveCollab.')
   })
 })

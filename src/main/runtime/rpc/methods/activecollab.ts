@@ -58,9 +58,13 @@ const TaskUpdate = z.object({
   })
 })
 
+// No upload method twin: `activecollab:uploadCommentAttachments` reads paths off the disk of the
+// machine the user is looking at, so a remote host would read its own. Codes minted locally still
+// travel, because a code is just a string the instance already holds.
 const Comment = z.object({
   taskId: requiredNumber('Task id is required'),
-  bodyHtml: requiredString('Comment body is required')
+  bodyHtml: requiredString('Comment body is required'),
+  attachmentCodes: z.array(z.string()).optional()
 })
 
 export const ACTIVECOLLAB_METHODS: RpcMethod[] = [

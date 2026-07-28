@@ -31,6 +31,16 @@ describe('resolveNativeFileDropPath', () => {
     ).toEqual({ target: NATIVE_FILE_DROP_TARGET.projectSidebar })
   })
 
+  it('routes a drop on the ActiveCollab comment composer to its own target', () => {
+    // Its own target, never the chat composer's: the two share no state, so a misrouted drop would
+    // stage the files somewhere the author cannot see them.
+    expect(
+      resolveNativeFileDropPath([
+        { nativeFileDropTarget: NATIVE_FILE_DROP_TARGET.activeCollabComment }
+      ])
+    ).toEqual({ target: NATIVE_FILE_DROP_TARGET.activeCollabComment })
+  })
+
   it('preserves terminal tab and pane routing for native file drops', () => {
     expect(
       resolveNativeFileDropPath([
@@ -192,6 +202,13 @@ describe('isNativeFileDropPayload', () => {
         paths: ['/tmp/a'],
         tabId: 'tab-1',
         target: NATIVE_FILE_DROP_TARGET.terminal
+      })
+    ).toBe(true)
+    // Without this the relay in main drops the payload and the composer never hears about it.
+    expect(
+      isNativeFileDropPayload({
+        paths: ['/tmp/a'],
+        target: NATIVE_FILE_DROP_TARGET.activeCollabComment
       })
     ).toBe(true)
     expect(

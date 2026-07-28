@@ -14,6 +14,10 @@ export const MAX_URL = 2_048
 export const MAX_EMAIL = 320
 export const MAX_SECRET = 1_024
 export const MAX_BODY = 65_536
+/** Longer than any real path on any supported platform; the bound only stops a wedged renderer. */
+export const MAX_PATH = 4_096
+/** An upload code is a fixed-length token; the bound is slack, not a format check. */
+export const MAX_UPLOAD_CODE = 256
 const MAX_NAME = 512
 const MAX_LABEL_NAME = 128
 const MAX_LABELS = 64
@@ -45,6 +49,22 @@ export function boundedText(value: unknown, field: string, max: number): string 
   return value
 }
 
+/** A bounded list of bounded strings. Absence is the caller's to interpret; null is not a list. */
+export function boundedTextList(
+  value: unknown,
+  field: string,
+  maxItems: number,
+  maxText: number
+): string[] {
+  if (!Array.isArray(value)) {
+    throw new InvalidRequestError(`${field} must be an array of strings.`)
+  }
+  if (value.length > maxItems) {
+    throw new InvalidRequestError(`${field} exceeds ${maxItems} entries.`)
+  }
+  return value.map((entry) => boundedText(entry, `${field} entry`, maxText))
+}
+
 /** Clamped rather than rejected: a stale list asking for page 0 should read page 1, not fail. */
 export function pageNumber(value: unknown): number {
   if (value === undefined || value === null) {
@@ -62,16 +82,6 @@ export function taskRef(args: unknown): ActiveCollabTaskRef {
     projectId: positiveId(input.projectId, 'projectId'),
     taskId: positiveId(input.taskId, 'taskId')
   }
-}
-
-function labelNames(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    throw new InvalidRequestError('update.labelNames must be an array of label names.')
-  }
-  if (value.length > MAX_LABELS) {
-    throw new InvalidRequestError(`update.labelNames exceeds ${MAX_LABELS} entries.`)
-  }
-  return value.map((entry) => boundedText(entry, 'update.labelNames entry', MAX_LABEL_NAME))
 }
 
 /**
@@ -102,7 +112,12 @@ export function taskUpdate(value: unknown): ActiveCollabTaskUpdate {
     update.dueOn = input.dueOn
   }
   if (input.labelNames !== undefined) {
-    update.labelNames = labelNames(input.labelNames)
+    update.labelNames = boundedTextList(
+      input.labelNames,
+      'update.labelNames',
+      MAX_LABELS,
+      MAX_LABEL_NAME
+    )
   }
   if (Object.keys(update).length === 0) {
     throw new InvalidRequestError('update requires at least one field.')

@@ -14027,6 +14027,14 @@
           "action_connect": "Connect ActiveCollab",
           "action_settings": "Open Integrations settings",
           "settings_hint": "Settings → Integrations holds the same connection, the account it resolved to, and the ActiveCollab MCP install your agents use."
+        },
+        "comment_attachments": {
+          "too_large": "Too large to send",
+          "unreadable": "Cannot be read from disk",
+          "remove": "Remove {{value0}}",
+          "heading": "Attachments (you can drag and drop here)",
+          "attach": "Attach Files",
+          "orphaned_upload": "The files uploaded but the comment did not post, so nothing was attached. Your comment is still here — try again."
         }
       },
       "TaskPageActiveCollabPanel": {

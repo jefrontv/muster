@@ -255,6 +255,45 @@ describe('postComment', () => {
     const comment = await postComment({ http: http.client, taskId: 509323, bodyHtml: 'x' })
     expect(comment?.bodyPlainText).toBe('<p>Shipped</p>')
   })
+
+  it('sends no attach_uploaded_files key when nothing was staged', async () => {
+    // Not an empty array: a plain comment has to post the exact body it always did, because a key
+    // that only appeared once attachments shipped is a key no instance was ever tested against.
+    const http = stubHttp({ 'comments/task/509323': { data: { id: 88, body: 'x' } } })
+
+    await postComment({ http: http.client, taskId: 509323, bodyHtml: 'x', attachmentCodes: [] })
+    await postComment({ http: http.client, taskId: 509323, bodyHtml: 'x' })
+
+    for (const call of http.calls) {
+      expect(call.options?.body).toEqual({ body: 'x' })
+      expect(Object.keys(call.options?.body as object)).not.toContain('attach_uploaded_files')
+    }
+  })
+
+  it('quotes the upload codes in attach_uploaded_files, in order', async () => {
+    const http = stubHttp({
+      'comments/task/509323': {
+        data: { single: { id: 88, body: 'x', attachments: [{ id: 5, name: 'ac.png' }] } }
+      }
+    })
+
+    const comment = await postComment({
+      http: http.client,
+      taskId: 509323,
+      bodyHtml: '<p>Shipped</p>',
+      attachmentCodes: ['FVz6RyPOo4mwh4NUVxoPLjg0tcHuBQt8AS2ggGVv', 'mmFavHAGsIrXiB5gDElxk5bI']
+    })
+
+    expect(http.calls[0].options?.body).toEqual({
+      body: '<p>Shipped</p>',
+      attach_uploaded_files: [
+        'FVz6RyPOo4mwh4NUVxoPLjg0tcHuBQt8AS2ggGVv',
+        'mmFavHAGsIrXiB5gDElxk5bI'
+      ]
+    })
+    // The echoed row carries the REAL attachment records the codes turned into.
+    expect(comment?.attachments.map((attachment) => attachment.name)).toEqual(['ac.png'])
+  })
 })
 
 describe('listLabels', () => {

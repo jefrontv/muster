@@ -49,7 +49,7 @@ export type ActiveCollabWriteActions = {
     options?: ActiveCollabWriteOptions
   ) => Promise<ActiveCollabResult<ActiveCollabTask | null>>
   postActiveCollabComment: (
-    args: { taskId: number; bodyHtml: string },
+    args: { taskId: number; bodyHtml: string; attachmentCodes?: string[] },
     options?: ActiveCollabWriteOptions
   ) => Promise<ActiveCollabResult<ActiveCollabComment | null>>
   /** Fan a known-good row into every cache holding it, without a round trip. */

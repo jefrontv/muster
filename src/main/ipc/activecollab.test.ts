@@ -86,6 +86,9 @@ const CHANNELS = [
   'activecollab:getTaskDetail',
   'activecollab:getAttachmentImage',
   'activecollab:downloadAttachment',
+  'activecollab:pickCommentAttachments',
+  'activecollab:describeCommentAttachments',
+  'activecollab:uploadCommentAttachments',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
@@ -104,6 +107,11 @@ const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   {
     channel: 'activecollab:downloadAttachment',
     args: { attachmentId: 249087, name: 'brief.pdf' }
+  },
+  { channel: 'activecollab:pickCommentAttachments', args: undefined },
+  {
+    channel: 'activecollab:uploadCommentAttachments',
+    args: { paths: ['/tmp/ac.png'] }
   },
   {
     channel: 'activecollab:updateTask',

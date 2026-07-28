@@ -153,7 +153,7 @@ export function ActiveCollabTaskWorkspace({
           projectId={projectId}
           disabled={writes.pending !== null}
           busy={writes.pending === 'comment'}
-          onSubmit={(bodyHtml) => void writes.addComment(bodyHtml)}
+          onSubmit={(bodyHtml, attachmentCodes) => writes.addComment(bodyHtml, attachmentCodes)}
         />
       </div>
     </div>

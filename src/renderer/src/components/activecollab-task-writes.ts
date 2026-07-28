@@ -22,14 +22,24 @@ export type ActiveCollabTaskWrites = {
   /** Non-null while a write is in flight; the pane disables every control off this. */
   pending: ActiveCollabTaskWriteField | null
   failure: ActiveCollabFailure | null
-  setCompleted: (completed: boolean) => Promise<void>
+  /**
+   * Every write resolves TRUE only when it actually LANDED, including the refetch path where the
+   * instance echoed no row but did store the change. False means it was refused or coalesced away,
+   * and `failure` carries the reason. Callers that only fire and forget can ignore it.
+   */
+  setCompleted: (completed: boolean) => Promise<boolean>
   /** Full replacement set — see `activecollab-task-label-set.ts`. */
-  setLabelNames: (labelNames: string[]) => Promise<void>
+  setLabelNames: (labelNames: string[]) => Promise<boolean>
   /** Epoch ms for the local calendar day, or an explicit null to clear the date. */
-  setDueOn: (dueOn: number | null) => Promise<void>
+  setDueOn: (dueOn: number | null) => Promise<boolean>
   /** A user id, or an explicit null to unassign. */
-  setAssigneeId: (assigneeId: number | null) => Promise<void>
-  addComment: (bodyHtml: string) => Promise<void>
+  setAssigneeId: (assigneeId: number | null) => Promise<boolean>
+  /**
+   * `attachmentCodes` are already-uploaded codes; the upload happens BEFORE this is called, so a
+   * false here means the files reached the instance but the comment did not — see the composer,
+   * which is the only thing that can say so.
+   */
+  addComment: (bodyHtml: string, attachmentCodes: string[]) => Promise<boolean>
 }
 
 export type ActiveCollabTaskWriteTarget = {
@@ -59,9 +69,9 @@ export function useActiveCollabTaskWrites(
       field: ActiveCollabTaskWriteField,
       call: (ids: { projectId: number; taskId: number }) => Promise<ActiveCollabResult<T | null>>,
       apply: (value: T) => void
-    ): Promise<void> => {
+    ): Promise<boolean> => {
       if (projectId === null || taskId === null || pendingRef.current !== null) {
-        return
+        return false
       }
       pendingRef.current = field
       setPending(field)
@@ -73,14 +83,15 @@ export function useActiveCollabTaskWrites(
             // Surfaced beside the row, never instead of it — the task is still valid on screen.
             setFailure(result)
           }
-          return
+          return false
         }
         if (result.value === null) {
           // The write landed but the instance echoed no usable row: refetch, do not error.
           await reload()
-          return
+          return true
         }
         apply(result.value)
+        return true
       } finally {
         pendingRef.current = null
         if (mountedRef.current) {
@@ -125,8 +136,19 @@ export function useActiveCollabTaskWrites(
   )
 
   const addComment = useCallback(
-    (bodyHtml: string) =>
-      runWrite('comment', (ids) => postComment({ taskId: ids.taskId, bodyHtml }), onComment),
+    (bodyHtml: string, attachmentCodes: string[]) =>
+      runWrite(
+        'comment',
+        (ids) =>
+          // Absent, not empty: a comment with no attachments has to travel the exact shape it
+          // always did, all the way down to the request body.
+          postComment(
+            attachmentCodes.length === 0
+              ? { taskId: ids.taskId, bodyHtml }
+              : { taskId: ids.taskId, bodyHtml, attachmentCodes }
+          ),
+        onComment
+      ),
     [onComment, postComment, runWrite]
   )
 

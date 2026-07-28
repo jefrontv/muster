@@ -8,15 +8,17 @@ import { translate } from '@/i18n/i18n'
 import { hasBoundedCommentBodyText } from '@/lib/comment-body-submit-state'
 import { cn } from '@/lib/utils'
 import { activeCollabCommentBodyHtml } from './activecollab-comment-body-html'
+import { ActiveCollabCommentAttachmentStrip } from './activecollab-comment-attachment-strip'
 import { createActiveCollabCommentExtensions } from './activecollab-comment-editor-schema'
 import { ActiveCollabMentionMenu } from './activecollab-comment-mention-menu'
 import { ActiveCollabCommentToolbar } from './activecollab-comment-toolbar'
+import { useActiveCollabCommentAttachments } from './use-activecollab-comment-attachments'
 import { useActiveCollabCommentLinkBubble } from './use-activecollab-comment-link-bubble'
 import { useActiveCollabCommentMentionMenu } from './use-activecollab-comment-mention-menu'
 
 /**
- * The reply box: bold, italics, links, and @mentions, posted as the narrow HTML ActiveCollab
- * stores.
+ * The reply box: bold, italics, links, @mentions and file attachments, posted as the narrow HTML
+ * ActiveCollab stores.
  *
  * Enter is deliberately NOT a submit key and is only claimed while the mention menu is open: this
  * is a multi-line composer whose Post action is the button, so a plain Enter has to keep writing.
@@ -25,6 +27,10 @@ import { useActiveCollabCommentMentionMenu } from './use-activecollab-comment-me
  *
  * `projectId` narrows the suggestions to the people on the task's project — seven, against the 176
  * accounts on the instance — falling back to the full roster when that membership cannot be read.
+ *
+ * Posting is UPLOAD THEN POST, and the draft is cleared by neither until both have landed. A
+ * refused upload posts nothing and keeps every word; a post that fails after the files went up is
+ * the one outcome nothing else can see, so it is named here rather than left as a generic failure.
  */
 export function ActiveCollabCommentComposer({
   projectId,
@@ -35,7 +41,7 @@ export function ActiveCollabCommentComposer({
   projectId: number | null
   disabled: boolean
   busy: boolean
-  onSubmit: (bodyHtml: string) => void
+  onSubmit: (bodyHtml: string, attachmentCodes: string[]) => Promise<boolean>
 }): React.JSX.Element {
   const rootRef = useRef<HTMLDivElement | null>(null)
   // Why: `editorProps` is frozen when the editor is created, so the menu's live handler has to be
@@ -72,6 +78,7 @@ export function ActiveCollabCommentComposer({
   const menu = useActiveCollabCommentMentionMenu({ editor, projectId })
   menuKeyDownRef.current = menu.handleKeyDown
   const link = useActiveCollabCommentLinkBubble({ editor, rootRef, disabled })
+  const attachments = useActiveCollabCommentAttachments()
 
   const hasText =
     useEditorState({
@@ -103,23 +110,37 @@ export function ActiveCollabCommentComposer({
   }, [editor, menuOpen, menu.listboxId, menu.highlighted])
 
   const submit = useCallback(() => {
-    if (editor === null || disabled) {
+    if (editor === null || disabled || attachments.busy || attachments.blocked) {
       return
     }
     const bodyHtml = activeCollabCommentBodyHtml(editor.state.doc)
     if (bodyHtml === '') {
       return
     }
-    onSubmit(bodyHtml)
-    // Mentions are nodes in this document, so clearing the draft clears them: there is no pick list
-    // left over to leak into the next comment.
-    editor.commands.clearContent(true)
-  }, [editor, disabled, onSubmit])
+    void (async () => {
+      // Upload FIRST: a comment can only quote codes that already exist. A refusal stops right
+      // here with the draft and every staged row untouched — nothing posted, so nothing lost.
+      const codes = await attachments.upload()
+      if (codes === null) {
+        return
+      }
+      if (!(await onSubmit(bodyHtml, codes))) {
+        if (codes.length > 0) {
+          attachments.reportOrphanedUpload()
+        }
+        return
+      }
+      // Mentions are nodes in this document, so clearing the draft clears them: there is no pick
+      // list left over to leak into the next comment. The staged files clear in step with it.
+      editor.commands.clearContent(true)
+      attachments.clear()
+    })()
+  }, [attachments, disabled, editor, onSubmit])
 
   return (
     // Stacked, not side-by-side: the button used to sit `self-end` beside a two-row textarea, which
     // left it floating against the field's bottom corner aligned to nothing.
-    <div className="mt-2 flex flex-col gap-2">
+    <div className="mt-2 flex flex-col gap-2" {...attachments.dropTargetProps}>
       <div
         ref={rootRef}
         className={cn(
@@ -157,9 +178,29 @@ export function ActiveCollabCommentComposer({
           />
         )}
       </div>
+
+      <ActiveCollabCommentAttachmentStrip
+        files={attachments.files}
+        busy={attachments.busy}
+        dragging={attachments.dragging}
+        error={attachments.error}
+        disabled={disabled}
+        onPick={attachments.pick}
+        onRemove={attachments.remove}
+      />
+
       <div className="flex justify-end">
-        <Button size="sm" onClick={submit} disabled={disabled || !hasText} className="gap-2">
-          {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
+        <Button
+          size="sm"
+          onClick={submit}
+          disabled={disabled || !hasText || attachments.busy || attachments.blocked}
+          className="gap-2"
+        >
+          {busy || attachments.busy ? (
+            <LoaderCircle className="size-4 animate-spin" />
+          ) : (
+            <Send className="size-4" />
+          )}
           {translate('auto.components.activecollab.task_workspace.comment_submit', 'Comment')}
         </Button>
       </div>

@@ -167,6 +167,8 @@ let root: Root
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  // The composer subscribes to the preload drop router the moment it mounts.
+  window.api = { ui: { onFileDrop: () => () => {} } } as never
   for (const mock of Object.values(mocks)) {
     mock.mockReset()
   }

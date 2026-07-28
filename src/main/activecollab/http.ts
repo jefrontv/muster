@@ -1,11 +1,17 @@
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 import { acIsRecord, acMimeEssence } from './codecs'
+import { acMultipartBody, type AcMultipartPart } from './multipart'
 
 export type AcRequestOptions = {
   method?: 'GET' | 'POST' | 'PUT'
   query?: Record<string, string | number | undefined>
   body?: unknown
   form?: Record<string, string>
+  /**
+   * File parts for the one route that takes an upload. Mutually exclusive with `body` and `form`,
+   * and never retried: `request` only replays a GET.
+   */
+  multipart?: readonly AcMultipartPart[]
   signal?: AbortSignal
 }
 
@@ -153,8 +159,13 @@ function acRequestInit(token: string | null, options: AcRequestOptions): Request
     // Raw token: ActiveCollab rejects a `Bearer` prefix.
     headers['X-Angie-AuthApiToken'] = token
   }
-  let body: string | undefined
-  if (options.form) {
+  let body: string | FormData | undefined
+  if (options.multipart) {
+    // No Content-Type is set on purpose: the runtime writes it WITH the boundary it generated.
+    // Naming the type here strips the boundary, which is how a self-hosted instance ends up
+    // answering 200 with an empty array instead of upload records — see ./multipart.ts.
+    body = acMultipartBody(options.multipart)
+  } else if (options.form) {
     headers['Content-Type'] = 'application/x-www-form-urlencoded'
     body = new URLSearchParams(options.form).toString()
   } else if (options.body !== undefined) {

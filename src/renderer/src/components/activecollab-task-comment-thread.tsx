@@ -42,7 +42,8 @@ type ActiveCollabCommentThreadProps = {
   projectId: number | null
   disabled: boolean
   busy: boolean
-  onSubmit: (bodyHtml: string) => void
+  /** Resolves TRUE only when the comment landed; the composer clears its draft off that. */
+  onSubmit: (bodyHtml: string, attachmentCodes: string[]) => Promise<boolean>
 }
 
 /**

@@ -9,6 +9,9 @@ export const NATIVE_FILE_DROP_TARGET = {
   editor: 'editor',
   terminal: 'terminal',
   composer: 'composer',
+  /** The ActiveCollab comment composer. Its own target so a drop there never reaches the chat
+   * composer, which shares no state with it and would silently swallow the files. */
+  activeCollabComment: 'activecollab-comment',
   fileExplorer: 'file-explorer',
   projectSidebar: 'project-sidebar'
 } as const
@@ -17,6 +20,7 @@ export type NativeDropResolution =
   | { target: typeof NATIVE_FILE_DROP_TARGET.editor }
   | { target: typeof NATIVE_FILE_DROP_TARGET.terminal; tabId?: string; paneLeafId?: string }
   | { target: typeof NATIVE_FILE_DROP_TARGET.composer }
+  | { target: typeof NATIVE_FILE_DROP_TARGET.activeCollabComment }
   | { target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer; destinationDir: string }
   | { target: typeof NATIVE_FILE_DROP_TARGET.projectSidebar }
   | { target: 'rejected' }
@@ -30,6 +34,7 @@ export type NativeFileDropPayload =
       paneLeafId?: string
     }
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.composer }
+  | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.activeCollabComment }
   | {
       paths: string[]
       target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer
@@ -109,7 +114,11 @@ export function resolveNativeFileDropPath(
     if (target === NATIVE_FILE_DROP_TARGET.terminal) {
       return { target, tabId: entry.terminalTabId, paneLeafId: terminalPaneLeafId }
     }
-    if (target === NATIVE_FILE_DROP_TARGET.editor || target === NATIVE_FILE_DROP_TARGET.composer) {
+    if (
+      target === NATIVE_FILE_DROP_TARGET.editor ||
+      target === NATIVE_FILE_DROP_TARGET.composer ||
+      target === NATIVE_FILE_DROP_TARGET.activeCollabComment
+    ) {
       return { target }
     }
     if (target === NATIVE_FILE_DROP_TARGET.projectSidebar) {
@@ -264,6 +273,7 @@ export function isNativeFileDropPayload(value: unknown): value is NativeFileDrop
   return (
     target === NATIVE_FILE_DROP_TARGET.editor ||
     target === NATIVE_FILE_DROP_TARGET.composer ||
+    target === NATIVE_FILE_DROP_TARGET.activeCollabComment ||
     target === NATIVE_FILE_DROP_TARGET.projectSidebar
   )
 }

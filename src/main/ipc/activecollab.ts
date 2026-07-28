@@ -40,6 +40,7 @@ import {
 import { acResolveTaskNames, resetAcNameDirectoryCache } from '../activecollab/name-directory'
 import { resetAcProjectMembersCache } from '../activecollab/project-members'
 import { getAttachmentImage } from '../activecollab/attachment-image'
+import { AC_MAX_COMMENT_ATTACHMENTS } from '../activecollab/comment-attachment-upload'
 import {
   completeTask,
   listLabels,
@@ -56,10 +57,12 @@ import { acClearTaskSnapshot, acFoldLocalTaskWrite } from '../activecollab/task-
 import type { Store } from '../persistence'
 import {
   boundedText,
+  boundedTextList,
   InvalidRequestError,
   MAX_BODY,
   MAX_EMAIL,
   MAX_SECRET,
+  MAX_UPLOAD_CODE,
   MAX_URL,
   pageNumber,
   positiveId,
@@ -70,6 +73,11 @@ import {
 import { acClient, guard, toFailure } from './activecollab-operation-context'
 import { acListProjectMembers, acListUsers } from './activecollab-people'
 import { acDownloadAttachment } from './activecollab-attachment-download'
+import {
+  acDescribeCommentAttachments,
+  acPickCommentAttachments,
+  acUploadCommentAttachments
+} from './activecollab-comment-attachments'
 import { _resetPreflightCache } from './preflight'
 
 const ACTIVECOLLAB_CHANNELS = [
@@ -81,6 +89,9 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:getTaskDetail',
   'activecollab:getAttachmentImage',
   'activecollab:downloadAttachment',
+  'activecollab:pickCommentAttachments',
+  'activecollab:describeCommentAttachments',
+  'activecollab:uploadCommentAttachments',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
@@ -231,7 +242,23 @@ export function acPostComment(
     if (bodyHtml.trim() === '') {
       throw new InvalidRequestError('bodyHtml is required.')
     }
-    const comment = await postComment({ http: acClient().http, taskId, bodyHtml })
+    // Absent stays absent: postComment omits `attach_uploaded_files` entirely for an empty list,
+    // so a plain comment posts exactly the body it always did.
+    const attachmentCodes =
+      input.attachmentCodes === undefined
+        ? []
+        : boundedTextList(
+            input.attachmentCodes,
+            'attachmentCodes',
+            AC_MAX_COMMENT_ATTACHMENTS,
+            MAX_UPLOAD_CODE
+          )
+    const comment = await postComment({
+      http: acClient().http,
+      taskId,
+      bodyHtml,
+      attachmentCodes
+    })
     // The posted comment carries no task row, so the count this app just added is folded by hand.
     acFoldLocalTaskWrite({ taskId, postedComments: 1 })
     return comment
@@ -260,9 +287,18 @@ export function registerActiveCollabHandlers(store: Store): void {
   ipcMain.handle('activecollab:getAttachmentImage', async (_event, args: unknown) =>
     acGetAttachmentImage(args)
   )
-  // The only handler that needs its event: the save dialog is parented to the calling window.
+  // The two handlers that need their event: both dialogs are parented to the calling window.
   ipcMain.handle('activecollab:downloadAttachment', async (event, args: unknown) =>
     acDownloadAttachment(args, event.sender)
+  )
+  ipcMain.handle('activecollab:pickCommentAttachments', async (event) =>
+    acPickCommentAttachments(event.sender)
+  )
+  ipcMain.handle('activecollab:describeCommentAttachments', async (_event, args: unknown) =>
+    acDescribeCommentAttachments(args)
+  )
+  ipcMain.handle('activecollab:uploadCommentAttachments', async (_event, args: unknown) =>
+    acUploadCommentAttachments(args)
   )
   ipcMain.handle('activecollab:updateTask', async (_event, args: unknown) => acUpdateTask(args))
   ipcMain.handle('activecollab:completeTask', async (_event, args: unknown) => acCompleteTask(args))

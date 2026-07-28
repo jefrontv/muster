@@ -81,6 +81,28 @@ export type ActiveCollabAttachmentDownload =
   | { status: 'saved'; filePath: string; fileName: string; directory: string }
   | { status: 'cancelled' }
 
+/**
+ * A file the user picked or dropped, described from THIS machine's disk BEFORE anything is
+ * uploaded, so the composer can show a name and a size next to a staged row.
+ *
+ * `rejected` is non-null when the file can never be sent. Surfacing that here — rather than
+ * discovering it mid-upload — is what lets the user drop the offending file and post the rest.
+ */
+export type ActiveCollabStagedFile = {
+  path: string
+  name: string
+  size: number
+  rejected: 'too-large' | 'unreadable' | null
+}
+
+/** One uploaded file. `code` is what a write quotes in `attach_uploaded_files`. */
+export type ActiveCollabUploadedFile = {
+  path: string
+  name: string
+  size: number
+  code: string
+}
+
 export type ActiveCollabApi = {
   /** Never fails in practice: "not connected" and "cannot decrypt" are both `ok: true` states. */
   status: () => Promise<ActiveCollabResult<ActiveCollabConnectionStatus>>
@@ -114,6 +136,29 @@ export type ActiveCollabApi = {
     name: string
   }) => Promise<ActiveCollabResult<ActiveCollabAttachmentDownload>>
   /**
+   * Opens a native multi-select picker and describes what was chosen. An EMPTY array means the
+   * dialog was dismissed.
+   *
+   * LOCAL ONLY, no runtime RPC twin, for the reason {@link downloadAttachment} has none: every
+   * path here names a file on the disk of the machine the user is looking at, and a remote host
+   * would read its own.
+   */
+  pickCommentAttachments: () => Promise<ActiveCollabResult<ActiveCollabStagedFile[]>>
+  /** The same description for paths that arrived by drag and drop. LOCAL ONLY. */
+  describeCommentAttachments: (args: {
+    paths: string[]
+  }) => Promise<ActiveCollabResult<ActiveCollabStagedFile[]>>
+  /**
+   * Reads each path in main and uploads it, answering one code per file, in the order given.
+   *
+   * Never partial and never optimistic: an instance that answers HTTP 200 without an upload code
+   * fails the whole call, because a comment posted against a missing code loses the file with no
+   * error anywhere. LOCAL ONLY.
+   */
+  uploadCommentAttachments: (args: {
+    paths: string[]
+  }) => Promise<ActiveCollabResult<ActiveCollabUploadedFile[]>>
+  /**
    * `update.labelNames` is a FULL REPLACEMENT set — the API overwrites the task's labels — so a
    * caller adding one label sends the merged list, not the addition.
    *
@@ -126,9 +171,14 @@ export type ActiveCollabApi = {
   /** Project-scopeless upstream, so a task id is the whole address. */
   completeTask: (args: { taskId: number }) => Promise<ActiveCollabResult<ActiveCollabTask | null>>
   reopenTask: (args: { taskId: number }) => Promise<ActiveCollabResult<ActiveCollabTask | null>>
+  /**
+   * `attachmentCodes` are {@link uploadCommentAttachments} codes. Omitted or empty sends no
+   * `attach_uploaded_files` key at all, which is what an instance expects for a plain comment.
+   */
   postComment: (args: {
     taskId: number
     bodyHtml: string
+    attachmentCodes?: string[]
   }) => Promise<ActiveCollabResult<ActiveCollabComment | null>>
   /** The label vocabulary a `updateTask` label edit chooses from. */
   listLabels: () => Promise<ActiveCollabResult<ActiveCollabLabel[]>>

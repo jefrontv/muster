@@ -23,7 +23,9 @@ import type {
   ActiveCollabAttachmentImage,
   ActiveCollabConnectArgs,
   ActiveCollabResult,
-  ActiveCollabTaskRef
+  ActiveCollabStagedFile,
+  ActiveCollabTaskRef,
+  ActiveCollabUploadedFile
 } from '../../../shared/activecollab-api-types'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
 import {
@@ -164,21 +166,21 @@ export async function activeCollabGetAttachmentImage(
 }
 
 /**
- * The one operation here that never consults the runtime target, and so takes no `settings`.
+ * The throw barrier for a LOCAL-ONLY operation — one that never consults the runtime target
+ * because its subject is a file on THIS machine.
  *
- * A download ends at a save dialog and a file on THIS machine. Routing it to a remote host would
- * write the file over there and answer with a path the user cannot open, so the local bridge is
- * the only correct transport — the same reason PDF export and browser downloads stay local. The
- * throw barrier is kept, because a rejected bridge call would still strip the `kind` the UI needs.
+ * Routing any of these to a remote host would stat, read or write that host's disk and answer
+ * about files nobody here can see, the same reason PDF export and browser downloads stay local.
+ * The barrier is still needed: a rejected bridge call would strip the `kind` the UI branches on.
  */
-export async function activeCollabDownloadAttachment(args: {
-  attachmentId: number
-  name: string
-}): Promise<ActiveCollabResult<ActiveCollabAttachmentDownload>> {
+async function callLocalActiveCollab<T>(
+  method: string,
+  local: () => Promise<ActiveCollabResult<T>>
+): Promise<ActiveCollabResult<T>> {
   try {
-    const result = await window.api.activecollab.downloadAttachment(args)
-    if (!isActiveCollabResult<ActiveCollabAttachmentDownload>(result)) {
-      throw new Error('activecollab.downloadAttachment returned a malformed response.')
+    const result = await local()
+    if (!isActiveCollabResult<T>(result)) {
+      throw new Error(`${method} returned a malformed response.`)
     }
     return result
   } catch (error) {
@@ -189,6 +191,40 @@ export async function activeCollabDownloadAttachment(args: {
       status: null
     }
   }
+}
+
+export async function activeCollabDownloadAttachment(args: {
+  attachmentId: number
+  name: string
+}): Promise<ActiveCollabResult<ActiveCollabAttachmentDownload>> {
+  return callLocalActiveCollab('activecollab.downloadAttachment', () =>
+    window.api.activecollab.downloadAttachment(args)
+  )
+}
+
+/** Empty means the picker was dismissed, which is not a failure. */
+export async function activeCollabPickCommentAttachments(): Promise<
+  ActiveCollabResult<ActiveCollabStagedFile[]>
+> {
+  return callLocalActiveCollab('activecollab.pickCommentAttachments', () =>
+    window.api.activecollab.pickCommentAttachments()
+  )
+}
+
+export async function activeCollabDescribeCommentAttachments(args: {
+  paths: string[]
+}): Promise<ActiveCollabResult<ActiveCollabStagedFile[]>> {
+  return callLocalActiveCollab('activecollab.describeCommentAttachments', () =>
+    window.api.activecollab.describeCommentAttachments(args)
+  )
+}
+
+export async function activeCollabUploadCommentAttachments(args: {
+  paths: string[]
+}): Promise<ActiveCollabResult<ActiveCollabUploadedFile[]>> {
+  return callLocalActiveCollab('activecollab.uploadCommentAttachments', () =>
+    window.api.activecollab.uploadCommentAttachments(args)
+  )
 }
 
 export async function activeCollabUpdateTask(
@@ -219,7 +255,7 @@ export async function activeCollabReopenTask(
 }
 
 export async function activeCollabPostComment(
-  args: { taskId: number; bodyHtml: string },
+  args: { taskId: number; bodyHtml: string; attachmentCodes?: string[] },
   settings?: RuntimeActiveCollabSettings
 ): Promise<ActiveCollabResult<ActiveCollabComment | null>> {
   return callActiveCollab('activecollab.postComment', args, settings, OPERATION_TIMEOUT_MS, () =>

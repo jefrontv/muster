@@ -188,14 +188,25 @@ export async function reopenTask(args: {
   return normaliseTask(unwrapSingle(response.data))
 }
 
+/**
+ * `attachmentCodes` are `POST /upload-files` codes minted by comment-attachment-upload.ts, so the
+ * upload has already happened by the time this runs — the codes are the only thing the comment
+ * route understands. An empty list sends NO `attach_uploaded_files` key: a plain comment must post
+ * exactly the body it always did, not the same body plus an empty array.
+ */
 export async function postComment(args: {
   http: AcHttpClient
   taskId: number
   bodyHtml: string
+  attachmentCodes?: readonly string[]
 }): Promise<ActiveCollabComment | null> {
+  const codes = args.attachmentCodes ?? []
   const response = await args.http.request<unknown>(`comments/task/${args.taskId}`, {
     method: 'POST',
-    body: { body: args.bodyHtml }
+    body:
+      codes.length === 0
+        ? { body: args.bodyHtml }
+        : { body: args.bodyHtml, attach_uploaded_files: [...codes] }
   })
   return normaliseComment(unwrapSingle(response.data))
 }
