@@ -5,21 +5,31 @@ import type { GlobalSettings, NotificationSettings } from '../../shared/types'
 import { getDefaultNotificationSettings } from '../../shared/constants'
 import type { Store } from '../persistence'
 
-const { dispatchMock, keyMock, loadMock, saveMock } = vi.hoisted(() => ({
-  dispatchMock: vi.fn(async () => ({ delivered: true })),
-  keyMock: vi.fn<() => string | null>(),
-  loadMock: vi.fn(),
-  saveMock: vi.fn()
-}))
+const { dispatchMock, keyMock, loadMock, saveMock, loadUnreadMock, saveUnreadMock, broadcastMock } =
+  vi.hoisted(() => ({
+    dispatchMock: vi.fn(async () => ({ delivered: true })),
+    keyMock: vi.fn<() => string | null>(),
+    loadMock: vi.fn(),
+    saveMock: vi.fn(),
+    // Unread accrues on every poll regardless of the banner toggles, so the service now reads and
+    // writes it alongside the snapshot and broadcasts the result to the renderer.
+    loadUnreadMock: vi.fn(() => ({})),
+    saveUnreadMock: vi.fn(),
+    broadcastMock: vi.fn()
+  }))
 
 // The dispatch path itself is proved in ipc/notifications.test.ts; stubbed here so this file does
 // not drag in the tray, the sound assets and a BrowserWindow.
 vi.mock('../ipc/notifications', () => ({ dispatchMainProcessNotification: dispatchMock }))
 
+vi.mock('../ipc/activecollab-unread', () => ({ broadcastAcTaskUnread: broadcastMock }))
+
 vi.mock('./task-snapshot-store', () => ({
   acCurrentTaskSnapshotKey: keyMock,
   acLoadTaskSnapshot: loadMock,
-  acSaveTaskSnapshot: saveMock
+  acSaveTaskSnapshot: saveMock,
+  acLoadTaskUnread: loadUnreadMock,
+  acSaveTaskUnread: saveUnreadMock
 }))
 
 import {
@@ -206,28 +216,36 @@ describe('the running service', () => {
     expect(fetchPage).toHaveBeenCalledTimes(2)
   })
 
-  it('never polls while every toggle is off', async () => {
+  it('keeps polling with every toggle off, so the unread badge still moves', async () => {
+    // Superseded guarantee: this used to assert no poll at all with the toggles off. The badge is
+    // a quieter surface than a banner and the user asked for a count they can clear, so polling
+    // now follows the CONNECTION and the toggles only decide whether a banner also fires.
     notifications = settings()
 
     startAcTaskNotifications({ store, fetchPage })
     await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS + AC_POLL_INTERVAL_MS)
 
-    expect(fetchPage).not.toHaveBeenCalled()
+    expect(fetchPage).toHaveBeenCalled()
+    expect(dispatchMock).not.toHaveBeenCalled()
   })
 
-  it('starts when a toggle is switched on, and stops when they all go off again', async () => {
+  it('dispatches a banner once a toggle is switched on, and stops dispatching when it goes off', async () => {
     notifications = settings()
     startAcTaskNotifications({ store, fetchPage })
+    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS)
+    expect(dispatchMock).not.toHaveBeenCalled()
 
     notifications = settings({ activeCollabDue: true })
     settingsListener?.()
-    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS)
-    expect(fetchPage).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS + AC_POLL_INTERVAL_MS)
+    const withToggleOn = dispatchMock.mock.calls.length
 
     notifications = settings()
     settingsListener?.()
     await vi.advanceTimersByTimeAsync(AC_POLL_INTERVAL_MS * 3)
-    expect(fetchPage).toHaveBeenCalledTimes(1)
+
+    // Polling continues for the badge; only the banner stops.
+    expect(dispatchMock.mock.calls.length).toBe(withToggleOn)
   })
 
   it('stops on disconnect and starts again on reconnect', async () => {

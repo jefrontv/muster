@@ -49,6 +49,7 @@ export function useActiveCollabTaskDetail(
   taskId: number | null
 ): ActiveCollabTaskDetailHandle {
   const fetchTaskDetail = useAppStore((s) => s.fetchActiveCollabTaskDetail)
+  const markActiveCollabTaskRead = useAppStore((s) => s.markActiveCollabTaskRead)
   const [state, setState] = useState<ActiveCollabTaskDetailState>(IDLE)
   // Bumped per read so a superseded answer — selection moved on, or a slower refetch — is dropped.
   const requestRef = useRef(0)
@@ -92,6 +93,15 @@ export function useActiveCollabTaskDetail(
     )
     void read(false)
   }, [projectId, taskId, read])
+
+  // Opening a task IS reading it, so the badge clears here rather than when the list is opened —
+  // a list is not a read. Fired on the id, not on the loaded detail, so a task whose fetch fails
+  // still stops nagging: the user looked, which is what the count was tracking.
+  useEffect(() => {
+    if (taskId !== null) {
+      void markActiveCollabTaskRead(taskId)
+    }
+  }, [taskId, markActiveCollabTaskRead])
 
   // After commit rather than inside the updaters above: an updater can run twice, and this is the
   // one place every settled detail — first read, refetch, write echo — passes through.

@@ -143,7 +143,11 @@ export function getDefaultNotificationSettings(): NotificationSettings {
     suppressWhenFocused: true,
     customSoundId: 'system',
     customSoundPath: null,
-    customSoundVolume: 100
+    customSoundVolume: 100,
+    // Inherit the global sound until asked otherwise; 'global' is the state, not an absence.
+    activeCollabSoundId: 'global',
+    activeCollabSoundPath: null,
+    activeCollabStyle: 'detailed'
   }
 }
 

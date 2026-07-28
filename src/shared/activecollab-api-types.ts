@@ -103,6 +103,18 @@ export type ActiveCollabUploadedFile = {
   code: string
 }
 
+/**
+ * How many changes the connected user has not looked at yet, as the sidebar badge needs it: one
+ * number to draw, and one per task so opening a task can be recognised as reading it.
+ *
+ * `byTask` is keyed by task id as a STRING, which is what survives the JSON round trip main stores
+ * it through. A task with nothing unread is absent, never zero, so `total` is exactly the sum.
+ */
+export type ActiveCollabUnread = {
+  total: number
+  byTask: Record<string, number>
+}
+
 export type ActiveCollabApi = {
   /** Never fails in practice: "not connected" and "cannot decrypt" are both `ok: true` states. */
   status: () => Promise<ActiveCollabResult<ActiveCollabConnectionStatus>>
@@ -198,4 +210,19 @@ export type ActiveCollabApi = {
   listProjectMembers: (args: {
     projectId: number
   }) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+  /**
+   * How much the connected user has not read yet, for the sidebar badge.
+   *
+   * LOCAL ONLY with no runtime RPC twin, like {@link downloadAttachment}: the counts are a file this
+   * machine's poll loop maintains against this machine's keychain, and a remote host holds its own.
+   * A disconnected app answers a zero count, not a failure.
+   */
+  unread: () => Promise<ActiveCollabResult<ActiveCollabUnread>>
+  /**
+   * Clears one task's unread entry — what opening it in the detail pane means — and answers the
+   * counts that remain. Per task, never per page: opening a list is not reading anything. LOCAL ONLY.
+   */
+  markTaskRead: (args: { taskId: number }) => Promise<ActiveCollabResult<ActiveCollabUnread>>
+  /** Main pushes the new counts whenever a poll or a read moves them. Answers its unsubscribe. */
+  onUnreadChanged: (callback: (unread: ActiveCollabUnread) => void) => () => void
 }

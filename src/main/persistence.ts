@@ -56,6 +56,7 @@ import type {
   GlobalSettings,
   OrcaWorkspaceLayout,
   NotificationSettings,
+  NotificationSoundId,
   OnboardingChecklistState,
   OnboardingOutcome,
   OnboardingState,
@@ -857,31 +858,59 @@ function normalizeRightSidebarExplorerView(
   return getDefaultUIState().rightSidebarExplorerView
 }
 
+const NOTIFICATION_SOUND_IDS: Readonly<Record<NotificationSoundId, true>> = {
+  system: true,
+  'two-tone': true,
+  bong: true,
+  thump: true,
+  blip: true,
+  sonar: true,
+  blop: true,
+  ding: true,
+  clack: true,
+  beep: true,
+  custom: true
+}
+
+// Earlier builds shipped these ids; carry them forward instead of silently resetting to system.
+const RENAMED_NOTIFICATION_SOUND_IDS: Readonly<Record<string, NotificationSoundId>> = {
+  orca: 'two-tone',
+  chime: 'two-tone',
+  pop: 'blop'
+}
+
+function normalizeNotificationSoundId(raw: unknown): NotificationSoundId | null {
+  if (typeof raw !== 'string') {
+    return null
+  }
+  const known = raw as NotificationSoundId // guarded by the table lookup on the next line
+  if (NOTIFICATION_SOUND_IDS[known]) {
+    return known
+  }
+  return RENAMED_NOTIFICATION_SOUND_IDS[raw] ?? null
+}
+
 function normalizeNotificationSettings(value: unknown): NotificationSettings {
   const defaults = getDefaultNotificationSettings()
   const candidate =
     value && typeof value === 'object' ? (value as Partial<NotificationSettings>) : {}
-  const rawSoundId = (candidate as { customSoundId?: unknown }).customSoundId
+  // Persisted JSON, so every field is really unknown; read through this view instead of trusting
+  // the declared types, and let the checks below decide what survives into the result.
+  const raw: Partial<Record<keyof NotificationSettings, unknown>> = candidate
   const customSoundId =
-    rawSoundId === 'system' ||
-    rawSoundId === 'two-tone' ||
-    rawSoundId === 'bong' ||
-    rawSoundId === 'thump' ||
-    rawSoundId === 'blip' ||
-    rawSoundId === 'sonar' ||
-    rawSoundId === 'blop' ||
-    rawSoundId === 'ding' ||
-    rawSoundId === 'clack' ||
-    rawSoundId === 'beep' ||
-    rawSoundId === 'custom'
-      ? rawSoundId
-      : rawSoundId === 'orca' || rawSoundId === 'chime'
-        ? 'two-tone'
-        : rawSoundId === 'pop'
-          ? 'blop'
-          : typeof candidate.customSoundPath === 'string'
-            ? 'custom'
-            : defaults.customSoundId
+    normalizeNotificationSoundId(raw.customSoundId) ??
+    (typeof raw.customSoundPath === 'string' ? 'custom' : defaults.customSoundId)
+  // 'global' is a valid stored state, so it survives the sound-id check rather than falling back.
+  const activeCollabSoundId =
+    raw.activeCollabSoundId === 'global'
+      ? 'global'
+      : (normalizeNotificationSoundId(raw.activeCollabSoundId) ?? defaults.activeCollabSoundId)
+  const activeCollabStyle =
+    raw.activeCollabStyle === 'detailed' || raw.activeCollabStyle === 'minimal'
+      ? raw.activeCollabStyle
+      : defaults.activeCollabStyle
+  const activeCollabSoundPath =
+    typeof raw.activeCollabSoundPath === 'string' ? raw.activeCollabSoundPath : null
   const rawVolume = candidate.customSoundVolume
   const customSoundVolume =
     typeof rawVolume === 'number' && Number.isFinite(rawVolume)
@@ -891,7 +920,10 @@ function normalizeNotificationSettings(value: unknown): NotificationSettings {
     ...defaults,
     ...candidate,
     customSoundId,
-    customSoundVolume
+    customSoundVolume,
+    activeCollabSoundId,
+    activeCollabSoundPath,
+    activeCollabStyle
   }
 }
 

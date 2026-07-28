@@ -2,8 +2,9 @@
 //
 // Everything policy-shaped lives elsewhere on purpose — the change rules in
 // task-change-detector.ts, the cadence and the never-diff-a-bad-fetch rules in
-// task-notification-poller.ts, the credential-keyed storage in task-snapshot-store.ts. This module
-// only knows which toggle means which change kind, and how a change reads as a banner.
+// task-notification-poller.ts, the credential-keyed storage in task-snapshot-store.ts, the unread
+// model in task-unread.ts. This module only knows which toggle means which change kind, what still
+// makes a poll worth making, and how a change reads as a banner.
 //
 // The page fetch is INJECTED rather than imported: the operation that reads assigned tasks lives in
 // ipc/activecollab.ts, which starts this service, so importing it back would be a cycle.
@@ -11,11 +12,13 @@
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
 import type { ActiveCollabTaskPage } from '../../shared/activecollab-types'
 import type {
+  GlobalSettings,
   NotificationDispatchRequest,
   NotificationEventSource,
   NotificationSettings
 } from '../../shared/types'
 import { dispatchMainProcessNotification } from '../ipc/notifications'
+import { broadcastAcTaskUnread } from '../ipc/activecollab-unread'
 import type { Store } from '../persistence'
 import type { AcTaskChange, AcTaskChangeKind } from './task-change-detector'
 import {
@@ -28,7 +31,9 @@ import { createAcTaskPoller, type AcTaskPoller } from './task-notification-polle
 import {
   acCurrentTaskSnapshotKey,
   acLoadTaskSnapshot,
-  acSaveTaskSnapshot
+  acLoadTaskUnread,
+  acSaveTaskSnapshot,
+  acSaveTaskUnread
 } from './task-snapshot-store'
 
 const AC_SOURCE_BY_KIND: Record<AcTaskChangeKind, NotificationEventSource> = {
@@ -39,9 +44,10 @@ const AC_SOURCE_BY_KIND: Record<AcTaskChangeKind, NotificationEventSource> = {
 }
 
 /**
- * The kinds the user asked to hear about. Empty is the DEFAULT case — all four ship off — and empty
- * means the poller never runs, so nobody's work server is polled on a hunch. The master switch is
- * read here too: off is off, whatever the four say.
+ * The kinds the user asked for a BANNER about. Empty is the DEFAULT case — all four ship off — and
+ * empty no longer means "do not poll": the sidebar badge is fed by the same diff and is not gated on
+ * these (see acShouldPollAcTasks). The master switch is read here too: off is off, whatever the
+ * four say.
  */
 export function acEnabledChangeKinds(
   notifications: NotificationSettings
@@ -63,6 +69,27 @@ export function acEnabledChangeKinds(
     kinds.add('updated')
   }
   return kinds
+}
+
+/**
+ * Whether a poll is worth making at all.
+ *
+ * The badge changed this from "any banner is switched on" to "anything can show the answer",
+ * because the user asked for an unread count they can clear and gating it on the banner toggles
+ * would make it a second notification rather than the quieter surface it is.
+ *
+ * Being straight about the cost: this means the realistic case for a connected user is a request
+ * against their own work server every three minutes, where before it was only for those who opted
+ * into banners. That is the load the cadence in task-notification-poller.ts was already sized for
+ * at full adoption — about one request a second across the whole target instance — and connecting
+ * ActiveCollab is itself the opt-in: nobody types their work credentials in to be shown nothing.
+ *
+ * The escape hatch survives, which is why this is not simply "connected". Every banner off AND the
+ * Tasks button hidden leaves nowhere for a result to appear, and a poll nobody could observe is not
+ * worth one request, let alone twenty an hour.
+ */
+export function acShouldPollAcTasks(settings: GlobalSettings): boolean {
+  return acEnabledChangeKinds(settings.notifications).size > 0 || settings.showTasksButton !== false
 }
 
 /**
@@ -116,10 +143,14 @@ export function startAcTaskNotifications(args: {
   acPoller = createAcTaskPoller({
     now: Date.now,
     snapshotKey: acCurrentTaskSnapshotKey,
-    enabledKinds: () => acEnabledChangeKinds(store.getSettings().notifications),
+    shouldPoll: () => acShouldPollAcTasks(store.getSettings()),
+    notifyKinds: () => acEnabledChangeKinds(store.getSettings().notifications),
     fetchPage,
     loadSnapshot: acLoadTaskSnapshot,
     saveSnapshot: acSaveTaskSnapshot,
+    loadUnread: acLoadTaskUnread,
+    saveUnread: acSaveTaskUnread,
+    onUnread: broadcastAcTaskUnread,
     emit: (change) => {
       // A notification that could not be shown is not actionable, and must not take down the poll.
       void dispatchMainProcessNotification(acChangeNotification(change, Date.now())).catch(
@@ -131,7 +162,7 @@ export function startAcTaskNotifications(args: {
       return () => clearTimeout(timer)
     }
   })
-  // Flipping a toggle in Settings is the only other thing that starts or stops the loop.
+  // Flipping a toggle or hiding the Tasks button in Settings starts or stops the loop.
   acSettingsSubscription = store.onSettingsChanged(() => acPoller?.refresh())
   acPoller.refresh()
 }

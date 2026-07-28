@@ -44,7 +44,10 @@ export type AcTaskSnapshotEntry = {
 /** Keyed by task id as a string, because that is what survives a JSON round trip. */
 export type AcTaskSnapshot = Record<string, AcTaskSnapshotEntry>
 
-export type AcTaskChangeKind = 'assigned' | 'comments' | 'due' | 'updated'
+/** The canonical order, so the unread model and the notification map cannot drift from the diff. */
+export const AC_TASK_CHANGE_KINDS = ['assigned', 'comments', 'due', 'updated'] as const
+
+export type AcTaskChangeKind = (typeof AC_TASK_CHANGE_KINDS)[number]
 
 export type AcTaskChange =
   | { kind: 'assigned'; task: ActiveCollabTask }

@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import type { CSSProperties, JSX, ReactNode } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import type { ImageSurfacePanProps } from './image-viewer-drag-pan'
 import { translate } from '@/i18n/i18n'
 
 type ImageViewerPopupProps = {
@@ -19,6 +20,8 @@ type ImageViewerPopupProps = {
    * none, so a caller that wants focus back somewhere specific has to say where.
    */
   onCloseAutoFocus?: (event: Event) => void
+  /** Opt-in drag-to-pan wiring from the zoom surface; omitted leaves the surface scroll-only. */
+  surfacePanProps?: ImageSurfacePanProps
 }
 
 export default function ImageViewerPopup({
@@ -30,7 +33,8 @@ export default function ImageViewerPopup({
   setSurfaceRef,
   children,
   headerActions,
-  onCloseAutoFocus
+  onCloseAutoFocus,
+  surfacePanProps
 }: ImageViewerPopupProps): JSX.Element {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -66,6 +70,7 @@ export default function ImageViewerPopup({
           ref={setSurfaceRef}
           data-slot="image-viewer-surface"
           className="min-h-0 flex-1 overflow-auto bg-muted/20 scrollbar-editor"
+          {...surfacePanProps}
         >
           <div className="flex h-max min-h-full w-max min-w-full items-center justify-center p-4">
             <div className="flex items-center justify-center" style={imageLayoutStyle}>

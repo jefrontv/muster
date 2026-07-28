@@ -111,6 +111,42 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
           'edited'
         )
       ]
+    },
+    {
+      title: translate(
+        'auto.components.settings.notifications.search.activeCollabSound',
+        'ActiveCollab Sound'
+      ),
+      description: translate(
+        'auto.components.settings.notifications.search.activeCollabSoundDescription',
+        'Give ActiveCollab alerts their own sound, or let them use the global notification sound.'
+      ),
+      keywords: [
+        ...sharedKeywords(),
+        ...translateSearchKeyword(
+          'auto.components.settings.notifications.search.activeCollabSoundKeyword',
+          'sound',
+          { aliases: ['audio', 'alert', 'chime'] }
+        )
+      ]
+    },
+    {
+      title: translate(
+        'auto.components.settings.notifications.search.activeCollabStyle',
+        'Banner Wording'
+      ),
+      description: translate(
+        'auto.components.settings.notifications.search.activeCollabStyleDescription',
+        'Choose whether ActiveCollab banners lead with the change and name the project, or lead with the task name.'
+      ),
+      keywords: [
+        ...sharedKeywords(),
+        ...translateSearchKeyword(
+          'auto.components.settings.notifications.search.activeCollabStyleKeyword',
+          'style',
+          { aliases: ['wording', 'format', 'banner'] }
+        )
+      ]
     }
   ]
 }

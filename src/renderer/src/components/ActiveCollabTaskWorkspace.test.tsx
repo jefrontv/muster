@@ -39,7 +39,8 @@ const mocks = vi.hoisted(() => ({
       (args: { attachmentId: number }) => Promise<ActiveCollabResult<ActiveCollabAttachmentImage>>
     >(),
   listUsers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>(),
-  listProjectMembers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>()
+  listProjectMembers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>(),
+  markTaskRead: vi.fn(async () => {})
 }))
 
 // Separate from `mocks`, whose every value is reset as a vi.fn in beforeEach.
@@ -81,7 +82,10 @@ vi.mock('@/store', () => ({
       reopenActiveCollabTask: mocks.reopenTask,
       postActiveCollabComment: mocks.postComment,
       listActiveCollabUsers: mocks.listUsers,
-      listActiveCollabProjectMembers: mocks.listProjectMembers
+      listActiveCollabProjectMembers: mocks.listProjectMembers,
+      // Opening a task clears its unread badge entry; harmless here, but the hook calls it on
+      // every mount so the store stand-in has to answer.
+      markActiveCollabTaskRead: mocks.markTaskRead
     })
 }))
 

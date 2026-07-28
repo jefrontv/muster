@@ -134,7 +134,10 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
       suppressWhenFocused: true,
       customSoundId: 'system',
       customSoundPath: null,
-      customSoundVolume: 100
+      customSoundVolume: 100,
+      activeCollabSoundId: 'global',
+      activeCollabSoundPath: null,
+      activeCollabStyle: 'detailed'
     },
     promptCacheTimerEnabled: false,
     promptCacheTtlMs: 300_000,

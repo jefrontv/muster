@@ -2,6 +2,8 @@ export const MIN_IMAGE_VIEWER_ZOOM = 0.25
 export const MAX_IMAGE_VIEWER_ZOOM = 8
 export const IMAGE_VIEWER_ZOOM_STEP = 1.25
 export const IMAGE_VIEWER_SURFACE_PADDING = 16
+/** Pointer travel, in CSS pixels, past which a press is a pan gesture rather than a click. */
+export const IMAGE_VIEWER_DRAG_CLICK_THRESHOLD = 3
 
 const DOM_DELTA_LINE = 1
 const DOM_DELTA_PAGE = 2
@@ -33,8 +35,12 @@ export function clampImageViewerZoom(next: number): number {
   return Math.min(MAX_IMAGE_VIEWER_ZOOM, Math.max(MIN_IMAGE_VIEWER_ZOOM, next))
 }
 
-export function shouldHandleImageZoomWheel(event: ImageZoomWheelEventLike): boolean {
-  return event.ctrlKey
+export function shouldHandleImageZoomWheel(
+  event: ImageZoomWheelEventLike,
+  /** Opt-in: the surface owns every wheel event, not only the ctrl-wheel a pinch arrives as. */
+  plainWheelZooms = false
+): boolean {
+  return plainWheelZooms || event.ctrlKey
 }
 
 export function getPinchZoomFactor(deltaY: number, deltaMode: number): number {
@@ -123,4 +129,19 @@ export function getAnchoredImageViewerScrollOffset({
   }
 
   return (scrollOffset + anchorOffset) * (nextZoom / currentZoom) - anchorOffset
+}
+
+// Pan offsets live in the surface's own scroll range, so a drag and the scrollbars agree and no
+// gesture can push the image somewhere there is no way back from. Content no larger than the
+// surface collapses the range to zero, leaving a centred image centred.
+export function clampImageViewerPanOffset({
+  offset,
+  contentSize,
+  viewportSize
+}: {
+  offset: number
+  contentSize: number
+  viewportSize: number
+}): number {
+  return Math.max(0, Math.min(offset, Math.max(0, contentSize - viewportSize)))
 }

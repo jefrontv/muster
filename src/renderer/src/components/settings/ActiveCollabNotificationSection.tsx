@@ -2,6 +2,7 @@ import type { GlobalSettings } from '../../../../shared/types'
 import { Label } from '../ui/label'
 import { CalendarClock, ClipboardList, MessageSquare, PencilLine, UserPlus } from 'lucide-react'
 import { NotificationSettingToggle } from './NotificationSettingToggle'
+import { ActiveCollabNotificationDelivery } from './ActiveCollabNotificationDelivery'
 import { translate } from '@/i18n/i18n'
 
 type ActiveCollabNotificationSectionProps = {
@@ -112,6 +113,12 @@ export function ActiveCollabNotificationSection({
               activeCollabUpdated: !notificationSettings.activeCollabUpdated
             })
           }
+        />
+
+        <ActiveCollabNotificationDelivery
+          notificationSettings={notificationSettings}
+          notificationsEnabled={notificationsEnabled}
+          onUpdateNotificationSettings={onUpdateNotificationSettings}
         />
       </div>
     </div>

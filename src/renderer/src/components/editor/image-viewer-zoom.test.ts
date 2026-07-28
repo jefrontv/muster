@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MAX_IMAGE_VIEWER_ZOOM,
   MIN_IMAGE_VIEWER_ZOOM,
+  clampImageViewerPanOffset,
   clampImageViewerZoom,
   getAnchoredImageViewerScrollOffset,
   getNextWheelImageViewerZoom,
@@ -20,6 +21,28 @@ describe('image viewer zoom helpers', () => {
   it('handles only ctrl-wheel input as image zoom', () => {
     expect(shouldHandleImageZoomWheel({ ctrlKey: true })).toBe(true)
     expect(shouldHandleImageZoomWheel({ ctrlKey: false })).toBe(false)
+  })
+
+  it('lets an opted-in surface claim a plain wheel without changing the default', () => {
+    expect(shouldHandleImageZoomWheel({ ctrlKey: false }, true)).toBe(true)
+    expect(shouldHandleImageZoomWheel({ ctrlKey: true }, true)).toBe(true)
+    // The editor's surface never passes the flag, so a plain wheel still scrolls it.
+    expect(shouldHandleImageZoomWheel({ ctrlKey: false }, false)).toBe(false)
+  })
+
+  it('holds a pan offset inside the surface scroll range at both ends', () => {
+    expect(clampImageViewerPanOffset({ offset: 240, contentSize: 1000, viewportSize: 400 })).toBe(
+      240
+    )
+    expect(clampImageViewerPanOffset({ offset: -80, contentSize: 1000, viewportSize: 400 })).toBe(0)
+    expect(clampImageViewerPanOffset({ offset: 5000, contentSize: 1000, viewportSize: 400 })).toBe(
+      600
+    )
+  })
+
+  it('leaves an image smaller than the surface pinned at the centred origin', () => {
+    expect(clampImageViewerPanOffset({ offset: 120, contentSize: 300, viewportSize: 400 })).toBe(0)
+    expect(clampImageViewerPanOffset({ offset: -120, contentSize: 300, viewportSize: 400 })).toBe(0)
   })
 
   it('maps negative wheel deltas to zoom in and positive deltas to zoom out', () => {

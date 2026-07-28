@@ -1,4 +1,4 @@
-import type { NotificationDispatchRequest } from '../../shared/types'
+import type { ActiveCollabNotificationStyle, NotificationDispatchRequest } from '../../shared/types'
 
 const NOTIFICATION_AGENT_LABEL_MAX_LENGTH = 40
 const NOTIFICATION_TITLE_CONTEXT_MAX_LENGTH = 80
@@ -20,7 +20,10 @@ const AGENT_TYPE_LABELS: Readonly<Record<string, string>> = {
   hermes: 'Hermes'
 }
 
-export function buildNotificationOptions(args: NotificationDispatchRequest): {
+export function buildNotificationOptions(
+  args: NotificationDispatchRequest,
+  activeCollabStyle: ActiveCollabNotificationStyle = 'detailed'
+): {
   title: string
   body: string
   silent?: boolean
@@ -44,7 +47,7 @@ export function buildNotificationOptions(args: NotificationDispatchRequest): {
   }
 
   if (args.source.startsWith('activecollab-')) {
-    return buildActiveCollabNotificationOptions(args)
+    return buildActiveCollabNotificationOptions(args, activeCollabStyle)
   }
 
   if (args.source === 'test') {
@@ -63,11 +66,18 @@ export function buildNotificationOptions(args: NotificationDispatchRequest): {
 }
 
 /**
- * Task name first: it is the only part that tells the reader WHICH of their tasks this is, and a
- * macOS banner truncates the tail. The project follows in the body, because two tasks called
- * "Homepage" in two projects are otherwise the same notification.
+ * Two shapes, because "which task is this?" and "what happened?" are not equally urgent to
+ * everyone.
+ *
+ * `detailed` leads with the change and names the project: a macOS banner truncates the tail, so
+ * putting the change first is what tells someone juggling five projects whether to look now.
+ * `minimal` leads with the task name and drops the project entirely, for the single-project case
+ * where the project line is the same string every time and the change reads fine as a subtitle.
  */
-function buildActiveCollabNotificationOptions(args: NotificationDispatchRequest): {
+function buildActiveCollabNotificationOptions(
+  args: NotificationDispatchRequest,
+  style: ActiveCollabNotificationStyle
+): {
   title: string
   body: string
 } {
@@ -78,24 +88,33 @@ function buildActiveCollabNotificationOptions(args: NotificationDispatchRequest)
     task?.projectName,
     NOTIFICATION_TITLE_CONTEXT_MAX_LENGTH
   )
+  const change = describeActiveCollabChange(args)
+  if (style === 'minimal') {
+    return { title: taskName, body: change }
+  }
   const body = project.length > 0 ? project : 'ActiveCollab'
-  if (args.source === 'activecollab-comments') {
-    const count = task?.newComments ?? 1
+  if (args.source === 'activecollab-assigned') {
     return {
-      title: `${count} new comment${count === 1 ? '' : 's'}: ${taskName}`,
-      body
+      title: `${change}: ${taskName}`,
+      body: task?.duePhrase ? `${body} · ${task.duePhrase}` : body
     }
   }
+  return { title: `${change}: ${taskName}`, body }
+}
+
+/** The one phrase both styles agree on: what actually happened to the task. */
+function describeActiveCollabChange(args: NotificationDispatchRequest): string {
+  if (args.source === 'activecollab-comments') {
+    const count = args.activeCollab?.newComments ?? 1
+    return `${count} new comment${count === 1 ? '' : 's'}`
+  }
   if (args.source === 'activecollab-due') {
-    return { title: `${task?.duePhrase ?? 'Due soon'}: ${taskName}`, body }
+    return args.activeCollab?.duePhrase ?? 'Due soon'
   }
   if (args.source === 'activecollab-updated') {
-    return { title: `Task updated: ${taskName}`, body }
+    return 'Task updated'
   }
-  return {
-    title: `Assigned to you: ${taskName}`,
-    body: task?.duePhrase ? `${body} · ${task.duePhrase}` : body
-  }
+  return 'Assigned to you'
 }
 
 function buildAgentTaskCompleteNotificationOptions(

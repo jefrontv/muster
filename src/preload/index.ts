@@ -53,6 +53,7 @@ import type {
   NotificationDismissResult,
   NotificationDispatchResult,
   NotificationDeliveryProbeResult,
+  NotificationEventSource,
   NotificationPermissionStatusResult,
   NotificationSoundDataResult,
   NotificationSoundPathResult,
@@ -71,6 +72,7 @@ import type {
   WorktreeRemoteBranchConflictEvent
 } from '../shared/types'
 import type { PtyModelRestoreNeededEvent } from '../shared/pty-model-restore-marker'
+import type { ActiveCollabUnread } from '../shared/activecollab-api-types'
 import type {
   PtyRendererDeliveryHealthReply,
   PtyRendererDeliveryStateReport
@@ -1934,7 +1936,15 @@ const api = {
     postComment: (args) => ipcRenderer.invoke('activecollab:postComment', args),
     listLabels: () => ipcRenderer.invoke('activecollab:listLabels'),
     listUsers: () => ipcRenderer.invoke('activecollab:listUsers'),
-    listProjectMembers: (args) => ipcRenderer.invoke('activecollab:listProjectMembers', args)
+    listProjectMembers: (args) => ipcRenderer.invoke('activecollab:listProjectMembers', args),
+    unread: () => ipcRenderer.invoke('activecollab:unread'),
+    markTaskRead: (args) => ipcRenderer.invoke('activecollab:markTaskRead', args),
+    onUnreadChanged: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, unread: ActiveCollabUnread): void =>
+        callback(unread)
+      ipcRenderer.on('activecollab:unreadChanged', listener)
+      return () => ipcRenderer.removeListener('activecollab:unreadChanged', listener)
+    }
   } satisfies PreloadApi['activecollab'],
 
   // Why: deliberately loose — main's validator (src/main/telemetry/validator.ts) is the single enforcement point; call sites use the typed wrappers in src/renderer/src/lib/telemetry.ts.
@@ -2159,6 +2169,8 @@ const api = {
     playSound: async (options?: {
       force?: boolean
       volume?: number
+      /** Which source is alerting, so ActiveCollab's sound override can be honoured. */
+      source?: NotificationEventSource
     }): Promise<NotificationSoundResult> => {
       try {
         // Why: drop replays while still ringing; the test button passes force to always confirm.
@@ -2166,9 +2178,9 @@ const api = {
           return { played: false, reason: 'deduped' }
         }
 
-        const resolved = (await ipcRenderer.invoke(
-          'notifications:resolveSoundPath'
-        )) as NotificationSoundPathResult
+        const resolved = (await ipcRenderer.invoke('notifications:resolveSoundPath', {
+          source: options?.source
+        })) as NotificationSoundPathResult
         if (!resolved.ok) {
           if (cachedNotificationSound) {
             disposeCachedNotificationSound()
@@ -2178,9 +2190,9 @@ const api = {
 
         let entry = cachedNotificationSound
         if (!entry || entry.path !== resolved.path) {
-          const sound = (await ipcRenderer.invoke(
-            'notifications:loadSound'
-          )) as NotificationSoundDataResult
+          const sound = (await ipcRenderer.invoke('notifications:loadSound', {
+            source: options?.source
+          })) as NotificationSoundDataResult
           if (!sound.ok) {
             disposeCachedNotificationSound()
             return { played: false, reason: sound.reason }
@@ -4689,6 +4701,15 @@ const api = {
     }
   }
 }
+
+// Why: main dispatches ActiveCollab notifications itself, and only this side owns the Audio
+// element — without this bridge every non-system sound would be chosen but never heard.
+ipcRenderer.on(
+  'notifications:playSound',
+  (_event, payload: { source?: NotificationEventSource; volume?: number }) => {
+    void api.notifications.playSound({ source: payload?.source, volume: payload?.volume })
+  }
+)
 
 // Expose Electron APIs via contextBridge when context-isolated, otherwise attach to the DOM global.
 if (process.contextIsolated) {

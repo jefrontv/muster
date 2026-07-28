@@ -1,16 +1,6 @@
 /* eslint-disable max-lines -- Why: notification IPC keeps permission, dispatch, custom sound asset, and sound-loading handlers colocated so renderer/main contracts stay auditable. */
 import { app, BrowserWindow, Notification, ipcMain, shell } from 'electron'
 import { readFile, stat } from 'node:fs/promises'
-import { extname, isAbsolute, normalize } from 'node:path'
-import beepSoundPath from '../../../resources/notification-sounds/beep.mp3?asset'
-import blipSoundPath from '../../../resources/notification-sounds/blip.mp3?asset'
-import blopSoundPath from '../../../resources/notification-sounds/blop.mp3?asset'
-import bongSoundPath from '../../../resources/notification-sounds/bong.mp3?asset'
-import clackSoundPath from '../../../resources/notification-sounds/clack.mp3?asset'
-import dingSoundPath from '../../../resources/notification-sounds/ding.mp3?asset'
-import sonarSoundPath from '../../../resources/notification-sounds/sonar.mp3?asset'
-import thumpSoundPath from '../../../resources/notification-sounds/thump.mp3?asset'
-import twoToneSoundPath from '../../../resources/notification-sounds/two-tone.mp3?asset'
 import type { Store } from '../persistence'
 import type {
   NotificationDeliveryProbeResult,
@@ -25,6 +15,7 @@ import type {
 import { getRepoIdFromWorktreeId } from '../../shared/worktree-id'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { buildNotificationOptions } from './notification-options'
+import { resolveNotificationSoundFile } from './notification-sound-selection'
 import { readNotificationAuthorizationStatus } from './notification-authorization-status'
 import { parsePaneKey } from '../../shared/stable-pane-id'
 import { setTrayAttention } from '../tray/system-tray'
@@ -38,26 +29,6 @@ const MAX_NOTIFICATION_SOUND_BYTES = 10 * 1024 * 1024
 const MACOS_PACKAGED_BUNDLE_ID = 'com.stablyai.orca'
 const MACOS_NOTIFICATION_SETTINGS_URL =
   'x-apple.systempreferences:com.apple.Notifications-Settings.extension'
-const NOTIFICATION_SOUND_MIME_BY_EXTENSION: ReadonlyMap<string, string> = new Map([
-  ['.ogg', 'audio/ogg'],
-  ['.mp3', 'audio/mpeg'],
-  ['.wav', 'audio/wav'],
-  ['.m4a', 'audio/mp4'],
-  ['.aac', 'audio/aac'],
-  ['.flac', 'audio/flac']
-])
-const BUILT_IN_NOTIFICATION_SOUNDS: ReadonlyMap<string, string> = new Map([
-  ['two-tone', twoToneSoundPath],
-  ['bong', bongSoundPath],
-  ['thump', thumpSoundPath],
-  ['blip', blipSoundPath],
-  ['sonar', sonarSoundPath],
-  ['blop', blopSoundPath],
-  ['ding', dingSoundPath],
-  ['clack', clackSoundPath],
-  ['beep', beepSoundPath]
-])
-type NotificationSoundId = NotificationSettings['customSoundId']
 
 // Why: keep a strong reference so GC can't collect notifications (and their click handlers) before the user interacts with them.
 const activeNotifications = new Set<Notification>()
@@ -200,35 +171,6 @@ function openNotificationSystemSettings(): void {
   }
 }
 
-function getEffectiveNotificationSoundId(settings: NotificationSettings): NotificationSoundId {
-  return settings.customSoundId ?? (settings.customSoundPath ? 'custom' : 'system')
-}
-
-function getSelectedNotificationSoundPath(settings: NotificationSettings): {
-  path: string | null
-  reason?: 'missing-path' | 'invalid-path' | 'unsupported-type'
-} {
-  const customSoundId = getEffectiveNotificationSoundId(settings)
-  if (customSoundId === 'system') {
-    return { path: null, reason: 'missing-path' }
-  }
-  if (customSoundId !== 'custom') {
-    const builtInPath = BUILT_IN_NOTIFICATION_SOUNDS.get(customSoundId)
-    return builtInPath ? { path: builtInPath } : { path: null, reason: 'missing-path' }
-  }
-  if (!settings.customSoundPath) {
-    return { path: null, reason: 'missing-path' }
-  }
-  const normalizedPath = normalize(settings.customSoundPath)
-  if (!isAbsolute(normalizedPath)) {
-    return { path: null, reason: 'invalid-path' }
-  }
-  if (!NOTIFICATION_SOUND_MIME_BY_EXTENSION.has(extname(normalizedPath).toLowerCase())) {
-    return { path: null, reason: 'unsupported-type' }
-  }
-  return { path: normalizedPath }
-}
-
 function waitForNotificationDisplay(notification: Notification): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false
@@ -331,6 +273,22 @@ let mainNotificationDispatch:
       args: NotificationDispatchRequest
     ) => NotificationDispatchResult | Promise<NotificationDispatchResult>)
   | null = null
+// Why: the renderer plays non-system sounds (it owns the Audio element), and it only knows to do
+// that for notifications it dispatched itself. A main-dispatched one has to ask.
+let notificationSoundStore: Store | null = null
+
+function requestRendererNotificationSound(source: NotificationEventSource): void {
+  const settings = notificationSoundStore?.getSettings().notifications
+  // Mirrors the silent-flag decision above: if no file resolves, the OS alert already played.
+  if (!settings || !resolveNotificationSoundFile(settings, source).ok) {
+    return
+  }
+  const targetWindow = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed())
+  targetWindow?.webContents.send('notifications:playSound', {
+    source,
+    volume: settings.customSoundVolume
+  })
+}
 
 /** Dispatch from the main process, through the same settings gates the renderer path uses. */
 export async function dispatchMainProcessNotification(
@@ -339,7 +297,11 @@ export async function dispatchMainProcessNotification(
   if (mainNotificationDispatch === null) {
     return { delivered: false, reason: 'not-supported' }
   }
-  return mainNotificationDispatch(args)
+  const result = await mainNotificationDispatch(args)
+  if (result.delivered) {
+    requestRendererNotificationSound(args.source)
+  }
+  return result
 }
 
 export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntimeService): void {
@@ -444,7 +406,7 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
       return { delivered: false, reason: 'source-disabled' }
     }
 
-    const notificationOptions = buildNotificationOptions(args)
+    const notificationOptions = buildNotificationOptions(args, settings.activeCollabStyle)
 
     // Why: desktop focus only means this computer sees the worktree; the paired phone may still need the alert.
     if (runtime && args.source !== 'test') {
@@ -492,7 +454,9 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
     function deliverNativeNotification():
       | NotificationDispatchResult
       | Promise<NotificationDispatchResult> {
-      if (getEffectiveNotificationSoundId(settings) !== 'system') {
+      // Mute the OS alert only when we actually have a file to play in its place. A chosen sound
+      // whose file is gone must fall back to the system alert, not to silence the user can't explain.
+      if (resolveNotificationSoundFile(settings, args.source).ok) {
         notificationOptions.silent = true
       } else if (process.platform === 'darwin') {
         // Why: macOS treats an unset sound as silent, so request Electron's default when using the OS sound.
@@ -610,6 +574,7 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
     })
   }
   mainNotificationDispatch = dispatchNotificationRequest
+  notificationSoundStore = store
   ipcMain.removeHandler('notifications:dispatch')
   ipcMain.handle('notifications:dispatch', (_event, args: NotificationDispatchRequest) =>
     dispatchNotificationRequest(args)
@@ -619,50 +584,46 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
   ipcMain.removeHandler('notifications:resolveSoundPath')
   ipcMain.handle(
     'notifications:resolveSoundPath',
-    ():
+    (
+      _event,
+      args?: { source?: NotificationEventSource }
+    ):
       | { ok: true; path: string }
       | { ok: false; reason: 'missing-path' | 'invalid-path' | 'unsupported-type' } => {
-      const selectedSound = getSelectedNotificationSoundPath(store.getSettings().notifications)
-      if (!selectedSound.path) {
-        return { ok: false, reason: selectedSound.reason ?? 'missing-path' }
-      }
-      const normalizedPath = normalize(selectedSound.path)
-      if (!NOTIFICATION_SOUND_MIME_BY_EXTENSION.has(extname(normalizedPath).toLowerCase())) {
-        return { ok: false, reason: 'unsupported-type' }
-      }
-      return { ok: true, path: normalizedPath }
+      const resolved = resolveNotificationSoundFile(store.getSettings().notifications, args?.source)
+      return resolved.ok ? { ok: true, path: resolved.path } : resolved
     }
   )
 
   ipcMain.removeHandler('notifications:loadSound')
-  ipcMain.handle('notifications:loadSound', async (): Promise<NotificationSoundDataResult> => {
-    const selectedSound = getSelectedNotificationSoundPath(store.getSettings().notifications)
-    if (!selectedSound.path) {
-      return { ok: false, reason: selectedSound.reason ?? 'missing-path' }
-    }
-
-    const normalizedPath = normalize(selectedSound.path)
-
-    const mimeType = NOTIFICATION_SOUND_MIME_BY_EXTENSION.get(extname(normalizedPath).toLowerCase())
-    if (!mimeType) {
-      return { ok: false, reason: 'unsupported-type' }
-    }
-
-    try {
-      const fileStat = await stat(normalizedPath)
-      if (!fileStat.isFile()) {
-        return { ok: false, reason: 'invalid-path' }
+  ipcMain.handle(
+    'notifications:loadSound',
+    async (
+      _event,
+      args?: { source?: NotificationEventSource }
+    ): Promise<NotificationSoundDataResult> => {
+      const resolved = resolveNotificationSoundFile(store.getSettings().notifications, args?.source)
+      if (!resolved.ok) {
+        return resolved
       }
-      if (fileStat.size > MAX_NOTIFICATION_SOUND_BYTES) {
-        return { ok: false, reason: 'too-large' }
-      }
+      const { path: normalizedPath, mimeType } = resolved
 
-      const data = await readFile(normalizedPath)
-      return { ok: true, data: new Uint8Array(data), mimeType, path: normalizedPath }
-    } catch {
-      return { ok: false, reason: 'read-failed' }
+      try {
+        const fileStat = await stat(normalizedPath)
+        if (!fileStat.isFile()) {
+          return { ok: false, reason: 'invalid-path' }
+        }
+        if (fileStat.size > MAX_NOTIFICATION_SOUND_BYTES) {
+          return { ok: false, reason: 'too-large' }
+        }
+
+        const data = await readFile(normalizedPath)
+        return { ok: true, data: new Uint8Array(data), mimeType, path: normalizedPath }
+      } catch {
+        return { ok: false, reason: 'read-failed' }
+      }
     }
-  })
+  )
 }
 
 /**

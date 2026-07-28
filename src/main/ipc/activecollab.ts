@@ -73,6 +73,7 @@ import {
 import { acClient, guard, toFailure } from './activecollab-operation-context'
 import { acListProjectMembers, acListUsers } from './activecollab-people'
 import { acDownloadAttachment } from './activecollab-attachment-download'
+import { acMarkTaskRead, acTaskUnread } from './activecollab-unread'
 import {
   acDescribeCommentAttachments,
   acPickCommentAttachments,
@@ -98,7 +99,9 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:postComment',
   'activecollab:listLabels',
   'activecollab:listUsers',
-  'activecollab:listProjectMembers'
+  'activecollab:listProjectMembers',
+  'activecollab:unread',
+  'activecollab:markTaskRead'
 ] as const
 
 export function acStatus(): Promise<ActiveCollabResult<ActiveCollabConnectionStatus>> {
@@ -309,8 +312,10 @@ export function registerActiveCollabHandlers(store: Store): void {
   ipcMain.handle('activecollab:listProjectMembers', async (_event, args: unknown) =>
     acListProjectMembers(args)
   )
+  ipcMain.handle('activecollab:unread', async () => acTaskUnread())
+  ipcMain.handle('activecollab:markTaskRead', async (_event, args: unknown) => acMarkTaskRead(args))
 
-  // Polls only while connected with at least one toggle on; the service's refresh() decides that,
-  // so registering is cheap for the vast majority who never connect ActiveCollab.
+  // Polls only while connected and something can surface the result; the service's refresh() decides
+  // that, so registering is cheap for the vast majority who never connect ActiveCollab.
   startAcTaskNotifications({ store, fetchPage: (page) => acListAssignedTasks({ page }) })
 }

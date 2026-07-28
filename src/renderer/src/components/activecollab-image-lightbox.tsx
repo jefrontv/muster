@@ -47,7 +47,8 @@ export function ActiveCollabImageLightbox({
   const surface = useImageViewerZoomSurface({
     imageDimensions,
     active: attachment !== null,
-    measureKey: attachmentId
+    measureKey: attachmentId,
+    wheelZoomAndDragPan: true
   })
 
   const [lastAttachmentId, setLastAttachmentId] = useState<number | null>(attachmentId)
@@ -56,6 +57,12 @@ export function ActiveCollabImageLightbox({
     surface.setZoom(1)
     setImageDimensions(null)
   }
+
+  // Zoom resets in render because it is state; the pan it leaves behind is DOM, so it resets here.
+  const scrollToOrigin = surface.scrollToOrigin
+  useEffect(() => {
+    scrollToOrigin()
+  }, [attachmentId, scrollToOrigin])
 
   useEffect(() => {
     if (openIndex === null || total < 2) {
@@ -112,6 +119,7 @@ export function ActiveCollabImageLightbox({
       onCloseAutoFocus={handleCloseAutoFocus}
       setSurfaceRef={surface.setSurfaceRef}
       zoomPercent={surface.zoomPercent}
+      surfacePanProps={surface.panProps}
       headerActions={
         openIndex !== null && total > 1 ? (
           <LightboxPager index={openIndex} total={total} onNavigate={onNavigate} />

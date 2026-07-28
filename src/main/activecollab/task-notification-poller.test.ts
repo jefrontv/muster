@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
 import type { ActiveCollabTask, ActiveCollabTaskPage } from '../../shared/activecollab-types'
 import type { AcTaskChange, AcTaskChangeKind, AcTaskSnapshot } from './task-change-detector'
+import type { AcTaskUnread } from './task-unread'
 import {
   AC_POLL_INTERVAL_MS,
   AC_POLL_MAX_BACKOFF_MS,
@@ -62,16 +63,26 @@ let snapshotKey: string | null = KEY
 let enabled: AcTaskChangeKind[] = ['assigned', 'comments', 'due', 'updated']
 let fetchPage = vi.fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
 let saveSnapshot = vi.fn<(key: string, snapshot: AcTaskSnapshot) => void>()
+// Unread accrues independently of the notify kinds, so the poller now carries its own load/save
+// pair and an onUnread signal. Held here so a test can assert badge movement without a banner.
+let storedUnread: AcTaskUnread = {}
+let saveUnread = vi.fn<(key: string, unread: AcTaskUnread) => void>()
+let unreadSignals: AcTaskUnread[] = []
 
 function poller(): AcTaskPoller {
   return createAcTaskPoller({
     now: () => NOW,
     snapshotKey: () => snapshotKey,
-    enabledKinds: () => new Set(enabled),
+    // Polling is gated on having somewhere to put the result, not on the banner toggles.
+    shouldPoll: () => snapshotKey !== null,
+    notifyKinds: () => new Set(enabled),
     fetchPage,
     loadSnapshot: (key) => (key === KEY ? stored : null),
     saveSnapshot,
+    loadUnread: (key) => (key === KEY ? storedUnread : {}),
+    saveUnread,
     emit: (change) => emitted.push(change),
+    onUnread: (unread) => unreadSignals.push(unread),
     schedule: (delayMs, run) => {
       pending = { delayMs, run }
       return () => {
@@ -105,6 +116,13 @@ beforeEach(() => {
       stored = snapshot
     }
   })
+  storedUnread = {}
+  unreadSignals = []
+  saveUnread = vi.fn((key, unread) => {
+    if (key === KEY) {
+      storedUnread = unread
+    }
+  })
 })
 
 describe('when to poll at all', () => {
@@ -117,8 +135,25 @@ describe('when to poll at all', () => {
     expect(fetchPage).not.toHaveBeenCalled()
   })
 
-  it('does not schedule anything while every kind is switched off', () => {
+  it('still polls with every banner kind switched off, because the badge is not gated on them', async () => {
+    // Superseded guarantee: this used to assert no poll at all. Unread counts now accrue whether
+    // or not the user wants a banner, so polling is gated on `shouldPoll` (are we connected) and
+    // `notifyKinds` only decides whether a change is ALSO emitted as a notification.
     enabled = []
+    fetchPage.mockResolvedValue(page([acTask({ id: 1 })]))
+    const running = poller()
+
+    running.refresh()
+    expect(pending).not.toBeNull()
+
+    await fireTimer()
+
+    expect(fetchPage).toHaveBeenCalled()
+    expect(emitted).toEqual([])
+  })
+
+  it('does not schedule anything when there is nowhere to put the result', () => {
+    snapshotKey = null
 
     poller().refresh()
 

@@ -90,6 +90,16 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
   const prefetchWorkItems = useAppStore((s) => s.prefetchWorkItems)
   const activeRepoId = useAppStore((s) => s.activeRepoId)
   const defaultTaskViewPreset = useAppStore((s) => s.settings?.defaultTaskViewPreset ?? 'all')
+  // Both read defensively. This row renders inside the sidebar shell, which is mounted against
+  // partial store stand-ins in several suites and hydrates progressively at runtime; a bare
+  // `s.activeCollabUnread.total` took the whole sidebar down when the slice was absent. No badge
+  // is the honest answer while the slice has not arrived.
+  const activeCollabUnreadTotal = useAppStore((s) => s.activeCollabUnread?.total ?? 0)
+  const watchActiveCollabUnread = useAppStore((s) => s.watchActiveCollabUnread)
+  // Why here: this button is the only place the count is shown, and it is mounted for the whole
+  // session, so the subscription's lifetime matches the badge's rather than the Tasks page's —
+  // the badge has to move while the user is somewhere else entirely.
+  React.useEffect(() => watchActiveCollabUnread?.(), [watchActiveCollabUnread])
   const preferredVisibleTaskProviders = React.useMemo(
     () => normalizeVisibleTaskProviders(rawVisibleTaskProviders),
     [rawVisibleTaskProviders]
@@ -199,6 +209,21 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
           <span className="flex-1">
             {translate('auto.components.sidebar.SidebarNav.fee535205b', 'Tasks')}
           </span>
+          {activeCollabUnreadTotal > 0 ? (
+            // Why not inside the hover-only shortcut strip: the whole point is to be visible
+            // without hovering. Rendered only above zero — a "0" badge is noise that trains the
+            // eye to ignore the spot where a real count will appear.
+            <span
+              className="ml-1 shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary"
+              aria-label={translate(
+                'auto.components.sidebar.SidebarNav.activeCollabUnread',
+                '{{value0}} unread ActiveCollab changes',
+                { value0: String(activeCollabUnreadTotal) }
+              )}
+            >
+              {activeCollabUnreadTotal > 9 ? '9+' : activeCollabUnreadTotal}
+            </span>
+          ) : null}
           <span className="hidden items-center gap-1 group-hover:flex group-focus-within:flex">
             {visibleTaskProviders.includes('github') ? (
               <TaskProviderShortcut

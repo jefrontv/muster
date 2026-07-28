@@ -4068,7 +4068,8 @@
           "0ccba862b8": "GitHub タスクを開く",
           "fee535205b": "タスク",
           "d599269755": "サイドバーから隠す",
-          "sites": "Sites"
+          "sites": "Sites",
+          "activeCollabUnread": "{{value0}} unread ActiveCollab changes"
         },
         "SidebarRepositoryFilterSection": {
           "d3a9c4cea1": "クリア",
@@ -8254,7 +8255,11 @@
             "activeCollabDue": "Due Date Getting Closer",
             "activeCollabDueDescription": "Notify when an assigned ActiveCollab task moves into a nearer due window, up to overdue.",
             "activeCollabUpdated": "Task Details Edited",
-            "activeCollabUpdatedDescription": "Notify when an assigned ActiveCollab task is edited without a new comment."
+            "activeCollabUpdatedDescription": "Notify when an assigned ActiveCollab task is edited without a new comment.",
+            "activeCollabSound": "ActiveCollab Sound",
+            "activeCollabSoundDescription": "Give ActiveCollab alerts their own sound, or let them use the global notification sound.",
+            "activeCollabStyle": "Banner Wording",
+            "activeCollabStyleDescription": "Choose whether ActiveCollab banners lead with the change and name the project, or lead with the task name."
           }
         },
         "orchestration": {
@@ -9507,7 +9512,18 @@
           "due": "Due Date Getting Closer",
           "dueDescription": "An assigned task moves into a nearer due window — this week, then tomorrow, then today, then overdue.",
           "updated": "Task Details Edited",
-          "updatedDescription": "An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed."
+          "updatedDescription": "An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed.",
+          "soundLabel": "ActiveCollab Sound",
+          "styleLabel": "Banner Wording"
+        },
+        "NotificationSoundPicker": {
+          "inherit": "Use Global Sound"
+        },
+        "activeCollabNotificationStyle": {
+          "detailed": "Detailed",
+          "detailedExample": "2 new comments: Fix the header — Website Redesign",
+          "minimal": "Minimal",
+          "minimalExample": "Fix the header — 2 new comments"
         }
       },
       "right": {

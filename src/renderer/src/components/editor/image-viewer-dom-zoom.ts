@@ -77,9 +77,10 @@ export function applyAnchoredImageViewerZoomChange(
 
 export function applyImageSurfaceWheel(
   event: WheelEvent,
-  applyZoomChange: ApplyImageViewerZoomChange
+  applyZoomChange: ApplyImageViewerZoomChange,
+  plainWheelZooms = false
 ): void {
-  if (!shouldHandleImageZoomWheel(event)) {
+  if (!shouldHandleImageZoomWheel(event, plainWheelZooms)) {
     return
   }
 

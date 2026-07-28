@@ -218,6 +218,7 @@ import type {
   GitHubPRRefreshReason,
   GetRateLimitResult,
   NotificationDispatchRequest,
+  NotificationEventSource,
   NotificationDispatchResult,
   NotificationDeliveryProbeResult,
   NotificationDismissResult,
@@ -2470,7 +2471,11 @@ export type PreloadApi = {
     openSystemSettings: () => Promise<void>
     getPermissionStatus: () => Promise<NotificationPermissionStatusResult>
     probeDelivery: (args?: { force?: boolean }) => Promise<NotificationDeliveryProbeResult>
-    playSound: (options?: { force?: boolean; volume?: number }) => Promise<NotificationSoundResult>
+    playSound: (options?: {
+      force?: boolean
+      volume?: number
+      source?: NotificationEventSource
+    }) => Promise<NotificationSoundResult>
   }
   onboarding: {
     get: () => Promise<OnboardingState>

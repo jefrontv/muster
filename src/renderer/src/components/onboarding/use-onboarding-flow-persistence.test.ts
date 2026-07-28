@@ -58,7 +58,10 @@ describe('onboarding flow persistence', () => {
       suppressWhenFocused: false,
       customSoundId: 'two-tone',
       customSoundPath: null,
-      customSoundVolume: 60
+      customSoundVolume: 60,
+      activeCollabSoundId: 'global',
+      activeCollabSoundPath: null,
+      activeCollabStyle: 'detailed'
     })
 
     // Exhaustive on purpose: it catches a new notification default silently reaching completed
@@ -77,7 +80,10 @@ describe('onboarding flow persistence', () => {
       suppressWhenFocused: false,
       customSoundId: 'two-tone',
       customSoundPath: null,
-      customSoundVolume: 60
+      customSoundVolume: 60,
+      activeCollabSoundId: 'global',
+      activeCollabSoundPath: null,
+      activeCollabStyle: 'detailed'
     })
   })
 })

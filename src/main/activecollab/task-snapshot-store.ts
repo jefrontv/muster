@@ -1,4 +1,5 @@
-// Where the task snapshot lives between polls, and between runs.
+// Where the per-credential poll state lives between polls, and between runs: the task snapshot the
+// diff compares against, and the unread counts the sidebar badge draws.
 //
 // KEYED ON THE CREDENTIAL IDENTITY — instance URL plus user id, the same pair name-directory.ts and
 // project-members.ts key on, and never a bare global. Reconnecting as somebody else has to read as
@@ -11,6 +12,11 @@
 //
 // A plain JSON file rather than the settings store: this is a per-account cache of ids, counts and
 // buckets that nothing else reads, and it is rewritten on every poll.
+//
+// The unread counts share that one file, and therefore that one key, so a reconnect as another
+// account cannot inherit a badge any more than it can inherit a snapshot. Each field has its own
+// writer — a snapshot write carries the counts forward, a counts write carries the snapshot
+// forward — because a save that took both would silently truncate whichever one its caller forgot.
 
 import { readFileSync, rmSync } from 'node:fs'
 import path from 'node:path'
@@ -24,6 +30,7 @@ import {
   type AcTaskSnapshotEntry
 } from './task-change-detector'
 import { acIsDueBucket } from './task-due-bucket'
+import { acReadTaskUnreadCounts, type AcTaskUnread } from './task-unread'
 
 const FILE_NAME = 'activecollab-task-snapshot.json'
 
@@ -63,12 +70,8 @@ function acReadEntry(value: unknown): AcTaskSnapshotEntry | null {
   }
 }
 
-/**
- * The snapshot saved for `key`, or null when there is none — which the detector treats as a first
- * run and therefore reports nothing. A file written by another account, a truncated file and an
- * absent file are all the same answer: null, stay quiet, seed a fresh one.
- */
-export function acLoadTaskSnapshot(key: string): AcTaskSnapshot | null {
+/** The file's own fields, or null when it is absent, unreadable, or another account's. */
+function acReadSnapshotFile(key: string): { tasks?: unknown; unread?: unknown } | null {
   let parsed: unknown
   try {
     parsed = JSON.parse(readFileSync(acSnapshotPath(), 'utf8'))
@@ -78,8 +81,18 @@ export function acLoadTaskSnapshot(key: string): AcTaskSnapshot | null {
   if (typeof parsed !== 'object' || parsed === null) {
     return null
   }
-  const file = parsed as { key?: unknown; tasks?: unknown }
-  if (file.key !== key || typeof file.tasks !== 'object' || file.tasks === null) {
+  const file = parsed as { key?: unknown; tasks?: unknown; unread?: unknown }
+  return file.key === key ? file : null
+}
+
+/**
+ * The snapshot saved for `key`, or null when there is none — which the detector treats as a first
+ * run and therefore reports nothing. A file written by another account, a truncated file and an
+ * absent file are all the same answer: null, stay quiet, seed a fresh one.
+ */
+export function acLoadTaskSnapshot(key: string): AcTaskSnapshot | null {
+  const file = acReadSnapshotFile(key)
+  if (file === null || typeof file.tasks !== 'object' || file.tasks === null) {
     return null
   }
   const snapshot: AcTaskSnapshot = {}
@@ -92,12 +105,47 @@ export function acLoadTaskSnapshot(key: string): AcTaskSnapshot | null {
   return snapshot
 }
 
-/** Never throws: a snapshot that could not be written costs one silent poll, not a crash. */
-export function acSaveTaskSnapshot(key: string, snapshot: AcTaskSnapshot): void {
+/**
+ * The unread counts saved for `key`, or empty. Empty for another account's file too: a badge is a
+ * claim about the reader's own workload.
+ */
+export function acLoadTaskUnread(key: string): AcTaskUnread {
+  const file = acReadSnapshotFile(key)
+  if (file === null || typeof file.unread !== 'object' || file.unread === null) {
+    return {}
+  }
+  const unread: AcTaskUnread = {}
+  for (const [id, value] of Object.entries(file.unread as Record<string, unknown>)) {
+    const counts = acReadTaskUnreadCounts(value)
+    if (counts !== null) {
+      unread[id] = counts
+    }
+  }
+  return unread
+}
+
+/** Never throws: a file that could not be written costs one silent poll, not a crash. */
+function acWriteSnapshotFile(key: string, tasks: AcTaskSnapshot, unread: AcTaskUnread): void {
   try {
-    writeFileAtomically(acSnapshotPath(), JSON.stringify({ key, tasks: snapshot }))
+    writeFileAtomically(acSnapshotPath(), JSON.stringify({ key, tasks, unread }))
   } catch {
     // Nothing actionable — the next poll rewrites it, or reads null and seeds again silently.
+  }
+}
+
+export function acSaveTaskSnapshot(key: string, snapshot: AcTaskSnapshot): void {
+  acWriteSnapshotFile(key, snapshot, acLoadTaskUnread(key))
+}
+
+/**
+ * A no-op while no snapshot exists for `key`, and NOT merely because there would be nothing to
+ * count: writing `tasks: {}` here would turn the next poll's silent first run into "you had no
+ * tasks", which announces the user's entire workload.
+ */
+export function acSaveTaskUnread(key: string, unread: AcTaskUnread): void {
+  const snapshot = acLoadTaskSnapshot(key)
+  if (snapshot !== null) {
+    acWriteSnapshotFile(key, snapshot, unread)
   }
 }
 

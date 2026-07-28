@@ -95,7 +95,11 @@ const CHANNELS = [
   'activecollab:postComment',
   'activecollab:listLabels',
   'activecollab:listUsers',
-  'activecollab:listProjectMembers'
+  'activecollab:listProjectMembers',
+  // Unread is credential-free: the counts are a file this machine's poller maintains, so these
+  // two are deliberately absent from CREDENTIALLED_CHANNELS below.
+  'activecollab:unread',
+  'activecollab:markTaskRead'
 ]
 
 /** Every channel that needs a stored credential, so one loop can prove the whole surface. */

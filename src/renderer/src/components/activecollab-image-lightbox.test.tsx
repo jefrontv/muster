@@ -139,6 +139,64 @@ function pinchEvent(deltaY: number): WheelEvent {
   return event
 }
 
+/**
+ * A plain two-finger scroll: no ctrlKey anywhere, which is what the lightbox opt-in claims.
+ * happy-dom's WheelEvent extends UIEvent rather than MouseEvent, so it carries no pointer
+ * coordinates at all and the zoom anchor has to be pinned on or it computes to NaN.
+ */
+function scrollEvent(deltaY: number, at = { x: 0, y: 0 }): WheelEvent {
+  const event = new WheelEvent('wheel', { deltaY, deltaMode: 0, bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'clientX', { value: at.x })
+  Object.defineProperty(event, 'clientY', { value: at.y })
+  return event
+}
+
+function zoomSurface(): HTMLDivElement {
+  const surface = document.querySelector<HTMLDivElement>('[data-slot="image-viewer-surface"]')
+  if (!surface) {
+    throw new Error('zoom surface not rendered')
+  }
+  return surface
+}
+
+/**
+ * happy-dom reports every box as zero and its `getBoundingClientRect` carries no numbers at all,
+ * so both the scroll range a drag clamps against and the rect zoom anchors on are stated here.
+ */
+function sizeSurface(surface: HTMLDivElement): void {
+  Object.defineProperty(surface, 'scrollWidth', { value: 1000, configurable: true })
+  Object.defineProperty(surface, 'scrollHeight', { value: 800, configurable: true })
+  Object.defineProperty(surface, 'clientWidth', { value: 400, configurable: true })
+  Object.defineProperty(surface, 'clientHeight', { value: 300, configurable: true })
+  surface.getBoundingClientRect = () =>
+    ({
+      left: 0,
+      top: 0,
+      right: 400,
+      bottom: 300,
+      width: 400,
+      height: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    }) as DOMRect
+}
+
+async function pointer(type: string, element: Element, x: number, y: number): Promise<void> {
+  await act(async () => {
+    element.dispatchEvent(
+      new PointerEvent(type, {
+        pointerId: 1,
+        button: 0,
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true
+      })
+    )
+  })
+}
+
 describe('ActiveCollab image lightbox', () => {
   it('opens the clicked image full size, and reads no new bytes to do it', async () => {
     await mount(IMAGES)
@@ -307,5 +365,64 @@ describe('ActiveCollab image lightbox', () => {
     await pressKey('ArrowRight')
 
     expect(dialog()?.textContent).toContain('100%')
+  })
+
+  it('zooms on a plain wheel instead of nudging the image inside a scrollbox', async () => {
+    await mount(IMAGES)
+    await openThumbnail(0)
+    expect(dialog()?.textContent).toContain('100%')
+
+    const surface = zoomSurface()
+    sizeSurface(surface)
+    await act(async () => {
+      surface.dispatchEvent(scrollEvent(-120, { x: 200, y: 150 }))
+    })
+
+    // exp(120/300) = 1.4918, reached with no ctrlKey, so only the opt-in can have done it.
+    expect(dialog()?.textContent).toContain('149%')
+    // The point under the cursor holds still: 200 * 1.4918 - 200 of new content above and left.
+    expect(surface.scrollLeft).toBeCloseTo(98.36, 2)
+    expect(surface.scrollTop).toBeCloseTo(73.77, 2)
+  })
+
+  it('pans by dragging and holds the pointer for the whole gesture', async () => {
+    await mount(IMAGES)
+    await openThumbnail(0)
+    const surface = zoomSurface()
+    sizeSurface(surface)
+
+    await pointer('pointerdown', surface, 300, 200)
+    expect(surface.hasPointerCapture(1)).toBe(true)
+    expect(surface.style.cursor).toBe('grabbing')
+
+    await pointer('pointermove', surface, 220, 150)
+    expect(surface.scrollLeft).toBe(80)
+    expect(surface.scrollTop).toBe(50)
+
+    await pointer('pointerup', surface, 220, 150)
+    expect(surface.hasPointerCapture(1)).toBe(false)
+    expect(surface.style.cursor).toBe('grab')
+  })
+
+  it('puts zoom and pan back to the start when the next image comes up', async () => {
+    await mount(IMAGES)
+    await openThumbnail(0)
+    const surface = zoomSurface()
+    sizeSurface(surface)
+
+    await act(async () => {
+      surface.dispatchEvent(scrollEvent(-120))
+    })
+    await pointer('pointerdown', surface, 300, 200)
+    await pointer('pointermove', surface, 220, 150)
+    await pointer('pointerup', surface, 220, 150)
+    expect(dialog()?.textContent).not.toContain('100%')
+    expect(surface.scrollLeft).toBe(80)
+
+    await pressKey('ArrowRight')
+
+    expect(dialog()?.textContent).toContain('100%')
+    expect(surface.scrollLeft).toBe(0)
+    expect(surface.scrollTop).toBe(0)
   })
 })

@@ -2369,21 +2369,38 @@ export type NotificationSettings = {
   /** Task details edited with no comment delta — a comment already explains its own bump. */
   activeCollabUpdated: boolean
   suppressWhenFocused: boolean
-  customSoundId:
-    | 'system'
-    | 'two-tone'
-    | 'bong'
-    | 'thump'
-    | 'blip'
-    | 'sonar'
-    | 'blop'
-    | 'ding'
-    | 'clack'
-    | 'beep'
-    | 'custom'
+  customSoundId: NotificationSoundId
   customSoundPath: string | null
   customSoundVolume: number
+  /**
+   * ActiveCollab's own alert sound. `'global'` is a real, selectable state — "follow the sound
+   * above" — rather than an absent value, so a user can tell inheritance from a choice.
+   */
+  activeCollabSoundId: NotificationSoundId | 'global'
+  /** Custom file behind `activeCollabSoundId: 'custom'`; the global picker keeps its own. */
+  activeCollabSoundPath: string | null
+  /** How the `activecollab-*` banners are worded. */
+  activeCollabStyle: ActiveCollabNotificationStyle
 }
+
+export type NotificationSoundId =
+  | 'system'
+  | 'two-tone'
+  | 'bong'
+  | 'thump'
+  | 'blip'
+  | 'sonar'
+  | 'blop'
+  | 'ding'
+  | 'clack'
+  | 'beep'
+  | 'custom'
+
+/**
+ * `detailed` leads with what changed and names the project, for people juggling several.
+ * `minimal` leads with the task and drops the project, for people who only work in one.
+ */
+export type ActiveCollabNotificationStyle = 'detailed' | 'minimal'
 
 export type CodexManagedAccount = {
   id: string

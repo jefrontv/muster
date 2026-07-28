@@ -1,32 +1,9 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
 import type { GlobalSettings } from '../../../../shared/types'
 import { Label } from '../ui/label'
 import { Slider } from '../ui/slider'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue
-} from '../ui/select'
-import { FileAudio, Upload, Volume2 } from 'lucide-react'
-import { getNotificationSoundOptions } from '@/components/notification-sound-options'
-import { useMountedRef } from '@/hooks/useMountedRef'
+import { FileAudio, Volume2 } from 'lucide-react'
+import { NotificationSoundPicker } from './NotificationSoundPicker'
 import { translate } from '@/i18n/i18n'
-
-const CHOOSE_CUSTOM_SOUND_VALUE = 'choose-custom-file'
-
-type NotificationSoundSelectValue =
-  | GlobalSettings['notifications']['customSoundId']
-  | typeof CHOOSE_CUSTOM_SOUND_VALUE
-
-function isNotificationSoundId(
-  value: NotificationSoundSelectValue
-): value is GlobalSettings['notifications']['customSoundId'] {
-  return value !== CHOOSE_CUSTOM_SOUND_VALUE
-}
 
 type NotificationSoundSectionProps = {
   notificationSettings: GlobalSettings['notifications']
@@ -45,55 +22,12 @@ export function NotificationSoundSection({
   onVolumeCommit,
   onUpdateNotificationSettings
 }: NotificationSoundSectionProps): React.JSX.Element {
-  const mountedRef = useMountedRef()
-  const [isPickingSound, setIsPickingSound] = useState(false)
-
-  const previewSound = async (
-    customSoundId: GlobalSettings['notifications']['customSoundId']
-  ): Promise<void> => {
-    if (customSoundId === 'system') {
-      return
-    }
-    const result = await window.api.notifications.playSound({
-      force: true,
-      volume: volumeDraft
-    })
-    if (!result.played) {
-      toast.error(
-        translate(
-          'auto.components.settings.NotificationsPane.0fadad17ce',
-          'Notification sound could not be played'
-        )
-      )
-    }
-  }
-
-  const handleChooseCustomSound = async (): Promise<void> => {
-    setIsPickingSound(true)
-    try {
-      const soundPath = await window.api.shell.pickAudio()
-      if (soundPath) {
-        await onUpdateNotificationSettings({ customSoundId: 'custom', customSoundPath: soundPath })
-        await previewSound('custom')
-      }
-    } finally {
-      if (mountedRef.current) {
-        setIsPickingSound(false)
-      }
-    }
-  }
-
-  const handleSoundSelect = async (value: NotificationSoundSelectValue): Promise<void> => {
-    if (!isNotificationSoundId(value)) {
-      await handleChooseCustomSound()
-      return
-    }
-    await onUpdateNotificationSettings({ customSoundId: value })
-    await previewSound(value)
-  }
-
   const selectedSoundId = notificationSettings.customSoundId
-  const soundOptions = getNotificationSoundOptions(notificationSettings.customSoundPath)
+  const activeCollabSoundId = notificationSettings.activeCollabSoundId
+  // One volume serves both pickers, so it stays reachable while either plays a file of ours.
+  const playsOwnAudio =
+    selectedSoundId !== 'system' ||
+    (activeCollabSoundId !== 'global' && activeCollabSoundId !== 'system')
 
   return (
     <div className="space-y-2 py-2">
@@ -114,56 +48,24 @@ export function NotificationSoundSection({
           )}
         </p>
       </div>
-      <Select
+      <NotificationSoundPicker
         value={selectedSoundId}
-        disabled={!notificationsEnabled || isPickingSound}
-        onValueChange={(value) => void handleSoundSelect(value as NotificationSoundSelectValue)}
-      >
-        <SelectTrigger className="w-full max-w-[360px]" size="sm">
-          <SelectValue
-            placeholder={translate(
-              'auto.components.settings.NotificationsPane.c258cb96dc',
-              'Choose notification sound'
-            )}
-          />
-        </SelectTrigger>
-        <SelectContent align="start" className="w-[--radix-select-trigger-width]">
-          {soundOptions.map((option) => {
-            const OptionIcon = option.icon
-            return (
-              <SelectItem key={option.id} value={option.id}>
-                <OptionIcon className="size-4" />
-                <span className="truncate">{option.title}</span>
-              </SelectItem>
-            )
-          })}
-          <SelectSeparator />
-          <SelectItem value={CHOOSE_CUSTOM_SOUND_VALUE}>
-            <Upload className="size-4" />
-            <span>
-              {notificationSettings.customSoundPath
-                ? translate(
-                    'auto.components.settings.NotificationsPane.76e02467b8',
-                    'Change Custom File'
-                  )
-                : translate(
-                    'auto.components.settings.NotificationsPane.6e6df3a09a',
-                    'Choose Custom File'
-                  )}
-            </span>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      {notificationSettings.customSoundPath ? (
-        <p
-          className="truncate font-mono text-[11px] text-muted-foreground"
-          title={notificationSettings.customSoundPath}
-        >
-          {translate('auto.components.settings.NotificationsPane.4aa5085cd7', 'Custom:')}{' '}
-          {notificationSettings.customSoundPath}
-        </p>
-      ) : null}
-      {selectedSoundId !== 'system' ? (
+        customPath={notificationSettings.customSoundPath}
+        volume={volumeDraft}
+        disabled={!notificationsEnabled}
+        ariaLabel={translate(
+          'auto.components.settings.NotificationsPane.c258cb96dc',
+          'Choose notification sound'
+        )}
+        onSelect={({ soundId, soundPath }) =>
+          onUpdateNotificationSettings({
+            // Never 'global': the global picker has nothing above it to inherit from.
+            customSoundId: soundId === 'global' ? 'system' : soundId,
+            ...(soundPath === undefined ? {} : { customSoundPath: soundPath })
+          })
+        }
+      />
+      {playsOwnAudio ? (
         <div className="flex items-center gap-3 pt-1">
           <Volume2 className="size-4 text-muted-foreground" />
           <Slider

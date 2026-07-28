@@ -17,14 +17,21 @@
 //     recovery. Consecutive failures back off to a 15-minute ceiling and reset on the first success.
 //   - NEVER DIFF A PARTIAL FETCH either. An incomplete set is not a smaller set — the rows it
 //     missed read as "gone" now and "newly assigned" next time — so paging is all-or-nothing.
-//   - Poll only while ActiveCollab is connected AND at least one kind is switched on. A user who
-//     never connected, or wants none of it, is never polled on ActiveCollab's behalf.
+//   - Poll only while ActiveCollab is connected AND `shouldPoll` says something can surface the
+//     result. A user who never connected is never polled on ActiveCollab's behalf, and one who
+//     switched off every banner AND hid the Tasks button is not polled to feed a badge they cannot
+//     see (see acShouldPollAcTasks in task-notification-service.ts).
 //   - The snapshot is re-read from disk on every poll, never cached here: local writes fold
 //     themselves into that file (task-snapshot-store.ts), and a cached copy would miss the fold and
-//     notify the user about their own edit.
+//     notify the user about their own edit. The unread counts are re-read for the same reason —
+//     marking a task read writes that file from outside this loop.
 //
-// Kind filtering happens at EMIT, never at the snapshot: a change the user does not want to hear
-// about still has to advance the snapshot, or it is reported the moment they enable that toggle.
+// ONE DIFF FEEDS BOTH SURFACES. The banners and the unread counts come from the same
+// `acDiffTaskSnapshot` call, so they cannot disagree, and a count costs no extra request.
+//
+// Kind filtering happens at EMIT, never at the snapshot and never at the counts: a change the user
+// does not want a BANNER for still has to advance the snapshot, or it is reported the moment they
+// enable that toggle — and it still has to reach the badge, which those toggles do not govern.
 
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
 import type { ActiveCollabTask, ActiveCollabTaskPage } from '../../shared/activecollab-types'
@@ -34,6 +41,7 @@ import {
   type AcTaskChangeKind,
   type AcTaskSnapshot
 } from './task-change-detector'
+import { acMergeTaskUnread, type AcTaskUnread } from './task-unread'
 
 export const AC_POLL_INTERVAL_MS = 3 * 60_000
 export const AC_POLL_START_DELAY_MS = 15_000
@@ -46,12 +54,18 @@ export type AcTaskPollerDeps = {
   now: () => number
   /** The connected credential's snapshot key, or null when ActiveCollab is not connected. */
   snapshotKey: () => string | null
-  /** The kinds the user asked to hear about. Empty means do not poll at all. */
-  enabledKinds: () => ReadonlySet<AcTaskChangeKind>
+  /** Whether anything can surface a result. False means do not poll at all. */
+  shouldPoll: () => boolean
+  /** The kinds the user asked for a BANNER about. Empty still polls: the badge is not gated. */
+  notifyKinds: () => ReadonlySet<AcTaskChangeKind>
   fetchPage: (page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>
   loadSnapshot: (key: string) => AcTaskSnapshot | null
   saveSnapshot: (key: string, snapshot: AcTaskSnapshot) => void
+  loadUnread: (key: string) => AcTaskUnread
+  saveUnread: (key: string, unread: AcTaskUnread) => void
   emit: (change: AcTaskChange) => void
+  /** Told only when the counts actually moved, so an idle poll wakes no renderer. */
+  onUnread: (unread: AcTaskUnread) => void
   /** Schedules `run` once, and answers with its cancel. Injected so tests own the clock. */
   schedule: (delayMs: number, run: () => void) => () => void
 }
@@ -112,9 +126,8 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
       return
     }
     const key = deps.snapshotKey()
-    const kinds = deps.enabledKinds()
-    if (key === null || kinds.size === 0) {
-      // Disconnected, or every toggle went off between ticks. Nothing to poll for.
+    if (key === null || !deps.shouldPoll()) {
+      // Disconnected, or nothing left that could show the result. Nothing to poll for.
       stop()
       return
     }
@@ -132,6 +145,14 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
         now: deps.now()
       })
       deps.saveSnapshot(key, snapshot)
+      // Snapshot first: saving counts cannot create the file, so the seeding poll has to.
+      const previousUnread = deps.loadUnread(key)
+      const unread = acMergeTaskUnread({ unread: previousUnread, changes, tasks })
+      if (unread !== previousUnread) {
+        deps.saveUnread(key, unread)
+        deps.onUnread(unread)
+      }
+      const kinds = deps.notifyKinds()
       for (const change of changes) {
         if (kinds.has(change.kind)) {
           deps.emit(change)
@@ -164,7 +185,7 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
     },
     stop,
     refresh: (): void => {
-      if (deps.snapshotKey() !== null && deps.enabledKinds().size > 0) {
+      if (deps.snapshotKey() !== null && deps.shouldPoll()) {
         if (!running) {
           running = true
           failures = 0

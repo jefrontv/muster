@@ -23,6 +23,7 @@ import {
   getImageLayoutStyle,
   type ApplyImageViewerZoomChange
 } from './image-viewer-dom-zoom'
+import { useImageSurfaceDragPan, type ImageSurfacePanProps } from './image-viewer-drag-pan'
 import {
   getZoomedImageLayoutSize,
   type ImageViewerImageDimensions,
@@ -37,13 +38,18 @@ export type ImageViewerZoomSurface = {
   setSurfaceRef: (surface: HTMLDivElement | null) => void
   imageLayoutSize: ImageViewerImageDimensions | null
   imageLayoutStyle: CSSProperties | undefined
+  /** Undefined unless `wheelZoomAndDragPan` is on; spread onto the scroll surface. */
+  panProps: ImageSurfacePanProps | undefined
+  /** Puts the pan back where a fresh image starts, which zoom state alone cannot do. */
+  scrollToOrigin: () => void
 }
 
 export function useImageViewerZoomSurface({
   imageDimensions,
   active = true,
   fitToSurface = true,
-  measureKey
+  measureKey,
+  wheelZoomAndDragPan = false
 }: {
   imageDimensions: ImageViewerImageDimensions | null
   /** False parks the surface — a closed popup has no box to measure. */
@@ -52,6 +58,11 @@ export function useImageViewerZoomSurface({
   fitToSurface?: boolean
   /** Re-measures when it changes; a new image can resize the surface without resizing the window. */
   measureKey?: unknown
+  /**
+   * Opt-in photo-viewer gestures: a plain wheel zooms at the pointer instead of scrolling, and
+   * dragging pans. Off by default so a document surface keeps plain-wheel scrolling.
+   */
+  wheelZoomAndDragPan?: boolean
 }): ImageViewerZoomSurface {
   const [zoom, setZoom] = useState(1)
   const [surfaceSize, setSurfaceSize] = useState<ImageViewerSurfaceSize | null>(null)
@@ -62,10 +73,18 @@ export function useImageViewerZoomSurface({
   }, [])
   const handleSurfaceWheel = useCallback(
     (event: WheelEvent) => {
-      applyImageSurfaceWheel(event, applyZoomChange)
+      applyImageSurfaceWheel(event, applyZoomChange, wheelZoomAndDragPan)
     },
-    [applyZoomChange]
+    [applyZoomChange, wheelZoomAndDragPan]
   )
+  const panProps = useImageSurfaceDragPan(surfaceRef, wheelZoomAndDragPan)
+  const scrollToOrigin = useCallback(() => {
+    const surface = surfaceRef.current
+    if (surface) {
+      surface.scrollLeft = 0
+      surface.scrollTop = 0
+    }
+  }, [])
   const setSurfaceRef = useCallback(
     (surface: HTMLDivElement | null) => {
       if (surfaceRef.current) {
@@ -115,6 +134,8 @@ export function useImageViewerZoomSurface({
     applyZoomChange,
     setSurfaceRef,
     imageLayoutSize,
-    imageLayoutStyle
+    imageLayoutStyle,
+    panProps,
+    scrollToOrigin
   }
 }
