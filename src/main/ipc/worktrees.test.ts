@@ -268,6 +268,7 @@ import {
   __resetDetectedWorktreeScanCacheForTests,
   registerWorktreeHandlers
 } from './worktrees'
+import { clearConfiguredWorktreeSharedDirectoriesCacheForTests } from '../git/worktree-shared-directories'
 
 type HandlerMap = Record<string, (_event: unknown, args: unknown) => unknown>
 
@@ -313,6 +314,7 @@ describe('registerWorktreeHandlers', () => {
 
   beforeEach(() => {
     setPlatform(ORIGINAL_PLATFORM)
+    clearConfiguredWorktreeSharedDirectoriesCacheForTests()
     __resetSshWorktreeCreateFetchCacheForTests()
     __resetDetectedWorktreeScanCacheForTests()
     invalidateAuthorizedRootsCache()
@@ -7113,6 +7115,29 @@ describe('registerWorktreeHandlers', () => {
         })
       })
     )
+  })
+
+  it('passes project shared links through the IPC removal preflight and cleanup', async () => {
+    mockKnownFeatureWorktree()
+    loadHooksMock.mockReturnValue({
+      worktree: { sharedDirectories: ['node_modules'] }
+    })
+    findExistingWorktreeSymlinkPathsMock.mockResolvedValue(['node_modules'])
+    removeWorktreeMock.mockResolvedValue({})
+
+    await handlers['worktrees:remove'](null, {
+      worktreeId: 'repo-1::/workspace/feature-wt'
+    })
+
+    expect(findExistingWorktreeSymlinkPathsMock).toHaveBeenCalledWith('/workspace/feature-wt', [
+      'node_modules'
+    ])
+    expect(assertWorktreeCleanForRemovalMock).toHaveBeenCalledWith('/workspace/feature-wt', false, {
+      ignoredUntrackedPaths: ['node_modules']
+    })
+    expect(removeWorktreeLinkedPathsMock).toHaveBeenCalledWith('/workspace/feature-wt', [
+      'node_modules'
+    ])
   })
 
   it('does not remove a worktree when watcher teardown cannot release it', async () => {
