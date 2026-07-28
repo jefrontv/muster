@@ -83,8 +83,11 @@ export function TaskPageActiveCollabPanel({
   const hasSelection = selected !== null
 
   return (
-    <div className="flex min-h-0 max-h-full flex-1 gap-3 overflow-hidden">
-      <div className="flex min-h-0 max-h-full min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border/50 bg-background shadow-sm">
+    // Full bleed: the page gutter is dropped for ActiveCollab, so rounding, an outer border and a
+    // shadow would only redraw the inset card that removing the gutter was meant to eliminate. The
+    // two columns are separated by a single divider instead of a gap.
+    <div className="flex min-h-0 max-h-full flex-1 overflow-hidden">
+      <div className="flex min-h-0 max-h-full min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <ActiveCollabTaskList
           onSelect={handleSelect}
           selectedTaskId={selected?.taskId ?? null}
@@ -99,7 +102,7 @@ export function TaskPageActiveCollabPanel({
         // what the skeleton work depends on.
         // Why a bounded width: the pane's own class list is `h-full` with no basis, so as a bare
         // flex sibling it sized to its content and a long task body pushed the list off-screen.
-        <aside className="flex min-h-0 max-h-full w-[42%] min-w-[320px] max-w-[620px] shrink-0 flex-col overflow-hidden rounded-md border border-border/50 bg-background shadow-sm duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none">
+        <aside className="flex min-h-0 max-h-full w-[42%] min-w-[320px] max-w-[620px] shrink-0 flex-col overflow-hidden border-l border-border/60 bg-background duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none">
           <ActiveCollabTaskWorkspace projectId={selected.projectId} taskId={selected.taskId} />
         </aside>
       ) : null}
