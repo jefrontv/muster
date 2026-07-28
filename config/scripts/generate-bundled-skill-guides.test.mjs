@@ -12,6 +12,7 @@ import {
   frontmatterBlock,
   normalizeMarkdown,
   parseFrontmatter,
+  upstreamBrandedProjection,
   verifyArtifacts,
   writeArtifacts
 } from './generate-bundled-skill-guides.mjs'
@@ -59,14 +60,44 @@ describe('bundled skill guide generator', () => {
       const source = await readFile(path.join(projectDir, 'skill-guides', `${name}.md`), 'utf8')
       const projection = await readFile(path.join(projectDir, 'skills', name, 'SKILL.md'), 'utf8')
 
-      // The routing frontmatter is the unchanged discovery surface.
-      expect(projection.startsWith(frontmatterBlock(source, `${name}.md`))).toBe(true)
+      // The routing frontmatter is the unchanged discovery surface — de-branded, because the
+      // projection is the file upstream serves and its bytes are what freshness fingerprints.
+      expect(
+        projection.startsWith(upstreamBrandedProjection(frontmatterBlock(source, `${name}.md`)))
+      ).toBe(true)
       // The stub is a thin hybrid pointer, not the full guide.
       expect(projection).not.toEqual(source)
       expect(projection.length).toBeLessThan(source.length)
       expect(projection).toContain('discovery stub')
       expect(projection).toContain(`skills get ${name}`)
     }
+  })
+
+  it('ships installable projections that carry no Muster branding', async () => {
+    // The nag this prevents: `npx skills update` installs upstream's Orca-branded file, while
+    // resources/skills/*.json fingerprints whatever sits in skills/. Rebrand the projection and
+    // the two can never agree, so every skill reads "Update available" forever and the command
+    // that claims to fix it is a no-op. The embedded guide is asserted to keep saying Muster, so
+    // this cannot be "fixed" by de-branding the guide as well.
+    for (const name of STUB_TOPICS) {
+      const projection = await readFile(path.join(projectDir, 'skills', name, 'SKILL.md'), 'utf8')
+      expect(projection, name).not.toMatch(/\bMuster\b/)
+    }
+    const guide = await readFile(
+      path.join(projectDir, 'skill-guides', 'orchestration.md'),
+      'utf8'
+    )
+    expect(guide).toMatch(/\bMuster\b/)
+  })
+
+  it('fixes the article when de-branding, so prose stays grammatical', () => {
+    // "a Muster-managed terminal" must become "an Orca-managed terminal"; a bare noun swap would
+    // emit "a Orca-managed" and lose byte parity with upstream over a single character.
+    expect(upstreamBrandedProjection('outside a Muster-managed terminal')).toBe(
+      'outside an Orca-managed terminal'
+    )
+    expect(upstreamBrandedProjection('A Muster workspace')).toBe('An Orca workspace')
+    expect(upstreamBrandedProjection('the Muster app')).toBe('the Orca app')
   })
 
   it('keeps pre-guide fallback useful and read-only for every converted domain', async () => {

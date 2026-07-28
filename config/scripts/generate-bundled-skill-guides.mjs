@@ -142,6 +142,33 @@ function assertAliasContract(guides) {
   }
 }
 
+// Why this fork de-brands the INSTALLABLE projection while the embedded guide keeps saying
+// Muster: these two artifacts answer to different owners. The embedded guide is ours — it ships
+// inside the binary and `skills get` serves it, so it should read as Muster. The projection is
+// not ours: users install it with `npx skills update ... --global`, which pulls the file from
+// stablyai/orca, and `resources/skills/*.json` fingerprints whatever sits in skills/ to decide
+// whether an install is stale.
+//
+// Rebranding the projection therefore made every skill permanently "Update available": the
+// digest we demanded was of Muster-branded text no upstream install could ever produce, so the
+// command ran, changed nothing, and the badge stayed lit. Byte parity with upstream IS the
+// contract, which is why generate-bundled-skill-guides.test.mjs pins this output against the
+// real upstream files — a future rebrand that breaks parity must fail there rather than quietly
+// resurrect the nag.
+const UPSTREAM_BRAND_SUBSTITUTIONS = [
+  // Order matters: fix the article before the noun, or "a Muster" becomes "a Orca".
+  [/\ba Muster\b/g, 'an Orca'],
+  [/\bA Muster\b/g, 'An Orca'],
+  [/\bMuster\b/g, 'Orca']
+]
+
+function upstreamBrandedProjection(content) {
+  return UPSTREAM_BRAND_SUBSTITUTIONS.reduce(
+    (text, [pattern, replacement]) => text.replace(pattern, replacement),
+    content
+  )
+}
+
 async function assertStubSourcesMatchTopics(repoRoot) {
   const stubRoot = path.join(repoRoot, 'skill-stubs')
   let names = []
@@ -207,7 +234,7 @@ async function buildArtifacts(repoRoot = REPO_ROOT) {
       : markdown
     projections.push({
       path: path.join(repoRoot, 'skills', name, 'SKILL.md'),
-      content
+      content: upstreamBrandedProjection(content)
     })
   }
   assertAliasContract(guides)
@@ -272,6 +299,7 @@ export {
   normalizeMarkdown,
   parseFrontmatter,
   serializeEmbeddedModule,
+  upstreamBrandedProjection,
   verifyArtifacts,
   writeArtifacts
 }
