@@ -43,7 +43,7 @@ import {
 } from './task-change-detector'
 import { acMergeTaskUnread, type AcTaskUnread } from './task-unread'
 
-export const AC_POLL_INTERVAL_MS = 3 * 60_000
+export const AC_POLL_INTERVAL_MS = 60_000
 export const AC_POLL_START_DELAY_MS = 15_000
 export const AC_POLL_MAX_BACKOFF_MS = 15 * 60_000
 

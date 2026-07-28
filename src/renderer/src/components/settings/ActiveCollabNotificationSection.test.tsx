@@ -79,7 +79,7 @@ describe('ActiveCollabNotificationSection', () => {
 
     expect(
       screen.getByText(
-        'ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every 3 minutes in the background while any of these are on.'
+        'ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every minute in the background while any of these are on.'
       )
     ).toBeInTheDocument()
   })

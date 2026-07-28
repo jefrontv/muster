@@ -9527,7 +9527,7 @@
         },
         "ActiveCollabNotificationSection": {
           "group": "ActiveCollab Tasks",
-          "groupDescription": "ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every 3 minutes in the background while any of these are on.",
+          "groupDescription": "ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every minute in the background while any of these are on.",
           "assigned": "Task Assigned To You",
           "assignedDescription": "A task you were not assigned before shows up on your ActiveCollab task list.",
           "comments": "New Comments",

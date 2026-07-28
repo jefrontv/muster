@@ -33,7 +33,7 @@ export function ActiveCollabNotificationSection({
         <p className="text-xs text-muted-foreground">
           {translate(
             'auto.components.settings.ActiveCollabNotificationSection.groupDescription',
-            'ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every 3 minutes in the background while any of these are on.'
+            'ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every minute in the background while any of these are on.'
           )}
         </p>
       </div>

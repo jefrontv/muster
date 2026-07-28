@@ -160,7 +160,7 @@ describe('when to poll at all', () => {
     expect(pending).toBeNull()
   })
 
-  it('starts on a short delay, then settles into the three-minute cadence', async () => {
+  it('starts on a short delay, then settles into the one-minute cadence', async () => {
     fetchPage.mockResolvedValue(page([acTask({ id: 1 })]))
     const running = poller()
 
@@ -171,7 +171,7 @@ describe('when to poll at all', () => {
 
     expect(fetchPage).toHaveBeenCalledTimes(1)
     expect(pending?.delayMs).toBe(AC_POLL_INTERVAL_MS)
-    expect(AC_POLL_INTERVAL_MS).toBe(180_000)
+    expect(AC_POLL_INTERVAL_MS).toBe(60_000)
   })
 
   it('starts once however many times it is refreshed', () => {
@@ -237,6 +237,7 @@ describe('a fetch that did not work', () => {
   })
 
   it('backs off while failures repeat, to a ceiling, and recovers the cadence on success', async () => {
+    // Doubling from a 1-minute base: 2, 4, 8, then 16 which the 15-minute ceiling clamps.
     fetchPage.mockResolvedValue(FETCH_FAILED)
     const running = poller()
     running.refresh()
@@ -246,6 +247,9 @@ describe('a fetch that did not work', () => {
     await fireTimer()
     expect(pending?.delayMs).toBe(4 * AC_POLL_INTERVAL_MS)
     await fireTimer()
+    expect(pending?.delayMs).toBe(8 * AC_POLL_INTERVAL_MS)
+    await fireTimer()
+    // 16 minutes would exceed the ceiling, so it clamps and stays there.
     expect(pending?.delayMs).toBe(AC_POLL_MAX_BACKOFF_MS)
     await fireTimer()
     expect(pending?.delayMs).toBe(AC_POLL_MAX_BACKOFF_MS)
