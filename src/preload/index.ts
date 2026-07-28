@@ -3663,6 +3663,17 @@ const api = {
       ipcRenderer.on('ui:activateWorktree', listener)
       return () => ipcRenderer.removeListener('ui:activateWorktree', listener)
     },
+    /** Fired when the user clicks an ActiveCollab task notification: open that task. */
+    onOpenActiveCollabTask: (
+      callback: (data: { projectId: number; taskId: number }) => void
+    ): (() => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        data: { projectId: number; taskId: number }
+      ) => callback(data)
+      ipcRenderer.on('ui:openActiveCollabTask', listener)
+      return () => ipcRenderer.removeListener('ui:openActiveCollabTask', listener)
+    },
     onCreateTerminal: (
       callback: (data: {
         requestId?: string

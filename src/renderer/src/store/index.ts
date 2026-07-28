@@ -15,6 +15,7 @@ import { createPreflightSlice } from './slices/preflight'
 import { createJiraSlice } from './slices/jira'
 import { createActiveCollabSlice } from './slices/activecollab'
 import { createActiveCollabUnreadSlice } from './slices/activecollab-unread'
+import { createActiveCollabOpenRequestSlice } from './slices/activecollab-open-request'
 import { createEditorSlice } from './slices/editor'
 import { createSitesSlice } from './slices/sites'
 import { createStatsSlice } from './slices/stats'
@@ -67,6 +68,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createJiraSlice(...a),
   ...createActiveCollabSlice(...a),
   ...createActiveCollabUnreadSlice(...a),
+  ...createActiveCollabOpenRequestSlice(...a),
   ...createEditorSlice(...a),
   ...createSitesSlice(...a),
   ...createStatsSlice(...a),

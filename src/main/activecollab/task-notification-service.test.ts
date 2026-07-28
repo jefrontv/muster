@@ -107,6 +107,9 @@ describe('acChangeNotification', () => {
 
     expect(request.source).toBe('activecollab-comments')
     expect(request.activeCollab).toEqual({
+      // The ids are what a notification click routes on; the names are only ever displayed.
+      taskId: 1,
+      projectId: 3790,
       taskName: 'Fix the header',
       projectName: 'Muster',
       newComments: 3

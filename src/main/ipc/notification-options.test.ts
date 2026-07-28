@@ -9,7 +9,12 @@ function acRequest(
   return { source, activeCollab }
 }
 
-const TASK = { taskName: 'Fix the header', projectName: 'Website Redesign' }
+const TASK = {
+  taskId: 1,
+  projectId: 2,
+  taskName: 'Fix the header',
+  projectName: 'Website Redesign'
+}
 
 describe('ActiveCollab notification wording', () => {
   it('leads with the change and names the project in the detailed style', () => {
@@ -94,13 +99,23 @@ describe('ActiveCollab notification wording', () => {
   it('names a project-less task without leaving an empty banner in either style', () => {
     expect(
       buildNotificationOptions(
-        acRequest('activecollab-updated', { taskName: '', projectName: '' }),
+        acRequest('activecollab-updated', {
+          taskId: 1,
+          projectId: 2,
+          taskName: '',
+          projectName: ''
+        }),
         'detailed'
       )
     ).toEqual({ title: 'Task updated: a task', body: 'ActiveCollab' })
     expect(
       buildNotificationOptions(
-        acRequest('activecollab-updated', { taskName: '', projectName: '' }),
+        acRequest('activecollab-updated', {
+          taskId: 1,
+          projectId: 2,
+          taskName: '',
+          projectName: ''
+        }),
         'minimal'
       )
     ).toEqual({ title: 'a task', body: 'Task updated' })

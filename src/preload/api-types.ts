@@ -3152,6 +3152,10 @@ export type PreloadApi = {
         defaultTabs?: WorktreeDefaultTabsLaunch
       }) => void
     ) => () => void
+    /** Fired when the user clicks an ActiveCollab task notification: open that task. */
+    onOpenActiveCollabTask: (
+      callback: (data: { projectId: number; taskId: number }) => void
+    ) => () => void
     onCreateTerminal: (
       callback: (data: {
         requestId?: string

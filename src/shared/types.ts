@@ -3082,6 +3082,9 @@ export type NotificationDispatchRequest = {
   siteRun?: { siteName: string; group: 'import' | 'deploy'; environment: string; status: string }
   /** Set for the `activecollab-*` sources: the task that changed, and what changed about it. */
   activeCollab?: {
+    /** Both ids are what click-to-open routes on; the names are only ever displayed. */
+    taskId: number
+    projectId: number
     taskName: string
     projectName: string
     /** Comments that arrived; set for `activecollab-comments`. */

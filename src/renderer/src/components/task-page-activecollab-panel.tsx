@@ -57,6 +57,23 @@ export function TaskPageActiveCollabPanel({
     setSelected(ref)
   }, [])
 
+  // Honours a notification click. The request lives in the store rather than being passed down
+  // because the click usually arrives while this panel is unmounted, so it has to survive until
+  // the view switch brings the panel up. Cleared as soon as it is applied: leaving it set would
+  // drag the user back to this task every later visit to Tasks.
+  // Read defensively: this panel is mounted against partial store stand-ins in several suites, and
+  // a bare read of an absent slice would take the whole Tasks surface down rather than merely
+  // skipping a feature no stand-in exercises.
+  const openRequest = useAppStore((s) => s.activeCollabTaskOpenRequest ?? null)
+  const clearOpenRequest = useAppStore((s) => s.clearActiveCollabTaskOpenRequest)
+  useEffect(() => {
+    if (openRequest === null) {
+      return
+    }
+    setSelected(openRequest)
+    clearOpenRequest?.()
+  }, [openRequest, clearOpenRequest])
+
   if (statusUnknown) {
     return (
       <div className="mt-4 flex items-center justify-center py-14">

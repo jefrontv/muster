@@ -290,6 +290,27 @@ function requestRendererNotificationSound(source: NotificationEventSource): void
   })
 }
 
+/**
+ * Raises the window so a click-to-navigate binding has somewhere visible to navigate.
+ *
+ * Shared by every such binding: telling the renderer where to go while the window is still hidden
+ * or minimised moves the user somewhere they cannot see, which reads as the click doing nothing.
+ */
+function surfaceMainWindowForNotificationClick(): BrowserWindow | null {
+  const win = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed())
+  if (!win) {
+    return null
+  }
+  if (process.platform === 'darwin') {
+    app.focus({ steal: true })
+  }
+  if (win.isMinimized()) {
+    win.restore()
+  }
+  win.focus()
+  return win
+}
+
 /** Dispatch from the main process, through the same settings gates the renderer path uses. */
 export async function dispatchMainProcessNotification(
   args: NotificationDispatchRequest
@@ -511,17 +532,10 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
         const repoId = getRepoIdFromWorktreeId(args.worktreeId)
         clickHandler = () => {
           release()
-          const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+          const win = surfaceMainWindowForNotificationClick()
           if (!win) {
             return
           }
-          if (process.platform === 'darwin') {
-            app.focus({ steal: true })
-          }
-          if (win.isMinimized()) {
-            win.restore()
-          }
-          win.focus()
           win.webContents.send('ui:activateWorktree', {
             repoId,
             worktreeId: args.worktreeId
@@ -538,6 +552,18 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
               scrollToBottomIfOutputSinceLastView: true
             })
           }
+        }
+        notification.on('click', clickHandler)
+      } else if (args.activeCollab) {
+        // An ActiveCollab change carries no worktree — the task itself is the destination, so this
+        // branch routes on the ids rather than leaving the banner inert when clicked.
+        const { projectId, taskId } = args.activeCollab
+        clickHandler = () => {
+          release()
+          surfaceMainWindowForNotificationClick()?.webContents.send('ui:openActiveCollabTask', {
+            projectId,
+            taskId
+          })
         }
         notification.on('click', clickHandler)
       }

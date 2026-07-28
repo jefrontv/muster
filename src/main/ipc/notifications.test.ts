@@ -591,6 +591,77 @@ describe('registerNotificationHandlers', () => {
     })
   })
 
+  it('opens the task when an ActiveCollab notification is clicked', async () => {
+    const webContentsSend = vi.fn()
+    const restore = vi.fn()
+    const focus = vi.fn()
+    getAllWindowsMock.mockReturnValue([
+      {
+        isDestroyed: () => false,
+        isFocused: () => false,
+        isMinimized: () => true,
+        restore,
+        focus,
+        webContents: { send: webContentsSend }
+      } as never
+    ])
+    registerNotificationHandlers({
+      getSettings: () => ({
+        notifications: {
+          enabled: true,
+          activeCollabComments: true,
+          suppressWhenFocused: true
+        }
+      })
+    } as never)
+
+    const handler = getDispatchHandler()
+    expect(
+      await handler(
+        {},
+        {
+          source: 'activecollab-comments',
+          activeCollab: {
+            taskId: 91,
+            projectId: 12,
+            taskName: 'Fix the header',
+            projectName: 'Muster',
+            newComments: 2
+          }
+        }
+      )
+    ).toEqual({ delivered: true })
+
+    getNotificationEventHandler('click')()
+
+    // Raised before routing: navigating a hidden window reads as the click doing nothing.
+    expect(restore).toHaveBeenCalledTimes(1)
+    expect(focus).toHaveBeenCalledTimes(1)
+    expect(webContentsSend).toHaveBeenCalledWith('ui:openActiveCollabTask', {
+      projectId: 12,
+      taskId: 91
+    })
+  })
+
+  it('binds no click handler when a notification names nowhere to go', async () => {
+    // A bare source carries neither a worktree nor a task, so there is nothing to open; binding a
+    // handler anyway would raise and steal focus on click and then leave the user where they were.
+    registerNotificationHandlers({
+      getSettings: () => ({
+        notifications: {
+          enabled: true,
+          agentTaskComplete: true,
+          suppressWhenFocused: true
+        }
+      })
+    } as never)
+
+    const handler = getDispatchHandler()
+    expect(await handler({}, { source: 'agent-task-complete' })).toEqual({ delivered: true })
+
+    expect(notificationOnMock.mock.calls.map(([event]) => event)).not.toContain('click')
+  })
+
   it('clears the retained notification fallback timer when the native notification closes', async () => {
     registerNotificationHandlers({
       getSettings: () => ({

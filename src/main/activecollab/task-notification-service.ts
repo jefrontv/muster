@@ -119,6 +119,8 @@ export function acChangeNotification(
     // Same id replaces the banner it supersedes: "2 new comments" should not sit under "1 new".
     notificationId: key,
     activeCollab: {
+      taskId: change.task.id,
+      projectId: change.task.projectId,
       taskName: change.task.name,
       projectName: change.task.projectName,
       ...(change.kind === 'comments' ? { newComments: change.newComments } : {}),

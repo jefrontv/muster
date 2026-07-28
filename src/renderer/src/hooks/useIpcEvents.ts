@@ -1465,6 +1465,17 @@ export function useIpcEvents(): void {
     )
 
     unsubs.push(
+      window.api.ui.onOpenActiveCollabTask(({ projectId, taskId }) => {
+        const store = useAppStore.getState()
+        // Both halves are needed: the view switch gets the panel mounted, and the request tells it
+        // which task to select once it is. Setting only the view would land the user on whatever
+        // was last selected, which is exactly the task they did NOT get notified about.
+        store.setActiveView('tasks')
+        store.requestActiveCollabTask({ projectId, taskId })
+      })
+    )
+
+    unsubs.push(
       window.api.ui.onCreateTerminal(
         ({
           requestId,

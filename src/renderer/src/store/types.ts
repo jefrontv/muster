@@ -16,6 +16,10 @@ import type {
   ActiveCollabUnreadActions,
   ActiveCollabUnreadState
 } from './slices/activecollab-unread'
+import type {
+  ActiveCollabOpenRequestActions,
+  ActiveCollabOpenRequestState
+} from './slices/activecollab-open-request'
 import type { EditorSlice } from './slices/editor'
 import type { SitesSlice } from './slices/sites'
 import type { StatsSlice } from './slices/stats'
@@ -61,6 +65,8 @@ export type AppState = RepoSlice &
   ActiveCollabSlice &
   ActiveCollabUnreadState &
   ActiveCollabUnreadActions &
+  ActiveCollabOpenRequestState &
+  ActiveCollabOpenRequestActions &
   EditorSlice &
   SitesSlice &
   StatsSlice &
