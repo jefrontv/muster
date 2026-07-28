@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ACTIVECOLLAB_CALLOUT_TAG,
+  ACTIVECOLLAB_IMAGE_TAG,
   ACTIVECOLLAB_MENTION_TAG,
   isUnauthenticableInstanceImage,
   rehypeActiveCollabHtml
@@ -87,10 +88,82 @@ describe('rehypeActiveCollabHtml', () => {
   it('demotes provider HTML that mints the private ac-* tags itself', () => {
     const forged = element(ACTIVECOLLAB_MENTION_TAG, {})
     const forgedCallout = element(ACTIVECOLLAB_CALLOUT_TAG, {})
-    run({ type: 'root', children: [forged, forgedCallout] })
+    const forgedImage = element(ACTIVECOLLAB_IMAGE_TAG, {}, {
+      type: 'text',
+      value: '249016'
+    } as TestNode)
+    run({ type: 'root', children: [forged, forgedCallout, forgedImage] })
 
     expect(forged.tagName).toBe('span')
     expect(forgedCallout.tagName).toBe('span')
+    expect(forgedImage.tagName).toBe('span')
+  })
+
+  it('retags an attachment image onto the stated id, dropping every attribute', () => {
+    const image = element('img', {
+      src: `/proxy.php?i=--THUMBNAIL-TOKEN--`,
+      alt: 'unnamed.png',
+      'image-type': 'attachment',
+      'object-id': '249016',
+      onerror: 'window.stolen = 1'
+    })
+    run({ type: 'root', children: [element('p', {}, image)] })
+
+    expect(image.tagName).toBe(ACTIVECOLLAB_IMAGE_TAG)
+    expect(image.properties).toEqual({})
+    expect(image.children).toEqual([{ type: 'text', value: '249016 unnamed.png' }])
+  })
+
+  it('carries the bare id when the attachment image is unnamed', () => {
+    const image = element('img', { 'image-type': 'attachment', 'object-id': '7' })
+    run({ type: 'root', children: [element('p', {}, image)] })
+
+    expect(image.children).toEqual([{ type: 'text', value: '7' }])
+  })
+
+  it('still suppresses an instance image whose id is missing or unusable', () => {
+    const tree = run({
+      type: 'root',
+      children: [
+        element(
+          'p',
+          {},
+          element('img', { src: '/uploads/relative.png' }),
+          element('img', { src: '/uploads/a.png', 'object-id': '249016' }),
+          element('img', { src: '/uploads/b.png', 'image-type': 'avatar', 'object-id': '4' }),
+          element('img', { src: '/uploads/c.png', 'image-type': 'attachment', 'object-id': '0' }),
+          element('img', { src: '/uploads/d.png', 'image-type': 'attachment', 'object-id': 'x' })
+        )
+      ]
+    })
+
+    expect(tree.children?.[0]?.children).toEqual([])
+  })
+
+  it('refills a whitespace-only paragraph so the blank line keeps a line box', () => {
+    const tree = run({
+      type: 'root',
+      children: [
+        element('p', {}, { type: 'text', value: ' ' } as TestNode),
+        element('p', {}),
+        element('p', {}, { type: 'text', value: '\u00a0' } as TestNode),
+        element('p', {}, { type: 'text', value: '  Real copy  ' } as TestNode)
+      ]
+    })
+
+    expect(tree.children?.map((child) => child.children)).toEqual([
+      [{ type: 'text', value: '\u00a0' }],
+      [{ type: 'text', value: '\u00a0' }],
+      [{ type: 'text', value: '\u00a0' }],
+      [{ type: 'text', value: '  Real copy  ' }]
+    ])
+  })
+
+  it('leaves a paragraph holding an element alone, even when its text is blank', () => {
+    const spacerImage = element('img', { 'image-type': 'attachment', 'object-id': '5' })
+    const tree = run({ type: 'root', children: [element('p', {}, spacerImage)] })
+
+    expect(tree.children?.[0]?.children).toEqual([spacerImage])
   })
 
   it('removes instance images at any depth while keeping third-party ones', () => {

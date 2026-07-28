@@ -73,7 +73,7 @@ function noteFailure(
   get: ActiveCollabStoreGet,
   failure: ActiveCollabFailure
 ): void {
-  set({ activeCollabLastError: failure.error })
+  set({ activeCollabLastError: failure.error, activeCollabLastFailureKind: failure.kind })
   if (shouldRefreshStatusAfterFailure(failure)) {
     void get().checkActiveCollabConnection()
   }
@@ -95,7 +95,8 @@ function settleTaskWrite(
     ...(row
       ? patchActiveCollabTaskInCaches(s, row, prefix)
       : staleActiveCollabTaskInCaches(s, taskId, prefix)),
-    activeCollabLastError: null
+    activeCollabLastError: null,
+    activeCollabLastFailureKind: null
   }))
 }
 
@@ -137,7 +138,8 @@ export function createActiveCollabWriteActions(
         ...(comment
           ? appendActiveCollabCommentInCaches(s, args.taskId, comment, prefix)
           : staleActiveCollabTaskInCaches(s, args.taskId, prefix)),
-        activeCollabLastError: null
+        activeCollabLastError: null,
+        activeCollabLastFailureKind: null
       }))
       return result
     },

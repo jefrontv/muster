@@ -718,13 +718,9 @@ describe('Store', () => {
     expect(settings.rightSidebarOpenByDefault).toBe(true)
     expect(settings.showTasksButton).toBe(true)
     expect(settings.showAutomationsButton).toBe(true)
-    expect(settings.visibleTaskProviders).toEqual([
-      'github',
-      'gitlab',
-      'linear',
-      'jira',
-      'activecollab'
-    ])
+    expect(settings.visibleTaskProviders).toEqual(['activecollab'])
+    expect(settings.defaultTaskSource).toBe('activecollab')
+    expect(settings.visibleTaskProvidersNarrowedToActiveCollab).toBe(true)
     expect(settings.openInApplications).toEqual([
       { id: 'vscode', label: 'VS Code', command: 'code' }
     ])
@@ -2401,13 +2397,8 @@ describe('Store', () => {
     expect(store.getSettings().showTasksButton).toBe(true)
     expect(store.getSettings().showAutomationsButton).toBe(true)
     expect(store.getSettings().combinedDiffFileTreeVisibleByDefault).toBe(false)
-    expect(store.getSettings().visibleTaskProviders).toEqual([
-      'github',
-      'gitlab',
-      'linear',
-      'jira',
-      'activecollab'
-    ])
+    expect(store.getSettings().visibleTaskProviders).toEqual(['activecollab'])
+    expect(store.getSettings().defaultTaskSource).toBe('activecollab')
     expect(store.getSettings().experimentalActivity).toBe(false)
     expect(store.getSettings().experimentalActivityDefaultedOffForAllUsers).toBe(true)
     expect(store.getSettings().experimentalTerminalAttention).toBe(false)
@@ -2767,7 +2758,10 @@ describe('Store', () => {
       schemaVersion: 1,
       repos: [],
       worktreeMeta: {},
-      settings: { visibleTaskProviders: ['gitlab', 'unknown', 'gitlab'] },
+      settings: {
+        visibleTaskProviders: ['gitlab', 'unknown', 'gitlab'],
+        visibleTaskProvidersNarrowedToActiveCollab: true
+      },
       ui: {},
       githubCache: { pr: {}, issue: {} },
       workspaceSession: {}
@@ -2784,7 +2778,8 @@ describe('Store', () => {
       worktreeMeta: {},
       settings: {
         visibleTaskProviders: ['gitlab'],
-        visibleTaskProvidersDefaultedForJira: true
+        visibleTaskProvidersDefaultedForJira: true,
+        visibleTaskProvidersNarrowedToActiveCollab: true
       },
       ui: {},
       githubCache: { pr: {}, issue: {} },
@@ -2805,7 +2800,8 @@ describe('Store', () => {
       settings: {
         visibleTaskProviders: ['gitlab'],
         visibleTaskProvidersDefaultedForJira: true,
-        visibleTaskProvidersDefaultedForActiveCollab: true
+        visibleTaskProvidersDefaultedForActiveCollab: true,
+        visibleTaskProvidersNarrowedToActiveCollab: true
       },
       ui: {},
       githubCache: { pr: {}, issue: {} },
@@ -2814,6 +2810,77 @@ describe('Store', () => {
 
     const store = await createStore()
     expect(store.getSettings().visibleTaskProviders).toEqual(['gitlab'])
+  })
+
+  it('narrows an existing multi-provider profile to ActiveCollab', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: {
+        visibleTaskProviders: ['github', 'gitlab', 'linear', 'jira', 'activecollab'],
+        defaultTaskSource: 'github',
+        visibleTaskProvidersDefaultedForJira: true,
+        visibleTaskProvidersDefaultedForActiveCollab: true
+      },
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().visibleTaskProviders).toEqual(['activecollab'])
+    // The saved default has to move too, or normalizeTaskProviderSettings puts GitHub straight back.
+    expect(store.getSettings().defaultTaskSource).toBe('activecollab')
+    expect(store.getSettings().visibleTaskProvidersNarrowedToActiveCollab).toBe(true)
+  })
+
+  it('narrows an existing profile exactly once and leaves a re-enabled provider alone', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: {
+        visibleTaskProviders: ['github', 'jira', 'activecollab'],
+        defaultTaskSource: 'github',
+        visibleTaskProvidersDefaultedForJira: true,
+        visibleTaskProvidersDefaultedForActiveCollab: true
+      },
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().visibleTaskProviders).toEqual(['activecollab'])
+    store.updateSettings({ visibleTaskProviders: ['github', 'activecollab'] })
+    store.flush()
+
+    // The second load must not re-narrow, or every launch would undo the Settings -> Tasks opt-in.
+    const reopened = await createStore()
+    expect(reopened.getSettings().visibleTaskProviders).toEqual(['github', 'activecollab'])
+  }, 10_000)
+
+  it('does not re-narrow a profile that already opted GitHub back in', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: {
+        visibleTaskProviders: ['activecollab', 'github'],
+        defaultTaskSource: 'activecollab',
+        visibleTaskProvidersDefaultedForJira: true,
+        visibleTaskProvidersDefaultedForActiveCollab: true,
+        visibleTaskProvidersNarrowedToActiveCollab: true
+      },
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().visibleTaskProviders).toEqual(['activecollab', 'github'])
+    expect(store.getSettings().defaultTaskSource).toBe('activecollab')
   })
 
   it('normalizes malformed terminal shortcut policy on load', async () => {
@@ -2851,7 +2918,11 @@ describe('Store', () => {
       schemaVersion: 1,
       repos: [],
       worktreeMeta: {},
-      settings: { visibleTaskProviders: ['linear'], defaultTaskSource: 'github' },
+      settings: {
+        visibleTaskProviders: ['linear'],
+        defaultTaskSource: 'github',
+        visibleTaskProvidersNarrowedToActiveCollab: true
+      },
       ui: {},
       githubCache: { pr: {}, issue: {} },
       workspaceSession: {}
@@ -2872,7 +2943,11 @@ describe('Store', () => {
       schemaVersion: 1,
       repos: [],
       worktreeMeta: {},
-      settings: { visibleTaskProviders: ['gitlab'], defaultTaskSource: 'bitbucket' as never },
+      settings: {
+        visibleTaskProviders: ['gitlab'],
+        defaultTaskSource: 'bitbucket' as never,
+        visibleTaskProvidersNarrowedToActiveCollab: true
+      },
       ui: {},
       githubCache: { pr: {}, issue: {} },
       workspaceSession: {}

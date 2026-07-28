@@ -356,7 +356,14 @@ describe('SidebarNav', () => {
     const container = await renderSidebarNav()
 
     const tasksButton = getButtonByText(container, 'Tasks')
-    const shortcuts = tasksButton.querySelector('[aria-label="Open GitHub tasks"]')?.parentElement
+    // Why the container and not a child: this used to reach the wrapper via
+    // `[aria-label="Open GitHub tasks"]`.parentElement, but the fork now defaults
+    // `visibleTaskProviders` to ActiveCollab alone and this harness configures no provider
+    // shortcuts, so that query returned undefined and every assertion below ran against
+    // `undefined?.className` — passing vacuously. The affordance under test belongs to the
+    // wrapper, so assert on the wrapper.
+    const shortcuts = tasksButton.querySelector('span.group-hover\\:flex')
+    expect(shortcuts).not.toBeNull()
 
     expect(shortcuts?.className).toContain('hidden')
     expect(shortcuts?.className).toContain('group-hover:flex')

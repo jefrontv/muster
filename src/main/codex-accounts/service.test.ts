@@ -162,6 +162,7 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
     visibleTaskProviders: ['github', 'gitlab', 'linear', 'jira', 'activecollab'],
     visibleTaskProvidersDefaultedForJira: true,
     visibleTaskProvidersDefaultedForActiveCollab: true,
+    visibleTaskProvidersNarrowedToActiveCollab: true,
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     opencodeSessionCookie: '',

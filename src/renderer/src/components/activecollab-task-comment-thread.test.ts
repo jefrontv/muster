@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 
-import { activeCollabCommentBodyHtml } from './activecollab-comment-mentions'
 import { sortActiveCollabCommentsNewestFirst } from './activecollab-task-comment-thread'
 import type { ActiveCollabComment } from '../../../shared/activecollab-types'
 
@@ -54,17 +53,5 @@ describe('sortActiveCollabCommentsNewestFirst', () => {
     sortActiveCollabCommentsNewestFirst(rows)
 
     expect(rows.map((c) => c.id)).toEqual([1, 3])
-  })
-})
-
-describe('activeCollabCommentBodyHtml', () => {
-  it('escapes typed markup so a literal tag cannot become live HTML on the instance', () => {
-    expect(activeCollabCommentBodyHtml('<b>bold</b> & "quoted"')).toBe(
-      '<p>&lt;b&gt;bold&lt;/b&gt; &amp; &quot;quoted&quot;</p>'
-    )
-  })
-
-  it('splits blank-line-separated blocks into paragraphs and keeps single breaks', () => {
-    expect(activeCollabCommentBodyHtml('one\ntwo\n\nthree')).toBe('<p>one<br>two</p><p>three</p>')
   })
 })

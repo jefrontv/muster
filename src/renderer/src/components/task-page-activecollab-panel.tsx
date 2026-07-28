@@ -10,11 +10,10 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { ActiveCollabTaskList } from '@/components/task-page-activecollab-task-list'
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
-import { translate } from '@/i18n/i18n'
+import { TaskPageActiveCollabSetup } from '@/components/task-page-activecollab-setup'
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { useAppStore } from '@/store'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
@@ -31,17 +30,26 @@ export function TaskPageActiveCollabPanel({
 }: TaskPageActiveCollabPanelProps): React.JSX.Element {
   const status = useAppStore((s) => s.activeCollabStatus)
   const statusChecked = useAppStore((s) => s.activeCollabStatusChecked)
+  const statusContextKey = useAppStore((s) => s.activeCollabStatusContextKey)
+  const lastFailureKind = useAppStore((s) => s.activeCollabLastFailureKind)
+  const settings = useAppStore((s) => s.settings)
   const checkConnection = useAppStore((s) => s.checkActiveCollabConnection)
   const [selected, setSelected] = useState<ActiveCollabTaskRef | null>(null)
 
+  // Why the context key and not `statusChecked` alone: the flag stays true after the runtime changes,
+  // so a stale answer from the previous host would read as resolved and could flash the setup screen
+  // at a connected user. Unknown means "not yet answered for THIS runtime".
+  const statusUnknown =
+    !statusChecked || statusContextKey !== getProviderRuntimeContextKey(settings)
+
   // Why: nothing else probes the connection on this route. The settings pane has its own refresh
-  // hook, so without this the panel gates on `statusChecked` forever and renders a spinner that
-  // never resolves. Guarded on the flag so it runs once per unchecked mount, not per render.
+  // hook, so without this the panel gates on unknown status forever and renders a spinner that
+  // never resolves. Guarded so it runs once per unresolved mount, not per render.
   useEffect(() => {
-    if (!statusChecked) {
+    if (statusUnknown) {
       void checkConnection()
     }
-  }, [checkConnection, statusChecked])
+  }, [checkConnection, statusUnknown])
 
   // Why useCallback: the list re-renders per row, and a fresh handler identity each render would
   // defeat any memoisation added to the row later.
@@ -49,7 +57,7 @@ export function TaskPageActiveCollabPanel({
     setSelected(ref)
   }, [])
 
-  if (!statusChecked) {
+  if (statusUnknown) {
     return (
       <div className="mt-4 flex items-center justify-center py-14">
         <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
@@ -57,26 +65,18 @@ export function TaskPageActiveCollabPanel({
     )
   }
 
-  if (!status.configured) {
+  // A refused token still sits on disk, so `configured` cannot see it — the status read never leaves
+  // the machine. Without the kind check a rejected credential would leave the user staring at a task
+  // list that only errors, with no route back to the sign-in form. `configured` is required for the
+  // reconnect wording so a stale auth verdict cannot tell someone to reconnect a token that is gone.
+  const credentialRejected = status.configured && lastFailureKind === 'auth'
+  if (!status.configured || credentialRejected) {
     return (
-      <div className="mt-4 flex flex-col items-center justify-center rounded-md border border-border/50 bg-muted/50 px-6 py-14 text-center shadow-sm">
-        <ActiveCollabIcon className="mb-4 size-8 text-muted-foreground/60" />
-        <p className="text-base font-medium text-foreground">
-          {translate(
-            'auto.components.TaskPageActiveCollabPanel.connectHeading',
-            'Connect your ActiveCollab account'
-          )}
-        </p>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          {translate(
-            'auto.components.TaskPageActiveCollabPanel.connectBody',
-            'Browse and start work on your assigned ActiveCollab tasks directly from here.'
-          )}
-        </p>
-        <Button className="mt-5" onClick={onConnect}>
-          {translate('auto.components.TaskPageActiveCollabPanel.connectAction', 'Connect')}
-        </Button>
-      </div>
+      <TaskPageActiveCollabSetup
+        mode={credentialRejected ? 'reconnect' : 'connect'}
+        onConnect={onConnect}
+        reason={credentialRejected ? undefined : status.reason}
+      />
     )
   }
 

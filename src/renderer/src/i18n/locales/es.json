@@ -13935,7 +13935,11 @@
           "search_people": "Search people...",
           "unassign": "Unassign",
           "no_people": "No people match.",
-          "mention_menu_unscoped": "All people — project members unavailable"
+          "mention_menu_unscoped": "All people — project members unavailable",
+          "comment_formatting": "Comment formatting",
+          "comment_bold": "Bold",
+          "comment_italic": "Italic",
+          "comment_link": "Link"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -13978,6 +13982,28 @@
           "clear": "Show all tasks",
           "unscoped": "Nothing is scoping this list — showing every task assigned to you. Bind {{value0}} here, or from its ⋯ menu in the sidebar.",
           "bind_named": "Bind {{value0}}…"
+        },
+        "inline_image": {
+          "fallback_name": "Attached image"
+        },
+        "setup": {
+          "benefit_tasks": "Every task assigned to you, grouped by project.",
+          "benefit_comments": "Comment threads, with replies posted from here.",
+          "benefit_attachments": "Attachments and inline images, downloadable without leaving the app.",
+          "benefit_notifications": "Notifications when a task you follow changes.",
+          "heading_reconnect": "Reconnect ActiveCollab to see your work here",
+          "heading_connect": "Connect ActiveCollab to see your work here",
+          "intro_reconnect": "Your ActiveCollab token is still stored on this machine, but the instance refused it. A changed password, a revoked token, or a moved instance all look like this. Sign in once more to replace it — nothing else about your setup changes.",
+          "intro_connect": "Muster talks to your ActiveCollab workspace directly, so your assigned work lands in this panel instead of a browser tab.",
+          "benefits_title": "What connecting gives you",
+          "requirements_title": "What it asks you for",
+          "requirement_url": "Your ActiveCollab instance URL — the address you sign in at.",
+          "requirement_credentials": "The email and password of that ActiveCollab account.",
+          "credential_handling": "They are sent once, straight to your own instance, and exchanged for a long-lived API token. The password is never stored — only the token is kept, encrypted where the runtime supports it.",
+          "action_reconnect": "Reconnect ActiveCollab",
+          "action_connect": "Connect ActiveCollab",
+          "action_settings": "Open Integrations settings",
+          "settings_hint": "Settings → Integrations holds the same connection, the account it resolved to, and the ActiveCollab MCP install your agents use."
         }
       },
       "TaskPageActiveCollabPanel": {

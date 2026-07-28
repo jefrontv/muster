@@ -3,13 +3,21 @@
 // Mounts the composer against the REAL store slice with only the runtime client mocked, so the
 // "people are fetched lazily, and once per project" claim is proved through the cache that
 // actually enforces it rather than against a stub action.
+//
+// `useEditor` is wrapped rather than stubbed: happy-dom does not implement contenteditable, so
+// text cannot be produced by dispatching key events at the DOM. The wrapper is a pass-through that
+// keeps a handle on the real editor, which is what lets a test type. Everything else — the menu,
+// the key handling, the serialiser, the store — is the shipping code.
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { create } from 'zustand'
+import type * as TiptapReact from '@tiptap/react'
+import type { Editor } from '@tiptap/react'
 
 import { createActiveCollabSlice } from '@/store/slices/activecollab'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { clearActiveCollabInflightReads } from '@/store/slices/activecollab-reads'
 import type { AppState } from '@/store/types'
 import type { ActiveCollabResult } from '../../../shared/activecollab-api-types'
@@ -19,6 +27,7 @@ type UsersResult = ActiveCollabResult<ActiveCollabUser[]>
 
 const holder = vi.hoisted(() => ({
   state: null as unknown,
+  editor: null as Editor | null,
   listUsers: vi.fn<() => Promise<UsersResult>>(),
   listProjectMembers: vi.fn<(args: { projectId: number }) => Promise<UsersResult>>()
 }))
@@ -26,6 +35,18 @@ const holder = vi.hoisted(() => ({
 vi.mock('@/store', () => ({
   useAppStore: (selector: (state: unknown) => unknown) => selector(holder.state)
 }))
+
+vi.mock('@tiptap/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof TiptapReact>()
+  return {
+    ...actual,
+    useEditor: (...args: Parameters<typeof actual.useEditor>) => {
+      const instance = actual.useEditor(...args)
+      holder.editor = instance
+      return instance
+    }
+  }
+})
 
 vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabStatus: vi.fn(),
@@ -70,6 +91,7 @@ beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   // The slice's in-flight map outlives any one store, so isolate it like the DOM container.
   clearActiveCollabInflightReads()
+  holder.editor = null
   holder.listUsers.mockReset()
   holder.listUsers.mockResolvedValue({ ok: true, value: [ADA, ALAN, GRACE, JAKE] })
   holder.listProjectMembers.mockReset()
@@ -96,44 +118,45 @@ afterEach(() => {
   container.remove()
 })
 
-async function mount(projectId: number | null = PROJECT_ID): Promise<void> {
+async function mount({
+  projectId = PROJECT_ID as number | null,
+  disabled = false,
+  busy = false
+} = {}): Promise<void> {
   await act(async () => {
     root.render(
-      <ActiveCollabCommentComposer
-        projectId={projectId}
-        disabled={false}
-        busy={false}
-        onSubmit={(bodyHtml) => posted.push(bodyHtml)}
-      />
+      // The link bubble is built from `RichMarkdownLinkBubble`, whose actions are tooltipped; the
+      // app mounts one provider at the root (App.tsx), so the test supplies the same context.
+      <TooltipProvider>
+        <ActiveCollabCommentComposer
+          projectId={projectId}
+          disabled={disabled}
+          busy={busy}
+          onSubmit={(bodyHtml) => posted.push(bodyHtml)}
+        />
+      </TooltipProvider>
     )
   })
 }
 
-function field(): HTMLTextAreaElement {
-  const element = container.querySelector('textarea')
-  if (element === null) {
-    throw new Error('composer textarea missing')
+function editor(): Editor {
+  if (holder.editor === null) {
+    throw new Error('composer editor missing')
   }
-  return element
+  return holder.editor
 }
 
-/** Types a whole draft the way React sees it, caret parked at the end. */
+/** Types characters at the caret. Text, never markup — this is somebody at a keyboard. */
 async function type(text: string): Promise<void> {
-  const element = field()
   await act(async () => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set as (
-      value: string
-    ) => void
-    setter.call(element, text)
-    element.setSelectionRange(text.length, text.length)
-    element.dispatchEvent(new Event('input', { bubbles: true }))
+    editor().commands.insertContent([{ type: 'text', text }])
   })
 }
 
 async function press(key: string): Promise<boolean> {
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
   await act(async () => {
-    field().dispatchEvent(event)
+    editor().view.dom.dispatchEvent(event)
   })
   return event.defaultPrevented
 }
@@ -153,6 +176,74 @@ async function clickOption(index: number): Promise<void> {
   })
 }
 
+function toolbarButton(label: string): HTMLButtonElement {
+  const button = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
+  if (button === null) {
+    throw new Error(`toolbar button ${label} missing`)
+  }
+  return button
+}
+
+function submitButton(): HTMLButtonElement {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === 'Comment'
+  )
+  if (button === undefined) {
+    throw new Error('comment button missing')
+  }
+  return button
+}
+
+async function post(): Promise<void> {
+  await act(async () => {
+    submitButton().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  })
+}
+
+describe('ActiveCollabCommentComposer layout', () => {
+  it('stacks the Comment button beneath the input, right-aligned', async () => {
+    await mount()
+    const field = container.querySelector('.activecollab-comment-editor')
+    const buttonRow = submitButton().parentElement
+
+    // Regression guard: the button used to sit `self-end` BESIDE the field, which left it floating
+    // against the field's bottom corner aligned to nothing.
+    expect(field).not.toBeNull()
+    expect(buttonRow?.contains(field!)).toBe(false)
+    expect(
+      field!.compareDocumentPosition(buttonRow!) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(buttonRow?.className).toContain('justify-end')
+  })
+
+  it('carries the placeholder onto the field, which is what the empty-state CSS reads', async () => {
+    await mount()
+    const firstParagraph = container.querySelector('.activecollab-comment-editor p')
+
+    // Both halves of the contract with rich-markdown-editor.css: the rule is keyed on
+    // `p.is-editor-empty:first-child::before` and prints `attr(data-placeholder)`. Lose either and
+    // the field is silently blank with no hint of what it is for.
+    expect(firstParagraph?.getAttribute('data-placeholder')).toBe('Add an ActiveCollab comment...')
+    expect(firstParagraph?.classList.contains('is-editor-empty')).toBe(true)
+
+    await type('now it has words')
+    expect(
+      container
+        .querySelector('.activecollab-comment-editor p')
+        ?.classList.contains('is-editor-empty')
+    ).toBe(false)
+  })
+
+  it('offers exactly the three controls the schema can represent', async () => {
+    await mount()
+    const labels = [...container.querySelectorAll('button[aria-label]')].map((button) =>
+      button.getAttribute('aria-label')
+    )
+
+    expect(labels).toEqual(['Bold', 'Italic', 'Link'])
+  })
+})
+
 describe('ActiveCollabCommentComposer roster fetching', () => {
   it('never asks for anyone while the author writes a comment with no @', async () => {
     await mount()
@@ -166,9 +257,9 @@ describe('ActiveCollabCommentComposer roster fetching', () => {
   it('fetches project members once, however many characters follow the @', async () => {
     await mount()
     await type('Ping @')
-    await type('Ping @a')
-    await type('Ping @al')
-    await type('Ping @ala')
+    await type('a')
+    await type('l')
+    await type('a')
 
     expect(holder.listProjectMembers).toHaveBeenCalledTimes(1)
     // Members answered, so the instance-wide roster is never touched.
@@ -215,6 +306,13 @@ describe('ActiveCollabCommentComposer menu', () => {
     expect(options()).toEqual([])
   })
 
+  it('stays shut for an email address, because that @ is not a mention', async () => {
+    await mount()
+    await type('mail ada@efront')
+
+    expect(options()).toEqual([])
+  })
+
   it('moves the highlight with Down and Up, wrapping at both ends', async () => {
     await mount()
     await type('Ping @')
@@ -228,14 +326,26 @@ describe('ActiveCollabCommentComposer menu', () => {
     expect(selectedOption()).toBe('Alan Turing')
   })
 
-  it('accepts the highlighted person on Enter, inserting the name and closing the menu', async () => {
+  it('accepts the highlighted person on Enter, inserting a chip and closing the menu', async () => {
     await mount()
     await type('Ping @a')
     await press('ArrowDown')
-    await press('Enter')
+    expect(await press('Enter')).toBe(true)
 
-    expect(field().value).toBe('Ping @Alan Turing ')
+    expect(editor().getText()).toBe('Ping @Alan Turing ')
     expect(options()).toEqual([])
+  })
+
+  it('renders the accepted person as a highlighted chip, not as text', async () => {
+    await mount()
+    await type('Ping @ada')
+    await press('Enter')
+    // The class is the CSS hook that tints the chip to match how a mention renders once posted.
+    // Rename it without renaming the rule and the highlight silently disappears.
+    const chip = container.querySelector('span.activecollab-comment-mention')
+
+    expect(chip?.textContent).toBe('@Ada Lovelace')
+    expect(container.querySelectorAll('span.activecollab-comment-mention')).toHaveLength(1)
   })
 
   it('accepts on Tab as well', async () => {
@@ -243,33 +353,30 @@ describe('ActiveCollabCommentComposer menu', () => {
     await type('Ping @ada')
     await press('Tab')
 
-    expect(field().value).toBe('Ping @Ada Lovelace ')
+    expect(editor().getText()).toBe('Ping @Ada Lovelace ')
   })
 
-  it('accepts on click without stealing focus from the field', async () => {
+  it('accepts on click, and the caret stays in the editor', async () => {
     await mount()
     await type('Ping @')
     await clickOption(1)
 
-    expect(field().value).toBe('Ping @Alan Turing ')
-    expect(document.activeElement).toBe(field())
+    expect(editor().getText()).toBe('Ping @Alan Turing ')
+    expect(options()).toEqual([])
   })
 
-  it('leaves the caret after the inserted name and the rest of the draft untouched', async () => {
+  it('leaves the caret after the inserted chip and the rest of the draft untouched', async () => {
     await mount()
-    const element = field()
-    // Caret parked immediately after "@ad", with trailing text the pick must not disturb.
+    await type('Ping @ad about the header')
     await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')
-        ?.set as (value: string) => void
-      setter.call(element, 'Ping @ad about the header')
-      element.setSelectionRange(8, 8)
-      element.dispatchEvent(new Event('input', { bubbles: true }))
+      // Caret parked immediately after "@ad", with trailing text the pick must not disturb.
+      editor().commands.setTextSelection(9)
     })
     await press('Enter')
 
-    expect(element.value).toBe('Ping @Ada Lovelace about the header')
-    expect(element.selectionStart).toBe(18)
+    expect(editor().getText()).toBe('Ping @Ada Lovelace about the header')
+    // 7, not 8: the draft already had a space at the caret, so accepting did not add a second one.
+    expect(editor().state.selection.from).toBe(7)
   })
 
   it('stays dismissed after Escape, so Escape is not undone by the next keystroke', async () => {
@@ -280,7 +387,7 @@ describe('ActiveCollabCommentComposer menu', () => {
     expect(options()).toEqual([])
 
     // Still the same `@`: the author dismissed this token deliberately and kept typing.
-    await type('Ping @al')
+    await type('l')
     expect(options()).toEqual([])
   })
 
@@ -289,37 +396,91 @@ describe('ActiveCollabCommentComposer menu', () => {
     await type('Ping @a')
     await press('Escape')
 
-    await type('Ping @a and @al')
+    await type(' and @al')
     expect(options()).toEqual(['Alan Turing'])
   })
 
   it('closes when the field loses focus, so the menu cannot sit over the thread below it', async () => {
     await mount()
-    field().focus()
     await type('Ping @a')
 
     expect(options()).not.toEqual([])
+    // A real DOM blur, so TipTap's own focus plugin is what reports it.
     await act(async () => {
-      field().blur()
+      editor().view.dom.dispatchEvent(new FocusEvent('blur'))
     })
 
     expect(options()).toEqual([])
   })
 
-  it('does not hijack Enter when no menu is open, so a plain Enter still types a newline', async () => {
+  it('does not hijack Enter when no menu is open, so a plain Enter still starts a new line', async () => {
     await mount()
     await type('First line')
+    await press('Enter')
+    await type('Second line')
 
-    expect(await press('Enter')).toBe(false)
+    expect(editor().state.doc.childCount).toBe(2)
     expect(posted).toEqual([])
   })
 
-  it('does not hijack Escape or the arrows when no menu is open', async () => {
+  it('does not swallow Escape when no menu is open, so the pane still sees it', async () => {
     await mount()
     await type('First line')
 
     expect(await press('Escape')).toBe(false)
-    expect(await press('ArrowDown')).toBe(false)
+  })
+})
+
+describe('ActiveCollabCommentComposer formatting', () => {
+  it('posts bold as <strong> and nothing more', async () => {
+    await mount()
+    await type('make this bold')
+    await act(async () => {
+      editor().commands.setTextSelection({ from: 1, to: 15 })
+    })
+    await act(async () => {
+      toolbarButton('Bold').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    await post()
+
+    expect(posted).toEqual(['<p><strong>make this bold</strong></p>'])
+  })
+
+  it('posts italics as <em> and nothing more', async () => {
+    await mount()
+    await type('lean on this')
+    await act(async () => {
+      editor().commands.setTextSelection({ from: 1, to: 13 })
+    })
+    await act(async () => {
+      toolbarButton('Italic').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    await post()
+
+    expect(posted).toEqual(['<p><em>lean on this</em></p>'])
+  })
+
+  it('posts a link as a bare href anchor', async () => {
+    await mount()
+    await type('the docs')
+    await act(async () => {
+      editor()
+        .chain()
+        .setTextSelection({ from: 1, to: 9 })
+        .setLink({ href: 'https://efront.com.au/docs' })
+        .run()
+    })
+    await post()
+
+    expect(posted).toEqual(['<p><a href="https://efront.com.au/docs">the docs</a></p>'])
+  })
+
+  it('escapes typed markup instead of rendering it', async () => {
+    await mount()
+    await type('<b>not bold</b>')
+    await post()
+
+    expect(posted).toEqual(['<p>&lt;b&gt;not bold&lt;/b&gt;</p>'])
   })
 })
 
@@ -328,12 +489,8 @@ describe('ActiveCollabCommentComposer posting', () => {
     await mount()
     await type('Ping @ada')
     await press('Enter')
-    await type(`${field().value}please look`)
-    await act(async () => {
-      container
-        .querySelector('button:not([role="option"])')
-        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    })
+    await type('please look')
+    await post()
 
     expect(posted).toEqual([
       '<p>Ping <span class="new_mention" data-user-id="12" data-type="user">Ada Lovelace</span>' +
@@ -341,24 +498,78 @@ describe('ActiveCollabCommentComposer posting', () => {
     ])
   })
 
-  it('clears the picks with the draft, so the next comment does not inherit them', async () => {
+  it('drops a mention the author deleted before posting', async () => {
+    // The improvement over substituting picked names into the text: the mention IS the chip, so
+    // what the author can see is exactly what gets sent. There is no pick list left to disagree.
     await mount()
     await type('Ping @ada')
     await press('Enter')
-    const post = (): Promise<void> =>
-      act(async () => {
-        container
-          .querySelector('button:not([role="option"])')
-          ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-      })
+    await type('never mind')
+    await act(async () => {
+      editor().chain().setNodeSelection(6).deleteSelection().run()
+    })
     await post()
 
-    expect(field().value).toBe('')
+    expect(posted[0]).not.toContain('new_mention')
+    expect(posted[0]).not.toContain('Ada Lovelace')
+  })
+
+  it('never mints a mention from a hand-typed name, however many times it appears', async () => {
+    // The documented sharp edge of the old name-substitution serialiser, now gone: a second typed
+    // "@Ada Lovelace" also became a mention for the picked Ada, including when a different Ada was
+    // meant. Nothing here is matched by name.
+    await mount()
+    await type('Ping @ada')
+    await press('Enter')
+    await type('and also @Ada Lovelace')
+    await press('Escape')
+    await post()
+
+    expect(posted[0].match(/new_mention/g)).toHaveLength(1)
+  })
+
+  it('clears the draft with its mentions, so the next comment does not inherit them', async () => {
+    await mount()
+    await type('Ping @ada')
+    await press('Enter')
+    await post()
+
+    expect(editor().getText()).toBe('')
+    expect(submitButton().disabled).toBe(true)
 
     // A second comment that happens to repeat the name must NOT become a mention.
     await type('Ada Lovelace already reviewed it')
     await post()
 
     expect(posted[1]).toBe('<p>Ada Lovelace already reviewed it</p>')
+  })
+
+  it('refuses to post a draft of nothing but whitespace', async () => {
+    await mount()
+    await type('   ')
+    await post()
+
+    expect(posted).toEqual([])
+    expect(submitButton().disabled).toBe(true)
+  })
+})
+
+describe('ActiveCollabCommentComposer while a write is in flight', () => {
+  it('disables the editor, the formatting controls and the button together', async () => {
+    await mount({ disabled: true, busy: true })
+
+    expect(editor().isEditable).toBe(false)
+    expect(toolbarButton('Bold').disabled).toBe(true)
+    expect(toolbarButton('Italic').disabled).toBe(true)
+    expect(toolbarButton('Link').disabled).toBe(true)
+    expect(submitButton().disabled).toBe(true)
+  })
+
+  it('re-enables everything once the write lands', async () => {
+    await mount({ disabled: true, busy: true })
+    await mount({ disabled: false, busy: false })
+
+    expect(editor().isEditable).toBe(true)
+    expect(toolbarButton('Bold').disabled).toBe(false)
   })
 })

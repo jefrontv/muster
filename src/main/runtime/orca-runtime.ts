@@ -252,7 +252,7 @@ import {
   createSequencedSetupAgentCommands,
   SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV
 } from '../../shared/setup-agent-sequencing'
-import { TASK_PROVIDERS } from '../../shared/task-providers'
+import { DEFAULT_TASK_SOURCE, DEFAULT_VISIBLE_TASK_PROVIDERS } from '../../shared/task-providers'
 import { FIRST_PANE_ID } from '../../shared/pane-key'
 import { isTerminalLeafId, makePaneKey, parsePaneKey } from '../../shared/stable-pane-id'
 import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
@@ -3130,9 +3130,9 @@ export class OrcaRuntimeService {
       agentDefaultArgs: settings.agentDefaultArgs ?? {},
       agentDefaultEnv: settings.agentDefaultEnv ?? {},
       agentStatusHooksEnabled: settings.agentStatusHooksEnabled !== false,
-      defaultTaskSource: settings.defaultTaskSource ?? 'github',
+      defaultTaskSource: settings.defaultTaskSource ?? DEFAULT_TASK_SOURCE,
       defaultTaskViewPreset: settings.defaultTaskViewPreset ?? 'issues',
-      visibleTaskProviders: settings.visibleTaskProviders ?? [...TASK_PROVIDERS],
+      visibleTaskProviders: settings.visibleTaskProviders ?? [...DEFAULT_VISIBLE_TASK_PROVIDERS],
       defaultRepoSelection: settings.defaultRepoSelection ?? null,
       defaultLinearTeamSelection: settings.defaultLinearTeamSelection ?? null,
       githubProjects: settings.githubProjects,

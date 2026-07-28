@@ -3,6 +3,8 @@
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as TiptapReact from '@tiptap/react'
+import type { Editor } from '@tiptap/react'
 
 import type {
   ActiveCollabAttachmentImage,
@@ -39,6 +41,24 @@ const mocks = vi.hoisted(() => ({
   listUsers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>(),
   listProjectMembers: vi.fn<() => Promise<ActiveCollabResult<ActiveCollabUser[]>>>()
 }))
+
+// Separate from `mocks`, whose every value is reset as a vi.fn in beforeEach.
+//
+// The comment composer is a TipTap editor and happy-dom has no contenteditable, so the only way to
+// put words in it is through the editor instance. `useEditor` is wrapped, not stubbed.
+const composer = vi.hoisted(() => ({ editor: null as Editor | null }))
+
+vi.mock('@tiptap/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof TiptapReact>()
+  return {
+    ...actual,
+    useEditor: (...args: Parameters<typeof actual.useEditor>) => {
+      const instance = actual.useEditor(...args)
+      composer.editor = instance
+      return instance
+    }
+  }
+})
 
 vi.mock('@/store', () => ({
   useAppStore: (selector: (state: unknown) => unknown) =>
@@ -229,6 +249,23 @@ function typeInto(element: HTMLInputElement | HTMLTextAreaElement, value: string
         : HTMLInputElement.prototype
     Object.getOwnPropertyDescriptor(prototype, 'value')?.set?.call(element, value)
     element.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+/** Types into the comment composer, which is a TipTap editor rather than a textarea. */
+function typeComment(paragraphs: string[]): void {
+  const editor = composer.editor
+  if (editor === null) {
+    throw new Error('comment editor missing')
+  }
+  act(() => {
+    editor.commands.setContent({
+      type: 'doc',
+      content: paragraphs.map((text) => ({
+        type: 'paragraph',
+        content: [{ type: 'text', text }]
+      }))
+    })
   })
 }
 
@@ -444,7 +481,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     expect(dueDateInput().disabled).toBe(true)
     expect(buttonWith('Edit labels').disabled).toBe(true)
     expect(buttonByLabel('Assignee').disabled).toBe(true)
-    expect(container.querySelector('textarea')?.disabled).toBe(true)
+    expect(composer.editor?.isEditable).toBe(false)
 
     await act(async () => {
       pending.resolve({ ok: true, value: { ...TASK, isCompleted: true } })
@@ -468,8 +505,7 @@ describe('ActiveCollabTaskWorkspace comments', () => {
     mocks.postComment.mockResolvedValue({ ok: true, value: posted })
     await mount()
 
-    const textarea = container.querySelector('textarea') as HTMLTextAreaElement
-    typeInto(textarea, 'Ping <b>Ada</b>\n\nsecond line')
+    typeComment(['Ping <b>Ada</b>', 'second line'])
     await click(buttonWith('Comment'))
 
     expect(mocks.postComment).toHaveBeenCalledWith({
@@ -483,7 +519,7 @@ describe('ActiveCollabTaskWorkspace comments', () => {
     mocks.postComment.mockResolvedValue({ ok: true, value: null })
     await mount()
 
-    typeInto(container.querySelector('textarea') as HTMLTextAreaElement, 'Shipped')
+    typeComment(['Shipped'])
     await click(buttonWith('Comment'))
 
     expect(mocks.fetchTaskDetail).toHaveBeenLastCalledWith(

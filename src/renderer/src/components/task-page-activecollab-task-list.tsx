@@ -13,11 +13,9 @@ import {
   deriveActiveCollabTaskListState,
   type ActiveCollabTaskListError
 } from './task-page-activecollab-load-state'
-import {
-  groupActiveCollabTasksByProject,
-  type ActiveCollabTaskGroup
-} from './task-page-activecollab-task-grouping'
-import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
+import { activeCollabGroupCollapseKey } from './task-page-activecollab-group-collapse'
+import { ActiveCollabTaskGroupSection } from './task-page-activecollab-task-group-section'
+import { groupActiveCollabTasksByProject } from './task-page-activecollab-task-grouping'
 import type {
   ActiveCollabFailure,
   ActiveCollabTaskRef
@@ -44,61 +42,6 @@ const INITIAL_LOAD: ActiveCollabTaskListLoad = {
   requestedPages: 1,
   loading: true,
   failure: null
-}
-
-/**
- * A project heading and its tasks are one unit for assistive tech: the heading names the group's
- * list through `aria-labelledby`, so entering the list announces the project instead of leaving the
- * rows as an unlabelled run. The count is decoration — the list element already reports its length,
- * and folding a bare number into the heading text would have it read as part of the project name.
- */
-function ActiveCollabTaskGroupSection({
-  group,
-  now,
-  onSelect,
-  selectedTaskId
-}: {
-  group: ActiveCollabTaskGroup
-  now: number
-  onSelect: (ref: ActiveCollabTaskRef) => void
-  selectedTaskId: number | null
-}): React.JSX.Element {
-  const headingId = `activecollab-task-group-${group.projectId}`
-  return (
-    // Why the group reads as a block: a plain `border-t` at the same weight as the row dividers
-    // made a project boundary indistinguishable from a task boundary. The heading sits in its own
-    // tinted band and the rows below it are divided more faintly, so the eye ranks "new project"
-    // above "next task" instead of seeing one uniform stack of hairlines.
-    //
-    // No padding on the section: trailing space sits OUTSIDE the <ul>, so hovering the last row of
-    // a group highlighted the row and then left a dead strip beneath it before the next heading,
-    // which read as a broken hover. The heading's own band is the separator; it needs no help.
-    <section>
-      <h3
-        id={headingId}
-        className="sticky top-0 z-10 flex items-center justify-between gap-2 border-y border-border/60 bg-muted/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground backdrop-blur-sm"
-      >
-        <span className="min-w-0 truncate">{group.projectName}</span>
-        <span
-          aria-hidden="true"
-          className="shrink-0 rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] tabular-nums"
-        >
-          {group.tasks.length}
-        </span>
-      </h3>
-      <ul aria-labelledby={headingId} className="divide-y divide-border/30">
-        {group.tasks.map((task) => (
-          <ActiveCollabTaskRow
-            key={task.id}
-            now={now}
-            onSelect={onSelect}
-            selected={task.id === selectedTaskId}
-            task={task}
-          />
-        ))}
-      </ul>
-    </section>
-  )
 }
 
 function ActiveCollabListError({
@@ -137,6 +80,10 @@ export function ActiveCollabTaskList({
   const listAssignedTasks = useAppStore((s) => s.listActiveCollabAssignedTasks)
   const taskPageCache = useAppStore((s) => s.activeCollabTaskPageCache)
   const settings = useAppStore((s) => s.settings)
+  // Collapse rides the sidebar's shared `collapsedGroups` set rather than a second store: the ui
+  // slice already writes it through `window.api.ui.set`, so it survives navigation and restart.
+  const collapsedGroups = useAppStore((s) => s.collapsedGroups)
+  const toggleCollapsedGroup = useAppStore((s) => s.toggleCollapsedGroup)
   const mountedRef = useMountedRef()
 
   // Paging, freshness, and the last fault are all per-scope, so they travel together stamped with
@@ -212,6 +159,10 @@ export function ActiveCollabTaskList({
   const groups = useMemo(() => groupActiveCollabTasksByProject(rows.tasks), [rows.tasks])
   const retry = useCallback(() => void loadPage(1, true), [loadPage])
   const openConnect = useCallback(() => setConnectOpen(true), [])
+  const toggleGroupCollapsed = useCallback(
+    (projectId: number) => toggleCollapsedGroup(activeCollabGroupCollapseKey(projectId)),
+    [toggleCollapsedGroup]
+  )
   const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
   // Why the footer outlives the `ready` state: `listAssignedTasks` filters completed tasks
   // client-side, so a server page can arrive with every row already dropped while later pages still
@@ -269,9 +220,11 @@ export function ActiveCollabTaskList({
           {groups.map((group) => (
             <ActiveCollabTaskGroupSection
               key={group.projectId}
+              collapsed={collapsedGroups.has(activeCollabGroupCollapseKey(group.projectId))}
               group={group}
               now={now}
               onSelect={onSelect}
+              onToggleCollapsed={toggleGroupCollapsed}
               selectedTaskId={selectedTaskId}
             />
           ))}

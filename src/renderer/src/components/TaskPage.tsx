@@ -342,6 +342,7 @@ import {
 } from './jira-issue-sorter'
 import { TaskPageJiraSortControls } from './task-page-jira-sort-controls'
 import {
+  DEFAULT_TASK_SOURCE,
   normalizeVisibleTaskProviders,
   restoreAvailableDefaultTaskProvider,
   resolveVisibleTaskProvider
@@ -3229,7 +3230,9 @@ export default function TaskPage(): React.JSX.Element {
     () => normalizeVisibleTaskProviders(settings?.visibleTaskProviders),
     [settings?.visibleTaskProviders]
   )
-  const defaultTaskSource = settings?.defaultTaskSource ?? 'github'
+  // Why not `?? 'github'`: restoreAvailableDefaultTaskProvider keeps a saved default reachable, so a
+  // GitHub fallback re-adds GitHub to the switcher for the render before settings hydrate.
+  const defaultTaskSource = settings?.defaultTaskSource ?? DEFAULT_TASK_SOURCE
   const visibleTaskProviders = useMemo(
     () =>
       restoreAvailableDefaultTaskProvider(

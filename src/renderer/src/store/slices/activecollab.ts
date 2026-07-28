@@ -9,6 +9,7 @@ import type {
 } from '../../../../shared/activecollab-types'
 import type {
   ActiveCollabConnectArgs,
+  ActiveCollabFailureKind,
   ActiveCollabResult
 } from '../../../../shared/activecollab-api-types'
 import {
@@ -72,6 +73,13 @@ export type ActiveCollabConnectionState = {
   /** Covers connect and disconnect, owned by the mutation generation that raised it. */
   activeCollabConnecting: boolean
   activeCollabLastError: string | null
+  /**
+   * Why a kind beside the message: a stored token the instance now refuses is byte-identical to a
+   * healthy one in `activeCollabStatus` (the status read never leaves disk), so `'auth'` is the only
+   * signal that separates "reconnect" from "never connected". Cleared when a connect attempt starts,
+   * not just when one succeeds, so a stale verdict cannot outlive the credential it judged.
+   */
+  activeCollabLastFailureKind: ActiveCollabFailureKind | null
 }
 
 export type ActiveCollabSlice = ActiveCollabConnectionState &
@@ -96,6 +104,7 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
   activeCollabStatusContextKey: null,
   activeCollabConnecting: false,
   activeCollabLastError: null,
+  activeCollabLastFailureKind: null,
   ...EMPTY_CACHES,
   ...EMPTY_IMAGES,
   ...createActiveCollabReadActions(set, get),
@@ -121,7 +130,8 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
       set({
         activeCollabStatusChecked: true,
         activeCollabStatusContextKey: contextKey,
-        activeCollabLastError: result.error
+        activeCollabLastError: result.error,
+        activeCollabLastFailureKind: result.kind
       })
       return
     }
@@ -144,7 +154,11 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
   connectActiveCollab: async (args) => {
     const generation = beginActiveCollabMutation()
     const contextKey = getProviderRuntimeContextKey(get().settings)
-    set({ activeCollabConnecting: true, activeCollabLastError: null })
+    set({
+      activeCollabConnecting: true,
+      activeCollabLastError: null,
+      activeCollabLastFailureKind: null
+    })
     const result = await activeCollabConnect(args, get().settings)
     const sameMutation = isCurrentActiveCollabMutation(generation)
     if (!sameMutation || !isCurrentActiveCollabRuntimeContext(contextKey, get().settings)) {
@@ -155,7 +169,11 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
       return result.ok ? activeCollabSupersededFailure() : result
     }
     if (!result.ok) {
-      set({ activeCollabConnecting: false, activeCollabLastError: result.error })
+      set({
+        activeCollabConnecting: false,
+        activeCollabLastError: result.error,
+        activeCollabLastFailureKind: result.kind
+      })
       return result
     }
     clearActiveCollabInflightReads()
@@ -168,7 +186,8 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
       activeCollabStatusChecked: true,
       activeCollabStatusContextKey: contextKey,
       activeCollabConnecting: false,
-      activeCollabLastError: null
+      activeCollabLastError: null,
+      activeCollabLastFailureKind: null
     })
     return result
   },
@@ -193,7 +212,8 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
       activeCollabStatusChecked: true,
       activeCollabStatusContextKey: contextKey,
       activeCollabConnecting: false,
-      activeCollabLastError: result.ok ? null : result.error
+      activeCollabLastError: result.ok ? null : result.error,
+      activeCollabLastFailureKind: result.ok ? null : result.kind
     })
     return result
   }

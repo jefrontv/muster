@@ -119,11 +119,12 @@ async function runCachedRead<T>(args: {
       if (result.ok) {
         set((s) => ({
           ...writeCache(writeCacheEntry(selectCache(s), cacheKey, result.value)),
-          activeCollabLastError: null
+          activeCollabLastError: null,
+          activeCollabLastFailureKind: null
         }))
         return result
       }
-      set({ activeCollabLastError: result.error })
+      set({ activeCollabLastError: result.error, activeCollabLastFailureKind: result.kind })
       if (shouldRefreshStatusAfterFailure(result)) {
         void get().checkActiveCollabConnection()
       }

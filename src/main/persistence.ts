@@ -159,7 +159,11 @@ import {
   normalizeRuntimePathForComparison
 } from '../shared/cross-platform-path'
 import { normalizeTerminalQuickCommands } from '../shared/terminal-quick-commands'
-import { normalizeTaskProviderSettings } from '../shared/task-providers'
+import {
+  DEFAULT_TASK_SOURCE,
+  DEFAULT_VISIBLE_TASK_PROVIDERS,
+  normalizeTaskProviderSettings
+} from '../shared/task-providers'
 import { normalizeAutoRenameBranchFromWorkDefaultOn } from '../shared/auto-rename-branch-from-work-settings'
 import { normalizeOpenInApplications } from '../shared/open-in-applications'
 import { normalizeTerminalShortcutPolicy } from '../shared/keybindings'
@@ -2991,10 +2995,24 @@ export class Store {
           : jiraMigratedVisibleTaskProviders.includes('activecollab')
             ? jiraMigratedVisibleTaskProviders
             : [...jiraMigratedVisibleTaskProviders, 'activecollab' as const]
-        const taskProviderSettings = normalizeTaskProviderSettings({
-          visibleTaskProviders: migratedVisibleTaskProviders,
-          defaultTaskSource: rawTaskProviderSettings.defaultTaskSource
-        })
+        // Why a third flag: this fork is ActiveCollab-only, so a profile still carrying the old
+        // multi-provider list has to be narrowed once. Both flags above are stamped true on every
+        // load, so neither can gate a new migration. One-shot on purpose — re-narrowing would undo
+        // a deliberate re-enable from Settings -> Tasks on every single launch.
+        const visibleTaskProvidersNarrowedToActiveCollab =
+          parsed.settings?.visibleTaskProvidersNarrowedToActiveCollab === true
+        // The saved default moves with the list: normalizeTaskProviderSettings re-adds a default
+        // that fell out of the visible providers, so leaving `github` behind would put GitHub
+        // straight back into the switcher the narrowing just cleared.
+        const taskProviderSettings = visibleTaskProvidersNarrowedToActiveCollab
+          ? normalizeTaskProviderSettings({
+              visibleTaskProviders: migratedVisibleTaskProviders,
+              defaultTaskSource: rawTaskProviderSettings.defaultTaskSource
+            })
+          : normalizeTaskProviderSettings({
+              visibleTaskProviders: [...DEFAULT_VISIBLE_TASK_PROVIDERS],
+              defaultTaskSource: DEFAULT_TASK_SOURCE
+            })
         const primarySelectionDefaultedForLinux =
           parsed.settings?.primarySelectionMiddleClickPasteDefaultedForLinux === true
         const primarySelectionDefaultedForTerminalDefaults =
@@ -3013,7 +3031,8 @@ export class Store {
         }
         if (
           !visibleTaskProvidersDefaultedForJira ||
-          !visibleTaskProvidersDefaultedForActiveCollab
+          !visibleTaskProvidersDefaultedForActiveCollab ||
+          !visibleTaskProvidersNarrowedToActiveCollab
         ) {
           this.loadNeedsSave = true
         }
@@ -3167,6 +3186,7 @@ export class Store {
             visibleTaskProviders: taskProviderSettings.visibleTaskProviders,
             visibleTaskProvidersDefaultedForJira: true,
             visibleTaskProvidersDefaultedForActiveCollab: true,
+            visibleTaskProvidersNarrowedToActiveCollab: true,
             terminalShortcutPolicy: normalizeTerminalShortcutPolicy(
               parsed.settings?.terminalShortcutPolicy
             ),
@@ -5422,6 +5442,7 @@ export class Store {
       if ('visibleTaskProviders' in updates) {
         sanitizedUpdates.visibleTaskProvidersDefaultedForJira = true
         sanitizedUpdates.visibleTaskProvidersDefaultedForActiveCollab = true
+        sanitizedUpdates.visibleTaskProvidersNarrowedToActiveCollab = true
       }
     }
     if ('autoRenameBranchFromWork' in updates || 'autoRenameBranchFromWorkDefaultedOn' in updates) {

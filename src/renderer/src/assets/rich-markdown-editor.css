@@ -1490,3 +1490,61 @@
 .rich-markdown-link-input::placeholder {
   color: var(--muted-foreground);
 }
+
+/* ActiveCollab comment composer.
+
+   Its own block rather than a `.rich-markdown-editor` variant: that class carries the full-page
+   file editor's 24/32/96px padding and zoom-linked font size, and a three-line reply box wants
+   neither. `white-space` is not optional — ProseMirror needs it to keep runs of spaces and warns
+   when it is missing. */
+.activecollab-comment-editor {
+  min-height: 4.5rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: 8px 12px 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  outline: none;
+}
+
+.activecollab-comment-editor p {
+  margin: 0 0 0.5em;
+}
+
+.activecollab-comment-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.activecollab-comment-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+
+.activecollab-comment-editor a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+/* Deliberately the same treatment a mention gets once the comment is posted
+   (comment-markdown-activecollab-elements.tsx), so what the author picks looks like what the
+   thread will show them. */
+.activecollab-comment-mention {
+  display: inline;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.activecollab-comment-editor .ProseMirror-selectednode.activecollab-comment-mention {
+  outline: 2px solid color-mix(in srgb, var(--ring) 78%, transparent);
+  outline-offset: 1px;
+}

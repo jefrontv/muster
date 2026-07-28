@@ -2866,6 +2866,9 @@ export type GlobalSettings = {
   visibleTaskProvidersDefaultedForJira: boolean
   /** Why a second flag: the Jira one is stamped true on every load, so it can never gate a later provider. */
   visibleTaskProvidersDefaultedForActiveCollab: boolean
+  /** Why a third flag: this fork narrows existing profiles to ActiveCollab once. The two flags above
+   *  are stamped true on every load, so neither can gate a later migration. */
+  visibleTaskProvidersNarrowedToActiveCollab: boolean
   /** Persisted repo selection (cross-repo tasks view). null = sticky-all (includes future-added repos);
    *  string[] = frozen curated subset (ineligible ids dropped on load; empty after drop is treated as null). */
   defaultRepoSelection: string[] | null

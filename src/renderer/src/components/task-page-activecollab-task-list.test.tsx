@@ -2,6 +2,7 @@
 
 import '@testing-library/jest-dom/vitest'
 
+import { useSyncExternalStore } from 'react'
 import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
@@ -22,25 +23,70 @@ type RenderedList = {
   rerender: () => Promise<void>
 }
 
-const mocks = vi.hoisted(() => ({
-  listAssignedTasks:
-    vi.fn<
-      (
-        args?: { page?: number },
-        options?: { force?: boolean }
-      ) => Promise<ActiveCollabResult<ActiveCollabTaskPageRows>>
-    >(),
-  cache: {} as Record<string, CacheEntry<ActiveCollabTaskPageRows>>,
-  settings: { activeRuntimeEnvironmentId: null as string | null }
-}))
+const mocks = vi.hoisted(() => {
+  const listeners = new Set<() => void>()
+  const emit = (): void => {
+    for (const listener of listeners) {
+      listener()
+    }
+  }
+  const state = {
+    listAssignedTasks:
+      vi.fn<
+        (
+          args?: { page?: number },
+          options?: { force?: boolean }
+        ) => Promise<ActiveCollabResult<ActiveCollabTaskPageRows>>
+      >(),
+    cache: {} as Record<string, CacheEntry<ActiveCollabTaskPageRows>>,
+    settings: { activeRuntimeEnvironmentId: null as string | null },
+    // The sidebar's shared collapse set. Membership means collapsed, absence means expanded.
+    collapsedGroups: new Set<string>() as ReadonlySet<string>,
+    /** Everything the real ui slice would have handed to `window.api.ui.set`, in order. */
+    persistedCollapsedGroups: [] as string[][],
+    subscribeCollapsedGroups: (listener: () => void) => {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    /** Stands in for a set restored from disk at launch. */
+    restoreCollapsedGroups: (keys: string[]): void => {
+      state.collapsedGroups = new Set(keys)
+      emit()
+    },
+    // Mirrors store/slices/ui.ts: swap in a fresh Set, then write it through to persistence.
+    toggleCollapsedGroup: vi.fn((key: string) => {
+      const next = new Set(state.collapsedGroups)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      state.collapsedGroups = next
+      state.persistedCollapsedGroups.push([...next])
+      emit()
+    })
+  }
+  return state
+})
 
+// Reactive only where the component needs it: collapse is the one field a click has to push back
+// into a re-render, so it goes through useSyncExternalStore while the rest stay plain reads.
 vi.mock('@/store', () => ({
-  useAppStore: (selector: (state: unknown) => unknown) =>
-    selector({
+  useAppStore: (selector: (state: unknown) => unknown) => {
+    const collapsedGroups = useSyncExternalStore(
+      mocks.subscribeCollapsedGroups,
+      () => mocks.collapsedGroups
+    )
+    return selector({
       listActiveCollabAssignedTasks: mocks.listAssignedTasks,
       activeCollabTaskPageCache: mocks.cache,
-      settings: mocks.settings
+      settings: mocks.settings,
+      collapsedGroups,
+      toggleCollapsedGroup: mocks.toggleCollapsedGroup
     })
+  }
 }))
 
 // The real dialog portals through Radix; a stand-in keeps the assertion on whether the list opened
@@ -51,6 +97,7 @@ vi.mock('@/components/activecollab-connect-dialog', () => ({
 }))
 
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
+import { activeCollabGroupCollapseKey } from './task-page-activecollab-group-collapse'
 import { ActiveCollabTaskList } from './task-page-activecollab-task-list'
 
 function dueLabel(dueOn: number): string {
@@ -154,10 +201,18 @@ function rowButtons(): HTMLElement[] {
   })
 }
 
+/** The heading's toggle, addressed the way a user reaches it: by the project name. */
+function groupToggle(projectName: string): HTMLElement {
+  return screen.getByRole('button', { name: projectName })
+}
+
 beforeEach(() => {
   mocks.listAssignedTasks.mockReset()
   mocks.cache = {}
   mocks.settings = { activeRuntimeEnvironmentId: null }
+  mocks.collapsedGroups = new Set<string>()
+  mocks.persistedCollapsedGroups = []
+  mocks.toggleCollapsedGroup.mockClear()
 })
 
 afterEach(cleanup)
@@ -472,11 +527,18 @@ describe('ActiveCollabTaskList activation', () => {
     )
     const { onSelect, user } = await renderList()
 
+    // Each group's collapse toggle is a real control, so it precedes its rows in the tab order.
+    const [firstHeading, secondHeading] = screen.getAllByRole('button', { name: 'Muster UI' })
+
+    await user.tab()
+    expect(firstHeading).toHaveFocus()
     await user.tab()
     expect(rowButtons()[0]).toHaveFocus()
     await user.keyboard('{Enter}')
     expect(onSelect).toHaveBeenNthCalledWith(1, { projectId: 3790, taskId: 509323 })
 
+    await user.tab()
+    expect(secondHeading).toHaveFocus()
     await user.tab()
     expect(rowButtons()[1]).toHaveFocus()
     await user.keyboard(' ')
@@ -581,5 +643,168 @@ describe('ActiveCollabTaskList runtime scope', () => {
 
     expect(screen.getByText('Remote task')).toBeInTheDocument()
     expect(screen.queryByText(/local instance died/)).not.toBeInTheDocument()
+  })
+})
+
+describe('ActiveCollabTaskList group collapse', () => {
+  const ALPHA = taskFixture({ id: 1, name: 'Alpha task', projectId: 10, projectName: 'Alpha' })
+  const ZEPHYR = taskFixture({ id: 2, name: 'Zephyr task', projectId: 20, projectName: 'Zephyr' })
+
+  it('folds a project away on click and brings it back on the next one', async () => {
+    servePages(pageRows(1, [ALPHA, ZEPHYR], false))
+    const { user } = await renderList()
+
+    await user.click(groupToggle('Alpha'))
+
+    expect(screen.queryByText('Alpha task')).not.toBeInTheDocument()
+    // Only Alpha folded: collapse is per project, not a mode the whole list enters.
+    expect(screen.getByText('Zephyr task')).toBeInTheDocument()
+
+    await user.click(groupToggle('Alpha'))
+
+    expect(screen.getByText('Alpha task')).toBeInTheDocument()
+  })
+
+  it('toggles from the keyboard on both Enter and Space', async () => {
+    servePages(pageRows(1, [ALPHA], false))
+    const { user } = await renderList()
+
+    groupToggle('Alpha').focus()
+    await user.keyboard('{Enter}')
+    expect(screen.queryByText('Alpha task')).not.toBeInTheDocument()
+
+    await user.keyboard(' ')
+    expect(screen.getByText('Alpha task')).toBeInTheDocument()
+  })
+
+  it('reports expansion state and the list it controls, keeping the list named', async () => {
+    servePages(pageRows(1, [ALPHA], false))
+    const { user } = await renderList()
+
+    const toggle = groupToggle('Alpha')
+    const list = screen.getByRole('list', { name: 'Alpha' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(toggle).toHaveAttribute('aria-controls', list.id)
+    // The heading still names the list; making it a control must not cost that association.
+    expect(list).toHaveAttribute('aria-labelledby', screen.getByRole('heading', { level: 3 }).id)
+
+    await user.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    // Hidden, not unmounted — `aria-controls` has to keep resolving to a real element.
+    const collapsedList = document.getElementById(list.id)
+    expect(collapsedList).toBeInTheDocument()
+    expect(collapsedList).toHaveAttribute('aria-labelledby', toggle.closest('h3')?.id ?? '')
+    expect(collapsedList).not.toBeVisible()
+  })
+
+  it('keeps the count visible while collapsed', async () => {
+    servePages(
+      pageRows(1, [ALPHA, taskFixture({ id: 3, projectId: 10, projectName: 'Alpha' })], false)
+    )
+    const { user } = await renderList()
+
+    await user.click(groupToggle('Alpha'))
+
+    // Knowing how much is folded away is the whole reason to fold rather than scroll.
+    const heading = screen.getByRole('heading', { level: 3 })
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0)
+    expect(heading).toBeVisible()
+    expect(heading).toHaveTextContent('2')
+  })
+
+  it('writes the toggle through the shared collapsed-groups set under a per-project key', async () => {
+    servePages(pageRows(1, [ALPHA, ZEPHYR], false))
+    const { user } = await renderList()
+
+    await user.click(groupToggle('Zephyr'))
+
+    expect(mocks.toggleCollapsedGroup).toHaveBeenCalledWith('activecollab-project:20')
+    expect(mocks.persistedCollapsedGroups).toEqual([['activecollab-project:20']])
+  })
+
+  it('restores a collapsed project from the persisted set on first render', async () => {
+    mocks.collapsedGroups = new Set([activeCollabGroupCollapseKey(10)])
+    servePages(pageRows(1, [ALPHA, ZEPHYR], false))
+    await renderList()
+
+    expect(screen.queryByText('Alpha task')).not.toBeInTheDocument()
+    expect(groupToggle('Alpha')).toHaveAttribute('aria-expanded', 'false')
+    // A key belonging to another project must not fold this one.
+    expect(screen.getByText('Zephyr task')).toBeInTheDocument()
+    expect(groupToggle('Zephyr')).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('ignores sidebar keys that happen to share the project id', async () => {
+    mocks.collapsedGroups = new Set(['10', 'repo:10', 'pinned'])
+    servePages(pageRows(1, [ALPHA], false))
+    await renderList()
+
+    expect(screen.getByText('Alpha task')).toBeInTheDocument()
+  })
+
+  it('opens a project seen for the first time even while a sibling stays collapsed', async () => {
+    mocks.restoreCollapsedGroups([activeCollabGroupCollapseKey(10)])
+    servePages(pageRows(1, [ALPHA], true), pageRows(2, [ZEPHYR], false))
+    const { user } = await renderList()
+
+    await user.click(screen.getByRole('button', { name: /Load more tasks/ }))
+
+    // Absence from the set is the default, so a project nobody has folded arrives open.
+    expect(screen.getByText('Zephyr task')).toBeInTheDocument()
+    expect(groupToggle('Zephyr')).toHaveAttribute('aria-expanded', 'true')
+    expect(groupToggle('Alpha')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('stays collapsed when the group gains and loses tasks', async () => {
+    servePages(
+      pageRows(1, [ALPHA], true),
+      pageRows(
+        2,
+        [taskFixture({ id: 4, name: 'Alpha extra', projectId: 10, projectName: 'Alpha' })],
+        false
+      )
+    )
+    const { user } = await renderList()
+
+    await user.click(groupToggle('Alpha'))
+    await user.click(screen.getByRole('button', { name: /Load more tasks/ }))
+
+    // Collapse is keyed on the project, not on the row set, so a refetch cannot pop it open.
+    expect(groupToggle('Alpha')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('2')
+    expect(screen.queryByText('Alpha extra')).not.toBeInTheDocument()
+  })
+
+  it('leaves row height and ordering untouched across a collapse cycle', async () => {
+    servePages(
+      pageRows(
+        1,
+        [
+          taskFixture({ id: 5, name: 'Alpha undated', projectId: 10, projectName: 'Alpha' }),
+          taskFixture({
+            id: 6,
+            name: 'Alpha dated',
+            projectId: 10,
+            projectName: 'Alpha',
+            dueOn: DUE_ON
+          }),
+          ZEPHYR
+        ],
+        false
+      )
+    )
+    const { user } = await renderList()
+    const before = rowButtons().map((row) => row.textContent)
+
+    await user.click(groupToggle('Alpha'))
+    await user.click(groupToggle('Alpha'))
+
+    const after = rowButtons()
+    expect(after.map((row) => row.textContent)).toEqual(before)
+    expect(after[0]).toHaveTextContent('Alpha dated')
+    for (const row of after) {
+      expect(row.className).toContain('h-12')
+    }
   })
 })
