@@ -2682,6 +2682,13 @@
                           "failed": "ターミナル ID をコピーできません"
                         }
                       }
+                    },
+                    "pane": {
+                      "id": {
+                        "copy": {
+                          "failed": "Unable to copy pane ID"
+                        }
+                      }
                     }
                   }
                 }
