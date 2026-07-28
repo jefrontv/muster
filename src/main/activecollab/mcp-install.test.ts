@@ -30,6 +30,7 @@ import {
   detectActiveCollabMcp,
   getActiveCollabMcpStatus,
   installActiveCollabMcpForAgents,
+  resyncActiveCollabMcpCredentials,
   seedActiveCollabMcpCredentials
 } from './mcp-install'
 
@@ -299,5 +300,43 @@ describe('seedActiveCollabMcpCredentials', () => {
     expect(activeCollabMcpCredentialsPath(createDefaultActiveCollabMcpEnv())).toBe(
       join(homedir(), '.activecollab-mcp', 'credentials.json')
     )
+  })
+})
+
+describe('resyncActiveCollabMcpCredentials', () => {
+  it('rewrites an already-linked file so the agent follows the account Muster switched to', () => {
+    write(
+      '.activecollab-mcp/credentials.json',
+      JSON.stringify({ base_url: 'https://old.example.com/api/v1/', api_key: 'stale-token' })
+    )
+    getCredentialMock.mockReturnValue(CREDENTIAL)
+
+    const result = resyncActiveCollabMcpCredentials(env)
+
+    expect(result).toMatchObject({ seeded: true, issuedFor: 'ada@efront.com.au' })
+    const seeded = readSeededCredentials()
+    expect(seeded.api_key).toBe('ac-token-secret')
+    expect(seeded.base_url).toBe('https://projects.efront.com.au/api/v1/')
+  })
+
+  it('refuses to create a credential file the user never asked for', () => {
+    // The security-relevant half: connecting ActiveCollab in Muster must not drop an API token on
+    // disk for someone who never linked the MCP. Only the explicit card button may create it.
+    getCredentialMock.mockReturnValue(CREDENTIAL)
+
+    const result = resyncActiveCollabMcpCredentials(env)
+
+    expect(result).toMatchObject({ seeded: false })
+    expect(result.seeded === false && result.reason).toMatch(/no credential file yet/)
+    expect(existsSync(join(home, '.activecollab-mcp', 'credentials.json'))).toBe(false)
+  })
+
+  it('leaves a linked file alone when Muster itself holds no credential', () => {
+    const target = write('.activecollab-mcp/credentials.json', '{"api_key":"kept"}')
+
+    const result = resyncActiveCollabMcpCredentials(env)
+
+    expect(result).toMatchObject({ seeded: false })
+    expect(readFileSync(target, 'utf8')).toContain('kept')
   })
 })

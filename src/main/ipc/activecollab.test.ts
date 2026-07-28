@@ -13,7 +13,8 @@ const {
   getStatusMock,
   clearCredentialMock,
   connectMock,
-  resetPreflightMock
+  resetPreflightMock,
+  resyncMcpMock
 } = vi.hoisted(() => ({
   handleMock: vi.fn(),
   removeHandlerMock: vi.fn(),
@@ -24,7 +25,8 @@ const {
   getStatusMock: vi.fn(),
   clearCredentialMock: vi.fn(),
   connectMock: vi.fn(),
-  resetPreflightMock: vi.fn()
+  resetPreflightMock: vi.fn(),
+  resyncMcpMock: vi.fn()
 }))
 
 // `dialog`/`shell`/`app` exist only because the download op imports them; every assertion here
@@ -65,6 +67,12 @@ vi.mock('../activecollab/task-notification-service', () => ({
 vi.mock('../activecollab/task-snapshot-store', () => ({
   acClearTaskSnapshot: vi.fn(),
   acFoldLocalTaskWrite: vi.fn()
+}))
+
+// Not a courtesy stub: the real one resolves the REAL home directory, so connecting in this suite
+// would rewrite the developer's own ~/.activecollab-mcp/credentials.json with fixture values.
+vi.mock('../activecollab/mcp-install', () => ({
+  resyncActiveCollabMcpCredentials: resyncMcpMock
 }))
 
 import { AC_MAX_ATTACHMENT_IMAGE_BYTES } from '../activecollab/attachment-image'
@@ -215,6 +223,7 @@ beforeEach(() => {
   clearCredentialMock.mockReset()
   connectMock.mockReset()
   resetPreflightMock.mockReset()
+  resyncMcpMock.mockReset()
   // Module-level and credential-keyed by design, so each test starts from a cold directory.
   resetAcNameDirectoryCache()
   resetAcProjectMembersCache()
@@ -769,6 +778,35 @@ describe('connect and disconnect', () => {
     )
     expect(failure).toEqual({ kind: 'auth', error: 'Invalid username or password', status: null })
     expect(resetPreflightMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps a linked MCP credential in step, and still succeeds when that resync throws', async () => {
+    // The agent must follow the account the human just switched to; a disk or keychain problem on
+    // that side is not a sign-in failure, because the sign-in already worked.
+    connectMock.mockResolvedValue({ ok: true, connection: CONNECTED_STATUS.connection })
+    resyncMcpMock.mockImplementationOnce(() => {
+      throw new Error('disk full')
+    })
+    const result = await invoke('activecollab:connect', {
+      instanceUrl: 'https://projects.example.com',
+      email: 'jake@example.com',
+      password: 'pw'
+    })
+
+    expect(resyncMcpMock).toHaveBeenCalledTimes(1)
+    expect(result).toMatchObject({ ok: true })
+  })
+
+  it('never touches the MCP credential when the sign-in was rejected', async () => {
+    connectMock.mockResolvedValue({ ok: false, message: 'Invalid username or password' })
+
+    await invoke('activecollab:connect', {
+      instanceUrl: 'https://projects.example.com',
+      email: 'jake@example.com',
+      password: 'wrong'
+    })
+
+    expect(resyncMcpMock).not.toHaveBeenCalled()
   })
 
   it('rejects an incomplete connect form without attempting a sign-in', async () => {

@@ -33,6 +33,7 @@ import type {
   ActiveCollabTaskPage
 } from '../../shared/activecollab-types'
 import { connectActiveCollab } from '../activecollab/auth'
+import { resyncActiveCollabMcpCredentials } from '../activecollab/mcp-install'
 import {
   clearActiveCollabCredential,
   getActiveCollabConnectionStatus
@@ -134,6 +135,14 @@ export async function acConnect(
     resetAcProjectMembersCache()
     // A different account may have different toggles, and the previous one's loop is now pointless.
     refreshAcTaskNotifications()
+    // An agent already sharing this login must follow the account the human just switched to,
+    // rather than staying authenticated as the previous one. Best-effort by design: the sign-in
+    // succeeded, so a disk or keychain problem over here is not allowed to report it as failed.
+    try {
+      resyncActiveCollabMcpCredentials()
+    } catch (error) {
+      console.warn('[activecollab] could not resync the MCP credential file:', error)
+    }
     return { ok: true, value: result.connection }
   } catch (error) {
     return toFailure(error)

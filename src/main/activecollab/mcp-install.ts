@@ -27,14 +27,23 @@ import type {
   ActiveCollabMcpStatus
 } from '../../shared/activecollab-mcp-types'
 
-/** The documented install route; `install.sh` is a wrapper around exactly this. */
-export const ACTIVECOLLAB_MCP_INSTALL_COMMAND =
-  "pipx install 'git+ssh://git@bitbucket.org/efront_au/active-collab-mcp.git'"
+/**
+ * The documented install route; `install.sh` is a wrapper around exactly this.
+ *
+ * Published on PyPI, so this needs no Bitbucket SSH key — it used to install from
+ * `git+ssh://git@bitbucket.org/efront_au/active-collab-mcp.git`, which silently failed for anyone
+ * without repo access. Deliberately NOT `&& activecollab-mcp setup`: that command also registers
+ * agents and logs in, both of which this card already does from the token Muster holds.
+ */
+export const ACTIVECOLLAB_MCP_INSTALL_COMMAND = 'pipx install activecollab-mcp'
 
 const MISSING_BINARY_HINT = `activecollab-mcp is not installed. Run: ${ACTIVECOLLAB_MCP_INSTALL_COMMAND}`
 
 const NOTHING_TO_SEED_REASON =
   'ActiveCollab is not connected in Muster, so there is no token to share with the agent.'
+
+const NOT_LINKED_REASON =
+  'The MCP server has no credential file yet, so there is nothing to keep in step. Seed it once from this card.'
 
 export function activeCollabMcpCredentialsPath(env: ActiveCollabMcpEnv): string {
   return join(env.homeDir, '.activecollab-mcp', 'credentials.json')
@@ -178,4 +187,25 @@ export function seedActiveCollabMcpCredentials(
   }
   env.fs.writeSecretText(target, `${JSON.stringify(contents, null, 2)}\n`)
   return { seeded: true, path: target, issuedFor: credential.userEmail }
+}
+
+/**
+ * Keeps an ALREADY-LINKED MCP credential file in step with the account Muster just connected to.
+ *
+ * Rewrites only a file that is already there, and never creates one. That file existing is the
+ * user's prior consent to share this token with the MCP server; minting it here would drop an API
+ * token on disk for someone who never asked for the agent integration at all. First-time linking
+ * stays the explicit button on the install card.
+ *
+ * Drift is the half worth automating: reconnecting Muster to a different instance or account used
+ * to leave the agent silently authenticated as the previous one, which is the exact failure this
+ * whole module exists to prevent.
+ */
+export function resyncActiveCollabMcpCredentials(
+  env: ActiveCollabMcpEnv = createDefaultActiveCollabMcpEnv()
+): ActiveCollabMcpSeedResult {
+  if (!env.fs.exists(activeCollabMcpCredentialsPath(env))) {
+    return { seeded: false, reason: NOT_LINKED_REASON }
+  }
+  return seedActiveCollabMcpCredentials(env)
 }
