@@ -3,19 +3,21 @@ import type { Components } from 'react-markdown'
 
 import { ActiveCollabInlineImage } from '@/components/activecollab-inline-image'
 import {
+  ACTIVECOLLAB_BLANK_TAG,
   ACTIVECOLLAB_CALLOUT_TAG,
   ACTIVECOLLAB_IMAGE_TAG,
   ACTIVECOLLAB_MENTION_TAG
 } from './comment-markdown-activecollab-html'
 
 /**
- * The only sanitiser widening ActiveCollab bodies get. All three are minted by the pre-sanitise
+ * The only sanitiser widening ActiveCollab bodies get. All four are minted by the pre-sanitise
  * transform and allowed with no attributes, so provider HTML gains no styling surface at all.
  */
 export const activeCollabMarkdownTagNames = [
   ACTIVECOLLAB_MENTION_TAG,
   ACTIVECOLLAB_CALLOUT_TAG,
-  ACTIVECOLLAB_IMAGE_TAG
+  ACTIVECOLLAB_IMAGE_TAG,
+  ACTIVECOLLAB_BLANK_TAG
 ]
 
 type ActiveCollabElementProps = { children?: React.ReactNode }
@@ -52,6 +54,18 @@ function ActiveCollabCallout({ children }: ActiveCollabElementProps): React.JSX.
   )
 }
 
+/**
+ * ActiveCollab's blank-line separator, rendered as a SHORT spacer rather than a full paragraph.
+ *
+ * It used to be a `<p>` holding an NBSP, which cost a whole line box plus a margin on each side —
+ * so a single authored blank line opened a gap roughly three times the one the author saw in
+ * ActiveCollab. A fixed half-line spacer keeps the separation the author intended without the
+ * paragraph rhythm being dictated by an empty node.
+ */
+function ActiveCollabBlankLine(): React.JSX.Element {
+  return <span aria-hidden="true" className="block h-2" />
+}
+
 // react-markdown keys `Components` by intrinsic tag name, and the `ac-*` ones are ours rather than
 // the DOM's, so this assertion is the whole extension point. `p` is a plain override: it wins over
 // the variant's own paragraph because this map is spread last.
@@ -59,5 +73,6 @@ export const activeCollabMarkdownComponents = {
   p: ActiveCollabParagraph,
   [ACTIVECOLLAB_MENTION_TAG]: ActiveCollabMention,
   [ACTIVECOLLAB_CALLOUT_TAG]: ActiveCollabCallout,
-  [ACTIVECOLLAB_IMAGE_TAG]: ActiveCollabInlineImage
+  [ACTIVECOLLAB_IMAGE_TAG]: ActiveCollabInlineImage,
+  [ACTIVECOLLAB_BLANK_TAG]: ActiveCollabBlankLine
 } as Components

@@ -140,7 +140,10 @@ describe('rehypeActiveCollabHtml', () => {
     expect(tree.children?.[0]?.children).toEqual([])
   })
 
-  it('refills a whitespace-only paragraph so the blank line keeps a line box', () => {
+  it('retags a whitespace-only paragraph as a short spacer, keeping the blank line', () => {
+    // Previously refilled with an NBSP and left as a <p>, which inherited the whole paragraph
+    // rhythm — a line box plus a margin each side — and opened a gap several times the one the
+    // author saw. It is now an attribute-free <ac-blank> the renderer draws as a fixed spacer.
     const tree = run({
       type: 'root',
       children: [
@@ -151,12 +154,17 @@ describe('rehypeActiveCollabHtml', () => {
       ]
     })
 
-    expect(tree.children?.map((child) => child.children)).toEqual([
-      [{ type: 'text', value: '\u00a0' }],
-      [{ type: 'text', value: '\u00a0' }],
-      [{ type: 'text', value: '\u00a0' }],
-      [{ type: 'text', value: '  Real copy  ' }]
+    expect(tree.children?.map((child) => child.tagName)).toEqual([
+      'ac-blank',
+      'ac-blank',
+      'ac-blank',
+      'p'
     ])
+    // The spacer carries nothing: no text to select, no attributes to style through.
+    expect(tree.children?.slice(0, 3).every((child) => (child.children ?? []).length === 0)).toBe(
+      true
+    )
+    expect(tree.children?.[3]?.children).toEqual([{ type: 'text', value: '  Real copy  ' }])
   })
 
   it('leaves a paragraph holding an element alone, even when its text is blank', () => {

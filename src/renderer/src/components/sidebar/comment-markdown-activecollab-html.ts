@@ -13,6 +13,8 @@ export const ACTIVECOLLAB_MENTION_TAG = 'ac-mention'
 export const ACTIVECOLLAB_CALLOUT_TAG = 'ac-callout'
 /** Carries its attachment id as TEXT, so it needs no attribute allowance either. */
 export const ACTIVECOLLAB_IMAGE_TAG = 'ac-image'
+/** ActiveCollab's `<p> </p>` blank-line separator, kept as a short spacer instead of a paragraph. */
+export const ACTIVECOLLAB_BLANK_TAG = 'ac-blank'
 
 /** ActiveCollab hands out attachment URLs with these literal sentinels instead of an address. */
 const ATTACHMENT_URL_SENTINELS = ['--DOWNLOAD-TOKEN--', '--PREVIEW-TOKEN--', '--THUMBNAIL-TOKEN--']
@@ -24,7 +26,6 @@ const UNKNOWN_INSTANCE_ORIGIN = 'https://activecollab.invalid'
 const ATTACHMENT_IMAGE_TYPE = 'attachment'
 
 /** Collapsible whitespace draws no line box; U+00A0 is what keeps a blank paragraph one line tall. */
-const NON_BREAKING_SPACE = '\u00a0'
 
 export type ActiveCollabHtmlOptions = {
   /** Instance origin. Distinguishes an unauthenticable instance image from a third-party one. */
@@ -121,11 +122,16 @@ function retagAttachmentImage(node: HtmlNode): boolean {
 }
 
 /**
- * ActiveCollab writes a blank line as a paragraph holding one space. A paragraph whose only
- * content is collapsible whitespace draws no line box at all, so the author's blank line would
- * disappear; refilling it with an NBSP makes it exactly one line tall, no margin rule involved.
+ * ActiveCollab writes a blank line as a paragraph holding one space (a literal U+00A0 on this
+ * instance). A paragraph whose only content is collapsible whitespace draws no line box at all, so
+ * the author's blank line would vanish.
+ *
+ * Retagged rather than refilled with an NBSP. As a `<p>` it inherited the full paragraph rhythm —
+ * a line box plus a margin on each side — which stacked into a gap several times the one the
+ * author saw in ActiveCollab. `<ac-blank>` takes no attributes and renders as a fixed short
+ * spacer, so one authored blank line reads as one blank line.
  */
-function fillBlankParagraph(node: HtmlNode): void {
+function retagBlankParagraph(node: HtmlNode): void {
   const children = node.children ?? []
   if (node.tagName !== 'p' || children.some((child) => child.type !== 'text')) {
     return
@@ -136,7 +142,9 @@ function fillBlankParagraph(node: HtmlNode): void {
       .join('')
       .trim() === ''
   ) {
-    node.children = [{ type: 'text', value: NON_BREAKING_SPACE }]
+    node.tagName = ACTIVECOLLAB_BLANK_TAG
+    node.properties = {}
+    node.children = []
   }
 }
 
@@ -163,7 +171,7 @@ function transformChildren(node: HtmlNode, instanceUrl: string | null): void {
       continue
     }
     retagActiveCollabElement(child)
-    fillBlankParagraph(child)
+    retagBlankParagraph(child)
     transformChildren(child, instanceUrl)
     kept.push(child)
   }
