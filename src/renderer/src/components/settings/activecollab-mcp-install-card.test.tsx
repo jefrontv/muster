@@ -11,6 +11,22 @@ import type {
   ActiveCollabMcpStatus
 } from '../../../../shared/activecollab-mcp-types'
 import type { SiteResult } from '../../../../shared/site-types'
+
+// Stubbed so these cases stay about card wiring; the PTY itself is covered by
+// activecollab-mcp-setup-terminal.test.tsx.
+const setupTerminalHarness = vi.hoisted(() => ({
+  props: [] as { command: string; onProcessExit: () => void; onDismiss: () => void }[]
+}))
+vi.mock('./activecollab-mcp-setup-terminal', () => ({
+  ActiveCollabMcpSetupTerminal: (props: {
+    command: string
+    onProcessExit: () => void
+    onDismiss: () => void
+  }) => {
+    setupTerminalHarness.props.push(props)
+    return <div data-testid="activecollab-mcp-setup-terminal">{props.command}</div>
+  }
+}))
 import { ActiveCollabMcpInstallCard } from './activecollab-mcp-install-card'
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
@@ -101,6 +117,7 @@ beforeEach(() => {
   statusMock.mockReset()
   installMock.mockReset()
   seedMock.mockReset()
+  setupTerminalHarness.props.length = 0
   statusMock.mockResolvedValue({ ok: true, value: mcpStatus() })
   ;(window as unknown as { api: unknown }).api = {
     activecollabMcp: { status: statusMock, install: installMock, seedCredentials: seedMock },
@@ -284,5 +301,49 @@ describe('ActiveCollabMcpInstallCard', () => {
     )
     expect(rendered.textContent).toContain('Status unavailable')
     expect(rendered.querySelector('.animate-spin')).toBeNull()
+  })
+
+  it('offers guided setup only once the server binary is detected', async () => {
+    statusMock.mockResolvedValue({
+      ok: true,
+      value: mcpStatus({
+        binary: {
+          found: false,
+          path: null,
+          version: null,
+          source: null,
+          installHint: 'pipx install activecollab-mcp'
+        }
+      })
+    })
+
+    const rendered = await renderCard()
+
+    expect(button(rendered, 'Run Setup').disabled).toBe(true)
+    expect(rendered.querySelector('[data-testid="activecollab-mcp-setup-terminal"]')).toBeNull()
+  })
+
+  it('runs setup from the resolved absolute path and re-reads status when it exits', async () => {
+    const rendered = await renderCard()
+
+    await click(button(rendered, 'Run Setup'))
+
+    const terminal = requireElement(rendered, '[data-testid="activecollab-mcp-setup-terminal"]')
+    // A bare `activecollab-mcp` resolves against the GUI app's PATH, which routinely lacks ~/.local/bin.
+    expect(terminal.textContent).toContain('/Users/tester/.local/bin/activecollab-mcp')
+    expect(setupTerminalHarness.props.at(-1)?.command).toContain('setup')
+    // Re-opening while it is already live would spawn a second PTY over the first.
+    expect(button(rendered, 'Run Setup').disabled).toBe(true)
+
+    expect(statusMock).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      setupTerminalHarness.props.at(-1)?.onProcessExit()
+    })
+    expect(statusMock).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      setupTerminalHarness.props.at(-1)?.onDismiss()
+    })
+    expect(rendered.querySelector('[data-testid="activecollab-mcp-setup-terminal"]')).toBeNull()
   })
 })

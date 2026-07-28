@@ -9522,7 +9522,15 @@
             "recheck": "Re-check",
             "install_failed": "The agent config was not written.",
             "install_ok": "Wrote the \"{{value0}}\" entry to {{value1}}.",
-            "seed_ok": "Wrote credentials for {{value0}} to {{value1}}."
+            "seed_ok": "Wrote credentials for {{value0}} to {{value1}}.",
+            "run_setup_blocked": "Install the server first — guided setup runs the detected binary.",
+            "run_setup": "Run Setup",
+            "setup_title": "Guided setup",
+            "setup_cancel": "Cancel",
+            "setup_close": "Close",
+            "setup_terminal_label": "ActiveCollab MCP setup terminal",
+            "setup_tab_title": "ActiveCollab MCP setup",
+            "setup_running": "Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits."
           }
         },
         "ActiveCollabNotificationSection": {

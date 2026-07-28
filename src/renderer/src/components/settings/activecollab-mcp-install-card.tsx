@@ -1,12 +1,17 @@
-import { RefreshCw } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { RefreshCw, TerminalSquare } from 'lucide-react'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Button } from '@/components/ui/button'
+import { getShortcutPlatform } from '@/lib/shortcut-platform'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { useAppStore } from '@/store'
 import { ActiveCollabMcpAgentRow } from './activecollab-mcp-agent-row'
 import { activeCollabMcpAgentStateKind } from './activecollab-mcp-agent-state'
 import { ActiveCollabMcpBinaryRow } from './activecollab-mcp-binary-row'
 import { ActiveCollabMcpCredentialsRow } from './activecollab-mcp-credentials-row'
+import { ActiveCollabMcpSetupTerminal } from './activecollab-mcp-setup-terminal'
+import { buildActiveCollabMcpSetupCommand } from './activecollab-mcp-setup-command'
 import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
 import { useActiveCollabMcpStatus } from './use-activecollab-mcp-status'
 
@@ -15,11 +20,25 @@ import { useActiveCollabMcpStatus } from './use-activecollab-mcp-status'
 // visibility would hinge on an unrelated token.
 export function ActiveCollabMcpInstallCard(): React.JSX.Element {
   const mcp = useActiveCollabMcpStatus()
+  const settings = useAppStore((s) => s.settings)
   const status = mcp.status
+  const [setupOpen, setSetupOpen] = useState(false)
   const needSetup = (status?.agents ?? []).filter((agent) => {
     const kind = activeCollabMcpAgentStateKind(agent)
     return kind === 'stale' || kind === 'unconfigured'
   }).length
+
+  // Why memo: the command is the setup terminal's only effect dependency, so a fresh string every
+  // render would tear down and respawn the PTY under the user mid-question.
+  const setupCommand = useMemo(
+    () =>
+      buildActiveCollabMcpSetupCommand({
+        binaryPath: status?.binary.path ?? null,
+        platform: getShortcutPlatform(),
+        windowsShell: settings?.terminalWindowsShell ?? null
+      }),
+    [status?.binary.path, settings?.terminalWindowsShell]
+  )
 
   return (
     <IntegrationCardShell
@@ -49,16 +68,37 @@ export function ActiveCollabMcpInstallCard(): React.JSX.Element {
               : translate('auto.components.settings.activecollab.mcp.status_current', 'Up to date')
       }
       actions={
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => void mcp.refresh()}
-        >
-          <RefreshCw className={cn('size-3', !mcp.checked && 'animate-spin')} />
-          {translate('auto.components.settings.activecollab.mcp.recheck', 'Re-check')}
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={setupOpen || setupCommand === null}
+            title={
+              setupCommand === null
+                ? translate(
+                    'auto.components.settings.activecollab.mcp.run_setup_blocked',
+                    'Install the server first — guided setup runs the detected binary.'
+                  )
+                : undefined
+            }
+            onClick={() => setSetupOpen(true)}
+          >
+            <TerminalSquare className="size-3" />
+            {translate('auto.components.settings.activecollab.mcp.run_setup', 'Run Setup')}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => void mcp.refresh()}
+          >
+            <RefreshCw className={cn('size-3', !mcp.checked && 'animate-spin')} />
+            {translate('auto.components.settings.activecollab.mcp.recheck', 'Re-check')}
+          </Button>
+        </>
       }
     >
       {mcp.checked ? (
@@ -91,6 +131,19 @@ export function ActiveCollabMcpInstallCard(): React.JSX.Element {
                 notice={mcp.notice?.scope === 'credentials' ? mcp.notice : null}
                 onSeed={() => void mcp.seedCredentials()}
               />
+
+              {setupOpen && setupCommand !== null ? (
+                <ActiveCollabMcpSetupTerminal
+                  command={setupCommand}
+                  onProcessExit={() => void mcp.refresh()}
+                  onDismiss={() => {
+                    setSetupOpen(false)
+                    // Why refresh here too: cancelling kills setup part-way, which is exactly when
+                    // the card's picture of which agents are registered is most likely stale.
+                    void mcp.refresh()
+                  }}
+                />
+              ) : null}
             </>
           ) : null}
         </IntegrationCardDetails>
