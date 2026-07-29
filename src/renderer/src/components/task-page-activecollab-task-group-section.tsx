@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { ActiveCollabTaskGroup } from './task-page-activecollab-task-grouping'
 import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
 import { ActiveCollabBindSiteButton } from './task-page-activecollab-bind-site-button'
+import { ACTIVECOLLAB_SITE_BINDING_UI_ENABLED } from '@/lib/activecollab-site-binding-visibility'
 import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
 
 /**
@@ -76,7 +77,12 @@ export function ActiveCollabTaskGroupSection({
               />
             </span>
           </button>
-          <ActiveCollabBindSiteButton projectId={group.projectId} projectName={group.projectName} />
+          {ACTIVECOLLAB_SITE_BINDING_UI_ENABLED ? (
+            <ActiveCollabBindSiteButton
+              projectId={group.projectId}
+              projectName={group.projectName}
+            />
+          ) : null}
         </span>
       </h3>
       {/* Stays mounted while collapsed so `aria-controls` always resolves; `hidden` (not an unmount)

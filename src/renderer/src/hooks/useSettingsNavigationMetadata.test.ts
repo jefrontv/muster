@@ -33,26 +33,34 @@ function ids(
 
 describe('settings navigation metadata', () => {
   it('puts AI capability panes at the top on desktop', () => {
-    expect(ids().slice(0, 10)).toEqual([
+    expect(ids().slice(0, 8)).toEqual([
       'agents',
       'accounts',
-      'orchestration',
-      'computer-use',
       'voice',
       'setup-guide',
       'general',
       'integrations',
-      'mobile',
-      'git'
+      'git',
+      'tasks'
     ])
   })
 
-  it('adds the Linear capability section right after Orchestration only when connected', () => {
+  it('hides the panes this fork does not offer, on every platform', () => {
+    // Orchestration installs itself now, and Computer Use and Mobile are upstream capabilities
+    // this fork does not support — a pane that only offers to install one is a dead end.
+    for (const hidden of ['orchestration', 'computer-use', 'mobile']) {
+      expect(ids(), hidden).not.toContain(hidden)
+      expect(ids({ isWebClient: true }), hidden).not.toContain(hidden)
+    }
+  })
+
+  it('adds the Linear capability section only when connected', () => {
     expect(ids()).not.toContain('linear')
 
     const connectedIds = ids({ isLinearConnected: true })
     expect(connectedIds).toContain('linear')
-    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('orchestration') + 1)
+    // Orchestration used to anchor its position; with that pane hidden, Linear follows Accounts.
+    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('accounts') + 1)
 
     const linearSection = buildSettingsNavigationMetadata({
       isMac: false,
@@ -68,22 +76,10 @@ describe('settings navigation metadata', () => {
     expect(ids({ isWebClient: true, isLinearConnected: true })).toContain('linear')
   })
 
-  it('places Mobile under Set Up instead of its own sidebar group', () => {
-    const sections = buildSettingsNavigationMetadata({
-      isMac: false,
-      isWindows: false,
-      isWebClient: false,
-      repos: [repo]
-    })
-
-    expect(sections.find((section) => section.id === 'mobile')?.group).toBe('setup')
-  })
-
   it('puts web-safe AI capability panes at the top while hiding desktop-only panes', () => {
-    expect(ids({ isWebClient: true }).slice(0, 7)).toEqual([
+    expect(ids({ isWebClient: true }).slice(0, 6)).toEqual([
       'agents',
       'accounts',
-      'orchestration',
       'setup-guide',
       'general',
       'integrations',

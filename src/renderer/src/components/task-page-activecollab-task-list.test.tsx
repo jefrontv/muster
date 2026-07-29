@@ -527,15 +527,13 @@ describe('ActiveCollabTaskList activation', () => {
     )
     const { onSelect, user } = await renderList()
 
-    // Each group heading now holds two controls — the collapse toggle, then the bind-site button —
-    // and both precede that group's rows in the tab order.
+    // Each group's collapse toggle is a real control, so it precedes its rows in the tab order.
+    // The bind-site button would sit between them, but the binding UI is currently off — see
+    // ACTIVECOLLAB_SITE_BINDING_UI_ENABLED; re-enabling it adds one tab stop per heading here.
     const [firstHeading, secondHeading] = screen.getAllByRole('button', { name: 'Muster UI' })
-    const bindButtons = screen.getAllByRole('button', { name: /link this project to a site/i })
 
     await user.tab()
     expect(firstHeading).toHaveFocus()
-    await user.tab()
-    expect(bindButtons[0]).toHaveFocus()
     await user.tab()
     expect(rowButtons()[0]).toHaveFocus()
     await user.keyboard('{Enter}')
@@ -543,8 +541,6 @@ describe('ActiveCollabTaskList activation', () => {
 
     await user.tab()
     expect(secondHeading).toHaveFocus()
-    await user.tab()
-    expect(bindButtons[1]).toHaveFocus()
     await user.tab()
     expect(rowButtons()[1]).toHaveFocus()
     await user.keyboard(' ')

@@ -7,6 +7,7 @@ import React from 'react'
 import { Play } from 'lucide-react'
 
 import { useActiveCollabStartWork } from './use-activecollab-start-work'
+import { ACTIVECOLLAB_SITE_BINDING_UI_ENABLED } from '@/lib/activecollab-site-binding-visibility'
 
 import {
   formatActiveCollabDueDate,
@@ -156,7 +157,9 @@ export function ActiveCollabTaskRow({
   const { binding, startWork } = useActiveCollabStartWork(task.projectId)
   // Only offered when it can actually succeed: an unbound project has nowhere to put a workspace,
   // and a control that explains its own absence belongs in the detail pane, not on every row.
-  const canStartWork = binding.kind === 'ready' || binding.kind === 'needs-repo'
+  const canStartWork =
+    ACTIVECOLLAB_SITE_BINDING_UI_ENABLED &&
+    (binding.kind === 'ready' || binding.kind === 'needs-repo')
   const startWorkLabel = translate(
     'auto.components.activecollab.task_row.start_work',
     'Start a workspace for this task'

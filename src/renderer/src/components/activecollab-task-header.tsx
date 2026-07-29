@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
 import { activeCollabStamp } from './activecollab-task-timestamps'
 import { useActiveCollabStartWork } from './use-activecollab-start-work'
+import { ACTIVECOLLAB_SITE_BINDING_UI_ENABLED } from '@/lib/activecollab-site-binding-visibility'
 
 // A drawn dot rather than a typed middot: the identity line is decoration between localized
 // fragments, and punctuation as text would need translating.
@@ -41,6 +42,9 @@ export function ActiveCollabTaskHeader({
     : translate('auto.components.activecollab.task_workspace.complete', 'Complete task')
   const { binding, startWork } = useActiveCollabStartWork(task.projectId)
   const canStartWork = binding.kind === 'ready' || binding.kind === 'needs-repo'
+  // Hidden, not disabled: a permanently greyed button with no way to enable it is worse than no
+  // button at all while the binding UI is off.
+  const showStartWork = ACTIVECOLLAB_SITE_BINDING_UI_ENABLED
   const startWorkHint = canStartWork
     ? translate(
         'auto.components.activecollab.task_workspace.start_work_hint',
@@ -122,27 +126,29 @@ export function ActiveCollabTaskHeader({
             </p>
           </div>
 
-          {/* Disabled-with-a-reason rather than hidden, unlike the list row: the pane has room for
-            the explanation and is where someone goes looking for what they can do with a task. */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="shrink-0">
-                <Button
-                  variant="outline"
-                  size="xs"
-                  disabled={!canStartWork}
-                  onClick={() => startWork(task)}
-                >
-                  <Play aria-hidden="true" className="size-3" />
-                  {translate(
-                    'auto.components.activecollab.task_workspace.start_work',
-                    'Start workspace'
-                  )}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{startWorkHint}</TooltipContent>
-          </Tooltip>
+          {showStartWork ? (
+            // Disabled-with-a-reason rather than hidden when unbound: the pane has room for the
+            // explanation and is where someone goes looking for what they can do with a task.
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="shrink-0">
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    disabled={!canStartWork}
+                    onClick={() => startWork(task)}
+                  >
+                    <Play aria-hidden="true" className="size-3" />
+                    {translate(
+                      'auto.components.activecollab.task_workspace.start_work',
+                      'Start workspace'
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{startWorkHint}</TooltipContent>
+            </Tooltip>
+          ) : null}
         </div>
       </TooltipProvider>
     </header>

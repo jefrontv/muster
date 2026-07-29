@@ -110,6 +110,19 @@ function getDevToolsPaneSearchEntries(): SettingsNavSection['searchEntries'] {
   ]
 }
 
+/**
+ * Panes this fork hides, filtered out at the end of the builder so the entries above stay intact
+ * and re-enabling one is a single deletion here.
+ *
+ * Orchestration is set up automatically now, so a pane whose job was to talk you through
+ * installing it has nothing left to offer. Computer Use and Mobile are upstream capabilities this
+ * fork does not support, and a settings pane that only offers to install one is a dead end.
+ *
+ * Deliberately filtered rather than deleted: Cmd+J and Settings share this metadata, so hiding in
+ * one place keeps the palette and the sidebar from disagreeing about what exists.
+ */
+const HIDDEN_SETTINGS_SECTION_IDS = new Set(['orchestration', 'computer-use', 'mobile'])
+
 export function buildSettingsNavigationMetadata({
   isMac,
   isWindows,
@@ -591,7 +604,7 @@ export function buildSettingsNavigationMetadata({
         group: 'repositories'
       }
     })
-  ]
+  ].filter((section) => !HIDDEN_SETTINGS_SECTION_IDS.has(section.id))
 }
 
 export function useSettingsNavigationMetadata(): SettingsNavSection[] {
