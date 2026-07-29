@@ -14059,6 +14059,14 @@
           "heading": "Attachments (you can drag and drop here)",
           "attach": "Attach Files",
           "orphaned_upload": "The files uploaded but the comment did not post, so nothing was attached. Your comment is still here — try again."
+        },
+        "bind_site": {
+          "linked": "Linked to {{value0}}",
+          "missing": "Linked site is missing — pick another",
+          "link": "Link this project to a site",
+          "filter": "Filter sites…",
+          "empty": "No sites found.",
+          "unbind": "Unlink {{value0}}"
         }
       },
       "TaskPageActiveCollabPanel": {

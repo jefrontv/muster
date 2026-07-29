@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ActiveCollabTaskGroup } from './task-page-activecollab-task-grouping'
 import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
+import { ActiveCollabBindSiteButton } from './task-page-activecollab-bind-site-button'
 import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
 
 /**
@@ -48,29 +49,35 @@ export function ActiveCollabTaskGroupSection({
         id={headingId}
         className="sticky top-0 z-10 border-y border-border/60 bg-muted/80 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground backdrop-blur-sm"
       >
-        <button
-          type="button"
-          aria-controls={listId}
-          aria-expanded={!collapsed}
-          onClick={() => onToggleCollapsed(group.projectId)}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left uppercase tracking-[inherit] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
-        >
-          <span className="min-w-0 truncate">{group.projectName}</span>
-          {/* The count survives collapse — hiding the size of what you just folded away is the one
-              thing that would make collapsing worse than scrolling. */}
-          <span className="flex shrink-0 items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] tabular-nums"
-            >
-              {group.tasks.length}
+        {/* The bind control is a sibling of the toggle, not a child: nesting a button inside the
+            row-wide toggle is invalid markup and unreachable by keyboard. `w-full` moves to this
+            wrapper so the toggle can still own the whole row minus the control. */}
+        <span className="flex w-full items-center gap-1 pr-2">
+          <button
+            type="button"
+            aria-controls={listId}
+            aria-expanded={!collapsed}
+            onClick={() => onToggleCollapsed(group.projectId)}
+            className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left uppercase tracking-[inherit] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+          >
+            <span className="min-w-0 truncate">{group.projectName}</span>
+            {/* The count survives collapse — hiding the size of what you just folded away is the one
+                thing that would make collapsing worse than scrolling. */}
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] tabular-nums"
+              >
+                {group.tasks.length}
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className={cn('size-3.5 transition-transform', collapsed && '-rotate-90')}
+              />
             </span>
-            <ChevronDown
-              aria-hidden="true"
-              className={cn('size-3.5 transition-transform', collapsed && '-rotate-90')}
-            />
-          </span>
-        </button>
+          </button>
+          <ActiveCollabBindSiteButton projectId={group.projectId} projectName={group.projectName} />
+        </span>
       </h3>
       {/* Stays mounted while collapsed so `aria-controls` always resolves; `hidden` (not an unmount)
           is what removes it from the a11y tree, and dropping the children keeps the rows off the
