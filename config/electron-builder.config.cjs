@@ -25,6 +25,14 @@ const skillFreshnessResources = {
   from: 'resources/skills',
   to: 'skills'
 }
+// Why the package bytes ship too, despite the note above: this fork installs the default agent
+// skills itself at startup instead of asking the user to run `npx skills add`, so it needs the
+// files, not just their digests. They are the same bytes `resources/skills` fingerprints — laying
+// down anything else would light the freshness badge on a skill Muster had just written.
+const skillPackageResources = {
+  from: 'skills',
+  to: 'skill-packages'
+}
 // Why: SSH relay deploy resolves bundles from process.resourcesPath in packaged
 // apps. Keeping relay assets as extraResources makes them real directories
 // instead of paths hidden inside app.asar.
@@ -36,7 +44,7 @@ const relayExtraResource = {
 // from package directories where pnpm's symlink farm is absent. Copy the exact
 // runtime dependency closure to Resources/node_modules so bare require() calls
 // do not fall through to a developer checkout's node_modules.
-const commonExtraResources = [relayExtraResource, skillFreshnessResources]
+const commonExtraResources = [relayExtraResource, skillFreshnessResources, skillPackageResources]
 const macSpeechNativeResource = {
   from: 'node_modules/sherpa-onnx-darwin-${arch}',
   to: 'node_modules/sherpa-onnx-darwin-${arch}'

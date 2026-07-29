@@ -18,6 +18,7 @@ import { registerLinearHandlers } from './linear'
 import { registerJiraHandlers } from './jira'
 import { registerActiveCollabHandlers } from './activecollab'
 import { registerFeedbackHandlers } from './feedback'
+import { installDefaultAgentSkillsOnStartup } from '../skills/default-skill-install'
 import { registerCrashReportingHandlers } from './crash-reporting'
 import { registerExportHandlers } from './export'
 import { registerStatsHandlers } from './stats'
@@ -165,6 +166,10 @@ export function registerCoreHandlers(
   registerJiraHandlers()
   registerActiveCollabHandlers(store)
   registerFeedbackHandlers()
+  // Why here: agents read their skills directory at launch, so laying these down while the rest of
+  // the IPC surface registers means the next agent a user starts already has them. Idempotent and
+  // non-throwing, so a repeat launch is a no-op and a failure never blocks startup.
+  installDefaultAgentSkillsOnStartup()
   if (crashReports) {
     registerCrashReportingHandlers(crashReports)
   }
