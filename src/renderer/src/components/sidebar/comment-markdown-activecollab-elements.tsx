@@ -63,7 +63,9 @@ function ActiveCollabCallout({ children }: ActiveCollabElementProps): React.JSX.
  * paragraph rhythm being dictated by an empty node.
  */
 function ActiveCollabBlankLine(): React.JSX.Element {
-  return <span aria-hidden="true" className="block h-2" />
+  // The data attribute mirrors `data-activecollab-mention` above: these rendered ActiveCollab
+  // primitives are identifiable without depending on their utility classes.
+  return <span aria-hidden="true" data-activecollab-blank="" className="block h-2" />
 }
 
 // react-markdown keys `Components` by intrinsic tag name, and the `ac-*` ones are ours rather than

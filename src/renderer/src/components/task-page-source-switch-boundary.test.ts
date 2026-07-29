@@ -37,7 +37,10 @@ describe('TaskPage source switching host boundary', () => {
   it('switches task source without mutating the focused run host', () => {
     const section = sourceBetween(
       TASK_PAGE_SOURCE,
-      '{visibleSourceOptions.map((source) => {',
+      // No leading brace: the switcher is now guarded by `visibleSourceOptions.length > 1 &&`,
+      // which sits between the brace and the map. Anchoring on the map itself keeps this test
+      // about what the click handler does rather than how the switcher is gated.
+      'visibleSourceOptions.map((source) => {',
       "{taskSource === 'linear' && linearConnected ?"
     )
 

@@ -151,15 +151,19 @@ describe('ActiveCollab comment body rendering', () => {
     expect(REAL_COMMENT_BODY).toContain('<p>\u00a0</p>')
   })
 
-  it("keeps the author's blank line as its own paragraph instead of running the text together", async () => {
+  it("keeps the author's blank line as a spacer instead of running the text together", async () => {
     await mountBody(REAL_COMMENT_BODY)
 
+    // The blank `<p>\u00a0</p>` separators are retagged to <ac-blank> spacers rather than kept as
+    // paragraphs: as paragraphs they carried a full line box plus a margin each side, which stacked
+    // into a gap several times the one the author saw in ActiveCollab.
     const rendered = paragraphs()
-    expect(rendered).toHaveLength(4)
+    expect(rendered).toHaveLength(2)
     expect(rendered[0].textContent).toBe('Thanks Jake Varrese !')
-    expect(rendered[1].textContent).toBe('\u00a0')
-    expect(rendered[2].textContent).toBe('Hoping you can help with a small tweak from the client:')
-    expect(rendered[3].textContent).toBe('\u00a0')
+    expect(rendered[1].textContent).toBe('Hoping you can help with a small tweak from the client:')
+    // Still separated, and still not collapsed into one line box: the spacers are present and the
+    // paragraphs did not become inline spans.
+    expect(container.querySelectorAll('[data-activecollab-blank]')).toHaveLength(2)
     // The defect: the compact variant emitted inline spans, so every paragraph shared one line box.
     expect(container.querySelectorAll('span.comment-md-p')).toHaveLength(0)
   })
@@ -179,10 +183,13 @@ describe('ActiveCollab comment body rendering', () => {
     expect(paragraphs().every((node) => node.className === ordinaryClass)).toBe(true)
   })
 
-  it('fills a blank paragraph written with a plain space, which draws no line box on its own', async () => {
+  it('turns a blank paragraph written with a plain space into a spacer, not a lost line', async () => {
     await mountBody('<p>Above</p>\n<p> </p>\n<p>Below</p>')
 
-    expect(paragraphs().map((node) => node.textContent)).toEqual(['Above', '\u00a0', 'Below'])
+    // A paragraph holding only collapsible whitespace draws no line box at all, so the author's
+    // blank line would vanish; the spacer preserves the separation without a paragraph's margins.
+    expect(paragraphs().map((node) => node.textContent)).toEqual(['Above', 'Below'])
+    expect(container.querySelectorAll('[data-activecollab-blank]')).toHaveLength(1)
   })
 
   it('keeps the nested bullet and the line break inside the list item', async () => {

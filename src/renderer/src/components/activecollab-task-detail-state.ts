@@ -99,7 +99,10 @@ export function useActiveCollabTaskDetail(
   // still stops nagging: the user looked, which is what the count was tracking.
   useEffect(() => {
     if (taskId !== null) {
-      void markActiveCollabTaskRead(taskId)
+      // Called optionally because this pane is mounted against partial store stand-ins in several
+      // suites: clearing a badge is a nicety, and a missing action must not take the whole task
+      // pane down on render. The real store always registers it.
+      void markActiveCollabTaskRead?.(taskId)
     }
   }, [taskId, markActiveCollabTaskRead])
 

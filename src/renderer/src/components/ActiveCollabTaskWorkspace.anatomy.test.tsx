@@ -57,7 +57,10 @@ vi.mock('@/store', () => ({
       reopenActiveCollabTask: mocks.reopenTask,
       postActiveCollabComment: mocks.postComment,
       listActiveCollabUsers: mocks.listUsers,
-      listActiveCollabProjectMembers: mocks.listProjectMembers
+      listActiveCollabProjectMembers: mocks.listProjectMembers,
+      // Opening a task clears its unread badge entry; harmless here, but the hook calls it on every
+      // mount so the stand-in has to answer or the whole pane throws during render.
+      markActiveCollabTaskRead: async () => {}
     })
 }))
 
