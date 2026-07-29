@@ -321,6 +321,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     visibleTaskProvidersDefaultedForJira: true,
     visibleTaskProvidersDefaultedForActiveCollab: true,
     visibleTaskProvidersNarrowedToActiveCollab: true,
+    activeCollabProjectSites: {},
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     opencodeSessionCookie: '',

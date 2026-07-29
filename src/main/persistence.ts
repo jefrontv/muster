@@ -30,6 +30,7 @@ import {
   latestAutomationOccurrenceAtOrBefore,
   nextAutomationOccurrenceAfter
 } from '../shared/automation-schedules'
+import { sanitizeActiveCollabProjectSites } from '../shared/activecollab-project-site'
 import { getAutomationLegacyRepoId } from '../shared/automation-run-identity'
 import { normalizeAutomationPrecheck } from '../shared/automation-precheck'
 import type {
@@ -3219,6 +3220,9 @@ export class Store {
             visibleTaskProvidersDefaultedForJira: true,
             visibleTaskProvidersDefaultedForActiveCollab: true,
             visibleTaskProvidersNarrowedToActiveCollab: true,
+            activeCollabProjectSites: sanitizeActiveCollabProjectSites(
+              parsed.settings?.activeCollabProjectSites
+            ),
             terminalShortcutPolicy: normalizeTerminalShortcutPolicy(
               parsed.settings?.terminalShortcutPolicy
             ),

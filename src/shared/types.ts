@@ -2886,6 +2886,8 @@ export type GlobalSettings = {
   /** Why a third flag: this fork narrows existing profiles to ActiveCollab once. The two flags above
    *  are stamped true on every load, so neither can gate a later migration. */
   visibleTaskProvidersNarrowedToActiveCollab: boolean
+  /** ActiveCollab project → site bindings, keyed by `activeCollabProjectSiteKey`. */
+  activeCollabProjectSites: Record<string, string>
   /** Persisted repo selection (cross-repo tasks view). null = sticky-all (includes future-added repos);
    *  string[] = frozen curated subset (ineligible ids dropped on load; empty after drop is treated as null). */
   defaultRepoSelection: string[] | null

@@ -166,6 +166,7 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
     visibleTaskProvidersDefaultedForJira: true,
     visibleTaskProvidersDefaultedForActiveCollab: true,
     visibleTaskProvidersNarrowedToActiveCollab: true,
+    activeCollabProjectSites: {},
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     opencodeSessionCookie: '',
