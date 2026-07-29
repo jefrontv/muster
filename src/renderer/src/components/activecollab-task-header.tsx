@@ -1,12 +1,14 @@
 import React from 'react'
-import { Check, LoaderCircle } from 'lucide-react'
+import { Check, LoaderCircle, Play } from 'lucide-react'
 
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
 import { activeCollabStamp } from './activecollab-task-timestamps'
+import { useActiveCollabStartWork } from './use-activecollab-start-work'
 
 // A drawn dot rather than a typed middot: the identity line is decoration between localized
 // fragments, and punctuation as text would need translating.
@@ -37,11 +39,24 @@ export function ActiveCollabTaskHeader({
   const toggleLabel = task.isCompleted
     ? translate('auto.components.activecollab.task_workspace.reopen', 'Reopen task')
     : translate('auto.components.activecollab.task_workspace.complete', 'Complete task')
+  const { binding, startWork } = useActiveCollabStartWork(task.projectId)
+  const canStartWork = binding.kind === 'ready' || binding.kind === 'needs-repo'
+  const startWorkHint = canStartWork
+    ? translate(
+        'auto.components.activecollab.task_workspace.start_work_hint',
+        'Create a workspace in the linked site and brief an agent on this task'
+      )
+    : translate(
+        'auto.components.activecollab.task_workspace.start_work_unbound',
+        'Link this project to a site first — use the link button on the project heading'
+      )
 
   return (
     <header className="flex-none border-b border-border/50 bg-muted/30 px-4 py-3">
-      <div className="flex items-start gap-2.5">
-        <TooltipProvider delayDuration={300}>
+      {/* One provider for the whole row: the completion toggle and the start-work button both use
+          tooltips, and nesting a second provider inside the first buys nothing. */}
+      <TooltipProvider delayDuration={300}>
+        <div className="flex items-start gap-2.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -67,47 +82,69 @@ export function ActiveCollabTaskHeader({
             </TooltipTrigger>
             <TooltipContent side="bottom">{toggleLabel}</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
 
-        <div className="min-w-0 flex-1">
-          <h2
-            className={cn(
-              'text-[17px] font-semibold leading-snug',
-              task.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
-            )}
-          >
-            {task.name}
-          </h2>
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="flex min-w-0 items-center gap-1.5">
-              <ActiveCollabIcon className="size-3 shrink-0" />
-              <span className="min-w-0 truncate font-medium text-foreground/80">
-                {task.projectName}
-              </span>
-            </span>
-            <span aria-hidden="true" className={DOT} />
-            <span className="shrink-0 font-mono">
-              {translate(
-                'auto.components.activecollab.task_workspace.task_number',
-                'Task #{{value0}}',
-                { value0: task.taskNumber }
+          <div className="min-w-0 flex-1">
+            <h2
+              className={cn(
+                'text-[17px] font-semibold leading-snug',
+                task.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
               )}
-            </span>
-            {created ? (
-              <>
-                <span aria-hidden="true" className={DOT} />
-                <time dateTime={created.iso} className="shrink-0">
+            >
+              {task.name}
+            </h2>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <ActiveCollabIcon className="size-3 shrink-0" />
+                <span className="min-w-0 truncate font-medium text-foreground/80">
+                  {task.projectName}
+                </span>
+              </span>
+              <span aria-hidden="true" className={DOT} />
+              <span className="shrink-0 font-mono">
+                {translate(
+                  'auto.components.activecollab.task_workspace.task_number',
+                  'Task #{{value0}}',
+                  { value0: task.taskNumber }
+                )}
+              </span>
+              {created ? (
+                <>
+                  <span aria-hidden="true" className={DOT} />
+                  <time dateTime={created.iso} className="shrink-0">
+                    {translate(
+                      'auto.components.activecollab.task_workspace.created_on',
+                      'Created {{value0}}',
+                      { value0: created.label }
+                    )}
+                  </time>
+                </>
+              ) : null}
+            </p>
+          </div>
+
+          {/* Disabled-with-a-reason rather than hidden, unlike the list row: the pane has room for
+            the explanation and is where someone goes looking for what they can do with a task. */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="shrink-0">
+                <Button
+                  variant="outline"
+                  size="xs"
+                  disabled={!canStartWork}
+                  onClick={() => startWork(task)}
+                >
+                  <Play aria-hidden="true" className="size-3" />
                   {translate(
-                    'auto.components.activecollab.task_workspace.created_on',
-                    'Created {{value0}}',
-                    { value0: created.label }
+                    'auto.components.activecollab.task_workspace.start_work',
+                    'Start workspace'
                   )}
-                </time>
-              </>
-            ) : null}
-          </p>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{startWorkHint}</TooltipContent>
+          </Tooltip>
         </div>
-      </div>
+      </TooltipProvider>
     </header>
   )
 }

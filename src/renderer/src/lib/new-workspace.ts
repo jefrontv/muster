@@ -60,6 +60,12 @@ export type LinkedWorkItemSummary = Omit<FolderWorkspaceLinkedTask, 'provider'> 
   linearWorkspaceId?: string
   linearOrganizationUrlKey?: string
   linearBranchName?: string
+  /**
+   * ActiveCollab's project, carried for the agent's draft block. Renderer-side like the Linear
+   * extras above rather than on `FolderWorkspaceLinkedTask`, which is persisted — a display name
+   * that can be renamed upstream does not belong in a saved record.
+   */
+  projectName?: string
   linkedContext?: LinkedWorkItemContext
 }
 

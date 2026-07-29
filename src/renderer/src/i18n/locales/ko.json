@@ -13963,7 +13963,10 @@
           "comment_formatting": "Comment formatting",
           "comment_bold": "Bold",
           "comment_italic": "Italic",
-          "comment_link": "Link"
+          "comment_link": "Link",
+          "start_work_hint": "Create a workspace in the linked site and brief an agent on this task",
+          "start_work_unbound": "Link this project to a site first — use the link button on the project heading",
+          "start_work": "Start workspace"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -14044,6 +14047,14 @@
           "filter": "Filter sites…",
           "empty": "No sites found.",
           "unbind": "Unlink {{value0}}"
+        },
+        "task_row": {
+          "start_work": "Start a workspace for this task"
+        },
+        "start_work": {
+          "unbound": "Link {{value0}} to a site first — use the link button on the project heading.",
+          "open_failed": "Could not open {{value0}} as a repository.",
+          "still_no_repo": "{{value0}} is not a git repository, so it cannot hold a workspace."
         }
       },
       "TaskPageActiveCollabPanel": {

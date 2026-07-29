@@ -4,6 +4,9 @@
 // Hierarchy: the task name is the single primary line; labels and the due date are secondary and
 // live in their own regions of the row rather than running together with it.
 import React from 'react'
+import { Play } from 'lucide-react'
+
+import { useActiveCollabStartWork } from './use-activecollab-start-work'
 
 import {
   formatActiveCollabDueDate,
@@ -150,6 +153,14 @@ export function ActiveCollabTaskRow({
   // day early east of UTC.
   const due = formatActiveCollabDueDate(task.dueOn)
   const status = task.dueOn !== null && due ? activeCollabDueStatus(task.dueOn, now) : null
+  const { binding, startWork } = useActiveCollabStartWork(task.projectId)
+  // Only offered when it can actually succeed: an unbound project has nowhere to put a workspace,
+  // and a control that explains its own absence belongs in the detail pane, not on every row.
+  const canStartWork = binding.kind === 'ready' || binding.kind === 'needs-repo'
+  const startWorkLabel = translate(
+    'auto.components.activecollab.task_row.start_work',
+    'Start a workspace for this task'
+  )
   // Two chips is what fits beside a truncated title at the narrowest pane width; the rest collapse
   // into a count whose tooltip still names them, and the row's aria-label lists every label
   // regardless, so capping is presentation-only and hides nothing from assistive tech.
@@ -159,7 +170,9 @@ export function ActiveCollabTaskRow({
   const hiddenLabelNames = hiddenLabels.map((label) => label.name).join(', ')
 
   return (
-    <li>
+    // `group` drives the hover reveal; flex rather than an overlay so the action never covers the
+    // due date, and the space is reserved whenever it can appear so hovering causes no layout shift.
+    <li className="group flex items-center">
       <button
         type="button"
         aria-current={selected ? 'true' : undefined}
@@ -169,8 +182,7 @@ export function ActiveCollabTaskRow({
         className={cn(
           // Why a FIXED height rather than a minimum: labels used to wrap onto a second line, so a
           // labelled row stood taller than a bare one and the list scanned as an uneven stack.
-          // Everything now sits on one line and every row is exactly h-12.
-          'grid h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
+          'grid h-12 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
           // Selected outranks hover instead of matching it, so pointing at a row never looks like
           // selecting one.
           selected ? 'bg-accent hover:bg-accent' : 'hover:bg-accent/40'
@@ -204,6 +216,17 @@ export function ActiveCollabTaskRow({
         </span>
         <ActiveCollabTaskDue due={due} status={status} />
       </button>
+      {canStartWork ? (
+        <button
+          type="button"
+          aria-label={startWorkLabel}
+          title={startWorkLabel}
+          onClick={() => startWork(task)}
+          className="mr-2 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
+        >
+          <Play aria-hidden="true" className="size-3.5" />
+        </button>
+      ) : null}
     </li>
   )
 }
