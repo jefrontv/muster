@@ -95,15 +95,23 @@ the pane has room for the explanation and is where a user goes looking for actio
      `getLinkedWorkItemWorkspaceName`
    - **linked work item** — `provider: 'activecollab'` using the existing
      `ActiveCollabTaskProviderIdentity` (`instanceUrl`, `projectId`, `projectName`)
-   - **initial prompt** — the task name, its ActiveCollab URL, and the task body converted to
-     plain text and truncated to a bounded length. Body only, never the comment thread: comments
-     are discussion, frequently contradict the brief, and would let a stray remark read as an
-     instruction. The user can still edit the prompt before creating.
+   - **agent brief** — delivered as the agent's *draft* after launch, not as a composer field.
+     The modal is quick-create only and hardcodes `initialPrompt: ''` ("prompt-prefill state is
+     intentionally ignored even if older callers still send it"), so seeding a composer prompt
+     would mean reversing a deliberate decision every other caller inherits. Instead the existing
+     path applies: `resolveQuickCreateLinkedWorkItemPrompt` turns the linked work item into a
+     `draftPrompt`, and `buildAgentDraftLaunchPlan` types it into the agent once the workspace is
+     up. Today a non-Linear item degrades to a bare URL, so this adds an ActiveCollab context
+     block mirroring `buildLinearLaunchContextBlock` — task name, project and URL. Name and link
+     only, never the body or comments: the body can be long and stale, comments are discussion
+     that frequently contradicts the brief, and the agent already has the ActiveCollab MCP to read
+     the task from its URL when it needs the detail.
    - **harness** — left to the composer's existing agent picker; no new picker is introduced
 
 The provider is already accepted by `normalizeFolderWorkspaceLinkedTask` and
 `ActiveCollabTaskProviderIdentity` already exists, so this reuses the linked-task model rather than
-extending it.
+extending it. The draft is a draft, not a submission: the user still sees it in the agent and
+presses Enter, which is what keeps a linked-item pick from silently becoming an instruction.
 
 ## Error handling
 
