@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildAgentPromptWithContext } from './new-workspace'
 import {
+  buildActiveCollabLaunchContextBlock,
   buildContainedLinkedContextBlock,
   buildLinearLaunchContextBlock,
   getLaunchableWorkItemDraftContent,
@@ -306,5 +307,67 @@ describe('buildAgentPromptWithContext', () => {
     )
     expectNoLinearTicketContent(prompt)
     expectNoProductWorkflowDirection(prompt)
+  })
+})
+
+describe('buildActiveCollabLaunchContextBlock', () => {
+  it('names the task and its project above the link', () => {
+    expect(
+      buildActiveCollabLaunchContextBlock({
+        provider: 'activecollab',
+        title: 'Walk in form',
+        projectName: 'Orleton',
+        url: 'https://projects.efront.com.au/projects/5937/tasks/509749'
+      })
+    ).toBe(
+      [
+        'Linked ActiveCollab task: Walk in form (Orleton)',
+        'https://projects.efront.com.au/projects/5937/tasks/509749'
+      ].join('\n')
+    )
+  })
+
+  it('omits the project when it is unknown', () => {
+    expect(
+      buildActiveCollabLaunchContextBlock({
+        provider: 'activecollab',
+        title: 'Walk in form',
+        url: 'https://x.example/t/1'
+      })
+    ).toBe(['Linked ActiveCollab task: Walk in form', 'https://x.example/t/1'].join('\n'))
+  })
+
+  it('answers null with neither a title nor a url, so no empty block is emitted', () => {
+    expect(buildActiveCollabLaunchContextBlock({ provider: 'activecollab' })).toBeNull()
+  })
+
+  it('ignores items from other providers', () => {
+    expect(
+      buildActiveCollabLaunchContextBlock({ provider: 'github', title: 'x', url: 'https://y' })
+    ).toBeNull()
+  })
+})
+
+describe('resolveQuickCreateLinkedWorkItemPrompt with an ActiveCollab task', () => {
+  const AC_ITEM = {
+    provider: 'activecollab' as const,
+    number: 509749,
+    url: 'https://projects.efront.com.au/projects/5937/tasks/509749',
+    title: 'Walk in form',
+    projectName: 'Orleton'
+  }
+
+  it('drafts the named task rather than a bare url', () => {
+    const { draftPrompt } = resolveQuickCreateLinkedWorkItemPrompt(AC_ITEM, '')
+    expect(draftPrompt).toContain('Linked ActiveCollab task: Walk in form (Orleton)')
+    expect(draftPrompt).toContain('https://projects.efront.com.au/projects/5937/tasks/509749')
+  })
+
+  it('keeps a typed note above the task block', () => {
+    const { draftPrompt } = resolveQuickCreateLinkedWorkItemPrompt(
+      AC_ITEM,
+      'Start with the mobile breakpoint'
+    )
+    expect(draftPrompt?.startsWith('Start with the mobile breakpoint')).toBe(true)
   })
 })

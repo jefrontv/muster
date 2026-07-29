@@ -98,6 +98,35 @@ export function buildLinearLaunchContextBlock(args: LinearLaunchContextArgs): st
   return lines.join('\n')
 }
 
+/**
+ * The agent's draft for an ActiveCollab task.
+ *
+ * Without this the generic path hands the agent a bare URL, which reads as a link to open rather
+ * than work to do. Name and project only: the task body can be long and stale, and comments are
+ * discussion that often contradicts the brief. The agent has the ActiveCollab MCP and can read the
+ * task from this URL when it needs the detail.
+ */
+export function buildActiveCollabLaunchContextBlock(args: {
+  provider?: TaskProvider
+  title?: string
+  projectName?: string
+  url?: string
+}): string | null {
+  if (args.provider !== 'activecollab') {
+    return null
+  }
+  const title = args.title?.trim()
+  const url = args.url?.trim()
+  if (!title && !url) {
+    return null
+  }
+  const projectName = args.projectName?.trim()
+  const heading = title
+    ? `Linked ActiveCollab task: ${projectName ? `${title} (${projectName})` : title}`
+    : 'Linked ActiveCollab task'
+  return [heading, url].filter(Boolean).join('\n')
+}
+
 function escapeLinkedContextControlChars(value: string): string {
   return Array.from(value, (char) => {
     const code = char.codePointAt(0) ?? 0
@@ -153,8 +182,14 @@ function capLinkedContextSourceLines(args: { sourceLines: string; fixedChars: nu
 export function getLinkedWorkItemPromptContext(
   linkedWorkItem:
     | (Pick<
-        { provider?: TaskProvider; url: string; title?: string; linearIdentifier?: string },
-        'provider' | 'url' | 'title' | 'linearIdentifier'
+        {
+          provider?: TaskProvider
+          url: string
+          title?: string
+          linearIdentifier?: string
+          projectName?: string
+        },
+        'provider' | 'url' | 'title' | 'linearIdentifier' | 'projectName'
       > & { linkedContext?: LinkedWorkItemContext })
     | null
     | undefined
@@ -169,6 +204,17 @@ export function getLinkedWorkItemPromptContext(
     return linearBlock
       ? { linkedUrls: [], linkedContextBlocks: [linearBlock] }
       : { linkedUrls: [], linkedContextBlocks: [] }
+  }
+  // Why before the bare-URL fallback: an ActiveCollab task reaching the generic branch would be
+  // handed over as a naked link, which reads as something to open rather than work to do.
+  const activeCollabBlock = buildActiveCollabLaunchContextBlock({
+    provider: linkedWorkItem?.provider,
+    title: linkedWorkItem?.title,
+    projectName: linkedWorkItem?.projectName,
+    url: linkedWorkItem?.url
+  })
+  if (activeCollabBlock) {
+    return { linkedUrls: [], linkedContextBlocks: [activeCollabBlock] }
   }
   const linkedUrl = linkedWorkItem?.url?.trim()
   return linkedUrl
@@ -208,8 +254,9 @@ export function resolveQuickCreateLinkedWorkItemPrompt(
           url: string
           title?: string
           linearIdentifier?: string
+          projectName?: string
         },
-        'provider' | 'number' | 'url' | 'title' | 'linearIdentifier'
+        'provider' | 'number' | 'url' | 'title' | 'linearIdentifier' | 'projectName'
       > & { linkedContext?: LinkedWorkItemContext })
     | null
     | undefined,
@@ -225,12 +272,23 @@ export function resolveQuickCreateLinkedWorkItemPrompt(
       })
     : null
   const linearDraft = linearBlock ? formatDraftContextBlock(linearBlock) : null
+  // Why not the bare URL: see buildActiveCollabLaunchContextBlock — a naked link reads as
+  // something to open, not the task the workspace was created for.
+  const activeCollabBlock = buildActiveCollabLaunchContextBlock({
+    provider: linkedWorkItem?.provider,
+    title: linkedWorkItem?.title,
+    projectName: linkedWorkItem?.projectName,
+    url: linkedWorkItem?.url
+  })
+  const activeCollabDraft = activeCollabBlock ? formatDraftContextBlock(activeCollabBlock) : null
   const linkedUrl = linkedWorkItem?.url?.trim() || null
   const draftPrompt = linearDraft
     ? [trimmedNote, linearDraft].filter(Boolean).join('\n\n')
-    : linkedUrl
-      ? [trimmedNote, linkedUrl].filter(Boolean).join('\n\n')
-      : null
+    : activeCollabDraft
+      ? [trimmedNote, activeCollabDraft].filter(Boolean).join('\n\n')
+      : linkedUrl
+        ? [trimmedNote, linkedUrl].filter(Boolean).join('\n\n')
+        : null
   const isLinearTypedOnly = linkedWorkItem?.number === 0 && Boolean(trimmedNote) && !draftPrompt
   return {
     prompt: isLinearTypedOnly ? trimmedNote : '',
