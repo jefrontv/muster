@@ -1,7 +1,11 @@
 import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import { getDefaultSettings } from '../../../shared/constants'
-import { resolveLeftSidebarStyleVariables } from './left-sidebar-appearance'
+import {
+  applyMatchTerminalAppChrome,
+  MATCH_TERMINAL_APP_CHROME_VARIABLE_KEYS,
+  resolveLeftSidebarStyleVariables
+} from './left-sidebar-appearance'
 
 function settings(overrides = {}) {
   return {
@@ -80,5 +84,59 @@ describe('resolveLeftSidebarStyleVariables', () => {
     )
 
     expect(vars?.['--worktree-sidebar']).toBe('color-mix(in srgb, #000000 35%, var(--background))')
+  })
+})
+
+describe('applyMatchTerminalAppChrome', () => {
+  function makeRoot(): HTMLElement {
+    const store = new Map<string, string>()
+    return {
+      style: {
+        setProperty: (key: string, value: string) => {
+          store.set(key, value)
+        },
+        removeProperty: (key: string) => {
+          store.delete(key)
+        },
+        getPropertyValue: (key: string) => store.get(key) ?? ''
+      }
+    } as unknown as HTMLElement
+  }
+
+  it('writes terminal surface tokens on the document root for match-terminal', () => {
+    const root = makeRoot()
+    applyMatchTerminalAppChrome(
+      settings({
+        leftSidebarAppearanceMode: 'match-terminal',
+        terminalColorOverrides: {
+          background: '#101820',
+          foreground: '#f0f4f8'
+        }
+      }),
+      true,
+      root
+    )
+
+    expect(root.style.getPropertyValue('--background')).toBe('#101820')
+    expect(root.style.getPropertyValue('--foreground')).toBe('#f0f4f8')
+    expect(root.style.getPropertyValue('--bg-titlebar')).toContain('#f0f4f8')
+    expect(root.style.getPropertyValue('--sidebar')).toBe('#101820')
+  })
+
+  it('clears document-root overrides when leaving match-terminal', () => {
+    const root = makeRoot()
+    applyMatchTerminalAppChrome(
+      settings({
+        leftSidebarAppearanceMode: 'match-terminal',
+        terminalColorOverrides: { background: '#101820', foreground: '#fff' }
+      }),
+      true,
+      root
+    )
+    applyMatchTerminalAppChrome(settings({ leftSidebarAppearanceMode: 'default' }), true, root)
+
+    for (const key of MATCH_TERMINAL_APP_CHROME_VARIABLE_KEYS) {
+      expect(root.style.getPropertyValue(key)).toBe('')
+    }
   })
 })

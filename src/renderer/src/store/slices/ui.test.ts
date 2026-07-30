@@ -717,11 +717,11 @@ describe('createUISlice hydratePersistedUI', () => {
     expect(getDefaultUIState().rightSidebarOpen).toBe(true)
   })
 
-  it('defaults to hiding sleeping workspaces', () => {
+  it('defaults to showing sleeping workspaces', () => {
     const store = createUIStore()
 
     expect(store.getState().showSleepingWorkspaces).toBe(DEFAULT_SHOW_SLEEPING_WORKSPACES)
-    expect(DEFAULT_SHOW_SLEEPING_WORKSPACES).toBe(false)
+    expect(DEFAULT_SHOW_SLEEPING_WORKSPACES).toBe(true)
   })
 
   it('defaults workspace host scope to all hosts', () => {

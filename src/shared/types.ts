@@ -3298,7 +3298,7 @@ export type PersistedUIState = {
   projectOrderBy: ProjectOrderBy
   /** Deprecated; the Active only filter is retired and ignored on hydration. */
   showActiveOnly: boolean
-  /** Hide sleeping/inactive workspaces from workspace navigation. Off by default. */
+  /** Hide sleeping/inactive workspaces from workspace navigation. Default is show (false). */
   hideSleepingWorkspaces?: boolean
   /** Which execution hosts the sidebar shows; `all` = mixed view, specific IDs focus without tearing down other hosts' sessions. */
   workspaceHostScope?: WorkspaceHostScope

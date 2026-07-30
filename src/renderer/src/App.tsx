@@ -23,7 +23,10 @@ import {
 import logo from '../../../resources/logo.svg'
 import { SYNC_FIT_PANES_EVENT, TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
 import { syncZoomCSSVar } from '@/lib/ui-zoom'
-import { resolveLeftSidebarStyleVariables } from '@/lib/left-sidebar-appearance'
+import {
+  applyMatchTerminalAppChrome,
+  resolveLeftSidebarStyleVariables
+} from '@/lib/left-sidebar-appearance'
 import { canShowRightSidebarForView } from '@/lib/right-sidebar-visibility'
 import {
   isPairedWebClientWindow,
@@ -1385,11 +1388,23 @@ function App(): React.JSX.Element {
         applyDocumentTheme('system')
         // System theme changes don't mutate the store, so mobile terminal colors need an explicit graph republish.
         scheduleRuntimeGraphSync()
+        // Match Terminal chrome re-resolves after light/dark class flips.
+        applyMatchTerminalAppChrome(settings, mq.matches)
       }
       mq.addEventListener('change', handler)
       return () => mq.removeEventListener('change', handler)
     }
   }, [settings])
+
+  // Why: Match Terminal is a left-sidebar control name, but it should paint the
+  // whole chrome (titlebar, status bar, right sidebar, settings cards) so the
+  // app doesn't look two-toned against the terminal surface.
+  useEffect(() => {
+    applyMatchTerminalAppChrome(settings, systemPrefersDark)
+    return () => {
+      applyMatchTerminalAppChrome(null, systemPrefersDark)
+    }
+  }, [settings, systemPrefersDark])
 
   useEffect(() => {
     document.documentElement.style.setProperty(

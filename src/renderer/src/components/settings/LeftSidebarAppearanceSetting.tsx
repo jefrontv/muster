@@ -28,11 +28,11 @@ export function LeftSidebarAppearanceSetting({
         alignTop
         label={translate(
           'auto.components.settings.AppearancePane.leftSidebarAppearance.title',
-          'Left Sidebar Appearance'
+          'App / Sidebar Appearance'
         )}
         description={translate(
           'auto.components.settings.AppearancePane.leftSidebarAppearance.rowDescription',
-          'Make the left sidebar match your terminal, stay default, or use a tint.'
+          'Match Terminal themes the whole app chrome (sidebars, titlebar, status bar, settings). Default and Tinted only change the left sidebar.'
         )}
         control={
           <SettingsSegmentedControl<LeftSidebarAppearanceMode>
