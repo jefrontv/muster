@@ -235,9 +235,10 @@ describe('feature tip startup gate', () => {
     ).toEqual({ kind: 'skip' })
   })
 
-  it('requires an installed CLI to also be configured on PATH', () => {
+  it('treats shell CLI registration as always complete after PATH setup was gutted', () => {
     expect(isCliFeatureTipCompleted(makeCliStatus())).toBe(true)
-    expect(isCliFeatureTipCompleted(makeCliStatus({ pathConfigured: false }))).toBe(false)
+    expect(isCliFeatureTipCompleted(makeCliStatus({ pathConfigured: false }))).toBe(true)
+    expect(isCliFeatureTipCompleted(makeCliStatus({ state: 'not_installed' }))).toBe(true)
   })
 
   it('treats unsupported CLI setup as completed for feature tips', () => {

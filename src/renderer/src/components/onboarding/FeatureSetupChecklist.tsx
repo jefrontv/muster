@@ -52,7 +52,7 @@ const FEATURE_SETUP_ROWS: readonly FeatureSetupRow[] = [
         'Agents can inspect app windows and operate local apps when you ask.'
       )
     },
-    setupSummary: 'Registers the Muster CLI, opens permissions, and prepares the skill.',
+    setupSummary: 'Opens permissions and prepares the skill.',
     icon: <MonitorCog className="size-4" />
   },
   {
@@ -69,7 +69,7 @@ const FEATURE_SETUP_ROWS: readonly FeatureSetupRow[] = [
         'Agents can message each other, take tasks, and coordinate handoffs.'
       )
     },
-    setupSummary: 'Registers the Muster CLI, enables orchestration, and prepares the skill.',
+    setupSummary: 'Enables orchestration and prepares the skill.',
     icon: <Workflow className="size-4" />
   },
   {

@@ -137,40 +137,22 @@ export const getGeneralNavigationSearchEntries = createLocalizedCatalog(() => [
 
 export const getGeneralCliSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.general.search.327e3fa70d', 'Muster CLI'),
-    description: translate(
-      'auto.components.settings.general.search.ca529079bf',
-      'Register or remove the Muster CLI command.'
-    ),
-    keywords: [
-      ...translateSearchKeyword('auto.components.settings.general.search.924a660a78', 'cli'),
-      ...translateSearchKeyword('auto.components.settings.general.search.fb4f338a3d', 'path'),
-      ...translateSearchKeyword('auto.components.settings.general.search.88d3df9ce9', 'terminal'),
-      ...translateSearchKeyword('auto.components.settings.general.search.dbeb1f348e', 'command'),
-      ...translateSearchKeyword(
-        'auto.components.settings.general.search.0a00691c06',
-        'shell command'
-      )
-    ],
-    cmdJKeywords: searchKeywords([
-      { key: 'auto.components.settings.general.search.924a660a78', fallback: 'cli' },
-      { key: 'auto.components.settings.general.search.fb4f338a3d', fallback: 'path' },
-      { key: 'auto.components.settings.general.search.dbeb1f348e', fallback: 'command' },
-      { key: 'auto.components.settings.general.search.0a00691c06', fallback: 'shell command' }
-    ]),
-    targetSectionId: 'cli'
-  },
-  {
     title: translate('auto.components.settings.general.search.2d9f7b42df', 'Agent skill'),
     description: translate(
       'auto.components.settings.general.search.244e3fb4c8',
-      'Install the Muster skill so agents know to use the Muster CLI.'
+      'Install the Muster skill so agents know Muster workspace commands.'
     ),
     keywords: [
+      ...translateSearchKeyword('auto.components.settings.general.search.924a660a78', 'cli'),
       ...translateSearchKeyword('auto.components.settings.general.search.bda108e66c', 'skill'),
       ...translateSearchKeyword('auto.components.settings.general.search.baa263d6d8', 'agents'),
       ...translateSearchKeyword('auto.components.settings.general.search.6382fe9724', 'npx')
-    ]
+    ],
+    cmdJKeywords: searchKeywords([
+      { key: 'auto.components.settings.general.search.924a660a78', fallback: 'cli' },
+      { key: 'auto.components.settings.general.search.bda108e66c', fallback: 'skill' }
+    ]),
+    targetSectionId: 'cli'
   }
 ])
 

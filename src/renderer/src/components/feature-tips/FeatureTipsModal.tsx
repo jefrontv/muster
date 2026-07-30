@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { Mic } from 'lucide-react'
-import { toast } from 'sonner'
 import { getDefaultVoiceSettings } from '../../../../shared/constants'
 import type { FeatureTip } from '../../../../shared/feature-tips'
 import {
@@ -23,7 +22,6 @@ import { CmdJPaletteFeatureTipVisual } from './CmdJPaletteFeatureTipVisual'
 import { CmdJPaletteTipDialog } from './CmdJPaletteTipDialog'
 import { CliSkillSetupTerminal } from './CliSkillSetupTerminal'
 import { FeatureTipActions } from './FeatureTipActions'
-import { installCliFromFeatureTip } from './feature-tip-cli-install-action'
 import { getFeatureTipForModal } from './feature-tip-modal-state'
 import {
   getOrcaCliFeatureTipTelemetrySource,
@@ -31,7 +29,6 @@ import {
   trackOrcaCliFeatureTipSetupClicked,
   trackOrcaCliFeatureTipSetupResult
 } from './feature-tip-telemetry'
-import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 
 const WAVEFORM_BAR_HEIGHTS = [30, 60, 90, 70, 100, 50, 80, 35, 65]
@@ -86,7 +83,6 @@ export default function FeatureTipsModal(): JSX.Element | null {
   const featureInteractions = useAppStore((s) => s.featureInteractions)
   const markFeatureTipsSeen = useAppStore((s) => s.markFeatureTipsSeen)
   const modalData = useAppStore((s) => s.modalData)
-  const mountedRef = useMountedRef()
   const activeModalRef = useRef(activeModal)
   const setupRequestIdRef = useRef(0)
   const [primaryBusy, setPrimaryBusy] = useState(false)
@@ -126,11 +122,6 @@ export default function FeatureTipsModal(): JSX.Element | null {
     setSkillTerminalOpen(false)
     setPrimaryBusy(false)
     closeModal()
-  }
-
-  const openCliSettings = (): void => {
-    openSettingsTarget({ pane: 'general', repoId: null, sectionId: 'cli' })
-    openSettingsPage()
   }
 
   const openShortcutsSettings = (): void => {
@@ -179,85 +170,13 @@ export default function FeatureTipsModal(): JSX.Element | null {
         break
       }
       case 'setup-cli': {
-        const setupRequestId = setupRequestIdRef.current + 1
-        setupRequestIdRef.current = setupRequestId
-        // Why: this modal is lazily mounted; closing it does not unmount the
-        // component, so async install results must not reopen UI after dismissal.
-        const canApplySetupResult = (): boolean =>
-          mountedRef.current &&
-          activeModalRef.current === 'feature-tips' &&
-          setupRequestIdRef.current === setupRequestId
+        // Why: shell PATH registration was gutted — tip only opens optional skill setup.
         const telemetrySource = getOrcaCliFeatureTipTelemetrySource(modalData.source)
         trackOrcaCliFeatureTipSetupClicked(telemetrySource)
-        setPrimaryBusy(true)
-        try {
-          const result = await installCliFromFeatureTip(() => window.api.cli.install())
-          if (result.kind === 'installed') {
-            trackOrcaCliFeatureTipSetupResult(telemetrySource, 'installed')
-            if (!canApplySetupResult()) {
-              return
-            }
-            enableOrchestrationSkillSetup()
-            toast.success(
-              translate(
-                'auto.components.feature.tips.FeatureTipsModal.ce13a742d0',
-                'Registered `orca` in PATH.'
-              )
-            )
-            setSkillTerminalOpen(true)
-            return
-          }
-
-          trackOrcaCliFeatureTipSetupResult(telemetrySource, 'needs_attention')
-          if (!canApplySetupResult()) {
-            return
-          }
-          toast.warning(
-            translate(
-              'auto.components.feature.tips.FeatureTipsModal.1da82af45b',
-              'Muster CLI needs attention'
-            ),
-            {
-              description:
-                result.status.detail ??
-                translate(
-                  'auto.components.feature.tips.FeatureTipsModal.d1a86c7eb5',
-                  'Open Settings to finish CLI setup.'
-                )
-            }
-          )
-          closeModal()
-          openCliSettings()
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Failed to install Muster CLI.'
-          if (
-            import.meta.env.DEV &&
-            message.includes('Development mode uses a generated launcher for validation only')
-          ) {
-            trackOrcaCliFeatureTipSetupResult(telemetrySource, 'dev_preview')
-            if (!canApplySetupResult()) {
-              return
-            }
-            enableOrchestrationSkillSetup()
-            toast.info(
-              translate(
-                'auto.components.feature.tips.FeatureTipsModal.53905bd076',
-                'Development preview: opening skills setup terminal.'
-              )
-            )
-            setSkillTerminalOpen(true)
-            return
-          }
-
-          trackOrcaCliFeatureTipSetupResult(telemetrySource, 'failed')
-          if (canApplySetupResult()) {
-            toast.error(message)
-          }
-        } finally {
-          if (canApplySetupResult()) {
-            setPrimaryBusy(false)
-          }
-        }
+        trackOrcaCliFeatureTipSetupResult(telemetrySource, 'installed')
+        enableOrchestrationSkillSetup()
+        setSkillTerminalOpen(true)
+        break
       }
     }
   }

@@ -165,10 +165,7 @@ import { selectActiveTerminalChromeState } from './store/active-terminal-chrome-
 import type { VirtualizedScrollAnchor } from './hooks/useVirtualizedScrollAnchor'
 import type { RemoteWorkspacePatchResult } from '../../shared/remote-workspace-types'
 import type { OnboardingState, UpdateStatus } from '../../shared/types'
-import {
-  getFeatureTipsAppOpenDecision,
-  isCliFeatureTipCompleted
-} from './components/feature-tips/feature-tip-startup-gate'
+import { getFeatureTipsAppOpenDecision } from './components/feature-tips/feature-tip-startup-gate'
 import {
   trackCmdJPaletteFeatureTipShown,
   trackOrcaCliFeatureTipShown
@@ -757,25 +754,9 @@ function App(): React.JSX.Element {
     if (!persistedUIReady) {
       return
     }
-
-    let cancelled = false
-    void window.api.cli
-      .getInstallStatus()
-      .then((status) => {
-        if (cancelled) {
-          return
-        }
-        setFeatureTipCliInstalled(isCliFeatureTipCompleted(status))
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFeatureTipCliInstalled(true)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
+    // Why: shell CLI registration was gutted — treat as always done so feature
+    // tips never block on PATH /usr/local/bin/orca.
+    setFeatureTipCliInstalled(true)
   }, [persistedUIReady])
 
   useEffect(() => {

@@ -218,35 +218,8 @@ export async function runOnboardingFeatureSetup(
     }
   }
 
-  try {
-    const status = await deps.getCliStatus()
-    if (!status.supported) {
-      warnings.push({
-        featureId: 'cli',
-        message: status.detail ?? 'Muster CLI registration is not available on this platform.'
-      })
-    } else if (status.pathConfigured === null) {
-      // Why: an unknown registry read cannot safely drive a PATH read-modify-write.
-      warnings.push({
-        featureId: 'cli',
-        message: status.detail ?? 'Muster could not check your Windows user PATH.'
-      })
-    } else if (status.state !== 'installed' || status.pathConfigured === false) {
-      await deps.showCliRegistrationPrompt?.()
-      const next = await deps.installCli()
-      cliTouched = true
-      if (next.state !== 'installed') {
-        warnings.push({
-          featureId: 'cli',
-          message: next.detail ?? 'Muster CLI registration needs attention.'
-        })
-      } else if (next.pathConfigured !== true && next.detail) {
-        warnings.push({ featureId: 'cli', message: next.detail })
-      }
-    }
-  } catch (error) {
-    warnings.push({ featureId: 'cli', message: formatFeatureSetupError(error) })
-  }
+  // Why: shell PATH registration (`orca` in /usr/local/bin) was gutted — skip
+  // install prompts so onboarding never fails on a missing launcher binary.
 
   if (selection.computerUse) {
     try {

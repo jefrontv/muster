@@ -13,10 +13,10 @@ export type FeatureTipsAppOpenDecision =
   | { kind: 'skip' }
   | { kind: 'suppress-for-onboarding' }
 
-export function isCliFeatureTipCompleted(status: CliInstallStatus): boolean {
-  // Why: unsupported launch modes cannot complete setup, but an installed
-  // launcher still needs attention until it is reachable on PATH.
-  return !status.supported || (status.state === 'installed' && status.pathConfigured === true)
+export function isCliFeatureTipCompleted(_status?: CliInstallStatus): boolean {
+  // Why: shell PATH registration was gutted — never hold feature tips or
+  // onboarding behind `/usr/local/bin/orca`.
+  return true
 }
 
 export function getFeatureTipsAppOpenDecision(args: {

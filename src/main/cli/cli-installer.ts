@@ -472,7 +472,8 @@ export class CliInstaller {
     }
 
     // Why: AppImage upgrades can strand a legacy symlink into a now-gone FUSE mount that isn't a sibling of the stable path.
-    return /(?:^|[/\\])resources[/\\]bin[/\\]orca$/.test(resolvedTarget)
+    // Muster packages bin/muster; older builds used bin/orca.
+    return /(?:^|[/\\])resources[/\\]bin[/\\](orca|muster)$/.test(resolvedTarget)
   }
 
   private async installWindowsWrapper(commandPath: string, launcherPath: string): Promise<void> {
@@ -1217,6 +1218,12 @@ export function getBundledLauncherPath(
   resourcesPath: string
 ): string | null {
   if (platform === 'darwin') {
+    // Why: electron-builder packs resources/darwin/bin/muster → Resources/bin/muster.
+    // Prefer that; fall back to bin/orca for older packages that still shipped the Orca name.
+    const musterPath = join(resourcesPath, 'bin', 'muster')
+    if (existsSync(musterPath)) {
+      return musterPath
+    }
     return join(resourcesPath, 'bin', 'orca')
   }
   if (platform === 'linux') {
