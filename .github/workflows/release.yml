@@ -1,0 +1,130 @@
+# Publish Muster desktop artifacts to GitHub Releases so electron-updater can
+# discover them via the generic feed in src/main/updater-release-feed-source.ts.
+#
+# Feed shape (must match electron-builder publish output):
+#   https://github.com/jefrontv/muster/releases/latest/download/latest-mac.yml
+#   https://github.com/jefrontv/muster/releases/download/vX.Y.Z/...
+#
+# Trigger: push a version tag (v1.2.3 or v1.2.3-rc.1) or run manually.
+# Signing/notarization: set MAC_CERTS + Apple notary secrets for production
+# builds; without them the workflow still publishes an ad-hoc arm64 package
+# suitable for private/team installs.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build (branch, tag, or SHA). Defaults to the default branch.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-mac:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      # electron-builder GitHub publisher
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            # workflow_dispatch on a branch: use package.json version
+            TAG="v$(node -p "require('./package.json').version")"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building release ${TAG} (${VERSION})"
+
+      - name: Align package.json version with tag
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node -e "
+            const fs = require('fs')
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+            pkg.version = process.env.VERSION
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')
+          "
+
+      - name: Build desktop + native mac helpers
+        run: |
+          pnpm run build:desktop
+          pnpm run build:computer-macos
+          pnpm run build:notification-status-macos
+          pnpm run ensure:electron-runtime
+
+      - name: Package and publish macOS arm64
+        # Why arm64-only: team fleet is Apple Silicon; dual-arch doubles CI time.
+        # electron-builder --publish always creates/updates the GitHub Release and
+        # uploads latest-mac.yml + zip/dmg so the in-app updater can find them.
+        env:
+          # Optional signing — omit for ad-hoc private builds
+          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # When CSC is absent, electron-builder ad-hoc signs; force publish anyway.
+          # ORCA_MAC_RELEASE only when full signing secrets are present.
+        run: |
+          set -euo pipefail
+          if [[ -n "${CSC_LINK:-}" && -n "${APPLE_ID:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then
+            export ORCA_MAC_RELEASE=1
+            echo "Signed/notarized release path enabled"
+          else
+            echo "Ad-hoc package path (no MAC_CERTS / Apple notary secrets)"
+          fi
+          pnpm exec electron-builder \
+            --config config/electron-builder.config.cjs \
+            --mac \
+            --arm64 \
+            --publish always
+
+      - name: Ensure release is not draft
+        if: success()
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # electron-builder may leave a draft depending on config; undraft so /latest works.
+          gh release edit "$TAG" --draft=false --repo "${{ github.repository }}" || true

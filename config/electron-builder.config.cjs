@@ -422,8 +422,9 @@ module.exports = {
   npmRebuild: true,
   publish: {
     provider: 'github',
-    owner: 'efront',
-    repo: 'muster-ui',
+    // Why: packaged auto-update reads jefrontv/muster releases (see updater-release-feed-source).
+    owner: 'jefrontv',
+    repo: 'muster',
     releaseType: 'release'
   }
 }

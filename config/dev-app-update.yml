@@ -1,5 +1,5 @@
-# Muster fork: auto-update is disabled (src/main/updater-release-feed-source.ts).
-# This file only exists because electron-updater reads it in dev; the host can never resolve.
+# Dev-only feed electron-updater reads when not packaged. Production packaged builds pin
+# the feed in src/main/updater-release-feed-source.ts (jefrontv/muster GitHub Releases).
 provider: generic
-url: https://releases.muster.invalid/releases/latest/download
+url: https://github.com/jefrontv/muster/releases/latest/download
 updaterCacheDirName: muster-updater

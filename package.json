@@ -2,8 +2,12 @@
   "name": "muster",
   "version": "1.4.156-rc.1",
   "description": "Next-gen IDE for parallel agentic development",
-  "homepage": "https://github.com/stablyai/orca#muster-fork",
-  "author": "stablyai",
+  "homepage": "https://github.com/jefrontv/muster",
+  "author": "jefrontv",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jefrontv/muster.git"
+  },
   "bin": {
     "muster": "./out/cli/index.js",
     "muster-dev": "./config/scripts/orca-dev.mjs"

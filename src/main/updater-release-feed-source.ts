@@ -1,17 +1,21 @@
-// Muster fork: the auto-updater must never reach the upstream Orca release feed, or it will
-// download stablyai/orca builds over this app. Every feed URL and every update entry point routes
-// through this module so there is one place to audit and one place to re-enable.
-//
-// Re-enabling requires a real Muster release feed first: flip AUTO_UPDATE_ENABLED and repoint the
-// URLs below. The `.invalid` TLD (RFC 2606) can never resolve, so an accidental re-enable fails
-// closed instead of installing someone else's binaries.
+// Muster fork: every feed URL and update entry point routes through this module so the app never
+// accidentally pulls stablyai/orca binaries. GitHub Releases on jefrontv/muster is the production
+// feed — electron-builder publishes latest-*.yml + installers there; electron-updater consumes them
+// via the generic provider (not the native GitHub provider) so RC/prerelease probing stays under
+// our control (see pinDefaultReleaseFeed in updater.ts).
 
-/** Production switch. False until a Muster release feed exists. */
-const AUTO_UPDATE_ENABLED = false
+/** Production switch. Off only when intentionally kill-switching updates. */
+const AUTO_UPDATE_ENABLED = true
+
+/** GitHub owner/repo that hosts release artifacts and the atom feed. */
+export const RELEASE_GITHUB_OWNER = 'jefrontv'
+export const RELEASE_GITHUB_REPO = 'muster'
+
+const RELEASE_GITHUB_ORIGIN = `https://github.com/${RELEASE_GITHUB_OWNER}/${RELEASE_GITHUB_REPO}`
 
 /**
- * Upstream's updater test suite is thorough and worth keeping green — the code path has to work
- * the day a Muster feed is published. Tests therefore opt back in; nothing else can.
+ * Tests keep the full updater path green without hitting the network. Production always uses
+ * AUTO_UPDATE_ENABLED above.
  */
 function isTestRuntime(): boolean {
   return process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'
@@ -21,14 +25,20 @@ export function isAutoUpdateEnabled(): boolean {
   return AUTO_UPDATE_ENABLED || isTestRuntime()
 }
 
-export const RELEASE_LATEST_DOWNLOAD_URL =
-  'https://releases.muster.invalid/releases/latest/download'
+/** electron-updater generic feed root for the latest channel (`latest-mac.yml`, etc.). */
+export const RELEASE_LATEST_DOWNLOAD_URL = `${RELEASE_GITHUB_ORIGIN}/releases/latest/download`
 
-export const RELEASE_ATOM_FEED_URL = 'https://releases.muster.invalid/releases.atom'
+/** Atom feed used to discover newer tags (stable + prerelease) without the GitHub REST API. */
+export const RELEASE_ATOM_FEED_URL = `${RELEASE_GITHUB_ORIGIN}/releases.atom`
 
-export const RELEASE_DOWNLOAD_BASE = 'https://releases.muster.invalid/releases/download'
+/** Per-tag download base: `${RELEASE_DOWNLOAD_BASE}/v1.2.3/latest-mac.yml`. */
+export const RELEASE_DOWNLOAD_BASE = `${RELEASE_GITHUB_ORIGIN}/releases/download`
 
 /** Mines `/releases/tag/<tag>` hrefs out of the atom feed. Must track RELEASE_ATOM_FEED_URL's host. */
 export function createReleaseTagHrefPattern(): RegExp {
-  return /href="https:\/\/releases\.muster\.invalid\/releases\/tag\/([^"]+)"/g
+  // Why: GitHub's atom feed uses absolute https://github.com/.../releases/tag/<tag> links.
+  return new RegExp(
+    `href="${RELEASE_GITHUB_ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/releases/tag/([^"]+)"`,
+    'g'
+  )
 }
