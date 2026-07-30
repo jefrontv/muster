@@ -197,7 +197,7 @@ Terminal rules:
 - `--terminal` is optional for most commands; omitted means the active terminal in the current worktree.
 - Use `terminal read` before `terminal send` unless the next input is obvious.
 - Use `terminal send` only for direct terminal input or one-off prompts where no task state, inbox, or reply tracking is needed.
-- For structured coordination, invoke the `orchestration` skill; it uses `orca orchestration ...` commands for messages, handoffs, task DAGs, dispatches, inbox/reply flows, and coordinator loops. A receiving agent can run `orca orchestration check --unread --inject` to render its unread mail in agent-readable form; this checks the caller's inbox and does not remotely deliver input to another terminal.
+- Prefer full handoffs via `worktree create --agent` / `terminal send` over multi-agent coordinator loops. If the user explicitly asks for supervised coordination, use `orca orchestration ...` commands directly — there is no separate orchestration skill install.
 - Use `terminal create --worktree active --command "<agent>"` for a fresh agent in the current worktree. Use `worktree create --agent <agent>` only for a separate checkout (agent in the first terminal — do not also `terminal create` the same agent).
 - Use `terminal wait --for tui-idle` for agent CLIs such as Claude Code, Gemini, Codex, OMP, Pi, and Grok; always pass `--timeout-ms`.
 - Terminal handles are runtime-scoped. Use `startupTerminal.handle` as the sole agent handle when `worktree create --agent` returns it; if Muster restarts, omits the handle, or returns `terminal_handle_stale`, reacquire with `terminal list` and continue with the replacement only.

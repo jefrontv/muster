@@ -8,9 +8,8 @@ const projectDir = resolve(import.meta.dirname, '../..')
 // installable stub projection is checked separately below.
 const guidePath = join(projectDir, 'skill-guides', 'orca-cli.md')
 const stubPath = join(projectDir, 'skills', 'orca-cli', 'SKILL.md')
-// Why: orchestration and orca-emulator also ship hybrid stubs now, so their version-sensitive
-// command guidance lives in the guide sources — read the cross-guide worktree-id contract there.
-const orchestrationSkillPath = join(projectDir, 'skill-guides', 'orchestration.md')
+// Why: orca-emulator also ships a hybrid stub; its version-sensitive worktree-id contract lives
+// in the guide source.
 const emulatorSkillPath = join(projectDir, 'skill-guides', 'orca-emulator.md')
 
 function readSkill(path = guidePath) {
@@ -70,23 +69,19 @@ describe('orca CLI skill guidance', () => {
     expect(skill).not.toContain('ends with **one** tab')
     expect(skill).toContain('Use `startupTerminal.handle` as the sole agent handle')
     expect(skill).toContain('never dual-send to old and replacement handles')
-    expect(skill).toContain(
-      "this checks the caller's inbox and does not remotely deliver input to another terminal"
-    )
+    expect(skill).toContain('Prefer full handoffs via `worktree create --agent` / `terminal send`')
   })
 
   it('requires full worktree ids across bundled agent guidance', () => {
     const cliSkill = readSkill()
-    const orchestrationSkill = readSkill(orchestrationSkillPath)
     const emulatorSkill = readSkill(emulatorSkillPath)
 
-    for (const skill of [cliSkill, orchestrationSkill, emulatorSkill]) {
+    for (const skill of [cliSkill, emulatorSkill]) {
       expect(skill).toContain('<repo-id>::<path>')
       expect(skill).toContain('bare repo id')
     }
     expect(cliSkill).toContain('id:<repoId>::<worktreePath>')
     expect(cliSkill).toContain('two-part address')
-    expect(orchestrationSkill).toContain('id:<newFullWorktreeId>')
     expect(emulatorSkill).not.toContain('id:abc123')
   })
 
@@ -147,9 +142,16 @@ describe('orca CLI install stub', () => {
     expect(stub.length).toBeLessThan(readSkill(guidePath).length)
   })
 
-  it('keeps the routing frontmatter identical to the guide', () => {
+  it('keeps the routing frontmatter as the upstream-branded guide frontmatter', () => {
+    // Why: the installable projection is rebranded to Orca for digest parity with
+    // `npx skills update`; the full guide stays Muster-branded in the binary.
     const frontmatter = (text) => /^---\n[\s\S]*?\n---\n/u.exec(text)[0]
+    const branded = (text) =>
+      text
+        .replace(/\ba Muster\b/g, 'an Orca')
+        .replace(/\bA Muster\b/g, 'An Orca')
+        .replace(/\bMuster\b/g, 'Orca')
 
-    expect(frontmatter(readSkill(stubPath))).toBe(frontmatter(readSkill(guidePath)))
+    expect(frontmatter(readSkill(stubPath))).toBe(branded(frontmatter(readSkill(guidePath))))
   })
 })

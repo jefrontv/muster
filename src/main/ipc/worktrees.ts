@@ -56,6 +56,10 @@ import {
 import { pruneWorktreePRRefreshAliases } from '../github/pr-refresh-coordinator'
 import { resolveGitHubReviewHeadRemote } from '../github/review-head-remote'
 import { listRepoWorktrees } from '../repo-worktrees'
+import {
+  migrateAllLocalWpRepoPathsIfNeeded,
+  migrateLocalWpRepoPathIfNeeded
+} from '../sites/localwp-repo-path'
 import { getSshGitProvider, requireSshGitProvider } from '../providers/ssh-git-dispatch'
 import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
 import {
@@ -539,6 +543,9 @@ async function listDetectedGitWorktrees(
   store: Store,
   repo: Repo
 ): Promise<DetectedWorktreeScanResult> {
+  // Why: LocalWP projects imported before app/public remapping still sit on the site shell;
+  // migrate in place so listing worktrees lands terminals on the WordPress root.
+  repo = migrateLocalWpRepoPathIfNeeded(store, repo)
   const localWorktreeGitOptions = getLocalProjectWorktreeGitOptions(store, repo)
   if (repo.connectionId || isFolderRepo(repo)) {
     return {
@@ -1008,7 +1015,9 @@ export function registerWorktreeHandlers(
   ipcMain.removeHandler('hooks:writeIssueCommand')
 
   ipcMain.handle('worktrees:listAll', async () => {
-    const repos = store.getRepos()
+    // Why: folder LocalWP projects never hit listDetectedGitWorktrees — migrate before list so
+    // site shells become app/public. Process-cached after first evaluation per repo.
+    const { repos, anyChanged: migratedAnyLocalWpRepo } = migrateAllLocalWpRepoPathsIfNeeded(store)
     const sshWorktreeMetaIndex = repos.some((repo) => repo.connectionId)
       ? createSshWorktreeMetaIndex(Object.entries(store.getAllWorktreeMeta()))
       : new Map()
@@ -1067,13 +1076,26 @@ export function registerWorktreeHandlers(
       }
     })
 
+    // Why: renderer caches repos separately; path/kind migration must invalidate that snapshot.
+    if (migratedAnyLocalWpRepo && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('repos:changed')
+    }
+
     return results.flat()
   })
 
   ipcMain.handle('worktrees:list', async (_event, args: { repoId: string }) => {
-    const repo = store.getRepo(args.repoId)
+    let repo = store.getRepo(args.repoId)
     if (!repo) {
       return []
+    }
+    // Why: same LocalWP site-shell → app/public migration as listAll; folder projects skip the
+    // detected-git path so this must run before the folder short-circuit.
+    const beforePath = repo.path
+    const beforeKind = repo.kind
+    repo = migrateLocalWpRepoPathIfNeeded(store, repo)
+    if ((repo.path !== beforePath || repo.kind !== beforeKind) && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('repos:changed')
     }
     const sshWorktreeMetaIndex = repo.connectionId
       ? createSshWorktreeMetaIndex(Object.entries(store.getAllWorktreeMeta()))

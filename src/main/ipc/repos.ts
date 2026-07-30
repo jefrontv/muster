@@ -58,7 +58,6 @@ import {
 import { createNestedRepoImportTargetResolver } from '../project-groups/nested-repo-import-target'
 import {
   isGitRepo,
-  getGitRepoRoot,
   getRepoName,
   getBaseRefDefault,
   getRemoteCount,
@@ -71,6 +70,10 @@ import {
   mergeBaseRefSearchResultGroups,
   searchBaseRefDetails
 } from '../git/repo'
+import {
+  migrateAllLocalWpRepoPathsIfNeeded,
+  resolveLocalProjectImportPath
+} from '../sites/localwp-repo-path'
 import { getSshGitProvider } from '../providers/ssh-git-dispatch'
 import { getSshGitCapabilityCache } from '../git/git-capability-state'
 import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
@@ -168,38 +171,68 @@ export async function addLocalRepoFromPath(
   path: string,
   kind: 'git' | 'folder' = 'git'
 ): Promise<{ repo: Repo; alreadyExisted: boolean } | { error: string }> {
-  const repoKind = kind === 'folder' ? 'folder' : 'git'
-  if (repoKind === 'git' && !isGitRepo(path)) {
-    return { error: `Not a valid git repository: ${path}` }
+  // Why: LocalWP site shells remap to app/public; see resolveLocalProjectImportPath.
+  const resolved = resolveLocalProjectImportPath(path, kind === 'folder' ? 'folder' : 'git')
+  // Why: LocalWP may promote folder→git when app/public is the checkout; otherwise keep the
+  // caller's kind except after a remap that discovered nested git.
+  const repoKind = resolved.remappedToWordPressRoot
+    ? resolved.kind
+    : kind === 'folder'
+      ? 'folder'
+      : 'git'
+  if (repoKind === 'git' && !isGitRepo(resolved.path)) {
+    return { error: `Not a valid git repository: ${resolved.path}` }
   }
 
-  const resolvedPath = repoKind === 'git' ? getGitRepoRoot(path) : path
-  const pathKey = normalizeRuntimePathForComparison(path)
+  const resolvedPath = resolved.path
+  const candidateKeys = new Set([
+    normalizeRuntimePathForComparison(path),
+    normalizeRuntimePathForComparison(resolvedPath)
+  ])
   const existing = store
     .getRepos()
-    .find((repo) => !repo.connectionId && normalizeRuntimePathForComparison(repo.path) === pathKey)
+    .find(
+      (repo) =>
+        !repo.connectionId && candidateKeys.has(normalizeRuntimePathForComparison(repo.path))
+    )
   if (existing) {
-    return { repo: existing, alreadyExisted: true }
-  }
-
-  const resolvedPathKey = normalizeRuntimePathForComparison(resolvedPath)
-  if (resolvedPathKey !== pathKey) {
-    const existingAfterRootResolve = store
-      .getRepos()
-      .find(
-        (repo) =>
-          !repo.connectionId && normalizeRuntimePathForComparison(repo.path) === resolvedPathKey
-      )
-    if (existingAfterRootResolve) {
-      return { repo: existingAfterRootResolve, alreadyExisted: true }
+    // Why: pre-remap imports sit on the Local site shell; move them to app/public in place.
+    if (
+      normalizeRuntimePathForComparison(existing.path) !==
+        normalizeRuntimePathForComparison(resolvedPath) ||
+      existing.kind !== repoKind
+    ) {
+      const migrated =
+        store.updateRepo(existing.id, {
+          path: resolvedPath,
+          kind: repoKind,
+          displayName:
+            existing.displayName === getRepoName(existing.path) || existing.displayName === 'public'
+              ? getRepoName(resolved.displayNameSourcePath)
+              : existing.displayName,
+          ...(repoKind === 'git' && existing.kind !== 'git'
+            ? {
+                externalWorktreeVisibility: 'hide' as const,
+                externalWorktreeVisibilityLegacy: false,
+                projectHostSetupMethod:
+                  existing.projectHostSetupMethod ?? ('imported-existing-folder' as const)
+              }
+            : {})
+        }) ?? existing
+      await prepareLocalWorktreeRootForRepo(store, migrated)
+      return { repo: migrated, alreadyExisted: true }
     }
+    return { repo: existing, alreadyExisted: true }
   }
 
   const detected = await detectRepoIconAndUpstream({ repoPath: resolvedPath, kind: repoKind })
   const repo: Repo = {
     id: randomUUID(),
     path: resolvedPath,
-    displayName: getRepoName(resolvedPath),
+    // Why: remapped LocalWP imports would otherwise display as "public".
+    displayName: getRepoName(
+      resolved.remappedToWordPressRoot ? resolved.displayNameSourcePath : resolvedPath
+    ),
     badgeColor: DEFAULT_REPO_BADGE_COLOR,
     ...detected,
     addedAt: Date.now(),
@@ -1141,6 +1174,19 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
   ipcMain.removeHandler('sparsePresets:remove')
 
   ipcMain.handle('repos:list', () => {
+    // Why: LocalWP site shells must become app/public before the renderer opens sessions.
+    // worktrees:listAll also migrates, but search/project activation can hit repos:list first.
+    // Migration is process-cached after the first evaluation per repo (no per-list disk thrash).
+    const { anyChanged: migratedLocalWp } = migrateAllLocalWpRepoPathsIfNeeded(store)
+    if (migratedLocalWp && !mainWindow.isDestroyed()) {
+      // Why: notify after the list returns would race; schedule so this response still carries
+      // migrated paths and the next pull refreshes any concurrent subscribers.
+      queueMicrotask(() => {
+        if (!mainWindow.isDestroyed()) {
+          notifyReposChanged(mainWindow)
+        }
+      })
+    }
     enrichMissingRepoGitRemoteIdentities(store, {
       onChanged: () => notifyReposChanged(mainWindow)
     })

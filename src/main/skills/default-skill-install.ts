@@ -24,10 +24,16 @@ import { join, relative, resolve } from 'node:path'
 import { app } from 'electron'
 
 /**
- * Orchestration leans on its companion — it defers to `orca-cli` for handoffs, terminal control and
- * worktree management — so shipping it alone would leave every one of those references dangling.
+ * Skills Muster writes into agent skill roots on launch. Kept short on purpose: each entry is
+ * auto-installed for every harness, so only stable, high-signal guides belong here.
  */
-export const DEFAULT_AGENT_SKILL_NAMES = ['orchestration', 'orca-cli'] as const
+export const DEFAULT_AGENT_SKILL_NAMES = ['orca-cli'] as const
+
+/**
+ * Formerly auto-installed skills that must no longer ship. On launch we delete canonical copies
+ * (and our harness symlinks) so agents stop picking them up; user-owned directories are left alone.
+ */
+export const RETIRED_AGENT_SKILL_NAMES = ['orchestration'] as const
 
 export type DefaultAgentSkillName = (typeof DEFAULT_AGENT_SKILL_NAMES)[number]
 
@@ -55,6 +61,8 @@ export type DefaultSkillInstallResult = {
   unavailable: string[]
   /** Harness directories that gained a link this run. */
   linkedRoots: string[]
+  /** Retired skills removed from the canonical agents root this run. */
+  retired: string[]
 }
 
 function readIfPresent(path: string): string | null {
@@ -116,7 +124,28 @@ export function installDefaultAgentSkills(args: {
     alreadyCurrent: [],
     skipped: [],
     unavailable: [],
-    linkedRoots: []
+    linkedRoots: [],
+    retired: []
+  }
+
+  for (const name of RETIRED_AGENT_SKILL_NAMES) {
+    const canonicalDir = join(home, '.agents', 'skills', name)
+    if (existsSync(canonicalDir)) {
+      // Why: only delete the canonical agents copy and our harness links. A real
+      // user-owned skill directory under ~/.claude/skills/orchestration is left alone.
+      rmSync(canonicalDir, { recursive: true, force: true })
+      result.retired.push(name)
+    }
+    for (const segments of HARNESS_SKILL_DIRECTORIES) {
+      const linkPath = join(home, ...segments, name)
+      try {
+        if (lstatSync(linkPath).isSymbolicLink()) {
+          rmSync(linkPath, { force: true })
+        }
+      } catch {
+        // Missing link is fine.
+      }
+    }
   }
 
   for (const name of DEFAULT_AGENT_SKILL_NAMES) {

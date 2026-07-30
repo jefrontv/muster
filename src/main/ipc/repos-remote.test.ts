@@ -1720,6 +1720,10 @@ describe('repos:add + repos:clone', () => {
     gitSpawnMock.mockReset()
     invalidateAuthorizedRootsCacheMock.mockReset()
     prepareLocalWorktreeRootForRepoMock.mockReset().mockResolvedValue(undefined)
+    vi.mocked(isGitRepo).mockReset()
+    vi.mocked(isGitRepo).mockReturnValue(true)
+    vi.mocked(getGitRepoRoot).mockReset()
+    vi.mocked(getGitRepoRoot).mockImplementation((path: string) => path)
     gitSpawnMock.mockImplementation(() => {
       const proc = createMockCloneProcess()
       queueMicrotask(() => proc.emit('close', 0, null))
@@ -1781,6 +1785,71 @@ describe('repos:add + repos:clone', () => {
       })
     )
     expect(result).toHaveProperty('repo.path', '/tmp/from-add')
+  })
+
+  it('imports a LocalWP site folder as app/public while naming from the site folder', async () => {
+    const siteRoot = await createTempRoot()
+    const appPublic = join(siteRoot, 'app', 'public')
+    await mkdir(appPublic, { recursive: true })
+    await writeFile(join(appPublic, 'wp-config.php'), '<?php\n')
+    // No nested git → stays folder at app/public
+    vi.mocked(isGitRepo).mockImplementation(
+      (path: string) => path !== appPublic && path !== siteRoot
+    )
+    vi.mocked(getGitRepoRoot).mockImplementation((path: string) => path)
+
+    const result = await handlers.get('repos:add')!(null, {
+      path: siteRoot,
+      kind: 'folder'
+    })
+
+    expect(mockStore.addRepo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: appPublic,
+        displayName: siteRoot.split('/').pop(),
+        kind: 'folder'
+      })
+    )
+    expect(result).toHaveProperty('repo.path', appPublic)
+  })
+
+  it('migrates an existing LocalWP site-shell project to app/public on re-add', async () => {
+    const siteRoot = await createTempRoot()
+    const appPublic = join(siteRoot, 'app', 'public')
+    await mkdir(appPublic, { recursive: true })
+    await writeFile(join(appPublic, 'wp-config.php'), '<?php\n')
+    const existing = {
+      id: 'repo-localwp-shell',
+      path: siteRoot,
+      displayName: siteRoot.split('/').pop(),
+      kind: 'folder' as const,
+      badgeColor: '#737373'
+    }
+    mockStore.getRepos.mockReturnValue([existing])
+    mockStore.updateRepo.mockImplementation((id: string, updates: Record<string, unknown>) => ({
+      ...existing,
+      ...updates,
+      id
+    }))
+    vi.mocked(isGitRepo).mockImplementation((path: string) => path === appPublic)
+    vi.mocked(getGitRepoRoot).mockImplementation((path: string) => path)
+
+    const result = await handlers.get('repos:add')!(null, {
+      path: siteRoot,
+      kind: 'folder'
+    })
+
+    expect(mockStore.updateRepo).toHaveBeenCalledWith(
+      existing.id,
+      expect.objectContaining({
+        path: appPublic,
+        kind: 'git'
+      })
+    )
+    expect(mockStore.addRepo).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      repo: expect.objectContaining({ path: appPublic, kind: 'git' })
+    })
   })
 
   it('dedupes local git repos:add after canonical root resolution', async () => {

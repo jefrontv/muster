@@ -55,6 +55,10 @@ const DASHBOARD_BUCKET_DOT_CLASS: Record<'working' | 'idle', string> = {
   idle: 'bg-neutral-500/50'
 }
 
+// Shared chrome for Tasks / Automations / Agents / Sites so one row can't drift in height or type.
+const SIDEBAR_NAV_ITEM_CLASS =
+  'flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors'
+
 function dashboardBucketLabel(bucket: DashboardBucket): string {
   switch (bucket) {
     case 'attention':
@@ -116,7 +120,7 @@ function AgentDashboardSidebarEntry(): React.JSX.Element {
         }
       }}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+        SIDEBAR_NAV_ITEM_CLASS,
         'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
       )}
     >
@@ -167,7 +171,7 @@ const SidebarNav = React.memo(function SidebarNav() {
               onClick={openAutomationsPage}
               aria-current={automationsActive ? 'page' : undefined}
               className={cn(
-                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+                SIDEBAR_NAV_ITEM_CLASS,
                 automationsActive
                   ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
                   : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
@@ -195,7 +199,7 @@ const SidebarNav = React.memo(function SidebarNav() {
           onClick={openActivityPage}
           aria-current={activityActive ? 'page' : undefined}
           className={cn(
-            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+            SIDEBAR_NAV_ITEM_CLASS,
             activityActive
               ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
               : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
@@ -218,12 +222,18 @@ const SidebarNav = React.memo(function SidebarNav() {
           ) : null}
         </button>
       ) : null}
+      {/* Why: Sites is a separate product surface from Tasks/Automations — hairline + gap so it
+          doesn't read as another row in the same stack. */}
+      <div
+        role="separator"
+        className="mx-1 mt-1.5 mb-1 border-t border-worktree-sidebar-border/70"
+      />
       <button
         type="button"
         onClick={openSitesPage}
         aria-current={sitesActive ? 'page' : undefined}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+          SIDEBAR_NAV_ITEM_CLASS,
           sitesActive
             ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
             : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
@@ -244,7 +254,7 @@ const SidebarNav = React.memo(function SidebarNav() {
           'auto.components.sidebar.SidebarNav.0c3395fd32',
           'Search worktrees and browser tabs'
         )}
-        className="group relative flex h-7 w-full items-center rounded-md border border-worktree-sidebar-border/70 bg-worktree-sidebar-foreground/5 pl-7 pr-1.5 text-left text-[12px] font-medium tracking-tight text-worktree-sidebar-foreground/45 transition-colors hover:border-worktree-sidebar-border hover:bg-worktree-sidebar-foreground/8 hover:text-worktree-sidebar-foreground/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-worktree-sidebar-ring/50"
+        className="group relative flex h-8 w-full items-center rounded-md border border-worktree-sidebar-border/70 bg-worktree-sidebar-foreground/5 pl-7 pr-1.5 text-left text-[12px] font-medium tracking-tight text-worktree-sidebar-foreground/45 transition-colors hover:border-worktree-sidebar-border hover:bg-worktree-sidebar-foreground/8 hover:text-worktree-sidebar-foreground/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-worktree-sidebar-ring/50"
       >
         <Search
           className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-worktree-sidebar-foreground/30"

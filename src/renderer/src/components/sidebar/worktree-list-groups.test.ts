@@ -2069,6 +2069,49 @@ describe('buildRows project grouping order', () => {
     expect(headerKeys).toEqual(['repo:repo-c', 'repo:repo-a', 'repo:repo-b'])
   })
 
+  it('orders repo headers by smart-sorted workspace stream under Agent Activity', () => {
+    // Manual project order would keep B, A, C; Agent Activity follows the
+    // already smart-sorted worktree stream so the project with the hot agent
+    // (C, then A, then B) floats to the top — the regression the sidebar hit
+    // when Project order stayed Manual under sortBy=smart.
+    const repoOrder = new Map([
+      [repoB.id, 0],
+      [repoA.id, 1],
+      [repoC.id, 2]
+    ])
+    const rows = buildRows(
+      'repo',
+      [wC, wA, wB],
+      map,
+      null,
+      new Set(),
+      repoOrder,
+      undefined,
+      'manual',
+      {},
+      new Map([
+        [wC.id, wC],
+        [wA.id, wA],
+        [wB.id, wB]
+      ]),
+      false,
+      undefined,
+      [],
+      new Set(),
+      new Map(),
+      new Map(),
+      [],
+      undefined,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      'smart'
+    )
+    const headerKeys = rows.filter((r) => r.type === 'header').map((r) => r.key)
+    expect(headerKeys).toEqual(['repo:repo-c', 'repo:repo-a', 'repo:repo-b'])
+  })
+
   it("uses each repo's freshest visible child, not its first, in Recent mode", () => {
     // repo-a has a fresh child (200) and a stale one (50); its rank is the max.
     const rows = buildRows(

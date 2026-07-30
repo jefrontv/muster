@@ -300,6 +300,23 @@ describe('SidebarNav', () => {
     expect(mocks.openSitesPage).toHaveBeenCalledTimes(1)
   })
 
+  it('sizes Sites like the other nav rows and separates it with a hairline', async () => {
+    const container = await renderSidebarNav()
+
+    const sites = getButtonByText(container, 'Sites')
+    const automations = getButtonByText(container, 'Automations')
+    expect(sites.className).toContain('h-8')
+    expect(automations.className).toContain('h-8')
+
+    const separator = container.querySelector('[role="separator"]')
+    expect(separator).not.toBeNull()
+    if (!separator) {
+      throw new Error('expected Sites hairline separator')
+    }
+    // Why: separator must sit above Sites so the Sites row is visually grouped off Tasks/Automations.
+    expect(separator.compareDocumentPosition(sites) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('shows the Automations entry by default for older settings', () => {
     expect(shouldShowAutomationsButton(null)).toBe(true)
     expect(shouldShowAutomationsButton({})).toBe(true)

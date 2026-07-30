@@ -1472,6 +1472,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
   const sshConnectedGeneration = useAppStore((s) => s.sshConnectedGeneration)
   const prVisibleRefreshGeneration = useAppStore((s) => s.prVisibleRefreshGeneration)
   const settings = useAppStore((s) => s.settings)
+  const sortBy = useAppStore((s) => s.sortBy)
   const newCardStyle = settings?.experimentalNewWorktreeCardStyle === true
   const reorderRepos = useAppStore((s) => s.reorderRepos)
   const folderBackedProjectGroupIds = useMemo(
@@ -2488,7 +2489,8 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
         [],
         undefined,
         defaultHostId,
-        pinnedDisplayPolicy
+        pinnedDisplayPolicy,
+        sortBy
       ).filter((r): r is Extract<Row, { type: 'item' }> => r.type === 'item')
       const worktreeRows = getPreferredWorktreeRows(allWorktreeRows, pinnedDisplayPolicy)
       if (worktreeRows.length === 0) {
@@ -2542,7 +2544,8 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
       settings,
       projectGroups,
       projectGrouping,
-      pinnedDisplayPolicy
+      pinnedDisplayPolicy,
+      sortBy
     ]
   )
 
@@ -5744,7 +5747,8 @@ const WorktreeList = React.memo(function WorktreeList({
         visibleFolderWorkspacesForRows,
         hostLabelById,
         defaultHostId,
-        pinnedDisplayPolicy
+        pinnedDisplayPolicy,
+        sortBy
       ),
     [
       groupBy,
@@ -5767,7 +5771,8 @@ const WorktreeList = React.memo(function WorktreeList({
       newExternalWorktreesInboxByRepo,
       pendingCreations,
       hostLabelById,
-      pinnedDisplayPolicy
+      pinnedDisplayPolicy,
+      sortBy
     ]
   )
   const orderedHostOptions = useMemo(

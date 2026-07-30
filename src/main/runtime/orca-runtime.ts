@@ -781,6 +781,7 @@ import {
   getRemoteDrift,
   getRecentDriftSubjects
 } from '../git/repo'
+import { resolveLocalProjectImportPath } from '../sites/localwp-repo-path'
 import { hasCommitObjectViaGitExec } from '../git/commit-object-ref'
 import { hasWorktreeBaseCommitRef } from '../git/worktree-base-ref-probe'
 import { resolveLocalGitUsername } from '../git/git-username'
@@ -15407,12 +15408,18 @@ export class OrcaRuntimeService {
       // server-side repo paths to be explicit so `orca serve` cwd is irrelevant.
       throw new Error('Project path must be an absolute path')
     }
-    if (kind === 'git' && !isGitRepo(path)) {
-      throw new Error(`Not a valid git repository: ${path}`)
+    // Why: same LocalWP app/public remapping as addLocalRepoFromPath.
+    const resolved = resolveLocalProjectImportPath(path, kind === 'folder' ? 'folder' : 'git')
+    if (kind === 'git' && (resolved.kind !== 'git' || !isGitRepo(resolved.path))) {
+      throw new Error(`Not a valid git repository: ${resolved.path}`)
     }
+    const importPath = resolved.path
+    const repoKind = resolved.kind
 
     const existing = this.store.getRepos().find((repo) => {
-      if (!runtimePathsEqual(repo.path, path)) {
+      const samePath =
+        runtimePathsEqual(repo.path, importPath) || runtimePathsEqual(repo.path, path)
+      if (!samePath) {
         return false
       }
       return runtimeRepoMatchesExecutionHost(repo, executionHostId)
@@ -15435,20 +15442,39 @@ export class OrcaRuntimeService {
         this.notifyReposChanged()
         return adopted
       }
+      if (!runtimePathsEqual(existing.path, importPath) || existing.kind !== repoKind) {
+        const migrated =
+          this.store.updateRepo(existing.id, {
+            path: importPath,
+            kind: repoKind,
+            ...(repoKind === 'git' && existing.kind !== 'git'
+              ? {
+                  externalWorktreeVisibility: 'hide' as const,
+                  externalWorktreeVisibilityLegacy: false
+                }
+              : {})
+          }) ?? existing
+        this.invalidateResolvedWorktreeCache()
+        this.invalidateWorktreeScanCacheForRepo(existing.id)
+        this.notifyReposChanged()
+        return migrated
+      }
       return existing
     }
 
-    const detected = await detectRepoIconAndUpstream({ repoPath: path, kind })
+    const detected = await detectRepoIconAndUpstream({ repoPath: importPath, kind: repoKind })
     const repo: Repo = {
       id: randomUUID(),
-      path,
-      displayName: getRepoName(path),
+      path: importPath,
+      displayName: getRepoName(
+        resolved.remappedToWordPressRoot ? resolved.displayNameSourcePath : importPath
+      ),
       badgeColor: DEFAULT_REPO_BADGE_COLOR,
       ...(executionHostId != null ? { executionHostId } : {}),
       ...detected,
       addedAt: Date.now(),
-      kind,
-      ...(kind === 'git'
+      kind: repoKind,
+      ...(repoKind === 'git'
         ? {
             externalWorktreeVisibility: 'hide' as const,
             externalWorktreeVisibilityLegacy: false

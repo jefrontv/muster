@@ -14,8 +14,7 @@ const CANONICAL_GUIDE_NAMES = [
   'orca-emulator',
   'orca-emulator-android',
   'orca-linear',
-  'orca-per-workspace-env',
-  'orchestration'
+  'orca-per-workspace-env'
 ]
 
 // Why: old discovery stubs can outlive a rename indefinitely, so aliases are
@@ -27,8 +26,7 @@ const GUIDE_ALIASES = {
   'orca-emulator': [],
   'orca-emulator-android': [],
   'orca-linear': [],
-  'orca-per-workspace-env': [],
-  orchestration: []
+  'orca-per-workspace-env': []
 }
 
 // Why: a stubbed topic ships a hybrid discovery stub as its installable projection while
@@ -36,6 +34,8 @@ const GUIDE_ALIASES = {
 // Migrating a topic here is effectively one-way — earlier fat installs rely on the stub
 // landing to converge — so entries are added as skills convert, never removed. The stub
 // body lives in skill-stubs/<topic>.md; the projection reuses the guide's own frontmatter.
+// orchestration was deliberately dropped from shipping: the skill steered agents into a
+// coordinator loop that was not reliable enough to keep auto-installed.
 const STUB_TOPICS = [
   'computer-use',
   'linear-tickets',
@@ -43,8 +43,7 @@ const STUB_TOPICS = [
   'orca-emulator',
   'orca-emulator-android',
   'orca-linear',
-  'orca-per-workspace-env',
-  'orchestration'
+  'orca-per-workspace-env'
 ]
 
 function normalizeMarkdown(markdown) {

@@ -126,24 +126,6 @@
           "identitySha256": "a7ae9a0d22b8bc14a6cb3bdb6fc6ebf1f11cc25ab489d1cc63928bd025d7dddc"
         }
       ]
-    },
-    {
-      "name": "orchestration",
-      "sourcePath": "skills/orchestration",
-      "releaseRevision": 28,
-      "packageDigest": "ef5d5a744cdc700c51b4870cd2536b65b0b33d19413dfe238d43efdd01b5d14c",
-      "gitTreeSha": "9aa26fde93c0592e5983cdca1ccd33b402802255",
-      "files": [
-        {
-          "path": "SKILL.md",
-          "size": 4220,
-          "executable": false,
-          "classification": "text",
-          "exactSha256": "9ca228137b9a442b98c761aa07adecc2265708132ab175ad7e22b163fdc0bd7f",
-          "textNormalizedSha256": "9ca228137b9a442b98c761aa07adecc2265708132ab175ad7e22b163fdc0bd7f",
-          "identitySha256": "9ca228137b9a442b98c761aa07adecc2265708132ab175ad7e22b163fdc0bd7f"
-        }
-      ]
     }
   ]
 }

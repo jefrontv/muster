@@ -4484,6 +4484,8 @@ export class Store {
         | 'hookSettings'
         | 'worktreeBaseRef'
         | 'worktreeBasePath'
+        // Why: LocalWP site-shell → app/public migration rewrites the project root in place.
+        | 'path'
         | 'kind'
         | 'executionHostId'
         | 'symlinkPaths'

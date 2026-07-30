@@ -77,16 +77,12 @@ describe('bundled skill guide generator', () => {
     // The nag this prevents: `npx skills update` installs upstream's Orca-branded file, while
     // resources/skills/*.json fingerprints whatever sits in skills/. Rebrand the projection and
     // the two can never agree, so every skill reads "Update available" forever and the command
-    // that claims to fix it is a no-op. The embedded guide is asserted to keep saying Muster, so
-    // this cannot be "fixed" by de-branding the guide as well.
+    // that claims to fix it is a no-op. Embedded full guides keep saying Muster; projections do not.
     for (const name of STUB_TOPICS) {
       const projection = await readFile(path.join(projectDir, 'skills', name, 'SKILL.md'), 'utf8')
       expect(projection, name).not.toMatch(/\bMuster\b/)
     }
-    const guide = await readFile(
-      path.join(projectDir, 'skill-guides', 'orchestration.md'),
-      'utf8'
-    )
+    const guide = await readFile(path.join(projectDir, 'skill-guides', 'orca-cli.md'), 'utf8')
     expect(guide).toMatch(/\bMuster\b/)
   })
 
@@ -107,8 +103,7 @@ describe('bundled skill guide generator', () => {
       'orca-emulator': ['ORCA emulator list --json'],
       'orca-emulator-android': ['ORCA emulator devices --json'],
       'orca-linear': ['ORCA linear --help', 'ORCA linear issue --current --full --json'],
-      'orca-per-workspace-env': ['ORCA vm recipe doctor <recipe-id> --repo-path <repo> --json'],
-      orchestration: ['ORCA orchestration task-list --json', 'ORCA terminal list --json']
+      'orca-per-workspace-env': ['ORCA vm recipe doctor <recipe-id> --repo-path <repo> --json']
     }
 
     for (const [name, commands] of Object.entries(expectedFallbackCommands)) {

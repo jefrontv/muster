@@ -47,6 +47,7 @@ import {
   getCyclicProjectedWorktreeLineageIds,
   getLineageRenderInfo
 } from './worktree-lineage-projection'
+import type { SortBy } from './smart-sort'
 
 export { getLineageRenderInfo } from './worktree-lineage-projection'
 
@@ -939,16 +940,72 @@ function getManualOrderAnchorRepo(
 }
 
 /**
- * Order project header entries by the user's project-order preference. Manual
- * follows the canonical repoOrder; Recent follows each project's most recent
- * visible workspace activity (descending), with empty/imported-only projects
- * sorting after active ones, then by manual rank, then label.
+ * Rank a project by the earliest smart-sorted workspace that belongs to it.
+ * Empty/imported-only projects land after any project with a live workspace.
+ */
+function smartWorktreeRankForEntry(
+  entry: OrderedGroupEntry,
+  firstIndexByRepoId: Map<string, number>
+): number {
+  let best = Number.POSITIVE_INFINITY
+  const repoIds =
+    entry[1].repoIds.size > 0 ? entry[1].repoIds : entry[1].repo ? [entry[1].repo.id] : []
+  for (const repoId of repoIds) {
+    const index = firstIndexByRepoId.get(repoId)
+    if (index !== undefined && index < best) {
+      best = index
+    }
+  }
+  return best
+}
+
+/**
+ * Project header order under Sort by → Agent Activity: follow the already
+ * smart-sorted workspace stream so a project with a blocked/working/done agent
+ * floats above idle projects (mirrors flat-list smart sort).
+ */
+function sortProjectEntriesBySmartWorktreeOrder(
+  entries: OrderedGroupEntry[],
+  orderedWorktrees: readonly Worktree[]
+): OrderedGroupEntry[] {
+  const firstIndexByRepoId = new Map<string, number>()
+  for (let index = 0; index < orderedWorktrees.length; index++) {
+    const repoId = orderedWorktrees[index]?.repoId
+    if (repoId && !firstIndexByRepoId.has(repoId)) {
+      firstIndexByRepoId.set(repoId, index)
+    }
+  }
+  return [...entries].sort((a, b) => {
+    const bySmart =
+      smartWorktreeRankForEntry(a, firstIndexByRepoId) -
+      smartWorktreeRankForEntry(b, firstIndexByRepoId)
+    if (bySmart !== 0) {
+      return bySmart
+    }
+    return a[1].label.localeCompare(b[1].label)
+  })
+}
+
+/**
+ * Order project header entries.
+ *
+ * - Sort by Agent Activity (`smart`): follow the smart-sorted workspace stream
+ *   so projects with live agent attention rise (overrides Project order).
+ * - Project order Manual: canonical repoOrder / drag order.
+ * - Project order Recent: max lastActivityAt among visible workspaces.
  */
 function sortProjectEntries(
   entries: OrderedGroupEntry[],
   projectOrderBy: ProjectOrderBy,
-  repoOrder: Map<string, number> | undefined
+  repoOrder: Map<string, number> | undefined,
+  sortBy: SortBy,
+  orderedWorktrees: readonly Worktree[]
 ): OrderedGroupEntry[] {
+  // Why: Agent Activity is the explicit "what's hot" mode; leaving project
+  // headers frozen on Manual made active agents look broken under group-by-project.
+  if (sortBy === 'smart') {
+    return sortProjectEntriesBySmartWorktreeOrder(entries, orderedWorktrees)
+  }
   if (projectOrderBy === 'recent') {
     return [...entries].sort((a, b) => {
       const byRecent = compareRecentRank(recentRankForEntry(a), recentRankForEntry(b))
@@ -1007,7 +1064,9 @@ export function buildRows(
   folderWorkspaces: readonly FolderWorkspace[] = [],
   hostLabelById?: ReadonlyMap<string, string>,
   defaultHostId: ExecutionHostId = LOCAL_EXECUTION_HOST_ID,
-  pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings)
+  pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings),
+  /** Workspace sort mode; when `smart`, project headers follow agent-activity order. */
+  sortBy: SortBy = 'recent'
 ): Row[] {
   const result: Row[] = []
   const projectIndex = buildProjectGroupingIndex(projectGrouping)
@@ -1216,10 +1275,15 @@ export function buildRows(
       // same persisted order source the row sorter reads.
       group.repo = getManualOrderAnchorRepo(group, repoMap, repoOrder)
     }
-    // Why: project header order is its own user choice (projectOrderBy),
-    // decoupled from workspace sortBy. Manual uses the canonical repoOrder so
-    // header drag has a stable source of truth; Recent follows activity.
-    const entries = sortProjectEntries(Array.from(grouped.entries()), projectOrderBy, repoOrder)
+    // Why: Agent Activity reorders project headers from the smart-sorted stream;
+    // otherwise Project order (manual drag / recent activity) owns header order.
+    const entries = sortProjectEntries(
+      Array.from(grouped.entries()),
+      projectOrderBy,
+      repoOrder,
+      sortBy,
+      naturalWorktrees
+    )
     // Why: large imported repo sets can have one group per repo; spreading
     // those entries into push can exceed V8's argument limit.
     for (const entry of entries) {
@@ -1363,6 +1427,9 @@ export function buildRows(
   }
 
   const sortRepoEntriesWithinGroup = (entries: OrderedGroupEntry[]): OrderedGroupEntry[] => {
+    if (sortBy === 'smart') {
+      return sortProjectEntriesBySmartWorktreeOrder(entries, naturalWorktrees)
+    }
     if (projectOrderBy === 'recent') {
       return [...entries].sort((left, right) =>
         compareRecentRank(recentRankForEntry(left), recentRankForEntry(right))

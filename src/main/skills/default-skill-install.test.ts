@@ -53,8 +53,8 @@ describe('installDefaultAgentSkills', () => {
 
     installDefaultAgentSkills({ home, packageRoot })
 
-    const link = join(home, '.claude', 'skills', 'orchestration')
-    expect(readlinkSync(link)).toContain(join('.agents', 'skills', 'orchestration'))
+    const link = join(home, '.claude', 'skills', 'orca-cli')
+    expect(readlinkSync(link)).toContain(join('.agents', 'skills', 'orca-cli'))
   })
 
   it('never creates a harness directory that is not already there', () => {
@@ -64,31 +64,31 @@ describe('installDefaultAgentSkills', () => {
 
     const result = installDefaultAgentSkills({ home, packageRoot })
 
-    expect(() => readFileSync(join(home, '.grok', 'skills', 'orchestration'))).toThrow()
+    expect(() => readFileSync(join(home, '.grok', 'skills', 'orca-cli'))).toThrow()
     expect(result.linkedRoots).toEqual([])
   })
 
   it('leaves an existing copy alone rather than clobbering someone else\u2019s edit', () => {
     const { home, packageRoot } = sandbox()
-    const canonical = join(home, '.agents', 'skills', 'orchestration')
+    const canonical = join(home, '.agents', 'skills', 'orca-cli')
     mkdirSync(canonical, { recursive: true })
     writeFileSync(join(canonical, 'SKILL.md'), '# my own edited guide\n', 'utf8')
 
     const result = installDefaultAgentSkills({ home, packageRoot })
 
     expect(readFileSync(join(canonical, 'SKILL.md'), 'utf8')).toBe('# my own edited guide\n')
-    expect(result.skipped).toContain('orchestration')
+    expect(result.skipped).toContain('orca-cli')
   })
 
   it('leaves a harness entry that is not our symlink alone', () => {
     const { home, packageRoot } = sandbox()
     const claudeSkills = join(home, '.claude', 'skills')
-    mkdirSync(join(claudeSkills, 'orchestration'), { recursive: true })
-    writeFileSync(join(claudeSkills, 'orchestration', 'SKILL.md'), '# theirs\n', 'utf8')
+    mkdirSync(join(claudeSkills, 'orca-cli'), { recursive: true })
+    writeFileSync(join(claudeSkills, 'orca-cli', 'SKILL.md'), '# theirs\n', 'utf8')
 
     installDefaultAgentSkills({ home, packageRoot })
 
-    expect(readFileSync(join(claudeSkills, 'orchestration', 'SKILL.md'), 'utf8')).toBe('# theirs\n')
+    expect(readFileSync(join(claudeSkills, 'orca-cli', 'SKILL.md'), 'utf8')).toBe('# theirs\n')
   })
 
   it('is idempotent, so running it every launch changes nothing after the first', () => {
@@ -107,15 +107,15 @@ describe('installDefaultAgentSkills', () => {
     // Not a clobber: the bytes are ours, just older. Leaving them would pin agents to whatever
     // guide shipped the day they first launched Muster.
     const { home, packageRoot } = sandbox()
-    const canonical = join(home, '.agents', 'skills', 'orchestration')
+    const canonical = join(home, '.agents', 'skills', 'orca-cli')
     mkdirSync(canonical, { recursive: true })
-    writeFileSync(join(canonical, 'SKILL.md'), '# orchestration guide\n', 'utf8')
-    writeFileSync(join(packageRoot, 'orchestration', 'SKILL.md'), '# newer guide\n', 'utf8')
+    writeFileSync(join(canonical, 'SKILL.md'), '# orca-cli guide\n', 'utf8')
+    writeFileSync(join(packageRoot, 'orca-cli', 'SKILL.md'), '# newer guide\n', 'utf8')
 
     installDefaultAgentSkills({
       home,
       packageRoot,
-      knownPreviousContents: { orchestration: ['# orchestration guide\n'] }
+      knownPreviousContents: { 'orca-cli': ['# orca-cli guide\n'] }
     })
 
     expect(readFileSync(join(canonical, 'SKILL.md'), 'utf8')).toBe('# newer guide\n')
@@ -146,15 +146,28 @@ describe('installDefaultAgentSkills', () => {
     const { home, packageRoot } = sandbox()
     const claudeSkills = join(home, '.claude', 'skills')
     mkdirSync(claudeSkills, { recursive: true })
-    symlinkSync(
-      join(home, '.agents', 'skills', 'orchestration'),
-      join(claudeSkills, 'orchestration')
-    )
+    symlinkSync(join(home, '.agents', 'skills', 'orca-cli'), join(claudeSkills, 'orca-cli'))
 
     installDefaultAgentSkills({ home, packageRoot })
 
-    expect(readFileSync(join(claudeSkills, 'orchestration', 'SKILL.md'), 'utf8')).toBe(
-      '# orchestration guide\n'
+    expect(readFileSync(join(claudeSkills, 'orca-cli', 'SKILL.md'), 'utf8')).toBe(
+      '# orca-cli guide\n'
     )
+  })
+
+  it('removes a retired orchestration install and our harness links', () => {
+    const { home, packageRoot } = sandbox()
+    const canonical = join(home, '.agents', 'skills', 'orchestration')
+    const claudeSkills = join(home, '.claude', 'skills')
+    mkdirSync(canonical, { recursive: true })
+    writeFileSync(join(canonical, 'SKILL.md'), '# retired guide\n', 'utf8')
+    mkdirSync(claudeSkills, { recursive: true })
+    symlinkSync(canonical, join(claudeSkills, 'orchestration'))
+
+    const result = installDefaultAgentSkills({ home, packageRoot })
+
+    expect(result.retired).toContain('orchestration')
+    expect(() => readFileSync(join(canonical, 'SKILL.md'))).toThrow()
+    expect(() => readlinkSync(join(claudeSkills, 'orchestration'))).toThrow()
   })
 })

@@ -24,6 +24,6 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
       'Use --full to include bundled reference documents when the guide provides them.',
       'Use --json for a deterministic object containing canonical topic metadata and content.'
     ],
-    examples: ['orca skills get orca-cli', 'orca skills get orchestration --full']
+    examples: ['orca skills get orca-cli', 'orca skills get computer-use --full']
   }
 ]
