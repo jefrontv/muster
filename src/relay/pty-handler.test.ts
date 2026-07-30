@@ -2033,8 +2033,13 @@ describe('PtyHandler', () => {
     expect(callArgs.env.ORCA_TAB_ID).toBe('tab-1')
   })
 
-  it('passes the PTY id and renderer paneKey to env augmenters', async () => {
-    const seenContexts: { id: string; paneKey?: string; env: Record<string, string> }[] = []
+  it('passes PTY and explicit launch identity to env augmenters', async () => {
+    const seenContexts: {
+      id: string
+      paneKey?: string
+      launchAgent?: string
+      env: Record<string, string>
+    }[] = []
     handler.addEnvAugmenter((ctx) => {
       seenContexts.push(ctx)
       return {
@@ -2043,7 +2048,8 @@ describe('PtyHandler', () => {
     })
 
     await dispatcher.callRequest('pty.spawn', {
-      env: { ORCA_PANE_KEY: 'tab-context:0' }
+      env: { ORCA_PANE_KEY: 'tab-context:0' },
+      launchAgent: 'pi'
     })
     await dispatcher.callRequest('pty.spawn', {})
 
@@ -2052,6 +2058,7 @@ describe('PtyHandler', () => {
     expect(seenContexts[0]).toMatchObject({
       id: 'pty-1',
       paneKey: 'tab-context:0',
+      launchAgent: 'pi',
       env: { ORCA_PANE_KEY: 'tab-context:0' }
     })
     expect(seenContexts[1]).toMatchObject({ id: 'pty-2', paneKey: undefined })
