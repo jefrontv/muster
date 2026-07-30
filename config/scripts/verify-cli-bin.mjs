@@ -27,23 +27,30 @@ export function verifyPackageCliBin({
 } = {}) {
   const packageJsonPath = path.join(projectDir, 'package.json')
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
-  const binTarget = packageJson.bin?.orca
+  // Why two names: this fork renamed the CLI bin to `muster`, while upstream declares `orca`.
+  // Hardcoding either one makes `pnpm build:cli` fail on the other, and the failure lands AFTER
+  // tsc has already emitted — so the CLI looks built while install-dev-cli never runs and
+  // `orca-dev` is missing from PATH. That is exactly how the dev CLI went missing here.
+  const binName = ['orca', 'muster'].find(
+    (candidate) => typeof packageJson.bin?.[candidate] === 'string' && packageJson.bin[candidate]
+  )
+  const binTarget = binName ? packageJson.bin[binName] : undefined
   if (typeof binTarget !== 'string' || binTarget.length === 0) {
-    throw new Error('package.json must declare bin.orca')
+    throw new Error('package.json must declare bin.orca or bin.muster')
   }
 
   const binPath = path.resolve(projectDir, binTarget)
   const stats = statSync(binPath)
   if (!stats.isFile()) {
-    throw new Error(`bin.orca target is not a file: ${binTarget}`)
+    throw new Error(`bin.${binName} target is not a file: ${binTarget}`)
   }
   if (stats.size === 0) {
-    throw new Error(`bin.orca target is empty: ${binTarget}`)
+    throw new Error(`bin.${binName} target is empty: ${binTarget}`)
   }
 
   const content = readFileSync(binPath, 'utf8')
   if (!content.startsWith('#!/usr/bin/env node\n')) {
-    throw new Error(`bin.orca target must start with a Node shebang: ${binTarget}`)
+    throw new Error(`bin.${binName} target must start with a Node shebang: ${binTarget}`)
   }
 
   const outPackageJsonPath = path.join(projectDir, 'out', 'package.json')

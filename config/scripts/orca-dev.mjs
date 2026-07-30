@@ -34,18 +34,23 @@ if (result.signal) {
 process.exit(result.status ?? (result.error ? 1 : 0))
 
 function getDefaultDevUserDataPath() {
+  // Must match src/main/startup/configure-process.ts, which sets userData to `<appData>/muster-dev`.
+  // The fork renamed that directory but this resolver kept saying `orca-dev`, so the CLI read a
+  // path the app never writes: every orchestration command answered "Start the Muster app first"
+  // while the app was running.
+  const DEV_USER_DATA_DIR = 'muster-dev'
   if (process.platform === 'darwin') {
-    return path.join(process.env.HOME ?? '', 'Library', 'Application Support', 'orca-dev')
+    return path.join(process.env.HOME ?? '', 'Library', 'Application Support', DEV_USER_DATA_DIR)
   }
   if (process.platform === 'win32') {
     return path.join(
       process.env.APPDATA ?? path.join(process.env.USERPROFILE ?? '', 'AppData', 'Roaming'),
-      'orca-dev'
+      DEV_USER_DATA_DIR
     )
   }
   return path.join(
     process.env.XDG_CONFIG_HOME ?? path.join(process.env.HOME ?? '', '.config'),
-    'orca-dev'
+    DEV_USER_DATA_DIR
   )
 }
 
