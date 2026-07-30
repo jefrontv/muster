@@ -49,9 +49,17 @@ const PARCEL_WATCHER_PLATFORM_PREFIX_BY_PLATFORM = {
 const TYPE_DECLARATION_ARTIFACT_RE = /\.d\.(?:c|m)?ts(?:\.map)?$/
 const VERSIONED_ONNXRUNTIME_DYLIB_RE = /^libonnxruntime\.\d[\d.]*\.dylib$/
 
+// Why an explicit extra: Node omits EXPERIMENTAL builtins from `builtinModules`, so `node:sqlite`
+// is absent from that list on every current Node — including 24 — even though `require('node:sqlite')`
+// resolves fine in the Electron runtime this packages. Without it the check reads a genuine builtin
+// as a bare dependency needing copied node_modules and fails the mac build outright.
+const EXPERIMENTAL_NODE_BUILTINS = ['sqlite']
+
 const NODE_BUILTINS = new Set([
   ...builtinModules,
-  ...builtinModules.map((moduleName) => `node:${moduleName}`)
+  ...builtinModules.map((moduleName) => `node:${moduleName}`),
+  ...EXPERIMENTAL_NODE_BUILTINS,
+  ...EXPERIMENTAL_NODE_BUILTINS.map((moduleName) => `node:${moduleName}`)
 ])
 
 function packageNameFromSpecifier(specifier) {
