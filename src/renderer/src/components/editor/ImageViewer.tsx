@@ -21,13 +21,17 @@ type ImageViewerProps = {
   filePath: string
   mimeType?: string
   layout?: 'fill' | 'intrinsic'
+  // Why: absent means "no PDF scroll memory" — diff and conflict-review callers
+  // mount several viewers on one path, so they deliberately pass nothing.
+  scrollCacheKey?: string | null
 }
 
 export default function ImageViewer({
   content,
   filePath,
   mimeType = FALLBACK_IMAGE_MIME_TYPE,
-  layout = 'fill'
+  layout = 'fill',
+  scrollCacheKey = null
 }: ImageViewerProps): JSX.Element {
   const [isPopupOpen, setIsPopupOpen] = useState(false)
   const [imageDimensions, setImageDimensions] = useState<ImageViewerImageDimensions | null>(null)
@@ -88,7 +92,9 @@ export default function ImageViewer({
   )
 
   if (isPdf) {
-    return <PdfViewer content={cleanedContent} filePath={filePath} />
+    return (
+      <PdfViewer content={cleanedContent} filePath={filePath} scrollCacheKey={scrollCacheKey} />
+    )
   }
 
   if (imageError) {
