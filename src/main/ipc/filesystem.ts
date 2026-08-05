@@ -105,7 +105,10 @@ import {
   getLocalGitOptionsForRepo,
   getLocalRepoForRegisteredWorktree
 } from './local-worktree-runtime-options'
-import { resolveSourceControlAiLinkedIssue } from './source-control-ai-linked-issue'
+import {
+  resolveSourceControlAiLinkedIssue,
+  resolveSourceControlAiLinkedIssueMeta
+} from './source-control-ai-linked-issue'
 import { listMarkdownDocuments, markdownDocumentsFromRelativePaths } from './markdown-documents'
 import { checkRgAvailable } from './rg-availability'
 import {
@@ -117,6 +120,7 @@ import {
   SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE
 } from '../providers/ssh-git-dispatch'
 import { resolveHostedReviewBodyForGeneration } from '../source-control/pull-request-template'
+import { loadPullRequestLinkedIssue } from '../source-control/pull-request-linked-issue'
 import {
   prepareLocalCommitMessageAgentEnv,
   type CommitMessageAgentRuntimeTarget,
@@ -1596,6 +1600,13 @@ export function registerFilesystemHandlers(
             error: SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE
           }
         }
+        const issueMeta = resolveSourceControlAiLinkedIssueMeta(store, args)
+        const linkedIssueDetailsPromise = loadPullRequestLinkedIssue({
+          meta: issueMeta,
+          provider: args.provider,
+          repoPath: args.worktreePath,
+          connectionId: args.connectionId
+        })
         let context: Awaited<ReturnType<typeof getPullRequestDraftContext>>
         try {
           const currentBody = await resolveHostedReviewBodyForGeneration({
@@ -1624,10 +1635,12 @@ export function registerFilesystemHandlers(
         if (!context) {
           return { success: false, error: 'No branch changes to summarize.' }
         }
-        context = withLinkedIssueDraftContext(
-          context,
-          resolveSourceControlAiLinkedIssue(store, args)
-        )
+        const linkedIssueDetails = await linkedIssueDetailsPromise
+        context = {
+          ...withLinkedIssueDraftContext(context, issueMeta?.linkedIssue),
+          ...(args.provider ? { provider: args.provider } : {}),
+          ...(linkedIssueDetails ? { linkedIssueDetails } : {})
+        }
         return generatePullRequestFieldsFromContext(context, resolvedSettings.params, {
           kind: 'remote',
           cwd: args.worktreePath,
@@ -1643,6 +1656,14 @@ export function registerFilesystemHandlers(
         args.worktreePath,
         worktreePath
       )
+      const issueMeta = resolveSourceControlAiLinkedIssueMeta(store, args, worktreePath)
+      const linkedIssueDetailsPromise = loadPullRequestLinkedIssue({
+        meta: issueMeta,
+        provider: args.provider,
+        repoPath: worktreePath,
+        connectionId: args.connectionId,
+        localGitOptions: gitOptions
+      })
       let context: Awaited<ReturnType<typeof getPullRequestDraftContext>>
       try {
         const currentBody = await resolveHostedReviewBodyForGeneration({
@@ -1671,10 +1692,12 @@ export function registerFilesystemHandlers(
       if (!context) {
         return { success: false, error: 'No branch changes to summarize.' }
       }
-      context = withLinkedIssueDraftContext(
-        context,
-        resolveSourceControlAiLinkedIssue(store, args, worktreePath)
-      )
+      const linkedIssueDetails = await linkedIssueDetailsPromise
+      context = {
+        ...withLinkedIssueDraftContext(context, issueMeta?.linkedIssue),
+        ...(args.provider ? { provider: args.provider } : {}),
+        ...(linkedIssueDetails ? { linkedIssueDetails } : {})
+      }
       const localEnv = await prepareLocalCommitMessageAgentEnv(
         resolvedSettings.params.agentId,
         commitMessageAgentEnv,

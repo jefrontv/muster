@@ -1502,6 +1502,8 @@ export type IssueInfo = {
   state: IssueState
   url: string
   labels: string[]
+  /** Full markdown body when fetched through the single-issue endpoint. */
+  description?: string
 }
 
 export type GitHubViewer = {
