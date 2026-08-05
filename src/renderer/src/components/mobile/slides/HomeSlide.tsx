@@ -108,7 +108,7 @@ export function HomeSlide({ tapping }: { tapping: boolean }): React.JSX.Element 
                 {translate(
                   'auto.components.mobile.slides.HomeSlide.d33d7a9c29',
                   // Why: plain spaces (not &nbsp;) — React text nodes render HTML entities literally.
-                  'orca  ·  feat/mobile-page'
+                  'muster  ·  feat/mobile-page'
                 )}
               </span>
             </div>

@@ -4,7 +4,7 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import type { GlobalSettings } from '../../../../shared/types'
 import type { TelemetryConsentState } from '../../../../shared/telemetry-consent-types'
 import { Label } from '../ui/label'
-import { PRIVACY_URL, getConsentState, setOptIn as telemetrySetOptIn } from '../../lib/telemetry'
+import { getConsentState, setOptIn as telemetrySetOptIn } from '../../lib/telemetry'
 import { useAppStore } from '../../store'
 import { PrivacyDiagnosticsSection } from './PrivacyDiagnosticsSection'
 import { translate } from '@/i18n/i18n'
@@ -100,15 +100,7 @@ export function PrivacyPane({ settings }: PrivacyPaneProps): React.JSX.Element {
             {translate(
               'auto.components.settings.PrivacyPane.8bfdd23a88',
               'Help us figure out what to build next. Muster sends anonymous counts of which features you use and where things break.'
-            )}{' '}
-            <button
-              type="button"
-              className="underline underline-offset-2 hover:text-foreground"
-              onClick={() => void window.api.shell.openUrl(PRIVACY_URL)}
-            >
-              {translate('auto.components.settings.PrivacyPane.77410e0566', 'Privacy policy')}
-            </button>
-            .
+            )}
           </p>
         </div>
         <button

@@ -3507,7 +3507,7 @@
         "share": {
           "card": {
             "utils": {
-              "19f4b4dc75": "github.com/stablyai/orca",
+              "19f4b4dc75": "github.com/jefrontv/muster",
               "d864fc5f98": "salida",
               "5d66fdd7c2": "entrada",
               "7080aeaebb": "Razonamiento",
@@ -8156,7 +8156,7 @@
           "search": {
             "ca6a0c2df7": "atajo",
             "4811a8264a": "terminal primero",
-            "afda131738": "orca primero",
+            "afda131738": "muster primero",
             "0ecfc47434": "conflicto",
             "0f8cb15582": "agente",
             "f1adebbe8c": "shell",
@@ -8856,7 +8856,7 @@
           "orcaCloudSignOut": "Cerrar sesión",
           "orcaCloudConnect": "Conectar perfil",
           "orcaCloudRefresh": "Actualizar estado",
-          "orcaCloudNotConfigured": "Configura ORCA_CLOUD_API_URL y ORCA_CLOUD_CLIENT_ID para previsualizar el inicio de sesión de Orca Cloud en esta versión de desarrollo."
+          "orcaCloudNotConfigured": "Configura ORCA_CLOUD_API_URL y ORCA_CLOUD_CLIENT_ID para previsualizar el inicio de sesión de Muster Cloud en esta versión de desarrollo."
         },
         "EphemeralVmRecipeRow": {
           "useInWorkspace": "Usar en el espacio de trabajo"
@@ -11104,12 +11104,12 @@
             "a6e7cdc688": "pnpm test --filter mobile",
             "21b67dfc92": "Bash",
             "d6d1041a1c": "⎿ Se reemplazó la diapositiva de escaneo de emparejamiento por una sesión de terminal",
-            "336c0e070e": "mobile/orca-mobile-sidebar-mock-v3.html",
+            "336c0e070e": "mobile/muster-mobile-sidebar-mock-v3.html",
             "6d4ebd5833": "Editar",
             "fc83e0d5ef": "⎿ Leídas 2103 líneas",
             "80cc356591": "Leer",
             "2c10d43745": "claude",
-            "e0f98be657": "orca/feat-mobile-page",
+            "e0f98be657": "muster/feat-mobile-page",
             "2defc05141": "dev@mac",
             "da121ba48d": "PLAN.md",
             "e4befee569": "shell",
@@ -11310,7 +11310,7 @@
             "24fedd5a52": "login.spec.ts",
             "8279e9d95b": "Ejecutando 12 pruebas",
             "6218a9014d": "pnpm playwright test",
-            "04d54d50ec": "orca · zsh",
+            "04d54d50ec": "muster · zsh",
             "1aa8a9a24a": "Terminal dividible",
             "2a7cfc82c8": "Vinculado a GH #1842",
             "3822d8d14b": "fix/worktree-picker-truncates",

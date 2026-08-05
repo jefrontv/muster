@@ -10,7 +10,7 @@ type ChangelogEntry = {
   releaseNotesUrl: string
 }
 
-const CHANGELOG_URL = 'https://onorca.dev/changelog'
+const CHANGELOG_URL = 'https://github.com/jefrontv/muster/releases'
 
 function isValidEntry(entry: ChangelogEntry): boolean {
   return (

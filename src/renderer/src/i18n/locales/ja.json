@@ -67,10 +67,10 @@
     "paste": "貼り付け"
   },
   "tray": {
-    "openOrca": "Orcaを開く",
+    "openOrca": "Musterを開く",
     "quit": "終了",
     "minimizeNotice": {
-      "body": "Orcaはシステムトレイで実行中です"
+      "body": "Musterはシステムトレイで実行中です"
     },
     "activityWaiting": "Muster - アクティビティ待機中",
     "activityWaitingSuffix": "activity waiting"
@@ -3464,7 +3464,7 @@
           "2d9eb39264": "総トークン数",
           "beb6f24f37": "推定コスト",
           "da62578d9d": "使用法",
-          "0eb31e79ee": "OrcaIDE",
+          "0eb31e79ee": "Muster IDE",
           "960324e9b8": "イベント",
           "6adac63cfe": "ターン"
         },
@@ -3507,7 +3507,7 @@
         "share": {
           "card": {
             "utils": {
-              "19f4b4dc75": "github.com/stablyai/orca",
+              "19f4b4dc75": "github.com/jefrontv/muster",
               "d864fc5f98": "出力",
               "5d66fdd7c2": "入力",
               "7080aeaebb": "推論",
@@ -4701,7 +4701,7 @@
           "alsoForgetLocal": "また、Muster からこれらの {{value0}} も削除",
           "advanced": "詳細設定",
           "alsoDeleteRemoteHint": "リモートGitワークスペースとそのブランチを完全に削除します。この操作は取り消せません。",
-          "alsoForgetLocalHint": "Orcaからのみクリアします。リモートファイル、ワークスペース、ブランチはそのまま残ります。"
+          "alsoForgetLocalHint": "Musterからのみクリアします。リモートファイル、ワークスペース、ブランチはそのまま残ります。"
         },
         "HostRenameDialog": {
           "1a2b3c4d5e": "Rename host",
@@ -4818,12 +4818,12 @@
         },
         "ForgetSshWorkspaceDialog": {
           "reconnectFailed": "再接続に失敗しました",
-          "forgetBody": "このワークスペースをOrcaからのみ削除します。ファイル、Gitワークツリー、{{host}}のブランチはそのまま残ります。",
+          "forgetBody": "このワークスペースをMusterからのみ削除します。ファイル、Gitワークツリー、{{host}}のブランチはそのまま残ります。",
           "title": "Delete “{{name}}”?",
-          "disconnectedBody": "このワークスペースのSSHホストが接続されていません。再接続してリモートでも削除するか、Orcaからのみ削除してください。",
+          "disconnectedBody": "このワークスペースのSSHホストが接続されていません。再接続してリモートでも削除するか、Musterからのみ削除してください。",
           "ghostBody": "{{host}} is no longer a saved SSH host, so this workspace is no longer connected to a live host. It can only be removed from Muster — files and branches on the remote are left untouched.",
           "cancel": "キャンセル",
-          "forget": "Orcaから削除",
+          "forget": "Musterから削除",
           "reconnectAndDelete": "再接続して削除"
         },
         "activecollab_binding": {
@@ -5094,7 +5094,7 @@
           "3f1bdf3cb4": "環境テキストが大きすぎるため安全に解析できません。",
           "codexSessionSource": "インポートするCodexホーム",
           "codexSessionSourceInfo": "Codex履歴のインポートについて",
-          "codexSessionSourceTooltip": "Orcaは分離されたホームでCodexを実行します。既存のCodexホームを指定してセッション履歴をインポートします。空の場合、~/.codexを使用します。",
+          "codexSessionSourceTooltip": "Musterは分離されたホームでCodexを実行します。既存のCodexホームを指定してセッション履歴をインポートします。空の場合、~/.codexを使用します。",
           "03e1a5081a": "on {{value0}}",
           "25a41a9aad": "Re-detect agents installed on the active server",
           "remoteDetectionFailed": "Couldn’t detect installed agents. Check the host connection and try again.",
@@ -5152,7 +5152,7 @@
           "workspaceCardLayoutGuidance": "ワークスペースサイドバーで管理されます。",
           "872af9556e": "システムトレイ",
           "2edf606c46": "閉じるときにトレイへ最小化",
-          "b707773a0d": "有効にすると、ウィンドウを閉じてもOrcaは終了せず、システムトレイで実行を続けます。",
+          "b707773a0d": "有効にすると、ウィンドウを閉じてもMusterは終了せず、システムトレイで実行を続けます。",
           "interfaceDefaultFont": "デフォルトフォント",
           "terminalDefaultFont": "デフォルトフォント",
           "interfaceTitle": "インターフェイス",
@@ -7279,7 +7279,7 @@
               "detailed": "詳細"
             },
             "9a115966d3": "閉じるときにトレイへ最小化",
-            "4d5b9427b5": "有効にすると、ウィンドウを閉じてもOrcaは終了せず、システムトレイで実行を続けます。",
+            "4d5b9427b5": "有効にすると、ウィンドウを閉じてもMusterは終了せず、システムトレイで実行を続けます。",
             "showPinnedWorktreesInGroups": {
               "title": "ピン留めしたワークツリーを元のリストにも表示",
               "description": "ピン留めしたワークツリーを Pinned に残したまま、すべて、プロジェクト、ステータス、PR にも表示します。"
@@ -8178,7 +8178,7 @@
           "search": {
             "ca6a0c2df7": "ショートカット",
             "4811a8264a": "terminal ファースト",
-            "afda131738": "orca first",
+            "afda131738": "muster first",
             "0ecfc47434": "競合",
             "0f8cb15582": "agent",
             "f1adebbe8c": "シェル",
@@ -8856,7 +8856,7 @@
           "orcaCloudSignOut": "サインアウト",
           "orcaCloudConnect": "プロファイルを接続",
           "orcaCloudRefresh": "ステータスを更新",
-          "orcaCloudNotConfigured": "ORCA_CLOUD_API_URLとORCA_CLOUD_CLIENT_IDを設定して、この開発ビルドでOrca Cloudのサインインをプレビューします。"
+          "orcaCloudNotConfigured": "ORCA_CLOUD_API_URLとORCA_CLOUD_CLIENT_IDを設定して、この開発ビルドでMuster Cloudのサインインをプレビューします。"
         },
         "EphemeralVmRecipeRow": {
           "useInWorkspace": "ワークスペースでの使用"
@@ -11036,8 +11036,8 @@
           "fb5f28330e": "サイドバーに表示",
           "c669abcf8f": "サイドバーから隠す",
           "e1c7b4a92d": "Configure in Settings > Mobile.",
-          "a4f8c2d91e": "左サイドバーからOrca Mobileを削除",
-          "b7e3d1c84a": "左サイドバーにOrca Mobileを表示",
+          "a4f8c2d91e": "左サイドバーからMuster Mobileを削除",
+          "b7e3d1c84a": "左サイドバーにMuster Mobileを表示",
           "f3d8e5b71a": "ショートカットを左サイドバーに再度追加します。"
         },
         "PhoneCarousel": {
@@ -11070,7 +11070,7 @@
             "0bad5b07c8": "GitHub と Linear",
             "d047197480": "GitHub · Linear",
             "a4c3f7b7aa": "タスク",
-            "d33d7a9c29": "orca  ·  feat/mobile-page",
+            "d33d7a9c29": "muster  ·  feat/mobile-page",
             "25d6e8a491": "feat/mobile-page",
             "c791677f2f": "再開する",
             "cf3f98fa3f": "切断されました",
@@ -11104,12 +11104,12 @@
             "a6e7cdc688": "pnpm テスト --フィルターモバイル",
             "21b67dfc92": "Bash",
             "d6d1041a1c": "⎿ ペアスキャンスライドを terminal セッションに置き換えました",
-            "336c0e070e": "mobile/orca-mobile-sidebar-mock-v3.html",
+            "336c0e070e": "mobile/muster-mobile-sidebar-mock-v3.html",
             "6d4ebd5833": "編集",
             "fc83e0d5ef": "⎿ 2103 行を読み取ります",
             "80cc356591": "読む",
             "2c10d43745": "claude",
-            "e0f98be657": "orca/feat-mobile-page",
+            "e0f98be657": "muster/feat-mobile-page",
             "2defc05141": "開発@マック",
             "da121ba48d": "PLAN.md",
             "e4befee569": "シェル",
@@ -11310,7 +11310,7 @@
             "24fedd5a52": "ログイン.spec.ts",
             "8279e9d95b": "12 個のテストを実行する",
             "6218a9014d": "pnpm プレイライト テスト",
-            "04d54d50ec": "orca · zsh",
+            "04d54d50ec": "muster · zsh",
             "1aa8a9a24a": "分割可能な terminal",
             "2a7cfc82c8": "GH #1842 にリンク",
             "3822d8d14b": "fix/worktree-picker-truncates",
@@ -13156,7 +13156,7 @@
         "profiles": {
           "switcher": {
             "cloud": {
-              "unavailable": "Orcaへのサインインは利用できません"
+              "unavailable": "Musterへのサインインは利用できません"
             },
             "reconnect": "プロファイルを再接続",
             "connect": "プロファイルを接続",
@@ -13183,8 +13183,8 @@
             },
             "signInWaiting": "サインインを待機中…",
             "signInAgain": "もう一度サインイン",
-            "signIn": "Orcaにサインイン",
-            "accountTitle": "Orcaアカウント",
+            "signIn": "Musterにサインイン",
+            "accountTitle": "Musterアカウント",
             "accountSignedIn": "サインイン済み",
             "accountSignInRequired": "サインインが必要です",
             "accountSignedOut": "サインアウト済み"
@@ -13207,12 +13207,12 @@
               "confirm": {
                 "move": {
                   "title": "プロジェクトを移動しますか？",
-                  "description": "{{repoName}}を{{targetName}}に移動します。Orcaは{{activeProfileName}}から削除し、ファイルはそのまま保持し、{{targetName}}に再起動します。",
+                  "description": "{{repoName}}を{{targetName}}に移動します。Musterは{{activeProfileName}}から削除し、ファイルはそのまま保持し、{{targetName}}に再起動します。",
                   "action": "プロジェクトを移動"
                 },
                 "copy": {
                   "title": "プロジェクトをコピーしますか？",
-                  "description": "{{repoName}}を{{targetName}}にコピーします。両方のプロフィールが同じファイルを別のOrcaメタデータで参照します。",
+                  "description": "{{repoName}}を{{targetName}}にコピーします。両方のプロフィールが同じファイルを別のMusterメタデータで参照します。",
                   "action": "プロジェクトをコピー"
                 },
                 "live": {
@@ -13230,8 +13230,8 @@
           },
           "signout": {
             "confirm": {
-              "title": "Orcaからログアウトしますか？",
-              "description": "このデバイスでOrcaからログアウトします。ローカルのプロジェクトとワークツリーには影響しません。",
+              "title": "Musterからログアウトしますか？",
+              "description": "このデバイスでMusterからログアウトします。ローカルのプロジェクトとワークツリーには影響しません。",
               "cancel": "キャンセル",
               "action": "ログアウト"
             }
@@ -13240,7 +13240,7 @@
             "confirm": {
               "target": "選択されたプロフィール",
               "title": "プロフィールを切り替えますか？",
-              "description": "{{targetName}}に切り替えると、Orcaが再起動され、{{activeProfileName}}のワークスペースが再読み込みされます。",
+              "description": "{{targetName}}に切り替えると、Musterが再起動され、{{activeProfileName}}のワークスペースが再読み込みされます。",
               "live": {
                 "work": "このプロフィールのアクティブな作業"
               },
@@ -13264,7 +13264,7 @@
               },
               "not": {
                 "signed": {
-                  "in": "まだOrcaにサインインしていません。"
+                  "in": "まだMusterにサインインしていません。"
                 }
               },
               "remove": {
@@ -13304,8 +13304,8 @@
                 "failed": "問題が発生しました。もう一度お試しください。"
               },
               "subtitle": {
-                "named": "{{orgName}}でOrcaに協力できる人々。",
-                "default": "組織でOrcaに協力できる人々。"
+                "named": "{{orgName}}でMusterに協力できる人々。",
+                "default": "組織でMusterに協力できる人々。"
               }
             }
           }

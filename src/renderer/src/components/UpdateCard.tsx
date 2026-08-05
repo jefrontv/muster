@@ -28,8 +28,8 @@ import { translate } from '@/i18n/i18n'
 function releaseUrlForVersion(version: string | null): string {
   // Why: fall back to the plain releases listing (not /releases/latest) — /latest also breaks when GitHub's API is degraded.
   return version
-    ? `https://github.com/stablyai/orca/releases/tag/v${version}`
-    : 'https://github.com/stablyai/orca/releases'
+    ? `https://github.com/jefrontv/muster/releases/tag/v${version}`
+    : 'https://github.com/jefrontv/muster/releases'
 }
 
 function isAnimatedGif(url: string | undefined): boolean {

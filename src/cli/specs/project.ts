@@ -17,7 +17,7 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
     notes: ['A setup means a project is available on a host at a concrete filesystem path.'],
     examples: [
       'orca project setups',
-      'orca project setups --project github:stablyai/orca',
+      'orca project setups --project github:jefrontv/muster',
       'orca project setups --host local'
     ]
   },
@@ -29,8 +29,8 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS, 'project', 'host', 'path', 'kind', 'display-name'],
     notes: ['For remote runtimes, --path must be an absolute path on the remote server.'],
     examples: [
-      'orca project setup-existing-folder --project github:stablyai/orca --host local --path ~/orca',
-      'orca project setup-existing-folder --project github:stablyai/orca --host runtime:gpu --path /home/me/orca --kind git --json'
+      'orca project setup-existing-folder --project github:jefrontv/muster --host local --path ~/orca',
+      'orca project setup-existing-folder --project github:jefrontv/muster --host runtime:gpu --path /home/me/orca --kind git --json'
     ]
   },
   {
@@ -44,8 +44,8 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
       'SSH targets are cloned through the desktop UI because the desktop client owns SSH connections.'
     ],
     examples: [
-      'orca project setup-clone --project github:stablyai/orca --host local --url https://github.com/stablyai/orca.git --destination ~/src',
-      'orca project setup-clone --project github:stablyai/orca --host runtime:gpu --url https://github.com/stablyai/orca.git --destination /srv --json'
+      'orca project setup-clone --project github:jefrontv/muster --host local --url https://github.com/jefrontv/muster.git --destination ~/src',
+      'orca project setup-clone --project github:jefrontv/muster --host runtime:gpu --url https://github.com/jefrontv/muster.git --destination /srv --json'
     ]
   },
   {
@@ -71,7 +71,7 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
       'Use setup-existing-folder when Muster should import and manage an actual checkout path now.'
     ],
     examples: [
-      'orca project setup-create --project github:stablyai/orca --host runtime:gpu --state setting-up --method provisioned --json'
+      'orca project setup-create --project github:jefrontv/muster --host runtime:gpu --state setting-up --method provisioned --json'
     ]
   },
   {
@@ -95,8 +95,8 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
       'Path and availability state changes are only supported for independent setup records.'
     ],
     examples: [
-      'orca project setup-update --setup github:stablyai/orca::gpu --display-name "GPU VM"',
-      'orca project setup-update --setup github:stablyai/orca::gpu --path /srv/orca --state ready --json'
+      'orca project setup-update --setup github:jefrontv/muster::gpu --display-name "GPU VM"',
+      'orca project setup-update --setup github:jefrontv/muster::gpu --path /srv/orca --state ready --json'
     ]
   },
   {
@@ -109,6 +109,6 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
       'Independent setups are removed directly.',
       'Repo-backed setups remove the registered repo compatibility record.'
     ],
-    examples: ['orca project setup-delete --setup github:stablyai/orca::gpu --json']
+    examples: ['orca project setup-delete --setup github:jefrontv/muster::gpu --json']
   }
 ]

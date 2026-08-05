@@ -17,7 +17,6 @@ type FeatureWallTileBase = {
   title: string
   caption: string
   owner: string
-  docsUrl: string
 }
 
 export type FeatureWallTile =
@@ -64,8 +63,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-01.gif',
     posterPath: 'tile-01.poster.jpg',
     recordedAtPath: 'tile-01.recorded-at.json',
-    owner: 'worktree-orchestration',
-    docsUrl: 'https://www.onorca.dev/docs/model/worktrees'
+    owner: 'worktree-orchestration'
   },
   {
     id: 'tile-02',
@@ -76,8 +74,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-02.gif',
     posterPath: 'tile-02.poster.jpg',
     recordedAtPath: 'tile-02.recorded-at.json',
-    owner: 'terminal',
-    docsUrl: 'https://www.onorca.dev/docs/terminal'
+    owner: 'terminal'
   },
   {
     id: 'tile-03',
@@ -88,8 +85,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-03.gif',
     posterPath: 'tile-03.poster.jpg',
     recordedAtPath: 'tile-03.recorded-at.json',
-    owner: 'task-integrations',
-    docsUrl: 'https://www.onorca.dev/docs/review/linear'
+    owner: 'task-integrations'
   },
   {
     id: 'tile-04',
@@ -99,8 +95,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-04.gif',
     posterPath: 'tile-04.poster.jpg',
     recordedAtPath: 'tile-04.recorded-at.json',
-    owner: 'agent-integrations',
-    docsUrl: 'https://www.onorca.dev/docs/agents/supported'
+    owner: 'agent-integrations'
   },
   {
     id: 'tile-05',
@@ -111,8 +106,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-05.gif',
     posterPath: 'tile-05.poster.jpg',
     recordedAtPath: 'tile-05.recorded-at.json',
-    owner: 'browser-experience',
-    docsUrl: 'https://www.onorca.dev/docs/browser/design-mode'
+    owner: 'browser-experience'
   },
   {
     id: 'tile-06',
@@ -123,8 +117,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-06.gif',
     posterPath: 'tile-06.poster.jpg',
     recordedAtPath: 'tile-06.recorded-at.json',
-    owner: 'ssh-workspaces',
-    docsUrl: 'https://www.onorca.dev/docs/ssh'
+    owner: 'ssh-workspaces'
   },
   {
     id: 'tile-07',
@@ -135,8 +128,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-07.gif',
     posterPath: 'tile-07.poster.jpg',
     recordedAtPath: 'tile-07.recorded-at.json',
-    owner: 'editor',
-    docsUrl: 'https://www.onorca.dev/docs/editing/file-explorer'
+    owner: 'editor'
   },
   {
     id: 'tile-08',
@@ -147,8 +139,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-08.gif',
     posterPath: 'tile-08.poster.jpg',
     recordedAtPath: 'tile-08.recorded-at.json',
-    owner: 'diff-review',
-    docsUrl: 'https://www.onorca.dev/docs/review/annotate-ai-diff'
+    owner: 'diff-review'
   },
   {
     id: 'tile-09',
@@ -158,8 +149,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-09.gif',
     posterPath: 'tile-09.poster.jpg',
     recordedAtPath: 'tile-09.recorded-at.json',
-    owner: 'orca-cli',
-    docsUrl: 'https://www.onorca.dev/docs/cli/overview'
+    owner: 'orca-cli'
   },
   {
     id: 'tile-10',
@@ -170,8 +160,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-10.gif',
     posterPath: 'tile-10.poster.jpg',
     recordedAtPath: 'tile-10.recorded-at.json',
-    owner: 'keyboard-ux',
-    docsUrl: 'https://www.onorca.dev/docs/model/quick-open'
+    owner: 'keyboard-ux'
   },
   {
     id: 'tile-11',
@@ -182,8 +171,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-11.gif',
     posterPath: 'tile-11.poster.jpg',
     recordedAtPath: 'tile-11.recorded-at.json',
-    owner: 'usage-rate-limits',
-    docsUrl: 'https://www.onorca.dev/docs/agents/usage-tracking'
+    owner: 'usage-rate-limits'
   },
   {
     id: 'tile-12',
@@ -194,7 +182,6 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     gifPath: 'tile-12.gif',
     posterPath: 'tile-12.poster.jpg',
     recordedAtPath: 'tile-12.recorded-at.json',
-    owner: 'file-preview',
-    docsUrl: 'https://www.onorca.dev/docs/editing/viewers'
+    owner: 'file-preview'
   }
 ] as const

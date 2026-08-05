@@ -3530,7 +3530,7 @@
         "share": {
           "card": {
             "utils": {
-              "19f4b4dc75": "github.com/stablyai/orca",
+              "19f4b4dc75": "github.com/jefrontv/muster",
               "d864fc5f98": "output",
               "5d66fdd7c2": "input",
               "7080aeaebb": "Reasoning",
@@ -8216,7 +8216,7 @@
           "search": {
             "ca6a0c2df7": "shortcut",
             "4811a8264a": "terminal first",
-            "afda131738": "orca first",
+            "afda131738": "muster first",
             "0ecfc47434": "conflict",
             "0f8cb15582": "agent",
             "f1adebbe8c": "shell",
@@ -8879,7 +8879,7 @@
           "orcaCloudSignOut": "Sign out",
           "orcaCloudConnect": "Connect profile",
           "orcaCloudRefresh": "Refresh status",
-          "orcaCloudNotConfigured": "Set ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID to preview Orca Cloud sign-in in this dev build."
+          "orcaCloudNotConfigured": "Set ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID to preview Muster Cloud sign-in in this dev build."
         },
         "EphemeralVmRecipeRow": {
           "useInWorkspace": "Use in workspace"
@@ -11093,7 +11093,7 @@
             "0bad5b07c8": "GitHub and Linear",
             "d047197480": "GitHub · Linear",
             "a4c3f7b7aa": "Tasks",
-            "d33d7a9c29": "orca  ·  feat/mobile-page",
+            "d33d7a9c29": "muster  ·  feat/mobile-page",
             "25d6e8a491": "feat/mobile-page",
             "c791677f2f": "Resume",
             "cf3f98fa3f": "Disconnected",
@@ -11127,12 +11127,12 @@
             "a6e7cdc688": "pnpm test --filter mobile",
             "21b67dfc92": "Bash",
             "d6d1041a1c": "⎿ Replaced pair-scan slide with terminal session",
-            "336c0e070e": "mobile/orca-mobile-sidebar-mock-v3.html",
+            "336c0e070e": "mobile/muster-mobile-sidebar-mock-v3.html",
             "6d4ebd5833": "Edit",
             "fc83e0d5ef": "⎿ Read 2103 lines",
             "80cc356591": "Read",
             "2c10d43745": "claude",
-            "e0f98be657": "orca/feat-mobile-page",
+            "e0f98be657": "muster/feat-mobile-page",
             "2defc05141": "dev@mac",
             "da121ba48d": "PLAN.md",
             "e4befee569": "shell",
@@ -11333,7 +11333,7 @@
             "24fedd5a52": "login.spec.ts",
             "8279e9d95b": "Running 12 tests",
             "6218a9014d": "pnpm playwright test",
-            "04d54d50ec": "orca · zsh",
+            "04d54d50ec": "muster · zsh",
             "1aa8a9a24a": "Splittable terminal",
             "2a7cfc82c8": "Linked to GH #1842",
             "3822d8d14b": "fix/worktree-picker-truncates",
