@@ -98,20 +98,25 @@ jobs:
         # electron-builder --publish always creates/updates the GitHub Release and
         # uploads latest-mac.yml + zip/dmg so the in-app updater can find them.
         env:
-          # Optional signing — omit for ad-hoc private builds
-          CSC_LINK: ${{ secrets.MAC_CERTS }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          # Optional signing — these stay under MAC_* names so an unset secret never
+          # reaches electron-builder as an empty CSC_LINK (it resolves "" to the repo
+          # root and dies with "not a file").
+          MAC_CERTS: ${{ secrets.MAC_CERTS }}
+          MAC_CERTS_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # When CSC is absent, electron-builder ad-hoc signs; force publish anyway.
-          # ORCA_MAC_RELEASE only when full signing secrets are present.
         run: |
           set -euo pipefail
-          if [[ -n "${CSC_LINK:-}" && -n "${APPLE_ID:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then
+          if [[ -n "${MAC_CERTS:-}" && -n "${APPLE_ID:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then
+            export CSC_LINK="${MAC_CERTS}"
+            export CSC_KEY_PASSWORD="${MAC_CERTS_PASSWORD:-}"
             export ORCA_MAC_RELEASE=1
             echo "Signed/notarized release path enabled"
           else
+            # Ad-hoc signing path: electron-builder must see no CSC/Apple credentials at all.
+            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
             echo "Ad-hoc package path (no MAC_CERTS / Apple notary secrets)"
           fi
           pnpm exec electron-builder \
