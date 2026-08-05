@@ -76,8 +76,41 @@ export async function runSiteMcpEntry(options: SiteMcpEntryOptions = {}): Promis
   // UIElement instance still counts as "Muster is running" to LaunchServices — so a Dock/Finder
   // launch while only MCP servers were alive routed to a windowless server instead of starting
   // the GUI ("running but there is no window"). A prohibited process never registers with LS.
-  app?.dock?.hide()
-  app?.setActivationPolicy?.('prohibited')
+  const demoteToBackground = () => {
+    try {
+      app?.hide?.()
+      app?.dock?.hide()
+      app?.setActivationPolicy?.('prohibited')
+    } catch {
+      // AppKit refusing a policy transition must not kill the MCP server.
+    }
+  }
+  demoteToBackground()
+
+  // A Dock/Finder launch that LaunchServices routes here doesn't just reopen — LS force-promotes
+  // this background process to a Foreground app (TransformProcessType), parking a second
+  // windowless "Muster" in the Dock for as long as the server lives. The promotion lands after
+  // the activation event, so demote again immediately and once more on a delay.
+  const reassertBackground = () => {
+    demoteToBackground()
+    setTimeout(demoteToBackground, 500)
+  }
+  app?.on('did-become-active', reassertBackground)
+
+  // The promotion also arrives with NO observable AppKit event when LS transforms the process
+  // without activating it (a prohibited app cannot become active), so watch the one visible
+  // symptom — the dock icon — and demote whenever it appears.
+  if (app?.dock?.isVisible) {
+    setInterval(() => {
+      try {
+        if (app.dock?.isVisible()) {
+          demoteToBackground()
+        }
+      } catch {
+        // Same contract as demoteToBackground: AppKit hiccups must not kill the server.
+      }
+    }, 2000).unref()
+  }
 
   // Why: this headless instance still registers with LaunchServices under the app's bundle id, so
   // a Dock/Finder launch while only MCP servers run gets routed HERE as a reopen instead of
@@ -105,6 +138,8 @@ export async function runSiteMcpEntry(options: SiteMcpEntryOptions = {}): Promis
       child.unref()
     } catch (error) {
       console.error('[site-mcp] failed to relaunch the GUI on activate:', error)
+    } finally {
+      reassertBackground()
     }
   })
 
