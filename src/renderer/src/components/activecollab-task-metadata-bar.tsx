@@ -50,6 +50,14 @@ export function ActiveCollabTaskMetadataBar({
       </dd>
 
       <dt className={META_LABEL}>
+        {translate('auto.components.activecollab.task_workspace.created_by', 'Created by')}
+      </dt>
+      <dd className="min-w-0 truncate text-[12px] text-foreground">
+        {task.createdByName ??
+          translate('auto.components.activecollab.task_workspace.created_by_unknown', '—')}
+      </dd>
+
+      <dt className={META_LABEL}>
         {translate('auto.components.activecollab.task_workspace.due_date', 'Due date')}
       </dt>
       <dd className="min-w-0">

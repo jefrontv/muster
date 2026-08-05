@@ -67,6 +67,9 @@ export type ActiveCollabTask = {
   updatedOn: number | null
   assigneeId: number | null
   assigneeName: string | null
+  createdById: number | null
+  /** Filled by the name-directory join when the wire omits it, like assigneeName. */
+  createdByName: string | null
   labels: ActiveCollabLabel[]
   commentCount: number
   /** Relative, e.g. `/projects/3790/tasks/509323`. Join with instanceUrl for a permalink. */

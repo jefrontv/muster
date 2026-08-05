@@ -21,6 +21,8 @@ const TASK = {
   updatedOn: null,
   assigneeId: 407,
   assigneeName: 'Jake Varrese',
+  createdById: null,
+  createdByName: null,
   labels: [],
   commentCount: 0,
   urlPath: '/projects/5937/tasks/509749'

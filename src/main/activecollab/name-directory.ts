@@ -169,6 +169,9 @@ export async function acResolveTaskNames(
     if (task.assigneeName === null && task.assigneeId !== null) {
       task.assigneeName = directory.users.get(task.assigneeId) ?? null
     }
+    if (task.createdByName === null && task.createdById !== null) {
+      task.createdByName = directory.users.get(task.createdById) ?? null
+    }
   }
 }
 

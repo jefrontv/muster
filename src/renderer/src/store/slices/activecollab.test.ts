@@ -76,6 +76,8 @@ function task(id: number, overrides: Partial<ActiveCollabTask> = {}): ActiveColl
     updatedOn: null,
     assigneeId: 7,
     assigneeName: 'Jake',
+    createdById: null,
+    createdByName: null,
     labels: [],
     commentCount: 0,
     urlPath: `/projects/12/tasks/${id}`,

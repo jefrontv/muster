@@ -26,6 +26,8 @@ function task(id: number): ActiveCollabTask {
     updatedOn: null,
     assigneeId: null,
     assigneeName: null,
+    createdById: null,
+    createdByName: null,
     labels: [],
     commentCount: 0,
     urlPath: `/projects/7/tasks/${id}`,

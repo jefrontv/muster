@@ -88,6 +88,8 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     createdOn: epochMs(value.created_on),
     updatedOn: epochMs(value.updated_on),
     assigneeId: acNullableId(value.assignee_id),
+    createdById: acNullableId(value.created_by_id),
+    createdByName: asText(value.created_by_name) || null,
     assigneeName: assigneeNameOf(value),
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,

@@ -134,6 +134,8 @@ function taskFixture(overrides: Partial<ActiveCollabTask> = {}): ActiveCollabTas
     updatedOn: null,
     assigneeId: 42,
     assigneeName: 'Ada Lovelace',
+    createdById: null,
+    createdByName: null,
     labels: [],
     commentCount: 0,
     urlPath: '/projects/3790/tasks/501',

@@ -110,6 +110,8 @@ const TASK: ActiveCollabTask = {
   updatedOn: null,
   assigneeId: GRACE.id,
   assigneeName: GRACE.name,
+  createdById: null,
+  createdByName: null,
   labels: [],
   commentCount: 0,
   urlPath: '/projects/3790/tasks/509323',

@@ -123,6 +123,8 @@ const TASK: ActiveCollabTask = {
   updatedOn: null,
   assigneeId: 7,
   assigneeName: 'Grace Hopper',
+  createdById: null,
+  createdByName: null,
   labels: [VOCABULARY[0], VOCABULARY[1]],
   commentCount: 1,
   urlPath: '/projects/3790/tasks/509323',

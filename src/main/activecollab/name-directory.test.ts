@@ -83,6 +83,8 @@ function taskRow(over: Partial<ActiveCollabTask> = {}): ActiveCollabTask {
     updatedOn: null,
     assigneeId: 407,
     assigneeName: null,
+    createdById: null,
+    createdByName: null,
     labels: [],
     commentCount: 0,
     urlPath: '/projects/3790/tasks/509323',

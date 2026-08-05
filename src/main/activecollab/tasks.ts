@@ -75,6 +75,8 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     updatedOn: epochMs(value.updated_on),
     assigneeId: acNullableId(value.assignee_id),
     assigneeName: assigneeNameOf(value),
+    createdById: acNullableId(value.created_by_id),
+    createdByName: asText(value.created_by_name) || null,
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,
     urlPath: asText(value.url_path) || `/projects/${projectId}/tasks/${id}`,

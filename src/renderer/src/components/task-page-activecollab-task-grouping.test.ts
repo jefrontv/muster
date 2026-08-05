@@ -25,6 +25,8 @@ function task(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveColl
     updatedOn: null,
     assigneeId: null,
     assigneeName: null,
+    createdById: null,
+    createdByName: null,
     labels: [],
     commentCount: 0,
     urlPath: `/tasks/${overrides.id}`,

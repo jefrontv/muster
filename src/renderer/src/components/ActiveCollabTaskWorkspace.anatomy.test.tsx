@@ -91,6 +91,8 @@ const TASK: ActiveCollabTask = {
   updatedOn: CREATED_ON,
   assigneeId: 7,
   assigneeName: 'Jake Varrese',
+  createdById: null,
+  createdByName: null,
   labels: LABELS,
   commentCount: 1,
   urlPath: '/projects/3790/tasks/509323',
@@ -290,7 +292,7 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     await mount()
 
     const terms = Array.from(container.querySelectorAll('dt')).map((dt) => dt.textContent)
-    expect(terms).toEqual(['Assignee', 'Due date', 'Labels'])
+    expect(terms).toEqual(['Assignee', 'Created by', 'Due date', 'Labels'])
     expect(assigneeText()).toBe('Jake Varrese')
     // Already anchored to the local calendar day upstream — shown as-is, under its own label.
     const dueLabel = new Date(2026, 6, 27).toLocaleDateString(undefined, {
