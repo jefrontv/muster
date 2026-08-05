@@ -11,8 +11,8 @@ import {
 } from './activecollab-comment-mention-document'
 import { ACTIVECOLLAB_MENTION_NODE_NAME } from './activecollab-comment-mention-node'
 
-const ADA = { id: 12, name: 'Ada Lovelace' }
-const ALAN = { id: 88, name: 'Alan Turing' }
+const ADA = { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+const ALAN = { id: 88, name: 'Alan Turing', avatarUrl: null }
 
 function editor(content = '<p></p>'): Editor {
   return new Editor({
@@ -149,12 +149,14 @@ describe('insertActiveCollabMention', () => {
     instance.commands.insertContent([{ type: 'text', text: '@jak' }])
     insertActiveCollabMention(instance, activeCollabEditorMentionToken(instance)!, {
       id: 407,
-      name: 'Jake Varrese'
+      name: 'Jake Varrese',
+      avatarUrl: null
     })
     instance.commands.insertContent([{ type: 'text', text: 'and @jak' }])
     insertActiveCollabMention(instance, activeCollabEditorMentionToken(instance)!, {
       id: 900,
-      name: 'Jake'
+      name: 'Jake',
+      avatarUrl: null
     })
 
     expect(activeCollabCommentBodyHtml(instance.state.doc)).toBe(

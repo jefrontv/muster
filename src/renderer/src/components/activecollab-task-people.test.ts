@@ -35,8 +35,8 @@ describe('resolveActiveCollabAssignee', () => {
   it('names an otherwise-unresolvable id from the picker roster', () => {
     expect(
       resolveActiveCollabAssignee({ assigneeId: 407, assigneeName: null }, [
-        { id: 12, name: 'Ada Lovelace' },
-        { id: 407, name: 'Jake Varrese' }
+        { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+        { id: 407, name: 'Jake Varrese', avatarUrl: null }
       ])
     ).toEqual({ kind: 'named', name: 'Jake Varrese' })
   })
@@ -44,7 +44,7 @@ describe('resolveActiveCollabAssignee', () => {
   it('stays unresolved when the roster does not carry the id', () => {
     expect(
       resolveActiveCollabAssignee({ assigneeId: 90210, assigneeName: null }, [
-        { id: 407, name: 'Jake Varrese' }
+        { id: 407, name: 'Jake Varrese', avatarUrl: null }
       ])
     ).toEqual({ kind: 'unresolved' })
   })
@@ -52,7 +52,7 @@ describe('resolveActiveCollabAssignee', () => {
   it('never lets a roster name override the one the task shipped', () => {
     expect(
       resolveActiveCollabAssignee({ assigneeId: 407, assigneeName: 'Jacob Varrese' }, [
-        { id: 407, name: 'Jake Varrese' }
+        { id: 407, name: 'Jake Varrese', avatarUrl: null }
       ])
     ).toEqual({ kind: 'named', name: 'Jacob Varrese' })
   })
@@ -60,7 +60,7 @@ describe('resolveActiveCollabAssignee', () => {
   it('is unassigned regardless of the roster when there is no assignee id', () => {
     expect(
       resolveActiveCollabAssignee({ assigneeId: null, assigneeName: null }, [
-        { id: 407, name: 'Jake Varrese' }
+        { id: 407, name: 'Jake Varrese', avatarUrl: null }
       ])
     ).toEqual({ kind: 'unassigned' })
   })

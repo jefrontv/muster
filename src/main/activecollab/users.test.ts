@@ -30,7 +30,7 @@ function stubHttp(data: unknown): StubHttp {
 }
 
 describe('listUsers', () => {
-  it('reduces a roster row to the id and the name a join needs', async () => {
+  it('reduces a roster row to the id, name and avatar a badge needs', async () => {
     const http = stubHttp({
       users: [
         {
@@ -44,7 +44,7 @@ describe('listUsers', () => {
     })
 
     await expect(listUsers({ http: http.client })).resolves.toEqual([
-      { id: 407, name: 'Jake Varrese' }
+      { id: 407, name: 'Jake Varrese', avatarUrl: 'https://example.com/a.png' }
     ])
   })
 
@@ -52,7 +52,7 @@ describe('listUsers', () => {
     const http = stubHttp([{ id: 407, display_name: 'Jake Varrese' }])
 
     await expect(listUsers({ http: http.client })).resolves.toEqual([
-      { id: 407, name: 'Jake Varrese' }
+      { id: 407, name: 'Jake Varrese', avatarUrl: null }
     ])
   })
 
@@ -69,11 +69,11 @@ describe('listUsers', () => {
     })
 
     await expect(listUsers({ http: http.client })).resolves.toEqual([
-      { id: 1, name: 'Display Name' },
-      { id: 2, name: 'Short Name' },
-      { id: 3, name: 'Grace Hopper' },
-      { id: 4, name: 'Lovelace' },
-      { id: 5, name: 'nameless@example.com' }
+      { id: 1, name: 'Display Name', avatarUrl: null },
+      { id: 2, name: 'Short Name', avatarUrl: null },
+      { id: 3, name: 'Grace Hopper', avatarUrl: null },
+      { id: 4, name: 'Lovelace', avatarUrl: null },
+      { id: 5, name: 'nameless@example.com', avatarUrl: null }
     ])
   })
 
@@ -90,7 +90,7 @@ describe('listUsers', () => {
     })
 
     await expect(listUsers({ http: http.client })).resolves.toEqual([
-      { id: 7, name: 'Grace Hopper' }
+      { id: 7, name: 'Grace Hopper', avatarUrl: null }
     ])
   })
 
@@ -100,7 +100,7 @@ describe('listUsers', () => {
     })
 
     await expect(listUsers({ http: http.client })).resolves.toEqual([
-      { id: 8, name: 'Departed Colleague' }
+      { id: 8, name: 'Departed Colleague', avatarUrl: null }
     ])
   })
 

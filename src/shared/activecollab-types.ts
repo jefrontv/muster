@@ -32,6 +32,8 @@ export type ActiveCollabConnectionStatus = {
 export type ActiveCollabUser = {
   id: number
   name: string
+  /** Instance avatar URL with any size placeholder resolved; null when the wire omitted it. */
+  avatarUrl: string | null
 }
 
 export type ActiveCollabLabel = {

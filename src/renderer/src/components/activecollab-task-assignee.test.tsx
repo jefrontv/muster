@@ -90,10 +90,10 @@ import { ActiveCollabTaskWorkspace } from './ActiveCollabTaskWorkspace'
 const PROJECT_ID = 3790
 const TASK_ID = 509323
 
-const GRACE: ActiveCollabUser = { id: 7, name: 'Grace Hopper' }
-const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace' }
-const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing' }
-const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese' }
+const GRACE: ActiveCollabUser = { id: 7, name: 'Grace Hopper', avatarUrl: null }
+const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing', avatarUrl: null }
+const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese', avatarUrl: null }
 const ROSTER = [JAKE, ADA, ALAN, GRACE]
 
 const TASK: ActiveCollabTask = {
@@ -233,11 +233,12 @@ function typeInto(element: HTMLInputElement, value: string): void {
 }
 
 describe('ActiveCollab assignee people loading', () => {
-  it('does not read anybody until the picker is opened', async () => {
+  it('does not read the membership until the picker is opened', async () => {
     await mount()
 
     expect(mocks.listProjectMembers).not.toHaveBeenCalled()
-    expect(mocks.listUsers).not.toHaveBeenCalled()
+    // The roster read on mount is the avatar lookup; it is served from the cached directory.
+    expect(mocks.listUsers).toHaveBeenCalledTimes(1)
 
     await openPicker()
 
@@ -249,10 +250,13 @@ describe('ActiveCollab assignee people loading', () => {
     mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [ADA, GRACE] })
     await mount()
 
+    const rosterReadsBeforeOpen = mocks.listUsers.mock.calls.length
+
     await openPicker()
 
     expect(optionNames()).toEqual(['Ada Lovelace', 'Grace Hopper'])
-    expect(mocks.listUsers).not.toHaveBeenCalled()
+    // The picker itself never pays for the roster; only the mount-time avatar lookup did.
+    expect(mocks.listUsers).toHaveBeenCalledTimes(rosterReadsBeforeOpen)
   })
 
   it('reuses the list it already has instead of re-reading on every open', async () => {
@@ -275,7 +279,8 @@ describe('ActiveCollab assignee people loading', () => {
 
     await openPicker()
 
-    expect(mocks.listUsers).toHaveBeenCalledTimes(1)
+    // Mount avatar lookup + the picker fallback.
+    expect(mocks.listUsers).toHaveBeenCalledTimes(2)
     expect(optionNames()).toEqual(['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Jake Varrese'])
   })
 
@@ -315,6 +320,13 @@ describe('ActiveCollab assignee people loading', () => {
       kind: 'api',
       error: 'members unavailable',
       status: 500
+    })
+    // Two failures: the mount-time avatar lookup consumes the first, the picker fallback the second.
+    mocks.listUsers.mockResolvedValueOnce({
+      ok: false,
+      kind: 'api',
+      error: 'Access denied',
+      status: 403
     })
     mocks.listUsers.mockResolvedValueOnce({
       ok: false,

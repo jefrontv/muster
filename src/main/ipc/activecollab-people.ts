@@ -22,9 +22,7 @@ import { positiveId, record } from './activecollab-argument-validation'
 export function acListUsers(): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
   return guard(async () => {
     const directory = await acClient().names()
-    return [...directory.users]
-      .map(([id, name]) => ({ id, name }))
-      .sort((left, right) => left.name.localeCompare(right.name))
+    return [...directory.users.values()].sort((left, right) => left.name.localeCompare(right.name))
   })
 }
 

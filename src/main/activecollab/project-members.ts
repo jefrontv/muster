@@ -87,9 +87,9 @@ async function acLoadProjectMembers(args: {
     const ids = acMemberIds(response.data)
     const members: ActiveCollabUser[] = []
     for (const id of ids) {
-      const name = directory.users.get(id)
-      if (name !== undefined) {
-        members.push({ id, name })
+      const user = directory.users.get(id)
+      if (user !== undefined) {
+        members.push(user)
       }
     }
     // Sorted by name so a capped suggestion list is stable between keystrokes, matching the roster.

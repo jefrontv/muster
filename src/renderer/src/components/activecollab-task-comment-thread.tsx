@@ -65,7 +65,7 @@ function ActiveCollabCommentCard({
     // so "who spoke" separates from "what they said" without another rule.
     <article className="overflow-hidden rounded-md border border-border bg-card shadow-sm">
       <div className="flex min-w-0 items-center gap-2 border-b border-border bg-muted/50 px-3 py-1.5">
-        <ActiveCollabPersonBadge name={comment.createdByName} />
+        <ActiveCollabPersonBadge name={comment.createdByName} userId={comment.createdById} />
         <span className="min-w-0 truncate text-[13px] font-semibold text-foreground">
           {comment.createdByName ??
             translate('auto.components.activecollab.task_workspace.unknown', 'Unknown')}

@@ -462,7 +462,7 @@ describe('name resolution', () => {
     requestMock.mockImplementation(async (path: string) => {
       const data =
         path === 'projects'
-          ? [{ id: 3790, name: 'Website Rebuild' }]
+          ? [{ id: 3790, name: 'Website Rebuild', avatarUrl: null }]
           : path === 'users'
             ? { users: [{ id: 407, display_name: 'Jake Varrese' }] }
             : taskPayload
@@ -565,8 +565,8 @@ describe('name resolution', () => {
     await expect(invoke('activecollab:listUsers')).resolves.toEqual({
       ok: true,
       value: [
-        { id: 12, name: 'Ada Lovelace' },
-        { id: 407, name: 'Jake Varrese' }
+        { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+        { id: 407, name: 'Jake Varrese', avatarUrl: null }
       ]
     })
   })
@@ -609,8 +609,8 @@ describe('name resolution', () => {
     await expect(invoke('activecollab:listProjectMembers', { projectId: 5937 })).resolves.toEqual({
       ok: true,
       value: [
-        { id: 12, name: 'Ada Lovelace' },
-        { id: 407, name: 'Jake Varrese' }
+        { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+        { id: 407, name: 'Jake Varrese', avatarUrl: null }
       ]
     })
   })
@@ -660,7 +660,9 @@ describe('name resolution', () => {
         throw new ActiveCollabApiError('Access denied', 403, true)
       }
       const data =
-        path === 'projects' ? [{ id: 3790, name: 'Website Rebuild' }] : { tasks: [NAMELESS_ROW] }
+        path === 'projects'
+          ? [{ id: 3790, name: 'Website Rebuild', avatarUrl: null }]
+          : { tasks: [NAMELESS_ROW] }
       return { data, totalItems: null, page: null, perPage: null }
     })
 

@@ -48,7 +48,7 @@ function stubHttp(routes: Record<string, Route>, gate?: Promise<void>): StubHttp
   }
 }
 
-const PROJECTS: Route = { data: [{ id: 5937, name: '30494 - Orleton OM' }] }
+const PROJECTS: Route = { data: [{ id: 5937, name: '30494 - Orleton OM', avatarUrl: null }] }
 
 const USERS: Route = {
   data: {
@@ -93,8 +93,8 @@ describe('membership payload', () => {
 
     // Alan is on the instance roster but not on the project, so he must not come back.
     await expect(loaderFor(http.client)(5937)).resolves.toEqual([
-      { id: 12, name: 'Ada Lovelace' },
-      { id: 407, name: 'Jake Varrese' }
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+      { id: 407, name: 'Jake Varrese', avatarUrl: null }
     ])
   })
 
@@ -102,8 +102,8 @@ describe('membership payload', () => {
     const http = stubHttp({ ...HEALTHY, 'projects/5937': { data: { members: [12, 407] } } })
 
     await expect(loaderFor(http.client)(5937)).resolves.toEqual([
-      { id: 12, name: 'Ada Lovelace' },
-      { id: 407, name: 'Jake Varrese' }
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+      { id: 407, name: 'Jake Varrese', avatarUrl: null }
     ])
   })
 
@@ -113,7 +113,9 @@ describe('membership payload', () => {
       'projects/5937': { data: { single: { members: [12] }, members: [88] } }
     })
 
-    await expect(loaderFor(http.client)(5937)).resolves.toEqual([{ id: 12, name: 'Ada Lovelace' }])
+    await expect(loaderFor(http.client)(5937)).resolves.toEqual([
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+    ])
   })
 
   it('accepts member entries that arrive as objects rather than bare ids', async () => {
@@ -123,8 +125,8 @@ describe('membership payload', () => {
     })
 
     await expect(loaderFor(http.client)(5937)).resolves.toEqual([
-      { id: 12, name: 'Ada Lovelace' },
-      { id: 88, name: 'Alan Turing' }
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+      { id: 88, name: 'Alan Turing', avatarUrl: null }
     ])
   })
 
@@ -134,7 +136,9 @@ describe('membership payload', () => {
       'projects/5937': { data: { single: { members: [0, null, '12', 1.5, 407] } } }
     })
 
-    await expect(loaderFor(http.client)(5937)).resolves.toEqual([{ id: 407, name: 'Jake Varrese' }])
+    await expect(loaderFor(http.client)(5937)).resolves.toEqual([
+      { id: 407, name: 'Jake Varrese', avatarUrl: null }
+    ])
   })
 
   it('sorts by name, so a capped suggestion list is stable between keystrokes', async () => {
@@ -144,9 +148,9 @@ describe('membership payload', () => {
     })
 
     await expect(loaderFor(http.client)(5937)).resolves.toEqual([
-      { id: 12, name: 'Ada Lovelace' },
-      { id: 88, name: 'Alan Turing' },
-      { id: 407, name: 'Jake Varrese' }
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+      { id: 88, name: 'Alan Turing', avatarUrl: null },
+      { id: 407, name: 'Jake Varrese', avatarUrl: null }
     ])
   })
 
@@ -158,7 +162,9 @@ describe('membership payload', () => {
       'projects/5937': { data: { single: { members: [902, 12] } } }
     })
 
-    await expect(loaderFor(http.client)(5937)).resolves.toEqual([{ id: 12, name: 'Ada Lovelace' }])
+    await expect(loaderFor(http.client)(5937)).resolves.toEqual([
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+    ])
   })
 })
 
@@ -314,11 +320,11 @@ describe('credential isolation', () => {
     })
 
     await expect(loaderFor(mine.client, { userId: 42 })(5937)).resolves.toEqual([
-      { id: 12, name: 'Ada Lovelace' },
-      { id: 407, name: 'Jake Varrese' }
+      { id: 12, name: 'Ada Lovelace', avatarUrl: null },
+      { id: 407, name: 'Jake Varrese', avatarUrl: null }
     ])
     await expect(loaderFor(theirs.client, { userId: 99 })(5937)).resolves.toEqual([
-      { id: 12, name: 'Their Colleague' }
+      { id: 12, name: 'Their Colleague', avatarUrl: null }
     ])
 
     // Each identity paid for its own read; neither was skipped as "already cached".

@@ -120,7 +120,11 @@ export function ActiveCollabTaskAssigneeField({
     const name = task.assigneeName?.trim()
     return [
       ...users,
-      { id: task.assigneeId, name: name || activeCollabAssigneeLabel({ kind: 'unresolved' }) }
+      {
+        id: task.assigneeId,
+        name: name || activeCollabAssigneeLabel({ kind: 'unresolved' }),
+        avatarUrl: null
+      }
     ]
   }, [users, task.assigneeId, task.assigneeName])
 
@@ -135,7 +139,10 @@ export function ActiveCollabTaskAssigneeField({
           disabled={disabled}
           className="-ml-1.5 flex min-w-0 items-center gap-2 rounded-md border border-transparent px-1.5 py-0.5 text-[12px] transition hover:border-border/70 hover:bg-muted/40 focus-visible:border-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
         >
-          <ActiveCollabPersonBadge name={assignee.kind === 'named' ? assignee.name : null} />
+          <ActiveCollabPersonBadge
+            name={assignee.kind === 'named' ? assignee.name : null}
+            userId={task.assigneeId}
+          />
           <span
             data-testid="activecollab-task-assignee"
             className={cn(

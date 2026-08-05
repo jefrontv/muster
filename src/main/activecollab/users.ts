@@ -12,8 +12,9 @@
 //
 // The roster IS now reachable from the renderer, via `activecollab:listUsers`. An @mention menu
 // cannot filter a list it cannot see. It is served out of the SAME credential-keyed window in
-// name-directory.ts that the assignee join already fills, so exposing it costs no extra request,
-// and the shape stays at id-plus-name: no emails, avatars or permissions cross the bridge.
+// name-directory.ts that the assignee join already fills, so exposing it costs no extra request.
+// The shape is id, name, and avatar URL — the URL renders the person badge; emails and
+// permissions still never cross the bridge.
 
 import type { ActiveCollabUser } from '../../shared/activecollab-types'
 import { acCollection, acIsRecord, acNullableId } from './codecs'
@@ -34,6 +35,19 @@ function userName(row: Record<string, unknown>): string {
 }
 
 /**
+ * The wire ships `avatar_url` with a literal `--SIZE--` placeholder the client is expected to
+ * substitute; 80px covers every badge Muster draws at 2x. A URL that fails to load degrades to
+ * initials in the renderer, so an auth-gated avatar route costs nothing but the fallback.
+ */
+function userAvatarUrl(row: Record<string, unknown>): string | null {
+  const raw = asText(row.avatar_url)
+  if (raw.length === 0) {
+    return null
+  }
+  return raw.replaceAll('--SIZE--', '80')
+}
+
+/**
  * Archived users are kept: a task can outlive the person's account, and their real name is a more
  * honest label than a blank. Rows with no id or no usable name are dropped — there is nothing to
  * join them on, and a nameless entry would only shadow a later usable one.
@@ -48,7 +62,7 @@ export async function listUsers(args: { http: AcHttpClient }): Promise<ActiveCol
     const id = acNullableId(entry.id)
     const name = userName(entry)
     if (id !== null && name !== '') {
-      users.push({ id, name })
+      users.push({ id, name, avatarUrl: userAvatarUrl(entry) })
     }
   }
   return users

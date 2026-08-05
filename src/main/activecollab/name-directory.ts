@@ -14,7 +14,7 @@
 // the ipc layer builds a fresh client per call precisely so a reconnect can swap credentials
 // mid-flight, and a shared map would happily serve one account's project names to the next.
 
-import type { ActiveCollabTask } from '../../shared/activecollab-types'
+import type { ActiveCollabTask, ActiveCollabUser } from '../../shared/activecollab-types'
 import type { AcHttpClient } from './http'
 import { listProjects } from './tasks'
 import { listUsers } from './users'
@@ -41,10 +41,12 @@ export const AC_DIRECTORY_TTL_MS = 5 * 60_000
 export const AC_DIRECTORY_RETRY_TTL_MS = 30_000
 
 const AC_NO_NAMES: ReadonlyMap<number, string> = new Map()
+const AC_NO_USERS: ReadonlyMap<number, ActiveCollabUser> = new Map()
 
 export type AcNameDirectory = {
   readonly projects: ReadonlyMap<number, string>
-  readonly users: ReadonlyMap<number, string>
+  /** Full roster rows, so consumers can render names AND avatars from the one cached read. */
+  readonly users: ReadonlyMap<number, ActiveCollabUser>
 }
 
 /** Resolves the directory for one credential. NEVER rejects — see {@link acNameMap}. */
@@ -88,16 +90,31 @@ async function acNameMap(
   }
 }
 
+/** The users twin of acNameMap, keeping whole rows. Same never-throws contract. */
+async function acUserMap(
+  read: () => Promise<readonly ActiveCollabUser[]>
+): Promise<{ users: ReadonlyMap<number, ActiveCollabUser>; ok: boolean }> {
+  try {
+    const users = new Map<number, ActiveCollabUser>()
+    for (const row of await read()) {
+      users.set(row.id, row)
+    }
+    return { users, ok: true }
+  } catch {
+    return { users: AC_NO_USERS, ok: false }
+  }
+}
+
 /** Both collections in parallel: they are independent, and serialising them doubles first paint. */
 async function acLoadNames(
   http: AcHttpClient
 ): Promise<{ directory: AcNameDirectory; complete: boolean }> {
   const [projects, users] = await Promise.all([
     acNameMap(() => listProjects({ http })),
-    acNameMap(() => listUsers({ http }))
+    acUserMap(() => listUsers({ http }))
   ])
   return {
-    directory: { projects: projects.names, users: users.names },
+    directory: { projects: projects.names, users: users.users },
     complete: projects.ok && users.ok
   }
 }
@@ -167,10 +184,10 @@ export async function acResolveTaskNames(
       task.projectName = directory.projects.get(task.projectId) ?? ''
     }
     if (task.assigneeName === null && task.assigneeId !== null) {
-      task.assigneeName = directory.users.get(task.assigneeId) ?? null
+      task.assigneeName = directory.users.get(task.assigneeId)?.name ?? null
     }
     if (task.createdByName === null && task.createdById !== null) {
-      task.createdByName = directory.users.get(task.createdById) ?? null
+      task.createdByName = directory.users.get(task.createdById)?.name ?? null
     }
   }
 }

@@ -3,6 +3,7 @@ import React from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
+import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
 import { ActiveCollabTaskAssigneeField } from './activecollab-task-assignee-field'
 import { ActiveCollabTaskDueDateField } from './activecollab-task-due-date-field'
 import { ActiveCollabLabelChip, ActiveCollabLabelEditor } from './activecollab-task-label-editor'
@@ -52,9 +53,12 @@ export function ActiveCollabTaskMetadataBar({
       <dt className={META_LABEL}>
         {translate('auto.components.activecollab.task_workspace.created_by', 'Created by')}
       </dt>
-      <dd className="min-w-0 truncate text-[12px] text-foreground">
-        {task.createdByName ??
-          translate('auto.components.activecollab.task_workspace.created_by_unknown', '—')}
+      <dd className="flex min-w-0 items-center gap-2 text-[12px] text-foreground">
+        <ActiveCollabPersonBadge name={task.createdByName} userId={task.createdById} />
+        <span className="min-w-0 truncate">
+          {task.createdByName ??
+            translate('auto.components.activecollab.task_workspace.created_by_unknown', '—')}
+        </span>
       </dd>
 
       <dt className={META_LABEL}>

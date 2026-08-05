@@ -8,9 +8,9 @@ import {
 } from './activecollab-comment-mentions'
 import type { ActiveCollabUser } from '../../../shared/activecollab-types'
 
-const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace' }
-const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese' }
-const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing' }
+const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese', avatarUrl: null }
+const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing', avatarUrl: null }
 const ROSTER = [ADA, ALAN, JAKE]
 
 /** Caret at end of draft, which is where it sits while somebody is typing a mention. */
@@ -103,7 +103,8 @@ describe('activeCollabMentionSuggestions', () => {
   it('caps the list so the menu cannot cover the draft it is helping write', () => {
     const crowd = Array.from({ length: 30 }, (_, index) => ({
       id: index + 1,
-      name: `Person ${index}`
+      name: `Person ${index}`,
+      avatarUrl: null
     }))
 
     expect(

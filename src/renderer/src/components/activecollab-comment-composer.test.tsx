@@ -85,11 +85,11 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
 
 import { ActiveCollabCommentComposer } from './activecollab-comment-composer'
 
-const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace' }
-const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing' }
-const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese' }
+const ADA: ActiveCollabUser = { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+const ALAN: ActiveCollabUser = { id: 88, name: 'Alan Turing', avatarUrl: null }
+const JAKE: ActiveCollabUser = { id: 407, name: 'Jake Varrese', avatarUrl: null }
 /** On the instance roster but NOT on the project: the person scoping has to keep out. */
-const GRACE: ActiveCollabUser = { id: 7, name: 'Grace Hopper' }
+const GRACE: ActiveCollabUser = { id: 7, name: 'Grace Hopper', avatarUrl: null }
 
 const PROJECT_ID = 5937
 
