@@ -30,6 +30,7 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
+  ActiveCollabProjectTasks,
   ActiveCollabTaskPage
 } from '../../shared/activecollab-types'
 import { connectActiveCollab } from '../activecollab/auth'
@@ -49,7 +50,12 @@ import {
   reopenTask,
   updateTask
 } from '../activecollab/mutations'
-import { getTaskDetail, listAssignedTasks, listProjects } from '../activecollab/tasks'
+import {
+  getTaskDetail,
+  listAssignedTasks,
+  listProjects,
+  listProjectTasks
+} from '../activecollab/tasks'
 import {
   refreshAcTaskNotifications,
   startAcTaskNotifications
@@ -88,6 +94,7 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:disconnect',
   'activecollab:listAssignedTasks',
   'activecollab:listProjects',
+  'activecollab:listProjectTasks',
   'activecollab:getTaskDetail',
   'activecollab:getAttachmentImage',
   'activecollab:downloadAttachment',
@@ -178,6 +185,20 @@ export function acListAssignedTasks(
 
 export function acListProjects(): Promise<ActiveCollabResult<ActiveCollabProject[]>> {
   return guard(async () => listProjects({ http: acClient().http }))
+}
+
+export function acListProjectTasks(
+  args: unknown
+): Promise<ActiveCollabResult<ActiveCollabProjectTasks>> {
+  return guard(async () => {
+    const projectId = positiveId(record(args).projectId, 'projectId')
+    const { http, names } = acClient()
+    // Started before the task read, not after: on a cold cache the two round trips overlap.
+    const directory = names()
+    const result = await listProjectTasks({ http, projectId })
+    await acResolveTaskNames(directory, result.tasks)
+    return result
+  })
 }
 
 export function acGetTaskDetail(
@@ -293,6 +314,9 @@ export function registerActiveCollabHandlers(store: Store): void {
     acListAssignedTasks(args)
   )
   ipcMain.handle('activecollab:listProjects', async () => acListProjects())
+  ipcMain.handle('activecollab:listProjectTasks', async (_event, args: unknown) =>
+    acListProjectTasks(args)
+  )
   ipcMain.handle('activecollab:getTaskDetail', async (_event, args: unknown) =>
     acGetTaskDetail(args)
   )

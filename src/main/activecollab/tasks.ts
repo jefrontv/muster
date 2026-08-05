@@ -13,8 +13,10 @@ import {
   type ActiveCollabAttachment,
   type ActiveCollabComment,
   type ActiveCollabProject,
+  type ActiveCollabProjectTasks,
   type ActiveCollabTask,
   type ActiveCollabTaskDetail,
+  type ActiveCollabTaskList,
   type ActiveCollabTaskPage
 } from '../../shared/activecollab-types'
 import { acEpochToLocalDay } from '../../shared/activecollab-dates'
@@ -159,6 +161,65 @@ export async function listAssignedTasks(args: {
     totalItems: response.totalItems,
     hasMore: hasMorePages(response, page, rows.length)
   }
+}
+
+/** Pages a project can span before the read stops: 10 × the 100-row server cap. */
+const PROJECT_TASK_PAGE_LIMIT = 10
+
+function normaliseTaskLists(payload: unknown): ActiveCollabTaskList[] {
+  const lists: ActiveCollabTaskList[] = []
+  for (const entry of acCollection(payload, 'task_lists')) {
+    if (!acIsRecord(entry)) {
+      continue
+    }
+    const id = asNumber(entry.id)
+    if (id === null) {
+      continue
+    }
+    lists.push({ id, name: asText(entry.name) })
+  }
+  return lists
+}
+
+/**
+ * Every open task in one project, with the project's task lists for grouping. The task-list
+ * sidecar rides the first tasks page on instances that send it; the dedicated endpoint fills in
+ * when it does not, and its failure only costs the group names, never the tasks.
+ */
+export async function listProjectTasks(args: {
+  http: AcHttpClient
+  projectId: number
+}): Promise<ActiveCollabProjectTasks> {
+  const tasks: ActiveCollabTask[] = []
+  let taskLists: ActiveCollabTaskList[] = []
+  for (let page = 1; page <= PROJECT_TASK_PAGE_LIMIT; page += 1) {
+    const response = await args.http.request<unknown>(`projects/${args.projectId}/tasks`, {
+      query: { page }
+    })
+    const rows = acCollection(response.data, 'tasks')
+    for (const row of rows) {
+      const task = normaliseTask(row)
+      // Client-side because the server ignores a `completed` filter and returns closed tasks anyway.
+      if (task !== null && !task.isCompleted) {
+        tasks.push(task)
+      }
+    }
+    if (page === 1) {
+      taskLists = normaliseTaskLists(response.data)
+    }
+    if (!hasMorePages(response, page, rows.length)) {
+      break
+    }
+  }
+  if (taskLists.length === 0) {
+    try {
+      const response = await args.http.request<unknown>(`projects/${args.projectId}/task-lists`)
+      taskLists = normaliseTaskLists(response.data)
+    } catch {
+      // Group names degrade to "Other tasks"; the tasks themselves already loaded.
+    }
+  }
+  return { projectId: args.projectId, tasks, taskLists }
 }
 
 export async function listProjects(args: { http: AcHttpClient }): Promise<ActiveCollabProject[]> {

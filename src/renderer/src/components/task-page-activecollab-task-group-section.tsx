@@ -1,6 +1,9 @@
 import React from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { ActiveCollabTaskGroup } from './task-page-activecollab-task-grouping'
 import { ActiveCollabTaskRow } from './task-page-activecollab-task-row'
@@ -25,6 +28,7 @@ export function ActiveCollabTaskGroupSection({
   now,
   onSelect,
   onToggleCollapsed,
+  onOpenProject,
   selectedTaskId
 }: {
   collapsed: boolean
@@ -32,6 +36,8 @@ export function ActiveCollabTaskGroupSection({
   now: number
   onSelect: (ref: ActiveCollabTaskRef) => void
   onToggleCollapsed: (projectId: number) => void
+  /** Present when the heading offers the project drill-in (all tasks, grouped by task list). */
+  onOpenProject?: (projectId: number, projectName: string) => void
   selectedTaskId: number | null
 }): React.JSX.Element {
   const headingId = `activecollab-task-group-${group.projectId}`
@@ -77,6 +83,31 @@ export function ActiveCollabTaskGroupSection({
               />
             </span>
           </button>
+          {onOpenProject ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="text-muted-foreground"
+                  aria-label={translate(
+                    'auto.components.activecollab.task_list.open_project',
+                    'View all tasks in {{project}}',
+                    { project: group.projectName }
+                  )}
+                  onClick={() => onOpenProject(group.projectId, group.projectName)}
+                >
+                  <ChevronRight className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={4}>
+                {translate(
+                  'auto.components.activecollab.task_list.open_project_tooltip',
+                  'View all project tasks'
+                )}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
           {ACTIVECOLLAB_SITE_BINDING_UI_ENABLED ? (
             <ActiveCollabBindSiteButton
               projectId={group.projectId}

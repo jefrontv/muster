@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   groupActiveCollabTasksByProject,
+  groupActiveCollabTasksByTaskList,
   type ActiveCollabTaskGroup
 } from './task-page-activecollab-task-grouping'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
@@ -167,5 +168,43 @@ describe('groupActiveCollabTasksByProject ordering', () => {
     groupActiveCollabTasksByProject(rows)
 
     expect(rows.map((entry) => entry.id)).toEqual([1, 2])
+  })
+})
+
+describe('groupActiveCollabTasksByTaskList', () => {
+  it('keeps the project task-list order and files leftovers after it', () => {
+    const rows = [
+      task({ id: 1, taskListId: 20 }),
+      task({ id: 2, taskListId: 10 }),
+      task({ id: 3, taskListId: null }),
+      task({ id: 4, taskListId: 99 }),
+      task({ id: 5, taskListId: 10, dueOn: MARCH_14 })
+    ]
+    const groups = groupActiveCollabTasksByTaskList(rows, [
+      { id: 10, name: 'Important Dates' },
+      { id: 20, name: 'Project Overview' },
+      { id: 30, name: 'Empty list' }
+    ])
+
+    expect(
+      groups.map((group) => [group.taskListId, group.taskListName, group.tasks.map((t) => t.id)])
+    ).toEqual([
+      [10, 'Important Dates', [5, 2]],
+      [20, 'Project Overview', [1]],
+      [99, '', [4]],
+      [null, '', [3]]
+    ])
+  })
+
+  it('sorts tasks inside a list by due date then newest first', () => {
+    const rows = [
+      task({ id: 1, taskListId: 10 }),
+      task({ id: 2, taskListId: 10, dueOn: APRIL_01 }),
+      task({ id: 3, taskListId: 10, dueOn: MARCH_15 }),
+      task({ id: 4, taskListId: 10, dueOn: MARCH_15 })
+    ]
+    const groups = groupActiveCollabTasksByTaskList(rows, [{ id: 10, name: 'List' }])
+
+    expect(groups[0].tasks.map((t) => t.id)).toEqual([4, 3, 2, 1])
   })
 })

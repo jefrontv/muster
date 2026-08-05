@@ -117,6 +117,19 @@ export type ActiveCollabTaskPage = {
   hasMore: boolean
 }
 
+/** A task list (section) within a project, in the project's own order. */
+export type ActiveCollabTaskList = {
+  id: number
+  name: string
+}
+
+/** Every open task in one project plus the task lists they group under. */
+export type ActiveCollabProjectTasks = {
+  projectId: number
+  tasks: ActiveCollabTask[]
+  taskLists: ActiveCollabTaskList[]
+}
+
 /** Every collection endpoint is capped here by the server; a `limit` parameter is ignored. */
 export const ACTIVECOLLAB_PAGE_SIZE = 100
 

@@ -5,7 +5,7 @@
 // own paging order and a refetch reorders equal-ranked rows freely, so a comparator that returned 0
 // for two distinct rows would let the list reshuffle under the user between reads. Falling through
 // to a unique id makes the output a function of the row SET alone, never of arrival order.
-import type { ActiveCollabTask } from '../../../shared/activecollab-types'
+import type { ActiveCollabTask, ActiveCollabTaskList } from '../../../shared/activecollab-types'
 
 export type ActiveCollabTaskGroup = {
   /** Grouping key: projects are identified by id, so two same-named projects stay apart. */
@@ -61,4 +61,56 @@ export function groupActiveCollabTasksByProject(
     group.tasks.sort(byDueDateThenNewest)
   }
   return sorted.sort(byProjectName)
+}
+
+export type ActiveCollabTaskListGroup = {
+  /** Null groups tasks the project has not filed under any list. */
+  taskListId: number | null
+  taskListName: string
+  tasks: ActiveCollabTask[]
+}
+
+/**
+ * Groups a project's tasks by task list, in the PROJECT'S OWN list order — the lists are how the
+ * project structured its work (see the source instance's board), so alphabetising them here would
+ * shuffle a deliberate sequence. Lists the wire did not name sort after the named ones by id, and
+ * unfiled tasks close the view. Empty lists are dropped: a heading with no rows is noise.
+ */
+export function groupActiveCollabTasksByTaskList(
+  tasks: readonly ActiveCollabTask[],
+  taskLists: readonly ActiveCollabTaskList[]
+): ActiveCollabTaskListGroup[] {
+  const byListId = new Map<number | null, ActiveCollabTask[]>()
+  for (const task of tasks) {
+    const key = task.taskListId
+    const bucket = byListId.get(key)
+    if (bucket) {
+      bucket.push(task)
+    } else {
+      byListId.set(key, [task])
+    }
+  }
+  for (const bucket of byListId.values()) {
+    bucket.sort(byDueDateThenNewest)
+  }
+
+  const groups: ActiveCollabTaskListGroup[] = []
+  for (const list of taskLists) {
+    const bucket = byListId.get(list.id)
+    if (bucket) {
+      groups.push({ taskListId: list.id, taskListName: list.name, tasks: bucket })
+      byListId.delete(list.id)
+    }
+  }
+  const unnamed = [...byListId.entries()]
+    .filter((entry): entry is [number, ActiveCollabTask[]] => entry[0] !== null)
+    .sort((a, b) => a[0] - b[0])
+  for (const [taskListId, bucket] of unnamed) {
+    groups.push({ taskListId, taskListName: '', tasks: bucket })
+  }
+  const unfiled = byListId.get(null)
+  if (unfiled) {
+    groups.push({ taskListId: null, taskListName: '', tasks: unfiled })
+  }
+  return groups
 }

@@ -13,6 +13,7 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
+  ActiveCollabProjectTasks,
   ActiveCollabTaskPage,
   ActiveCollabTaskUpdate,
   ActiveCollabUser
@@ -127,6 +128,10 @@ export type ActiveCollabApi = {
    */
   listAssignedTasks: (args?: { page?: number }) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>
   listProjects: () => Promise<ActiveCollabResult<ActiveCollabProject[]>>
+  /** Every open task in one project plus its task lists, for the project drill-in view. */
+  listProjectTasks: (args: {
+    projectId: number
+  }) => Promise<ActiveCollabResult<ActiveCollabProjectTasks>>
   getTaskDetail: (args: ActiveCollabTaskRef) => Promise<ActiveCollabResult<ActiveCollabTaskDetail>>
   /**
    * One image attachment, inlined. Non-images and anything past the size cap answer an

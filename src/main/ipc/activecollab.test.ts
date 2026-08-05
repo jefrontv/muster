@@ -91,6 +91,7 @@ const CHANNELS = [
   'activecollab:disconnect',
   'activecollab:listAssignedTasks',
   'activecollab:listProjects',
+  'activecollab:listProjectTasks',
   'activecollab:getTaskDetail',
   'activecollab:getAttachmentImage',
   'activecollab:downloadAttachment',
@@ -114,6 +115,7 @@ const CHANNELS = [
 const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   { channel: 'activecollab:listAssignedTasks', args: undefined },
   { channel: 'activecollab:listProjects', args: undefined },
+  { channel: 'activecollab:listProjectTasks', args: { projectId: 3790 } },
   { channel: 'activecollab:getTaskDetail', args: { projectId: 3790, taskId: 509323 } },
   { channel: 'activecollab:getAttachmentImage', args: { attachmentId: 249086 } },
   {

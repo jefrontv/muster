@@ -14,6 +14,7 @@ import {
   type ActiveCollabTaskListError
 } from './task-page-activecollab-load-state'
 import { activeCollabGroupCollapseKey } from './task-page-activecollab-group-collapse'
+import { ActiveCollabProjectView } from './task-page-activecollab-project-view'
 import { ActiveCollabTaskGroupSection } from './task-page-activecollab-task-group-section'
 import { groupActiveCollabTasksByProject } from './task-page-activecollab-task-grouping'
 import type {
@@ -91,6 +92,9 @@ export function ActiveCollabTaskList({
   // dropped instead of writing another instance's error over the current one.
   const [load, setLoad] = useState<ActiveCollabTaskListLoad>(INITIAL_LOAD)
   const [connectOpen, setConnectOpen] = useState(false)
+  // The project drill-in replaces the assigned list while set; backing out restores the list with
+  // its paging and scroll state intact because this component never unmounts around it.
+  const [openProject, setOpenProject] = useState<{ id: number; name: string } | null>(null)
 
   // A string, so an unstable `sourceContext` object identity cannot restart the load.
   const cachePrefix = useMemo(
@@ -163,12 +167,30 @@ export function ActiveCollabTaskList({
     (projectId: number) => toggleCollapsedGroup(activeCollabGroupCollapseKey(projectId)),
     [toggleCollapsedGroup]
   )
+  const openProjectView = useCallback(
+    (id: number, name: string) => setOpenProject({ id, name }),
+    []
+  )
+  const closeProjectView = useCallback(() => setOpenProject(null), [])
   const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
   // Why the footer outlives the `ready` state: `listAssignedTasks` filters completed tasks
   // client-side, so a server page can arrive with every row already dropped while later pages still
   // hold open work. Gating paging on a non-empty list would strand the user on "nothing here" with
   // those pages never requested.
   const canLoadMore = rows.hasMore && (state.kind === 'ready' || state.kind === 'empty')
+
+  if (openProject) {
+    return (
+      <ActiveCollabProjectView
+        projectId={openProject.id}
+        projectName={openProject.name}
+        onBack={closeProjectView}
+        onSelect={onSelect}
+        selectedTaskId={selectedTaskId}
+        sourceContext={sourceContext}
+      />
+    )
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -225,6 +247,7 @@ export function ActiveCollabTaskList({
               now={now}
               onSelect={onSelect}
               onToggleCollapsed={toggleGroupCollapsed}
+              onOpenProject={openProjectView}
               selectedTaskId={selectedTaskId}
             />
           ))}

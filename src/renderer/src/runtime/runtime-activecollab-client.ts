@@ -14,6 +14,7 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
+  ActiveCollabProjectTasks,
   ActiveCollabTaskPage,
   ActiveCollabTaskUpdate,
   ActiveCollabUser
@@ -140,6 +141,19 @@ export async function activeCollabListProjects(
     settings,
     OPERATION_TIMEOUT_MS,
     () => window.api.activecollab.listProjects()
+  )
+}
+
+export async function activeCollabListProjectTasks(
+  args: { projectId: number },
+  settings?: RuntimeActiveCollabSettings
+): Promise<ActiveCollabResult<ActiveCollabProjectTasks>> {
+  return callActiveCollab(
+    'activecollab.listProjectTasks',
+    args,
+    settings,
+    OPERATION_TIMEOUT_MS,
+    () => window.api.activecollab.listProjectTasks(args)
   )
 }
 

@@ -703,6 +703,7 @@ import {
   acListAssignedTasks,
   acListLabels,
   acListProjects,
+  acListProjectTasks,
   acPostComment,
   acReopenTask,
   acStatus,
@@ -721,6 +722,7 @@ import type {
   ActiveCollabProject,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
+  ActiveCollabProjectTasks,
   ActiveCollabTaskPage,
   ActiveCollabUser
 } from '../../shared/activecollab-types'
@@ -29933,6 +29935,12 @@ export class OrcaRuntimeService {
 
   activeCollabListProjects(): Promise<ActiveCollabResult<ActiveCollabProject[]>> {
     return acListProjects()
+  }
+
+  activeCollabListProjectTasks(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabProjectTasks>> {
+    return acListProjectTasks(args)
   }
 
   activeCollabGetTaskDetail(args: unknown): Promise<ActiveCollabResult<ActiveCollabTaskDetail>> {

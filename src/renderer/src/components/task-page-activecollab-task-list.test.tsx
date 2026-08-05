@@ -98,6 +98,7 @@ vi.mock('@/components/activecollab-connect-dialog', () => ({
 
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { activeCollabGroupCollapseKey } from './task-page-activecollab-group-collapse'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { ActiveCollabTaskList } from './task-page-activecollab-task-list'
 
 function dueLabel(dueOn: number): string {
@@ -180,7 +181,9 @@ async function renderList(selectedTaskId: number | null = null): Promise<Rendere
   // A fresh element each time: React bails out of re-rendering an identical element reference,
   // which would silently hide the scope change under test.
   const element = (): React.JSX.Element => (
-    <ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />
+    <TooltipProvider>
+      <ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />
+    </TooltipProvider>
   )
   const view = await act(async () => render(element()))
   return {
@@ -535,8 +538,10 @@ describe('ActiveCollabTaskList activation', () => {
     // ACTIVECOLLAB_SITE_BINDING_UI_ENABLED; re-enabling it adds one tab stop per heading here.
     const [firstHeading, secondHeading] = screen.getAllByRole('button', { name: 'Muster UI' })
 
+    // Heading toggle → project drill-in button → first row, per group.
     await user.tab()
     expect(firstHeading).toHaveFocus()
+    await user.tab()
     await user.tab()
     expect(rowButtons()[0]).toHaveFocus()
     await user.keyboard('{Enter}')
@@ -544,6 +549,7 @@ describe('ActiveCollabTaskList activation', () => {
 
     await user.tab()
     expect(secondHeading).toHaveFocus()
+    await user.tab()
     await user.tab()
     expect(rowButtons()[1]).toHaveFocus()
     await user.keyboard(' ')
