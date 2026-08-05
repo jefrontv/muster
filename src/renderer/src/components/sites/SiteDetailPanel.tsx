@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
-import { SiteRunConsole } from './SiteRunConsole'
+import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
 import { SiteRunHistory } from './SiteRunHistory'
 
 type SiteDetailPanelProps = {
@@ -73,6 +73,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
   const setSecret = (kind: SiteSecretKind, value: string): void => {
     void setSiteSecret(site.id, viewedName, kind, value)
   }
+  const runConsole = useSiteRunConsole(summary)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto scrollbar-sleek p-5">
@@ -124,7 +125,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
             <Badge
               key={name}
               variant={name === viewedName ? 'default' : 'secondary'}
-              className="gap-1"
+              className="group gap-1"
             >
               <button
                 type="button"
@@ -135,6 +136,9 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
                 {name}
               </button>
               {environmentNames.length > 1 ? (
+                // Revealed on chip hover/focus: delete is rare and destructive, so it stays out
+                // of the switch-environment pointer path. Opacity (not display) keeps the chip
+                // width stable.
                 <button
                   type="button"
                   aria-label={translate(
@@ -142,6 +146,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
                     'Remove environment'
                   )}
                   onClick={() => void removeSiteEnvironment(site.id, name)}
+                  className="rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   <Trash2 className="size-3" />
                 </button>
@@ -186,6 +191,8 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
             environment={viewedEnvironment}
             onPatch={patchEnvironment}
             onSetSecret={setSecret}
+            importAction={<SiteRunActionButton console={runConsole} group="import" />}
+            deployAction={<SiteRunActionButton console={runConsole} group="deploy" />}
           />
         ) : (
           <p className="text-sm text-muted-foreground">
@@ -206,7 +213,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         onCreated={setSelectedName}
       />
 
-      <SiteRunConsole summary={summary} />
+      <SiteRunOutput console={runConsole} />
       <SiteRunHistory siteId={site.id} />
     </div>
   )

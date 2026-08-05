@@ -16,13 +16,19 @@ export function SiteStepToggles({
   siteId,
   environmentName,
   environment,
-  onChanged
+  onChanged,
+  importAction,
+  deployAction
 }: {
   siteId: string
   environmentName: string
   environment: SiteEnvironment
   /** The owner refetches summaries; counts and run readiness derive from them. */
   onChanged: () => void
+  /** Run button rendered at the foot of the import column, so action sits with its options. */
+  importAction?: React.ReactNode
+  /** Run button rendered at the foot of the deploy column. */
+  deployAction?: React.ReactNode
 }): React.JSX.Element {
   const toggleLabels = getSiteToggleLabels()
   const [error, setError] = useState('')
@@ -43,9 +49,10 @@ export function SiteStepToggles({
 
   const group = (
     heading: string,
-    toggles: readonly { key: string; label: string }[]
+    toggles: readonly { key: string; label: string }[],
+    action: React.ReactNode
   ): React.JSX.Element => (
-    <fieldset className="min-w-0 flex-1 space-y-1">
+    <fieldset className="flex min-w-0 flex-1 flex-col space-y-1">
       <legend className="text-[11px] font-medium text-muted-foreground">{heading}</legend>
       {toggles.map((toggle) => (
         <label key={toggle.key} className="flex items-center gap-1.5 text-xs">
@@ -56,6 +63,7 @@ export function SiteStepToggles({
           <span className="truncate">{toggleLabels[toggle.key] ?? toggle.label}</span>
         </label>
       ))}
+      {action ? <div className="mt-auto pt-1.5">{action}</div> : null}
     </fieldset>
   )
 
@@ -64,11 +72,13 @@ export function SiteStepToggles({
       <div className="flex gap-3">
         {group(
           translate('auto.components.right.sidebar.SitePanel.importStepsHeading', 'Import steps'),
-          SITE_IMPORT_TOGGLES
+          SITE_IMPORT_TOGGLES,
+          importAction
         )}
         {group(
           translate('auto.components.right.sidebar.SitePanel.deployStepsHeading', 'Deploy steps'),
-          SITE_DEPLOY_TOGGLES
+          SITE_DEPLOY_TOGGLES,
+          deployAction
         )}
       </div>
       {error.length > 0 ? <p className="text-[11px] text-destructive">{error}</p> : null}

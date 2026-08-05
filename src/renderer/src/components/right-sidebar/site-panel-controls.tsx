@@ -1,11 +1,13 @@
 // Leaf controls for the right-sidebar Site tab, split out of SitePanel so the panel stays under
 // the file-size cap while these pieces keep one shared visual definition.
 
+import { DownloadCloud, UploadCloud } from 'lucide-react'
 import type React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { translate } from '@/i18n/i18n'
 
 // Why module scope: Intl.RelativeTimeFormat allocation is non-trivial; all rows share one.
 const relativeTimeFormatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
@@ -91,5 +93,35 @@ export function QuickActionButton({
         </TooltipContent>
       ) : null}
     </Tooltip>
+  )
+}
+
+/** Import/Deploy quick action carrying the group's standard icon and label. */
+export function SiteRunQuickAction({
+  group,
+  count,
+  disabledReason,
+  busy,
+  onRun
+}: {
+  group: 'import' | 'deploy'
+  count: number
+  disabledReason: string | null
+  busy: boolean
+  onRun: () => void
+}): React.JSX.Element {
+  return (
+    <QuickActionButton
+      icon={group === 'import' ? DownloadCloud : UploadCloud}
+      label={
+        group === 'import'
+          ? translate('auto.components.right.sidebar.SitePanel.import', 'Import')
+          : translate('auto.components.right.sidebar.SitePanel.deploy', 'Deploy')
+      }
+      count={count}
+      disabledReason={disabledReason}
+      busy={busy}
+      onRun={onRun}
+    />
   )
 }

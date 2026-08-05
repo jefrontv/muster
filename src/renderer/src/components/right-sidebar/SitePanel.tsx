@@ -2,7 +2,7 @@
 // configuration with quick Import/Deploy actions. The full editing surface stays on the Sites
 // page; this panel answers "what would a run do right now" without leaving the workspace.
 
-import { ArrowUpRight, CircleStop, DownloadCloud, Loader2, UploadCloud } from 'lucide-react'
+import { ArrowUpRight, CircleStop, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteRun } from '../../../../shared/site-run-types'
@@ -18,14 +18,9 @@ import { useConfirmationDialog } from '@/components/confirmation-dialog'
 import { cn } from '@/lib/utils'
 import { useSiteRun } from '@/components/sites/use-site-run'
 import { RUN_STATUS_BADGE, RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
-import {
-  InfoRow,
-  QuickActionButton,
-  SectionHeading,
-  formatRelativeTime
-} from './site-panel-controls'
+import { InfoRow, SectionHeading, formatRelativeTime } from './site-panel-controls'
 import { useSiteForActiveProject } from './use-site-for-active-project'
-import { SiteStepToggles } from './site-panel-step-toggles'
+import { SitePanelEnvironmentSection } from './site-panel-environment-section'
 
 /** The sidebar shows a tail, not the console: enough to see the run is alive and where it died. */
 const SIDEBAR_LOG_TAIL = 200
@@ -50,7 +45,6 @@ export function SitePanelContent({
   onRunSettledRef.current = onRunSettled
 
   const running = run?.status === 'running'
-  const environmentNames = Object.keys(site.environments)
   const targetName = resolvedEnvironment.environment
   const targetEnvironment = targetName ? (site.environments[targetName] ?? null) : null
 
@@ -220,118 +214,36 @@ export function SitePanelContent({
         />
       </section>
 
-      <section className="space-y-1.5">
-        <SectionHeading>
-          {translate('auto.components.right.sidebar.SitePanel.environmentSection', 'Environment')}
-        </SectionHeading>
-        {environmentNames.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {environmentNames.map((name) => (
-              <Badge key={name} variant={name === targetName ? 'default' : 'secondary'}>
-                {name}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            {translate(
-              'auto.components.right.sidebar.SitePanel.noEnvironments',
-              'This site has no environments yet.'
-            )}
-          </p>
-        )}
-        {branch ? (
-          <p className="text-xs text-muted-foreground">
-            {resolvedEnvironment.requiresConfirmation
-              ? translate(
-                  'auto.components.right.sidebar.SitePanel.branchUnmatched',
-                  'Branch {{branch}} matches no environment; runs must be confirmed.',
-                  { branch }
-                )
-              : translate(
-                  'auto.components.right.sidebar.SitePanel.branchResolution',
-                  'Branch {{branch}} targets {{environment}}.',
-                  { branch, environment: targetName ?? '—' }
-                )}
-          </p>
-        ) : null}
-        {targetEnvironment ? (
-          <>
-            <InfoRow
-              label={translate('auto.components.right.sidebar.SitePanel.sshHost', 'SSH host')}
-              value={targetEnvironment.hostname || '—'}
-              mono
-            />
-            <InfoRow
-              label={translate('auto.components.right.sidebar.SitePanel.sshUser', 'SSH user')}
-              value={targetEnvironment.username || '—'}
-              mono
-            />
-            <InfoRow
-              label={translate('auto.components.right.sidebar.SitePanel.remoteRoot', 'Remote root')}
-              value={targetEnvironment.rootPath || '—'}
-              mono
-            />
-            <InfoRow
-              label={translate('auto.components.right.sidebar.SitePanel.liveDomain', 'Live domain')}
-              value={targetEnvironment.liveDomain || '—'}
-              mono
-            />
-          </>
-        ) : null}
-        {targetName && targetEnvironment ? (
-          <SiteStepToggles
-            siteId={site.id}
-            environmentName={targetName}
-            environment={targetEnvironment}
-            onChanged={() => onRunSettledRef.current()}
-          />
-        ) : (
-          <>
-            <InfoRow
-              label={translate(
-                'auto.components.right.sidebar.SitePanel.importSteps',
-                'Import steps'
-              )}
-              value={String(summary.importSelectedCount)}
-            />
-            <InfoRow
-              label={translate(
-                'auto.components.right.sidebar.SitePanel.deploySteps',
-                'Deploy steps'
-              )}
-              value={String(summary.deploySelectedCount)}
-            />
-          </>
-        )}
-      </section>
+      <SitePanelEnvironmentSection
+        summary={summary}
+        targetName={targetName ?? null}
+        targetEnvironment={targetEnvironment}
+        importReason={importReason}
+        deployReason={deployReason}
+        busy={running || starting}
+        requestRun={(group) => void requestRun(group)}
+        onStepsChanged={() => onRunSettledRef.current()}
+      />
 
-      <section className="space-y-2 border-t border-border pt-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <QuickActionButton
-            icon={DownloadCloud}
-            label={translate('auto.components.right.sidebar.SitePanel.import', 'Import')}
-            count={summary.importSelectedCount}
-            disabledReason={importReason}
-            busy={running || starting}
-            onRun={() => void requestRun('import')}
-          />
-          <QuickActionButton
-            icon={UploadCloud}
-            label={translate('auto.components.right.sidebar.SitePanel.deploy', 'Deploy')}
-            count={summary.deploySelectedCount}
-            disabledReason={deployReason}
-            busy={running || starting}
-            onRun={() => void requestRun('deploy')}
-          />
-          {running ? (
-            <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => void cancel()}>
-              <CircleStop className="size-3.5" />
-              {translate('auto.components.right.sidebar.SitePanel.cancel', 'Cancel')}
-            </Button>
-          ) : null}
-          {starting || running ? <Loader2 className="size-4 animate-spin" /> : null}
-        </div>
+      {/* Output only: the Import/Deploy actions live with their step toggles above. The section
+          disappears while idle so the panel carries no empty chrome. */}
+      <section
+        className={cn(
+          'space-y-2 border-t border-border pt-3',
+          !run && !starting && !error && lines.length === 0 && 'hidden'
+        )}
+      >
+        {running || starting ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {running ? (
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => void cancel()}>
+                <CircleStop className="size-3.5" />
+                {translate('auto.components.right.sidebar.SitePanel.cancel', 'Cancel')}
+              </Button>
+            ) : null}
+            <Loader2 className="size-4 animate-spin" />
+          </div>
+        ) : null}
 
         {run ? (
           <p className={cn('text-xs', RUN_STATUS_TONE[run.status])}>

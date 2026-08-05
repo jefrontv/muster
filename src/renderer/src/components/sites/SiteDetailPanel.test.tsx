@@ -16,7 +16,11 @@ import {
 import { SiteDetailPanel } from './SiteDetailPanel'
 
 // Runs and history have their own coverage; the environments section is what is under test.
-vi.mock('./SiteRunConsole', () => ({ SiteRunConsole: () => null }))
+vi.mock('./SiteRunConsole', () => ({
+  useSiteRunConsole: () => ({}),
+  SiteRunActionButton: () => null,
+  SiteRunOutput: () => null
+}))
 vi.mock('./SiteRunHistory', () => ({ SiteRunHistory: () => null }))
 
 const storeMocks = vi.hoisted(() => ({

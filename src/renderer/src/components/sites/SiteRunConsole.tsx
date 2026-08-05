@@ -1,3 +1,8 @@
+// Run controls for a site: action buttons that sit next to the step toggles they execute, plus
+// the shared output surface (status, progress, log). Split so the owner can place the Import
+// button under the import steps and the Deploy button under the deploy steps — one console state
+// still backs both.
+
 import { CircleStop, DownloadCloud, Loader2, UploadCloud } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
@@ -10,19 +15,22 @@ import { useConfirmationDialog } from '@/components/confirmation-dialog'
 import { cn } from '@/lib/utils'
 import { useSiteRun } from './use-site-run'
 
-type SiteRunConsoleProps = {
+export type SiteRunConsoleState = {
   summary: SiteSummary
+  run: ReturnType<typeof useSiteRun>['run']
+  lines: ReturnType<typeof useSiteRun>['lines']
+  progress: ReturnType<typeof useSiteRun>['progress']
+  starting: boolean
+  error: string | null
+  running: boolean
+  requestRun: (group: SiteRunGroup) => Promise<void>
+  cancel: () => Promise<void>
 }
 
-export function SiteRunConsole({ summary }: SiteRunConsoleProps): React.JSX.Element {
+export function useSiteRunConsole(summary: SiteSummary): SiteRunConsoleState {
   const { run, lines, progress, starting, error, start, cancel } = useSiteRun(summary.site.id)
   const confirm = useConfirmationDialog()
-  const logRef = useRef<HTMLDivElement | null>(null)
   const running = run?.status === 'running'
-
-  useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
-  }, [lines.length])
 
   const requestRun = async (group: SiteRunGroup): Promise<void> => {
     const target = summary.resolvedEnvironment.environment
@@ -45,34 +53,77 @@ export function SiteRunConsole({ summary }: SiteRunConsoleProps): React.JSX.Elem
     await start(group, target ?? undefined)
   }
 
+  return { summary, run, lines, progress, starting, error, running, requestRun, cancel }
+}
+
+const GROUP_CHROME: Record<
+  SiteRunGroup,
+  { icon: typeof DownloadCloud; label: () => string; count: (summary: SiteSummary) => number }
+> = {
+  import: {
+    icon: DownloadCloud,
+    label: () => translate('auto.components.sites.SiteRunConsole.import', 'Import'),
+    count: (summary) => summary.importSelectedCount
+  },
+  deploy: {
+    icon: UploadCloud,
+    label: () => translate('auto.components.sites.SiteRunConsole.deploy', 'Deploy'),
+    count: (summary) => summary.deploySelectedCount
+  }
+}
+
+/** The run button for one step group; place it directly under that group's toggles. */
+export function SiteRunActionButton({
+  console: consoleState,
+  group
+}: {
+  console: SiteRunConsoleState
+  group: SiteRunGroup
+}): React.JSX.Element {
+  const { summary, running, starting, requestRun } = consoleState
+  const chrome = GROUP_CHROME[group]
+  const count = chrome.count(summary)
+  const Icon = chrome.icon
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-1.5"
+      disabled={running || starting || count === 0}
+      onClick={() => void requestRun(group)}
+    >
+      <Icon className="size-3.5" />
+      {chrome.label()}
+      <Badge variant="secondary">{count}</Badge>
+    </Button>
+  )
+}
+
+/** Status, progress, and log for the active run. Renders nothing while idle with no history. */
+export function SiteRunOutput({
+  console: consoleState
+}: {
+  console: SiteRunConsoleState
+}): React.JSX.Element | null {
+  const { run, lines, progress, starting, error, running, cancel } = consoleState
+  const logRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
+  }, [lines.length])
+
   const selectedCount =
-    run?.group === 'deploy' ? summary.deploySelectedCount : summary.importSelectedCount
+    run?.group === 'deploy'
+      ? consoleState.summary.deploySelectedCount
+      : consoleState.summary.importSelectedCount
+
+  if (!run && !starting && !error && !progress && lines.length === 0) {
+    return null
+  }
 
   return (
     <section className="space-y-3 border-t border-border pt-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          disabled={running || starting || summary.importSelectedCount === 0}
-          onClick={() => void requestRun('import')}
-        >
-          <DownloadCloud className="size-3.5" />
-          {translate('auto.components.sites.SiteRunConsole.import', 'Import')}
-          <Badge variant="secondary">{summary.importSelectedCount}</Badge>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          disabled={running || starting || summary.deploySelectedCount === 0}
-          onClick={() => void requestRun('deploy')}
-        >
-          <UploadCloud className="size-3.5" />
-          {translate('auto.components.sites.SiteRunConsole.deploy', 'Deploy')}
-          <Badge variant="secondary">{summary.deploySelectedCount}</Badge>
-        </Button>
         {running ? (
           <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => void cancel()}>
             <CircleStop className="size-3.5" />

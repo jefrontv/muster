@@ -339,9 +339,18 @@ export default function SitesPage(): React.JSX.Element {
           <SiteDetailPanel summary={selected} />
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-            <p className="text-sm text-muted-foreground">
-              {translate('auto.components.sites.SitesPage.selectPrompt', 'Select a site.')}
-            </p>
+            <div className="flex flex-col items-center gap-1.5 text-center">
+              <Globe className="mb-1 size-7 text-muted-foreground/50" strokeWidth={1.5} />
+              <p className="text-sm font-medium">
+                {translate('auto.components.sites.SitesPage.selectPrompt', 'Select a site')}
+              </p>
+              <p className="max-w-60 text-xs text-muted-foreground">
+                {translate(
+                  'auto.components.sites.SitesPage.selectPromptHint',
+                  'Choose a site from the list to edit its local setup and environments.'
+                )}
+              </p>
+            </div>
           </div>
         )}
       </div>

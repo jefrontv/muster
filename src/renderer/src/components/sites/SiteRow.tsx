@@ -31,6 +31,7 @@ export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): R
       type="button"
       onClick={() => onSelect(site.id)}
       aria-current={selected ? 'true' : undefined}
+      data-current={selected ? 'true' : undefined}
       className={cn(
         'flex w-full flex-col gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
         selected ? 'bg-accent' : 'hover:bg-accent'
@@ -66,7 +67,8 @@ export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): R
           </span>
         </span>
         {environmentCount > 1 ? (
-          <span className="shrink-0">
+          // Right-aligned so env counts line up into a scannable column across rows.
+          <span className="ml-auto shrink-0 pl-2 tabular-nums">
             {translate('auto.components.sites.SiteRow.environmentCount', '{{count}} envs', {
               count: environmentCount
             })}

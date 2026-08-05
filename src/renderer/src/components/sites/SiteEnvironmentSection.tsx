@@ -23,6 +23,10 @@ type SiteEnvironmentSectionProps = {
   environment: SiteEnvironment
   onPatch: (patch: Partial<SiteEnvironment>) => void
   onSetSecret: (kind: SiteSecretKind, value: string) => void
+  /** Run button rendered at the foot of the import-steps column, so action sits with its options. */
+  importAction?: React.ReactNode
+  /** Run button rendered at the foot of the deploy-steps column. */
+  deployAction?: React.ReactNode
 }
 
 const getTextFields = createLocalizedCatalog(() => [
@@ -147,7 +151,9 @@ export function SiteEnvironmentSection({
   environmentName,
   environment,
   onPatch,
-  onSetSecret
+  onSetSecret,
+  importAction,
+  deployAction
 }: SiteEnvironmentSectionProps): React.JSX.Element {
   const presence = summary.secrets[environmentName] ?? { ssh: false, db: false }
   const toggleLabels = getSiteToggleLabels()
@@ -168,7 +174,7 @@ export function SiteEnvironmentSection({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <fieldset className="space-y-2">
+        <fieldset className="flex flex-col space-y-2">
           <legend className="text-xs font-medium text-muted-foreground">
             {translate('auto.components.sites.SiteEnvironmentSection.importSteps', 'Import steps')}
           </legend>
@@ -181,8 +187,9 @@ export function SiteEnvironmentSection({
               {toggleLabels[toggle.key] ?? toggle.label}
             </label>
           ))}
+          {importAction ? <div className="mt-auto pt-2">{importAction}</div> : null}
         </fieldset>
-        <fieldset className="space-y-2">
+        <fieldset className="flex flex-col space-y-2">
           <legend className="text-xs font-medium text-muted-foreground">
             {translate('auto.components.sites.SiteEnvironmentSection.deploySteps', 'Deploy steps')}
           </legend>
@@ -195,6 +202,7 @@ export function SiteEnvironmentSection({
               {toggleLabels[toggle.key] ?? toggle.label}
             </label>
           ))}
+          {deployAction ? <div className="mt-auto pt-2">{deployAction}</div> : null}
         </fieldset>
       </div>
 
