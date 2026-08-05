@@ -337,6 +337,17 @@ Host myserver
 })
 
 describe('sshConfigHostsToTargets', () => {
+  it('skips git transport hosts and aliases resolving to them', () => {
+    const hosts = [
+      { host: 'github.com' },
+      { host: 'bitbucket.org' },
+      { host: 'github-efront', hostname: 'github.com', user: 'git' },
+      { host: 'myserver', hostname: '10.0.0.1' }
+    ]
+    const targets = sshConfigHostsToTargets(hosts, new Set())
+    expect(targets.map((target) => target.label)).toEqual(['myserver'])
+  })
+
   it('converts hosts to SshTarget objects', () => {
     const hosts = [{ host: 'myserver', hostname: '10.0.0.1', port: 22, user: 'deploy' }]
     const targets = sshConfigHostsToTargets(hosts, new Set())

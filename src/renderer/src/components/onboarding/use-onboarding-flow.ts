@@ -50,7 +50,13 @@ type TaskSourcesExitAction = TaskSourcesSnapshotProps['exit_action']
 function shouldSkipIntegrationsStep(
   status: ReturnType<typeof useAppStore.getState>['preflightStatus']
 ): boolean {
-  return status?.gh.installed === true
+  // Why the extra clauses: the step also hosts the Bitbucket connection and the one-click ocsites
+  // import, so it stays visible while either still has something for the user to do.
+  return (
+    status?.gh.installed === true &&
+    status.bitbucket?.configured === true &&
+    status.ocsites?.detected !== true
+  )
 }
 
 function shouldSkipWindowsTerminalStep(isWindows: boolean): boolean {

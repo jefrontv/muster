@@ -693,6 +693,8 @@ export type PreflightStatus = {
     baseUrl: string | null
     tokenConfigured: boolean
   }
+  /** Whether an ocsites configuration exists on disk, so onboarding can offer a one-click import. */
+  ocsites?: { detected: boolean }
 }
 
 export type RefreshAgentsResult = {

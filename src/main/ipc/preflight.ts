@@ -2,7 +2,9 @@ import { ipcMain } from 'electron'
 import type { PathSource, ShellHydrationFailureReason } from '../../shared/types'
 import { hydrateShellPath, mergePathSegments } from '../startup/hydrate-shell-path'
 import { getAzureDevOpsAuthStatus } from '../azure-devops/client'
+import { existsSync } from 'node:fs'
 import { getBitbucketAuthStatus } from '../bitbucket/client'
+import { getOcsitesConfigDirectory } from '../sites/ocsites-config-import'
 import { getGiteaAuthStatus } from '../gitea/client'
 import { _resetKnownHostsCache } from '../gitlab/gl-utils'
 import { getActiveMultiplexer } from './ssh'
@@ -50,6 +52,8 @@ export type PreflightStatus = {
     baseUrl: string | null
     tokenConfigured: boolean
   }
+  /** Whether an ocsites configuration exists on disk, so onboarding can offer a one-click import. */
+  ocsites?: { detected: boolean }
 }
 
 export { detectRemoteWindowsTerminalCapabilities }
@@ -263,7 +267,8 @@ export async function runPreflightCheck(
     glab: { installed: glabProbe.installed, authenticated: glabAuthenticated },
     bitbucket,
     azureDevOps,
-    gitea
+    gitea,
+    ocsites: { detected: existsSync(getOcsitesConfigDirectory()) }
   }
 
   if (cacheable) {

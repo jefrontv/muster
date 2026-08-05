@@ -48,8 +48,8 @@ describe('OnboardingFlow', () => {
   })
 
   it.each([
-    [3, 'Set up GitHub tasks'],
-    [4, 'Set up GitHub tasks'],
+    [3, 'Connect your sources'],
+    [4, 'Connect your sources'],
     [5, 'Set up notifications'],
     [9, 'Set up notifications']
   ])(
@@ -71,7 +71,7 @@ describe('OnboardingFlow', () => {
   )
 
   it.each([
-    [3, 'Set up GitHub tasks'],
+    [3, 'Connect your sources'],
     [4, 'Set up notifications'],
     [5, 'Set up notifications'],
     [9, 'Set up notifications']
@@ -134,7 +134,9 @@ describe('OnboardingFlow', () => {
     useAppStore.setState({
       preflightStatus: {
         git: { installed: true },
-        gh: { installed: true, authenticated: false }
+        gh: { installed: true, authenticated: false },
+        bitbucket: { configured: true, authenticated: true, account: 'team' },
+        ocsites: { detected: false }
       },
       preflightStatusChecked: true
     })
@@ -152,7 +154,7 @@ describe('OnboardingFlow', () => {
     // stepper dot at all — the four real steps are agent, theme, Windows
     // terminal, notifications, and Windows terminal is the third of four.
     expect(html).toContain('3 of 4')
-    expect(html).not.toContain('Set up GitHub tasks')
+    expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Integrations')
   })
 
@@ -160,7 +162,9 @@ describe('OnboardingFlow', () => {
     useAppStore.setState({
       preflightStatus: {
         git: { installed: true },
-        gh: { installed: true, authenticated: false }
+        gh: { installed: true, authenticated: false },
+        bitbucket: { configured: true, authenticated: true, account: 'team' },
+        ocsites: { detected: false }
       },
       preflightStatusChecked: true
     })
@@ -175,7 +179,7 @@ describe('OnboardingFlow', () => {
 
     expect(html).toContain('Set up notifications')
     expect(html).toContain('Add your first project')
-    expect(html).not.toContain('Set up GitHub tasks')
+    expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Connect your task sources')
     expect(html).not.toContain('Point Muster at some code')
     // Why: with both integrations (gh installed) and Windows terminal (Mac)
@@ -201,14 +205,12 @@ describe('OnboardingFlow', () => {
       onOnboardingChange: vi.fn()
     })
 
-    expect(html).toContain('Set up GitHub tasks')
-    expect(html).toContain('Install the GitHub CLI to:')
+    expect(html).toContain('Connect your sources')
+    expect(html).toContain('Link GitHub and Bitbucket to:')
     expect(html).toContain('GitHub')
     expect(html).not.toContain('Linear')
     expect(html).not.toContain('Jira')
-    expect(html).toContain(
-      'GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings'
-    )
+    expect(html).toContain('GitLab, Azure DevOps, Gitea, and ActiveCollab live in Settings')
   })
 
   it('renders onboarding inside a centered modal shell', () => {

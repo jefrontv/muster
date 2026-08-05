@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import type { SshTarget } from '../../shared/ssh-types'
+import { isGitTransportSshTarget } from '../../shared/git-transport-hosts'
 import { expandSshConfigIncludes } from './ssh-config-include-expander'
 import { resolveSshConfigHomePath } from './ssh-config-path-expansion'
 export { parseSshGOutput, resolveWithSshG, type SshResolvedConfig } from './ssh-g-config-resolution'
@@ -245,6 +246,13 @@ export function sshConfigHostsToTargets(
       continue
     }
     seenLabels.add(label)
+
+    // Git transport endpoints (github.com, bitbucket.org, aliases resolving to them) accept SSH
+    // for git only — no shell. Importing them creates targets that can never connect, which then
+    // haunt every SSH-target surface as permanent "not connected" rows.
+    if (isGitTransportSshTarget({ host: effectiveHost, configHost: entry.host })) {
+      continue
+    }
 
     targets.push({
       id: `ssh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

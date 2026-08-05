@@ -19,6 +19,7 @@ import type { SshTarget } from '../../shared/ssh-types'
 import type { Store } from '../persistence'
 import { getActiveMultiplexer } from '../ipc/ssh'
 import { isRuntimeOwnedSshTarget } from '../ssh/ssh-connection-store'
+import { isGitTransportSshTarget } from '../../shared/git-transport-hosts'
 import { mapHermesJobs, mapOpenClawJobs } from './external-job-mappers'
 import {
   clearHermesCronOutputRunCountCache,
@@ -307,8 +308,10 @@ export async function listExternalAutomationManagers(
       store
         .getSshTargets()
         // Why: runtime-owned hidden targets are excluded from SSH/run-target
-        // surfaces; don't probe them for external automations either.
-        .filter((target) => !isRuntimeOwnedSshTarget(target))
+        // surfaces; don't probe them for external automations either. Git
+        // transport endpoints (github.com, bitbucket.org, …) have no shell, so
+        // probing them only produces permanent "not connected" placeholder rows.
+        .filter((target) => !isRuntimeOwnedSshTarget(target) && !isGitTransportSshTarget(target))
         .flatMap((target) => [listRemoteHermesManager(target), listRemoteOpenClawManager(target)])
     )
   ])

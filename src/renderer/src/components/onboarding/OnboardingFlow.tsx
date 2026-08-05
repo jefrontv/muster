@@ -62,14 +62,14 @@ const stepCopy = {
   integrations: {
     get title() {
       return translate(
-        'auto.components.onboarding.OnboardingFlow.ae3b00ca82',
-        'Set up GitHub tasks'
+        'auto.components.onboarding.OnboardingFlow.integrationsTitle',
+        'Connect your sources'
       )
     },
     get subtitle() {
       return translate(
-        'auto.components.onboarding.OnboardingFlow.97c42cda00',
-        'Install the GitHub CLI to:'
+        'auto.components.onboarding.OnboardingFlow.integrationsSubtitle',
+        'Link GitHub and Bitbucket to:'
       )
     }
   },

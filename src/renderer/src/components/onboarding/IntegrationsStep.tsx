@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
-import { ExternalLink, Github, Terminal } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { DownloadCloud, ExternalLink, GitPullRequestArrow, Github, Terminal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
 import { IntegrationStatusPill } from '@/components/integration-status-pill'
 import { cn } from '@/lib/utils'
+import type { BitbucketAuthCredentialStatus } from '../../../../shared/bitbucket-auth-types'
+import { BitbucketCredentialDialog } from '@/components/settings/BitbucketCredentialDialog'
 import { OnboardingInlineCommandTerminal } from './OnboardingInlineCommandTerminal'
 import { translate } from '@/i18n/i18n'
 
@@ -134,6 +136,191 @@ export function GitHubRow(props: { compact?: boolean } = {}): React.JSX.Element 
   )
 }
 
+export function BitbucketRow(props: { compact?: boolean } = {}): React.JSX.Element {
+  const { compact = false } = props
+  const preflightStatus = useAppStore((s) => s.preflightStatus)
+  const preflightStatusLoading = useAppStore((s) => s.preflightStatusLoading)
+  const refreshPreflightStatus = useAppStore((s) => s.refreshPreflightStatus)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [credential, setCredential] = useState<BitbucketAuthCredentialStatus | null>(null)
+
+  const syncCredential = useCallback(async (): Promise<void> => {
+    const api = window.api.bitbucketAuth
+    if (!api) {
+      return
+    }
+    setCredential(await api.status())
+  }, [])
+
+  useEffect(() => {
+    void syncCredential()
+  }, [syncCredential])
+
+  const checking = preflightStatusLoading || !preflightStatus
+  const connected = preflightStatus?.bitbucket?.configured === true
+  const account = preflightStatus?.bitbucket?.account ?? null
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20">
+      <div className={cn(compact ? 'flex flex-col gap-3 p-4' : 'flex items-start gap-4 p-5')}>
+        <div className={cn('flex items-start gap-3', compact ? '' : 'gap-4 flex-1 min-w-0')}>
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground">
+            <GitPullRequestArrow className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-[15px] font-semibold leading-tight text-foreground">
+                {translate('auto.components.onboarding.IntegrationsStep.bitbucket', 'Bitbucket')}
+              </h3>
+              {checking ? (
+                <IntegrationStatusPill tone="neutral">
+                  {translate('auto.components.onboarding.IntegrationsStep.c1547656f0', 'Checking…')}
+                </IntegrationStatusPill>
+              ) : connected ? (
+                <IntegrationStatusPill tone="connected">
+                  {translate('auto.components.onboarding.IntegrationsStep.c91a5782f1', 'Connected')}
+                </IntegrationStatusPill>
+              ) : (
+                <IntegrationStatusPill tone="attention">
+                  {translate(
+                    'auto.components.onboarding.IntegrationsStep.bitbucketNotConnected',
+                    'Not connected'
+                  )}
+                </IntegrationStatusPill>
+              )}
+            </div>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+              {connected && account
+                ? translate(
+                    'auto.components.onboarding.IntegrationsStep.bitbucketAccount',
+                    '{{account}} · Pull requests and build statuses.',
+                    { account }
+                  )
+                : translate(
+                    'auto.components.onboarding.IntegrationsStep.bitbucketDescription',
+                    'Pull requests and build statuses via a Bitbucket API token.'
+                  )}
+            </p>
+          </div>
+        </div>
+        <div className={cn('flex items-center gap-2', compact ? 'flex-wrap' : 'shrink-0')}>
+          {!connected && !checking ? (
+            <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+              {translate('auto.components.onboarding.IntegrationsStep.bitbucketConnect', 'Connect')}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <BitbucketCredentialDialog
+        open={dialogOpen}
+        status={credential}
+        onOpenChange={setDialogOpen}
+        onSave={async (input) => {
+          const result = await window.api.bitbucketAuth.setCredentials(input)
+          if ('error' in result) {
+            return result.error
+          }
+          await syncCredential()
+          void refreshPreflightStatus({ force: true })
+          return null
+        }}
+        onClear={async () => {
+          await window.api.bitbucketAuth.clear()
+          await syncCredential()
+          void refreshPreflightStatus({ force: true })
+        }}
+      />
+    </div>
+  )
+}
+
+function OcsitesImportRow(): React.JSX.Element | null {
+  const preflightStatus = useAppStore((s) => s.preflightStatus)
+  const importSitesFromOcsites = useAppStore((s) => s.importSitesFromOcsites)
+  const [state, setState] = useState<'idle' | 'importing' | 'done' | 'error'>('idle')
+  const [resultLabel, setResultLabel] = useState<string | null>(null)
+
+  if (preflightStatus?.ocsites?.detected !== true) {
+    return null
+  }
+
+  const runImport = async (): Promise<void> => {
+    setState('importing')
+    const result = await importSitesFromOcsites()
+    if ('error' in result) {
+      setState('error')
+      setResultLabel(result.error)
+      return
+    }
+    setState('done')
+    setResultLabel(
+      translate(
+        'auto.components.onboarding.IntegrationsStep.ocsitesImported',
+        'Imported {{created}} new and updated {{updated}} sites.',
+        { created: result.created, updated: result.updated }
+      )
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20">
+      <div className="flex items-start gap-4 p-5">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground">
+          <DownloadCloud className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-[15px] font-semibold leading-tight text-foreground">
+              {translate('auto.components.onboarding.IntegrationsStep.ocsitesTitle', 'ocsites')}
+            </h3>
+            {state === 'done' ? (
+              <IntegrationStatusPill tone="connected">
+                {translate('auto.components.onboarding.IntegrationsStep.ocsitesDone', 'Imported')}
+              </IntegrationStatusPill>
+            ) : (
+              <IntegrationStatusPill tone="neutral">
+                {translate(
+                  'auto.components.onboarding.IntegrationsStep.ocsitesDetected',
+                  'Configuration found'
+                )}
+              </IntegrationStatusPill>
+            )}
+          </div>
+          <p
+            className={cn(
+              'mt-1 text-[13px] leading-relaxed',
+              state === 'error' ? 'text-destructive' : 'text-muted-foreground'
+            )}
+          >
+            {resultLabel ??
+              translate(
+                'auto.components.onboarding.IntegrationsStep.ocsitesDescription',
+                'Bring your existing ocsites sites, environments, and passwords into Muster.'
+              )}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {state !== 'done' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={state === 'importing'}
+              onClick={() => void runImport()}
+            >
+              {state === 'importing'
+                ? translate(
+                    'auto.components.onboarding.IntegrationsStep.ocsitesImporting',
+                    'Importing…'
+                  )
+                : translate('auto.components.onboarding.IntegrationsStep.ocsitesImport', 'Import')}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const CAPABILITIES = [
   'Start a workspace from any GitHub issue or pull request, prefilled with its title and context',
   'Browse GitHub issues and pull requests in the Tasks view without leaving Muster',
@@ -161,6 +348,8 @@ export function IntegrationsStep(): React.JSX.Element {
 
       <div className="space-y-3">
         <GitHubRow />
+        <BitbucketRow />
+        <OcsitesImportRow />
         <div className="mt-4 rounded-xl border border-border bg-muted/10 px-5 py-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-[14px] font-medium text-foreground/70">
@@ -171,8 +360,8 @@ export function IntegrationsStep(): React.JSX.Element {
             </span>
             <span className="text-[13px] leading-relaxed text-muted-foreground">
               {translate(
-                'auto.components.onboarding.IntegrationsStep.more_task_sources_settings',
-                'GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations.'
+                'auto.components.onboarding.IntegrationsStep.more_task_sources_v2',
+                'GitLab, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations.'
               )}
             </span>
           </div>

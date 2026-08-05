@@ -189,7 +189,8 @@ describe('preflight', () => {
       glab: { installed: true, authenticated: true },
       bitbucket: defaultBitbucketStatus,
       azureDevOps: defaultAzureDevOpsStatus,
-      gitea: defaultGiteaStatus
+      gitea: defaultGiteaStatus,
+      ocsites: { detected: expect.any(Boolean) }
     })
     expect(execFileAsyncMock).toHaveBeenNthCalledWith(4, 'gh', ['auth', 'status'], {
       encoding: 'utf-8',
@@ -456,7 +457,8 @@ describe('preflight', () => {
       glab: { installed: true, authenticated: true },
       bitbucket: defaultBitbucketStatus,
       azureDevOps: defaultAzureDevOpsStatus,
-      gitea: defaultGiteaStatus
+      gitea: defaultGiteaStatus,
+      ocsites: { detected: expect.any(Boolean) }
     })
   })
 
@@ -484,7 +486,8 @@ describe('preflight', () => {
       glab: { installed: true, authenticated: true },
       bitbucket: defaultBitbucketStatus,
       azureDevOps: defaultAzureDevOpsStatus,
-      gitea: defaultGiteaStatus
+      gitea: defaultGiteaStatus,
+      ocsites: { detected: expect.any(Boolean) }
     })
     expect(refreshedStatus).toEqual({
       git: { installed: true },
@@ -492,7 +495,8 @@ describe('preflight', () => {
       glab: { installed: true, authenticated: true },
       bitbucket: defaultBitbucketStatus,
       azureDevOps: defaultAzureDevOpsStatus,
-      gitea: defaultGiteaStatus
+      gitea: defaultGiteaStatus,
+      ocsites: { detected: expect.any(Boolean) }
     })
   })
 

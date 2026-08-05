@@ -74,6 +74,24 @@ describe('listExternalAutomationManagers', () => {
     expect(settled).toBe(true)
     await expect(promise).resolves.toEqual([])
   })
+
+  it('skips git transport targets instead of probing them', async () => {
+    vi.useFakeTimers()
+    execFileMock.mockImplementation(() => ({ kill: vi.fn() }))
+    const promise = listExternalAutomationManagers({
+      getSshTargets: () => [
+        { id: 'gh', label: 'github.com', host: 'github.com', configHost: 'github.com' },
+        { id: 'bb', label: 'bitbucket.org', host: 'bitbucket.org', configHost: 'bitbucket.org' },
+        { id: 'alias', label: 'github-efront', host: 'github.com', configHost: 'github-efront' }
+      ]
+    } as unknown as Store)
+    await vi.advanceTimersByTimeAsync(5_000)
+    await Promise.resolve()
+
+    const managers = await promise
+    expect(managers.filter((manager) => manager.target?.type === 'ssh')).toEqual([])
+    expect(vi.mocked(getActiveMultiplexer)).not.toHaveBeenCalled()
+  })
 })
 
 describe('mapHermesJobs', () => {
