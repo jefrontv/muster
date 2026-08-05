@@ -3,7 +3,7 @@ import type { AppState } from '../../store/types'
 import { reconcileTabOrder } from './reconcile-order'
 
 export type VisibleTabRef = {
-  type: 'terminal' | 'editor' | 'browser' | 'simulator'
+  type: 'terminal' | 'editor' | 'browser'
   id: string
   tabId?: string
 }
@@ -12,7 +12,6 @@ export type ActiveTabNavOrderIds = {
   terminalIds?: string[]
   editorIds?: string[]
   browserIds?: string[]
-  simulatorIds?: string[]
 }
 
 /**
@@ -52,8 +51,7 @@ export function getGroupVisibleTabOrder(
   groupTabs: readonly Tab[],
   terminalEntityIds: ReadonlySet<string>,
   editorEntityIds: ReadonlySet<string>,
-  browserEntityIds: ReadonlySet<string>,
-  simulatorTabIds: ReadonlySet<string> = new Set()
+  browserEntityIds: ReadonlySet<string>
 ): VisibleTabRef[] {
   const tabsById = new Map(groupTabs.map((t) => [t.id, t]))
   const result: VisibleTabRef[] = []
@@ -64,7 +62,6 @@ export function getGroupVisibleTabOrder(
   const seenTerminals = new Set<string>()
   const seenBrowsers = new Set<string>()
   const seenEditors = new Set<string>()
-  const seenSimulators = new Set<string>()
   for (const unifiedId of group.tabOrder) {
     const tab = tabsById.get(unifiedId)
     if (!tab) {
@@ -82,12 +79,6 @@ export function getGroupVisibleTabOrder(
       }
       seenBrowsers.add(tab.entityId)
       result.push({ type: 'browser', id: tab.entityId, tabId: tab.id })
-    } else if (tab.contentType === 'simulator') {
-      if (!simulatorTabIds.has(tab.id) || seenSimulators.has(tab.id)) {
-        continue
-      }
-      seenSimulators.add(tab.id)
-      result.push({ type: 'simulator', id: tab.id, tabId: tab.id })
     } else {
       if (!editorEntityIds.has(tab.entityId) || seenEditors.has(tab.id)) {
         continue
@@ -132,12 +123,6 @@ export function getActiveTabNavOrder(
     ids.editorIds ?? state.openFiles.filter((f) => f.worktreeId === worktreeId).map((f) => f.id)
   const browserIds =
     ids.browserIds ?? (state.browserTabsByWorktree?.[worktreeId] ?? []).map((t) => t.id)
-  const simulatorIds =
-    ids.simulatorIds ??
-    (state.unifiedTabsByWorktree[worktreeId] ?? [])
-      .filter((tab) => tab.contentType === 'simulator')
-      .map((tab) => tab.id)
-
   const activeGroupId = state.activeGroupIdByWorktree[worktreeId]
   const group = activeGroupId
     ? (state.groupsByWorktree[worktreeId] ?? []).find((g) => g.id === activeGroupId)
@@ -152,8 +137,7 @@ export function getActiveTabNavOrder(
       groupTabs,
       new Set(terminalIds),
       new Set(editorIds),
-      new Set(browserIds),
-      new Set(simulatorIds)
+      new Set(browserIds)
     )
   }
 
@@ -162,13 +146,11 @@ export function getActiveTabNavOrder(
     state.tabBarOrderByWorktree[worktreeId],
     terminalIds,
     editorIds,
-    browserIds,
-    simulatorIds
+    browserIds
   )
   const terminalIdSet = new Set(terminalIds)
   const editorIdSet = new Set(editorIds)
   const browserIdSet = new Set(browserIds)
-  const simulatorIdSet = new Set(simulatorIds)
   const result: VisibleTabRef[] = []
   for (const id of visibleIds) {
     if (terminalIdSet.has(id)) {
@@ -177,8 +159,6 @@ export function getActiveTabNavOrder(
       result.push({ type: 'editor', id })
     } else if (browserIdSet.has(id)) {
       result.push({ type: 'browser', id })
-    } else if (simulatorIdSet.has(id)) {
-      result.push({ type: 'simulator', id })
     }
   }
   return result

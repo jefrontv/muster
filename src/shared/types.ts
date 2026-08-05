@@ -796,9 +796,8 @@ export type TabContentType =
   | 'conflict-review'
   | 'check-details'
   | 'browser'
-  | 'simulator'
 
-export type WorkspaceVisibleTabType = 'terminal' | 'editor' | 'browser' | 'simulator'
+export type WorkspaceVisibleTabType = 'terminal' | 'editor' | 'browser'
 export type CtrlTabOrderMode = 'mru' | 'sequential'
 
 export type Tab = {
@@ -2777,8 +2776,19 @@ export type GlobalSettings = {
   httpProxyBypassRules?: string
   /** Why: corporate TLS-intercepting proxies can break HTTP/2 downloads; opt-in Chromium process-wide HTTP/1.1 switch. */
   electronHttp1CompatibilityMode?: boolean
-  /** Opt-in in-app browsing (isolated guest surface); default keeps links opening in the system browser. */
+  /** Why: this fork hides panes it does not support, but a user troubleshooting an upstream
+   *  feature still needs a way back to them. Off keeps the trimmed sidebar everyone else sees. */
+  showHiddenSettingsSections?: boolean
+  /** In-app browsing (isolated guest surface) for http(s) links; on by default, off sends links to the system browser. */
   openLinksInApp: boolean
+  /** Route in-app links to the floating workspace panel instead of a workspace browser tab; needs openLinksInApp and floatingTerminalEnabled. */
+  openLinksInFloatingBrowser?: boolean
+  /** Absolute directories of unpacked Chrome extensions loaded into the in-app browser sessions. */
+  browserExtensionPaths?: string[]
+  /** WordPress autofill username; the password lives in the OS keychain, never here. */
+  wordPressAutofillUsername?: string
+  /** Submit the WordPress login form after filling it. */
+  wordPressAutofillAutoLogin?: boolean
   /** Worktree-scoped localhost hostnames to distinguish tabs; opt-in since a non-localhost host can break apps binding cookies/sessions to localhost. */
   localhostWorktreeLabelsEnabled?: boolean
   /** Tracks the one-time first-use prompt for terminal link routing (avoid silently changing where links open). */
@@ -2888,6 +2898,9 @@ export type GlobalSettings = {
   visibleTaskProvidersNarrowedToActiveCollab: boolean
   /** ActiveCollab project → site bindings, keyed by `activeCollabProjectSiteKey`. */
   activeCollabProjectSites: Record<string, string>
+  /** Why: ActiveCollab has no push channel, so the cadence is a per-user trade between freshness
+   *  and API budget. Clamped by `clampActiveCollabPollIntervalMs` so a typo cannot hammer the API. */
+  activeCollabPollIntervalMs?: number
   /** Persisted repo selection (cross-repo tasks view). null = sticky-all (includes future-added repos);
    *  string[] = frozen curated subset (ineligible ids dropped on load; empty after drop is treated as null). */
   defaultRepoSelection: string[] | null
@@ -2922,8 +2935,13 @@ export type GlobalSettings = {
   agentYoloDefaultsMigrated?: boolean
   /** Why: disabling must persist so startup doesn't reinstall global agent hook entries the user just removed. */
   agentStatusHooksEnabled: boolean
-  /** Dismissed freshness tuples: no write authority, just suppress re-nudging the same official placement/revision. */
-  dismissedSkillFreshnessNudges?: string[]
+  /** Why: the bundled muster-sites MCP hands agents 24 tools that reach real infrastructure
+   *  (WordPress deploys, remote DB queries), so turning it off is a legitimate hardening step.
+   *  Absent or true = exposed, matching every install that predates this toggle. */
+  agentCapabilitySitesMcp?: boolean
+  /** Why: per-bundled-skill opt-out keyed by skill id. A missing key reads as enabled so an
+   *  upgrade never silently withdraws a skill an agent already depends on. */
+  agentCapabilityBundledSkills?: Record<string, boolean>
   /** Why: generated tab titles are subjective, so they stay opt-in and manual renames win. */
   tabAutoGenerateTitle: boolean
   /** Why: pinned tabs can still be closed via keyboard/native-menu; this gates that behind a confirmation. Defaults on. */
@@ -2941,12 +2959,6 @@ export type GlobalSettings = {
   /** Whether macOS terminal input maps the physical JIS Yen (¥) key to backslash, per common terminal expectation. */
   terminalJISYenToBackslash: boolean
   experimentalMobile: boolean
-  /** Why: iOS Simulator is default-on for capable macOS hosts; this is the durable off switch (hides UI, blocks CLI attach). */
-  mobileEmulatorEnabled?: boolean
-  /** Preferred iOS Simulator UDID for UI auto-attach and agent CLI attach. */
-  mobileEmulatorDefaultDeviceUdid?: string | null
-  /** Explicit Android SDK root for when auto-discovery (ANDROID_HOME / default path) fails; null (default) auto-discovers. */
-  androidSdkPath?: string | null
   /** Auto-restore window (ms) for a phone-fit PTY after the last mobile subscriber leaves.
    *  `null` (default) holds phone size indefinitely; a finite value schedules restore.
    *  Clamped on read to [5_000ms, 60min]. See docs/mobile-fit-hold.md. */
@@ -3257,6 +3269,7 @@ export type RightSidebarTab =
   | 'source-control'
   | 'checks'
   | 'ports'
+  | 'site'
 export type ActiveRightSidebarTab = Exclude<RightSidebarTab, 'search'>
 export type RightSidebarExplorerView = 'files' | 'search'
 
@@ -3374,10 +3387,6 @@ export type PersistedUIState = {
   browserImportHintHidden?: boolean
   /** Why: Windows-only. Set once on first hide to tray so the "Orca is still running" notice shows only once. */
   trayMinimizeNoticeShown?: boolean
-  /** User dismissed the first-run Mobile Emulator intro; reversible only by re-enabling the feature in Settings. */
-  mobileEmulatorTabIntroDismissed?: boolean
-  /** User deferred the in-pane Mobile Emulator CLI + skill setup guide. */
-  mobileEmulatorAgentSetupDismissed?: boolean
   /** One-shot rollout notice for manual project ordering default; absent or true keeps the sidebar callout hidden. */
   projectOrderManualDefaultNoticeDismissed?: boolean
   /** One-shot notice that usage meters show percent used, not remaining; absent resolves on load (new profiles dismissed, upgraded see it once). */

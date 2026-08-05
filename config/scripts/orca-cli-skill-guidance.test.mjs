@@ -8,9 +8,6 @@ const projectDir = resolve(import.meta.dirname, '../..')
 // installable stub projection is checked separately below.
 const guidePath = join(projectDir, 'skill-guides', 'orca-cli.md')
 const stubPath = join(projectDir, 'skills', 'orca-cli', 'SKILL.md')
-// Why: orca-emulator also ships a hybrid stub; its version-sensitive worktree-id contract lives
-// in the guide source.
-const emulatorSkillPath = join(projectDir, 'skill-guides', 'orca-emulator.md')
 
 function readSkill(path = guidePath) {
   return readFileSync(path, 'utf8')
@@ -74,15 +71,11 @@ describe('orca CLI skill guidance', () => {
 
   it('requires full worktree ids across bundled agent guidance', () => {
     const cliSkill = readSkill()
-    const emulatorSkill = readSkill(emulatorSkillPath)
 
-    for (const skill of [cliSkill, emulatorSkill]) {
-      expect(skill).toContain('<repo-id>::<path>')
-      expect(skill).toContain('bare repo id')
-    }
+    expect(cliSkill).toContain('<repo-id>::<path>')
+    expect(cliSkill).toContain('bare repo id')
     expect(cliSkill).toContain('id:<repoId>::<worktreePath>')
     expect(cliSkill).toContain('two-part address')
-    expect(emulatorSkill).not.toContain('id:abc123')
   })
 
   it('keeps browser injection guidance narrow and avoids literal secret examples', () => {

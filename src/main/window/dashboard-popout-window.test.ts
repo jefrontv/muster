@@ -201,7 +201,9 @@ describe('createOrFocusDashboardPopout', () => {
     expect(opts.webPreferences?.partition).toBe('orca-dashboard-popout')
     expect(opts.webPreferences?.webviewTag).toBe(false)
     expect(opts.webPreferences?.preload).toMatch(/preload[\\/]index\.js$/)
-    expect(installNavigationPolicyMock).toHaveBeenCalledWith(instances[0].webContents)
+    expect(installNavigationPolicyMock).toHaveBeenCalledWith(instances[0].webContents, {
+      routeLinksToRenderer: false
+    })
     const { session } = instances[0].webContents
     expect(session.setPermissionRequestHandler).toHaveBeenCalledTimes(1)
     expect(session.setPermissionCheckHandler).toHaveBeenCalledTimes(1)

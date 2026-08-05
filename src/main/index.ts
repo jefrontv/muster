@@ -114,6 +114,7 @@ import { getDevInstanceIdentity } from './startup/dev-instance-identity'
 import { registerSiteBindUrlSchemes } from './sites/bind-url-scheme'
 import { extractSiteBindUrl } from './sites/site-bind-url'
 import { handleSiteBindUrl } from './ipc/site-bind'
+import { isSiteMcpInvocation, runSiteMcpEntry } from './sites/mcp/site-mcp-entry'
 import { hydrateShellPath, mergePathSegments } from './startup/hydrate-shell-path'
 import {
   acquireSingleInstanceLock,
@@ -202,7 +203,6 @@ import {
   registerHeadlessPtyRuntime
 } from './ipc/pty'
 import { AgentBrowserBridge } from './browser/agent-browser-bridge'
-import { EmulatorBridge } from './emulator/emulator-bridge'
 import { browserCertificateTrustController, browserManager } from './browser/browser-manager'
 import { OffscreenBrowserBackend } from './browser/offscreen-browser-backend'
 import { initializeBrowserSessionsForApp } from './browser/browser-session-startup'
@@ -490,6 +490,62 @@ configureDevUserDataPath(is.dev)
 configureOrcaUserDataPathEnv()
 installServeSupervisorDisconnectQuit(isServeMode)
 
+// --site-mcp: an agent spawned this binary as its stdio MCP server (resolveSiteMcpCommand in
+// ipc/site-mcp-registration.ts writes that command into project .mcp.json files). Serve MCP from
+// THIS process and boot none of the GUI. Placed after configureDevUserDataPath /
+// configureOrcaUserDataPathEnv so the entry resolves the same userData + active profile a GUI
+// instance would. Every module-scope side effect below that must not run for this process is
+// gated on `isSiteMcpMode` — follow that pattern when adding new module-scope statements: gate
+// them unless the MCP server genuinely needs them.
+const isSiteMcpMode = isSiteMcpInvocation(process.argv)
+if (isSiteMcpMode) {
+  // FIRST, before any Chromium init: an MCP instance must never appear in the Dock. The entry
+  // repeats this after whenReady, but a server that wedges during startup would otherwise sit in
+  // the Dock as a second windowless "Muster" indefinitely.
+  app.setActivationPolicy?.('prohibited')
+  app.dock?.hide()
+  // Resolve the REAL profile store and run-log paths first, then move this instance's Chromium
+  // profile (userData) to a scratch subdirectory. Why: a GUI instance and an MCP instance sharing
+  // one Chromium user-data-dir contend on Chromium-level state, and the GUI can hang mid-boot
+  // before creating its window whenever MCP servers are alive. The store/dataFile below still
+  // points at the real profile, so the server serves real sites.
+  const siteMcpRealUserData = app.getPath('userData')
+  void (async () => {
+    const { initDataPath, Store } = await import('./persistence')
+    const { initOrcaProfilePaths, ensureActiveOrcaProfile } =
+      await import('./orca-profiles/profile-index-store')
+    const { getProfileUserDataPath } = await import('./orca-profiles/profile-storage-paths')
+    initDataPath()
+    initOrcaProfilePaths()
+    const profile = ensureActiveOrcaProfile(getProfileUserDataPath())
+    // Per-process scratch: concurrent MCP servers sharing one Chromium dir race each other the
+    // same way they raced the GUI. Best-effort sweep keeps the runtime dir from accumulating.
+    const scratchRoot = join(siteMcpRealUserData, 'site-mcp-runtime')
+    try {
+      const { readdirSync, rmSync, statSync } = await import('node:fs')
+      for (const entry of readdirSync(scratchRoot)) {
+        const dir = join(scratchRoot, entry)
+        if (Date.now() - statSync(dir).mtimeMs > 24 * 60 * 60 * 1000) {
+          rmSync(dir, { recursive: true, force: true })
+        }
+      }
+    } catch {
+      // First run or a concurrent sweep; nothing to clean.
+    }
+    app.setPath('userData', join(scratchRoot, String(process.pid)))
+    await runSiteMcpEntry({
+      version: app.getVersion(),
+      store: new Store({ dataFile: profile.dataFile }),
+      runsBaseDir: join(siteMcpRealUserData, 'site-runs')
+    })
+  })().catch((error: unknown) => {
+    // stdout is the MCP wire; failures report on stderr and exit non-zero so the spawning agent
+    // sees a dead server instead of a silent hang.
+    console.error('[site-mcp] fatal:', error)
+    app.exit(1)
+  })
+}
+
 // Why: just past createMainWindow's 10s ready-to-show fallback, so a window revealed that way still gets its tray icon.
 const TRAY_CREATE_FALLBACK_MS = 12_000
 
@@ -617,11 +673,15 @@ if (bypassSingleInstanceLock) {
   // Why: diagnostic escape hatch for macOS builds where Electron reports a false lock loss before any app logs exist.
   logSingleInstanceLockBypass()
 }
-const hasSingleInstanceLock = skipSingleInstanceLock
-  ? true
-  : bypassSingleInstanceLock
+// Why --site-mcp resolves false without acquiring: this process must neither steal the lock from
+// a running GUI nor die because the GUI holds it; `false` also skips every lock-gated block below.
+const hasSingleInstanceLock = isSiteMcpMode
+  ? false
+  : skipSingleInstanceLock
     ? true
-    : acquireSingleInstanceLock(app, requestDesktopActivation)
+    : bypassSingleInstanceLock
+      ? true
+      : acquireSingleInstanceLock(app, requestDesktopActivation)
 if (startupDiagnosticsEnabled) {
   logStartupDiagnostic('single-instance-lock-result', {
     acquired: hasSingleInstanceLock,
@@ -629,7 +689,7 @@ if (startupDiagnosticsEnabled) {
     skippedForDev: skipSingleInstanceLock
   })
 }
-if (!hasSingleInstanceLock) {
+if (!isSiteMcpMode && !hasSingleInstanceLock) {
   // Why: a false-negative lock loss otherwise looks like a silent crash on packaged macOS; `open --stderr` can capture this line.
   logSingleInstanceLockFailure()
   app.quit()
@@ -1812,6 +1872,11 @@ function shouldSuppressCodexAutoApprovalSyntheticTitleFromHook(args: {
 }
 
 app.whenReady().then(async () => {
+  if (isSiteMcpMode) {
+    // --site-mcp serves stdio via runSiteMcpEntry (module scope above); none of the GUI
+    // bootstrap — window, daemon, PTYs, hooks, telemetry, updater — may run in this process.
+    return
+  }
   logStartupMilestone('app-ready')
   // Why: install certificate decisions before any webview or headless window issues its first TLS request.
   app.on(
@@ -2204,11 +2269,6 @@ app.whenReady().then(async () => {
       onTabsChanged: (worktreeId) => runtimeService.notifyMobileSessionTabsChanged(worktreeId)
     })
   )
-
-  // Emulator bridge (serve-sim). macOS-only feature (gated in CLI/runtime); always ship like agent-browser.
-  // Why: externally started serve-sim processes must stay independent — only Orca-managed/attached helpers belong to a workspace.
-  const emulatorBridge = new EmulatorBridge()
-  runtimeService.setEmulatorBridge(emulatorBridge)
   nativeTheme.themeSource = store.getSettings().theme ?? 'system'
   if (codexRuntimeHome.isHostSystemDefaultRealHomeSelected()) {
     // Why: establish capability before managed-hook reconciliation so an
@@ -2553,7 +2613,6 @@ app.on('will-quit', (e) => {
   // Why: headless offscreen browser windows are main-process owned; tear them down explicitly on quit.
   runtime?.getOffscreenBrowserBackend()?.destroyAll?.()
   browserManager.setBrowserGuestStateChangedListener(null)
-  const emulatorShutdown = runtime?.getEmulatorBridge()?.destroyAllSessions() ?? Promise.resolve()
   killAllPty()
   const watcherShutdown = shutdownWatchersOnce()
   store?.flush()
@@ -2588,8 +2647,7 @@ app.on('will-quit', (e) => {
     settleTeardownWithinDeadline([
       { name: 'daemon', promise: daemonTeardown },
       { name: 'runtime-rpc', promise: rpcStopAndClear },
-      { name: 'watchers', promise: watcherShutdown },
-      { name: 'emulator', promise: emulatorShutdown }
+      { name: 'watchers', promise: watcherShutdown }
     ])
       .then((pendingTeardowns) => {
         if (pendingTeardowns.length > 0) {

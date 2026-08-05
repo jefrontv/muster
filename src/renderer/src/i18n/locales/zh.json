@@ -167,7 +167,9 @@
             "36761d9604": "未知的键绑定操作“{{value0}}”被忽略。",
             "d2e43e426a": "{{value0}} 必须是一个对象。",
             "fb290366b2": "无法在网络上使用。",
-            "76122208ca": "“{{value0}}”的快捷方式被忽略：{{value1}}"
+            "76122208ca": "“{{value0}}”的快捷方式被忽略：{{value1}}",
+            "e7b1c4a903": "Extensions are only available in the desktop app.",
+            "f3a9c17b42": "Favicon fetch is only available in the desktop app."
           }
         },
         "runtime": {
@@ -351,13 +353,6 @@
           }
         }
       },
-      "ensure": {
-        "simulator": {
-          "tab": {
-            "372d21d428": "手机模拟器"
-          }
-        }
-      },
       "fix": {
         "checks": {
           "agent": {
@@ -436,13 +431,6 @@
               "f8b8ca2711": "Zed",
               "d62b12e98a": "Cursor",
               "173553f73a": "VS Code"
-            }
-          }
-        },
-        "mobile": {
-          "emulator": {
-            "tab": {
-              "bf4f2a8a72": "无法启动模拟器。请检查 iOS 或 Android 模拟器设置，然后尝试其他设备。"
             }
           }
         }
@@ -694,8 +682,6 @@
         "93d88d20bf": "外观",
         "2d0659f6f0": "全局终端、浏览器和 Markdown 选项卡。",
         "65b19f5bde": "浮动工作区",
-        "3d65d3f1b9": "配置对 Muster 和编码智能体的手机模拟器支持。",
-        "1e761cff2b": "手机模拟器",
         "e815fd01bd": "主页、链接路由和会话 cookie。",
         "8c197f74a1": "浏览器",
         "42ae40842f": "保存的终端命令，范围全局或每个项目。",
@@ -718,8 +704,6 @@
         "5f32ac08f3": "完成 Muster 核心工作流程的入门清单。",
         "8ac3de82f5": "使用设备端模型进行本地语音转文字听写。",
         "6a50cdcd7c": "语音",
-        "0059bd17f3": "使智能体能够控制您计算机上的任何应用程序。",
-        "b35e92364b": "计算机控制",
         "cd50cec5d7": "通过 Muster 协调多个编码智能体。",
         "58a868e8e4": "编排",
         "7c79d3b7bf": "可选",
@@ -739,7 +723,9 @@
         "devSearchKeywordNotification": "notification",
         "projectHostsSummary": "{{value0}} 个主机",
         "linearTitle": "Linear",
-        "linearDescription": "Give agents the skill to read and update your linked Linear tickets."
+        "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
+        "agentCapabilitiesTitle": "Agent Capabilities",
+        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "粘贴内容过大。"
@@ -1883,7 +1869,6 @@
         "c4afa68159": "尝试工作树、设置、操作、标签页标题、智能体提示、URL、PR 或端口。",
         "dbd9d87eec": "没有结果符合您的搜索",
         "2c38630a01": "工作区不再存在",
-        "7726ce9970": "手机模拟器选项卡不再存在",
         "d7d496a451": "浏览器页面不再存在",
         "50a1d11d5b": "打开标签页",
         "088d66d980": "操作与设置",
@@ -2499,6 +2484,10 @@
               "18ec58881e": "搜索团队..."
             }
           }
+        },
+        "date_range_calendar": {
+          "previous_month": "Previous month",
+          "next_month": "Next month"
         }
       },
       "terminal": {
@@ -2739,7 +2728,6 @@
             "4df2a06d36": "向下拆分",
             "ab1e2bff04": "向右拆分",
             "9acaf92093": "窗格操作",
-            "1bce81dba6": "模拟器",
             "1ff1c77616": "浏览器",
             "586d2ac445": "终端",
             "addSplitPane": "添加拆分窗格",
@@ -2836,9 +2824,6 @@
             "b1a132357f": "新标签页",
             "4f327c8b3d": "打开 Markdown...",
             "3d5d6c960d": "新 Markdown",
-            "fd2b42aaa3": "新的手机模拟器",
-            "aea43b5748": "打开现有的模拟器选项卡。",
-            "b426bb2615": "转到手机模拟器",
             "4833fb2cbe": "新浏览器选项卡",
             "d364f3c8d4": "新终端",
             "7c1313d237": "新终端：",
@@ -2913,10 +2898,6 @@
                   "b330f72434": "markdown",
                   "37ff3ddca1": "打开 markdown",
                   "164c394bab": "打开文件",
-                  "bbaf4f85a4": "移动端模拟器",
-                  "3784b83bd4": "模拟器",
-                  "a63847a742": "模拟器",
-                  "1baeb07c17": "iOS 模拟器",
                   "8a580f88cf": "iPhone",
                   "7ecdc5ef08": "iPad",
                   "14965cc123": "移动端"
@@ -3677,13 +3658,6 @@
           "cd7893fbc1": "正在扫描技能",
           "35b9a724a0": "可用的",
           "0c74e7ff34": "当地的"
-        },
-        "SkillFreshnessNudge": {
-          "titleOne": "已安装的 Muster 技能已过期",
-          "titleMany": "{{value0}} 个已安装的 Muster 技能已过期",
-          "updateOne": "更新技能",
-          "updateMany": "更新技能",
-          "description": "更新 {{value0}}，让 Agents 遵循此版本 Muster 的最新说明。"
         },
         "SkillFreshnessRow": {
           "statusUpdateAvailable": "有更新",
@@ -5048,7 +5022,8 @@
           "8b7a8df299": "支持故障排除的低级解决方法。",
           "8d8d8ac599": "兼容性",
           "network": "网络",
-          "networkDescription": "用于代理和企业环境的应用级网络路由。"
+          "networkDescription": "用于代理和企业环境的应用级网络路由。",
+          "settingsVisibility": "Settings visibility"
         },
         "AgentLocationSetting": {
           "92f4238f1a": "WSL 默认值",
@@ -5298,93 +5273,6 @@
           "b4e9d3f2a1c5": "已从 {{value1}} 导入 {{value0}} 个 Cookie 到 {{value2}}。",
           "c5a273a809": "从 {{value0}}"
         },
-        "BrowserUseComputerUseNotice": {
-          "15b5e680ba": "开放计算机使用",
-          "79209b37b9": "如果 cookie 导入不合适，“计算机使用”可以控制本地应用程序，并可以在适用的情况下使用现有的登录浏览器会话。安装计算机使用技能； macOS 还需要隐私权限。",
-          "333984cf90": "使用现有的浏览器会话"
-        },
-        "BrowserUseEnableSwitch": {
-          "aea3f45349": "启用智能体浏览器使用"
-        },
-        "BrowserUseExamples": {
-          "1199258ace": "复制",
-          "1188e56af4": "复制示例提示",
-          "b84807f228": "”",
-          "59722f31b4": "”",
-          "c5325e91f6": "将其中任何内容粘贴到 Claude Code、Codex 或安装该技能的项目中的其他智能体中。",
-          "2a180694f7": "尝试一下 - 示例提示",
-          "5ec620ccc4": "复制失败。",
-          "a602d43069": "复制{{value0}}。"
-        },
-        "BrowserUsePane": {
-          "be6df68384": "从文件...",
-          "e44c5d681e": "从",
-          "67d9a53f47": "管理单独登录的配置文件",
-          "112f70adc4": "上次导入自 {{value0}}",
-          "72d4815523": "将您现有的登录信息带入 Muster，以便智能体可以访问经过身份验证的页面。导入到默认配置文件中。",
-          "2eb906706c": "导入浏览器 Cookie",
-          "af8c83ed61": "从 Chrome、Edge 或其他浏览器导入 cookie，以便智能体可以重复使用您的登录信息。",
-          "68ea76eb71": "安装浏览器使用技能，以便智能体可以操作 Muster 的浏览器。",
-          "2d6ead9ab2": "安装浏览器使用技能",
-          "e9f3f3b488": "安装于",
-          "9fca1f7f5d": "注册 Muster CLI 命令，以便智能体可以从其 shell 编排浏览器。",
-          "c6065d205d": "启用 Muster CLI",
-          "c79eff0213": "注册 Muster CLI，以便智能体可以驱动浏览器。",
-          "702488a5f7": "让编码智能体通过您的登录来驱动此浏览器。完成以下三个步骤。",
-          "b8a1f2d84d": "智能体浏览器使用",
-          "96b91c6349": "让编码智能体通过您的登录来驱动此浏览器。",
-          "2ea4617e3a": "从 {{value1}}{{value2}} 导入 {{value0}} cookie。",
-          "721aee31b4": "在 PATH 中注册 Muster CLI。",
-          "180a9abf3a": "无法加载 CLI 状态。",
-          "2ccfc9cff8": "导入",
-          "0462565413": "重新导入",
-          "de9b2f32f3": "启用",
-          "ad8cb0ee22": "修复路径",
-          "0289434ed6": "启用",
-          "8b3054dac7": "注册...",
-          "8f2675c2f3": "已从文件导入 {{value0}} 个 Cookie。",
-          "5301857d88": "从 {{value0}}"
-        },
-        "BrowserUseSkillStep": {
-          "0871b6998d": "使智能体能够在 Muster 浏览器中导航和验证页面。",
-          "459e24eebc": "浏览器使用技能"
-        },
-        "CliSection": {
-          "8671e406f0": "取消",
-          "a4aafe46e3": "目标路径：",
-          "e8012c03a1": "使智能体能够使用 Muster 工作区、终端和进度命令。",
-          "cliSkillTerminalTitle": "CLI 技能设置",
-          "cliSkillTerminalAria": "CLI 技能安装终端",
-          "6053cf736c": "CLI技能",
-          "36a6f919ba": "为智能体提供 Muster 感知的工作区、终端和进度工作流程。",
-          "04873eea3e": "智能体技能",
-          "7f2747f7dd": "当前在此 shell 的 PATH 上不可见。",
-          "b0c310ab46": "现有启动器目标：",
-          "15eaad0d31": "命令路径：",
-          "5dae812f50": "刷新",
-          "52e640f3a0": "刷新 CLI 状态",
-          "38edbb5721": "Shell 命令",
-          "6930feda9e": "从终端使用 Muster 打开应用程序、管理工作树并与 Muster 终端交互。",
-          "c5c0f2641d": "Muster CLI",
-          "d77352f2df": "无法从 PATH 中删除 `{{value0}}`。",
-          "af5540930c": "从路径中删除了“{{value0}}”。",
-          "a2b13efa94": "无法在 PATH 中注册 `{{value0}}`。",
-          "9cbcd31338": "在 PATH 中注册了 `{{value0}}`。",
-          "7baec27029": "无法加载 CLI 状态。",
-          "d00df2e397": "注册",
-          "9a5f8a4568": "移除",
-          "b0fca411a0": "注册…",
-          "4c7e3e4c5f": "安装",
-          "068552b191": "正在删除...",
-          "8d96213669": "移除",
-          "aa6536977e": "Muster 将注册 {{value0}} ，以便该命令在您的终端上运行。",
-          "a030816e3e": "这将删除 shell 命令符号链接。 Muster 本身仍保持安装状态。",
-          "fa87db3d6e": "在路径中注册`{{value0}}`？",
-          "14444243ba": "从路径中删除`{{value0}}`？",
-          "5d432fe44d": "已安装",
-          "8a9b784c60": "陈旧",
-          "d363e5929b": "正在检查 CLI 注册..."
-        },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
           "a58ba464ad": "技能位置",
@@ -5440,27 +5328,6 @@
           "407d28bde6": "命令行",
           "54038660e0": "命令",
           "25350d670f": "风俗"
-        },
-        "ComputerUsePane": {
-          "1735461723": "使智能体能够检查和操作本地桌面应用程序。",
-          "93255aaf18": "计算机控制技能",
-          "45f8e22c2e": "打开",
-          "d95d1cfab8": "刷新",
-          "0c29da5805": "就绪",
-          "3383ea1aab": "无法重置计算机使用权限",
-          "f189f448a3": "重置计算机使用访问权限",
-          "5c45349665": "无法打开计算机使用权限",
-          "7801ac08ec": "仅在 macOS 上需要计算机使用权限",
-          "740766c291": "计算机使用设置已完成",
-          "697005758f": "打开 macOS 隐私和安全",
-          "2168fa5ab0": "无法加载计算机使用权限",
-          "0c9a33f468": "捕获应用程序窗口，以便智能体可以检查视觉状态。",
-          "07bbe4c4cb": "截图",
-          "4d03dec2d0": "读取应用程序界面树并执行请求的操作。",
-          "6b5a2cd3a5": "无障碍",
-          "6b17602073": "重置访问权限",
-          "506f2acf7a": "正在重置访问...",
-          "4b65070096": "darwin"
         },
         "DeveloperPermissionsPane": {
           "4c17304beb": "刷新",
@@ -5619,22 +5486,6 @@
           "36b2a5dc6d": "关闭固定标签页前显示确认对话框。",
           "projectRuntime": "项目运行时",
           "projectRuntimeDescription": "不覆盖此项的本地 Windows 项目的默认运行时。"
-        },
-        "GeneralSupportSection": {
-          "af7d9f4396": "感谢您的支持！",
-          "6922c1fa2b": "GitHub 上的 Star Muster",
-          "511782265b": "通过 gh CLI 通过 GitHub star 支持该项目。",
-          "55a87e5fd1": "支持 Muster",
-          "964acc6bb4": "加星标",
-          "73b327e793": "重试",
-          "c9f96d4234": "错误",
-          "397719bee5": "正在加星标...",
-          "1e29570462": "正在加星标",
-          "9d181300e3": "已加星标",
-          "5c49f02662": "隐",
-          "b3f0584f5d": "加载中",
-          "cb65c75b11": "正在打开...",
-          "f2d4f877b2": "打开 GitHub"
         },
         "GeneralUpdateSettingsSection": {
           "8a52ca1d02": "发行说明",
@@ -5903,52 +5754,6 @@
           "1f3665e35a": "MCP 配置已创建",
           "82436439eb": "添加 MCP 配置",
           "0a5c1ead54": "创建空配置"
-        },
-        "MobileEmulatorAgentControlRow": {
-          "1861982430": "无法加载 CLI 状态。",
-          "8af7a8bc38": "命令针对当前工作树的活动模拟器。坐标从 0..1 标准化。",
-          "c7f3fe0a6e": "常用模拟器命令",
-          "d94ca6a623": "使智能体能够使用 Muster CLI 命令，包括手机模拟器控制。",
-          "67e19ee03c": "Muster CLI 技能",
-          "aaf62a3dd2": "安装于",
-          "2fef055608": "注册 Muster CLI 命令，以便智能体可以从其 shell 控制活动模拟器。",
-          "4f2205f3b6": "启用 Muster CLI",
-          "ff4b7e65d6": "让编码智能体使用 Muster CLI 命令控制活动手机模拟器。",
-          "2a674aa810": "智能体手机模拟器控制",
-          "cdeaed9e37": "在 PATH 中注册 Muster CLI。",
-          "3d34423e88": "正在注册 Muster CLI",
-          "3be27641c9": "以便智能体 shell 可以运行模拟器命令。",
-          "3941719a56": "打开技能设置前正在检查 Muster CLI。"
-        },
-        "MobileEmulatorExamples": {
-          "edf13dd03b": "复制",
-          "c12b253997": "复制示例提示",
-          "d151e25078": "”",
-          "b525ff2b12": "”",
-          "4daa95f25a": "将其中任何内容粘贴到安装了 Muster CLI 技能的项目中的 Claude Code、Codex 或其他智能体中。",
-          "0820b3f84f": "尝试一下 - 示例提示",
-          "1f608e7d60": "复制提示失败。",
-          "2b077b5544": "已复制提示。"
-        },
-        "MobileEmulatorSettingsPane": {
-          "19d39113b6": "让编码智能体使用 Muster CLI 命令控制活动手机模拟器。",
-          "f2f8d97bb6": "智能体手机模拟器控制",
-          "143961d031": "默认设备",
-          "8aec2f99a0": "刷新模拟器可用性",
-          "ae1612c58c": "可用性",
-          "f9af91ea26": "显示“新建手机模拟器”操作并允许智能体连接到活动模拟器。",
-          "700ddbf9b1": "启用手机模拟器",
-          "bc39d0f115": "配置对 Muster 和编码智能体的手机模拟器支持。",
-          "6593c9ddd3": "手机模拟器",
-          "a4f1c82d90": "已禁用",
-          "b5e2d93e01": "检查中...",
-          "c6f3ea4f12": "就绪",
-          "d704fb5023": "需要设置",
-          "06b06429c6": "正在检查 Android SDK 和 iOS 模拟器支持。",
-          "6d1483d4a0": "检测到 1 个模拟器设备。",
-          "0a452d4d3b": "检测到 {{value0}} 个模拟器设备。",
-          "f62a1bb759": "检测到设备后，Muster 会自动选择一个模拟器设备。",
-          "b2fd62ea75": "新模拟器标签页和智能体附加命令使用的默认设备。自动选择会优先使用已在运行的设备。"
         },
         "MobileNetworkInterfaceSection": {
           "63d5e4ae1e": "重新生成二维码并从 Muster 手机应用程序扫描。",
@@ -6271,7 +6076,12 @@
           "f79972271a": "找不到此仓库的 GitHub 远程。",
           "4d039317f4": "网站图标",
           "acf31559a0": "输入有效的网站 URL。",
-          "868c5c9b56": "无法导入仓库图标"
+          "868c5c9b56": "无法导入仓库图标",
+          "favicon_fetch_failed": "Failed to fetch favicon",
+          "favicon_domain": "Website domain",
+          "favicon_fetch": "Fetch",
+          "favicon_apply": "Apply",
+          "favicon_hint": "Fetches the site's favicon and stores it as this project's icon."
         },
         "RepositoryPane": {
           "15a99d9b9f": "相对路径从该项目根解析。",
@@ -6552,8 +6362,6 @@
           "2b4474780a": "外观",
           "3d9adfe6a5": "全局终端、浏览器和 Markdown 选项卡。",
           "3eb22a3ada": "浮动工作区",
-          "01f9d36292": "配置对 Muster 和编码智能体的手机模拟器支持。",
-          "f75daf1002": "手机模拟器",
           "ad9788036f": "主页、链接路由和会话 cookie。",
           "c46215ea03": "浏览器",
           "6742c7932c": "保存的终端命令，范围全局或每个项目。",
@@ -6572,8 +6380,6 @@
           "6d119427ef": "入门清单",
           "eb1176a14e": "使用设备上模型进行本地语音到文本听写。",
           "5063bb47a5": "语音",
-          "7118953f14": "使智能体能够控制您计算机上的任何应用程序。",
-          "c9841721cb": "计算机控制",
           "475980f53d": "通过 Muster 协调多个编码智能体。",
           "00c3a7950d": "编排",
           "21f09426ea": "可选。 Muster 可与您现有的提供商登录配合使用；仅当您希望 Muster 帮助在账户之间切换时才添加账户。",
@@ -6598,7 +6404,9 @@
           "dev": "开发工具",
           "devDescription": "仅用于调试 UI 状态的开发工具。",
           "linearTitle": "Linear",
-          "linearDescription": "Give agents the skill to read and update your linked Linear tickets."
+          "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
+          "agentCapabilitiesTitle": "Agent Capabilities",
+          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
         },
         "SettingsFormControls": {
           "42a4d15a30": "没有匹配的字体。",
@@ -7527,47 +7335,13 @@
             "a942905148": "创建新浏览器选项卡时打开的 URL。留空以打开空白选项卡。",
             "c3903322d2": "默认主页",
             "19ea5607cf": "本地主机工作区标签",
-            "4e0fdf0a3f": "将工作区端口打开为特定于工作区的 Muster localhost URL，便于区分浏览器标签页。"
-          },
-          "use": {
-            "search": {
-              "3f4c559deb": "圆弧轮廓",
-              "d5afa54d21": "边缘轮廓",
-              "22fb801af8": "镀铬型材",
-              "59968bb9b4": "经过身份验证的浏览器",
-              "62e2a790c0": "现有会话",
-              "63a66da648": "系统浏览器",
-              "20c1323d1e": "计算机控制",
-              "ab349a2dd0": "弧",
-              "2e1b09897b": "边缘",
-              "088e7a9012": "铬合金",
-              "96ce3d2de2": "授权",
-              "48557f639c": "登录",
-              "d5ad1f7aad": "导入",
-              "02837ee497": "会话",
-              "fb8178824f": "曲奇饼",
-              "ba4eb53b72": "浏览器使用",
-              "2fb24d17db": "从 Chrome、Edge 或其他浏览器导入 cookie，以便智能体可以重复使用您的登录信息。",
-              "614c756ab1": "导入浏览器 Cookie",
-              "cee44fb442": "自动化",
-              "a57c2172dc": "智能体浏览器",
-              "6ea88e5206": "恩克斯",
-              "f5b8fdddf5": "orca-cli",
-              "e5a784bc54": "安装",
-              "9d97446873": "智能体",
-              "a2d489263e": "技能",
-              "a7e82445fa": "安装浏览器使用技能，以便智能体可以操作 Muster 的浏览器。",
-              "a1414dcefb": "安装浏览器使用技能",
-              "e56c7b55c9": "设置",
-              "034c5e8d7f": "启用",
-              "7e0dcb257a": "Shell",
-              "3ffafc9b95": "命令",
-              "30c74aaa1f": "路径",
-              "ff05cbc344": "orca",
-              "85fab5e12c": "CLI",
-              "890ddf943d": "注册 Muster CLI，以便智能体可以驱动浏览器。",
-              "50f0860e18": "启用 Muster CLI"
-            }
+            "4e0fdf0a3f": "将工作区端口打开为特定于工作区的 Muster localhost URL，便于区分浏览器标签页。",
+            "f0a71c3d92": "Open Links in Floating Browser",
+            "a94c26e5f1": "Open in-app links in the floating workspace panel instead of a workspace browser tab.",
+            "b52e7f1a06": "Browser Extensions",
+            "c73d81e4f9": "Load unpacked Chrome extensions into the in-app browser.",
+            "c1908fe37b": "Muster Extensions",
+            "d0472be851": "Install extensions Muster ships, including WordPress login autofill."
           }
         },
         "commit": {
@@ -7606,20 +7380,6 @@
                 "0b946b2abe": "为源代码管理的 commit、PR、分支命名和修复操作添加操作方案。",
                 "24dbdfca78": "显示源代码控制 AI 操作"
               }
-            }
-          }
-        },
-        "computer": {
-          "use": {
-            "search": {
-              "6e88da3508": "技能",
-              "798be54d7e": "自动化",
-              "e27f8bafbf": "截屏",
-              "26c1290d83": "屏幕录制",
-              "82f01c2d2c": "可达性",
-              "fefb452f5b": "计算机控制",
-              "9210db582b": "当您要求时，允许智能体检查屏幕截图并操作本地应用程序。",
-              "442bec10fe": "计算机控制"
             }
           }
         },
@@ -7764,13 +7524,6 @@
         },
         "general": {
           "search": {
-            "bdfb6dc21b": "喜欢",
-            "e6b01c8e30": "反馈",
-            "b65665703a": "支持",
-            "06ea5a69a6": "GitHub",
-            "e4fb4516d0": "星星",
-            "e0b8c8bc25": "点赞 GitHub star 支持该项目（通过 gh CLI ",
-            "36a72f0d9e": "GitHub 上的 Star Muster",
             "c61b14be7c": "grok",
             "5d9ba08673": "copilot",
             "f472e97440": "助手",
@@ -7800,18 +7553,9 @@
             "f89a94773c": "更新",
             "79ff46776e": "检查应用程序更新并安装较新的 Muster 版本。",
             "e15af4eb64": "检查更新",
-            "6382fe9724": "恩克斯",
             "baa263d6d8": "智能体",
-            "bda108e66c": "技能",
-            "244e3fb4c8": "安装 Muster 技能，以便智能体知道如何使用 Muster CLI。",
-            "2d9f7b42df": "智能体技能",
-            "0a00691c06": "Shell 命令",
             "dbeb1f348e": "命令",
-            "88d3df9ce9": "终端",
             "fb4f338a3d": "路径",
-            "924a660a78": "CLI",
-            "ca529079bf": "注册或删除 Muster CLI 命令。",
-            "327e3fa70d": "Muster CLI",
             "fb84767421": "转变",
             "f8f0ac213a": "顺序的",
             "12ecc640a8": "姆鲁",
@@ -7860,14 +7604,8 @@
             "91a46caafc": "no_proxy",
             "3a73054565": "旁路",
             "20b711ac9e": "代理",
-            "eb8946b2c9": "应绕过配置的 HTTP 代理的主机。",
-            "8436ff6f8e": "代理绕过规则",
-            "e55d62dfa4": "启动板",
-            "9da6c875e5": "码头",
             "b9096a44cf": "https_proxy",
             "8f03d44672": "http_proxy",
-            "e3b1d42f95": "用于 Muster 网络请求和本地终端子进程的代理 URL。",
-            "c29f23ab57": "HTTP 代理",
             "6c2ce8457c": "文件浏览器",
             "c9d9636f24": "发现者",
             "68d03d9980": "VSCode",
@@ -7898,8 +7636,6 @@
             "7baf524b04": "工作区",
             "d0bc793689": "创建工作区文件夹的根目录。",
             "4c95d08fa2": "工作区目录",
-            "161a86a9da": "关闭固定标签页前确认",
-            "8e593f04fc": "关闭固定标签页前显示确认对话框。",
             "defaultProjectRuntime": "默认项目运行时",
             "defaultProjectRuntimeDescription": "选择本地 Windows 项目继承的运行时。",
             "d2d2d929c0": "Rich Markdown Spellcheck",
@@ -8064,46 +7800,6 @@
           }
         },
         "mobile": {
-          "emulator": {
-            "search": {
-              "2348045036": "选择 Muster 默认打开的模拟器设备。",
-              "2bb2e09225": "手机技能",
-              "bbe4267416": "模拟器类型",
-              "64494f03c3": "模拟器附加",
-              "6f728f1456": "模拟器抽头",
-              "f8b871d655": "智能体客户端",
-              "2e0b45b2ba": "使用 Muster CLI 命令列出、附加、点击和输入手机模拟器。",
-              "ea3eac39bb": "智能体 CLI 控制",
-              "8ef0f08d36": "运行时",
-              "27397fe8e9": "xcode 命令行工具",
-              "7650063d17": "模拟控制",
-              "3211e7acf9": "xcrun",
-              "42bfab45d8": "可用性",
-              "ea1f51b980": "检查Xcode、simctl、serve-sim和模拟器设备是否准备就绪。",
-              "0b95dfd5b3": "模拟器可用性",
-              "04c5f5d901": "设备",
-              "25d7bfbcd4": "乌迪德",
-              "ec3c4043fd": "默认ipad",
-              "1dc8c52ffa": "默认 iPhone",
-              "ab4814f3c5": "默认模拟器",
-              "54184cb9c5": "默认模拟器设备",
-              "b8ddd13195": "智能体模拟器",
-              "1ad6fb6230": "默认设备",
-              "ac0a985873": "模拟器技能",
-              "9353854ff3": "Muster 模拟器",
-              "d4b7833894": "Muster CLI",
-              "84e5706975": "服务SIM卡",
-              "7c5a8a2bee": "Xcode",
-              "bec7231663": "平板电脑",
-              "49727355a3": "iPhone",
-              "6b6407dc1f": "模拟器",
-              "2d67f708ce": "模拟器",
-              "c5eca29310": "ios模拟器",
-              "25159de808": "手机模拟器",
-              "9595354cff": "配置对 Muster 和编码智能体的手机模拟器支持。",
-              "cdd3c31918": "手机模拟器"
-            }
-          },
           "pane": {
             "search": {
               "dbccde3a60": "关闭",
@@ -8977,19 +8673,6 @@
             }
           }
         },
-        "computerUseSummary": {
-          "permissionsRequired": "在智能体可操作应用窗口前需要 {{value0}} 项权限{{value1}}。",
-          "checkingTitle": "正在检查计算机控制访问权限。",
-          "checkingDescription": "Muster 正在检查计算机控制助手的 macOS 隐私权限。",
-          "unavailableTitle": "计算机控制不可用。",
-          "unavailableDescription": "Computer Use 权限不可用，因为 {{value0}}。",
-          "readyTitle": "计算机控制已就绪。",
-          "readyDescription": "当你要求时，智能体可以检查并操作应用窗口。",
-          "permissionsTitle": "完成设置以使用本地应用。"
-        },
-        "computerUseSkillRuntime": {
-          "thisDevice": "此设备"
-        },
         "WorkspaceDirectorySetting": {
           "1a2b3c4d5e": "客户端默认值",
           "2b3c4d5e6f": "应用于",
@@ -9134,21 +8817,6 @@
           "wslUnavailable": "此机器上不可用 WSL。",
           "distroRequired": "项目继承 WSL 前，请先选择一个 WSL 发行版。",
           "wslDescription": "对于未覆盖运行时的项目，通过 WSL 在 {{value0}} 中检测并启动智能体。"
-        },
-        "MobileEmulatorSdkStatus": {
-          "536026130e": "模拟器 SDK",
-          "dde0ec1cd8": "Muster 用于运行模拟器的工具链。Android 可通过 Android SDK 在任何系统上运行；iOS 模拟器需要 macOS 上的 Xcode。",
-          "027cbf668a": "Android SDK",
-          "f6d080d128": "正在使用配置的路径",
-          "7fe4bd5907": "检测位置",
-          "2784f0b22d": "未找到。请安装 Android Studio，然后创建虚拟设备。",
-          "b94ff260e6": "下载 Android Studio",
-          "18925b082d": "定位 SDK 文件夹",
-          "8c52684db8": "清除",
-          "76eb88b88e": "iOS 模拟器 (Xcode)",
-          "c6f3ea4f12": "已就绪",
-          "e4f14b50d7": "请安装 Xcode 并添加 iOS 模拟器运行时。",
-          "63fe73a1ea": "无法更新 Android SDK 文件夹。"
         },
         "AppearanceAdvancedDisclosure": {
           "advanced": "高级"
@@ -9532,6 +9200,140 @@
           "detailedExample": "2 new comments: Fix the header — Website Redesign",
           "minimal": "Minimal",
           "minimalExample": "Fix the header — 2 new comments"
+        },
+        "AgentCapabilities": {
+          "scopeNote": "These switches govern what your coding agents can reach, not what you can do in Muster.",
+          "sitesTitle": "Site tools",
+          "sitesWarning": "These tools reach real infrastructure — WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.",
+          "skillsDescription": "Muster installs its bundled skills into your agent skill directories at startup. Turning one off stops future installs; a copy already on disk is left where it is."
+        },
+        "BrowserExtensionsSection": {
+          "b7419fc2ad": "Configure",
+          "f47a2c1e08": "Remove extension",
+          "b8d3f5a219": "Browser Extensions",
+          "c9e1740b6d": "Load unpacked Chrome extensions into the in-app browser. Electron supports a subset of the extension APIs — content scripts and storage work, while background service workers and request blocking may not.",
+          "d15c8ba304": "No extensions added. Point Muster at a folder containing a manifest.json.",
+          "a3f9026b7c": "Add Extension Folder",
+          "e6207bd94a": "Reload"
+        },
+        "BrowserFloatingLinkSetting": {
+          "a1c4f0b2e7": "Open Links in Floating Browser",
+          "b3d7e9a145": "Open in-app links in the floating workspace panel instead of a workspace browser tab, so the current view stays put.",
+          "c5f1a8b930": "Turn on Link Routing to use the floating browser.",
+          "d2e6c4f817": "Enable the floating workspace to use the floating browser."
+        },
+        "BundledExtensionsSection": {
+          "a91b3e70cd": "Username",
+          "b7c04f12ae": "Password (stored — type to replace)",
+          "c58e29a4d1": "Password",
+          "d3f8017b62": "Submit the form automatically",
+          "e40a5c1936": "Off fills the fields only. A failed login or a deliberate logout is never resubmitted.",
+          "f16b8d05c7": "Saved",
+          "a2c7e94013": "Save Credentials",
+          "b8e1490fd2": "Clear Password",
+          "c04d7fe158": "The password is stored in your OS keychain and written into the extension only while it is enabled.",
+          "d5910be3c7": "Muster Extensions",
+          "e6b204af91": "Extensions Muster ships for the in-app browser. Install one to load it into every browser tab.",
+          "f2705ce8b4": "Enabled",
+          "a4b90cd671": "Installed",
+          "b615e0f2a8": "Not installed",
+          "c8123fe4a0": "Disable",
+          "d97e6015bc": "Enable",
+          "e2a3b7c941": "Install",
+          "f5028cd731": "Remove"
+        },
+        "BundledSkillCapabilityRows": {
+          "autoInstalled": "Installed automatically at startup.",
+          "installOnDemand": "Shipped with Muster; installed only when you ask for it.",
+          "loading": "Reading the bundled skills…",
+          "empty": "This build ships no bundled agent skills."
+        },
+        "Confirmations": {
+          "description": "Prompts shown before an action you cannot undo. Turning one off applies everywhere, including keyboard shortcuts and the native menu.",
+          "resetAll": "Reset all confirmations"
+        },
+        "SettingsBackup": {
+          "errorNotJson": "That file is not valid JSON.",
+          "errorNotAnExport": "That file was not exported from Muster settings.",
+          "errorVersion": "That file was written by a newer version of Muster.",
+          "errorExcludedKey": "That file contains credentials or machine-specific paths, which Muster never exports. It was not imported.",
+          "errorInvalidValue": "A setting in that file has the wrong kind of value. Nothing was changed.",
+          "errorNothingToImport": "That file has no settings this version of Muster understands.",
+          "imported": "Imported {{value0}} settings.",
+          "importedWithIgnored": "Skipped {{value0}} setting(s) this version does not recognise.",
+          "exportFailed": "Could not write the settings file.",
+          "exported": "Exported {{value0}} settings.",
+          "importFailed": "Could not import that settings file.",
+          "title": "Settings backup",
+          "description": "Move your preferences to another machine. Credentials and machine-specific paths are deliberately left out of the file.",
+          "exportAction": "Export…",
+          "importAction": "Import…"
+        },
+        "agentCapabilities": {
+          "search": {
+            "paneTitle": "Agent Capabilities",
+            "paneDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+            "sitesMcpTitle": "Site tools (muster-sites MCP)",
+            "sitesMcpDescription": "Expose the built-in site MCP server so agents can run deploys, imports, and database queries.",
+            "bundledSkillsTitle": "Bundled agent skills",
+            "bundledSkillsDescription": "Turn off individual skills Muster installs for your agents at startup.",
+            "sitesMcpInstallTitle": "muster-sites MCP install",
+            "sitesMcpInstallDescription": "Register the built-in site MCP server with Claude Code, Codex, and Cursor global configs."
+          }
+        },
+        "confirmations": {
+          "search": {
+            "sectionTitle": "Confirmations",
+            "sectionDescription": "Every \"are you sure?\" prompt you can turn off, in one place.",
+            "deleteWorkspaceTitle": "Confirm before deleting a workspace",
+            "deleteWorkspaceDescription": "Deleting a workspace removes its working directory from disk.",
+            "closeTerminalTitle": "Confirm before closing a busy terminal",
+            "closeTerminalDescription": "Closing a terminal with running processes kills whatever is in the foreground.",
+            "deleteAutomationTitle": "Confirm before deleting an automation",
+            "deleteAutomationDescription": "Deleting an automation also discards its run history.",
+            "codexResetTitle": "Confirm before resetting a Codex rate limit",
+            "codexResetDescription": "A reset spends a scarce credit on the live account.",
+            "pinnedTabTitle": "Confirm before closing a pinned tab",
+            "pinnedTabDescription": "Pinned tabs can still be closed from the keyboard and the native menu."
+          }
+        },
+        "settingsBackup": {
+          "search": {
+            "exportTitle": "Export settings",
+            "exportDescription": "Save your preferences to a JSON file. Secrets and machine-specific paths are left out.",
+            "importTitle": "Import settings",
+            "importDescription": "Load a settings file exported from Muster. Unrecognised files are rejected."
+          }
+        },
+        "hiddenSections": {
+          "search": {
+            "title": "Show hidden settings pages",
+            "description": "Restore the Orchestration and Mobile pages this build hides by default."
+          }
+        },
+        "siteMcp": {
+          "harness_missing_status": "Harness not detected",
+          "harness_missing_detail": "Muster did not find this harness on this machine. Installing anyway writes the config file shown below, which the harness picks up once it exists.",
+          "harness_missing_action": "Install anyway",
+          "harness_unconfigured_status": "Not configured by Muster",
+          "harness_unconfigured_detail": "Muster has not written its \"muster-sites\" entry here. If you already added a site MCP server under a different key, Muster cannot see it — open the config below before installing so you do not end up with two.",
+          "harness_unconfigured_action": "Install",
+          "harness_stale_status": "Muster entry out of date",
+          "harness_stale_detail": "A \"muster-sites\" entry is already here, but it points at a different command than this build would write now — usually a moved or upgraded app.",
+          "harness_stale_action": "Update entry",
+          "harness_current_status": "Installed and current",
+          "harness_current_detail": "The \"muster-sites\" entry matches what this build would write now.",
+          "harness_current_action": "Rewrite entry",
+          "install_blocked_disabled": "Site tools are switched off above, so agents would not be allowed to call this server anyway. Turn them on to install.",
+          "card_name": "muster-sites MCP",
+          "card_description": "Register the built-in site MCP server with your coding harnesses so agents can run deploys, imports, and database queries.",
+          "status_unavailable": "Status unavailable",
+          "status_setup": "Setup needed",
+          "status_current": "Up to date",
+          "recheck": "Re-check",
+          "command_label": "Each entry spawns this build directly:",
+          "workspace_note": "Project-level installs are automatic: Muster keeps a muster-sites entry in each site project’s .mcp.json on its own.",
+          "install_ok": "Wrote the \"muster-sites\" entry to {{value0}}."
         }
       },
       "right": {
@@ -10382,7 +10184,8 @@
             "fc3095d2ed": "资源管理器",
             "aiVaultSessionHistory": "智能体",
             "folderWorkspaces": "已附加的工作树",
-            "parentPrChecks": "PR 检查"
+            "parentPrChecks": "PR 检查",
+            "siteTab": "Site"
           },
           "right": {
             "panel": {
@@ -10806,6 +10609,37 @@
                 }
               }
             }
+          },
+          "SitePanel": {
+            "confirmTitle": "Confirm target",
+            "confirmBody": "Branch {{branch}} does not match an environment. This run would target {{environment}}. Continue?",
+            "confirmRun": "Run anyway",
+            "noEnvironmentReason": "No environment is configured for this site.",
+            "noImportSteps": "No import steps are enabled for this environment.",
+            "noDeploySteps": "No deploy steps are enabled for this environment.",
+            "openInSites": "Open in Sites",
+            "localSection": "Local",
+            "localDomain": "Local domain",
+            "localWpRoot": "WordPress subpath",
+            "dbSocket": "DB socket",
+            "dbSocketSet": "Set",
+            "environmentSection": "Environment",
+            "noEnvironments": "This site has no environments yet.",
+            "branchUnmatched": "Branch {{branch}} matches no environment; runs must be confirmed.",
+            "branchResolution": "Branch {{branch}} targets {{environment}}.",
+            "sshHost": "SSH host",
+            "sshUser": "SSH user",
+            "remoteRoot": "Remote root",
+            "liveDomain": "Live domain",
+            "importSteps": "Import steps",
+            "deploySteps": "Deploy steps",
+            "import": "Import",
+            "deploy": "Deploy",
+            "cancel": "Cancel",
+            "recentRuns": "Recent runs",
+            "noSite": "The active project is not linked to a site.",
+            "importStepsHeading": "Import steps",
+            "deployStepsHeading": "Deploy steps"
           }
         }
       },
@@ -10879,10 +10713,6 @@
         "FeatureSetupChecklist": {
           "77f74946f5": "智能体可互相通信、领取任务并协调交接。",
           "399cf885c0": "智能体编排",
-          "c5292c409d": "按你的要求，智能体可查看应用窗口并操作本地应用。",
-          "1ecfb490ac": "计算机控制",
-          "01426f3a23": "智能体可浏览网站、检查页面并完成浏览器任务。",
-          "ea85d9e628": "智能体浏览器操控",
           "linearTicketsTitle": "Linear 智能体技能",
           "linearTicketsDescription": "智能体可使用已链接的 Linear 任务，完成更了解 ticket 背景的交接。",
           "linearTicketsSetupSummary": "推荐用于 Linear 工作区；不会影响 Linear 连接设置。"
@@ -10915,7 +10745,8 @@
           "a3bcf13694": "已连接",
           "d6e5dba05a": "登录",
           "0b4a7d23ab": "登录",
-          "a74c6d6b18": "未安装"
+          "a74c6d6b18": "未安装",
+          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations."
         },
         "NotificationStep": {
           "3bede04483": "发送测试通知",
@@ -11408,13 +11239,8 @@
         "wall": {
           "AgentCapabilitiesSetupAction": {
             "b8dc9dd8a2": "已安装",
-            "1b51644c2d": "让智能体控制桌面、手机光标、单击并在任何应用程序中键入。",
-            "362a07517d": "计算机控制",
-            "5e8fe5a72d": "让智能体直接访问 Muster 的浏览器，以便测试页面、捕获屏幕截图并根据所见内容执行操作。",
-            "e638da007a": "智能体浏览器使用",
             "c61c91e642": "让智能体通过 Muster 进行协调，以确保大型、多步骤的任务顺利完成。",
             "ac07f8887f": "智能体编排",
-            "e9eb197e12": "打开计算机使用权限",
             "3a59452a67": "技能命令已复制并插入到下方以供评审。",
             "c605f51f2b": "能力设置就绪",
             "1aa657d8f4": "一些能力设置需要注意",
@@ -11453,25 +11279,6 @@
             "1bec24acc1": "@keyframes browserFlash { 0% { opacity: 0; } 20% { opacity: 0.85; } 100% { opacity: 0; } } @keyframes browserTabIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } } @keyframes browserViewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }",
             "73bbb46073": "/定价",
             "f39be6ca14": "/报名"
-          },
-          "BrowserUseSkillSetupCard": {
-            "cbc45022d4": "使智能体能够在 Muster 浏览器中导航和验证页面。",
-            "d5bb1cd4ba": "浏览器使用技能"
-          },
-          "ComputerUseAnimatedVisual": {
-            "d8401975b1": "已批准",
-            "f27676a92c": "状态：",
-            "6804cb356f": "点击发送",
-            "1719b28a81": "找到“批准”",
-            "79445f7512": "批准我的应用程序中的注释",
-            "99a8624bcb": ">",
-            "2adb561b44": "Claude Code 会话已开始",
-            "94787f01f8": "Claude Code",
-            "9cddfe96b2": "本地应用程序",
-            "9634d870d1": "批准",
-            "3cc2df3671": "完成",
-            "bdd5312213": "待办的",
-            "c11dda000b": "已批准"
           },
           "EditorAnimatedVisual": {
             "7a763daf2f": "斜体",
@@ -11549,7 +11356,8 @@
             "713cc529a5": "里程碑",
             "b1f1981c5e": "查看任务",
             "0235b268b2": "还没有完成",
-            "13294d3405": "完成"
+            "13294d3405": "完成",
+            "open_integrations_settings": "Open Integrations settings"
           },
           "FeatureWallSetupWorkflowActions": {
             "486c2f4d8d": "首先添加 git 项目，然后配置该存储库的安装脚本。",
@@ -11659,13 +11467,9 @@
               "setup": {
                 "status": {
                   "8eccfcb314": "已安装",
-                  "21d4f79c93": "单击安装 CLI 和技能以打开 macOS 访问设置",
-                  "5c9293e51a": "检查应用程序访问权限",
                   "aae94eeb52": "单击安装 CLI 和技能",
                   "aa8e143a2f": "无法检查安装",
-                  "9b33e7fb13": "检查安装",
-                  "4c8e1f92a7": "在此 Mac 上打开 Muster Desktop",
-                  "6d2b0a84e1": "此版本不可用"
+                  "9b33e7fb13": "检查安装"
                 }
               }
             }
@@ -11768,14 +11572,7 @@
           "FeatureWallBrowserAction": {
             "5022c43a88": "无法打开浏览器",
             "c9eb68b474": "此工作树尚无可用的工作区组。",
-            "c9728107c5": "试试看",
-            "25dd101f15": "浏览器设置需要处理",
-            "e02b11e6b0": "浏览器设置已就绪",
-            "d6d15077df": "技能命令已复制并插入到下方供查看。",
-            "78e65f19d9": "浏览器设置失败",
-            "b7345c18db": "发生了意外错误。",
-            "5f97caf76b": "正在安装…",
-            "c2df599513": "安装 CLI 和技能"
+            "c9728107c5": "试试看"
           },
           "ConnectIntegrationsList": {
             "3dddb2d565": "已连接，可用于任务",
@@ -11861,129 +11658,6 @@
             "55001880db": "重试",
             "34a189ae0f": "应用程序的其余部分仍在运行。重试此表面或切换出去然后再回来。",
             "ab855c11f4": "Muster 的这一部分遇到了错误。"
-          }
-        }
-      },
-      "emulator": {
-        "pane": {
-          "EmulatorPane": {
-            "59b08fa031": "没有连接模拟器"
-          },
-          "emulator": {
-            "device": {
-              "frame": {
-                "9406c15775": "模拟器屏幕",
-                "8f25ffaf8a": "模拟器屏幕，键盘捕获。按 Esc 键释放。",
-                "0022420df0": "手机"
-              }
-            },
-            "pane": {
-              "toolbar": {
-                "06e10d7356": "关闭模拟器",
-                "e7a0d1897e": "家",
-                "6bd8dff42a": "旋转",
-                "3d836b879c": "选择模拟器",
-                "81b3571a07": "连接",
-                "868c0f2938": "处理中…"
-              }
-            },
-            "screen": {
-              "stream": {
-                "content": {
-                  "8b1a0d8694": "模拟器预览",
-                  "36841af608": "流已断开连接",
-                  "5f818f12ab": "正在连接模拟器...",
-                  "5ee64cd44e": "模拟器屏幕"
-                }
-              }
-            },
-            "unavailable": {
-              "pane": {
-                "f630b9ca9f": "手机模拟器需要配备 Xcode 和 iOS Simulator 运行时的 Mac。在 Linux 或 Windows 上，使用物理设备或远程 Mac 构建主机。",
-                "b2c268a0b9": "手机模拟器仅适用于 macOS"
-              }
-            }
-          },
-          "use": {
-            "emulator": {
-              "frame": {
-                "stream": {
-                  "f1c0179002": "流不生成帧。"
-                }
-              }
-            },
-            "mobile": {
-              "emulator": {
-                "agent": {
-                  "setup": {
-                    "state": {
-                      "fdcca1ec75": "正在注册...",
-                      "69fb2c2289": "已启用",
-                      "c6705092ba": "修复 PATH",
-                      "7c1b6bdb1e": "启用",
-                      "51074ccb05": "无法加载 CLI 状态。",
-                      "35dea1ae12": "智能体控制已就绪。",
-                      "9dff3a6338": "技能已安装。启用 Muster CLI 以完成设置。",
-                      "15986a1080": "Muster CLI 已就绪。安装技能以完成设置。",
-                      "4c26913def": "尚未设置完成。请完成两个步骤以启用智能体控制。",
-                      "c94ff11e91": "无法重新检查设置状态。",
-                      "2b519eed94": "已在 PATH 中注册 Muster CLI。"
-                    }
-                  }
-                },
-                "tab": {
-                  "intro": {
-                    "actions": {
-                      "68a5dc6604": "无法隐藏移动模拟器。"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "MobileEmulatorAgentSetupGuide": {
-            "2fda9ff015": "设置智能体控制",
-            "0ac0fef514": "智能体控制已就绪。",
-            "2bdfff8763": "智能体控制（可选）。",
-            "72736b051f": "当您希望智能体控制此模拟器时，设置 Muster CLI + 技能。",
-            "d10ae98046": "完成",
-            "3756cbeca7": "暂不",
-            "6d950431d2": "隐藏",
-            "ebceac65a4": "设置",
-            "3f003507f4": "在设置中打开完整设置"
-          },
-          "MobileEmulatorAgentSetupGuideSteps": {
-            "9b49d892e3": "启用 Muster CLI",
-            "3d8dc52c93": "在智能体 shell 中注册用于模拟器控制的 orca 命令。",
-            "21f5687c07": "Muster CLI 技能",
-            "64fb057667": "教授智能体此工作区的 orca 模拟器命令。",
-            "5c59ea96ca": "移动端模拟器 Muster CLI 技能设置",
-            "bff5341ac3": "移动端模拟器 Muster CLI 技能安装终端",
-            "3d34423e88": "正在注册 Muster CLI",
-            "3be27641c9": "以便智能体 shell 可以运行模拟器命令。",
-            "3941719a56": "打开技能设置前正在检查 Muster CLI。"
-          },
-          "MobileEmulatorTabIntroCallout": {
-            "1924982130": "关闭",
-            "5789936d9a": "在智能体控制屏幕时预览 iOS 模拟器。",
-            "8014b4b80b": "保留",
-            "6e051a40b7": "隐藏"
-          },
-          "mobile": {
-            "emulator": {
-              "hidden": {
-                "toast": {
-                  "e8f098a870": "移动模拟器已隐藏",
-                  "c46c979c1d": "随时重新启用移动模拟器",
-                  "600f9a745a": "设置 › 移动模拟器"
-                }
-              }
-            }
-          },
-          "useEmulatorScreenKeyboard": {
-            "pasteTooLarge": "模拟器键盘输入的粘贴内容过大。",
-            "unsupportedPasteText": "模拟器键盘粘贴仅支持美式键盘文本。",
-            "pasteTargetUnavailable": "模拟器键盘粘贴失败，因为设备尚未就绪。"
           }
         }
       },
@@ -13709,7 +13383,8 @@
           "dbUser": "Local DB user",
           "dbUserHint": "root",
           "dbSocket": "Local DB socket",
-          "dbSocketHint": "/…/mysql/mysqld.sock"
+          "dbSocketHint": "/…/mysql/mysqld.sock",
+          "editingDivergence": "Editing {{environment}} — runs target {{target}}."
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
@@ -13780,9 +13455,6 @@
           "description": "A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.",
           "willStore": "What will be stored",
           "chooseFolder": "Which local folder should this bind to?",
-          "browse": "Choose a folder…",
-          "cloneHeading": "Not cloned yet",
-          "cloneHint": "Clone the repository first, then bind the new checkout.",
           "clone": "Clone into a folder…",
           "cloning": "Cloning…",
           "noCandidates": "No local checkout matches this repository yet.",
@@ -13804,7 +13476,12 @@
           "environment": "Environment",
           "deployCommand": "Build command",
           "themeDistPath": "Theme dist path",
-          "notes": "Notes"
+          "notes": "Notes",
+          "missingFolder": "Its folder is gone, so this record cannot be bound. Choose or clone a folder to set it up fresh.",
+          "setUpInRoot": "Set up in {{folder}}",
+          "settingUp": "Setting up…",
+          "willCreateAt": "Muster will clone into {{path}} and configure it.",
+          "noRootConfigured": "No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders."
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -13837,7 +13514,7 @@
           "stackPreviewing": "Checking…",
           "stackRunning": "Setting up…",
           "stackConfirm": "Run setup",
-          "stackDone": "LocalWP site created",
+          "stackDone": "LocalWP site ready.",
           "stackDomainLabel": "Local domain",
           "importHeading": "Import from the server",
           "importBody": "Pull the remote database and files down to this checkout.",
@@ -13853,9 +13530,25 @@
           "certAction": "Trust certificate",
           "certTrusting": "Trusting…",
           "certTrusted": "Trusted — the local site loads over https without a warning.",
-          "stackAdminEmail": "Admin email",
-          "stackAdminPassword": "Admin password",
-          "stackAdminHint": "The WordPress admin account LocalWP creates. Local only — it never reaches the server."
+          "stackOsPasswordHint": "LocalWP may ask for your macOS password — check the Local app.",
+          "stackLogLabel": "Setup progress",
+          "stackFailed": "LocalWP setup did not finish.",
+          "stackRetry": "Try again",
+          "stackCreateBody": "No WordPress here yet. Register the folder with LocalWP, then pull the site down with the import step.",
+          "stackCreateAction": "Create LocalWP site",
+          "stackMoves": "{{count}} project entries move into app/public",
+          "stackDeletes": "{{count}} existing entries under app/public are deleted first",
+          "importChooseSteps": "Choose steps",
+          "importStepsLegend": "Import steps for {{environment}}",
+          "importNoSteps": "Nothing is enabled yet. Pick what to pull down — each one is off until you choose it.",
+          "importBranchWarning": "The checked-out branch does not match an environment — confirm the target before importing.",
+          "importRunning": "Importing from the server…",
+          "importSucceeded": "Import complete.",
+          "importFailed": "Import failed.",
+          "importCancelled": "Import cancelled.",
+          "importBlocked": "Import was blocked before it started.",
+          "importProgress": "{{stage}} · {{percent}}%",
+          "importLogLabel": "Import log"
         },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"
@@ -13868,7 +13561,10 @@
           "loading": "Loading repositories…",
           "empty": "No repositories match.",
           "noProviders": "No git hosts are connected yet.",
-          "truncated": "Showing the most recent repositories. Search to narrow the list.",
+          "searching": "Searching repositories…",
+          "noMatch": "No repositories match “{{query}}”.",
+          "truncated": "Showing the most recent repositories. Search to reach any repository on the host, not only these.",
+          "truncatedLocal": "Showing the most recent repositories. This host cannot search, so the box only filters these.",
           "chooseFolder": "Clone into…",
           "cloning": "Cloning…",
           "adding": "Adding site…",
@@ -13898,6 +13594,20 @@
           "derived": "No folders chosen yet, so Muster is using the parent folders of the projects you already have: {{roots}}. Add one to take over.",
           "none": "No folders chosen, and there are no projects to infer one from. Add the folder your sites live in.",
           "add": "Add folder"
+        },
+        "AddSiteEnvironmentDialog": {
+          "title": "Add environment",
+          "modeHint": "Start blank, or copy an existing environment including its stored passwords.",
+          "nameHint": "Name it after a git branch and runs on that branch target it automatically.",
+          "createNew": "Create new environment",
+          "copyExisting": "Copy existing environment",
+          "copyFrom": "Copy from",
+          "name": "Name",
+          "namePlaceholder": "staging",
+          "duplicateName": "An environment with this name already exists.",
+          "back": "Back",
+          "copy": "Copy",
+          "create": "Create"
         }
       },
       "activecollab": {
@@ -13966,7 +13676,10 @@
           "comment_link": "Link",
           "start_work_hint": "Create a workspace in the linked site and brief an agent on this task",
           "start_work_unbound": "Link this project to a site first — use the link button on the project heading",
-          "start_work": "Start workspace"
+          "start_work": "Start workspace",
+          "close_date_picker": "Close",
+          "clear_dates": "Clear",
+          "save_dates": "Save"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -14061,6 +13774,29 @@
         "connectHeading": "Connect your ActiveCollab account",
         "connectBody": "Browse and start work on your assigned ActiveCollab tasks directly from here.",
         "connectAction": "Connect"
+      },
+      "ActionPalette": {
+        "groupActions": "Actions",
+        "groupCommands": "Commands",
+        "groupSettings": "Settings",
+        "title": "Command palette",
+        "description": "Run a command or jump to a setting",
+        "placeholder": "Run a command or jump to a setting...",
+        "empty": "No matching commands.",
+        "hiddenCount": "Type to search {{value0}} more",
+        "keyEnter": "Enter",
+        "hintRun": "Run",
+        "keyEsc": "Esc",
+        "hintClose": "Close",
+        "hintMove": "Move",
+        "resultCount": "{{value0}} results found"
+      },
+      "action": {
+        "palette": {
+          "ActionPaletteRow": {
+            "revealShortcut": "Shortcut"
+          }
+        }
       }
     },
     "i18n": {

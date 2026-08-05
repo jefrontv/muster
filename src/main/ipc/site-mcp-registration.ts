@@ -30,9 +30,21 @@ export type { SiteMcpCommand, SiteMcpTargetStatus }
  * exactly as `electron .` does.
  */
 export function resolveSiteMcpCommand(): SiteMcpCommand {
-  return app.isPackaged
-    ? { command: process.execPath, args: [SITE_MCP_CLI_FLAG] }
-    : { command: process.execPath, args: [app.getAppPath(), SITE_MCP_CLI_FLAG] }
+  // Why the shim: a directly-spawned `Muster --site-mcp` inherits the MCP client's controlling
+  // terminal, and Chromium's startup takes the tty foreground — suspending the claude/omp TUI
+  // that spawned it (SIGTTIN, `zsh: suspended (tty input)`). The shim runs under
+  // ELECTRON_RUN_AS_NODE (plain Node, never touches the tty) and re-spawns the real server
+  // detached: a new session with no controlling terminal.
+  const env = { ELECTRON_RUN_AS_NODE: '1' }
+  if (app.isPackaged) {
+    // getAppPath() is <resources>/app.asar; derive resources from it so tests can emulate a
+    // packaged app without a real process.resourcesPath.
+    const resources = process.resourcesPath ?? dirname(app.getAppPath())
+    const shim = join(resources, 'app.asar.unpacked', 'out', 'main', 'site-mcp-shim.js')
+    return { command: process.execPath, args: [shim, SITE_MCP_CLI_FLAG], env }
+  }
+  const shim = join(app.getAppPath(), 'out', 'main', 'site-mcp-shim.js')
+  return { command: process.execPath, args: [shim, app.getAppPath(), SITE_MCP_CLI_FLAG], env }
 }
 
 export function findSiteMcpCandidate(relativePath: string): McpConfigCandidate {
@@ -102,7 +114,8 @@ export function readSiteMcpTargets(rootPath: string): SiteMcpTargetStatus[] {
         current:
           record.command === expected.command &&
           args.length === expected.args.length &&
-          expected.args.every((value, index) => args[index] === value)
+          expected.args.every((value, index) => args[index] === value) &&
+          JSON.stringify(record.env ?? {}) === JSON.stringify(expected.env)
       }
     } catch (error) {
       return {

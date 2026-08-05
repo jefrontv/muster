@@ -54,7 +54,6 @@ function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): Featur
       'two-worktrees': false,
       browser: false,
       'task-sources': false,
-      'agent-capabilities': false,
       'setup-script': false
     },
     coreDoneCount: 0,
@@ -74,7 +73,6 @@ function makeAllDoneProgress(
       'two-worktrees': true,
       browser: true,
       'task-sources': true,
-      'agent-capabilities': true,
       'setup-script': true
     },
     coreDoneCount: 8,
@@ -149,8 +147,7 @@ describe('SetupGuideSidebarEntry', () => {
       makeAllDoneProgress({
         ready: false,
         stepDone: {
-          ...makeAllDoneProgress().stepDone,
-          'agent-capabilities': false
+          ...makeAllDoneProgress().stepDone
         },
         coreDoneCount: 7
       })

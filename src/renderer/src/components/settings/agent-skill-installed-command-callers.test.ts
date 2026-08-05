@@ -20,10 +20,6 @@ const updateCapableCallers = new Map<string, readonly string[]>([
     ['ORCHESTRATION_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
   ],
   [
-    'src/renderer/src/components/settings/ComputerUseSkillSetupPanel.tsx',
-    ['COMPUTER_USE_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
     // Why: the Linear settings section shares the update-target resolver so
     // legacy-only installs keep the command and freshness identity aligned.
     'src/renderer/src/components/settings/LinearAgentSkillPane.tsx',
@@ -34,22 +30,6 @@ const updateCapableCallers = new Map<string, readonly string[]>([
     ['EPHEMERAL_VMS_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
   ],
   [
-    'src/renderer/src/components/settings/CliSection.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/BrowserUsePane.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={browserUseUpdateCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/BrowserUseSkillStep.tsx',
-    ['installedCommand={installedCommand}']
-  ],
-  [
-    'src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={updateCommand}']
-  ],
-  [
     // Why: the single-skill update command selection moved into
     // getLinearAgentSkillUpdateCommand so the settings install CTA shares it.
     'src/renderer/src/components/sidebar/LinearAgentSkillSetupPrompt.tsx',
@@ -58,30 +38,17 @@ const updateCapableCallers = new Map<string, readonly string[]>([
   [
     'src/renderer/src/components/sidebar/LinearAgentSkillSetupDialog.tsx',
     ['installedCommand={installedCommand}']
-  ],
-  [
-    'src/renderer/src/components/settings/MobileEmulatorAgentControlRow.tsx',
-    ['ORCA_CLI_SKILL_UPDATE_COMMAND', 'installedCommand={cliSkillUpdateCommand}']
   ]
 ])
 
-const installOnlyCallers = new Map<string, readonly string[]>([
-  [
-    'src/renderer/src/components/emulator-pane/MobileEmulatorAgentSetupGuideSteps.tsx',
-    ['showInstallWhenInstalled={!setup.cliSkillInstalled}']
-  ]
-])
-
-const directPanelCallers = new Set([
-  // BrowserUsePane and LinearAgentSkillSetupPrompt delegate through child setup
-  // components that forward installedCommand and are validated separately above.
-  ...[...updateCapableCallers.keys()].filter(
+// LinearAgentSkillSetupPrompt delegates through a child setup component that
+// forwards installedCommand and is validated separately above.
+const directPanelCallers = new Set(
+  [...updateCapableCallers.keys()].filter(
     (relativePath) =>
-      relativePath !== 'src/renderer/src/components/settings/BrowserUsePane.tsx' &&
       relativePath !== 'src/renderer/src/components/sidebar/LinearAgentSkillSetupPrompt.tsx'
-  ),
-  ...installOnlyCallers.keys()
-])
+  )
+)
 
 function relativeRepoPath(filePath: string): string {
   return path.relative(repoRoot, filePath).split(path.sep).join('/')
@@ -133,15 +100,5 @@ describe('AgentSkillSetupPanel installed-command call sites', () => {
     const productionCallers = findProductionPanelCallers(componentsRoot)
 
     expect(productionCallers).toEqual([...directPanelCallers].sort())
-
-    for (const [relativePath, expectedSnippets] of installOnlyCallers) {
-      const source = readRepoFile(relativePath)
-      expect(source, `${relativePath} intentionally hides the installed action`).not.toContain(
-        'installedCommand='
-      )
-      for (const snippet of expectedSnippets) {
-        expect(source, `${relativePath} should include ${snippet}`).toContain(snippet)
-      }
-    }
   })
 })

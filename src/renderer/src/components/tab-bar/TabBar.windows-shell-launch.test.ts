@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const appStoreSnapshot: {
   activeRepoId: string | null
   activeTabId: string | null
-  activeTabType: 'terminal' | 'editor' | 'browser' | 'simulator' | null
+  activeTabType: 'terminal' | 'editor' | 'browser' | null
   activeRuntimeEnvironmentId: string | null
   activeWorktreeId: string | null
   projects: {
@@ -63,7 +63,7 @@ const useAppStoreMock = vi.fn(
     selector: (state: {
       activeRepoId: string | null
       activeTabId: string | null
-      activeTabType: 'terminal' | 'editor' | 'browser' | 'simulator' | null
+      activeTabType: 'terminal' | 'editor' | 'browser' | null
       activeWorktreeId: string | null
       gitStatusByWorktree: Record<string, never[]>
       projects: typeof appStoreSnapshot.projects

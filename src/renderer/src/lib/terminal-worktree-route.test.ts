@@ -6,7 +6,7 @@ import { folderWorkspaceKey } from '../../../shared/workspace-scope'
 import { resolveTerminalWorktreeRoute } from './terminal-worktree-route'
 
 const EPHEMERAL_ID = brandEphemeralSetupTerminalWorktreeId(
-  'settings-mobile-emulator-orca-cli-skill-terminal'
+  'feature-wall-orchestration-skill-terminal'
 )
 
 // A realistic local-only store: one real repo/worktree, hydrated empty runtime catalog.

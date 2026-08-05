@@ -1,17 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { isFolderRepo } from '../../../../shared/repo-kind'
 import { finishProjectAddWithDefaultCheckout } from './project-added-default-checkout'
 
-type ProjectAddedModalData = {
-  repoId?: string
-  projectId?: string
-}
-
 export default function ProjectAddedDialog(): null {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData as ProjectAddedModalData)
+  const modalData = useModalData('project-added')
   const closeModal = useAppStore((s) => s.closeModal)
   const repos = useAppStore((s) => s.repos)
   const fetchRepos = useAppStore((s) => s.fetchRepos)
@@ -22,16 +17,11 @@ export default function ProjectAddedDialog(): null {
 
   // Why: older onboarding builds wrote `projectId`; accepting both prevents a
   // stale project-added modal from blocking follow-up contextual tours.
-  const repoId =
-    typeof modalData?.repoId === 'string'
-      ? modalData.repoId
-      : typeof modalData?.projectId === 'string'
-        ? modalData.projectId
-        : ''
+  const repoId = modalData?.repoId ?? modalData?.projectId ?? ''
   const repo = repos.find((candidate) => candidate.id === repoId) ?? null
 
   useEffect(() => {
-    if (activeModal !== 'project-added') {
+    if (modalData === null) {
       handoffRunRef.current++
       pendingRepoHydrationRef.current = null
       return
@@ -110,7 +100,7 @@ export default function ProjectAddedDialog(): null {
       cancelled = true
     }
   }, [
-    activeModal,
+    modalData,
     closeModal,
     fetchRepos,
     fetchWorktrees,

@@ -85,12 +85,17 @@ const {
 }))
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   ipcMain: {
     handle: handleMock,
     on: vi.fn(),
     once: vi.fn(),
     removeHandler: vi.fn(),
     removeAllListeners: vi.fn()
+  },
+  app: {
+    getPath: vi.fn(() => '/tmp/orca-test-user-data')
   },
   powerMonitor: {
     on: powerMonitorOnMock,

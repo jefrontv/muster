@@ -117,6 +117,7 @@ const TASK: ActiveCollabTask = {
   name: 'Ship the ActiveCollab pane',
   bodyHtml: '<p>Ping <span class="mention mention-user">Ada Lovelace</span> when it lands.</p>',
   isCompleted: false,
+  startOn: null,
   dueOn: DUE_ON,
   createdOn: null,
   updatedOn: null,
@@ -231,10 +232,17 @@ function labelRow(name: string): HTMLButtonElement {
   return found as HTMLButtonElement
 }
 
-function dueDateInput(): HTMLInputElement {
-  const input = container.querySelector<HTMLInputElement>('input[type="date"]')
-  expect(input).toBeTruthy()
-  return input as HTMLInputElement
+// The picker trigger renders the stored dates as text; there is no date input any more.
+const DUE_LABEL = new Date(DUE_ON).toLocaleDateString(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+})
+
+function dayCell(day: Date): HTMLButtonElement {
+  return buttonByLabel(
+    day.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+  )
 }
 
 function alertText(): string | null {
@@ -244,17 +252,6 @@ function alertText(): string | null {
 async function click(element: HTMLElement): Promise<void> {
   await act(async () => {
     element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-  })
-}
-
-function typeInto(element: HTMLInputElement | HTMLTextAreaElement, value: string): void {
-  act(() => {
-    const prototype =
-      element instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype
-        : HTMLInputElement.prototype
-    Object.getOwnPropertyDescriptor(prototype, 'value')?.set?.call(element, value)
-    element.dispatchEvent(new Event('input', { bubbles: true }))
   })
 }
 
@@ -319,7 +316,7 @@ describe('ActiveCollabTaskWorkspace load states', () => {
     expect(container.textContent).toContain('#42')
     expect(container.textContent).toContain('Grace Hopper')
     // Already anchored to the local calendar day upstream — rendered as-is, not re-shifted.
-    expect(dueDateInput().value).toBe('2026-07-27')
+    expect(buttonByLabel('Due date').textContent).toContain(DUE_LABEL)
     const chips = Array.from(container.querySelectorAll('span[style*="border-color"]'))
     expect(chips.some((chip) => chip.textContent?.includes('Blocked'))).toBe(true)
   })
@@ -388,34 +385,51 @@ describe('ActiveCollabTaskWorkspace label writes', () => {
 })
 
 describe('ActiveCollabTaskWorkspace due-date writes', () => {
-  it('clears a due date with an explicit null rather than an omitted key', async () => {
-    mocks.updateTask.mockResolvedValue({ ok: true, value: { ...TASK, dueOn: null } })
+  it('clears both date fields with explicit nulls rather than omitted keys', async () => {
+    mocks.updateTask.mockResolvedValue({ ok: true, value: { ...TASK, startOn: null, dueOn: null } })
     await mount()
 
-    const clear = container.querySelector<HTMLButtonElement>('button[aria-label="Clear due date"]')
-    expect(clear).toBeTruthy()
-    await click(clear as HTMLButtonElement)
+    await click(buttonByLabel('Due date'))
+    await click(buttonWith('Clear'))
 
     const args = mocks.updateTask.mock.calls[0]?.[0]
     expect(args).toEqual({
       projectId: PROJECT_ID,
       taskId: TASK_ID,
-      update: { dueOn: null }
+      update: { startOn: null, dueOn: null }
     })
-    expect('dueOn' in (args?.update ?? {})).toBe(true)
+    expect('startOn' in (args?.update ?? {}) && 'dueOn' in (args?.update ?? {})).toBe(true)
   })
 
-  it('writes the picked local calendar day as epoch milliseconds', async () => {
+  it('saves a picked range as local-midnight epochs on both fields', async () => {
     mocks.updateTask.mockResolvedValue({ ok: true, value: TASK })
     await mount()
 
-    typeInto(dueDateInput(), '2026-08-03')
-    await act(async () => {})
+    await click(buttonByLabel('Due date'))
+    // The grid opens on the stored due month (July 2026); pick the 20th, then the 30th.
+    await click(dayCell(new Date(2026, 6, 20)))
+    await click(dayCell(new Date(2026, 6, 30)))
+    await click(buttonWith('Save'))
 
     expect(mocks.updateTask).toHaveBeenCalledWith({
       projectId: PROJECT_ID,
       taskId: TASK_ID,
-      update: { dueOn: new Date(2026, 7, 3).getTime() }
+      update: { startOn: new Date(2026, 6, 20).getTime(), dueOn: new Date(2026, 6, 30).getTime() }
+    })
+  })
+
+  it('saves a single click as a single-day range', async () => {
+    mocks.updateTask.mockResolvedValue({ ok: true, value: TASK })
+    await mount()
+
+    await click(buttonByLabel('Due date'))
+    await click(dayCell(new Date(2026, 6, 20)))
+    await click(buttonWith('Save'))
+
+    expect(mocks.updateTask).toHaveBeenCalledWith({
+      projectId: PROJECT_ID,
+      taskId: TASK_ID,
+      update: { startOn: new Date(2026, 6, 20).getTime(), dueOn: new Date(2026, 6, 20).getTime() }
     })
   })
 })
@@ -473,7 +487,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
 
     expect(alertText()).toContain('Task is locked')
     expect(container.textContent).toContain(TASK.name)
-    expect(dueDateInput().value).toBe('2026-07-27')
+    expect(buttonByLabel('Due date').textContent).toContain(DUE_LABEL)
   })
 
   it('disables every control while a write is in flight', async () => {
@@ -484,7 +498,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     await click(buttonByLabel('Complete task'))
 
     expect(buttonByLabel('Complete task').disabled).toBe(true)
-    expect(dueDateInput().disabled).toBe(true)
+    expect(buttonByLabel('Due date').disabled).toBe(true)
     expect(buttonWith('Edit labels').disabled).toBe(true)
     expect(buttonByLabel('Assignee').disabled).toBe(true)
     expect(composer.editor?.isEditable).toBe(false)
@@ -494,7 +508,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     })
 
     expect(buttonByLabel('Reopen task').disabled).toBe(false)
-    expect(dueDateInput().disabled).toBe(false)
+    expect(buttonByLabel('Due date').disabled).toBe(false)
     expect(buttonByLabel('Assignee').disabled).toBe(false)
   })
 })

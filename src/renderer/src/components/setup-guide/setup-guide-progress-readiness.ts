@@ -1,5 +1,4 @@
 import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
-import type { ComputerUsePermissionStatusResult } from '../../../../shared/computer-use-permissions-types'
 import type { GlobalSettings, Repo } from '../../../../shared/types'
 
 export type SetupScriptProbeState = {
@@ -11,15 +10,9 @@ export type SetupScriptProbeState = {
 export type SetupGuideProgressReadinessInput = {
   refreshEnabled: boolean
   settingsLoaded: boolean
-  preflightStatusChecked: boolean
-  linearStatusChecked: boolean
-  jiraStatusChecked: boolean
-  browserUseSkillDiscoveryLoading: boolean
-  computerUseSkillDiscoveryLoading: boolean
+  taskSourceStatusChecked: boolean
   orchestrationSkillDiscoveryLoading: boolean
   setupScriptProbeReady: boolean
-  computerUseSkillInstalled: boolean
-  computerUsePermissionStatusChecked: boolean
 }
 
 export const INITIAL_SETUP_SCRIPT_PROBE_STATE: SetupScriptProbeState = {
@@ -81,25 +74,8 @@ export function getSetupGuideProgressReady(input: SetupGuideProgressReadinessInp
   return (
     input.refreshEnabled &&
     input.settingsLoaded &&
-    input.preflightStatusChecked &&
-    input.linearStatusChecked &&
-    input.jiraStatusChecked &&
-    !input.browserUseSkillDiscoveryLoading &&
-    !input.computerUseSkillDiscoveryLoading &&
+    input.taskSourceStatusChecked &&
     !input.orchestrationSkillDiscoveryLoading &&
-    input.setupScriptProbeReady &&
-    (!input.computerUseSkillInstalled || input.computerUsePermissionStatusChecked)
+    input.setupScriptProbeReady
   )
-}
-
-export function getComputerUsePermissionSetupState(
-  status: ComputerUsePermissionStatusResult | null
-): { ready: boolean; unavailable: boolean } {
-  return {
-    ready:
-      status !== null &&
-      status.helperUnavailableReason === null &&
-      status.permissions.every((permission) => permission.status !== 'not-granted'),
-    unavailable: status !== null && status.helperUnavailableReason !== null
-  }
 }

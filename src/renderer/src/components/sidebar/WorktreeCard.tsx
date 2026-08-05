@@ -83,6 +83,12 @@ import { translate } from '@/i18n/i18n'
 import { recordRendererCrashBreadcrumb } from '@/lib/crash-diagnostics'
 import { folderWorkspaceKey, parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import {
+  dedupeWorktreeCardSubtitle,
+  findSiteLocalDomainForWorkspacePath,
+  getFolderWorkspaceSubtitle,
+  pathLooksLikeAppPublicRoot
+} from './worktree-card-subtitle'
+import {
   isRuntimeOwnedSshTargetId,
   parseExecutionHostId,
   toRuntimeExecutionHostId
@@ -167,12 +173,6 @@ function formatSparseDirectoryPreview(directories: string[]): string {
 
 function isWebClient(): boolean {
   return Boolean((window as unknown as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__)
-}
-
-function getDirectoryName(folderPath: string): string {
-  const normalized = folderPath.replace(/[\\/]+$/, '')
-  const parts = normalized.split(/[\\/]+/)
-  return parts.at(-1) || normalized || folderPath
 }
 
 // Why: pinned repo icon and compact inline badge share this chip shell so both repo cues read as the same affordance.
@@ -413,11 +413,14 @@ const WorktreeCard = React.memo(function WorktreeCard({
   const folderPathIdentityDisplay =
     isFolder && hasProjectGroups && worktree.path.trim().length > 0 ? worktree.path : undefined
   const identityDisplay = branchIdentityDisplay ?? folderPathIdentityDisplay
+  // Why: LocalWP folder projects land on …/app/public, so the raw basename subtitle reads as a
+  // meaningless 'public'; the matched Site's local domain is the identity users actually recognize.
+  const matchedSiteLocalDomain = useAppStore((s) =>
+    isFolder && pathLooksLikeAppPublicRoot(worktree.path)
+      ? findSiteLocalDomainForWorkspacePath(worktree.path, s.sites)
+      : null
+  )
   const hasPathIdentityEnabled = cardProps.includes('branch')
-  const showIdentityInNewCard = newCardStyle && hasPathIdentityEnabled && Boolean(identityDisplay)
-  const folderMetaRowContent = newCardStyle
-    ? hasPathIdentityEnabled && Boolean(folderPathIdentityDisplay)
-    : isFolder
   const hostedReviewCacheKey =
     repo && branch
       ? getHostedReviewCacheKey(
@@ -628,6 +631,22 @@ const WorktreeCard = React.memo(function WorktreeCard({
   })
   const legacyCardTitleDisplay = coerceWorktreeCardVisibleTitle(worktree.displayName)
   const visibleCardTitle = newCardStyle ? cardTitleDisplay : legacyCardTitleDisplay
+  // Why: a subtitle that just repeats the visible title is noise; both card styles share one rule.
+  const dedupedIdentityDisplay = dedupeWorktreeCardSubtitle(identityDisplay, visibleCardTitle)
+  const folderSubtitle = isFolder
+    ? getFolderWorkspaceSubtitle({
+        workspacePath: worktree.path,
+        visibleTitle: visibleCardTitle,
+        siteLocalDomain: matchedSiteLocalDomain
+      })
+    : null
+  const showIdentityInNewCard =
+    newCardStyle && hasPathIdentityEnabled && dedupedIdentityDisplay !== null
+  const folderMetaRowContent = newCardStyle
+    ? hasPathIdentityEnabled &&
+      Boolean(folderPathIdentityDisplay) &&
+      dedupedIdentityDisplay !== null
+    : folderSubtitle !== null
   const isDeleting = deleteState?.isDeleting ?? false
   const isQueuedForDeletion = deleteState?.phase === 'queued'
   const deleteLabel = isQueuedForDeletion
@@ -1204,15 +1223,13 @@ const WorktreeCard = React.memo(function WorktreeCard({
     ? hasMetadataBadge || cacheStartedAt != null
     : hasDetailedMetaRowContent
   const showHeaderActions = showTitleRowPrimary || showDeleteQuickAction
-  // Why: normalize the title once so title/branch de-dupe and identity-only hover eligibility stay in sync.
+  // Why: normalize the title once so title/branch de-dupe stays in sync with the hover heading.
   const trimmedVisibleCardTitle = visibleCardTitle.trim()
   const showBranchIdentityHover = newCardStyle
-    ? Boolean(identityDisplay) &&
-      !cardProps.includes('branch') &&
-      identityDisplay !== trimmedVisibleCardTitle
+    ? dedupedIdentityDisplay !== null && !cardProps.includes('branch')
     : compactCards && showBranch
   const hoverBranchName = newCardStyle
-    ? identityDisplay
+    ? (dedupedIdentityDisplay ?? undefined)
     : showBranchIdentityHover
       ? branch
       : undefined
@@ -1220,7 +1237,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
     trimmedVisibleCardTitle.length > 0 && trimmedVisibleCardTitle !== hoverBranchName
       ? trimmedVisibleCardTitle
       : undefined
-  const hasHoverIdentity = Boolean(hoverWorkspaceTitle || hoverBranchName)
+  // Why: identity alone is not worth a hover panel — it just repeated the visible row title (#hover-noise).
   const hasHoverDetails =
     newCardStyle &&
     (hasWorktreeCardDetails({
@@ -1230,8 +1247,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
       comment: hoverComment,
       automationProvenance: metaAutomationProvenance
     }) ||
-      workspacePorts.length > 0 ||
-      hasHoverIdentity)
+      workspacePorts.length > 0)
   // Why: the parent row owns metadata hover; don't stack the title's truncation tooltip on the details popover.
   const titleWrapper = newCardStyle
     ? hasHoverDetails
@@ -1656,16 +1672,16 @@ const WorktreeCard = React.memo(function WorktreeCard({
 
               {showIdentityInNewCard ? (
                 <TruncatedSidebarLabel
-                  text={identityDisplay!}
+                  text={dedupedIdentityDisplay!}
                   className="text-[11px] text-muted-foreground leading-none"
                   tooltipEnabled={!hasHoverDetails}
                 />
-              ) : isFolder && !newCardStyle ? (
+              ) : folderSubtitle !== null && !newCardStyle ? (
                 <span
                   className="min-w-0 truncate font-mono text-[11px] leading-none text-muted-foreground"
                   title={worktree.path}
                 >
-                  {getDirectoryName(worktree.path)}
+                  {folderSubtitle}
                 </span>
               ) : showBranch ? (
                 <TruncatedSidebarLabel

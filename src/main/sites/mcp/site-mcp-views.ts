@@ -30,6 +30,8 @@ export function describeResolution(
   switch (resolution.reason) {
     case 'branch-match':
       return `branch '${branchLabel}' matches env name`
+    case 'active-environment':
+      return `no env matches branch '${branchLabel}' — using the site's selected env '${resolution.environment ?? ''}'`
     case 'default-main':
       return `no env matches branch '${branchLabel}' — falling back to default env '${DEFAULT_SITE_ENVIRONMENT_NAME}'`
     case 'first-environment':

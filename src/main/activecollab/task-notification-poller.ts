@@ -1,12 +1,13 @@
 // The loop that turns ActiveCollab's lack of an incremental API into notifications.
 //
-// Poll cadence is THREE MINUTES, fixed. One poll is one request per page of open assigned tasks —
-// one page for anyone holding under 100 — so three minutes costs 20 requests an hour per user who
-// opted in. Even if every one of the 176 people on the target instance switched it on, that is
-// about one request a second against their own work server, and realistic adoption is a fraction of
-// that. In the other direction, three minutes is well inside the human latency of "somebody
-// commented on your task": a tighter loop buys a couple of minutes of freshness for a linear cost
-// on a server nobody here owns, and a looser one stops being a notification.
+// Poll cadence is the USER'S, defaulting to one minute and clamped to 15s..15min. One poll is one
+// request per page of open assigned tasks — one page for anyone holding under 100 — so the default
+// costs 60 requests an hour per user who opted in, against a server nobody here owns. The floor is
+// there because that cost is linear in the number of opted-in users on a shared instance; the
+// ceiling because past a quarter of an hour a "notification" is a report.
+//
+// A cadence edit lands on the LIVE timer (see `refresh`): waiting out a fifteen-minute interval to
+// learn whether a shorter one works is not a setting anyone would trust.
 //
 // The first poll waits 15 seconds so it neither competes with app startup nor turns a restart loop
 // into a burst of requests.
@@ -34,6 +35,10 @@
 // enable that toggle — and it still has to reach the badge, which those toggles do not govern.
 
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
+import {
+  clampActiveCollabPollIntervalMs,
+  MIN_ACTIVECOLLAB_POLL_INTERVAL_MS
+} from '../../shared/activecollab-poll-interval'
 import type { ActiveCollabTask, ActiveCollabTaskPage } from '../../shared/activecollab-types'
 import {
   acDiffTaskSnapshot,
@@ -43,7 +48,6 @@ import {
 } from './task-change-detector'
 import { acMergeTaskUnread, type AcTaskUnread } from './task-unread'
 
-export const AC_POLL_INTERVAL_MS = 60_000
 export const AC_POLL_START_DELAY_MS = 15_000
 export const AC_POLL_MAX_BACKOFF_MS = 15 * 60_000
 
@@ -52,6 +56,11 @@ export const AC_POLL_MAX_PAGES = 10
 
 export type AcTaskPollerDeps = {
   now: () => number
+  /**
+   * The stored cadence, RAW and re-read on every schedule so a settings change needs no restart.
+   * Clamped here rather than at the call site, so no caller can forget to.
+   */
+  intervalMs: () => number | null | undefined
   /** The connected credential's snapshot key, or null when ActiveCollab is not connected. */
   snapshotKey: () => string | null
   /** Whether anything can surface a result. False means do not poll at all. */
@@ -74,7 +83,10 @@ export type AcTaskPoller = {
   /** Idempotent: starting a running poller is a no-op, not a second timer. */
   start: () => void
   stop: () => void
-  /** Start or stop to match the current credential and settings. */
+  /**
+   * Start or stop to match the current credential and settings, and re-arm a running timer against
+   * a cadence that changed under it.
+   */
   refresh: () => void
   /** One poll, awaited. The timer loop and the tests both go through here. */
   poll: () => Promise<void>
@@ -106,18 +118,38 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
   let running = false
   let failures = 0
   let inFlight = false
+  /**
+   * The cadence the pending timer was armed with, and when. Null while the timer is the start
+   * delay, which is about app startup and so is not a cadence a settings edit may re-arm.
+   */
+  let armedInterval: number | null = null
+  let armedAt = 0
 
   const stop = (): void => {
     running = false
     cancelTimer?.()
     cancelTimer = null
+    armedInterval = null
   }
 
-  const scheduleNext = (delayMs: number): void => {
+  /**
+   * How long until the next poll, for a cadence, counting the time already spent since `since` —
+   * a request that sat out a 429 `Retry-After` must not then wait a full interval on top of it.
+   * Floored at the tightest cadence we allow anywhere, so a slow instance is never hammered.
+   */
+  const delayFor = (interval: number, since: number): number => {
+    const target =
+      failures === 0 ? interval : Math.min(interval * 2 ** failures, AC_POLL_MAX_BACKOFF_MS)
+    return Math.max(target - (deps.now() - since), MIN_ACTIVECOLLAB_POLL_INTERVAL_MS)
+  }
+
+  const scheduleNext = (delayMs: number, interval: number | null): void => {
     if (!running) {
       return
     }
     cancelTimer?.()
+    armedInterval = interval
+    armedAt = deps.now()
     cancelTimer = deps.schedule(delayMs, tick)
   }
 
@@ -165,12 +197,10 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
 
   function tick(): void {
     cancelTimer = null
+    const startedAt = deps.now()
     void poll().then(() => {
-      scheduleNext(
-        failures === 0
-          ? AC_POLL_INTERVAL_MS
-          : Math.min(AC_POLL_INTERVAL_MS * 2 ** failures, AC_POLL_MAX_BACKOFF_MS)
-      )
+      const interval = clampActiveCollabPollIntervalMs(deps.intervalMs())
+      scheduleNext(delayFor(interval, startedAt), interval)
     })
   }
 
@@ -181,19 +211,26 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
       }
       running = true
       failures = 0
-      scheduleNext(AC_POLL_START_DELAY_MS)
+      scheduleNext(AC_POLL_START_DELAY_MS, null)
     },
     stop,
     refresh: (): void => {
-      if (deps.snapshotKey() !== null && deps.shouldPoll()) {
-        if (!running) {
-          running = true
-          failures = 0
-          scheduleNext(AC_POLL_START_DELAY_MS)
-        }
+      if (deps.snapshotKey() === null || !deps.shouldPoll()) {
+        stop()
         return
       }
-      stop()
+      if (!running) {
+        running = true
+        failures = 0
+        scheduleNext(AC_POLL_START_DELAY_MS, null)
+        return
+      }
+      const interval = clampActiveCollabPollIntervalMs(deps.intervalMs())
+      // A cadence edit re-arms the PENDING poll, keeping the time already waited: the loop must not
+      // need a restart to speed up, and nudging the field must not push the next poll away.
+      if (armedInterval !== null && interval !== armedInterval) {
+        scheduleNext(delayFor(interval, armedAt), interval)
+      }
     },
     poll
   }

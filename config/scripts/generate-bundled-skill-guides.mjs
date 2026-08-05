@@ -8,11 +8,8 @@ const SCRIPT_DIR = import.meta.dirname
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..')
 
 const CANONICAL_GUIDE_NAMES = [
-  'computer-use',
   'linear-tickets',
   'orca-cli',
-  'orca-emulator',
-  'orca-emulator-android',
   'orca-linear',
   'orca-per-workspace-env'
 ]
@@ -20,11 +17,8 @@ const CANONICAL_GUIDE_NAMES = [
 // Why: old discovery stubs can outlive a rename indefinitely, so aliases are
 // a compatibility ledger: add entries for renames, but never remove them.
 const GUIDE_ALIASES = {
-  'computer-use': [],
   'linear-tickets': [],
   'orca-cli': [],
-  'orca-emulator': [],
-  'orca-emulator-android': [],
   'orca-linear': [],
   'orca-per-workspace-env': []
 }
@@ -36,15 +30,7 @@ const GUIDE_ALIASES = {
 // body lives in skill-stubs/<topic>.md; the projection reuses the guide's own frontmatter.
 // orchestration was deliberately dropped from shipping: the skill steered agents into a
 // coordinator loop that was not reliable enough to keep auto-installed.
-const STUB_TOPICS = [
-  'computer-use',
-  'linear-tickets',
-  'orca-cli',
-  'orca-emulator',
-  'orca-emulator-android',
-  'orca-linear',
-  'orca-per-workspace-env'
-]
+const STUB_TOPICS = ['linear-tickets', 'orca-cli', 'orca-linear', 'orca-per-workspace-env']
 
 function normalizeMarkdown(markdown) {
   return markdown.replace(/\r\n/g, '\n').replace(/\r/g, '\n')

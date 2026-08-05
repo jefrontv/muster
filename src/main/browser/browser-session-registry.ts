@@ -22,6 +22,7 @@ import {
 import type { BrowserSessionProfile, BrowserSessionProfileScope } from '../../shared/types'
 import { browserManager } from './browser-manager'
 import { hasSystemMediaAccess, requestSystemMediaAccess } from './browser-media-access'
+import { loadConfiguredBrowserExtensions } from './browser-extension-service'
 import { cleanElectronUserAgent, setupClientHintsOverride } from './browser-session-ua'
 import { resolveChromiumCookiesPath } from './chromium-cookie-path'
 import { isAutoGrantedBrowserSessionPermission } from './browser-session-permission-policy'
@@ -316,6 +317,11 @@ class BrowserSessionRegistry {
     return [...this.profiles.values()]
   }
 
+  /** Partitions already configured this run — the set that must re-apply extension changes. */
+  listConfiguredPartitions(): string[] {
+    return [...this.configuredPartitions]
+  }
+
   isAllowedPartition(partition: string): boolean {
     if (partition === this.defaultPartition) {
       return true
@@ -499,6 +505,9 @@ class BrowserSessionRegistry {
 
     const sess = session.fromPartition(partition)
     browserManager.installCertificateRequestGuard(sess)
+    // Why: Electron never remembers extensions across runs, so every partition re-loads the
+    // configured folders the first time it is configured.
+    void loadConfiguredBrowserExtensions(sess, partition)
     if (typeof sess.getUserAgent === 'function') {
       const cleanUA = cleanElectronUserAgent(sess.getUserAgent())
       sess.setUserAgent(cleanUA)

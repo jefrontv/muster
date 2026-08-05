@@ -1,7 +1,8 @@
 // The `muster://configure?…` bind-link contract, ported from ocsites' url_handler / configure-url
 // parsing (cli.py:2843-2879) and its MCP generate_bind_url / parse_bind_url pair
-// (mcp_server.py:2395-2450). The legacy `ocsites://` scheme and every parameter alias are accepted
-// so dashboard links written for ocsites keep working unchanged.
+// (mcp_server.py:2395-2450). Every parameter alias is accepted so dashboard links written for
+// ocsites keep working, but only the `muster://` scheme is — `ocsites://` belongs to the separate
+// installed ocsites app and is deliberately left to it.
 //
 // Security: a link carries a plaintext SSH password. The password is returned on its own, separate
 // from the field record that crosses IPC, and no error message here ever echoes a parameter value —
@@ -9,10 +10,11 @@
 
 import type { SiteBindFields } from '../../shared/site-bind-types'
 
+export const SITE_BIND_URL_SCHEME = 'muster'
 export const SITE_BIND_URL_ACTION = 'configure'
 
-/** `ocsite` is accepted because ocsites' own MCP parser accepted that typo (mcp_server.py:2426). */
-const ACCEPTED_SCHEMES: Record<string, true> = { muster: true, ocsites: true, ocsite: true }
+/** Only `muster`: `ocsites://` is owned by the separately installed ocsites app. */
+const ACCEPTED_SCHEMES: Record<string, true> = { [SITE_BIND_URL_SCHEME]: true }
 
 const MAX_URL_LENGTH = 8_192
 const MAX_FIELD_LENGTH = 256
@@ -274,8 +276,7 @@ export function parseSiteBindUrl(url: unknown): SiteBindUrlParse {
  * on parse, so including it would let a link disagree with itself.
  */
 export function generateSiteBindUrl(
-  fields: Partial<SiteBindFields> & { password?: string },
-  scheme = 'muster'
+  fields: Partial<SiteBindFields> & { password?: string }
 ): string {
   const query = new URLSearchParams()
   for (const key of Object.keys(FIELD_ALIASES) as BindUrlFieldKey[]) {
@@ -290,5 +291,5 @@ export function generateSiteBindUrl(
   if (fields.password) {
     query.set(PASSWORD_ALIASES[0], fields.password)
   }
-  return `${scheme}://${SITE_BIND_URL_ACTION}?${query.toString()}`
+  return `${SITE_BIND_URL_SCHEME}://${SITE_BIND_URL_ACTION}?${query.toString()}`
 }

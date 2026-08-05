@@ -9,6 +9,9 @@
 //     leave a user who has never opened Settings with an empty dialog and no way to learn why.
 //   * A provider that blows up degrades to `configured: false` carrying its own message. One broken
 //     host must not blank out the other, which is the whole reason the picker lists both.
+//   * A search is the host's job wherever the host can do it. Filtering a capped page in the
+//     renderer cannot reach a repo the page never contained, so the query goes to the provider and
+//     `serverSearched` says whether it was honoured.
 //
 // The list is also filtered against what the user already has (site-clone-source-exclusions.ts).
 // That belongs here rather than in the renderer: it is the same fact as "cloning there would
@@ -158,9 +161,11 @@ async function buildStoreFootprint(store: CloneSourceStore): Promise<ExistingSit
 
 export async function listCloneSourceRepos(
   store: CloneSourceStore,
-  provider: CloneSourceProviderId
+  provider: CloneSourceProviderId,
+  /** Handed to the host so the match happens where the whole repo list lives, not on this page. */
+  query = ''
 ): Promise<CloneSourceListResult> {
-  const listed = await listProviderRepos(provider)
+  const listed = await listProviderRepos(provider, query)
   // Nothing to filter, and the footprint costs a directory sweep — so do not pay for it when the
   // provider is unconfigured or its lookup failed.
   if (listed.repos.length === 0) {
@@ -181,24 +186,30 @@ export async function listCloneSourceRepos(
   }
 }
 
-async function listProviderRepos(provider: CloneSourceProviderId): Promise<CloneSourceListResult> {
+async function listProviderRepos(
+  provider: CloneSourceProviderId,
+  query: string
+): Promise<CloneSourceListResult> {
   if (provider === 'bitbucket') {
-    return listBitbucketCloneSourceRepos()
+    return listBitbucketCloneSourceRepos(query)
   }
   if (provider === 'github') {
+    // `gh repo list` has no name filter, so the query cannot be honoured here. Passed nowhere and
+    // reported as `serverSearched: false` so the picker filters locally and says as much.
     return listGithubCloneSourceRepos()
   }
   // Reachable only from IPC, where the argument is renderer-supplied and therefore untrusted.
   throw new TypeError(`Unknown clone source provider: ${String(provider)}`)
 }
 
-async function listBitbucketCloneSourceRepos(): Promise<CloneSourceListResult> {
+async function listBitbucketCloneSourceRepos(query: string): Promise<CloneSourceListResult> {
   // No `preferCache`: the picker is often opened right after creating a repo, and a stale cache
   // would hide it. The lister still falls back to its cache when the live fetch fails.
   const result = await listBitbucketWorkspaceRepos({
     workspace: getBitbucketCredentialRecord()?.workspace ?? '',
     credentials: getBitbucketCredentials(),
-    fetchJson: fetchBitbucketJson
+    fetchJson: fetchBitbucketJson,
+    query
   })
   const usable = toCloneSourceRepos(result)
   return {
@@ -207,7 +218,9 @@ async function listBitbucketCloneSourceRepos(): Promise<CloneSourceListResult> {
     // here, on the full mapped list, so it reports the host's size and not the filter's.
     repos: usable,
     error: result.error,
-    truncated: usable.length > CLONE_SOURCE_REPO_LIMIT
+    truncated: usable.length > CLONE_SOURCE_REPO_LIMIT,
+    // Bitbucket filters host-side whether or not a query is set, so the picker never needs to.
+    searchesRemotely: true
   }
 }
 

@@ -25,6 +25,12 @@ vi.mock('@/components/terminal/terminal-tab-actions', () => ({
   closeTerminalTab: closeTerminalTabMock
 }))
 
+// Why: this suite stubs a minimal `window` with no addEventListener; the tracker's real
+// listener wiring is covered by system-browser-click-escape.test.ts.
+vi.mock('@/lib/system-browser-click-escape', () => ({
+  installSystemBrowserClickEscapeTracking: () => () => {}
+}))
+
 const FUTURE_LEAF_ID = '11111111-1111-4111-8111-111111111111'
 const STALE_LEAF_ID = '22222222-2222-4222-8222-222222222222'
 const ORPHAN_LEAF_ID = '33333333-3333-4333-8333-333333333333'
@@ -3235,17 +3241,22 @@ describe('useIpcEvents browser tab close routing', () => {
         browserTabsByWorktree: {},
         unifiedTabsByWorktree: {
           'wt-1': [
-            { id: 'sim-tab-1', entityId: 'sim-1', contentType: 'simulator', isPinned: false }
+            {
+              id: 'term-tab-1',
+              entityId: 'term-1',
+              contentType: 'terminal',
+              isPinned: false
+            }
           ]
         }
       })
     })
 
-    closeSessionTabListenerRef.current?.({ tabId: 'sim-tab-1', worktreeId: 'wt-1' })
+    closeSessionTabListenerRef.current?.({ tabId: 'term-tab-1', worktreeId: 'wt-1' })
 
     // Why: only editor tabs need the closeFile (openFiles) path; other content types
     // must keep closeUnifiedTab so the editor-only routing stays scoped.
-    expect(closeUnifiedTab).toHaveBeenCalledWith('sim-tab-1')
+    expect(closeUnifiedTab).toHaveBeenCalledWith('term-tab-1')
     expect(closeFile).not.toHaveBeenCalled()
   })
 

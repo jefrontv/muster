@@ -176,6 +176,21 @@ function findTomlTable(lines: readonly string[], header: string): TomlTableRange
   return start === -1 ? null : { start, end: lines.length }
 }
 
+/** The value text of a `key = value` line, or null. Tolerates missing spaces around the `=`. */
+export function tomlLineValue(block: string, key: string): string | null {
+  for (const raw of block.split('\n')) {
+    const line = raw.trim()
+    if (!line.startsWith(key)) {
+      continue
+    }
+    const rest = line.slice(key.length).trim()
+    if (rest.startsWith('=')) {
+      return rest.slice(1).trim()
+    }
+  }
+  return null
+}
+
 export function readTomlTable(
   fs: ActiveCollabMcpFs,
   target: string,

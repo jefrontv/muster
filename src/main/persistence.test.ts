@@ -1828,6 +1828,7 @@ describe('Store', () => {
       store.updateAutomation(existingWorkspace.id, { workspaceMode: 'new_per_run' }).reuseSession
     ).toBe(false)
 
+    store.flush()
     const persisted = readDataFile() as { automations: Record<string, unknown>[] }
     delete persisted.automations[0].reuseSession
     writeDataFile(persisted)
@@ -1990,6 +1991,7 @@ describe('Store', () => {
       dtstart: new Date('2026-05-13T00:00:00Z').getTime()
     })
     const run = store.createAutomationRun(automation, new Date('2026-05-13T09:00:00Z').getTime())
+    store.flush()
     const persisted = readDataFile() as {
       automations: Record<string, unknown>[]
       automationRuns: Record<string, unknown>[]
@@ -2245,6 +2247,7 @@ describe('Store', () => {
 
     expect(store.getUI().featureInteractions?.['automation-created']?.interactionCount).toBe(1)
     expect(store.getUI().featureInteractions?.['automation-run']?.interactionCount).toBe(1)
+    store.flush()
     const persisted = readDataFile() as PersistedState
     expect(persisted.ui?.featureInteractions?.['automation-created']).toMatchObject({
       interactionCount: 1
@@ -5286,10 +5289,10 @@ describe('Store', () => {
     expect(updated.disabledTuiAgents).toEqual(['gemini', 'opencode'])
   })
 
-  it('enables Claude Agent Teams by default for fresh installs', async () => {
+  it('disables Claude Agent Teams by default for fresh installs (fork removes it from pickers)', async () => {
     const store = await createStore()
 
-    expect(store.getSettings().disabledTuiAgents).toEqual([])
+    expect(store.getSettings().disabledTuiAgents).toEqual(['claude-agent-teams'])
     expect(store.getSettings().claudeAgentTeamsDefaultDisabledMigrated).toBe(true)
   })
 
@@ -5747,10 +5750,12 @@ describe('Store', () => {
       ptyId: 'daemon-pty'
     }
     store.persistPtyBinding(binding)
+    store.flush()
     const inoBefore = statSync(dataFile()).ino
 
-    // Warm-restart re-bind storm: an identical binding re-asserted with a sync flush must not rewrite.
+    // Warm-restart re-bind storm: an identical binding re-asserted must not produce a new durable write.
     store.persistPtyBinding(binding)
+    store.flush()
 
     expect(statSync(dataFile()).ino).toBe(inoBefore)
   })
@@ -8558,11 +8563,45 @@ describe('Store', () => {
       [TEST_LEAF_2]: 'pty-2'
     })
 
+    store.flush()
     const reloaded = await createStore()
     expect(reloaded.getWorkspaceSession().terminalLayoutsByTabId.tab1.ptyIdsByLeafId).toEqual({
       [TEST_LEAF_1]: 'pty-1',
       [TEST_LEAF_2]: 'pty-2'
     })
+  })
+
+  it('recovers a pty binding from the journal when the process dies before the debounced write', async () => {
+    const store = await createStore()
+    store.setWorkspaceSession({
+      ...getDefaultWorkspaceSession(),
+      tabsByWorktree: {
+        wt1: [makeTerminalTab({ id: 'tab1', worktreeId: 'wt1', ptyId: 'pty-1' })]
+      },
+      terminalLayoutsByTabId: {
+        tab1: {
+          root: { type: 'leaf', leafId: TEST_LEAF_1 },
+          activeLeafId: TEST_LEAF_1,
+          expandedLeafId: null,
+          ptyIdsByLeafId: { [TEST_LEAF_1]: 'pty-1' }
+        }
+      }
+    })
+    store.flush()
+
+    // Spawn, then never flush: models SIGKILL inside the 1s debounce window (Issue #217).
+    store.persistPtyBinding({
+      worktreeId: 'wt1',
+      tabId: 'tab1',
+      leafId: TEST_LEAF_2,
+      ptyId: 'pty-2'
+    })
+
+    const reloaded = await createStore()
+    // The binding must survive so the spawned pty is not orphaned on the host.
+    expect(
+      reloaded.getWorkspaceSession().terminalLayoutsByTabId.tab1.ptyIdsByLeafId?.[TEST_LEAF_2]
+    ).toBe('pty-2')
   })
 
   it('advances host topology when a live spawn adds a split leaf after retirement', async () => {
@@ -11086,11 +11125,16 @@ describe('Store host-partitioned workspace sessions', () => {
     ).toBeNull()
   })
 
-  it('rolls back a failed SSH PTY binding flush in the SSH host partition', async () => {
+  it('rolls back a failed SSH PTY binding journal append in the SSH host partition', async () => {
     const store = await createStore()
     store.setWorkspaceSession(makeBoundHostSession(null), 'local')
     store.setWorkspaceSession(makeBoundHostSession(null), 'ssh:ssh-1')
-    const flush = vi.spyOn(store, 'flushOrThrow').mockImplementationOnce(() => {
+    // Fail at the durability barrier itself: the journal append is what now
+    // guarantees the binding survives a crash, so its failure must roll back.
+    const journal = (
+      store as unknown as { durabilityJournal: { append: (record: unknown) => void } }
+    ).durabilityJournal
+    const flush = vi.spyOn(journal, 'append').mockImplementationOnce(() => {
       throw new Error('disk unavailable')
     })
 

@@ -1,26 +1,14 @@
 import { defineMethod, type RpcMethod } from '../core'
+import { assertRpcClipboardTextWriteWithinLimit } from '../rpc-clipboard-text-validation'
 import { BrowserTarget, requiredString } from '../schemas'
 import {
-  Check,
-  Drag,
-  Element,
   Eval,
-  Exec,
-  Find,
-  FullScreenshot,
-  Get,
   Goto,
-  Highlight,
-  Is,
+  KeyboardInsert,
   Keypress,
-  LimitParam,
   ProfileCreate,
   ProfileDelete,
   ProfileImportFromBrowser,
-  Screenshot,
-  Scroll,
-  Select,
-  SelectorPath,
   TabCurrent,
   TabSetProfile,
   TabClose,
@@ -28,27 +16,17 @@ import {
   TabList,
   TabProfileClone,
   TabShow,
-  TabSwitch,
-  Upload,
-  Wait
+  TabSwitch
 } from './browser-schemas'
-import { BROWSER_TEXT_METHODS } from './browser-text-rpc-methods'
 
 const CertificateProceed = BrowserTarget.extend({
   challengeId: requiredString('Missing required challengeId')
 })
 
+// Why: agent-driven browser automation was removed, so what remains is only the
+// surface the desktop BrowserPane and the mobile companion drive over RPC —
+// tab lifecycle, navigation, profiles, and input replay.
 export const BROWSER_CORE_METHODS: RpcMethod[] = [
-  defineMethod({
-    name: 'browser.snapshot',
-    params: BrowserTarget,
-    handler: async (params, { runtime }) => runtime.browserSnapshot(params)
-  }),
-  defineMethod({
-    name: 'browser.click',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserClick(params)
-  }),
   defineMethod({
     name: 'browser.goto',
     params: Goto,
@@ -59,16 +37,13 @@ export const BROWSER_CORE_METHODS: RpcMethod[] = [
     params: CertificateProceed,
     handler: async (params, { runtime }) => runtime.browserProceedCertificate(params)
   }),
-  ...BROWSER_TEXT_METHODS,
   defineMethod({
-    name: 'browser.select',
-    params: Select,
-    handler: async (params, { runtime }) => runtime.browserSelect(params)
-  }),
-  defineMethod({
-    name: 'browser.scroll',
-    params: Scroll,
-    handler: async (params, { runtime }) => runtime.browserScroll(params)
+    name: 'browser.keyboardInsertText',
+    params: KeyboardInsert,
+    handler: async (params, { runtime }) => {
+      await assertRpcClipboardTextWriteWithinLimit(params.text)
+      return runtime.browserKeyboardInsertText(params)
+    }
   }),
   defineMethod({
     name: 'browser.back',
@@ -76,19 +51,24 @@ export const BROWSER_CORE_METHODS: RpcMethod[] = [
     handler: async (params, { runtime }) => runtime.browserBack(params)
   }),
   defineMethod({
+    name: 'browser.forward',
+    params: BrowserTarget,
+    handler: async (params, { runtime }) => runtime.browserForward(params)
+  }),
+  defineMethod({
     name: 'browser.reload',
     params: BrowserTarget,
     handler: async (params, { runtime }) => runtime.browserReload(params)
   }),
   defineMethod({
-    name: 'browser.screenshot',
-    params: Screenshot,
-    handler: async (params, { runtime }) => runtime.browserScreenshot(params)
-  }),
-  defineMethod({
     name: 'browser.eval',
     params: Eval,
     handler: async (params, { runtime }) => runtime.browserEval(params)
+  }),
+  defineMethod({
+    name: 'browser.keypress',
+    params: Keypress,
+    handler: async (params, { runtime }) => runtime.browserKeypress(params)
   }),
   defineMethod({
     name: 'browser.tabList',
@@ -164,125 +144,5 @@ export const BROWSER_CORE_METHODS: RpcMethod[] = [
     name: 'browser.profileClearDefaultCookies',
     params: null,
     handler: async (_params, { runtime }) => runtime.browserProfileClearDefaultCookies()
-  }),
-  defineMethod({
-    name: 'browser.hover',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserHover(params)
-  }),
-  defineMethod({
-    name: 'browser.drag',
-    params: Drag,
-    handler: async (params, { runtime }) => runtime.browserDrag(params)
-  }),
-  defineMethod({
-    name: 'browser.upload',
-    params: Upload,
-    handler: async (params, { runtime }) => runtime.browserUpload(params)
-  }),
-  defineMethod({
-    name: 'browser.wait',
-    params: Wait,
-    handler: async (params, { runtime }) => runtime.browserWait(params)
-  }),
-  defineMethod({
-    name: 'browser.check',
-    params: Check,
-    handler: async (params, { runtime }) => runtime.browserCheck(params)
-  }),
-  defineMethod({
-    name: 'browser.focus',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserFocus(params)
-  }),
-  defineMethod({
-    name: 'browser.clear',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserClear(params)
-  }),
-  defineMethod({
-    name: 'browser.selectAll',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserSelectAll(params)
-  }),
-  defineMethod({
-    name: 'browser.keypress',
-    params: Keypress,
-    handler: async (params, { runtime }) => runtime.browserKeypress(params)
-  }),
-  defineMethod({
-    name: 'browser.pdf',
-    params: BrowserTarget,
-    handler: async (params, { runtime }) => runtime.browserPdf(params)
-  }),
-  defineMethod({
-    name: 'browser.fullScreenshot',
-    params: FullScreenshot,
-    handler: async (params, { runtime }) => runtime.browserFullScreenshot(params)
-  }),
-  defineMethod({
-    name: 'browser.dblclick',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserDblclick(params)
-  }),
-  defineMethod({
-    name: 'browser.forward',
-    params: BrowserTarget,
-    handler: async (params, { runtime }) => runtime.browserForward(params)
-  }),
-  defineMethod({
-    name: 'browser.scrollIntoView',
-    params: Element,
-    handler: async (params, { runtime }) => runtime.browserScrollIntoView(params)
-  }),
-  defineMethod({
-    name: 'browser.get',
-    params: Get,
-    handler: async (params, { runtime }) => runtime.browserGet(params)
-  }),
-  defineMethod({
-    name: 'browser.is',
-    params: Is,
-    handler: async (params, { runtime }) => runtime.browserIs(params)
-  }),
-  defineMethod({
-    name: 'browser.find',
-    params: Find,
-    handler: async (params, { runtime }) => runtime.browserFind(params)
-  }),
-  defineMethod({
-    name: 'browser.console',
-    params: LimitParam,
-    handler: async (params, { runtime }) => runtime.browserConsoleLog(params)
-  }),
-  defineMethod({
-    name: 'browser.network',
-    params: LimitParam,
-    handler: async (params, { runtime }) => runtime.browserNetworkLog(params)
-  }),
-  defineMethod({
-    name: 'browser.exec',
-    params: Exec,
-    handler: async (params, { runtime }) => runtime.browserExec(params)
-  }),
-  defineMethod({
-    name: 'browser.capture.start',
-    params: BrowserTarget,
-    handler: async (params, { runtime }) => runtime.browserCaptureStart(params)
-  }),
-  defineMethod({
-    name: 'browser.capture.stop',
-    params: BrowserTarget,
-    handler: async (params, { runtime }) => runtime.browserCaptureStop(params)
-  }),
-  defineMethod({
-    name: 'browser.download',
-    params: SelectorPath,
-    handler: async (params, { runtime }) => runtime.browserDownload(params)
-  }),
-  defineMethod({
-    name: 'browser.highlight',
-    params: Highlight,
-    handler: async (params, { runtime }) => runtime.browserHighlight(params)
   })
 ]

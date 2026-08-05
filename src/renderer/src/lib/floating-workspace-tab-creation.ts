@@ -51,6 +51,24 @@ export async function createFloatingWorkspaceBrowserTab(
   })
 }
 
+/**
+ * Opens a URL in the floating workspace panel. The panel reveals itself once it owns a visible
+ * tab, so callers on any top-level view get a visible browser without switching surfaces.
+ */
+export function openFloatingWorkspaceBrowserUrl(
+  store: FloatingWorkspaceBrowserStore,
+  url: string
+): BrowserTab | null {
+  const targetGroupId = store.activeGroupIdByWorktree[FLOATING_TERMINAL_WORKTREE_ID]
+  // Why: the floating workspace is local-only, so it never inherits a remote runtime owner.
+  return store.createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, url, {
+    activate: true,
+    title: url,
+    targetGroupId,
+    browserRuntimeEnvironmentId: null
+  })
+}
+
 export async function createFloatingWorkspaceMarkdownTab(
   store: FloatingWorkspaceMarkdownStore,
   markdownDirectory?: string | null

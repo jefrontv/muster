@@ -5,7 +5,6 @@ export type FeatureWallSetupStepId =
   | 'two-worktrees'
   | 'browser'
   | 'task-sources'
-  | 'agent-capabilities'
   | 'setup-script'
 
 export type FeatureWallSetupStep = {
@@ -50,17 +49,11 @@ export const FEATURE_WALL_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
     description: 'Start new work faster with your preferred agent already selected.'
   },
   {
-    id: 'agent-capabilities',
-    name: 'Enable Muster CLI',
-    subtitle: 'Enable Muster CLI',
-    description:
-      'Register the Muster shell command and install agent skills for browser, computer, and orchestration workflows.'
-  },
-  {
     id: 'task-sources',
-    name: 'Connect integrations',
-    subtitle: 'Connect integrations',
-    description: 'Start an agent from a task in one click and keep PR status in view.'
+    name: 'Connect ActiveCollab',
+    subtitle: 'Connect ActiveCollab',
+    description:
+      'Browse your ActiveCollab tasks and start workspaces from ActiveCollab issues without leaving Muster.'
   },
   {
     id: 'setup-script',

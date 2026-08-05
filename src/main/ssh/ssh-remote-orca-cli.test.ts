@@ -2,6 +2,8 @@ import { EventEmitter } from 'node:events'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   app: {
     isPackaged: false,
     getAppPath: () => '/host/app'

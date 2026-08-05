@@ -148,7 +148,7 @@ describe('skill freshness name-scoped update eligibility', () => {
     // the global one — while a name whose convergent copy is current stays unoffered.
     expect(
       eligibleSkillUpdateNames([
-        placement('computer-use', { status: 'current' }),
+        placement('orca-cli', { status: 'current' }),
         placement('orchestration'),
         placement('orchestration', {
           id: 'orchestration-project',

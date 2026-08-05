@@ -48,6 +48,7 @@ export type SitesSlice = {
     name: string,
     patch?: Partial<SiteEnvironment>
   ) => Promise<string | null>
+  copySiteEnvironment: (siteId: string, from: string, to: string) => Promise<string | null>
   renameSiteEnvironment: (siteId: string, from: string, to: string) => Promise<string | null>
   removeSiteEnvironment: (siteId: string, name: string) => Promise<string | null>
   importSitesFromOcsites: () => Promise<
@@ -135,6 +136,9 @@ export const createSitesSlice: StateCreator<AppState, [], [], SitesSlice> = (set
 
     upsertSiteEnvironment: (siteId, name, patch) =>
       applyMutation(() => window.api.sites.upsertEnvironment({ siteId, name, patch })),
+
+    copySiteEnvironment: (siteId, from, to) =>
+      applyMutation(() => window.api.sites.copyEnvironment({ siteId, from, to })),
 
     renameSiteEnvironment: (siteId, from, to) =>
       applyMutation(() => window.api.sites.renameEnvironment({ siteId, from, to })),

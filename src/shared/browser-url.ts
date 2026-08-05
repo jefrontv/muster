@@ -289,7 +289,10 @@ export function normalizeBrowserNavigationUrl(
     // (nodeIntegration off, contextIsolation on, webSecurity on; see
     // createMainWindow.ts will-attach-webview), so the loaded page cannot
     // escalate privileges. Other non-web schemes (javascript:, arbitrary
-    // data: URIs) remain rejected.
+    // data: URIs) remain rejected. chrome-extension:// is deliberately absent:
+    // Chromium refuses to render extension pages inside a <webview> guest
+    // (navigation silently no-ops), so extension popup/options pages open in a
+    // dedicated window instead — see browser-extension-window.ts.
     return parsed.protocol === 'http:' ||
       parsed.protocol === 'https:' ||
       parsed.protocol === 'file:'

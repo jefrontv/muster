@@ -1,8 +1,17 @@
-// Executing the plain-WordPress → LocalWP migration: create the Local site, relocate every project
-// file into app/public, point wp-config.php at Local's MySQL, and import the database.
+// Executing both of ocsites' LocalWP setups: create the Local site, relocate the project into
+// app/public, and — for an existing WordPress install only — point wp-config.php at Local's MySQL
+// and import the database.
 //
-// Ported from the standard-WordPress branch of ocsites tui_deploy's migrate-to-LocalWP worker
-// (:2813-3145). Bedrock's separate relocate path is deliberately out of scope here.
+// `create` is ocsites `setup_localwp_before_clone` (tui_deploy:2740-2799) via `_run_localwp_log_tui`
+// with pre_clone=True (:2619-2630); `migrate` is the standard-WordPress branch of the
+// migrate-to-LocalWP worker (:2813-3145). Bedrock's separate relocate path is deliberately out of
+// scope here.
+//
+// Ordering note for `create`: ocsites empties app/public and then clones into it, because it runs
+// before the clone. Muster's bind flow has already cloned to the project root by the time this
+// stage is reachable, so this reaches the same end state the way ocsites' own migrate worker does
+// (:3072-3083) — create the site at the project root, then move the existing entries in. End state
+// is identical: a registered site, a live socket, and the project under app/public.
 //
 // Destructive and irreversible: preconditions and the dry run live in localwp-migration-plan.ts, and
 // this refuses to touch anything unless that plan says ok.
@@ -20,10 +29,12 @@ import { discardLocalDatabaseExport, exportLocalDatabase } from './localwp-datab
 import { createLocalWpHost, localWpWordPressRoot, type LocalWpHost } from './localwp-host'
 import {
   LOCALWP_ROOT,
+  LOCALWP_SITE_READY,
   planLocalWpMigration,
   readTextOrEmpty,
   type LocalWpMigrationPlan,
-  type LocalWpMigrationRequest
+  type LocalWpMigrationRequest,
+  type LocalWpSetupMode
 } from './localwp-migration-plan'
 import { addLocalWpSite } from './localwp-site-creation'
 import { waitForSocket } from './localwp-site-control'
@@ -75,7 +86,8 @@ export async function runLocalWpMigration(
     return failed(plan, plan.blockedReason, log)
   }
   // Export first: it is the only step that reads the pre-migration database, and it must not run
-  // after Local has repointed the site at its own MySQL.
+  // after Local has repointed the site at its own MySQL. `create` has no database to read — the
+  // import stage is what brings one down.
   const dump = plan.databaseName
     ? await exportDump(request, plan, dependencies, fileOperations, record)
     : null
@@ -93,18 +105,40 @@ export async function runLocalWpMigration(
     if (!created.ok) {
       return failed(plan, `LocalWP site creation failed: ${created.message}`, log)
     }
-    record('Waiting for LocalWP to finish setting the site up…')
+    // ocsites' exact sequence (tui_deploy:2608-2617): announce the wait, then fail with a timeout
+    // that names the budget and the likeliest cause, because Local silently does nothing when the
+    // app is closed or its OS password prompt is still unanswered.
+    record('Waiting for LocalWP to complete setup…')
     const socketPath = await (dependencies.awaitSocket ?? waitForSocket)(request.sitePath, {
       host,
       onStatus: record,
       signal: dependencies.signal
     })
     if (!socketPath) {
-      return failed(plan, 'Timed out waiting for the LocalWP MySQL socket.', log)
+      return failed(
+        plan,
+        'Timed out waiting for the LocalWP MySQL socket (3 min). Is the Local app open?',
+        log
+      )
     }
-    const relocateError = await relocateProject(request, host, fileOperations, record)
+    record('Socket ready.')
+    const relocateError = await relocateProject(request, host, fileOperations, record, plan.mode)
     if (relocateError) {
       return failed(plan, relocateError, log)
+    }
+    if (plan.mode === 'create') {
+      // ocsites' create path ends here (tui_deploy:2630). There is no wp-config.php to rewrite and
+      // no dump to import; both arrive with "Import from the server".
+      record(LOCALWP_SITE_READY)
+      return {
+        ok: true,
+        plan,
+        socketPath,
+        localWpRoot: LOCALWP_ROOT,
+        databaseImported: false,
+        log,
+        message: LOCALWP_SITE_READY
+      }
     }
     await applyLocalWpConfigEdits(plan, fileOperations, record)
     const databaseImported = await importDump(
@@ -165,10 +199,12 @@ async function relocateProject(
   request: LocalWpMigrationRequest,
   host: LocalWpHost,
   fileOperations: LocalWpFileOperations,
-  record: (message: string) => void
+  record: (message: string) => void,
+  mode: LocalWpSetupMode
 ): Promise<string> {
   // Local scaffolds app/public while creating the site; clear it so the project's own wp-content
-  // replaces the scaffold rather than nesting inside it.
+  // replaces the scaffold rather than nesting inside it. ocsites clears here too, one step after the
+  // socket is ready (tui_deploy:2620).
   if (await fileOperations.pathExists(localWpWordPressRoot(request.sitePath))) {
     record("Clearing Local's generated app/public scaffold…")
     const cleared = await emptyAppPublic(request.sitePath, fileOperations)
@@ -176,9 +212,14 @@ async function relocateProject(
       return `Failed to clear app/public: ${cleared.message}`
     }
   }
-  const restored = await restoreGitAppPublic(request.sitePath, host)
-  if (restored.message) {
-    record(restored.message)
+  // Migrate-only, as in ocsites: an existing install has git-tracked files under app/public that
+  // Local's scaffold may have clobbered. In `create` mode app/public was never tracked, so
+  // `git restore app/public` has nothing to recover and ocsites skips it (tui_deploy:2619).
+  if (mode === 'migrate') {
+    const restored = await restoreGitAppPublic(request.sitePath, host)
+    if (restored.message) {
+      record(restored.message)
+    }
   }
   record('Moving project files into app/public…')
   const moved = await moveRootEntriesIntoAppPublic(request.sitePath, fileOperations, record)

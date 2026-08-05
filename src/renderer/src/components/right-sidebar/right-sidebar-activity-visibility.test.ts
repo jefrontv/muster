@@ -26,7 +26,8 @@ const items: ActivityBarItem[] = [
     shortcut: '',
     gitOnly: true
   },
-  { id: 'ports', icon: Files, title: 'Ports', shortcut: '', sshOnly: true }
+  { id: 'ports', icon: Files, title: 'Ports', shortcut: '', sshOnly: true },
+  { id: 'site', icon: Files, title: 'Site', shortcut: '', siteOnly: true }
 ]
 
 describe('getVisibleRightSidebarActivityItems', () => {
@@ -35,7 +36,8 @@ describe('getVisibleRightSidebarActivityItems', () => {
       getVisibleRightSidebarActivityItems(items, {
         isFolder: false,
         isFolderWorkspace: false,
-        isSshRepo: false
+        isSshRepo: false,
+        hasSite: false
       }).map((item) => item.id)
     ).toEqual(['explorer', 'source-control'])
 
@@ -43,9 +45,21 @@ describe('getVisibleRightSidebarActivityItems', () => {
       getVisibleRightSidebarActivityItems(items, {
         isFolder: false,
         isFolderWorkspace: false,
-        isSshRepo: true
+        isSshRepo: true,
+        hasSite: false
       }).map((item) => item.id)
     ).toEqual(['explorer', 'source-control', 'ports'])
+  })
+
+  it('shows Site only when the active project resolves to a site', () => {
+    expect(
+      getVisibleRightSidebarActivityItems(items, {
+        isFolder: false,
+        isFolderWorkspace: false,
+        isSshRepo: false,
+        hasSite: true
+      }).map((item) => item.id)
+    ).toEqual(['explorer', 'source-control', 'site'])
   })
 
   it('shows Workspaces only for folder workspaces and hides git tabs for all folder scopes', () => {
@@ -53,7 +67,8 @@ describe('getVisibleRightSidebarActivityItems', () => {
       getVisibleRightSidebarActivityItems(items, {
         isFolder: true,
         isFolderWorkspace: true,
-        isSshRepo: true
+        isSshRepo: true,
+        hasSite: false
       }).map((item) => item.id)
     ).toEqual(['explorer', 'workspaces', 'pr-checks', 'ports'])
 
@@ -61,7 +76,8 @@ describe('getVisibleRightSidebarActivityItems', () => {
       getVisibleRightSidebarActivityItems(items, {
         isFolder: true,
         isFolderWorkspace: false,
-        isSshRepo: true
+        isSshRepo: true,
+        hasSite: false
       }).map((item) => item.id)
     ).toEqual(['explorer', 'ports'])
   })

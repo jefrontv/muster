@@ -1,17 +1,12 @@
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: setup-guide readiness is driven by bounded IPC probes and browser focus events; the state cannot be derived synchronously from render inputs. */
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useAppStore } from '@/store'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { hasFeatureInteraction } from '../../../../shared/feature-interactions'
 import { checkRuntimeHooks } from '@/runtime/runtime-hooks-client'
-import { getLocalPreflightContext, localPreflightContextKey } from '@/lib/local-preflight-context'
 import { hasEffectiveSetupCommand } from '@/lib/setup-script-status'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
-import {
-  COMPUTER_USE_SKILL_NAME,
-  ORCA_CLI_SKILL_NAME,
-  ORCHESTRATION_SKILL_NAME
-} from '@/lib/agent-feature-install-commands'
+import { ORCHESTRATION_SKILL_NAME } from '@/lib/agent-feature-install-commands'
 import {
   GLOBAL_AGENT_SKILL_SOURCE_KINDS,
   useInstalledAgentSkill
@@ -21,10 +16,9 @@ import {
   getFeatureWallSetupProgress,
   type FeatureWallSetupProgress
 } from '../feature-wall/feature-wall-setup-progress'
-import { deriveIntegrationConnectionStatus } from '../feature-wall/use-integration-connection-status'
+import { deriveActiveCollabConnectionState } from '../settings/activecollab-connection-state'
 import { useSetupGuideBrowserMilestoneProgress } from './setup-guide-browser-milestone-progress'
 import {
-  getComputerUsePermissionSetupState,
   getCurrentSetupScriptProbeState,
   getSetupGuideProgressReady,
   getSetupScriptProbeSignature
@@ -37,55 +31,22 @@ import {
 
 const SETUP_SCRIPT_PROBE_SETTLE_TIMEOUT_MS = 15_000
 
-export function useSetupGuideProgress(
-  shouldRefreshCoreState: boolean,
-  orchestrationSkillInstalled: boolean,
-  browserUseSkillInstalled: boolean
-): FeatureWallSetupProgress {
+export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureWallSetupProgress {
   const settings = useAppStore((s) => s.settings)
   const featureInteractions = useAppStore((s) => s.featureInteractions)
   const worktreesByRepo = useAppStore((s) => s.worktreesByRepo)
-  const preflightStatus = useAppStore((s) => s.preflightStatus)
-  const preflightStatusChecked = useAppStore((s) => s.preflightStatusChecked)
-  const preflightStatusContextKey = useAppStore((s) => s.preflightStatusContextKey)
-  const preflightStatusError = useAppStore((s) => s.preflightStatusError)
-  const preflightStatusLoading = useAppStore((s) => s.preflightStatusLoading)
-  const refreshPreflightStatus = useAppStore((s) => s.refreshPreflightStatus)
+  const activeCollabStatus = useAppStore((s) => s.activeCollabStatus)
+  const activeCollabStatusChecked = useAppStore((s) => s.activeCollabStatusChecked)
+  const activeCollabStatusContextKey = useAppStore((s) => s.activeCollabStatusContextKey)
+  const checkActiveCollabConnection = useAppStore((s) => s.checkActiveCollabConnection)
   const activeSkillRuntime = useActiveProjectSkillRuntime()
-  const linearStatus = useAppStore((s) => s.linearStatus)
-  const linearStatusChecked = useAppStore((s) => s.linearStatusChecked)
-  const linearStatusContextKey = useAppStore((s) => s.linearStatusContextKey)
-  const checkLinearConnection = useAppStore((s) => s.checkLinearConnection)
-  const jiraStatus = useAppStore((s) => s.jiraStatus)
-  const jiraStatusChecked = useAppStore((s) => s.jiraStatusChecked)
-  const jiraStatusContextKey = useAppStore((s) => s.jiraStatusContextKey)
-  const checkJiraConnection = useAppStore((s) => s.checkJiraConnection)
   const repos = useAppStore((s) => s.repos)
   const activeRepoId = useAppStore((s) => s.activeRepoId)
-  const expectedPreflightContextKey = useAppStore((s) =>
-    localPreflightContextKey(getLocalPreflightContext(s))
-  )
   const setupScriptProbe = useSyncExternalStore(
     subscribeSetupScriptProbeCache,
     readSetupScriptProbeCache,
     readSetupScriptProbeCache
   )
-  const [computerUsePermissionsReady, setComputerUsePermissionsReady] = useState(false)
-  const [computerUsePermissionStatusChecked, setComputerUsePermissionStatusChecked] =
-    useState(false)
-  const [computerUseUnavailable, setComputerUseUnavailable] = useState(false)
-  const { installed: detectedBrowserUseSkillInstalled, loading: detectedBrowserUseSkillLoading } =
-    useInstalledAgentSkill(ORCA_CLI_SKILL_NAME, {
-      enabled: shouldRefreshCoreState,
-      discoveryTarget: activeSkillRuntime.discoveryTarget,
-      sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
-    })
-  const { installed: computerUseSkillInstalled, loading: computerUseSkillLoading } =
-    useInstalledAgentSkill(COMPUTER_USE_SKILL_NAME, {
-      enabled: shouldRefreshCoreState,
-      discoveryTarget: activeSkillRuntime.discoveryTarget,
-      sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
-    })
   const {
     installed: detectedOrchestrationSkillInstalled,
     loading: detectedOrchestrationSkillLoading
@@ -95,38 +56,19 @@ export function useSetupGuideProgress(
     sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
   })
   const providerRuntimeContextKey = getProviderRuntimeContextKey(settings)
-  const linearStatusCurrent = linearStatusContextKey === providerRuntimeContextKey
-  const jiraStatusCurrent = jiraStatusContextKey === providerRuntimeContextKey
-  const preflightStatusCurrent = preflightStatusContextKey === expectedPreflightContextKey
+  const activeCollabStatusCurrent = activeCollabStatusContextKey === providerRuntimeContextKey
 
   useEffect(() => {
     if (!shouldRefreshCoreState) {
       return
     }
-    if (!preflightStatusCurrent || !preflightStatusChecked) {
-      void refreshPreflightStatus()
-    }
-    if (!linearStatusCurrent || !linearStatusChecked) {
-      void checkLinearConnection()
-    }
-    if (!jiraStatusCurrent || !jiraStatusChecked) {
-      void checkJiraConnection()
+    if (!activeCollabStatusCurrent || !activeCollabStatusChecked) {
+      void checkActiveCollabConnection()
     }
   }, [
-    checkJiraConnection,
-    checkLinearConnection,
-    jiraStatusCurrent,
-    jiraStatusChecked,
-    jiraStatusContextKey,
-    linearStatusCurrent,
-    linearStatusChecked,
-    linearStatusContextKey,
-    expectedPreflightContextKey,
-    preflightStatusContextKey,
-    preflightStatusCurrent,
-    preflightStatusChecked,
-    providerRuntimeContextKey,
-    refreshPreflightStatus,
+    activeCollabStatusChecked,
+    activeCollabStatusCurrent,
+    checkActiveCollabConnection,
     shouldRefreshCoreState
   ])
 
@@ -189,93 +131,26 @@ export function useSetupGuideProgress(
     }
   }, [orderedGitRepos, settings, setupScriptProbeSignature, shouldRefreshCoreState])
 
-  const readComputerUsePermissions = useCallback(async (isStale: () => boolean): Promise<void> => {
-    const status = await window.api.computerUsePermissions.getStatus().catch(() => null)
-    if (isStale()) {
-      return
-    }
-    const permissionState = getComputerUsePermissionSetupState(status)
-    // oxlint-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Why: async permission checks update setup progress after external OS state changes.
-    setComputerUsePermissionStatusChecked(true)
-    setComputerUsePermissionsReady(permissionState.ready)
-    setComputerUseUnavailable(permissionState.unavailable)
-  }, [])
-
-  useEffect(() => {
-    if (!shouldRefreshCoreState || !computerUseSkillInstalled) {
-      // Why: unavailable setup-guide steps must clear stale permission state before
-      // readiness is derived for the visible checklist.
-      setComputerUsePermissionStatusChecked(false)
-      setComputerUsePermissionsReady(false)
-      setComputerUseUnavailable(false)
-      return
-    }
-    let stale = false
-    const refreshComputerUsePermissions = (): void => {
-      void readComputerUsePermissions(() => stale)
-    }
-    // oxlint-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Why: refresh the setup checklist when the permission step becomes active.
-    refreshComputerUsePermissions()
-    const handleFocus = (): void => {
-      void refreshComputerUsePermissions()
-    }
-    const handleVisibilityChange = (): void => {
-      if (document.visibilityState === 'visible') {
-        void refreshComputerUsePermissions()
-      }
-    }
-    // Why: users grant Computer Use permissions outside the setup guide. Refresh
-    // on return so the checklist updates without requiring a remount.
-    window.addEventListener('focus', handleFocus)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      stale = true
-      window.removeEventListener('focus', handleFocus)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [computerUseSkillInstalled, readComputerUsePermissions, shouldRefreshCoreState])
-
-  const taskSourceStatus = deriveIntegrationConnectionStatus({
-    preflightStatus,
-    preflightStatusChecked,
-    preflightStatusContextKey,
-    preflightStatusError,
-    preflightStatusLoading,
-    expectedPreflightContextKey,
-    linearStatus,
-    linearStatusChecked,
-    linearStatusContextKey,
-    jiraStatus,
-    jiraStatusChecked,
-    jiraStatusContextKey,
+  // Why: the step tracks the exact connected state the ActiveCollab settings
+  // card renders, so the checklist can never disagree with Settings.
+  const taskSourceStatus = deriveActiveCollabConnectionState({
+    status: activeCollabStatus,
+    statusChecked: activeCollabStatusChecked,
+    statusContextKey: activeCollabStatusContextKey,
     providerRuntimeContextKey
   })
-  const hasConnectedTaskSource = taskSourceStatus.trackerConnected
+  const hasConnectedTaskSource = taskSourceStatus.connected
   const gitRepoCount = orderedGitRepos.length
   const currentSetupScriptProbe = getCurrentSetupScriptProbeState(
     setupScriptProbe,
     setupScriptProbeSignature
   )
-  const currentComputerUsePermissionStatusChecked =
-    shouldRefreshCoreState && computerUseSkillInstalled ? computerUsePermissionStatusChecked : false
-  const currentComputerUsePermissionsReady =
-    shouldRefreshCoreState && computerUseSkillInstalled ? computerUsePermissionsReady : false
-  const currentComputerUseUnavailable =
-    shouldRefreshCoreState && computerUseSkillInstalled ? computerUseUnavailable : false
   const ready = getSetupGuideProgressReady({
     refreshEnabled: shouldRefreshCoreState,
     settingsLoaded: settings !== null,
-    // Why: task-source readiness is a capability group. Once any provider is
-    // usable, unrelated stale provider checks should not hide setup progress.
-    preflightStatusChecked: !taskSourceStatus.checking,
-    linearStatusChecked: true,
-    jiraStatusChecked: true,
-    browserUseSkillDiscoveryLoading: detectedBrowserUseSkillLoading,
-    computerUseSkillDiscoveryLoading: computerUseSkillLoading,
+    taskSourceStatusChecked: !taskSourceStatus.checking,
     orchestrationSkillDiscoveryLoading: detectedOrchestrationSkillLoading,
-    setupScriptProbeReady: currentSetupScriptProbe.ready,
-    computerUseSkillInstalled,
-    computerUsePermissionStatusChecked: currentComputerUsePermissionStatusChecked
+    setupScriptProbeReady: currentSetupScriptProbe.ready
   })
 
   const rawProgress = useMemo(
@@ -285,29 +160,17 @@ export function useSetupGuideProgress(
         settings,
         featureInteractions,
         hasConnectedTaskSource,
-        browserUseSkillInstalled: browserUseSkillInstalled || detectedBrowserUseSkillInstalled,
-        computerUseSkillInstalled,
-        computerUsePermissionsReady: currentComputerUsePermissionsReady,
-        computerUseUnavailable: currentComputerUseUnavailable,
-        orchestrationSkillInstalled:
-          orchestrationSkillInstalled || detectedOrchestrationSkillInstalled,
         gitRepoCount,
         worktreesByRepo,
         hasSetupScript: currentSetupScriptProbe.hasSetupScript
       }),
     [
-      browserUseSkillInstalled,
       ready,
-      currentComputerUseUnavailable,
-      currentComputerUsePermissionsReady,
-      computerUseSkillInstalled,
-      detectedBrowserUseSkillInstalled,
       detectedOrchestrationSkillInstalled,
       featureInteractions,
       gitRepoCount,
       hasConnectedTaskSource,
       currentSetupScriptProbe.hasSetupScript,
-      orchestrationSkillInstalled,
       settings,
       worktreesByRepo
     ]

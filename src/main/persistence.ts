@@ -1,5 +1,11 @@
 /* eslint-disable max-lines -- Why: persistence keeps schema defaults, migration, and load/save/flush in one file so the storage contract reviews as a unit. */
-import { app, safeStorage } from 'electron'
+import { electronApp, electronSafeStorage, nodeFallbackUserDataDir } from './node-safe-electron'
+import { isOsCryptDecryptAvailable, osCryptDecryptString } from './os-crypt-node'
+import {
+  DURABILITY_JOURNAL_MAX_BYTES,
+  PersistenceDurabilityJournal,
+  type DurabilityJournalRecord
+} from './persistence-durability-journal'
 import {
   readFileSync,
   writeFileSync,
@@ -260,11 +266,12 @@ import { getCohortAtEmit } from './telemetry/cohort-classifier'
 import { isStartupDiagnosticsEnabled, logStartupDiagnostic } from './startup/startup-diagnostics'
 
 function encrypt(plaintext: string): string {
-  if (!plaintext || !safeStorage.isEncryptionAvailable()) {
+  // Node-mode processes (the muster-sites MCP server) never encrypt: one writer, the GUI.
+  if (!plaintext || electronSafeStorage?.isEncryptionAvailable() !== true) {
     return plaintext
   }
   try {
-    return safeStorage.encryptString(plaintext).toString('base64')
+    return electronSafeStorage.encryptString(plaintext).toString('base64')
   } catch (err) {
     console.error('[persistence] Encryption failed:', err)
     return plaintext
@@ -272,18 +279,29 @@ function encrypt(plaintext: string): string {
 }
 
 function decrypt(ciphertext: string): string {
-  if (!ciphertext || !safeStorage.isEncryptionAvailable()) {
+  if (!ciphertext) {
     return ciphertext
   }
-  try {
-    return safeStorage.decryptString(Buffer.from(ciphertext, 'base64'))
-  } catch {
-    // Why: decrypt failure usually means plaintext (pre-encryption) or a changed keychain; return raw so the cookie survives upgrade.
-    console.warn(
-      '[persistence] safeStorage decryption failed — returning ciphertext as-is. Possible keychain reset.'
-    )
-    return ciphertext
+  if (electronSafeStorage?.isEncryptionAvailable() === true) {
+    try {
+      return electronSafeStorage.decryptString(Buffer.from(ciphertext, 'base64'))
+    } catch {
+      // Why: decrypt failure usually means plaintext (pre-encryption) or a changed keychain; return raw so the cookie survives upgrade.
+      console.warn(
+        '[persistence] safeStorage decryption failed — returning ciphertext as-is. Possible keychain reset.'
+      )
+      return ciphertext
+    }
   }
+  // Node mode: same bytes, decrypted via Chromium's documented OSCrypt scheme.
+  if (isOsCryptDecryptAvailable()) {
+    try {
+      return osCryptDecryptString(Buffer.from(ciphertext, 'base64'))
+    } catch {
+      return ciphertext
+    }
+  }
+  return ciphertext
 }
 
 function decryptOptionalSecret(value: string | null | undefined): string | null {
@@ -336,7 +354,7 @@ let _dataFile: string | null = null
 let _userDataDir: string | null = null
 
 export function initDataPath(): void {
-  const userDataDir = app.getPath('userData')
+  const userDataDir = electronApp?.getPath('userData') ?? nodeFallbackUserDataDir()
   _userDataDir = userDataDir
   _dataFile = join(userDataDir, 'orca-data.json')
 }
@@ -344,7 +362,7 @@ export function initDataPath(): void {
 function getDataFile(): string {
   if (!_dataFile) {
     // Safety fallback — should not be hit in normal startup.
-    const userDataDir = app.getPath('userData')
+    const userDataDir = electronApp?.getPath('userData') ?? nodeFallbackUserDataDir()
     _userDataDir = userDataDir
     _dataFile = join(userDataDir, 'orca-data.json')
   }
@@ -443,7 +461,7 @@ function readGithubCacheSnapshot(dataFile: string): PersistedState['githubCache'
 export function getCanonicalUserDataPath(): string {
   if (!_userDataDir) {
     // Safety fallback — should not be hit in normal startup.
-    _userDataDir = app.getPath('userData')
+    _userDataDir = electronApp?.getPath('userData') ?? nodeFallbackUserDataDir()
   }
   return _userDataDir
 }
@@ -793,7 +811,8 @@ function normalizeRightSidebarTab(tab: unknown): PersistedState['ui']['rightSide
     tab === 'workspaces' ||
     tab === 'source-control' ||
     tab === 'checks' ||
-    tab === 'ports'
+    tab === 'ports' ||
+    tab === 'site'
   ) {
     return tab
   }
@@ -2655,6 +2674,9 @@ export class Store {
   private githubCacheDirty = false
   private gitUsernameCache = new Map<string, string>()
   private loadNeedsSave = false
+  private readonly durabilityJournal: PersistenceDurabilityJournal
+  // Why: replay re-invokes journaled mutators; suppress re-journaling during it.
+  private replayingJournal = false
   private settingsChangeListeners = new Set<
     (
       updates: Partial<GlobalSettings>,
@@ -2667,6 +2689,8 @@ export class Store {
   constructor(options: StoreOptions = {}) {
     // Why: profile switching yields multiple state paths; capture per Store so late async writes can't follow a global path.
     this.dataFile = options.dataFile ?? getDataFile()
+    // Why: crash-critical mutations append here instead of paying a full-state sync write.
+    this.durabilityJournal = new PersistenceDurabilityJournal(this.dataFile)
     const profileSnapshotRoot = getProfileTerminalScrollbackSnapshotRoot(this.dataFile)
     const legacySnapshotRoot = getProfileTerminalScrollbackSnapshotRoot(getDataFile())
     this.terminalScrollbackSnapshotStorage = {
@@ -2694,6 +2718,7 @@ export class Store {
       this.state.legacyPaneKeyAliasEntries = entries
       this.scheduleSave()
     })
+    this.replayDurabilityJournal()
     if (normalized.changed || this.loadNeedsSave || adaptedProjectGroups) {
       // Why: rewrite legacy pane:1 leaves so older renderer writes can't revive them; other migrations also set loadNeedsSave.
       this.scheduleSave()
@@ -2931,6 +2956,15 @@ export class Store {
           : rawOptionAsAlt === undefined || rawOptionAsAlt === 'true'
             ? 'auto'
             : rawOptionAsAlt
+        // Why: in-app link routing now defaults on; only adopt it for profiles that never made an
+        // explicit choice, so an existing opt-out (recorded via the routing prompt) survives reload.
+        const openLinksInAppChosen = parsed.settings?.openLinksInAppPreferencePrompted === true
+        const migratedOpenLinksInApp = openLinksInAppChosen
+          ? parsed.settings?.openLinksInApp === true
+          : true
+        if (!openLinksInAppChosen && parsed.settings?.openLinksInApp !== true) {
+          this.loadNeedsSave = true
+        }
         const floatingTerminalDefaultedForAllUsers =
           parsed.settings?.floatingTerminalDefaultedForAllUsers === true
         // Why: early builds persisted the old off default; flip only unmigrated profiles so a later opt-out survives reload.
@@ -3197,6 +3231,7 @@ export class Store {
             localWindowsRuntimeDefault: migratedWindowsRuntimeDefault,
             localAccountRuntime: migratedLocalAccountRuntime,
             localAccountRuntimeDefaultedToAutoForAllUsers: true,
+            openLinksInApp: migratedOpenLinksInApp,
             floatingTerminalEnabled: migratedFloatingTerminalEnabled,
             floatingTerminalDefaultedForAllUsers: true,
             floatingTerminalCwd: migratedFloatingTerminalCwd,
@@ -3718,6 +3753,8 @@ export class Store {
       return
     }
     const gen = this.writeGeneration
+    // Why: entries appended during this write's awaits must survive compaction.
+    const journalWatermark = this.durabilityJournal.watermark()
     const { payload, stateHash } = this.buildStateToSave()
     // Why: don't rewrite a byte-identical multi-MB file when state nets out to already-persisted.
     if (stateHash === this.lastWrittenStateHash) {
@@ -3741,6 +3778,8 @@ export class Store {
       // Why re-check gen: a sync flush during the rename await may have written fresher state; don't record a stale hash over it.
       if (this.writeGeneration === gen) {
         this.lastWrittenStateHash = stateHash
+        // Why: this payload already contains every journaled mutation up to the watermark.
+        this.durabilityJournal.compactTo(journalWatermark)
       }
     } finally {
       if (!renamed) {
@@ -3757,11 +3796,14 @@ export class Store {
     }
   }
 
-  // Why: sync variant only for flush() at shutdown, where the process may exit before an async write completes.
+  // Why: sync variant for durability barriers that must outlive an imminent exit —
+  // shutdown flush, the Codex credit ledger, and journal overflow.
   private writeToDiskSync(opts: { force?: boolean } = {}): void {
     if (this.writesFrozen) {
       return
     }
+    // Why: no awaits below, so this watermark still covers the built payload.
+    const journalWatermark = this.durabilityJournal.watermark()
     const { payload, stateHash } = this.buildStateToSave()
     // Why: matching hash means the file already holds this state; force overrides when an async rename may be racing past the gen check.
     if (!opts.force && stateHash === this.lastWrittenStateHash) {
@@ -3781,6 +3823,7 @@ export class Store {
       renameSync(tmpFile, dataFile)
       renamed = true
       this.lastWrittenStateHash = stateHash
+      this.durabilityJournal.compactTo(journalWatermark)
     } finally {
       if (!renamed) {
         try {
@@ -3807,6 +3850,57 @@ export class Store {
     this.writeGeneration++
     this.pendingWrite = null
     this.writeToDiskSync({ force: asyncWriteWasInFlight })
+  }
+
+  /** Durability barrier for crash-critical mutations. Records intent to the
+   *  append-only journal (O(entry)) instead of a sync full-state write
+   *  (O(state)). Throws on failure so callers roll back, matching flushOrThrow. */
+  private journalOrThrow(record: DurabilityJournalRecord): void {
+    // Replay re-invokes these mutators; re-journaling would duplicate the entry.
+    if (this.replayingJournal || this.writesFrozen) {
+      return
+    }
+    this.durabilityJournal.append(record)
+    this.scheduleSave()
+    if (this.durabilityJournal.byteLength() > DURABILITY_JOURNAL_MAX_BYTES) {
+      // Why: journal stopped converging (full writes failing); collapse it now
+      // rather than accumulate a file we must replay at next launch.
+      this.flushOrThrow()
+    }
+  }
+
+  /** Re-apply crash-critical mutations the last full write didn't capture. Each
+   *  mutator is idempotent, so replaying an already-persisted record is a no-op. */
+  private replayDurabilityJournal(): void {
+    const pending = this.durabilityJournal.readPending()
+    if (pending.length === 0) {
+      return
+    }
+    this.replayingJournal = true
+    try {
+      for (const record of pending) {
+        try {
+          switch (record.op) {
+            case 'pty-binding':
+              this.persistPtyBinding(record.args, record.hostId)
+              break
+            case 'claude-live-pty-session':
+              this.addClaudeLivePtySessionId(record.sessionId)
+              break
+            case 'ssh-lease-upsert':
+              this.applySshRemotePtyLease(record.lease)
+              break
+          }
+        } catch (err) {
+          // One bad record must not strand the rest of the journal.
+          console.warn('[persistence] Skipped unreplayable journal record:', err)
+        }
+      }
+    } finally {
+      this.replayingJournal = false
+    }
+    // Why: fold replayed state into the next full write, which then drops the journal.
+    this.loadNeedsSave = true
   }
 
   flushActiveViewPreferenceOrThrow(): void {
@@ -4863,7 +4957,7 @@ export class Store {
     }
     this.state.automations = [...(this.state.automations ?? []), automation]
     this.recordFeatureInteraction('automation-created')
-    this.flush()
+    this.scheduleSave()
     return automation
   }
 
@@ -4935,7 +5029,7 @@ export class Store {
       updatedAt: Date.now()
     }
     this.state.automations[index] = updated
-    this.flush()
+    this.scheduleSave()
     return updated
   }
 
@@ -4944,7 +5038,7 @@ export class Store {
     this.state.automationRuns = (this.state.automationRuns ?? []).filter(
       (entry) => entry.automationId !== id
     )
-    this.flush()
+    this.scheduleSave()
   }
 
   createAutomationRun(
@@ -4992,7 +5086,7 @@ export class Store {
     if (trigger === 'manual') {
       this.recordFeatureInteraction('automation-run')
     }
-    this.flush()
+    this.scheduleSave()
     return run
   }
 
@@ -5041,7 +5135,7 @@ export class Store {
       automation.lastRunAt = now
       automation.updatedAt = now
     }
-    this.flush()
+    this.scheduleSave()
     return updated
   }
 
@@ -5059,7 +5153,7 @@ export class Store {
       return { ...run, workspaceDisplayName: normalizedDisplayName }
     })
     if (updatedCount > 0) {
-      this.flush()
+      this.scheduleSave()
     }
     return updatedCount
   }
@@ -5085,7 +5179,7 @@ export class Store {
     const nextRunAt = nextAutomationOccurrenceAfter(current.rrule, current.dtstart, now)
     const updated = { ...current, nextRunAt, updatedAt: Date.now() }
     this.state.automations[index] = updated
-    this.flush()
+    this.scheduleSave()
     return updated
   }
 
@@ -6171,7 +6265,7 @@ export class Store {
     return this.state.repos.find((repo) => repo.id === repoId)?.connectionId ?? null
   }
 
-  // Why: sync-flush the pty binding before pty:spawn returns to close the spawn/persist SIGKILL race (Issue #217).
+  // Why: journal the binding before pty:spawn returns to close the spawn/persist SIGKILL race (Issue #217).
   persistPtyBinding(
     args: {
       worktreeId: string
@@ -6194,6 +6288,8 @@ export class Store {
     const sessionBeforeBinding = cloneWorkspaceSessionState(session)
     const paneKey = `${args.tabId}:${args.leafId}`
     let terminalMembershipChanged = false
+    // Why: a warm-restart re-bind storm re-asserts identical bindings; skip journaling those.
+    let bindingChanged = false
     const advanceTopologyAfterMembershipChange = (): void => {
       const repoId = getRepoIdFromWorktreeId(args.worktreeId)
       const currentRevision = session.terminalTopologyRevisionByRepoId?.[repoId] ?? 0
@@ -6217,23 +6313,31 @@ export class Store {
       }
     }
     if (args.incarnationId) {
-      session.terminalPtyIncarnationsByPaneKey = {
-        ...session.terminalPtyIncarnationsByPaneKey,
-        [paneKey]: args.incarnationId
+      if (session.terminalPtyIncarnationsByPaneKey?.[paneKey] !== args.incarnationId) {
+        session.terminalPtyIncarnationsByPaneKey = {
+          ...session.terminalPtyIncarnationsByPaneKey,
+          [paneKey]: args.incarnationId
+        }
+        bindingChanged = true
       }
       if (session.terminalSurfaceTombstonesByPaneKey?.[paneKey]) {
         session.terminalSurfaceTombstonesByPaneKey = {
           ...session.terminalSurfaceTombstonesByPaneKey
         }
         delete session.terminalSurfaceTombstonesByPaneKey[paneKey]
+        bindingChanged = true
       }
     }
     const tabs = session.tabsByWorktree?.[args.worktreeId]
     const tab = tabs?.find((t) => t.id === args.tabId)
     if (tab) {
-      tab.ptyId = args.ptyId
+      if (tab.ptyId !== args.ptyId) {
+        tab.ptyId = args.ptyId
+        bindingChanged = true
+      }
     } else {
       terminalMembershipChanged = true
+      bindingChanged = true
       // Why: pty:spawn can beat the debounced writer; persist a minimal tab so hydration won't prune the binding as orphaned.
       const nextTabs = [
         ...(tabs ?? []),
@@ -6256,8 +6360,11 @@ export class Store {
     if (!isTerminalLeafId(args.leafId)) {
       // Why: keep legacy renderer-local pane ids out of durable leaf-keyed layout state after the UUID migration.
       advanceTopologyAfterMembershipChange()
+      if (!bindingChanged) {
+        return
+      }
       try {
-        this.flushOrThrow()
+        this.journalOrThrow({ op: 'pty-binding', args, hostId: resolvedHostId })
       } catch (err) {
         restoreSession()
         throw err
@@ -6268,12 +6375,14 @@ export class Store {
     if (layout) {
       if (!layout.root) {
         terminalMembershipChanged = true
-        // Why: createTab can persist an empty layout before TerminalPane mounts; the sync binding still needs a durable root.
+        bindingChanged = true
+        // Why: createTab can persist an empty layout before TerminalPane mounts; the binding still needs a durable root.
         layout.root = { type: 'leaf', leafId: args.leafId }
         layout.activeLeafId = args.leafId
         layout.expandedLeafId = null
       } else if (!layoutContainsLeafId(layout.root, args.leafId)) {
         terminalMembershipChanged = true
+        bindingChanged = true
         // Why: splitPane spawns before its snapshot reaches main; add a minimal leaf so a crash can't strand the pane's binding.
         layout.root = {
           type: 'split',
@@ -6286,12 +6395,16 @@ export class Store {
           layout.expandedLeafId = null
         }
       }
-      layout.ptyIdsByLeafId = {
-        ...layout.ptyIdsByLeafId,
-        [args.leafId]: args.ptyId
+      if (layout.ptyIdsByLeafId?.[args.leafId] !== args.ptyId) {
+        layout.ptyIdsByLeafId = {
+          ...layout.ptyIdsByLeafId,
+          [args.leafId]: args.ptyId
+        }
+        bindingChanged = true
       }
     } else {
       terminalMembershipChanged = true
+      bindingChanged = true
       // Why: first tab spawn — persist a minimal layout so a SIGKILL before the renderer snapshot can't lose ptyIdsByLeafId.
       session.terminalLayoutsByTabId = {
         ...session.terminalLayoutsByTabId,
@@ -6304,8 +6417,11 @@ export class Store {
       }
     }
     advanceTopologyAfterMembershipChange()
+    if (!bindingChanged) {
+      return
+    }
     try {
-      this.flushOrThrow()
+      this.journalOrThrow({ op: 'pty-binding', args, hostId: resolvedHostId })
     } catch (err) {
       restoreSession()
       throw err
@@ -6370,8 +6486,8 @@ export class Store {
     }
     // Why: drop oldest at the cap — stale ids get pruned against the daemon at startup, so only recency matters.
     this.state.claudeLivePtySessionIds = [...ids, sessionId].slice(-MAX_CLAUDE_LIVE_PTY_SESSION_IDS)
-    // Why: flush sync so a force-quit right after a Claude spawn still seeds the live-PTY gate next launch.
-    this.flush()
+    // Why: journal it so a force-quit right after a Claude spawn still seeds the live-PTY gate next launch.
+    this.journalOrThrow({ op: 'claude-live-pty-session', sessionId })
   }
 
   removeClaudeLivePtySessionId(sessionId: string): void {
@@ -6552,6 +6668,18 @@ export class Store {
       normalizedLease.targetId,
       normalizedLease.ptyId
     )
+    const stored = this.applySshRemotePtyLease(normalizedLease)
+    // Why: losing a lease orphans a live pty on the remote host.
+    this.journalOrThrow({ op: 'ssh-lease-upsert', lease: stored })
+  }
+
+  /** Why separate: journal replay must not re-run the pty-id normalization in
+   *  upsertSshRemotePtyLease, which is not idempotent. */
+  private applySshRemotePtyLease(
+    normalizedLease: Omit<SshRemotePtyLease, 'createdAt' | 'updatedAt'> &
+      Partial<Pick<SshRemotePtyLease, 'createdAt' | 'updatedAt'>>
+  ): SshRemotePtyLease {
+    this.state.sshRemotePtyLeases ??= []
     const now = Date.now()
     const existingIndex = this.state.sshRemotePtyLeases.findIndex(
       (entry) =>
@@ -6569,9 +6697,12 @@ export class Store {
     } else {
       this.state.sshRemotePtyLeases.push(next)
     }
-    this.flush()
+    return next
   }
 
+  // Why these transitions ride the debounced write while lease *creation* is journaled:
+  // losing a state change or removal is self-healing — the next launch just attempts a
+  // re-attach that fails and cleans up. Losing a creation orphans a live remote pty.
   markSshRemotePtyLeases(targetId: string, state: SshRemotePtyLease['state']): void {
     const now = Date.now()
     let changed = false
@@ -6603,7 +6734,7 @@ export class Store {
       ? this.clearSshRemotePtyBindingsForLeases(targetId, leasesToClear)
       : false
     if (changed || bindingsChanged) {
-      this.flush()
+      this.scheduleSave()
     }
   }
 
@@ -6618,7 +6749,7 @@ export class Store {
     const shouldClearBindings = state === 'terminated' || state === 'expired'
     if (lease.state === state) {
       if (shouldClearBindings && this.clearSshRemotePtyBindingsForLeases(targetId, [lease])) {
-        this.flush()
+        this.scheduleSave()
       }
       return
     }
@@ -6633,7 +6764,7 @@ export class Store {
     if (shouldClearBindings) {
       this.clearSshRemotePtyBindingsForLeases(targetId, [lease])
     }
-    this.flush()
+    this.scheduleSave()
   }
 
   removeSshRemotePtyLease(targetId: string, ptyId: string): void {
@@ -6647,7 +6778,7 @@ export class Store {
       (lease) => lease.targetId !== targetId || lease.ptyId !== relayPtyId
     )
     if (this.state.sshRemotePtyLeases.length !== before) {
-      this.flush()
+      this.scheduleSave()
     }
   }
 
@@ -6659,7 +6790,7 @@ export class Store {
       (lease) => lease.targetId !== targetId
     )
     if (this.state.sshRemotePtyLeases.length !== before) {
-      this.flush()
+      this.scheduleSave()
     }
   }
 

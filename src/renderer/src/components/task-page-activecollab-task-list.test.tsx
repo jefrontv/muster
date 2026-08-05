@@ -128,6 +128,7 @@ function taskFixture(overrides: Partial<ActiveCollabTask> = {}): ActiveCollabTas
     name: 'Ship the codec',
     bodyHtml: '<p>body</p>',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,

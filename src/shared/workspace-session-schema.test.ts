@@ -474,4 +474,107 @@ describe('parseWorkspaceSession', () => {
       expect(result.value.unifiedTabs?.wt[0].viewMode).toBe('terminal')
     }
   })
+
+  // Why this contract matters: `contentType` used to have no tolerance, so a session
+  // holding a tab type this build had retired (e.g. the removed mobile emulator's
+  // 'simulator') failed the whole-object safeParse. The caller then fell back to
+  // defaults, silently destroying every tab, group, and split layout — indistinguishable
+  // from generic session corruption. Retiring the NEXT tab type must stay safe.
+  it('drops a tab with a retired contentType and keeps the rest of the session', () => {
+    const result = parseWorkspaceSession({
+      activeRepoId: null,
+      activeWorktreeId: 'wt',
+      activeTabId: null,
+      tabsByWorktree: {},
+      terminalLayoutsByTabId: {},
+      unifiedTabs: {
+        wt: [
+          {
+            id: 'term1',
+            entityId: 'term1',
+            groupId: 'group1',
+            worktreeId: 'wt',
+            contentType: 'terminal',
+            label: 'Claude',
+            customLabel: null,
+            color: null,
+            sortOrder: 0,
+            createdAt: 0
+          },
+          {
+            id: 'retired1',
+            entityId: 'retired1',
+            groupId: 'group1',
+            worktreeId: 'wt',
+            // A build that retired this tab type must not lose the session.
+            contentType: 'simulator',
+            label: 'Mobile Emulator',
+            customLabel: null,
+            color: null,
+            sortOrder: 1,
+            createdAt: 1
+          },
+          {
+            id: 'browser1',
+            entityId: 'browser1',
+            groupId: 'group2',
+            worktreeId: 'wt',
+            contentType: 'browser',
+            label: 'Docs',
+            customLabel: null,
+            color: null,
+            sortOrder: 2,
+            createdAt: 2
+          }
+        ]
+      },
+      tabGroups: {
+        wt: [
+          { id: 'group1', worktreeId: 'wt', activeTabId: 'term1', tabOrder: ['term1', 'retired1'] },
+          { id: 'group2', worktreeId: 'wt', activeTabId: 'browser1', tabOrder: ['browser1'] }
+        ]
+      },
+      tabGroupLayouts: {
+        wt: {
+          type: 'split',
+          direction: 'horizontal',
+          first: { type: 'leaf', groupId: 'group1' },
+          second: { type: 'leaf', groupId: 'group2' },
+          ratio: 0.5
+        }
+      }
+    })
+
+    // The negative case: the whole-object parse must NOT fail into defaults.
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+    // Only the retired tab is gone.
+    expect(result.value.unifiedTabs?.wt.map((tab) => tab.id)).toEqual(['term1', 'browser1'])
+    // Layout and groups survive — that is what the old whole-session failure destroyed.
+    expect(result.value.tabGroups?.wt.map((group) => group.id)).toEqual(['group1', 'group2'])
+    expect(result.value.tabGroupLayouts?.wt).toEqual({
+      type: 'split',
+      direction: 'horizontal',
+      first: { type: 'leaf', groupId: 'group1' },
+      second: { type: 'leaf', groupId: 'group2' },
+      ratio: 0.5
+    })
+  })
+
+  it('degrades a retired activeTabType to terminal without failing parse', () => {
+    const result = parseWorkspaceSession({
+      activeRepoId: null,
+      activeWorktreeId: 'wt',
+      activeTabId: null,
+      tabsByWorktree: {},
+      terminalLayoutsByTabId: {},
+      activeTabTypeByWorktree: { wt: 'simulator' }
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.activeTabTypeByWorktree?.wt).toBe('terminal')
+    }
+  })
 })

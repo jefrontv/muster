@@ -5,6 +5,7 @@ import {
   shouldUseNativeContextMenu,
   shouldIgnoreNestedWorktreeContextMenuScope,
   shouldRemoveProjectFromContextMenu,
+  shouldShowDisabledDeleteWorktree,
   shouldSuppressContextMenuFollowUpClick,
   shouldContinueDeleteSiblingPositionRestore,
   getWorktreeParentPickerAnchor,
@@ -233,6 +234,41 @@ describe('project removal from workspace context menus', () => {
     expect(isContextWorktreeDeletable({ isMainWorktree: false }, folderRepo)).toBe(true)
     expect(isContextWorktreeDeletable({ isMainWorktree: true }, folderRepo)).toBe(false)
     expect(isContextWorktreeDeletable({ isMainWorktree: false }, null)).toBe(false)
+  })
+
+  // Why: a folder project has no worktrees, so a greyed "Delete Worktree" tooltipped about a
+  // primary worktree reads as a broken action next to the only enabled item, project removal.
+  it('hides the disabled Delete Worktree row for folder projects', () => {
+    expect(
+      shouldShowDisabledDeleteWorktree(
+        { kind: 'folder' },
+        { isMultiContext: false, removesProject: true }
+      )
+    ).toBe(false)
+  })
+
+  it('keeps it for a git primary checkout, which genuinely cannot be worktree-removed', () => {
+    expect(
+      shouldShowDisabledDeleteWorktree(
+        { kind: 'git' },
+        { isMultiContext: false, removesProject: true }
+      )
+    ).toBe(true)
+  })
+
+  it('never shows it for a row that is not routed to project removal', () => {
+    expect(
+      shouldShowDisabledDeleteWorktree(
+        { kind: 'git' },
+        { isMultiContext: false, removesProject: false }
+      )
+    ).toBe(false)
+    expect(
+      shouldShowDisabledDeleteWorktree(
+        { kind: 'git' },
+        { isMultiContext: true, removesProject: true }
+      )
+    ).toBe(false)
   })
 })
 

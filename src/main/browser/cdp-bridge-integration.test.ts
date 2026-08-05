@@ -14,7 +14,16 @@ vi.mock('electron', () => ({
   webContents: { fromId: webContentsFromIdMock },
   shell: { openExternal: vi.fn() },
   ipcMain: { handle: vi.fn(), removeHandler: vi.fn(), on: vi.fn() },
-  app: { getPath: vi.fn(() => '/tmp'), isPackaged: false }
+  app: { getPath: vi.fn(() => '/tmp'), isPackaged: false, getAppPath: vi.fn(() => '/tmp') },
+  // Browser-extension modules reached through the RPC method registry import these by name.
+  BrowserWindow: { fromWebContents: vi.fn(() => null) },
+  dialog: { showOpenDialog: vi.fn() },
+  session: { fromPartition: vi.fn(() => ({ extensions: undefined })) },
+  safeStorage: {
+    isEncryptionAvailable: vi.fn(() => false),
+    encryptString: vi.fn(),
+    decryptString: vi.fn()
+  }
 }))
 
 vi.mock('../git/worktree', () => ({

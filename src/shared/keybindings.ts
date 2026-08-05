@@ -32,6 +32,7 @@ export type KeybindingActionId =
   | 'worktree.navigateDown'
   | 'app.settings'
   | 'app.forceReload'
+  | 'app.actionPalette'
   | 'workspace.create'
   | 'workspace.rename'
   | 'workspace.delete'
@@ -60,7 +61,6 @@ export type KeybindingActionId =
   | 'tab.newAgent'
   | AgentTabActionId
   | 'tab.newBrowser'
-  | 'tab.newSimulator'
   | 'tab.newMarkdown'
   | 'tab.openMarkdown'
   | 'tab.close'
@@ -203,6 +203,22 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
     scope: 'global',
     searchKeywords: ['shortcut', 'global', 'file', 'quick open'],
     defaultBindings: platformBindings(['Mod+P'])
+  },
+  {
+    id: 'app.actionPalette',
+    title: 'Command Palette',
+    group: 'Global',
+    scope: 'global',
+    searchKeywords: [
+      'shortcut',
+      'global',
+      'command',
+      'palette',
+      'action',
+      'run command',
+      'go to setting'
+    ],
+    defaultBindings: platformBindings(['Mod+Shift+P'])
   },
   {
     id: 'app.settings',
@@ -550,19 +566,6 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
     scope: 'tabs',
     searchKeywords: ['shortcut', 'tab', 'browser', 'new'],
     defaultBindings: platformBindings(['Mod+Shift+B'])
-  },
-  {
-    id: 'tab.newSimulator',
-    title: 'New mobile emulator tab',
-    group: 'Tabs',
-    scope: 'tabs',
-    searchKeywords: ['shortcut', 'tab', 'simulator', 'emulator', 'mobile', 'ios', 'new'],
-    // Why: keep explorer on Mod+Shift+E (VS Code muscle memory); emulator is macOS-only and less common, so it yields to a free chord (#8533).
-    defaultBindings: {
-      darwin: ['Mod+Alt+Shift+E'],
-      linux: [],
-      win32: []
-    }
   },
   {
     id: 'tab.newMarkdown',

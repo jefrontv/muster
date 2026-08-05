@@ -19,14 +19,8 @@ import type {
   ActiveCollabTask,
   ActiveCollabTaskUpdate
 } from '../../shared/activecollab-types'
-import {
-  acAttachments,
-  acDateForWrite,
-  acEpochToLocalDay,
-  acIsRecord,
-  acLabels,
-  acNullableId
-} from './codecs'
+import { acDateForWrite, acEpochToLocalDay } from '../../shared/activecollab-dates'
+import { acAttachments, acIsRecord, acLabels, acNullableId } from './codecs'
 import type { AcHttpClient } from './http'
 
 type Row = Record<string, unknown>
@@ -89,6 +83,7 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     bodyHtml: asText(value.body),
     // `is_completed` and `completed_on` disagree on some rows; either one closes the task.
     isCompleted: value.is_completed === true || epochMs(value.completed_on) !== null,
+    startOn: acEpochToLocalDay(asNumber(value.start_on)),
     dueOn: acEpochToLocalDay(asNumber(value.due_on)),
     createdOn: epochMs(value.created_on),
     updatedOn: epochMs(value.updated_on),
@@ -137,6 +132,10 @@ function updatePayload(update: ActiveCollabTaskUpdate): Row {
   }
   if (update.assigneeId !== undefined) {
     payload.assignee_id = update.assigneeId
+  }
+  if (update.startOn !== undefined) {
+    // Same date-only rule as due_on below: null clears, a number is the local calendar day.
+    payload.start_on = update.startOn === null ? null : acDateForWrite(update.startOn)
   }
   if (update.dueOn !== undefined) {
     // null goes out as null — that is what clears the date. A number becomes the local calendar

@@ -154,7 +154,6 @@ export const LOCALE_PHRASE_FIXES = {
     { pattern: /实验性的/g, replacement: '实验性', whenEnIncludes: 'Experimental' },
     { pattern: /移动的/g, replacement: '移动端', whenEnIncludes: 'Mobile' },
     { pattern: /嗓音/g, replacement: '语音', whenEnIncludes: 'Voice' },
-    { pattern: /电脑使用/g, replacement: '计算机控制', whenEnIncludes: 'Computer Use' },
     { pattern: /快捷方式/g, replacement: '快捷键', whenEnIncludes: 'Shortcuts' },
     { pattern: /入职清单/g, replacement: '入门清单', whenEnIncludes: 'Onboarding checklist' },
     { pattern: /发射代理/g, replacement: '启动代理', whenEnIncludes: 'Launch agent' },

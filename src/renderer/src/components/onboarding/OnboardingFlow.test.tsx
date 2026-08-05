@@ -204,11 +204,10 @@ describe('OnboardingFlow', () => {
     expect(html).toContain('Set up GitHub tasks')
     expect(html).toContain('Install the GitHub CLI to:')
     expect(html).toContain('GitHub')
-    expect(html).not.toContain(
-      '<h3 class="text-[15px] font-semibold leading-tight text-foreground">Linear</h3>'
-    )
+    expect(html).not.toContain('Linear')
+    expect(html).not.toContain('Jira')
     expect(html).toContain(
-      'Linear, GitLab, Bitbucket, Azure DevOps, Gitea, and Jira live in Settings'
+      'GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings'
     )
   })
 

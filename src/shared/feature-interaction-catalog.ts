@@ -23,17 +23,13 @@ export type FeatureInteractionId =
   | 'browser-grab'
   | 'markdown-file-created'
   | 'workspace-creation'
-  | 'agent-browser-setup'
   | 'agent-browser-use'
   | 'agent-orchestration-setup'
   | 'agent-orchestration'
   | 'ephemeral-vm-setup'
-  | 'mobile-emulator-agent-setup'
   | 'ai-commit-generation'
   | 'ai-pr-generation'
   | 'claude-account-switching'
-  | 'computer-use-setup'
-  | 'computer-use'
   | 'codex-account-switching'
   | 'cookie-import'
   | 'floating-workspace'
@@ -95,7 +91,6 @@ export const FEATURE_INTERACTIONS = [
   { id: 'browser-grab', interaction: 'browser element grab or screenshot used' },
   { id: 'markdown-file-created', interaction: 'untitled markdown file explicitly created' },
   { id: 'workspace-creation', interaction: 'workspace creation flow opened' },
-  { id: 'agent-browser-setup', interaction: 'Agent Browser Use setup enabled or opened' },
   { id: 'agent-browser-use', interaction: 'agent browser runtime method used' },
   { id: 'ephemeral-vm-setup', interaction: 'Ephemeral VMs setup opened or scaffold prompt copied' },
   {
@@ -103,10 +98,6 @@ export const FEATURE_INTERACTIONS = [
     interaction: 'Agent Orchestration setup enabled or opened'
   },
   { id: 'agent-orchestration', interaction: 'agent orchestration runtime method used' },
-  {
-    id: 'mobile-emulator-agent-setup',
-    interaction: 'Mobile Emulator agent CLI or skill setup opened'
-  },
   {
     id: 'ai-commit-generation',
     interaction: 'AI commit message generation enabled or used'
@@ -116,11 +107,6 @@ export const FEATURE_INTERACTIONS = [
     id: 'claude-account-switching',
     interaction: 'Claude managed account added, selected, reauthenticated, or removed'
   },
-  {
-    id: 'computer-use-setup',
-    interaction: 'Computer Use setup or permission flow opened'
-  },
-  { id: 'computer-use', interaction: 'computer-use runtime method used' },
   {
     id: 'codex-account-switching',
     interaction: 'Codex managed account added, selected, reauthenticated, or removed'

@@ -16,6 +16,7 @@ let execBehavior: 'callback' | 'pending' = 'callback'
 let pendingExecCallback: ((err: Error | undefined, channel: unknown) => void) | null = null
 let sftpBehavior: 'callback' | 'pending' = 'callback'
 let pendingSftpCallback: ((err: Error | undefined, channel: unknown) => void) | null = null
+let mockHostKeyMaterial = 'mock-ssh-host-key'
 
 type MockSshClient = {
   setNoDelay: ReturnType<typeof vi.fn>
@@ -62,8 +63,13 @@ vi.mock('ssh2', () => {
       this.lastConnectConfig = config
       const hostVerifier = (config as { hostVerifier?: (key: Buffer) => boolean } | undefined)
         ?.hostVerifier
-      hostVerifier?.(Buffer.from('mock-ssh-host-key'))
+      const hostKeyAccepted = hostVerifier?.(Buffer.from(mockHostKeyMaterial)) ?? true
       setTimeout(() => {
+        // Real ssh2 aborts the handshake when hostVerifier rejects the key.
+        if (!hostKeyAccepted) {
+          emitSshEvent('error', new Error('Host fingerprint verification failed'))
+          return
+        }
         const next = connectSequence.shift()
         if (next instanceof Error) {
           emitSshEvent('error', next)
@@ -167,6 +173,8 @@ import {
   writeFileViaSystemSsh
 } from './ssh-system-fallback'
 import { getRemoteHostPlatform } from './ssh-remote-platform'
+import { configureSshKnownHostsStore } from './known-hosts-store'
+import { fingerprintHostKey } from './known-hosts-fingerprint'
 import type { SshTarget } from '../../shared/ssh-types'
 
 function createTarget(overrides?: Partial<SshTarget>): SshTarget {
@@ -298,6 +306,10 @@ describe('SshConnection', () => {
     vi.mocked(writeFileViaSystemSsh).mockResolvedValue(undefined)
     vi.mocked(resolveWithSshG).mockReset()
     vi.mocked(resolveWithSshG).mockResolvedValue(null)
+    // Why: host-key pins are process-wide; a fresh in-memory store keeps each case independent
+    // and stops the suite from reading the developer's real ~/.ssh/known_hosts.
+    configureSshKnownHostsStore({ pinFilePath: null, userKnownHostsPaths: [] })
+    mockHostKeyMaterial = 'mock-ssh-host-key'
     vi.unstubAllEnvs()
   })
 
@@ -331,25 +343,90 @@ describe('SshConnection', () => {
   })
 
   it('ignores a late host fingerprint from an obsolete connect generation', async () => {
-    const conn = new SshConnection(createTarget(), createCallbacks())
-    await conn.connect()
-    const firstVerifier = (
-      clientInstances[0].lastConnectConfig as { hostVerifier?: (key: Buffer) => boolean }
-    ).hostVerifier
+    // Why: the generation guard is only observable when every presented key is already
+    // trusted — otherwise TOFU pinning rejects the second key before the guard runs.
+    const pinDir = mkdtempSync(join(tmpdir(), 'orca-host-pins-'))
+    const pinFilePath = join(pinDir, 'ssh-known-hosts.json')
+    writeFileSync(
+      pinFilePath,
+      JSON.stringify({
+        version: 1,
+        hosts: {
+          'example.com:22': [
+            'mock-ssh-host-key',
+            'newer-ssh-host-key',
+            'obsolete-ssh-host-key'
+          ].map((material) => ({
+            keyType: 'ssh-ed25519',
+            fingerprint: fingerprintHostKey(Buffer.from(material)),
+            pinnedAt: '2026-01-01T00:00:00.000Z'
+          }))
+        }
+      })
+    )
+    configureSshKnownHostsStore({ pinFilePath, userKnownHostsPaths: [] })
 
-    const privateConn = conn as unknown as { attemptConnect: () => Promise<void> }
-    await privateConn.attemptConnect()
-    const secondVerifier = (
-      clientInstances[1].lastConnectConfig as { hostVerifier?: (key: Buffer) => boolean }
-    ).hostVerifier
-    expect(firstVerifier).toBeTypeOf('function')
-    expect(secondVerifier).toBeTypeOf('function')
+    try {
+      const conn = new SshConnection(createTarget(), createCallbacks())
+      await conn.connect()
+      const firstVerifier = (
+        clientInstances[0].lastConnectConfig as { hostVerifier?: (key: Buffer) => boolean }
+      ).hostVerifier
 
-    secondVerifier?.(Buffer.from('newer-ssh-host-key'))
-    const currentFingerprint = conn.getHostKeyFingerprint()
-    firstVerifier?.(Buffer.from('obsolete-ssh-host-key'))
+      const privateConn = conn as unknown as { attemptConnect: () => Promise<void> }
+      await privateConn.attemptConnect()
+      const secondVerifier = (
+        clientInstances[1].lastConnectConfig as { hostVerifier?: (key: Buffer) => boolean }
+      ).hostVerifier
+      expect(firstVerifier).toBeTypeOf('function')
+      expect(secondVerifier).toBeTypeOf('function')
 
-    expect(conn.getHostKeyFingerprint()).toBe(currentFingerprint)
+      secondVerifier?.(Buffer.from('newer-ssh-host-key'))
+      const currentFingerprint = conn.getHostKeyFingerprint()
+      firstVerifier?.(Buffer.from('obsolete-ssh-host-key'))
+
+      expect(conn.getHostKeyFingerprint()).toBe(currentFingerprint)
+    } finally {
+      rmSync(pinDir, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses a changed host key and names both fingerprints', async () => {
+    const pinDir = mkdtempSync(join(tmpdir(), 'orca-host-pins-'))
+    const pinFilePath = join(pinDir, 'ssh-known-hosts.json')
+    const pinnedFingerprint = fingerprintHostKey(Buffer.from('original-host-key'))
+    writeFileSync(
+      pinFilePath,
+      JSON.stringify({
+        version: 1,
+        hosts: {
+          'example.com:22': [
+            {
+              keyType: 'ssh-ed25519',
+              fingerprint: pinnedFingerprint,
+              pinnedAt: '2026-01-01T00:00:00.000Z'
+            }
+          ]
+        }
+      })
+    )
+    configureSshKnownHostsStore({ pinFilePath, userKnownHostsPaths: [] })
+    mockHostKeyMaterial = 'impostor-host-key'
+
+    try {
+      const conn = new SshConnection(createTarget(), createCallbacks())
+      const error = await conn.connect().then(
+        () => null,
+        (err: Error) => err
+      )
+
+      expect(error?.message).toContain('example.com:22')
+      expect(error?.message).toContain(pinnedFingerprint)
+      expect(error?.message).toContain(fingerprintHostKey(Buffer.from('impostor-host-key')))
+      expect(conn.getState().status).toBe('error')
+    } finally {
+      rmSync(pinDir, { recursive: true, force: true })
+    }
   })
 
   it('allows concurrent exec commands for ssh2 transport', async () => {

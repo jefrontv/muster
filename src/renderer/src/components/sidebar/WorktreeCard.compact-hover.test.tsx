@@ -468,7 +468,7 @@ describe('WorktreeCard compact hover details', () => {
     expect(markup).toContain('Reviewer handoff note')
   })
 
-  it('uses whole-card hover for identity-only new card worktrees with branch row visible', async () => {
+  it('opens no hover panel for identity-only new card worktrees', async () => {
     settings = { compactWorktreeCards: false, experimentalNewWorktreeCardStyle: true }
     worktreeCardProperties = ['status', 'branch']
     const { default: WorktreeCard } = await import('./WorktreeCard')
@@ -482,9 +482,9 @@ describe('WorktreeCard compact hover details', () => {
     )
 
     expect(markup).toContain('data-worktree-card-meta-row=""')
-    expectParentBodyIsHoverTrigger(markup)
-    expect(markup.match(/data-hover-open-delay="100"/g)).toHaveLength(1)
-    expect(markup.match(/Readable identity only/g)).toHaveLength(2)
+    expect(markup).not.toContain('data-hover-card-trigger=""')
+    expect(markup).not.toContain('data-hover-card-content=""')
+    expect(markup.match(/Readable identity only/g)).toHaveLength(1)
     expect(markup).toContain('feature/local-branch')
     expect(markup).not.toContain('Workspace metadata')
     expect(markup).not.toContain('Live Ports')
@@ -503,8 +503,8 @@ describe('WorktreeCard compact hover details', () => {
       />
     )
 
-    expectParentBodyIsHoverTrigger(markup)
-    expect(markup.match(/feature\/local-branch/g)).toHaveLength(3)
+    // Why 1: visible title only — the meta-row identity de-dupes against it.
+    expect(markup.match(/feature\/local-branch/g)).toHaveLength(1)
   })
 
   it('keeps detailed metadata hover scoped to metadata icons by default', async () => {
@@ -718,7 +718,7 @@ describe('WorktreeCard compact hover details', () => {
     expect(markup).not.toContain('>Folder</span>')
   })
 
-  it('keeps hidden folder path identity available from the new-card hover', async () => {
+  it('opens no new-card hover for a folder card whose path row is hidden', async () => {
     settings = { compactWorktreeCards: false, experimentalNewWorktreeCardStyle: true }
     worktreeCardProperties = ['status']
     projectGroups = [{ id: 'group-1' }]
@@ -738,8 +738,7 @@ describe('WorktreeCard compact hover details', () => {
     )
 
     expect(markup).not.toContain('data-worktree-card-meta-row=""')
-    expect(markup).toContain('data-hover-open-delay="100"')
-    expect(markup).toContain('/Users/x/projects/my-app')
+    expect(markup).not.toContain('data-hover-open-delay="100"')
     expect(markup).toContain('Docs folder')
   })
 

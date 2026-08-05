@@ -9,6 +9,13 @@ describe('normalizeRightSidebarRoute', () => {
     })
   })
 
+  it('preserves the site-only Site route', () => {
+    expect(normalizeRightSidebarRoute('site')).toEqual({
+      rightSidebarTab: 'site',
+      rightSidebarExplorerView: 'files'
+    })
+  })
+
   it('still normalizes invalid tabs to Explorer files', () => {
     expect(normalizeRightSidebarRoute('missing')).toEqual({
       rightSidebarTab: 'explorer',

@@ -40,11 +40,22 @@ const relayExtraResource = {
   from: 'out/relay',
   to: 'relay'
 }
+// Why: Electron loads only UNPACKED extension directories, so the bundled extensions must ship as
+// real directories outside app.asar. Muster copies them into userData before loading.
+const bundledBrowserExtensionResources = {
+  from: 'resources/browser-extensions',
+  to: 'browser-extensions'
+}
 // Why: the main bundle, packaged CLI, SSH paths, and speech worker all execute
 // from package directories where pnpm's symlink farm is absent. Copy the exact
 // runtime dependency closure to Resources/node_modules so bare require() calls
 // do not fall through to a developer checkout's node_modules.
-const commonExtraResources = [relayExtraResource, skillFreshnessResources, skillPackageResources]
+const commonExtraResources = [
+  relayExtraResource,
+  skillFreshnessResources,
+  skillPackageResources,
+  bundledBrowserExtensionResources
+]
 const macSpeechNativeResource = {
   from: 'node_modules/sherpa-onnx-darwin-${arch}',
   to: 'node_modules/sherpa-onnx-darwin-${arch}'
@@ -62,12 +73,13 @@ const winSpeechNativeResource = {
 module.exports = {
   appId: 'au.com.efront.muster',
   productName: 'Muster',
-  // Muster fork: `muster://configure?…` (plus the legacy ocsites:// shape) is how a dashboard
-  // link hands site credentials to the app. Replaces ocsites' AppleScript handler bundle.
+  // Muster fork: `muster://configure?…` is how a dashboard link hands site credentials to the app.
+  // Deliberately does NOT advertise `ocsites://` — listing it in the Info.plist lets macOS route
+  // legacy links here and steal them from a still-installed OcsitesHandler.app.
   protocols: [
     {
       name: 'Muster Site Bind',
-      schemes: ['muster', 'ocsites']
+      schemes: ['muster']
     }
   ],
   directories: {
@@ -145,7 +157,8 @@ module.exports = {
     'out/main/hermes/**',
     'out/main/win32-utils.js',
     'out/main/daemon-entry.js',
-    'out/main/computer-sidecar.js',
+    'out/main/site-mcp-shim.js',
+    'out/main/node_modules/**',
     'out/main/parcel-watcher-process-entry.js',
     'out/main/chunks/**',
     'resources/**',
@@ -195,7 +208,6 @@ module.exports = {
       )
     }
     chmodUnixCliLaunchers(resourcesDir, context.electronPlatformName)
-    chmodMacServeSimHelpers(resourcesDir, context.electronPlatformName)
     for (const filename of readdirSync(resourcesDir)) {
       if (!filename.startsWith('agent-browser-')) {
         continue
@@ -206,7 +218,6 @@ module.exports = {
       chmodSync(join(resourcesDir, filename), 0o755)
     }
     if (context.electronPlatformName === 'darwin') {
-      await signMacComputerUseHelper(join(resourcesDir, 'Orca Computer Use.app'), context.packager)
       await signMacNotificationStatusHelper(
         join(resourcesDir, '..', 'MacOS', 'orca-notification-status'),
         context.packager
@@ -235,10 +246,6 @@ module.exports = {
       {
         from: 'node_modules/agent-browser/bin/agent-browser-win32-x64.exe',
         to: 'agent-browser-win32-x64.exe'
-      },
-      {
-        from: 'native/computer-use-windows/runtime.ps1',
-        to: 'computer-use-windows/runtime.ps1'
       },
       featureWallResources
     ]
@@ -296,16 +303,6 @@ module.exports = {
         from: 'node_modules/agent-browser/bin/agent-browser-darwin-${arch}',
         to: 'agent-browser-darwin-${arch}'
       },
-      // Why: serve-sim resolves its helper binary and camera assets relative
-      // to dist/serve-sim.js, so the whole package must be a real resource dir.
-      {
-        from: 'node_modules/serve-sim',
-        to: 'serve-sim'
-      },
-      {
-        from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-        to: 'Orca Computer Use.app'
-      },
       featureWallResources
     ],
     // Why: the notification-status helper must execute from Contents/MacOS —
@@ -359,10 +356,6 @@ module.exports = {
       {
         from: 'node_modules/agent-browser/bin/agent-browser-linux-${arch}',
         to: 'agent-browser-linux-${arch}'
-      },
-      {
-        from: 'native/computer-use-linux/runtime.py',
-        to: 'computer-use-linux/runtime.py'
       },
       featureWallResources
     ],
@@ -444,50 +437,6 @@ function chmodUnixCliLaunchers(resourcesDir, electronPlatformName) {
   }
 }
 
-function chmodMacServeSimHelpers(resourcesDir, electronPlatformName) {
-  if (electronPlatformName !== 'darwin') {
-    return
-  }
-  const helperPaths = [
-    join(resourcesDir, 'serve-sim', 'bin', 'serve-sim-bin'),
-    join(resourcesDir, 'serve-sim', 'dist', 'simcam', 'serve-sim-camera-helper'),
-    join(resourcesDir, 'node_modules', 'serve-sim', 'bin', 'serve-sim-bin'),
-    join(resourcesDir, 'node_modules', 'serve-sim', 'dist', 'simcam', 'serve-sim-camera-helper')
-  ]
-  for (const helperPath of helperPaths) {
-    if (existsSync(helperPath)) {
-      chmodSync(helperPath, 0o755)
-    }
-  }
-}
-
-async function signMacComputerUseHelper(helperAppPath, packager) {
-  if (!existsSync(helperAppPath)) {
-    if (isMacRelease) {
-      throw new Error(`Missing Orca Computer Use helper app at ${helperAppPath}`)
-    }
-    return
-  }
-  const codeSigningInfo =
-    isMacRelease && process.env.CSC_LINK && packager?.codeSigningInfo?.value
-      ? await packager.codeSigningInfo.value
-      : null
-  const identity =
-    process.env.ORCA_COMPUTER_MACOS_SIGN_IDENTITY ??
-    process.env.CSC_NAME ??
-    findInstalledMacSigningIdentity(codeSigningInfo?.keychainFile) ??
-    (isMacRelease ? null : '-')
-  if (!identity) {
-    throw new Error('Missing signing identity for Orca Computer Use helper app')
-  }
-  // Why: TCC grants attach to this nested app's code identity. Sign it before
-  // the outer Orca.app is sealed so production builds preserve that identity.
-  execFileSync('codesign', codesignArgs(identity, helperAppPath), { stdio: 'inherit' })
-  execFileSync('codesign', ['--verify', '--deep', '--strict', helperAppPath], {
-    stdio: 'inherit'
-  })
-}
-
 async function signMacNotificationStatusHelper(helperPath, packager) {
   if (!existsSync(helperPath)) {
     if (isMacRelease) {
@@ -509,7 +458,7 @@ async function signMacNotificationStatusHelper(helperPath, packager) {
   // Why: macOS keys notification records to the code-signing identifier; the
   // binary embeds the app's CFBundleIdentifier in __TEXT,__info_plist so this
   // (and any later) `codesign --force` derives the correct identifier. Sign
-  // before the outer Orca.app is sealed, like the computer-use helper.
+  // before the outer Orca.app is sealed.
   const args = ['--force', '--sign', identity]
   if (isMacRelease) {
     args.push('--options', 'runtime', '--timestamp')
@@ -517,21 +466,6 @@ async function signMacNotificationStatusHelper(helperPath, packager) {
   args.push(helperPath)
   execFileSync('codesign', args, { stdio: 'inherit' })
   execFileSync('codesign', ['--verify', '--strict', helperPath], { stdio: 'inherit' })
-}
-
-function codesignArgs(identity, targetPath) {
-  const args = ['--force', '--deep', '--sign', identity]
-  if (isMacRelease) {
-    args.push(
-      '--options',
-      'runtime',
-      '--timestamp',
-      '--entitlements',
-      resolve(__dirname, '../resources/build/entitlements.computer-use.mac.plist')
-    )
-  }
-  args.push(targetPath)
-  return args
 }
 
 function findInstalledMacSigningIdentity(keychainFile) {

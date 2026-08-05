@@ -2,12 +2,32 @@ import { shell, type WebContents } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { normalizeExternalBrowserUrl } from '../../shared/browser-url'
 
+type PrivilegedWindowNavigationOptions = {
+  /** Renderers without Orca's worktree/tab model (dashboard popout) must hand links straight to the OS. */
+  routeLinksToRenderer?: boolean
+}
+
 /** Keep remote documents from inheriting an Orca window's privileged preload. */
-export function installPrivilegedWindowNavigationPolicy(contents: WebContents): void {
+export function installPrivilegedWindowNavigationPolicy(
+  contents: WebContents,
+  options: PrivilegedWindowNavigationOptions = {}
+): void {
+  const routeLinksToRenderer = options.routeLinksToRenderer !== false
+
+  // Why: the renderer owns the tab model and the openLinksInApp preference, and falls
+  // back to shell.openExternal itself, so main forwards instead of deciding here.
+  const openLink = (externalUrl: string): void => {
+    if (routeLinksToRenderer && !contents.isDestroyed()) {
+      contents.send('browser:open-link-in-orca-tab', { browserPageId: null, url: externalUrl })
+      return
+    }
+    void shell.openExternal(externalUrl)
+  }
+
   contents.setWindowOpenHandler(({ url }) => {
     const externalUrl = normalizeExternalBrowserUrl(url)
     if (externalUrl) {
-      void shell.openExternal(externalUrl)
+      openLink(externalUrl)
     }
     return { action: 'deny' }
   })
@@ -26,7 +46,7 @@ export function installPrivilegedWindowNavigationPolicy(contents: WebContents): 
           // Fall through and block malformed navigation targets.
         }
       }
-      void shell.openExternal(externalUrl)
+      openLink(externalUrl)
     }
     event.preventDefault()
   })

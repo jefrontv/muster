@@ -38,7 +38,9 @@ const {
 }))
 
 vi.mock('electron', () => ({
-  app: {},
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
+  app: { getPath: () => '/tmp/orca-test-userdata' },
   clipboard: {},
   systemPreferences: {
     askForMediaAccess: systemPreferencesAskForMediaAccessMock,

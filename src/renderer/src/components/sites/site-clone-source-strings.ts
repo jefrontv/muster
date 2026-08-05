@@ -38,13 +38,24 @@ export const getSiteCloneSourceStrings = createLocalizedCatalog(() => ({
   done: translate('auto.components.sites.CloneSource.done', 'Done'),
   loading: translate('auto.components.sites.CloneSource.loading', 'Loading repositories…'),
   empty: translate('auto.components.sites.CloneSource.empty', 'No repositories match.'),
+  searching: translate('auto.components.sites.CloneSource.searching', 'Searching repositories…'),
+  // A function, not a value: the typed term is only known at render time, and the catalog is
+  // rebuilt per language so the lookup still follows a language change.
+  noMatch: (query: string): string =>
+    translate('auto.components.sites.CloneSource.noMatch', 'No repositories match “{{query}}”.', {
+      query
+    }),
   noProviders: translate(
     'auto.components.sites.CloneSource.noProviders',
     'No git hosts are connected yet.'
   ),
   truncated: translate(
     'auto.components.sites.CloneSource.truncated',
-    'Showing the most recent repositories. Search to narrow the list.'
+    'Showing the most recent repositories. Search to reach any repository on the host, not only these.'
+  ),
+  truncatedLocal: translate(
+    'auto.components.sites.CloneSource.truncatedLocal',
+    'Showing the most recent repositories. This host cannot search, so the box only filters these.'
   ),
   chooseFolder: translate('auto.components.sites.CloneSource.chooseFolder', 'Clone into…'),
   cloning: translate('auto.components.sites.CloneSource.cloning', 'Cloning…'),

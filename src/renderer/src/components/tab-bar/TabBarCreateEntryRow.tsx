@@ -1,5 +1,5 @@
 import React from 'react'
-import { FilePlus, FileText, Globe, Loader2, Smartphone, TerminalSquare } from 'lucide-react'
+import { FilePlus, FileText, Globe, Loader2, TerminalSquare } from 'lucide-react'
 import { AgentIcon } from '@/lib/agent-catalog'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
@@ -85,8 +85,6 @@ function getActionPresentation(option: ActiveOption): {
         <FilePlus className="size-3.5 shrink-0" aria-hidden="true" />
       ) : option.option.kind === 'open-markdown' ? (
         <FileText className="size-3.5 shrink-0" aria-hidden="true" />
-      ) : option.option.kind === 'new-simulator' || option.option.kind === 'go-to-simulator' ? (
-        <Smartphone className="size-3.5 shrink-0" aria-hidden="true" />
       ) : (
         <TerminalSquare className="size-3.5 shrink-0" aria-hidden="true" />
       )

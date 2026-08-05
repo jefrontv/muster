@@ -85,6 +85,7 @@ const TASK: ActiveCollabTask = {
   name: 'Ship the ActiveCollab pane',
   bodyHtml: '<p>Body copy.</p>',
   isCompleted: false,
+  startOn: null,
   dueOn: new Date(2026, 6, 27).getTime(),
   createdOn: CREATED_ON,
   updatedOn: CREATED_ON,
@@ -292,9 +293,12 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     expect(terms).toEqual(['Assignee', 'Due date', 'Labels'])
     expect(assigneeText()).toBe('Jake Varrese')
     // Already anchored to the local calendar day upstream — shown as-is, under its own label.
-    expect(container.querySelector<HTMLInputElement>('input[type="date"]')?.value).toBe(
-      '2026-07-27'
-    )
+    const dueLabel = new Date(2026, 6, 27).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+    expect(buttonByLabel('Due date').textContent).toContain(dueLabel)
     expect(buttonWith('Edit labels')).toBeTruthy()
   })
 
@@ -324,11 +328,12 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     mocks.fetchTaskDetail.mockResolvedValue(detailFor({ id: 509402, dueOn: null }))
     await mount(509402)
 
-    expect(container.querySelector('input[type="date"]')).toBeNull()
+    // Radix portals the popover to document.body, so the whole document is queried.
+    expect(document.querySelector('[data-slot="date-range-calendar"]')).toBeNull()
 
     await click(buttonWith('Set...'))
 
-    expect(container.querySelector('input[type="date"]')).toBeTruthy()
+    expect(document.querySelector('[data-slot="date-range-calendar"]')).toBeTruthy()
     expect(mocks.updateTask).not.toHaveBeenCalled()
   })
 

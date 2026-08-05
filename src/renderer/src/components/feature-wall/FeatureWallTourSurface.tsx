@@ -14,7 +14,7 @@ import type { FeatureWallOpenSourceTelemetry } from '../../../../shared/telemetr
 import type { FeatureWallTourDepthSummary } from '../../../../shared/feature-wall-tour-depth'
 import { track } from '@/lib/telemetry'
 import { useAppStore } from '@/store'
-import { ORCA_CLI_SKILL_NAME, ORCHESTRATION_SKILL_NAME } from '@/lib/agent-feature-install-commands'
+import { ORCHESTRATION_SKILL_NAME } from '@/lib/agent-feature-install-commands'
 import {
   GLOBAL_AGENT_SKILL_SOURCE_KINDS,
   useInstalledAgentSkill
@@ -114,17 +114,11 @@ export function FeatureWallTourSurface({
     discoveryTarget: activeSkillRuntime.discoveryTarget,
     sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
   })
-  const browserUseSkill = useInstalledAgentSkill(ORCA_CLI_SKILL_NAME, {
-    enabled: isOpen,
-    discoveryTarget: activeSkillRuntime.discoveryTarget,
-    sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
-  })
   const completion = useFeatureWallCompletion(
     isOpen,
     taskSourcePresentation.hasConnectedTaskSource,
     taskSourcePresentation.isCheckingTaskSources,
     orchestrationSkill.installed,
-    browserUseSkill.installed,
     { onTourDepthSummaryChange }
   )
   const { markExitAction } = useFeatureWallTourTelemetry({
@@ -404,7 +398,6 @@ export function FeatureWallTourSurface({
       prefersReducedMotion={prefersReducedMotion}
       source={source}
       orchestrationSkill={orchestrationSkill}
-      browserUseSkill={browserUseSkill}
       settings={settings}
       updateSettings={updateSettings}
       footerText={footerText}

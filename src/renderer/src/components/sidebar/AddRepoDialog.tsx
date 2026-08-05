@@ -20,6 +20,7 @@ import {
   useAddRepoHostedController,
   type AddRepoDialogHostedController
 } from './use-add-repo-hosted-controller'
+import { getModalData } from '@/store/slices/modal-payloads'
 
 const AddRepoDialog = React.memo(function AddRepoDialog({
   hosted
@@ -27,11 +28,9 @@ const AddRepoDialog = React.memo(function AddRepoDialog({
   hosted?: AddRepoDialogHostedController
 }) {
   const isOpen = useAppStore((s) => (hosted ? hosted.open : s.activeModal === 'add-repo'))
-  // Why: hosted mode never receives dropped paths through modalData — that
-  // channel belongs to the store-modal instance.
-  const droppedLocalPath = useAppStore((s) =>
-    !hosted && typeof s.modalData.droppedLocalPath === 'string' ? s.modalData.droppedLocalPath : ''
-  )
+  // Why: hosted mode gets dropped paths from its controller, not the store modal.
+  const modalDroppedPath = useAppStore((s) => getModalData(s, 'add-repo')?.droppedLocalPath ?? '')
+  const droppedLocalPath = hosted ? '' : modalDroppedPath
   const addRepoPath = useAppStore((s) => s.addRepoPath)
   const scanNestedRepos = useAppStore((s) => s.scanNestedRepos)
   const cancelNestedRepoScan = useAppStore((s) => s.cancelNestedRepoScan)

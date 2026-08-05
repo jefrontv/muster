@@ -63,10 +63,13 @@ export function registerHttpLinkStoreAccessor(fn: StoreAccessor): void {
 // is only invoked on target.kind === 'external' (and for the terminal's http
 // branch). Shift+Cmd/Ctrl is the escape hatch: callers pass forceSystemBrowser
 // to bypass the setting entirely.
-export function openHttpLink(url: string, opts: OpenHttpLinkOptions = {}): void {
+/** Where the link was sent, so callers on non-workspace views can reveal the new tab. */
+export type HttpLinkDestination = 'in-app-browser' | 'system-browser' | 'dropped'
+
+export function openHttpLink(url: string, opts: OpenHttpLinkOptions = {}): HttpLinkDestination {
   const { worktreeId, forceSystemBrowser, sourceOwner } = opts
   if (sourceOwner?.kind === 'unknown') {
-    return
+    return 'dropped'
   }
   const state = storeAccessor?.()
   const remoteRuntimeActive = Boolean(state?.settings?.activeRuntimeEnvironmentId?.trim())
@@ -90,22 +93,23 @@ export function openHttpLink(url: string, opts: OpenHttpLinkOptions = {}): void 
     const localhostRoute = localhostLabelRouteForHttpLink(url, state, sourceOwner)
     if (!localhostRoute) {
       state.createBrowserTab(worktreeId, url, { activate: true })
-      return
+      return 'in-app-browser'
     }
     void openLabeledLocalhostLink(url, localhostRoute, (labeledUrl) => {
       state.createBrowserTab(worktreeId, labeledUrl, { activate: true })
     })
-    return
+    return 'in-app-browser'
   }
 
   const localhostRoute = state ? localhostLabelRouteForHttpLink(url, state, sourceOwner) : null
   if (!localhostRoute) {
     void window.api.shell.openUrl(url)
-    return
+    return 'system-browser'
   }
   void openLabeledLocalhostLink(url, localhostRoute, (labeledUrl) => {
     void window.api.shell.openUrl(labeledUrl)
   })
+  return 'system-browser'
 }
 
 function localhostLabelRouteForHttpLink(

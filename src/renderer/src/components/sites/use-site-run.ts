@@ -40,7 +40,9 @@ const IDLE: SiteRunState = { run: null, lines: [], progress: null, starting: fal
 /**
  * Drives one site's run: subscribe first, then start, so no event is missed between the invoke
  * and the listener attaching. On mount it recovers any run already in flight from main, which is
- * what makes the console survive navigating away and back.
+ * what makes the console survive navigating away and back. Events for a run this hook did not
+ * start (site page, right-sidebar panel, MCP) are attributed via `active()` and adopted when they
+ * belong to this site, so every surface streams the same run.
  */
 export function useSiteRun(siteId: string | null): SiteRunState & {
   start: (group: SiteRunGroup, environment?: string) => Promise<void>
@@ -50,6 +52,13 @@ export function useSiteRun(siteId: string | null): SiteRunState & {
   const runIdRef = useRef<string | null>(null)
   // Mirrors state.run so the event listener can read it without resubscribing on every change.
   const runRef = useRef<SiteRun | null>(null)
+  // Mirrors siteId for the same reason; the subscription must survive re-renders untouched.
+  const siteIdRef = useRef(siteId)
+  siteIdRef.current = siteId
+  // Guards: one attribution probe at a time, and none while our own start() is still resolving
+  // (its events arrive before runIdRef is set and must not be adopted as "external").
+  const probingRef = useRef(false)
+  const startingRef = useRef(false)
 
   useEffect(() => {
     setState(IDLE)
@@ -82,8 +91,39 @@ export function useSiteRun(siteId: string | null): SiteRunState & {
   }, [siteId])
 
   useEffect(() => {
+    // Attributes an event stream to this site. Events carry only a runId, so ownership is
+    // resolved through `active()`; a stale or foreign runId simply finds no matching entry.
+    const adoptExternalRun = (runId: string): void => {
+      const targetSiteId = siteIdRef.current
+      if (!targetSiteId || probingRef.current || startingRef.current) {
+        return
+      }
+      probingRef.current = true
+      void window.api.siteRuns.active().then((result) => {
+        probingRef.current = false
+        if (!result.ok || siteIdRef.current !== targetSiteId || startingRef.current) {
+          return
+        }
+        const active = result.value.find(
+          (entry) => entry.run.siteId === targetSiteId && entry.run.id === runId
+        )
+        if (!active) {
+          return
+        }
+        runIdRef.current = active.run.id
+        setState({ ...IDLE, run: active.run, progress: active.progress })
+        void window.api.siteRuns
+          .readLog({ siteId: targetSiteId, runId, lines: MAX_LOG_LINES })
+          .then((page) => {
+            if (page.ok && runIdRef.current === runId) {
+              setState((previous) => ({ ...previous, lines: page.value.lines }))
+            }
+          })
+      })
+    }
     const unsubscribe = window.api.siteRuns.onEvent((event: SiteRunEvent) => {
       if (event.runId !== runIdRef.current) {
+        adoptExternalRun(event.runId)
         return
       }
       if (event.type === 'status' && event.status !== 'running') {
@@ -123,18 +163,23 @@ export function useSiteRun(siteId: string | null): SiteRunState & {
       if (!siteId) {
         return
       }
+      startingRef.current = true
       setState({ ...IDLE, starting: true })
-      const result = await window.api.siteRuns.start({
-        siteId,
-        group,
-        ...(environment ? { environment } : {})
-      })
-      if (!result.ok) {
-        setState({ ...IDLE, error: result.error })
-        return
+      try {
+        const result = await window.api.siteRuns.start({
+          siteId,
+          group,
+          ...(environment ? { environment } : {})
+        })
+        if (!result.ok) {
+          setState({ ...IDLE, error: result.error })
+          return
+        }
+        runIdRef.current = result.value.id
+        setState({ ...IDLE, run: result.value })
+      } finally {
+        startingRef.current = false
       }
-      runIdRef.current = result.value.id
-      setState({ ...IDLE, run: result.value })
     },
     [siteId]
   )

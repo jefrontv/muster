@@ -24,6 +24,24 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackBody',
     'Register this folder with LocalWP so it can be served and given a database.'
   ),
+  // The two states this stage can be in, phrased for what actually happens to the folder. ocsites
+  // called them setup_localwp_before_clone and _migrate_to_localwp.
+  stackCreateBody: translate(
+    'auto.components.sites.SiteSetupContinuation.stackCreateBody',
+    'No WordPress here yet. Register the folder with LocalWP, then pull the site down with the import step.'
+  ),
+  stackCreateAction: translate(
+    'auto.components.sites.SiteSetupContinuation.stackCreateAction',
+    'Create LocalWP site'
+  ),
+  stackMoves: translate(
+    'auto.components.sites.SiteSetupContinuation.stackMoves',
+    '{{count}} project entries move into app/public'
+  ),
+  stackDeletes: translate(
+    'auto.components.sites.SiteSetupContinuation.stackDeletes',
+    '{{count}} existing entries under app/public are deleted first'
+  ),
   stackAction: translate(
     'auto.components.sites.SiteSetupContinuation.stackAction',
     'Set up LocalWP'
@@ -39,23 +57,27 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
   stackConfirm: translate('auto.components.sites.SiteSetupContinuation.stackConfirm', 'Run setup'),
   stackDone: translate(
     'auto.components.sites.SiteSetupContinuation.stackDone',
-    'LocalWP site created'
+    'LocalWP site ready.'
   ),
+  // The Local app raises a system password prompt to install its site certificate and hosts entry.
+  // Nothing moves until that is answered, and it opens behind Muster — without this line the setup
+  // simply looks frozen.
+  stackOsPasswordHint: translate(
+    'auto.components.sites.SiteSetupContinuation.stackOsPasswordHint',
+    'LocalWP may ask for your macOS password — check the Local app.'
+  ),
+  stackLogLabel: translate(
+    'auto.components.sites.SiteSetupContinuation.stackLogLabel',
+    'Setup progress'
+  ),
+  stackFailed: translate(
+    'auto.components.sites.SiteSetupContinuation.stackFailed',
+    'LocalWP setup did not finish.'
+  ),
+  stackRetry: translate('auto.components.sites.SiteSetupContinuation.stackRetry', 'Try again'),
   stackDomainLabel: translate(
     'auto.components.sites.SiteSetupContinuation.stackDomainLabel',
     'Local domain'
-  ),
-  stackAdminEmail: translate(
-    'auto.components.sites.SiteSetupContinuation.stackAdminEmail',
-    'Admin email'
-  ),
-  stackAdminPassword: translate(
-    'auto.components.sites.SiteSetupContinuation.stackAdminPassword',
-    'Admin password'
-  ),
-  stackAdminHint: translate(
-    'auto.components.sites.SiteSetupContinuation.stackAdminHint',
-    'The WordPress admin account LocalWP creates. Local only — it never reaches the server.'
   ),
   certHeading: translate(
     'auto.components.sites.SiteSetupContinuation.certHeading',
@@ -86,13 +108,55 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.importStarting',
     'Starting…'
   ),
-  importStarted: translate(
-    'auto.components.sites.SiteSetupContinuation.importStarted',
-    'Import started — progress is on the site page.'
+  importRunning: translate(
+    'auto.components.sites.SiteSetupContinuation.importRunning',
+    'Importing from the server…'
+  ),
+  importSucceeded: translate(
+    'auto.components.sites.SiteSetupContinuation.importSucceeded',
+    'Import complete.'
+  ),
+  importFailed: translate(
+    'auto.components.sites.SiteSetupContinuation.importFailed',
+    'Import failed.'
+  ),
+  importCancelled: translate(
+    'auto.components.sites.SiteSetupContinuation.importCancelled',
+    'Import cancelled.'
+  ),
+  importBlocked: translate(
+    'auto.components.sites.SiteSetupContinuation.importBlocked',
+    'Import was blocked before it started.'
+  ),
+  importProgress: translate(
+    'auto.components.sites.SiteSetupContinuation.importProgress',
+    '{{stage}} · {{percent}}%'
+  ),
+  importLogLabel: translate(
+    'auto.components.sites.SiteSetupContinuation.importLogLabel',
+    'Import log'
   ),
   importSteps: translate(
     'auto.components.sites.SiteSetupContinuation.importSteps',
     '{{count}} steps enabled'
+  ),
+  // Steps are off by default, exactly as in ocsites: pulling a live database or live files is
+  // destructive, so nothing runs until it is asked for. What was missing is a way to ask from here.
+  importChooseSteps: translate(
+    'auto.components.sites.SiteSetupContinuation.importChooseSteps',
+    'Choose steps'
+  ),
+  importStepsLegend: translate(
+    'auto.components.sites.SiteSetupContinuation.importStepsLegend',
+    'Import steps for {{environment}}'
+  ),
+  importNoSteps: translate(
+    'auto.components.sites.SiteSetupContinuation.importNoSteps',
+    'Nothing is enabled yet. Pick what to pull down — each one is off until you choose it.'
+  ),
+  importBranchWarning: translate(
+    'auto.components.sites.SiteSetupContinuation.importBranchWarning',
+    'The checked-out branch does not match an environment — confirm the target before importing.'
   ),
   overrideAction: translate(
     'auto.components.sites.SiteSetupContinuation.overrideAction',

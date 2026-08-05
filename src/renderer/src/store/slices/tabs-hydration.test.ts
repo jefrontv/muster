@@ -134,7 +134,7 @@ describe('buildHydratedTabState – unified format', () => {
     expect(result.layoutByWorktree.w1).toEqual({ type: 'leaf', groupId: 'g2' })
   })
 
-  it('keeps restored simulator tabs while pruning unrelated empty split groups', () => {
+  it('keeps restored non-transient tabs while pruning unrelated empty split groups', () => {
     const session: WorkspaceSessionState = {
       ...makeBaseSession(),
       unifiedTabs: {
@@ -152,12 +152,12 @@ describe('buildHydratedTabState – unified format', () => {
             createdAt: 1
           },
           {
-            id: 'simulator-1',
-            entityId: 'simulator-1',
+            id: 'browser-1',
+            entityId: 'browser-page-1',
             groupId: 'g2',
             worktreeId: 'w1',
-            contentType: 'simulator',
-            label: 'iPhone 17 Pro',
+            contentType: 'browser',
+            label: 'Example',
             customLabel: null,
             color: null,
             sortOrder: 1,
@@ -168,7 +168,7 @@ describe('buildHydratedTabState – unified format', () => {
       tabGroups: {
         w1: [
           { id: 'g1', worktreeId: 'w1', activeTabId: 'terminal-1', tabOrder: ['terminal-1'] },
-          { id: 'g2', worktreeId: 'w1', activeTabId: 'simulator-1', tabOrder: ['simulator-1'] },
+          { id: 'g2', worktreeId: 'w1', activeTabId: 'browser-1', tabOrder: ['browser-1'] },
           { id: 'g3', worktreeId: 'w1', activeTabId: null, tabOrder: [] }
         ]
       },
@@ -194,7 +194,7 @@ describe('buildHydratedTabState – unified format', () => {
 
     expect(result.unifiedTabsByWorktree.w1).toEqual([
       expect.objectContaining({ id: 'terminal-1', contentType: 'terminal', groupId: 'g1' }),
-      expect.objectContaining({ id: 'simulator-1', contentType: 'simulator', groupId: 'g2' })
+      expect.objectContaining({ id: 'browser-1', contentType: 'browser', groupId: 'g2' })
     ])
     expect(result.groupsByWorktree.w1).toEqual([
       {
@@ -207,9 +207,9 @@ describe('buildHydratedTabState – unified format', () => {
       {
         id: 'g2',
         worktreeId: 'w1',
-        activeTabId: 'simulator-1',
-        tabOrder: ['simulator-1'],
-        recentTabIds: ['simulator-1']
+        activeTabId: 'browser-1',
+        tabOrder: ['browser-1'],
+        recentTabIds: ['browser-1']
       }
     ])
     expect(result.activeGroupIdByWorktree.w1).toBe('g2')

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react'
 import { EyeOff } from 'lucide-react'
 import {
-  FEATURE_WALL_SETUP_STEP_IDS,
   getFirstIncompleteFeatureWallSetupStepId,
   getFeatureWallSetupSteps
 } from '../../../../shared/feature-wall-setup-steps'
@@ -16,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import { FeatureWallSetupChecklist } from '../feature-wall/FeatureWallSetupChecklist'
 import { SetupGuideProgressRing } from './SetupGuideProgressRing'
 import { useSetupGuideProgress } from './use-setup-guide-progress'
@@ -23,32 +23,18 @@ import { useSetupGuideOpenCloseTelemetry } from './use-setup-guide-telemetry'
 import { translate } from '@/i18n/i18n'
 
 export default function SetupGuideModal(): JSX.Element | null {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('setup-guide')
   const closeModal = useAppStore((s) => s.closeModal)
   const setSetupGuideSidebarDismissed = useAppStore((s) => s.setSetupGuideSidebarDismissed)
-  const isOpen = activeModal === 'setup-guide'
+  const isOpen = modalData !== null
   const setupSteps = useMemo(() => getFeatureWallSetupSteps(), [])
   const [userSelectedStep, setUserSelectedStep] = useState(false)
-  const [orchestrationSkillInstalled, setOrchestrationSkillInstalled] = useState(false)
-  const [browserUseSkillInstalled, setBrowserUseSkillInstalled] = useState(false)
-  const progress = useSetupGuideProgress(
-    isOpen,
-    orchestrationSkillInstalled,
-    browserUseSkillInstalled
-  )
+  const progress = useSetupGuideProgress(isOpen)
   const [activeStepId, setActiveStepId] = useState<FeatureWallSetupStepId>(() =>
     getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)
   )
-  const requestedStepId = isFeatureWallSetupStepId(modalData.setupStepId)
-    ? modalData.setupStepId
-    : null
-  const telemetrySource =
-    typeof modalData.setupGuideSource === 'string'
-      ? modalData.setupGuideSource
-      : typeof modalData.telemetrySource === 'string'
-        ? modalData.telemetrySource
-        : 'unknown'
+  const requestedStepId = modalData?.setupStepId ?? null
+  const telemetrySource = modalData?.telemetrySource ?? 'unknown'
   const activeStep = setupSteps.find((step) => step.id === activeStepId) ?? setupSteps[0] ?? null
 
   useSetupGuideOpenCloseTelemetry({
@@ -168,18 +154,9 @@ export default function SetupGuideModal(): JSX.Element | null {
             activeStep={activeStep}
             progress={progress}
             onSelectStep={handleSelectStep}
-            onOrchestrationSkillInstalledChange={setOrchestrationSkillInstalled}
-            onBrowserUseSkillInstalledChange={setBrowserUseSkillInstalled}
           />
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function isFeatureWallSetupStepId(value: unknown): value is FeatureWallSetupStepId {
-  return (
-    typeof value === 'string' &&
-    FEATURE_WALL_SETUP_STEP_IDS.includes(value as FeatureWallSetupStepId)
   )
 }

@@ -7,51 +7,11 @@ import {
   OptionalFiniteNumber,
   OptionalPlainString,
   OptionalString,
-  requiredStringAllowingEmpty,
   requiredString
 } from '../schemas'
 
-export const Element = BrowserTarget.extend({
-  element: requiredString('Missing required --element')
-})
-
 export const Goto = BrowserTarget.extend({
   url: requiredString('Missing required --url')
-})
-
-export const Fill = BrowserTarget.extend({
-  element: requiredString('Missing required --element'),
-  value: requiredStringAllowingEmpty('Missing required --value')
-})
-
-export const Type = BrowserTarget.extend({
-  input: requiredString('Missing required --input')
-})
-
-export const Select = BrowserTarget.extend({
-  element: requiredString('Missing required --element'),
-  value: z.custom<string>((v) => typeof v === 'string', {
-    message: 'Missing required --value'
-  })
-})
-
-export const Scroll = BrowserTarget.extend({
-  direction: z.custom<'up' | 'down'>((v) => v === 'up' || v === 'down', {
-    message: 'Missing required --direction (up or down)'
-  }),
-  amount: z
-    .unknown()
-    .transform((v) => (typeof v === 'number' && v > 0 ? v : undefined))
-    .pipe(z.union([z.number(), z.undefined()]))
-    .optional()
-})
-
-export const Screenshot = BrowserTarget.extend({
-  format: z
-    .unknown()
-    .transform((v) => (v === 'png' || v === 'jpeg' ? v : undefined))
-    .pipe(z.union([z.enum(['png', 'jpeg']), z.undefined()]))
-    .optional()
 })
 
 export const Screencast = BrowserTarget.extend({
@@ -69,14 +29,6 @@ export const Screencast = BrowserTarget.extend({
   mobile: OptionalBoolean,
   everyNthFrame: OptionalFiniteNumber,
   minFrameIntervalMs: OptionalFiniteNumber
-})
-
-export const FullScreenshot = BrowserTarget.extend({
-  format: z
-    .unknown()
-    .optional()
-    .transform((v) => (v === 'jpeg' ? 'jpeg' : 'png'))
-    .pipe(z.enum(['png', 'jpeg']))
 })
 
 export const Eval = BrowserTarget.extend({
@@ -163,86 +115,12 @@ export const ProfileImportFromBrowser = z.object({
   browserProfile: OptionalString
 })
 
-export const Drag = BrowserTarget.extend({
-  from: requiredString('Missing required --from and --to element refs'),
-  to: requiredString('Missing required --from and --to element refs')
-})
-
-export const Upload = BrowserTarget.extend({
-  element: requiredString('Missing required --element and --files'),
-  files: z.custom<string[]>(
-    (v) => Array.isArray(v) && v.length > 0 && v.every((f) => typeof f === 'string'),
-    { message: 'Missing required --element and --files' }
-  )
-})
-
-export const Wait = BrowserTarget.extend({
-  selector: OptionalPlainString,
-  timeout: z
-    .unknown()
-    .transform((v) => (typeof v === 'number' && v > 0 ? v : undefined))
-    .pipe(z.union([z.number(), z.undefined()]))
-    .optional(),
-  text: OptionalPlainString,
-  url: OptionalPlainString,
-  load: OptionalPlainString,
-  fn: OptionalPlainString,
-  state: OptionalPlainString
-})
-
-export const Check = BrowserTarget.extend({
-  element: requiredString('Missing required --element'),
-  checked: z
-    .unknown()
-    .optional()
-    .transform((v) => (v === undefined ? true : v))
-    .pipe(z.boolean())
-})
-
 export const Keypress = BrowserTarget.extend({
   key: requiredString('Missing required --key')
 })
 
-export const SelectorPath = BrowserTarget.extend({
-  selector: requiredString('Missing required --selector and --path'),
-  path: requiredString('Missing required --selector and --path')
-})
-
-export const Highlight = BrowserTarget.extend({
-  selector: requiredString('Missing required --selector')
-})
-
-export const Exec = BrowserTarget.extend({
-  command: requiredString('Missing required --command')
-})
-
-export const Get = BrowserTarget.extend({
-  what: requiredString('Missing required --what'),
-  selector: OptionalString
-})
-
-export const Is = BrowserTarget.extend({
-  what: z.custom<string>((v) => typeof v === 'string' && v.length > 0, {
-    message: 'Missing required --what and --element'
-  }),
-  selector: z.custom<string>((v) => typeof v === 'string' && v.length > 0, {
-    message: 'Missing required --what and --element'
-  })
-})
-
 export const KeyboardInsert = BrowserTarget.extend({
   text: requiredString('Missing required --text')
-})
-
-export const LimitParam = BrowserTarget.extend({
-  limit: OptionalFiniteNumber
-})
-
-export const Find = BrowserTarget.extend({
-  locator: requiredString('Missing required --locator, --value, and --action'),
-  value: requiredString('Missing required --locator, --value, and --action'),
-  action: requiredString('Missing required --locator, --value, and --action'),
-  text: OptionalString
 })
 
 export const CookieGet = BrowserTarget.extend({
@@ -291,14 +169,6 @@ export const Geolocation = BrowserTarget.extend({
   accuracy: OptionalFiniteNumber
 })
 
-export const InterceptEnable = BrowserTarget.extend({
-  patterns: z
-    .unknown()
-    .transform((v) => (Array.isArray(v) ? (v as string[]) : undefined))
-    .pipe(z.union([z.array(z.string()), z.undefined()]))
-    .optional()
-})
-
 export const MouseXY = BrowserTarget.extend({
   x: z.custom<number>((v) => typeof v === 'number', {
     message: 'Missing required x and y coordinates'
@@ -319,49 +189,10 @@ export const MouseWheel = BrowserTarget.extend({
   dx: OptionalFiniteNumber
 })
 
-export const SetDevice = BrowserTarget.extend({
-  name: requiredString('Missing required --name')
-})
-
-export const SetOffline = BrowserTarget.extend({
-  state: OptionalPlainString
-})
-
-export const SetHeaders = BrowserTarget.extend({
-  headers: requiredString('Missing required --headers (JSON string)')
-})
-
-export const SetCredentials = BrowserTarget.extend({
-  user: z.custom<string>((v) => typeof v === 'string' && v.length > 0, {
-    message: 'Missing required --user and --pass'
-  }),
-  pass: z.custom<string>((v) => typeof v === 'string', {
-    message: 'Missing required --user and --pass'
-  })
-})
-
-export const SetMedia = BrowserTarget.extend({
-  colorScheme: OptionalPlainString,
-  reducedMotion: OptionalPlainString
-})
-
 export const ClipboardWrite = BrowserTarget.extend({
   text: requiredString('Missing required --text')
 })
 
 export const DialogAccept = BrowserTarget.extend({
   text: OptionalPlainString
-})
-
-export const StorageKey = BrowserTarget.extend({
-  key: requiredString('Missing required --key')
-})
-
-export const StorageKeyValue = BrowserTarget.extend({
-  key: z.custom<string>((v) => typeof v === 'string' && v.length > 0, {
-    message: 'Missing required --key and --value'
-  }),
-  value: z.custom<string>((v) => typeof v === 'string', {
-    message: 'Missing required --key and --value'
-  })
 })

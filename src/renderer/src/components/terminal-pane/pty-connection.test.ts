@@ -15429,8 +15429,7 @@ describe('connectPanePty', () => {
     const { createIpcPtyTransport } = await import('./pty-transport')
     const transport = createMockTransport()
     transportFactoryQueue.push(transport)
-    const setupWorktreeId =
-      'ephemeral-setup-terminal:settings-mobile-emulator-orca-cli-skill-terminal'
+    const setupWorktreeId = 'ephemeral-setup-terminal:feature-wall-orchestration-skill-terminal'
     mockStoreState = {
       ...mockStoreState,
       tabsByWorktree: { [setupWorktreeId]: [{ id: 'tab-1', ptyId: null }] },
@@ -15455,8 +15454,7 @@ describe('connectPanePty', () => {
     const { createRemoteRuntimePtyTransport } = await import('./remote-runtime-pty-transport')
     const transport = createMockTransport()
     transportFactoryQueue.push(transport)
-    const setupWorktreeId =
-      'ephemeral-setup-terminal:settings-mobile-emulator-orca-cli-skill-terminal'
+    const setupWorktreeId = 'ephemeral-setup-terminal:feature-wall-orchestration-skill-terminal'
     mockStoreState = {
       ...mockStoreState,
       tabsByWorktree: { [setupWorktreeId]: [{ id: 'tab-1', ptyId: null }] },

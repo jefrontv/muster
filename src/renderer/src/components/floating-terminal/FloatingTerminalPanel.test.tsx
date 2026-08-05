@@ -197,12 +197,6 @@ vi.mock('@/components/browser-pane/BrowserPane', () => ({
   }
 }))
 
-vi.mock('@/components/emulator-pane/EmulatorPane', () => ({
-  default: function EmulatorPane() {
-    return null
-  }
-}))
-
 vi.mock('@/components/editor/EditorPanel', () => ({
   default: function EditorPanel() {
     return null
@@ -430,38 +424,6 @@ function setFloatingEditorTabs(files: OpenFile[]): void {
     ]
   }
   state.activeGroupIdByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: groupId }
-}
-
-function setFloatingSimulatorTab(): Tab {
-  const state = storeBox.state as FloatingPanelStoreState
-  const groupId = 'floating-group'
-  const tab: Tab = {
-    id: 'simulator-tab',
-    entityId: 'simulator-tab',
-    groupId,
-    worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
-    contentType: 'simulator',
-    label: 'Mobile Emulator',
-    customLabel: null,
-    color: null,
-    sortOrder: 0,
-    createdAt: 0
-  }
-  state.unifiedTabsByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: [tab] }
-  state.groupsByWorktree = {
-    [FLOATING_TERMINAL_WORKTREE_ID]: [
-      {
-        id: groupId,
-        worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
-        activeTabId: tab.id,
-        tabOrder: [tab.id],
-        recentTabIds: [tab.id]
-      }
-    ]
-  }
-  state.activeGroupIdByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: groupId }
-  state.tabBarOrderByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: [tab.id] }
-  return tab
 }
 
 function resetStore(tabs: TerminalTab[] = []): void {
@@ -1716,13 +1678,14 @@ describe('FloatingTerminalPanel close behavior', () => {
     const state = storeBox.state as FloatingPanelStoreState
     const groupId = 'floating-group'
     const terminalTab = makeTab({ id: 'terminal-tab' })
-    const simulatorTab: Tab = {
-      id: 'simulator-tab',
-      entityId: 'simulator-tab',
+    const editorFile = makeFile({ id: 'file-1' })
+    const editorUnifiedTab: Tab = {
+      id: 'editor-unified-tab',
+      entityId: editorFile.id,
       groupId,
       worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
-      contentType: 'simulator',
-      label: 'Mobile Emulator',
+      contentType: 'editor',
+      label: editorFile.relativePath,
       customLabel: null,
       color: null,
       sortOrder: 1,
@@ -1766,8 +1729,9 @@ describe('FloatingTerminalPanel close behavior', () => {
     }
     state.tabsByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: [terminalTab] }
     state.browserTabsByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: [browserTab] }
+    state.openFiles = [editorFile]
     state.unifiedTabsByWorktree = {
-      [FLOATING_TERMINAL_WORKTREE_ID]: [terminalUnifiedTab, simulatorTab, browserUnifiedTab]
+      [FLOATING_TERMINAL_WORKTREE_ID]: [terminalUnifiedTab, editorUnifiedTab, browserUnifiedTab]
     }
     state.groupsByWorktree = {
       [FLOATING_TERMINAL_WORKTREE_ID]: [
@@ -1775,8 +1739,8 @@ describe('FloatingTerminalPanel close behavior', () => {
           id: groupId,
           worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
           activeTabId: terminalUnifiedTab.id,
-          tabOrder: [terminalUnifiedTab.id, simulatorTab.id, browserUnifiedTab.id],
-          recentTabIds: [terminalUnifiedTab.id, simulatorTab.id, browserUnifiedTab.id]
+          tabOrder: [terminalUnifiedTab.id, editorUnifiedTab.id, browserUnifiedTab.id],
+          recentTabIds: [terminalUnifiedTab.id, editorUnifiedTab.id, browserUnifiedTab.id]
         }
       ]
     }
@@ -1785,7 +1749,7 @@ describe('FloatingTerminalPanel close behavior', () => {
     state.tabBarOrderByWorktree = {
       [FLOATING_TERMINAL_WORKTREE_ID]: [
         terminalUnifiedTab.id,
-        simulatorTab.id,
+        editorUnifiedTab.id,
         browserUnifiedTab.id
       ]
     }
@@ -1804,7 +1768,7 @@ describe('FloatingTerminalPanel close behavior', () => {
     )
 
     expect(preventDefault).toHaveBeenCalledWith()
-    expect(mocks.activateTab).toHaveBeenCalledWith('simulator-tab')
+    expect(mocks.activateTab).toHaveBeenCalledWith('editor-unified-tab')
   })
 
   it('ignores focused floating tab index shortcuts past the visible tab count', async () => {
@@ -2347,22 +2311,7 @@ describe('FloatingTerminalPanel close behavior', () => {
     expect(onOpenChange).not.toHaveBeenCalled()
   })
 
-  it('renders and closes simulator tabs in the floating workspace', async () => {
-    const tab = setFloatingSimulatorTab()
-
-    const element = await renderPanel(true)
-    const tabBar = findByTypeName(element, 'TabBar')
-    const emulatorPane = findByTypeName(element, 'EmulatorPane')
-    ;(tabBar.props.onCloseFile as (tabId: string) => void)(tab.id)
-
-    expect(tabBar.props.activeTabType).toBe('simulator')
-    expect(tabBar.props.activeSimulatorTabId).toBe(tab.id)
-    expect(emulatorPane.props.tab).toBe(tab)
-    expect(mocks.closeUnifiedTab).toHaveBeenCalledWith(tab.id)
-    expect(mocks.closeFile).not.toHaveBeenCalledWith(tab.id)
-  })
-
-  it('keeps simulator tabs open when closing all files', async () => {
+  it('keeps non-file tabs open when closing all files', async () => {
     const state = storeBox.state as FloatingPanelStoreState
     const groupId = 'floating-group'
     const file = makeFile({ id: 'file-a' })
@@ -2378,21 +2327,34 @@ describe('FloatingTerminalPanel close behavior', () => {
       sortOrder: 0,
       createdAt: 0
     }
-    const simulatorTab: Tab = {
-      id: 'simulator-tab',
-      entityId: 'simulator-tab',
+    const browserTab: BrowserTab = {
+      id: 'browser-page-1',
+      worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
+      url: '',
+      title: 'Browser',
+      loading: false,
+      faviconUrl: null,
+      canGoBack: false,
+      canGoForward: false,
+      loadError: null,
+      createdAt: 1
+    }
+    const browserUnifiedTab: Tab = {
+      id: 'browser-unified-tab',
+      entityId: browserTab.id,
       groupId,
       worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
-      contentType: 'simulator',
-      label: 'Mobile Emulator',
+      contentType: 'browser',
+      label: 'Browser',
       customLabel: null,
       color: null,
       sortOrder: 1,
       createdAt: 1
     }
     state.openFiles = [file]
+    state.browserTabsByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: [browserTab] }
     state.unifiedTabsByWorktree = {
-      [FLOATING_TERMINAL_WORKTREE_ID]: [editorTab, simulatorTab]
+      [FLOATING_TERMINAL_WORKTREE_ID]: [editorTab, browserUnifiedTab]
     }
     state.groupsByWorktree = {
       [FLOATING_TERMINAL_WORKTREE_ID]: [
@@ -2400,14 +2362,14 @@ describe('FloatingTerminalPanel close behavior', () => {
           id: groupId,
           worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
           activeTabId: editorTab.id,
-          tabOrder: [editorTab.id, simulatorTab.id],
-          recentTabIds: [editorTab.id, simulatorTab.id]
+          tabOrder: [editorTab.id, browserUnifiedTab.id],
+          recentTabIds: [editorTab.id, browserUnifiedTab.id]
         }
       ]
     }
     state.activeGroupIdByWorktree = { [FLOATING_TERMINAL_WORKTREE_ID]: groupId }
     state.tabBarOrderByWorktree = {
-      [FLOATING_TERMINAL_WORKTREE_ID]: [editorTab.id, simulatorTab.id]
+      [FLOATING_TERMINAL_WORKTREE_ID]: [editorTab.id, browserTab.id]
     }
 
     const element = await renderPanel(true)
@@ -2415,7 +2377,7 @@ describe('FloatingTerminalPanel close behavior', () => {
     ;(tabBar.props.onCloseAllFiles as () => void)()
 
     expect(mocks.closeFile).toHaveBeenCalledWith(file.id)
-    expect(mocks.closeUnifiedTab).not.toHaveBeenCalledWith(simulatorTab.id)
+    expect(mocks.closeBrowserTab).not.toHaveBeenCalled()
   })
 
   it('keeps floating terminal create and close local during active web runtime sessions', async () => {

@@ -50,7 +50,6 @@ export function FeatureWallTourPanel(props: {
   prefersReducedMotion: boolean
   source: FeatureWallOpenSourceTelemetry
   orchestrationSkill: InstalledAgentSkillState
-  browserUseSkill: InstalledAgentSkillState
   settings: GlobalSettings | null
   updateSettings: (updates: Partial<GlobalSettings>) => void
   footerText: string | null
@@ -140,7 +139,6 @@ export function FeatureWallTourPanel(props: {
               workbenchActiveStep={props.workbenchActiveStep}
               reviewActiveStep={props.reviewActiveStep}
               orchestrationSkill={props.orchestrationSkill}
-              browserUseSkill={props.browserUseSkill}
               onUsageAccountStateChange={props.completion.refreshUsageAccountState}
               settings={props.settings}
               updateSettings={props.updateSettings}

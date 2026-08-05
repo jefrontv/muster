@@ -197,16 +197,16 @@ describe('sendRemoteRuntimeRequest', () => {
     })
   })
 
-  it('preserves structured failure data for remote computer-use recovery hints', async () => {
+  it('preserves structured failure data for remote recovery hints', async () => {
     const server = await createOneShotServer({
       response: (requestId) => ({
         id: requestId,
         ok: false,
         error: {
-          code: 'app_not_found',
-          message: 'app not found: Gmail',
+          code: 'LINEAGE_PARENT_NOT_FOUND',
+          message: 'Parent selector was not found.',
           data: {
-            nextSteps: ['Target the desktop browser app/window that contains Gmail.']
+            nextSteps: ['Pass a valid --parent-worktree selector such as branch:<branch>.']
           }
         },
         _meta: { runtimeId: 'runtime-test' }
@@ -215,17 +215,17 @@ describe('sendRemoteRuntimeRequest', () => {
 
     const response = await sendRemoteRuntimeRequest(
       server.pairing,
-      'computer.getAppState',
-      { app: 'Gmail' },
+      'worktree.create',
+      { parentWorktree: 'branch:missing' },
       1000
     )
 
     expect(response).toMatchObject({
       ok: false,
       error: {
-        code: 'app_not_found',
+        code: 'LINEAGE_PARENT_NOT_FOUND',
         data: {
-          nextSteps: [expect.stringContaining('desktop browser app/window')]
+          nextSteps: [expect.stringContaining('--parent-worktree selector')]
         }
       }
     })

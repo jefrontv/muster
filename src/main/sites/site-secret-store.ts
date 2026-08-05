@@ -11,7 +11,7 @@
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
-import { safeStorage } from 'electron'
+import { electronSafeStorage } from '../node-safe-electron'
 import {
   CredentialDecryptionError,
   readStoredCredentialToken
@@ -55,12 +55,12 @@ export function setSiteSecret(
     rmSync(target, { force: true })
     return
   }
-  if (!safeStorage.isEncryptionAvailable()) {
+  if (electronSafeStorage?.isEncryptionAvailable() !== true) {
     throw new SiteSecretUnavailableError()
   }
   mkdirSync(getSiteSecretsDirectory(), { recursive: true, mode: 0o700 })
   // Base64 because writeSecureFile takes text and safeStorage returns raw bytes.
-  writeSecureFile(target, safeStorage.encryptString(value).toString('base64'))
+  writeSecureFile(target, electronSafeStorage!.encryptString(value).toString('base64'))
 }
 
 /** Returns null when no secret is stored; throws CredentialDecryptionError when it cannot be read. */

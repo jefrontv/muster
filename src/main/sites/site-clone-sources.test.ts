@@ -221,6 +221,36 @@ describe('listCloneSourceRepos', () => {
     )
   })
 
+  it('hands the search term to Bitbucket instead of filtering the page here', async () => {
+    await listCloneSourceRepos(store(), 'bitbucket', 'sulo')
+
+    expect(listBitbucketWorkspaceRepos).toHaveBeenCalledWith(
+      expect.objectContaining({ query: 'sulo' })
+    )
+  })
+
+  it('browses with no query when none was given', async () => {
+    await listCloneSourceRepos(store(), 'bitbucket')
+
+    expect(listBitbucketWorkspaceRepos).toHaveBeenCalledWith(expect.objectContaining({ query: '' }))
+  })
+
+  // GitHub has no host-side filter, so the query must not silently look applied.
+  it('does not pretend GitHub searched', async () => {
+    listGithubCloneSourceRepos.mockResolvedValue({
+      provider: 'github',
+      repos: [],
+      error: '',
+      truncated: false,
+      searchesRemotely: false
+    })
+
+    const result = await listCloneSourceRepos(store(), 'github', 'sulo')
+
+    expect(result.searchesRemotely).toBe(false)
+    expect(listGithubCloneSourceRepos).toHaveBeenCalledWith()
+  })
+
   it('maps Bitbucket repos onto the shared shape, keeping the SSH clone URL', async () => {
     listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: [bitbucketRepo()] }))
 
@@ -237,7 +267,8 @@ describe('listCloneSourceRepos', () => {
         }
       ],
       error: '',
-      truncated: false
+      truncated: false,
+      searchesRemotely: true
     })
   })
 
@@ -285,7 +316,8 @@ describe('listCloneSourceRepos', () => {
       provider: 'bitbucket',
       repos: [],
       error: 'Bitbucket rejected the stored App Password.',
-      truncated: false
+      truncated: false,
+      searchesRemotely: true
     })
   })
 
@@ -317,7 +349,8 @@ describe('listCloneSourceRepos', () => {
         }
       ],
       error: '',
-      truncated: false
+      truncated: false,
+      searchesRemotely: false
     }
     listGithubCloneSourceRepos.mockResolvedValue(githubResult)
 
@@ -427,7 +460,8 @@ describe('listCloneSourceRepos exclusions', () => {
         }
       ],
       error: '',
-      truncated: false
+      truncated: false,
+      searchesRemotely: false
     })
 
     const result = await listCloneSourceRepos(store([], ['/nowhere/api']), 'github')

@@ -11,8 +11,18 @@ import {
   discoverSkillsOnTarget,
   resolveSkillDiscoveryTarget
 } from '../skills/skill-discovery-target'
+import { listBundledAgentSkills } from '../skills/bundled-skill-catalog'
+import type { BundledAgentSkill } from '../../shared/bundled-agent-skills'
 
 export function registerSkillsHandlers(store: Store): void {
+  for (const channel of ['skills:discover', 'skills:freshnessInventory', 'skills:bundled']) {
+    ipcMain.removeHandler(channel)
+  }
+
+  ipcMain.handle('skills:bundled', async (): Promise<BundledAgentSkill[]> => {
+    return listBundledAgentSkills()
+  })
+
   ipcMain.handle(
     'skills:discover',
     async (_event, target?: SkillDiscoveryTarget): Promise<SkillDiscoveryResult> => {

@@ -8,6 +8,7 @@ import {
   BarChart3,
   Bell,
   Blocks,
+  Boxes,
   Bot,
   Bug,
   Cable,
@@ -18,7 +19,6 @@ import {
   ListChecks,
   Lock,
   Mic,
-  MousePointerClick,
   Network,
   Palette,
   PanelsTopLeft,
@@ -27,7 +27,6 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
-  TabletSmartphone,
   SquareTerminal,
   TextCursorInput,
   UserCog,
@@ -42,6 +41,7 @@ import { isMacUserAgent, isWindowsUserAgent } from '@/components/terminal-pane/p
 import type { SettingsNavSection } from '@/lib/settings-navigation-types'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents-search'
+import { getAgentCapabilitiesPaneSearchEntries } from '@/components/settings/agent-capabilities-search'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts-search'
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations-search'
 import { getGitPaneSearchEntries } from '@/components/settings/git-search'
@@ -53,7 +53,7 @@ import { getAppearancePaneSearchEntries } from '@/components/settings/appearance
 import { getInputPaneSearchEntries } from '@/components/settings/input-search'
 import { getTerminalPaneSearchEntries } from '@/components/settings/terminal-search'
 import { getQuickCommandsPaneSearchEntries } from '@/components/settings/quick-commands-search'
-import { getBrowserPaneCombinedSearchEntries } from '@/components/settings/browser-pane-search'
+import { getBrowserPaneSearchEntries } from '@/components/settings/browser-search'
 import { getNotificationsPaneSearchEntries } from '@/components/settings/notifications-search'
 import { getOrchestrationPaneSearchEntries } from '@/components/settings/orchestration-search'
 import { getLinearAgentSkillPaneSearchEntries } from '@/components/settings/linear-agent-skill-search'
@@ -63,8 +63,6 @@ import {
 } from '@/components/settings/runtime-environments-search'
 import { getSshPaneSearchEntries } from '@/components/settings/ssh-search'
 import { getMobileSettingsPaneSearchEntries } from '@/components/settings/mobile-settings-search'
-import { getMobileEmulatorSearchEntries } from '@/components/settings/mobile-emulator-search'
-import { getComputerUsePaneSearchEntries } from '@/components/settings/computer-use-search'
 import { getVoicePaneSearchEntries } from '@/components/settings/voice-pane-search'
 import { getDeveloperPermissionsPaneSearchEntries } from '@/components/settings/developer-permissions-search'
 import { getPrivacyPaneSearchEntries } from '@/components/settings/privacy-search'
@@ -115,13 +113,14 @@ function getDevToolsPaneSearchEntries(): SettingsNavSection['searchEntries'] {
  * and re-enabling one is a single deletion here.
  *
  * Orchestration is set up automatically now, so a pane whose job was to talk you through
- * installing it has nothing left to offer. Computer Use and Mobile are upstream capabilities this
- * fork does not support, and a settings pane that only offers to install one is a dead end.
+ * installing it has nothing left to offer. Mobile is an upstream capability this fork does not
+ * support, and a settings pane that only offers to install it is a dead end.
  *
  * Deliberately filtered rather than deleted: Cmd+J and Settings share this metadata, so hiding in
- * one place keeps the palette and the sidebar from disagreeing about what exists.
+ * one place keeps the palette and the sidebar from disagreeing about what exists. That also makes
+ * the Advanced → `showHiddenSettingsSections` escape hatch a single flag rather than a code path.
  */
-const HIDDEN_SETTINGS_SECTION_IDS = new Set(['orchestration', 'computer-use', 'mobile'])
+const HIDDEN_SETTINGS_SECTION_IDS: Record<string, true> = { orchestration: true, mobile: true }
 
 export function buildSettingsNavigationMetadata({
   isMac,
@@ -130,6 +129,7 @@ export function buildSettingsNavigationMetadata({
   isWebClient,
   isDev = import.meta.env.DEV,
   isLinearConnected = false,
+  showHiddenSections = false,
   repos
 }: {
   isMac: boolean
@@ -138,6 +138,8 @@ export function buildSettingsNavigationMetadata({
   isWebClient: boolean
   isDev?: boolean
   isLinearConnected?: boolean
+  /** Settings → Advanced escape hatch; when true the panes below stay in the sidebar. */
+  showHiddenSections?: boolean
   repos: readonly Repo[]
 }): SettingsNavSection[] {
   const showDesktopOnlySettings = !isWebClient
@@ -186,6 +188,26 @@ export function buildSettingsNavigationMetadata({
       group: 'capabilities',
       badge: translate('auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf', 'Optional')
     },
+    // Why desktop-only: both switches govern things that live on this machine — the bundled skill
+    // packages and the local MCP config files a browser client has no access to.
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'agent-capabilities',
+            title: translate(
+              'auto.hooks.useSettingsNavigationMetadata.agentCapabilitiesTitle',
+              'Agent Capabilities'
+            ),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.agentCapabilitiesDescription',
+              'Choose which built-in tools and skills Muster hands to your agents.'
+            ),
+            icon: Boxes,
+            searchEntries: getAgentCapabilitiesPaneSearchEntries(),
+            group: 'capabilities'
+          }
+        ]
+      : []),
     {
       id: 'orchestration',
       title: translate('auto.hooks.useSettingsNavigationMetadata.58a868e8e4', 'Orchestration'),
@@ -216,17 +238,6 @@ export function buildSettingsNavigationMetadata({
       : []),
     ...(showDesktopOnlySettings
       ? [
-          {
-            id: 'computer-use',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.b35e92364b', 'Computer Use'),
-            description: translate(
-              'auto.hooks.useSettingsNavigationMetadata.0059bd17f3',
-              'Enable agents to control any app on your computer.'
-            ),
-            icon: MousePointerClick,
-            searchEntries: getComputerUsePaneSearchEntries(),
-            group: 'capabilities'
-          },
           {
             id: 'voice',
             title: translate('auto.hooks.useSettingsNavigationMetadata.6a50cdcd7c', 'Voice'),
@@ -373,25 +384,7 @@ export function buildSettingsNavigationMetadata({
               'Home page, link routing, and session cookies.'
             ),
             icon: Globe,
-            searchEntries: getBrowserPaneCombinedSearchEntries(),
-            group: 'workflows'
-          }
-        ]
-      : []),
-    ...(showDesktopOnlySettings
-      ? [
-          {
-            id: 'mobile-emulator',
-            title: translate(
-              'auto.hooks.useSettingsNavigationMetadata.1e761cff2b',
-              'Mobile Emulator'
-            ),
-            description: translate(
-              'auto.hooks.useSettingsNavigationMetadata.3d65d3f1b9',
-              'Configure mobile emulator support for Muster and coding agents.'
-            ),
-            icon: TabletSmartphone,
-            searchEntries: getMobileEmulatorSearchEntries(),
+            searchEntries: getBrowserPaneSearchEntries(),
             group: 'workflows'
           }
         ]
@@ -604,7 +597,7 @@ export function buildSettingsNavigationMetadata({
         group: 'repositories'
       }
     })
-  ].filter((section) => !HIDDEN_SETTINGS_SECTION_IDS.has(section.id))
+  ].filter((section) => showHiddenSections || !HIDDEN_SETTINGS_SECTION_IDS[section.id])
 }
 
 export function useSettingsNavigationMetadata(): SettingsNavSection[] {
@@ -631,6 +624,7 @@ export function useSettingsNavigationMetadata(): SettingsNavSection[] {
     runtimeTarget
   )
   const isWindowsTerminalHost = isWindows || windowsTerminalCapabilities.hostPlatform === 'win32'
+  const showHiddenSections = settings?.showHiddenSettingsSections === true
 
   // Why: Settings and Cmd+J share this metadata so platform/runtime visibility
   // and search entries cannot drift. Keep this hook free of Settings pane UI
@@ -644,9 +638,19 @@ export function useSettingsNavigationMetadata(): SettingsNavSection[] {
         isWebClient,
         isDev: import.meta.env.DEV,
         isLinearConnected,
+        showHiddenSections,
         repos
       }),
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- activeLocale is read implicitly by the translate() calls inside buildSettingsNavigationMetadata; without it the memo keeps the previous language's sections.
-    [isMac, isWindows, isWindowsTerminalHost, isWebClient, isLinearConnected, repos, activeLocale]
+    [
+      isMac,
+      isWindows,
+      isWindowsTerminalHost,
+      isWebClient,
+      isLinearConnected,
+      showHiddenSections,
+      repos,
+      activeLocale
+    ]
   )
 }

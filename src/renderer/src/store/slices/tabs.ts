@@ -404,7 +404,7 @@ function collapseGroupLayout(
 }
 
 function toVisibleTabType(contentType: TabContentType): WorkspaceVisibleTabType {
-  if (contentType === 'browser' || contentType === 'terminal' || contentType === 'simulator') {
+  if (contentType === 'browser' || contentType === 'terminal') {
     return contentType
   }
   return 'editor'
@@ -1841,9 +1841,6 @@ export const createTabsSlice: StateCreator<AppState, [], [], TabsSlice> = (set, 
       }
       if (tab.contentType === 'browser') {
         return liveBrowserIds.has(tab.entityId)
-      }
-      if (tab.contentType === 'simulator') {
-        return true
       }
       return liveEditorIds.has(tab.entityId)
     }

@@ -10,6 +10,15 @@ import type {
 } from '../shared/hosted-review'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
+  BrowserExtensionAddResult,
+  BrowserExtensionStatus,
+  BundledExtensionActionResult,
+  BundledExtensionInfo,
+  OpenExtensionPageResult,
+  SetWordPressLoginResult,
+  WordPressLoginAutofillStatus
+} from '../shared/browser-extension-types'
+import type {
   OcsitesImportApplyResult,
   Site,
   SiteEnvironment,
@@ -23,6 +32,7 @@ import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../sh
 import type {
   LocalWpControlOutcome,
   LocalWpMigrationPlan,
+  LocalWpMigrationProgressEvent,
   LocalWpMigrationResult,
   LocalWpStackDetection
 } from '../shared/site-stack-types'
@@ -33,7 +43,13 @@ import type { RepoHeadBranchApi } from '../shared/repo-head-branch-api-types'
 import type { SiteSetupApi } from '../shared/site-setup-api-types'
 import type { LocalWpCertApi } from '../shared/localwp-cert-types'
 import type { SiteRootsApi } from '../shared/site-roots-api-types'
-import type { SiteMcpStatus, SiteMcpWriteResult } from '../shared/site-mcp-types'
+import type {
+  SiteMcpGlobalInstallResult,
+  SiteMcpGlobalStatus,
+  SiteMcpHarnessId,
+  SiteMcpStatus,
+  SiteMcpWriteResult
+} from '../shared/site-mcp-types'
 import type { ActiveCollabMcpApi } from '../shared/activecollab-mcp-types'
 import type { ActiveCollabApi } from '../shared/activecollab-api-types'
 import type {
@@ -383,6 +399,8 @@ import type {
 } from '../shared/shell-open-types'
 import type { SkillDiscoveryResult, SkillDiscoveryTarget } from '../shared/skills'
 import type { SkillFreshnessInventory } from '../shared/skill-freshness'
+import type { BundledAgentSkill } from '../shared/bundled-agent-skills'
+import type { SettingsExportOutcome, SettingsImportOutcome } from '../shared/settings-transfer'
 import type {
   CrashReportBreadcrumbData,
   CrashReportCopyDiagnosticsArgs,
@@ -412,12 +430,6 @@ import type {
   DeveloperPermissionRequestResult,
   DeveloperPermissionState
 } from '../shared/developer-permissions-types'
-import type {
-  ComputerUsePermissionId,
-  ComputerUsePermissionResetResult,
-  ComputerUsePermissionSetupResult,
-  ComputerUsePermissionStatusResult
-} from '../shared/computer-use-permissions-types'
 import type {
   ClaudeUsageBreakdownKind,
   ClaudeUsageBreakdownRow,
@@ -570,6 +582,31 @@ export type BrowserApi = {
     browserPageId: string
     challengeId: string
   }) => Promise<BrowserCertificateProceedResult>
+  /** Unpacked Chrome extensions loaded into the in-app browser sessions. */
+  extensions: {
+    list: () => Promise<BrowserExtensionStatus[]>
+    /** Opens a folder picker; resolves with the outcome of adding the chosen folder. */
+    add: () => Promise<BrowserExtensionAddResult>
+    remove: (args: { path: string }) => Promise<BrowserExtensionStatus[]>
+    reload: () => Promise<BrowserExtensionStatus[]>
+    /** Opens the extension's popup/options page in its own window. */
+    openSettingsPage: (args: {
+      extensionId: string
+      page: string
+    }) => Promise<OpenExtensionPageResult>
+    /** Extensions Muster ships and installs itself. */
+    listBundled: () => Promise<BundledExtensionInfo[]>
+    installBundled: (args: { id: string }) => Promise<BundledExtensionActionResult>
+    disableBundled: (args: { id: string }) => Promise<BundledExtensionActionResult>
+    uninstallBundled: (args: { id: string }) => Promise<BundledExtensionActionResult>
+    getWordPressLogin: () => Promise<WordPressLoginAutofillStatus>
+    setWordPressLogin: (args: {
+      username: string
+      password?: string | null
+      autoLogin: boolean
+    }) => Promise<SetWordPressLoginResult>
+    clearWordPressLoginPassword: () => Promise<WordPressLoginAutofillStatus>
+  }
   onPermissionDenied: (callback: (event: BrowserPermissionDeniedEvent) => void) => () => void
   onPopup: (callback: (event: BrowserPopupEvent) => void) => () => void
   onDownloadRequested: (callback: (event: BrowserDownloadRequestedEvent) => void) => () => void
@@ -590,8 +627,9 @@ export type BrowserApi = {
   onPaneFocus: (
     callback: (data: { worktreeId: string | null; browserPageId: string }) => void
   ) => () => void
+  /** browserPageId is null for app-chrome links intercepted by the window navigation policy. */
   onOpenLinkInOrcaTab: (
-    callback: (event: { browserPageId: string; url: string }) => void
+    callback: (event: { browserPageId: string | null; url: string }) => void
   ) => () => void
   cancelDownload: (args: { downloadId: string }) => Promise<boolean>
   setGrabMode: (args: BrowserSetGrabModeArgs) => Promise<BrowserSetGrabModeResult>
@@ -621,44 +659,6 @@ export type BrowserApi = {
   }) => Promise<BrowserCookieImportResult>
   sessionClearDefaultCookies: () => Promise<boolean>
   notifyActiveTabChanged: (args: { browserPageId: string }) => Promise<boolean>
-}
-
-export type EmulatorApi = {
-  onPaneFocus: (callback: (data: { worktreeId: string }) => void) => () => void
-  onAutoAttach: (
-    callback: (data: {
-      worktreeId: string
-      info: { deviceUdid: string; streamUrl: string; wsUrl: string; axUrl?: string }
-    }) => void
-  ) => () => void
-  startFrameStream: (args: { streamUrl: string; streamKey?: string }) => Promise<{
-    streamId: string
-  }>
-  stopFrameStream: (args: { streamId: string }) => Promise<void>
-  onFrameStreamFrame: (
-    callback: (data: { streamId: string; bytes: ArrayBuffer }) => void
-  ) => () => void
-  onFrameStreamError: (
-    callback: (data: { streamId: string; message: string }) => void
-  ) => () => void
-  startVideoStream: (args: { deviceId: string; streamId: string }) => Promise<{ streamId: string }>
-  stopVideoStream: (args: { streamId: string }) => Promise<void>
-  onVideoStreamMeta: (
-    callback: (data: {
-      streamId: string
-      deviceId: string
-      meta: { codecId: string; width: number; height: number }
-    }) => void
-  ) => () => void
-  onVideoStreamFrame: (
-    callback: (data: {
-      streamId: string
-      deviceId: string
-      config: boolean
-      keyFrame: boolean
-      bytes: ArrayBuffer
-    }) => void
-  ) => () => void
 }
 
 export type DetectedBrowserProfileInfo = {
@@ -805,6 +805,11 @@ export type SitesApi = {
     name: string
     patch?: Partial<SiteEnvironment>
   }) => Promise<SiteResult<SiteSummary>>
+  copyEnvironment: (args: {
+    siteId: string
+    from: string
+    to: string
+  }) => Promise<SiteResult<SiteSummary>>
   renameEnvironment: (args: {
     siteId: string
     from: string
@@ -816,6 +821,8 @@ export type SitesApi = {
   >
   /** Binds on-disk sites to sidebar projects. Re-runnable when a volume comes back online. */
   linkRepos: () => Promise<SiteResult<SiteRepoLinkResult>>
+  /** Local branch names of the site's checkout — suggestions only, [] when git is absent. */
+  listBranches: (siteId: string) => Promise<SiteResult<string[]>>
 }
 
 /** Import/deploy runs. Long-lived and cancellable; progress arrives on `onEvent`. */
@@ -844,17 +851,23 @@ export type SiteStacksApi = {
   resolveSocket: (siteId: string) => Promise<SiteResult<string>>
   start: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
   stop: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
-  previewMigration: (args: {
-    siteId: string
-    domain: string
-    force?: boolean
-  }) => Promise<SiteResult<LocalWpMigrationPlan>>
+  previewMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationPlan>>
   /** Destructive: show the preview and take an explicit confirmation before calling this. */
-  runMigration: (args: {
-    siteId: string
-    domain: string
-    force?: boolean
-  }) => Promise<SiteResult<LocalWpMigrationResult>>
+  runMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationResult>>
+  /**
+   * Status lines from an in-flight `runMigration`, in order. Every subscriber sees every migration
+   * this window started, so a consumer must filter on `siteId`.
+   */
+  onMigrationProgress: (callback: (event: LocalWpMigrationProgressEvent) => void) => () => void
+}
+
+/** LocalWP creates a real WordPress install, so the wp-admin account is required, not optional. */
+export type LocalWpMigrationArgs = {
+  siteId: string
+  domain: string
+  adminEmail: string
+  adminPassword: string
+  force?: boolean
 }
 
 /**
@@ -872,6 +885,11 @@ export type SiteMcpApi = {
     rootPath: string
     configPath?: string
   }) => Promise<SiteResult<SiteMcpWriteResult>>
+  /** The global (per-user) harness configs; one entry there serves every project. */
+  globalStatus: () => Promise<SiteResult<SiteMcpGlobalStatus>>
+  globalInstall: (args: {
+    harnessId: SiteMcpHarnessId
+  }) => Promise<SiteResult<SiteMcpGlobalInstallResult>>
 }
 
 export type SiteToolsApi = {
@@ -1314,6 +1332,9 @@ export type PreloadApi = {
     getDefaultCreateProjectParent: () => Promise<string>
     onCloneProgress: (callback: (data: { phase: string; percent: number }) => void) => () => void
     getGitUsername: (args: { repoId: string }) => Promise<string>
+    fetchFavicon: (args: {
+      domain: string
+    }) => Promise<{ ok: true; dataUrl: string } | { ok: false; error: string }>
     getBaseRefDefault: (args: {
       repoId: string
       hostId?: ExecutionHostId
@@ -2384,6 +2405,10 @@ export type PreloadApi = {
     listFonts: () => Promise<string[]>
     previewGhosttyImport: () => Promise<GhosttyImportPreview>
     previewWarpThemeImport: (source: WarpThemeImportSource) => Promise<WarpThemeImportPreview>
+    /** Write the portable, secret-free settings file the user picks a location for. */
+    exportToFile: () => Promise<SettingsExportOutcome>
+    /** Validate a settings file and merge the keys this build recognises. */
+    importFromFile: () => Promise<SettingsImportOutcome>
     /** Subscribe to out-of-band settings updates (e.g. View > Appearance toggles) to stay in sync with main. */
     onChanged: (callback: (updates: Partial<GlobalSettings>) => void) => () => void
   }
@@ -2520,13 +2545,6 @@ export type PreloadApi = {
     request: (args: { id: DeveloperPermissionId }) => Promise<DeveloperPermissionRequestResult>
     openSettings: (args: { id: DeveloperPermissionId }) => Promise<void>
   }
-  computerUsePermissions: {
-    getStatus: () => Promise<ComputerUsePermissionStatusResult>
-    openSetup: (args?: {
-      id?: ComputerUsePermissionId
-    }) => Promise<ComputerUsePermissionSetupResult>
-    reset: () => Promise<ComputerUsePermissionResetResult>
-  }
   shell: {
     openPath: (path: string) => Promise<void>
     openInFileManager: (path: string) => Promise<ShellOpenLocalPathResult>
@@ -2547,6 +2565,7 @@ export type PreloadApi = {
   skills: {
     discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>
     freshnessInventory: () => Promise<SkillFreshnessInventory>
+    bundled: () => Promise<BundledAgentSkill[]>
   }
   pet: {
     import: () => Promise<CustomPet | null>
@@ -2555,7 +2574,6 @@ export type PreloadApi = {
     delete: (id: string, fileName: string, kind?: 'image' | 'bundle') => Promise<void>
   }
   browser: BrowserApi
-  emulator: EmulatorApi
   hooks: {
     check: (args: { repoId: string; hostId?: ExecutionHostId }) => Promise<{
       status?: 'ok' | 'error'
@@ -3099,7 +3117,6 @@ export type PreloadApi = {
     onWorktreeHistoryNavigate: (callback: (direction: 'back' | 'forward') => void) => () => void
     onNewBrowserTab: (callback: () => void) => () => void
     onNewMarkdownTab: (callback: () => void) => () => void
-    onNewSimulatorTab: (callback: () => void) => () => void
     onRequestTabCreate: (
       callback: (data: {
         requestId: string

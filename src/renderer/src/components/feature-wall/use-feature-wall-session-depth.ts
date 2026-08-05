@@ -13,7 +13,6 @@ type FeatureWallSessionDepthInput = {
   isCheckingTaskSources: boolean
   hasUsageAccount: boolean
   orchestrationSkillInstalled: boolean
-  browserUseSkillInstalled: boolean
   githubConfigured: boolean
   aiCommitPrConfigured: boolean
   onTourDepthSummaryChange?: (summary: FeatureWallTourDepthSummary) => void
@@ -36,7 +35,6 @@ export function useFeatureWallSessionDepth(
     isCheckingTaskSources,
     hasUsageAccount,
     orchestrationSkillInstalled,
-    browserUseSkillInstalled,
     githubConfigured,
     aiCommitPrConfigured,
     onTourDepthSummaryChange
@@ -66,7 +64,6 @@ export function useFeatureWallSessionDepth(
       isCheckingTaskSources,
       hasUsageAccount,
       orchestrationSkillInstalled,
-      browserUseSkillInstalled,
       githubConfigured,
       aiCommitPrConfigured
     })
@@ -80,7 +77,6 @@ export function useFeatureWallSessionDepth(
     })
   }, [
     aiCommitPrConfigured,
-    browserUseSkillInstalled,
     githubConfigured,
     hasConnectedTaskSource,
     hasUsageAccount,

@@ -19,6 +19,7 @@ function task(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveColl
     name: `Task ${overrides.id}`,
     bodyHtml: '',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,

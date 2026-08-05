@@ -7,21 +7,12 @@ import { REPO_HANDLERS } from './handlers/repo'
 import { WORKTREE_HANDLERS } from './handlers/worktree'
 import { FILE_HANDLERS } from './handlers/file'
 import { TERMINAL_HANDLERS } from './handlers/terminal'
-import { BROWSER_NAV_HANDLERS } from './handlers/browser-nav'
-import { BROWSER_INTERACT_HANDLERS } from './handlers/browser-interact'
-import { BROWSER_TAB_HANDLERS } from './handlers/browser-tab'
-import { BROWSER_PROFILE_HANDLERS } from './handlers/browser-profile'
-import { BROWSER_COOKIE_HANDLERS } from './handlers/browser-cookie'
-import { BROWSER_CAPTURE_HANDLERS } from './handlers/browser-capture'
-import { BROWSER_ENV_HANDLERS } from './handlers/browser-env'
-import { BROWSER_STORAGE_HANDLERS } from './handlers/browser-storage'
+import { BROWSER_EXTENSION_HANDLERS } from './handlers/browser-extension'
 import { ORCHESTRATION_HANDLERS } from './handlers/orchestration'
-import { COMPUTER_HANDLERS } from './handlers/computer'
 import { ENVIRONMENT_HANDLERS } from './handlers/environment'
 import { AGENT_HOOK_HANDLERS } from './handlers/agent-hooks'
 import { DIAGNOSTICS_HANDLERS } from './handlers/diagnostics'
 import { INTROSPECTION_HANDLERS } from './handlers/introspection'
-import { EMULATOR_HANDLERS } from './handlers/emulator'
 import { LINEAR_HANDLERS } from './handlers/linear'
 import { VM_HANDLERS } from './handlers/vm'
 import { SKILL_HANDLERS } from './handlers/skills'
@@ -46,17 +37,8 @@ function buildHandlers(): Map<string, CommandHandler> {
     WORKTREE_HANDLERS,
     FILE_HANDLERS,
     TERMINAL_HANDLERS,
-    BROWSER_NAV_HANDLERS,
-    BROWSER_INTERACT_HANDLERS,
-    BROWSER_TAB_HANDLERS,
-    BROWSER_PROFILE_HANDLERS,
-    BROWSER_COOKIE_HANDLERS,
-    BROWSER_CAPTURE_HANDLERS,
-    BROWSER_ENV_HANDLERS,
-    BROWSER_STORAGE_HANDLERS,
+    BROWSER_EXTENSION_HANDLERS,
     ORCHESTRATION_HANDLERS,
-    EMULATOR_HANDLERS,
-    COMPUTER_HANDLERS,
     AGENT_HOOK_HANDLERS,
     DIAGNOSTICS_HANDLERS,
     INTROSPECTION_HANDLERS,

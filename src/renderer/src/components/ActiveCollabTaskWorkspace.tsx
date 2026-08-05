@@ -110,7 +110,7 @@ export function ActiveCollabTaskWorkspace({
       <ActiveCollabTaskMetadataBar
         task={task}
         pending={writes.pending}
-        onDueOnChange={(dueOn) => void writes.setDueOn(dueOn)}
+        onScheduleChange={(schedule) => void writes.setSchedule(schedule)}
         onAssigneeIdChange={(assigneeId) => void writes.setAssigneeId(assigneeId)}
         onLabelNamesChange={(labelNames) => void writes.setLabelNames(labelNames)}
       />

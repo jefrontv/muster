@@ -10,23 +10,22 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { buildDismissedOnboardingFolderAgentStartup } from '@/lib/onboarding-folder-agent-startup'
 import { markOnboardingProjectAdded } from '@/lib/onboarding-project-checklist'
 import { translate } from '@/i18n/i18n'
 
 const NonGitFolderDialog = React.memo(function NonGitFolderDialog() {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('confirm-non-git-folder')
   const closeModal = useAppStore((s) => s.closeModal)
   const addNonGitFolder = useAppStore((s) => s.addNonGitFolder)
   const runtimeEnvironments = useAppStore((s) => s.runtimeEnvironments)
 
-  const isOpen = activeModal === 'confirm-non-git-folder'
-  const folderPath = typeof modalData.folderPath === 'string' ? modalData.folderPath : ''
-  const connectionId = typeof modalData.connectionId === 'string' ? modalData.connectionId : ''
-  const runtimeEnvironmentId =
-    typeof modalData.runtimeEnvironmentId === 'string' ? modalData.runtimeEnvironmentId : ''
+  const isOpen = modalData !== null
+  const folderPath = modalData?.folderPath ?? ''
+  const connectionId = modalData?.connectionId ?? ''
+  const runtimeEnvironmentId = modalData?.runtimeEnvironmentId ?? ''
   const runtimeEnvironmentName =
     runtimeEnvironmentId &&
     (runtimeEnvironments.find((environment) => environment.id === runtimeEnvironmentId)?.name ||

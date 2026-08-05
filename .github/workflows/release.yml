@@ -90,7 +90,6 @@ jobs:
       - name: Build desktop + native mac helpers
         run: |
           pnpm run build:desktop
-          pnpm run build:computer-macos
           pnpm run build:notification-status-macos
           pnpm run ensure:electron-runtime
 

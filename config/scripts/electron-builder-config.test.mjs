@@ -47,28 +47,8 @@ describe('electron-builder config', () => {
         to: 'skills'
       })
     }
-    expect(electronBuilderConfig.mac.extraResources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-          to: 'Orca Computer Use.app'
-        })
-      ])
-    )
-    expect(electronBuilderConfig.linux.extraResources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/computer-use-linux/runtime.py',
-          to: 'computer-use-linux/runtime.py'
-        })
-      ])
-    )
     expect(electronBuilderConfig.win.extraResources).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/computer-use-windows/runtime.ps1',
-          to: 'computer-use-windows/runtime.ps1'
-        }),
         expect.objectContaining({
           from: 'native/windows-cli-launcher/.build/muster.exe',
           to: 'bin/muster.exe'

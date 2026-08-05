@@ -4,11 +4,12 @@ type RightSidebarActivityVisibilityState = {
   isFolder: boolean
   isFolderWorkspace: boolean
   isSshRepo: boolean
+  hasSite: boolean
 }
 
 export function getVisibleRightSidebarActivityItems(
   items: ActivityBarItem[],
-  { isFolder, isFolderWorkspace, isSshRepo }: RightSidebarActivityVisibilityState
+  { isFolder, isFolderWorkspace, isSshRepo, hasSite }: RightSidebarActivityVisibilityState
 ): ActivityBarItem[] {
   return items.filter((item) => {
     if (item.gitOnly && isFolder) {
@@ -18,6 +19,9 @@ export function getVisibleRightSidebarActivityItems(
       return false
     }
     if (item.sshOnly && !isSshRepo) {
+      return false
+    }
+    if (item.siteOnly && !hasSite) {
       return false
     }
     return true

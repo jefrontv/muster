@@ -36,9 +36,18 @@ export type CloneSourceListResult = {
   error: string
   /** True when the host had more than the cap; the list is usable but not exhaustive. */
   truncated: boolean
+  /**
+   * True when this host applies the caller's query itself, so `repos` is already the answer to it.
+   * False means the query was not applied at all: the caller must filter the returned list, and the
+   * UI must say the search only covers what is listed rather than imply the whole account.
+   */
+  searchesRemotely: boolean
 }
 
-/** Enough repos to search through without paging the whole account on every open. */
+/**
+ * Safety bound on one response, not a search limit: with a server-side query the host does the
+ * narrowing, and this only stops an unbounded browse from flooding the picker.
+ */
 export const CLONE_SOURCE_REPO_LIMIT = 200
 
 export function findCloneSourceProvider(

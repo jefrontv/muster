@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Github, Image, Link2 } from 'lucide-react'
+import { Github, Globe, Image, Link2, Loader2 } from 'lucide-react'
 import type { RepoIcon } from '../../../../shared/repo-icon'
 import { faviconUrlFromWebsite } from '../../../../shared/repo-icon'
 import { Button } from '../ui/button'
@@ -14,10 +14,12 @@ import { translate } from '@/i18n/i18n'
 const EMOJI_OPTIONS = ['🚀', '✨', '💻', '🧠', '📦', '🔧', '🎨', '🌐', '📊', '🔒', '⚡', '✅']
 
 type RepositoryIconTabsProps = {
-  initialTab: 'avatar' | 'icon' | 'emoji'
+  initialTab: 'avatar' | 'icon' | 'emoji' | 'favicon'
   selectedLucideName: string | null
   selectedEmoji: string
   loadingGitHub: boolean
+  /** Live domain of the Site matching this project; empty when no Site matches. */
+  defaultFaviconDomain: string
   onSetIcon: (repoIcon: RepoIcon | null) => void
   onUseGitHubAvatar: () => void
 }
@@ -27,10 +29,17 @@ export function RepositoryIconTabs({
   selectedLucideName,
   selectedEmoji,
   loadingGitHub,
+  defaultFaviconDomain,
   onSetIcon,
   onUseGitHubAvatar
 }: RepositoryIconTabsProps): React.JSX.Element {
   const [website, setWebsite] = useState('')
+  // Null means untouched, so the Site's live domain prefills until the user types.
+  const [faviconDomainOverride, setFaviconDomainOverride] = useState<string | null>(null)
+  const faviconDomain = faviconDomainOverride ?? defaultFaviconDomain
+  const [faviconLoading, setFaviconLoading] = useState(false)
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null)
+  const [faviconError, setFaviconError] = useState<string | null>(null)
   const mountedRef = useMountedRef()
 
   const handleUploadImage = async () => {
@@ -79,6 +88,38 @@ export function RepositoryIconTabs({
     })
   }
 
+  const handleFetchFavicon = async () => {
+    setFaviconLoading(true)
+    setFaviconError(null)
+    setFaviconPreview(null)
+    try {
+      const result = await window.api.repos.fetchFavicon({ domain: faviconDomain })
+      if (!mountedRef.current) {
+        return
+      }
+      if (result.ok) {
+        setFaviconPreview(result.dataUrl)
+      } else {
+        setFaviconError(result.error)
+      }
+    } catch (error) {
+      if (mountedRef.current) {
+        setFaviconError(
+          error instanceof Error
+            ? error.message
+            : translate(
+                'auto.components.settings.RepositoryIconPicker.favicon_fetch_failed',
+                'Failed to fetch favicon'
+              )
+        )
+      }
+    } finally {
+      if (mountedRef.current) {
+        setFaviconLoading(false)
+      }
+    }
+  }
+
   return (
     <Tabs defaultValue={initialTab} className="gap-3">
       <TabsList variant="line" className="h-8">
@@ -90,6 +131,9 @@ export function RepositoryIconTabs({
         </TabsTrigger>
         <TabsTrigger value="emoji" className="h-7 text-xs">
           {translate('auto.components.settings.RepositoryIconPicker.c490787d24', 'Emoji')}
+        </TabsTrigger>
+        <TabsTrigger value="favicon" className="h-7 text-xs">
+          {translate('auto.components.settings.RepositoryIconPicker.cc1286e263', 'Favicon')}
         </TabsTrigger>
       </TabsList>
 
@@ -198,6 +242,71 @@ export function RepositoryIconTabs({
             {emoji}
           </Button>
         ))}
+      </TabsContent>
+
+      <TabsContent value="favicon" className="space-y-3">
+        <div className="flex gap-2">
+          <Input
+            value={faviconDomain}
+            onChange={(event) => setFaviconDomainOverride(event.target.value)}
+            placeholder={translate(
+              'auto.components.settings.RepositoryIconPicker.03ca1a4e9b',
+              'example.com'
+            )}
+            aria-label={translate(
+              'auto.components.settings.RepositoryIconPicker.favicon_domain',
+              'Website domain'
+            )}
+            className="h-9 text-sm"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 gap-2"
+            disabled={faviconLoading || !faviconDomain.trim()}
+            onClick={() => void handleFetchFavicon()}
+          >
+            {faviconLoading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Globe className="size-3.5" />
+            )}
+            {translate('auto.components.settings.RepositoryIconPicker.favicon_fetch', 'Fetch')}
+          </Button>
+        </div>
+        {faviconError ? <p className="text-xs text-destructive">{faviconError}</p> : null}
+        {faviconPreview ? (
+          <div className="flex items-center gap-3">
+            <img
+              src={faviconPreview}
+              alt=""
+              draggable={false}
+              className="size-10 shrink-0 rounded-md border border-border/70 bg-muted/30 object-contain p-1"
+            />
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={() =>
+                onSetIcon({
+                  type: 'image',
+                  src: faviconPreview,
+                  source: 'favicon',
+                  label: faviconDomain.trim()
+                })
+              }
+            >
+              {translate('auto.components.settings.RepositoryIconPicker.favicon_apply', 'Apply')}
+            </Button>
+          </div>
+        ) : null}
+        <p className="text-xs text-muted-foreground">
+          {translate(
+            'auto.components.settings.RepositoryIconPicker.favicon_hint',
+            "Fetches the site's favicon and stores it as this project's icon."
+          )}
+        </p>
       </TabsContent>
     </Tabs>
   )

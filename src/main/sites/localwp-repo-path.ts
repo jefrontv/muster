@@ -6,7 +6,7 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { resolveLocalWpImportProjectPath } from '../../shared/localwp-paths'
+import { localWpConfigPath, resolveLocalWpImportProjectPath } from '../../shared/localwp-paths'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import type { Repo, WorktreeMeta } from '../../shared/types'
 import { FOLDER_WORKSPACE_INSTANCE_SEPARATOR } from '../../shared/worktree-id'
@@ -18,7 +18,26 @@ export { rewriteWorkspaceSessionWorktreePath } from './localwp-workspace-session
 
 // Why: repos:list + worktrees:list* hit every project on a timer. After the first pass this
 // process, disk probes and rewrites are pure waste — cache "already evaluated" by repo id.
-const localWpMigrationCheckedRepoIds = new Set<string>()
+//
+// The cached value is the wp-config marker as it stood when we decided. A bare Set was wrong: it
+// made "not a LocalWP shell" permanent for the process, but a LocalWP setup relocates a project
+// mid-session and the import then lands wp-config.php. The stale answer left the repo record
+// pointing at a folder with no .git, so creating a worktree failed with "no base branch found".
+// Re-checking one marker per pass is far cheaper than the full resolve it guards.
+const localWpMigrationCheckedRepoIds = new Map<string, boolean>()
+
+function localWpConfigPresent(repoPath: string): boolean {
+  return existsSync(localWpConfigPath(repoPath))
+}
+
+function migrationCheckIsCurrent(repo: Repo): boolean {
+  const decidedWith = localWpMigrationCheckedRepoIds.get(repo.id)
+  return decidedWith !== undefined && decidedWith === localWpConfigPresent(repo.path)
+}
+
+function rememberMigrationCheck(repo: Repo): void {
+  localWpMigrationCheckedRepoIds.set(repo.id, localWpConfigPresent(repo.path))
+}
 
 /** Test-only: clear the process-local migration check cache. */
 export function resetLocalWpRepoPathMigrationCacheForTests(): void {
@@ -137,13 +156,13 @@ export function migrateLocalWpRepoPathIfNeeded(store: Store, repo: Repo): Repo {
   if (repo.connectionId) {
     return repo
   }
-  if (localWpMigrationCheckedRepoIds.has(repo.id)) {
+  if (migrationCheckIsCurrent(repo)) {
     return repo
   }
 
   // Why: ~all LocalWP fleets after migration are folder@app/public; basename checks only.
   if (repo.kind === 'folder' && pathLooksLikeAppPublicRoot(repo.path)) {
-    localWpMigrationCheckedRepoIds.add(repo.id)
+    rememberMigrationCheck(repo)
     return repo
   }
 
@@ -152,7 +171,7 @@ export function migrateLocalWpRepoPathIfNeeded(store: Store, repo: Repo): Repo {
     repo.kind === 'folder' ? 'folder' : 'git'
   )
   if (!resolved.remappedToWordPressRoot) {
-    localWpMigrationCheckedRepoIds.add(repo.id)
+    rememberMigrationCheck(repo)
     return repo
   }
 
@@ -160,7 +179,7 @@ export function migrateLocalWpRepoPathIfNeeded(store: Store, repo: Repo): Repo {
   const nextPathKey = normalizeRuntimePathForComparison(resolved.path)
   const kindChanged = repo.kind !== resolved.kind
   if (pathKey === nextPathKey && !kindChanged) {
-    localWpMigrationCheckedRepoIds.add(repo.id)
+    rememberMigrationCheck(repo)
     return repo
   }
 
@@ -200,7 +219,7 @@ export function migrateLocalWpRepoPathIfNeeded(store: Store, repo: Repo): Repo {
       )
     }
   }
-  localWpMigrationCheckedRepoIds.add(repo.id)
+  rememberMigrationCheck(repo)
   return migrated
 }
 

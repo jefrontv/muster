@@ -14,27 +14,14 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import { runWorktreeDeleteWithToast } from './delete-worktree-flow'
-import type { SshWorkspaceForgetResolution } from './ssh-workspace-forget-resolution'
-
-type ForgetSshWorkspaceModalData = {
-  worktreeId: string
-  displayName: string
-  resolution: SshWorkspaceForgetResolution
-}
-
-function isForgetModalData(data: unknown): data is ForgetSshWorkspaceModalData {
-  if (!data || typeof data !== 'object') {
-    return false
-  }
-  const candidate = data as Partial<ForgetSshWorkspaceModalData>
-  return typeof candidate.worktreeId === 'string' && candidate.resolution != null
-}
+import { getModalData } from '@/store/slices/modal-payloads'
+import { useModalData } from '@/hooks/use-modal-data'
 
 export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('forget-ssh-workspace')
   const closeModal = useAppStore((s) => s.closeModal)
   const hostLabel = useAppStore((s) => {
-    const resolution = isForgetModalData(s.modalData) ? s.modalData.resolution : null
+    const resolution = getModalData(s, 'forget-ssh-workspace')?.resolution ?? null
     const targetId = resolution && resolution.kind !== 'not-ssh' ? resolution.targetId : undefined
     if (!targetId) {
       return ''
@@ -46,7 +33,7 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
   const [busy, setBusy] = useState<null | 'reconnect' | 'forget'>(null)
   const mountedRef = useMountedRef()
 
-  if (!isForgetModalData(modalData)) {
+  if (modalData === null) {
     return null
   }
   const { worktreeId, displayName, resolution } = modalData

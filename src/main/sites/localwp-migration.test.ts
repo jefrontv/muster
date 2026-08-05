@@ -1,7 +1,8 @@
-import { mkdir } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createLocalWpFileOperations } from './localwp-app-public'
 import { fakeFileOperations, type FakeFileTree } from './localwp-app-public.test-fixtures'
 import { createLocalWpHost, type LocalWpCommandResult, type LocalWpHost } from './localwp-host'
 import {
@@ -134,13 +135,14 @@ describe('previewLocalWpMigration', () => {
     expect(plan.moves).toEqual([])
   })
 
-  it('lists every move and edit without mutating anything', async () => {
+  it('lists every move and edit without mutating anything, in migrate mode', async () => {
     const tree = plainProject()
     const before = new Map(tree.entries)
     const plan = await previewLocalWpMigration(request(), {
       host: fakeHost({ appRunning: true }),
       fileOperations: tree.operations
     })
+    expect(plan.mode).toBe('migrate')
     expect(plan.ok).toBe(true)
     expect(plan.databaseName).toBe('acme_local')
     expect(plan.databaseUser).toBe('acmeuser')
@@ -191,13 +193,62 @@ describe('previewLocalWpMigration', () => {
     expect(plan.blockedReason).toContain('Local app is not running')
   })
 
-  it('blocks when there is no WordPress install at the project root', async () => {
-    const tree = fakeFileOperations({ [path.join(SITE_PATH, 'readme.md')]: '# acme' })
+  it('plans a create, not a block, when there is no WordPress at the project root', async () => {
+    // The defect this replaces: a freshly cloned repo was refused with "Migration requires a
+    // WordPress install at the project root", a gate ocsites only applies to _migrate_to_localwp.
+    const tree = fakeFileOperations({
+      [path.join(SITE_PATH, 'readme.md')]: '# acme',
+      [path.join(SITE_PATH, 'composer.json')]: '{}'
+    })
     const plan = await previewLocalWpMigration(request(), {
       host: fakeHost({ appRunning: true }),
       fileOperations: tree.operations
     })
-    expect(plan.blockedReason).toContain('wp-config.php not found')
+    expect(plan.ok).toBe(true)
+    expect(plan.blockedReason).toBe('')
+    expect(plan.mode).toBe('create')
+    // No wp-config.php to read, so nothing to export and nothing to rewrite.
+    expect(plan.databaseName).toBe('')
+    expect(plan.databaseUser).toBe('')
+    expect(plan.edits).toEqual([])
+    // The destructive preview still names every entry that will be relocated.
+    expect(plan.moves.map((move) => path.basename(move.from))).toEqual([
+      'composer.json',
+      'readme.md'
+    ])
+    expect(plan.steps).not.toContain('Restore git-tracked files under app/public')
+    expect(plan.steps.some((step) => step.includes('Export local database'))).toBe(false)
+    expect(plan.steps.some((step) => step.includes('Import the dump'))).toBe(false)
+    expect(plan.steps.at(-1)).toBe('Leave the database and wp-config.php to the import step')
+  })
+
+  it('still blocks a create when the Local app is not running', async () => {
+    const tree = fakeFileOperations({ [path.join(SITE_PATH, 'readme.md')]: '# acme' })
+    const plan = await previewLocalWpMigration(request(), {
+      host: fakeHost({ appRunning: false }),
+      fileOperations: tree.operations
+    })
+    expect(plan.mode).toBe('create')
+    expect(plan.blockedReason).toContain('Local app is not running')
+  })
+
+  it('still blocks a create when the project is already registered with Local', async () => {
+    const tree = fakeFileOperations({ [path.join(SITE_PATH, 'readme.md')]: '# acme' })
+    const plan = await previewLocalWpMigration(request(), {
+      host: fakeHost({ appRunning: true, registered: true }),
+      fileOperations: tree.operations
+    })
+    expect(plan.mode).toBe('create')
+    expect(plan.blockedReason).toBe('This project is already registered with LocalWP.')
+  })
+
+  it('still blocks a create with an empty domain', async () => {
+    const tree = fakeFileOperations({ [path.join(SITE_PATH, 'readme.md')]: '# acme' })
+    const plan = await previewLocalWpMigration(request({ domain: '  ' }), {
+      host: fakeHost({ appRunning: true }),
+      fileOperations: tree.operations
+    })
+    expect(plan.blockedReason).toContain('domain is required')
   })
 
   it('blocks an empty domain', async () => {
@@ -242,6 +293,108 @@ describe('non-empty app/public guard', () => {
     expect(result.ok).toBe(true)
     expect(tree.entries.has(path.join(APP_PUBLIC, 'leftover.php'))).toBe(false)
   })
+
+  it('refuses a create without force too — the same files are at risk', async () => {
+    const tree = fakeFileOperations({
+      [path.join(SITE_PATH, 'readme.md')]: '# acme',
+      ...occupied
+    })
+    const plan = await previewLocalWpMigration(request(), {
+      host: fakeHost({ appRunning: true }),
+      fileOperations: tree.operations
+    })
+    expect(plan.mode).toBe('create')
+    expect(plan.ok).toBe(false)
+    expect(plan.blockedReason).toContain('is not empty (1 entries)')
+    expect(plan.appPublicEntries).toEqual(['leftover.php'])
+  })
+})
+
+describe('runLocalWpMigration in create mode', () => {
+  // A freshly cloned repo: no wp-config.php anywhere, so ocsites' setup_localwp_before_clone
+  // applies and the database/wp-config arrive later with the import.
+  function freshCheckout(): FakeFileTree {
+    return fakeFileOperations({
+      [path.join(SITE_PATH, 'composer.json')]: '{}',
+      [path.join(SITE_PATH, '.git', 'HEAD')]: 'ref: refs/heads/main',
+      [path.join(SITE_PATH, 'web', 'app', 'themes', 'acme', 'style.css')]: 'body{}'
+    })
+  }
+
+  it('registers the site, waits for the socket, and leaves the project under app/public', async () => {
+    const tree = freshCheckout()
+    const { dependencies, imports, exported } = harness(tree)
+    const result = await runLocalWpMigration(request(), dependencies)
+    expect(result.ok).toBe(true)
+    expect(result.plan.mode).toBe('create')
+    expect(result.socketPath).toBe(SOCKET)
+    expect(result.localWpRoot).toBe('app/public')
+    // The end state ocsites leaves behind: the project's own files under app/public, with Local's
+    // scaffold gone rather than nested underneath them.
+    expect(tree.entries.has(path.join(APP_PUBLIC, 'composer.json'))).toBe(true)
+    expect(tree.entries.has(path.join(APP_PUBLIC, '.git', 'HEAD'))).toBe(true)
+    expect(
+      tree.entries.has(path.join(APP_PUBLIC, 'web', 'app', 'themes', 'acme', 'style.css'))
+    ).toBe(true)
+    expect(tree.entries.has(path.join(SITE_PATH, 'composer.json'))).toBe(false)
+    expect(
+      tree.entries.has(
+        path.join(APP_PUBLIC, 'wp-content', 'themes', 'twentytwentyfour', 'style.css')
+      )
+    ).toBe(false)
+    // Neither half of the database work belongs to this mode.
+    expect(exported).toEqual([])
+    expect(imports).toEqual([])
+    expect(result.databaseImported).toBe(false)
+  })
+
+  it('never writes a wp-config.php — the import stage owns that', async () => {
+    const tree = freshCheckout()
+    const { dependencies } = harness(tree)
+    const result = await runLocalWpMigration(request(), dependencies)
+    expect(result.ok).toBe(true)
+    expect(result.plan.edits).toEqual([])
+    expect(tree.entries.has(path.join(APP_PUBLIC, 'wp-config.php'))).toBe(false)
+    expect(result.log.some((line) => line.includes('DB_HOST'))).toBe(false)
+    expect(result.log.some((line) => line.includes('Importing the database'))).toBe(false)
+  })
+
+  it("ends at ocsites' terminal line rather than a migration message", async () => {
+    const tree = freshCheckout()
+    const streamed: string[] = []
+    const { dependencies } = harness(tree, { onStatus: (message) => streamed.push(message) })
+    const result = await runLocalWpMigration(request(), dependencies)
+    expect(result.message).toBe('LocalWP site ready.')
+    expect(streamed).toEqual(result.log)
+    expect(streamed.at(-1)).toBe('LocalWP site ready.')
+    const wait = streamed.indexOf('Waiting for LocalWP to complete setup…')
+    const ready = streamed.indexOf('Socket ready.')
+    expect(wait).toBeGreaterThanOrEqual(0)
+    expect(ready).toBeGreaterThan(wait)
+    expect(streamed.indexOf('Moving project files into app/public…')).toBeGreaterThan(ready)
+  })
+
+  it('leaves the checkout at the project root when the socket never appears', async () => {
+    const tree = freshCheckout()
+    const { dependencies } = harness(tree, { awaitSocket: async () => null })
+    const result = await runLocalWpMigration(request(), dependencies)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe(
+      'Timed out waiting for the LocalWP MySQL socket (3 min). Is the Local app open?'
+    )
+    expect(tree.entries.has(path.join(SITE_PATH, 'composer.json'))).toBe(true)
+    expect(tree.entries.has(path.join(APP_PUBLIC, 'composer.json'))).toBe(false)
+  })
+
+  it('creates the site even when the checkout has nothing to relocate yet', async () => {
+    // ocsites' pre-clone case verbatim: the folder is empty and the site is still registered.
+    const tree = fakeFileOperations({})
+    const { dependencies } = harness(tree)
+    const result = await runLocalWpMigration(request(), dependencies)
+    expect(result.ok).toBe(true)
+    expect(result.plan.mode).toBe('create')
+    expect(result.plan.moves).toEqual([])
+  })
 })
 
 describe('runLocalWpMigration', () => {
@@ -270,6 +423,23 @@ describe('runLocalWpMigration', () => {
     )
   })
 
+  it('streams the ocsites setup sequence through onStatus, in order', async () => {
+    const tree = plainProject()
+    const streamed: string[] = []
+    const { dependencies } = harness(tree, { onStatus: (message) => streamed.push(message) })
+    const result = await runLocalWpMigration(request(), dependencies)
+    expect(result.ok).toBe(true)
+    // The beats ocsites showed (tui_deploy:2599-2630): the wait is announced before it starts, and
+    // "Socket ready." is what tells the user the OS password prompt has been dealt with.
+    const wait = streamed.indexOf('Waiting for LocalWP to complete setup…')
+    const ready = streamed.indexOf('Socket ready.')
+    expect(wait).toBeGreaterThanOrEqual(0)
+    expect(ready).toBeGreaterThan(wait)
+    expect(streamed.slice(ready)).toContain('Database imported.')
+    // What the renderer shows is what the result carries; they must not drift apart.
+    expect(streamed).toEqual(result.log)
+  })
+
   it('aborts before touching disk when Local refuses to create the site', async () => {
     const tree = plainProject()
     const before = new Map(tree.entries)
@@ -287,7 +457,11 @@ describe('runLocalWpMigration', () => {
     const { dependencies, imports } = harness(tree, { awaitSocket: async () => null })
     const result = await runLocalWpMigration(request(), dependencies)
     expect(result.ok).toBe(false)
-    expect(result.message).toContain('Timed out waiting for the LocalWP MySQL socket')
+    // ocsites named the budget and the likeliest cause (tui_deploy:2615); "timed out" alone leaves
+    // the user with nothing to act on.
+    expect(result.message).toBe(
+      'Timed out waiting for the LocalWP MySQL socket (3 min). Is the Local app open?'
+    )
     // Local's own scaffold may exist by now, but nothing of the project has been relocated.
     expect(tree.entries.has(path.join(SITE_PATH, 'wp-config.php'))).toBe(true)
     expect(
@@ -347,5 +521,64 @@ describe('runLocalWpMigration', () => {
     const result = await runLocalWpMigration(request(), dependencies)
     expect(statuses).toEqual(result.log)
     expect(statuses.at(-1)).toBe('Database imported.')
+  })
+})
+
+// The only test here that touches a real filesystem. Everything above proves the sequence; this
+// proves the end state ocsites leaves behind — the project's own files under app/public, on disk.
+// The Local app is never contacted: site creation and the socket wait are still injected.
+describe('create mode on a real filesystem', () => {
+  const roots: string[] = []
+
+  afterEach(async () => {
+    await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })))
+  })
+
+  it('leaves a cloned checkout under app/public with the scaffold gone', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'muster-localwp-create-'))
+    roots.push(root)
+    await mkdir(path.join(root, '.git'), { recursive: true })
+    await writeFile(path.join(root, '.git', 'HEAD'), 'ref: refs/heads/main')
+    await writeFile(path.join(root, 'composer.json'), '{}')
+    await mkdir(path.join(root, 'web', 'app', 'themes', 'acme'), { recursive: true })
+    await writeFile(path.join(root, 'web', 'app', 'themes', 'acme', 'style.css'), 'body{}')
+
+    const appPublic = path.join(root, 'app', 'public')
+    const fileOperations = createLocalWpFileOperations()
+    const result = await runLocalWpMigration(
+      { ...request({ sitePath: root }), siteName: path.basename(root) },
+      {
+        host: fakeHost({ appRunning: true }),
+        fileOperations,
+        importDatabase: async () => {
+          throw new Error('create mode must never import a database')
+        },
+        exportDatabase: async () => {
+          throw new Error('create mode must never export a database')
+        },
+        // Local scaffolds app/public while registering the site; reproduce that on disk so the
+        // clearing step has something real to remove.
+        createSite: async () => {
+          await mkdir(path.join(appPublic, 'wp-content'), { recursive: true })
+          await writeFile(path.join(appPublic, 'index.php'), '// scaffold')
+          return { ok: true, siteId: SITE_ID, message: 'LocalWP site created' }
+        },
+        awaitSocket: async () => SOCKET
+      }
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.plan.mode).toBe('create')
+    expect(result.socketPath).toBe(SOCKET)
+    expect(result.localWpRoot).toBe('app/public')
+    expect(result.message).toBe('LocalWP site ready.')
+    // app/ is Local's, so it stays at the root; everything else moved inside app/public.
+    expect((await readdir(root)).sort()).toEqual(['app'])
+    expect((await readdir(appPublic)).sort()).toEqual(['.git', 'composer.json', 'web'])
+    expect((await readdir(path.join(appPublic, 'web', 'app', 'themes'))).sort()).toEqual(['acme'])
+    // Local's scaffold is gone rather than nested under the project's files.
+    expect(await fileOperations.pathExists(path.join(appPublic, 'wp-content'))).toBe(false)
+    // No wp-config.php was invented; the import stage brings it.
+    expect(await fileOperations.pathExists(path.join(appPublic, 'wp-config.php'))).toBe(false)
   })
 })

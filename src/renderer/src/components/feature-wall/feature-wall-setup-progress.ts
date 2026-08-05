@@ -11,11 +11,6 @@ export type FeatureWallSetupProgressInput = {
   settings: GlobalSettings | null
   featureInteractions: FeatureInteractionState
   hasConnectedTaskSource: boolean
-  browserUseSkillInstalled: boolean
-  computerUseSkillInstalled: boolean
-  computerUsePermissionsReady: boolean
-  computerUseUnavailable?: boolean
-  orchestrationSkillInstalled: boolean
   gitRepoCount: number
   worktreesByRepo: Record<string, Worktree[]>
   hasSetupScript: boolean
@@ -44,11 +39,6 @@ function countAvailableNonMainWorktrees(worktreesByRepo: Record<string, Worktree
 export function getFeatureWallSetupProgress(
   input: FeatureWallSetupProgressInput
 ): FeatureWallSetupProgress {
-  const agentCapabilitiesDone =
-    input.browserUseSkillInstalled &&
-    input.computerUseSkillInstalled &&
-    (input.computerUsePermissionsReady || input.computerUseUnavailable === true) &&
-    input.orchestrationSkillInstalled
   const stepDone: Record<FeatureWallSetupStepId, boolean> = {
     'default-agent':
       Boolean(input.settings?.defaultTuiAgent) && input.settings?.defaultTuiAgent !== 'blank',
@@ -61,7 +51,6 @@ export function getFeatureWallSetupProgress(
     // opening any real page in Orca's browser durably completes this milestone.
     browser: hasFeatureInteraction(input.featureInteractions, 'browser'),
     'task-sources': input.hasConnectedTaskSource,
-    'agent-capabilities': agentCapabilitiesDone,
     'setup-script': input.hasSetupScript
   }
   return {

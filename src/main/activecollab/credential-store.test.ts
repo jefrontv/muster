@@ -21,7 +21,11 @@ const { safeStorageMock, userDataPathMock, writeSecureFileMock } = vi.hoisted(()
   writeSecureFileMock: vi.fn()
 }))
 
-vi.mock('electron', () => ({ safeStorage: safeStorageMock }))
+vi.mock('electron', () => ({
+  // node-safe-electron imports app from the same module; a partial mock throws at import.
+  app: undefined,
+  safeStorage: safeStorageMock
+}))
 vi.mock('../persistence', () => ({ getCanonicalUserDataPath: userDataPathMock }))
 vi.mock('../../shared/secure-file', () => ({ writeSecureFile: writeSecureFileMock }))
 

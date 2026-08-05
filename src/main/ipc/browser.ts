@@ -1,9 +1,35 @@
 /* eslint-disable max-lines -- Why: browser IPC handlers must be registered together so the
    trust boundary (isTrustedBrowserRenderer) and handler teardown stay consistent. */
-import { BrowserWindow, ipcMain, webContents } from 'electron'
+import { BrowserWindow, dialog, ipcMain, webContents } from 'electron'
 import { browserCertificateTrustController, browserManager } from '../browser/browser-manager'
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
 import { browserSessionRegistry } from '../browser/browser-session-registry'
+import { readExtensionManifest } from '../browser/browser-extension-loader'
+import {
+  openExtensionSettingsPage,
+  type OpenExtensionPageResult
+} from '../browser/browser-extension-window'
+import {
+  addBrowserExtensionPath,
+  getBrowserExtensionStatuses,
+  reloadBrowserExtensionsEverywhere,
+  removeBrowserExtensionPath
+} from '../browser/browser-extension-service'
+import {
+  clearWordPressLoginPassword,
+  disableBundledExtension,
+  getWordPressLoginStatus,
+  installAndEnableBundledExtension,
+  listBundledExtensions,
+  setWordPressLoginConfig,
+  uninstallBundledExtensionCompletely
+} from '../browser/bundled-extension-service'
+import type {
+  BrowserExtensionAddResult,
+  BrowserExtensionStatus,
+  BundledExtensionInfo,
+  WordPressLoginAutofillStatus
+} from '../../shared/browser-extension-types'
 import {
   pickCookieFile,
   importCookiesFromFile,
@@ -182,6 +208,102 @@ export function registerBrowserHandlers(): void {
   ipcMain.removeHandler('browser:extractHoverPayload')
   ipcMain.removeHandler('browser:activeTabChanged')
   ipcMain.removeHandler('browser:proceedCertificate')
+  ipcMain.removeHandler('browserExtensions:list')
+  ipcMain.removeHandler('browserExtensions:add')
+  ipcMain.removeHandler('browserExtensions:remove')
+  ipcMain.removeHandler('browserExtensions:reload')
+  ipcMain.removeHandler('browserExtensions:openSettingsPage')
+  ipcMain.removeHandler('browserExtensions:listBundled')
+  ipcMain.removeHandler('browserExtensions:installBundled')
+  ipcMain.removeHandler('browserExtensions:disableBundled')
+  ipcMain.removeHandler('browserExtensions:uninstallBundled')
+  ipcMain.removeHandler('browserExtensions:getWordPressLogin')
+  ipcMain.removeHandler('browserExtensions:setWordPressLogin')
+  ipcMain.removeHandler('browserExtensions:clearWordPressLoginPassword')
+
+  ipcMain.handle('browserExtensions:listBundled', (): BundledExtensionInfo[] =>
+    listBundledExtensions()
+  )
+
+  ipcMain.handle(
+    'browserExtensions:installBundled',
+    async (_event, args: { id: string }) => await installAndEnableBundledExtension(args.id)
+  )
+
+  ipcMain.handle(
+    'browserExtensions:disableBundled',
+    async (_event, args: { id: string }) => await disableBundledExtension(args.id)
+  )
+
+  ipcMain.handle(
+    'browserExtensions:uninstallBundled',
+    async (_event, args: { id: string }) => await uninstallBundledExtensionCompletely(args.id)
+  )
+
+  ipcMain.handle(
+    'browserExtensions:getWordPressLogin',
+    (): WordPressLoginAutofillStatus => getWordPressLoginStatus()
+  )
+
+  ipcMain.handle(
+    'browserExtensions:setWordPressLogin',
+    async (_event, args: { username: string; password?: string | null; autoLogin: boolean }) =>
+      await setWordPressLoginConfig(args)
+  )
+
+  ipcMain.handle(
+    'browserExtensions:clearWordPressLoginPassword',
+    async (): Promise<WordPressLoginAutofillStatus> => await clearWordPressLoginPassword()
+  )
+
+  ipcMain.handle('browserExtensions:list', (): BrowserExtensionStatus[] =>
+    getBrowserExtensionStatuses()
+  )
+
+  ipcMain.handle('browserExtensions:add', async (event): Promise<BrowserExtensionAddResult> => {
+    const parentWindow = BrowserWindow.fromWebContents(event.sender)
+    const options = {
+      title: 'Select unpacked extension folder',
+      properties: ['openDirectory']
+    } satisfies Electron.OpenDialogOptions
+    const result = parentWindow
+      ? await dialog.showOpenDialog(parentWindow, options)
+      : await dialog.showOpenDialog(options)
+    if (result.canceled || result.filePaths.length === 0) {
+      return { ok: false, reason: 'cancelled', message: null }
+    }
+    const extensionPath = result.filePaths[0]
+    // Why: reject before persisting so a bad folder never sits in settings failing every boot.
+    const manifest = readExtensionManifest(extensionPath)
+    if (!manifest.ok) {
+      return { ok: false, reason: 'invalid', message: manifest.error }
+    }
+    return await addBrowserExtensionPath(extensionPath, manifest.name, manifest.version)
+  })
+
+  ipcMain.handle(
+    'browserExtensions:remove',
+    async (_event, args: { path: string }): Promise<BrowserExtensionStatus[]> =>
+      await removeBrowserExtensionPath(args.path)
+  )
+
+  ipcMain.handle(
+    'browserExtensions:openSettingsPage',
+    (event, args: { extensionId: string; page: string }): OpenExtensionPageResult =>
+      openExtensionSettingsPage({
+        extensionId: args.extensionId,
+        page: args.page,
+        parent: BrowserWindow.fromWebContents(event.sender)
+      })
+  )
+
+  ipcMain.handle(
+    'browserExtensions:reload',
+    async (): Promise<BrowserExtensionStatus[]> =>
+      await reloadBrowserExtensionsEverywhere(browserSessionRegistry.listConfiguredPartitions(), {
+        force: true
+      })
+  )
 
   ipcMain.handle(
     'browser:registerGuest',

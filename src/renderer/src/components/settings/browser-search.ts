@@ -17,7 +17,7 @@ export function getBrowserLinkRoutingShortcutLabel(platform: BrowserShortcutPlat
 }
 
 export function getBrowserLinkRoutingDescription(platform: BrowserShortcutPlatform): string {
-  return `Open http(s) links in Muster's built-in browser — from the terminal, markdown, and the editor. ${getBrowserLinkRoutingShortcutLabel(platform)} always uses your system browser.`
+  return `Open http(s) links in Muster's built-in browser — from the terminal, markdown, the editor, and task panels. ${getBrowserLinkRoutingShortcutLabel(platform)} always uses your system browser.`
 }
 
 export function getBrowserPaneSearchEntries(
@@ -107,6 +107,61 @@ export function getBrowserPaneSearchEntries(
         ...translateSearchKeyword('auto.components.settings.browser.search.68d1db8929', 'markdown'),
         ...translateSearchKeyword('auto.components.settings.browser.search.8dd4805991', 'file'),
         ...translateSearchKeyword('auto.components.settings.browser.search.a7a07d5415', 'editor')
+      ]
+    },
+    {
+      title: translate(
+        'auto.components.settings.browser.search.f0a71c3d92',
+        'Open Links in Floating Browser'
+      ),
+      description: translate(
+        'auto.components.settings.browser.search.a94c26e5f1',
+        'Open in-app links in the floating workspace panel instead of a workspace browser tab.'
+      ),
+      keywords: [
+        ...translateSearchKeyword('auto.components.settings.browser.search.2d2d995c58', 'browser'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.bea27bac4b', 'links'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.b7e5304af8', 'floating'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.c1d9f2760b', 'panel'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.d6b83e1a45', 'overlay'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.8f036ea11f', 'worktree')
+      ]
+    },
+    {
+      title: translate('auto.components.settings.browser.search.b52e7f1a06', 'Browser Extensions'),
+      description: translate(
+        'auto.components.settings.browser.search.c73d81e4f9',
+        'Load unpacked Chrome extensions into the in-app browser.'
+      ),
+      keywords: [
+        ...translateSearchKeyword('auto.components.settings.browser.search.2d2d995c58', 'browser'),
+        ...translateSearchKeyword(
+          'auto.components.settings.browser.search.d94a6c02e5',
+          'extension'
+        ),
+        ...translateSearchKeyword('auto.components.settings.browser.search.e8b1573fa2', 'chrome'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.f2704ac9d1', 'unpacked'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.a0e5f3b8c7', 'plugin')
+      ]
+    },
+    {
+      title: translate('auto.components.settings.browser.search.c1908fe37b', 'Muster Extensions'),
+      description: translate(
+        'auto.components.settings.browser.search.d0472be851',
+        'Install extensions Muster ships, including WordPress login autofill.'
+      ),
+      keywords: [
+        ...translateSearchKeyword('auto.components.settings.browser.search.2d2d995c58', 'browser'),
+        ...translateSearchKeyword(
+          'auto.components.settings.browser.search.d94a6c02e5',
+          'extension'
+        ),
+        ...translateSearchKeyword(
+          'auto.components.settings.browser.search.e5183ba7c0',
+          'wordpress'
+        ),
+        ...translateSearchKeyword('auto.components.settings.browser.search.f7269ad401', 'autofill'),
+        ...translateSearchKeyword('auto.components.settings.browser.search.a83b0e5217', 'login')
       ]
     },
     {

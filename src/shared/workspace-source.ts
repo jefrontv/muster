@@ -4,7 +4,9 @@ export const WORKSPACE_SOURCE_VALUES = [
   'shortcut',
   'drag_drop',
   'onboarding',
+  'settings',
   'terminal_context_menu',
+  'activecollab-task',
   'unknown'
 ] as const
 

@@ -6,6 +6,7 @@ import {
   findPrevLiveNonTaskStackHistoryIndex,
   findPrevLiveWorktreeHistoryIndex
 } from './worktree-nav-history'
+import type { ModalId, ModalPayload, OpenModal } from './modal-payloads'
 import type {
   ChangelogData,
   CustomPet,
@@ -779,28 +780,9 @@ export type UISlice = {
     section: NonNullable<UISlice['appearanceAccordionDeepLink']>
   ) => void
   clearAppearanceAccordionDeepLink: () => void
-  activeModal:
-    | 'none'
-    | 'create-worktree'
-    | 'edit-meta'
-    | 'delete-worktree'
-    | 'forget-ssh-workspace'
-    | 'confirm-add-project-from-folder'
-    | 'confirm-non-git-folder'
-    | 'confirm-remove-folder'
-    | 'add-repo'
-    | 'quick-open'
-    | 'worktree-palette'
-    | 'workspace-cleanup'
-    | 'project-added'
-    | 'worktree-visibility'
-    | 'setup-guide'
-    | 'feature-wall'
-    | 'feature-tips'
-    | 'new-workspace-composer'
-    | 'confirm-orca-yaml-hooks'
-  modalData: Record<string, unknown>
-  openModal: (modal: UISlice['activeModal'], data?: Record<string, unknown>) => void
+  activeModal: ModalId
+  modalData: ModalPayload
+  openModal: OpenModal
   closeModal: () => void
   featureTipsSeenIds: FeatureTipId[]
   markFeatureTipsSeen: (ids: FeatureTipId[]) => void
@@ -853,10 +835,6 @@ export type UISlice = {
   markSetupGuideBrowserMilestoneMigrated: (legacyComplete: boolean) => void
   browserImportHintHidden: boolean
   setBrowserImportHintHidden: (hidden: boolean) => void
-  mobileEmulatorTabIntroDismissed: boolean
-  dismissMobileEmulatorTabIntro: () => void
-  mobileEmulatorAgentSetupDismissed: boolean
-  dismissMobileEmulatorAgentSetup: () => void
   projectOrderManualDefaultNoticeDismissed: boolean
   dismissProjectOrderManualDefaultNotice: () => void
   usagePercentageDisplayChangeNoticeDismissed: boolean
@@ -1556,8 +1534,11 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   clearAppearanceAccordionDeepLink: () => set({ appearanceAccordionDeepLink: null }),
 
   activeModal: 'none',
-  modalData: {},
-  openModal: (modal, data = {}) => {
+  modalData: undefined,
+  // Why: the public signature is generic (payload keyed off the modal id), but
+  // the body is id-agnostic — assert once here rather than index the deferred
+  // conditional arg tuple.
+  openModal: ((modal: ModalId, data?: ModalPayload) => {
     if (modal === 'add-repo' || modal === 'create-worktree') {
       get().recordFeatureInteraction?.('workspace-creation')
     }
@@ -1565,8 +1546,8 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
       activeModal: modal,
       modalData: data
     })
-  },
-  closeModal: () => set({ activeModal: 'none', modalData: {} }),
+  }) as OpenModal,
+  closeModal: () => set({ activeModal: 'none', modalData: undefined }),
   featureTipsSeenIds: [],
   markFeatureTipsSeen: (ids) =>
     set((s) => {
@@ -1950,24 +1931,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
       }
       window.api.ui.set({ browserImportHintHidden: hidden }).catch(console.error)
       return { browserImportHintHidden: hidden }
-    }),
-  mobileEmulatorTabIntroDismissed: false,
-  dismissMobileEmulatorTabIntro: () =>
-    set((s) => {
-      if (s.mobileEmulatorTabIntroDismissed) {
-        return s
-      }
-      window.api.ui.set({ mobileEmulatorTabIntroDismissed: true }).catch(console.error)
-      return { mobileEmulatorTabIntroDismissed: true }
-    }),
-  mobileEmulatorAgentSetupDismissed: false,
-  dismissMobileEmulatorAgentSetup: () =>
-    set((s) => {
-      if (s.mobileEmulatorAgentSetupDismissed) {
-        return s
-      }
-      window.api.ui.set({ mobileEmulatorAgentSetupDismissed: true }).catch(console.error)
-      return { mobileEmulatorAgentSetupDismissed: true }
     }),
   projectOrderManualDefaultNoticeDismissed: true,
   dismissProjectOrderManualDefaultNotice: () =>
@@ -2519,8 +2482,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
         setupGuideBrowserMilestoneLegacyComplete:
           ui.setupGuideBrowserMilestoneLegacyComplete === true,
         browserImportHintHidden: ui.browserImportHintHidden === true,
-        mobileEmulatorTabIntroDismissed: ui.mobileEmulatorTabIntroDismissed === true,
-        mobileEmulatorAgentSetupDismissed: ui.mobileEmulatorAgentSetupDismissed === true,
         projectOrderManualDefaultNoticeDismissed:
           ui.projectOrderManualDefaultNoticeDismissed === true,
         // Why: treat only explicit true as dismissed so a false from migration still surfaces.

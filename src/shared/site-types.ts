@@ -112,6 +112,7 @@ export type SiteSummary = {
 
 export type SiteEnvironmentResolutionReason =
   | 'branch-match'
+  | 'active-environment'
   | 'default-main'
   | 'first-environment'
   | 'no-environments'
@@ -181,9 +182,14 @@ export function countSelectedToggles(environment: SiteEnvironment, group: SiteRu
 }
 
 /**
- * ocsites' branch → environment rule, ported verbatim: exact branch-name match wins, then a
- * 'main' environment, then the first one. Anything but a branch match requires confirmation
- * before a write action, so an unmatched branch can never silently deploy to production.
+ * ocsites' branch → environment rule: exact branch-name match wins, then the environment the site
+ * is actually pointed at, then a 'main' environment, then the first one. Anything but a branch match
+ * requires confirmation before a write action, so an unmatched branch can never silently deploy to
+ * production.
+ *
+ * Why activeEnvironment outranks 'main': a bind link names its target environment and stores it
+ * here. Preferring a stale 'main' over it showed the wrong environment's fields — so edits landed
+ * in 'main' while runs used something else.
  */
 export function resolveSiteEnvironment(
   site: Pick<Site, 'environments' | 'activeEnvironment'>,
@@ -195,6 +201,13 @@ export function resolveSiteEnvironment(
   }
   if (branch && names.includes(branch)) {
     return { environment: branch, reason: 'branch-match', requiresConfirmation: false }
+  }
+  if (site.activeEnvironment && names.includes(site.activeEnvironment)) {
+    return {
+      environment: site.activeEnvironment,
+      reason: 'active-environment',
+      requiresConfirmation: true
+    }
   }
   if (names.includes(DEFAULT_SITE_ENVIRONMENT_NAME)) {
     return {

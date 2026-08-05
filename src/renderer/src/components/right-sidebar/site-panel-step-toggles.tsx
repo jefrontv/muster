@@ -1,0 +1,77 @@
+// Editable import/deploy step toggles for the Site panel.
+//
+// The panel is read-mostly, but the step set is the one knob a run actually varies on — sending
+// the user to the Sites page to tick a checkbox made the quick actions pointless. Writes go to the
+// RESOLVED environment only (the one a run would use), so what you toggle here is what Import runs.
+
+import type React from 'react'
+import { useState } from 'react'
+import type { SiteEnvironment } from '../../../../shared/site-types'
+import { SITE_DEPLOY_TOGGLES, SITE_IMPORT_TOGGLES } from '../../../../shared/site-types'
+import { translate } from '@/i18n/i18n'
+import { Checkbox } from '@/components/ui/checkbox'
+import { getSiteToggleLabels } from '@/components/sites/site-toggle-labels'
+
+export function SiteStepToggles({
+  siteId,
+  environmentName,
+  environment,
+  onChanged
+}: {
+  siteId: string
+  environmentName: string
+  environment: SiteEnvironment
+  /** The owner refetches summaries; counts and run readiness derive from them. */
+  onChanged: () => void
+}): React.JSX.Element {
+  const toggleLabels = getSiteToggleLabels()
+  const [error, setError] = useState('')
+
+  const setStep = async (key: string, enabled: boolean): Promise<void> => {
+    setError('')
+    const result = await window.api.sites.upsertEnvironment({
+      siteId,
+      name: environmentName,
+      patch: { [key]: enabled }
+    })
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    onChanged()
+  }
+
+  const group = (
+    heading: string,
+    toggles: readonly { key: string; label: string }[]
+  ): React.JSX.Element => (
+    <fieldset className="min-w-0 flex-1 space-y-1">
+      <legend className="text-[11px] font-medium text-muted-foreground">{heading}</legend>
+      {toggles.map((toggle) => (
+        <label key={toggle.key} className="flex items-center gap-1.5 text-xs">
+          <Checkbox
+            checked={Boolean(environment[toggle.key as keyof SiteEnvironment])}
+            onCheckedChange={(checked) => void setStep(toggle.key, checked === true)}
+          />
+          <span className="truncate">{toggleLabels[toggle.key] ?? toggle.label}</span>
+        </label>
+      ))}
+    </fieldset>
+  )
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-3">
+        {group(
+          translate('auto.components.right.sidebar.SitePanel.importStepsHeading', 'Import steps'),
+          SITE_IMPORT_TOGGLES
+        )}
+        {group(
+          translate('auto.components.right.sidebar.SitePanel.deployStepsHeading', 'Deploy steps'),
+          SITE_DEPLOY_TOGGLES
+        )}
+      </div>
+      {error.length > 0 ? <p className="text-[11px] text-destructive">{error}</p> : null}
+    </div>
+  )
+}

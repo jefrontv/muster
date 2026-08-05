@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import type * as ReactModule from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NonGitFolderModalPayload } from '@/store/slices/modal-payloads'
 
 type ButtonCapture = {
   label: string
@@ -14,7 +15,7 @@ const mocks = vi.hoisted(() => ({
     modalData: {
       folderPath: '/srv/non-git',
       runtimeEnvironmentId: 'env-1'
-    } as Record<string, unknown>,
+    } as NonGitFolderModalPayload,
     closeModal: vi.fn(),
     addNonGitFolder: vi.fn(),
     runtimeEnvironments: [{ id: 'env-1', name: 'Remote Mac' }]

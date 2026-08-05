@@ -17,10 +17,6 @@ function makeInput(
     settings: null,
     featureInteractions: {},
     hasConnectedTaskSource: false,
-    browserUseSkillInstalled: false,
-    computerUseSkillInstalled: false,
-    computerUsePermissionsReady: false,
-    orchestrationSkillInstalled: false,
     gitRepoCount: 0,
     worktreesByRepo: {},
     hasSetupScript: false,
@@ -49,7 +45,7 @@ describe('getFeatureWallSetupProgress', () => {
     const progress = getFeatureWallSetupProgress(makeInput({ gitRepoCount: 2 }))
 
     expect(progress.stepDone['add-two-repos']).toBe(true)
-    expect(progress.coreTotal).toBe(8)
+    expect(progress.coreTotal).toBe(7)
   })
 
   it('preserves the durable setup step definition order', () => {
@@ -58,7 +54,6 @@ describe('getFeatureWallSetupProgress', () => {
       'browser',
       'notifications',
       'default-agent',
-      'agent-capabilities',
       'task-sources',
       'setup-script',
       'add-two-repos'
@@ -73,7 +68,6 @@ describe('getFeatureWallSetupProgress', () => {
     expect(getFeatureWallSetupStepsForSection('setup').map((step) => step.id)).toEqual([
       'notifications',
       'default-agent',
-      'agent-capabilities',
       'task-sources',
       'setup-script',
       'add-two-repos'
@@ -102,11 +96,7 @@ describe('getFeatureWallSetupProgress', () => {
         } as never,
         hasConnectedTaskSource: true,
         hasSetupScript: true,
-        gitRepoCount: 2,
-        browserUseSkillInstalled: true,
-        computerUseSkillInstalled: true,
-        computerUsePermissionsReady: true,
-        orchestrationSkillInstalled: true
+        gitRepoCount: 2
       })
     )
 
@@ -123,7 +113,7 @@ describe('getFeatureWallSetupProgress', () => {
     )
 
     expect(Object.hasOwn(progress.stepDone, 'split-terminal')).toBe(false)
-    expect(progress.coreTotal).toBe(8)
+    expect(progress.coreTotal).toBe(7)
   })
 
   it('marks all active steps complete without historical terminal split interaction', () => {
@@ -141,15 +131,11 @@ describe('getFeatureWallSetupProgress', () => {
         },
         hasConnectedTaskSource: true,
         hasSetupScript: true,
-        gitRepoCount: 2,
-        browserUseSkillInstalled: true,
-        computerUseSkillInstalled: true,
-        computerUsePermissionsReady: true,
-        orchestrationSkillInstalled: true
+        gitRepoCount: 2
       })
     )
 
-    expect(progress.coreDoneCount).toBe(8)
+    expect(progress.coreDoneCount).toBe(7)
     expect(Object.values(progress.stepDone).every(Boolean)).toBe(true)
   })
 
@@ -219,89 +205,15 @@ describe('getFeatureWallSetupProgress', () => {
     expect(getFeatureWallSetupProgress(makeInput()).stepDone.browser).toBe(false)
   })
 
-  it('marks task sources complete for any supported connected provider', () => {
+  it('marks Connect ActiveCollab complete when ActiveCollab is connected', () => {
     const progress = getFeatureWallSetupProgress(makeInput({ hasConnectedTaskSource: true }))
 
     expect(progress.stepDone['task-sources']).toBe(true)
   })
 
-  it('does not mark task sources complete while provider checks are pending', () => {
+  it('does not mark Connect ActiveCollab complete while ActiveCollab is not connected', () => {
     const progress = getFeatureWallSetupProgress(makeInput({ hasConnectedTaskSource: false }))
 
     expect(progress.stepDone['task-sources']).toBe(false)
-  })
-
-  it('does not mark agent capabilities complete from setup-start interactions alone', () => {
-    const progress = getFeatureWallSetupProgress(
-      makeInput({
-        featureInteractions: {
-          'agent-browser-setup': { firstInteractedAt: 1_700_000_000_000, interactionCount: 1 },
-          'computer-use-setup': { firstInteractedAt: 1_700_000_000_001, interactionCount: 1 },
-          'agent-orchestration-setup': {
-            firstInteractedAt: 1_700_000_000_002,
-            interactionCount: 1
-          }
-        }
-      })
-    )
-
-    expect(progress.stepDone['agent-capabilities']).toBe(false)
-  })
-
-  it('marks agent capabilities complete only when required skills and permissions are ready', () => {
-    expect(
-      getFeatureWallSetupProgress(
-        makeInput({
-          browserUseSkillInstalled: true,
-          computerUseSkillInstalled: true,
-          computerUsePermissionsReady: false,
-          orchestrationSkillInstalled: true
-        })
-      ).stepDone['agent-capabilities']
-    ).toBe(false)
-
-    const progress = getFeatureWallSetupProgress(
-      makeInput({
-        browserUseSkillInstalled: true,
-        computerUseSkillInstalled: true,
-        computerUsePermissionsReady: true,
-        orchestrationSkillInstalled: true
-      })
-    )
-
-    expect(progress.stepDone['agent-capabilities']).toBe(true)
-  })
-
-  it('does not block agent capabilities on unavailable Computer Use access', () => {
-    const progress = getFeatureWallSetupProgress(
-      makeInput({
-        browserUseSkillInstalled: true,
-        computerUseSkillInstalled: true,
-        computerUsePermissionsReady: false,
-        computerUseUnavailable: true,
-        orchestrationSkillInstalled: true
-      })
-    )
-
-    expect(progress.stepDone['agent-capabilities']).toBe(true)
-  })
-
-  it('marks the Muster CLI setup row complete when installed skills are ready and Computer Use is unavailable', () => {
-    const progress = getFeatureWallSetupProgress(
-      makeInput({
-        browserUseSkillInstalled: true,
-        computerUseSkillInstalled: true,
-        computerUsePermissionsReady: false,
-        computerUseUnavailable: true,
-        orchestrationSkillInstalled: true
-      })
-    )
-
-    expect(progress.stepDone).toMatchObject({
-      'agent-capabilities': true
-    })
-    expect(getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)).not.toBe(
-      'agent-capabilities'
-    )
   })
 })

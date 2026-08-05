@@ -16,6 +16,7 @@ import {
   readSiteMcpTargets,
   registerSiteMcpServer
 } from '../ipc/site-mcp-registration'
+import { isSitesMcpExposedToAgents } from '../../shared/agent-capabilities'
 
 export type SiteMcpAutoRegisterResult = {
   scanned: number
@@ -25,7 +26,11 @@ export type SiteMcpAutoRegisterResult = {
 
 export function autoRegisterSiteMcpServers(store: Store): SiteMcpAutoRegisterResult {
   const result: SiteMcpAutoRegisterResult = { scanned: 0, repaired: [], failed: [] }
-
+  // Why here and not per-site: with the capability off, Muster stops keeping the entry current
+  // anywhere. An entry a user registered by hand stays put — this only withholds our upkeep.
+  if (!isSitesMcpExposedToAgents(store.getSettings())) {
+    return result
+  }
   for (const site of store.listSites()) {
     if (!site.path || !existsSync(site.path)) {
       continue

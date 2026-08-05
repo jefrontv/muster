@@ -170,4 +170,81 @@ describe('installDefaultAgentSkills', () => {
     expect(() => readFileSync(join(canonical, 'SKILL.md'))).toThrow()
     expect(() => readlinkSync(join(claudeSkills, 'orchestration'))).toThrow()
   })
+
+  it('installs every skill when the capability record is empty or absent', () => {
+    // Why both: `{}` is what a fresh profile persists, `undefined` is every profile saved before
+    // the setting existed. Neither may withhold a skill.
+    for (const bundledSkillCapabilities of [undefined, {}]) {
+      const { home, packageRoot } = sandbox()
+
+      const result = installDefaultAgentSkills({ home, packageRoot, bundledSkillCapabilities })
+
+      expect(result.disabled).toEqual([])
+      expect(result.installed.sort()).toEqual([...DEFAULT_AGENT_SKILL_NAMES].sort())
+    }
+  })
+
+  it('installs a skill whose entry is explicitly true', () => {
+    const { home, packageRoot } = sandbox()
+
+    const result = installDefaultAgentSkills({
+      home,
+      packageRoot,
+      bundledSkillCapabilities: { 'orca-cli': true }
+    })
+
+    expect(result.disabled).toEqual([])
+    expect(result.installed).toContain('orca-cli')
+  })
+
+  it('skips a skill the user turned off, without touching the harness roots', () => {
+    const { home, packageRoot } = sandbox()
+    const claudeSkills = join(home, '.claude', 'skills')
+    mkdirSync(claudeSkills, { recursive: true })
+
+    const result = installDefaultAgentSkills({
+      home,
+      packageRoot,
+      bundledSkillCapabilities: { 'orca-cli': false }
+    })
+
+    expect(result.disabled).toEqual(['orca-cli'])
+    expect(result.installed).toEqual([])
+    expect(result.linkedRoots).toEqual([])
+    expect(() => readFileSync(join(home, '.agents', 'skills', 'orca-cli', 'SKILL.md'))).toThrow()
+    expect(() => readlinkSync(join(claudeSkills, 'orca-cli'))).toThrow()
+  })
+
+  it('leaves an already-installed copy in place when the skill is turned off', () => {
+    // Turning the capability off withholds future installs; deleting a skill an agent may be
+    // mid-conversation with is a separate, destructive decision this must not make.
+    const { home, packageRoot } = sandbox()
+    installDefaultAgentSkills({ home, packageRoot })
+
+    const result = installDefaultAgentSkills({
+      home,
+      packageRoot,
+      bundledSkillCapabilities: { 'orca-cli': false }
+    })
+
+    expect(result.disabled).toEqual(['orca-cli'])
+    expect(readFileSync(join(home, '.agents', 'skills', 'orca-cli', 'SKILL.md'), 'utf8')).toBe(
+      '# orca-cli guide\n'
+    )
+  })
+
+  it('still retires withdrawn skills while a capability is turned off', () => {
+    const { home, packageRoot } = sandbox()
+    const canonical = join(home, '.agents', 'skills', 'orchestration')
+    mkdirSync(canonical, { recursive: true })
+    writeFileSync(join(canonical, 'SKILL.md'), '# retired guide\n', 'utf8')
+
+    const result = installDefaultAgentSkills({
+      home,
+      packageRoot,
+      bundledSkillCapabilities: { 'orca-cli': false }
+    })
+
+    expect(result.retired).toContain('orchestration')
+  })
 })

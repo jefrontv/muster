@@ -53,8 +53,17 @@ function pathSegments(value: string): string[] {
  * Local checkouts whose folder name matches the link's repo slug. ocsites searched its configured
  * roots (cli.py:2246); Muster already knows every site and every repo, so it matches against those
  * instead of walking the filesystem.
+ *
+ * `exists` is probed per candidate rather than assumed: a Site or Repo record outlives the folder it
+ * points at (deleted checkout, unmounted volume), and a candidate that claims to exist would offer
+ * "confirming updates it" for a path confirm() then rejects. A missing folder must present as a new
+ * site instead.
  */
-function findCandidates(store: SiteBindIntakeStore, fields: SiteBindFields): SiteBindCandidate[] {
+function findCandidates(
+  store: SiteBindIntakeStore,
+  fields: SiteBindFields,
+  directoryExists: (candidatePath: string) => boolean
+): SiteBindCandidate[] {
   const slug = bitbucketRepoSlug(fields.reponame)
   const byPath = new Map<string, SiteBindCandidate>()
 
@@ -68,7 +77,7 @@ function findCandidates(store: SiteBindIntakeStore, fields: SiteBindFields): Sit
       displayName: site.displayName,
       siteId: site.id,
       repoId: site.repoId,
-      exists: true
+      exists: directoryExists(site.path)
     })
   }
 
@@ -87,11 +96,12 @@ function findCandidates(store: SiteBindIntakeStore, fields: SiteBindFields): Sit
       displayName: repo.displayName,
       siteId: null,
       repoId: repo.id,
-      exists: true
+      exists: directoryExists(repo.path)
     })
   }
 
-  return [...byPath.values()]
+  // Present reachable checkouts first so the dialog never preselects a stale record.
+  return [...byPath.values()].sort((a, b) => Number(b.exists) - Number(a.exists))
 }
 
 /** Link fields overwrite the environment's connection details; toggles are the user's, so they stay. */
@@ -159,7 +169,7 @@ export function createSiteBindIntake(deps: SiteBindIntakeDeps): SiteBindIntake {
         receivedAt: clock(),
         fields: parsed.fields,
         passwordProvided: parsed.password.length > 0,
-        candidates: findCandidates(deps.store, parsed.fields),
+        candidates: findCandidates(deps.store, parsed.fields, deps.directoryExists),
         suggestedCloneUrl: bitbucketCloneUrlForReponame(parsed.fields.reponame)
       }
       return { ok: true, pending }

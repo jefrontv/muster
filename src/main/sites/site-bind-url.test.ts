@@ -22,11 +22,18 @@ function parseOk(url: string): { fields: SiteBindFields; password: string } {
 }
 
 describe('parseSiteBindUrl scheme and action', () => {
-  it('accepts muster://, the legacy ocsites://, and the ocsite typo', () => {
-    for (const scheme of ['muster', 'ocsites', 'ocsite']) {
-      expect(parseOk(`${scheme}://configure?${MINIMUM}`).fields.hostname).toBe(
-        'dedicated-11.example.com'
-      )
+  it('accepts muster://', () => {
+    expect(parseOk(`muster://configure?${MINIMUM}`).fields.hostname).toBe(
+      'dedicated-11.example.com'
+    )
+  })
+
+  it('rejects ocsites:// and the ocsite typo so the installed ocsites app keeps its links', () => {
+    for (const scheme of ['ocsites', 'ocsite']) {
+      expect(parseSiteBindUrl(`${scheme}://configure?${MINIMUM}`)).toEqual({
+        ok: false,
+        error: 'The link does not use the muster:// scheme.'
+      })
     }
   })
 
@@ -253,9 +260,12 @@ describe('generateSiteBindUrl', () => {
 })
 
 describe('link recognition', () => {
-  it('recognises the accepted schemes only', () => {
+  it('recognises muster:// only, case-insensitively', () => {
     expect(isSiteBindUrl('muster://configure?a=1')).toBe(true)
-    expect(isSiteBindUrl('OCSITES://configure?a=1')).toBe(true)
+    expect(isSiteBindUrl('MUSTER://configure?a=1')).toBe(true)
+    // Why: an ocsites:// link must fall through to the user's installed ocsites app untouched.
+    expect(isSiteBindUrl('OCSITES://configure?a=1')).toBe(false)
+    expect(isSiteBindUrl('ocsites://configure?a=1')).toBe(false)
     expect(isSiteBindUrl('https://example.com')).toBe(false)
     expect(isSiteBindUrl('configure')).toBe(false)
   })

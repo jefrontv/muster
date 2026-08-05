@@ -167,7 +167,9 @@
             "36761d9604": "알 수 없는 키 바인딩 작업 \"{{value0}}\"이(가) 무시되었습니다.",
             "d2e43e426a": "{{value0}}은(는) 객체여야 합니다.",
             "fb290366b2": "웹에서는 사용할 수 없습니다.",
-            "76122208ca": "\"{{value0}}\"에 대한 단축키가 무시되었습니다: {{value1}}"
+            "76122208ca": "\"{{value0}}\"에 대한 단축키가 무시되었습니다: {{value1}}",
+            "e7b1c4a903": "Extensions are only available in the desktop app.",
+            "f3a9c17b42": "Favicon fetch is only available in the desktop app."
           }
         },
         "runtime": {
@@ -351,13 +353,6 @@
           }
         }
       },
-      "ensure": {
-        "simulator": {
-          "tab": {
-            "372d21d428": "모바일 에뮬레이터"
-          }
-        }
-      },
       "fix": {
         "checks": {
           "agent": {
@@ -436,13 +431,6 @@
               "f8b8ca2711": "Zed",
               "d62b12e98a": "Cursor",
               "173553f73a": "VS Code"
-            }
-          }
-        },
-        "mobile": {
-          "emulator": {
-            "tab": {
-              "bf4f2a8a72": "에뮬레이터를 시작할 수 없습니다. iOS 또는 Android 에뮬레이터 설정을 확인하고 다른 기기를 사용해 보세요."
             }
           }
         }
@@ -694,8 +682,6 @@
         "93d88d20bf": "외관",
         "2d0659f6f0": "전역 terminal, 브라우저 및 markdown 탭.",
         "65b19f5bde": "플로팅 워크스페이스",
-        "3d65d3f1b9": "Muster 및 코딩 agents의 모바일 에뮬레이터 지원을 구성합니다.",
-        "1e761cff2b": "모바일 에뮬레이터",
         "e815fd01bd": "홈페이지, 링크 라우팅 및 세션 쿠키.",
         "8c197f74a1": "브라우저",
         "42ae40842f": "전역적으로 또는 프로젝트별로 범위가 지정된 저장된 terminal 명령입니다.",
@@ -718,8 +704,6 @@
         "5f32ac08f3": "핵심 Muster 워크플로에 대한 온보딩 체크리스트를 완료하세요.",
         "8ac3de82f5": "온디바이스 모델을 사용한 로컬 음성-텍스트 받아쓰기.",
         "6a50cdcd7c": "음성",
-        "0059bd17f3": "agents가 컴퓨터의 모든 앱을 제어할 수 있도록 하세요.",
-        "b35e92364b": "컴퓨터 사용",
         "cd50cec5d7": "Orca를 통해 여러 코딩 agents를 조정합니다.",
         "58a868e8e4": "오케스트레이션",
         "7c79d3b7bf": "선택 사항",
@@ -739,7 +723,9 @@
         "devSearchKeywordNotification": "notification",
         "projectHostsSummary": "호스트 {{value0}}개",
         "linearTitle": "Linear",
-        "linearDescription": "Give agents the skill to read and update your linked Linear tickets."
+        "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
+        "agentCapabilitiesTitle": "Agent Capabilities",
+        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "붙여넣기 내용이 너무 큽니다."
@@ -1883,7 +1869,6 @@
         "c4afa68159": "작업 트리, 설정, 작업, 탭 제목, agent 프롬프트, URL, PR 또는 포트를 입력해 보세요.",
         "dbd9d87eec": "검색어와 일치하는 결과가 없습니다.",
         "2c38630a01": "워크스페이스가 더 이상 존재하지 않습니다.",
-        "7726ce9970": "모바일 에뮬레이터 탭이 더 이상 존재하지 않습니다.",
         "d7d496a451": "브라우저 페이지가 더 이상 존재하지 않습니다.",
         "50a1d11d5b": "열린 탭",
         "088d66d980": "작업 및 설정",
@@ -2499,6 +2484,10 @@
               "18ec58881e": "팀 검색..."
             }
           }
+        },
+        "date_range_calendar": {
+          "previous_month": "Previous month",
+          "next_month": "Next month"
         }
       },
       "terminal": {
@@ -2739,7 +2728,6 @@
             "4df2a06d36": "아래로 분할",
             "ab1e2bff04": "오른쪽 분할",
             "9acaf92093": "창 작업",
-            "1bce81dba6": "시뮬레이터",
             "1ff1c77616": "브라우저",
             "586d2ac445": "터미널",
             "addSplitPane": "분할 창 추가",
@@ -2836,9 +2824,6 @@
             "b1a132357f": "새 탭",
             "4f327c8b3d": "Markdown 열기...",
             "3d5d6c960d": "새로운 Markdown",
-            "fd2b42aaa3": "새로운 모바일 에뮬레이터",
-            "aea43b5748": "기존 에뮬레이터 탭을 엽니다.",
-            "b426bb2615": "모바일 에뮬레이터로 이동",
             "4833fb2cbe": "새 브라우저 탭",
             "d364f3c8d4": "새로운 Terminal",
             "7c1313d237": "새로운 Terminal:",
@@ -2913,10 +2898,6 @@
                   "b330f72434": "mark",
                   "37ff3ddca1": "Markdown 열기",
                   "164c394bab": "파일 열기",
-                  "bbaf4f85a4": "모바일 에뮬레이터",
-                  "3784b83bd4": "에뮬레이터",
-                  "a63847a742": "시뮬레이터",
-                  "1baeb07c17": "iOS 시뮬레이터",
                   "8a580f88cf": "iPhone",
                   "7ecdc5ef08": "iPad",
                   "14965cc123": "모바일"
@@ -3677,13 +3658,6 @@
           "cd7893fbc1": "스킬 스캔 중",
           "35b9a724a0": "사용 가능",
           "0c74e7ff34": "로컬"
-        },
-        "SkillFreshnessNudge": {
-          "titleOne": "설치된 Muster 스킬이 오래되었습니다",
-          "titleMany": "설치된 Muster 스킬 {{value0}}개가 오래되었습니다",
-          "updateOne": "스킬 업데이트",
-          "updateMany": "스킬 업데이트",
-          "description": "Agents가 이 버전의 Orca에 대한 최신 지침을 따르도록 {{value0}}을(를) 업데이트하세요."
         },
         "SkillFreshnessRow": {
           "statusUpdateAvailable": "업데이트 있음",
@@ -5048,7 +5022,8 @@
           "8b7a8df299": "지원 문제 해결을 위한 낮은 수준의 해결 방법입니다.",
           "8d8d8ac599": "호환성",
           "network": "네트워크",
-          "networkDescription": "프록시 및 기업 환경을 위한 앱 수준 네트워크 라우팅."
+          "networkDescription": "프록시 및 기업 환경을 위한 앱 수준 네트워크 라우팅.",
+          "settingsVisibility": "Settings visibility"
         },
         "AgentLocationSetting": {
           "92f4238f1a": "WSL 기본값",
@@ -5298,93 +5273,6 @@
           "b4e9d3f2a1c5": "{{value1}}에서 {{value0}}개의 쿠키를 {{value2}}(으)로 가져왔습니다.",
           "c5a273a809": "{{value0}}에서"
         },
-        "BrowserUseComputerUseNotice": {
-          "15b5e680ba": "컴퓨터 사용 열기",
-          "79209b37b9": "쿠키 가져오기가 적합하지 않은 경우 컴퓨터 사용은 로컬 앱을 제어할 수 있으며 해당되는 경우 기존 로그인 브라우저 세션을 사용할 수 있습니다. Computer Use 스킬을 설치하십시오. macOS에도 개인정보 보호 권한이 필요합니다.",
-          "333984cf90": "기존 브라우저 세션 사용"
-        },
-        "BrowserUseEnableSwitch": {
-          "aea3f45349": "Agent 브라우저 사용 활성화"
-        },
-        "BrowserUseExamples": {
-          "1199258ace": "복사",
-          "1188e56af4": "예시 프롬프트 복사",
-          "b84807f228": "\"",
-          "59722f31b4": "\"",
-          "c5325e91f6": "이 중 하나를 Claude Code, Codex 또는 해당 스킬이 설치된 프로젝트의 다른 agent에 붙여넣으세요.",
-          "2a180694f7": "시도해 보세요 - 예시 프롬프트",
-          "5ec620ccc4": "복사하지 못했습니다.",
-          "a602d43069": "{{value0}}을(를) 복사했습니다."
-        },
-        "BrowserUsePane": {
-          "be6df68384": "파일에서…",
-          "e44c5d681e": "에서",
-          "67d9a53f47": "별도의 로그인을 위한 프로필 관리",
-          "112f70adc4": "{{value0}}에서 마지막으로 가져옴",
-          "72d4815523": "agents가 인증된 페이지에 접근할 수 있도록 기존 로그인을 Orca로 가져오세요. 기본 프로필로 가져옵니다.",
-          "2eb906706c": "브라우저 쿠키 가져오기",
-          "af8c83ed61": "agents가 로그인을 재사용할 수 있도록 Chrome, Edge 또는 기타 브라우저에서 쿠키를 가져옵니다.",
-          "68ea76eb71": "agents가 Orca의 브라우저를 작동할 수 있도록 브라우저 사용 스킬을 설치하세요.",
-          "2d6ead9ab2": "브라우저 사용 스킬 설치",
-          "e9f3f3b488": "설치 위치",
-          "9fca1f7f5d": "agents가 셸에서 브라우저를 조정할 수 있도록 Muster CLI 명령을 등록합니다.",
-          "c6065d205d": "Muster CLI 활성화",
-          "c79eff0213": "agents가 브라우저를 구동할 수 있도록 Muster CLI를 등록하세요.",
-          "702488a5f7": "코딩 agents가 로그인을 통해 이 브라우저를 구동하게 하세요. 아래 세 단계를 완료하세요.",
-          "b8a1f2d84d": "Agent 브라우저 사용",
-          "96b91c6349": "코딩 agents가 로그인을 통해 이 브라우저를 구동하게 하세요.",
-          "2ea4617e3a": "{{value1}}{{value2}}에서 {{value0}} 쿠키를 가져왔습니다.",
-          "721aee31b4": "PATH에 Muster CLI를 등록했습니다.",
-          "180a9abf3a": "CLI 상태를 로드하지 못했습니다.",
-          "2ccfc9cff8": "가져오기",
-          "0462565413": "다시 가져오기",
-          "de9b2f32f3": "활성화",
-          "ad8cb0ee22": "경로 수정",
-          "0289434ed6": "활성화됨",
-          "8b3054dac7": "등록 중...",
-          "8f2675c2f3": "파일에서 {{value0}}개의 쿠키를 가져왔습니다.",
-          "5301857d88": "{{value0}}에서"
-        },
-        "BrowserUseSkillStep": {
-          "0871b6998d": "agents가 Muster 브라우저에서 페이지를 탐색하고 확인할 수 있습니다.",
-          "459e24eebc": "Browser Use 스킬"
-        },
-        "CliSection": {
-          "8671e406f0": "취소",
-          "a4aafe46e3": "대상 경로:",
-          "e8012c03a1": "agents가 Muster 워크스페이스, terminal 및 진행 명령을 사용할 수 있도록 합니다.",
-          "cliSkillTerminalTitle": "CLI 스킬 설정",
-          "cliSkillTerminalAria": "CLI 스킬 설치 terminal",
-          "6053cf736c": "CLI 스킬",
-          "36a6f919ba": "agents에게 Muster 인식 워크스페이스, terminal 및 진행 워크플로를 제공합니다.",
-          "04873eea3e": "Agent 스킬",
-          "7f2747f7dd": "현재 이 셸의 PATH에 표시되지 않습니다.",
-          "b0c310ab46": "기존 실행기 대상:",
-          "15eaad0d31": "명령 경로:",
-          "5dae812f50": "새로고침",
-          "52e640f3a0": "CLI 상태 새로 고침",
-          "38edbb5721": "쉘 명령",
-          "6930feda9e": "terminals에서 Orca를 사용하여 앱을 열고, 작업 트리를 관리하고, Muster terminals과 상호 작용할 수 있습니다.",
-          "c5c0f2641d": "Muster CLI",
-          "d77352f2df": "PATH에서 `{{value0}}`을(를) 제거하지 못했습니다.",
-          "af5540930c": "PATH에서 `{{value0}}`을 제거했습니다.",
-          "a2b13efa94": "PATH에 `{{value0}}`을(를) 등록하지 못했습니다.",
-          "9cbcd31338": "PATH에 `{{value0}}`을 등록했습니다.",
-          "7baec27029": "CLI 상태를 로드하지 못했습니다.",
-          "d00df2e397": "등록",
-          "9a5f8a4568": "제거",
-          "b0fca411a0": "등록 중…",
-          "4c7e3e4c5f": "설치",
-          "068552b191": "제거 중…",
-          "8d96213669": "제거",
-          "aa6536977e": "Orca는 {{value0}}을 등록하므로 명령이 terminal에서 작동합니다.",
-          "a030816e3e": "그러면 쉘 명령 심볼릭 링크가 제거됩니다. Muster 자체는 설치된 상태로 유지됩니다.",
-          "fa87db3d6e": "PATH에 `{{value0}}`을 등록하시겠습니까?",
-          "14444243ba": "PATH에서 `{{value0}}`을(를) 제거하시겠습니까?",
-          "5d432fe44d": "설치됨",
-          "8a9b784c60": "오래됨",
-          "d363e5929b": "CLI 등록 확인 중…"
-        },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
           "a58ba464ad": "스킬 위치",
@@ -5440,27 +5328,6 @@
           "407d28bde6": "CLI",
           "54038660e0": "명령",
           "25350d670f": "custom"
-        },
-        "ComputerUsePane": {
-          "1735461723": "agents가 로컬 데스크톱 앱을 검사하고 작동할 수 있습니다.",
-          "93255aaf18": "Computer Use 스킬",
-          "45f8e22c2e": "열기",
-          "d95d1cfab8": "새로고침",
-          "0c29da5805": "준비됨",
-          "3383ea1aab": "컴퓨터 사용 권한을 재설정할 수 없습니다.",
-          "f189f448a3": "컴퓨터 사용 액세스 재설정",
-          "5c45349665": "컴퓨터 사용 권한을 열 수 없습니다.",
-          "7801ac08ec": "컴퓨터 사용 권한은 macOS에서만 필요합니다.",
-          "740766c291": "컴퓨터 사용 설정이 이미 완료되었습니다.",
-          "697005758f": "macOS 개인정보 보호 및 보안 오픈",
-          "2168fa5ab0": "컴퓨터 사용 권한을 로드할 수 없습니다.",
-          "0c9a33f468": "agents가 시각적 상태를 검사할 수 있도록 앱 창을 캡처합니다.",
-          "07bbe4c4cb": "스크린샷",
-          "4d03dec2d0": "앱 인터페이스 트리를 읽고 요청된 작업을 수행합니다.",
-          "6b5a2cd3a5": "접근성",
-          "6b17602073": "액세스 재설정",
-          "506f2acf7a": "액세스 재설정 중...",
-          "4b65070096": "darwin"
         },
         "DeveloperPermissionsPane": {
           "4c17304beb": "새로고침",
@@ -5619,22 +5486,6 @@
           "36b2a5dc6d": "고정된 탭을 닫기 전에 확인 대화상자를 표시합니다.",
           "projectRuntime": "프로젝트 런타임",
           "projectRuntimeDescription": "별도로 재정의하지 않은 로컬 Windows 프로젝트의 기본 런타임입니다."
-        },
-        "GeneralSupportSection": {
-          "af7d9f4396": "지원해 주셔서 감사합니다!",
-          "6922c1fa2b": "GitHub에서 Muster 스타 누르기",
-          "511782265b": "gh CLI를 통해 GitHub 스타로 프로젝트를 지원하세요.",
-          "55a87e5fd1": "Muster 지원",
-          "964acc6bb4": "스타",
-          "73b327e793": "다시 시도",
-          "c9f96d4234": "오류",
-          "397719bee5": "스타 표시 중...",
-          "1e29570462": "스타 표시",
-          "9d181300e3": "별표가 붙은",
-          "5c49f02662": "숨겨진",
-          "b3f0584f5d": "로드 중",
-          "cb65c75b11": "여는 중...",
-          "f2d4f877b2": "GitHub 열기"
         },
         "GeneralUpdateSettingsSection": {
           "8a52ca1d02": "릴리스 노트",
@@ -5903,52 +5754,6 @@
           "1f3665e35a": "MCP 구성이 생성되었습니다.",
           "82436439eb": "MCP 구성 추가",
           "0a5c1ead54": "빈 구성 만들기"
-        },
-        "MobileEmulatorAgentControlRow": {
-          "1861982430": "CLI 상태를 로드하지 못했습니다.",
-          "8af7a8bc38": "명령은 현재 작업 트리의 활성 에뮬레이터를 대상으로 합니다. 좌표는 0..1에서 정규화됩니다.",
-          "c7f3fe0a6e": "일반 에뮬레이터 명령",
-          "d94ca6a623": "agents가 모바일 에뮬레이터 제어를 포함하여 Muster CLI 명령을 사용할 수 있도록 합니다.",
-          "67e19ee03c": "Muster CLI 스킬",
-          "aaf62a3dd2": "설치 위치",
-          "2fef055608": "agents가 셸에서 활성 에뮬레이터를 제어할 수 있도록 Muster CLI 명령을 등록합니다.",
-          "4f2205f3b6": "Muster CLI 활성화",
-          "ff4b7e65d6": "코딩 agents가 Muster CLI 명령을 사용하여 활성 모바일 에뮬레이터를 제어하도록 합니다.",
-          "2a674aa810": "Agent 모바일 에뮬레이터 제어",
-          "cdeaed9e37": "PATH에 Muster CLI를 등록했습니다.",
-          "3d34423e88": "Muster CLI를 등록하는 중",
-          "3be27641c9": "agent 셸에서 에뮬레이터 명령을 실행할 수 있도록 합니다.",
-          "3941719a56": "스킬 설정을 열기 전에 Muster CLI를 확인하고 있습니다."
-        },
-        "MobileEmulatorExamples": {
-          "edf13dd03b": "복사",
-          "c12b253997": "예시 프롬프트 복사",
-          "d151e25078": "\"",
-          "b525ff2b12": "\"",
-          "4daa95f25a": "Muster CLI 스킬이 설치된 프로젝트의 Claude Code, Codex 또는 다른 agent에 이들 중 하나를 붙여넣으세요.",
-          "0820b3f84f": "시도해 보세요 - 예시 프롬프트",
-          "1f608e7d60": "프롬프트를 복사하지 못했습니다.",
-          "2b077b5544": "프롬프트를 복사했습니다."
-        },
-        "MobileEmulatorSettingsPane": {
-          "19d39113b6": "코딩 agents가 Muster CLI 명령을 사용하여 활성 모바일 에뮬레이터를 제어하도록 합니다.",
-          "f2f8d97bb6": "Agent 모바일 에뮬레이터 제어",
-          "143961d031": "기본 장치",
-          "8aec2f99a0": "에뮬레이터 가용성 새로 고침",
-          "ae1612c58c": "가용성",
-          "f9af91ea26": "새 모바일 에뮬레이터 작업을 표시하고 agents가 활성 에뮬레이터에 연결할 수 있도록 합니다.",
-          "700ddbf9b1": "모바일 에뮬레이터 활성화",
-          "bc39d0f115": "Muster 및 코딩 agents에 대한 모바일 에뮬레이터 지원을 구성합니다.",
-          "6593c9ddd3": "모바일 에뮬레이터",
-          "a4f1c82d90": "비활성화됨",
-          "b5e2d93e01": "확인 중...",
-          "c6f3ea4f12": "준비됨",
-          "d704fb5023": "설정 필요",
-          "06b06429c6": "Android SDK 및 iOS 시뮬레이터 지원을 확인 중입니다.",
-          "6d1483d4a0": "1개의 에뮬레이터 장치가 감지되었습니다.",
-          "0a452d4d3b": "{{value0}} 에뮬레이터 장치가 감지되었습니다.",
-          "f62a1bb759": "Orca는 장치가 감지된 후 에뮬레이터 장치를 자동으로 선택합니다.",
-          "b2fd62ea75": "새 에뮬레이터 탭 및 agent 연결 명령을 위한 기본 장치입니다. 자동 선택은 이미 실행 중인 장치를 선호합니다."
         },
         "MobileNetworkInterfaceSection": {
           "63d5e4ae1e": "QR 코드를 재생성하고 Muster 모바일 앱에서 스캔하세요.",
@@ -6271,7 +6076,12 @@
           "f79972271a": "이 repo에 대한 GitHub 원격을 찾을 수 없습니다.",
           "4d039317f4": "웹사이트 파비콘",
           "acf31559a0": "유효한 웹사이트 URL을 입력하세요.",
-          "868c5c9b56": "repo 아이콘을 가져오지 못했습니다."
+          "868c5c9b56": "repo 아이콘을 가져오지 못했습니다.",
+          "favicon_fetch_failed": "Failed to fetch favicon",
+          "favicon_domain": "Website domain",
+          "favicon_fetch": "Fetch",
+          "favicon_apply": "Apply",
+          "favicon_hint": "Fetches the site's favicon and stores it as this project's icon."
         },
         "RepositoryPane": {
           "15a99d9b9f": "상대 경로는 이 프로젝트 루트에서 확인됩니다.",
@@ -6552,8 +6362,6 @@
           "2b4474780a": "외관",
           "3d9adfe6a5": "전역 terminal, 브라우저, Markdown 탭.",
           "3eb22a3ada": "플로팅 워크스페이스",
-          "01f9d36292": "Muster 및 코딩 agents에 대한 모바일 에뮬레이터 지원을 구성합니다.",
-          "f75daf1002": "모바일 에뮬레이터",
           "ad9788036f": "홈페이지, 링크 라우팅 및 세션 쿠키.",
           "c46215ea03": "브라우저",
           "6742c7932c": "전역 또는 프로젝트별로 적용되는 저장된 terminal 명령입니다.",
@@ -6572,8 +6380,6 @@
           "6d119427ef": "온보딩 체크리스트",
           "eb1176a14e": "온디바이스 모델을 사용한 로컬 음성-텍스트 받아쓰기.",
           "5063bb47a5": "음성",
-          "7118953f14": "agents가 컴퓨터의 모든 앱을 제어할 수 있도록 하세요.",
-          "c9841721cb": "컴퓨터 사용",
           "475980f53d": "Orca를 통해 여러 코딩 agents를 조정합니다.",
           "00c3a7950d": "오케스트레이션",
           "21f09426ea": "선택 사항. Orca는 기존 공급자 로그인과 함께 작동합니다. Orca가 계정 간 전환을 돕도록 원하는 경우에만 계정을 추가하세요.",
@@ -6598,7 +6404,9 @@
           "dev": "Dev Tools",
           "devDescription": "UI 상태를 시험해 보기 위한 개발 전용 도구입니다.",
           "linearTitle": "Linear",
-          "linearDescription": "Give agents the skill to read and update your linked Linear tickets."
+          "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
+          "agentCapabilitiesTitle": "Agent Capabilities",
+          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
         },
         "SettingsFormControls": {
           "42a4d15a30": "일치하는 글꼴이 없습니다.",
@@ -7527,47 +7335,13 @@
             "a942905148": "새 브라우저 탭을 만들 때 열리는 URL입니다. 빈 탭을 열려면 비워 두세요.",
             "c3903322d2": "기본 홈 페이지",
             "19ea5607cf": "로컬호스트 작업 트리 레이블",
-            "4e0fdf0a3f": "브라우저 탭을 더 쉽게 구분할 수 있도록 작업 트리별 Muster 로컬 호스트 URL로 워크스페이스 포트를 엽니다."
-          },
-          "use": {
-            "search": {
-              "3f4c559deb": "Arc 프로필",
-              "d5afa54d21": "Edge 프로필",
-              "22fb801af8": "크롬 프로필",
-              "59968bb9b4": "인증된 브라우저",
-              "62e2a790c0": "기존 세션",
-              "63a66da648": "시스템 브라우저",
-              "20c1323d1e": "컴퓨터 사용",
-              "ab349a2dd0": "Arc",
-              "2e1b09897b": "Edge",
-              "088e7a9012": "크롬",
-              "96ce3d2de2": "인증",
-              "48557f639c": "로그인",
-              "d5ad1f7aad": "가져오기",
-              "02837ee497": "세션",
-              "fb8178824f": "쿠키",
-              "ba4eb53b72": "브라우저 사용",
-              "2fb24d17db": "agents가 로그인을 재사용할 수 있도록 Chrome, Edge 또는 기타 브라우저에서 쿠키를 가져옵니다.",
-              "614c756ab1": "브라우저 쿠키 가져오기",
-              "cee44fb442": "오토메이션",
-              "a57c2172dc": "agent-browser",
-              "6ea88e5206": "npx",
-              "f5b8fdddf5": "orca-cli",
-              "e5a784bc54": "설치",
-              "9d97446873": "agent",
-              "a2d489263e": "스킬",
-              "a7e82445fa": "agents가 Orca의 브라우저를 작동할 수 있도록 브라우저 사용 스킬을 설치하세요.",
-              "a1414dcefb": "브라우저 사용 스킬 설치",
-              "e56c7b55c9": "설정",
-              "034c5e8d7f": "활성화",
-              "7e0dcb257a": "셸",
-              "3ffafc9b95": "명령",
-              "30c74aaa1f": "경로",
-              "ff05cbc344": "orca",
-              "85fab5e12c": "CLI",
-              "890ddf943d": "agents가 브라우저를 구동할 수 있도록 Muster CLI를 등록하세요.",
-              "50f0860e18": "Muster CLI 활성화"
-            }
+            "4e0fdf0a3f": "브라우저 탭을 더 쉽게 구분할 수 있도록 작업 트리별 Muster 로컬 호스트 URL로 워크스페이스 포트를 엽니다.",
+            "f0a71c3d92": "Open Links in Floating Browser",
+            "a94c26e5f1": "Open in-app links in the floating workspace panel instead of a workspace browser tab.",
+            "b52e7f1a06": "Browser Extensions",
+            "c73d81e4f9": "Load unpacked Chrome extensions into the in-app browser.",
+            "c1908fe37b": "Muster Extensions",
+            "d0472be851": "Install extensions Muster ships, including WordPress login autofill."
           }
         },
         "commit": {
@@ -7606,20 +7380,6 @@
                 "0b946b2abe": "소스 제어 commit, PR, 브랜치 이름 및 수정 작업에 대한 작업 레시피를 추가합니다.",
                 "24dbdfca78": "소스 제어 AI 작업 표시"
               }
-            }
-          }
-        },
-        "computer": {
-          "use": {
-            "search": {
-              "6e88da3508": "스킬",
-              "798be54d7e": "오토메이션",
-              "e27f8bafbf": "스크린샷",
-              "26c1290d83": "화면 녹화",
-              "82f01c2d2c": "접근성",
-              "fefb452f5b": "컴퓨터 사용",
-              "9210db582b": "요청 시 agents가 스크린샷을 검사하고 로컬 앱을 작동할 수 있도록 허용합니다.",
-              "442bec10fe": "컴퓨터 사용"
             }
           }
         },
@@ -7764,13 +7524,6 @@
         },
         "general": {
           "search": {
-            "bdfb6dc21b": "좋아요",
-            "e6b01c8e30": "피드백",
-            "b65665703a": "지원",
-            "06ea5a69a6": "GitHub",
-            "e4fb4516d0": "스타",
-            "e0b8c8bc25": "gh CLI를 통해 GitHub 스타로 프로젝트를 지원하세요.",
-            "36a72f0d9e": "GitHub에서 Orca에 스타 주기",
             "c61b14be7c": "그로크",
             "5d9ba08673": "Copilot",
             "f472e97440": "aider",
@@ -7800,18 +7553,9 @@
             "f89a94773c": "업데이트",
             "79ff46776e": "앱 업데이트를 확인하고 최신 Muster 버전을 설치하세요.",
             "e15af4eb64": "업데이트 확인",
-            "6382fe9724": "npx",
             "baa263d6d8": "에이전트",
-            "bda108e66c": "스킬",
-            "244e3fb4c8": "agents가 Muster CLI를 사용하도록 Muster 스킬을 설치하세요.",
-            "2d9f7b42df": "Agent 스킬",
-            "0a00691c06": "셸 명령",
             "dbeb1f348e": "명령",
-            "88d3df9ce9": "터미널",
             "fb4f338a3d": "경로",
-            "924a660a78": "CLI",
-            "ca529079bf": "Muster CLI 명령을 등록하거나 제거합니다.",
-            "327e3fa70d": "Muster CLI",
             "fb84767421": "전환",
             "f8f0ac213a": "순차적",
             "12ecc640a8": "mru",
@@ -7860,14 +7604,8 @@
             "91a46caafc": "no_proxy",
             "3a73054565": "우회",
             "20b711ac9e": "프록시",
-            "eb8946b2c9": "구성된 HTTP 프록시를 우회해야 하는 호스트입니다.",
-            "8436ff6f8e": "프록시 우회 규칙",
-            "e55d62dfa4": "런치패드",
-            "9da6c875e5": "독",
             "b9096a44cf": "https_proxy",
             "8f03d44672": "http_proxy",
-            "e3b1d42f95": "Muster 네트워크 요청 및 로컬 terminal 하위 항목에 대한 프록시 URL입니다.",
-            "c29f23ab57": "HTTP 프록시",
             "6c2ce8457c": "파일 탐색기",
             "c9d9636f24": "파인더",
             "68d03d9980": "vscode",
@@ -7898,8 +7636,6 @@
             "7baf524b04": "워크스페이스",
             "d0bc793689": "워크스페이스 폴더가 생성되는 루트 디렉터리입니다.",
             "4c95d08fa2": "워크스페이스 디렉토리",
-            "161a86a9da": "고정된 탭을 닫기 전에 확인",
-            "8e593f04fc": "고정된 탭을 닫기 전에 확인 대화상자를 표시합니다.",
             "defaultProjectRuntime": "기본 프로젝트 런타임",
             "defaultProjectRuntimeDescription": "로컬 Windows 프로젝트가 상속할 런타임을 선택합니다.",
             "d2d2d929c0": "리치 Markdown 맞춤법 검사",
@@ -8064,46 +7800,6 @@
           }
         },
         "mobile": {
-          "emulator": {
-            "search": {
-              "2348045036": "Orca가 기본적으로 여는 에뮬레이터 장치를 선택합니다.",
-              "2bb2e09225": "모바일 스킬",
-              "bbe4267416": "에뮬레이터 유형",
-              "64494f03c3": "에뮬레이터 연결",
-              "6f728f1456": "에뮬레이터 탭",
-              "f8b871d655": "agent CLI",
-              "2e0b45b2ba": "Muster CLI 명령을 사용하여 모바일 에뮬레이터를 나열하고, 연결하고, 탭하고, 입력하세요.",
-              "ea3eac39bb": "Agent CLI 제어",
-              "8ef0f08d36": "런타임",
-              "27397fe8e9": "Xcode 명령줄 도구",
-              "7650063d17": "simctl",
-              "3211e7acf9": "xcrun",
-              "42bfab45d8": "가용성",
-              "ea1f51b980": "Xcode, simctl, serve-sim 및 에뮬레이터 장치가 준비되었는지 확인하세요.",
-              "0b95dfd5b3": "에뮬레이터 가용성",
-              "04c5f5d901": "장치",
-              "25d7bfbcd4": "udid",
-              "ec3c4043fd": "기본 아이패드",
-              "1dc8c52ffa": "기본 아이폰",
-              "ab4814f3c5": "기본 시뮬레이터",
-              "54184cb9c5": "기본 에뮬레이터 장치",
-              "b8ddd13195": "agent 에뮬레이터",
-              "1ad6fb6230": "기본 장치",
-              "ac0a985873": "에뮬레이터 스킬",
-              "9353854ff3": "orca emulator",
-              "d4b7833894": "orca cli",
-              "84e5706975": "serve-sim",
-              "7c5a8a2bee": "Xcode",
-              "bec7231663": "아이패드",
-              "49727355a3": "아이폰",
-              "6b6407dc1f": "에뮬레이터",
-              "2d67f708ce": "시뮬레이터",
-              "c5eca29310": "iOS 시뮬레이터",
-              "25159de808": "모바일 에뮬레이터",
-              "9595354cff": "Muster 및 코딩 agents에 대한 모바일 에뮬레이터 지원을 구성합니다.",
-              "cdd3c31918": "모바일 에뮬레이터"
-            }
-          },
           "pane": {
             "search": {
               "dbccde3a60": "닫기",
@@ -8977,19 +8673,6 @@
             }
           }
         },
-        "computerUseSummary": {
-          "permissionsRequired": "agents가 앱 창을 조작하려면 먼저 {{value0}} 권한{{value1}}이 필요합니다.",
-          "checkingTitle": "Computer Use 액세스 확인 중입니다.",
-          "checkingDescription": "Orca가 Computer Use 도우미의 macOS 개인정보 보호 권한을 확인하고 있습니다.",
-          "unavailableTitle": "Computer Use를 사용할 수 없습니다.",
-          "unavailableDescription": "{{value0}} 때문에 Computer Use 권한을 사용할 수 없습니다.",
-          "readyTitle": "Computer Use를 사용할 준비가 되었습니다.",
-          "readyDescription": "요청하면 Agents가 앱 창을 검사하고 조작할 수 있습니다.",
-          "permissionsTitle": "로컬 앱을 사용하려면 설정을 완료하세요."
-        },
-        "computerUseSkillRuntime": {
-          "thisDevice": "이 기기"
-        },
         "WorkspaceDirectorySetting": {
           "1a2b3c4d5e": "클라이언트 기본값",
           "2b3c4d5e6f": "적용 대상",
@@ -9134,21 +8817,6 @@
           "wslUnavailable": "이 컴퓨터에서는 WSL을 사용할 수 없습니다.",
           "distroRequired": "프로젝트가 WSL을 상속하려면 먼저 WSL 배포판을 선택하세요.",
           "wslDescription": "런타임을 재정의하지 않는 프로젝트에 대해 WSL을 통해 {{value0}}에서 agents를 감지하고 시작합니다."
-        },
-        "MobileEmulatorSdkStatus": {
-          "536026130e": "에뮬레이터 SDK",
-          "dde0ec1cd8": "Orca가 에뮬레이터를 실행하는 데 사용하는 도구 체인입니다. Android는 Android SDK를 통해 모든 OS에서 작동합니다. iOS 시뮬레이터에는 macOS에서 Xcode가 필요합니다.",
-          "027cbf668a": "Android SDK",
-          "f6d080d128": "구성된 경로 사용",
-          "7fe4bd5907": "다음에서 감지됨",
-          "2784f0b22d": "찾을 수 없습니다. Android Studio를 설치한 다음 가상 장치를 만듭니다.",
-          "b94ff260e6": "안드로이드 스튜디오 다운로드",
-          "18925b082d": "SDK 폴더 찾기",
-          "8c52684db8": "지우기",
-          "76eb88b88e": "iOS 시뮬레이터(Xcode)",
-          "c6f3ea4f12": "준비됨",
-          "e4f14b50d7": "Xcode를 설치하고 iOS 시뮬레이터 런타임을 추가하세요.",
-          "63fe73a1ea": "Android SDK 폴더를 업데이트할 수 없습니다."
         },
         "AppearanceAdvancedDisclosure": {
           "advanced": "고급"
@@ -9532,6 +9200,140 @@
           "detailedExample": "2 new comments: Fix the header — Website Redesign",
           "minimal": "Minimal",
           "minimalExample": "Fix the header — 2 new comments"
+        },
+        "AgentCapabilities": {
+          "scopeNote": "These switches govern what your coding agents can reach, not what you can do in Muster.",
+          "sitesTitle": "Site tools",
+          "sitesWarning": "These tools reach real infrastructure — WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.",
+          "skillsDescription": "Muster installs its bundled skills into your agent skill directories at startup. Turning one off stops future installs; a copy already on disk is left where it is."
+        },
+        "BrowserExtensionsSection": {
+          "b7419fc2ad": "Configure",
+          "f47a2c1e08": "Remove extension",
+          "b8d3f5a219": "Browser Extensions",
+          "c9e1740b6d": "Load unpacked Chrome extensions into the in-app browser. Electron supports a subset of the extension APIs — content scripts and storage work, while background service workers and request blocking may not.",
+          "d15c8ba304": "No extensions added. Point Muster at a folder containing a manifest.json.",
+          "a3f9026b7c": "Add Extension Folder",
+          "e6207bd94a": "Reload"
+        },
+        "BrowserFloatingLinkSetting": {
+          "a1c4f0b2e7": "Open Links in Floating Browser",
+          "b3d7e9a145": "Open in-app links in the floating workspace panel instead of a workspace browser tab, so the current view stays put.",
+          "c5f1a8b930": "Turn on Link Routing to use the floating browser.",
+          "d2e6c4f817": "Enable the floating workspace to use the floating browser."
+        },
+        "BundledExtensionsSection": {
+          "a91b3e70cd": "Username",
+          "b7c04f12ae": "Password (stored — type to replace)",
+          "c58e29a4d1": "Password",
+          "d3f8017b62": "Submit the form automatically",
+          "e40a5c1936": "Off fills the fields only. A failed login or a deliberate logout is never resubmitted.",
+          "f16b8d05c7": "Saved",
+          "a2c7e94013": "Save Credentials",
+          "b8e1490fd2": "Clear Password",
+          "c04d7fe158": "The password is stored in your OS keychain and written into the extension only while it is enabled.",
+          "d5910be3c7": "Muster Extensions",
+          "e6b204af91": "Extensions Muster ships for the in-app browser. Install one to load it into every browser tab.",
+          "f2705ce8b4": "Enabled",
+          "a4b90cd671": "Installed",
+          "b615e0f2a8": "Not installed",
+          "c8123fe4a0": "Disable",
+          "d97e6015bc": "Enable",
+          "e2a3b7c941": "Install",
+          "f5028cd731": "Remove"
+        },
+        "BundledSkillCapabilityRows": {
+          "autoInstalled": "Installed automatically at startup.",
+          "installOnDemand": "Shipped with Muster; installed only when you ask for it.",
+          "loading": "Reading the bundled skills…",
+          "empty": "This build ships no bundled agent skills."
+        },
+        "Confirmations": {
+          "description": "Prompts shown before an action you cannot undo. Turning one off applies everywhere, including keyboard shortcuts and the native menu.",
+          "resetAll": "Reset all confirmations"
+        },
+        "SettingsBackup": {
+          "errorNotJson": "That file is not valid JSON.",
+          "errorNotAnExport": "That file was not exported from Muster settings.",
+          "errorVersion": "That file was written by a newer version of Muster.",
+          "errorExcludedKey": "That file contains credentials or machine-specific paths, which Muster never exports. It was not imported.",
+          "errorInvalidValue": "A setting in that file has the wrong kind of value. Nothing was changed.",
+          "errorNothingToImport": "That file has no settings this version of Muster understands.",
+          "imported": "Imported {{value0}} settings.",
+          "importedWithIgnored": "Skipped {{value0}} setting(s) this version does not recognise.",
+          "exportFailed": "Could not write the settings file.",
+          "exported": "Exported {{value0}} settings.",
+          "importFailed": "Could not import that settings file.",
+          "title": "Settings backup",
+          "description": "Move your preferences to another machine. Credentials and machine-specific paths are deliberately left out of the file.",
+          "exportAction": "Export…",
+          "importAction": "Import…"
+        },
+        "agentCapabilities": {
+          "search": {
+            "paneTitle": "Agent Capabilities",
+            "paneDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+            "sitesMcpTitle": "Site tools (muster-sites MCP)",
+            "sitesMcpDescription": "Expose the built-in site MCP server so agents can run deploys, imports, and database queries.",
+            "bundledSkillsTitle": "Bundled agent skills",
+            "bundledSkillsDescription": "Turn off individual skills Muster installs for your agents at startup.",
+            "sitesMcpInstallTitle": "muster-sites MCP install",
+            "sitesMcpInstallDescription": "Register the built-in site MCP server with Claude Code, Codex, and Cursor global configs."
+          }
+        },
+        "confirmations": {
+          "search": {
+            "sectionTitle": "Confirmations",
+            "sectionDescription": "Every \"are you sure?\" prompt you can turn off, in one place.",
+            "deleteWorkspaceTitle": "Confirm before deleting a workspace",
+            "deleteWorkspaceDescription": "Deleting a workspace removes its working directory from disk.",
+            "closeTerminalTitle": "Confirm before closing a busy terminal",
+            "closeTerminalDescription": "Closing a terminal with running processes kills whatever is in the foreground.",
+            "deleteAutomationTitle": "Confirm before deleting an automation",
+            "deleteAutomationDescription": "Deleting an automation also discards its run history.",
+            "codexResetTitle": "Confirm before resetting a Codex rate limit",
+            "codexResetDescription": "A reset spends a scarce credit on the live account.",
+            "pinnedTabTitle": "Confirm before closing a pinned tab",
+            "pinnedTabDescription": "Pinned tabs can still be closed from the keyboard and the native menu."
+          }
+        },
+        "settingsBackup": {
+          "search": {
+            "exportTitle": "Export settings",
+            "exportDescription": "Save your preferences to a JSON file. Secrets and machine-specific paths are left out.",
+            "importTitle": "Import settings",
+            "importDescription": "Load a settings file exported from Muster. Unrecognised files are rejected."
+          }
+        },
+        "hiddenSections": {
+          "search": {
+            "title": "Show hidden settings pages",
+            "description": "Restore the Orchestration and Mobile pages this build hides by default."
+          }
+        },
+        "siteMcp": {
+          "harness_missing_status": "Harness not detected",
+          "harness_missing_detail": "Muster did not find this harness on this machine. Installing anyway writes the config file shown below, which the harness picks up once it exists.",
+          "harness_missing_action": "Install anyway",
+          "harness_unconfigured_status": "Not configured by Muster",
+          "harness_unconfigured_detail": "Muster has not written its \"muster-sites\" entry here. If you already added a site MCP server under a different key, Muster cannot see it — open the config below before installing so you do not end up with two.",
+          "harness_unconfigured_action": "Install",
+          "harness_stale_status": "Muster entry out of date",
+          "harness_stale_detail": "A \"muster-sites\" entry is already here, but it points at a different command than this build would write now — usually a moved or upgraded app.",
+          "harness_stale_action": "Update entry",
+          "harness_current_status": "Installed and current",
+          "harness_current_detail": "The \"muster-sites\" entry matches what this build would write now.",
+          "harness_current_action": "Rewrite entry",
+          "install_blocked_disabled": "Site tools are switched off above, so agents would not be allowed to call this server anyway. Turn them on to install.",
+          "card_name": "muster-sites MCP",
+          "card_description": "Register the built-in site MCP server with your coding harnesses so agents can run deploys, imports, and database queries.",
+          "status_unavailable": "Status unavailable",
+          "status_setup": "Setup needed",
+          "status_current": "Up to date",
+          "recheck": "Re-check",
+          "command_label": "Each entry spawns this build directly:",
+          "workspace_note": "Project-level installs are automatic: Muster keeps a muster-sites entry in each site project’s .mcp.json on its own.",
+          "install_ok": "Wrote the \"muster-sites\" entry to {{value0}}."
         }
       },
       "right": {
@@ -10382,7 +10184,8 @@
             "fc3095d2ed": "탐색기",
             "aiVaultSessionHistory": "에이전트",
             "folderWorkspaces": "연결된 워크트리",
-            "parentPrChecks": "PR 검사"
+            "parentPrChecks": "PR 검사",
+            "siteTab": "Site"
           },
           "right": {
             "panel": {
@@ -10806,6 +10609,37 @@
                 }
               }
             }
+          },
+          "SitePanel": {
+            "confirmTitle": "Confirm target",
+            "confirmBody": "Branch {{branch}} does not match an environment. This run would target {{environment}}. Continue?",
+            "confirmRun": "Run anyway",
+            "noEnvironmentReason": "No environment is configured for this site.",
+            "noImportSteps": "No import steps are enabled for this environment.",
+            "noDeploySteps": "No deploy steps are enabled for this environment.",
+            "openInSites": "Open in Sites",
+            "localSection": "Local",
+            "localDomain": "Local domain",
+            "localWpRoot": "WordPress subpath",
+            "dbSocket": "DB socket",
+            "dbSocketSet": "Set",
+            "environmentSection": "Environment",
+            "noEnvironments": "This site has no environments yet.",
+            "branchUnmatched": "Branch {{branch}} matches no environment; runs must be confirmed.",
+            "branchResolution": "Branch {{branch}} targets {{environment}}.",
+            "sshHost": "SSH host",
+            "sshUser": "SSH user",
+            "remoteRoot": "Remote root",
+            "liveDomain": "Live domain",
+            "importSteps": "Import steps",
+            "deploySteps": "Deploy steps",
+            "import": "Import",
+            "deploy": "Deploy",
+            "cancel": "Cancel",
+            "recentRuns": "Recent runs",
+            "noSite": "The active project is not linked to a site.",
+            "importStepsHeading": "Import steps",
+            "deployStepsHeading": "Deploy steps"
           }
         }
       },
@@ -10879,10 +10713,6 @@
         "FeatureSetupChecklist": {
           "77f74946f5": "Agents는 서로 메시지를 보내고, 작업을 수행하고, 핸드오프를 조정할 수 있습니다.",
           "399cf885c0": "Agent 오케스트레이션",
-          "c5292c409d": "Agents는 요청 시 앱 창을 검사하고 로컬 앱을 작동할 수 있습니다.",
-          "1ecfb490ac": "컴퓨터 사용",
-          "01426f3a23": "Agents가 사이트를 탐색하고, 페이지를 검사하고, 브라우저 작업을 처리할 수 있습니다.",
-          "ea85d9e628": "Agent 브라우저 사용",
           "linearTicketsTitle": "Linear agent 스킬",
           "linearTicketsDescription": "Agents는 연결된 Linear 작업을 사용해 티켓 맥락을 반영한 더 풍부한 인계를 할 수 있습니다.",
           "linearTicketsSetupSummary": "Linear 워크스페이스에 권장됩니다. Linear 연결 설정에는 영향을 주지 않습니다."
@@ -10915,7 +10745,8 @@
           "a3bcf13694": "연결됨",
           "d6e5dba05a": "로그인",
           "0b4a7d23ab": "로그인 중",
-          "a74c6d6b18": "설치되지 않은"
+          "a74c6d6b18": "설치되지 않은",
+          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations."
         },
         "NotificationStep": {
           "3bede04483": "테스트 알림 보내기",
@@ -11408,13 +11239,8 @@
         "wall": {
           "AgentCapabilitiesSetupAction": {
             "b8dc9dd8a2": "설치됨",
-            "1b51644c2d": "agents가 데스크톱을 제어하고, 커서를 이동하고, 클릭하고, 모든 앱에서 입력할 수 있도록 하세요.",
-            "362a07517d": "컴퓨터 사용",
-            "5e8fe5a72d": "agents가 Orca의 브라우저에 직접 액세스할 수 있도록 하여 페이지를 테스트하고, 스크린샷을 캡처하고, 표시된 내용에 따라 조치를 취할 수 있도록 하세요.",
-            "e638da007a": "Agent 브라우저 사용",
             "c61c91e642": "agents가 Orca를 통해 조정하여 대규모 다단계 작업을 완료할 수 있도록 하세요.",
             "ac07f8887f": "Agent 오케스트레이션",
-            "e9eb197e12": "열린 컴퓨터 사용 권한",
             "3a59452a67": "리뷰를 위해 스킬 명령을 아래에 복사하여 삽입했습니다.",
             "c605f51f2b": "기능 설정 준비 완료",
             "1aa657d8f4": "일부 기능 설정에 주의가 필요합니다.",
@@ -11453,25 +11279,6 @@
             "1bec24acc1": "@keyframes browserFlash { 0% { opacity: 0; } 20% { opacity: 0.85; } 100% { opacity: 0; } } @keyframes browserTabIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } } @keyframes browserViewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }",
             "73bbb46073": "/pricing",
             "f39be6ca14": "/signup"
-          },
-          "BrowserUseSkillSetupCard": {
-            "cbc45022d4": "agents가 Muster 브라우저에서 페이지를 탐색하고 확인할 수 있습니다.",
-            "d5bb1cd4ba": "Browser Use 스킬"
-          },
-          "ComputerUseAnimatedVisual": {
-            "d8401975b1": "승인됨",
-            "f27676a92c": "상태:",
-            "6804cb356f": "클릭 전송됨",
-            "1719b28a81": "'승인'을 찾았습니다.",
-            "79445f7512": "내 앱에서 메모 승인",
-            "99a8624bcb": ">",
-            "2adb561b44": "Claude Code 세션이 시작되었습니다.",
-            "94787f01f8": "Claude Code",
-            "9cddfe96b2": "로컬 앱",
-            "9634d870d1": "승인",
-            "3cc2df3671": "완료",
-            "bdd5312213": "보류 중",
-            "c11dda000b": "승인됨"
           },
           "EditorAnimatedVisual": {
             "7a763daf2f": "이탤릭체",
@@ -11549,7 +11356,8 @@
             "713cc529a5": "마일스톤",
             "b1f1981c5e": "작업 보기",
             "0235b268b2": "아직 완료되지 않음",
-            "13294d3405": "완료"
+            "13294d3405": "완료",
+            "open_integrations_settings": "Open Integrations settings"
           },
           "FeatureWallSetupWorkflowActions": {
             "486c2f4d8d": "먼저 git 프로젝트를 추가한 다음 해당 repos에 대한 설정 스크립트를 구성하세요.",
@@ -11659,13 +11467,9 @@
               "setup": {
                 "status": {
                   "8eccfcb314": "설치됨",
-                  "21d4f79c93": "CLI 및 스킬 설치를 클릭하여 macOS 액세스 설정을 엽니다.",
-                  "5c9293e51a": "앱 액세스 확인 중",
                   "aae94eeb52": "CLI 및 스킬 설치를 클릭하세요.",
                   "aa8e143a2f": "설치를 확인할 수 없습니다.",
-                  "9b33e7fb13": "설치 확인 중",
-                  "4c8e1f92a7": "이 Mac에서 Muster Desktop을 여세요",
-                  "6d2b0a84e1": "이 빌드에서는 사용할 수 없습니다"
+                  "9b33e7fb13": "설치 확인 중"
                 }
               }
             }
@@ -11768,14 +11572,7 @@
           "FeatureWallBrowserAction": {
             "5022c43a88": "브라우저를 열 수 없습니다",
             "c9eb68b474": "이 워크트리에 사용할 수 있는 워크스페이스 그룹이 아직 없습니다.",
-            "c9728107c5": "사용해 보기",
-            "25dd101f15": "브라우저 설정에 주의가 필요합니다",
-            "e02b11e6b0": "브라우저 설정이 준비되었습니다",
-            "d6d15077df": "리뷰를 위해 스킬 명령을 아래에 복사하여 삽입했습니다.",
-            "78e65f19d9": "브라우저 설정에 실패했습니다",
-            "b7345c18db": "예기치 않은 오류가 발생했습니다.",
-            "5f97caf76b": "설치 중…",
-            "c2df599513": "CLI 및 스킬 설치"
+            "c9728107c5": "사용해 보기"
           },
           "ConnectIntegrationsList": {
             "3dddb2d565": "작업용으로 연결됨",
@@ -11861,129 +11658,6 @@
             "55001880db": "다시 시도",
             "34a189ae0f": "앱의 나머지 부분은 아직 실행 중입니다. 이 표면을 다시 시도하거나 다른 곳으로 전환했다가 다시 돌아오세요.",
             "ab855c11f4": "Orca의 이 부분에 오류가 발생했습니다."
-          }
-        }
-      },
-      "emulator": {
-        "pane": {
-          "EmulatorPane": {
-            "59b08fa031": "연결된 에뮬레이터가 없습니다."
-          },
-          "emulator": {
-            "device": {
-              "frame": {
-                "9406c15775": "에뮬레이터 화면",
-                "8f25ffaf8a": "에뮬레이터 화면, 키보드 캡처. Esc를 눌러 해제하세요.",
-                "0022420df0": "핸드폰"
-              }
-            },
-            "pane": {
-              "toolbar": {
-                "06e10d7356": "에뮬레이터 종료",
-                "e7a0d1897e": "홈",
-                "6bd8dff42a": "회전",
-                "3d836b879c": "에뮬레이터 선택",
-                "81b3571a07": "연결",
-                "868c0f2938": "작업 중…"
-              }
-            },
-            "screen": {
-              "stream": {
-                "content": {
-                  "8b1a0d8694": "에뮬레이터 미리보기",
-                  "36841af608": "스트림 연결이 끊어졌습니다.",
-                  "5f818f12ab": "에뮬레이터 연결 중…",
-                  "5ee64cd44e": "에뮬레이터 화면"
-                }
-              }
-            },
-            "unavailable": {
-              "pane": {
-                "f630b9ca9f": "모바일 에뮬레이터를 사용하려면 Xcode 및 iOS 시뮬레이터 런타임이 설치된 Mac이 필요합니다. Linux 또는 Windows에서는 물리적 장치 또는 원격 Mac 빌드 호스트를 사용합니다.",
-                "b2c268a0b9": "모바일 에뮬레이터는 macOS 전용입니다."
-              }
-            }
-          },
-          "use": {
-            "emulator": {
-              "frame": {
-                "stream": {
-                  "f1c0179002": "스트림이 프레임을 생성하지 않습니다."
-                }
-              }
-            },
-            "mobile": {
-              "emulator": {
-                "agent": {
-                  "setup": {
-                    "state": {
-                      "fdcca1ec75": "등록 중...",
-                      "69fb2c2289": "활성화됨",
-                      "c6705092ba": "PATH 수정",
-                      "7c1b6bdb1e": "활성화",
-                      "51074ccb05": "CLI 상태를 불러오지 못했습니다.",
-                      "35dea1ae12": "agent 제어가 준비되었습니다.",
-                      "9dff3a6338": "스킬이 설치되었습니다. Muster CLI를 활성화하여 설정을 완료하세요.",
-                      "15986a1080": "Muster CLI가 준비되었습니다. 스킬을 설치하여 설정을 완료하세요.",
-                      "4c26913def": "아직 설정되지 않았습니다. agent 제어를 활성화하려면 두 단계를 모두 완료하세요.",
-                      "c94ff11e91": "설정 상태를 다시 확인할 수 없습니다.",
-                      "2b519eed94": "Muster CLI가 PATH에 등록되었습니다."
-                    }
-                  }
-                },
-                "tab": {
-                  "intro": {
-                    "actions": {
-                      "68a5dc6604": "모바일 에뮬레이터를 숨길 수 없습니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "MobileEmulatorAgentSetupGuide": {
-            "2fda9ff015": "agent 제어 설정",
-            "0ac0fef514": "agent 제어가 준비되었습니다.",
-            "2bdfff8763": "agent 제어(선택 사항).",
-            "72736b051f": "agents가 이 시뮬레이터를 제어하도록 하려면 Muster CLI + 스킬을 설정하세요.",
-            "d10ae98046": "완료",
-            "3756cbeca7": "나중에",
-            "6d950431d2": "숨기기",
-            "ebceac65a4": "설정",
-            "3f003507f4": "설정에서 전체 설정 열기"
-          },
-          "MobileEmulatorAgentSetupGuideSteps": {
-            "9b49d892e3": "Muster CLI 활성화",
-            "3d8dc52c93": "agents 셸에서 에뮬레이터 제어를 위해 orca 명령을 등록합니다.",
-            "21f5687c07": "Muster CLI 스킬",
-            "64fb057667": "이 워크트리의 orca 에뮬레이터 명령을 agents에게 알려줍니다.",
-            "5c59ea96ca": "모바일 에뮬레이터 Muster CLI 스킬 설정",
-            "bff5341ac3": "모바일 에뮬레이터 Muster CLI 스킬 설치 terminal",
-            "3d34423e88": "Muster CLI를 등록하는 중",
-            "3be27641c9": "agent 셸에서 에뮬레이터 명령을 실행할 수 있도록 합니다.",
-            "3941719a56": "스킬 설정을 열기 전에 Muster CLI를 확인하고 있습니다."
-          },
-          "MobileEmulatorTabIntroCallout": {
-            "1924982130": "닫기",
-            "5789936d9a": "agents가 화면을 제어하는 동안 iOS 시뮬레이터를 미리 볼 수 있습니다.",
-            "8014b4b80b": "유지",
-            "6e051a40b7": "숨기기"
-          },
-          "mobile": {
-            "emulator": {
-              "hidden": {
-                "toast": {
-                  "e8f098a870": "모바일 에뮬레이터가 숨겨졌습니다",
-                  "c46c979c1d": "모바일 에뮬레이터를 언제든지 다시 활성화할 수 있습니다",
-                  "600f9a745a": "설정 › 모바일 에뮬레이터"
-                }
-              }
-            }
-          },
-          "useEmulatorScreenKeyboard": {
-            "pasteTooLarge": "붙여넣을 내용이 에뮬레이터 키보드 입력에 비해 너무 큽니다.",
-            "unsupportedPasteText": "에뮬레이터 키보드 붙여넣기는 US 키보드 텍스트만 지원합니다.",
-            "pasteTargetUnavailable": "기기가 준비되지 않아 에뮬레이터 키보드 붙여넣기에 실패했습니다."
           }
         }
       },
@@ -13709,7 +13383,8 @@
           "dbUser": "Local DB user",
           "dbUserHint": "root",
           "dbSocket": "Local DB socket",
-          "dbSocketHint": "/…/mysql/mysqld.sock"
+          "dbSocketHint": "/…/mysql/mysqld.sock",
+          "editingDivergence": "Editing {{environment}} — runs target {{target}}."
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
@@ -13780,9 +13455,6 @@
           "description": "A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.",
           "willStore": "What will be stored",
           "chooseFolder": "Which local folder should this bind to?",
-          "browse": "Choose a folder…",
-          "cloneHeading": "Not cloned yet",
-          "cloneHint": "Clone the repository first, then bind the new checkout.",
           "clone": "Clone into a folder…",
           "cloning": "Cloning…",
           "noCandidates": "No local checkout matches this repository yet.",
@@ -13804,7 +13476,12 @@
           "environment": "Environment",
           "deployCommand": "Build command",
           "themeDistPath": "Theme dist path",
-          "notes": "Notes"
+          "notes": "Notes",
+          "missingFolder": "Its folder is gone, so this record cannot be bound. Choose or clone a folder to set it up fresh.",
+          "setUpInRoot": "Set up in {{folder}}",
+          "settingUp": "Setting up…",
+          "willCreateAt": "Muster will clone into {{path}} and configure it.",
+          "noRootConfigured": "No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders."
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -13837,7 +13514,7 @@
           "stackPreviewing": "Checking…",
           "stackRunning": "Setting up…",
           "stackConfirm": "Run setup",
-          "stackDone": "LocalWP site created",
+          "stackDone": "LocalWP site ready.",
           "stackDomainLabel": "Local domain",
           "importHeading": "Import from the server",
           "importBody": "Pull the remote database and files down to this checkout.",
@@ -13853,9 +13530,25 @@
           "certAction": "Trust certificate",
           "certTrusting": "Trusting…",
           "certTrusted": "Trusted — the local site loads over https without a warning.",
-          "stackAdminEmail": "Admin email",
-          "stackAdminPassword": "Admin password",
-          "stackAdminHint": "The WordPress admin account LocalWP creates. Local only — it never reaches the server."
+          "stackOsPasswordHint": "LocalWP may ask for your macOS password — check the Local app.",
+          "stackLogLabel": "Setup progress",
+          "stackFailed": "LocalWP setup did not finish.",
+          "stackRetry": "Try again",
+          "stackCreateBody": "No WordPress here yet. Register the folder with LocalWP, then pull the site down with the import step.",
+          "stackCreateAction": "Create LocalWP site",
+          "stackMoves": "{{count}} project entries move into app/public",
+          "stackDeletes": "{{count}} existing entries under app/public are deleted first",
+          "importChooseSteps": "Choose steps",
+          "importStepsLegend": "Import steps for {{environment}}",
+          "importNoSteps": "Nothing is enabled yet. Pick what to pull down — each one is off until you choose it.",
+          "importBranchWarning": "The checked-out branch does not match an environment — confirm the target before importing.",
+          "importRunning": "Importing from the server…",
+          "importSucceeded": "Import complete.",
+          "importFailed": "Import failed.",
+          "importCancelled": "Import cancelled.",
+          "importBlocked": "Import was blocked before it started.",
+          "importProgress": "{{stage}} · {{percent}}%",
+          "importLogLabel": "Import log"
         },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"
@@ -13868,7 +13561,10 @@
           "loading": "Loading repositories…",
           "empty": "No repositories match.",
           "noProviders": "No git hosts are connected yet.",
-          "truncated": "Showing the most recent repositories. Search to narrow the list.",
+          "searching": "Searching repositories…",
+          "noMatch": "No repositories match “{{query}}”.",
+          "truncated": "Showing the most recent repositories. Search to reach any repository on the host, not only these.",
+          "truncatedLocal": "Showing the most recent repositories. This host cannot search, so the box only filters these.",
           "chooseFolder": "Clone into…",
           "cloning": "Cloning…",
           "adding": "Adding site…",
@@ -13898,6 +13594,20 @@
           "derived": "No folders chosen yet, so Muster is using the parent folders of the projects you already have: {{roots}}. Add one to take over.",
           "none": "No folders chosen, and there are no projects to infer one from. Add the folder your sites live in.",
           "add": "Add folder"
+        },
+        "AddSiteEnvironmentDialog": {
+          "title": "Add environment",
+          "modeHint": "Start blank, or copy an existing environment including its stored passwords.",
+          "nameHint": "Name it after a git branch and runs on that branch target it automatically.",
+          "createNew": "Create new environment",
+          "copyExisting": "Copy existing environment",
+          "copyFrom": "Copy from",
+          "name": "Name",
+          "namePlaceholder": "staging",
+          "duplicateName": "An environment with this name already exists.",
+          "back": "Back",
+          "copy": "Copy",
+          "create": "Create"
         }
       },
       "activecollab": {
@@ -13966,7 +13676,10 @@
           "comment_link": "Link",
           "start_work_hint": "Create a workspace in the linked site and brief an agent on this task",
           "start_work_unbound": "Link this project to a site first — use the link button on the project heading",
-          "start_work": "Start workspace"
+          "start_work": "Start workspace",
+          "close_date_picker": "Close",
+          "clear_dates": "Clear",
+          "save_dates": "Save"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -14061,6 +13774,29 @@
         "connectHeading": "Connect your ActiveCollab account",
         "connectBody": "Browse and start work on your assigned ActiveCollab tasks directly from here.",
         "connectAction": "Connect"
+      },
+      "ActionPalette": {
+        "groupActions": "Actions",
+        "groupCommands": "Commands",
+        "groupSettings": "Settings",
+        "title": "Command palette",
+        "description": "Run a command or jump to a setting",
+        "placeholder": "Run a command or jump to a setting...",
+        "empty": "No matching commands.",
+        "hiddenCount": "Type to search {{value0}} more",
+        "keyEnter": "Enter",
+        "hintRun": "Run",
+        "keyEsc": "Esc",
+        "hintClose": "Close",
+        "hintMove": "Move",
+        "resultCount": "{{value0}} results found"
+      },
+      "action": {
+        "palette": {
+          "ActionPaletteRow": {
+            "revealShortcut": "Shortcut"
+          }
+        }
       }
     },
     "i18n": {

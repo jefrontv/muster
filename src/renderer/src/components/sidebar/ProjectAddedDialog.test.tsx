@@ -2,11 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type * as ReactModule from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/types'
+import type { ProjectAddedModalPayload } from '@/store/slices/modal-payloads'
 
 const mocks = vi.hoisted(() => ({
   state: {
     activeModal: 'project-added',
-    modalData: {} as Record<string, unknown>,
+    modalData: {} as ProjectAddedModalPayload,
     closeModal: vi.fn(),
     repos: [] as Repo[],
     worktreesByRepo: {} as Record<string, unknown[]>,

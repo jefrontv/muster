@@ -12,7 +12,8 @@ import { importOcsitesConfig } from '../sites/ocsites-config-import'
 import { applyOcsitesImport, type OcsitesImportApplyResult } from '../sites/ocsites-import-apply'
 import { deleteSiteSecrets, setSiteSecret } from '../sites/site-secret-store'
 import { linkSitesToRepos, type SiteRepoLinkResult } from '../sites/site-repo-link'
-import { buildSiteSummaries, buildSiteSummary } from '../sites/site-summary'
+import { listCheckoutBranches } from '../sites/site-branches'
+import { buildSiteSummaries, buildSiteSummary, resolveSiteCheckoutDir } from '../sites/site-summary'
 import { registerSiteEnvironmentHandlers } from './sites-environments'
 import {
   isSiteEnvironmentName,
@@ -33,7 +34,8 @@ const SITE_CHANNELS = [
   'sites:linkRepo',
   'sites:setSecret',
   'sites:importFromOcsites',
-  'sites:linkRepos'
+  'sites:linkRepos',
+  'sites:listBranches'
 ] as const
 
 export function registerSiteHandlers(store: Store): void {
@@ -59,6 +61,23 @@ export function registerSiteHandlers(store: Store): void {
       return failure(error)
     }
   })
+
+  // Suggestions only: a site without git answers [] (never an error), so the add-environment
+  // dialog stays usable — resolution just has nothing to offer.
+  ipcMain.handle(
+    'sites:listBranches',
+    async (_event, siteId: unknown): Promise<SiteResult<string[]>> => {
+      try {
+        if (typeof siteId !== 'string') {
+          throw new TypeError('siteId must be a string')
+        }
+        const site = requireSite(store, siteId)
+        return { ok: true, value: await listCheckoutBranches(resolveSiteCheckoutDir(site)) }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
 
   ipcMain.handle(
     'sites:create',

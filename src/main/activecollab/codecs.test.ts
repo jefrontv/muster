@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  acAttachments,
-  acDateForWrite,
-  acEpochToLocalDay,
-  acLabelNames,
-  acLabels,
-  acMimeEssence,
-  acNullableId
-} from './codecs'
+import { acDateForWrite, acEpochToLocalDay } from '../../shared/activecollab-dates'
+import { acAttachments, acLabelNames, acLabels, acMimeEssence, acNullableId } from './codecs'
 
 // 2026-07-27T00:00:00Z — a real `due_on` from the target instance, and like
 // every other one it is exactly UTC midnight.

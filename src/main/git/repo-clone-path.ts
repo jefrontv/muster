@@ -69,6 +69,22 @@ export function getClonePathComparisonKey(clonePath: string): string {
   return normalizeRuntimePathForComparison(resolvedClonePath)
 }
 
+/**
+ * Whether a recorded clone path is still on disk.
+ *
+ * Why: a Repo record outlives a folder deleted outside Muster, so clone de-duplication must probe
+ * the filesystem before trusting the record — otherwise it reports a successful clone having
+ * created nothing.
+ */
+export async function clonePathExists(clonePath: string): Promise<boolean> {
+  try {
+    await lstat(clonePath)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function claimCloneTarget(clonePath: string): Promise<ClaimedCloneTarget> {
   try {
     await mkdir(clonePath, { recursive: false })

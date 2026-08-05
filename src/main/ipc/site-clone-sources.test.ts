@@ -55,7 +55,8 @@ const REPOS: CloneSourceListResult = {
   provider: 'bitbucket',
   repos: [],
   error: '',
-  truncated: false
+  truncated: false,
+  searchesRemotely: true
 }
 
 // Only the readers the registry's exclusion touches; the rest of Store is irrelevant here.
@@ -109,7 +110,7 @@ describe('registerSiteCloneSourceHandlers', () => {
       ok: true,
       value: REPOS
     })
-    expect(listCloneSourceRepos).toHaveBeenCalledWith(STORE, 'github')
+    expect(listCloneSourceRepos).toHaveBeenCalledWith(STORE, 'github', '')
   })
 
   it('returns a failure for an unknown provider instead of throwing', async () => {

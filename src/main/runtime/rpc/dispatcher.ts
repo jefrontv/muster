@@ -18,16 +18,8 @@ import {
 import type { TerminalStreamFrame } from '../../../shared/terminal-stream-protocol'
 import type { FeatureInteractionId } from '../../../shared/feature-interactions'
 import { isBrowserPaneUiRuntimeRpcParams } from '../../../shared/runtime-rpc-feature-interaction-source'
-import {
-  computerErrorData,
-  errorResponse,
-  mapBrowserError,
-  mapEmulatorError,
-  mapRuntimeError,
-  successResponse
-} from './errors'
+import { errorResponse, mapBrowserError, mapRuntimeError, successResponse } from './errors'
 import { ALL_RPC_METHODS } from './methods'
-import { emulatorProbe, emulatorProbeError } from '../../emulator/emulator-probe'
 import type { OrcaRuntimeService } from '../orca-runtime'
 
 export type DispatcherOptions = {
@@ -73,10 +65,6 @@ export class RpcDispatcher {
       )
     }
 
-    const isEmulator = request.method.startsWith('emulator.')
-    if (isEmulator) {
-      emulatorProbe(`rpc ${request.method}`, request.params)
-    }
     try {
       const result = await method.handler(parsedParams.value, {
         runtime: this.runtime,
@@ -85,9 +73,6 @@ export class RpcDispatcher {
       this.recordRuntimeFeatureInteraction(request.method, result, undefined, request.params)
       return successResponse(request.id, meta, result)
     } catch (error) {
-      if (isEmulator) {
-        emulatorProbeError(`rpc ${request.method}`, error, { params: request.params })
-      }
       return this.mapError(request, meta, error)
     }
   }
@@ -225,9 +210,6 @@ export class RpcDispatcher {
     if (request.method.startsWith('browser.')) {
       return mapBrowserError(request.id, meta, error)
     }
-    if (request.method.startsWith('emulator.')) {
-      return mapEmulatorError(request.id, meta, error)
-    }
     return mapRuntimeError(request.id, meta, error)
   }
 
@@ -236,13 +218,7 @@ export class RpcDispatcher {
     meta: RpcEnvelopeMeta,
     message: string
   ): RpcResponse {
-    return errorResponse(
-      request.id,
-      meta,
-      'invalid_argument',
-      message,
-      request.method.startsWith('computer.') ? computerErrorData('invalid_argument') : undefined
-    )
+    return errorResponse(request.id, meta, 'invalid_argument', message)
   }
 
   private meta(): RpcEnvelopeMeta {
@@ -285,26 +261,14 @@ function getRuntimeFeatureInteractionId(
   if (method === 'browser.screencast.unsubscribe') {
     return null
   }
+  // Why: agent-facing browser automation was removed, so this marker is now the
+  // only thing separating BrowserPane/mobile-originated browser RPCs from a
+  // terminal-side caller. It is load-bearing, not vestigial — do not drop it.
   if (method.startsWith('browser.') && isBrowserPaneUiRuntimeRpcParams(rawParams)) {
     return null
   }
   if (method.startsWith('browser.') && !method.startsWith('browser.profile')) {
     return 'agent-browser-use'
-  }
-  if (method.startsWith('emulator.')) {
-    // Emulator commands are allowed from terminal/CLI (workspace-scoped, like other automation).
-    // Return null to indicate no special feature-interaction restriction (or add 'emulator-use' later).
-    return null
-  }
-  if (method === 'computer.permissions') {
-    return 'computer-use-setup'
-  }
-  if (
-    method.startsWith('computer.') &&
-    method !== 'computer.capabilities' &&
-    method !== 'computer.permissionsStatus'
-  ) {
-    return 'computer-use'
   }
   if (method.startsWith('orchestration.')) {
     return 'agent-orchestration'

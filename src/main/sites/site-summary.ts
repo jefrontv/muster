@@ -14,6 +14,7 @@ import {
 } from '../../shared/site-types'
 import { commandExecFileAsync } from '../git/runner'
 import { getSiteSecretPresence } from './site-secret-store'
+import { resolveSiteWpDir } from './site-run-config'
 
 const BRANCH_READ_TIMEOUT_MS = 5_000
 
@@ -31,9 +32,23 @@ export async function readSiteBranch(sitePath: string): Promise<string | null> {
   }
 }
 
+/**
+ * Where this site's git checkout actually lives.
+ *
+ * A LocalWP setup moves the project into `app/public`, taking `.git` with it. Fall back to the site
+ * root so a plain checkout — or a recorded WordPress root that is not there — still resolves.
+ */
+export function resolveSiteCheckoutDir(site: Site): string {
+  const wpDir = resolveSiteWpDir(site)
+  return wpDir !== site.path && existsSync(wpDir) ? wpDir : site.path
+}
+
 export async function buildSiteSummary(site: Site): Promise<SiteSummary> {
   const pathExists = existsSync(site.path)
-  const branch = pathExists ? await readSiteBranch(site.path) : null
+  // Why the WordPress root, not the site root: a LocalWP setup relocates the checkout into
+  // `app/public`, so `.git` no longer sits at site.path — and `git rev-parse` only walks up. Reading
+  // the site root there reports "no branch", which then silently retargets environment resolution.
+  const branch = pathExists ? await readSiteBranch(resolveSiteCheckoutDir(site)) : null
   const resolvedEnvironment = resolveSiteEnvironment(site, branch)
 
   const secrets: Record<string, SiteSecretPresence> = {}

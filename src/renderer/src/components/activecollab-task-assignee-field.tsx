@@ -1,9 +1,11 @@
-// The Assignee row's control: reads as the current value, opens a searchable roster when acted on.
+// The Assignee row's control: reads as the current value, opens a searchable people list when
+// acted on. The list is the task's PROJECT members, not the 176-row instance roster — only they
+// can be assigned — widening to the roster only when the members read fails or answers nobody.
 //
 // Shaped after the due-date field rather than after a form widget — a loud outline button beside a
 // bare date would read as the louder of two peers, when both are just values you can change.
 
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronsUpDown, LoaderCircle } from 'lucide-react'
 
 import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
@@ -19,7 +21,7 @@ import { activeCollabAssigneeLabel, resolveActiveCollabAssignee } from './active
 import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
 
 type ActiveCollabTaskAssigneeFieldProps = {
-  task: Pick<ActiveCollabTask, 'assigneeId' | 'assigneeName'>
+  task: Pick<ActiveCollabTask, 'assigneeId' | 'assigneeName' | 'projectId'>
   disabled: boolean
   busy: boolean
   /** An explicit null UNASSIGNS; omitting the key would leave the server's assignee alone. */
@@ -33,44 +35,65 @@ export function ActiveCollabTaskAssigneeField({
   onChange
 }: ActiveCollabTaskAssigneeFieldProps): React.JSX.Element {
   const listUsers = useAppStore((s) => s.listActiveCollabUsers)
+  const listProjectMembers = useAppStore((s) => s.listActiveCollabProjectMembers)
   const mountedRef = useMountedRef()
   const [open, setOpen] = useState(false)
   const [users, setUsers] = useState<readonly ActiveCollabUser[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [failure, setFailure] = useState<ActiveCollabFailure | null>(null)
-  // Gates the fetch to once per successful roster, so reopening the picker costs nothing.
+  // Gates the fetch to once per successful list, so reopening the picker costs nothing.
   const requestedRef = useRef(false)
 
-  const loadRoster = useCallback((): void => {
+  // Membership is per project, and the workspace reuses this component instance across tasks: a
+  // switch to another project must drop the old project's people before the next open.
+  useEffect(() => {
+    requestedRef.current = false
+    setUsers(null)
+    setFailure(null)
+  }, [task.projectId])
+
+  const loadPeople = useCallback((): void => {
     if (requestedRef.current) {
       return
     }
     requestedRef.current = true
     setLoading(true)
     setFailure(null)
-    void listUsers().then((result) => {
+    void (async (): Promise<void> => {
+      // Project members first — same fallback contract as the @mention menu
+      // (`activeCollabMentionPeople`): a members read that fails or answers nobody widens to the
+      // instance roster rather than presenting an empty menu the user can neither read nor fix.
+      const members = await listProjectMembers(task.projectId)
+      if (members.ok && members.value.length > 0) {
+        if (mountedRef.current) {
+          setLoading(false)
+          setUsers(members.value)
+        }
+        return
+      }
+      const roster = await listUsers()
       if (!mountedRef.current) {
         return
       }
       setLoading(false)
-      if (result.ok) {
-        setUsers(result.value)
+      if (roster.ok) {
+        setUsers(roster.value)
         return
       }
-      // Let the next open retry: a roster that failed once is not a roster that is empty.
+      // Let the next open retry: a list that failed once is not a list that is empty.
       requestedRef.current = false
-      setFailure(result)
-    })
-  }, [listUsers, mountedRef])
+      setFailure(roster)
+    })()
+  }, [listProjectMembers, listUsers, task.projectId, mountedRef])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean): void => {
       setOpen(nextOpen)
       if (nextOpen) {
-        loadRoster()
+        loadPeople()
       }
     },
-    [loadRoster]
+    [loadPeople]
   )
 
   const select = useCallback(
@@ -81,9 +104,25 @@ export function ActiveCollabTaskAssigneeField({
     [onChange]
   )
 
-  // The roster is the second chance at a name: ActiveCollab 8 ships no `assignee_name` on task rows,
+  // The list is the second chance at a name: ActiveCollab 8 ships no `assignee_name` on task rows,
   // so an id that read as unresolved before the picker was opened usually resolves after.
   const assignee = resolveActiveCollabAssignee(task, users ?? [])
+
+  // The current assignee must stay offerable even after leaving the project: without this row the
+  // scoped menu could neither display the selection nor let the user re-pick it after filtering.
+  const offeredUsers = useMemo(() => {
+    if (users === null || task.assigneeId === null) {
+      return users
+    }
+    if (users.some((user) => user.id === task.assigneeId)) {
+      return users
+    }
+    const name = task.assigneeName?.trim()
+    return [
+      ...users,
+      { id: task.assigneeId, name: name || activeCollabAssigneeLabel({ kind: 'unresolved' }) }
+    ]
+  }, [users, task.assigneeId, task.assigneeName])
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -115,7 +154,7 @@ export function ActiveCollabTaskAssigneeField({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-0">
         <ActiveCollabAssigneePickerList
-          users={users}
+          users={offeredUsers}
           loading={loading}
           errorMessage={failure ? describeActiveCollabFailure(failure) : null}
           selectedUserId={task.assigneeId}

@@ -4356,7 +4356,9 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
 
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-1.5">
-                        <div className="min-w-0 truncate text-[13px] font-semibold leading-none">
+                        {/* Group label, not content: smaller + muted gives the hierarchy without
+                            the uppercase shout the first pass had. */}
+                        <div className="min-w-0 truncate text-xs font-medium leading-none text-muted-foreground">
                           {row.label}
                         </div>
                         <RepoForkIndicator upstream={row.repo?.upstream} />

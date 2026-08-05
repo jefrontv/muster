@@ -190,7 +190,7 @@ describe('buildWorkspaceSessionPayload', () => {
     expect(payload.markdownFrontmatterVisible).toEqual({ '/tmp/demo.ts': false })
   })
 
-  it('does not persist empty split groups from transient simulator tab creation', () => {
+  it('does not persist empty split groups left behind by a discarded tab', () => {
     const payload = buildWorkspaceSessionPayload(
       createSnapshot({
         unifiedTabsByWorktree: {

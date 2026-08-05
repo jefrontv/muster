@@ -15,6 +15,12 @@ export type SiteCloneSourcesApi = {
   /**
    * Resolves `ok: false` only for an unknown provider. A configured host that could not be reached
    * resolves `ok: true` with an empty `repos` and a populated `error`.
+   *
+   * `query` is the user's search text. Hosts that can filter server-side do; the result's
+   * `serverSearched` reports whether it happened, and when it did not the caller must filter itself.
    */
-  repos: (args: { provider: CloneSourceProviderId }) => Promise<SiteResult<CloneSourceListResult>>
+  repos: (args: {
+    provider: CloneSourceProviderId
+    query?: string
+  }) => Promise<SiteResult<CloneSourceListResult>>
 }

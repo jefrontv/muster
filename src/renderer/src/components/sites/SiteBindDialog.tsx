@@ -10,7 +10,7 @@
 // stages and closes when the user is finished. Dismissing at that point is safe — the bind is
 // already saved, and both remaining stages are optional by construction.
 
-import { KeyRound, Link2, ShieldOff } from 'lucide-react'
+import { GitBranch, KeyRound, Link2, Loader2, ShieldOff } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { getSiteBindFieldLabels, getSiteBindStrings } from './site-bind-strings'
 import { SiteBindTargetPicker } from './SiteBindTargetPicker'
+import { buildSiteBindSetupProposal } from './site-bind-setup-proposal'
 import { SiteSetupContinuation } from './SiteSetupContinuation'
 import { getSiteSetupStrings } from './site-setup-strings'
 import { siteBindApi, usePendingSiteBind } from './use-pending-site-bind'
@@ -90,8 +91,10 @@ export function SiteBindDialog(): React.JSX.Element | null {
   const [boundFields, setBoundFields] = useState<SiteBindFields | null>(null)
 
   // A newer link replaces the old request outright, so the chosen folder must not carry over.
+  // Only a candidate that is actually on disk may be preselected: a stale Site/Repo record whose
+  // folder was deleted would otherwise be offered as a bind target that confirm() then rejects.
   useEffect(() => {
-    setSelectedPath(pending?.candidates[0]?.path ?? '')
+    setSelectedPath(pending?.candidates.find((candidate) => candidate.exists)?.path ?? '')
     setError('')
   }, [pending?.requestId, pending?.candidates])
 
@@ -121,18 +124,32 @@ export function SiteBindDialog(): React.JSX.Element | null {
     }
   }, [reponame, linkCloneUrl])
 
+  // Why the configured roots: ocsites cloned a not-yet-checked-out site straight into the user's
+  // projects folder instead of asking for a path, so a link for an unknown site is one click.
+  // `list()` already falls back to derived roots when the user has configured none.
+  const [siteRoots, setSiteRoots] = useState<string[]>([])
+  const pendingRequestId = pending?.requestId ?? ''
+  useEffect(() => {
+    if (pendingRequestId.length === 0) {
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const result = await window.api.siteRoots.list()
+      if (!cancelled && result.ok) {
+        setSiteRoots(result.value)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingRequestId])
+
   if (!pending && boundSiteId.length === 0) {
     return null
   }
   const strings = getSiteBindStrings()
   const setupStrings = getSiteSetupStrings()
-
-  const browse = async (): Promise<void> => {
-    const picked = await window.api.repos.pickDirectory()
-    if (picked) {
-      setSelectedPath(picked)
-    }
-  }
 
   const clone = async (pendingBind: PendingSiteBind): Promise<void> => {
     const destination = await window.api.repos.pickDirectory()
@@ -157,7 +174,31 @@ export function SiteBindDialog(): React.JSX.Element | null {
     }
   }
 
-  const confirm = async (pendingBind: PendingSiteBind): Promise<void> => {
+  // Clones into the configured projects folder without a picker, then binds — the ocsites
+  // "set it up for me" path. `repos.clone` takes the PARENT and derives the folder from the URL,
+  // and mkdir -p's it, so a root that does not exist yet is created rather than an error.
+  const setUpInRoot = async (pendingBind: PendingSiteBind, root: string): Promise<void> => {
+    setCloning(true)
+    setError('')
+    try {
+      const repo = await window.api.repos.clone({
+        url: pendingBind.suggestedCloneUrl || resolvedCloneUrl,
+        destination: root
+      })
+      setSelectedPath(repo.path)
+      await confirm(pendingBind, repo.path)
+    } catch (setupError) {
+      const message = setupError instanceof Error ? setupError.message : String(setupError)
+      setError(message)
+      toast.error(strings.cloneFailedToast, { description: message })
+    } finally {
+      setCloning(false)
+    }
+  }
+
+  // `path` is explicit so the auto-setup flow can bind the freshly cloned folder without waiting
+  // for the selectedPath state update to land.
+  const confirm = async (pendingBind: PendingSiteBind, path = selectedPath): Promise<void> => {
     const api = siteBindApi()
     if (!api) {
       return
@@ -165,7 +206,7 @@ export function SiteBindDialog(): React.JSX.Element | null {
     setConfirming(true)
     setError('')
     try {
-      const result = await api.confirm({ requestId: pendingBind.requestId, path: selectedPath })
+      const result = await api.confirm({ requestId: pendingBind.requestId, path })
       if (!result.ok) {
         setError(result.error)
         return
@@ -235,6 +276,15 @@ export function SiteBindDialog(): React.JSX.Element | null {
     return null
   }
   const active = pending
+  const effectiveCloneUrl = active.suggestedCloneUrl || resolvedCloneUrl
+  const primaryRoot = siteRoots[0] ?? ''
+  const { proposedPath, proposedRootLabel, needsFreshSetup } = buildSiteBindSetupProposal({
+    roots: siteRoots,
+    cloneUrl: effectiveCloneUrl,
+    candidates: active.candidates
+  })
+  // Needs all three: nothing reachable to bind, a root to clone into, and a URL to clone from.
+  const canSetUpInRoot = needsFreshSetup && proposedPath.length > 0 && effectiveCloneUrl.length > 0
 
   return (
     <Dialog
@@ -273,10 +323,12 @@ export function SiteBindDialog(): React.JSX.Element | null {
             candidates={active.candidates}
             selectedPath={selectedPath}
             onSelect={setSelectedPath}
-            onBrowse={() => void browse()}
-            cloneUrl={active.suggestedCloneUrl || resolvedCloneUrl}
+            cloneUrl={effectiveCloneUrl}
             cloning={cloning}
             onClone={() => void clone(active)}
+            proposedPath={proposedPath}
+            canSetUpInRoot={canSetUpInRoot}
+            needsFreshSetup={needsFreshSetup}
           />
 
           {error.length > 0 ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -286,12 +338,30 @@ export function SiteBindDialog(): React.JSX.Element | null {
           <Button variant="ghost" onClick={dismiss}>
             {strings.cancel}
           </Button>
-          <Button
-            disabled={selectedPath.length === 0 || confirming || cloning}
-            onClick={() => void confirm(active)}
-          >
-            {confirming ? strings.confirming : strings.confirm}
-          </Button>
+          {/* Binding needs an existing checkout of this repo. With nothing to bind, offering the
+              action would only ever error, so the setup that creates the checkout takes its place. */}
+          {canSetUpInRoot ? (
+            <Button
+              disabled={cloning || confirming}
+              onClick={() => void setUpInRoot(active, primaryRoot)}
+            >
+              {cloning ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <GitBranch className="size-3.5" />
+              )}
+              {cloning
+                ? strings.settingUp
+                : strings.setUpInRoot.replace('{{folder}}', proposedRootLabel)}
+            </Button>
+          ) : (
+            <Button
+              disabled={selectedPath.length === 0 || confirming || cloning}
+              onClick={() => void confirm(active)}
+            >
+              {confirming ? strings.confirming : strings.confirm}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -8,6 +8,7 @@ import {
   type SiteSecretKind,
   type SiteSummary
 } from '../../../../shared/site-types'
+import { getSiteToggleLabels } from './site-toggle-labels'
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { Badge } from '@/components/ui/badge'
@@ -74,41 +75,6 @@ const getTextFields = createLocalizedCatalog(() => [
     )
   }
 ])
-
-// Toggle labels live here, not in shared/site-types.ts: that array is the engine's data contract
-// and must stay free of UI strings.
-const getToggleLabels = createLocalizedCatalog(
-  (): Record<string, string> => ({
-    exportDatabase: translate(
-      'auto.components.sites.SiteEnvironmentSection.exportDatabase',
-      'Pull/import server DB'
-    ),
-    exportFiles: translate(
-      'auto.components.sites.SiteEnvironmentSection.exportFiles',
-      'Pull server files'
-    ),
-    wpUploadRewrite: translate(
-      'auto.components.sites.SiteEnvironmentSection.wpUploadRewrite',
-      'WP upload rewrite'
-    ),
-    wpSearchReplace: translate(
-      'auto.components.sites.SiteEnvironmentSection.wpSearchReplace',
-      'WP search replace'
-    ),
-    gitPullOnServer: translate(
-      'auto.components.sites.SiteEnvironmentSection.gitPullOnServer',
-      'Git pull on server'
-    ),
-    clearServerCache: translate(
-      'auto.components.sites.SiteEnvironmentSection.clearServerCache',
-      'Clear server cache'
-    ),
-    deployThemes: translate(
-      'auto.components.sites.SiteEnvironmentSection.deployThemes',
-      'Deploy theme dist'
-    )
-  })
-)
 
 function SecretRow({
   kind,
@@ -184,7 +150,7 @@ export function SiteEnvironmentSection({
   onSetSecret
 }: SiteEnvironmentSectionProps): React.JSX.Element {
   const presence = summary.secrets[environmentName] ?? { ssh: false, db: false }
-  const toggleLabels = getToggleLabels()
+  const toggleLabels = getSiteToggleLabels()
 
   return (
     <div className="space-y-4">

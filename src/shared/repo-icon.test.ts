@@ -89,6 +89,39 @@ describe('sanitizeRepoIcon', () => {
     expect(sanitizeRepoIcon(null)).toBeNull()
   })
 
+  it('accepts inline favicon data urls fetched by the main process', () => {
+    const pngFavicon = {
+      type: 'image',
+      src: `data:image/png;base64,${PNG_1X1_BASE64}`,
+      source: 'favicon',
+      label: 'example.com'
+    }
+    expect(sanitizeRepoIcon(pngFavicon)).toEqual(pngFavicon)
+    const svgFavicon = {
+      type: 'image',
+      src: 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=',
+      source: 'favicon'
+    }
+    expect(sanitizeRepoIcon(svgFavicon)).toEqual(svgFavicon)
+  })
+
+  it('rejects favicon data urls with disallowed mimes or broken raster bytes', () => {
+    expect(
+      sanitizeRepoIcon({
+        type: 'image',
+        src: 'data:text/html;base64,PGh0bWw+',
+        source: 'favicon'
+      })
+    ).toBeUndefined()
+    expect(
+      sanitizeRepoIcon({
+        type: 'image',
+        src: `data:image/png;base64,${pngBase64(32_769, 1)}`,
+        source: 'favicon'
+      })
+    ).toBeUndefined()
+  })
+
   it('rejects unsupported image urls and oversized payloads', () => {
     expect(
       sanitizeRepoIcon({

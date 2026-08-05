@@ -8,11 +8,10 @@ if (process.platform === 'win32') {
 }
 
 if (process.platform !== 'darwin') {
-  console.log(`[native-build] no macOS native computer build required on ${process.platform}`)
+  console.log(`[native-build] no macOS native build required on ${process.platform}`)
   process.exit(0)
 }
 
-runPnpmScript('build:computer-macos')
 runPnpmScript('build:notification-status-macos')
 process.exit(0)
 

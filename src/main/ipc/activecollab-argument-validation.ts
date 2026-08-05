@@ -102,6 +102,15 @@ export function taskUpdate(value: unknown): ActiveCollabTaskUpdate {
     update.assigneeId =
       input.assigneeId === null ? null : positiveId(input.assigneeId, 'update.assigneeId')
   }
+  if (input.startOn !== undefined) {
+    if (
+      input.startOn !== null &&
+      (typeof input.startOn !== 'number' || !Number.isFinite(input.startOn))
+    ) {
+      throw new InvalidRequestError('update.startOn must be epoch milliseconds or null.')
+    }
+    update.startOn = input.startOn
+  }
   if (input.dueOn !== undefined) {
     if (
       input.dueOn !== null &&

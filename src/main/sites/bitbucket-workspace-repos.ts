@@ -46,13 +46,31 @@ export function bitbucketAuthHeaders(credentials: BitbucketCredentials): Record<
   return { Authorization: `Basic ${basic}`, Accept: 'application/json' }
 }
 
-export function bitbucketWorkspaceReposUrl(workspace: string): string {
-  const query = new URLSearchParams({
+/**
+ * Bitbucket's own filter, so a workspace with more repos than one page can be searched without
+ * paging the whole thing. `name~"term"` is BBQL's substring match on the repository name.
+ *
+ * The term is quoted, so a `"` or `\` typed by the user would otherwise close the string early and
+ * splice extra clauses into the query (or just earn an HTTP 400). Escape both before quoting.
+ */
+function bitbucketNameFilter(term: string): string {
+  return `name~"${term.replace(/[\\"]/g, '\\$&')}"`
+}
+
+export function bitbucketWorkspaceReposUrl(workspace: string, query = ''): string {
+  const params = new URLSearchParams({
     pagelen: String(PAGE_LENGTH),
     fields: REPO_FIELDS,
     sort: '-updated_on'
   })
-  return `${BITBUCKET_API_BASE}/repositories/${encodeURIComponent(workspace)}?${query.toString()}`
+  const typed = query.trim()
+  // `owner/name` pasted whole still has to find the repo: `name~` matches the repository name alone,
+  // and the workspace is already fixed by the path, so keeping the prefix would match nothing.
+  const term = typed.slice(typed.lastIndexOf('/') + 1)
+  if (term.length > 0) {
+    params.set('q', bitbucketNameFilter(term))
+  }
+  return `${BITBUCKET_API_BASE}/repositories/${encodeURIComponent(workspace)}?${params.toString()}`
 }
 
 /** Workspace slug out of any Bitbucket remote, for auto-detection from an existing checkout. */
@@ -118,6 +136,11 @@ export type BitbucketRepoListRequest = {
   /** Null when no App Password is stored — reported as not-configured rather than thrown. */
   credentials: BitbucketCredentials | null
   fetchJson: BitbucketFetchJson
+  /**
+   * Server-side name filter. Empty browses the workspace newest-first; non-empty asks Bitbucket to
+   * do the matching, which is the only way to reach a repo outside the first pages.
+   */
+  query?: string
   /** Serve the process cache when it is populated, skipping the network entirely. */
   preferCache?: boolean
   signal?: AbortSignal
@@ -127,7 +150,11 @@ export async function listBitbucketWorkspaceRepos(
   request: BitbucketRepoListRequest
 ): Promise<BitbucketRepoListResult> {
   const workspace = request.workspace.trim()
-  const cached = cacheByWorkspace.get(workspace) ?? null
+  const query = request.query?.trim() ?? ''
+  // The cache holds the *unfiltered* browse list. A filtered run must neither read it (it would
+  // answer a search with repos that do not match) nor write it (the next browse would then show
+  // only the last search's hits), so a query opts out of it in both directions.
+  const cached = query.length === 0 ? (cacheByWorkspace.get(workspace) ?? null) : null
   const base = { workspace, repos: [] as BitbucketRepoSummary[], fromCache: false }
 
   if (workspace.length === 0) {
@@ -148,7 +175,7 @@ export async function listBitbucketWorkspaceRepos(
   const headers = bitbucketAuthHeaders(credentials)
   const collected: BitbucketRepoSummary[] = []
   const seenUrls = new Set<string>()
-  let url = bitbucketWorkspaceReposUrl(workspace)
+  let url = bitbucketWorkspaceReposUrl(workspace, query)
 
   for (let page = 0; page < MAX_PAGES && url.length > 0; page += 1) {
     if (seenUrls.has(url)) {
@@ -175,7 +202,9 @@ export async function listBitbucketWorkspaceRepos(
     url = next
   }
 
-  cacheByWorkspace.set(workspace, collected)
+  if (query.length === 0) {
+    cacheByWorkspace.set(workspace, collected)
+  }
   return { workspace, configured: true, repos: collected, fromCache: false, error: '' }
 }
 

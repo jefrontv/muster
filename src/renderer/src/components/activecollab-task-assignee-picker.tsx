@@ -1,12 +1,13 @@
-// Searchable single-select over the instance's ActiveCollab user roster.
+// Searchable single-select over the people the caller supplies — the task's project members, with
+// the instance roster as the caller's fallback.
 //
-// Searchable is not a nicety: the target instance answers `/users` with 176 rows in one unpaginated
-// response, so an unfiltered dropdown is a scroll-hunt. Filtering is manual (`shouldFilter={false}`)
+// Searchable is not a nicety: the fallback roster is 176 rows in one unpaginated response, so an
+// unfiltered dropdown is a scroll-hunt. Filtering is manual (`shouldFilter={false}`)
 // rather than cmdk's built-in matcher because display names are not unique on this API — two people
 // can share one — and cmdk keys items by their `value` string, which would make one of a duplicate
 // pair unselectable.
 //
-// Presentational: the caller owns the fetch, so the roster is paid for when the picker first opens
+// Presentational: the caller owns the fetch, so the list is paid for when the picker first opens
 // rather than on every task selection.
 
 import React, { useMemo, useState } from 'react'
@@ -18,7 +19,7 @@ import { cn } from '@/lib/utils'
 import type { ActiveCollabUser } from '../../../shared/activecollab-types'
 
 export type ActiveCollabAssigneePickerListProps = {
-  /** Null before the caller has fetched; an empty array is a roster that really is empty. */
+  /** Null before the caller has fetched; an empty array is a list that really is empty. */
   users: readonly ActiveCollabUser[] | null
   loading: boolean
   errorMessage: string | null

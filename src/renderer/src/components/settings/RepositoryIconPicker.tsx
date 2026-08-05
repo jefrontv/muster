@@ -11,6 +11,9 @@ import { RepoIconGlyph, getRepoLucideIconOptions } from '../repo/repo-icon'
 import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import { getRepoExecutionHostId, parseExecutionHostId } from '../../../../shared/execution-host'
 import { useMountedRef } from '@/hooks/useMountedRef'
+import { useAppStore } from '@/store'
+import { findSiteForProject } from '../right-sidebar/site-for-project'
+import type { SiteSummary } from '../../../../shared/site-types'
 import { RepositoryIconColorSection } from './RepositoryIconColorSection'
 import { RepositoryIconTabs } from './RepositoryIconTabs'
 import {
@@ -19,6 +22,8 @@ import {
   resolveRepositoryUpstreamLive
 } from './repository-icon-github'
 import { translate } from '@/i18n/i18n'
+
+const NO_SITES: SiteSummary[] = []
 
 export function RepositoryIconPicker({
   repo,
@@ -39,11 +44,34 @@ export function RepositoryIconPicker({
   const selectedEmoji = repo.repoIcon?.type === 'emoji' ? repo.repoIcon.emoji : ''
   const selectedBadgeColor = normalizeRepoBadgeColor(repo.badgeColor) ?? DEFAULT_REPO_BADGE_COLOR
   const initialTab =
-    repo.repoIcon?.type === 'emoji' ? 'emoji' : repo.repoIcon?.type === 'lucide' ? 'icon' : 'avatar'
+    repo.repoIcon?.type === 'emoji'
+      ? 'emoji'
+      : repo.repoIcon?.type === 'lucide'
+        ? 'icon'
+        : repo.repoIcon?.type === 'image' && repo.repoIcon.source === 'favicon'
+          ? 'favicon'
+          : 'avatar'
   const runtimeTarget = useMemo(
     () => getActiveRuntimeTarget({ activeRuntimeEnvironmentId }),
     [activeRuntimeEnvironmentId]
   )
+
+  const sites = useAppStore((s) => s.sites ?? NO_SITES)
+  const fetchSites = useAppStore((s) => s.fetchSites)
+  // Why: settings can open before the right sidebar ever fetched sites; one
+  // refresh keeps the Favicon tab's live-domain prefill from staying empty.
+  useEffect(() => {
+    void fetchSites()
+  }, [fetchSites])
+  const defaultFaviconDomain = useMemo(() => {
+    const summary = findSiteForProject(sites, repo.path)
+    if (!summary) {
+      return ''
+    }
+    const environmentName =
+      summary.resolvedEnvironment.environment ?? summary.site.activeEnvironment
+    return summary.site.environments[environmentName]?.liveDomain ?? ''
+  }, [sites, repo.path])
 
   const currentIconLabel = useMemo(() => {
     if (repo.repoIcon?.type === 'image') {
@@ -204,6 +232,7 @@ export function RepositoryIconPicker({
         selectedLucideName={selectedLucideName}
         selectedEmoji={selectedEmoji}
         loadingGitHub={loadingGitHub}
+        defaultFaviconDomain={defaultFaviconDomain}
         onSetIcon={setIcon}
         onUseGitHubAvatar={() => void handleUseGitHubAvatar()}
       />

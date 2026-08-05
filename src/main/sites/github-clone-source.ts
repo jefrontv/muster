@@ -38,7 +38,7 @@ function provider(configured: boolean, reason: string): CloneSourceProvider {
 }
 
 function emptyResult(error: string): CloneSourceListResult {
-  return { provider: 'github', repos: [], error, truncated: false }
+  return { provider: 'github', repos: [], error, truncated: false, searchesRemotely: false }
 }
 
 /**
@@ -172,6 +172,10 @@ export async function listGithubCloneSourceRepos(): Promise<CloneSourceListResul
     // listCloneSourceRepos and runs AFTER already-present repos are excluded; capping here too
     // would spend a slot on a repo the user already has and then drop it, shrinking the page.
     repos,
-    error: ''
+    error: '',
+    // `gh repo list` takes no name filter, and `gh search repos` needs an owner scope we do not have
+    // plus a payload with no sshUrl, so GitHub is never searched host-side. Said plainly here so the
+    // picker filters locally and tells the user the search only covers what is listed.
+    searchesRemotely: false
   }
 }

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import { CliFeatureTipVisual } from './CliFeatureTipVisual'
 import { CmdJPaletteFeatureTipVisual } from './CmdJPaletteFeatureTipVisual'
 import { CmdJPaletteTipDialog } from './CmdJPaletteTipDialog'
@@ -82,7 +83,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
   const seenTipIds = useAppStore((s) => s.featureTipsSeenIds)
   const featureInteractions = useAppStore((s) => s.featureInteractions)
   const markFeatureTipsSeen = useAppStore((s) => s.markFeatureTipsSeen)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('feature-tips')
   const activeModalRef = useRef(activeModal)
   const setupRequestIdRef = useRef(0)
   const [primaryBusy, setPrimaryBusy] = useState(false)
@@ -151,7 +152,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
         // Why: passive education tip — acknowledging just dismisses; the rebind
         // path lives in Settings and is reachable from the palette itself.
         trackCmdJPaletteFeatureTipAcknowledged(
-          getOrcaCliFeatureTipTelemetrySource(modalData.source)
+          getOrcaCliFeatureTipTelemetrySource(modalData?.source)
         )
         closeModal()
         break
@@ -171,7 +172,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
       }
       case 'setup-cli': {
         // Why: shell PATH registration was gutted — tip only opens optional skill setup.
-        const telemetrySource = getOrcaCliFeatureTipTelemetrySource(modalData.source)
+        const telemetrySource = getOrcaCliFeatureTipTelemetrySource(modalData?.source)
         trackOrcaCliFeatureTipSetupClicked(telemetrySource)
         trackOrcaCliFeatureTipSetupResult(telemetrySource, 'installed')
         enableOrchestrationSkillSetup()

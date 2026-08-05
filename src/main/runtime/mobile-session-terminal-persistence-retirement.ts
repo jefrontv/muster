@@ -19,9 +19,6 @@ function visibleTypeForContentType(
   if (contentType === 'browser') {
     return 'browser'
   }
-  if (contentType === 'simulator') {
-    return 'simulator'
-  }
   return contentType ? 'editor' : undefined
 }
 

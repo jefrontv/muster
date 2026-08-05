@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import type { Repo } from '../../../../shared/types'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { finishProjectAddWithDefaultCheckout } from './project-added-default-checkout'
@@ -20,8 +21,7 @@ import { translate } from '@/i18n/i18n'
 const NON_GIT_REPO_ERROR = 'Not a valid git repository'
 
 const AddProjectFromFolderDialog = React.memo(function AddProjectFromFolderDialog() {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('confirm-add-project-from-folder')
   const closeModal = useAppStore((s) => s.closeModal)
   const openModal = useAppStore((s) => s.openModal)
   const addRepoPath = useAppStore((s) => s.addRepoPath)
@@ -33,10 +33,10 @@ const AddProjectFromFolderDialog = React.memo(function AddProjectFromFolderDialo
   const mountedRef = useMountedRef()
   const addGenRef = useRef(0)
 
-  const isOpen = activeModal === 'confirm-add-project-from-folder'
+  const isOpen = modalData !== null
   const [previousOpen, setPreviousOpen] = useState(isOpen)
-  const folderPath = typeof modalData.folderPath === 'string' ? modalData.folderPath : ''
-  const connectionId = typeof modalData.connectionId === 'string' ? modalData.connectionId : ''
+  const folderPath = modalData?.folderPath ?? ''
+  const connectionId = modalData?.connectionId ?? ''
 
   if (isOpen !== previousOpen) {
     setPreviousOpen(isOpen)

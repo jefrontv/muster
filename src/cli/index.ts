@@ -102,7 +102,7 @@ export async function main(
       json
     })
   } catch (error) {
-    reportCliError(error, json, { commandPath: parsed.commandPath })
+    reportCliError(error, json)
     process.exitCode = 1
   }
 }
@@ -120,7 +120,7 @@ async function runClaudeTeams(argv: string[], cwd: string): Promise<void> {
       rawArgs: argv
     })
   } catch (error) {
-    reportCliError(error, false, { commandPath: ['claude-teams'] })
+    reportCliError(error, false)
     process.exitCode = 1
   }
 }
@@ -145,7 +145,7 @@ async function runAgentTeamsTmuxShim(argv: string[]): Promise<void> {
     process.stderr.write(response.result.tmux.stderr)
     process.exitCode = response.result.tmux.exitCode
   } catch (error) {
-    reportCliError(error, false, { commandPath: ['agent-teams-tmux'] })
+    reportCliError(error, false)
     process.exitCode = 1
   }
 }

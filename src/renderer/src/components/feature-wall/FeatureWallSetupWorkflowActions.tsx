@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAppStore } from '@/store'
 import { useAllWorktrees } from '@/store/selectors'
+import { getModalData } from '@/store/slices/modal-payloads'
 import { getDefaultRepoHookSettings } from '../../../../shared/constants'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import type { Repo, RepoHookSettings, Worktree } from '../../../../shared/types'
@@ -245,10 +246,6 @@ export function requestSetupGuideTourWhenReady(args: RequestContextualTourWhenRe
 }
 
 export function isSetupGuideWorkspaceComposerRequestCurrent(requestId: string): boolean {
-  const state = useAppStore.getState()
-  const modalData = state.modalData as { setupGuideTourRequestId?: unknown }
-  return (
-    state.activeModal === 'new-workspace-composer' &&
-    modalData.setupGuideTourRequestId === requestId
-  )
+  const composerData = getModalData(useAppStore.getState(), 'new-workspace-composer')
+  return composerData?.setupGuideTourRequestId === requestId
 }

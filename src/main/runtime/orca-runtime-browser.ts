@@ -1,42 +1,23 @@
-/* eslint-disable max-lines -- Why: this file is a command adapter for one external surface, Agent Browser automation. It stays separate from OrcaRuntimeService so runtime state does not grow further while browser routing remains easy to scan in one place. */
+/* eslint-disable max-lines -- Why: this file is the command adapter for one external surface, the runtime browser RPCs the desktop BrowserPane and mobile companion drive. It stays separate from OrcaRuntimeService so runtime state does not grow further while browser routing remains easy to scan in one place. */
 import { randomUUID } from 'node:crypto'
 import { ipcMain, webContents, type BrowserWindow } from 'electron'
 import type {
   BrowserBackResult,
-  BrowserCaptureStartResult,
-  BrowserCheckResult,
-  BrowserCaptureStopResult,
-  BrowserClearResult,
-  BrowserClickResult,
-  BrowserConsoleResult,
   BrowserCookieDeleteResult,
   BrowserCookieGetResult,
   BrowserCookieSetResult,
   BrowserDetectProfilesResult,
-  BrowserDragResult,
   BrowserEvalResult,
-  BrowserFillResult,
-  BrowserFocusResult,
   BrowserGeolocationResult,
   BrowserGotoResult,
-  BrowserHoverResult,
-  BrowserInterceptDisableResult,
-  BrowserInterceptEnableResult,
   BrowserKeypressResult,
-  BrowserNetworkLogResult,
-  BrowserPdfResult,
   BrowserProfileClearDefaultCookiesResult,
   BrowserProfileCreateResult,
   BrowserProfileDeleteResult,
   BrowserProfileImportFromBrowserResult,
   BrowserProfileListResult,
   BrowserReloadResult,
-  BrowserScreenshotResult,
   BrowserScreencastResult,
-  BrowserScrollResult,
-  BrowserSelectAllResult,
-  BrowserSelectResult,
-  BrowserSnapshotResult,
   BrowserTabCurrentResult,
   BrowserTabListResult,
   BrowserTabProfileCloneResult,
@@ -44,10 +25,7 @@ import type {
   BrowserTabSetProfileResult,
   BrowserTabShowResult,
   BrowserTabSwitchResult,
-  BrowserTypeResult,
-  BrowserUploadResult,
-  BrowserViewportResult,
-  BrowserWaitResult
+  BrowserViewportResult
 } from '../../shared/runtime-types'
 import type { BrowserCertificateProceedResult } from '../../shared/types'
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
@@ -325,25 +303,6 @@ export class RuntimeBrowserCommands {
     }
   }
 
-  async browserSnapshot(params: BrowserCommandTargetParams): Promise<BrowserSnapshotResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().snapshot(target.worktreeId, target.browserPageId)
-  }
-
-  async browserClick(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<BrowserClickResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    const bridge = this.requireAgentBrowserBridge()
-    const result = await bridge.click(params.element, target.worktreeId, target.browserPageId)
-    // Why: clicks can trigger navigation, so push the tab's live URL/title to the renderer even when automation targeted a non-active page.
-    const page = bridge.getPageInfo(target.worktreeId, target.browserPageId)
-    if (page) {
-      this.notifyRendererNavigation(page.browserPageId, page.url, page.title)
-    }
-    return result
-  }
-
   async browserGoto(
     params: { url: string } & BrowserCommandTargetParams
   ): Promise<BrowserGotoResult> {
@@ -355,59 +314,6 @@ export class RuntimeBrowserCommands {
       this.notifyRendererNavigation(pageId, result.url, result.title)
     }
     return result
-  }
-
-  async browserFill(
-    params: {
-      element: string
-      value: string
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserFillResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().fill(
-      params.element,
-      params.value,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserType(
-    params: { input: string } & BrowserCommandTargetParams
-  ): Promise<BrowserTypeResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().type(
-      params.input,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserSelect(
-    params: {
-      element: string
-      value: string
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserSelectResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().select(
-      params.element,
-      params.value,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserScroll(
-    params: { direction: 'up' | 'down'; amount?: number } & BrowserCommandTargetParams
-  ): Promise<BrowserScrollResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().scroll(
-      params.direction,
-      params.amount,
-      target.worktreeId,
-      target.browserPageId
-    )
   }
 
   async browserBack(params: BrowserCommandTargetParams): Promise<BrowserBackResult> {
@@ -430,19 +336,6 @@ export class RuntimeBrowserCommands {
       this.notifyRendererNavigation(pageId, result.url, result.title)
     }
     return result
-  }
-
-  async browserScreenshot(
-    params: {
-      format?: 'png' | 'jpeg'
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserScreenshotResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().screenshot(
-      params.format,
-      target.worktreeId,
-      target.browserPageId
-    )
   }
 
   async browserScreencast(
@@ -633,129 +526,12 @@ export class RuntimeBrowserCommands {
     return result
   }
 
-  async browserHover(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<BrowserHoverResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().hover(
-      params.element,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserDrag(
-    params: {
-      from: string
-      to: string
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserDragResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().drag(
-      params.from,
-      params.to,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserUpload(
-    params: { element: string; files: string[] } & BrowserCommandTargetParams
-  ): Promise<BrowserUploadResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().upload(
-      params.element,
-      params.files,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserWait(
-    params: {
-      selector?: string
-      timeout?: number
-      text?: string
-      url?: string
-      load?: string
-      fn?: string
-      state?: string
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserWaitResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    const { worktree: _, page: __, ...options } = params
-    return this.requireAgentBrowserBridge().wait(options, target.worktreeId, target.browserPageId)
-  }
-
-  async browserCheck(
-    params: { element: string; checked: boolean } & BrowserCommandTargetParams
-  ): Promise<BrowserCheckResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().check(
-      params.element,
-      params.checked,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserFocus(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<BrowserFocusResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().focus(
-      params.element,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserClear(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<BrowserClearResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().clear(
-      params.element,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserSelectAll(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<BrowserSelectAllResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().selectAll(
-      params.element,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
   async browserKeypress(
     params: { key: string } & BrowserCommandTargetParams
   ): Promise<BrowserKeypressResult> {
     const target = await this.resolveBrowserCommandTarget(params)
     return this.requireAgentBrowserBridge().keypress(
       params.key,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserPdf(params: BrowserCommandTargetParams): Promise<BrowserPdfResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().pdf(target.worktreeId, target.browserPageId)
-  }
-
-  async browserFullScreenshot(
-    params: {
-      format?: 'png' | 'jpeg'
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserScreenshotResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().fullPageScreenshot(
-      params.format,
       target.worktreeId,
       target.browserPageId
     )
@@ -851,129 +627,12 @@ export class RuntimeBrowserCommands {
     )
   }
 
-  // ── Request interception ──
-
-  async browserInterceptEnable(
-    params: {
-      patterns?: string[]
-    } & BrowserCommandTargetParams
-  ): Promise<BrowserInterceptEnableResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().interceptEnable(
-      params.patterns,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserInterceptDisable(
-    params: BrowserCommandTargetParams
-  ): Promise<BrowserInterceptDisableResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().interceptDisable(
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserInterceptList(params: BrowserCommandTargetParams): Promise<{ requests: unknown[] }> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().interceptList(target.worktreeId, target.browserPageId)
-  }
-
-  // ── Console/network capture ──
-
-  async browserCaptureStart(
-    params: BrowserCommandTargetParams
-  ): Promise<BrowserCaptureStartResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().captureStart(target.worktreeId, target.browserPageId)
-  }
-
-  async browserCaptureStop(params: BrowserCommandTargetParams): Promise<BrowserCaptureStopResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().captureStop(target.worktreeId, target.browserPageId)
-  }
-
-  async browserConsoleLog(
-    params: { limit?: number } & BrowserCommandTargetParams
-  ): Promise<BrowserConsoleResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().consoleLog(
-      params.limit,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserNetworkLog(
-    params: { limit?: number } & BrowserCommandTargetParams
-  ): Promise<BrowserNetworkLogResult> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().networkLog(
-      params.limit,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
   // ── Additional core commands ──
-
-  async browserDblclick(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().dblclick(
-      params.element,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
 
   async browserForward(params: BrowserCommandTargetParams): Promise<unknown> {
     const target = await this.resolveBrowserCommandTarget(params)
     return this.requireAgentBrowserBridge().forward(target.worktreeId, target.browserPageId)
   }
-
-  async browserScrollIntoView(
-    params: { element: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().scrollIntoView(
-      params.element,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserGet(
-    params: {
-      what: string
-      selector?: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().get(
-      params.what,
-      params.selector,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserIs(
-    params: { what: string; selector: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().is(
-      params.what,
-      params.selector,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  // ── Keyboard insert text ──
 
   async browserKeyboardInsertText(
     params: { text: string } & BrowserCommandTargetParams
@@ -1056,90 +715,6 @@ export class RuntimeBrowserCommands {
     )
   }
 
-  // ── Find (semantic locators) ──
-
-  async browserFind(
-    params: {
-      locator: string
-      value: string
-      action: string
-      text?: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().find(
-      params.locator,
-      params.value,
-      params.action,
-      params.text,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  // ── Set commands ──
-
-  async browserSetDevice(params: { name: string } & BrowserCommandTargetParams): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().setDevice(
-      params.name,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserSetOffline(
-    params: { state?: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().setOffline(
-      params.state,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserSetHeaders(
-    params: { headers: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().setHeaders(
-      params.headers,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserSetCredentials(
-    params: {
-      user: string
-      pass: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().setCredentials(
-      params.user,
-      params.pass,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserSetMedia(
-    params: {
-      colorScheme?: string
-      reducedMotion?: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().setMedia(
-      params.colorScheme,
-      params.reducedMotion,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
   // ── Clipboard commands ──
 
   async browserClipboardRead(params: BrowserCommandTargetParams): Promise<unknown> {
@@ -1176,116 +751,7 @@ export class RuntimeBrowserCommands {
     return this.requireAgentBrowserBridge().dialogDismiss(target.worktreeId, target.browserPageId)
   }
 
-  // ── Storage commands ──
-
-  async browserStorageLocalGet(
-    params: { key: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().storageLocalGet(
-      params.key,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserStorageLocalSet(
-    params: {
-      key: string
-      value: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().storageLocalSet(
-      params.key,
-      params.value,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserStorageLocalClear(params: BrowserCommandTargetParams): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().storageLocalClear(
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserStorageSessionGet(
-    params: { key: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().storageSessionGet(
-      params.key,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserStorageSessionSet(
-    params: {
-      key: string
-      value: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().storageSessionSet(
-      params.key,
-      params.value,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  async browserStorageSessionClear(params: BrowserCommandTargetParams): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().storageSessionClear(
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  // ── Download command ──
-
-  async browserDownload(
-    params: {
-      selector: string
-      path: string
-    } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().download(
-      params.selector,
-      params.path,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  // ── Highlight command ──
-
-  async browserHighlight(
-    params: { selector: string } & BrowserCommandTargetParams
-  ): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().highlight(
-      params.selector,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
-
-  // ── New: exec passthrough + tab lifecycle ──
-
-  async browserExec(params: { command: string } & BrowserCommandTargetParams): Promise<unknown> {
-    const target = await this.resolveBrowserCommandTarget(params)
-    return this.requireAgentBrowserBridge().exec(
-      params.command,
-      target.worktreeId,
-      target.browserPageId
-    )
-  }
+  // ── Tab lifecycle ──
 
   async browserTabCreate(params: {
     url?: string

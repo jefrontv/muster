@@ -45,7 +45,7 @@ describe('keybinding-file', () => {
       JSON.stringify({
         version: 1,
         keybindings: {
-          'worktree.quickOpen': 'Mod+Shift+P',
+          'worktree.quickOpen': 'Mod+Shift+F9',
           'view.tasks': null
         },
         platforms: {
@@ -64,7 +64,7 @@ describe('keybinding-file', () => {
     expect(readKeybindingFile(filePath, 'linux')).toMatchObject({
       exists: true,
       overrides: {
-        'worktree.quickOpen': ['Mod+Shift+P'],
+        'worktree.quickOpen': ['Mod+Shift+F9'],
         'view.tasks': [],
         'terminal.paste': ['Ctrl+Shift+V', 'Shift+Insert'],
         'terminal.search': ['Ctrl+Shift+F']
@@ -121,7 +121,7 @@ describe('keybinding-file', () => {
       JSON.stringify({
         version: 1,
         keybindings: {
-          'worktree.quickOpen': 'Mod+Shift+P'
+          'worktree.quickOpen': 'Mod+Shift+F9'
         },
         platforms: {
           darwin: {
@@ -138,7 +138,7 @@ describe('keybinding-file', () => {
       keybindings: Record<string, unknown>
       platforms: Record<string, Record<string, unknown>>
     }
-    expect(written.keybindings['worktree.quickOpen']).toBe('Mod+Shift+P')
+    expect(written.keybindings['worktree.quickOpen']).toBe('Mod+Shift+F9')
     expect(written.platforms.darwin['terminal.search']).toBe('Mod+F')
     expect(written.platforms.linux['terminal.search']).toEqual(['Ctrl+Shift+F'])
   })
@@ -148,7 +148,7 @@ describe('keybinding-file', () => {
       filePath,
       JSON.stringify({
         version: 1,
-        'worktree.quickOpen': 'Mod+Shift+P',
+        'worktree.quickOpen': 'Mod+Shift+F9',
         platforms: {
           darwin: {
             'terminal.search': 'Mod+F'
@@ -166,10 +166,10 @@ describe('keybinding-file', () => {
       'worktree.quickOpen'?: unknown
     }
     expect(written['worktree.quickOpen']).toBeUndefined()
-    expect(written.keybindings['worktree.quickOpen']).toEqual(['Mod+Shift+P'])
+    expect(written.keybindings['worktree.quickOpen']).toEqual(['Mod+Shift+F9'])
     expect(written.platforms.darwin['terminal.search']).toBe('Mod+F')
     expect(readKeybindingFile(filePath, 'linux').overrides).toEqual({
-      'worktree.quickOpen': ['Mod+Shift+P'],
+      'worktree.quickOpen': ['Mod+Shift+F9'],
       'terminal.search': ['Ctrl+Shift+F']
     })
   })
@@ -341,7 +341,7 @@ describe('keybinding-file', () => {
       filePath,
       JSON.stringify({
         version: 1,
-        'worktree.quickOpen': 'Mod+Shift+P',
+        'worktree.quickOpen': 'Mod+Shift+F9',
         'tab.nextSameType': 'Mod+K'
       }),
       'utf8'
@@ -358,11 +358,11 @@ describe('keybinding-file', () => {
     expect(written['worktree.quickOpen']).toBeUndefined()
     expect(written['tab.nextSameType']).toBeUndefined()
     expect(written.keybindings).toMatchObject({
-      'worktree.quickOpen': ['Mod+Shift+P'],
+      'worktree.quickOpen': ['Mod+Shift+F9'],
       'tab.nextSameType': ['Mod+K']
     })
     expect(readKeybindingFile(filePath, 'darwin').overrides).toMatchObject({
-      'worktree.quickOpen': ['Mod+Shift+P'],
+      'worktree.quickOpen': ['Mod+Shift+F9'],
       'tab.nextSameType': ['Mod+K'],
       'tab.nextAllTypes': ['Mod+Alt+BracketRight']
     })

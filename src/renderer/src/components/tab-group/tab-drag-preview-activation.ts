@@ -51,12 +51,6 @@ function previewActiveSurfacePatch(
       activeTabTypeByWorktree: nextActiveTabTypeByWorktree('browser')
     }
   }
-  if (unifiedTab.contentType === 'simulator') {
-    return {
-      activeTabType: 'simulator',
-      activeTabTypeByWorktree: nextActiveTabTypeByWorktree('simulator')
-    }
-  }
   return {
     activeFileId: unifiedTab.entityId,
     activeTabType: 'editor',

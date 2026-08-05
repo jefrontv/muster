@@ -256,9 +256,11 @@ export function WorktreeCardDetailsHover({
     >
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
       <HoverCardContent
-        side="right"
+        // Why bottom: side="right" floated this panel out of the sidebar and over the content
+        // pane, covering whatever the user was reading. Below the card it stays in-column.
+        side="bottom"
         align="start"
-        sideOffset={8}
+        sideOffset={4}
         className="w-80 max-h-[28rem] overflow-y-auto p-3 text-xs scrollbar-sleek"
         {...{ [WORKTREE_NATIVE_CONTEXT_MENU_ATTR]: '' }}
         onClick={(event) => event.stopPropagation()}

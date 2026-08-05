@@ -131,7 +131,7 @@ function deriveActiveSurface(
       terminalTabId: terminalFallback,
       browserTabId: browserFallback,
       fileId: activeUnified.entityId,
-      type: activeUnified.contentType === 'simulator' ? 'simulator' : 'editor'
+      type: 'editor'
     }
   }
   if (fileFallback) {

@@ -16,32 +16,7 @@ describe('tab create menu options', () => {
     terminalOnly: false,
     hasNewBrowser: true,
     hasNewMarkdown: true,
-    hasOpenMarkdown: true,
-    hasSimulator: true,
-    simulatorIsGoTo: false
-  })
-
-  it('matches mobile emulator aliases to the simulator menu action', () => {
-    expect(
-      findMatchingTabCreateMenuOptions('mobile emulator', defaultOptions).map(
-        (option) => option.kind
-      )
-    ).toEqual(['new-simulator'])
-  })
-
-  it('matches go-to simulator when the workspace already has one', () => {
-    const options = buildTabCreateMenuOptions({
-      terminalOnly: false,
-      hasNewBrowser: true,
-      hasNewMarkdown: true,
-      hasOpenMarkdown: false,
-      hasSimulator: true,
-      simulatorIsGoTo: true
-    })
-
-    expect(
-      findMatchingTabCreateMenuOptions('simulator', options).map((option) => option.kind)
-    ).toEqual(['go-to-simulator'])
+    hasOpenMarkdown: true
   })
 
   it('matches terminal and browser quick actions', () => {
@@ -59,8 +34,6 @@ describe('tab create menu options', () => {
       hasNewBrowser: false,
       hasNewMarkdown: false,
       hasOpenMarkdown: false,
-      hasSimulator: false,
-      simulatorIsGoTo: false,
       windowsShellEntries: [
         { label: 'PowerShell', shell: 'powershell.exe' },
         { label: 'CMD Prompt', shell: 'cmd.exe' }

@@ -96,10 +96,7 @@ import IssueSourceIndicator, { sameGitHubOwnerRepo } from '@/components/github/I
 import IssueSourceSelector, { issueSourceChipClass } from '@/components/github/IssueSourceSelector'
 import { LinearPriorityIcon } from '@/components/linear-priority-icon'
 import { reconcileLinearTeamSelection } from '@/components/task-page-linear-team-selection'
-import {
-  getTaskSourceAvailabilityNotice,
-  getTaskSourceContextSummary
-} from './task-source-context-summary'
+import { getTaskSourceAvailabilityNotice } from './task-source-context-summary'
 import type {
   TaskSourceAvailabilityNotice,
   TaskSourceHostAvailability
@@ -3606,36 +3603,6 @@ export default function TaskPage(): React.JSX.Element {
     runtimePreflightStatusByHostId,
     selectedRepos,
     sourceOptions
-  ])
-  const taskSourceContextSummary = useMemo(() => {
-    const providerLabel =
-      sourceOptions.find((source) => source.id === taskSource)?.label ?? taskSource
-    return getTaskSourceContextSummary({
-      provider: taskSource,
-      providerLabel,
-      repoContexts: taskSourceRepoContexts,
-      hostAvailability:
-        taskSource === 'linear' || taskSource === 'jira'
-          ? accountBackedTaskSourceHostAvailability
-          : taskSourceHostAvailability,
-      accountHostId: accountBackedTaskSourceHostId,
-      hostLabelById,
-      selectedRepoCount: selectedRepos.length,
-      linearWorkspaceName:
-        selectedLinearWorkspace?.organizationName ?? selectedLinearWorkspace?.id ?? null,
-      jiraSiteName: selectedJiraSite?.displayName ?? selectedJiraSite?.siteUrl ?? null
-    })
-  }, [
-    selectedJiraSite,
-    selectedLinearWorkspace,
-    selectedRepos.length,
-    sourceOptions,
-    taskSource,
-    accountBackedTaskSourceHostAvailability,
-    accountBackedTaskSourceHostId,
-    hostLabelById,
-    taskSourceHostAvailability,
-    taskSourceRepoContexts
   ])
   const taskSourceAvailabilityNotice = useMemo(() => {
     const providerLabel =
@@ -8020,12 +7987,6 @@ export default function TaskPage(): React.JSX.Element {
                           </Tooltip>
                         )
                       })}
-                    <div
-                      className="hidden min-w-0 max-w-[min(420px,40vw)] items-center rounded-md border border-border/50 bg-muted/35 px-2 py-1 text-xs text-muted-foreground sm:flex"
-                      title={taskSourceContextSummary.title}
-                    >
-                      <span className="truncate">{taskSourceContextSummary.label}</span>
-                    </div>
                   </div>
                   {taskSource === 'linear' && linearConnected ? (
                     <div className="flex items-center gap-2">

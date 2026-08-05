@@ -77,9 +77,6 @@ importers:
       react-i18next:
         specifier: ^17.0.8
         version: 17.0.8(i18next@26.3.1(typescript@7.0.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@7.0.2)
-      serve-sim:
-        specifier: ^0.1.40
-        version: 0.1.40(typescript@7.0.2)
       sherpa-onnx:
         specifier: 1.12.37
         version: 1.12.37
@@ -4573,12 +4570,6 @@ packages:
   inline-style-parser@0.2.7:
     resolution: {integrity: sha512-Nb2ctOyNR8DqQoR0OwRG95uNWIC0C1lCgf5Naz5H6Ji72KZ8OcFZLz2P5sNgwlyoJ8Yif11oMuYs5pBQa86csA==}
 
-  inspect-webkit@0.0.5:
-    resolution: {integrity: sha512-584wP/2nJO1LX74nqHP2j0tQzlK9ZTi+D0Z9qeLQjtUR/LCMXQHGX8M0vrsqBwTeGakF7q5GMFpg81nxUYlCvw==}
-    hasBin: true
-    peerDependencies:
-      typescript: ^5
-
   internmap@1.0.1:
     resolution: {integrity: sha512-lDB5YccMydFBtasVtxnZ3MRBHuaoE8GKsppq+EchKL2U4nK/DmEpPHNH8MZe5HkMtpSiTSOZwfN0tzYjO/lJEw==}
 
@@ -5939,11 +5930,6 @@ packages:
   serialize-error@7.0.1:
     resolution: {integrity: sha512-8I8TjW5KMOKsZQTvoxjuSIa7foAwPWGOts+6o7sgjz41/qMD9VQHEDxi6PBvK2l0MXUmqZyNpUK+T2tQaaElvw==}
     engines: {node: '>=10'}
-
-  serve-sim@0.1.40:
-    resolution: {integrity: sha512-32JSUriN/EnNR3zx6fmiOKjuFrbA8VHWR2J3dX8T51Z/xkSmrSLOwaz/3W9lPiCIaF2O3LT4qpAhLkp0f1kVaw==}
-    engines: {node: '>=18'}
-    hasBin: true
 
   serve-static@2.2.1:
     resolution: {integrity: sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==}
@@ -10818,10 +10804,6 @@ snapshots:
 
   inline-style-parser@0.2.7: {}
 
-  inspect-webkit@0.0.5(typescript@7.0.2):
-    dependencies:
-      typescript: 7.0.2
-
   internmap@1.0.1: {}
 
   internmap@2.0.3: {}
@@ -12546,12 +12528,6 @@ snapshots:
     dependencies:
       type-fest: 0.13.1
     optional: true
-
-  serve-sim@0.1.40(typescript@7.0.2):
-    dependencies:
-      inspect-webkit: 0.0.5(typescript@7.0.2)
-    transitivePeerDependencies:
-      - typescript
 
   serve-static@2.2.1:
     dependencies:

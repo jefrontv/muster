@@ -40,7 +40,6 @@ import type { Tab, TabContentType, TabGroupLayoutNode, TuiAgent } from '../../..
 import { hasFeatureInteraction } from '../../../shared/feature-interactions'
 import BrowserPane from './browser-pane/BrowserPane'
 import BrowserPaneOverlayLayer from './browser-pane/BrowserPaneOverlayLayer'
-import EmulatorPaneOverlayLayer from './emulator-pane/EmulatorPaneOverlayLayer'
 import { useBrowserAutomationVisibilityForAny } from './browser-pane/browser-automation-visibility'
 import { useBrowserMobileDriverForAny } from '@/lib/pane-manager/browser-mobile-driver-state'
 import TerminalPaneOverlayLayer from './terminal-pane/TerminalPaneOverlayLayer'
@@ -108,7 +107,6 @@ import {
   createWebRuntimeSessionTerminal,
   isWebRuntimeSessionActive
 } from '@/runtime/web-runtime-session'
-import { openMobileEmulatorTab } from '@/lib/open-mobile-emulator-tab'
 import { launchAgentInNewTab } from '@/lib/launch-agent-in-new-tab'
 import { resumeSleepingAgentSessionsForWorktree } from '@/lib/resume-sleeping-agent-session'
 import { listBoundAgentTabActions, resolveDefaultAgentForNewTab } from '@/lib/agent-tab-shortcuts'
@@ -293,7 +291,6 @@ function Terminal(): React.JSX.Element | null {
   const terminalShortcutPolicy = useAppStore(
     (s) => s.settings?.terminalShortcutPolicy ?? 'orca-first'
   )
-  const mobileEmulatorEnabled = useAppStore((s) => s.settings?.mobileEmulatorEnabled !== false)
   const setActiveTabType = useAppStore((s) => s.setActiveTabType)
   const setActiveFile = useAppStore((s) => s.setActiveFile)
   const closeFile = useAppStore((s) => s.closeFile)
@@ -1241,19 +1238,6 @@ function Terminal(): React.JSX.Element | null {
     [activeWorktreeId]
   )
 
-  const handleNewSimulatorTab = useCallback(() => {
-    if (!activeWorktreeId) {
-      return
-    }
-    const targetGroupId =
-      useAppStore.getState().activeGroupIdByWorktree[activeWorktreeId] ??
-      useAppStore.getState().groupsByWorktree[activeWorktreeId]?.[0]?.id
-    void openMobileEmulatorTab(activeWorktreeId, {
-      placement: 'rightSplit',
-      targetGroupId: targetGroupId ?? undefined
-    })
-  }, [activeWorktreeId])
-
   const handleNewBrowserTab = useCallback(() => {
     if (!activeWorktreeId) {
       return
@@ -1722,16 +1706,6 @@ function Terminal(): React.JSX.Element | null {
         return
       }
 
-      // Cmd/Ctrl+Shift+E — new mobile emulator tab (macOS only)
-      if (!e.repeat && mobileEmulatorEnabled && matchShortcut('tab.newSimulator')) {
-        e.preventDefault()
-        notifyTerminalCapture('tab.newSimulator')
-        if (!floatingWorkspaceFocused) {
-          handleNewSimulatorTab()
-        }
-        return
-      }
-
       // Save active editor file — fallback for when focus is outside the editor (tab bar/sidebar); editor-local handlers own save when the editor is focused.
       if (!e.repeat && matchShortcut('editor.save')) {
         const target = e.target as HTMLElement | null
@@ -1879,7 +1853,6 @@ function Terminal(): React.JSX.Element | null {
   }, [
     activeWorktreeId,
     handleNewBrowserTab,
-    handleNewSimulatorTab,
     handleNewFile,
     handleNewTab,
     handleNewAgentTab,
@@ -1889,7 +1862,6 @@ function Terminal(): React.JSX.Element | null {
     handleCloseFile,
     handleCloseAllFiles,
     keybindings,
-    mobileEmulatorEnabled,
     terminalShortcutPolicy
   ])
 
@@ -2019,7 +1991,6 @@ function Terminal(): React.JSX.Element | null {
             onNewTerminalTab={() => handleNewTab()}
             onNewTerminalWithShell={handleNewTab}
             onNewBrowserTab={handleNewBrowserTab}
-            onNewSimulatorTab={mobileEmulatorEnabled ? handleNewSimulatorTab : undefined}
             onOpenEntry={handleOpenEntry}
             onNewFileTab={handleNewFile}
             onSetCustomTitle={setTabCustomTitle}
@@ -2030,21 +2001,8 @@ function Terminal(): React.JSX.Element | null {
             browserTabs={worktreeBrowserTabs}
             activeFileId={activeFileId}
             activeBrowserTabId={activeBrowserTabId}
-            activeSimulatorTabId={
-              activeTabType === 'simulator' && renderedActiveWorktreeId
-                ? (useAppStore.getState().getActiveTab(renderedActiveWorktreeId)?.id ?? null)
-                : null
-            }
             activeTabType={activeTabType}
             onActivateFile={(fileId) => {
-              const unifiedTabs =
-                useAppStore.getState().unifiedTabsByWorktree[renderedActiveWorktreeId ?? ''] ?? []
-              const unifiedTab = unifiedTabs.find((tab) => tab.id === fileId)
-              if (unifiedTab?.contentType === 'simulator') {
-                setActiveTab(fileId)
-                setActiveTabType('simulator')
-                return
-              }
               setActiveFile(fileId)
               setActiveTabType('editor')
             }}
@@ -2114,8 +2072,7 @@ function Terminal(): React.JSX.Element | null {
             className={`relative flex-1 min-h-0 overflow-hidden ${
               // Why: only hide the terminal when another tab type has content; else a stale activeTabType (e.g. 'editor' with no files after restore) blanks the screen.
               (activeTabType === 'editor' && worktreeFiles.length > 0) ||
-              (activeTabType === 'browser' && worktreeBrowserTabs.length > 0) ||
-              activeTabType === 'simulator'
+              (activeTabType === 'browser' && worktreeBrowserTabs.length > 0)
                 ? 'hidden'
                 : ''
             }`}
@@ -2410,10 +2367,7 @@ const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
         activationDeferredMountTabIds={activationDeferredMountTabIds}
       />
       {isVisible || backgroundMountTabIds === null ? (
-        <>
-          <BrowserPaneOverlayLayer worktreeId={worktreeId} isWorktreeActive={isVisible} />
-          <EmulatorPaneOverlayLayer worktreeId={worktreeId} isWorktreeActive={isVisible} />
-        </>
+        <BrowserPaneOverlayLayer worktreeId={worktreeId} isWorktreeActive={isVisible} />
       ) : null}
       <AiVaultSessionDropLayer worktreeId={worktreeId} enabled={isVisible} />
     </div>

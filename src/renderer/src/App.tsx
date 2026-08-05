@@ -60,7 +60,6 @@ import {
   useSystemPrefersDark
 } from './components/terminal-pane/use-system-prefers-dark'
 import RightSidebar from './components/right-sidebar'
-import { SkillFreshnessNudge } from './components/skills/SkillFreshnessNudge'
 import { SkillFreshnessUpdateDialog } from './components/skills/SkillFreshnessUpdateDialog'
 import { TelemetryFirstLaunchSurface } from './components/TelemetryFirstLaunchSurface'
 import { ZoomOverlay } from './components/ZoomOverlay'
@@ -324,6 +323,7 @@ const WorkspaceSpacePage = lazy(() => import('./components/workspace-space/Works
 const MobilePage = lazy(() => import('./components/mobile/MobilePage'))
 const QuickOpen = lazy(() => import('./components/QuickOpen'))
 const WorktreeJumpPalette = lazy(() => import('./components/WorktreeJumpPalette'))
+const ActionPalette = lazy(() => import('./components/ActionPalette'))
 const WorkspaceCleanupDialog = lazy(
   () => import('./components/workspace-cleanup/WorkspaceCleanupDialog')
 )
@@ -1613,6 +1613,20 @@ function App(): React.JSX.Element {
         return
       }
 
+      // Ahead of the editable-target bail: the palette is a global entry point, so it
+      // must open from a composer or editor too. Toggles, matching the Cmd+J palette.
+      if (matchShortcut('app.actionPalette')) {
+        input.preventDefault()
+        notifyTerminalCapture('app.actionPalette')
+        const store = useAppStore.getState()
+        if (store.activeModal === 'action-palette') {
+          store.closeModal()
+        } else {
+          store.openModal('action-palette')
+        }
+        return
+      }
+
       // Skip editable surfaces so TipTap's Cmd+B bold works; this renderer-side fallback covers the blur→press IPC race (docs/markdown-cmd-b-bold-design.md).
       if (isEditableTarget(input.target)) {
         return
@@ -2437,6 +2451,16 @@ function App(): React.JSX.Element {
                   <WorktreeJumpPalette />
                 </RecoverableRenderErrorBoundary>
               ) : null}
+              {resolvedMountedLazyModalIds.has('action-palette') ? (
+                <RecoverableRenderErrorBoundary
+                  boundaryId="modal.action-palette"
+                  surface="modal"
+                  resetKey={activeModal === 'action-palette'}
+                  compact
+                >
+                  <ActionPalette />
+                </RecoverableRenderErrorBoundary>
+              ) : null}
               {resolvedMountedLazyModalIds.has('setup-guide') ? (
                 <RecoverableRenderErrorBoundary
                   boundaryId="modal.setup-guide"
@@ -2628,7 +2652,6 @@ function App(): React.JSX.Element {
       </TooltipProvider>
       <SiteBindDialog />
       <Toaster closeButton toastOptions={{ className: 'font-sans text-sm' }} />
-      <SkillFreshnessNudge />
       <PinnedTabCloseDialog />
       {/* Why: Electron's drag-region hit-test is DOM-order-based (ignores z-index); render last so WindowControls stay clickable. */}
       {hasCustomTitleBar && <WindowControls />}

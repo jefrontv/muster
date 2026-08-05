@@ -14,10 +14,6 @@ import type {
 } from '../../../shared/ai-vault-resume-preparation'
 import { buildNativeChatUnsubscribe } from '../../../shared/native-chat-stream-unsubscribe'
 import type {
-  ComputerUsePermissionSetupResult,
-  ComputerUsePermissionStatusResult
-} from '../../../shared/computer-use-permissions-types'
-import type {
   DetectedWorktreeListResult,
   DirEntry,
   ForceDeleteWorktreeBranchResult,
@@ -734,7 +730,6 @@ function createWebPreloadApi(): Partial<PreloadApi> {
     fs: createFileApi(),
     git: createGitApi(),
     browser: createBrowserApi(),
-    emulator: createEmulatorApi(),
     gh: createGitHubApi(),
     gl: createGitLabApi(),
     hostedReview: createRuntimeNamespaceApi('hostedReview'),
@@ -769,7 +764,6 @@ function createWebPreloadApi(): Partial<PreloadApi> {
         Promise.resolve({ state: 'synced', reason: null, systemConfigPath: '' } as const)
     },
     developerPermissions: createDeveloperPermissionsApi(),
-    computerUsePermissions: createComputerUsePermissionsApi(),
     updater: createUpdaterApi(),
     shell: createShellApi(),
     skills: createSkillsApi(),
@@ -1473,6 +1467,16 @@ function createReposApi(): NonNullable<Partial<PreloadApi>['repos']> {
     },
     onCloneProgress: () => noopUnsubscribe,
     getGitUsername: () => Promise.resolve(''),
+    // Why: favicon fetch needs the desktop main process; the web client has no
+    // CORS-free transport, so degrade to a visible error instead of crashing.
+    fetchFavicon: () =>
+      Promise.resolve({
+        ok: false as const,
+        error: translate(
+          'auto.web.web.preload.api.f3a9c17b42',
+          'Favicon fetch is only available in the desktop app.'
+        )
+      }),
     getBaseRefDefault: async ({ repoId }) =>
       callRuntimeResult('repo.baseRefDefault', { repo: repoId }),
     searchBaseRefs: async ({ repoId, query, limit }) =>
@@ -2022,6 +2026,21 @@ function createBrowserApi(): NonNullable<Partial<PreloadApi>['browser']> {
     onGuestLoadFailed: () => noopUnsubscribe,
     onCertificateFailureChanged: () => noopUnsubscribe,
     proceedCertificate: () => Promise.resolve({ ok: false, reason: 'missing' }),
+    // Extensions are a desktop-session capability; the web runtime has no Electron session.
+    extensions: {
+      list: () => Promise.resolve([]),
+      add: () =>
+        Promise.resolve({
+          ok: false as const,
+          reason: 'invalid' as const,
+          message: translate(
+            'auto.web.web.preload.api.e7b1c4a903',
+            'Extensions are only available in the desktop app.'
+          )
+        }),
+      remove: () => Promise.resolve([]),
+      reload: () => Promise.resolve([])
+    },
     onPermissionDenied: () => noopUnsubscribe,
     onPopup: () => noopUnsubscribe,
     onDownloadRequested: () => noopUnsubscribe,
@@ -2095,17 +2114,6 @@ function createBrowserApi(): NonNullable<Partial<PreloadApi>['browser']> {
     sessionClearDefaultCookies: () => Promise.resolve(false),
     notifyActiveTabChanged: () => Promise.resolve(false)
   } as unknown as NonNullable<Partial<PreloadApi>['browser']>
-}
-
-function createEmulatorApi(): NonNullable<Partial<PreloadApi>['emulator']> {
-  return {
-    onPaneFocus: () => noopUnsubscribe,
-    onAutoAttach: () => noopUnsubscribe,
-    startFrameStream: () => Promise.reject(new Error('Mobile emulator is unavailable on web.')),
-    stopFrameStream: () => Promise.resolve(),
-    onFrameStreamFrame: () => noopUnsubscribe,
-    onFrameStreamError: () => noopUnsubscribe
-  } as unknown as NonNullable<Partial<PreloadApi>['emulator']>
 }
 
 function createGitHubApi(): WebGitHubApi {
@@ -2509,7 +2517,6 @@ function createWebUiApi(): NonNullable<Partial<PreloadApi>['ui']> {
     onWorktreeHistoryNavigate: () => noopUnsubscribe,
     onNewBrowserTab: () => noopUnsubscribe,
     onNewMarkdownTab: () => noopUnsubscribe,
-    onNewSimulatorTab: () => noopUnsubscribe,
     onRequestTabCreate: () => noopUnsubscribe,
     replyTabCreate: () => {},
     onRequestTabSetProfile: () => noopUnsubscribe,
@@ -2726,39 +2733,6 @@ function createDeveloperPermissionsApi(): NonNullable<Partial<PreloadApi>['devel
   }
 }
 
-function createComputerUsePermissionsApi(): NonNullable<
-  Partial<PreloadApi>['computerUsePermissions']
-> {
-  return {
-    getStatus: () =>
-      callRuntimeResult<ComputerUsePermissionStatusResult>(
-        'computer.permissionsStatus',
-        {},
-        15_000
-      ),
-    openSetup: (args) =>
-      callRuntimeResult<ComputerUsePermissionSetupResult>(
-        'computer.permissions',
-        args ?? {},
-        15_000
-      ).catch(() => ({
-        platform: getBrowserPlatform(),
-        helperAppPath: null,
-        openedSettings: false,
-        launchedHelper: false,
-        nextStep: 'Computer-use permissions are managed on the Muster server.'
-      })),
-    reset: () =>
-      Promise.resolve({
-        platform: getBrowserPlatform(),
-        helperAppPath: null,
-        helperUnavailableReason: 'web_client',
-        bundleId: null,
-        permissions: []
-      })
-  }
-}
-
 function createSkillsApi(): NonNullable<Partial<PreloadApi>['skills']> {
   return {
     discover: (target) =>
@@ -2770,7 +2744,10 @@ function createSkillsApi(): NonNullable<Partial<PreloadApi>['skills']> {
         installations: [],
         eligibleUpdateNames: [],
         scannedAt: Date.now()
-      })
+      }),
+    // Why empty: the bundle lives with the desktop binary, and the Agent Capabilities pane that
+    // reads this list is desktop-only. Returning [] keeps the surface honest rather than guessing.
+    bundled: () => Promise.resolve([])
   }
 }
 

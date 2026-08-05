@@ -94,13 +94,6 @@ export function useModalReturnFocus(visible: boolean): {
     ])
   }, [focusCapturedElement, focusFirstMatchingSurface])
 
-  const focusSimulatorSurface = useCallback((): void => {
-    if (focusCapturedElement()) {
-      return
-    }
-    focusFirstMatchingSurface(['[data-orca-emulator-frame="true"] [tabindex]'])
-  }, [focusCapturedElement, focusFirstMatchingSurface])
-
   const focusFallbackSurface = useCallback((): void => {
     focusFirstMatchingSurface(['.xterm-helper-textarea', '.monaco-editor textarea'])
   }, [focusFirstMatchingSurface])
@@ -130,7 +123,7 @@ export function useModalReturnFocus(visible: boolean): {
       ? (state.terminalLayoutsByTabId[terminalTabId]?.activeLeafId ?? null)
       : null
     // Why: this can be called from Radix onOpenAutoFocus, before focus moves
-    // into the dialog, preserving address-bar/editor/simulator identity.
+    // into the dialog, preserving address-bar/editor identity.
     const browserTarget =
       tabType === 'browser' && activeElement?.closest('[data-orca-browser-address-bar="true"]')
         ? 'address-bar'
@@ -167,8 +160,6 @@ export function useModalReturnFocus(visible: boolean): {
         focusTerminalTabSurface(action.tabId, action.leafId)
       } else if (action.kind === 'editor') {
         focusEditorSurface()
-      } else if (action.kind === 'simulator') {
-        focusSimulatorSurface()
       } else if (action.kind === 'surface') {
         focusFallbackSurface()
       }
@@ -182,7 +173,6 @@ export function useModalReturnFocus(visible: boolean): {
     captureReturnFocus,
     focusEditorSurface,
     focusFallbackSurface,
-    focusSimulatorSurface,
     requestBrowserFocus
   ])
 

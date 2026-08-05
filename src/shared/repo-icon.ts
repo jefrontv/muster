@@ -11,6 +11,10 @@ export const MAX_REPO_ICON_UPLOAD_BYTES = 256 * 1024
 export const MAX_REPO_ICON_DATA_URL_LENGTH = 400 * 1024
 
 const LUCIDE_ICON_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9]*$/
+// Why: the main-process favicon fetcher stores sniffed image bytes inline, like
+// uploads. SVG is rendered only via <img src>, where scripts never execute.
+const FAVICON_DATA_URL_PATTERN =
+  /^data:image\/(?:png|jpeg|gif|webp|x-icon|svg\+xml);base64,[A-Za-z0-9+/=\s]+$/i
 const isRepoIconImageSource = (value: string): value is RepoIconImageSource =>
   value === 'upload' || value === 'file' || value === 'favicon' || value === 'github'
 
@@ -69,6 +73,12 @@ function isSupportedImageSrc(src: string, source: RepoIconImageSource): boolean 
       /^data:image\/png;base64,[A-Za-z0-9+/=\s]+$/i.test(src) &&
       validateRasterImageDataUri(src) !== null
     )
+  }
+
+  // Favicon icons are inline data URLs (fetched by main) or legacy Google s2 URLs.
+  if (source === 'favicon' && FAVICON_DATA_URL_PATTERN.test(src)) {
+    // Non-raster mimes (svg) pass through untouched; raster ones must decode.
+    return validateRasterImageDataUri(src) !== null
   }
 
   let url: URL

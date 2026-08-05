@@ -13,6 +13,8 @@ import type { SshTarget } from '../../shared/ssh-types'
 const testState = { dir: '' }
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports app+safeStorage; partial electron mocks throw at import.
+  safeStorage: undefined,
   app: {
     getPath: () => testState.dir
   }

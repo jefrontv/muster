@@ -16,7 +16,6 @@ const {
   registerNotebookHandlersMock,
   registerNotificationHandlersMock,
   registerDeveloperPermissionHandlersMock,
-  registerComputerUsePermissionHandlersMock,
   registerSettingsHandlersMock,
   registerKeybindingHandlersMock,
   registerTelemetryHandlersMock,
@@ -63,9 +62,7 @@ const {
   registerWorkspaceSpaceHandlersMock,
   registerWorkspacePortHandlersMock,
   registerLocalhostWorktreeLabelHandlersMock,
-  registerNativeChatHandlersMock,
-  registerEmulatorFrameStreamHandlersMock,
-  registerEmulatorVideoStreamHandlersMock
+  registerNativeChatHandlersMock
 } = vi.hoisted(() => ({
   getPathMock: vi.fn(() => '/test/user-data'),
   listEnvironmentsMock: vi.fn(() => []),
@@ -82,7 +79,6 @@ const {
   registerNotebookHandlersMock: vi.fn(),
   registerNotificationHandlersMock: vi.fn(),
   registerDeveloperPermissionHandlersMock: vi.fn(),
-  registerComputerUsePermissionHandlersMock: vi.fn(),
   registerSettingsHandlersMock: vi.fn(),
   registerKeybindingHandlersMock: vi.fn(),
   registerTelemetryHandlersMock: vi.fn(),
@@ -129,15 +125,15 @@ const {
   registerWorkspaceSpaceHandlersMock: vi.fn(),
   registerWorkspacePortHandlersMock: vi.fn(),
   registerLocalhostWorktreeLabelHandlersMock: vi.fn(),
-  registerNativeChatHandlersMock: vi.fn(),
-  registerEmulatorFrameStreamHandlersMock: vi.fn(),
-  registerEmulatorVideoStreamHandlersMock: vi.fn()
+  registerNativeChatHandlersMock: vi.fn()
 }))
 
 // Why a working ipcMain and not just `app`: this suite mocks the registrars it asserts on, but the
 // rest still run for real, and every one of them opens with the removeHandler/handle prologue.
 // Without these the first unmocked registrar throws and the arg-passing assertions never run.
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   app: {
     getPath: getPathMock,
     on: vi.fn(),
@@ -234,10 +230,6 @@ vi.mock('./developer-permissions', () => ({
   registerDeveloperPermissionHandlers: registerDeveloperPermissionHandlersMock
 }))
 
-vi.mock('./computer-use-permissions', () => ({
-  registerComputerUsePermissionHandlers: registerComputerUsePermissionHandlersMock
-}))
-
 vi.mock('./settings', () => ({
   registerSettingsHandlers: registerSettingsHandlersMock
 }))
@@ -285,14 +277,6 @@ vi.mock('./session', () => ({
 vi.mock('./ui', () => ({
   registerUIHandlers: registerUIHandlersMock,
   setTrustedUIRendererWebContentsId: setTrustedUIRendererWebContentsIdMock
-}))
-
-vi.mock('./emulator-frame-stream', () => ({
-  registerEmulatorFrameStreamHandlers: registerEmulatorFrameStreamHandlersMock
-}))
-
-vi.mock('./emulator-video-stream', () => ({
-  registerEmulatorVideoStreamHandlers: registerEmulatorVideoStreamHandlersMock
 }))
 
 vi.mock('./filesystem', () => ({
@@ -420,7 +404,6 @@ describe('registerCoreHandlers', () => {
     registerNotebookHandlersMock.mockReset()
     registerNotificationHandlersMock.mockReset()
     registerDeveloperPermissionHandlersMock.mockReset()
-    registerComputerUsePermissionHandlersMock.mockReset()
     registerSettingsHandlersMock.mockReset()
     registerKeybindingHandlersMock.mockReset()
     registerTelemetryHandlersMock.mockReset()
@@ -465,8 +448,6 @@ describe('registerCoreHandlers', () => {
     registerWorkspacePortHandlersMock.mockReset()
     registerLocalhostWorktreeLabelHandlersMock.mockReset()
     registerNativeChatHandlersMock.mockReset()
-    registerEmulatorFrameStreamHandlersMock.mockReset()
-    registerEmulatorVideoStreamHandlersMock.mockReset()
   })
 
   it('passes the store through to handler registrars that need it', async () => {
@@ -474,6 +455,7 @@ describe('registerCoreHandlers', () => {
     // set at registration. The marker still identifies the object for the pass-through assertions.
     const store = {
       marker: 'store',
+      getSettings: () => ({}),
       getRepos: () => [],
       listSites: () => [],
       getConfiguredSiteRoots: () => []
@@ -545,7 +527,6 @@ describe('registerCoreHandlers', () => {
     expect(registerNotebookHandlersMock).toHaveBeenCalledWith(store)
     expect(registerNotificationHandlersMock).toHaveBeenCalledWith(store, runtime)
     expect(registerDeveloperPermissionHandlersMock).toHaveBeenCalled()
-    expect(registerComputerUsePermissionHandlersMock).toHaveBeenCalled()
     expect(registerDashboardPopoutHandlersMock).toHaveBeenCalledWith(store, undefined)
     expect(registerTerminalPreviewHandlersMock).toHaveBeenCalledWith(runtime)
     expect(registerSettingsHandlersMock).toHaveBeenCalledWith(store, agentAwakeService)
@@ -557,8 +538,6 @@ describe('registerCoreHandlers', () => {
     expect(registerOrcaProfileHandlersMock).toHaveBeenCalledWith(store, { onBeforeRelaunch })
     expect(registerSessionHandlersMock).toHaveBeenCalledWith(store)
     expect(registerUIHandlersMock).toHaveBeenCalledWith(store)
-    expect(registerEmulatorFrameStreamHandlersMock).toHaveBeenCalled()
-    expect(registerEmulatorVideoStreamHandlersMock).toHaveBeenCalled()
     expect(registerFilesystemHandlersMock).toHaveBeenCalledWith(store)
     expect(registerRuntimeHandlersMock).toHaveBeenCalledWith(runtime)
     expect(registerRuntimeEnvironmentHandlersMock).toHaveBeenCalledWith(store)
@@ -643,7 +622,7 @@ describe('registerCoreHandlers', () => {
   it('only registers IPC handlers once but always updates web contents id', () => {
     // The first test already called registerCoreHandlers, so the module-level
     // guard is now set. beforeEach reset all mocks, so call counts are 0.
-    const store2 = { marker: 'store2' }
+    const store2 = { marker: 'store2', getSettings: () => ({}) }
     const runtime2 = { marker: 'runtime2', getAgentBrowserBridge: () => null }
     const stats2 = { marker: 'stats2' }
     const claudeUsage2 = { marker: 'claudeUsage2' }

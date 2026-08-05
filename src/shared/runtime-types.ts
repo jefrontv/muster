@@ -1189,14 +1189,3 @@ export type BrowserErrorCode =
   | 'browser_debugger_detached'
   | 'browser_timeout'
   | 'browser_error'
-
-export type EmulatorErrorCode =
-  | 'emulator_no_active'
-  | 'emulator_device_not_found'
-  | 'emulator_helper_failed'
-  | 'emulator_not_macos'
-  | 'emulator_error'
-
-// Keep the broad runtime-types import surface stable while letting computer-use
-// CI watch a narrow contract file instead of every runtime type change.
-export * from './computer-use-runtime-types'

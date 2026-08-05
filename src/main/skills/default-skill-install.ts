@@ -22,6 +22,7 @@ import {
 import { homedir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 import { app } from 'electron'
+import { isBundledSkillEnabled } from '../../shared/agent-capabilities'
 
 /**
  * Skills Muster writes into agent skill roots on launch. Kept short on purpose: each entry is
@@ -63,6 +64,8 @@ export type DefaultSkillInstallResult = {
   linkedRoots: string[]
   /** Retired skills removed from the canonical agents root this run. */
   retired: string[]
+  /** Turned off in Settings → Agent Capabilities, so not installed this run. */
+  disabled: string[]
 }
 
 function readIfPresent(path: string): string | null {
@@ -117,6 +120,8 @@ export function installDefaultAgentSkills(args: {
   packageRoot: string
   /** Guides shipped by earlier builds, so a stale-but-ours copy can be refreshed rather than skipped. */
   knownPreviousContents?: Partial<Record<string, readonly string[]>>
+  /** Per-skill opt-outs from Settings. A skill with no entry installs, as it always has. */
+  bundledSkillCapabilities?: Readonly<Record<string, boolean>>
 }): DefaultSkillInstallResult {
   const home = args.home ?? homedir()
   const result: DefaultSkillInstallResult = {
@@ -125,7 +130,8 @@ export function installDefaultAgentSkills(args: {
     skipped: [],
     unavailable: [],
     linkedRoots: [],
-    retired: []
+    retired: [],
+    disabled: []
   }
 
   for (const name of RETIRED_AGENT_SKILL_NAMES) {
@@ -149,6 +155,12 @@ export function installDefaultAgentSkills(args: {
   }
 
   for (const name of DEFAULT_AGENT_SKILL_NAMES) {
+    if (!isBundledSkillEnabled(args.bundledSkillCapabilities, name)) {
+      // Why leave an existing copy in place: turning the capability off withholds future installs;
+      // deleting a skill an agent is mid-conversation with is a different, destructive decision.
+      result.disabled.push(name)
+      continue
+    }
     const shipped = readIfPresent(join(args.packageRoot, name, 'SKILL.md'))
     if (shipped === null) {
       result.unavailable.push(name)
@@ -224,9 +236,14 @@ export function defaultSkillPackageRoot(): string {
  * Startup entry point. Never throws: a failure here means an agent is missing a guide, which must
  * not stop the app from launching.
  */
-export function installDefaultAgentSkillsOnStartup(): void {
+export function installDefaultAgentSkillsOnStartup(
+  bundledSkillCapabilities?: Readonly<Record<string, boolean>>
+): void {
   try {
-    const result = installDefaultAgentSkills({ packageRoot: defaultSkillPackageRoot() })
+    const result = installDefaultAgentSkills({
+      packageRoot: defaultSkillPackageRoot(),
+      bundledSkillCapabilities
+    })
     if (result.installed.length > 0 || result.linkedRoots.length > 0) {
       console.info(
         `[skills] installed ${result.installed.join(', ') || 'none'}; linked into ${result.linkedRoots.length} harness dir(s)`
@@ -234,6 +251,9 @@ export function installDefaultAgentSkillsOnStartup(): void {
     }
     if (result.skipped.length > 0) {
       console.info(`[skills] left your own copies alone: ${result.skipped.join(', ')}`)
+    }
+    if (result.disabled.length > 0) {
+      console.info(`[skills] turned off in Settings: ${result.disabled.join(', ')}`)
     }
   } catch (error) {
     console.warn('[skills] could not install the default agent skills:', error)

@@ -29,11 +29,13 @@ const specs: CommandSpec[] = [
   },
   {
     // A destructive command outside the delete-family, to prove the guard keys
-    // off the spec flag rather than a hardcoded verb list.
-    path: ['emulator', 'kill'],
+    // off the spec flag rather than a hardcoded verb list. Synthetic on purpose:
+    // every real destructive spec currently uses a remove/rm/delete verb, so
+    // without this the flag-driven branch would lose its only coverage.
+    path: ['terminal', 'kill'],
     destructive: true,
-    summary: 'Kill the emulator',
-    usage: 'orca emulator kill',
+    summary: 'Kill the terminal',
+    usage: 'orca terminal kill',
     allowedFlags: []
   }
 ]
@@ -101,11 +103,11 @@ describe('suggestCommands', () => {
   })
 
   it('guards destructive commands outside the delete-family via the spec flag', () => {
-    // `emulator ball` is a benign token, distance 2 from the flagged `emulator
+    // `terminal ball` is a benign token, distance 2 from the flagged `terminal
     // kill` — close enough to otherwise rank, so the guard must exclude it.
-    expect(suggestCommands(specs, ['emulator', 'ball'])).not.toContain('emulator kill')
+    expect(suggestCommands(specs, ['terminal', 'ball'])).not.toContain('terminal kill')
     // A genuine near-miss of the destructive verb still recovers.
-    expect(suggestCommands(specs, ['emulator', 'kil'])).toContain('emulator kill')
+    expect(suggestCommands(specs, ['terminal', 'kil'])).toContain('terminal kill')
   })
 
   it('still recovers non-destructive near-misses', () => {

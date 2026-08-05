@@ -3,6 +3,10 @@ import { getAdvancedNetworkSearchEntries } from './advanced-network-search'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { translate } from '@/i18n/i18n'
 import { translateSearchKeyword } from './settings-search-keywords'
+import {
+  getHiddenSettingsSectionsSearchEntry,
+  getSettingsBackupSearchEntries
+} from './settings-backup-search'
 
 export const getAdvancedPaneSearchEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   ...getAdvancedNetworkSearchEntries(),
@@ -41,7 +45,9 @@ export const getAdvancedPaneSearchEntries = createLocalizedCatalog((): SettingsS
       ...translateSearchKeyword('auto.components.settings.advanced.search.e61ed8ab33', 'updates'),
       ...translateSearchKeyword('auto.components.settings.advanced.search.a7002e1ac4', 'updater')
     ]
-  }
+  },
+  getHiddenSettingsSectionsSearchEntry(),
+  ...getSettingsBackupSearchEntries()
 ])
 
 function findEntry(title: string): SettingsSearchEntry {

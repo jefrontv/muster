@@ -60,6 +60,8 @@ export type ActiveCollabTask = {
   bodyHtml: string
   isCompleted: boolean
   /** Epoch ms, already re-anchored to the local calendar day. Null when unset. */
+  startOn: number | null
+  /** Epoch ms, already re-anchored to the local calendar day. Null when unset. */
   dueOn: number | null
   createdOn: number | null
   updatedOn: number | null
@@ -120,6 +122,7 @@ export type ActiveCollabTaskUpdate = {
   name?: string
   bodyHtml?: string
   assigneeId?: number | null
+  startOn?: number | null
   dueOn?: number | null
   /**
    * Full replacement set of label NAMES, because that is what the API accepts and it overwrites

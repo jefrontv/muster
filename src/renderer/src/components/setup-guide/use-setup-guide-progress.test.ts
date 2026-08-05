@@ -9,7 +9,6 @@ import {
   shouldMarkBrowserMilestoneLegacyComplete
 } from './setup-guide-browser-milestone-progress'
 import {
-  getComputerUsePermissionSetupState,
   getCurrentSetupScriptProbeState,
   getSetupGuideProgressReady,
   getSetupScriptProbeSignature,
@@ -33,7 +32,6 @@ function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): Featur
       'two-worktrees': false,
       browser: false,
       'task-sources': false,
-      'agent-capabilities': false,
       'setup-script': false
     },
     coreDoneCount: 0,
@@ -109,68 +107,16 @@ describe('browser milestone legacy setup guide progress', () => {
   })
 })
 
-describe('getComputerUsePermissionSetupState', () => {
-  it('does not treat a failed status read as unavailable setup completion', () => {
-    expect(getComputerUsePermissionSetupState(null)).toEqual({
-      ready: false,
-      unavailable: false
-    })
-  })
-
-  it('marks Computer Use ready only when permissions are granted and helper is available', () => {
-    expect(
-      getComputerUsePermissionSetupState({
-        platform: 'darwin',
-        helperAppPath: '/Applications/Muster Helper.app',
-        helperUnavailableReason: null,
-        permissions: [
-          { id: 'accessibility', status: 'granted' },
-          { id: 'screenshots', status: 'granted' }
-        ]
-      })
-    ).toEqual({ ready: true, unavailable: false })
-  })
-
-  it('marks Computer Use unavailable only for explicit helper unavailability', () => {
-    expect(
-      getComputerUsePermissionSetupState({
-        platform: 'linux',
-        helperAppPath: null,
-        helperUnavailableReason: 'unsupported-platform',
-        permissions: []
-      })
-    ).toEqual({ ready: false, unavailable: true })
-  })
-})
-
 describe('getSetupGuideProgressReady', () => {
   const readyInput = {
     refreshEnabled: true,
     settingsLoaded: true,
-    preflightStatusChecked: true,
-    linearStatusChecked: true,
-    jiraStatusChecked: true,
-    browserUseSkillDiscoveryLoading: false,
-    computerUseSkillDiscoveryLoading: false,
+    taskSourceStatusChecked: true,
     orchestrationSkillDiscoveryLoading: false,
-    setupScriptProbeReady: true,
-    computerUseSkillInstalled: false,
-    computerUsePermissionStatusChecked: false
+    setupScriptProbeReady: true
   }
 
   it('waits for every setup-guide skill discovery scan to settle', () => {
-    expect(
-      getSetupGuideProgressReady({
-        ...readyInput,
-        browserUseSkillDiscoveryLoading: true
-      })
-    ).toBe(false)
-    expect(
-      getSetupGuideProgressReady({
-        ...readyInput,
-        computerUseSkillDiscoveryLoading: true
-      })
-    ).toBe(false)
     expect(
       getSetupGuideProgressReady({
         ...readyInput,
@@ -179,38 +125,10 @@ describe('getSetupGuideProgressReady', () => {
     ).toBe(false)
   })
 
-  it('treats checked but ungranted Computer Use permissions as settled readiness', () => {
-    expect(
-      getComputerUsePermissionSetupState({
-        platform: 'darwin',
-        helperAppPath: '/Applications/Muster Helper.app',
-        helperUnavailableReason: null,
-        permissions: [{ id: 'accessibility', status: 'not-granted' }]
-      })
-    ).toEqual({ ready: false, unavailable: false })
-    expect(
-      getSetupGuideProgressReady({
-        ...readyInput,
-        computerUseSkillInstalled: true,
-        computerUsePermissionStatusChecked: true
-      })
-    ).toBe(true)
-  })
-
-  it('waits for Computer Use permission status when the skill is installed', () => {
-    expect(
-      getSetupGuideProgressReady({
-        ...readyInput,
-        computerUseSkillInstalled: true,
-        computerUsePermissionStatusChecked: false
-      })
-    ).toBe(false)
-  })
-
-  it('waits for preflight, Linear, and Jira checks', () => {
-    expect(getSetupGuideProgressReady({ ...readyInput, preflightStatusChecked: false })).toBe(false)
-    expect(getSetupGuideProgressReady({ ...readyInput, linearStatusChecked: false })).toBe(false)
-    expect(getSetupGuideProgressReady({ ...readyInput, jiraStatusChecked: false })).toBe(false)
+  it('waits for the ActiveCollab task-source check', () => {
+    expect(getSetupGuideProgressReady({ ...readyInput, taskSourceStatusChecked: false })).toBe(
+      false
+    )
   })
 })
 

@@ -67,6 +67,9 @@ export function useSiteRootsRefresh(): void {
     const onFocus = (): void => schedule()
     window.addEventListener('focus', onFocus)
     const unsubscribe = window.api.siteRoots?.onChanged(() => schedule())
+    // Why: focus/watch triggers only fire after user activity; sidebar site identities (e.g.
+    // LocalWP subtitle domains) need the list populated at first paint, not after the first refocus.
+    void fetchSitesRef.current()
 
     return () => {
       disposed = true

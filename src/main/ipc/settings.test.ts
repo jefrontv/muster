@@ -25,6 +25,8 @@ const {
 }))
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   app: { getPath: vi.fn(() => '/test/user-data') },
   BrowserWindow: { getAllWindows: browserWindowGetAllWindowsMock },
   ipcMain: { handle: handleMock, on: onMock },

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type * as ReactModule from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/types'
+import type { AddProjectFromFolderModalPayload } from '@/store/slices/modal-payloads'
 
 type ButtonCapture = {
   label: string
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   buttons: [] as ButtonCapture[],
   state: {
     activeModal: 'confirm-add-project-from-folder',
-    modalData: {} as Record<string, unknown>,
+    modalData: {} as AddProjectFromFolderModalPayload,
     closeModal: vi.fn(),
     openModal: vi.fn(),
     addRepoPath: vi.fn(),

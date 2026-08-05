@@ -14,6 +14,10 @@ const { handleMock, copyFileMock, lstatMock, mkdirMock, renameMock, writeFileMoc
   }))
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports app+safeStorage; partial electron mocks throw at import.
+  safeStorage: undefined,
+  // node-safe-electron imports app from the same module; a partial mock throws at import.
+  app: undefined,
   ipcMain: { handle: handleMock }
 }))
 

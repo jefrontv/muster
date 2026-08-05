@@ -146,6 +146,7 @@ export function startAcTaskNotifications(args: {
     now: Date.now,
     snapshotKey: acCurrentTaskSnapshotKey,
     shouldPoll: () => acShouldPollAcTasks(store.getSettings()),
+    intervalMs: () => store.getSettings().activeCollabPollIntervalMs,
     notifyKinds: () => acEnabledChangeKinds(store.getSettings().notifications),
     fetchPage,
     loadSnapshot: acLoadTaskSnapshot,
@@ -164,7 +165,7 @@ export function startAcTaskNotifications(args: {
       return () => clearTimeout(timer)
     }
   })
-  // Flipping a toggle or hiding the Tasks button in Settings starts or stops the loop.
+  // Flipping a toggle, hiding the Tasks button or editing the cadence in Settings lands here.
   acSettingsSubscription = store.onSettingsChanged(() => acPoller?.refresh())
   acPoller.refresh()
 }

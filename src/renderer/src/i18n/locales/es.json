@@ -167,7 +167,9 @@
             "36761d9604": "Se ignoró la acción de atajo desconocida \"{{value0}}\".",
             "d2e43e426a": "{{value0}} debe ser un objeto.",
             "fb290366b2": "No está disponible en la web.",
-            "76122208ca": "Se ignoró el atajo para \"{{value0}}\": {{value1}}"
+            "76122208ca": "Se ignoró el atajo para \"{{value0}}\": {{value1}}",
+            "e7b1c4a903": "Extensions are only available in the desktop app.",
+            "f3a9c17b42": "Favicon fetch is only available in the desktop app."
           }
         },
         "runtime": {
@@ -351,13 +353,6 @@
           }
         }
       },
-      "ensure": {
-        "simulator": {
-          "tab": {
-            "372d21d428": "Emulador móvil"
-          }
-        }
-      },
       "fix": {
         "checks": {
           "agent": {
@@ -436,13 +431,6 @@
               "f8b8ca2711": "Zed",
               "d62b12e98a": "Cursor",
               "173553f73a": "VS Code"
-            }
-          }
-        },
-        "mobile": {
-          "emulator": {
-            "tab": {
-              "bf4f2a8a72": "No se pudo iniciar el emulador. Revisa la configuración del emulador de iOS o Android y prueba con otro dispositivo."
             }
           }
         }
@@ -694,8 +682,6 @@
         "93d88d20bf": "Apariencia",
         "2d0659f6f0": "Terminal global, navegador y pestañas Markdown.",
         "65b19f5bde": "Espacio de trabajo flotante",
-        "3d65d3f1b9": "Configura la compatibilidad del emulador móvil para Muster y coding agents.",
-        "1e761cff2b": "Emulador móvil",
         "e815fd01bd": "Página de inicio, enrutamiento de enlaces y cookies de sesión.",
         "8c197f74a1": "Navegador",
         "42ae40842f": "Comandos de terminal guardados, con alcance global o por proyecto.",
@@ -718,8 +704,6 @@
         "5f32ac08f3": "Completa la lista de configuración inicial para los flujos de trabajo principales de Muster.",
         "8ac3de82f5": "Dictado local de voz a texto con modelos en el dispositivo.",
         "6a50cdcd7c": "Voz",
-        "0059bd17f3": "Permite que los agentes controlen cualquier app en tu computadora.",
-        "b35e92364b": "Computer Use",
         "cd50cec5d7": "Coordina múltiples coding agents a través de Muster.",
         "58a868e8e4": "Orquestación",
         "7c79d3b7bf": "Opcional",
@@ -739,7 +723,9 @@
         "devSearchKeywordNotification": "notification",
         "projectHostsSummary": "{{value0}} hosts",
         "linearTitle": "Linear",
-        "linearDescription": "Give agents the skill to read and update your linked Linear tickets."
+        "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
+        "agentCapabilitiesTitle": "Agent Capabilities",
+        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "El contenido pegado es demasiado grande."
@@ -1883,7 +1869,6 @@
         "c4afa68159": "Prueba con un worktree, ajuste, acción, título de pestaña, prompt de agente, URL, PR o puerto.",
         "dbd9d87eec": "Ningún resultado coincide con tu búsqueda",
         "2c38630a01": "El espacio de trabajo ya no existe",
-        "7726ce9970": "La pestaña del emulador móvil ya no existe",
         "d7d496a451": "La página del navegador ya no existe",
         "50a1d11d5b": "Pestañas abiertas",
         "088d66d980": "Acciones y ajustes",
@@ -2499,6 +2484,10 @@
               "18ec58881e": "Buscar equipos..."
             }
           }
+        },
+        "date_range_calendar": {
+          "previous_month": "Previous month",
+          "next_month": "Next month"
         }
       },
       "terminal": {
@@ -2739,7 +2728,6 @@
             "4df2a06d36": "Dividir hacia abajo",
             "ab1e2bff04": "Dividir a la derecha",
             "9acaf92093": "Acciones del panel",
-            "1bce81dba6": "simulador",
             "1ff1c77616": "navegador",
             "586d2ac445": "terminal",
             "addSplitPane": "Agregar panel dividido",
@@ -2836,9 +2824,6 @@
             "b1a132357f": "Nueva pestaña",
             "4f327c8b3d": "Abrir Markdown...",
             "3d5d6c960d": "Nuevo Markdown",
-            "fd2b42aaa3": "Nuevo emulador móvil",
-            "aea43b5748": "Abrir la pestaña del emulador existente.",
-            "b426bb2615": "Ir al emulador móvil",
             "4833fb2cbe": "Nueva pestaña de navegador",
             "d364f3c8d4": "Nuevo terminal",
             "7c1313d237": "Nuevo terminal:",
@@ -2913,10 +2898,6 @@
                   "b330f72434": "mark",
                   "37ff3ddca1": "abrir markdown",
                   "164c394bab": "abrir archivo",
-                  "bbaf4f85a4": "emulador móvil",
-                  "3784b83bd4": "emulador",
-                  "a63847a742": "simulador",
-                  "1baeb07c17": "simulador de iOS",
                   "8a580f88cf": "iPhone",
                   "7ecdc5ef08": "iPad",
                   "14965cc123": "móvil"
@@ -3677,13 +3658,6 @@
           "cd7893fbc1": "Escaneando skills",
           "35b9a724a0": "Disponible",
           "0c74e7ff34": "Local"
-        },
-        "SkillFreshnessNudge": {
-          "titleOne": "Una skill de Muster instalada está desactualizada",
-          "titleMany": "{{value0}} skills de Muster instaladas están desactualizadas",
-          "updateOne": "Actualizar skill",
-          "updateMany": "Actualizar skills",
-          "description": "Actualiza {{value0}} para que los Agents sigan las instrucciones actuales de esta versión de Muster."
         },
         "SkillFreshnessRow": {
           "statusUpdateAvailable": "Actualización disponible",
@@ -5063,7 +5037,8 @@
           "8b7a8df299": "Workarounds de bajo nivel para troubleshooting de soporte.",
           "8d8d8ac599": "Compatibilidad",
           "network": "Red",
-          "networkDescription": "Enrutamiento de red a nivel de aplicación para proxies y entornos corporativos."
+          "networkDescription": "Enrutamiento de red a nivel de aplicación para proxies y entornos corporativos.",
+          "settingsVisibility": "Settings visibility"
         },
         "AgentLocationSetting": {
           "92f4238f1a": "WSL predeterminado",
@@ -5313,93 +5288,6 @@
           "b4e9d3f2a1c5": "Se importaron {{value0}} cookies de {{value1}} a {{value2}}.",
           "c5a273a809": "Desde {{value0}}"
         },
-        "BrowserUseComputerUseNotice": {
-          "15b5e680ba": "Abrir Computer Use",
-          "79209b37b9": "Si importar cookies no encaja, Computer Use puede controlar apps locales y usar sesiones de navegador existentes donde aplique. Instala el skill Computer Use; macOS también requiere permisos de privacidad.",
-          "333984cf90": "Usar una sesión de navegador existente"
-        },
-        "BrowserUseEnableSwitch": {
-          "aea3f45349": "Activar Agent Browser Use"
-        },
-        "BrowserUseExamples": {
-          "1199258ace": "Copiar",
-          "1188e56af4": "Copiar prompt de ejemplo",
-          "b84807f228": "\"",
-          "59722f31b4": "\"",
-          "c5325e91f6": "Pega cualquiera de estos en Claude Code, Codex u otro agente en un proyecto donde el skill esté instalado.",
-          "2a180694f7": "Pruébalo: prompts de ejemplo",
-          "5ec620ccc4": "No se pudo copiar.",
-          "a602d43069": "Copiado {{value0}}."
-        },
-        "BrowserUsePane": {
-          "be6df68384": "Desde archivo…",
-          "e44c5d681e": "Desde ",
-          "67d9a53f47": "Gestionar perfiles para logins separados",
-          "112f70adc4": "Última importación desde {{value0}}",
-          "72d4815523": "Trae tus logins existentes a Muster para que los agents puedan acceder a páginas autenticadas. Importa al perfil predeterminado.",
-          "2eb906706c": "Importar cookies del navegador",
-          "af8c83ed61": "Importa cookies de Chrome, Edge u otros navegadores para que los agents puedan reutilizar tus logins.",
-          "68ea76eb71": "Instala el skill Browser Use para que los agents puedan operar el navegador de Muster.",
-          "2d6ead9ab2": "Instalar skill Browser Use",
-          "e9f3f3b488": "Instalado en",
-          "9fca1f7f5d": "Registra el comando Muster CLI para que los agents puedan orquestar el navegador desde su shell.",
-          "c6065d205d": "Activar Muster CLI",
-          "c79eff0213": "Registra Muster CLI para que los agents puedan controlar el navegador.",
-          "702488a5f7": "Deja que los coding agents controlen este navegador con tus logins. Completa los tres pasos de abajo.",
-          "b8a1f2d84d": "Agent Browser Use",
-          "96b91c6349": "Deja que los coding agents controlen este navegador con tus logins.",
-          "2ea4617e3a": "Se importaron {{value0}} cookies de {{value1}}{{value2}}.",
-          "721aee31b4": "Se registró Muster CLI en PATH.",
-          "180a9abf3a": "No se pudo cargar el estado de CLI.",
-          "2ccfc9cff8": "Importar",
-          "0462565413": "Reimportar",
-          "de9b2f32f3": "Activar",
-          "ad8cb0ee22": "Corregir PATH",
-          "0289434ed6": "Activado",
-          "8b3054dac7": "Registrando...",
-          "8f2675c2f3": "Se importaron {{value0}} cookies desde un archivo.",
-          "5301857d88": "Desde {{value0}}"
-        },
-        "BrowserUseSkillStep": {
-          "0871b6998d": "Permite a los agents navegar y verificar páginas en el navegador de Muster.",
-          "459e24eebc": "Skill Browser Use"
-        },
-        "CliSection": {
-          "8671e406f0": "Cancelar",
-          "a4aafe46e3": "Ruta de destino:",
-          "e8012c03a1": "Permite a los agents usar comandos de workspace, terminal y progreso de Muster.",
-          "cliSkillTerminalTitle": "Configuración del skill CLI",
-          "cliSkillTerminalAria": "Terminal de instalación del skill CLI",
-          "6053cf736c": "Skill CLI",
-          "36a6f919ba": "Da a los agents workflows de workspace, terminal y progreso integrados con Muster.",
-          "04873eea3e": "Agent skills",
-          "7f2747f7dd": "no está visible en PATH para este shell.",
-          "b0c310ab46": "Destino del launcher existente:",
-          "15eaad0d31": "Ruta del comando:",
-          "5dae812f50": "Actualizar",
-          "52e640f3a0": "Actualizar estado de la CLI",
-          "38edbb5721": "Comando de shell",
-          "6930feda9e": "Usa Muster desde tu terminal para abrir la app, administrar worktrees e interactuar con terminales de Muster.",
-          "c5c0f2641d": "Muster CLI",
-          "d77352f2df": "No se pudo eliminar `{{value0}}` de PATH.",
-          "af5540930c": "Se eliminó `{{value0}}` de PATH.",
-          "a2b13efa94": "No se pudo registrar `{{value0}}` en PATH.",
-          "9cbcd31338": "Se registró `{{value0}}` en PATH.",
-          "7baec27029": "No se pudo cargar el estado de CLI.",
-          "d00df2e397": "Registrar",
-          "9a5f8a4568": "Eliminar",
-          "b0fca411a0": "Registrando…",
-          "4c7e3e4c5f": "instalar",
-          "068552b191": "Eliminando…",
-          "8d96213669": "eliminar",
-          "aa6536977e": "Muster registrará {{value0}} para que el comando funcione desde tu terminal.",
-          "a030816e3e": "Esto elimina el symlink del comando de shell. Muster permanece instalada.",
-          "fa87db3d6e": "¿Registrar `{{value0}}` en PATH?",
-          "14444243ba": "¿Eliminar `{{value0}}` de PATH?",
-          "5d432fe44d": "instalado",
-          "8a9b784c60": "desactualizado",
-          "d363e5929b": "Comprobando registro de CLI..."
-        },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
           "a58ba464ad": "Ubicación del skill",
@@ -5455,27 +5343,6 @@
           "407d28bde6": "cli",
           "54038660e0": "comando",
           "25350d670f": "personalizado"
-        },
-        "ComputerUsePane": {
-          "1735461723": "Permite a los agents inspeccionar y operar apps de escritorio locales.",
-          "93255aaf18": "Skill Computer Use",
-          "45f8e22c2e": "Abrir",
-          "d95d1cfab8": "Actualizar",
-          "0c29da5805": "Listo",
-          "3383ea1aab": "No se pudieron restablecer los permisos de Computer Use",
-          "f189f448a3": "Restablecer acceso de Computer Use",
-          "5c45349665": "No se pudieron abrir los permisos de Computer Use",
-          "7801ac08ec": "Los permisos de Computer Use solo se requieren en macOS",
-          "740766c291": "La configuración de Computer Use ya está completa",
-          "697005758f": "Se abrió Privacidad y seguridad de macOS",
-          "2168fa5ab0": "No se pudieron cargar los permisos de Computer Use",
-          "0c9a33f468": "Captura ventanas de apps para que los agents puedan inspeccionar el estado visual.",
-          "07bbe4c4cb": "Capturas de pantalla",
-          "4d03dec2d0": "Lee árboles de interfaz de apps y realiza las acciones solicitadas.",
-          "6b5a2cd3a5": "Accesibilidad",
-          "6b17602073": "Restablecer acceso",
-          "506f2acf7a": "Restableciendo acceso...",
-          "4b65070096": "darwin"
         },
         "DeveloperPermissionsPane": {
           "4c17304beb": "Actualizar",
@@ -5634,22 +5501,6 @@
           "36b2a5dc6d": "Muestra un diálogo de confirmación antes de cerrar una pestaña fijada.",
           "projectRuntime": "Runtime del proyecto",
           "projectRuntimeDescription": "Runtime predeterminado para proyectos locales de Windows que no lo sobrescriben."
-        },
-        "GeneralSupportSection": {
-          "af7d9f4396": "¡Gracias por el apoyo!",
-          "6922c1fa2b": "Dale una estrella a Muster en GitHub",
-          "511782265b": "Apoya el proyecto con una estrella de GitHub mediante la CLI gh.",
-          "55a87e5fd1": "Apoya a Muster",
-          "964acc6bb4": "Dar una estrella",
-          "73b327e793": "Intentar otra vez",
-          "c9f96d4234": "error",
-          "397719bee5": "Dando una estrella...",
-          "1e29570462": "dando estrella",
-          "9d181300e3": "con estrella",
-          "5c49f02662": "oculto",
-          "b3f0584f5d": "cargando",
-          "cb65c75b11": "Abriendo...",
-          "f2d4f877b2": "Abrir GitHub"
         },
         "GeneralUpdateSettingsSection": {
           "8a52ca1d02": "Notas de la versión",
@@ -5918,52 +5769,6 @@
           "1f3665e35a": "Configuración de MCP creada",
           "82436439eb": "Agregar configuración de MCP",
           "0a5c1ead54": "Crear configuración vacía"
-        },
-        "MobileEmulatorAgentControlRow": {
-          "1861982430": "No se pudo cargar el estado de CLI.",
-          "8af7a8bc38": "Los comandos apuntan al emulador activo del worktree actual. Las coordenadas están normalizadas de 0 a 1.",
-          "c7f3fe0a6e": "Comandos comunes del emulador",
-          "d94ca6a623": "Permite a los agentes usar comandos de la CLI de Muster, incluido el control del emulador móvil.",
-          "67e19ee03c": "Skill Muster CLI",
-          "aaf62a3dd2": "Instalado en",
-          "2fef055608": "Registra el comando de la CLI de Muster para que los agentes puedan controlar el emulador activo desde su shell.",
-          "4f2205f3b6": "Habilitar CLI de Muster",
-          "ff4b7e65d6": "Permite que los agentes de codificación controlen el emulador móvil activo con comandos de la CLI de Muster.",
-          "2a674aa810": "Control del emulador móvil para agentes",
-          "cdeaed9e37": "Registré Muster CLI en PATH.",
-          "3d34423e88": "Registrando la CLI de Muster",
-          "3be27641c9": "para que los comandos del emulador se puedan ejecutar desde shells de agentes.",
-          "3941719a56": "Comprobando la CLI de Muster antes de abrir la configuración de la skill."
-        },
-        "MobileEmulatorExamples": {
-          "edf13dd03b": "Copiar",
-          "c12b253997": "Copiar prompt de ejemplo",
-          "d151e25078": "\"",
-          "b525ff2b12": "\"",
-          "4daa95f25a": "Pega cualquiera de estos en Claude Code, Codex u otro agente en un proyecto donde esté instalado el skill Muster CLI.",
-          "0820b3f84f": "Pruébalo: prompts de ejemplo",
-          "1f608e7d60": "No se pudo copiar el prompt.",
-          "2b077b5544": "Prompt copiado."
-        },
-        "MobileEmulatorSettingsPane": {
-          "19d39113b6": "Permite que los agentes de codificación controlen el emulador móvil activo con comandos de la CLI de Muster.",
-          "f2f8d97bb6": "Control del emulador móvil para agentes",
-          "143961d031": "Dispositivo predeterminado",
-          "8aec2f99a0": "Actualizar la disponibilidad del emulador",
-          "ae1612c58c": "Disponibilidad",
-          "f9af91ea26": "Muestra la acción Nuevo emulador móvil y permite que los agentes se conecten al emulador activo.",
-          "700ddbf9b1": "Habilitar emulador móvil",
-          "bc39d0f115": "Configura la compatibilidad con el emulador móvil para Muster y agentes de codificación.",
-          "6593c9ddd3": "Emulador móvil",
-          "a4f1c82d90": "Desactivado",
-          "b5e2d93e01": "Comprobando...",
-          "c6f3ea4f12": "Listo",
-          "d704fb5023": "Necesita configuración",
-          "06b06429c6": "Comprobando la compatibilidad con el SDK de Android y el simulador de iOS.",
-          "6d1483d4a0": "1 dispositivo emulador detectado.",
-          "0a452d4d3b": "{{value0}} dispositivos emuladores detectados.",
-          "f62a1bb759": "Muster seleccionará automáticamente un dispositivo emulador después de que se detecten los dispositivos.",
-          "b2fd62ea75": "Dispositivo predeterminado para nuevas pestañas del emulador y comandos de conexión de agentes. La selección automática prefiere un dispositivo que ya esté en ejecución."
         },
         "MobileNetworkInterfaceSection": {
           "63d5e4ae1e": "Regenera el código QR y escanéalo desde la aplicación móvil de Muster.",
@@ -6286,7 +6091,12 @@
           "f79972271a": "No se encontró ningún control remoto de GitHub para este repositorio.",
           "4d039317f4": "Favicon del sitio web",
           "acf31559a0": "Ingresa una URL de sitio web válida.",
-          "868c5c9b56": "No se pudo importar el icono del repositorio"
+          "868c5c9b56": "No se pudo importar el icono del repositorio",
+          "favicon_fetch_failed": "Failed to fetch favicon",
+          "favicon_domain": "Website domain",
+          "favicon_fetch": "Fetch",
+          "favicon_apply": "Apply",
+          "favicon_hint": "Fetches the site's favicon and stores it as this project's icon."
         },
         "RepositoryPane": {
           "15a99d9b9f": "Las rutas relativas se resuelven desde la raíz de este proyecto.",
@@ -6567,8 +6377,6 @@
           "2b4474780a": "Apariencia",
           "3d9adfe6a5": "Pestañas globales de terminal, navegador y Markdown.",
           "3eb22a3ada": "Espacio de trabajo flotante",
-          "01f9d36292": "Configura la compatibilidad con el emulador móvil para Muster y agentes de codificación.",
-          "f75daf1002": "Emulador móvil",
           "ad9788036f": "Página de inicio, enrutamiento de enlaces y cookies de sesión.",
           "c46215ea03": "Navegador",
           "6742c7932c": "Comandos de terminal guardados, con alcance global o por proyecto.",
@@ -6587,8 +6395,6 @@
           "6d119427ef": "Lista de verificación de incorporación",
           "eb1176a14e": "Dictado local de voz a texto con modelos en el dispositivo.",
           "5063bb47a5": "Voz",
-          "7118953f14": "Permite que los agentes controlen cualquier app en tu computadora.",
-          "c9841721cb": "Computer Use",
           "475980f53d": "Coordina varios agentes de codificación a través de Muster.",
           "00c3a7950d": "Orquestación",
           "21f09426ea": "Opcional. Muster funciona con tus inicios de sesión de proveedores existentes; agrega cuentas solo si quieres que Muster te ayude a cambiar entre ellas.",
@@ -6613,7 +6419,9 @@
           "dev": "Herramientas de desarrollo",
           "devDescription": "Herramientas solo de desarrollo para probar estados de la UI.",
           "linearTitle": "Linear",
-          "linearDescription": "Give agents the skill to read and update your linked Linear tickets."
+          "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
+          "agentCapabilitiesTitle": "Agent Capabilities",
+          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
         },
         "SettingsFormControls": {
           "42a4d15a30": "No hay fuentes coincidentes.",
@@ -7542,47 +7350,13 @@
             "a942905148": "URL abierta al crear una nueva pestaña del navegador. Déjelo vacío para abrir una pestaña en blanco.",
             "c3903322d2": "Página de inicio predeterminada",
             "19ea5607cf": "Etiquetas de localhost para worktrees",
-            "4e0fdf0a3f": "Abre los puertos del workspace como URL localhost de Muster específicas del worktree para que las pestañas del navegador sean más fáciles de distinguir."
-          },
-          "use": {
-            "search": {
-              "3f4c559deb": "perfil de arco",
-              "d5afa54d21": "perfil de borde",
-              "22fb801af8": "perfil cromado",
-              "59968bb9b4": "navegador autenticado",
-              "62e2a790c0": "sesión existente",
-              "63a66da648": "navegador del sistema",
-              "20c1323d1e": "uso de la computadora",
-              "ab349a2dd0": "Arc",
-              "2e1b09897b": "Edge",
-              "088e7a9012": "Chrome",
-              "96ce3d2de2": "autenticación",
-              "48557f639c": "inicio de sesión",
-              "d5ad1f7aad": "importar",
-              "02837ee497": "sesión",
-              "fb8178824f": "cookies",
-              "ba4eb53b72": "uso del navegador",
-              "2fb24d17db": "Importa cookies de Chrome, Edge u otros navegadores para que los agentes puedan reutilizar tus inicios de sesión.",
-              "614c756ab1": "Importar cookies del navegador",
-              "cee44fb442": "automatización",
-              "a57c2172dc": "navegador-agente",
-              "6ea88e5206": "npx",
-              "f5b8fdddf5": "orca-cli",
-              "e5a784bc54": "instalar",
-              "9d97446873": "agent",
-              "a2d489263e": "skill",
-              "a7e82445fa": "Instala el skill Browser Use para que los agentes puedan controlar el navegador de Muster.",
-              "a1414dcefb": "Instalar skill Browser Use",
-              "e56c7b55c9": "configuración",
-              "034c5e8d7f": "habilitar",
-              "7e0dcb257a": "shell",
-              "3ffafc9b95": "comando",
-              "30c74aaa1f": "PATH",
-              "ff05cbc344": "orca",
-              "85fab5e12c": "CLI",
-              "890ddf943d": "Registra la CLI de Muster para que los agentes puedan controlar el navegador.",
-              "50f0860e18": "Habilitar CLI de Muster"
-            }
+            "4e0fdf0a3f": "Abre los puertos del workspace como URL localhost de Muster específicas del worktree para que las pestañas del navegador sean más fáciles de distinguir.",
+            "f0a71c3d92": "Open Links in Floating Browser",
+            "a94c26e5f1": "Open in-app links in the floating workspace panel instead of a workspace browser tab.",
+            "b52e7f1a06": "Browser Extensions",
+            "c73d81e4f9": "Load unpacked Chrome extensions into the in-app browser.",
+            "c1908fe37b": "Muster Extensions",
+            "d0472be851": "Install extensions Muster ships, including WordPress login autofill."
           }
         },
         "commit": {
@@ -7621,20 +7395,6 @@
                 "0b946b2abe": "Agrega recetas de acciones para commit, pull request, nombre de rama y correcciones de control de código fuente.",
                 "24dbdfca78": "Mostrar acciones de IA para control de código fuente"
               }
-            }
-          }
-        },
-        "computer": {
-          "use": {
-            "search": {
-              "6e88da3508": "skill",
-              "798be54d7e": "automatización",
-              "e27f8bafbf": "captura de pantalla",
-              "26c1290d83": "grabación de pantalla",
-              "82f01c2d2c": "accesibilidad",
-              "fefb452f5b": "uso de la computadora",
-              "9210db582b": "Permite que los agentes inspeccionen capturas de pantalla y controlen aplicaciones locales cuando lo pidas.",
-              "442bec10fe": "Uso de la computadora"
             }
           }
         },
@@ -7779,13 +7539,6 @@
         },
         "general": {
           "search": {
-            "bdfb6dc21b": "me gusta",
-            "e6b01c8e30": "comentarios",
-            "b65665703a": "soporte",
-            "06ea5a69a6": "github",
-            "e4fb4516d0": "estrella",
-            "e0b8c8bc25": "Apoya el proyecto con una estrella de GitHub mediante la CLI gh.",
-            "36a72f0d9e": "Dar una estrella a Muster en GitHub",
             "c61b14be7c": "grok",
             "5d9ba08673": "copiloto",
             "f472e97440": "aider",
@@ -7815,18 +7568,9 @@
             "f89a94773c": "actualizar",
             "79ff46776e": "Busque actualizaciones de la aplicación e instale una versión más reciente de Muster.",
             "e15af4eb64": "Buscar actualizaciones",
-            "6382fe9724": "npx",
             "baa263d6d8": "agentes",
-            "bda108e66c": "skill",
-            "244e3fb4c8": "Instala el skill de Muster para que los agentes sepan usar la CLI de Muster.",
-            "2d9f7b42df": "Skill de agente",
-            "0a00691c06": "comando de shell",
             "dbeb1f348e": "comando",
-            "88d3df9ce9": "terminal",
             "fb4f338a3d": "PATH",
-            "924a660a78": "cli",
-            "ca529079bf": "Registre o elimine el comando CLI de Muster.",
-            "327e3fa70d": "CLI de Muster",
             "fb84767421": "cambiar",
             "f8f0ac213a": "secuencial",
             "12ecc640a8": "mru",
@@ -7875,14 +7619,8 @@
             "91a46caafc": "no_proxy",
             "3a73054565": "derivación",
             "20b711ac9e": "proxy",
-            "eb8946b2c9": "Hosts que deben omitir el proxy HTTP configurado.",
-            "8436ff6f8e": "Reglas de omisión de proxy",
-            "e55d62dfa4": "launchpad",
-            "9da6c875e5": "dock",
             "b9096a44cf": "https_proxy",
             "8f03d44672": "http_proxy",
-            "e3b1d42f95": "URL del proxy para solicitudes de red de Muster y procesos de terminal locales secundarios.",
-            "c29f23ab57": "Proxy HTTP",
             "6c2ce8457c": "explorador de archivos",
             "c9d9636f24": "finder",
             "68d03d9980": "vscode",
@@ -7913,8 +7651,6 @@
             "7baf524b04": "espacio de trabajo",
             "d0bc793689": "Directorio raíz donde se crean las carpetas del espacio de trabajo.",
             "4c95d08fa2": "Directorio de espacio de trabajo",
-            "161a86a9da": "Confirmar antes de cerrar pestañas fijadas",
-            "8e593f04fc": "Muestra un diálogo de confirmación antes de cerrar una pestaña fijada.",
             "defaultProjectRuntime": "Runtime de proyecto predeterminado",
             "defaultProjectRuntimeDescription": "Elige el runtime que heredarán los proyectos locales de Windows.",
             "d2d2d929c0": "Corrector ortográfico de Rich Markdown",
@@ -8079,46 +7815,6 @@
           }
         },
         "mobile": {
-          "emulator": {
-            "search": {
-              "2348045036": "Elija qué dispositivo emulador abre Muster de forma predeterminada.",
-              "2bb2e09225": "skill móvil",
-              "bbe4267416": "tipo de emulador",
-              "64494f03c3": "adjuntar emulador",
-              "6f728f1456": "tap del emulador",
-              "f8b871d655": "CLI de agente",
-              "2e0b45b2ba": "Usa comandos de Muster CLI para listar, adjuntar, tocar y escribir en un emulador móvil.",
-              "ea3eac39bb": "Control por CLI de Agent",
-              "8ef0f08d36": "runtime",
-              "27397fe8e9": "herramientas de línea de comandos de Xcode",
-              "7650063d17": "simctl",
-              "3211e7acf9": "xcrun",
-              "42bfab45d8": "disponibilidad",
-              "ea1f51b980": "Comprueba si Xcode, simctl, serve-sim y los dispositivos emuladores están listos.",
-              "0b95dfd5b3": "Disponibilidad del emulador",
-              "04c5f5d901": "dispositivo",
-              "25d7bfbcd4": "UDID",
-              "ec3c4043fd": "iPad predeterminado",
-              "1dc8c52ffa": "iPhone predeterminado",
-              "ab4814f3c5": "simulador predeterminado",
-              "54184cb9c5": "Dispositivo emulador predeterminado",
-              "b8ddd13195": "emulador de agente",
-              "1ad6fb6230": "dispositivo predeterminado",
-              "ac0a985873": "skill del emulador",
-              "9353854ff3": "emulador de Muster",
-              "d4b7833894": "Muster CLI",
-              "84e5706975": "serve-sim",
-              "7c5a8a2bee": "Xcode",
-              "bec7231663": "iPad",
-              "49727355a3": "iPhone",
-              "6b6407dc1f": "emulador",
-              "2d67f708ce": "simulador",
-              "c5eca29310": "simulador de iOS",
-              "25159de808": "emulador móvil",
-              "9595354cff": "Configura la compatibilidad con el emulador móvil para Muster y agentes de codificación.",
-              "cdd3c31918": "Emulador móvil"
-            }
-          },
           "pane": {
             "search": {
               "dbccde3a60": "cerrar",
@@ -8977,19 +8673,6 @@
             }
           }
         },
-        "computerUseSummary": {
-          "permissionsRequired": "Requiere {{value0}} permiso{{value1}} antes de que los agentes puedan operar ventanas de apps.",
-          "checkingTitle": "Comprobando el acceso a Computer Use.",
-          "checkingDescription": "Muster está comprobando los permisos de privacidad de macOS para el helper de Computer Use.",
-          "unavailableTitle": "Computer Use no está disponible.",
-          "unavailableDescription": "Los permisos de Computer Use no están disponibles porque {{value0}}.",
-          "readyTitle": "Computer Use está listo.",
-          "readyDescription": "Los agentes pueden inspeccionar y operar ventanas de apps cuando se lo pidas.",
-          "permissionsTitle": "Completa la configuración para usar apps locales."
-        },
-        "computerUseSkillRuntime": {
-          "thisDevice": "Este dispositivo"
-        },
         "WorkspaceDirectorySetting": {
           "1a2b3c4d5e": "Predeterminado del cliente",
           "2b3c4d5e6f": "Aplicar a",
@@ -9134,21 +8817,6 @@
           "wslUnavailable": "WSL no está disponible en esta máquina.",
           "distroRequired": "Elige una distro de WSL antes de que los proyectos puedan heredar WSL.",
           "wslDescription": "Detecta y lanza agentes en {{value0}} mediante WSL para proyectos que no anulan su runtime."
-        },
-        "MobileEmulatorSdkStatus": {
-          "536026130e": "SDK de emulador",
-          "dde0ec1cd8": "Cadenas de herramientas que Muster utiliza para ejecutar emuladores. Android funciona en cualquier sistema operativo a través del SDK de Android; Los simuladores de iOS necesitan Xcode en macOS.",
-          "027cbf668a": "Android SDK",
-          "f6d080d128": "Usando ruta configurada",
-          "7fe4bd5907": "Detectado en",
-          "2784f0b22d": "No encontrado. Instala Android Studio y luego crea un dispositivo virtual.",
-          "b94ff260e6": "Descargar Android Studio",
-          "18925b082d": "Ubicar carpeta del SDK",
-          "8c52684db8": "Borrar",
-          "76eb88b88e": "iOS Simulator (Xcode)",
-          "c6f3ea4f12": "Listo",
-          "e4f14b50d7": "Instala Xcode y agrega un runtime de iOS Simulator.",
-          "63fe73a1ea": "No se pudo actualizar la carpeta SDK de Android."
         },
         "AppearanceAdvancedDisclosure": {
           "advanced": "Avanzado"
@@ -9532,6 +9200,140 @@
           "detailedExample": "2 new comments: Fix the header — Website Redesign",
           "minimal": "Minimal",
           "minimalExample": "Fix the header — 2 new comments"
+        },
+        "AgentCapabilities": {
+          "scopeNote": "These switches govern what your coding agents can reach, not what you can do in Muster.",
+          "sitesTitle": "Site tools",
+          "sitesWarning": "These tools reach real infrastructure — WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.",
+          "skillsDescription": "Muster installs its bundled skills into your agent skill directories at startup. Turning one off stops future installs; a copy already on disk is left where it is."
+        },
+        "BrowserExtensionsSection": {
+          "b7419fc2ad": "Configure",
+          "f47a2c1e08": "Remove extension",
+          "b8d3f5a219": "Browser Extensions",
+          "c9e1740b6d": "Load unpacked Chrome extensions into the in-app browser. Electron supports a subset of the extension APIs — content scripts and storage work, while background service workers and request blocking may not.",
+          "d15c8ba304": "No extensions added. Point Muster at a folder containing a manifest.json.",
+          "a3f9026b7c": "Add Extension Folder",
+          "e6207bd94a": "Reload"
+        },
+        "BrowserFloatingLinkSetting": {
+          "a1c4f0b2e7": "Open Links in Floating Browser",
+          "b3d7e9a145": "Open in-app links in the floating workspace panel instead of a workspace browser tab, so the current view stays put.",
+          "c5f1a8b930": "Turn on Link Routing to use the floating browser.",
+          "d2e6c4f817": "Enable the floating workspace to use the floating browser."
+        },
+        "BundledExtensionsSection": {
+          "a91b3e70cd": "Username",
+          "b7c04f12ae": "Password (stored — type to replace)",
+          "c58e29a4d1": "Password",
+          "d3f8017b62": "Submit the form automatically",
+          "e40a5c1936": "Off fills the fields only. A failed login or a deliberate logout is never resubmitted.",
+          "f16b8d05c7": "Saved",
+          "a2c7e94013": "Save Credentials",
+          "b8e1490fd2": "Clear Password",
+          "c04d7fe158": "The password is stored in your OS keychain and written into the extension only while it is enabled.",
+          "d5910be3c7": "Muster Extensions",
+          "e6b204af91": "Extensions Muster ships for the in-app browser. Install one to load it into every browser tab.",
+          "f2705ce8b4": "Enabled",
+          "a4b90cd671": "Installed",
+          "b615e0f2a8": "Not installed",
+          "c8123fe4a0": "Disable",
+          "d97e6015bc": "Enable",
+          "e2a3b7c941": "Install",
+          "f5028cd731": "Remove"
+        },
+        "BundledSkillCapabilityRows": {
+          "autoInstalled": "Installed automatically at startup.",
+          "installOnDemand": "Shipped with Muster; installed only when you ask for it.",
+          "loading": "Reading the bundled skills…",
+          "empty": "This build ships no bundled agent skills."
+        },
+        "Confirmations": {
+          "description": "Prompts shown before an action you cannot undo. Turning one off applies everywhere, including keyboard shortcuts and the native menu.",
+          "resetAll": "Reset all confirmations"
+        },
+        "SettingsBackup": {
+          "errorNotJson": "That file is not valid JSON.",
+          "errorNotAnExport": "That file was not exported from Muster settings.",
+          "errorVersion": "That file was written by a newer version of Muster.",
+          "errorExcludedKey": "That file contains credentials or machine-specific paths, which Muster never exports. It was not imported.",
+          "errorInvalidValue": "A setting in that file has the wrong kind of value. Nothing was changed.",
+          "errorNothingToImport": "That file has no settings this version of Muster understands.",
+          "imported": "Imported {{value0}} settings.",
+          "importedWithIgnored": "Skipped {{value0}} setting(s) this version does not recognise.",
+          "exportFailed": "Could not write the settings file.",
+          "exported": "Exported {{value0}} settings.",
+          "importFailed": "Could not import that settings file.",
+          "title": "Settings backup",
+          "description": "Move your preferences to another machine. Credentials and machine-specific paths are deliberately left out of the file.",
+          "exportAction": "Export…",
+          "importAction": "Import…"
+        },
+        "agentCapabilities": {
+          "search": {
+            "paneTitle": "Agent Capabilities",
+            "paneDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+            "sitesMcpTitle": "Site tools (muster-sites MCP)",
+            "sitesMcpDescription": "Expose the built-in site MCP server so agents can run deploys, imports, and database queries.",
+            "bundledSkillsTitle": "Bundled agent skills",
+            "bundledSkillsDescription": "Turn off individual skills Muster installs for your agents at startup.",
+            "sitesMcpInstallTitle": "muster-sites MCP install",
+            "sitesMcpInstallDescription": "Register the built-in site MCP server with Claude Code, Codex, and Cursor global configs."
+          }
+        },
+        "confirmations": {
+          "search": {
+            "sectionTitle": "Confirmations",
+            "sectionDescription": "Every \"are you sure?\" prompt you can turn off, in one place.",
+            "deleteWorkspaceTitle": "Confirm before deleting a workspace",
+            "deleteWorkspaceDescription": "Deleting a workspace removes its working directory from disk.",
+            "closeTerminalTitle": "Confirm before closing a busy terminal",
+            "closeTerminalDescription": "Closing a terminal with running processes kills whatever is in the foreground.",
+            "deleteAutomationTitle": "Confirm before deleting an automation",
+            "deleteAutomationDescription": "Deleting an automation also discards its run history.",
+            "codexResetTitle": "Confirm before resetting a Codex rate limit",
+            "codexResetDescription": "A reset spends a scarce credit on the live account.",
+            "pinnedTabTitle": "Confirm before closing a pinned tab",
+            "pinnedTabDescription": "Pinned tabs can still be closed from the keyboard and the native menu."
+          }
+        },
+        "settingsBackup": {
+          "search": {
+            "exportTitle": "Export settings",
+            "exportDescription": "Save your preferences to a JSON file. Secrets and machine-specific paths are left out.",
+            "importTitle": "Import settings",
+            "importDescription": "Load a settings file exported from Muster. Unrecognised files are rejected."
+          }
+        },
+        "hiddenSections": {
+          "search": {
+            "title": "Show hidden settings pages",
+            "description": "Restore the Orchestration and Mobile pages this build hides by default."
+          }
+        },
+        "siteMcp": {
+          "harness_missing_status": "Harness not detected",
+          "harness_missing_detail": "Muster did not find this harness on this machine. Installing anyway writes the config file shown below, which the harness picks up once it exists.",
+          "harness_missing_action": "Install anyway",
+          "harness_unconfigured_status": "Not configured by Muster",
+          "harness_unconfigured_detail": "Muster has not written its \"muster-sites\" entry here. If you already added a site MCP server under a different key, Muster cannot see it — open the config below before installing so you do not end up with two.",
+          "harness_unconfigured_action": "Install",
+          "harness_stale_status": "Muster entry out of date",
+          "harness_stale_detail": "A \"muster-sites\" entry is already here, but it points at a different command than this build would write now — usually a moved or upgraded app.",
+          "harness_stale_action": "Update entry",
+          "harness_current_status": "Installed and current",
+          "harness_current_detail": "The \"muster-sites\" entry matches what this build would write now.",
+          "harness_current_action": "Rewrite entry",
+          "install_blocked_disabled": "Site tools are switched off above, so agents would not be allowed to call this server anyway. Turn them on to install.",
+          "card_name": "muster-sites MCP",
+          "card_description": "Register the built-in site MCP server with your coding harnesses so agents can run deploys, imports, and database queries.",
+          "status_unavailable": "Status unavailable",
+          "status_setup": "Setup needed",
+          "status_current": "Up to date",
+          "recheck": "Re-check",
+          "command_label": "Each entry spawns this build directly:",
+          "workspace_note": "Project-level installs are automatic: Muster keeps a muster-sites entry in each site project’s .mcp.json on its own.",
+          "install_ok": "Wrote the \"muster-sites\" entry to {{value0}}."
         }
       },
       "right": {
@@ -10382,7 +10184,8 @@
             "fc3095d2ed": "explorador",
             "aiVaultSessionHistory": "Agentes",
             "folderWorkspaces": "Worktrees adjuntos",
-            "parentPrChecks": "Checks de PR"
+            "parentPrChecks": "Checks de PR",
+            "siteTab": "Site"
           },
           "right": {
             "panel": {
@@ -10806,6 +10609,37 @@
                 }
               }
             }
+          },
+          "SitePanel": {
+            "confirmTitle": "Confirm target",
+            "confirmBody": "Branch {{branch}} does not match an environment. This run would target {{environment}}. Continue?",
+            "confirmRun": "Run anyway",
+            "noEnvironmentReason": "No environment is configured for this site.",
+            "noImportSteps": "No import steps are enabled for this environment.",
+            "noDeploySteps": "No deploy steps are enabled for this environment.",
+            "openInSites": "Open in Sites",
+            "localSection": "Local",
+            "localDomain": "Local domain",
+            "localWpRoot": "WordPress subpath",
+            "dbSocket": "DB socket",
+            "dbSocketSet": "Set",
+            "environmentSection": "Environment",
+            "noEnvironments": "This site has no environments yet.",
+            "branchUnmatched": "Branch {{branch}} matches no environment; runs must be confirmed.",
+            "branchResolution": "Branch {{branch}} targets {{environment}}.",
+            "sshHost": "SSH host",
+            "sshUser": "SSH user",
+            "remoteRoot": "Remote root",
+            "liveDomain": "Live domain",
+            "importSteps": "Import steps",
+            "deploySteps": "Deploy steps",
+            "import": "Import",
+            "deploy": "Deploy",
+            "cancel": "Cancel",
+            "recentRuns": "Recent runs",
+            "noSite": "The active project is not linked to a site.",
+            "importStepsHeading": "Import steps",
+            "deployStepsHeading": "Deploy steps"
           }
         }
       },
@@ -10879,10 +10713,6 @@
         "FeatureSetupChecklist": {
           "77f74946f5": "Los agentes pueden enviarse mensajes entre sí, tomar tareas y coordinar handoffs.",
           "399cf885c0": "Orquestación de agentes",
-          "c5292c409d": "Los agentes pueden inspeccionar ventanas de apps y operar apps locales cuando se lo pidas.",
-          "1ecfb490ac": "Uso de la computadora",
-          "01426f3a23": "Los agentes pueden navegar por sitios, inspeccionar páginas y trabajar en tareas del navegador.",
-          "ea85d9e628": "Uso del navegador por agentes",
           "linearTicketsTitle": "Skill de agente de Linear",
           "linearTicketsDescription": "Los agentes pueden usar tareas de Linear enlazadas para handoffs con más contexto de ticket.",
           "linearTicketsSetupSummary": "Recomendado para espacios de trabajo de Linear; no afecta la configuración de conexión de Linear."
@@ -10915,7 +10745,8 @@
           "a3bcf13694": "conectado",
           "d6e5dba05a": "Iniciar sesión",
           "0b4a7d23ab": "Iniciando sesión",
-          "a74c6d6b18": "no instalado"
+          "a74c6d6b18": "no instalado",
+          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations."
         },
         "NotificationStep": {
           "3bede04483": "Enviar notificación de prueba",
@@ -11408,13 +11239,8 @@
         "wall": {
           "AgentCapabilitiesSetupAction": {
             "b8dc9dd8a2": "Instalado",
-            "1b51644c2d": "Permite que los agentes controlen el escritorio, muevan el cursor, hagan clic y escriban en cualquier app.",
-            "362a07517d": "Uso de computadora",
-            "5e8fe5a72d": "Da a los agentes acceso directo al navegador de Muster para que puedan probar páginas, hacer capturas de pantalla y actuar según lo que ven.",
-            "e638da007a": "Uso del navegador por agentes",
             "c61c91e642": "Permite que los agentes se coordinen a través de Muster para mantener en marcha tareas grandes de varios pasos hasta completarlas.",
             "ac07f8887f": "Orquestación de agentes",
-            "e9eb197e12": "Permisos de uso de computadora abiertos",
             "3a59452a67": "Comando de skill copiado e insertado abajo para revisarlo.",
             "c605f51f2b": "Configuración de capacidades lista",
             "1aa657d8f4": "La configuración de algunas capacidades necesita atención",
@@ -11453,25 +11279,6 @@
             "1bec24acc1": "@keyframes browserFlash { 0% { opacity: 0; } 20% { opacity: 0.85; } 100% { opacity: 0; } } @keyframes browserTabIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } } @keyframes browserViewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }",
             "73bbb46073": "/pricing",
             "f39be6ca14": "/signup"
-          },
-          "BrowserUseSkillSetupCard": {
-            "cbc45022d4": "Permite a los agentes navegar y verificar páginas en el navegador de Muster.",
-            "d5bb1cd4ba": "Skill Browser Use"
-          },
-          "ComputerUseAnimatedVisual": {
-            "d8401975b1": "aprobado",
-            "f27676a92c": "estado:",
-            "6804cb356f": "clic enviado",
-            "1719b28a81": "encontrado \"Aprobar\"",
-            "79445f7512": "aprobar la nota en mi aplicación",
-            "99a8624bcb": ">",
-            "2adb561b44": "Sesión de Claude Code iniciada",
-            "94787f01f8": "Claude Code",
-            "9cddfe96b2": "app local",
-            "9634d870d1": "Aprobar",
-            "3cc2df3671": "Hecho",
-            "bdd5312213": "Pendiente",
-            "c11dda000b": "Aprobado"
           },
           "EditorAnimatedVisual": {
             "7a763daf2f": "itálico",
@@ -11549,7 +11356,8 @@
             "713cc529a5": "Hitos",
             "b1f1981c5e": "Ver tareas",
             "0235b268b2": "Aún no hecho",
-            "13294d3405": "Hecho"
+            "13294d3405": "Hecho",
+            "open_integrations_settings": "Open Integrations settings"
           },
           "FeatureWallSetupWorkflowActions": {
             "486c2f4d8d": "Agrega primero un proyecto git y luego configura el script de configuración para ese repositorio.",
@@ -11659,13 +11467,9 @@
               "setup": {
                 "status": {
                   "8eccfcb314": "Instalado",
-                  "21d4f79c93": "haz clic en Instalar CLI y skills para abrir la configuración de acceso de macOS",
-                  "5c9293e51a": "comprobando acceso a la app",
                   "aae94eeb52": "Haz clic en Instalar CLI y skills",
                   "aa8e143a2f": "No se pudo comprobar la instalación",
-                  "9b33e7fb13": "Comprobando instalación",
-                  "4c8e1f92a7": "abre Muster Desktop en este Mac",
-                  "6d2b0a84e1": "No disponible en esta compilación"
+                  "9b33e7fb13": "Comprobando instalación"
                 }
               }
             }
@@ -11768,14 +11572,7 @@
           "FeatureWallBrowserAction": {
             "5022c43a88": "El navegador no pudo abrir",
             "c9eb68b474": "Aún no hay ningún grupo de workspace disponible para este worktree.",
-            "c9728107c5": "Pruébalo",
-            "25dd101f15": "La configuración del navegador necesita atención",
-            "e02b11e6b0": "Configuración del navegador lista",
-            "d6d15077df": "Comando de skill copiado e insertado abajo para revisarlo.",
-            "78e65f19d9": "La configuración del navegador falló",
-            "b7345c18db": "Se produjo un error inesperado.",
-            "5f97caf76b": "Instalando…",
-            "c2df599513": "Instalar CLI y skill"
+            "c9728107c5": "Pruébalo"
           },
           "ConnectIntegrationsList": {
             "3dddb2d565": "conectado para tareas",
@@ -11861,129 +11658,6 @@
             "55001880db": "Reintentar",
             "34a189ae0f": "El resto de la app sigue ejecutándose. Reintenta esta vista o cambia a otra y vuelve.",
             "ab855c11f4": "Esta parte de Muster encontró un error."
-          }
-        }
-      },
-      "emulator": {
-        "pane": {
-          "EmulatorPane": {
-            "59b08fa031": "Ningún emulador conectado"
-          },
-          "emulator": {
-            "device": {
-              "frame": {
-                "9406c15775": "Pantalla del emulador",
-                "8f25ffaf8a": "Pantalla del emulador, teclado capturado. Presiona Escape para liberar.",
-                "0022420df0": "teléfono"
-              }
-            },
-            "pane": {
-              "toolbar": {
-                "06e10d7356": "Apagar el emulador",
-                "e7a0d1897e": "Inicio",
-                "6bd8dff42a": "Girar",
-                "3d836b879c": "Elegir emulador",
-                "81b3571a07": "Conectar",
-                "868c0f2938": "Procesando…"
-              }
-            },
-            "screen": {
-              "stream": {
-                "content": {
-                  "8b1a0d8694": "Vista previa del emulador",
-                  "36841af608": "Transmisión desconectada",
-                  "5f818f12ab": "Conectando el emulador…",
-                  "5ee64cd44e": "Pantalla del emulador"
-                }
-              }
-            },
-            "unavailable": {
-              "pane": {
-                "f630b9ca9f": "Mobile Emulator requiere una Mac con Xcode y el runtime de iOS Simulator. En Linux o Windows, usa un dispositivo físico o un host de compilación Mac remoto.",
-                "b2c268a0b9": "Mobile Emulator es solo macOS"
-              }
-            }
-          },
-          "use": {
-            "emulator": {
-              "frame": {
-                "stream": {
-                  "f1c0179002": "La transmisión no produce fotogramas."
-                }
-              }
-            },
-            "mobile": {
-              "emulator": {
-                "agent": {
-                  "setup": {
-                    "state": {
-                      "fdcca1ec75": "Registrando…",
-                      "69fb2c2289": "Habilitado",
-                      "c6705092ba": "Corregir PATH",
-                      "7c1b6bdb1e": "Habilitar",
-                      "51074ccb05": "No se pudo cargar el estado de la CLI.",
-                      "35dea1ae12": "El control de agentes está listo.",
-                      "9dff3a6338": "La skill está instalada. Habilita la CLI de Muster para completar la configuración.",
-                      "15986a1080": "La CLI de Muster está lista. Instala la skill para completar la configuración.",
-                      "4c26913def": "Aún no está configurado. Completa ambos pasos para habilitar el control de agentes.",
-                      "c94ff11e91": "No se pudo volver a verificar el estado de la configuración.",
-                      "2b519eed94": "Se registró la CLI de Muster en PATH."
-                    }
-                  }
-                },
-                "tab": {
-                  "intro": {
-                    "actions": {
-                      "68a5dc6604": "No se pudo ocultar el Emulador Móvil."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "MobileEmulatorAgentSetupGuide": {
-            "2fda9ff015": "Configurar control de agentes",
-            "0ac0fef514": "El control de agentes está listo.",
-            "2bdfff8763": "Control de agentes (opcional).",
-            "72736b051f": "Configura la CLI de Muster + skill cuando quieras que los agentes controlen este simulador.",
-            "d10ae98046": "Listo",
-            "3756cbeca7": "Ahora no",
-            "6d950431d2": "Ocultar",
-            "ebceac65a4": "Configurar",
-            "3f003507f4": "Abrir configuración completa en Ajustes"
-          },
-          "MobileEmulatorAgentSetupGuideSteps": {
-            "9b49d892e3": "Habilitar la CLI de Muster",
-            "3d8dc52c93": "Registra el comando orca para controlar el emulador en los shells de los agentes.",
-            "21f5687c07": "Skill del CLI de Muster",
-            "64fb057667": "Enseña a los agentes los comandos orca del emulador para este worktree.",
-            "5c59ea96ca": "Configuración de la skill de Muster CLI para Mobile Emulator",
-            "bff5341ac3": "Terminal de instalación de la skill de Muster CLI para Mobile Emulator",
-            "3d34423e88": "Registrando la CLI de Muster",
-            "3be27641c9": "para que los comandos del emulador se puedan ejecutar desde shells de agentes.",
-            "3941719a56": "Verificando la CLI de Muster antes de abrir la configuración de la skill."
-          },
-          "MobileEmulatorTabIntroCallout": {
-            "1924982130": "Descartar",
-            "5789936d9a": "Vista previa de simuladores de iOS mientras los agentes controlan la pantalla.",
-            "8014b4b80b": "Mantener",
-            "6e051a40b7": "Ocultar"
-          },
-          "mobile": {
-            "emulator": {
-              "hidden": {
-                "toast": {
-                  "e8f098a870": "Mobile Emulator oculto",
-                  "c46c979c1d": "Vuelve a habilitar Mobile Emulator en cualquier momento en",
-                  "600f9a745a": "Ajustes › Mobile Emulator"
-                }
-              }
-            }
-          },
-          "useEmulatorScreenKeyboard": {
-            "pasteTooLarge": "El texto pegado es demasiado grande para la entrada de teclado del emulador.",
-            "unsupportedPasteText": "Pegar en el teclado del emulador solo admite texto de teclado de EE. UU.",
-            "pasteTargetUnavailable": "No se pudo pegar en el teclado del emulador porque el dispositivo no está listo."
           }
         }
       },
@@ -13709,7 +13383,8 @@
           "dbUser": "Local DB user",
           "dbUserHint": "root",
           "dbSocket": "Local DB socket",
-          "dbSocketHint": "/…/mysql/mysqld.sock"
+          "dbSocketHint": "/…/mysql/mysqld.sock",
+          "editingDivergence": "Editing {{environment}} — runs target {{target}}."
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
@@ -13780,9 +13455,6 @@
           "description": "A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.",
           "willStore": "What will be stored",
           "chooseFolder": "Which local folder should this bind to?",
-          "browse": "Choose a folder…",
-          "cloneHeading": "Not cloned yet",
-          "cloneHint": "Clone the repository first, then bind the new checkout.",
           "clone": "Clone into a folder…",
           "cloning": "Cloning…",
           "noCandidates": "No local checkout matches this repository yet.",
@@ -13804,7 +13476,12 @@
           "environment": "Environment",
           "deployCommand": "Build command",
           "themeDistPath": "Theme dist path",
-          "notes": "Notes"
+          "notes": "Notes",
+          "missingFolder": "Its folder is gone, so this record cannot be bound. Choose or clone a folder to set it up fresh.",
+          "setUpInRoot": "Set up in {{folder}}",
+          "settingUp": "Setting up…",
+          "willCreateAt": "Muster will clone into {{path}} and configure it.",
+          "noRootConfigured": "No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders."
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -13837,7 +13514,7 @@
           "stackPreviewing": "Checking…",
           "stackRunning": "Setting up…",
           "stackConfirm": "Run setup",
-          "stackDone": "LocalWP site created",
+          "stackDone": "LocalWP site ready.",
           "stackDomainLabel": "Local domain",
           "importHeading": "Import from the server",
           "importBody": "Pull the remote database and files down to this checkout.",
@@ -13853,9 +13530,25 @@
           "certAction": "Trust certificate",
           "certTrusting": "Trusting…",
           "certTrusted": "Trusted — the local site loads over https without a warning.",
-          "stackAdminEmail": "Admin email",
-          "stackAdminPassword": "Admin password",
-          "stackAdminHint": "The WordPress admin account LocalWP creates. Local only — it never reaches the server."
+          "stackOsPasswordHint": "LocalWP may ask for your macOS password — check the Local app.",
+          "stackLogLabel": "Setup progress",
+          "stackFailed": "LocalWP setup did not finish.",
+          "stackRetry": "Try again",
+          "stackCreateBody": "No WordPress here yet. Register the folder with LocalWP, then pull the site down with the import step.",
+          "stackCreateAction": "Create LocalWP site",
+          "stackMoves": "{{count}} project entries move into app/public",
+          "stackDeletes": "{{count}} existing entries under app/public are deleted first",
+          "importChooseSteps": "Choose steps",
+          "importStepsLegend": "Import steps for {{environment}}",
+          "importNoSteps": "Nothing is enabled yet. Pick what to pull down — each one is off until you choose it.",
+          "importBranchWarning": "The checked-out branch does not match an environment — confirm the target before importing.",
+          "importRunning": "Importing from the server…",
+          "importSucceeded": "Import complete.",
+          "importFailed": "Import failed.",
+          "importCancelled": "Import cancelled.",
+          "importBlocked": "Import was blocked before it started.",
+          "importProgress": "{{stage}} · {{percent}}%",
+          "importLogLabel": "Import log"
         },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"
@@ -13868,7 +13561,10 @@
           "loading": "Loading repositories…",
           "empty": "No repositories match.",
           "noProviders": "No git hosts are connected yet.",
-          "truncated": "Showing the most recent repositories. Search to narrow the list.",
+          "searching": "Searching repositories…",
+          "noMatch": "No repositories match “{{query}}”.",
+          "truncated": "Showing the most recent repositories. Search to reach any repository on the host, not only these.",
+          "truncatedLocal": "Showing the most recent repositories. This host cannot search, so the box only filters these.",
           "chooseFolder": "Clone into…",
           "cloning": "Cloning…",
           "adding": "Adding site…",
@@ -13898,6 +13594,20 @@
           "derived": "No folders chosen yet, so Muster is using the parent folders of the projects you already have: {{roots}}. Add one to take over.",
           "none": "No folders chosen, and there are no projects to infer one from. Add the folder your sites live in.",
           "add": "Add folder"
+        },
+        "AddSiteEnvironmentDialog": {
+          "title": "Add environment",
+          "modeHint": "Start blank, or copy an existing environment including its stored passwords.",
+          "nameHint": "Name it after a git branch and runs on that branch target it automatically.",
+          "createNew": "Create new environment",
+          "copyExisting": "Copy existing environment",
+          "copyFrom": "Copy from",
+          "name": "Name",
+          "namePlaceholder": "staging",
+          "duplicateName": "An environment with this name already exists.",
+          "back": "Back",
+          "copy": "Copy",
+          "create": "Create"
         }
       },
       "activecollab": {
@@ -13966,7 +13676,10 @@
           "comment_link": "Link",
           "start_work_hint": "Create a workspace in the linked site and brief an agent on this task",
           "start_work_unbound": "Link this project to a site first — use the link button on the project heading",
-          "start_work": "Start workspace"
+          "start_work": "Start workspace",
+          "close_date_picker": "Close",
+          "clear_dates": "Clear",
+          "save_dates": "Save"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -14061,6 +13774,29 @@
         "connectHeading": "Connect your ActiveCollab account",
         "connectBody": "Browse and start work on your assigned ActiveCollab tasks directly from here.",
         "connectAction": "Connect"
+      },
+      "ActionPalette": {
+        "groupActions": "Actions",
+        "groupCommands": "Commands",
+        "groupSettings": "Settings",
+        "title": "Command palette",
+        "description": "Run a command or jump to a setting",
+        "placeholder": "Run a command or jump to a setting...",
+        "empty": "No matching commands.",
+        "hiddenCount": "Type to search {{value0}} more",
+        "keyEnter": "Enter",
+        "hintRun": "Run",
+        "keyEsc": "Esc",
+        "hintClose": "Close",
+        "hintMove": "Move",
+        "resultCount": "{{value0}} results found"
+      },
+      "action": {
+        "palette": {
+          "ActionPaletteRow": {
+            "revealShortcut": "Shortcut"
+          }
+        }
       }
     },
     "i18n": {

@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { OrcaRuntimeService } from './orca-runtime'
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   BrowserWindow: { fromId: vi.fn(() => null) },
   webContents: { fromId: vi.fn(() => null) },
   ipcMain: {

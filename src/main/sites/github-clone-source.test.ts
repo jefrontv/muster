@@ -268,7 +268,9 @@ describe('listGithubCloneSourceRepos', () => {
       provider: 'github',
       repos: [],
       error: 'Could not read the repository list returned by gh.',
-      truncated: false
+      truncated: false,
+      // GitHub never filters host-side; the picker is told so rather than left to assume.
+      searchesRemotely: false
     })
   })
 
@@ -322,7 +324,13 @@ describe('listGithubCloneSourceRepos', () => {
 
     const result = await listGithubCloneSourceRepos()
 
-    expect(result).toEqual({ provider: 'github', repos: [], error: '', truncated: false })
+    expect(result).toEqual({
+      provider: 'github',
+      repos: [],
+      error: '',
+      truncated: false,
+      searchesRemotely: false
+    })
     // Not connected must not cost a repo query.
     expect(repoListArgs()).toEqual([])
   })

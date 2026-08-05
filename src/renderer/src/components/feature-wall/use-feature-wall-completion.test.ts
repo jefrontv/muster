@@ -23,7 +23,6 @@ function completionInput(overrides: Partial<CompletionInput> = {}): CompletionIn
     isCheckingTaskSources: false,
     hasUsageAccount: false,
     orchestrationSkillInstalled: false,
-    browserUseSkillInstalled: false,
     githubConfigured: false,
     aiCommitPrConfigured: false,
     ...overrides
@@ -37,7 +36,6 @@ describe('getFeatureWallCompletionProgress', () => {
         hasConnectedTaskSource: true,
         hasUsageAccount: true,
         orchestrationSkillInstalled: true,
-        browserUseSkillInstalled: true,
         githubConfigured: true,
         aiCommitPrConfigured: true
       })
@@ -171,34 +169,20 @@ describe('getFeatureWallCompletionProgress', () => {
       getFeatureWallCompletionProgress(
         completionInput({
           visitedWorkflows: new Set<FeatureWallWorkflowId>(['workbench']),
-          visitedWorkbenchSteps: new Set<WorkbenchStepId>(['terminal', 'editor', 'browser']),
-          browserUseSkillInstalled: true
+          visitedWorkbenchSteps: new Set<WorkbenchStepId>(['terminal', 'editor', 'browser'])
         })
       ).workflowDone.workbench
     ).toBe(true)
   })
 
-  it('requires the Browser Use skill before completing the workbench browser step', () => {
+  it('completes the workbench browser step once the tour step is visited', () => {
     const browserVisited = completionInput({
       visitedWorkflows: new Set<FeatureWallWorkflowId>(['workbench']),
       visitedWorkbenchSteps: new Set<WorkbenchStepId>(['terminal', 'editor', 'browser'])
     })
 
-    expect(getFeatureWallCompletionProgress(browserVisited).workbenchStepDone.browser).toBe(false)
-    expect(getFeatureWallCompletionProgress(browserVisited).workflowDone.workbench).toBe(false)
-
-    expect(
-      getFeatureWallCompletionProgress({
-        ...browserVisited,
-        browserUseSkillInstalled: true
-      }).workbenchStepDone.browser
-    ).toBe(true)
-    expect(
-      getFeatureWallCompletionProgress({
-        ...browserVisited,
-        browserUseSkillInstalled: true
-      }).workflowDone.workbench
-    ).toBe(true)
+    expect(getFeatureWallCompletionProgress(browserVisited).workbenchStepDone.browser).toBe(true)
+    expect(getFeatureWallCompletionProgress(browserVisited).workflowDone.workbench).toBe(true)
   })
 })
 

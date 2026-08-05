@@ -22,6 +22,7 @@ import { requireSite } from '../ipc/sites-result'
 import type { Store } from '../persistence'
 import { detectLocalWpStack } from './localwp-detection'
 import { createLocalWpHost, LOCALWP_UNSUPPORTED_PLATFORM } from './localwp-host'
+import { defaultLocalDomain } from './site-bind-url'
 import { buildSiteRunPlan, canStartRun } from './site-run-plan'
 import { getSiteSecretPresence } from './site-secret-store'
 import { resolveSiteSetupCloneTargets } from './site-setup-clone-targets'
@@ -106,8 +107,10 @@ function buildStackReadiness(
   return {
     supported: detection.supported,
     alreadyLocalWp,
-    // Local rejects a blank domain, so fall back to the folder name rather than offering nothing.
-    suggestedDomain: site.localDomain.trim() || `${path.basename(site.path)}.local`,
+    // Local rejects a blank domain, so fall back to the folder name rather than offering nothing —
+    // through ocsites' own default_local_domain, so a domain-shaped folder gives acme.local rather
+    // than acme.com.au.local.
+    suggestedDomain: site.localDomain.trim() || defaultLocalDomain(path.basename(site.path)),
     // `reason` is only a contract when the stage is closed, and the type does not promise
     // detection filled it in, so the platform message is the floor.
     reason: !detection.supported

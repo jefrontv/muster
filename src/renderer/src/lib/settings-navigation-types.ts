@@ -24,7 +24,6 @@ export type SettingsNavTarget =
   | 'terminal'
   | 'quick-commands'
   | 'notifications'
-  | 'computer-use'
   | 'developer-permissions'
   | 'privacy'
   | 'advanced'
@@ -35,11 +34,11 @@ export type SettingsNavTarget =
   | 'ssh'
   | 'experimental'
   | 'agents'
+  | 'agent-capabilities'
   | 'orchestration'
   | 'linear'
   | 'servers'
   | 'mobile'
-  | 'mobile-emulator'
   | 'repo'
 
 export type SettingsNavSection = {

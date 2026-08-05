@@ -91,17 +91,45 @@ const terminalTabSchema = z.object({
 
 // ─── Unified tab model ──────────────────────────────────────────────
 
-const tabContentTypeSchema = z.enum([
+// Why these are listed as a const array and not inlined into z.enum: the drop-on-read
+// predicate below needs to test membership at runtime, and a single source keeps the
+// schema and that check from drifting apart.
+const RECOGNIZED_TAB_CONTENT_TYPES = [
   'terminal',
   'editor',
   'diff',
   'conflict-review',
   'check-details',
-  'browser',
-  'simulator'
-])
+  'browser'
+] as const
 
-const workspaceVisibleTabTypeSchema = z.enum(['terminal', 'editor', 'browser', 'simulator'])
+const tabContentTypeSchema = z.enum(RECOGNIZED_TAB_CONTENT_TYPES)
+
+// Why `.catch`: activeTabType is only a view selector, so an unrecognized value must
+// degrade instead of failing the session. Falling back to 'terminal' is inert here —
+// it focuses an existing surface and never creates a tab or spawns a pty.
+const workspaceVisibleTabTypeSchema = z.enum(['terminal', 'editor', 'browser']).catch('terminal')
+
+// Why: a build that RETIRES a tab content type must not wipe the whole session.
+// `contentType` carried no tolerance while its sibling `viewMode` deliberately does,
+// so one unrecognized value failed the entire safeParse and discarded every tab,
+// group, and split layout — presenting as generic session corruption. Unrecognized
+// types are dropped per-tab instead, which is how retired transient editor tabs are
+// already handled downstream in tabs-hydration.ts (dangling tabOrder ids are
+// tolerated there). This is forward/backward-compat tolerance for retired tab types,
+// NOT a feature flag, and it must stay general so retiring the next type is safe.
+// Deliberately NOT `.catch('terminal')` on contentType: resurrecting a retired tab as
+// a terminal would spawn a pty the user never asked for.
+function isRetiredTabContentType(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object' || !('contentType' in raw)) {
+    return false
+  }
+  const contentType: unknown = raw.contentType
+  return (
+    typeof contentType === 'string' &&
+    !(RECOGNIZED_TAB_CONTENT_TYPES as readonly string[]).includes(contentType)
+  )
+}
 
 const tabSchema = z.object({
   id: z.string(),
@@ -125,6 +153,13 @@ const tabSchema = z.object({
   // undefined → 'terminal' in the renderer.
   viewMode: z.enum(['terminal', 'chat']).catch('terminal').optional()
 })
+
+// Why a per-entry preprocess rather than filtering the parsed array: a retired tab
+// must be dropped BEFORE tabSchema rejects its contentType, otherwise the array
+// element fails and takes the whole session parse with it.
+const tabArraySchema = z
+  .array(z.preprocess((raw) => (isRetiredTabContentType(raw) ? null : raw), tabSchema.nullable()))
+  .transform((tabs) => tabs.filter((tab): tab is z.infer<typeof tabSchema> => tab !== null))
 
 const tabGroupSchema = z.object({
   id: z.string(),
@@ -264,7 +299,7 @@ export const workspaceSessionStateSchema: z.ZodType<WorkspaceSessionState> = z.o
   activeTabTypeByWorktree: z.record(z.string(), workspaceVisibleTabTypeSchema).optional(),
   browserUrlHistory: browserHistoryEntriesSchema.optional(),
   activeTabIdByWorktree: z.record(z.string(), z.string().nullable()).optional(),
-  unifiedTabs: z.record(z.string(), z.array(tabSchema)).optional(),
+  unifiedTabs: z.record(z.string(), tabArraySchema).optional(),
   tabGroups: z.record(z.string(), z.array(tabGroupSchema)).optional(),
   tabGroupLayouts: z.record(z.string(), tabGroupLayoutNodeSchema).optional(),
   activeGroupIdByWorktree: z.record(z.string(), z.string()).optional(),

@@ -52,7 +52,7 @@ describe('setup guide workflow actions', () => {
     vi.useRealTimers()
     useAppStore.setState({
       activeModal: 'none',
-      modalData: {},
+      modalData: undefined,
       activeWorktreeId: null,
       worktreesByRepo: {},
       tabsByWorktree: {},

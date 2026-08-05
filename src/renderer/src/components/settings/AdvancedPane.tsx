@@ -7,8 +7,10 @@ import { Label } from '../ui/label'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { AdvancedNetworkSettingsSection } from './AdvancedNetworkSettingsSection'
 import { SearchableSetting } from './SearchableSetting'
-import { SettingsSubsectionHeader, SettingsSwitch } from './SettingsFormControls'
+import { SettingsSubsectionHeader, SettingsSwitch, SettingsSwitchRow } from './SettingsFormControls'
 import { getAdvancedPaneSearchEntries, getAdvancedSearchEntry } from './advanced-search'
+import { getHiddenSettingsSectionsSearchEntry } from './settings-backup-search'
+import { SettingsBackupSection } from './SettingsBackupSection'
 import { translate } from '@/i18n/i18n'
 
 export { getAdvancedPaneSearchEntries }
@@ -39,6 +41,8 @@ export function AdvancedPane({ settings, updateSettings }: AdvancedPaneProps): R
       }
     })
   }
+
+  const showHiddenSections = settings.showHiddenSettingsSections === true
 
   return (
     <div className="space-y-4">
@@ -147,6 +151,25 @@ export function AdvancedPane({ settings, updateSettings }: AdvancedPaneProps): R
         />
         <AdvancedNetworkSettingsSection settings={settings} updateSettings={updateSettings} />
       </section>
+
+      <section className="space-y-3">
+        <SettingsSubsectionHeader
+          title={translate(
+            'auto.components.settings.AdvancedPane.settingsVisibility',
+            'Settings visibility'
+          )}
+        />
+        <SearchableSetting {...getHiddenSettingsSectionsSearchEntry()}>
+          <SettingsSwitchRow
+            label={getHiddenSettingsSectionsSearchEntry().title}
+            description={getHiddenSettingsSectionsSearchEntry().description}
+            checked={showHiddenSections}
+            onChange={() => updateSettings({ showHiddenSettingsSections: !showHiddenSections })}
+          />
+        </SearchableSetting>
+      </section>
+
+      <SettingsBackupSection />
     </div>
   )
 }

@@ -178,7 +178,9 @@ const electronMocks = vi.hoisted(() => {
     BrowserWindow: { fromId: vi.fn((_id: number): unknown => null) },
     webContents: { fromId: vi.fn((_id: number): unknown => null) },
     ipcMain,
-    app: { getPath: vi.fn(() => '/tmp') }
+    app: { getPath: vi.fn(() => '/tmp') },
+    // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+    safeStorage: undefined
   }
 })
 
@@ -37291,27 +37293,28 @@ describe('OrcaRuntimeService', () => {
       })
     }
 
+    // Why browserBack: page-targeting is a shared contract of resolveBrowserCommandTarget, and back
+    // takes the same (worktreeId, browserPageId) bridge shape the removed agent snapshot did.
     it('passes explicit page ids through without resolving the current worktree', async () => {
       vi.mocked(listWorktrees).mockClear()
       mockLiveBrowserGuest()
       const runtime = createRuntime()
-      const snapshotMock = vi.fn().mockResolvedValue({
+      const backMock = vi.fn().mockResolvedValue({
         browserPageId: 'page-1',
-        snapshot: 'tree',
-        refs: [],
         url: 'https://example.com',
         title: 'Example'
       })
 
       runtime.setAgentBrowserBridge({
-        snapshot: snapshotMock,
+        back: backMock,
+        getActivePageId: vi.fn(() => 'page-1'),
         getRegisteredTabs: vi.fn(() => new Map([['page-1', 1]]))
       } as never)
 
-      const result = await runtime.browserSnapshot({ page: 'page-1' })
+      const result = await runtime.browserBack({ page: 'page-1' })
 
-      expect(result.browserPageId).toBe('page-1')
-      expect(snapshotMock).toHaveBeenCalledWith(undefined, 'page-1')
+      expect(result.url).toBe('https://example.com')
+      expect(backMock).toHaveBeenCalledWith(undefined, 'page-1')
       expect(listWorktrees).not.toHaveBeenCalled()
     })
 
@@ -37319,41 +37322,36 @@ describe('OrcaRuntimeService', () => {
       vi.mocked(listWorktrees).mockClear()
       mockLiveBrowserGuest()
       const runtime = createRuntime()
-      const snapshotMock = vi.fn().mockResolvedValue({
+      const backMock = vi.fn().mockResolvedValue({
         browserPageId: 'page-1',
-        snapshot: 'tree',
-        refs: [],
         url: 'https://example.com',
         title: 'Example'
       })
 
       runtime.setAgentBrowserBridge({
-        snapshot: snapshotMock,
+        back: backMock,
+        getActivePageId: vi.fn(() => 'page-1'),
         getRegisteredTabs: vi.fn(() => new Map([['page-1', 1]]))
       } as never)
 
-      await runtime.browserSnapshot({
+      await runtime.browserBack({
         worktree: 'branch:feature/foo',
         page: 'page-1'
       })
 
-      expect(snapshotMock).toHaveBeenCalledWith(TEST_WORKTREE_ID, 'page-1')
+      expect(backMock).toHaveBeenCalledWith(TEST_WORKTREE_ID, 'page-1')
     })
 
-    it('routes tab switch and capture start by explicit page id', async () => {
+    it('routes tab switch by explicit page id', async () => {
       mockLiveBrowserGuest()
       const runtime = createRuntime()
       const tabSwitchMock = vi.fn().mockResolvedValue({
         switched: 2,
         browserPageId: 'page-2'
       })
-      const captureStartMock = vi.fn().mockResolvedValue({
-        capturing: true
-      })
 
       runtime.setAgentBrowserBridge({
         tabSwitch: tabSwitchMock,
-        captureStart: captureStartMock,
         getRegisteredTabs: vi.fn(() => new Map([['page-2', 2]]))
       } as never)
 
@@ -37361,11 +37359,7 @@ describe('OrcaRuntimeService', () => {
         switched: 2,
         browserPageId: 'page-2'
       })
-      await expect(runtime.browserCaptureStart({ page: 'page-2' })).resolves.toEqual({
-        capturing: true
-      })
       expect(tabSwitchMock).toHaveBeenCalledWith(undefined, undefined, 'page-2')
-      expect(captureStartMock).toHaveBeenCalledWith(undefined, 'page-2')
     })
 
     it('accepts focus on tab switch without altering bridge args (focus is main-side concern)', async () => {
@@ -37393,20 +37387,21 @@ describe('OrcaRuntimeService', () => {
       vi.mocked(listWorktrees).mockResolvedValue(MOCK_GIT_WORKTREES)
       mockLiveBrowserGuest()
       const runtime = createRuntime()
-      const snapshotMock = vi.fn()
+      const backMock = vi.fn()
 
       runtime.setAgentBrowserBridge({
-        snapshot: snapshotMock,
+        back: backMock,
+        getActivePageId: vi.fn(() => 'page-1'),
         getRegisteredTabs: vi.fn(() => new Map([['page-1', 1]]))
       } as never)
 
       await expect(
-        runtime.browserSnapshot({
+        runtime.browserBack({
           worktree: 'path:/tmp/missing-worktree',
           page: 'page-1'
         })
       ).rejects.toThrow('selector_not_found')
-      expect(snapshotMock).not.toHaveBeenCalled()
+      expect(backMock).not.toHaveBeenCalled()
     })
 
     it('does not silently drop invalid explicit worktree selectors for non-page browser commands', async () => {

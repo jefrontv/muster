@@ -858,36 +858,16 @@ describe('keybindings', () => {
     ).toBe(true)
   })
 
-  // Why: #8533 — both previously defaulted to Mod+Shift+E on darwin; emulator won.
-  it('keeps explorer on Mod+Shift+E and gives the mobile emulator a non-colliding macOS default', () => {
+  // Why kept after the mobile emulator's removal: #8533 was an explorer/emulator collision on
+  // Mod+Shift+E, and explorer keeping that chord is the half users have muscle memory for.
+  it('keeps explorer on Mod+Shift+E', () => {
     expect(getEffectiveKeybindingsForAction('sidebar.explorer.toggle', 'darwin')).toEqual([
       'Mod+Shift+E'
     ])
-    expect(getEffectiveKeybindingsForAction('tab.newSimulator', 'darwin')).toEqual([
-      'Mod+Alt+Shift+E'
-    ])
-    expect(getEffectiveKeybindingsForAction('tab.newSimulator', 'linux')).toEqual([])
-    expect(getEffectiveKeybindingsForAction('tab.newSimulator', 'win32')).toEqual([])
-    expect(formatKeybindingList(['Mod+Alt+Shift+E'], 'darwin')).toBe('⌘⌥⇧E')
-
     expect(
       keybindingMatchesAction(
         'sidebar.explorer.toggle',
         { key: 'e', code: 'KeyE', meta: true, control: false, alt: false, shift: true },
-        'darwin'
-      )
-    ).toBe(true)
-    expect(
-      keybindingMatchesAction(
-        'tab.newSimulator',
-        { key: 'e', code: 'KeyE', meta: true, control: false, alt: false, shift: true },
-        'darwin'
-      )
-    ).toBe(false)
-    expect(
-      keybindingMatchesAction(
-        'tab.newSimulator',
-        { key: 'e', code: 'KeyE', meta: true, control: false, alt: true, shift: true },
         'darwin'
       )
     ).toBe(true)

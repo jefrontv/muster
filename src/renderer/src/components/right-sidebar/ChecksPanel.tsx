@@ -3346,8 +3346,8 @@ export default function ChecksPanel(): React.JSX.Element {
       currentPR: activeWorktree.linkedPR ?? activeReview.number,
       currentComment: activeWorktree.comment,
       focus: 'pr',
-      afterSave: ({ updates }: { updates?: { linkedPR?: unknown } }) => {
-        const nextLinkedPR = updates?.linkedPR
+      afterSave: ({ updates }) => {
+        const nextLinkedPR = updates.linkedPR
         if (typeof nextLinkedPR === 'number') {
           void refreshLinkedGitHubPullRequest(nextLinkedPR)
         }

@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "WordPress Login Autofill",
+  "version": "1.0.0",
+  "description": "Fills the WordPress login form with credentials configured in Muster.",
+  "content_scripts": [
+    {
+      "matches": ["*://*/*wp-login*"],
+      "js": ["config.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

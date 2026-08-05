@@ -168,7 +168,17 @@ describe('buildSiteSetupPlan', () => {
       branch: 'main'
     })
 
-    expect(plan.stack.suggestedDomain).toBe(`${path.basename(EXISTING_PATH)}.local`)
+    // ocsites' default_local_domain: lower-cased, and only the first label survives.
+    expect(plan.stack.suggestedDomain).toBe(`${path.basename(EXISTING_PATH).toLowerCase()}.local`)
+  })
+
+  it('keeps only the first label of a domain-shaped folder name, as ocsites does', async () => {
+    const plan = await buildSiteSetupPlan(
+      storeStub(site({ localDomain: '', path: '/Sites/ttiwatertrucks.com.au' })),
+      { siteId: SITE_ID, reponame: 'acme', branch: 'main' }
+    )
+
+    expect(plan.stack.suggestedDomain).toBe('ttiwatertrucks.local')
   })
 
   it('closes the stack stage off macOS, where LocalWP cannot be driven at all', async () => {

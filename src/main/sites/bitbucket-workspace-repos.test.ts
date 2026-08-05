@@ -72,6 +72,37 @@ describe('request construction', () => {
     expect(url).toContain('pagelen=100')
     expect(url).toContain('sort=-updated_on')
     expect(decodeURIComponent(url)).toContain('values.links.clone')
+    // No filter at all when browsing, or Bitbucket would answer with an empty match set.
+    expect(url).not.toContain('q=')
+  })
+
+  it('asks Bitbucket to do the matching when a query is given', () => {
+    const url = bitbucketWorkspaceReposUrl('efront_au', '  sulo  ')
+    // Trimmed, because a trailing space in `name~"sulo "` is part of the term Bitbucket matches.
+    expect(new URL(url).searchParams.get('q')).toBe('name~"sulo"')
+    // Paging and the field mask still apply: a broad query pages exactly like a browse.
+    expect(url).toContain('pagelen=100')
+  })
+
+  it('matches on the repository name when a full name is pasted in', () => {
+    // `name~"efront_au/sulo"` would match nothing: the field holds the name alone.
+    expect(
+      new URL(bitbucketWorkspaceReposUrl('efront_au', 'efront_au/sulo')).searchParams.get('q')
+    ).toBe('name~"sulo"')
+  })
+
+  it('escapes quotes and backslashes so a crafted term cannot break out of the filter', () => {
+    const q = (query: string): string =>
+      new URL(bitbucketWorkspaceReposUrl('efront_au', query)).searchParams.get('q') ?? ''
+
+    expect(q('a" OR name~"b')).toBe('name~"a\\" OR name~\\"b"')
+    expect(q('back\\slash')).toBe('name~"back\\\\slash"')
+    // The escape itself must not be escapable: a trailing backslash stays inert.
+    expect(q('trailing\\')).toBe('name~"trailing\\\\"')
+    // Whitespace-only is no query at all, not an empty match.
+    expect(new URL(bitbucketWorkspaceReposUrl('efront_au', '   ')).searchParams.has('q')).toBe(
+      false
+    )
   })
 
   it('detects the workspace from an ssh or https remote', () => {
@@ -246,5 +277,75 @@ describe('listBitbucketWorkspaceRepos', () => {
     })
     expect(script.urls).toHaveLength(2)
     expect(result.repos.map((repo) => repo.slug)).toEqual(['acme'])
+  })
+
+  it('sends the query to Bitbucket and still follows its paging', async () => {
+    const script = scriptedFetch([
+      { ok: true, status: 200, body: repoPage('sulo', 'https://api.bitbucket.org/page2') },
+      { ok: true, status: 200, body: repoPage('sulo-legacy') }
+    ])
+    const result = await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: script.fetchJson,
+      query: 'sulo'
+    })
+
+    expect(new URL(script.urls[0]).searchParams.get('q')).toBe('name~"sulo"')
+    expect(script.urls[1]).toBe('https://api.bitbucket.org/page2')
+    expect(result.repos.map((repo) => repo.slug)).toEqual(['sulo', 'sulo-legacy'])
+  })
+
+  // The regression this guards: a search writing its hits into the browse cache, so the next open
+  // shows only the last search's matches.
+  it('keeps a query result out of the browse cache and leaves the browse list intact', async () => {
+    const browse = scriptedFetch([{ ok: true, status: 200, body: repoPage('acme') }])
+    await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: browse.fetchJson
+    })
+
+    const search = scriptedFetch([{ ok: true, status: 200, body: repoPage('sulo') }])
+    const searched = await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: search.fetchJson,
+      query: 'sulo'
+    })
+    expect(searched.repos.map((repo) => repo.slug)).toEqual(['sulo'])
+
+    const cached = scriptedFetch([])
+    const afterSearch = await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: cached.fetchJson,
+      preferCache: true
+    })
+    expect(cached.urls).toEqual([])
+    expect(afterSearch.repos.map((repo) => repo.slug)).toEqual(['acme'])
+  })
+
+  it('never answers a query from the browse cache, even when the search fails', async () => {
+    const browse = scriptedFetch([{ ok: true, status: 200, body: repoPage('acme') }])
+    await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: browse.fetchJson
+    })
+
+    const failing = scriptedFetch([{ ok: false, status: 401, body: null }])
+    const searched = await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: failing.fetchJson,
+      query: 'sulo',
+      // Even asked for the cache: a cached browse list is not an answer to 'sulo'.
+      preferCache: true
+    })
+    expect(failing.urls).toHaveLength(1)
+    expect(searched.repos).toEqual([])
+    expect(searched.fromCache).toBe(false)
+    expect(searched.error).toContain('HTTP 401')
   })
 })

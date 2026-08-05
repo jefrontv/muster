@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { GlobalSettings } from '../../../../shared/types'
 import { useAppStore } from '../../store'
 import { matchesSettingsSearch } from './settings-search'
 import { getBrowserPaneSearchEntries, getBrowserLinkRoutingDescription } from './browser-search'
-import { getBrowserUsePaneSearchEntries } from './browser-use-search'
-import { getBrowserPaneCombinedSearchEntries } from './browser-pane-search'
 import { BrowserHomePageSetting } from './BrowserHomePageSetting'
 import { BrowserDefaultZoomSetting } from './BrowserDefaultZoomSetting'
-import { BrowserUseSetup } from './BrowserUsePane'
 import { BrowserSearchEngineSetting } from './BrowserSearchEngineSetting'
 import { BrowserLinkRoutingSetting } from './BrowserLinkRoutingSetting'
+import { BrowserFloatingLinkSetting } from './BrowserFloatingLinkSetting'
+import { BrowserExtensionsSection } from './BrowserExtensionsSection'
+import { BundledExtensionsSection } from './BundledExtensionsSection'
 import { BrowserLocalhostWorktreeLabelsSetting } from './BrowserLocalhostWorktreeLabelsSetting'
 import { BrowserSessionCookiesSection } from './BrowserSessionCookiesSection'
 import { BrowserNewProfileDialog } from './BrowserNewProfileDialog'
@@ -26,26 +26,13 @@ import {
 import { isMacUserAgent } from '@/components/terminal-pane/pane-helpers'
 import { translate } from '@/i18n/i18n'
 import { resolveAvailableBrowserSessionHostId } from './browser-session-host-selection'
-export { getBrowserPaneCombinedSearchEntries }
 
 type BrowserPaneProps = {
   settings: GlobalSettings
   updateSettings: (updates: Partial<GlobalSettings>) => void
-  onOpenComputerUse?: () => void
 }
 
-function cancelBrowserSessionCookieScrollFrames(frameIds: MutableRefObject<number[]>): void {
-  for (const frameId of frameIds.current) {
-    cancelAnimationFrame(frameId)
-  }
-  frameIds.current = []
-}
-
-export function BrowserPane({
-  settings,
-  updateSettings,
-  onOpenComputerUse
-}: BrowserPaneProps): React.JSX.Element {
+export function BrowserPane({ settings, updateSettings }: BrowserPaneProps): React.JSX.Element {
   const searchQuery = useAppStore((s) => s.settingsSearchQuery)
   const browserDefaultUrl = useAppStore((s) => s.browserDefaultUrl)
   const setBrowserDefaultUrl = useAppStore((s) => s.setBrowserDefaultUrl)
@@ -72,7 +59,6 @@ export function BrowserPane({
     createBrowserHomePageDraftState(persistedHomePageDraft)
   )
   const [newProfileDialogOpen, setNewProfileDialogOpen] = useState(false)
-  const sessionCookieScrollFrameIdsRef = useRef<number[]>([])
   const resolvedHomePageDraftState = resolveBrowserHomePageDraftState(
     homePageDraftState,
     persistedHomePageDraft
@@ -86,22 +72,19 @@ export function BrowserPane({
     setHomePageDraftState((current) => ({ ...current, value }))
   }
 
-  const setBrowserPaneRootNode = useCallback((node: HTMLDivElement | null) => {
-    if (node !== null) {
-      return
-    }
-    cancelBrowserSessionCookieScrollFrames(sessionCookieScrollFrameIdsRef)
-  }, [])
-
   const selectedSearchEngine = browserDefaultSearchEngine ?? 'google'
 
   const showHomePage = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[0]])
   const showSearchEngine = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[1]])
   const showDefaultZoom = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[2]])
   const showLinkRouting = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[3]])
-  const showLocalhostLabels = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[4]])
-  const showCookies = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[5]])
-  const showBrowserUse = matchesSettingsSearch(searchQuery, getBrowserUsePaneSearchEntries())
+  const showFloatingLinks = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[4]])
+  const showExtensions = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[5]])
+  const showBundledExtensions = matchesSettingsSearch(searchQuery, [
+    getBrowserPaneSearchEntries()[6]
+  ])
+  const showLocalhostLabels = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[7]])
+  const showCookies = matchesSettingsSearch(searchQuery, [getBrowserPaneSearchEntries()[8]])
   const isMac = isMacUserAgent()
   const linkRoutingDescription = getBrowserLinkRoutingDescription({ isMac })
   const hostLabelOverrides = useMemo(() => getHostDisplayLabelOverrides(settings), [settings])
@@ -162,46 +145,8 @@ export function BrowserPane({
     [setBrowserSessionHostId]
   )
 
-  const requestSessionCookieScrollFrame = (callback: FrameRequestCallback): void => {
-    let completed = false
-    let frameId: number | undefined
-    frameId = requestAnimationFrame((timestamp) => {
-      completed = true
-      if (frameId !== undefined) {
-        sessionCookieScrollFrameIdsRef.current = sessionCookieScrollFrameIdsRef.current.filter(
-          (pendingFrameId) => pendingFrameId !== frameId
-        )
-      }
-      callback(timestamp)
-    })
-    if (!completed) {
-      sessionCookieScrollFrameIdsRef.current.push(frameId)
-    }
-  }
-
-  const scrollToSessionCookies = (): void => {
-    cancelBrowserSessionCookieScrollFrames(sessionCookieScrollFrameIdsRef)
-    useAppStore.getState().setSettingsSearchQuery('')
-    requestSessionCookieScrollFrame(() => {
-      requestSessionCookieScrollFrame(() => {
-        const el = document.getElementById('browser-session-cookies')
-        if (!el) {
-          return
-        }
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
-    })
-  }
-
   return (
-    <div ref={setBrowserPaneRootNode} className="space-y-6">
-      {showBrowserUse ? (
-        <BrowserUseSetup
-          onConfigureMoreBrowsers={scrollToSessionCookies}
-          onOpenComputerUse={onOpenComputerUse}
-        />
-      ) : null}
-
+    <div className="space-y-6">
       {showHomePage ? (
         <BrowserHomePageSetting
           value={homePageDraft}
@@ -237,6 +182,14 @@ export function BrowserPane({
           updateSettings={updateSettings}
         />
       ) : null}
+
+      {showFloatingLinks ? (
+        <BrowserFloatingLinkSetting settings={settings} updateSettings={updateSettings} />
+      ) : null}
+
+      {showBundledExtensions ? <BundledExtensionsSection /> : null}
+
+      {showExtensions ? <BrowserExtensionsSection /> : null}
 
       {showLocalhostLabels ? (
         <BrowserLocalhostWorktreeLabelsSetting

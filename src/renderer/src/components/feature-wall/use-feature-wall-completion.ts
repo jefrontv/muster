@@ -39,7 +39,6 @@ export function useFeatureWallCompletion(
   hasConnectedTaskSource: boolean,
   isCheckingTaskSources: boolean,
   orchestrationSkillInstalled: boolean,
-  browserUseSkillInstalled: boolean,
   options: { onTourDepthSummaryChange?: (summary: FeatureWallTourDepthSummary) => void } = {}
 ): FeatureWallCompletionState {
   const { onTourDepthSummaryChange } = options
@@ -114,7 +113,6 @@ export function useFeatureWallCompletion(
     isCheckingTaskSources,
     hasUsageAccount,
     orchestrationSkillInstalled,
-    browserUseSkillInstalled,
     githubConfigured,
     aiCommitPrConfigured,
     onTourDepthSummaryChange
@@ -160,13 +158,11 @@ export function useFeatureWallCompletion(
         isCheckingTaskSources,
         hasUsageAccount,
         orchestrationSkillInstalled,
-        browserUseSkillInstalled,
         githubConfigured,
         aiCommitPrConfigured
       }),
     [
       aiCommitPrConfigured,
-      browserUseSkillInstalled,
       githubConfigured,
       hasConnectedTaskSource,
       hasUsageAccount,
@@ -233,13 +229,11 @@ export function useFeatureWallCompletion(
         isCheckingTaskSources,
         hasUsageAccount,
         orchestrationSkillInstalled,
-        browserUseSkillInstalled,
         githubConfigured,
         aiCommitPrConfigured
       }),
     [
       aiCommitPrConfigured,
-      browserUseSkillInstalled,
       completedAgentSteps,
       completedReviewSteps,
       completedWorkbenchSteps,

@@ -79,7 +79,9 @@ export type AcHttpArgs = {
 const AC_REDACTED = '***'
 const AC_MAX_ATTEMPTS = 3
 const AC_RETRY_BACKOFF_MS = [250, 750]
-// Why: an unbounded Retry-After would stall a background poll for hours.
+// Why: an unbounded Retry-After would stall a background poll for hours. The cap is a budget for
+// the WHOLE request, not per attempt: three attempts each honouring a 60s hint would hold one poll
+// open for three minutes, and the poller then schedules its own backoff on top of that.
 const AC_MAX_RETRY_AFTER_MS = 60_000
 // Why: ActiveCollab answers bad credentials with HTTP 500, so a 500 naming an
 // authentication failure must be told apart from a transient server fault —
@@ -321,6 +323,7 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
     const url = acUrl(baseUrl, path, options.query)
     const init = acRequestInit(token, options)
     let attempt = 0
+    let retryAfterSpentMs = 0
     for (;;) {
       const response = await acFetchOnce(fetchImpl, url, init, token)
       // Draining on every path — ok or not — is what keeps undici from stalling.
@@ -334,18 +337,23 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
         }
       }
       const error = acError(response.status, body, token)
+      // Why: the server's own hint beats our guess — a shorter sleep re-fails.
+      const hintedMs = acRetryAfterMs(response, now)
       // Why: only GET is safe to replay, and an auth-shaped 500 is a rejected
-      // credential rather than a blip, so replaying it can never succeed.
+      // credential rather than a blip, so replaying it can never succeed. A hint that no longer
+      // fits the budget ends the request instead: asking again sooner than the server asked is
+      // worse than failing, and the caller comes back on its own schedule.
       const retryable =
         init.method === 'GET' &&
         !error.isAuthError &&
         AC_RETRYABLE_STATUS[response.status] === true &&
-        attempt < AC_MAX_ATTEMPTS - 1
+        attempt < AC_MAX_ATTEMPTS - 1 &&
+        (hintedMs === null || hintedMs <= AC_MAX_RETRY_AFTER_MS - retryAfterSpentMs)
       if (!retryable) {
         throw error
       }
-      // Why: the server's own hint beats our guess — a shorter sleep re-fails.
-      await sleep(acRetryAfterMs(response, now) ?? AC_RETRY_BACKOFF_MS[attempt])
+      retryAfterSpentMs += hintedMs ?? 0
+      await sleep(hintedMs ?? AC_RETRY_BACKOFF_MS[attempt])
       attempt += 1
     }
   }

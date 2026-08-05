@@ -23,8 +23,6 @@ import {
 } from '../../runtime/web-runtime-session'
 import { closeTerminalTab } from '../terminal/terminal-tab-actions'
 import { openTabBarEntry, type TabCreateEntryArgs } from '../tab-bar/tab-create-entry-action'
-import { openMobileEmulatorTab } from '@/lib/open-mobile-emulator-tab'
-import { ensureSimulatorTab, getSimulatorTabForWorktree } from '@/lib/ensure-simulator-tab'
 import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { browserWorkspaceHasRemoteOwner } from '@/runtime/remote-browser-tab-ownership'
@@ -66,8 +64,7 @@ export function useTabGroupWorkspaceModel({
       browserTabs: state.browserTabsByWorktree[worktreeId] ?? EMPTY_BROWSER_TABS,
       expandedPaneByTabId: state.expandedPaneByTabId,
       terminalLayoutsByTabId: state.terminalLayoutsByTabId ?? EMPTY_TERMINAL_LAYOUTS_BY_TAB_ID,
-      generatedTabTitlesEnabled: state.settings?.tabAutoGenerateTitle === true,
-      mobileEmulatorEnabled: state.settings?.mobileEmulatorEnabled !== false
+      generatedTabTitlesEnabled: state.settings?.tabAutoGenerateTitle === true
     }))
   )
 
@@ -260,8 +257,6 @@ export function useTabGroupWorkspaceModel({
         destroyWorkspaceWebviews(browserState.browserPagesByWorkspace, item.entityId)
         closeBrowserTab(item.entityId)
         closeUnifiedTab(item.id)
-      } else if (item.contentType === 'simulator') {
-        closeUnifiedTab(item.id)
       } else {
         const canCloseTab = closeEditorIfUnreferenced(item.entityId, item.id)
         if (!canCloseTab) {
@@ -321,8 +316,6 @@ export function useTabGroupWorkspaceModel({
           closeUnifiedTab(item.id)
         } else if (item.contentType === 'terminal') {
           closeTab(item.entityId)
-        } else if (item.contentType === 'simulator') {
-          closeUnifiedTab(item.id)
         } else {
           const canCloseTab = closeEditorIfUnreferenced(item.entityId, item.id)
           if (canCloseTab) {
@@ -402,13 +395,8 @@ export function useTabGroupWorkspaceModel({
       }
       focusGroup(worktreeId, groupId)
       activateTab(item.id)
-      if (item.contentType === 'simulator') {
-        setActiveTabType('simulator')
-        // simulator has no editor file entity
-      } else {
-        setActiveFile(item.entityId)
-        setActiveTabType('editor')
-      }
+      setActiveFile(item.entityId)
+      setActiveTabType('editor')
     },
     [activateTab, focusGroup, groupId, groupTabs, setActiveFile, setActiveTabType, worktreeId]
   )
@@ -564,19 +552,6 @@ export function useTabGroupWorkspaceModel({
       newBrowserTab: () => {
         void openNewBrowserTabInActiveWorkspace(groupId)
       },
-      newSimulatorTab: worktreeState.mobileEmulatorEnabled
-        ? () => {
-            if (getSimulatorTabForWorktree(worktreeId)) {
-              void ensureSimulatorTab(worktreeId, { surfacePane: true })
-              return
-            }
-            // Why: mobile simulators are most useful beside the current tab group.
-            void openMobileEmulatorTab(worktreeId, {
-              placement: 'rightSplit',
-              targetGroupId: groupId
-            })
-          }
-        : undefined,
       openEntry: async (args: TabCreateEntryArgs) => {
         await openTabBarEntry(args)
       },

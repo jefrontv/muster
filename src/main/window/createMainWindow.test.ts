@@ -157,6 +157,7 @@ describe('createMainWindow', () => {
       setWindowOpenHandler: vi.fn((handler) => {
         windowHandlers.windowOpen = handler
       }),
+      isDestroyed: vi.fn(() => false),
       send: vi.fn(),
       isDevToolsOpened: vi.fn(),
       openDevTools: vi.fn(),
@@ -210,15 +211,26 @@ describe('createMainWindow', () => {
     expect(windowHandlers.windowOpen({ url: 'file:///etc/passwd' })).toEqual({ action: 'deny' })
     expect(windowHandlers.windowOpen({ url: 'not a url' })).toEqual({ action: 'deny' })
 
-    expect(openExternalMock).toHaveBeenCalledTimes(2)
-    expect(openExternalMock).toHaveBeenCalledWith('https://example.com/')
-    expect(openExternalMock).toHaveBeenCalledWith('http://localhost:3000/')
+    // Why: http(s) targets go to the renderer, which owns openLinksInApp routing and
+    // falls back to the system browser itself; main never calls openExternal here.
+    const linkForwards = (): string[] =>
+      webContents.send.mock.calls
+        .filter(([channel]) => channel === 'browser:open-link-in-orca-tab')
+        .map(([, payload]) => payload.url)
+
+    expect(openExternalMock).not.toHaveBeenCalled()
+    expect(linkForwards()).toEqual(['https://example.com/', 'http://localhost:3000/'])
+    expect(
+      webContents.send.mock.calls.find(
+        ([channel]) => channel === 'browser:open-link-in-orca-tab'
+      )?.[1]
+    ).toMatchObject({ browserPageId: null })
 
     const preventDefault = vi.fn()
     windowHandlers['will-navigate']({ preventDefault } as never, 'https://example.com/docs')
     expect(preventDefault).toHaveBeenCalledTimes(1)
-    expect(openExternalMock).toHaveBeenCalledTimes(3)
-    expect(openExternalMock).toHaveBeenLastCalledWith('https://example.com/docs')
+    expect(linkForwards()).toHaveLength(3)
+    expect(linkForwards().at(-1)).toBe('https://example.com/docs')
 
     const localhostPreventDefault = vi.fn()
     windowHandlers['will-navigate'](
@@ -226,8 +238,8 @@ describe('createMainWindow', () => {
       'localhost:3000'
     )
     expect(localhostPreventDefault).toHaveBeenCalledTimes(1)
-    expect(openExternalMock).toHaveBeenCalledTimes(4)
-    expect(openExternalMock).toHaveBeenLastCalledWith('http://localhost:3000/')
+    expect(linkForwards()).toHaveLength(4)
+    expect(linkForwards().at(-1)).toBe('http://localhost:3000/')
 
     const fileNavigationPreventDefault = vi.fn()
     windowHandlers['will-navigate'](
@@ -235,7 +247,8 @@ describe('createMainWindow', () => {
       'file:///etc/passwd'
     )
     expect(fileNavigationPreventDefault).toHaveBeenCalledTimes(1)
-    expect(openExternalMock).toHaveBeenCalledTimes(4)
+    expect(linkForwards()).toHaveLength(4)
+    expect(openExternalMock).not.toHaveBeenCalled()
 
     const allowBlankEvent = { preventDefault: vi.fn() }
     const allowBlankPrefs = { partition: 'persist:orca-browser' }

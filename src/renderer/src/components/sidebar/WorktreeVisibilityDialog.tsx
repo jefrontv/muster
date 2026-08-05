@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import {
   Dialog,
   DialogContent,
@@ -21,15 +22,14 @@ import {
 import { translate } from '@/i18n/i18n'
 
 export default function WorktreeVisibilityDialog(): React.JSX.Element | null {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('worktree-visibility')
   const closeModal = useAppStore((s) => s.closeModal)
   const repos = useAppStore((s) => s.repos)
   const updateRepo = useAppStore((s) => s.updateRepo)
   const fetchWorktrees = useAppStore((s) => s.fetchWorktrees)
   const detectedWorktreesByRepo = useAppStore((s) => s.detectedWorktreesByRepo)
 
-  const repoId = typeof modalData.repoId === 'string' ? modalData.repoId : ''
+  const repoId = modalData?.repoId ?? ''
   const repo = repos.find((candidate) => candidate.id === repoId) ?? null
   const detected = repoId ? detectedWorktreesByRepo[repoId] : undefined
   const showOther = repo
@@ -57,7 +57,7 @@ export default function WorktreeVisibilityDialog(): React.JSX.Element | null {
     closeModal()
   }, [closeModal, fetchWorktrees, repoId, showOther, updateRepo])
 
-  if (activeModal !== 'worktree-visibility' || !repo || !isGitRepoKind(repo)) {
+  if (modalData === null || !repo || !isGitRepoKind(repo)) {
     return null
   }
 

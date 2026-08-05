@@ -16,12 +16,6 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteBindDialog.chooseFolder',
     'Which local folder should this bind to?'
   ),
-  browse: translate('auto.components.sites.SiteBindDialog.browse', 'Choose a folder…'),
-  cloneHeading: translate('auto.components.sites.SiteBindDialog.cloneHeading', 'Not cloned yet'),
-  cloneHint: translate(
-    'auto.components.sites.SiteBindDialog.cloneHint',
-    'Clone the repository first, then bind the new checkout.'
-  ),
   clone: translate('auto.components.sites.SiteBindDialog.clone', 'Clone into a folder…'),
   cloning: translate('auto.components.sites.SiteBindDialog.cloning', 'Cloning…'),
   noCandidates: translate(
@@ -39,6 +33,23 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
   updatesExisting: translate(
     'auto.components.sites.SiteBindDialog.updatesExisting',
     'This folder already has a site record; confirming updates it.'
+  ),
+  missingFolder: translate(
+    'auto.components.sites.SiteBindDialog.missingFolder',
+    'Its folder is gone, so this record cannot be bound. Choose or clone a folder to set it up fresh.'
+  ),
+  setUpInRoot: translate(
+    'auto.components.sites.SiteBindDialog.setUpInRoot',
+    'Set up in {{folder}}'
+  ),
+  settingUp: translate('auto.components.sites.SiteBindDialog.settingUp', 'Setting up…'),
+  willCreateAt: translate(
+    'auto.components.sites.SiteBindDialog.willCreateAt',
+    'Muster will clone into {{path}} and configure it.'
+  ),
+  noRootConfigured: translate(
+    'auto.components.sites.SiteBindDialog.noRootConfigured',
+    'No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders.'
   ),
   confirm: translate('auto.components.sites.SiteBindDialog.confirm', 'Bind this site'),
   confirming: translate('auto.components.sites.SiteBindDialog.confirming', 'Binding…'),

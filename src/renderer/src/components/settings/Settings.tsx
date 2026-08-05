@@ -52,6 +52,7 @@ import { VoicePane } from './VoicePane'
 import { SshPane } from './SshPane'
 import { ExperimentalPane } from './ExperimentalPane'
 import { AgentsPane } from './AgentsPane'
+import { AgentCapabilitiesPane } from './AgentCapabilitiesPane'
 import { OrchestrationPane } from './OrchestrationPane'
 import { LinearAgentSkillPane } from './LinearAgentSkillPane'
 import { AccountsPane } from './AccountsPane'
@@ -60,9 +61,7 @@ import { IntegrationsPane } from './IntegrationsPane'
 import { TasksPane } from './TasksPane'
 import { QuickCommandsPane } from './QuickCommandsPane'
 import { DeveloperPermissionsPane } from './DeveloperPermissionsPane'
-import { ComputerUsePane } from './ComputerUsePane'
 import { MobileSettingsPane } from './MobileSettingsPane'
-import { MobileEmulatorSettingsPane } from './MobileEmulatorSettingsPane'
 import { RuntimeEnvironmentsPane } from './RuntimeEnvironmentsPane'
 import { PrivacyPane } from './PrivacyPane'
 import { AdvancedPane } from './AdvancedPane'
@@ -93,7 +92,6 @@ import type {
   SettingsNavTarget
 } from '@/lib/settings-navigation-types'
 import {
-  COMPUTER_USE_SKILL_NAME,
   LINEAR_AGENT_SKILL_NAMES,
   ORCHESTRATION_SKILL_NAME
 } from '@/lib/agent-feature-install-commands'
@@ -338,11 +336,6 @@ function Settings(): React.JSX.Element {
   })
   const linearSkill = useInstalledAgentSkillNames(LINEAR_AGENT_SKILL_NAMES, {
     enabled: linearConnected,
-    discoveryTarget: activeSkillRuntime.discoveryTarget,
-    sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
-  })
-  const computerUseSkill = useInstalledAgentSkill(COMPUTER_USE_SKILL_NAME, {
-    enabled: showDesktopOnlySettings,
     discoveryTarget: activeSkillRuntime.discoveryTarget,
     sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
   })
@@ -704,8 +697,6 @@ function Settings(): React.JSX.Element {
     loading: linearSkillLoading,
     skills: linearSkills
   } = linearSkill
-  const { installed: computerUseSkillInstalled, loading: computerUseSkillLoading } =
-    computerUseSkill
   const capabilityInstallStatusBySectionId = useMemo(() => {
     const applicableFreshnessInventory = skillFreshnessApplies ? skillFreshnessInventory : null
     const next = new Map<string, SettingsNavInstallStatus>([
@@ -731,15 +722,6 @@ function Settings(): React.JSX.Element {
       )
     }
     if (showDesktopOnlySettings) {
-      next.set(
-        'computer-use',
-        getAgentSkillNavInstallStatus({
-          name: COMPUTER_USE_SKILL_NAME,
-          installed: computerUseSkillInstalled,
-          loading: computerUseSkillLoading,
-          inventory: applicableFreshnessInventory
-        })
-      )
       if (settings) {
         next.set(
           'voice',
@@ -753,8 +735,6 @@ function Settings(): React.JSX.Element {
     }
     return next
   }, [
-    computerUseSkillInstalled,
-    computerUseSkillLoading,
     linearConnected,
     linearSkillInstalled,
     linearSkillLoading,
@@ -1067,20 +1047,6 @@ function Settings(): React.JSX.Element {
     ]
   )
 
-  const openComputerUseFromBrowser = useCallback(async () => {
-    if (!(await confirmDiscardSourceControlAiPromptChanges())) {
-      return
-    }
-    pendingNavSectionRef.current = 'computer-use'
-    pendingScrollTargetRef.current = 'computer-use'
-    if (settingsSearchQuery !== '') {
-      setSettingsSearchQuery('')
-      return
-    }
-    // Why: pending refs don't schedule a render; bump state to rerun the jump effect.
-    setPendingNavRequestTick((tick) => tick + 1)
-  }, [confirmDiscardSourceControlAiPromptChanges, setSettingsSearchQuery, settingsSearchQuery])
-
   if (!settings) {
     return (
       <div
@@ -1218,6 +1184,25 @@ function Settings(): React.JSX.Element {
                   ) : null}
                 </SettingsSection>
 
+                {showDesktopOnlySettings ? (
+                  <SettingsSection
+                    id="agent-capabilities"
+                    title={translate(
+                      'auto.components.settings.Settings.agentCapabilitiesTitle',
+                      'Agent Capabilities'
+                    )}
+                    description={translate(
+                      'auto.components.settings.Settings.agentCapabilitiesDescription',
+                      'Choose which built-in tools and skills Muster hands to your agents.'
+                    )}
+                    searchEntries={getSectionSearchEntries('agent-capabilities')}
+                  >
+                    {isSectionMounted('agent-capabilities') ? (
+                      <AgentCapabilitiesPane settings={settings} updateSettings={updateSettings} />
+                    ) : null}
+                  </SettingsSection>
+                ) : null}
+
                 <SettingsSection
                   id="orchestration"
                   title={translate('auto.components.settings.Settings.00c3a7950d', 'Orchestration')}
@@ -1245,36 +1230,19 @@ function Settings(): React.JSX.Element {
                 ) : null}
 
                 {showDesktopOnlySettings ? (
-                  <>
-                    <SettingsSection
-                      id="computer-use"
-                      title={translate(
-                        'auto.components.settings.Settings.c9841721cb',
-                        'Computer Use'
-                      )}
-                      description={translate(
-                        'auto.components.settings.Settings.7118953f14',
-                        'Enable agents to control any app on your computer.'
-                      )}
-                      searchEntries={getSectionSearchEntries('computer-use')}
-                    >
-                      {isSectionMounted('computer-use') ? <ComputerUsePane /> : null}
-                    </SettingsSection>
-
-                    <SettingsSection
-                      id="voice"
-                      title={translate('auto.components.settings.Settings.5063bb47a5', 'Voice')}
-                      description={translate(
-                        'auto.components.settings.Settings.eb1176a14e',
-                        'Local speech-to-text dictation with on-device models.'
-                      )}
-                      searchEntries={getSectionSearchEntries('voice')}
-                    >
-                      {isSectionMounted('voice') ? (
-                        <VoicePane settings={settings} updateSettings={updateSettings} />
-                      ) : null}
-                    </SettingsSection>
-                  </>
+                  <SettingsSection
+                    id="voice"
+                    title={translate('auto.components.settings.Settings.5063bb47a5', 'Voice')}
+                    description={translate(
+                      'auto.components.settings.Settings.eb1176a14e',
+                      'Local speech-to-text dictation with on-device models.'
+                    )}
+                    searchEntries={getSectionSearchEntries('voice')}
+                  >
+                    {isSectionMounted('voice') ? (
+                      <VoicePane settings={settings} updateSettings={updateSettings} />
+                    ) : null}
+                  </SettingsSection>
                 ) : null}
 
                 <SettingsSection
@@ -1453,33 +1421,7 @@ function Settings(): React.JSX.Element {
                     searchEntries={getSectionSearchEntries('browser')}
                   >
                     {isSectionMounted('browser') ? (
-                      <BrowserPane
-                        settings={settings}
-                        updateSettings={updateSettings}
-                        onOpenComputerUse={openComputerUseFromBrowser}
-                      />
-                    ) : null}
-                  </SettingsSection>
-                ) : null}
-
-                {showDesktopOnlySettings ? (
-                  <SettingsSection
-                    id="mobile-emulator"
-                    title={translate(
-                      'auto.components.settings.Settings.f75daf1002',
-                      'Mobile Emulator'
-                    )}
-                    description={translate(
-                      'auto.components.settings.Settings.01f9d36292',
-                      'Configure mobile emulator support for Muster and coding agents.'
-                    )}
-                    searchEntries={getSectionSearchEntries('mobile-emulator')}
-                  >
-                    {isSectionMounted('mobile-emulator') ? (
-                      <MobileEmulatorSettingsPane
-                        settings={settings}
-                        updateSettings={updateSettings}
-                      />
+                      <BrowserPane settings={settings} updateSettings={updateSettings} />
                     ) : null}
                   </SettingsSection>
                 ) : null}

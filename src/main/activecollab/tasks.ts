@@ -17,14 +17,8 @@ import {
   type ActiveCollabTaskDetail,
   type ActiveCollabTaskPage
 } from '../../shared/activecollab-types'
-import {
-  acAttachments,
-  acCollection,
-  acEpochToLocalDay,
-  acIsRecord,
-  acLabels,
-  acNullableId
-} from './codecs'
+import { acEpochToLocalDay } from '../../shared/activecollab-dates'
+import { acAttachments, acCollection, acIsRecord, acLabels, acNullableId } from './codecs'
 import type { AcHttpClient, AcResponse } from './http'
 
 function asText(value: unknown): string {
@@ -75,6 +69,7 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     bodyHtml: asText(value.body),
     // `is_completed` and `completed_on` disagree on some rows; either one closes the task.
     isCompleted: value.is_completed === true || epochMs(value.completed_on) !== null,
+    startOn: acEpochToLocalDay(asNumber(value.start_on)),
     dueOn: acEpochToLocalDay(asNumber(value.due_on)),
     createdOn: epochMs(value.created_on),
     updatedOn: epochMs(value.updated_on),

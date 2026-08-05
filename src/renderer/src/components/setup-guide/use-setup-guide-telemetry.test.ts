@@ -31,7 +31,6 @@ describe('setup guide step completion telemetry', () => {
         createProgress({
           notifications: true,
           'default-agent': true,
-          'agent-capabilities': true,
           'task-sources': true,
           'setup-script': true,
           'add-two-repos': true

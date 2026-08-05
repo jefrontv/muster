@@ -94,6 +94,8 @@ const {
 }))
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   app: {
     isPackaged: true,
     getPath: getPathMock,

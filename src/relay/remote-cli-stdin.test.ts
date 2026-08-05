@@ -17,14 +17,14 @@ describe('shouldReadRemoteCliStdin', () => {
   })
 
   it('reads stdin for *-stdin payload flags bridged to the full host CLI', () => {
-    expect(shouldReadRemoteCliStdin(['computer', 'action', '--app', 'Notes', '--text-stdin'])).toBe(
+    expect(shouldReadRemoteCliStdin(['terminal', 'send', '--terminal', 't1', '--text-stdin'])).toBe(
       true
     )
-    expect(shouldReadRemoteCliStdin(['computer', 'action', '--app', 'Notes', '--text', 'hi'])).toBe(
+    expect(shouldReadRemoteCliStdin(['terminal', 'send', '--terminal', 't1', '--text', 'hi'])).toBe(
       false
     )
     expect(
-      shouldReadRemoteCliStdin(['computer', 'action', '--app', 'Notes', '--text-stdin', '--help'])
+      shouldReadRemoteCliStdin(['terminal', 'send', '--terminal', 't1', '--text-stdin', '--help'])
     ).toBe(false)
   })
 })

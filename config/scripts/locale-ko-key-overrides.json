@@ -1001,9 +1001,6 @@
   "auto.components.feature.wall.BrowserAnimatedVisual.f39be6ca14": {
     "ko": "/signup"
   },
-  "auto.components.feature.wall.ComputerUseAnimatedVisual.6804cb356f": {
-    "ko": "클릭 전송됨"
-  },
   "auto.components.feature.wall.ConnectIntegrationsList.33b650af52": {
     "ko": "팀이 작업을 추적하는 서비스를 연결하세요. Orca는 이슈 제목, 링크, 컨텍스트가 이미 첨부된 워크스페이스를 시작합니다."
   },
@@ -2189,9 +2186,6 @@
   "auto.components.settings.BrowserProfileRow.d420c43729": {
     "ko": "{{value1}}{{value2}}에서 {{value0}}개의 쿠키를 {{value3}}(으)로 가져왔습니다."
   },
-  "auto.components.settings.BrowserUseComputerUseNotice.15b5e680ba": {
-    "ko": "컴퓨터 사용 열기"
-  },
   "auto.components.settings.CliSection.8a9b784c60": {
     "ko": "오래됨"
   },
@@ -3146,24 +3140,6 @@
   "auto.components.settings.browser.search.c3d89ed4d0": {
     "ko": "새로 열린 브라우저 탭에 적용되는 확대/축소 수준입니다."
   },
-  "auto.components.settings.browser.use.search.2e1b09897b": {
-    "ko": "Edge"
-  },
-  "auto.components.settings.browser.use.search.3f4c559deb": {
-    "ko": "Arc 프로필"
-  },
-  "auto.components.settings.browser.use.search.7e0dcb257a": {
-    "ko": "셸"
-  },
-  "auto.components.settings.browser.use.search.a57c2172dc": {
-    "ko": "agent-browser"
-  },
-  "auto.components.settings.browser.use.search.ab349a2dd0": {
-    "ko": "Arc"
-  },
-  "auto.components.settings.browser.use.search.d5afa54d21": {
-    "ko": "Edge 프로필"
-  },
   "auto.components.settings.cli.source.control.integration.cards.2e44dda68a": {
     "ko": "GitHub CLI가 설치되어 있지만 인증되지 않았습니다. terminal에서 다음 명령을 실행하세요."
   },
@@ -3193,33 +3169,6 @@
   },
   "auto.components.settings.commit.message.ai.search.b7d50da4d8": {
     "ko": "템플릿"
-  },
-  "auto.components.settings.computerUseSkillRuntime.thisDevice": {
-    "ko": "이 기기"
-  },
-  "auto.components.settings.computerUseSummary.checkingDescription": {
-    "ko": "Orca가 Computer Use 도우미의 macOS 개인정보 보호 권한을 확인하고 있습니다."
-  },
-  "auto.components.settings.computerUseSummary.checkingTitle": {
-    "ko": "Computer Use 액세스 확인 중입니다."
-  },
-  "auto.components.settings.computerUseSummary.permissionsRequired": {
-    "ko": "agents가 앱 창을 조작하려면 먼저 {{value0}} 권한{{value1}}이 필요합니다."
-  },
-  "auto.components.settings.computerUseSummary.permissionsTitle": {
-    "ko": "로컬 앱을 사용하려면 설정을 완료하세요."
-  },
-  "auto.components.settings.computerUseSummary.readyDescription": {
-    "ko": "요청하면 Agents가 앱 창을 검사하고 조작할 수 있습니다."
-  },
-  "auto.components.settings.computerUseSummary.readyTitle": {
-    "ko": "Computer Use를 사용할 준비가 되었습니다."
-  },
-  "auto.components.settings.computerUseSummary.unavailableDescription": {
-    "ko": "{{value0}} 때문에 Computer Use 권한을 사용할 수 없습니다."
-  },
-  "auto.components.settings.computerUseSummary.unavailableTitle": {
-    "ko": "Computer Use를 사용할 수 없습니다."
   },
   "auto.components.settings.developer.permissions.search.00e954319e": {
     "ko": "Whisper"

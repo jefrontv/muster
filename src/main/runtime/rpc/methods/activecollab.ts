@@ -52,6 +52,7 @@ const TaskUpdate = z.object({
     // Plain, not OptionalString: an empty body is a legitimate "clear the description".
     bodyHtml: OptionalPlainString,
     assigneeId: z.union([z.number(), z.null()]).optional(),
+    startOn: z.union([z.number(), z.null()]).optional(),
     dueOn: z.union([z.number(), z.null()]).optional(),
     // Full replacement set — the API overwrites a task's labels rather than merging.
     labelNames: z.array(z.string()).optional()

@@ -10,6 +10,7 @@ import {
   hasRemoteProviderRuntime
 } from '@/lib/provider-runtime-context'
 import { useAppStore } from '@/store'
+import { deriveActiveCollabConnectionState } from './activecollab-connection-state'
 import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
 import { useIntegrationSubordinateRowClass } from './integration-card-presentation'
 import { getProviderAccountScope } from './provider-account-scope'
@@ -30,9 +31,12 @@ export function ActiveCollabIntegrationCard(): React.JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [disconnectError, setDisconnectError] = useState<string | null>(null)
 
-  const contextMatches = activeCollabStatusContextKey === getProviderRuntimeContextKey(settings)
-  const checking = !contextMatches || !activeCollabStatusChecked
-  const connected = contextMatches && activeCollabStatus.configured
+  const { contextMatches, checking, connected } = deriveActiveCollabConnectionState({
+    status: activeCollabStatus,
+    statusChecked: activeCollabStatusChecked,
+    statusContextKey: activeCollabStatusContextKey,
+    providerRuntimeContextKey: getProviderRuntimeContextKey(settings)
+  })
   const connection = contextMatches ? activeCollabStatus.connection : null
   const accountScope = getProviderAccountScope(settings)
   const credentialCopy = hasRemoteProviderRuntime(settings)

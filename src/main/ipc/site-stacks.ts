@@ -16,8 +16,11 @@ import { currentSocketIfRunning, detectLocalWpStack } from '../sites/localwp-det
 import {
   createLocalWpHost,
   isLocalWpSupported,
+  LOCALWP_DATABASE_PASSWORD,
+  LOCALWP_DATABASE_USER,
   LOCALWP_UNSUPPORTED_PLATFORM
 } from '../sites/localwp-host'
+import { setSiteSecret } from '../sites/site-secret-store'
 import type { LocalWpMigrationPlan, LocalWpMigrationRequest } from '../sites/localwp-migration-plan'
 import {
   previewLocalWpMigration,
@@ -30,6 +33,7 @@ import {
   type LocalWpControlOutcome
 } from '../sites/localwp-site-control'
 import type { SiteRunConfig, SiteRunContext } from '../sites/pipeline-contract'
+import { createMigrationProgressForwarder } from './site-stack-progress'
 import { failure, requireSite, type SiteResult } from './sites-result'
 
 const SITE_STACK_CHANNELS = [
@@ -119,12 +123,13 @@ export function registerSiteStackHandlers(store: Store): void {
   // pass `force: true` to accept deleting an existing app/public.
   ipcMain.handle(
     'siteStacks:runMigration',
-    async (_event, args: unknown): Promise<SiteResult<LocalWpMigrationResult>> => {
+    async (event, args: unknown): Promise<SiteResult<LocalWpMigrationResult>> => {
       try {
         const request = buildMigrationRequest(store, args)
         const site = requireSite(store, requireId(readField(args, 'siteId')))
         const result = await runLocalWpMigration(request, {
-          importDatabase: (options) => importMigratedDatabase(store, site.id, options)
+          importDatabase: (options) => importMigratedDatabase(store, site.id, options),
+          onStatus: createMigrationProgressForwarder(event.sender, site.id, [request.adminPassword])
         })
         if (result.ok) {
           store.updateSite(site.id, {
@@ -132,9 +137,10 @@ export function registerSiteStackHandlers(store: Store): void {
             localWpRoot: result.localWpRoot,
             localDomain: request.domain,
             dbSocket: result.socketPath,
-            dbUser: 'root',
+            dbUser: LOCALWP_DATABASE_USER,
             dbPort: null
           })
+          persistLocalWpDatabasePassword(store, site.id)
         }
         return { ok: true, value: result }
       } catch (error) {
@@ -142,6 +148,26 @@ export function registerSiteStackHandlers(store: Store): void {
       }
     }
   )
+}
+
+/**
+ * Stores Local's MySQL root password so a later import can authenticate.
+ *
+ * Why every environment: ocsites keeps `db_user`/`db_password` in SITE_FIELD_KEYS (deploy/config.py
+ * :38-47) because they are local-only concerns shared across environments, but Muster's secret
+ * store is keyed per environment. Writing all of them keeps the credential reachable after an
+ * environment switch instead of failing with "using password: NO" on the next import.
+ */
+function persistLocalWpDatabasePassword(store: Store, siteId: string): void {
+  const site = requireSite(store, siteId)
+  for (const environmentName of Object.keys(site.environments)) {
+    try {
+      setSiteSecret(siteId, environmentName, 'db', LOCALWP_DATABASE_PASSWORD)
+    } catch {
+      // A locked keychain must not fail the migration that already succeeded on disk; the import
+      // reports the missing credential precisely at the step that needs it.
+    }
+  }
 }
 
 /**
@@ -166,7 +192,7 @@ async function importMigratedDatabase(
     throwIfCancelled: () => {}
   }
   const config: SiteRunConfig = {
-    site: { ...site, dbSocket: options.socketPath, dbUser: 'root', dbPort: null },
+    site: { ...site, dbSocket: options.socketPath, dbUser: LOCALWP_DATABASE_USER, dbPort: null },
     environmentName: site.activeEnvironment,
     // A local DB import needs no remote target; keep the field type-honest for the shared config.
     environment:
@@ -176,7 +202,7 @@ async function importMigratedDatabase(
     group: 'import',
     wpDir: path.join(site.path, 'app', 'public'),
     sshPassword: '',
-    dbPassword: 'root'
+    dbPassword: LOCALWP_DATABASE_PASSWORD
   }
   await importLocalDatabase(context, config, options.dumpPath, options.databaseName)
 }

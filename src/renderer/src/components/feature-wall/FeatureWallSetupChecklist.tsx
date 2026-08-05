@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { Check } from 'lucide-react'
+import { ArrowUpRight, Check } from 'lucide-react'
 import type {
   FeatureWallSetupStep,
   FeatureWallSetupStepId
@@ -7,13 +7,12 @@ import type {
 import { getFeatureWallSetupStepsForSection } from '../../../../shared/feature-wall-setup-steps'
 import { cn } from '@/lib/utils'
 import type { FeatureWallSetupProgress } from './feature-wall-setup-progress'
-import { AgentCapabilitiesSetupAction } from './AgentCapabilitiesSetupAction'
 import {
   AddReposAction,
   SetupScriptAction,
   WorkspacesAction
 } from './FeatureWallSetupWorkflowActions'
-import { ConnectIntegrationsList } from './ConnectIntegrationsList'
+import { Button } from '@/components/ui/button'
 import { BrowserAction } from './FeatureWallBrowserAction'
 import {
   SetupBrowserVisual,
@@ -33,8 +32,6 @@ type FeatureWallSetupChecklistProps = {
   activeStep: FeatureWallSetupStep | null
   progress: FeatureWallSetupProgress
   onSelectStep: (id: FeatureWallSetupStepId) => void
-  onOrchestrationSkillInstalledChange: (installed: boolean) => void
-  onBrowserUseSkillInstalledChange: (installed: boolean) => void
   /** Modal keeps a compact rail; embedded (settings pane) gets more column breathing room. */
   layout?: FeatureWallSetupChecklistLayout
 }
@@ -151,15 +148,7 @@ function SelectedStepAction(props: FeatureWallSetupChecklistProps): React.JSX.El
     return <BrowserAction done={activeDone} />
   }
   if (activeStep.id === 'task-sources') {
-    return <TaskSourcesAction />
-  }
-  if (activeStep.id === 'agent-capabilities') {
-    return (
-      <AgentCapabilitiesSetupAction
-        onOrchestrationSkillInstalledChange={props.onOrchestrationSkillInstalledChange}
-        onBrowserUseSkillInstalledChange={props.onBrowserUseSkillInstalledChange}
-      />
-    )
+    return <ActiveCollabAction />
   }
   if (activeStep.id === 'setup-script') {
     return <SetupScriptAction />
@@ -224,28 +213,36 @@ function NotificationAction(): React.JSX.Element {
   )
 }
 
-function TaskSourcesAction(): React.JSX.Element {
-  const refreshPreflightStatus = useAppStore((s) => s.refreshPreflightStatus)
-  const checkJiraConnection = useAppStore((s) => s.checkJiraConnection)
-  const checkLinearConnection = useAppStore((s) => s.checkLinearConnection)
+function ActiveCollabAction(): React.JSX.Element {
+  const checkActiveCollabConnection = useAppStore((s) => s.checkActiveCollabConnection)
+  const closeModal = useAppStore((s) => s.closeModal)
+  const openSettingsPage = useAppStore((s) => s.openSettingsPage)
+  const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
+  const setSettingsSearchQuery = useAppStore((s) => s.setSettingsSearchQuery)
   const settings = useAppStore((s) => s.settings)
   const providerRuntimeContextKey = getProviderRuntimeContextKey(settings)
 
   useEffect(() => {
-    void refreshPreflightStatus()
-    void checkJiraConnection()
-    void checkLinearConnection()
-  }, [
-    refreshPreflightStatus,
-    checkJiraConnection,
-    checkLinearConnection,
-    providerRuntimeContextKey
-  ])
+    // Why: completion follows real connection status, so entering the step
+    // re-checks ActiveCollab for the current runtime instead of a stale snapshot.
+    void checkActiveCollabConnection()
+  }, [checkActiveCollabConnection, providerRuntimeContextKey])
+
+  const handleOpenIntegrations = useCallback(() => {
+    setSettingsSearchQuery('')
+    openSettingsTarget({ pane: 'integrations', repoId: null })
+    closeModal()
+    openSettingsPage()
+  }, [closeModal, openSettingsPage, openSettingsTarget, setSettingsSearchQuery])
 
   return (
-    <div className="space-y-5">
-      <ConnectIntegrationsList />
-    </div>
+    <Button type="button" size="sm" className="gap-2" onClick={handleOpenIntegrations}>
+      <ArrowUpRight className="size-3.5" />
+      {translate(
+        'auto.components.feature.wall.FeatureWallSetupChecklist.open_integrations_settings',
+        'Open Integrations settings'
+      )}
+    </Button>
   )
 }
 

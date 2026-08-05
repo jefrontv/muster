@@ -26,8 +26,8 @@ function makeSetupGuideProgress(
   return {
     ready: true,
     doneCount: 5,
-    total: 8,
-    firstIncompleteStepId: 'agent-capabilities',
+    total: 7,
+    firstIncompleteStepId: 'setup-script',
     ...overrides
   }
 }
@@ -64,8 +64,8 @@ function renderSidebar(
                 installStatus: 'installed'
               },
               {
-                id: 'computer-use',
-                title: 'Computer Use',
+                id: 'developer-permissions',
+                title: 'Developer Permissions',
                 icon: Bot,
                 installStatus: 'up-to-date'
               }
@@ -140,8 +140,8 @@ describe('SettingsSidebar', () => {
     const markup = renderSidebar()
 
     expect(markup).toContain('Onboarding checklist')
-    expect(markup).toContain('Onboarding checklist, 5 of 8 done. Show setup guide.')
-    expect(markup).toContain('5 of 8 setup steps complete')
+    expect(markup).toContain('Onboarding checklist, 5 of 7 done. Show setup guide.')
+    expect(markup).toContain('5 of 7 setup steps complete')
   })
 
   it('does not render the setup guide row after every checklist step is complete', () => {

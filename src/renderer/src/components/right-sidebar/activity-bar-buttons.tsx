@@ -25,6 +25,8 @@ export type ActivityBarItem = {
   folderOnly?: boolean
   /** When true, shown only for worktrees that belong to an SSH repo. */
   sshOnly?: boolean
+  /** When true, shown only when the active project resolves to a Site record. */
+  siteOnly?: boolean
 }
 
 const STATUS_DOT_COLOR: Record<CheckStatus, string> = {

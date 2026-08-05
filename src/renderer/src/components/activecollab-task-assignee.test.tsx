@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 //
 // The Assignee field end to end: what the trigger reads in each of the three states, when the
-// 176-row roster is paid for, and the exact payload each choice writes.
+// people list is paid for (project members first, 176-row instance roster as the fallback), and
+// the exact payload each choice writes.
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -27,7 +28,7 @@ const mocks = vi.hoisted(() => ({
   fetchTaskDetail:
     vi.fn<(ref: ActiveCollabTaskRef, options?: { force?: boolean }) => Promise<DetailResult>>(),
   listUsers: vi.fn<() => Promise<UsersResult>>(),
-  listProjectMembers: vi.fn<() => Promise<UsersResult>>(),
+  listProjectMembers: vi.fn<(projectId: number) => Promise<UsersResult>>(),
   listLabels: vi.fn(),
   updateTask: vi.fn<(args: UpdateArgs) => Promise<TaskResult>>(),
   completeTask: vi.fn(),
@@ -103,6 +104,7 @@ const TASK: ActiveCollabTask = {
   name: 'Ship the ActiveCollab pane',
   bodyHtml: '<p>Body copy.</p>',
   isCompleted: false,
+  startOn: null,
   dueOn: null,
   createdOn: null,
   updatedOn: null,
@@ -228,27 +230,69 @@ function typeInto(element: HTMLInputElement, value: string): void {
   })
 }
 
-describe('ActiveCollab assignee roster loading', () => {
-  it('does not read the roster until the picker is opened', async () => {
+describe('ActiveCollab assignee people loading', () => {
+  it('does not read anybody until the picker is opened', async () => {
     await mount()
 
+    expect(mocks.listProjectMembers).not.toHaveBeenCalled()
     expect(mocks.listUsers).not.toHaveBeenCalled()
 
     await openPicker()
 
-    expect(mocks.listUsers).toHaveBeenCalledTimes(1)
+    expect(mocks.listProjectMembers).toHaveBeenCalledTimes(1)
+    expect(mocks.listProjectMembers).toHaveBeenCalledWith(PROJECT_ID)
   })
 
-  it('reuses the roster it already has instead of re-reading on every open', async () => {
+  it('offers the project members without ever paying for the instance roster', async () => {
+    mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [ADA, GRACE] })
+    await mount()
+
+    await openPicker()
+
+    expect(optionNames()).toEqual(['Ada Lovelace', 'Grace Hopper'])
+    expect(mocks.listUsers).not.toHaveBeenCalled()
+  })
+
+  it('reuses the list it already has instead of re-reading on every open', async () => {
     await mount()
 
     await openPicker()
     await openPicker()
 
-    expect(mocks.listUsers).toHaveBeenCalledTimes(1)
+    expect(mocks.listProjectMembers).toHaveBeenCalledTimes(1)
   })
 
-  it('surfaces a failed roster read instead of claiming nobody matches', async () => {
+  it('falls back to the instance roster when the members read fails', async () => {
+    mocks.listProjectMembers.mockResolvedValue({
+      ok: false,
+      kind: 'api',
+      error: 'members unavailable',
+      status: 500
+    })
+    await mount()
+
+    await openPicker()
+
+    expect(mocks.listUsers).toHaveBeenCalledTimes(1)
+    expect(optionNames()).toEqual(['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Jake Varrese'])
+  })
+
+  it('treats an empty membership as "offer the roster", not as nobody', async () => {
+    mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [] })
+    await mount()
+
+    await openPicker()
+
+    expect(optionNames()).toEqual(['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Jake Varrese'])
+  })
+
+  it('surfaces a read that failed on both paths instead of claiming nobody matches', async () => {
+    mocks.listProjectMembers.mockResolvedValue({
+      ok: false,
+      kind: 'api',
+      error: 'members unavailable',
+      status: 500
+    })
     mocks.listUsers.mockResolvedValue({
       ok: false,
       kind: 'api',
@@ -263,7 +307,13 @@ describe('ActiveCollab assignee roster loading', () => {
     expect(optionNames()).toEqual([])
   })
 
-  it('retries a failed roster read on the next open', async () => {
+  it('retries a failed read on the next open', async () => {
+    mocks.listProjectMembers.mockResolvedValueOnce({
+      ok: false,
+      kind: 'api',
+      error: 'members unavailable',
+      status: 500
+    })
     mocks.listUsers.mockResolvedValueOnce({
       ok: false,
       kind: 'api',
@@ -275,8 +325,44 @@ describe('ActiveCollab assignee roster loading', () => {
     await openPicker()
     await openPicker()
 
-    expect(mocks.listUsers).toHaveBeenCalledTimes(2)
+    expect(mocks.listProjectMembers).toHaveBeenCalledTimes(2)
     expect(optionNames()).toEqual(['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Jake Varrese'])
+  })
+})
+
+describe('ActiveCollab assignee current-assignee injection', () => {
+  it('keeps the current assignee offerable and searchable when no longer a member', async () => {
+    mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [ADA] })
+    await mount({ assigneeId: ALAN.id, assigneeName: ALAN.name })
+
+    await openPicker()
+
+    expect(optionNames()).toEqual(['Ada Lovelace', 'Alan Turing'])
+    expect(optionFor('Alan Turing').getAttribute('aria-selected')).toBe('true')
+
+    // The injected row is a real candidate: the search filter must reach it like anybody else.
+    typeInto(searchInput(), 'alan')
+
+    expect(optionNames()).toEqual(['Alan Turing'])
+  })
+
+  it('names an unnameable injected assignee honestly instead of a blank row', async () => {
+    mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [ADA] })
+    await mount({ assigneeId: 90210, assigneeName: null })
+
+    await openPicker()
+
+    expect(optionNames()).toContain('Assigned (name unavailable)')
+  })
+
+  it('adds no duplicate when the assignee is already on the scoped list', async () => {
+    // GRACE is the default assignee, and here she is also a member.
+    mocks.listProjectMembers.mockResolvedValue({ ok: true, value: [GRACE] })
+    await mount()
+
+    await openPicker()
+
+    expect(optionNames()).toEqual(['Grace Hopper'])
   })
 })
 

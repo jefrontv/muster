@@ -12,15 +12,14 @@ describe('onboarding feature setup telemetry validation', () => {
   })
 
   it('accepts checklist, setup run, and terminal interaction events', () => {
+    // selected_count counts orchestration only — linear tickets is a recommended add-on.
     const selection = {
-      browser_use: true,
-      computer_use: false,
       linear_tickets: true,
       orchestration: true,
-      selected_count: 2
+      selected_count: 1
     }
     const cases = [
-      ['onboarding_feature_setup_toggled', { feature: 'browser_use', selected: false }],
+      ['onboarding_feature_setup_toggled', { feature: 'orchestration', selected: false }],
       [
         'onboarding_feature_setup_run',
         {
@@ -28,7 +27,6 @@ describe('onboarding feature setup telemetry validation', () => {
           cli_touched: true,
           skill_commands_copied: true,
           skill_install_command_prepared: true,
-          computer_use_permissions_opened: false,
           warning_count: 0
         }
       ],
@@ -44,17 +42,15 @@ describe('onboarding feature setup telemetry validation', () => {
   it('rejects raw strings and unknown fields', () => {
     expect(
       validate('onboarding_feature_setup_terminal_opened', {
-        browser_use: true,
-        computer_use: false,
         linear_tickets: false,
         orchestration: true,
-        selected_count: 2,
+        selected_count: 1,
         command: 'npx skills add https://github.com/stablyai/orca --global'
       } as never).ok
     ).toBe(false)
     expect(
       validate('onboarding_feature_setup_toggled', {
-        feature: 'browser_use',
+        feature: 'orchestration',
         selected: false,
         path: '/Users/alice/project'
       } as never).ok
@@ -65,21 +61,18 @@ describe('onboarding feature setup telemetry validation', () => {
     expect(
       validate('onboarding_feature_setup_run', {
         browser_use: false,
-        computer_use: false,
         linear_tickets: false,
         orchestration: false,
-        selected_count: 3,
+        selected_count: 2,
         cli_touched: false,
         skill_commands_copied: false,
         skill_install_command_prepared: false,
-        computer_use_permissions_opened: false,
         warning_count: 0
       } as never).ok
     ).toBe(false)
     expect(
       validate('onboarding_feature_setup_terminal_opened', {
         browser_use: true,
-        computer_use: false,
         linear_tickets: false,
         orchestration: true,
         selected_count: 1

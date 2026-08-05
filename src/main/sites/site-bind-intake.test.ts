@@ -49,13 +49,18 @@ function existingSite(overrides: Partial<Site> = {}): Site {
 }
 
 function harness(
-  options: { sites?: Site[]; repos?: { id: string; path: string }[] } = {}
+  options: {
+    sites?: Site[]
+    repos?: { id: string; path: string }[]
+    /** Paths `directoryExists` should report as gone, modelling a deleted or unmounted checkout. */
+    missingPaths?: string[]
+  } = {}
 ): Harness {
   const state: Harness = {
     intake: null as unknown as SiteBindIntake,
     sites: options.sites ?? [],
     secrets: [],
-    missingPaths: new Set<string>(),
+    missingPaths: new Set<string>(options.missingPaths ?? []),
     secretFailure: null
   }
   let counter = 0
@@ -136,6 +141,35 @@ describe('receive', () => {
     expect(candidates.map((entry) => entry.path)).toEqual(['/Sites/acme', '/Volumes/repos/acme'])
     expect(candidates[0]).toMatchObject({ siteId: 'site-1', repoId: 'repo-1' })
     expect(candidates[1]).toMatchObject({ siteId: null, repoId: 'repo-2' })
+  })
+
+  it('reports a candidate whose folder is gone as not existing', () => {
+    // Regression: `exists` was hardcoded true, so a Site record left behind by a deleted checkout
+    // was offered as "already has a site record; confirming updates it" while confirm() rejected
+    // the same path as missing — the dialog contradicted itself.
+    const state = harness({
+      sites: [existingSite()],
+      missingPaths: ['/Sites/acme']
+    })
+    state.intake.receive(LINK)
+    const candidates = state.intake.getPending()?.candidates ?? []
+
+    expect(candidates).toHaveLength(1)
+    expect(candidates[0]).toMatchObject({ path: '/Sites/acme', siteId: 'site-1', exists: false })
+  })
+
+  it('orders reachable checkouts ahead of stale records', () => {
+    const state = harness({
+      sites: [existingSite()],
+      repos: [{ id: 'repo-2', path: '/Volumes/repos/acme' }],
+      missingPaths: ['/Sites/acme']
+    })
+    state.intake.receive(LINK)
+    const candidates = state.intake.getPending()?.candidates ?? []
+
+    // The dialog preselects the first candidate, so a present folder must sort first.
+    expect(candidates.map((entry) => entry.path)).toEqual(['/Volumes/repos/acme', '/Sites/acme'])
+    expect(candidates.map((entry) => entry.exists)).toEqual([true, false])
   })
 })
 

@@ -35,7 +35,6 @@ export type FeatureWallCompletionProgressInput = {
   isCheckingTaskSources: boolean
   hasUsageAccount: boolean
   orchestrationSkillInstalled: boolean
-  browserUseSkillInstalled: boolean
   githubConfigured: boolean
   aiCommitPrConfigured: boolean
 }
@@ -75,7 +74,7 @@ export function getFeatureWallCompletionProgress(
     input.visitedWorkbenchSteps.has('editor')
   const workbenchBrowserDone =
     input.completedWorkbenchSteps?.has('browser') === true ||
-    (input.visitedWorkbenchSteps.has('browser') && input.browserUseSkillInstalled)
+    input.visitedWorkbenchSteps.has('browser')
   const workbenchAllStepsDone =
     input.completedWorkflows?.has('workbench') === true ||
     (workbenchVisited && workbenchTerminalDone && workbenchEditorDone && workbenchBrowserDone)

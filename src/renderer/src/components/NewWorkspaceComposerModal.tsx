@@ -16,15 +16,11 @@ import {
   pickQuickWorkspaceAgent,
   resolveQuickWorkspaceAgentSelection
 } from '@/lib/quick-workspace-agent-selection'
-import type { LinkedWorkItemSummary } from '@/lib/new-workspace'
+import { useModalData } from '@/hooks/use-modal-data'
 import { shouldAllowComposerEnterSubmitTarget } from '@/lib/new-workspace-enter-guard'
 import { isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
-import type {
-  TuiAgent,
-  WorkspaceCreateTelemetrySource,
-  WorkspaceStatus
-} from '../../../shared/types'
-import type { TaskSourceContext } from '../../../shared/task-source-context'
+import type { TuiAgent } from '../../../shared/types'
+import type { NewWorkspaceComposerModalPayload } from '@/store/slices/modal-payloads'
 import { translate } from '@/i18n/i18n'
 import { getWorkspaceComposerInitialFocusTarget } from '@/lib/workspace-composer-initial-focus'
 import { getFolderWorkspacePrimaryActionLabel } from '@/components/sidebar/folder-workspace-composer-helpers'
@@ -35,27 +31,9 @@ const HostedAddRepoDialog = lazyWithRetry(() => import('@/components/sidebar/Add
   reloadKey: 'composer-add-repo'
 })
 
-type ComposerModalData = {
-  prefilledName?: string
-  initialRepoId?: string
-  initialEphemeralVmRecipeId?: string
-  initialProjectGroupId?: string
-  linkedWorkItem?: LinkedWorkItemSummary | null
-  taskSourceContext?: TaskSourceContext | null
-  initialBaseBranch?: string
-  initialWorkspaceStatus?: WorkspaceStatus
-  /** Telemetry surface that opened the composer. Set by each
-   *  `openModal('new-workspace-composer', ...)` site so
-   *  `workspace_created.source` carries the right value. Falls back to
-   *  `unknown` when omitted. */
-  telemetrySource?: WorkspaceCreateTelemetrySource
-  contextualTourSource?: string
-  setupGuideTourRequestId?: string
-}
-
 export default function NewWorkspaceComposerModal(): React.JSX.Element | null {
   const visible = useAppStore((s) => s.activeModal === 'new-workspace-composer')
-  const modalData = useAppStore((s) => s.modalData as ComposerModalData | undefined)
+  const modalData = useModalData('new-workspace-composer')
   const closeModal = useAppStore((s) => s.closeModal)
 
   // Why: Dialog open-state transitions must be driven by the store, not a
@@ -88,7 +66,7 @@ function ComposerModalBody({
   onClose,
   onOpenChange
 }: {
-  modalData: ComposerModalData
+  modalData: NewWorkspaceComposerModalPayload
   onClose: () => void
   onOpenChange: (open: boolean) => void
 }): React.JSX.Element {
@@ -117,7 +95,7 @@ function QuickTabBody({
   onClose,
   active
 }: {
-  modalData: ComposerModalData
+  modalData: NewWorkspaceComposerModalPayload
   onClose: () => void
   active: boolean
 }): React.JSX.Element {

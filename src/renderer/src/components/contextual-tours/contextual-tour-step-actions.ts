@@ -1,5 +1,6 @@
 import type { ContextualTourStepAction } from '../../../../shared/contextual-tours'
 import type { RequestActiveTerminalPaneSplitDetail } from '@/constants/terminal'
+import type { OpenModal } from '@/store/slices/modal-payloads'
 
 export function performContextualTourStepAction(args: {
   action: ContextualTourStepAction
@@ -10,7 +11,7 @@ export function performContextualTourStepAction(args: {
   detachContextualTourSource: () => void
   setSidebarOpen: (open: boolean) => void
   openTaskPage: () => void
-  openModal: (modal: 'setup-guide', data?: Record<string, unknown>) => void
+  openModal: OpenModal
   canCreateWorkspace: boolean
   openWorkspaceComposer: () => void
   dispatchTerminalPaneSplit: (detail: RequestActiveTerminalPaneSplitDetail) => void

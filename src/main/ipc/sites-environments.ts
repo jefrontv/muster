@@ -20,6 +20,7 @@ import { failure, requireSite, type SiteResult } from './sites-result'
 
 const SITE_ENVIRONMENT_CHANNELS = [
   'sites:upsertEnvironment',
+  'sites:copyEnvironment',
   'sites:renameEnvironment',
   'sites:removeEnvironment'
 ] as const
@@ -45,6 +46,40 @@ export function registerSiteEnvironmentHandlers(store: Store): void {
         const updated = store.updateSite(site.id, {
           environments: { ...site.environments, [input.name]: { ...base, ...input.patch } },
           activeEnvironment: site.activeEnvironment || input.name
+        })
+        return { ok: true, value: await buildSiteSummary(updated ?? site) }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
+
+  // Copy = config fields plus secrets: a duplicated environment that silently dropped its stored
+  // SSH/DB passwords would look configured while every run against it failed auth.
+  ipcMain.handle(
+    'sites:copyEnvironment',
+    async (_event, args: unknown): Promise<SiteResult<SiteSummary>> => {
+      try {
+        const input = args as { siteId?: unknown; from?: unknown; to?: unknown }
+        if (
+          typeof input.siteId !== 'string' ||
+          !isSiteEnvironmentName(input.from) ||
+          !isSiteEnvironmentName(input.to)
+        ) {
+          throw new TypeError('sites:copyEnvironment requires { siteId, from, to }')
+        }
+        const site = requireSite(store, input.siteId)
+        const source = site.environments[input.from]
+        if (!source) {
+          throw new Error(`Unknown environment: ${input.from}`)
+        }
+        if (input.to in site.environments) {
+          throw new Error(`Environment already exists: ${input.to}`)
+        }
+        copySiteEnvironmentSecrets(site.id, input.from, input.to)
+        const updated = store.updateSite(site.id, {
+          environments: { ...site.environments, [input.to]: { ...source } },
+          activeEnvironment: site.activeEnvironment || input.to
         })
         return { ok: true, value: await buildSiteSummary(updated ?? site) }
       } catch (error) {

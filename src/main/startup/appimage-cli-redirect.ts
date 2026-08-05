@@ -36,7 +36,6 @@ const APPIMAGE_CLI_COMMAND_NAMES = [
   'clear',
   'click',
   'clipboard',
-  'computer',
   'console',
   'cookie',
   'dblclick',

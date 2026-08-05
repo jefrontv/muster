@@ -12,6 +12,8 @@ const { handlers, removed } = vi.hoisted(() => ({
 }))
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   app: {
     isPackaged: true,
     getAppPath: () => '/Applications/Muster.app/Contents/Resources/app.asar',
@@ -62,8 +64,12 @@ function readServerNames(path: string): string[] {
 
 let root = ''
 
-// Auto-registration walks the store's sites; an empty list keeps these tests about the IPC seam.
-const emptyStore = { listSites: () => [] } as unknown as Store
+// Auto-registration reads the capability setting and walks the store's sites; an empty list keeps
+// these tests about the IPC seam.
+const emptyStore = {
+  listSites: () => [],
+  getSettings: () => ({ agentCapabilitySitesMcp: true })
+} as unknown as Store
 
 beforeEach(() => {
   handlers.clear()
@@ -74,13 +80,22 @@ beforeEach(() => {
 
 describe('siteMcp:status', () => {
   it('removes its handlers before registering, so a re-register cannot double up', () => {
-    expect(removed).toEqual(['siteMcp:status', 'siteMcp:register', 'siteMcp:unregister'])
+    expect(removed).toEqual([
+      'siteMcp:status',
+      'siteMcp:register',
+      'siteMcp:unregister',
+      'siteMcp:globalStatus',
+      'siteMcp:globalInstall'
+    ])
   })
 
   it('lists every tool and the command agents should spawn', () => {
     const status = unwrap(invoke<SiteMcpStatus>('siteMcp:status', {}))
     expect(status.serverName).toBe('muster-sites')
-    expect(status.command.args).toEqual(['--site-mcp'])
+    expect(status.command.args).toEqual([
+      '/Applications/Muster.app/Contents/Resources/app.asar.unpacked/out/main/site-mcp-shim.js',
+      '--site-mcp'
+    ])
     expect(status.command.command.length).toBeGreaterThan(0)
     expect(status.tools.map((tool) => tool.name)).toContain('run_deploy_functions')
     expect(status.tools).toHaveLength(24)
@@ -99,13 +114,56 @@ describe('siteMcp:status', () => {
   })
 })
 
+describe('siteMcp:globalStatus', () => {
+  it('reports one status per harness, each naming a user-global config file', () => {
+    const status = unwrap(
+      invoke<{
+        serverName: string
+        command: { command: string; args: string[] }
+        harnesses: { id: string; configPath: string }[]
+      }>('siteMcp:globalStatus')
+    )
+    expect(status.serverName).toBe('muster-sites')
+    expect(status.command.args).toEqual([
+      '/Applications/Muster.app/Contents/Resources/app.asar.unpacked/out/main/site-mcp-shim.js',
+      '--site-mcp'
+    ])
+    expect(status.harnesses.map((harness) => harness.id)).toEqual([
+      'claude-code',
+      'codex',
+      'cursor'
+    ])
+    expect(status.harnesses[0]?.configPath.endsWith('.claude.json')).toBe(true)
+    expect(status.harnesses[1]?.configPath.endsWith('.codex/config.toml')).toBe(true)
+    expect(status.harnesses[2]?.configPath.endsWith('.cursor/mcp.json')).toBe(true)
+  })
+})
+
+describe('siteMcp:globalInstall', () => {
+  it('rejects an unknown harness id as a failure value, never a throw across the bridge', () => {
+    const result = invoke<unknown>('siteMcp:globalInstall', { harnessId: 'vscode' })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toContain('Unknown MCP harness id')
+    }
+  })
+
+  it('rejects a missing harness id', () => {
+    const result = invoke<unknown>('siteMcp:globalInstall', {})
+    expect(result.ok).toBe(false)
+  })
+})
+
 describe('siteMcp:register', () => {
   it('creates the workspace config and reports the entry as current', () => {
     const written = unwrap(invoke<SiteMcpWriteResult>('siteMcp:register', { rootPath: root }))
     expect(written.configPath).toBe(join(root, '.mcp.json'))
 
     const document = readJson(written.configPath)
-    expect(document).toHaveProperty('mcpServers.muster-sites.args', ['--site-mcp'])
+    expect(document).toHaveProperty('mcpServers.muster-sites.args', [
+      '/Applications/Muster.app/Contents/Resources/app.asar.unpacked/out/main/site-mcp-shim.js',
+      '--site-mcp'
+    ])
 
     const target = written.targets.find((entry) => entry.relativePath === '.mcp.json')
     expect(target).toMatchObject({ exists: true, registered: true, current: true })

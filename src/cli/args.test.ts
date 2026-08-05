@@ -12,10 +12,10 @@ import {
 
 describe('parseArgs', () => {
   it('keeps an empty string as a flag value', () => {
-    const parsed = parseArgs(['computer', 'set-value', '--value', '', '--json'])
+    const parsed = parseArgs(['worktree', 'create', '--name', '', '--json'])
 
-    expect(parsed.commandPath).toEqual(['computer', 'set-value'])
-    expect(parsed.flags.get('value')).toBe('')
+    expect(parsed.commandPath).toEqual(['worktree', 'create'])
+    expect(parsed.flags.get('name')).toBe('')
     expect(parsed.flags.get('json')).toBe(true)
   })
 
@@ -113,40 +113,24 @@ describe('parseArgs', () => {
     expect(parsed.flags.get('environment')).toBe('worktree')
   })
 
-  it('parses emulator reinstall as a boolean flag', () => {
-    const parsed = parseArgs(['emulator', 'install', 'app.apk', '--reinstall', '--device', 'emu'])
-
-    expect(parsed.commandPath).toEqual(['emulator', 'install', 'app.apk'])
-    expect(parsed.flags.get('reinstall')).toBe(true)
-    expect(parsed.flags.get('device')).toBe('emu')
-  })
-
   it('normalizes partial positionals without conflicting later flag-supplied args', () => {
     const parsed = normalizeCommandPositionals(
       [
         {
-          path: ['emulator', 'permissions'],
-          summary: 'Permissions',
-          usage: 'orca emulator permissions <op> <package> [permission]',
-          allowedFlags: ['op', 'package', 'permission'],
-          positionalArgs: ['op', 'package', 'permission']
+          path: ['storage', 'set'],
+          summary: 'Set a storage value',
+          usage: 'orca storage set <scope> <key> [value]',
+          allowedFlags: ['scope', 'key', 'value'],
+          positionalArgs: ['scope', 'key', 'value']
         }
       ],
-      parseArgs([
-        'emulator',
-        'permissions',
-        'grant',
-        '--package',
-        'com.example.app',
-        '--permission',
-        'android.permission.CAMERA'
-      ])
+      parseArgs(['storage', 'set', 'local', '--key', 'theme', '--value', 'dark'])
     )
 
-    expect(parsed.commandPath).toEqual(['emulator', 'permissions'])
-    expect(parsed.flags.get('op')).toBe('grant')
-    expect(parsed.flags.get('package')).toBe('com.example.app')
-    expect(parsed.flags.get('permission')).toBe('android.permission.CAMERA')
+    expect(parsed.commandPath).toEqual(['storage', 'set'])
+    expect(parsed.flags.get('scope')).toBe('local')
+    expect(parsed.flags.get('key')).toBe('theme')
+    expect(parsed.flags.get('value')).toBe('dark')
     expect(parsed.positionalFlagConflicts).toEqual([])
   })
 

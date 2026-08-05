@@ -5,7 +5,6 @@ import { isTuiAgent } from './tui-agent-config'
 // automatic fallback priority when the user has not chosen a default agent.
 export const TUI_AGENT_AUTO_PICK_ORDER = [
   'claude',
-  'claude-agent-teams',
   'openclaude',
   'codex',
   'grok',
@@ -40,9 +39,12 @@ export const TUI_AGENT_AUTO_PICK_ORDER = [
   'openclaw'
 ] as const satisfies readonly TuiAgent[]
 
-// Why: fresh installs should expose Claude Agent Teams in agent pickers; the
-// persistence migration separately preserves the old hidden default for legacy profiles.
-export const DEFAULT_DISABLED_TUI_AGENTS = [] as const satisfies readonly TuiAgent[]
+// Why: this fork removes Claude Agent Teams from agent pickers (user call, 2026-08-04). The agent
+// config stays intact so an existing session or a deliberate re-enable in Settings → Agents still
+// works; disabled is the sanctioned "not an option" mechanism every picker already filters on.
+export const DEFAULT_DISABLED_TUI_AGENTS = [
+  'claude-agent-teams'
+] as const satisfies readonly TuiAgent[]
 
 export function pickTuiAgent(
   preferred: TuiAgent | 'blank' | null | undefined,

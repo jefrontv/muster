@@ -8,9 +8,7 @@ description: >-
   "read/wait/send Orca terminal", "terminal send", "full handoff", "handover",
   "give this to another agent", "another worktree", "Orca browser", or
   "control the browser inside Orca". Prefer this over raw `git worktree`, ad hoc
-  PTYs, Playwright, or Computer Use when the task touches Orca-managed state.
-  Use Computer Use for browser windows, webviews, or desktop UI outside Orca's
-  embedded browser.
+  PTYs, or Playwright when the task touches Orca-managed state.
 ---
 
 # Orca CLI

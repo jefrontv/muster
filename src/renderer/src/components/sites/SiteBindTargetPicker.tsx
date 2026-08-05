@@ -1,4 +1,4 @@
-import { Check, FolderOpen, GitBranch, Loader2 } from 'lucide-react'
+import { Check, GitBranch, Loader2 } from 'lucide-react'
 import type React from 'react'
 import type { SiteBindCandidate } from '../../../../shared/site-bind-types'
 import { Button } from '@/components/ui/button'
@@ -8,21 +8,28 @@ type SiteBindTargetPickerProps = {
   candidates: SiteBindCandidate[]
   selectedPath: string
   onSelect: (path: string) => void
-  onBrowse: () => void
   /** Empty when the link named no workspace-qualified repository, which makes cloning impossible. */
   cloneUrl: string
   cloning: boolean
   onClone: () => void
+  /** Where a brand-new checkout would land: `<primary configured root>/<repo folder>`. */
+  proposedPath: string
+  /** True when the footer owns the one-click setup, so this section only explains where it lands. */
+  canSetUpInRoot: boolean
+  /** True when no candidate is reachable, so setting up fresh is the expected path. */
+  needsFreshSetup: boolean
 }
 
 export function SiteBindTargetPicker({
   candidates,
   selectedPath,
   onSelect,
-  onBrowse,
   cloneUrl,
   cloning,
-  onClone
+  onClone,
+  proposedPath,
+  canSetUpInRoot,
+  needsFreshSetup
 }: SiteBindTargetPickerProps): React.JSX.Element {
   const strings = getSiteBindStrings()
   const known = candidates.some((entry) => entry.path === selectedPath)
@@ -40,8 +47,11 @@ export function SiteBindTargetPicker({
               <button
                 type="button"
                 aria-pressed={candidate.path === selectedPath}
+                // Why disabled: confirm() rejects a path that is not on disk, so offering it as a
+                // bind target would only produce an error. The clone/browse actions are the way out.
+                disabled={!candidate.exists}
                 onClick={() => onSelect(candidate.path)}
-                className="flex w-full items-start gap-2 rounded-md border border-border px-2 py-2 text-left text-sm hover:bg-accent aria-pressed:border-primary aria-pressed:bg-accent"
+                className="flex w-full items-start gap-2 rounded-md border border-border px-2 py-2 text-left text-sm hover:bg-accent aria-pressed:border-primary aria-pressed:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
               >
                 <Check
                   className={
@@ -63,7 +73,11 @@ export function SiteBindTargetPicker({
                   <span className="block truncate font-mono text-[11px] text-muted-foreground">
                     {candidate.path}
                   </span>
-                  {candidate.siteId ? (
+                  {!candidate.exists ? (
+                    <span className="mt-0.5 block text-xs text-destructive">
+                      {strings.missingFolder}
+                    </span>
+                  ) : candidate.siteId ? (
                     <span className="mt-0.5 block text-xs text-muted-foreground">
                       {strings.updatesExisting}
                     </span>
@@ -78,12 +92,17 @@ export function SiteBindTargetPicker({
       {selectedPath.length > 0 && !known ? (
         <p className="truncate font-mono text-xs text-muted-foreground">{selectedPath}</p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" onClick={onBrowse}>
-          <FolderOpen className="size-3.5" />
-          {strings.browse}
-        </Button>
-        {cloneUrl.length > 0 ? (
+      {needsFreshSetup ? (
+        <p className="text-xs text-muted-foreground">
+          {canSetUpInRoot
+            ? strings.willCreateAt.replace('{{path}}', proposedPath)
+            : strings.noRootConfigured}
+        </p>
+      ) : null}
+      {/* The footer owns setup when a root is configured; this pick-a-destination clone is the only
+          way forward when there is no root to clone into. */}
+      {!canSetUpInRoot && needsFreshSetup && cloneUrl.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" disabled={cloning} onClick={onClone}>
             {cloning ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -92,11 +111,7 @@ export function SiteBindTargetPicker({
             )}
             {cloning ? strings.cloning : strings.clone}
           </Button>
-        ) : null}
-      </div>
-
-      {candidates.length === 0 && cloneUrl.length > 0 ? (
-        <p className="text-xs text-muted-foreground">{strings.cloneHint}</p>
+        </div>
       ) : null}
     </section>
   )

@@ -444,8 +444,6 @@ import {
   advanceTerminalTopologyRevision,
   hasHostAuthoritativeTerminalMembership
 } from './workspace-session-terminal-membership-authority'
-import { RuntimeEmulatorCommands, setEmulatorBridge } from './orca-runtime-emulator'
-import type { EmulatorBridge } from '../emulator/emulator-bridge'
 import { RuntimeFileCommands } from './orca-runtime-files'
 import { RuntimeGitCommands } from './orca-runtime-git'
 import {
@@ -1069,8 +1067,6 @@ type RuntimeStore = {
     terminalQuickCommands?: GlobalSettings['terminalQuickCommands']
     gitlabProjects?: GlobalSettings['gitlabProjects']
     mobileAutoRestoreFitMs?: number | null
-    mobileEmulatorEnabled?: boolean
-    mobileEmulatorDefaultDeviceUdid?: string | null
     voice?: VoiceSettings
     claudeAgentTeamsMode?: GlobalSettings['claudeAgentTeamsMode']
     // Why: Phase-5 query responder kill switches — read per chunk in
@@ -2558,7 +2554,6 @@ export class OrcaRuntimeService {
   private forkBackfillStarted = false
   private agentBrowserBridge: AgentBrowserBridge | null = null
   private offscreenBrowserBackend: BrowserBackend | null = null
-  private emulatorBridge: EmulatorBridge | null = null
   private resolvedWorktreeCache: ResolvedWorktreeCache | null = null
   private resolvedWorktreeInFlight: ResolvedWorktreeInFlight | null = null
   private resolvedWorktreeGeneration = 0
@@ -3765,16 +3760,6 @@ export class OrcaRuntimeService {
   getOffscreenBrowserBackend(): BrowserBackend | null {
     return this.offscreenBrowserBackend
   }
-
-  setEmulatorBridge(bridge: EmulatorBridge | null): void {
-    this.emulatorBridge = bridge
-    setEmulatorBridge(bridge)
-  }
-
-  getEmulatorBridge(): EmulatorBridge | null {
-    return this.emulatorBridge
-  }
-
   attachWindow(windowId: number): void {
     if (this.authoritativeWindowId === HEADLESS_RUNTIME_WINDOW_ID) {
       // Why: promotion is a renderer reload of the same graph owner, not a new
@@ -30000,37 +29985,7 @@ export class OrcaRuntimeService {
     markHeadlessBrowserSessionTabActive: this.markHeadlessBrowserSessionTabActive.bind(this)
   })
 
-  private readonly emulatorCommands = new RuntimeEmulatorCommands({
-    getEmulatorBridge: () => this.emulatorBridge,
-    resolveWorktreeSelector: (selector) => this.resolveWorktreeSelector(selector),
-    getAuthoritativeWindow: () => this.getAuthoritativeWindow(),
-    getSettings: () => this.requireStore().getSettings()
-  })
-
-  browserSnapshot: RuntimeBrowserCommands['browserSnapshot'] =
-    this.browserCommands.browserSnapshot.bind(this.browserCommands)
-
-  browserClick: RuntimeBrowserCommands['browserClick'] = this.browserCommands.browserClick.bind(
-    this.browserCommands
-  )
-
   browserGoto: RuntimeBrowserCommands['browserGoto'] = this.browserCommands.browserGoto.bind(
-    this.browserCommands
-  )
-
-  browserFill: RuntimeBrowserCommands['browserFill'] = this.browserCommands.browserFill.bind(
-    this.browserCommands
-  )
-
-  browserType: RuntimeBrowserCommands['browserType'] = this.browserCommands.browserType.bind(
-    this.browserCommands
-  )
-
-  browserSelect: RuntimeBrowserCommands['browserSelect'] = this.browserCommands.browserSelect.bind(
-    this.browserCommands
-  )
-
-  browserScroll: RuntimeBrowserCommands['browserScroll'] = this.browserCommands.browserScroll.bind(
     this.browserCommands
   )
 
@@ -30041,9 +29996,6 @@ export class OrcaRuntimeService {
   browserReload: RuntimeBrowserCommands['browserReload'] = this.browserCommands.browserReload.bind(
     this.browserCommands
   )
-
-  browserScreenshot: RuntimeBrowserCommands['browserScreenshot'] =
-    this.browserCommands.browserScreenshot.bind(this.browserCommands)
 
   async browserScreencast(
     params: Parameters<RuntimeBrowserCommands['browserScreencast']>[0],
@@ -30201,46 +30153,8 @@ export class OrcaRuntimeService {
   browserTabSwitch: RuntimeBrowserCommands['browserTabSwitch'] =
     this.browserCommands.browserTabSwitch.bind(this.browserCommands)
 
-  browserHover: RuntimeBrowserCommands['browserHover'] = this.browserCommands.browserHover.bind(
-    this.browserCommands
-  )
-
-  browserDrag: RuntimeBrowserCommands['browserDrag'] = this.browserCommands.browserDrag.bind(
-    this.browserCommands
-  )
-
-  browserUpload: RuntimeBrowserCommands['browserUpload'] = this.browserCommands.browserUpload.bind(
-    this.browserCommands
-  )
-
-  browserWait: RuntimeBrowserCommands['browserWait'] = this.browserCommands.browserWait.bind(
-    this.browserCommands
-  )
-
-  browserCheck: RuntimeBrowserCommands['browserCheck'] = this.browserCommands.browserCheck.bind(
-    this.browserCommands
-  )
-
-  browserFocus: RuntimeBrowserCommands['browserFocus'] = this.browserCommands.browserFocus.bind(
-    this.browserCommands
-  )
-
-  browserClear: RuntimeBrowserCommands['browserClear'] = this.browserCommands.browserClear.bind(
-    this.browserCommands
-  )
-
-  browserSelectAll: RuntimeBrowserCommands['browserSelectAll'] =
-    this.browserCommands.browserSelectAll.bind(this.browserCommands)
-
   browserKeypress: RuntimeBrowserCommands['browserKeypress'] =
     this.browserCommands.browserKeypress.bind(this.browserCommands)
-
-  browserPdf: RuntimeBrowserCommands['browserPdf'] = this.browserCommands.browserPdf.bind(
-    this.browserCommands
-  )
-
-  browserFullScreenshot: RuntimeBrowserCommands['browserFullScreenshot'] =
-    this.browserCommands.browserFullScreenshot.bind(this.browserCommands)
 
   browserCookieGet: RuntimeBrowserCommands['browserCookieGet'] =
     this.browserCommands.browserCookieGet.bind(this.browserCommands)
@@ -30257,43 +30171,8 @@ export class OrcaRuntimeService {
   browserSetGeolocation: RuntimeBrowserCommands['browserSetGeolocation'] =
     this.browserCommands.browserSetGeolocation.bind(this.browserCommands)
 
-  browserInterceptEnable: RuntimeBrowserCommands['browserInterceptEnable'] =
-    this.browserCommands.browserInterceptEnable.bind(this.browserCommands)
-
-  browserInterceptDisable: RuntimeBrowserCommands['browserInterceptDisable'] =
-    this.browserCommands.browserInterceptDisable.bind(this.browserCommands)
-
-  browserInterceptList: RuntimeBrowserCommands['browserInterceptList'] =
-    this.browserCommands.browserInterceptList.bind(this.browserCommands)
-
-  browserCaptureStart: RuntimeBrowserCommands['browserCaptureStart'] =
-    this.browserCommands.browserCaptureStart.bind(this.browserCommands)
-
-  browserCaptureStop: RuntimeBrowserCommands['browserCaptureStop'] =
-    this.browserCommands.browserCaptureStop.bind(this.browserCommands)
-
-  browserConsoleLog: RuntimeBrowserCommands['browserConsoleLog'] =
-    this.browserCommands.browserConsoleLog.bind(this.browserCommands)
-
-  browserNetworkLog: RuntimeBrowserCommands['browserNetworkLog'] =
-    this.browserCommands.browserNetworkLog.bind(this.browserCommands)
-
-  browserDblclick: RuntimeBrowserCommands['browserDblclick'] =
-    this.browserCommands.browserDblclick.bind(this.browserCommands)
-
   browserForward: RuntimeBrowserCommands['browserForward'] =
     this.browserCommands.browserForward.bind(this.browserCommands)
-
-  browserScrollIntoView: RuntimeBrowserCommands['browserScrollIntoView'] =
-    this.browserCommands.browserScrollIntoView.bind(this.browserCommands)
-
-  browserGet: RuntimeBrowserCommands['browserGet'] = this.browserCommands.browserGet.bind(
-    this.browserCommands
-  )
-
-  browserIs: RuntimeBrowserCommands['browserIs'] = this.browserCommands.browserIs.bind(
-    this.browserCommands
-  )
 
   browserKeyboardInsertText: RuntimeBrowserCommands['browserKeyboardInsertText'] =
     this.browserCommands.browserKeyboardInsertText.bind(this.browserCommands)
@@ -30313,25 +30192,6 @@ export class OrcaRuntimeService {
   browserMouseWheel: RuntimeBrowserCommands['browserMouseWheel'] =
     this.browserCommands.browserMouseWheel.bind(this.browserCommands)
 
-  browserFind: RuntimeBrowserCommands['browserFind'] = this.browserCommands.browserFind.bind(
-    this.browserCommands
-  )
-
-  browserSetDevice: RuntimeBrowserCommands['browserSetDevice'] =
-    this.browserCommands.browserSetDevice.bind(this.browserCommands)
-
-  browserSetOffline: RuntimeBrowserCommands['browserSetOffline'] =
-    this.browserCommands.browserSetOffline.bind(this.browserCommands)
-
-  browserSetHeaders: RuntimeBrowserCommands['browserSetHeaders'] =
-    this.browserCommands.browserSetHeaders.bind(this.browserCommands)
-
-  browserSetCredentials: RuntimeBrowserCommands['browserSetCredentials'] =
-    this.browserCommands.browserSetCredentials.bind(this.browserCommands)
-
-  browserSetMedia: RuntimeBrowserCommands['browserSetMedia'] =
-    this.browserCommands.browserSetMedia.bind(this.browserCommands)
-
   browserClipboardRead: RuntimeBrowserCommands['browserClipboardRead'] =
     this.browserCommands.browserClipboardRead.bind(this.browserCommands)
 
@@ -30343,34 +30203,6 @@ export class OrcaRuntimeService {
 
   browserDialogDismiss: RuntimeBrowserCommands['browserDialogDismiss'] =
     this.browserCommands.browserDialogDismiss.bind(this.browserCommands)
-
-  browserStorageLocalGet: RuntimeBrowserCommands['browserStorageLocalGet'] =
-    this.browserCommands.browserStorageLocalGet.bind(this.browserCommands)
-
-  browserStorageLocalSet: RuntimeBrowserCommands['browserStorageLocalSet'] =
-    this.browserCommands.browserStorageLocalSet.bind(this.browserCommands)
-
-  browserStorageLocalClear: RuntimeBrowserCommands['browserStorageLocalClear'] =
-    this.browserCommands.browserStorageLocalClear.bind(this.browserCommands)
-
-  browserStorageSessionGet: RuntimeBrowserCommands['browserStorageSessionGet'] =
-    this.browserCommands.browserStorageSessionGet.bind(this.browserCommands)
-
-  browserStorageSessionSet: RuntimeBrowserCommands['browserStorageSessionSet'] =
-    this.browserCommands.browserStorageSessionSet.bind(this.browserCommands)
-
-  browserStorageSessionClear: RuntimeBrowserCommands['browserStorageSessionClear'] =
-    this.browserCommands.browserStorageSessionClear.bind(this.browserCommands)
-
-  browserDownload: RuntimeBrowserCommands['browserDownload'] =
-    this.browserCommands.browserDownload.bind(this.browserCommands)
-
-  browserHighlight: RuntimeBrowserCommands['browserHighlight'] =
-    this.browserCommands.browserHighlight.bind(this.browserCommands)
-
-  browserExec: RuntimeBrowserCommands['browserExec'] = this.browserCommands.browserExec.bind(
-    this.browserCommands
-  )
 
   browserTabCreate: RuntimeBrowserCommands['browserTabCreate'] =
     this.browserCommands.browserTabCreate.bind(this.browserCommands)
@@ -30404,52 +30236,6 @@ export class OrcaRuntimeService {
 
   browserTabClose: RuntimeBrowserCommands['browserTabClose'] =
     this.browserCommands.browserTabClose.bind(this.browserCommands)
-
-  // Emulator bindings (delegated to dedicated commands for surface separation).
-  emulatorTap: RuntimeEmulatorCommands['emulatorTap'] = this.emulatorCommands.emulatorTap.bind(
-    this.emulatorCommands
-  )
-  emulatorGesture: RuntimeEmulatorCommands['emulatorGesture'] =
-    this.emulatorCommands.emulatorGesture.bind(this.emulatorCommands)
-  emulatorType: RuntimeEmulatorCommands['emulatorType'] = this.emulatorCommands.emulatorType.bind(
-    this.emulatorCommands
-  )
-  emulatorButton: RuntimeEmulatorCommands['emulatorButton'] =
-    this.emulatorCommands.emulatorButton.bind(this.emulatorCommands)
-  emulatorRotate: RuntimeEmulatorCommands['emulatorRotate'] =
-    this.emulatorCommands.emulatorRotate.bind(this.emulatorCommands)
-  emulatorExec: RuntimeEmulatorCommands['emulatorExec'] = this.emulatorCommands.emulatorExec.bind(
-    this.emulatorCommands
-  )
-  emulatorAttach: RuntimeEmulatorCommands['emulatorAttach'] =
-    this.emulatorCommands.emulatorAttach.bind(this.emulatorCommands)
-  emulatorList: RuntimeEmulatorCommands['emulatorList'] = this.emulatorCommands.emulatorList.bind(
-    this.emulatorCommands
-  )
-  emulatorKill: RuntimeEmulatorCommands['emulatorKill'] = this.emulatorCommands.emulatorKill.bind(
-    this.emulatorCommands
-  )
-  emulatorShutdown: RuntimeEmulatorCommands['emulatorShutdown'] =
-    this.emulatorCommands.emulatorShutdown.bind(this.emulatorCommands)
-  emulatorListSimulators: RuntimeEmulatorCommands['emulatorListSimulators'] =
-    this.emulatorCommands.emulatorListSimulators.bind(this.emulatorCommands)
-  emulatorAvailability: RuntimeEmulatorCommands['emulatorAvailability'] =
-    this.emulatorCommands.emulatorAvailability.bind(this.emulatorCommands)
-  emulatorListDevices: RuntimeEmulatorCommands['emulatorListDevices'] =
-    this.emulatorCommands.emulatorListDevices.bind(this.emulatorCommands)
-  emulatorInstall: RuntimeEmulatorCommands['emulatorInstall'] =
-    this.emulatorCommands.emulatorInstall.bind(this.emulatorCommands)
-  emulatorLaunch: RuntimeEmulatorCommands['emulatorLaunch'] =
-    this.emulatorCommands.emulatorLaunch.bind(this.emulatorCommands)
-  emulatorPermissions: RuntimeEmulatorCommands['emulatorPermissions'] =
-    this.emulatorCommands.emulatorPermissions.bind(this.emulatorCommands)
-  emulatorAx: RuntimeEmulatorCommands['emulatorAx'] = this.emulatorCommands.emulatorAx.bind(
-    this.emulatorCommands
-  )
-  emulatorLogcat: RuntimeEmulatorCommands['emulatorLogcat'] =
-    this.emulatorCommands.emulatorLogcat.bind(this.emulatorCommands)
-  emulatorUnregisterActive: RuntimeEmulatorCommands['emulatorUnregisterActive'] =
-    this.emulatorCommands.emulatorUnregisterActive.bind(this.emulatorCommands)
 
   private getAuthoritativeWindow(): BrowserWindow {
     const win = this.getAvailableAuthoritativeWindow()

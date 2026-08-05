@@ -166,7 +166,7 @@ describe('isOrchestrationSkillName', () => {
       _installedAgentSkillDiscoveryInternalsForTests.isOrchestrationSkillName(' Orchestration ')
     ).toBe(true)
     expect(
-      _installedAgentSkillDiscoveryInternalsForTests.isOrchestrationSkillName('computer-use')
+      _installedAgentSkillDiscoveryInternalsForTests.isOrchestrationSkillName('orca-cli')
     ).toBe(false)
   })
 })

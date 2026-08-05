@@ -23,7 +23,8 @@ vi.mock('electron', () => ({
     getVersion: () => '9.9.9-test'
   },
   ipcMain: {
-    handle: handleMock
+    handle: handleMock,
+    removeHandler: vi.fn()
   }
 }))
 

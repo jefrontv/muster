@@ -368,16 +368,11 @@ describe('RuntimeBrowserCommands browser screencast', () => {
     const { RuntimeBrowserCommands } = await import('./orca-runtime-browser')
     webContentsFromIdMock.mockReturnValue({ isDestroyed: () => true })
     const send = vi.fn()
-    const snapshot = vi.fn(() => ({
-      origin: 'about:blank',
-      refs: {},
-      snapshot: '(empty page)',
-      browserPageId: 'page-target'
-    }))
+    const goto = vi.fn(() => ({ url: 'https://example.test/', title: 'Target' }))
     const bridge = {
       getRegisteredTabs: vi.fn(() => new Map([['page-target', 101]])),
       getActivePageId: vi.fn(() => 'page-other'),
-      snapshot
+      goto
     } as unknown as AgentBrowserBridge
     const commands = new RuntimeBrowserCommands(
       createHost({
@@ -387,13 +382,12 @@ describe('RuntimeBrowserCommands browser screencast', () => {
     )
 
     await expect(
-      commands.browserSnapshot({ worktree: 'id:wt-1', page: 'page-target' })
-    ).resolves.toEqual({
-      origin: 'about:blank',
-      refs: {},
-      snapshot: '(empty page)',
-      browserPageId: 'page-target'
-    })
+      commands.browserGoto({
+        worktree: 'id:wt-1',
+        page: 'page-target',
+        url: 'https://example.test/'
+      })
+    ).resolves.toEqual({ url: 'https://example.test/', title: 'Target' })
 
     expect(send).toHaveBeenCalledWith('browser:activateView', {
       worktreeId: 'wt-1',
@@ -401,7 +395,7 @@ describe('RuntimeBrowserCommands browser screencast', () => {
     })
     expect(waitForTabRegistrationMock).toHaveBeenCalledWith('page-target')
     expect(waitForWorktreeTabRegistrationMock).not.toHaveBeenCalled()
-    expect(snapshot).toHaveBeenCalledWith('wt-1', 'page-target')
+    expect(goto).toHaveBeenCalledWith('https://example.test/', 'wt-1', 'page-target')
   })
 
   it('wakes the requested page before showing page-scoped tab metadata', async () => {

@@ -44,7 +44,7 @@ export function registerSiteCloneSourceHandlers(store: Store): void {
     'siteCloneSources:repos',
     async (_event, args: unknown): Promise<SiteResult<CloneSourceListResult>> => {
       try {
-        const input = (args ?? {}) as { provider?: unknown }
+        const input = (args ?? {}) as { provider?: unknown; query?: unknown }
         // Validated against the known ids before it can reach a host module, so a malformed
         // renderer call is a result the picker can render instead of an unhandled rejection.
         if (!isCloneSourceProviderId(input.provider)) {
@@ -52,9 +52,12 @@ export function registerSiteCloneSourceHandlers(store: Store): void {
             'siteCloneSources:repos requires { provider: "bitbucket" | "github" }'
           )
         }
+        // A non-string query is dropped rather than rejected: an absent search is the normal browse
+        // case, so coercing to empty keeps the picker working instead of erroring on a typo.
+        const query = typeof input.query === 'string' ? input.query : ''
         // The store is what "already have it" is measured against, so the registry filters the
         // list before it ever reaches the picker.
-        return { ok: true, value: await listCloneSourceRepos(store, input.provider) }
+        return { ok: true, value: await listCloneSourceRepos(store, input.provider, query) }
       } catch (error) {
         return failure(error)
       }

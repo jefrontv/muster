@@ -204,6 +204,54 @@ describe('migrateLocalWpRepoPathIfNeeded', () => {
     expect(migrated.path).toBe(appPublic)
     expect(updateRepo).not.toHaveBeenCalled()
   })
+
+  // Why: the "already evaluated" cache used to be permanent for the process. A LocalWP setup
+  // relocates the checkout into app/public and the import then writes wp-config.php, so the cached
+  // "not a LocalWP shell" answer went stale and the repo kept pointing at a folder with no .git —
+  // which is why creating a worktree failed with "no base branch found".
+  it('re-evaluates a repo it already checked once wp-config.php appears', async () => {
+    const site = await makeTempRoot()
+    const appPublic = join(site, 'app', 'public')
+    await mkdir(appPublic, { recursive: true })
+    execFileSync('git', ['init'], { cwd: appPublic, stdio: 'ignore' })
+
+    const updateRepo = vi.fn((id: string, updates: Record<string, unknown>) => ({
+      id,
+      path: site,
+      displayName: 'orleton',
+      badgeColor: '#000',
+      addedAt: 0,
+      kind: 'git' as const,
+      ...updates
+    }))
+    const store = {
+      getAllWorktreeMeta: () => ({}),
+      setWorktreeMeta: vi.fn(),
+      removeWorktreeMeta: vi.fn(),
+      updateRepo
+    }
+    const repo = {
+      id: 'repo-late-wp',
+      path: site,
+      displayName: 'orleton',
+      badgeColor: '#000',
+      addedAt: 0,
+      kind: 'git' as const
+    }
+
+    // First pass: app/public exists but there is no WordPress there yet, so nothing to remap.
+    expect(migrateLocalWpRepoPathIfNeeded(store as never, repo).path).toBe(site)
+    expect(updateRepo).not.toHaveBeenCalled()
+
+    await writeFile(join(appPublic, 'wp-config.php'), '<?php\n')
+
+    const migrated = migrateLocalWpRepoPathIfNeeded(store as never, repo)
+    expect(migrated).toMatchObject({ path: appPublic, kind: 'folder' })
+    expect(updateRepo).toHaveBeenCalledWith(
+      'repo-late-wp',
+      expect.objectContaining({ path: appPublic, kind: 'folder' })
+    )
+  })
 })
 
 describe('rekeyWorktreeMetaForRepoPathChange', () => {

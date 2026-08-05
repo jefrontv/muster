@@ -2,11 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo, Worktree, WorktreeLineage } from '../../../../shared/types'
+import type { DeleteWorktreeModalPayload } from '@/store/slices/modal-payloads'
 
 const mocks = vi.hoisted(() => {
   const state = {
     activeModal: 'delete-worktree',
-    modalData: {} as Record<string, unknown>,
+    modalData: {} as DeleteWorktreeModalPayload,
     closeModal: vi.fn(),
     removeWorktree: vi.fn(),
     clearWorktreeDeleteState: vi.fn(),

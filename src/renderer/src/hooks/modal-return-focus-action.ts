@@ -4,7 +4,7 @@ import type { BrowserFocusTarget } from '../components/browser-pane/browser-focu
 // Captured at open time because Radix steals document focus once the dialog
 // mounts, so the raw activeElement is gone by close time.
 export type ModalReturnFocusSurface = {
-  tabType: 'browser' | 'editor' | 'terminal' | 'simulator'
+  tabType: 'browser' | 'editor' | 'terminal'
   worktreeId: string | null
   browserPageId: string | null
   browserTarget: BrowserFocusTarget
@@ -16,7 +16,6 @@ export type ModalReturnFocusAction =
   | { kind: 'browser'; pageId: string; target: BrowserFocusTarget }
   | { kind: 'terminal'; tabId: string; leafId: string | null }
   | { kind: 'editor' }
-  | { kind: 'simulator' }
   | { kind: 'surface' }
   | { kind: 'none' }
 
@@ -37,9 +36,6 @@ export function resolveModalReturnFocusAction(
   }
   if (captured.tabType === 'editor' && captured.worktreeId) {
     return { kind: 'editor' }
-  }
-  if (captured.tabType === 'simulator' && captured.worktreeId) {
-    return { kind: 'simulator' }
   }
   if (captured.worktreeId) {
     return { kind: 'surface' }

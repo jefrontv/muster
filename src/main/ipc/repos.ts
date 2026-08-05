@@ -31,6 +31,7 @@ import { DEFAULT_REPO_BADGE_COLOR } from '../../shared/constants'
 import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
 import { sanitizeRepoIcon } from '../../shared/repo-icon'
 import { normalizeRepoSourceControlAiOverrides } from '../../shared/source-control-ai'
+import { fetchFaviconAsDataUrl } from '../favicon-fetch'
 import {
   isRuntimePathAbsolute,
   normalizeRuntimePathForComparison,
@@ -45,6 +46,7 @@ import { isAbsolute, join, posix } from 'node:path'
 import {
   cleanupClaimedCloneTarget,
   claimCloneTarget,
+  clonePathExists,
   deriveCloneRepoNameFromUrl,
   deriveValidatedClonePath,
   getClonePathComparisonKey
@@ -1163,6 +1165,7 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
   ipcMain.removeHandler('repos:isGitAvailable')
   ipcMain.removeHandler('repos:getDefaultCreateProjectParent')
   ipcMain.removeHandler('repos:getGitUsername')
+  ipcMain.removeHandler('repos:fetchFavicon')
   ipcMain.removeHandler('repos:getBaseRefDefault')
   ipcMain.removeHandler('repos:searchBaseRefs')
   ipcMain.removeHandler('repos:searchBaseRefDetails')
@@ -2204,7 +2207,15 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
         const existingAfterPendingClone = store
           .getRepos()
           .find((r) => getClonePathComparisonKey(r.path) === clonePathKey)
-        if (existingAfterPendingClone && !isFolderRepo(existingAfterPendingClone)) {
+        // Why: the record alone is not proof the checkout is still there. A folder deleted outside
+        // Muster leaves its Repo behind, and returning it here would report a successful clone
+        // while creating nothing — the caller then binds a path that does not exist. Probe the
+        // disk so a stale record falls through and re-clones instead.
+        if (
+          existingAfterPendingClone &&
+          !isFolderRepo(existingAfterPendingClone) &&
+          (await clonePathExists(existingAfterPendingClone.path))
+        ) {
           // Why: clone_url always produces a git repo.
           emitRepoAdded('clone_url', true, true)
           return existingAfterPendingClone
@@ -2388,6 +2399,12 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
     }
     return resolveLocalGitUsername(repo.path)
   })
+
+  // Why: renderer CSP/CORS blocks cross-origin favicon fetches, so main fetches
+  // on the user's local machine — this also serves SSH/remote projects.
+  ipcMain.handle('repos:fetchFavicon', (_event, args: { domain: string }) =>
+    fetchFaviconAsDataUrl(typeof args?.domain === 'string' ? args.domain : '')
+  )
 
   ipcMain.handle(
     'repos:getBaseRefDefault',

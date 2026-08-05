@@ -7,6 +7,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import { toast } from 'sonner'
 import { getConnectionId } from '@/lib/connection-context'
 import { getRuntimeGitStatus } from '@/runtime/runtime-git-client'
@@ -31,8 +32,7 @@ import {
 import { translate } from '@/i18n/i18n'
 
 const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('delete-worktree')
   const closeModal = useAppStore((s) => s.closeModal)
   const removeWorktree = useAppStore((s) => s.removeWorktree)
   const clearWorktreeDeleteState = useAppStore((s) => s.clearWorktreeDeleteState)
@@ -46,21 +46,14 @@ const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
   const gitStatusByWorktree = useAppStore((s) => s.gitStatusByWorktree)
   const setGitStatus = useAppStore((s) => s.setGitStatus)
 
-  const isOpen = activeModal === 'delete-worktree'
-  const worktreeId = typeof modalData.worktreeId === 'string' ? modalData.worktreeId : ''
+  const isOpen = modalData !== null
+  const worktreeId = modalData?.worktreeId ?? ''
+  const batchWorktreeIds = modalData?.worktreeIds
   const worktreeIds = useMemo(
-    () =>
-      Array.isArray(modalData.worktreeIds)
-        ? modalData.worktreeIds.filter((id): id is string => typeof id === 'string')
-        : worktreeId
-          ? [worktreeId]
-          : [],
-    [modalData.worktreeIds, worktreeId]
+    () => batchWorktreeIds ?? (worktreeId ? [worktreeId] : []),
+    [batchWorktreeIds, worktreeId]
   )
-  const onDeleted =
-    typeof modalData.onDeleted === 'function'
-      ? (modalData.onDeleted as (worktreeIds: string[]) => void)
-      : null
+  const onDeleted = modalData?.onDeleted ?? null
   const worktree = useMemo(
     () => (worktreeId ? (allWorktrees().find((item) => item.id === worktreeId) ?? null) : null),
     [allWorktrees, worktreeId]
@@ -131,7 +124,7 @@ const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
     folderWorkspaceDeleteCount: lineageFolderWorkspaceDeleteCount
   })
   const allowSkipConfirm =
-    !isBatchDelete && modalData.allowSkipConfirm !== false && childWorkspaceCount === 0
+    !isBatchDelete && modalData?.allowSkipConfirm !== false && childWorkspaceCount === 0
   const [dontAskAgain, setDontAskAgain] = useState(false)
   const deleteTargets = useMemo(
     () => (canDeleteAllLineage ? lineageDelete.deleteAllTargets : worktrees),

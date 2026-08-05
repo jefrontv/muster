@@ -8,14 +8,7 @@ import {
   OptionalPositiveInt,
   OptionalString
 } from './schemas'
-import {
-  InterceptEnable,
-  Screenshot,
-  Scroll,
-  TabClose,
-  TabSwitch,
-  Wait
-} from './methods/browser-schemas'
+import { CookieGet, TabClose, TabCreate, TabSwitch } from './methods/browser-schemas'
 import { TERMINAL_METHODS } from './methods/terminal'
 import { TERMINAL_ORPHAN_METHODS } from './methods/terminal-orphan'
 import { WORKTREE_METHODS } from './methods/worktree'
@@ -57,12 +50,10 @@ describe('RPC optional pipe schemas', () => {
   })
 
   it('accepts omitted browser optional fields while required fields are present', () => {
-    expectParses(Scroll, { direction: 'down' })
-    expectParses(Screenshot, {})
+    expectParses(TabCreate, {})
+    expectParses(CookieGet, {})
     expectParses(TabSwitch, { page: 'page-1' })
     expectParses(TabClose, {})
-    expectParses(Wait, {})
-    expectParses(InterceptEnable, {})
     expectParses(BrowserTarget, {})
   })
 

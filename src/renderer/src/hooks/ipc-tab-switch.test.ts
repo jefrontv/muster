@@ -22,7 +22,7 @@ import {
   handleSwitchTerminalTab
 } from './ipc-tab-switch'
 
-type ActiveTabType = 'terminal' | 'editor' | 'browser' | 'simulator'
+type ActiveTabType = 'terminal' | 'editor' | 'browser'
 
 type MockGroup = {
   id: string

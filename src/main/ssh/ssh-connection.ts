@@ -1,9 +1,8 @@
 /* eslint-disable max-lines -- Why: SSH connection lifecycle, credential retries, reconnect policy, and transport fallback are intentionally co-located so state transitions stay auditable in one file. */
 import * as net from 'node:net'
-import { createHash } from 'node:crypto'
 import { Client as SshClient } from 'ssh2'
 import type { ChildProcess } from 'node:child_process'
-import type { ClientChannel, ConnectConfig, SFTPWrapper } from 'ssh2'
+import type { ClientChannel, ConnectConfig, SFTPWrapper, ServerHostKeyAlgorithm } from 'ssh2'
 import type { SshTarget, SshConnectionState, SshConnectionStatus } from '../../shared/ssh-types'
 import {
   getOrcaControlSocketPath,
@@ -46,6 +45,10 @@ import {
   createLinkedSshFileTransferSignal,
   raceSftpFileTransferWithAbort
 } from './ssh-file-transfer-abort'
+import { normalizeKnownHostsHostname } from './known-hosts-fingerprint'
+import { orderServerHostKeyAlgorithms } from './known-hosts-algorithms'
+import { createHostKeyMismatchError } from './known-hosts-error'
+import { getSshKnownHostsStore } from './known-hosts-store'
 export type { SshConnectionCallbacks } from './ssh-connection-utils'
 
 type SshRemoteFileOptions = {
@@ -1125,13 +1128,44 @@ export class SshConnection {
     return new Promise<void>((resolve, reject) => {
       const client = new SshClient()
       let settled = false
+      let hostKeyRejection: Error | null = null
 
-      // Why: the relay uses the negotiated server key to isolate shared-home
-      // install locks without comparing PIDs from an unrelated SSH host.
+      const knownHosts = getSshKnownHostsStore()
+      const verifiedHost = normalizeKnownHostsHostname(config.host ?? this.target.host)
+      const verifiedPort = config.port ?? this.target.port
+
+      // Why: OpenSSH biases HostKeyAlgorithms toward types it already trusts. Without the same
+      // bias ssh2 can negotiate a type this endpoint was never pinned with, so a legitimate
+      // server would be indistinguishable from a key substitution.
+      const preferredHostKeyAlgorithms = orderServerHostKeyAlgorithms(
+        knownHosts.getTrustedKeyTypes(verifiedHost, verifiedPort)
+      )
+      if (preferredHostKeyAlgorithms) {
+        // Built from ssh2's own supported names; the cast only re-applies its literal union.
+        const serverHostKey = preferredHostKeyAlgorithms as ServerHostKeyAlgorithm[]
+        config.algorithms = { ...config.algorithms, serverHostKey }
+      }
+
+      // Why: ssh2 accepts any host key unless told otherwise, so an unverified peer would be
+      // handed the stored password. Trust on first use, then refuse any later change.
+      // The relay also uses the negotiated key to isolate shared-home install locks.
       config.hostVerifier = (key: Buffer): boolean => {
+        const verdict = knownHosts.verify(verifiedHost, verifiedPort, key)
+        if (verdict.outcome === 'mismatch' || verdict.outcome === 'revoked') {
+          const refusal = createHostKeyMismatchError({
+            reason: verdict.outcome,
+            host: verifiedHost,
+            port: verifiedPort,
+            presented: verdict.presented,
+            trusted: verdict.trusted,
+            pinFilePath: knownHosts.getPinFilePath()
+          })
+          hostKeyRejection = refusal
+          console.warn(`[ssh] ${refusal.message}`)
+          return false
+        }
         if (!this.disposed && connectGeneration === this.connectGeneration) {
-          const digest = createHash('sha256').update(key).digest('base64').replace(/=+$/, '')
-          this.hostKeyFingerprint = `SHA256:${digest}`
+          this.hostKeyFingerprint = verdict.presented.fingerprint
         }
         return true
       }
@@ -1197,7 +1231,7 @@ export class SshConnection {
         cleanupStartupListeners()
         settled = true
         client.destroy()
-        reject(err)
+        reject(hostKeyRejection ?? err)
       }
 
       client.on('ready', onReady)

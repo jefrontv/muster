@@ -243,6 +243,42 @@ describe('retry policy', () => {
     expect(sleeps).toEqual([12_000, 12_000])
   })
 
+  it('honours a Retry-After on a 503 as well as a 429', async () => {
+    const { sleeps, http } = harness([json({ message: 'Down' }, 503, { 'retry-after': '5' })])
+    await rejection(http.request('projects/3790/tasks'))
+
+    expect(sleeps).toEqual([5000, 5000])
+  })
+
+  it('clamps an oversized Retry-After to the cap, and spends that budget only once', async () => {
+    const { calls, sleeps, http } = harness([json({}, 429, { 'retry-after': '86400' })])
+    await rejection(http.request('projects/3790/tasks'))
+
+    // A day becomes the 60s cap, and the cap is the budget for the WHOLE request: the second 429
+    // ends it rather than stalling the caller for another minute on top.
+    expect(sleeps).toEqual([60_000])
+    expect(calls).toHaveLength(2)
+  })
+
+  it('falls back to bounded backoff when a 429 carries no Retry-After at all', async () => {
+    const { calls, sleeps, http } = harness([json({ message: 'Slow down' }, 429)])
+    await rejection(http.request('projects/3790/tasks'))
+
+    expect(sleeps).toEqual([250, 750])
+    expect(calls).toHaveLength(3)
+  })
+
+  it('ignores a Retry-After date that has already passed', async () => {
+    const now = Date.parse('2026-07-27T00:00:00Z')
+    const { sleeps, http } = harness(
+      [json({}, 429, { 'retry-after': new Date(now - 30_000).toUTCString() })],
+      { nowImpl: () => now }
+    )
+    await rejection(http.request('projects/3790/tasks'))
+
+    expect(sleeps).toEqual([250, 750])
+  })
+
   it('ignores an unusable Retry-After and falls back to bounded backoff', async () => {
     const { sleeps, http } = harness([json({}, 503, { 'retry-after': 'whenever' })])
     await rejection(http.request('projects/3790/tasks'))

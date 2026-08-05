@@ -32,6 +32,7 @@ vi.mock('./task-snapshot-store', () => ({
   acSaveTaskUnread: saveUnreadMock
 }))
 
+import { DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS } from '../../shared/activecollab-poll-interval'
 import {
   acChangeNotification,
   acEnabledChangeKinds,
@@ -39,7 +40,7 @@ import {
   startAcTaskNotifications,
   stopAcTaskNotifications
 } from './task-notification-service'
-import { AC_POLL_INTERVAL_MS, AC_POLL_START_DELAY_MS } from './task-notification-poller'
+import { AC_POLL_START_DELAY_MS } from './task-notification-poller'
 
 const NOW = new Date(2026, 6, 28, 12, 0, 0).getTime()
 const KEY = 'https://projects.efront.com.au#407'
@@ -56,6 +57,7 @@ function acTask(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveCo
     name: 'Fix the header',
     bodyHtml: '',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,
@@ -166,11 +168,13 @@ describe('acChangeNotification', () => {
 
 describe('the running service', () => {
   let notifications = settings()
+  let pollIntervalMs: number | undefined
   let settingsListener: (() => void) | null = null
   let fetchPage = vi.fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
 
   const store = {
-    getSettings: () => ({ notifications }) as unknown as GlobalSettings,
+    getSettings: () =>
+      ({ notifications, activeCollabPollIntervalMs: pollIntervalMs }) as unknown as GlobalSettings,
     onSettingsChanged: (listener: () => void) => {
       settingsListener = listener
       return () => {
@@ -182,6 +186,7 @@ describe('the running service', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     notifications = settings({ activeCollabComments: true })
+    pollIntervalMs = undefined
     settingsListener = null
     dispatchMock.mockClear()
     keyMock.mockReset()
@@ -215,7 +220,7 @@ describe('the running service', () => {
       })
     )
 
-    await vi.advanceTimersByTimeAsync(AC_POLL_INTERVAL_MS)
+    await vi.advanceTimersByTimeAsync(DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS)
     expect(fetchPage).toHaveBeenCalledTimes(2)
   })
 
@@ -226,7 +231,9 @@ describe('the running service', () => {
     notifications = settings()
 
     startAcTaskNotifications({ store, fetchPage })
-    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS + AC_POLL_INTERVAL_MS)
+    await vi.advanceTimersByTimeAsync(
+      AC_POLL_START_DELAY_MS + DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS
+    )
 
     expect(fetchPage).toHaveBeenCalled()
     expect(dispatchMock).not.toHaveBeenCalled()
@@ -240,12 +247,14 @@ describe('the running service', () => {
 
     notifications = settings({ activeCollabDue: true })
     settingsListener?.()
-    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS + AC_POLL_INTERVAL_MS)
+    await vi.advanceTimersByTimeAsync(
+      AC_POLL_START_DELAY_MS + DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS
+    )
     const withToggleOn = dispatchMock.mock.calls.length
 
     notifications = settings()
     settingsListener?.()
-    await vi.advanceTimersByTimeAsync(AC_POLL_INTERVAL_MS * 3)
+    await vi.advanceTimersByTimeAsync(DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS * 3)
 
     // Polling continues for the badge; only the banner stops.
     expect(dispatchMock.mock.calls.length).toBe(withToggleOn)
@@ -256,7 +265,9 @@ describe('the running service', () => {
     keyMock.mockReturnValue(null)
 
     refreshAcTaskNotifications()
-    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS + AC_POLL_INTERVAL_MS)
+    await vi.advanceTimersByTimeAsync(
+      AC_POLL_START_DELAY_MS + DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS
+    )
     expect(fetchPage).not.toHaveBeenCalled()
 
     keyMock.mockReturnValue(KEY)
@@ -272,5 +283,22 @@ describe('the running service', () => {
     await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS)
 
     expect(fetchPage).toHaveBeenCalledTimes(1)
+  })
+
+  it('takes a cadence change live, without a restart', async () => {
+    pollIntervalMs = 600_000
+    startAcTaskNotifications({ store, fetchPage })
+    await vi.advanceTimersByTimeAsync(AC_POLL_START_DELAY_MS)
+    expect(fetchPage).toHaveBeenCalledTimes(1)
+
+    // Still inside the ten-minute window the first poll armed.
+    await vi.advanceTimersByTimeAsync(DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS)
+    expect(fetchPage).toHaveBeenCalledTimes(1)
+
+    pollIntervalMs = 15_000
+    settingsListener?.()
+    await vi.advanceTimersByTimeAsync(15_000)
+
+    expect(fetchPage).toHaveBeenCalledTimes(2)
   })
 })

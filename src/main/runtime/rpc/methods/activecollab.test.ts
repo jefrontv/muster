@@ -97,7 +97,7 @@ describe('activecollab RPC methods', () => {
       makeRequest('activecollab.updateTask', {
         projectId: 3790,
         taskId: 509323,
-        update: { dueOn: null, labelNames: ['Deferred', 'Blocked'] }
+        update: { startOn: null, dueOn: null, labelNames: ['Deferred', 'Blocked'] }
       })
     )
     await dispatcher.dispatch(makeRequest('activecollab.completeTask', { taskId: 509323 }))
@@ -106,11 +106,12 @@ describe('activecollab RPC methods', () => {
       makeRequest('activecollab.postComment', { taskId: 509323, bodyHtml: '<p>Shipped</p>' })
     )
 
-    // The null has to survive the schema: dropping it would turn "clear the due date" into a no-op.
+    // The nulls have to survive the schema: z.object strips unknown keys, so a missing startOn
+    // entry would make a remote workspace silently drop half of every range write.
     expect(runtime.activeCollabUpdateTask).toHaveBeenCalledWith({
       projectId: 3790,
       taskId: 509323,
-      update: { dueOn: null, labelNames: ['Deferred', 'Blocked'] }
+      update: { startOn: null, dueOn: null, labelNames: ['Deferred', 'Blocked'] }
     })
     expect(runtime.activeCollabCompleteTask).toHaveBeenCalledWith({ taskId: 509323 })
     expect(runtime.activeCollabReopenTask).toHaveBeenCalledWith({ taskId: 509323 })

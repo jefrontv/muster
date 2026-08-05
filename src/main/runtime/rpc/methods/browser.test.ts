@@ -10,17 +10,16 @@ import {
 import { BROWSER_CORE_METHODS } from './browser-core'
 import { BROWSER_EXTRA_METHODS } from './browser-extras'
 import { BROWSER_SCREENCAST_METHODS } from './browser-screencast'
-import { ClipboardWrite, Fill, KeyboardInsert, Type } from './browser-schemas'
+import { ClipboardWrite, KeyboardInsert } from './browser-schemas'
 
 function makeRequest(method: string, params?: unknown): RpcRequest {
   return { id: 'req-1', authToken: 'tok', method, params }
 }
 
 describe('browser RPC methods', () => {
-  it('routes core browser automation commands to the runtime server', async () => {
+  it('routes core browser commands to the runtime server', async () => {
     const runtime = {
       getRuntimeId: () => 'test-runtime',
-      browserSnapshot: vi.fn().mockResolvedValue({ elements: [] }),
       browserGoto: vi.fn().mockResolvedValue({ url: 'https://example.com' }),
       browserProfileDetectBrowsers: vi.fn().mockResolvedValue({ browsers: [] }),
       browserProfileImportFromBrowser: vi.fn().mockResolvedValue({ ok: false, reason: 'empty' }),
@@ -29,7 +28,6 @@ describe('browser RPC methods', () => {
     } as unknown as OrcaRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_CORE_METHODS })
 
-    await dispatcher.dispatch(makeRequest('browser.snapshot', { worktree: 'id:wt-1' }))
     await dispatcher.dispatch(
       makeRequest('browser.goto', {
         worktree: 'id:wt-1',
@@ -60,7 +58,6 @@ describe('browser RPC methods', () => {
       })
     )
 
-    expect(runtime.browserSnapshot).toHaveBeenCalledWith({ worktree: 'id:wt-1' })
     expect(runtime.browserGoto).toHaveBeenCalledWith({
       worktree: 'id:wt-1',
       page: 'page-1',
@@ -82,6 +79,31 @@ describe('browser RPC methods', () => {
       browserFamily: 'chrome',
       browserProfile: 'Default'
     })
+  })
+
+  // Why: agent-only automation methods were removed; the runtime must reject them
+  // outright rather than silently accept a call no handler serves.
+  it('no longer exposes agent-only browser automation methods', async () => {
+    const runtime = { getRuntimeId: () => 'test-runtime' } as unknown as OrcaRuntimeService
+    const dispatcher = new RpcDispatcher({
+      runtime,
+      methods: [...BROWSER_CORE_METHODS, ...BROWSER_EXTRA_METHODS]
+    })
+
+    for (const method of [
+      'browser.snapshot',
+      'browser.click',
+      'browser.fill',
+      'browser.type',
+      'browser.screenshot',
+      'browser.exec',
+      'browser.intercept.enable',
+      'browser.storage.local.set',
+      'browser.setDevice'
+    ]) {
+      const response = await dispatcher.dispatch(makeRequest(method, { page: 'page-1' }))
+      expect(response, method).toMatchObject({ ok: false })
+    }
   })
 
   it('routes browser screencast over the streaming dispatcher', async () => {
@@ -160,8 +182,7 @@ describe('browser RPC methods', () => {
       getRuntimeId: () => 'test-runtime',
       browserCookieGet: vi.fn().mockResolvedValue({ cookies: [] }),
       browserSetViewport: vi.fn().mockResolvedValue({ ok: true }),
-      browserMouseWheel: vi.fn().mockResolvedValue({ ok: true }),
-      browserStorageLocalSet: vi.fn().mockResolvedValue({ ok: true })
+      browserMouseWheel: vi.fn().mockResolvedValue({ ok: true })
     } as unknown as OrcaRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_EXTRA_METHODS })
 
@@ -187,14 +208,6 @@ describe('browser RPC methods', () => {
         dy: 240
       })
     )
-    await dispatcher.dispatch(
-      makeRequest('browser.storage.local.set', {
-        worktree: 'id:wt-1',
-        page: 'page-1',
-        key: 'orca',
-        value: 'enabled'
-      })
-    )
 
     expect(runtime.browserCookieGet).toHaveBeenCalledWith({
       worktree: 'id:wt-1',
@@ -212,34 +225,6 @@ describe('browser RPC methods', () => {
       page: 'page-1',
       dy: 240
     })
-    expect(runtime.browserStorageLocalSet).toHaveBeenCalledWith({
-      worktree: 'id:wt-1',
-      page: 'page-1',
-      key: 'orca',
-      value: 'enabled'
-    })
-  })
-
-  it('rejects non-boolean browser check states instead of coercing them to true', async () => {
-    const runtime = {
-      getRuntimeId: () => 'test-runtime',
-      browserCheck: vi.fn().mockResolvedValue({ ok: true })
-    } as unknown as OrcaRuntimeService
-    const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_CORE_METHODS })
-
-    const response = await dispatcher.dispatch(
-      makeRequest('browser.check', {
-        page: 'page-1',
-        element: 'ref-1',
-        checked: 'false'
-      })
-    )
-
-    expect(response).toMatchObject({
-      ok: false,
-      error: { code: 'invalid_argument' }
-    })
-    expect(runtime.browserCheck).not.toHaveBeenCalled()
   })
 
   it('rejects oversized browser clipboard writes before runtime dispatch', async () => {
@@ -271,8 +256,6 @@ describe('browser RPC methods', () => {
   it('leaves browser text byte limits to async handlers', () => {
     const text = 'x'.repeat(CLIPBOARD_TEXT_WRITE_MAX_BYTES + 1)
 
-    expect(Fill.safeParse({ element: '@e1', value: text }).success).toBe(true)
-    expect(Type.safeParse({ input: text }).success).toBe(true)
     expect(KeyboardInsert.safeParse({ text }).success).toBe(true)
     expect(ClipboardWrite.safeParse({ text }).success).toBe(true)
   })
@@ -283,23 +266,25 @@ describe('browser RPC methods', () => {
       const text = 'é'.repeat(CLIPBOARD_TEXT_MEASURE_YIELD_CODE_UNITS + 1)
       const runtime = {
         getRuntimeId: () => 'test-runtime',
-        browserType: vi.fn().mockResolvedValue({ typed: true })
+        browserKeyboardInsertText: vi.fn().mockResolvedValue({ inserted: true })
       } as unknown as OrcaRuntimeService
       const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_CORE_METHODS })
 
-      const responsePromise = dispatcher.dispatch(makeRequest('browser.type', { input: text }))
+      const responsePromise = dispatcher.dispatch(
+        makeRequest('browser.keyboardInsertText', { text })
+      )
       await Promise.resolve()
 
-      expect(runtime.browserType).not.toHaveBeenCalled()
+      expect(runtime.browserKeyboardInsertText).not.toHaveBeenCalled()
 
       await vi.runOnlyPendingTimersAsync()
       const response = await responsePromise
 
       expect(response).toMatchObject({
         ok: true,
-        result: { typed: true }
+        result: { inserted: true }
       })
-      expect(runtime.browserType).toHaveBeenCalledWith({ input: text })
+      expect(runtime.browserKeyboardInsertText).toHaveBeenCalledWith({ text })
     } finally {
       vi.useRealTimers()
     }
@@ -309,35 +294,15 @@ describe('browser RPC methods', () => {
     const secret = 'browser-insert-secret'
     const runtime = {
       getRuntimeId: () => 'test-runtime',
-      browserFill: vi.fn().mockResolvedValue({ filled: '@e1' }),
-      browserType: vi.fn().mockResolvedValue({ typed: true }),
       browserKeyboardInsertText: vi.fn().mockResolvedValue({ inserted: true })
     } as unknown as OrcaRuntimeService
     const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_CORE_METHODS })
     const text = [secret, 'x'.repeat(CLIPBOARD_TEXT_WRITE_MAX_BYTES + 1)].join('')
 
-    const fillResponse = await dispatcher.dispatch(
-      makeRequest('browser.fill', { element: '@e1', value: text })
-    )
-    const typeResponse = await dispatcher.dispatch(makeRequest('browser.type', { input: text }))
     const keyboardInsertResponse = await dispatcher.dispatch(
       makeRequest('browser.keyboardInsertText', { text })
     )
 
-    expect(fillResponse).toMatchObject({
-      ok: false,
-      error: {
-        code: 'invalid_argument',
-        message: CLIPBOARD_TEXT_WRITE_TOO_LARGE_ERROR
-      }
-    })
-    expect(typeResponse).toMatchObject({
-      ok: false,
-      error: {
-        code: 'invalid_argument',
-        message: CLIPBOARD_TEXT_WRITE_TOO_LARGE_ERROR
-      }
-    })
     expect(keyboardInsertResponse).toMatchObject({
       ok: false,
       error: {
@@ -345,11 +310,7 @@ describe('browser RPC methods', () => {
         message: CLIPBOARD_TEXT_WRITE_TOO_LARGE_ERROR
       }
     })
-    expect(JSON.stringify([fillResponse, typeResponse, keyboardInsertResponse])).not.toContain(
-      secret
-    )
-    expect(runtime.browserFill).not.toHaveBeenCalled()
-    expect(runtime.browserType).not.toHaveBeenCalled()
+    expect(JSON.stringify(keyboardInsertResponse)).not.toContain(secret)
     expect(runtime.browserKeyboardInsertText).not.toHaveBeenCalled()
   })
 })

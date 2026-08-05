@@ -1,11 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { OrcaYamlHooksModalPayload } from '@/store/slices/modal-payloads'
 
 const mocks = vi.hoisted(() => ({
   state: {
     activeModal: 'confirm-orca-yaml-hooks' as string | null,
-    modalData: {} as Record<string, unknown>,
+    modalData: {} as OrcaYamlHooksModalPayload,
     closeModal: vi.fn(),
     markOrcaHookScriptConfirmed: vi.fn(),
     markOrcaHookRepoAlwaysTrusted: vi.fn()
@@ -65,7 +66,8 @@ describe('OrcaYamlTrustDialog', () => {
       scriptKind: 'setup',
       scriptContent: 'node config/scripts/run-internal-dev-setup.mjs\npnpm install',
       contentHash: 'hash-1',
-      previouslyApproved: false
+      previouslyApproved: false,
+      onResolve: vi.fn()
     }
   })
 

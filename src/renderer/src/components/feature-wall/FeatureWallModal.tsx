@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { getFeatureWallOpenSource } from './feature-wall-modal-helpers'
+import { useModalData } from '@/hooks/use-modal-data'
 import {
   Dialog,
   DialogContent,
@@ -12,11 +12,10 @@ import { FeatureWallTourSurface } from './FeatureWallTourSurface'
 import { translate } from '@/i18n/i18n'
 
 export default function FeatureWallModal(): JSX.Element | null {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('feature-wall')
   const closeModal = useAppStore((s) => s.closeModal)
-  const isOpen = activeModal === 'feature-wall'
-  const source = getFeatureWallOpenSource(modalData)
+  const isOpen = modalData !== null
+  const source = modalData?.source ?? 'unknown'
 
   const handleOpenChange = (open: boolean): void => {
     if (!open) {

@@ -70,6 +70,7 @@ function task(id: number, overrides: Partial<ActiveCollabTask> = {}): ActiveColl
     name: `Task ${id}`,
     bodyHtml: '',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,

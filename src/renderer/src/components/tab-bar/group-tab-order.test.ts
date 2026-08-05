@@ -48,21 +48,6 @@ function browserTab(id: string, groupId: string, entityId: string, sortOrder: nu
   }
 }
 
-function simulatorTab(id: string, groupId: string, sortOrder: number): Tab {
-  return {
-    id,
-    entityId: id,
-    groupId,
-    worktreeId: 'wt',
-    contentType: 'simulator',
-    label: 'Mobile Emulator',
-    customLabel: null,
-    color: null,
-    sortOrder,
-    createdAt: sortOrder
-  }
-}
-
 describe('getGroupVisibleTabOrder', () => {
   it('returns active-group refs with backing ids plus unified tab ids', () => {
     const group: TabGroup = {
@@ -157,34 +142,6 @@ describe('getGroupVisibleTabOrder', () => {
     ).toEqual([
       { type: 'terminal', id: 'term-1', tabId: 'tab-t1' },
       { type: 'browser', id: 'browser-1', tabId: 'tab-b1' },
-      { type: 'editor', id: '/repo/file.md', tabId: 'tab-e1' }
-    ])
-  })
-
-  it('includes simulator tabs keyed by unified tab id in the declared group order', () => {
-    const group: TabGroup = {
-      id: 'g1',
-      worktreeId: 'wt',
-      activeTabId: 'tab-s1',
-      tabOrder: ['tab-t1', 'tab-s1', 'tab-e1']
-    }
-    const tabs: Tab[] = [
-      terminalTab('tab-t1', 'g1', 'term-1', 0),
-      simulatorTab('tab-s1', 'g1', 1),
-      editorTab('tab-e1', 'g1', '/repo/file.md', 2)
-    ]
-    expect(
-      getGroupVisibleTabOrder(
-        group,
-        tabs,
-        new Set(['term-1']),
-        new Set(['/repo/file.md']),
-        new Set(),
-        new Set(['tab-s1'])
-      )
-    ).toEqual([
-      { type: 'terminal', id: 'term-1', tabId: 'tab-t1' },
-      { type: 'simulator', id: 'tab-s1', tabId: 'tab-s1' },
       { type: 'editor', id: '/repo/file.md', tabId: 'tab-e1' }
     ])
   })
@@ -287,18 +244,19 @@ describe('getActiveTabNavOrder', () => {
 
   it('falls back to the legacy reconciled order when no active group exists', () => {
     const state = makeState({
-      tabBarOrderByWorktree: { wt: ['term-1', 'sim-1', 'e1', 'term-2'] },
-      unifiedTabsByWorktree: { wt: [simulatorTab('sim-1', 'g1', 3)] },
+      tabBarOrderByWorktree: { wt: ['term-1', 'browser-1', 'e1', 'term-2'] },
       tabsByWorktree: {
         // @ts-expect-error — minimal shape
         wt: [{ id: 'term-1' }, { id: 'term-2' }]
       },
       // @ts-expect-error — minimal shape
+      browserTabsByWorktree: { wt: [{ id: 'browser-1' }] },
+      // @ts-expect-error — minimal shape
       openFiles: [{ id: 'e1', worktreeId: 'wt' }]
     })
     expect(getActiveTabNavOrder(state, 'wt')).toEqual([
       { type: 'terminal', id: 'term-1' },
-      { type: 'simulator', id: 'sim-1' },
+      { type: 'browser', id: 'browser-1' },
       { type: 'editor', id: 'e1' },
       { type: 'terminal', id: 'term-2' }
     ])

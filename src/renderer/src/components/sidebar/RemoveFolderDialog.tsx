@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import { translate } from '@/i18n/i18n'
 
 // Why: interpolated into the sentence so locales control where the name sits;
@@ -16,14 +17,13 @@ import { translate } from '@/i18n/i18n'
 const NAME_TOKEN = '\u0000'
 
 const RemoveFolderDialog = React.memo(function RemoveFolderDialog() {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('confirm-remove-folder')
   const closeModal = useAppStore((s) => s.closeModal)
   const removeProject = useAppStore((s) => s.removeProject)
 
-  const isOpen = activeModal === 'confirm-remove-folder'
-  const repoId = typeof modalData.repoId === 'string' ? modalData.repoId : ''
-  const displayName = typeof modalData.displayName === 'string' ? modalData.displayName : ''
+  const isOpen = modalData !== null
+  const repoId = modalData?.repoId ?? ''
+  const displayName = modalData?.displayName ?? ''
 
   // Why: for an SSH project the files live on the remote host's disk, not the
   // user's — "still on your disk" would be misleading. Name the host (using the

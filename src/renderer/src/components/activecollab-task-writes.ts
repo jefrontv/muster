@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from 'react'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
 import type { ActiveCollabComment, ActiveCollabTask } from '../../../shared/activecollab-types'
+import type { ActiveCollabSchedule } from './activecollab-task-schedule'
 import type {
   ActiveCollabFailure,
   ActiveCollabResult
@@ -30,8 +31,11 @@ export type ActiveCollabTaskWrites = {
   setCompleted: (completed: boolean) => Promise<boolean>
   /** Full replacement set — see `activecollab-task-label-set.ts`. */
   setLabelNames: (labelNames: string[]) => Promise<boolean>
-  /** Epoch ms for the local calendar day, or an explicit null to clear the date. */
-  setDueOn: (dueOn: number | null) => Promise<boolean>
+  /**
+   * The picker's Save/Clear: BOTH date fields travel every time — Save writes the range, Clear
+   * sends explicit nulls. An omitted key would leave the server's value alone.
+   */
+  setSchedule: (schedule: ActiveCollabSchedule) => Promise<boolean>
   /** A user id, or an explicit null to unassign. */
   setAssigneeId: (assigneeId: number | null) => Promise<boolean>
   /**
@@ -119,11 +123,11 @@ export function useActiveCollabTaskWrites(
     [onTask, runWrite, updateTask]
   )
 
-  const setDueOn = useCallback(
-    (dueOn: number | null) =>
-      // `dueOn` is always present in the update, so clearing sends an explicit null rather than
-      // omitting the key, which would leave the server's date untouched.
-      runWrite('dueDate', (ids) => updateTask({ ...ids, update: { dueOn } }), onTask),
+  const setSchedule = useCallback(
+    ({ startOn, dueOn }: ActiveCollabSchedule) =>
+      // Both keys are always present, so clearing sends explicit nulls rather than omitting the
+      // keys, which would leave the server's dates untouched.
+      runWrite('dueDate', (ids) => updateTask({ ...ids, update: { startOn, dueOn } }), onTask),
     [onTask, runWrite, updateTask]
   )
 
@@ -152,5 +156,5 @@ export function useActiveCollabTaskWrites(
     [onComment, postComment, runWrite]
   )
 
-  return { pending, failure, setCompleted, setLabelNames, setDueOn, setAssigneeId, addComment }
+  return { pending, failure, setCompleted, setLabelNames, setSchedule, setAssigneeId, addComment }
 }

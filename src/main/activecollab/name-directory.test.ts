@@ -77,6 +77,7 @@ function taskRow(over: Partial<ActiveCollabTask> = {}): ActiveCollabTask {
     name: 'Fix the header',
     bodyHtml: '',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,

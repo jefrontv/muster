@@ -13,9 +13,9 @@ import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   buildWorktreeMetaUpdates,
-  parseGitHubWorkItemNumberForMetaField,
-  type WorktreeMetaSavedPayload
+  parseGitHubWorkItemNumberForMetaField
 } from './worktree-meta-updates'
+import { useModalData } from '@/hooks/use-modal-data'
 import { useWorktreeIssueLink } from './use-worktree-issue-link'
 import { getScreenSubmitShortcutLabel, isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
 import { ExternalLink, LoaderCircle } from 'lucide-react'
@@ -28,28 +28,22 @@ function resizeCommentTextarea(textarea: HTMLTextAreaElement): void {
 }
 
 const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('edit-meta')
   const closeModal = useAppStore((s) => s.closeModal)
   const updateWorktreeMeta = useAppStore((s) => s.updateWorktreeMeta)
   const submitShortcutLabel = getScreenSubmitShortcutLabel()
 
-  const isEditMeta = activeModal === 'edit-meta'
+  const isEditMeta = modalData !== null
   const isOpen = isEditMeta
 
-  const worktreeId = typeof modalData.worktreeId === 'string' ? modalData.worktreeId : ''
-  const currentDisplayName =
-    typeof modalData.currentDisplayName === 'string' ? modalData.currentDisplayName : ''
+  const worktreeId = modalData?.worktreeId ?? ''
+  const currentDisplayName = modalData?.currentDisplayName ?? ''
   const currentIssue =
-    typeof modalData.currentIssue === 'number' ? String(modalData.currentIssue) : ''
-  const currentPR = typeof modalData.currentPR === 'number' ? String(modalData.currentPR) : ''
-  const currentComment =
-    typeof modalData.currentComment === 'string' ? modalData.currentComment : ''
-  const focusField = typeof modalData.focus === 'string' ? modalData.focus : 'comment'
-  const afterSave =
-    typeof modalData.afterSave === 'function'
-      ? (modalData.afterSave as (payload: WorktreeMetaSavedPayload) => void | Promise<void>)
-      : null
+    typeof modalData?.currentIssue === 'number' ? String(modalData.currentIssue) : ''
+  const currentPR = typeof modalData?.currentPR === 'number' ? String(modalData.currentPR) : ''
+  const currentComment = modalData?.currentComment ?? ''
+  const focusField = modalData?.focus ?? 'comment'
+  const afterSave = modalData?.afterSave ?? null
 
   const [displayNameInput, setDisplayNameInput] = useState('')
   const [issueInput, setIssueInput] = useState('')

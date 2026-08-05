@@ -209,12 +209,7 @@ function safeOrigin(rawUrl: string): string {
 }
 
 export class BrowserManager {
-  private settingsResolver:
-    | (() => {
-        keybindings?: KeybindingOverrides
-        mobileEmulatorEnabled?: boolean
-      })
-    | null = null
+  private settingsResolver: (() => { keybindings?: KeybindingOverrides }) | null = null
   private readonly webContentsIdByTabId = new Map<string, number>()
   // Why: reverse map gives O(1) guest→tab lookups on every mouse/load/permission/popup event.
   private readonly tabIdByWebContentsId = new Map<number, string>()
@@ -271,12 +266,7 @@ export class BrowserManager {
     this.certificateTrustController?.removeSessionRequestGuard(session)
   }
 
-  setSettingsResolver(
-    resolver: () => {
-      keybindings?: KeybindingOverrides
-      mobileEmulatorEnabled?: boolean
-    }
-  ): void {
+  setSettingsResolver(resolver: () => { keybindings?: KeybindingOverrides }): void {
     this.settingsResolver = resolver
   }
 
@@ -1710,7 +1700,6 @@ export class BrowserManager {
         resolveRenderer: (tabId) =>
           resolveRendererWebContents(this.rendererWebContentsIdByTabId, tabId),
         shouldForwardDictationShortcut: () => this.shouldForwardDictationShortcut?.() ?? false,
-        isMobileEmulatorEnabled: () => this.settingsResolver?.().mobileEmulatorEnabled !== false,
         getKeybindings: () => this.settingsResolver?.().keybindings
       })
     )

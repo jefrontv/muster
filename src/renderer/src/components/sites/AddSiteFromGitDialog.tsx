@@ -17,7 +17,7 @@
 
 import { ArrowLeft, Loader2, Lock } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   CloneSourceProvider,
   CloneSourceProviderId,
@@ -49,6 +49,14 @@ type Step = 'pick' | 'confirm' | 'cloning' | 'setup'
 
 type CloneProgress = { phase: string; percent: number }
 
+/** How long typing settles before the provider is asked again — one request per word, not per key. */
+const SEARCH_DEBOUNCE_MS = 275
+
+/**
+ * The fallback filter for a host that cannot search itself (GitHub). Never applied to a provider
+ * that did search: it only knows about name and description, so it would hide a genuine host match
+ * on any other field.
+ */
 function matchesQuery(repo: CloneSourceRepo, query: string): boolean {
   if (query.length === 0) {
     return true
@@ -77,8 +85,12 @@ export function AddSiteFromGitDialog({
   const [repos, setRepos] = useState<CloneSourceRepo[]>([])
   const [listError, setListError] = useState('')
   const [truncated, setTruncated] = useState(false)
+  const [searchesRemotely, setSearchesRemotely] = useState(false)
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  /** Only the newest request may write the list; see the repo-listing effect. */
+  const requestIdRef = useRef(0)
   const [selected, setSelected] = useState<CloneSourceRepo | null>(null)
   const [progress, setProgress] = useState<CloneProgress | null>(null)
   const [cloneError, setCloneError] = useState('')
@@ -96,6 +108,7 @@ export function AddSiteFromGitDialog({
     setCloneError('')
     setCreatedSiteId('')
     setQuery('')
+    setDebouncedQuery('')
   }, [open])
 
   useEffect(() => {
@@ -109,7 +122,10 @@ export function AddSiteFromGitDialog({
         return
       }
       setProviders(result.value)
-      setActive((current) => current ?? defaultCloneSourceProvider(result.value))
+      // Falling back to the first provider when none is configured: the row's own reason is the
+      // only thing that explains an empty picker, and it renders per selected provider.
+      const fallback = defaultCloneSourceProvider(result.value) ?? result.value[0]?.id ?? null
+      setActive((current) => current ?? fallback)
     })()
     return () => {
       disposed = true
@@ -117,15 +133,37 @@ export function AddSiteFromGitDialog({
   }, [open])
 
   useEffect(() => {
+    const term = query.trim()
+    // Clearing the box must not wait out a timer: an empty query is the browse list, which is the
+    // state the user expects back instantly.
+    if (term.length === 0) {
+      setDebouncedQuery('')
+      return
+    }
+    const timer = setTimeout(() => setDebouncedQuery(term), SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  // What the provider is actually asked for. A host that cannot search is asked once, for the
+  // browse list, and the typed term is applied locally instead of costing a request it ignores.
+  const remoteQuery = searchesRemotely ? debouncedQuery : ''
+
+  useEffect(() => {
     if (!open || !active) {
       return
     }
-    let disposed = false
+    // The newest request always wins. Bumped before the call and re-checked after it, so a slow
+    // response for an earlier query cannot land on top of the one the user is now looking at.
+    requestIdRef.current += 1
+    const requestId = requestIdRef.current
     setLoading(true)
     setListError('')
     void (async () => {
-      const result = await window.api.siteCloneSources?.repos({ provider: active })
-      if (disposed) {
+      const result = await window.api.siteCloneSources?.repos({
+        provider: active,
+        query: remoteQuery
+      })
+      if (requestId !== requestIdRef.current) {
         return
       }
       setLoading(false)
@@ -137,11 +175,13 @@ export function AddSiteFromGitDialog({
       setRepos(result.value.repos)
       setListError(result.value.error)
       setTruncated(result.value.truncated)
+      setSearchesRemotely(result.value.searchesRemotely)
     })()
     return () => {
-      disposed = true
+      // Retires whatever is in flight: the provider or the query just changed under it.
+      requestIdRef.current += 1
     }
-  }, [open, active])
+  }, [open, active, remoteQuery])
 
   // Subscribed for the whole dialog rather than only while cloning: git emits its first phase
   // before the invoke promise settles, and a listener attached inside the clone call would miss it.
@@ -183,7 +223,16 @@ export function AddSiteFromGitDialog({
   )
 
   const activeProvider = providers.find((provider) => provider.id === active) ?? null
-  const visible = repos.filter((repo) => matchesQuery(repo, query))
+  const typedQuery = query.trim()
+  // A host that searched has already answered the query; filtering its answer again could only hide
+  // a match it made on a field this component does not look at.
+  const visible = searchesRemotely ? repos : repos.filter((repo) => matchesQuery(repo, typedQuery))
+  // What the visible rows actually answer to: the term the host was asked, or the live one when the
+  // filtering happens here.
+  const appliedQuery = searchesRemotely ? debouncedQuery : typedQuery
+  // Keystrokes still inside the debounce window count as busy, so the list is never presented as a
+  // finished answer to a term that has not been sent yet.
+  const busy = loading || (searchesRemotely && typedQuery !== debouncedQuery)
   const destinationPath =
     selected && destinationRoot.length > 0 ? `${destinationRoot}/${repoSlug(selected)}` : ''
 
@@ -226,7 +275,13 @@ export function AddSiteFromGitDialog({
                   key={provider.id}
                   size="sm"
                   variant={provider.id === active ? 'secondary' : 'ghost'}
-                  onClick={() => setActive(provider.id)}
+                  onClick={() => {
+                    setActive(provider.id)
+                    // Cleared in the same update as the switch: a term typed for one host is not a
+                    // query for another, and carrying it over would spend a request proving it.
+                    setQuery('')
+                    setDebouncedQuery('')
+                  }}
                 >
                   {provider.label}
                 </Button>
@@ -243,20 +298,24 @@ export function AddSiteFromGitDialog({
                   onChange={(event) => setQuery(event.target.value)}
                 />
                 {truncated ? (
-                  <p className="text-[11px] text-muted-foreground/70">{strings.truncated}</p>
+                  <p className="text-[11px] text-muted-foreground/70">
+                    {searchesRemotely ? strings.truncated : strings.truncatedLocal}
+                  </p>
                 ) : null}
                 {listError.length > 0 ? (
                   <p className="text-sm text-destructive">{listError}</p>
                 ) : null}
                 <div className="scrollbar-sleek max-h-[40vh] space-y-0.5 overflow-y-auto">
-                  {loading ? (
+                  {busy ? (
                     <p className="flex items-center gap-2 px-1 py-2 text-sm text-muted-foreground">
                       <Loader2 className="size-3.5 animate-spin" />
-                      {strings.loading}
+                      {typedQuery.length > 0 ? strings.searching : strings.loading}
                     </p>
                   ) : null}
-                  {!loading && visible.length === 0 && listError.length === 0 ? (
-                    <p className="px-1 py-2 text-sm text-muted-foreground">{strings.empty}</p>
+                  {!busy && visible.length === 0 && listError.length === 0 ? (
+                    <p className="px-1 py-2 text-sm text-muted-foreground">
+                      {appliedQuery.length > 0 ? strings.noMatch(appliedQuery) : strings.empty}
+                    </p>
                   ) : null}
                   {visible.map((repo) => (
                     <button

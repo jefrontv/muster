@@ -109,6 +109,36 @@ describe('updateTask', () => {
     expect('due_on' in body).toBe(true)
   })
 
+  it('sends a start/due range as two date-only strings, never instants', async () => {
+    const http = stubHttp({ [TASK_PATH]: { data: { single: TASK_ROW } } })
+    await withTimeZone('Australia/Sydney', () =>
+      updateTask({
+        http: http.client,
+        projectId: 3790,
+        taskId: 509323,
+        update: {
+          // Local midnights in Sydney; both are still the PREVIOUS day in UTC.
+          startOn: Date.parse('2026-07-26T14:00:00Z'),
+          dueOn: Date.parse('2026-07-28T14:00:00Z')
+        }
+      })
+    )
+    expect(http.calls[0]?.options?.body).toEqual({ start_on: '2026-07-27', due_on: '2026-07-29' })
+  })
+
+  it('clears a range with explicit nulls on both date keys', async () => {
+    const http = stubHttp({ [TASK_PATH]: { data: { single: TASK_ROW } } })
+    await updateTask({
+      http: http.client,
+      projectId: 3790,
+      taskId: 509323,
+      update: { startOn: null, dueOn: null }
+    })
+    const body = http.calls[0]?.options?.body as Record<string, unknown>
+    expect(body).toEqual({ start_on: null, due_on: null })
+    expect('start_on' in body && 'due_on' in body).toBe(true)
+  })
+
   it('omits every key the caller did not supply', async () => {
     const http = stubHttp({ [TASK_PATH]: { data: { single: TASK_ROW } } })
     await updateTask({

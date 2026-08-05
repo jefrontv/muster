@@ -19,6 +19,7 @@ function ids(
     isWebClient?: boolean
     isDev?: boolean
     isLinearConnected?: boolean
+    showHiddenSections?: boolean
   } = {}
 ): string[] {
   return buildSettingsNavigationMetadata({
@@ -27,6 +28,7 @@ function ids(
     isWebClient: args.isWebClient ?? false,
     isDev: args.isDev ?? false,
     isLinearConnected: args.isLinearConnected ?? false,
+    showHiddenSections: args.showHiddenSections ?? false,
     repos: [repo]
   }).map((section) => section.id)
 }
@@ -36,22 +38,54 @@ describe('settings navigation metadata', () => {
     expect(ids().slice(0, 8)).toEqual([
       'agents',
       'accounts',
+      'agent-capabilities',
       'voice',
       'setup-guide',
       'general',
       'integrations',
-      'git',
-      'tasks'
+      'git'
     ])
   })
 
   it('hides the panes this fork does not offer, on every platform', () => {
-    // Orchestration installs itself now, and Computer Use and Mobile are upstream capabilities
+    // Orchestration installs itself now, and Mobile is an upstream capability
     // this fork does not support — a pane that only offers to install one is a dead end.
-    for (const hidden of ['orchestration', 'computer-use', 'mobile']) {
+    for (const hidden of ['orchestration', 'mobile']) {
       expect(ids(), hidden).not.toContain(hidden)
       expect(ids({ isWebClient: true }), hidden).not.toContain(hidden)
     }
+  })
+
+  it('restores every hidden pane when the Advanced escape hatch is on', () => {
+    const shown = ids({ showHiddenSections: true })
+    for (const hidden of ['orchestration', 'mobile']) {
+      expect(shown, hidden).toContain(hidden)
+    }
+  })
+
+  it('keeps the un-hide flag from inventing panes the platform does not have', () => {
+    // Mobile is a desktop-only entry; the flag lifts the fork's filter, it does
+    // not bypass the platform gate above it.
+    const shown = ids({ isWebClient: true, showHiddenSections: true })
+    expect(shown).toContain('orchestration')
+    expect(shown).not.toContain('mobile')
+  })
+
+  it('lists Agent Capabilities beside the other AI capability panes', () => {
+    const sections = buildSettingsNavigationMetadata({
+      isMac: false,
+      isWindows: false,
+      isWebClient: false,
+      repos: [repo]
+    })
+    const section = sections.find((entry) => entry.id === 'agent-capabilities')
+    expect(section?.group).toBe('capabilities')
+    expect(section?.searchEntries.length).toBeGreaterThan(0)
+  })
+
+  it('keeps Agent Capabilities off web clients, which have no local bundle or MCP config', () => {
+    expect(ids({ isWebClient: true })).not.toContain('agent-capabilities')
+    expect(ids({ isWebClient: true, showHiddenSections: true })).not.toContain('agent-capabilities')
   })
 
   it('adds the Linear capability section only when connected', () => {
@@ -59,8 +93,9 @@ describe('settings navigation metadata', () => {
 
     const connectedIds = ids({ isLinearConnected: true })
     expect(connectedIds).toContain('linear')
-    // Orchestration used to anchor its position; with that pane hidden, Linear follows Accounts.
-    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('accounts') + 1)
+    // Orchestration used to anchor its position; with that pane hidden, Linear follows the
+    // Agent Capabilities pane that now sits between it and Accounts.
+    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('agent-capabilities') + 1)
 
     const linearSection = buildSettingsNavigationMetadata({
       isMac: false,
@@ -93,7 +128,6 @@ describe('settings navigation metadata', () => {
     expect(webIds).not.toContain('browser')
     expect(webIds).not.toContain('ssh')
     expect(webIds).not.toContain('mobile')
-    expect(webIds).not.toContain('computer-use')
     expect(webIds).not.toContain('voice')
     expect(webIds).not.toContain('advanced')
     expect(webIds).toContain('servers')
@@ -108,7 +142,6 @@ describe('settings navigation metadata', () => {
       repos: [repo]
     })
 
-    expect(sections.find((section) => section.id === 'computer-use')?.badge).toBeUndefined()
     expect(sections.find((section) => section.id === 'voice')?.badge).toBeUndefined()
   })
 

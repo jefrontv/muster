@@ -35,10 +35,10 @@ import { registerOnboardingHandlers } from './onboarding'
 import { registerDashboardPopoutHandlers } from './dashboard-popout'
 import { registerTerminalPreviewHandlers } from './terminal-preview'
 import { registerDeveloperPermissionHandlers } from './developer-permissions'
-import { registerComputerUsePermissionHandlers } from './computer-use-permissions'
 import { setTrustedBrowserRendererWebContentsId, setAgentBrowserBridgeRef } from './browser'
 import { registerSessionHandlers } from './session'
 import { registerSettingsHandlers } from './settings'
+import { registerSettingsTransferHandlers } from './settings-transfer'
 import { registerDiagnosticsHandlers } from './diagnostics'
 import { registerSkillsHandlers } from './skills'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
@@ -61,11 +61,12 @@ import { registerAutomationHandlers } from './automations'
 import { registerKeybindingHandlers } from './keybindings'
 import { registerTelemetryHandlers } from './telemetry'
 import { registerBrowserHandlers } from './browser'
+import { browserSessionRegistry } from '../browser/browser-session-registry'
+import { registerBrowserExtensionSettingsBridge } from '../browser/browser-extension-service'
+import { registerWordPressLoginSettingsBridge } from '../browser/bundled-extension-service'
 import { registerShellHandlers } from './shell'
 import { registerPetHandlers } from './pet'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from './ui'
-import { registerEmulatorFrameStreamHandlers } from './emulator-frame-stream'
-import { registerEmulatorVideoStreamHandlers } from './emulator-video-stream'
 import { registerSpeechHandlers } from './speech'
 import { registerTerminalRenderDesyncEvidenceHandler } from './terminal-render-desync-evidence'
 import { registerOrcaProfileHandlers } from './orca-profiles'
@@ -169,7 +170,7 @@ export function registerCoreHandlers(
   // Why here: agents read their skills directory at launch, so laying these down while the rest of
   // the IPC surface registers means the next agent a user starts already has them. Idempotent and
   // non-throwing, so a repeat launch is a no-op and a failure never blocks startup.
-  installDefaultAgentSkillsOnStartup()
+  installDefaultAgentSkillsOnStartup(store.getSettings().agentCapabilityBundledSkills)
   if (crashReports) {
     registerCrashReportingHandlers(crashReports)
   }
@@ -188,8 +189,8 @@ export function registerCoreHandlers(
   // not load-bearing; both register independent ipcMain channels.
   registerDiagnosticsHandlers()
   registerTerminalRenderDesyncEvidenceHandler()
-  registerComputerUsePermissionHandlers()
   registerSettingsHandlers(store, agentAwakeService)
+  registerSettingsTransferHandlers(store)
   registerSkillsHandlers(store)
   if (automations) {
     registerAutomationHandlers(store, automations)
@@ -203,13 +204,30 @@ export function registerCoreHandlers(
     onAuthMutation: lifecycleOptions.onOrcaProfileAuthMutation,
     onBeforeSignOut: lifecycleOptions.onBeforeOrcaProfileSignOut
   })
+  // Why: the browser session registry configures partitions before any Store exists, so the
+  // extension loader reads and writes settings through this bridge instead of importing one.
+  registerBrowserExtensionSettingsBridge({
+    getPaths: () => store.getSettings().browserExtensionPaths ?? [],
+    setPaths: (paths) => {
+      store.updateSettings({ browserExtensionPaths: paths })
+    },
+    listPartitions: () => browserSessionRegistry.listConfiguredPartitions()
+  })
+  registerWordPressLoginSettingsBridge({
+    getUsername: () => store.getSettings().wordPressAutofillUsername ?? '',
+    getAutoLogin: () => store.getSettings().wordPressAutofillAutoLogin === true,
+    setConfig: ({ username, autoLogin }) => {
+      store.updateSettings({
+        wordPressAutofillUsername: username,
+        wordPressAutofillAutoLogin: autoLogin
+      })
+    }
+  })
   registerBrowserHandlers()
   registerShellHandlers(store)
   registerPetHandlers()
   registerSessionHandlers(store)
   registerUIHandlers(store)
-  registerEmulatorFrameStreamHandlers()
-  registerEmulatorVideoStreamHandlers()
   registerWorkspaceSpaceHandlers(store)
   registerSiteHandlers(store)
   registerSiteRunHandlers(store)

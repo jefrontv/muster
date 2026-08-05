@@ -1,5 +1,6 @@
 import { statSync } from 'node:fs'
-import { safeStorage } from 'electron'
+import { electronSafeStorage } from './node-safe-electron'
+import { isOsCryptDecryptAvailable, osCryptDecryptString } from './os-crypt-node'
 import {
   credentialDecryptionMessage,
   type IntegrationCredentialService
@@ -33,9 +34,18 @@ export function readStoredCredentialToken(
     return null
   }
 
-  if (safeStorage.isEncryptionAvailable()) {
+  if (electronSafeStorage?.isEncryptionAvailable() === true) {
     try {
-      return usableToken(safeStorage.decryptString(raw))
+      return usableToken(electronSafeStorage.decryptString(raw))
+    } catch {
+      return readPlaintextLegacyCredential(service, raw)
+    }
+  }
+
+  // Node mode (muster-sites MCP server): same bytes, Chromium's OSCrypt scheme, decrypt only.
+  if (isOsCryptDecryptAvailable()) {
+    try {
+      return usableToken(osCryptDecryptString(raw))
     } catch {
       return readPlaintextLegacyCredential(service, raw)
     }

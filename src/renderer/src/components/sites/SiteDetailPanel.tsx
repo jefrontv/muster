@@ -1,5 +1,6 @@
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import type { SiteEnvironment, SiteSecretKind, SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
 import { SiteRunConsole } from './SiteRunConsole'
 import { SiteRunHistory } from './SiteRunHistory'
@@ -50,14 +52,26 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
 
   const { site, resolvedEnvironment, branch } = summary
   const environmentNames = Object.keys(site.environments)
-  const activeName = resolvedEnvironment.environment ?? environmentNames[0] ?? ''
-  const activeEnvironment = site.environments[activeName]
+  // Why activeEnvironment before the first key: object order is insertion order, so a later-added
+  // env would otherwise be edited while runs targeted the selected one.
+  const runTargetName =
+    resolvedEnvironment.environment ??
+    (site.activeEnvironment && site.environments[site.activeEnvironment]
+      ? site.activeEnvironment
+      : (environmentNames[0] ?? ''))
+  // Chip clicks are an explicit view/edit selection held locally — never written to
+  // site.activeEnvironment, which would silently retarget runs (the exact bug this pane had).
+  // Falls back to the run target when nothing is selected or the selected env was removed.
+  const [selectedName, setSelectedName] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const viewedName = selectedName && site.environments[selectedName] ? selectedName : runTargetName
+  const viewedEnvironment = site.environments[viewedName]
 
   const patchEnvironment = (patch: Partial<SiteEnvironment>): void => {
-    void upsertSiteEnvironment(site.id, activeName, patch)
+    void upsertSiteEnvironment(site.id, viewedName, patch)
   }
   const setSecret = (kind: SiteSecretKind, value: string): void => {
-    void setSiteSecret(site.id, activeName, kind, value)
+    void setSiteSecret(site.id, viewedName, kind, value)
   }
 
   return (
@@ -99,15 +113,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
           <h3 className="text-xs font-medium text-muted-foreground">
             {translate('auto.components.sites.SiteDetailPanel.environments', 'Environments')}
           </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => {
-              const name = `environment-${environmentNames.length + 1}`
-              void upsertSiteEnvironment(site.id, name)
-            }}
-          >
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
             <Plus className="size-3.5" />
             {translate('auto.components.sites.SiteDetailPanel.addEnvironment', 'Add')}
           </Button>
@@ -117,10 +123,17 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
           {environmentNames.map((name) => (
             <Badge
               key={name}
-              variant={name === activeName ? 'default' : 'secondary'}
+              variant={name === viewedName ? 'default' : 'secondary'}
               className="gap-1"
             >
-              {name}
+              <button
+                type="button"
+                aria-pressed={name === viewedName}
+                onClick={() => setSelectedName(name)}
+                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                {name}
+              </button>
               {environmentNames.length > 1 ? (
                 <button
                   type="button"
@@ -142,7 +155,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
             ? translate(
                 'auto.components.sites.SiteDetailPanel.branchResolution',
                 'Branch {{branch}} targets {{environment}}.',
-                { branch, environment: activeName || '—' }
+                { branch, environment: runTargetName || '—' }
               )
             : translate(
                 'auto.components.sites.SiteDetailPanel.noBranch',
@@ -156,11 +169,21 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
             : ''}
         </p>
 
-        {activeEnvironment ? (
+        {viewedName !== runTargetName ? (
+          <p className="text-xs text-muted-foreground">
+            {translate(
+              'auto.components.sites.SiteDetailPanel.editingDivergence',
+              'Editing {{environment}} — runs target {{target}}.',
+              { environment: viewedName, target: runTargetName || '—' }
+            )}
+          </p>
+        ) : null}
+
+        {viewedEnvironment ? (
           <SiteEnvironmentSection
             summary={summary}
-            environmentName={activeName}
-            environment={activeEnvironment}
+            environmentName={viewedName}
+            environment={viewedEnvironment}
             onPatch={patchEnvironment}
             onSetSecret={setSecret}
           />
@@ -173,6 +196,15 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
           </p>
         )}
       </section>
+
+      <AddSiteEnvironmentDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        siteId={site.id}
+        environmentNames={environmentNames}
+        defaultSource={viewedName}
+        onCreated={setSelectedName}
+      />
 
       <SiteRunConsole summary={summary} />
       <SiteRunHistory siteId={site.id} />

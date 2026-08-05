@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -165,6 +166,29 @@ function createStartupDiagnosticsBootstrapPlugin() {
   }
 }
 
+// Why: the muster-sites MCP server runs the main bundles under ELECTRON_RUN_AS_NODE, where
+// require('electron') would otherwise fail module resolution (Electron's builtin only exists in
+// Electron processes; vitest resolves the npm package). This stub makes plain-node resolution
+// yield an empty object so node-safe-electron's guards take their fallbacks.
+function siteMcpElectronStub() {
+  return {
+    name: 'site-mcp-electron-stub',
+    writeBundle(options: { dir?: string }) {
+      const dir = options.dir
+      if (!dir || !dir.endsWith('main')) {
+        return
+      }
+      const stubDir = resolve(dir, 'node_modules', 'electron')
+      mkdirSync(stubDir, { recursive: true })
+      writeFileSync(
+        resolve(stubDir, 'package.json'),
+        JSON.stringify({ name: 'electron', version: '0.0.0-node-stub', main: 'index.js' })
+      )
+      writeFileSync(resolve(stubDir, 'index.js'), 'module.exports = {}\n')
+    }
+  }
+}
+
 export default defineConfig({
   main: {
     build: {
@@ -179,7 +203,9 @@ export default defineConfig({
         input: {
           index: resolve('src/main/index.ts'),
           'daemon-entry': resolve('src/main/daemon/daemon-entry.ts'),
-          'computer-sidecar': resolve('src/main/computer/sidecar-entry.ts'),
+          // Why: MCP clients run this under ELECTRON_RUN_AS_NODE — a plain-node host with no
+          // AppKit/LaunchServices/Chromium footprint and no access to the harness's tty.
+          'site-mcp-shim': resolve('src/main/sites/mcp/site-mcp-shim.ts'),
           'stt-worker': resolve('src/main/speech/stt-worker.ts'),
           'warp-theme-parser-worker': resolve('src/main/warp-themes/warp-theme-parser-worker.ts'),
           'session-scanner-opencode-sqlite-worker-entry': resolve(
@@ -200,7 +226,11 @@ export default defineConfig({
             'src/main/agent-hooks/managed-agent-hook-controls.ts'
           )
         },
-        plugins: [createStartupDiagnosticsBootstrapPlugin(), createPlainNodeEntryGuardPlugin()]
+        plugins: [
+          createStartupDiagnosticsBootstrapPlugin(),
+          createPlainNodeEntryGuardPlugin(),
+          siteMcpElectronStub()
+        ]
       }
     },
     // Why: compile-time substitution for the telemetry gate. See the block

@@ -30,7 +30,7 @@ const CODEX_READY_RE = /Ask Codex|OpenAI Codex/i
 const CODEX_TRUST_PROMPT_RE =
   /Do you trust|trust this folder|Trust this|Working with untrusted contents/i
 const CODEX_UPDATE_PROMPT_RE = /update available|install update|Skip for now|Skip until next/i
-const CODEX_SKILL_PREVIEW_RE = /Press enter to insert|esc to close|electron|orca-cli|orca-emulator/i
+const CODEX_SKILL_PREVIEW_RE = /Press enter to insert|esc to close|electron|orca-cli/i
 const SETUP_PANE_ACTIVITY_RE = /install-orca-skills|pnpm|Progress:|Packages:|Lockfile/i
 const CLEAN_SKILL_ROW_RE = /^  [A-Za-z][A-Za-z0-9 .-]{1,32}\s+\[Skill\]\s/
 const CODEX_READY_SETTLE_MS = 3_500

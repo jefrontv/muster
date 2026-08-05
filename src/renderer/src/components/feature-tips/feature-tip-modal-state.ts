@@ -4,19 +4,19 @@ import {
   FEATURE_TIPS,
   getCompletedFeatureTipIds,
   getOrderedUnseenFeatureTips,
-  isFeatureTipId,
   type FeatureTip,
   type FeatureTipId
 } from '../../../../shared/feature-tips'
+import type { FeatureTipsModalPayload } from '@/store/slices/modal-payloads'
 
 export function getFeatureTipForModal(args: {
   cliInstalled: boolean
-  modalData: Record<string, unknown>
+  modalData: FeatureTipsModalPayload | null | undefined
   seenTipIds: readonly FeatureTipId[]
   featureInteractions: FeatureInteractionState
   settings: { voice?: GlobalSettings['voice'] } | null | undefined
 }): FeatureTip | null {
-  const modalTipId = isFeatureTipId(args.modalData.tipId) ? args.modalData.tipId : null
+  const modalTipId = args.modalData?.tipId ?? null
   if (modalTipId) {
     return FEATURE_TIPS.find((tip) => tip.id === modalTipId) ?? null
   }

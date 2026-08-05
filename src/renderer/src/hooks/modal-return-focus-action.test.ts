@@ -59,19 +59,6 @@ describe('resolveModalReturnFocusAction', () => {
     ).toEqual({ kind: 'editor' })
   })
 
-  it('restores the simulator surface without using the terminal fallback', () => {
-    expect(
-      resolveModalReturnFocusAction({
-        tabType: 'simulator',
-        worktreeId: 'wt-1',
-        browserPageId: null,
-        browserTarget: 'webview',
-        terminalTabId: null,
-        terminalLeafId: null
-      })
-    ).toEqual({ kind: 'simulator' })
-  })
-
   it('returns none when there is no worktree to restore into', () => {
     expect(
       resolveModalReturnFocusAction({

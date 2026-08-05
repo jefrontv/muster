@@ -11,6 +11,8 @@ const handlers = new Map<string, (event: unknown, ...args: unknown[]) => unknown
 let userDataDir = ''
 
 vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
   app: { getPath: () => userDataDir },
   ipcMain: {
     handle: (channel: string, handler: (event: unknown, ...args: unknown[]) => unknown) => {

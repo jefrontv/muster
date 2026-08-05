@@ -36,19 +36,28 @@ export type LocalWpControlOutcome = {
   state: LocalWpControlState
 }
 
+/**
+ * Which of ocsites' two LocalWP setups a project needs, decided by the project's state rather than
+ * by the user: `create` for a checkout with no WordPress at its root (ocsites'
+ * `setup_localwp_before_clone`), `migrate` for an existing install (`_migrate_to_localwp`).
+ */
+export type LocalWpSetupMode = 'create' | 'migrate'
+
 export type LocalWpMigrationPlan = {
-  /** False when a precondition blocks the migration; `blockedReason` says which. */
+  /** False when a precondition blocks the setup; `blockedReason` says which. */
   ok: boolean
   blockedReason: string
+  mode: LocalWpSetupMode
   sitePath: string
   domain: string
   wordPressRoot: string
+  /** Both empty in `create` mode: there is no wp-config.php to read credentials from yet. */
   databaseName: string
   databaseUser: string
   /** Existing app/public contents that a forced run will delete. */
   appPublicEntries: string[]
   moves: { from: string; to: string }[]
-  /** Files this migration rewrites in place. */
+  /** Files this setup rewrites in place; empty in `create` mode. */
   edits: string[]
   steps: string[]
 }
@@ -62,3 +71,10 @@ export type LocalWpMigrationResult = {
   databaseImported: boolean
   log: string[]
 }
+
+/**
+ * One streamed status line from a running LocalWP migration. Tagged with the siteId because the
+ * channel is per-window, not per-request: a second window running its own migration must not have
+ * its lines rendered into this one's log.
+ */
+export type LocalWpMigrationProgressEvent = { siteId: string; message: string }

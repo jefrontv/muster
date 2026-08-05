@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  activeCollabDueDateFromInput,
-  formatActiveCollabDueDate
-} from './activecollab-task-due-date'
+import { formatActiveCollabDueDate } from './activecollab-task-due-date'
 
 function withTimeZone<T>(timeZone: string, run: () => T): T {
   const original = process.env.TZ
@@ -31,16 +28,6 @@ describe('formatActiveCollabDueDate', () => {
     expect(iso).toBe('2026-07-27')
   })
 
-  it('round-trips a picked day back to the same epoch in any zone', () => {
-    for (const zone of ['Australia/Sydney', 'America/Los_Angeles', 'UTC']) {
-      withTimeZone(zone, () => {
-        const picked = activeCollabDueDateFromInput('2026-07-27')
-        expect(picked).toBe(new Date(2026, 6, 27).getTime())
-        expect(formatActiveCollabDueDate(picked)?.iso).toBe('2026-07-27')
-      })
-    }
-  })
-
   it('labels the same day it formats', () => {
     const due = formatActiveCollabDueDate(new Date(2026, 6, 27).getTime())
 
@@ -58,31 +45,5 @@ describe('formatActiveCollabDueDate', () => {
     expect(formatActiveCollabDueDate(null)).toBeNull()
     expect(formatActiveCollabDueDate(Number.NaN)).toBeNull()
     expect(formatActiveCollabDueDate(Number.POSITIVE_INFINITY)).toBeNull()
-  })
-})
-
-describe('activeCollabDueDateFromInput', () => {
-  it('treats a cleared field as no date rather than a bad date', () => {
-    expect(activeCollabDueDateFromInput('')).toBeNull()
-    expect(activeCollabDueDateFromInput('   ')).toBeNull()
-  })
-
-  it('rejects a calendar overflow instead of silently rolling it forward', () => {
-    // `new Date(2026, 1, 31)` is March 3rd; accepting it would write a day the user never picked.
-    expect(activeCollabDueDateFromInput('2026-02-31')).toBeNull()
-  })
-
-  it('rejects a partial or malformed value', () => {
-    expect(activeCollabDueDateFromInput('2026-07')).toBeNull()
-    expect(activeCollabDueDateFromInput('27/07/2026')).toBeNull()
-  })
-
-  it('lands on local midnight, not UTC midnight', () => {
-    const picked = withTimeZone('Australia/Sydney', () =>
-      activeCollabDueDateFromInput('2026-07-27')
-    )
-
-    expect(picked).toBe(withTimeZone('Australia/Sydney', () => new Date(2026, 6, 27).getTime()))
-    expect(picked).not.toBe(Date.parse('2026-07-27T00:00:00Z'))
   })
 })

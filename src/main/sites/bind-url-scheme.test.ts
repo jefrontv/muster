@@ -10,11 +10,8 @@ vi.mock('electron', () => ({
   }
 }))
 
-import {
-  LEGACY_SITE_BIND_URL_SCHEME,
-  SITE_BIND_URL_SCHEME,
-  registerSiteBindUrlSchemes
-} from './bind-url-scheme'
+import { registerSiteBindUrlSchemes } from './bind-url-scheme'
+import { SITE_BIND_URL_SCHEME } from './site-bind-url'
 
 function claimedSchemes(): string[] {
   return setAsDefaultProtocolClientMock.mock.calls.map((call) => call[0] as string)
@@ -31,17 +28,12 @@ describe('registerSiteBindUrlSchemes', () => {
     expect(claimedSchemes()).toEqual([SITE_BIND_URL_SCHEME])
   })
 
-  it('never seizes the legacy ocsites scheme from an installed OcsitesHandler.app', () => {
+  it('never claims ocsites, which belongs to the separately installed ocsites app', () => {
     // Why this is a regression test and not a detail: setAsDefaultProtocolClient is an active
-    // takeover that runs on every launch, so claiming 'ocsites' would re-steal the scheme from
-    // ocsites each time Muster starts, even after the user reassigned it back. Legacy links still
-    // reach Muster via the packaged Info.plist claim and parseSiteBindUrl's scheme allowance.
+    // takeover that runs on every launch, so claiming 'ocsites' would re-steal the scheme from the
+    // user's ocsites install each time Muster starts, even after they reassigned it back.
     registerSiteBindUrlSchemes(false)
 
-    expect(claimedSchemes()).not.toContain(LEGACY_SITE_BIND_URL_SCHEME)
-  })
-
-  it('keeps the legacy scheme exported so the parser and Info.plist stay in sync', () => {
-    expect(LEGACY_SITE_BIND_URL_SCHEME).toBe('ocsites')
+    expect(claimedSchemes()).not.toContain('ocsites')
   })
 })

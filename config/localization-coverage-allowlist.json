@@ -40,5 +40,13 @@
     "text": "Idioma",
     "dynamic": false,
     "count": 1
+  },
+  {
+    "_why": "A literal example WordPress account name, not prose - the account really is 'admin', so translating it would misinform.",
+    "filePath": "src/renderer/src/components/settings/BundledExtensionsSection.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "admin",
+    "dynamic": false,
+    "count": 1
   }
 ]

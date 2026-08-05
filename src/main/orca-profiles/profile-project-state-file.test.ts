@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { getDefaultPersistedState } from '../../shared/constants'
 import type { PersistedState, Project, Repo } from '../../shared/types'
 
-vi.mock('electron', () => ({ app: { getPath: () => '/tmp/orca-profile-state-test' } }))
+vi.mock('electron', () => ({
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined,
+  app: { getPath: () => '/tmp/orca-profile-state-test' }
+}))
 
 import { rebuildRepoBackedProjectState } from './profile-project-state-file'
 

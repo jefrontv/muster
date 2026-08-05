@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
+import { useModalData } from '@/hooks/use-modal-data'
 import type { OrcaHookScriptKind } from '@/lib/orca-hook-trust'
 import { translate } from '@/i18n/i18n'
 
@@ -29,13 +30,12 @@ const SCRIPT_KIND_TRIGGER: Record<ScriptKind, string> = {
 }
 
 const OrcaYamlTrustDialog = React.memo(function OrcaYamlTrustDialog() {
-  const activeModal = useAppStore((s) => s.activeModal)
-  const modalData = useAppStore((s) => s.modalData)
+  const modalData = useModalData('confirm-orca-yaml-hooks')
   const closeModal = useAppStore((s) => s.closeModal)
   const markOrcaHookScriptConfirmed = useAppStore((s) => s.markOrcaHookScriptConfirmed)
   const markOrcaHookRepoAlwaysTrusted = useAppStore((s) => s.markOrcaHookRepoAlwaysTrusted)
 
-  const isOpen = activeModal === 'confirm-orca-yaml-hooks'
+  const isOpen = modalData !== null
   const [alwaysTrustState, setAlwaysTrustState] = useState(() => ({
     isOpen,
     value: false
@@ -51,23 +51,13 @@ const OrcaYamlTrustDialog = React.memo(function OrcaYamlTrustDialog() {
     setAlwaysTrustState({ isOpen, value })
   }
 
-  const repoId = typeof modalData.repoId === 'string' ? modalData.repoId : ''
-  const repoName = typeof modalData.repoName === 'string' ? modalData.repoName : 'this repository'
-  const scriptKind: ScriptKind =
-    modalData.scriptKind === 'archive'
-      ? 'archive'
-      : modalData.scriptKind === 'issueCommand'
-        ? 'issueCommand'
-        : modalData.scriptKind === 'vmRecipe'
-          ? 'vmRecipe'
-          : 'setup'
-  const scriptContent = typeof modalData.scriptContent === 'string' ? modalData.scriptContent : ''
-  const contentHash = typeof modalData.contentHash === 'string' ? modalData.contentHash : ''
-  const previouslyApproved = modalData.previouslyApproved === true
-  const onResolve =
-    typeof modalData.onResolve === 'function'
-      ? (modalData.onResolve as (decision: 'run' | 'skip') => void)
-      : null
+  const repoId = modalData?.repoId ?? ''
+  const repoName = modalData?.repoName ?? 'this repository'
+  const scriptKind: ScriptKind = modalData?.scriptKind ?? 'setup'
+  const scriptContent = modalData?.scriptContent ?? ''
+  const contentHash = modalData?.contentHash ?? ''
+  const previouslyApproved = modalData?.previouslyApproved === true
+  const onResolve = modalData?.onResolve ?? null
 
   const resolveAndClose = useCallback(
     (decision: 'run' | 'skip') => {

@@ -15,9 +15,9 @@ import { EditorAnimatedVisual } from './EditorAnimatedVisual'
 import { BrowserAnimatedVisual } from './BrowserAnimatedVisual'
 import { AgentsOrchestrationVisual } from './AgentsOrchestrationVisual'
 import { ReviewAnimatedVisual } from './ReviewAnimatedVisual'
-import { GitHubRow, LinearRow } from '../onboarding/IntegrationsStep'
+import { GitHubRow } from '../onboarding/IntegrationsStep'
+import { LinearRow } from './LinearRow'
 import { OrchestrationSetupCard } from '../settings/OrchestrationSetupCard'
-import { BrowserUseSkillSetupCard } from './BrowserUseSkillSetupCard'
 import { UsageAccountsCard } from './agents-orchestration/UsageAccountsCard'
 import { AiCommitPrSettingsCard } from './AiCommitPrSettingsCard'
 import { KeepAwakeCard } from './KeepAwakeCard'
@@ -34,7 +34,6 @@ export function FeatureWallBody(props: {
   workbenchActiveStep: WorkbenchStep | null
   reviewActiveStep: ReviewStep | null
   orchestrationSkill: InstalledAgentSkillState
-  browserUseSkill: InstalledAgentSkillState
   onUsageAccountStateChange: () => void | Promise<void>
   settings: GlobalSettings | null
   updateSettings: (updates: Partial<GlobalSettings>) => void
@@ -50,7 +49,6 @@ export function FeatureWallBody(props: {
     workbenchActiveStep,
     reviewActiveStep,
     orchestrationSkill,
-    browserUseSkill,
     onUsageAccountStateChange
   } = props
   const isWorkspaces = selected.id === 'workspaces'
@@ -112,11 +110,7 @@ export function FeatureWallBody(props: {
             : 'max-w-[400px]'
           : isReviewSettingStep
             ? 'max-w-[420px]'
-            : isWorkbenchBrowser
-              ? isOnboardingWorkbenchBrowser
-                ? 'max-w-[340px]'
-                : 'max-w-[400px]'
-              : 'max-w-[480px]'
+            : 'max-w-[480px]'
   const setupTerminalHeightPx = source === 'onboarding' ? 140 : 240
   const settingContent = isTasks ? (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -132,12 +126,6 @@ export function FeatureWallBody(props: {
       compact
       terminalHeightPx={setupTerminalHeightPx}
       skill={orchestrationSkill}
-    />
-  ) : isWorkbenchBrowser ? (
-    <BrowserUseSkillSetupCard
-      compact
-      terminalHeightPx={setupTerminalHeightPx}
-      skill={browserUseSkill}
     />
   ) : isReviewPrView ? (
     <GitHubRow compact />

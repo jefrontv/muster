@@ -103,16 +103,16 @@ describe('Electron runtime package contract', () => {
   it('keeps Windows and Linux package builds off the macOS native helper build', () => {
     const scripts = packageJson.scripts
 
-    expect(scripts['build:desktop']).not.toContain('build:computer-macos')
+    expect(scripts['build:desktop']).not.toContain('build:notification-status-macos')
     expect(scripts['build:win']).toContain('pnpm run build:desktop')
     expect(scripts['build:win']).not.toContain('pnpm run build ')
-    expect(scripts['build:win']).not.toContain('build:computer-macos')
+    expect(scripts['build:win']).not.toContain('build:notification-status-macos')
     expect(scripts['build:linux']).toContain('pnpm run build:desktop')
     expect(scripts['build:linux']).not.toContain('pnpm run build ')
-    expect(scripts['build:linux']).not.toContain('build:computer-macos')
-    expect(scripts['build:mac']).toContain('pnpm run build:computer-macos')
+    expect(scripts['build:linux']).not.toContain('build:notification-status-macos')
+    expect(scripts['build:mac']).toContain('pnpm run build:notification-status-macos')
     expect(scripts['build:release']).toContain('pnpm run build:native')
-    expect(scripts['build:release']).not.toContain('build:computer-macos')
+    expect(scripts['build:release']).not.toContain('build:notification-status-macos')
   })
 
   it('runs the web build through the heap-sized Vite wrapper', () => {

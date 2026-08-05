@@ -7,11 +7,12 @@ import { ActiveCollabTaskAssigneeField } from './activecollab-task-assignee-fiel
 import { ActiveCollabTaskDueDateField } from './activecollab-task-due-date-field'
 import { ActiveCollabLabelChip, ActiveCollabLabelEditor } from './activecollab-task-label-editor'
 import type { ActiveCollabTaskWriteField } from './activecollab-task-writes'
+import type { ActiveCollabSchedule } from './activecollab-task-schedule'
 
 type ActiveCollabTaskMetadataBarProps = {
   task: ActiveCollabTask
   pending: ActiveCollabTaskWriteField | null
-  onDueOnChange: (dueOn: number | null) => void
+  onScheduleChange: (schedule: ActiveCollabSchedule) => void
   onAssigneeIdChange: (assigneeId: number | null) => void
   onLabelNamesChange: (labelNames: string[]) => void
 }
@@ -28,7 +29,7 @@ const META_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.05em] text-m
 export function ActiveCollabTaskMetadataBar({
   task,
   pending,
-  onDueOnChange,
+  onScheduleChange,
   onAssigneeIdChange,
   onLabelNamesChange
 }: ActiveCollabTaskMetadataBarProps): React.JSX.Element {
@@ -53,12 +54,13 @@ export function ActiveCollabTaskMetadataBar({
       </dt>
       <dd className="min-w-0">
         <ActiveCollabTaskDueDateField
-          // Remount per task so the `Set...` affordance never carries over.
+          // Remount per task so the popover and its draft range never carry over.
           key={task.id}
+          startOn={task.startOn}
           dueOn={task.dueOn}
           disabled={busy}
           busy={pending === 'dueDate'}
-          onChange={onDueOnChange}
+          onChange={onScheduleChange}
         />
       </dd>
 

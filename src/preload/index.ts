@@ -4,9 +4,19 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { preloadE2EConfig } from './e2e-config'
 import { glApi } from './gitlab'
 import type { AppIdentity } from '../shared/app-identity'
+import type {
+  BrowserExtensionAddResult,
+  BrowserExtensionStatus,
+  BundledExtensionActionResult,
+  BundledExtensionInfo,
+  OpenExtensionPageResult,
+  SetWordPressLoginResult,
+  WordPressLoginAutofillStatus
+} from '../shared/browser-extension-types'
 import type { SiteRunEvent } from '../shared/site-run-types'
 import type { SiteRootsChangedEvent } from '../shared/site-discovery-types'
 import type { PendingSiteBind } from '../shared/site-bind-types'
+import type { LocalWpMigrationProgressEvent } from '../shared/site-stack-types'
 import type { DashboardSnapshot, DashboardRevealAgentArgs } from '../shared/dashboard-snapshot'
 import type {
   TerminalPreviewConnectResult,
@@ -92,6 +102,8 @@ import type {
 } from '../shared/shell-open-types'
 import type { SkillDiscoveryResult, SkillDiscoveryTarget } from '../shared/skills'
 import type { SkillFreshnessInventory } from '../shared/skill-freshness'
+import type { BundledAgentSkill } from '../shared/bundled-agent-skills'
+import type { SettingsExportOutcome, SettingsImportOutcome } from '../shared/settings-transfer'
 import type {
   RuntimeBrowserDriverState,
   RuntimeMobileSessionTabMove,
@@ -576,6 +588,11 @@ const api = {
     getGitUsername: (args: { repoId: string }): Promise<string> =>
       ipcRenderer.invoke('repos:getGitUsername', args),
 
+    fetchFavicon: (args: {
+      domain: string
+    }): Promise<{ ok: true; dataUrl: string } | { ok: false; error: string }> =>
+      ipcRenderer.invoke('repos:fetchFavicon', args),
+
     getBaseRefDefault: (args: {
       repoId: string
       hostId?: ExecutionHostId
@@ -797,10 +814,12 @@ const api = {
     linkRepo: (args) => ipcRenderer.invoke('sites:linkRepo', args),
     setSecret: (args) => ipcRenderer.invoke('sites:setSecret', args),
     upsertEnvironment: (args) => ipcRenderer.invoke('sites:upsertEnvironment', args),
+    copyEnvironment: (args) => ipcRenderer.invoke('sites:copyEnvironment', args),
     renameEnvironment: (args) => ipcRenderer.invoke('sites:renameEnvironment', args),
     removeEnvironment: (args) => ipcRenderer.invoke('sites:removeEnvironment', args),
     importFromOcsites: () => ipcRenderer.invoke('sites:importFromOcsites'),
-    linkRepos: () => ipcRenderer.invoke('sites:linkRepos')
+    linkRepos: () => ipcRenderer.invoke('sites:linkRepos'),
+    listBranches: (siteId) => ipcRenderer.invoke('sites:listBranches', siteId)
   } satisfies PreloadApi['sites'],
 
   siteRuns: {
@@ -839,7 +858,15 @@ const api = {
     start: (siteId) => ipcRenderer.invoke('siteStacks:start', siteId),
     stop: (siteId) => ipcRenderer.invoke('siteStacks:stop', siteId),
     previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
-    runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args)
+    runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args),
+    onMigrationProgress: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        event: LocalWpMigrationProgressEvent
+      ): void => callback(event)
+      ipcRenderer.on('siteStacks:migrationProgress', listener)
+      return () => ipcRenderer.removeListener('siteStacks:migrationProgress', listener)
+    }
   } satisfies PreloadApi['siteStacks'],
 
   siteTools: {
@@ -897,7 +924,9 @@ const api = {
   siteMcp: {
     status: (args) => ipcRenderer.invoke('siteMcp:status', args),
     register: (args) => ipcRenderer.invoke('siteMcp:register', args),
-    unregister: (args) => ipcRenderer.invoke('siteMcp:unregister', args)
+    unregister: (args) => ipcRenderer.invoke('siteMcp:unregister', args),
+    globalStatus: () => ipcRenderer.invoke('siteMcp:globalStatus'),
+    globalInstall: (args) => ipcRenderer.invoke('siteMcp:globalInstall', args)
   } satisfies PreloadApi['siteMcp'],
 
   activecollabMcp: {
@@ -1997,6 +2026,11 @@ const api = {
     previewWarpThemeImport: (source: WarpThemeImportSource): Promise<WarpThemeImportPreview> =>
       ipcRenderer.invoke('settings:previewWarpThemeImport', source),
 
+    exportToFile: (): Promise<SettingsExportOutcome> => ipcRenderer.invoke('settings:exportToFile'),
+
+    importFromFile: (): Promise<SettingsImportOutcome> =>
+      ipcRenderer.invoke('settings:importFromFile'),
+
     onChanged: (callback: (updates: Record<string, unknown>) => void): (() => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
@@ -2332,13 +2366,6 @@ const api = {
       ipcRenderer.invoke('developerPermissions:openSettings', args)
   },
 
-  computerUsePermissions: {
-    getStatus: (): Promise<unknown> => ipcRenderer.invoke('computerUsePermissions:getStatus'),
-    openSetup: (args?: { id?: string }): Promise<unknown> =>
-      ipcRenderer.invoke('computerUsePermissions:openSetup', args),
-    reset: (): Promise<unknown> => ipcRenderer.invoke('computerUsePermissions:reset')
-  },
-
   shell: {
     openPath: (path: string): Promise<void> => ipcRenderer.invoke('shell:openPath', path),
 
@@ -2379,7 +2406,8 @@ const api = {
     discover: (target?: SkillDiscoveryTarget): Promise<SkillDiscoveryResult> =>
       ipcRenderer.invoke('skills:discover', target),
     freshnessInventory: (): Promise<SkillFreshnessInventory> =>
-      ipcRenderer.invoke('skills:freshnessInventory')
+      ipcRenderer.invoke('skills:freshnessInventory'),
+    bundled: (): Promise<BundledAgentSkill[]> => ipcRenderer.invoke('skills:bundled')
   },
 
   pet: {
@@ -2441,6 +2469,38 @@ const api = {
     },
 
     proceedCertificate: (args) => ipcRenderer.invoke('browser:proceedCertificate', args),
+
+    extensions: {
+      list: (): Promise<BrowserExtensionStatus[]> => ipcRenderer.invoke('browserExtensions:list'),
+      add: (): Promise<BrowserExtensionAddResult> => ipcRenderer.invoke('browserExtensions:add'),
+      remove: (args: { path: string }): Promise<BrowserExtensionStatus[]> =>
+        ipcRenderer.invoke('browserExtensions:remove', args),
+      reload: (): Promise<BrowserExtensionStatus[]> =>
+        ipcRenderer.invoke('browserExtensions:reload'),
+      openSettingsPage: (args: {
+        extensionId: string
+        page: string
+      }): Promise<OpenExtensionPageResult> =>
+        ipcRenderer.invoke('browserExtensions:openSettingsPage', args),
+      listBundled: (): Promise<BundledExtensionInfo[]> =>
+        ipcRenderer.invoke('browserExtensions:listBundled'),
+      installBundled: (args: { id: string }): Promise<BundledExtensionActionResult> =>
+        ipcRenderer.invoke('browserExtensions:installBundled', args),
+      disableBundled: (args: { id: string }): Promise<BundledExtensionActionResult> =>
+        ipcRenderer.invoke('browserExtensions:disableBundled', args),
+      uninstallBundled: (args: { id: string }): Promise<BundledExtensionActionResult> =>
+        ipcRenderer.invoke('browserExtensions:uninstallBundled', args),
+      getWordPressLogin: (): Promise<WordPressLoginAutofillStatus> =>
+        ipcRenderer.invoke('browserExtensions:getWordPressLogin'),
+      setWordPressLogin: (args: {
+        username: string
+        password?: string | null
+        autoLogin: boolean
+      }): Promise<SetWordPressLoginResult> =>
+        ipcRenderer.invoke('browserExtensions:setWordPressLogin', args),
+      clearWordPressLoginPassword: (): Promise<WordPressLoginAutofillStatus> =>
+        ipcRenderer.invoke('browserExtensions:clearWordPressLoginPassword')
+    },
 
     onPermissionDenied: (
       callback: (event: { browserPageId: string; permission: string; origin: string }) => void
@@ -2623,11 +2683,11 @@ const api = {
     },
 
     onOpenLinkInOrcaTab: (
-      callback: (event: { browserPageId: string; url: string }) => void
+      callback: (event: { browserPageId: string | null; url: string }) => void
     ): (() => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
-        data: { browserPageId: string; url: string }
+        data: { browserPageId: string | null; url: string }
       ) => callback(data)
       ipcRenderer.on('browser:open-link-in-orca-tab', listener)
       return () => ipcRenderer.removeListener('browser:open-link-in-orca-tab', listener)
@@ -2712,105 +2772,6 @@ const api = {
 
     notifyActiveTabChanged: (args: { browserPageId: string }): Promise<boolean> =>
       ipcRenderer.invoke('browser:activeTabChanged', args)
-  },
-
-  emulator: {
-    startFrameStream: (args: {
-      streamUrl: string
-      streamKey?: string
-    }): Promise<{
-      streamId: string
-    }> => ipcRenderer.invoke('emulator:frameStreamStart', args),
-    stopFrameStream: (args: { streamId: string }): Promise<void> =>
-      ipcRenderer.invoke('emulator:frameStreamStop', args),
-    onFrameStreamFrame: (
-      callback: (data: { streamId: string; bytes: ArrayBuffer }) => void
-    ): (() => void) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        data: { streamId: string; bytes: ArrayBuffer }
-      ) => callback(data)
-      ipcRenderer.on('emulator:frameStreamFrame', listener)
-      return () => ipcRenderer.removeListener('emulator:frameStreamFrame', listener)
-    },
-    onFrameStreamError: (
-      callback: (data: { streamId: string; message: string }) => void
-    ): (() => void) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        data: { streamId: string; message: string }
-      ) => callback(data)
-      ipcRenderer.on('emulator:frameStreamError', listener)
-      return () => ipcRenderer.removeListener('emulator:frameStreamError', listener)
-    },
-    startVideoStream: (args: {
-      deviceId: string
-      streamId: string
-    }): Promise<{ streamId: string }> => ipcRenderer.invoke('emulator:videoStreamStart', args),
-    stopVideoStream: (args: { streamId: string }): Promise<void> =>
-      ipcRenderer.invoke('emulator:videoStreamStop', args),
-    onVideoStreamMeta: (
-      callback: (data: {
-        streamId: string
-        deviceId: string
-        meta: { codecId: string; width: number; height: number }
-      }) => void
-    ): (() => void) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        data: {
-          streamId: string
-          deviceId: string
-          meta: { codecId: string; width: number; height: number }
-        }
-      ) => callback(data)
-      ipcRenderer.on('emulator:videoStreamMeta', listener)
-      return () => ipcRenderer.removeListener('emulator:videoStreamMeta', listener)
-    },
-    onVideoStreamFrame: (
-      callback: (data: {
-        streamId: string
-        deviceId: string
-        config: boolean
-        keyFrame: boolean
-        bytes: ArrayBuffer
-      }) => void
-    ): (() => void) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        data: {
-          streamId: string
-          deviceId: string
-          config: boolean
-          keyFrame: boolean
-          bytes: ArrayBuffer
-        }
-      ) => callback(data)
-      ipcRenderer.on('emulator:videoStreamFrame', listener)
-      return () => ipcRenderer.removeListener('emulator:videoStreamFrame', listener)
-    },
-    onPaneFocus: (callback: (data: { worktreeId: string }) => void): (() => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, data: { worktreeId: string }) =>
-        callback(data)
-      ipcRenderer.on('emulator:pane-focus', listener)
-      return () => ipcRenderer.removeListener('emulator:pane-focus', listener)
-    },
-    onAutoAttach: (
-      callback: (data: {
-        worktreeId: string
-        info: { deviceUdid: string; streamUrl: string; wsUrl: string; axUrl?: string }
-      }) => void
-    ): (() => void) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        data: {
-          worktreeId: string
-          info: { deviceUdid: string; streamUrl: string; wsUrl: string; axUrl?: string }
-        }
-      ) => callback(data)
-      ipcRenderer.on('ui:emulatorAutoAttach', listener)
-      return () => ipcRenderer.removeListener('ui:emulatorAutoAttach', listener)
-    }
   },
 
   hooks: {
@@ -3465,11 +3426,6 @@ const api = {
       const listener = (_event: Electron.IpcRendererEvent) => callback()
       ipcRenderer.on('ui:newMarkdownTab', listener)
       return () => ipcRenderer.removeListener('ui:newMarkdownTab', listener)
-    },
-    onNewSimulatorTab: (callback: () => void): (() => void) => {
-      const listener = (_event: Electron.IpcRendererEvent) => callback()
-      ipcRenderer.on('ui:newSimulatorTab', listener)
-      return () => ipcRenderer.removeListener('ui:newSimulatorTab', listener)
     },
     onRequestTabCreate: (
       callback: (data: {

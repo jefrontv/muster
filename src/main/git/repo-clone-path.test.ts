@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { deriveValidatedClonePath, getClonePathComparisonKey } from './repo-clone-path'
+import {
+  clonePathExists,
+  deriveValidatedClonePath,
+  getClonePathComparisonKey
+} from './repo-clone-path'
 
 describe('repo clone path helpers', () => {
   it('allows safe repository names that start with two dots', async () => {
@@ -59,5 +63,31 @@ describe('repo clone path helpers', () => {
     expect(getClonePathComparisonKey('\\\\wsl.localhost\\Ubuntu\\home\\User\\repo')).not.toBe(
       getClonePathComparisonKey('\\\\wsl$\\ubuntu\\home\\user\\repo')
     )
+  })
+
+  // Why: clone de-duplication reads this to decide whether a surviving Repo record still has a
+  // checkout. A false positive makes `repos:clone` report success while creating nothing, and the
+  // caller then binds a path that is not there.
+  describe('clonePathExists', () => {
+    it('reports a directory that is present', async () => {
+      const destination = await mkdtemp(join(tmpdir(), 'orca-clone-exists-'))
+      try {
+        expect(await clonePathExists(destination)).toBe(true)
+      } finally {
+        await rm(destination, { recursive: true, force: true })
+      }
+    })
+
+    it('reports a folder deleted outside Muster as gone', async () => {
+      const destination = await mkdtemp(join(tmpdir(), 'orca-clone-gone-'))
+      await rm(destination, { recursive: true, force: true })
+      expect(await clonePathExists(destination)).toBe(false)
+    })
+
+    it('does not throw for a path whose parent does not exist either', async () => {
+      expect(await clonePathExists(join(tmpdir(), 'orca-absent-parent', 'nested', 'repo'))).toBe(
+        false
+      )
+    })
   })
 })

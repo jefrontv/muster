@@ -5,21 +5,20 @@
 // stages run *after* that write, are individually optional, and each one can be unavailable for a
 // reason the user has to read. Keeping them apart means the consent gate stays small and honest.
 //
-// Neither stage renders progress. LocalWP migration is a single awaited call, and the import hands
-// off to the run console on the site page, which already streams logs and supports cancel — a
-// second log viewer here would be a worse copy of it.
+// The LocalWP stage streams its progress (see SiteSetupStackStage). The import stage (see
+// SiteSetupImportStage) does not: it hands off to the run console on the site page, which already
+// streams logs and supports cancel — a second log viewer here would be a worse copy of it.
 
 import { Check, Database, HardDrive, Loader2, ShieldCheck } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { SiteSetupPlan, SiteSetupStage } from '../../../../shared/site-setup-flow-types'
 import { findSetupStage } from '../../../../shared/site-setup-flow-types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import { getSiteSetupStrings } from './site-setup-strings'
-
-type StageOutcome = 'idle' | 'busy' | 'done' | 'skipped'
+import { SiteSetupImportStage } from './SiteSetupImportStage'
+import { SiteSetupStackStage } from './SiteSetupStackStage'
 
 /** A stage the machine or the configuration rules out entirely — shown, but never actionable. */
 function UnavailableRow({
@@ -59,14 +58,10 @@ export function SiteSetupContinuation({
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const [plan, setPlan] = useState<SiteSetupPlan | null>(null)
+  // Owned here, not by the stack stage: the certificate stage needs it even for a site that was
+  // already LocalWP and never runs a migration.
   const [domain, setDomain] = useState('')
-  const [stack, setStack] = useState<StageOutcome>('idle')
-  const [importState, setImportState] = useState<StageOutcome>('idle')
   const [error, setError] = useState('')
-  // Defaults chosen for a throwaway local install: the account only ever exists inside LocalWP.
-  // ocsites hardcoded the same shape (a house email plus 'admin').
-  const [adminEmail, setAdminEmail] = useState('')
-  const [adminPassword, setAdminPassword] = useState('admin')
   const [cert, setCert] = useState<LocalWpCertStatus | null>(null)
   const [trusting, setTrusting] = useState(false)
 
@@ -82,8 +77,8 @@ export function SiteSetupContinuation({
         return
       }
       setPlan(result.value)
+      // The certificate stage keys off the domain the stack stage will register.
       setDomain(result.value.stack.suggestedDomain)
-      setAdminEmail(`admin@${result.value.stack.suggestedDomain || 'localhost'}`)
       // Already-LocalWP sites have a domain from the start, so the certificate stage is
       // answerable before the user touches anything.
       const domainNow = result.value.stack.suggestedDomain.trim()
@@ -97,6 +92,17 @@ export function SiteSetupContinuation({
     return () => {
       cancelled = true
     }
+  }, [siteId, reponame, branch])
+
+  // Enabling an import step changes what the run planner allows, so the plan is re-read rather
+  // than patched locally: the planner is the only thing that decides whether a run may start.
+  const replan = useCallback((): void => {
+    void (async () => {
+      const result = await window.api.siteSetup.plan({ siteId, reponame, branch })
+      if (result.ok) {
+        setPlan(result.value)
+      }
+    })()
   }, [siteId, reponame, branch])
 
   if (error.length > 0 && !plan) {
@@ -150,139 +156,20 @@ export function SiteSetupContinuation({
       setTrusting(false)
     }
   }
-  const runStack = async (): Promise<void> => {
-    setStack('busy')
-    setError('')
-    try {
-      // Preview first even though we do not render the plan: it is the call that reports a
-      // conflicting site or an unusable domain, so it turns a mid-migration failure into a message.
-      const credentials = {
-        domain,
-        adminEmail: adminEmail.trim(),
-        adminPassword: adminPassword.trim()
-      }
-      const preview = await window.api.siteStacks.previewMigration({ siteId, ...credentials })
-      if (!preview.ok) {
-        setError(preview.error)
-        setStack('idle')
-        return
-      }
-      const migrated = await window.api.siteStacks.runMigration({ siteId, ...credentials })
-      if (!migrated.ok) {
-        setError(migrated.error)
-        setStack('idle')
-        return
-      }
-      setStack('done')
-      // The migration is what gives the site its local domain, so the certificate question only
-      // becomes answerable now.
-      void refreshCert(domain)
-    } catch (migrationError) {
-      setError(migrationError instanceof Error ? migrationError.message : String(migrationError))
-      setStack('idle')
-    }
-  }
-
-  const runImport = async (): Promise<void> => {
-    setImportState('busy')
-    setError('')
-    const result = await window.api.siteRuns.start({
-      siteId,
-      group: 'import',
-      ...(plan.import.environment ? { environment: plan.import.environment } : {})
-    })
-    if (!result.ok) {
-      setError(result.error)
-      setImportState('idle')
-      return
-    }
-    setImportState('done')
-  }
 
   return (
     <div className="space-y-3">
       {isActionable(stackStage) ? (
-        <div className="space-y-2 rounded-md border border-border px-3 py-2.5">
-          <div className="flex items-start gap-2.5">
-            <HardDrive className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-sm font-medium">{strings.stackHeading}</p>
-              <p className="text-xs text-muted-foreground">{strings.stackBody}</p>
-            </div>
-            {stack === 'done' ? (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Check className="size-3.5" />
-                {strings.stackDone}
-              </span>
-            ) : null}
-          </div>
-          {stack === 'idle' || stack === 'busy' ? (
-            <div className="space-y-1.5 pl-6.5">
-              {/* LocalWP creates a real WordPress install, so it needs the wp-admin account up
-                  front. These were the fields ocsites prompted for; omitting them is why the
-                  migration used to fail with "adminEmail must be a non-empty string". */}
-              <div className="grid grid-cols-2 gap-1.5">
-                <label className="sr-only" htmlFor="setup-local-domain">
-                  {strings.stackDomainLabel}
-                </label>
-                <Input
-                  id="setup-local-domain"
-                  className="h-8 font-mono text-xs"
-                  placeholder={strings.stackDomainLabel}
-                  value={domain}
-                  disabled={stack === 'busy'}
-                  onChange={(event) => setDomain(event.target.value)}
-                />
-                <label className="sr-only" htmlFor="setup-admin-email">
-                  {strings.stackAdminEmail}
-                </label>
-                <Input
-                  id="setup-admin-email"
-                  className="h-8 font-mono text-xs"
-                  placeholder={strings.stackAdminEmail}
-                  value={adminEmail}
-                  disabled={stack === 'busy'}
-                  onChange={(event) => setAdminEmail(event.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <label className="sr-only" htmlFor="setup-admin-password">
-                  {strings.stackAdminPassword}
-                </label>
-                <Input
-                  id="setup-admin-password"
-                  className="h-8 font-mono text-xs"
-                  placeholder={strings.stackAdminPassword}
-                  value={adminPassword}
-                  disabled={stack === 'busy'}
-                  onChange={(event) => setAdminPassword(event.target.value)}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0"
-                  disabled={
-                    stack === 'busy' ||
-                    domain.trim().length === 0 ||
-                    adminEmail.trim().length === 0 ||
-                    adminPassword.trim().length === 0
-                  }
-                  onClick={() => void runStack()}
-                >
-                  {stack === 'busy' ? (
-                    <>
-                      <Loader2 className="size-3.5 animate-spin" />
-                      {strings.stackRunning}
-                    </>
-                  ) : (
-                    strings.stackAction
-                  )}
-                </Button>
-              </div>
-              <p className="text-[11px] text-muted-foreground/70">{strings.stackAdminHint}</p>
-            </div>
-          ) : null}
-        </div>
+        <SiteSetupStackStage
+          siteId={siteId}
+          suggestedDomain={plan.stack.suggestedDomain}
+          onMigrated={(migratedDomain) => {
+            // The migration is what gives the site its local domain, so the certificate question
+            // only becomes answerable now.
+            setDomain(migratedDomain)
+            void refreshCert(migratedDomain)
+          }}
+        />
       ) : (
         <UnavailableRow
           icon={<HardDrive className="size-4" />}
@@ -328,44 +215,14 @@ export function SiteSetupContinuation({
         />
       ) : null}
 
-      {plan.import.ready || plan.import.confirmable ? (
-        <div className="space-y-2 rounded-md border border-border px-3 py-2.5">
-          <div className="flex items-start gap-2.5">
-            <Database className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-sm font-medium">{strings.importHeading}</p>
-              <p className="text-xs text-muted-foreground">
-                {importState === 'done' ? strings.importStarted : strings.importBody}
-              </p>
-              {/* The count is the honest signal that the link configured anything worth running. */}
-              {importState !== 'done' && plan.import.enabledStepCount > 0 ? (
-                <p className="text-[11px] text-muted-foreground/70">
-                  {strings.importSteps.replace('{{count}}', String(plan.import.enabledStepCount))}
-                </p>
-              ) : null}
-              {/* Blocked-but-confirmable is a branch/environment mismatch: allowed, with the reason visible. */}
-              {!plan.import.ready && importState !== 'done' ? (
-                <p className="text-[11px] text-muted-foreground/70">{importStage?.reason ?? ''}</p>
-              ) : null}
-            </div>
-            {importState === 'done' ? (
-              <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={importState === 'busy' || plan.import.enabledStepCount === 0}
-                onClick={() => void runImport()}
-              >
-                {importState === 'busy'
-                  ? strings.importStarting
-                  : plan.import.ready
-                    ? strings.importAction
-                    : strings.overrideAction}
-              </Button>
-            )}
-          </div>
-        </div>
+      {/* An empty step list is the one import block the user can clear from here, so it must not
+          collapse into an unavailable row: the stage offers the toggles instead. Everything else
+          (no environment, missing SSH password, missing checkout) is fixed elsewhere. */}
+      {plan.import.ready ||
+      plan.import.confirmable ||
+      (plan.import.environment.length > 0 &&
+        plan.import.blockedBy.includes('no-steps-selected')) ? (
+        <SiteSetupImportStage siteId={siteId} readiness={plan.import} onStepsChanged={replan} />
       ) : (
         <UnavailableRow
           icon={<Database className="size-4" />}

@@ -16,6 +16,7 @@ function task(id: number): ActiveCollabTask {
     name: `Task ${id}`,
     bodyHtml: '',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,

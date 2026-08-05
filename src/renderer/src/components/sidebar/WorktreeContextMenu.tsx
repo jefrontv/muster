@@ -63,6 +63,7 @@ import {
   parseWorkspaceKey,
   worktreeWorkspaceKey
 } from '../../../../shared/workspace-scope'
+import { isFolderRepo } from '../../../../shared/repo-kind'
 
 type Props = {
   worktree: Worktree
@@ -196,6 +197,23 @@ function shouldRemoveProjectFromContextMenu(
   worktree: Pick<Worktree, 'isMainWorktree'>
 ): boolean {
   return repo != null && worktree.isMainWorktree
+}
+
+/**
+ * Whether to keep the disabled git "Delete Worktree" row above the enabled project removal.
+ *
+ * Primary git checkouts cannot be `git worktree remove`d, so the greyed row preserves parity with
+ * non-primary cards. Folder projects are excluded: they have no worktrees at all, so a greyed
+ * "Delete Worktree" tooltipped about a primary worktree reads as a broken action.
+ */
+function shouldShowDisabledDeleteWorktree(
+  repo: Pick<Repo, 'kind'> | null | undefined,
+  args: { isMultiContext: boolean; removesProject: boolean }
+): boolean {
+  if (args.isMultiContext || !args.removesProject) {
+    return false
+  }
+  return !(repo != null && isFolderRepo(repo))
 }
 
 function isContextWorktreeDeletable(
@@ -948,8 +966,12 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
           </Tooltip>
           {/* Why: primary checkout rows can't be git-worktree-removed, so keep a
              disabled Delete Worktree for parity with non-primary cards and pair
-             it with the enabled Remove Project action below. */}
-          {!isMultiContext && removesProject ? (
+             it with the enabled Remove Project action below.
+
+             Folder projects are excluded: they have no worktrees at all, so a greyed
+             "Delete Worktree" whose tooltip talks about a primary worktree reads as a broken
+             action rather than an unavailable one. */}
+          {shouldShowDisabledDeleteWorktree(repo, { isMultiContext, removesProject }) ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
@@ -1050,6 +1072,7 @@ export {
   getWorktreeParentPickerLabel,
   isWorktreeParentPickerDisabled,
   shouldRemoveProjectFromContextMenu,
+  shouldShowDisabledDeleteWorktree,
   shouldUseNativeContextMenu,
   shouldSuppressContextMenuFollowUpClick,
   shouldIgnoreNestedWorktreeContextMenuScope

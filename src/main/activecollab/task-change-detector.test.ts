@@ -24,6 +24,7 @@ function acTask(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveCo
     name: 'Fix the header',
     bodyHtml: '',
     isCompleted: false,
+    startOn: null,
     dueOn: null,
     createdOn: null,
     updatedOn: null,

@@ -162,7 +162,6 @@ Agentes também controlam o Muster — automatize qualquer fluxo de trabalho com
 - **[Abertura rápida](https://www.onorca.dev/docs/model/quick-open)** — Pesquise entre worktrees, arquivos, agentes, comandos e contexto do repositório sem sair do seu fluxo.
 - **[Troca de contas e acompanhamento de uso](https://www.onorca.dev/docs/agents/usage-tracking)** — Veja o uso de Claude e Codex, os reinícios de limites e troque contas instantaneamente sem fazer login de novo.
 - **[Prévias ricas do repositório](https://www.onorca.dev/docs/editing/markdown)** — Pré-visualize Markdown, imagens, PDFs e documentos do repositório no workspace.
-- **[Computer Use](https://www.onorca.dev/docs/cli/computer-use)** — Deixe agentes operarem apps de desktop e UI visível quando um fluxo de trabalho precisa de interação real.
 - **[Notificações e estado de não lido](https://www.onorca.dev/docs/notifications)** — Saiba quando um agente termina ou precisa de atenção, depois marque conversas como não lidas para voltar depois.
 - **E muito, muito mais** — lançamos novidades todos os dias, então esta lista vive atrasada. O [changelog](https://github.com/stablyai/orca/releases) é a lista real de recursos.
 

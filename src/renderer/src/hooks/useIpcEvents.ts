@@ -5,6 +5,7 @@ import { useAppStore } from '../store'
 import { shouldRetryPaneSpawnOnSshReconnect } from './ssh-reconnect-pane-retry'
 import { applyWorktreeHeadIdentities } from './worktree-head-identity-apply'
 import { getWorktreeMapFromState, getRepoMapFromState } from '@/store/selectors'
+import type { NewWorkspaceComposerModalPayload } from '@/store/slices/modal-payloads'
 import { applyUIZoom } from '@/lib/ui-zoom'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { buildLinearIssueLinkedWorkItem } from '@/lib/linear-linked-work-item'
@@ -50,12 +51,6 @@ import {
   handleSwitchTabAcrossAllTypes,
   handleSwitchTerminalTab
 } from './ipc-tab-switch'
-import { ensureSimulatorTab } from '@/lib/ensure-simulator-tab'
-import { openMobileEmulatorTab } from '@/lib/open-mobile-emulator-tab'
-import {
-  isManualSimulatorLaunchPending,
-  rememberPrelaunchedSimulatorSession
-} from '@/lib/simulator-launch-coordination'
 import {
   normalizeAgentStatusPayload,
   type AgentStatusClearIpcPayload,
@@ -133,6 +128,8 @@ import { showTerminalShortcutCaptureNotification } from '@/lib/terminal-shortcut
 import { resolveAgentStatusTerminalTitle } from '@/lib/agent-status-terminal-title'
 import { titleHasAgentName } from '../../../shared/agent-detection'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
+import { openChromeHttpLink } from '@/lib/chrome-link-open'
+import { installSystemBrowserClickEscapeTracking } from '@/lib/system-browser-click-escape'
 import { resolveTerminalWorktreeRoute } from '@/lib/terminal-worktree-route'
 import { resolveAgentPaneAuthorityKey } from '@/store/slices/agent-pane-authority'
 import { translate } from '@/i18n/i18n'
@@ -674,10 +671,8 @@ type BrowserSessionTabTarget =
   | { kind: 'unified-browser'; unifiedTabId: string; workspaceId: string; groupId: string }
   | { kind: 'fallback-browser'; workspaceId: string }
 
-type NewWorkspaceShortcutModalData = {
+type NewWorkspaceShortcutModalData = NewWorkspaceComposerModalPayload & {
   telemetrySource: 'shortcut'
-  prefilledName?: string
-  linkedWorkItem?: ReturnType<typeof buildLinearIssueLinkedWorkItem>
 }
 
 export function buildNewWorkspaceShortcutModalData(
@@ -2158,9 +2153,15 @@ export function useIpcEvents(): void {
       })
     )
 
+    unsubs.push(installSystemBrowserClickEscapeTracking())
+
     unsubs.push(
       window.api.browser.onOpenLinkInOrcaTab(({ browserPageId, url }) => {
         const store = useAppStore.getState()
+        if (browserPageId === null) {
+          openChromeHttpLink(store, url)
+          return
+        }
         const sourcePage = Object.values(store.browserPagesByWorkspace)
           .flat()
           .find((page) => page.id === browserPageId)
@@ -2239,57 +2240,6 @@ export function useIpcEvents(): void {
         }
       })
     )
-
-    // Why: emulator IPC is additive; guard so older clients or partial preload mocks don't crash the hook when it's absent.
-    const unsubscribeNewSimulatorTab = window.api.ui.onNewSimulatorTab?.(() => {
-      if (isRuntimeEnvironmentActive()) {
-        return
-      }
-      const store = useAppStore.getState()
-      const worktreeId = store.activeWorktreeId
-      if (!worktreeId) {
-        return
-      }
-      void openMobileEmulatorTab(worktreeId, { placement: 'rightSplit' })
-    })
-    if (unsubscribeNewSimulatorTab) {
-      unsubs.push(unsubscribeNewSimulatorTab)
-    }
-
-    const unsubscribeEmulatorAutoAttach = window.api.emulator?.onAutoAttach(
-      ({ worktreeId, info }) => {
-        if (isRuntimeEnvironmentActive()) {
-          return
-        }
-        if (isManualSimulatorLaunchPending(worktreeId)) {
-          // Why: manual launches pre-attach so the ready pane opens in the right split, not as a hidden tab in this group.
-          rememberPrelaunchedSimulatorSession(worktreeId, info)
-          return
-        }
-        ensureSimulatorTab(worktreeId, { surfacePane: false })
-        // Why: watcher may detect a helper while a simulator tab is already mounted; push stream info so the pane updates without re-attach.
-        window.setTimeout(() => {
-          window.dispatchEvent(
-            new CustomEvent('orca:emulator-auto-attach', {
-              detail: { worktreeId, info }
-            })
-          )
-        }, 0)
-      }
-    )
-    if (unsubscribeEmulatorAutoAttach) {
-      unsubs.push(unsubscribeEmulatorAutoAttach)
-    }
-
-    const unsubscribeEmulatorPaneFocus = window.api.emulator?.onPaneFocus(({ worktreeId }) => {
-      if (isRuntimeEnvironmentActive()) {
-        return
-      }
-      ensureSimulatorTab(worktreeId, { surfacePane: true })
-    })
-    if (unsubscribeEmulatorPaneFocus) {
-      unsubs.push(unsubscribeEmulatorPaneFocus)
-    }
 
     // Why: reply with the page ID so main can await registerGuest before returning to the CLI.
     unsubs.push(

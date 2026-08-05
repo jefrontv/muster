@@ -176,7 +176,8 @@ export function createOrFocusDashboardPopout(
       webviewTag: false
     }
   })
-  installPrivilegedWindowNavigationPolicy(window.webContents)
+  // Why: the popout has no worktree/tab model, so its links cannot route to an in-app browser tab.
+  installPrivilegedWindowNavigationPolicy(window.webContents, { routeLinksToRenderer: false })
   // Why: isolated sessions do not inherit the main session's deny-by-default permission policy.
   window.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) =>
     callback(false)

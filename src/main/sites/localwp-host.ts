@@ -22,6 +22,13 @@ export const LOCALWP_UNSUPPORTED_PLATFORM = 'LocalWP integration is only availab
 export const LOCALWP_COMMAND_TIMEOUT_MS = 5_000
 export const LOCALWP_PROBE_TIMEOUT_MS = 3_000
 
+/**
+ * Local owns the MySQL accounts on every site it creates and always uses root/root, so ocsites
+ * authenticates with these rather than with the credentials in wp-config.php (tui_deploy:3133).
+ */
+export const LOCALWP_DATABASE_USER = 'root'
+export const LOCALWP_DATABASE_PASSWORD = 'root'
+
 export type LocalWpCommandResult = { code: number; stdout: string; stderr: string }
 
 export type LocalWpCommandRunner = (
@@ -78,10 +85,22 @@ function isTcpPortOpen(port: number, timeoutMs: number): Promise<boolean> {
   return promise
 }
 
+// Errors that mean "this process cannot probe", not "the server is down". ocsites answered True
+// when its MySQL client library was missing, for the same reason: a probe that cannot run must not
+// be read as a dead server, or the caller burns its whole wait budget and reports a bogus timeout.
+const UNPROBEABLE_SOCKET_ERRORS: Record<string, true> = {
+  EACCES: true,
+  EPERM: true,
+  EMFILE: true,
+  ENFILE: true
+}
+
 // mysqld sends its handshake packet unprompted, so receiving any byte proves the server is past
 // startup. Checking only for the socket file loses that race and surfaces as a spurious
 // "Can't connect to local MySQL" during the import right after a site starts.
-function isMysqlSocketReady(socketPath: string, timeoutMs: number): Promise<boolean> {
+//
+// Exported for its own test: the two outcomes below are the whole reason the probe exists.
+export function isMysqlSocketReady(socketPath: string, timeoutMs: number): Promise<boolean> {
   const { promise, resolve } = Promise.withResolvers<boolean>()
   const socket = net.connect({ path: socketPath })
   const finish = (ready: boolean): void => {
@@ -90,7 +109,9 @@ function isMysqlSocketReady(socketPath: string, timeoutMs: number): Promise<bool
   }
   socket.setTimeout(timeoutMs, () => finish(false))
   socket.once('data', () => finish(true))
-  socket.once('error', () => finish(false))
+  socket.once('error', (error: NodeJS.ErrnoException) =>
+    finish(UNPROBEABLE_SOCKET_ERRORS[error.code ?? ''] === true)
+  )
   socket.once('close', () => resolve(false))
   return promise
 }

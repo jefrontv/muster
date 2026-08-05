@@ -24,6 +24,7 @@ import {
   readTomlTable,
   spliceJsonMcpServer,
   spliceTomlTable,
+  tomlLineValue,
   type ActiveCollabMcpFs,
   type JsonObject
 } from './mcp-config-io'
@@ -107,21 +108,6 @@ function detectJsonAgent(
       error: error instanceof Error ? error.message : String(error)
     }
   }
-}
-
-/** The value text of a `key = value` line, or null. Tolerates missing spaces around the `=`. */
-function tomlLineValue(block: string, key: string): string | null {
-  for (const raw of block.split('\n')) {
-    const line = raw.trim()
-    if (!line.startsWith(key)) {
-      continue
-    }
-    const rest = line.slice(key.length).trim()
-    if (rest.startsWith('=')) {
-      return rest.slice(1).trim()
-    }
-  }
-  return null
 }
 
 const claudeCodeAgent: ActiveCollabMcpAgentAdapter = {
