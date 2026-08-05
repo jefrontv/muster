@@ -87,6 +87,15 @@ jobs:
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')
           "
 
+      # Why: publish config uses releaseType 'release', and electron-builder only adopts
+      # DRAFT releases — a leftover published release from a failed run makes every retry
+      # die with 422 already_exists. Drop the release (tag survives) so re-runs are clean.
+      - name: Clear stale release for tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release delete "$TAG" --yes --repo "${{ github.repository }}" || true
+
       - name: Build desktop + native mac helpers
         run: |
           pnpm run build:desktop
