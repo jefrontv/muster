@@ -122,6 +122,18 @@ jobs:
             export CSC_KEY_PASSWORD="${MAC_CERTS_PASSWORD:-}"
             export ORCA_MAC_RELEASE=1
             echo "Signed/notarized release path enabled"
+          elif [[ -n "${MAC_CERTS:-}" ]]; then
+            # Why this path exists: Squirrel.Mac refuses an update whose signature does not satisfy
+            # the INSTALLED app's designated requirement, so an unsigned CI build can never replace
+            # a locally signed one ("code failed to satisfy specified code requirement(s)"). Signing
+            # releases with the same certificate the team installs with makes auto-update work
+            # without an Apple Developer ID. Notarization is impossible for a self-signed cert, so
+            # it stays off and Gatekeeper still needs `xattr -cr` on first install.
+            export CSC_LINK="${MAC_CERTS}"
+            export CSC_KEY_PASSWORD="${MAC_CERTS_PASSWORD:-}"
+            export MUSTER_MAC_SIGNED_NO_NOTARIZE=1
+            unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+            echo "Signed (no notarization) release path enabled"
           else
             # Ad-hoc signing path: electron-builder must see no CSC/Apple credentials at all.
             unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID

@@ -14,6 +14,12 @@ const {
 const { verifyLinuxGlibcFloor } = require('./scripts/verify-linux-glibc-floor.cjs')
 
 const isMacRelease = process.env.ORCA_MAC_RELEASE === '1'
+// Why: an internal fleet can auto-update without an Apple Developer ID by signing every release
+// with the SAME certificate the team installs with — Squirrel.Mac only requires the replacement app
+// to satisfy the installed app's designated requirement, not that the certificate be Apple-issued.
+// Notarization is impossible for such a certificate, so this mode signs and stops there; first
+// install still needs `xattr -cr /Applications/Muster.app` on each machine.
+const isMacSignedWithoutNotarization = process.env.MUSTER_MAC_SIGNED_NO_NOTARIZE === '1'
 const isLinuxArm64Release = process.env.ORCA_LINUX_ARM64_RELEASE === '1'
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
@@ -308,8 +314,13 @@ module.exports = {
     // credentials. Hardened runtime + notarization stay enabled only on the
     // explicit release path so production artifacts remain strict while dev
     // artifacts do not fail with broken ad-hoc launch behavior.
+    // Hardened runtime requires notarization to be useful and breaks launch without it, so it
+    // follows the Apple release path only.
     hardenedRuntime: isMacRelease,
     notarize: isMacRelease,
+    // Why explicit: with CSC_LINK set, electron-builder would otherwise auto-discover an identity
+    // and still try to notarize. This keeps the self-signed path signing-only.
+    ...(isMacSignedWithoutNotarization ? { identity: process.env.CSC_NAME ?? undefined } : {}),
     extraResources: [
       ...commonExtraResources,
       ...createPackagedRuntimeNodeModuleResources('darwin'),
@@ -463,8 +474,12 @@ async function signMacNotificationStatusHelper(helperPath, packager) {
     }
     return
   }
+  // Why the self-signed mode is included: the helper must carry the SAME identity as the app, or
+  // the bundle ships mixed signatures and a deep verify of the update candidate can fail.
   const codeSigningInfo =
-    isMacRelease && process.env.CSC_LINK && packager?.codeSigningInfo?.value
+    (isMacRelease || isMacSignedWithoutNotarization) &&
+    process.env.CSC_LINK &&
+    packager?.codeSigningInfo?.value
       ? await packager.codeSigningInfo.value
       : null
   const identity =
