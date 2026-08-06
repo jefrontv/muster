@@ -2232,3 +2232,39 @@ h3 {
 .auto-runs .dim {
   margin-left: 0.35rem;
 }
+
+/* ============================================================== scroll flourishes */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  z-index: 80;
+  pointer-events: none;
+}
+
+/* Section designator rule draws itself when the section arrives (JS adds .grown). */
+.js .strip::after {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+
+.js .strip.grown::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-progress {
+    display: none;
+  }
+
+  .js .strip::after {
+    transform: none;
+    transition: none;
+  }
+}

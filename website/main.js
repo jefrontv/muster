@@ -1041,15 +1041,148 @@ function featureReveals() {
     return
   }
   for (const feature of document.querySelectorAll('.feature')) {
-    const parts = [feature.querySelector('.feature-copy'), feature.querySelector('.mock')].filter(
-      Boolean
+    // Copy slides in; the mock only fades here — its travel belongs to the
+    // parallax scrub in scrollFlourishes, and two tweens on one y fight.
+    const copy = feature.querySelector('.feature-copy')
+    const mock = feature.querySelector('.mock')
+    if (copy) {
+      copy.classList.add('anim')
+      gsap
+        .timeline({ scrollTrigger: { trigger: feature, start: 'top 80%' } })
+        .add(animIn([copy], { y: 26 }, { duration: 0.75 }))
+    }
+    if (mock) {
+      mock.classList.add('anim')
+      gsap.fromTo(
+        mock,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 0.9,
+          ease: 'power2.out',
+          onComplete: () => mock.classList.remove('anim'),
+          scrollTrigger: { trigger: feature, start: 'top 80%' }
+        }
+      )
+    }
+  }
+}
+
+/* ------------------------------------------------------------ scroll flourishes
+ * The scrub layer: reading progress, parallax on the product mocks, and small
+ * cascades inside them. All gated on hasGsap, so reduced motion skips the lot. */
+function scrollFlourishes() {
+  if (!hasGsap || !window.ScrollTrigger) {
+    return
+  }
+
+  // Reading progress along the very top edge.
+  const progress = document.createElement('div')
+  progress.className = 'scroll-progress'
+  document.body.append(progress)
+  gsap.to(progress, {
+    scaleX: 1,
+    ease: 'none',
+    scrollTrigger: { start: 0, end: 'max', scrub: 0.4 }
+  })
+
+  // Product mocks drift slower than the page — depth without theatrics.
+  for (const mock of document.querySelectorAll('.feature .mock')) {
+    gsap.fromTo(
+      mock,
+      { y: 44 },
+      {
+        y: -28,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: mock.parentElement,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 0.5
+        }
+      }
     )
-    for (const part of parts) {
-      part.classList.add('anim')
+  }
+
+  // The hero app window recedes slightly as it scrolls away.
+  const app = document.querySelector('.hero .app')
+  if (app) {
+    gsap.to(app, {
+      y: -36,
+      scale: 0.985,
+      ease: 'none',
+      scrollTrigger: { trigger: app, start: 'top 60%', end: 'bottom top', scrub: 0.5 }
+    })
+  }
+
+  // Section designator rules draw themselves in.
+  for (const strip of document.querySelectorAll('.strip')) {
+    window.ScrollTrigger.create({
+      trigger: strip,
+      start: 'top 88%',
+      once: true,
+      onEnter: () => strip.classList.add('grown')
+    })
+  }
+
+  // Agent chips scatter in.
+  const chips = [...document.querySelectorAll('.chips li')]
+  if (chips.length) {
+    for (const chip of chips) {
+      chip.classList.add('anim')
     }
     gsap
-      .timeline({ scrollTrigger: { trigger: feature, start: 'top 80%' } })
-      .add(animIn(parts, { y: 26 }, { duration: 0.75, stagger: 0.12 }))
+      .timeline({ scrollTrigger: { trigger: '.chips', start: 'top 88%' } })
+      .add(
+        animIn(
+          chips,
+          { y: 10, scale: 0.9 },
+          { duration: 0.4, stagger: 0.03, ease: 'back.out(1.6)' }
+        )
+      )
+  }
+
+  // Inside the diff mock: lines land first, then the comment card.
+  const diffLines = [...document.querySelectorAll('.diff-lines li')]
+  const diffComment = document.querySelector('.diff-comment')
+  if (diffLines.length) {
+    for (const line of diffLines) {
+      line.classList.add('anim')
+    }
+    if (diffComment) {
+      diffComment.classList.add('anim')
+    }
+    const tl = gsap
+      .timeline({ scrollTrigger: { trigger: '.diff', start: 'top 82%' } })
+      .add(animIn(diffLines, { x: -16 }, { duration: 0.4, stagger: 0.1, ease: 'power2.out' }), 0.15)
+    if (diffComment) {
+      tl.add(
+        animIn([diffComment], { y: 12, scale: 0.97 }, { duration: 0.5, ease: 'back.out(1.4)' }),
+        '-=0.1'
+      )
+    }
+  }
+
+  // Task rows cascade.
+  const taskRows = [...document.querySelectorAll('.tasks-rows li, .tasks-group, .tasks-foot')]
+  if (taskRows.length) {
+    for (const row of taskRows) {
+      row.classList.add('anim')
+    }
+    gsap
+      .timeline({ scrollTrigger: { trigger: '.tasks', start: 'top 82%' } })
+      .add(animIn(taskRows, { x: -14 }, { duration: 0.35, stagger: 0.05, ease: 'power2.out' }), 0.1)
+  }
+
+  // Automation cards stack in.
+  const autoCards = [...document.querySelectorAll('.auto-card')]
+  if (autoCards.length) {
+    for (const card of autoCards) {
+      card.classList.add('anim')
+    }
+    gsap
+      .timeline({ scrollTrigger: { trigger: '.autos', start: 'top 84%' } })
+      .add(animIn(autoCards, { y: 18 }, { duration: 0.55, stagger: 0.12 }), 0.1)
   }
 }
 
@@ -1062,6 +1195,7 @@ initAgentBoard()
 initUsageBars()
 initRunLog()
 featureReveals()
+scrollFlourishes()
 phaseSequence()
 stepProgress()
 counters()
