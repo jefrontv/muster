@@ -10,6 +10,20 @@
     />
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+
+    <!-- Link preview for Slack and anywhere else the URL gets pasted. og:image must be absolute,
+         so it is set at runtime from the page's own origin — the site has no fixed host yet. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Muster" />
+    <meta property="og:title" content="Muster — desktop IDE for parallel coding agents" />
+    <meta
+      property="og:description"
+      content="Run coding agents across git worktrees, with WordPress imports, deploys and ActiveCollab tasks. Download and install guide."
+    />
+    <meta property="og:image" content="assets/og.png" data-og-image />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="preload"
       href="assets/fonts/Geist-Variable.woff2"

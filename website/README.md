@@ -43,6 +43,19 @@ Any static host works — the page has no server dependency.
   without it: elements are only hidden when JavaScript is present *and* the reader has not asked for
   reduced motion, so a no-JS or reduced-motion visitor sees a complete page.
 
+## Social preview
+
+`assets/og.png` is generated, not hand-drawn — `scratchpad/og-card.html` is rendered at 1200×630
+with a headless browser. To change it, edit the card and re-screenshot; the `og:image` URL is made
+absolute at runtime from wherever the page is served, so no host is baked in.
+
+## Contrast
+
+Every text colour clears WCAG AA (4.5:1 for small text) in both themes. The mono micro-labels are
+all 10–11px, which is what makes `--faint` and the light-theme `--signal-text` the tight ones —
+both were failing before they were measured. If you change a neutral, re-check rather than eyeball
+it.
+
 ## The one gotcha
 
 Anything animated in must use `gsap.fromTo()` with an explicit `opacity: 1`, never `gsap.from()`.

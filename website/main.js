@@ -751,3 +751,10 @@ function markDetectedBuild() {
 
 liveRelease()
 markDetectedBuild()
+
+/* og:image has to be an absolute URL for a crawler to fetch it, and this page has no fixed host
+ * yet — so it is resolved against wherever the page is actually being served from. */
+const ogImage = document.querySelector('[data-og-image]')
+if (ogImage) {
+  ogImage.setAttribute('content', new URL('assets/og.png', document.baseURI).href)
+}
