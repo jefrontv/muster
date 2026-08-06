@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { SYNC_FIT_PANES_EVENT } from '@/constants/terminal'
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
-import { fitPanes } from './pane-helpers'
+import { requestFitPanesSettled } from './pane-helpers'
 
 type UseTerminalContainerFitSyncArgs = {
   isVisible: boolean
@@ -63,7 +63,10 @@ export function useTerminalContainerFitSync({
         timerId = null
         const manager = managerRef.current
         if (manager) {
-          fitPanes(manager)
+          // Settled, not immediate: this debounce fires alongside the per-pane observer and the
+          // focus/visibility refits, and three immediate fits against different transient
+          // geometries are what made the terminal visibly re-lay-out for about a second.
+          requestFitPanesSettled(manager)
         }
       }, RESIZE_DEBOUNCE_MS)
     })

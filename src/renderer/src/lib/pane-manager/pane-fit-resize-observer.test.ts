@@ -3,6 +3,7 @@ import type { ManagedPaneInternal, ScrollState } from './pane-manager-types'
 import {
   attachPaneFitResizeObserver,
   detachPaneFitResizeObserver,
+  requestFitAllPanesSettled,
   requestStablePaneFit
 } from './pane-fit-resize-observer'
 import {
@@ -257,5 +258,61 @@ describe('attachPaneFitResizeObserver', () => {
     expect(cancelAnimationFrame).toHaveBeenCalledWith(scheduledRafId)
     expect(pane.fitAddon.fit).not.toHaveBeenCalled()
     expect(pane.pendingObservedFitRafId).toBeNull()
+  })
+})
+
+describe('requestFitAllPanesSettled', () => {
+  beforeEach(() => {
+    nextRafId = 1
+    pendingRafs = new Map()
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        const id = nextRafId++
+        pendingRafs.set(id, callback)
+        return id
+      })
+    )
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      vi.fn((id: number) => pendingRafs.delete(id))
+    )
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  // Why this matters: a window show/focus wakes several fit paths at once. Before they were
+  // coalesced, each fitted immediately against a different transient geometry and xterm visibly
+  // re-laid-out two or three times per gesture.
+  it('collapses a burst of requests into one fit per pane', () => {
+    const paneA = createPane()
+    const paneB = createPane()
+    const panes = new Map([
+      [1, paneA],
+      [2, paneB]
+    ])
+
+    requestFitAllPanesSettled(panes)
+    requestFitAllPanesSettled(panes)
+    requestFitAllPanesSettled(panes)
+    // Nothing fits before the grid is measured as stable.
+    expect(paneA.fitAddon.fit).not.toHaveBeenCalled()
+
+    flushAnimationFrames()
+
+    expect(paneA.fitAddon.fit).toHaveBeenCalledTimes(1)
+    expect(paneB.fitAddon.fit).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips panes with no measurable geometry instead of fitting them blind', () => {
+    const pane = createPane(() => ({ cols: 80, rows: 24 }), { rect: { width: 0, height: 0 } })
+
+    requestFitAllPanesSettled(new Map([[1, pane]]))
+    flushAnimationFrames()
+
+    expect(pane.fitAddon.fit).not.toHaveBeenCalled()
   })
 })

@@ -29,6 +29,7 @@ import {
   fitAllPanesInternal,
   refitPanesUnder
 } from './pane-tree-ops'
+import { requestFitAllPanesSettled } from './pane-fit-resize-observer'
 import { toPublicPane } from './pane-public-view'
 import { applyTerminalGpuAcceleration } from './pane-terminal-gpu-acceleration'
 import { rebuildAttachedWebgl } from './pane-webgl-reattach'
@@ -196,6 +197,11 @@ export class PaneManager {
 
   fitAllPanes(): void {
     fitAllPanesInternal(this.panes)
+  }
+
+  /** Coalesced fit-all for burst triggers (resize, focus, window show). See the module comment. */
+  requestFitAllPanesSettled(): void {
+    requestFitAllPanesSettled(this.panes)
   }
 
   // Why: a raw synchronous fit on reveal can apply a transient DOM<->WebGL

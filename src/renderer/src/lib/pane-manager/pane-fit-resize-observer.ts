@@ -138,6 +138,25 @@ export function requestStablePaneFit(pane: StableFitPane, onSettled?: () => void
   waitForStableGrid()
 }
 
+/**
+ * Coalescing fit for every pane, for triggers that arrive in BURSTS.
+ *
+ * A window show, a focus change and a continuous resize each wake several independent fit paths
+ * (the container ResizeObserver's debounce, the focus rAF, the per-pane observer, visibility
+ * resume). When those called `safeFit` directly they each fitted immediately, so a single gesture
+ * reflowed xterm two or three times against different transient geometries — the terminal visibly
+ * re-laid-out for about a second. Routing them here makes them join ONE per-pane stability loop:
+ * the grid is measured across frames and the reflow happens once, when the size has stopped moving.
+ *
+ * Discrete, known-final layout changes (the sidebar toggle's pre-paint sync fit) deliberately keep
+ * fitting synchronously: they have no burst to coalesce and a deferred fit would flash instead.
+ */
+export function requestFitAllPanesSettled(panes: Map<number, ManagedPaneInternal>): void {
+  for (const pane of panes.values()) {
+    requestStablePaneFit(pane)
+  }
+}
+
 export function attachPaneFitResizeObserver(pane: ManagedPaneInternal): void {
   detachPaneFitResizeObserver(pane)
 

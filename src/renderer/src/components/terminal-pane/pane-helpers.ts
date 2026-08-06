@@ -4,6 +4,14 @@ export function fitPanes(manager: PaneManager): void {
   manager.fitAllPanes()
 }
 
+/**
+ * Fit every pane once the geometry settles. Use this for triggers that arrive in bursts — window
+ * resize, focus, window show — so one gesture reflows xterm once instead of two or three times.
+ */
+export function requestFitPanesSettled(manager: PaneManager): void {
+  manager.requestFitAllPanesSettled()
+}
+
 export function focusActivePane(manager: PaneManager): void {
   // Why: tab rename focuses the input on the next frame. A queued terminal
   // layout focus can land in between mount and focus, blurring rename closed.

@@ -109,7 +109,7 @@ import { getRemoteRuntimePtyEnvironmentId } from '@/runtime/runtime-terminal-str
 import { getConnectionId } from '@/lib/connection-context'
 import { getExecutionHostIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { isPaneReplaying, type ReplayingPanesRef } from './replay-guard'
-import { fitAndFocusPanes, fitPanes } from './pane-helpers'
+import { focusActivePane, requestFitPanesSettled } from './pane-helpers'
 import { markTerminalPinnedViewport } from '@/lib/pane-manager/terminal-scroll-intent'
 import { syncTerminalScrollIntentSoon } from '@/lib/pane-manager/terminal-scroll-intent-settle'
 import { registerRuntimeTerminalTab, scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
@@ -685,11 +685,12 @@ export function useTerminalPaneLifecycle({
         if (!manager) {
           return
         }
+        // Settled: a window show/focus wakes this alongside the container observer and visibility
+        // resume, so coalesce into one reflow instead of fitting per waking path.
+        requestFitPanesSettled(manager)
         if (focusActive) {
-          fitAndFocusPanes(manager)
-          return
+          focusActivePane(manager)
         }
-        fitPanes(manager)
       })
     }
 
