@@ -813,11 +813,255 @@ function initAppWindow() {
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()))
 }
 
+/* ------------------------------------------------------------ feature mocks
+ * The dashboard, run-log and usage visuals. Same rules as the app window:
+ * loop only while visible, and reduced motion gets the finished state. */
+
+/** Run `tick` on an interval only while `el` is on screen. */
+function whileVisible(el, tick, ms) {
+  let timer = null
+  const start = () => {
+    if (timer === null) {
+      timer = window.setInterval(tick, ms)
+    }
+  }
+  const stop = () => {
+    if (timer !== null) {
+      window.clearInterval(timer)
+      timer = null
+    }
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            start()
+          } else {
+            stop()
+          }
+        }
+      },
+      { threshold: 0 }
+    ).observe(el)
+  } else {
+    start()
+  }
+  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()))
+}
+
+function initAgentBoard() {
+  const list = document.querySelector('[data-agent-rows]')
+  if (!list) {
+    return
+  }
+
+  const AGENTS = [
+    {
+      name: 'Claude Code',
+      steps: ['Edit src/cart/totals.ts', 'Bash npm test -- totals', 'Read src/checkout/form.tsx']
+    },
+    {
+      name: 'Codex',
+      steps: ['Grep "invoice_total"', 'Edit app/models/invoice.rb', 'Bash bundle exec rspec']
+    },
+    {
+      name: 'Gemini',
+      steps: ['Read docs/deploy.md', 'Bash git diff --stat', 'Edit config/nginx.conf']
+    },
+    { name: 'OpenCode', steps: ['Bash pnpm build', 'Read vite.config.ts', 'Edit src/router.ts'] }
+  ]
+
+  const rows = AGENTS.map((agent, index) => {
+    const li = document.createElement('li')
+    li.className = 'arow'
+    li.innerHTML =
+      '<span class="arow-dot"></span>' +
+      '<span class="arow-main"><span class="arow-name"></span><br /><span class="arow-step"></span></span>' +
+      '<span class="arow-state"></span>'
+    li.querySelector('.arow-name').textContent = agent.name
+    list.append(li)
+    return {
+      el: li,
+      step: li.querySelector('.arow-step'),
+      state: li.querySelector('.arow-state'),
+      agent,
+      at: index,
+      waiting: false
+    }
+  })
+
+  const count = document.querySelector('[data-agent-count]')
+  function paint() {
+    for (const row of rows) {
+      row.step.textContent = row.waiting
+        ? 'stopped — waiting on you'
+        : row.agent.steps[row.at % row.agent.steps.length]
+      row.state.textContent = row.waiting ? 'Needs you' : 'Working'
+      if (row.waiting) {
+        row.el.dataset.state = 'answered'
+      } else {
+        delete row.el.dataset.state
+      }
+    }
+    if (count) {
+      const busy = rows.filter((row) => !row.waiting).length
+      count.textContent = `${busy} running`
+    }
+  }
+
+  paint()
+  if (reduceMotion.matches) {
+    rows[1].waiting = true
+    paint()
+    return
+  }
+
+  whileVisible(
+    list,
+    () => {
+      for (const row of rows) {
+        if (row.waiting) {
+          if (Math.random() < 0.35) {
+            row.waiting = false
+            row.at += 1
+          }
+        } else if (Math.random() < 0.18) {
+          row.waiting = true
+        } else if (Math.random() < 0.55) {
+          row.at += 1
+        }
+      }
+      paint()
+    },
+    1400
+  )
+}
+
+function initUsageBars() {
+  const bars = [...document.querySelectorAll('[data-us]')]
+  if (bars.length === 0) {
+    return
+  }
+  const fill = () => {
+    for (const bar of bars) {
+      bar.style.width = `${bar.dataset.us}%`
+    }
+  }
+  if (reduceMotion.matches || !('IntersectionObserver' in window)) {
+    fill()
+    return
+  }
+  const io = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      fill()
+      io.disconnect()
+    }
+  })
+  io.observe(bars[0])
+}
+
+function initRunLog() {
+  const root = document.querySelector('.runlog')
+  if (!root) {
+    return
+  }
+  const steps = [...root.querySelectorAll('[data-step]')]
+  const tail = root.querySelector('[data-run-tail]')
+  const state = root.querySelector('[data-run-state]')
+
+  const LOG = [
+    ['$ git pull --ff-only', 'Updating 4d9b57b..ad752b3', 'Fast-forward · 12 files changed'],
+    ['$ wp cache flush', 'Success: The cache was flushed.'],
+    ['rsync dist/ → themes/roads/dist', 'sent 214 files · 3.1 MB', 'deploy complete ✓']
+  ]
+
+  function renderDone() {
+    for (const step of steps) {
+      step.setAttribute('data-done', '')
+      step.removeAttribute('data-on')
+    }
+    if (tail) {
+      tail.innerHTML = LOG.flat()
+        .slice(-4)
+        .map((line) => `<div>${line}</div>`)
+        .join('')
+    }
+    if (state) {
+      state.textContent = 'succeeded'
+    }
+  }
+
+  if (reduceMotion.matches) {
+    renderDone()
+    return
+  }
+
+  let at = 0 // 0..steps*2: even = start step, odd = finish step
+  whileVisible(
+    root,
+    () => {
+      const total = steps.length * 2
+      if (at >= total + 2) {
+        // hold, then restart
+        at = 0
+        for (const step of steps) {
+          step.removeAttribute('data-done')
+          step.removeAttribute('data-on')
+        }
+        if (tail) {
+          tail.innerHTML = ''
+        }
+        if (state) {
+          state.textContent = 'running'
+        }
+        return
+      }
+      const index = Math.floor(at / 2)
+      if (at % 2 === 0 && index < steps.length) {
+        steps[index].setAttribute('data-on', '')
+        if (tail && LOG[index]) {
+          tail.innerHTML = LOG[index].map((line) => `<div>${line}</div>`).join('')
+        }
+      } else if (index < steps.length) {
+        steps[index].removeAttribute('data-on')
+        steps[index].setAttribute('data-done', '')
+      }
+      if (state && at === total) {
+        state.textContent = 'succeeded'
+      }
+      at += 1
+    },
+    1300
+  )
+}
+
+function featureReveals() {
+  if (!hasGsap) {
+    return
+  }
+  for (const feature of document.querySelectorAll('.feature')) {
+    const parts = [feature.querySelector('.feature-copy'), feature.querySelector('.mock')].filter(
+      Boolean
+    )
+    for (const part of parts) {
+      part.classList.add('anim')
+    }
+    gsap
+      .timeline({ scrollTrigger: { trigger: feature, start: 'top 80%' } })
+      .add(animIn(parts, { y: 26 }, { duration: 0.75, stagger: 0.12 }))
+  }
+}
+
 /* ------------------------------------------------------------------ boot */
 heroIntro()
 panelReveals()
 initBoard()
 initAppWindow()
+initAgentBoard()
+initUsageBars()
+initRunLog()
+featureReveals()
 phaseSequence()
 stepProgress()
 counters()

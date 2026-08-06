@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Muster — desktop IDE for parallel coding agents</title>
-    <meta name="description" content="Run coding agents across git worktrees, with WordPress imports, deploys and ActiveCollab tasks. Download and install guide for the efront team." />
+    <meta name="description" content="Run several coding agents at once, with team tasks, WordPress imports and deploys built in. Download and install guide for the efront team." />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
@@ -14,9 +14,9 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Muster" />
     <meta property="og:title" content="Muster \u{2014} desktop IDE for parallel coding agents" />
-    <meta property="og:description" content="Run coding agents across git worktrees, with WordPress imports, deploys and ActiveCollab tasks. Download and install guide for the efront team." />
-    <meta property="og:image" content="http://127.0.0.1:8913/assets/og.png" />
-    <meta property="og:url" content="http://127.0.0.1:8913/" />
+    <meta property="og:description" content="Run several coding agents at once, with team tasks, WordPress imports and deploys built in. Download and install guide for the efront team." />
+    <meta property="og:image" content="http://127.0.0.1:8914/assets/og.png" />
+    <meta property="og:url" content="http://127.0.0.1:8914/" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -66,12 +66,17 @@
         <nav class="index-nav">
           <a href="#overview"><span class="idx">01</span><span>Overview</span></a>
           <a href="#model"><span class="idx">02</span><span>How it works</span></a>
-          <a href="#capabilities"><span class="idx">03</span><span>Capabilities</span></a>
-          <a href="#install"><span class="idx">04</span><span>Install</span></a>
-          <a href="#updates"><span class="idx">05</span><span>Updates</span></a>
-          <a href="#spec"><span class="idx">06</span><span>Spec</span></a>
-          <a href="#agents"><span class="idx">07</span><span>For agents</span></a>
-          <a href="#trouble"><span class="idx">08</span><span>Trouble</span></a>
+          <a href="#agents-sec"><span class="idx">03</span><span>Agents</span></a>
+          <a href="#sites-sec"><span class="idx">04</span><span>Sites</span></a>
+          <a href="#tasks-sec"><span class="idx">05</span><span>Tasks</span></a>
+          <a href="#review"><span class="idx">06</span><span>Review</span></a>
+          <a href="#workbench"><span class="idx">07</span><span>Workbench</span></a>
+          <a href="#automations"><span class="idx">08</span><span>Automations</span></a>
+          <a href="#install"><span class="idx">09</span><span>Install</span></a>
+          <a href="#updates"><span class="idx">10</span><span>Updates</span></a>
+          <a href="#spec"><span class="idx">11</span><span>Spec</span></a>
+          <a href="#agents"><span class="idx">12</span><span>MCP</span></a>
+          <a href="#trouble"><span class="idx">13</span><span>Trouble</span></a>
         </nav>
 
         <div class="index-foot">
@@ -109,10 +114,9 @@
             </h1>
 
             <p class="lede">
-              A desktop IDE for running coding agents across git worktrees, with WordPress site
-              imports and deploys and ActiveCollab tasks built in. Each agent works in its own
-              checkout, so parallel jobs never touch the same files, and the sidebar shows which one
-              has stopped and needs attention.
+              A desktop app for running several coding agents at once — with your team's tasks,
+              WordPress imports and deploys, terminals and code review in the same window. The
+              sidebar shows which agent has stopped and needs attention.
             </p>
 
             <dl class="figures">
@@ -121,8 +125,8 @@
                 <dd><span data-count="19">19</span></dd>
               </div>
               <div>
-                <dt>Worktrees</dt>
-                <dd><span data-count="1">1</span><i>per agent</i></dd>
+                <dt>Task trackers</dt>
+                <dd><span data-count="7">7</span></dd>
               </div>
               <div>
                 <dt>Tools for agents</dt>
@@ -201,7 +205,7 @@
             <ol class="phase-list">
               <li class="phase" data-phase="0">
                 <span class="phase-n">Phase 01</span>
-                <h3>Muster creates the worktree</h3>
+                <h3>Muster creates the workspace</h3>
                 <p>
                   A workspace is a real <code>git worktree</code> on a branch you choose, in its own
                   directory, with your setup script run against it. Nothing is copied by hand and
@@ -241,21 +245,20 @@
           </div>
         </section>
 
-        <!-- ======================================================= 03 capabilities -->
-        <section class="panel" id="capabilities">
+        <!-- ======================================================= 03 agents -->
+        <section class="panel" id="agents-sec">
           <header class="phead">
-            <p class="strip"><span class="strip-n">03</span> Capabilities</p>
-            <h2>What's in the app</h2>
+            <p class="strip"><span class="strip-n">03</span> Agents</p>
+            <h2>19 CLI agents, tracked live</h2>
+            <p class="phead-note">
+              Each agent runs as a session with real state — working, waiting on you, done — reported
+              by hooks installed into the agent's own config, not guessed from terminal output. The
+              status bar tracks your plan usage for each provider you're signed into.
+            </p>
           </header>
 
-          <div class="cap-grid">
-            <article class="cap">
-              <p class="cap-k">Agents</p>
-              <h3>19 CLI agents supported</h3>
-              <p>
-                Each runs as a tracked session with live state — working, waiting, blocked, done —
-                reported through installed hooks rather than guessed from terminal output.
-              </p>
+          <div class="feature">
+            <div class="feature-copy">
               <ul class="chips">
                 <li>Claude Code</li>
                 <li>Codex</li>
@@ -274,16 +277,41 @@
                 <li>Antigravity</li>
                 <li class="more">+4</li>
               </ul>
-            </article>
+              <ul class="ticks">
+                <li>Dashboard shows every agent's current tool step</li>
+                <li>Rows light up when an agent needs an answer</li>
+                <li>Sessions resume — history survives a window close</li>
+                <li>Per-provider usage meters in the status bar</li>
+              </ul>
+            </div>
 
-            <article class="cap">
-              <p class="cap-k">Sites</p>
-              <h3>Imports and deploys, per environment</h3>
-              <p>
-                Each site keeps its environments, SSH credentials and per-branch targets. The branch
-                you have checked out decides where a run goes; if it matches no environment, the run
-                refuses to start.
-              </p>
+            <!-- Decorative recreation of the agent dashboard. -->
+            <div class="mock agentboard" aria-hidden="true">
+              <div class="mock-bar">Agents <span class="mock-n" data-agent-count>4 running</span></div>
+              <ul class="arow-list" data-agent-rows></ul>
+              <div class="usage-strip">
+                <span class="us"><i>claude</i><b class="us-bar"><u data-us="34"></u></b>34%</span>
+                <span class="us"><i>codex</i><b class="us-bar"><u data-us="12"></u></b>12%</span>
+                <span class="us hide-sm"><i>gemini</i><b class="us-bar"><u data-us="61"></u></b>61%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================= 04 sites -->
+        <section class="panel" id="sites-sec">
+          <header class="phead">
+            <p class="strip"><span class="strip-n">04</span> Sites</p>
+            <h2>WordPress imports and deploys</h2>
+            <p class="phead-note">
+              Each site keeps its environments, SSH credentials and per-branch targets. The branch
+              you have checked out decides where a run goes; if it matches no environment, the run
+              refuses to start instead of guessing production.
+            </p>
+          </header>
+
+          <div class="feature flip">
+            <div class="feature-copy">
               <div class="split">
                 <div>
                   <p class="mini">Import steps</p>
@@ -303,60 +331,199 @@
                   </ul>
                 </div>
               </div>
-            </article>
+              <ul class="ticks">
+                <li>Live logs stream while a run executes</li>
+                <li>Runs started by an agent show the same logs</li>
+                <li>Credentials stored per environment in the keychain</li>
+              </ul>
+            </div>
 
-            <article class="cap">
-              <p class="cap-k">Tasks</p>
-              <h3>ActiveCollab, in the sidebar</h3>
-              <p>
-                My Work lists what is assigned to you, grouped by project. Open a project to see
-                every task under its own task lists, with assignee avatars and who created it. Start
-                a workspace from a task and the branch and context arrive prefilled.
-              </p>
-
-              <!-- Decorative recreation of the project task list. -->
-              <div class="tasks" aria-hidden="true">
-                <div class="tasks-bar"><span class="tasks-back">←</span> Dev Portal <span class="tasks-n">47</span></div>
-                <p class="tasks-group">Backlog <span>9</span></p>
-                <ul class="tasks-rows">
-                  <li><span class="tid">#728</span><span class="ttl">Improve visibility of tasks in report</span></li>
-                  <li>
-                    <span class="tid">#698</span><span class="ttl">Closed Captions embed integration</span>
-                    <span class="tlab lab-y">Coming up</span>
-                  </li>
-                  <li>
-                    <span class="tid">#657</span><span class="ttl">Sections Syncer</span>
-                    <span class="tlab lab-o">Medium priority</span>
-                    <span class="tav">JV</span>
-                  </li>
-                </ul>
-                <p class="tasks-group">Current discussion <span>6</span></p>
-                <ul class="tasks-rows">
-                  <li>
-                    <span class="tid">#721</span><span class="ttl">Transfer GET vars when redirecting</span>
-                    <span class="tlab lab-g">To be discussed</span>
-                    <span class="tav">RM</span>
-                  </li>
-                  <li><span class="tid">#643</span><span class="ttl">Site Downloader: skip directories</span><span class="tlab lab-r">On hold</span></li>
-                </ul>
+            <!-- Decorative recreation of a deploy run. -->
+            <div class="mock runlog" aria-hidden="true">
+              <div class="mock-bar">
+                deploy · roads-australia
+                <span class="env-pill">staging</span>
+                <span class="mock-n" data-run-state>running</span>
               </div>
-            </article>
+              <ul class="run-steps" data-run-steps>
+                <li data-step><span class="rs-m"></span>Git pull on server</li>
+                <li data-step><span class="rs-m"></span>Clear server cache</li>
+                <li data-step><span class="rs-m"></span>Deploy theme dist</li>
+              </ul>
+              <div class="run-tail" data-run-tail></div>
+            </div>
+          </div>
+        </section>
 
-            <article class="cap">
-              <p class="cap-k">Terminals</p>
+        <!-- ======================================================= 05 tasks -->
+        <section class="panel" id="tasks-sec">
+          <header class="phead">
+            <p class="strip"><span class="strip-n">05</span> Tasks</p>
+            <h2>Your tracker, in the sidebar</h2>
+            <p class="phead-note">
+              ActiveCollab, Jira, Linear, GitHub, GitLab, Azure DevOps and Gitea. My Work lists what
+              is assigned to you; open a project to see every task under its own lists, with labels,
+              assignee avatars and who created it.
+            </p>
+          </header>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <ul class="ticks">
+                <li>Start a workspace straight from a task — branch and context prefilled</li>
+                <li>Comment on the task without leaving the app</li>
+                <li>Labels and priorities shown as your tracker sets them</li>
+                <li>New assignments appear as they land</li>
+              </ul>
+            </div>
+
+            <!-- Decorative recreation of the project task list. -->
+            <div class="mock tasks" aria-hidden="true">
+              <div class="tasks-bar"><span class="tasks-back">←</span> Dev Portal <span class="tasks-n">47</span></div>
+              <p class="tasks-group">Backlog <span>9</span></p>
+              <ul class="tasks-rows">
+                <li><span class="tid">#728</span><span class="ttl">Improve visibility of tasks in report</span></li>
+                <li>
+                  <span class="tid">#698</span><span class="ttl">Closed Captions embed integration</span>
+                  <span class="tlab lab-y">Coming up</span>
+                </li>
+                <li class="sel">
+                  <span class="tid">#657</span><span class="ttl">Sections Syncer</span>
+                  <span class="tlab lab-o">Medium priority</span>
+                  <span class="tav">JV</span>
+                </li>
+              </ul>
+              <p class="tasks-group">Current discussion <span>6</span></p>
+              <ul class="tasks-rows">
+                <li>
+                  <span class="tid">#721</span><span class="ttl">Transfer GET vars when redirecting</span>
+                  <span class="tlab lab-g">To be discussed</span>
+                  <span class="tav">RM</span>
+                </li>
+                <li><span class="tid">#643</span><span class="ttl">Site Downloader: skip directories</span><span class="tlab lab-r">On hold</span></li>
+              </ul>
+              <div class="tasks-foot"><span class="tasks-cta">▸ Start work on #657</span><span class="dim">creates workspace · fix/sections-syncer</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================= 06 review -->
+        <section class="panel" id="review">
+          <header class="phead">
+            <p class="strip"><span class="strip-n">06</span> Review</p>
+            <h2>Read the diff, comment, open the PR</h2>
+            <p class="phead-note">
+              Every workspace has a diff view of what its agent changed. Leave a comment on a line
+              and send it to the agent as its next instruction. When it's right, open the pull
+              request from the app — GitHub, GitLab, Bitbucket, Gitea or Azure DevOps.
+            </p>
+          </header>
+
+          <div class="feature flip">
+            <div class="feature-copy">
+              <ul class="ticks">
+                <li>Side-by-side or unified, per file</li>
+                <li>Line comments go back to the agent as instructions</li>
+                <li>PR title and description drafted from the change</li>
+                <li>Works with your provider's PR template</li>
+              </ul>
+            </div>
+
+            <!-- Decorative recreation of the diff view. -->
+            <div class="mock diff" aria-hidden="true">
+              <div class="mock-bar">src/cart/totals.ts <span class="mock-n">+6 −3</span></div>
+              <ul class="diff-lines">
+                <li class="ctx"><span class="dn">41</span>const subtotal = lines.reduce(sum, 0)</li>
+                <li class="del"><span class="dn">42</span>const total = round(subtotal * tax)</li>
+                <li class="add"><span class="dn">42</span>const total = subtotal * tax</li>
+                <li class="add"><span class="dn">43</span>return { total: round(total) }</li>
+              </ul>
+              <div class="diff-comment" data-diff-comment>
+                <p class="dc-a"><span class="tav">JV</span> line 42</p>
+                <p class="dc-t">Round once at the end, not per step — cents drift otherwise.</p>
+                <p class="dc-send">↩ Sent to Claude Code</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================= 07 workbench -->
+        <section class="panel" id="workbench">
+          <header class="phead">
+            <p class="strip"><span class="strip-n">07</span> Workbench</p>
+            <h2>Terminals, browser and palette</h2>
+            <p class="phead-note">
+              The rest of the working surface: real split terminals that survive a window close, a
+              browser pane for checking the site you're changing, and a command palette over all of
+              it.
+            </p>
+          </header>
+
+          <div class="tiles">
+            <article class="tile">
               <h3>Split, persistent terminals</h3>
               <p>
-                Split panes, per-pane titles, sessions that survive a window close. Local, SSH and
-                remote runtime hosts behave identically from the pane's point of view.
+                Split panes with per-pane titles. Local, SSH and remote runtime hosts behave
+                identically from the pane's point of view, and sessions survive a window close.
               </p>
             </article>
+            <article class="tile">
+              <h3>Browser pane</h3>
+              <p>
+                Open the site next to the agent changing it. Annotate what's wrong on the page and
+                send the annotation to the agent.
+              </p>
+            </article>
+            <article class="tile">
+              <h3>Command palette</h3>
+              <p>
+                <kbd>⌘J</kbd> jumps to any workspace, task or action. Recently used entries come
+                first.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ======================================================= 08 automations -->
+        <section class="panel" id="automations">
+          <header class="phead">
+            <p class="strip"><span class="strip-n">08</span> Automations</p>
+            <h2>Agents on a schedule</h2>
+            <p class="phead-note">
+              An automation is a prompt, a project and a schedule. Muster starts the agent run
+              unattended, keeps the full history, and can require a precheck to pass before anything
+              starts.
+            </p>
+          </header>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <ul class="ticks">
+                <li>Cron or picker schedules, with a grace window for missed runs</li>
+                <li>Every run keeps its transcript and result</li>
+                <li>Prechecks gate the run — fail fast, start nothing</li>
+                <li>Manual "run now" whenever you need it early</li>
+              </ul>
+            </div>
+
+            <!-- Decorative recreation of two automation cards. -->
+            <div class="mock autos" aria-hidden="true">
+              <div class="auto-card">
+                <p class="auto-name">Dependency audit <span class="auto-when">Mon 09:00</span></p>
+                <p class="auto-runs"><span class="ar ok"></span><span class="ar ok"></span><span class="ar ok"></span><span class="ar bad"></span><span class="ar ok"></span> <span class="dim">last 5 runs</span></p>
+              </div>
+              <div class="auto-card">
+                <p class="auto-name">Stale branch report <span class="auto-when">Daily 07:30</span></p>
+                <p class="auto-runs"><span class="ar ok"></span><span class="ar ok"></span><span class="ar ok"></span><span class="ar ok"></span><span class="ar ok"></span> <span class="dim">last 5 runs</span></p>
+              </div>
+            </div>
           </div>
         </section>
 
         <!-- ======================================================= 04 install -->
         <section class="panel" id="install">
           <header class="phead">
-            <p class="strip"><span class="strip-n">04</span> Install</p>
+            <p class="strip"><span class="strip-n">09</span> Install</p>
             <h2>Four steps, once per Mac</h2>
             <p class="phead-note">
               Step three is a Terminal command; what it does and why is explained under it.
@@ -447,7 +614,7 @@
         <!-- ======================================================= 05 updates -->
         <section class="panel" id="updates">
           <header class="phead">
-            <p class="strip"><span class="strip-n">05</span> Updates</p>
+            <p class="strip"><span class="strip-n">10</span> Updates</p>
             <h2>Updates</h2>
           </header>
 
@@ -479,7 +646,7 @@
         <!-- ======================================================= 06 spec -->
         <section class="panel" id="spec">
           <header class="phead">
-            <p class="strip"><span class="strip-n">06</span> Spec</p>
+            <p class="strip"><span class="strip-n">11</span> Spec</p>
             <h2>Technical details</h2>
           </header>
 
@@ -509,7 +676,7 @@
         <!-- ======================================================= 07 for agents -->
         <section class="panel" id="agents">
           <header class="phead">
-            <p class="strip"><span class="strip-n">07</span> For agents</p>
+            <p class="strip"><span class="strip-n">12</span> For agents</p>
             <h2>The MCP server</h2>
             <p class="phead-note">
               Muster ships an MCP server. An agent working in a checkout gets 25 tools to inspect and
@@ -559,7 +726,7 @@
         <!-- ======================================================= 08 trouble -->
         <section class="panel" id="trouble">
           <header class="phead">
-            <p class="strip"><span class="strip-n">08</span> Trouble</p>
+            <p class="strip"><span class="strip-n">13</span> Trouble</p>
             <h2>If something goes wrong</h2>
           </header>
 
