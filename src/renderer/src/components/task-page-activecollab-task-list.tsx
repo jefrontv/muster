@@ -144,6 +144,17 @@ export function ActiveCollabTaskList({
     void loadPage(1)
   }, [loadPage])
 
+  // The main-process poller (Settings → Notifications cadence, default one minute) already detects
+  // assignment and status changes; its unread broadcast doubles as the freshness signal here, so a
+  // newly assigned task lands in an OPEN list at poll cadence instead of waiting for a remount.
+  // Optional chaining: web/runtime stand-ins and unit suites mount this list without the bridge.
+  useEffect(() => {
+    const unsubscribe = window.api?.activecollab?.onUnreadChanged?.(() => {
+      void loadPage(1, true)
+    })
+    return () => unsubscribe?.()
+  }, [loadPage])
+
   // Derived rather than reset from an effect: until the reload lands, a changed scope must not
   // show the previous instance's paging or error.
   const scoped = load.prefix === cachePrefix
