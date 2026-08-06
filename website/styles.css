@@ -209,6 +209,8 @@ kbd {
   font-family: var(--mono);
   font-size: 0.6875rem;
   color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sb-brand {
@@ -241,6 +243,16 @@ kbd {
   letter-spacing: 0.09em;
   color: color-mix(in srgb, var(--faint) 70%, transparent);
   margin-right: 0.35rem;
+}
+
+.sb-version {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sb-version b {
+  font-weight: 500;
+  color: var(--text);
 }
 
 .sb-live {
@@ -498,7 +510,18 @@ h3 {
   width: 100%;
   height: 100%;
   z-index: -2;
-  opacity: 0.6;
+  opacity: 0.55;
+  /* Copy is left-aligned, so the field is masked out of the reading column — a track running
+     through a sentence reads as a strikethrough, which was exactly what happened on narrow
+     viewports before this. */
+  mask-image: linear-gradient(to right, transparent 0%, transparent 38%, #000 72%);
+}
+
+@media (max-width: 60rem) {
+  .lanes {
+    opacity: 0.32;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 22%);
+  }
 }
 
 /* Blueprint grid: the console's drafting surface, not a decorative gradient. */
@@ -669,6 +692,22 @@ h3 {
 .btn.ghost:hover {
   border-color: var(--faint);
   background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+/* Only shown once the chip is positively identified; an unknown Mac gets no claim either way. */
+.detected {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--signal-text);
+  border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  margin-left: 0.1rem;
 }
 
 .btn.bare {

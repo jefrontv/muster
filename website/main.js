@@ -668,3 +668,86 @@ indexNav()
 copyButtons()
 magnetic()
 initLanes()
+
+/* ------------------------------------------------------------------ live release
+ * The page claims the download is always current, so it should be able to say WHICH build that is.
+ * Read from the public releases API; a rate limit, an offline visitor or a private repo simply
+ * leaves the slot hidden rather than showing a stale number baked in at build time. */
+async function liveRelease() {
+  const slot = document.querySelector('[data-version]')
+  if (!slot) {
+    return
+  }
+  try {
+    const response = await fetch('https://api.github.com/repos/jefrontv/muster/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' }
+    })
+    if (!response.ok) {
+      return
+    }
+    const release = await response.json()
+    const tag = typeof release.tag_name === 'string' ? release.tag_name.replace(/^v/, '') : ''
+    if (!tag) {
+      return
+    }
+    const value = slot.querySelector('b')
+    if (value) {
+      value.textContent = tag
+    }
+    slot.hidden = false
+  } catch {
+    // Offline or blocked: the download links still work, so say nothing.
+  }
+}
+
+/* ------------------------------------------------------------------ chip detection
+ * Removes a decision the reader should not have to make. Only claims a match when the GPU string
+ * actually names an Apple chip — `navigator.platform` reports "MacIntel" on Apple Silicon too, so
+ * trusting it would send half the team to the wrong build. Anything ambiguous is left alone. */
+function detectChip() {
+  const isMac = /Mac/i.test(navigator.userAgent)
+  if (!isMac) {
+    return null
+  }
+  try {
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    if (!gl) {
+      return null
+    }
+    const info = gl.getExtension('WEBGL_debug_renderer_info')
+    const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : ''
+    if (/Apple\s+M\d/i.test(renderer)) {
+      return 'arm64'
+    }
+    if (/Intel|AMD|Radeon/i.test(renderer)) {
+      return 'x64'
+    }
+  } catch {
+    // WebGL blocked; fall through to no claim.
+  }
+  return null
+}
+
+function markDetectedBuild() {
+  const chip = detectChip()
+  if (!chip) {
+    return
+  }
+  const wanted = chip === 'arm64' ? 'arm64' : 'x64'
+  for (const link of document.querySelectorAll('a[href*="muster-macos-"]')) {
+    if (!link.href.includes(`muster-macos-${wanted}`)) {
+      continue
+    }
+    if (link.querySelector('.detected') || link.classList.contains('index-dl')) {
+      continue
+    }
+    const badge = document.createElement('span')
+    badge.className = 'detected'
+    badge.textContent = 'your Mac'
+    link.append(badge)
+  }
+}
+
+liveRelease()
+markDetectedBuild()
