@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Muster">
+  <title>Muster</title>
+
+  <!-- Squircle tile: 22.3% corner radius matches the macOS Big Sur icon curve. -->
+  <rect width="512" height="512" rx="114" fill="#0E0E14"/>
+  <rect x="6" y="6" width="500" height="500" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="12"/>
+
+  <!-- A muster roll: one mark per name, the accented row is the unit that answered.
+       Three rows is the fewest that still reads as a roster at 16px. -->
+  <g fill="#F5F5F7">
+    <circle cx="150" cy="172" r="22"/>
+    <rect x="196" y="152" width="188" height="40" rx="20"/>
+
+    <circle cx="150" cy="256" r="22" fill="#22D3EE"/>
+    <rect x="196" y="236" width="140" height="40" rx="20" fill="#22D3EE"/>
+
+    <circle cx="150" cy="340" r="22" fill-opacity=".4"/>
+    <rect x="196" y="320" width="188" height="40" rx="20" fill-opacity=".4"/>
+  </g>
+</svg>
