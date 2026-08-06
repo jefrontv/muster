@@ -1,6 +1,6 @@
-const { chmodSync, existsSync, readdirSync } = require('node:fs')
+const { chmodSync, cpSync, existsSync, mkdirSync, readdirSync } = require('node:fs')
 const { execFileSync } = require('node:child_process')
-const { join, resolve } = require('node:path')
+const { dirname, join, resolve } = require('node:path')
 const electronBuilderNativeRebuild = require('./scripts/electron-builder-native-rebuild.cjs')
 const {
   assertPackagedDaemonEntryExists,
@@ -189,6 +189,25 @@ module.exports = {
     }
     prunePackagedRuntimeNodeModules(resourcesDir, context.electronPlatformName, context.arch)
     verifyPackagedMainRuntimeDeps(resourcesDir)
+    // Why: the site-mcp shim runs the server under plain Node, where require('electron') must
+    // resolve to the {} stub emitted at out/main/node_modules/electron. electron-builder's file
+    // collector silently drops nested node_modules directories, so the asarUnpack glob for it
+    // never had anything to unpack — copy the stub into the unpacked tree by hand and fail the
+    // build if the source stub is missing, because a package without it ships a broken MCP server.
+    const stubSource = join(__dirname, '..', 'out', 'main', 'node_modules', 'electron')
+    const stubTarget = join(
+      resourcesDir,
+      'app.asar.unpacked',
+      'out',
+      'main',
+      'node_modules',
+      'electron'
+    )
+    if (!existsSync(stubSource)) {
+      throw new Error(`[site-mcp] electron stub missing at ${stubSource}; run the main build first.`)
+    }
+    mkdirSync(dirname(stubTarget), { recursive: true })
+    cpSync(stubSource, stubTarget, { recursive: true })
     // Why: boot the packaged daemon-entry under plain Node, but only for the
     // slice matching the packaging host's arch — daemon-entry.js is JS, yet it
     // require()s the native (N-API) node-pty for the TARGET arch, which the host
