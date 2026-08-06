@@ -678,6 +678,12 @@ async function liveRelease() {
   if (!slot) {
     return
   }
+  // The PHP page prints the version server-side, where crawlers and no-JS readers can see it. When
+  // it has already done so, this fetch is pure waste — and worse, it would spend the visitor's own
+  // GitHub rate limit to arrive at the same answer. Only the static build reaches past this.
+  if (!slot.hidden) {
+    return
+  }
   try {
     const response = await fetch('https://api.github.com/repos/jefrontv/muster/releases/latest', {
       headers: { Accept: 'application/vnd.github+json' }

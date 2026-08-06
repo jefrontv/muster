@@ -5,31 +5,53 @@ package install, nothing to compile.
 
 ```
 website/
-  index.html          markup and all copy
+  index.php           the page (PHP only renders the release number and absolute URLs)
+  index.html          static twin, for hosts without PHP
+  inc/release.php     GitHub release lookup, disk-cached
   styles.css          design tokens, layout, both themes
   main.js             GSAP timelines, the lane canvas, the workspace board, copy buttons
   assets/logo.svg     the app icon
+  assets/og.png       link-preview card (generated, see below)
   assets/fonts/       Geist Variable, the app's own typeface
   vendor/             GSAP + ScrollTrigger, vendored so the page works offline
 ```
 
+## Why there is PHP at all
+
+Two things have to be in the HTML as delivered, because link-preview crawlers (Slack, Teams,
+iMessage) never run JavaScript:
+
+- **`og:image` as an absolute URL.** Resolved from `$_SERVER`, so the same file works on any host
+  with no configuration.
+- **The current release number.** Fetched from the GitHub API and cached on disk for 15 minutes.
+
+Everything else is static. If GitHub is unreachable the page falls back to the last cached answer,
+and if there has never been one it simply omits the version — the download links do not depend on
+it, and the page still renders.
+
+The disk cache matters: unauthenticated GitHub requests are rate-limited per IP, and server-side
+that IP is shared by every visitor. Without the cache a busy page would exhaust the hour's quota.
+
 ## Run it locally
 
 ```sh
-cd website && python3 -m http.server 8899
-# then open http://localhost:8899
+cd website && php -S 127.0.0.1:8899     # the real thing
+cd website && python3 -m http.server 8899   # static twin, no version number
 ```
-
-Open it as a `file://` URL and the font and vendored scripts still load, but treat the served
-version as the real one.
 
 ## Deploy
 
-Any static host works — the page has no server dependency.
+**Your server (PHP):** copy the `website/` directory anywhere PHP 7.4+ serves files. No composer,
+no database, no writable directory beyond the system temp dir. Point the vhost at it and it works.
 
-**GitHub Pages:** Settings → Pages → deploy from a branch, folder `/website`. Push and it is live.
+**A static host (GitHub Pages, Netlify, S3):** `index.html` is the same page without the two
+server-rendered bits; it fills the version in with a client-side fetch instead. Regenerate it after
+editing `index.php`:
 
-**Netlify / Cloudflare Pages / S3:** publish directory `website`, no build command.
+```sh
+cd website && php -S 127.0.0.1:8899 &
+curl -s http://127.0.0.1:8899/ > index.html
+```
 
 ## Editing
 
