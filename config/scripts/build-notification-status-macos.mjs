@@ -9,6 +9,7 @@
 // macOS keys notification records to that identifier.
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -28,7 +29,25 @@ if (process.platform !== 'darwin') {
 }
 
 const args = process.argv.slice(2)
-const bundleId = readArg('--bundle-id') ?? 'com.stablyai.orca'
+/**
+ * The app's real CFBundleIdentifier, read from the packaging config rather than hardcoded: macOS
+ * keys notification authorization to the helper's code-signing identifier, so a stale literal here
+ * makes the helper report the authorization of an app that does not exist ("not-determined" while
+ * System Settings shows the real app enabled). Deriving it means a fork or a rename cannot drift.
+ */
+function resolveAppBundleId() {
+  try {
+    const config = createRequire(import.meta.url)('../electron-builder.config.cjs')
+    if (typeof config?.appId === 'string' && config.appId.length > 0) {
+      return config.appId
+    }
+  } catch {
+    // Fall through to the literal below.
+  }
+  return 'au.com.efront.muster'
+}
+
+const bundleId = readArg('--bundle-id') ?? resolveAppBundleId()
 const outputPath = readArg('--output') ?? defaultOutputPath
 // Why: dev launches only need the host architecture; release builds ship a
 // universal binary matching the app's x64 + arm64 targets.
