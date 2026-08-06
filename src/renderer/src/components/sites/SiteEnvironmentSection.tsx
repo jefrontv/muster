@@ -173,6 +173,13 @@ export function SiteEnvironmentSection({
         ))}
       </div>
 
+      {/* Secrets sit with the other connection settings; the step toggles and their run buttons
+          close the section as the action area. */}
+      <div className="space-y-3">
+        <SecretRow kind="ssh" isSet={presence.ssh} onSetSecret={onSetSecret} />
+        <SecretRow kind="db" isSet={presence.db} onSetSecret={onSetSecret} />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <fieldset className="flex flex-col space-y-2">
           <legend className="text-xs font-medium text-muted-foreground">
@@ -204,11 +211,6 @@ export function SiteEnvironmentSection({
           ))}
           {deployAction ? <div className="mt-auto pt-2">{deployAction}</div> : null}
         </fieldset>
-      </div>
-
-      <div className="space-y-3 border-t border-border pt-3">
-        <SecretRow kind="ssh" isSet={presence.ssh} onSetSecret={onSetSecret} />
-        <SecretRow kind="db" isSet={presence.db} onSetSecret={onSetSecret} />
       </div>
     </div>
   )
