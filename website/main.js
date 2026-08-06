@@ -657,10 +657,167 @@ function initLanes() {
   })
 }
 
+/* ------------------------------------------------------------ app window
+ * The hero's recreation of the app: rail rows change status, the terminal
+ * types a session, the ctx bar creeps. Reduced motion gets the finished
+ * transcript with no typing. */
+function initAppWindow() {
+  const root = document.querySelector('[data-app]')
+  const tree = document.querySelector('[data-app-tree]')
+  const lines = document.querySelector('[data-app-lines]')
+  if (!root || !tree || !lines) {
+    return
+  }
+
+  const RAIL = [
+    {
+      proj: 'roads-australia',
+      ws: [{ name: 'fix/cart-total', on: true }, { name: 'feat/admin-search' }]
+    },
+    { proj: 'orleton-om', ws: [{ name: 'feat/mobile-nav' }] }
+  ]
+  const dots = []
+  for (const group of RAIL) {
+    const proj = document.createElement('li')
+    proj.className = 'proj'
+    proj.textContent = group.proj
+    tree.append(proj)
+    for (const ws of group.ws) {
+      const li = document.createElement('li')
+      li.className = ws.on ? 'ws on' : 'ws'
+      const dot = document.createElement('span')
+      dot.className = 'app-dot'
+      li.append(dot, document.createTextNode(ws.name))
+      tree.append(li)
+      dots.push(dot)
+    }
+  }
+
+  // One terminal session, as the app renders it.
+  const SCRIPT = [
+    '<span class="u">❯ fix the cart total rounding on checkout</span>',
+    '<span class="t">●</span> Read src/cart/totals.ts',
+    '<span class="t">●</span> Edit src/cart/totals.ts <span class="dim">— round once, at display</span>',
+    '<span class="t">●</span> Bash npm test -- totals',
+    '<span class="ok">  ✓ 14 passed</span>',
+    '<span class="sig">✳</span> Done — 2 files changed, ready to review'
+  ]
+
+  const ctxFill = document.querySelector('[data-app-ctx]')
+  const ctxPct = document.querySelector('[data-app-pct]')
+
+  function renderStatic() {
+    lines.innerHTML = SCRIPT.map((html) => `<div class="app-line">${html}</div>`).join('')
+    if (ctxFill && ctxPct) {
+      ctxFill.style.width = '9%'
+      ctxPct.textContent = '9%'
+    }
+  }
+
+  if (reduceMotion.matches) {
+    renderStatic()
+    return
+  }
+
+  let shown = 0
+  let ctx = 4
+  let timer = null
+  let holding = 0
+
+  function step() {
+    if (holding > 0) {
+      // Hold the finished transcript for a few beats, then run the session again.
+      holding -= 1
+      if (holding === 0) {
+        shown = 0
+        ctx = 4
+        lines.innerHTML = ''
+        paintCtx()
+      }
+      return
+    }
+    if (shown >= SCRIPT.length) {
+      holding = 4
+      return
+    }
+    const div = document.createElement('div')
+    div.className = 'app-line'
+    div.innerHTML = `${SCRIPT[shown]}<span class="app-caret"></span>`
+    const prev = lines.querySelector('.app-caret')
+    if (prev) {
+      prev.remove()
+    }
+    lines.append(div)
+    shown += 1
+    ctx += 1 + Math.floor(Math.random() * 2)
+    paintCtx()
+    // A finished line flips the active workspace dot to "needs you".
+    if (shown === SCRIPT.length && dots[0]) {
+      dots[0].dataset.s = 'answered'
+    } else if (dots[0]) {
+      delete dots[0].dataset.s
+    }
+  }
+
+  function paintCtx() {
+    if (ctxFill && ctxPct) {
+      ctxFill.style.width = `${ctx}%`
+      ctxPct.textContent = `${ctx}%`
+    }
+  }
+
+  // The idle workspaces drift between working and waiting so the rail feels alive.
+  function drift() {
+    for (const dot of dots.slice(1)) {
+      if (Math.random() < 0.25) {
+        dot.dataset.s = dot.dataset.s === 'answered' ? '' : 'answered'
+        if (dot.dataset.s === '') {
+          delete dot.dataset.s
+        }
+      }
+    }
+  }
+
+  let driftTimer = null
+  const start = () => {
+    if (timer === null) {
+      timer = window.setInterval(step, 1150)
+      driftTimer = window.setInterval(drift, 2400)
+    }
+  }
+  const stop = () => {
+    if (timer !== null) {
+      window.clearInterval(timer)
+      window.clearInterval(driftTimer)
+      timer = null
+      driftTimer = null
+    }
+  }
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            start()
+          } else {
+            stop()
+          }
+        }
+      },
+      { threshold: 0 }
+    ).observe(root)
+  } else {
+    start()
+  }
+  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()))
+}
+
 /* ------------------------------------------------------------------ boot */
 heroIntro()
 panelReveals()
 initBoard()
+initAppWindow()
 phaseSequence()
 stepProgress()
 counters()

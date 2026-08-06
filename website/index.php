@@ -16,6 +16,8 @@ $description = 'Run coding agents across git worktrees, with WordPress imports, 
 header('Content-Type: text/html; charset=utf-8');
 // Short cache: the only thing that changes between deploys is the release number.
 header('Cache-Control: public, max-age=300');
+// Internal tool — keep it out of search indexes.
+header('X-Robots-Tag: noindex, nofollow');
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
@@ -24,6 +26,7 @@ header('Cache-Control: public, max-age=300');
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Muster — desktop IDE for parallel coding agents</title>
     <meta name="description" content="<?= e($description) ?>" />
+    <meta name="robots" content="noindex, nofollow" />
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
 
@@ -87,7 +90,7 @@ header('Cache-Control: public, max-age=300');
 
         <nav class="index-nav">
           <a href="#overview"><span class="idx">01</span><span>Overview</span></a>
-          <a href="#model"><span class="idx">02</span><span>The model</span></a>
+          <a href="#model"><span class="idx">02</span><span>How it works</span></a>
           <a href="#capabilities"><span class="idx">03</span><span>Capabilities</span></a>
           <a href="#install"><span class="idx">04</span><span>Install</span></a>
           <a href="#updates"><span class="idx">05</span><span>Updates</span></a>
@@ -134,7 +137,7 @@ header('Cache-Control: public, max-age=300');
               A desktop IDE for running coding agents across git worktrees, with WordPress site
               imports and deploys and ActiveCollab tasks built in. Each agent works in its own
               checkout, so parallel jobs never touch the same files, and the sidebar shows which one
-              has stopped and needs a human.
+              has stopped and needs attention.
             </p>
 
             <dl class="figures">
@@ -149,10 +152,6 @@ header('Cache-Control: public, max-age=300');
               <div>
                 <dt>Tools for agents</dt>
                 <dd><span data-count="25">25</span></dd>
-              </div>
-              <div>
-                <dt>Install steps</dt>
-                <dd><span data-count="4">4</span><i>once per Mac</i></dd>
               </div>
             </dl>
 
@@ -178,7 +177,36 @@ header('Cache-Control: public, max-age=300');
                 href="https://github.com/jefrontv/muster/releases/latest/download/muster-macos-x64.dmg"
                 >Intel build</a
               >
-              <a class="btn bare" href="#install">Read the install steps →</a>
+              <a class="btn bare" href="#install">Install steps →</a>
+            </div>
+
+            <!-- Decorative recreation of the app window: rail, terminal, status strip. -->
+            <div class="app" aria-hidden="true" data-app>
+              <div class="app-bar">
+                <span class="bd r"></span><span class="bd y"></span><span class="bd g"></span>
+                <span class="app-name">Muster</span>
+                <span class="app-tab"><span class="app-tab-dot"></span> fix/cart-total — Claude Code</span>
+              </div>
+              <div class="app-body">
+                <aside class="app-rail">
+                  <p class="app-k">Projects</p>
+                  <ul class="app-tree" data-app-tree></ul>
+                  <p class="app-k">Sites</p>
+                  <ul class="app-sites">
+                    <li><span class="app-site-dot"></span>roads-australia</li>
+                    <li><span class="app-site-dot"></span>orleton-om</li>
+                  </ul>
+                </aside>
+                <div class="app-term">
+                  <div class="app-lines" data-app-lines></div>
+                  <div class="app-statusline">
+                    <span class="as-model">Sonnet 5 · high</span>
+                    <span class="as-ctx">ctx <i class="as-bar"><b data-app-ctx></b></i> <span data-app-pct>4%</span></span>
+                    <span class="as-env">env master</span>
+                    <span class="as-agents">← 1 agent</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -187,11 +215,10 @@ header('Cache-Control: public, max-age=300');
         <section class="panel" id="model">
           <header class="phead">
             <p class="strip"><span class="strip-n">02</span> The model</p>
-            <h2>One branch, one checkout, one agent</h2>
+            <h2>How workspaces work</h2>
             <p class="phead-note">
-              Agents collide when they share a working tree: two edits to one file, one of them lost.
-              Muster's answer is boringly mechanical — give each run its own checkout, so isolation is
-              a property of the filesystem rather than a promise.
+              Agents sharing one working tree overwrite each other's edits. Muster gives each run its
+              own git worktree, so they can't touch the same files.
             </p>
           </header>
 
@@ -211,16 +238,15 @@ header('Cache-Control: public, max-age=300');
                 <h3>The agent works in it, alone</h3>
                 <p>
                   Your CLI agent launches inside that directory with its own terminal and
-                  hook-reported status. Four can run at once and none can overwrite another, because
-                  none can see another's files.
+                  hook-reported status. Several can run at once without touching each other's files.
                 </p>
               </li>
               <li class="phase" data-phase="2">
                 <span class="phase-n">Phase 03</span>
                 <h3>You review whoever finished</h3>
                 <p>
-                  When an agent stops — done, blocked, or asking something — its row lights up. That
-                  is the queue: attend to whoever answered while the rest keep moving.
+                  When an agent stops — done, blocked, or asking something — its row lights up in the
+                  sidebar. The others keep running while you deal with it.
                 </p>
               </li>
             </ol>
@@ -244,13 +270,13 @@ header('Cache-Control: public, max-age=300');
         <section class="panel" id="capabilities">
           <header class="phead">
             <p class="strip"><span class="strip-n">03</span> Capabilities</p>
-            <h2>What is actually in the app</h2>
+            <h2>What's in the app</h2>
           </header>
 
           <div class="cap-grid">
             <article class="cap">
               <p class="cap-k">Agents</p>
-              <h3>Nineteen CLI agents, first class</h3>
+              <h3>19 CLI agents supported</h3>
               <p>
                 Each runs as a tracked session with live state — working, waiting, blocked, done —
                 reported through installed hooks rather than guessed from terminal output.
@@ -280,8 +306,8 @@ header('Cache-Control: public, max-age=300');
               <h3>Imports and deploys, per environment</h3>
               <p>
                 Each site keeps its environments, SSH credentials and per-branch targets. The branch
-                you have checked out decides where a run goes; a branch matching nothing refuses
-                rather than guessing production.
+                you have checked out decides where a run goes; if it matches no environment, the run
+                refuses to start.
               </p>
               <div class="split">
                 <div>
@@ -312,11 +338,38 @@ header('Cache-Control: public, max-age=300');
                 every task under its own task lists, with assignee avatars and who created it. Start
                 a workspace from a task and the branch and context arrive prefilled.
               </p>
+
+              <!-- Decorative recreation of the project task list. -->
+              <div class="tasks" aria-hidden="true">
+                <div class="tasks-bar"><span class="tasks-back">←</span> Dev Portal <span class="tasks-n">47</span></div>
+                <p class="tasks-group">Backlog <span>9</span></p>
+                <ul class="tasks-rows">
+                  <li><span class="tid">#728</span><span class="ttl">Improve visibility of tasks in report</span></li>
+                  <li>
+                    <span class="tid">#698</span><span class="ttl">Closed Captions embed integration</span>
+                    <span class="tlab lab-g">Alfredo</span><span class="tlab lab-y">Coming up</span>
+                  </li>
+                  <li>
+                    <span class="tid">#657</span><span class="ttl">Sections Syncer</span>
+                    <span class="tlab lab-o">Medium priority</span>
+                    <span class="tav">JV</span>
+                  </li>
+                </ul>
+                <p class="tasks-group">Current discussion <span>6</span></p>
+                <ul class="tasks-rows">
+                  <li>
+                    <span class="tid">#721</span><span class="ttl">Transfer GET vars when redirecting</span>
+                    <span class="tlab lab-g">Ruben</span>
+                    <span class="tav">RM</span>
+                  </li>
+                  <li><span class="tid">#643</span><span class="ttl">Site Downloader: skip directories</span><span class="tlab lab-r">On hold</span></li>
+                </ul>
+              </div>
             </article>
 
             <article class="cap">
               <p class="cap-k">Terminals</p>
-              <h3>Real PTYs, split and persistent</h3>
+              <h3>Split, persistent terminals</h3>
               <p>
                 Split panes, per-pane titles, sessions that survive a window close. Local, SSH and
                 remote runtime hosts behave identically from the pane's point of view.
@@ -331,8 +384,7 @@ header('Cache-Control: public, max-age=300');
             <p class="strip"><span class="strip-n">04</span> Install</p>
             <h2>Four steps, once per Mac</h2>
             <p class="phead-note">
-              Step three looks alarming and is not. What it does, and why it is needed, is spelled
-              out underneath it.
+              Step three is a Terminal command; what it does and why is explained under it.
             </p>
           </header>
 
@@ -342,7 +394,7 @@ header('Cache-Control: public, max-age=300');
             <li class="step">
               <div class="step-n">1</div>
               <div class="step-b">
-                <h3>Take the build that matches your Mac</h3>
+                <h3>Download the build for your Mac</h3>
                 <p>
                   Apple Silicon (M1 and later) or Intel. Unsure? Apple menu →
                   <strong>About This Mac</strong> → look for <em>Chip</em> or <em>Processor</em>.
@@ -391,8 +443,8 @@ header('Cache-Control: public, max-age=300');
                     macOS attaches a quarantine flag to anything downloaded from the internet and
                     refuses to open code it cannot trace back to Apple, so the app reports itself as
                     damaged. <code>xattr -cr</code> removes that flag from the copy you just
-                    installed. It changes nothing inside the app, and you never run it again — updates
-                    arriving through the app are not quarantined.
+                    installed. You only run it once — updates arriving through the app are not
+                    quarantined.
                   </p>
                 </div>
               </div>
@@ -401,10 +453,10 @@ header('Cache-Control: public, max-age=300');
             <li class="step">
               <div class="step-n">4</div>
               <div class="step-b">
-                <h3>Open it and connect what you use</h3>
+                <h3>Open it and set up</h3>
                 <p>
-                  First launch covers your default agent, the theme, and the integrations worth wiring
-                  now. Everything is changeable later in Settings.
+                  First launch asks for a default agent, a theme, and which integrations to connect.
+                  All of it can be changed later in Settings.
                 </p>
                 <ul class="ticks two">
                   <li>Pick a default agent</li>
@@ -421,15 +473,15 @@ header('Cache-Control: public, max-age=300');
         <section class="panel" id="updates">
           <header class="phead">
             <p class="strip"><span class="strip-n">05</span> Updates</p>
-            <h2>Updates install themselves</h2>
+            <h2>Updates</h2>
           </header>
 
           <div class="tiles">
             <article class="tile">
               <h3>Checked in the background</h3>
               <p>
-                Muster looks for a newer build periodically and offers it when one is ready. You
-                approve the restart — nothing is swapped underneath you.
+                Muster checks for a newer build periodically and offers it when one is ready. Nothing
+                installs until you approve the restart.
               </p>
             </article>
             <article class="tile">
@@ -440,7 +492,7 @@ header('Cache-Control: public, max-age=300');
               </p>
             </article>
             <article class="tile">
-              <h3>No quarantine step again</h3>
+              <h3>No quarantine step for updates</h3>
               <p>
                 Quarantine applies only to files you download yourself. In-app updates are verified
                 against the installed signature and need no Terminal command.
@@ -453,7 +505,7 @@ header('Cache-Control: public, max-age=300');
         <section class="panel" id="spec">
           <header class="phead">
             <p class="strip"><span class="strip-n">06</span> Spec</p>
-            <h2>The technical detail</h2>
+            <h2>Technical details</h2>
           </header>
 
           <div class="table-wrap">
@@ -486,10 +538,10 @@ header('Cache-Control: public, max-age=300');
         <section class="panel" id="agents">
           <header class="phead">
             <p class="strip"><span class="strip-n">07</span> For agents</p>
-            <h2>Your agent can drive the site tooling</h2>
+            <h2>The MCP server</h2>
             <p class="phead-note">
-              Muster ships an MCP server, so an agent working in a checkout can inspect and operate
-              that site directly — twenty-five tools, behind the same guard rails the buttons use.
+              Muster ships an MCP server. An agent working in a checkout gets 25 tools to inspect and
+              operate that site, with the same guard rails as the UI.
             </p>
           </header>
 
