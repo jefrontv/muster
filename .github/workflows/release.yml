@@ -129,11 +129,16 @@ jobs:
             # releases with the same certificate the team installs with makes auto-update work
             # without an Apple Developer ID. Notarization is impossible for a self-signed cert, so
             # it stays off and Gatekeeper still needs `xattr -cr` on first install.
-            export CSC_LINK="${MAC_CERTS}"
-            export CSC_KEY_PASSWORD="${MAC_CERTS_PASSWORD:-}"
+            # Why a keychain script instead of CSC_LINK: electron-builder imports a .p12 without
+            # trust settings, and a self-signed root then reads as CSSMERR_TP_NOT_TRUSTED, so its
+            # identity search skips it and silently ships an UNSIGNED build. The script imports,
+            # trusts, verifies, and prints the identity to sign as.
+            CSC_NAME_VALUE="$(bash config/scripts/setup-mac-self-signed-keychain.sh)"
+            export CSC_NAME="${CSC_NAME_VALUE}"
+            export CSC_IDENTITY_AUTO_DISCOVERY=true
             export MUSTER_MAC_SIGNED_NO_NOTARIZE=1
-            unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
-            echo "Signed (no notarization) release path enabled"
+            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+            echo "Signed (no notarization) release path enabled as '${CSC_NAME_VALUE}'"
           else
             # Ad-hoc signing path: electron-builder must see no CSC/Apple credentials at all.
             unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
