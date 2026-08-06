@@ -347,7 +347,7 @@ header('X-Robots-Tag: noindex, nofollow');
                   <li><span class="tid">#728</span><span class="ttl">Improve visibility of tasks in report</span></li>
                   <li>
                     <span class="tid">#698</span><span class="ttl">Closed Captions embed integration</span>
-                    <span class="tlab lab-g">Alfredo</span><span class="tlab lab-y">Coming up</span>
+                    <span class="tlab lab-y">Coming up</span>
                   </li>
                   <li>
                     <span class="tid">#657</span><span class="ttl">Sections Syncer</span>
@@ -359,7 +359,7 @@ header('X-Robots-Tag: noindex, nofollow');
                 <ul class="tasks-rows">
                   <li>
                     <span class="tid">#721</span><span class="ttl">Transfer GET vars when redirecting</span>
-                    <span class="tlab lab-g">Ruben</span>
+                    <span class="tlab lab-g">To be discussed</span>
                     <span class="tav">RM</span>
                   </li>
                   <li><span class="tid">#643</span><span class="ttl">Site Downloader: skip directories</span><span class="tlab lab-r">On hold</span></li>
