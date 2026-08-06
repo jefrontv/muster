@@ -25,7 +25,7 @@ export function SitePanelEnvironmentSection({
   deployReason: string | null
   busy: boolean
   requestRun: (group: SiteRunGroup) => void
-  onStepsChanged: () => void
+  onStepsChanged: (summary: SiteSummary) => void
 }): React.JSX.Element {
   const { site, branch, resolvedEnvironment } = summary
   const environmentNames = Object.keys(site.environments)

@@ -327,7 +327,7 @@ describe('SitePanelContent', () => {
   })
 
   // Why: the step set is what a run varies on; editing it here is the panel's whole point.
-  it('unchecking an enabled step writes false to the resolved environment and refetches', async () => {
+  it('unchecking an enabled step writes false to the resolved environment without a refetch', async () => {
     await render(makeSummary())
     const checkbox = container?.querySelector('[role="checkbox"]') as HTMLButtonElement | null
     expect(checkbox).not.toBeNull()
@@ -344,7 +344,9 @@ describe('SitePanelContent', () => {
     expect(args.name).toBe('production')
     // Fixture's first import step (exportDatabase) starts true, so the click disables it.
     expect(args.patch).toEqual({ exportDatabase: false })
-    expect(onRunSettled).toHaveBeenCalled()
+    // The write's own returned summary patches the store; the full-list refetch (one git spawn
+    // per site) is exactly what made the toggles feel stuck, so it must NOT run here.
+    expect(onRunSettled).not.toHaveBeenCalled()
   })
 
   it('surfaces a failed toggle write instead of refetching', async () => {

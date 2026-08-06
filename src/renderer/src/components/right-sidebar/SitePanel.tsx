@@ -38,6 +38,13 @@ export function SitePanelContent({
 }): React.JSX.Element {
   const { site, branch, resolvedEnvironment } = summary
   const { run, lines, progress, starting, error, start, cancel } = useSiteRun(site.id)
+  const applySiteSummary = useAppStore((s) => s.applySiteSummary)
+  // A step toggle already gets the fresh summary back from its own write; patching it in avoids
+  // the full list refetch (one git spawn per configured site) that made the checkboxes feel stuck.
+  const onStepsChanged = useCallback(
+    (next: SiteSummary) => applySiteSummary(next),
+    [applySiteSummary]
+  )
   const confirm = useConfirmationDialog()
   const [recentRuns, setRecentRuns] = useState<SiteRun[]>([])
   // The newest running run this panel is NOT streaming in-process — an agent started it through
@@ -265,7 +272,7 @@ export function SitePanelContent({
         deployReason={deployReason}
         busy={running || starting}
         requestRun={(group) => void requestRun(group)}
-        onStepsChanged={() => onRunSettledRef.current()}
+        onStepsChanged={onStepsChanged}
       />
 
       {/* Output only: the Import/Deploy actions live with their step toggles above. The section

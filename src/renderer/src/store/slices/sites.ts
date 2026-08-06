@@ -33,6 +33,9 @@ export type SitesSlice = {
   selectedSiteId: string | null
   siteQuery: string
   fetchSites: () => Promise<void>
+  /** Replaces one summary in place — a targeted write for cheap edits that already have the fresh
+   *  summary in hand, sparing the full list rebuild (one git spawn per site). */
+  applySiteSummary: (summary: SiteSummary) => void
   selectSite: (siteId: string | null) => void
   setSiteQuery: (query: string) => void
   updateSite: (siteId: string, patch: SiteFieldPatch) => Promise<string | null>
@@ -100,6 +103,11 @@ export const createSitesSlice: StateCreator<AppState, [], [], SitesSlice> = (set
           selected && result.value.some((entry) => entry.site.id === selected) ? selected : null
       })
     },
+
+    applySiteSummary: (summary) =>
+      set({
+        sites: get().sites.map((entry) => (entry.site.id === summary.site.id ? summary : entry))
+      }),
 
     selectSite: (siteId) => set({ selectedSiteId: siteId }),
     setSiteQuery: (query) => set({ siteQuery: query }),

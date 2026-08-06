@@ -5,8 +5,8 @@
 // RESOLVED environment only (the one a run would use), so what you toggle here is what Import runs.
 
 import type React from 'react'
-import { useState } from 'react'
-import type { SiteEnvironment } from '../../../../shared/site-types'
+import { useEffect, useState } from 'react'
+import type { SiteEnvironment, SiteSummary } from '../../../../shared/site-types'
 import { SITE_DEPLOY_TOGGLES, SITE_IMPORT_TOGGLES } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -23,8 +23,8 @@ export function SiteStepToggles({
   siteId: string
   environmentName: string
   environment: SiteEnvironment
-  /** The owner refetches summaries; counts and run readiness derive from them. */
-  onChanged: () => void
+  /** Receives the upsert's own fresh summary, so the owner can patch it in without a refetch. */
+  onChanged: (summary: SiteSummary) => void
   /** Run button rendered at the foot of the import column, so action sits with its options. */
   importAction?: React.ReactNode
   /** Run button rendered at the foot of the deploy column. */
@@ -32,19 +32,43 @@ export function SiteStepToggles({
 }): React.JSX.Element {
   const toggleLabels = getSiteToggleLabels()
   const [error, setError] = useState('')
+  // Optimistic overrides: the checkbox flips on click, not after the write plus the owner's full
+  // summary refetch land (that round trip resolves git branches for every site and took seconds).
+  // The override clears once the prop catches up, or reverts on a failed write.
+  const [pending, setPending] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    setPending((current) => {
+      const next = { ...current }
+      let changed = false
+      for (const [key, value] of Object.entries(current)) {
+        if (Boolean(environment[key as keyof SiteEnvironment]) === value) {
+          delete next[key]
+          changed = true
+        }
+      }
+      return changed ? next : current
+    })
+  }, [environment])
 
   const setStep = async (key: string, enabled: boolean): Promise<void> => {
     setError('')
+    setPending((current) => ({ ...current, [key]: enabled }))
     const result = await window.api.sites.upsertEnvironment({
       siteId,
       name: environmentName,
       patch: { [key]: enabled }
     })
     if (!result.ok) {
+      setPending((current) => {
+        const next = { ...current }
+        delete next[key]
+        return next
+      })
       setError(result.error)
       return
     }
-    onChanged()
+    onChanged(result.value)
   }
 
   const group = (
@@ -57,7 +81,9 @@ export function SiteStepToggles({
       {toggles.map((toggle) => (
         <label key={toggle.key} className="flex items-center gap-1.5 text-xs">
           <Checkbox
-            checked={Boolean(environment[toggle.key as keyof SiteEnvironment])}
+            checked={
+              pending[toggle.key] ?? Boolean(environment[toggle.key as keyof SiteEnvironment])
+            }
             onCheckedChange={(checked) => void setStep(toggle.key, checked === true)}
           />
           <span className="truncate">{toggleLabels[toggle.key] ?? toggle.label}</span>
