@@ -110,6 +110,12 @@ function buildSiteSshTarget(config: SiteRunConfig): SshTarget {
     host: hostname,
     port: 22,
     username,
+    // Why 'none' when a password is stored: ssh2 offers every key the user's agent holds BEFORE
+    // falling back to the password, and a server's MaxAuthTries (commonly 6) then disconnects
+    // mid-handshake — an intermittent "handshake dropped" that depends on how many keys the
+    // agent happens to carry. A site environment authenticates with its own stored credential, so
+    // the keyring is noise here. Password-less environments keep the agent: it is all they have.
+    ...(config.sshPassword ? { identityAgent: 'none' } : {}),
     source: 'manual'
   }
 }
