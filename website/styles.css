@@ -485,7 +485,7 @@ h3 {
 
 /* ============================================================== hero */
 .hero {
-  min-height: min(88svh, 50rem);
+  min-height: min(72svh, 42rem);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -523,10 +523,10 @@ h3 {
 }
 
 .display {
-  font-size: clamp(2.5rem, 6.4vw, 4.6rem);
-  font-weight: 830;
-  letter-spacing: -0.048em;
-  line-height: 0.94;
+  font-size: clamp(1.9rem, 3.6vw, 2.6rem);
+  font-weight: 780;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
   display: flex;
   flex-direction: column;
 }
@@ -554,9 +554,10 @@ h3 {
 }
 
 .lede {
-  font-size: clamp(1rem, 1.7vw, 1.1875rem);
+  font-size: clamp(1.0625rem, 1.9vw, 1.3125rem);
   color: var(--muted);
-  max-width: 44rem;
+  max-width: 42rem;
+  line-height: 1.55;
 }
 
 /* Figures read as instrument readouts: mono label above, tabular figure below. */
