@@ -35,6 +35,9 @@ export function TaskPageActiveCollabPanel({
   const settings = useAppStore((s) => s.settings)
   const checkConnection = useAppStore((s) => s.checkActiveCollabConnection)
   const [selected, setSelected] = useState<ActiveCollabTaskRef | null>(null)
+  // Owned here, like selection: the list's project headings AND the detail pane's project link
+  // both open the same drill-in view.
+  const [openProject, setOpenProject] = useState<{ id: number; name: string } | null>(null)
 
   // Why the context key and not `statusChecked` alone: the flag stays true after the runtime changes,
   // so a stale answer from the previous host would read as resolved and could flash the setup screen
@@ -56,6 +59,11 @@ export function TaskPageActiveCollabPanel({
   const handleSelect = useCallback((ref: ActiveCollabTaskRef) => {
     setSelected(ref)
   }, [])
+
+  const handleOpenProject = useCallback((id: number, name: string) => {
+    setOpenProject({ id, name })
+  }, [])
+  const handleCloseProject = useCallback(() => setOpenProject(null), [])
 
   // Honours a notification click. The request lives in the store rather than being passed down
   // because the click usually arrives while this panel is unmounted, so it has to survive until
@@ -109,6 +117,9 @@ export function TaskPageActiveCollabPanel({
           onSelect={handleSelect}
           selectedTaskId={selected?.taskId ?? null}
           sourceContext={sourceContext}
+          openProject={openProject}
+          onOpenProject={handleOpenProject}
+          onCloseProject={handleCloseProject}
         />
       </div>
       {hasSelection ? (
@@ -120,7 +131,11 @@ export function TaskPageActiveCollabPanel({
         // Why a bounded width: the pane's own class list is `h-full` with no basis, so as a bare
         // flex sibling it sized to its content and a long task body pushed the list off-screen.
         <aside className="flex min-h-0 max-h-full w-[42%] min-w-[320px] max-w-[620px] shrink-0 flex-col overflow-hidden border-l border-border/60 bg-background duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none">
-          <ActiveCollabTaskWorkspace projectId={selected.projectId} taskId={selected.taskId} />
+          <ActiveCollabTaskWorkspace
+            projectId={selected.projectId}
+            taskId={selected.taskId}
+            onOpenProject={handleOpenProject}
+          />
         </aside>
       ) : null}
     </div>

@@ -19,6 +19,8 @@ import { useActiveCollabTaskWrites } from './activecollab-task-writes'
 export type ActiveCollabTaskWorkspaceProps = {
   projectId: number | null
   taskId: number | null
+  /** Present when the header's project name can open the project drill-in view. */
+  onOpenProject?: (id: number, name: string) => void
 }
 
 // One class list for every state the pane can be in, so a skeleton, a failure and a loaded task all
@@ -57,7 +59,8 @@ function ActiveCollabFailureNotice({
  */
 export function ActiveCollabTaskWorkspace({
   projectId,
-  taskId
+  taskId,
+  onOpenProject
 }: ActiveCollabTaskWorkspaceProps): React.JSX.Element | null {
   const { detail, failure, reload, replaceTask, appendComment } = useActiveCollabTaskDetail(
     projectId,
@@ -105,6 +108,7 @@ export function ActiveCollabTaskWorkspace({
         disabled={writes.pending !== null}
         completing={writes.pending === 'completion'}
         onCompletedChange={(completed) => void writes.setCompleted(completed)}
+        onOpenProject={onOpenProject}
       />
 
       <ActiveCollabTaskMetadataBar

@@ -21,6 +21,8 @@ type ActiveCollabTaskHeaderProps = {
   disabled: boolean
   completing: boolean
   onCompletedChange: (completed: boolean) => void
+  /** Present when the project name should open the project drill-in view. */
+  onOpenProject?: (id: number, name: string) => void
 }
 
 /**
@@ -34,7 +36,8 @@ export function ActiveCollabTaskHeader({
   task,
   disabled,
   completing,
-  onCompletedChange
+  onCompletedChange,
+  onOpenProject
 }: ActiveCollabTaskHeaderProps): React.JSX.Element {
   const created = activeCollabStamp(task.createdOn, 'date')
   const toggleLabel = task.isCompleted
@@ -99,9 +102,24 @@ export function ActiveCollabTaskHeader({
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
               <span className="flex min-w-0 items-center gap-1.5">
                 <ActiveCollabIcon className="size-3 shrink-0" />
-                <span className="min-w-0 truncate font-medium text-foreground/80">
-                  {task.projectName}
-                </span>
+                {onOpenProject ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenProject(task.projectId, task.projectName)}
+                    aria-label={translate(
+                      'auto.components.activecollab.task_workspace.open_project',
+                      'View all tasks in {{project}}',
+                      { project: task.projectName }
+                    )}
+                    className="min-w-0 truncate rounded-sm font-medium text-foreground/80 transition-colors hover:text-foreground hover:underline hover:underline-offset-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {task.projectName}
+                  </button>
+                ) : (
+                  <span className="min-w-0 truncate font-medium text-foreground/80">
+                    {task.projectName}
+                  </span>
+                )}
               </span>
               <span aria-hidden="true" className={DOT} />
               <span className="shrink-0 font-mono">

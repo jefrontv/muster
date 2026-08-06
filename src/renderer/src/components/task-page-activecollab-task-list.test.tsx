@@ -182,7 +182,14 @@ async function renderList(selectedTaskId: number | null = null): Promise<Rendere
   // which would silently hide the scope change under test.
   const element = (): React.JSX.Element => (
     <TooltipProvider>
-      <ActiveCollabTaskList onSelect={onSelect} selectedTaskId={selectedTaskId} />
+      {/* onOpenProject always present in production (the panel owns the drill-in), so the
+          heading's drill-in button is part of the real tab order under test. */}
+      <ActiveCollabTaskList
+        onSelect={onSelect}
+        selectedTaskId={selectedTaskId}
+        onOpenProject={() => {}}
+        onCloseProject={() => {}}
+      />
     </TooltipProvider>
   )
   const view = await act(async () => render(element()))

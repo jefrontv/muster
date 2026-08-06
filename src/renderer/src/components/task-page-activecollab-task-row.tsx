@@ -14,6 +14,8 @@ import {
   type ActiveCollabDueDate
 } from '@/components/activecollab-task-due-date'
 import { translate } from '@/i18n/i18n'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { ActiveCollabPersonBadge } from './activecollab-task-person-badge'
 import { cn } from '@/lib/utils'
 import {
   activeCollabDueStatus,
@@ -142,12 +144,15 @@ export function ActiveCollabTaskRow({
   now,
   onSelect,
   selected,
+  showAssignee = false,
   task
 }: {
   /** One clock reading per list render, so no two rows can straddle midnight. */
   now: number
   onSelect: (ref: ActiveCollabTaskRef) => void
   selected: boolean
+  /** Project views show who holds each task; the assigned-to-me list omits it (always you). */
+  showAssignee?: boolean
   task: ActiveCollabTask
 }): React.JSX.Element {
   // `dueOn` is already anchored to the local calendar day; re-deriving it from UTC would read a
@@ -217,7 +222,25 @@ export function ActiveCollabTaskRow({
             </span>
           ) : null}
         </span>
-        <ActiveCollabTaskDue due={due} status={status} />
+        <span className="flex shrink-0 items-center gap-2.5">
+          {showAssignee && task.assigneeId !== null ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="shrink-0">
+                  <ActiveCollabPersonBadge name={task.assigneeName} userId={task.assigneeId} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={4}>
+                {task.assigneeName ??
+                  translate(
+                    'auto.components.activecollab.task_row.assignee_unresolved',
+                    'Assigned'
+                  )}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
+          <ActiveCollabTaskDue due={due} status={status} />
+        </span>
       </button>
       {canStartWork ? (
         <button

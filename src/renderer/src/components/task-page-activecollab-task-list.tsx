@@ -27,6 +27,10 @@ type ActiveCollabTaskListProps = {
   onSelect: (ref: ActiveCollabTaskRef) => void
   selectedTaskId?: number | null
   sourceContext?: TaskSourceContext | null
+  /** Owned by the panel so the detail pane's project link can open the same view. */
+  openProject?: { id: number; name: string } | null
+  onOpenProject?: (id: number, name: string) => void
+  onCloseProject?: () => void
 }
 
 type ActiveCollabTaskListLoad = {
@@ -76,7 +80,10 @@ function ActiveCollabListError({
 export function ActiveCollabTaskList({
   onSelect,
   selectedTaskId = null,
-  sourceContext = null
+  sourceContext = null,
+  openProject = null,
+  onOpenProject,
+  onCloseProject
 }: ActiveCollabTaskListProps): React.JSX.Element {
   const listAssignedTasks = useAppStore((s) => s.listActiveCollabAssignedTasks)
   const taskPageCache = useAppStore((s) => s.activeCollabTaskPageCache)
@@ -92,9 +99,6 @@ export function ActiveCollabTaskList({
   // dropped instead of writing another instance's error over the current one.
   const [load, setLoad] = useState<ActiveCollabTaskListLoad>(INITIAL_LOAD)
   const [connectOpen, setConnectOpen] = useState(false)
-  // The project drill-in replaces the assigned list while set; backing out restores the list with
-  // its paging and scroll state intact because this component never unmounts around it.
-  const [openProject, setOpenProject] = useState<{ id: number; name: string } | null>(null)
 
   // A string, so an unstable `sourceContext` object identity cannot restart the load.
   const cachePrefix = useMemo(
@@ -167,11 +171,6 @@ export function ActiveCollabTaskList({
     (projectId: number) => toggleCollapsedGroup(activeCollabGroupCollapseKey(projectId)),
     [toggleCollapsedGroup]
   )
-  const openProjectView = useCallback(
-    (id: number, name: string) => setOpenProject({ id, name }),
-    []
-  )
-  const closeProjectView = useCallback(() => setOpenProject(null), [])
   const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
   // Why the footer outlives the `ready` state: `listAssignedTasks` filters completed tasks
   // client-side, so a server page can arrive with every row already dropped while later pages still
@@ -179,12 +178,14 @@ export function ActiveCollabTaskList({
   // those pages never requested.
   const canLoadMore = rows.hasMore && (state.kind === 'ready' || state.kind === 'empty')
 
-  if (openProject) {
+  // The drill-in replaces the assigned list while set; backing out restores the list with its
+  // paging and scroll state intact because this component never unmounts around it.
+  if (openProject && onCloseProject) {
     return (
       <ActiveCollabProjectView
         projectId={openProject.id}
         projectName={openProject.name}
-        onBack={closeProjectView}
+        onBack={onCloseProject}
         onSelect={onSelect}
         selectedTaskId={selectedTaskId}
         sourceContext={sourceContext}
@@ -199,6 +200,18 @@ export function ActiveCollabTaskList({
         onOpenChange={setConnectOpen}
         onConnected={retry}
       />
+
+      {/* Same band as the project view's header, so the two list surfaces read as siblings. */}
+      <div className="flex h-[41px] items-center gap-2 border-b border-border/50 px-3 py-2">
+        <span className="min-w-0 truncate text-sm font-semibold">
+          {translate('auto.components.activecollab.task_list.my_work', 'My Work')}
+        </span>
+        {state.kind === 'ready' || state.kind === 'empty' ? (
+          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+            {rows.tasks.length}
+          </span>
+        ) : null}
+      </div>
 
       {errorBanner ? (
         <ActiveCollabListError error={errorBanner} onConnect={openConnect} onRetry={retry} />
@@ -247,7 +260,7 @@ export function ActiveCollabTaskList({
               now={now}
               onSelect={onSelect}
               onToggleCollapsed={toggleGroupCollapsed}
-              onOpenProject={openProjectView}
+              onOpenProject={onOpenProject}
               selectedTaskId={selectedTaskId}
             />
           ))}

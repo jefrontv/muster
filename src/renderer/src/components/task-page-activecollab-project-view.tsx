@@ -106,6 +106,7 @@ function ActiveCollabTaskListSection({
                 now={now}
                 onSelect={onSelect}
                 selected={task.id === selectedTaskId}
+                showAssignee
                 task={task}
               />
             ))}
@@ -158,7 +159,7 @@ export function ActiveCollabProjectView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-border/50 px-2 py-2">
+      <div className="flex h-[41px] items-center gap-2 border-b border-border/50 px-2 py-2">
         <Button
           variant="ghost"
           size="icon-xs"
