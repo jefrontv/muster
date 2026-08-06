@@ -43,6 +43,8 @@ export type SiteRun = {
   endedAt: number | null
   error: string | null
   logPath: string
+  /** The process that owns the run, so a reader can detect a runner that died mid-run. */
+  pid?: number
 }
 
 /** Catch-up payload for a renderer that mounted mid-run: live run plus its last known progress. */

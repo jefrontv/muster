@@ -5,7 +5,7 @@
 import { ArrowUpRight, CircleStop, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SiteRun } from '../../../../shared/site-run-types'
+import type { SiteRun, SiteRunLogLine } from '../../../../shared/site-run-types'
 import type { SiteRunGroup, SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -40,7 +40,14 @@ export function SitePanelContent({
   const { run, lines, progress, starting, error, start, cancel } = useSiteRun(site.id)
   const confirm = useConfirmationDialog()
   const [recentRuns, setRecentRuns] = useState<SiteRun[]>([])
+  // The newest running run this panel is NOT streaming in-process — an agent started it through
+  // the muster-sites MCP server. Its on-disk log is tailed below so it reads like a button run.
+  const [externalTail, setExternalTail] = useState<{
+    runId: string
+    lines: SiteRunLogLine[]
+  } | null>(null)
   const logRef = useRef<HTMLDivElement | null>(null)
+  const externalLogRef = useRef<HTMLDivElement | null>(null)
   const onRunSettledRef = useRef(onRunSettled)
   onRunSettledRef.current = onRunSettled
 
@@ -106,10 +113,46 @@ export function SitePanelContent({
     }
   }, [runId, runStatus, loadRecentRuns])
 
+  const externalRunningId =
+    recentRuns.find((entry) => entry.status === 'running' && entry.id !== run?.id)?.id ?? null
+  useEffect(() => {
+    if (externalRunningId === null) {
+      setExternalTail(null)
+      return
+    }
+    let cancelled = false
+    let timer: number | null = null
+    const read = async (): Promise<void> => {
+      const result = await window.api.siteRuns.readLog({
+        siteId: site.id,
+        runId: externalRunningId,
+        lines: SIDEBAR_LOG_TAIL
+      })
+      if (cancelled) {
+        return
+      }
+      if (result.ok) {
+        setExternalTail({ runId: externalRunningId, lines: result.value.lines })
+      }
+      // The recent-runs poll clears externalRunningId once the run settles; until then keep tailing.
+      timer = window.setTimeout(() => void read(), 2_000)
+    }
+    void read()
+    return () => {
+      cancelled = true
+      if (timer !== null) {
+        window.clearTimeout(timer)
+      }
+    }
+  }, [externalRunningId, site.id])
+
   // The tail is what says a multi-minute run is still alive; keep the newest line in view.
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [lines.length])
+  useEffect(() => {
+    externalLogRef.current?.scrollTo({ top: externalLogRef.current.scrollHeight })
+  }, [externalTail?.lines.length])
 
   const requestRun = async (group: SiteRunGroup): Promise<void> => {
     // The branch guard: an unmatched branch must never silently deploy to production.
@@ -230,7 +273,7 @@ export function SitePanelContent({
       <section
         className={cn(
           'space-y-2 border-t border-border pt-3',
-          !run && !starting && !error && lines.length === 0 && 'hidden'
+          !run && !starting && !error && lines.length === 0 && externalTail === null && 'hidden'
         )}
       >
         {running || starting ? (
@@ -261,6 +304,44 @@ export function SitePanelContent({
             </div>
             <Progress value={progress.percent ?? 0} />
           </div>
+        ) : null}
+
+        {externalTail !== null ? (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {(() => {
+                const entry = recentRuns.find((candidate) => candidate.id === externalTail.runId)
+                return entry
+                  ? `${entry.group} · ${entry.environment} · ${translate(
+                      'auto.components.right.sidebar.SitePanel.externalRun',
+                      'running (started by an agent)'
+                    )}`
+                  : translate(
+                      'auto.components.right.sidebar.SitePanel.externalRunBare',
+                      'running (started by an agent)'
+                    )
+              })()}
+            </p>
+            {externalTail.lines.length > 0 ? (
+              <div
+                ref={externalLogRef}
+                className="max-h-48 overflow-y-auto scrollbar-sleek rounded-md bg-muted/40 p-2 font-mono text-[11px]"
+              >
+                {externalTail.lines.map((line, index) => (
+                  <div
+                    key={`${line.at}-${index}`}
+                    className={cn(
+                      'whitespace-pre-wrap break-words',
+                      line.level === 'error' && 'text-destructive',
+                      line.level === 'status' && 'font-medium'
+                    )}
+                  >
+                    {line.text}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </>
         ) : null}
 
         {tailLines.length > 0 ? (

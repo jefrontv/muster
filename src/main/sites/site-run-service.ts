@@ -95,7 +95,8 @@ export function createSiteRunService(options: SiteRunServiceOptions): SiteRunSer
       startedAt,
       endedAt: null,
       error: null,
-      logPath: ''
+      logPath: '',
+      pid: process.pid
     })
     const entry: InFlightSiteRun = {
       controller,

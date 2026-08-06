@@ -65,10 +65,60 @@ function isSiteRunRecord(value: unknown): value is SiteRun {
 function readMeta(dir: string): SiteRun | null {
   try {
     const parsed: unknown = JSON.parse(readFileSync(join(dir, META_FILE), 'utf8'))
-    return isSiteRunRecord(parsed) ? parsed : null
+    return isSiteRunRecord(parsed) ? reconcileStaleRun(dir, parsed) : null
   } catch {
     return null
   }
+}
+
+/** Legacy metas carry no pid; only silence this long marks one interrupted. */
+const LEGACY_STALE_RUN_QUIET_MS = 15 * 60_000
+
+function isRunOwnerAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function lastLogActivityMs(dir: string): number {
+  try {
+    return statSync(join(dir, LOG_FILE)).mtimeMs
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * A run is only "running" while the process that started it is alive. The MCP server and the GUI
+ * are separate processes sharing this directory, and either can die mid-run (app quit, crash,
+ * upgrade) without reaching finalize() — leaving a meta that claims "running" forever. Every read
+ * passes through here, so the first reader after the death settles the record on disk.
+ *
+ * Metas written before the pid field fall back to log silence: only a quarter hour with no output
+ * marks one interrupted, so a legitimately quiet import is not buried by an over-eager sweep.
+ */
+function reconcileStaleRun(dir: string, run: SiteRun): SiteRun {
+  if (run.status !== 'running') {
+    return run
+  }
+  const ownerDead =
+    typeof run.pid === 'number'
+      ? !isRunOwnerAlive(run.pid)
+      : Date.now() - Math.max(lastLogActivityMs(dir), run.startedAt) > LEGACY_STALE_RUN_QUIET_MS
+  if (!ownerDead) {
+    return run
+  }
+  const settled: SiteRun = {
+    ...run,
+    status: 'failed',
+    error: 'Interrupted: the process running this operation exited before it finished.',
+    endedAt: Math.max(lastLogActivityMs(dir), run.startedAt)
+  }
+  writeMeta(dir, settled)
+  return settled
 }
 
 export type SiteRunLogHandle = {

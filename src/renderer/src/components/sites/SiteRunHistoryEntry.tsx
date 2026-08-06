@@ -28,33 +28,53 @@ export function SiteRunHistoryEntry({
   const [loading, setLoading] = useState(false)
   const lineRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  // A run that is still RUNNING keeps refreshing its tail while expanded, so a run started by an
+  // agent through the MCP server reads exactly like one started from the buttons. Settled runs
+  // load once — their log cannot change.
+  const running = run.status === 'running'
   useEffect(() => {
-    if (!expanded || page) {
+    if (!expanded || (page && !running)) {
       return
     }
     let cancelled = false
-    setLoading(true)
-    void window.api.siteRuns
-      .readLog({ siteId: run.siteId, runId: run.id, lines: LOG_TAIL_LINES })
-      .then((result) => {
-        if (cancelled) {
-          return
-        }
-        if (result.ok) {
-          setPage(result.value)
-        } else {
-          setError(result.error)
-        }
+    let timer: number | null = null
+    const read = async (): Promise<void> => {
+      if (!page) {
+        setLoading(true)
+      }
+      const result = await window.api.siteRuns.readLog({
+        siteId: run.siteId,
+        runId: run.id,
+        lines: LOG_TAIL_LINES
       })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      })
+      if (cancelled) {
+        return
+      }
+      setLoading(false)
+      if (result.ok) {
+        setPage(result.value)
+      } else {
+        setError(result.error)
+      }
+      // The freshest verdict is the meta that rode back with the tail: stop as soon as the run
+      // settles on disk, even while the surrounding list still says running.
+      const settled =
+        result.ok && result.value.run !== null && result.value.run.status !== 'running'
+      if (running && !settled) {
+        timer = window.setTimeout(() => void read(), 2_000)
+      }
+    }
+    void read()
     return () => {
       cancelled = true
+      if (timer !== null) {
+        window.clearTimeout(timer)
+      }
     }
-  }, [expanded, page, run.id, run.siteId])
+    // `page` is deliberately not a dependency: each poll writes it, and re-running the effect per
+    // write would double the timers. `running` restarting the effect is the desired stop signal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded, running, run.id, run.siteId])
 
   const jumpToFirstError = useCallback(() => {
     const index = page?.firstErrorIndex ?? -1
