@@ -9,6 +9,7 @@
 
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import type { Site, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
+import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
 
 /** The subset of Store the tools touch. The real Store satisfies this structurally. */
 export type SiteMcpStore = {
@@ -57,6 +58,11 @@ export type SiteMcpContext = {
   listActiveRuns: () => SiteActiveRun[]
   startRun: (request: SiteMcpStartRunRequest) => SiteRun
   cancelRun: (runId: string) => boolean
+  /**
+   * Opens an SSH session against one environment. Injected for the same reason the pipelines
+   * inject theirs: the tool table's tests drive every tool without touching a socket.
+   */
+  openSshSession: (config: SiteRunConfig, signal: AbortSignal) => Promise<SiteSshSession>
   /**
    * Aborts every in-flight run and waits for it to unwind. The host that spawned this server can
    * close the pipe mid-deploy, and exiting without this orphans the ssh/mysqldump grandchildren

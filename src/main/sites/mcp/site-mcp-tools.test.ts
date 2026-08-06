@@ -120,6 +120,14 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
 
   return {
     cwd: '/Sites/acme/wp-content/themes/acme',
+    openSshSession: async () => ({
+      exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
+      download: async () => undefined,
+      upload: async () => undefined,
+      writeSecureRemoteFile: async () => undefined,
+      removeRemoteFile: async () => undefined,
+      close: async () => undefined
+    }),
     store: {
       listSites: () => records,
       getSite: (siteId) => records.find((site) => site.id === siteId) ?? null,
@@ -218,6 +226,7 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   preview_run: { group: 'deploy' },
   run_import_functions: { env: 'main' },
   run_deploy_functions: { env: 'main' },
+  run_ssh_command: { command: 'true', env: 'main' },
   list_recent_runs: {},
   get_run_log: { run_id: RUN_ID },
   list_jobs: {},

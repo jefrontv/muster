@@ -53,6 +53,14 @@ function createContext(): SiteMcpContext {
   }
   return {
     cwd: '/Sites/acme',
+    openSshSession: async () => ({
+      exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
+      download: async () => undefined,
+      upload: async () => undefined,
+      writeSecureRemoteFile: async () => undefined,
+      removeRemoteFile: async () => undefined,
+      close: async () => undefined
+    }),
     store: {
       listSites: () => records,
       getSite: (siteId) => records.find((site) => site.id === siteId) ?? null,

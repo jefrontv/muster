@@ -15,6 +15,7 @@ import {
   hasSiteSecret
 } from '../site-secret-store'
 import { buildSiteSummaries, buildSiteSummary } from '../site-summary'
+import { createSiteSshSession } from '../site-ssh-session'
 import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
 
@@ -58,6 +59,7 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
         job: createSiteRunJob(site, request.environment, request.group)
       })
     },
+    openSshSession: createSiteSshSession,
     cancelRun: (runId) => runs.cancel(runId),
     shutdownRuns: async () => {
       // Snapshot the ids first: cancelAll() starts tearing the registry down as jobs settle.
