@@ -1214,22 +1214,30 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
                 sourceContext: data.openJiraSourceContext
               } as const)
             : null
-    const currentEntry = get().worktreeNavHistory[get().worktreeNavHistoryIndex]
-    const currentIsTaskStack =
-      currentEntry === 'tasks' ||
-      (typeof currentEntry === 'object' && currentEntry.kind === 'task-detail')
-    if (!detailEntry || !currentIsTaskStack) {
-      get().recordViewVisit('tasks')
+    // Chat view hosts Tasks inside its own panel — stay put and skip code-view nav history.
+    const inChatView = get().activeView === 'chat'
+    if (!inChatView) {
+      const currentEntry = get().worktreeNavHistory[get().worktreeNavHistoryIndex]
+      const currentIsTaskStack =
+        currentEntry === 'tasks' ||
+        (typeof currentEntry === 'object' && currentEntry.kind === 'task-detail')
+      if (!detailEntry || !currentIsTaskStack) {
+        get().recordViewVisit('tasks')
+      }
+      if (detailEntry) {
+        get().recordViewVisit(detailEntry)
+      }
     }
-    if (detailEntry) {
-      get().recordViewVisit(detailEntry)
-    }
-    set((state) => ({
-      activeView: 'tasks',
-      previousViewBeforeTasks:
-        state.activeView === 'tasks' ? state.previousViewBeforeTasks : state.activeView,
-      taskPageData: data
-    }))
+    set((state) =>
+      state.activeView === 'chat'
+        ? { chatTasksOpen: true, taskPageData: data }
+        : {
+            activeView: 'tasks',
+            previousViewBeforeTasks:
+              state.activeView === 'tasks' ? state.previousViewBeforeTasks : state.activeView,
+            taskPageData: data
+          }
+    )
     // Why: prefetch the work-item list during first render so the page's effect hits a warm/in-flight SWR cache (~300–800ms win).
     const state = get()
     const preferredVisibleTaskProviders = normalizeVisibleTaskProviders(
@@ -1315,6 +1323,10 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   setGithubTaskDrawerWorkItem: (item) => set({ githubTaskDrawerWorkItem: item }),
   closeTaskPage: () =>
     set((state) => {
+      // Embedded-in-chat close: drop the panel, leave the view and nav history alone.
+      if (state.activeView === 'chat') {
+        return { chatTasksOpen: false, taskPageData: {}, githubTaskDrawerWorkItem: null }
+      }
       // Why: if parked on a 'tasks' entry, rewind the history index so Back/Forward aren't no-ops; keep 0 if it's the only entry.
       const currentEntry = state.worktreeNavHistory[state.worktreeNavHistoryIndex]
       let nextHistoryIndex = state.worktreeNavHistoryIndex

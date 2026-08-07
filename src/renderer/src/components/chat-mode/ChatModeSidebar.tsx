@@ -2,7 +2,7 @@
 // then workspaces with their threads. Selection state lives in the chat slice.
 
 import {
-  ListTodo,
+  List,
   MessageSquarePlus,
   MoreHorizontal,
   Plus,
@@ -23,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
+import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from './ChatModeToggle'
 import { ChatThreadRow } from './ChatThreadRow'
@@ -175,6 +176,7 @@ export function ChatModeSidebar(): React.JSX.Element {
   const workspaces = useAppStore((s) => s.chatWorkspaces)
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const openTaskPage = useAppStore((s) => s.openTaskPage)
+  const tasksOpen = useAppStore((s) => s.chatTasksOpen)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ChatWorkspace | undefined>(undefined)
   const [rawQuery, setRawQuery] = useState('')
@@ -184,6 +186,24 @@ export function ChatModeSidebar(): React.JSX.Element {
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-sidebar">
       <div className="flex flex-col gap-3 p-3 pb-0">
         <ChatModeToggle />
+        <button
+          type="button"
+          aria-current={tasksOpen ? 'page' : undefined}
+          className={cn(
+            // Mirrors the code sidebar's Tasks row so the two views read as one app.
+            'group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors',
+            tasksOpen
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:bg-muted/60'
+          )}
+          onClick={() => openTaskPage()}
+        >
+          <List
+            className={cn('size-4 shrink-0', !tasksOpen && 'text-muted-foreground/50')}
+            strokeWidth={tasksOpen ? 2.25 : 1.75}
+          />
+          <span className="flex-1">{translate('auto.components.chat.sidebar.tasks', 'Tasks')}</span>
+        </button>
         <div className="relative">
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -229,15 +249,6 @@ export function ChatModeSidebar(): React.JSX.Element {
         ))}
       </div>
       <div className="flex items-center gap-1 border-t border-border p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground"
-          onClick={() => openTaskPage()}
-        >
-          <ListTodo className="size-3.5" />
-          {translate('auto.components.chat.sidebar.tasks', 'Tasks')}
-        </Button>
         <div className="flex-1" />
         <Button
           variant="ghost"

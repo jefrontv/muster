@@ -25,6 +25,9 @@ export type ChatModeSlice = {
   activeChatWorkspaceId: string | null
   activeChatThreadId: string | null
   chatThreadSessions: Record<string, ChatThreadSession>
+  /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
+  chatTasksOpen: boolean
+  setChatTasksOpen: (open: boolean) => void
   hydrateChatMode: () => Promise<void>
   setActiveChatWorkspace: (id: string | null) => void
   setActiveChatThread: (id: string | null) => void
@@ -55,6 +58,9 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   activeChatWorkspaceId: null,
   activeChatThreadId: null,
   chatThreadSessions: {},
+  chatTasksOpen: false,
+
+  setChatTasksOpen: (open) => set({ chatTasksOpen: open }),
 
   hydrateChatMode: async () => {
     const state = await window.api.chatMode.getState()
@@ -82,6 +88,8 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       const thread = id !== null ? s.chatThreads.find((t) => t.id === id) : null
       return {
         activeChatThreadId: id,
+        // Picking a thread dismisses the embedded Tasks page — the panel shows one thing.
+        ...(id !== null ? { chatTasksOpen: false } : {}),
         ...(thread ? { activeChatWorkspaceId: thread.workspaceId } : {})
       }
     }),

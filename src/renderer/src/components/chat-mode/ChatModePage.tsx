@@ -2,12 +2,14 @@
 // sidebar beside the active thread's conversation. Owns chat-store hydration.
 
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
 import { ChatModeEmptyState } from './ChatModeEmptyState'
 import { ChatModeSidebar } from './ChatModeSidebar'
 import { ChatThreadView } from './ChatThreadView'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
+
+const TaskPage = lazy(() => import('../TaskPage'))
 
 export default function ChatModePage(): React.JSX.Element {
   const hydrated = useAppStore((s) => s.chatModeHydrated)
@@ -15,6 +17,7 @@ export default function ChatModePage(): React.JSX.Element {
   const workspaces = useAppStore((s) => s.chatWorkspaces)
   const threads = useAppStore((s) => s.chatThreads)
   const activeChatThreadId = useAppStore((s) => s.activeChatThreadId)
+  const tasksOpen = useAppStore((s) => s.chatTasksOpen)
   const [createOpen, setCreateOpen] = useState(false)
 
   useEffect(() => {
@@ -30,30 +33,22 @@ export default function ChatModePage(): React.JSX.Element {
       : null
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      {/* Full-page views hide the worktree titlebar strip, so Chat draws its own:
-          window drag region, traffic-light clearance, and the app name. */}
-      {/* pl clears the macOS traffic lights so the name sits beside them, matching Code view. */}
-      <div className="titlebar pl-20">
-        <span className="text-sm font-semibold text-foreground select-none">Muster</span>
-      </div>
-      <div className="flex min-h-0 flex-1">
-        <ChatModeSidebar />
-        <main className="min-w-0 flex-1">
-          {activeThread && (activeThread.workspaceId === null || activeWorkspace) ? (
-            <ChatThreadView
-              key={activeThread.id}
-              thread={activeThread}
-              workspace={activeWorkspace}
-            />
-          ) : (
-            <ChatModeEmptyState
-              hasWorkspaces={workspaces.length > 0}
-              onCreateWorkspace={() => setCreateOpen(true)}
-            />
-          )}
-        </main>
-      </div>
+    <div className="flex h-full min-h-0 bg-background">
+      <ChatModeSidebar />
+      <main className="min-w-0 flex-1">
+        {tasksOpen ? (
+          <Suspense fallback={null}>
+            <TaskPage />
+          </Suspense>
+        ) : activeThread && (activeThread.workspaceId === null || activeWorkspace) ? (
+          <ChatThreadView key={activeThread.id} thread={activeThread} workspace={activeWorkspace} />
+        ) : (
+          <ChatModeEmptyState
+            hasWorkspaces={workspaces.length > 0}
+            onCreateWorkspace={() => setCreateOpen(true)}
+          />
+        )}
+      </main>
       <ChatWorkspaceCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   )
