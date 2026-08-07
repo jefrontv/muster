@@ -19,7 +19,8 @@ export function ChatThreadView({
   workspace
 }: {
   thread: ChatThread
-  workspace: ChatWorkspace
+  /** Null for standalone chats. */
+  workspace: ChatWorkspace | null
 }): React.JSX.Element {
   const session = useAppStore((s) => s.chatThreadSessions[thread.id])
   const setChatThreadSession = useAppStore((s) => s.setChatThreadSession)

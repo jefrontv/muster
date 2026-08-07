@@ -20,7 +20,8 @@ export type ChatWorkspace = {
 
 export type ChatThread = {
   id: string
-  workspaceId: string
+  /** Null = a standalone chat in the ungrouped "Chats" section. */
+  workspaceId: string | null
   /** User-set, or derived from the first prompt once one is sent. */
   title: string
   agent: 'claude'

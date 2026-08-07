@@ -34,7 +34,7 @@ export type ChatModeSlice = {
     patch: Partial<Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color'>>
   ) => Promise<void>
   deleteChatWorkspace: (id: string) => Promise<void>
-  createChatThread: (workspaceId: string, title?: string) => Promise<ChatThread | null>
+  createChatThread: (workspaceId: string | null, title?: string) => Promise<ChatThread | null>
   updateChatThread: (
     id: string,
     patch: Partial<
@@ -126,7 +126,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       set((s) => ({
         chatThreads: [...s.chatThreads, thread],
         activeChatThreadId: thread.id,
-        activeChatWorkspaceId: thread.workspaceId
+        ...(thread.workspaceId !== null ? { activeChatWorkspaceId: thread.workspaceId } : {})
       }))
     }
     return thread

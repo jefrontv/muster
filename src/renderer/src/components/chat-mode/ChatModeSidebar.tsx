@@ -1,10 +1,17 @@
-// Chat mode's own sidebar: workspaces with their threads, plus create affordances.
-// Selection state lives in the chat slice; this renders it.
+// Chat mode's own sidebar: a search bar over everything, ungrouped standalone chats,
+// then workspaces with their threads. Selection state lives in the chat slice.
 
-import { MessageSquarePlus, MoreHorizontal, Plus } from 'lucide-react'
+import {
+  ListTodo,
+  MessageSquarePlus,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Settings as SettingsIcon
+} from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
-import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
+import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,46 +20,93 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from './ChatModeToggle'
+import { ChatThreadRow } from './ChatThreadRow'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
 
-/** T3-style attention colors: amber = needs you, sky pulse = in motion, plain = resting. */
-function ThreadStatusDot({ threadId }: { threadId: string }): React.JSX.Element | null {
-  const state = useAppStore((s) => {
-    const session = s.chatThreadSessions[threadId]
-    return session ? s.agentStatusByPaneKey[session.paneKey]?.state : undefined
-  })
-  if (state === 'working') {
-    return <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-sky-400" />
+function matchesQuery(value: string, query: string): boolean {
+  return value.toLowerCase().includes(query)
+}
+
+function visibleThreads(threads: ChatThread[], query: string): ChatThread[] {
+  // Creation order stays static while agents work (T3 pattern) — a list that
+  // reorders on every activity tick steals the row out from under the pointer.
+  const sorted = threads
+    .filter((t) => t.archived !== true)
+    .sort((a, b) => a.createdAt - b.createdAt)
+  return query ? sorted.filter((t) => matchesQuery(t.title, query)) : sorted
+}
+
+function StandaloneChatsSection({ query }: { query: string }): React.JSX.Element | null {
+  const threads = useAppStore((s) => s.chatThreads)
+  const createChatThread = useAppStore((s) => s.createChatThread)
+  const rows = visibleThreads(
+    threads.filter((t) => t.workspaceId === null),
+    query
+  )
+  if (query && rows.length === 0) {
+    return null
   }
-  if (state === 'blocked' || state === 'waiting') {
-    return <span className="size-1.5 shrink-0 rounded-full bg-amber-400" />
-  }
-  return null
+  return (
+    <section className="space-y-0.5">
+      <div className="group flex items-center gap-1.5 px-1">
+        <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {translate('auto.components.chat.sidebar.chats', 'Chats')}
+        </h3>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="opacity-0 transition-opacity group-hover:opacity-100"
+          aria-label={translate('auto.components.chat.sidebar.newStandaloneChat', 'New chat')}
+          onClick={() => void createChatThread(null)}
+        >
+          <MessageSquarePlus className="size-3.5" />
+        </Button>
+      </div>
+      {rows.length === 0 ? (
+        <button
+          type="button"
+          className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60"
+          onClick={() => void createChatThread(null)}
+        >
+          {translate('auto.components.chat.sidebar.startQuickChat', 'Start a quick chat…')}
+        </button>
+      ) : (
+        <ul className="space-y-px">
+          {rows.map((thread) => (
+            <ChatThreadRow key={thread.id} thread={thread} />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
 }
 
 function WorkspaceSection({
   workspace,
+  query,
   onEdit
 }: {
   workspace: ChatWorkspace
+  query: string
   onEdit: (workspace: ChatWorkspace) => void
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
-  const activeChatThreadId = useAppStore((s) => s.activeChatThreadId)
-  const setActiveChatThread = useAppStore((s) => s.setActiveChatThread)
   const createChatThread = useAppStore((s) => s.createChatThread)
   const deleteChatWorkspace = useAppStore((s) => s.deleteChatWorkspace)
-  const deleteChatThread = useAppStore((s) => s.deleteChatThread)
-  // Why (T3 pattern): creation-order stays static while agents work — a list that
-  // reorders on every activity tick steals the row out from under the pointer.
-  const workspaceThreads = threads
-    .filter((t) => t.workspaceId === workspace.id && t.archived !== true)
-    .sort((a, b) => a.createdAt - b.createdAt)
+  const workspaceMatches = query ? matchesQuery(workspace.name, query) : true
+  // A workspace-name match keeps all its threads; otherwise the query filters them.
+  const rows = visibleThreads(
+    threads.filter((t) => t.workspaceId === workspace.id),
+    workspaceMatches ? '' : query
+  )
+  if (query && !workspaceMatches && rows.length === 0) {
+    return null
+  }
 
   return (
     <section className="space-y-0.5">
@@ -98,7 +152,7 @@ function WorkspaceSection({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {workspaceThreads.length === 0 ? (
+      {rows.length === 0 ? (
         <button
           type="button"
           className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60"
@@ -108,42 +162,8 @@ function WorkspaceSection({
         </button>
       ) : (
         <ul className="space-y-px">
-          {workspaceThreads.map((thread) => (
-            <li key={thread.id} className="group/thread flex items-center">
-              <button
-                type="button"
-                className={cn(
-                  'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
-                  thread.id === activeChatThreadId
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground/90 hover:bg-muted/60'
-                )}
-                onClick={() => setActiveChatThread(thread.id)}
-              >
-                <span className="min-w-0 flex-1 truncate">{thread.title}</span>
-                <ThreadStatusDot threadId={thread.id} />
-              </button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="opacity-0 transition-opacity group-hover/thread:opacity-100"
-                    aria-label={translate('auto.components.chat.sidebar.threadMenu', 'Chat menu')}
-                  >
-                    <MoreHorizontal className="size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={() => void deleteChatThread(thread.id)}
-                  >
-                    {translate('auto.components.chat.sidebar.deleteThread', 'Delete chat')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
+          {rows.map((thread) => (
+            <ChatThreadRow key={thread.id} thread={thread} />
           ))}
         </ul>
       )}
@@ -153,39 +173,80 @@ function WorkspaceSection({
 
 export function ChatModeSidebar(): React.JSX.Element {
   const workspaces = useAppStore((s) => s.chatWorkspaces)
+  const openSettingsPage = useAppStore((s) => s.openSettingsPage)
+  const openTaskPage = useAppStore((s) => s.openTaskPage)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ChatWorkspace | undefined>(undefined)
+  const [rawQuery, setRawQuery] = useState('')
+  const query = rawQuery.trim().toLowerCase()
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col gap-3 border-r border-border bg-sidebar p-3">
-      <ChatModeToggle />
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
-        </h2>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={translate('auto.components.chat.sidebar.newWorkspace', 'New workspace')}
-          onClick={() => {
-            setEditing(undefined)
-            setDialogOpen(true)
-          }}
-        >
-          <Plus className="size-3.5" />
-        </Button>
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-sidebar">
+      <div className="flex flex-col gap-3 p-3 pb-0">
+        <ChatModeToggle />
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={rawQuery}
+            className="h-8 pl-7 text-sm"
+            placeholder={translate('auto.components.chat.sidebar.searchPlaceholder', 'Search…')}
+            aria-label={translate(
+              'auto.components.chat.sidebar.searchLabel',
+              'Search chats and workspaces'
+            )}
+            onChange={(event) => setRawQuery(event.target.value)}
+          />
+        </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-sleek">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-sleek p-3">
+        <StandaloneChatsSection query={query} />
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={translate('auto.components.chat.sidebar.newWorkspace', 'New workspace')}
+            onClick={() => {
+              setEditing(undefined)
+              setDialogOpen(true)
+            }}
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        </div>
         {workspaces.map((workspace) => (
           <WorkspaceSection
             key={workspace.id}
             workspace={workspace}
+            query={query}
             onEdit={(target) => {
               setEditing(target)
               setDialogOpen(true)
             }}
           />
         ))}
+      </div>
+      <div className="flex items-center gap-1 border-t border-border p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground"
+          onClick={() => openTaskPage()}
+        >
+          <ListTodo className="size-3.5" />
+          {translate('auto.components.chat.sidebar.tasks', 'Tasks')}
+        </Button>
+        <div className="flex-1" />
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          aria-label={translate('auto.components.chat.sidebar.settings', 'Settings')}
+          onClick={() => openSettingsPage()}
+        >
+          <SettingsIcon className="size-3.5" />
+        </Button>
       </div>
       <ChatWorkspaceCreateDialog
         open={dialogOpen}

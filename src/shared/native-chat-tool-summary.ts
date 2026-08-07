@@ -6,6 +6,22 @@ const MAX_PREVIEW_COLLECTION_ITEMS = 8
 const MAX_PREVIEW_DEPTH = 2
 const MAX_TOOL_RUN_SUMMARY_PARTS = 3
 
+/** Reads `mcp__server__tool` into "Server · tool words"; other names pass through.
+ *  claude.ai connector servers are prefixed `claude_ai_` — the product name is the tail. */
+export function humanizeToolName(rawName: string): string {
+  const match = /^mcp__([^_].*?)__(.+)$/.exec(rawName.trim())
+  if (!match) {
+    return rawName
+  }
+  const server = match[1]!
+    .replace(/^claude_ai_/i, '')
+    .replace(/_+/g, ' ')
+    .trim()
+  const serverLabel = server.charAt(0).toUpperCase() + server.slice(1)
+  const tool = match[2]!.replace(/_+/g, ' ').trim()
+  return `${serverLabel} · ${tool}`
+}
+
 export function summarizeToolInput(input: unknown): string {
   const collapsed = toRawPreview(input).replace(/\s+/g, ' ').trim()
   return collapsed.length <= MAX_PREVIEW_LENGTH
@@ -64,7 +80,7 @@ export function summarizeToolRun(blocks: readonly NativeChatBlock[]): string {
     if (!isToolCallBlock(block)) {
       continue
     }
-    const name = block.name.trim()
+    const name = humanizeToolName(block.name.trim())
     if (!name) {
       continue
     }

@@ -11,6 +11,7 @@ import { diffFromText, diffFromToolCall, type DiffLine } from './native-chat-dif
 import {
   countToolCalls,
   formatToolInput,
+  humanizeToolName,
   summarizeToolInput,
   summarizeToolRun
 } from './native-chat-tool-summary'
@@ -24,7 +25,9 @@ const MAX_TOOL_RESULT_CHARS = 4000
  *  mount while the parent run is open, so each starts expanded (opening the run
  *  reveals every line at once) and is then individually collapsible. */
 function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | null {
-  const [expanded, setExpanded] = useState(true)
+  // Why: tool results (MCP JSON payloads especially) are working material, not
+  // conversation — keep them behind the preview until asked for.
+  const [expanded, setExpanded] = useState(() => !isToolResultBlock(block))
 
   let name: string
   let preview: string
@@ -34,7 +37,7 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
   let detail: string | null = null
 
   if (isToolCallBlock(block)) {
-    name = block.name
+    name = humanizeToolName(block.name)
     preview = summarizeToolInput(block.input)
     diff = diffFromToolCall(block.name, block.input)
     detail = diff ? null : formatToolInput(block.input)

@@ -88,7 +88,7 @@ export function registerChatModeHandlers(): void {
     'chatMode:createThread',
     async (_event, args: { workspaceId?: unknown; title?: unknown }): Promise<ChatThread | null> =>
       chatStore().createThread({
-        workspaceId: asString(args?.workspaceId, 'workspaceId'),
+        workspaceId: args?.workspaceId === null ? null : asString(args?.workspaceId, 'workspaceId'),
         ...(typeof args?.title === 'string' && args.title !== '' ? { title: args.title } : {})
       })
   )

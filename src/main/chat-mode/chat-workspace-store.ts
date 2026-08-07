@@ -45,12 +45,14 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
   if (!isRecord(raw) || typeof raw.id !== 'string' || raw.id === '') {
     return null
   }
-  if (typeof raw.workspaceId !== 'string' || !workspaceIds.has(raw.workspaceId)) {
+  // null = standalone chat; a dangling workspace pointer drops the thread.
+  const workspaceId = typeof raw.workspaceId === 'string' ? raw.workspaceId : null
+  if (workspaceId !== null && !workspaceIds.has(workspaceId)) {
     return null
   }
   return {
     id: raw.id,
-    workspaceId: raw.workspaceId,
+    workspaceId,
     title: typeof raw.title === 'string' && raw.title !== '' ? raw.title : 'New chat',
     agent: 'claude',
     claudeSessionId: typeof raw.claudeSessionId === 'string' ? raw.claudeSessionId : null,
@@ -148,8 +150,11 @@ export class ChatWorkspaceStore {
     return true
   }
 
-  createThread(args: { workspaceId: string; title?: string }): ChatThread | null {
-    if (!this.state.workspaces.some((w) => w.id === args.workspaceId)) {
+  createThread(args: { workspaceId: string | null; title?: string }): ChatThread | null {
+    if (
+      args.workspaceId !== null &&
+      !this.state.workspaces.some((w) => w.id === args.workspaceId)
+    ) {
       return null
     }
     const at = this.now()

@@ -47,21 +47,22 @@ export type ChatThreadLaunchResult = {
 
 export async function launchChatThreadSession(args: {
   thread: ChatThread
-  workspace: ChatWorkspace
+  /** Null for standalone chats — the session starts in the provider's default (home). */
+  workspace: ChatWorkspace | null
   onAgentStatus?: (payload: ParsedAgentStatusPayload) => void
   onExit?: (ptyId: string, code: number) => void
 }): Promise<ChatThreadLaunchResult | null> {
   const { thread, workspace, onAgentStatus, onExit } = args
   const store = useAppStore.getState()
   const agent = thread.agent
-  const primaryDirectory = workspace.directories[0]
-  if (!primaryDirectory) {
+  const primaryDirectory = workspace ? workspace.directories[0] : undefined
+  if (workspace && !primaryDirectory) {
     throw new Error('This chat workspace has no directory yet; add one first.')
   }
 
   // Why: the session is invisible, so the trust menu would stall it with no way to answer.
   const preflight = TUI_AGENT_CONFIG[agent].preflightTrust
-  if (preflight && window.api.agentTrust?.markTrusted) {
+  if (preflight && workspace && window.api.agentTrust?.markTrusted) {
     for (const directory of workspace.directories) {
       try {
         await window.api.agentTrust.markTrusted({ preset: preflight, workspacePath: directory })
@@ -79,8 +80,7 @@ export async function launchChatThreadSession(args: {
   })
   const shell = resolveStartupShell(CLIENT_PLATFORM, startupShell)
   // Extra workspace directories become the session's file-access scope.
-  const addDirArgs = workspace.directories
-    .slice(1)
+  const addDirArgs = (workspace?.directories.slice(1) ?? [])
     .map((dir) => `--add-dir ${quoteStartupArg(dir, shell)}`)
     .join(' ')
   const baseArgs = resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
@@ -171,7 +171,7 @@ export async function launchChatThreadSession(args: {
     const result = await window.api.pty.spawn({
       cols: 120,
       rows: 40,
-      cwd: primaryDirectory,
+      ...(primaryDirectory ? { cwd: primaryDirectory } : {}),
       command: startupPlan.launchCommand,
       ...(startupPlan.startupCommandDelivery
         ? { startupCommandDelivery: startupPlan.startupCommandDelivery }
