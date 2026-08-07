@@ -334,7 +334,8 @@ describe('resolveNativeChatSession', () => {
       paneKey,
       launchAgent: 'claude',
       ptyId: null,
-      agentStatusEntry: makeEntry({
+      agentStatusEntry: entry({
+        paneKey,
         agentType: 'claude',
         providerSession: { key: 'session_id', id: 'live-session' }
       }),
