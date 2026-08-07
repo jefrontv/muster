@@ -83,8 +83,15 @@ export function registerChatThreadStreamHandlers(store: Store): void {
 
   ipcMain.handle(
     'chatThreadStream:send',
-    async (_event, threadId: unknown, text: unknown): Promise<boolean> =>
-      sendChatThreadStreamMessage(asString(threadId, 'threadId'), asString(text, 'text'))
+    async (_event, threadId: unknown, text: unknown, imagePaths: unknown): Promise<boolean> =>
+      sendChatThreadStreamMessage(
+        asString(threadId, 'threadId'),
+        // Empty text is valid for an images-only send.
+        typeof text === 'string' ? text : '',
+        Array.isArray(imagePaths)
+          ? imagePaths.filter((path): path is string => typeof path === 'string')
+          : undefined
+      )
   )
 
   ipcMain.handle(

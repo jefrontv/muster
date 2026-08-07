@@ -9,6 +9,7 @@ import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-strea
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder } from './chat-thread-stream-decode'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
+import { buildChatStreamUserContent, readChatStreamImages } from './chat-thread-stream-user-content'
 
 const STDERR_TAIL_LIMIT = 4_096
 const STOP_KILL_GRACE_MS = 1_500
@@ -177,14 +178,29 @@ function writeStdinLine(entry: StreamEntry, payload: unknown): boolean {
   return true
 }
 
-export function sendChatThreadStreamMessage(threadId: string, text: string): boolean {
+export async function sendChatThreadStreamMessage(
+  threadId: string,
+  text: string,
+  imagePaths?: readonly string[]
+): Promise<boolean> {
+  if (!registry.has(threadId)) {
+    return false
+  }
+  const { images } = imagePaths?.length
+    ? await readChatStreamImages(imagePaths)
+    : { images: [] as Awaited<ReturnType<typeof readChatStreamImages>>['images'] }
+  // Re-check: the child can die during the file reads.
   const entry = registry.get(threadId)
   if (!entry) {
     return false
   }
+  const content = buildChatStreamUserContent(text, images)
+  if (content.length === 0) {
+    return false
+  }
   return writeStdinLine(entry, {
     type: 'user',
-    message: { role: 'user', content: [{ type: 'text', text }] }
+    message: { role: 'user', content }
   })
 }
 

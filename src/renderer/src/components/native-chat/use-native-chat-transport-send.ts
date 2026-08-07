@@ -9,7 +9,7 @@ import { pushHistory, type HistoryState } from './native-chat-composer-state'
 
 export function useNativeChatTransportSend(args: {
   agent: AgentType
-  transportSend: ((text: string) => Promise<boolean>) | undefined
+  transportSend: ((text: string, imagePaths?: string[]) => Promise<boolean>) | undefined
   onOptimisticSend?: (text: string, imagePaths?: string[]) => string | undefined
   onOptimisticSendCanceled?: (pendingId: string) => void
   setHistory: Dispatch<SetStateAction<HistoryState>>
@@ -17,7 +17,7 @@ export function useNativeChatTransportSend(args: {
   setCaret: Dispatch<SetStateAction<number>>
   clearSkillOrigin: () => void
   setNotice: Dispatch<SetStateAction<string | null>>
-}): (text: string) => void {
+}): (text: string, imagePaths?: string[]) => void {
   const {
     agent,
     transportSend,
@@ -30,12 +30,12 @@ export function useNativeChatTransportSend(args: {
     setNotice
   } = args
   return useCallback(
-    (text: string) => {
+    (text: string, imagePaths?: string[]) => {
       if (!transportSend) {
         return
       }
-      const pendingId = onOptimisticSend?.(text)
-      void transportSend(text).then((delivered) => {
+      const pendingId = onOptimisticSend?.(text, imagePaths)
+      void transportSend(text, imagePaths).then((delivered) => {
         if (!delivered && pendingId) {
           // Why: the stream died between render and send; a stuck queued
           // bubble would claim delivery that never happened.

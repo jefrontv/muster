@@ -904,7 +904,7 @@ export type ChatModeApi = {
  *  the authoritative message source. */
 export type ChatThreadStreamApi = {
   start: (args: ChatThreadStreamStartArgs) => Promise<ChatThreadStreamStartResult>
-  send: (threadId: string, text: string) => Promise<boolean>
+  send: (threadId: string, text: string, imagePaths?: string[]) => Promise<boolean>
   /** Answer a pending can_use_tool control request (Approve/Decline). */
   respondPermission: (args: ChatThreadPermissionResponseArgs) => Promise<boolean>
   /** Interrupt the in-flight turn over the stream's control protocol. */

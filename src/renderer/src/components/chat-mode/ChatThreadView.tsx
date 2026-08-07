@@ -109,7 +109,8 @@ export function ChatThreadView({
   }, [providerSession, thread.claudeSessionId, thread.id, updateChatThread])
 
   const sendMessage = useCallback(
-    (text: string) => window.api.chatThreadStream.send(thread.id, text),
+    (text: string, imagePaths?: string[]) =>
+      window.api.chatThreadStream.send(thread.id, text, imagePaths),
     [thread.id]
   )
   const dispatchOption = useCallback(

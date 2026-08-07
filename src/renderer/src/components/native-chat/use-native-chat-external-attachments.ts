@@ -12,6 +12,8 @@ export type UseNativeChatExternalAttachmentsArgs = {
   /** Live composer-disabled state; read at await-resume via a ref so a flip
    *  mid-upload doesn't attach into a guarded composer. */
   disabled: boolean
+  /** Stream-transport panes have no worktree: attachments are always local. */
+  transportLocal?: boolean
   attachResolvedPaths: (paths: string[]) => void
   setNotice: (notice: string | null) => void
 }
@@ -24,6 +26,7 @@ export type UseNativeChatExternalAttachmentsArgs = {
 export function useNativeChatExternalAttachments({
   terminalTabId,
   disabled,
+  transportLocal = false,
   attachResolvedPaths,
   setNotice
 }: UseNativeChatExternalAttachmentsArgs): {
@@ -34,8 +37,11 @@ export function useNativeChatExternalAttachments({
   disabledRef.current = disabled
 
   const resolveAttachmentOwner = useCallback(
-    () => resolveNativeChatAttachmentOwner(useAppStore.getState(), terminalTabId),
-    [terminalTabId]
+    (): NativeChatAttachmentOwner =>
+      transportLocal
+        ? { kind: 'local' }
+        : resolveNativeChatAttachmentOwner(useAppStore.getState(), terminalTabId),
+    [terminalTabId, transportLocal]
   )
 
   const attachExternalPaths = useCallback(

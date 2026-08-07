@@ -35,7 +35,7 @@ export type UseNativeChatComposerSendArgs = {
   isDispatchingSessionOption: boolean
   classifySend: (text: string) => NativeChatSendClassification
   resolveTarget: () => NativeChatResolvedTarget | null
-  sendViaTransport: (text: string) => void
+  sendViaTransport: (text: string, imagePaths?: string[]) => void
   cancelPendingSends: () => void
   trackPendingSend: (handle: NativeChatSendHandle, pendingId?: string) => void
   transportInterrupt?: () => Promise<boolean>
@@ -94,17 +94,14 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
       return
     }
     if (hasTransport) {
-      // Stream transport: plain user turns only. Slash/skill sends and image
-      // attachments have no headless delivery path yet — say so, don't drop.
-      if (imagePaths.length > 0) {
-        setNotice('Attachments are not supported in chat threads yet.')
-        return
-      }
+      // Stream transport: plain user turns (with optional images as base64
+      // content blocks). Slash/skill sends still have no headless path.
       if (classifySend(text) !== 'chat') {
         setNotice('Commands are not supported in chat threads yet — use the pickers below.')
         return
       }
-      sendViaTransport(text)
+      sendViaTransport(text, imagePaths.length > 0 ? imagePaths : undefined)
+      clearImageAttachments()
       return
     }
     const target = resolveTarget()

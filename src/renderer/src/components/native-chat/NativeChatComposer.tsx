@@ -176,6 +176,9 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     const { attachExternalPaths, resolveAttachmentOwner } = useNativeChatExternalAttachments({
       terminalTabId,
       disabled,
+      // Stream threads run a local headless child — there is no worktree to
+      // resolve, and images ride the message as base64 blocks.
+      transportLocal: hasTransport,
       attachResolvedPaths,
       setNotice
     })

@@ -250,24 +250,24 @@ describe('startChatThreadStream', () => {
     child.emit('close', 0)
   })
 
-  it('writes user turns as NDJSON to stdin and refuses missing threads', () => {
+  it('writes user turns as NDJSON to stdin and refuses missing threads', async () => {
     const child = createFakeChild()
     const { sender } = createSender()
     startChatThreadStream(
       { threadId: 't1', command: 'claude -p', sender },
       { spawn: () => child, hookEnv: () => ({}) }
     )
-    expect(sendChatThreadStreamMessage('t1', 'hello')).toBe(true)
+    await expect(sendChatThreadStreamMessage('t1', 'hello')).resolves.toBe(true)
     const written = child.stdin.read() as Buffer
     expect(JSON.parse(written.toString().trim())).toEqual({
       type: 'user',
       message: { role: 'user', content: [{ type: 'text', text: 'hello' }] }
     })
-    expect(sendChatThreadStreamMessage('missing', 'hello')).toBe(false)
+    await expect(sendChatThreadStreamMessage('missing', 'hello')).resolves.toBe(false)
     child.emit('close', 0)
   })
 
-  it('suppresses the exit event for an intentional stop and is idempotent', () => {
+  it('suppresses the exit event for an intentional stop and is idempotent', async () => {
     const child = createFakeChild()
     const { sent, sender } = createSender()
     startChatThreadStream(
@@ -276,7 +276,7 @@ describe('startChatThreadStream', () => {
     )
     stopChatThreadStream('t1')
     stopChatThreadStream('t1')
-    expect(sendChatThreadStreamMessage('t1', 'late')).toBe(false)
+    await expect(sendChatThreadStreamMessage('t1', 'late')).resolves.toBe(false)
     child.emit('close', 0)
     expect(sent).toEqual([])
     expect(chatThreadStreamCountForTests()).toBe(0)

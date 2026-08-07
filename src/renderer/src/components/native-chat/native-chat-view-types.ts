@@ -17,8 +17,9 @@ export type NativeChatPermissionBehavior = 'allow' | 'allow-always' | 'deny'
  *  present it replaces the PTY send path; PTY-only affordances (interrupt ESC,
  *  attachments) degrade gracefully. */
 export type NativeChatTransport = {
-  /** Deliver one user turn; resolves false when the stream is gone. */
-  send: (text: string) => Promise<boolean>
+  /** Deliver one user turn (optionally with image attachments as base64
+   *  content blocks); resolves false when the stream is gone. */
+  send: (text: string, imagePaths?: string[]) => Promise<boolean>
   /** Token-streamed assistant text for the in-flight turn, or null. */
   streamingText: string | null
   /** True once the in-flight message completed (typewriter sprints to the end). */

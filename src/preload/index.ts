@@ -856,7 +856,8 @@ const api = {
 
   chatThreadStream: {
     start: (args) => ipcRenderer.invoke('chatThreadStream:start', args),
-    send: (threadId, text) => ipcRenderer.invoke('chatThreadStream:send', threadId, text),
+    send: (threadId, text, imagePaths) =>
+      ipcRenderer.invoke('chatThreadStream:send', threadId, text, imagePaths),
     respondPermission: (args) => ipcRenderer.invoke('chatThreadStream:respondPermission', args),
     interrupt: (threadId) => ipcRenderer.invoke('chatThreadStream:interrupt', threadId),
     stop: (threadId) => ipcRenderer.invoke('chatThreadStream:stop', threadId),
