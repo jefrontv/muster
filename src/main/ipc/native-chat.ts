@@ -6,6 +6,7 @@ import type {
 } from '../../shared/native-chat-types'
 import { clearNativeChatTranscriptCache } from '../native-chat/transcript-read-cache'
 import { resolveSessionFilePath } from '../native-chat/session-file-resolver'
+import { chatStreamImageMediaType } from '../chat-mode/chat-thread-stream-user-content'
 import {
   readTranscriptContextUsage,
   type TranscriptContextUsage
@@ -52,6 +53,27 @@ export type NativeChatReadContextUsageArgs = {
   agent: AgentType
   sessionId: string
   transcriptPath?: string
+}
+
+// Composer/message thumbnails: images are user-picked local paths, so a data
+// URL round-trip through main is the sandbox-safe way to display them.
+const IMAGE_DATA_URL_MAX_BYTES = 8 * 1024 * 1024
+
+async function readImageDataUrl(path: string): Promise<string | null> {
+  const mediaType = chatStreamImageMediaType(path)
+  if (!mediaType) {
+    return null
+  }
+  try {
+    const { readFile, stat } = await import('node:fs/promises')
+    const info = await stat(path)
+    if (info.size > IMAGE_DATA_URL_MAX_BYTES) {
+      return null
+    }
+    return `data:${mediaType};base64,${(await readFile(path)).toString('base64')}`
+  } catch {
+    return null
+  }
 }
 
 async function readContextUsage(
@@ -303,6 +325,9 @@ export function registerNativeChatHandlers(): void {
   )
   ipcMain.handle('nativeChat:readContextUsage', (_event, args: NativeChatReadContextUsageArgs) =>
     readContextUsage(args)
+  )
+  ipcMain.handle('nativeChat:readImageDataUrl', (_event, path: unknown) =>
+    typeof path === 'string' && path !== '' ? readImageDataUrl(path) : null
   )
   ipcMain.on('nativeChat:subscribe', (event, args: NativeChatSubscribeArgs) => {
     void handleSubscribe(event, args)

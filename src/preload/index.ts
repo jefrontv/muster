@@ -4159,7 +4159,9 @@ const api = {
       sessionId: string,
       transcriptPath?: string
     ): Promise<{ usedTokens: number } | null> =>
-      ipcRenderer.invoke('nativeChat:readContextUsage', { agent, sessionId, transcriptPath })
+      ipcRenderer.invoke('nativeChat:readContextUsage', { agent, sessionId, transcriptPath }),
+    readImageDataUrl: (path: string): Promise<string | null> =>
+      ipcRenderer.invoke('nativeChat:readImageDataUrl', path)
   },
 
   runtime: {

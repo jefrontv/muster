@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { ArrowUp, Image as ImageIcon } from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
 } from '@/components/sidebar/CommentMarkdown'
@@ -18,6 +18,7 @@ import {
   shouldCollapseUserMessage
 } from './native-chat-user-message-collapse'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
+import { NativeChatImageThumb } from './NativeChatImageThumb'
 import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
@@ -35,7 +36,7 @@ function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.J
     return null
   }
   return (
-    <div className="mb-2 flex flex-wrap gap-1.5">
+    <div className="mb-2 flex flex-wrap gap-2">
       {images.map((image, index) => {
         const label = image.alt ?? image.path ?? image.url ?? 'Image'
         const name =
@@ -44,15 +45,23 @@ function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.J
             : image.path
               ? basename(image.path)
               : label
-        return (
-          <div
+        // Remote URLs render directly; local paths go through the thumb's
+        // data-URL bridge. Both stay square (1:1 crop).
+        return image.url ? (
+          <img
             key={`${label}-${index}`}
-            className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
+            src={image.url}
+            alt={name}
             title={label}
-          >
-            <ImageIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{name}</span>
-          </div>
+            className="size-24 rounded-lg border border-border object-cover"
+          />
+        ) : (
+          <NativeChatImageThumb
+            key={`${label}-${index}`}
+            path={image.path}
+            alt={name}
+            className="size-24 rounded-lg"
+          />
         )
       })}
     </div>

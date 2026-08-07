@@ -4,7 +4,7 @@ import type {
   KeyboardEventHandler,
   RefObject
 } from 'react'
-import { Image as ImageIcon, ImageOff, X } from 'lucide-react'
+import { ImageOff, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { NATIVE_FILE_DROP_TARGET } from '../../../../shared/native-file-drop'
@@ -19,6 +19,7 @@ import {
   type NativeChatComposerApproval
 } from './NativeChatApprovalPanel'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
+import { NativeChatImageThumb } from './NativeChatImageThumb'
 import { nativeChatComposerPlaceholder } from './native-chat-composer-target'
 import type {
   SessionOptionDescriptor,
@@ -146,22 +147,21 @@ export function NativeChatComposerField({
           >
             {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
             {imageAttachments.length > 0 ? (
-              <div className="mb-2 flex flex-wrap gap-1.5 px-1">
+              <div className="mb-2 flex flex-wrap gap-2 px-1">
                 {imageAttachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
-                    title={attachment.path}
-                  >
-                    <ImageIcon className="size-3.5 shrink-0" />
-                    <span className="max-w-56 truncate">
-                      {isNativeChatPastedImagePath(attachment.path)
-                        ? translate(
-                            'components.native-chat.composer.pastedImageLabel',
-                            'Pasted image'
-                          )
-                        : basename(attachment.path)}
-                    </span>
+                  <div key={attachment.id} className="group/thumb relative">
+                    <NativeChatImageThumb
+                      path={attachment.path}
+                      alt={
+                        isNativeChatPastedImagePath(attachment.path)
+                          ? translate(
+                              'components.native-chat.composer.pastedImageLabel',
+                              'Pasted image'
+                            )
+                          : basename(attachment.path)
+                      }
+                      className="size-16 rounded-md"
+                    />
                     <button
                       type="button"
                       onClick={() => onRemoveImageAttachment(attachment.id)}
@@ -169,7 +169,7 @@ export function NativeChatComposerField({
                         'components.native-chat.composer.removeAttachment',
                         'Remove attachment'
                       )}
-                      className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-border bg-background text-muted-foreground opacity-0 shadow-sm transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/thumb:opacity-100"
                     >
                       <X className="size-3" />
                     </button>
