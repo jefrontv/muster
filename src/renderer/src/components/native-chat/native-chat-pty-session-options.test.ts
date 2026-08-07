@@ -122,7 +122,7 @@ describe('native chat PTY session options', () => {
 
     expect(dispatch).toHaveBeenCalledWith('/model fable', {
       detectAgentInteraction: 'claude-model-switch-confirmation',
-      expectedChoiceLabel: 'Fable 5'
+      expectedChoiceLabel: 'Fable'
     })
     expect(onAgentPicker).not.toHaveBeenCalled()
     expect(result.snapshot[0]).toMatchObject({

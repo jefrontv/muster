@@ -336,7 +336,7 @@ describe('NativeChatComposer', () => {
     expect(mocks.createClaudeModelSwitchConfirmationObserver).toHaveBeenCalledWith({
       ptyId: 'pty-1',
       settings: {},
-      expectedModelLabel: 'Opus 4.8'
+      expectedModelLabel: 'Opus'
     })
     expect(onSwitchToTerminal).not.toHaveBeenCalled()
   })
@@ -367,7 +367,7 @@ describe('NativeChatComposer', () => {
     expect(mocks.createClaudeModelSwitchConfirmationObserver).toHaveBeenCalledWith({
       ptyId: 'pty-1',
       settings: {},
-      expectedModelLabel: 'Fable 5'
+      expectedModelLabel: 'Fable'
     })
     expect(mocks.confirmationObserver?.arm).toHaveBeenCalledOnce()
     expect(mocks.confirmationObserver?.arm.mock.invocationCallOrder[0]).toBeLessThan(

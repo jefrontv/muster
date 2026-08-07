@@ -32,7 +32,8 @@ const getEmptySnapshot = (): SessionOptionDescriptor[] => EMPTY_SNAPSHOT
 function readLaunchAppliedSessionOptions(
   terminalTabId: string
 ): Record<string, SessionOptionValue> | null {
-  for (const session of Object.values(useAppStore.getState().chatThreadSessions)) {
+  // ?? {}: test harnesses build partial stores without the chat slice.
+  for (const session of Object.values(useAppStore.getState().chatThreadSessions ?? {})) {
     if (session.tabId === terminalTabId && session.appliedSessionOptions) {
       return session.appliedSessionOptions
     }

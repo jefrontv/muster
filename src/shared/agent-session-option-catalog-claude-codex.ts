@@ -66,20 +66,24 @@ const CLAUDE_FAST_MODE: CatalogOption = {
 }
 
 export const CLAUDE_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
+  // Why: these ids are Claude CLI aliases that resolve per-host ("opus" is Opus 5
+  // on current CLIs, older Opus on older ones), so version-pinned labels lie on
+  // part of the fleet — and the model-switch verifier matches the CLI's
+  // "Set model to <name>" echo by label prefix, which only family names survive.
   models: [
     {
       id: 'fable',
-      label: 'Fable 5',
+      label: 'Fable',
       options: [claudeEffort(true)]
     },
     {
       id: 'opus',
-      label: 'Opus 4.8',
+      label: 'Opus',
       options: [claudeEffort(true), CLAUDE_FAST_MODE]
     },
     {
       id: 'sonnet',
-      label: 'Sonnet 5',
+      label: 'Sonnet',
       isDefault: true,
       options: [claudeEffort(true)]
     },
