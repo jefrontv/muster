@@ -58,7 +58,8 @@ export default function NativeChatView({
   onSwitchToTerminal,
   readTerminalScreen,
   contextMenuActions,
-  transport
+  transport,
+  fallbackProviderSession
 }: NativeChatViewProps): React.JSX.Element {
   // Select only this tab's status entry (shallow-compared) so an unrelated
   // pane's status tick doesn't re-render this view or re-run the resolution.
@@ -80,6 +81,7 @@ export default function NativeChatView({
       resolvedAgent={resolvedAgent}
       agentStatusEntry={agentStatusEntry}
       ptyId={targetPtyId}
+      fallbackProviderSession={fallbackProviderSession ?? null}
     >
       {(resolution) => (
         <NativeChatResolvedView

@@ -23,6 +23,11 @@ export type NativeChatPaneResolutionInput = {
   /** Agent identity resolved from trusted terminal title/foreground signals.
    *  Fallback only: launch metadata and hook status remain authoritative. */
   resolvedAgent?: TuiAgent | null
+  /** Persisted session identity (e.g. a resumed chat thread's stored
+   *  claudeSessionId/transcriptPath). Used until the live hook entry reports a
+   *  providerSession — without it a resumed conversation renders empty until
+   *  the agent's next activity. Hook-reported identity always wins. */
+  fallbackProviderSession?: { id: string; transcriptPath?: string | null } | null
 }
 
 export type NativeChatPaneResolution = {
@@ -50,10 +55,14 @@ export function resolveNativeChatSession(
   if (!agent || !isNativeChatSupportedAgent(agent)) {
     return null
   }
+  const reported = input.agentStatusEntry?.providerSession
+  const fallback = input.fallbackProviderSession
   return {
     agent,
-    sessionId: input.agentStatusEntry?.providerSession?.id ?? null,
-    transcriptPath: input.agentStatusEntry?.providerSession?.transcriptPath ?? null,
+    sessionId: reported?.id ?? fallback?.id ?? null,
+    transcriptPath: reported?.id
+      ? (reported.transcriptPath ?? null)
+      : (fallback?.transcriptPath ?? null),
     ptyId: input.ptyId,
     paneKey: input.paneKey
   }

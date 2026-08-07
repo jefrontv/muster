@@ -309,4 +309,39 @@ describe('resolveNativeChatSession', () => {
       })
     ).toBeNull()
   })
+
+  it('uses the persisted fallback session until the hook reports one', () => {
+    const paneKey = 'tab-1:11111111-1111-4111-8111-111111111111'
+    expect(
+      resolveNativeChatSession({
+        paneKey,
+        launchAgent: 'claude',
+        ptyId: null,
+        fallbackProviderSession: { id: 'stored-session', transcriptPath: '/t/stored.jsonl' }
+      })
+    ).toEqual({
+      agent: 'claude',
+      sessionId: 'stored-session',
+      transcriptPath: '/t/stored.jsonl',
+      ptyId: null,
+      paneKey
+    })
+  })
+
+  it('prefers the hook-reported session over the persisted fallback', () => {
+    const paneKey = 'tab-1:11111111-1111-4111-8111-111111111111'
+    const resolved = resolveNativeChatSession({
+      paneKey,
+      launchAgent: 'claude',
+      ptyId: null,
+      agentStatusEntry: makeEntry({
+        agentType: 'claude',
+        providerSession: { key: 'session_id', id: 'live-session' }
+      }),
+      fallbackProviderSession: { id: 'stored-session', transcriptPath: '/t/stored.jsonl' }
+    })
+    expect(resolved?.sessionId).toBe('live-session')
+    // Hook identity wins wholesale — a stored path must not pair with a newer id.
+    expect(resolved?.transcriptPath).toBeNull()
+  })
 })

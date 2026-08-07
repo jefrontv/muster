@@ -179,6 +179,11 @@ export function ChatThreadView({
           paneKey={session.paneKey}
           launchAgent={thread.agent}
           transport={transport}
+          fallbackProviderSession={
+            thread.claudeSessionId !== null
+              ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
+              : null
+          }
         />
       </div>
     )

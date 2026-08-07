@@ -51,4 +51,7 @@ export type NativeChatViewProps = {
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
   /** Stream transport override; when set the composer sends here, not the PTY. */
   transport?: NativeChatTransport | null
+  /** Persisted session identity for resumed conversations — renders history
+   *  before the live hook entry reports a providerSession. */
+  fallbackProviderSession?: { id: string; transcriptPath?: string | null } | null
 }
