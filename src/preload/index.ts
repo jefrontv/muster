@@ -828,6 +828,7 @@ const api = {
     list: (args) => ipcRenderer.invoke('siteRuns:list', args),
     readLog: (args) => ipcRenderer.invoke('siteRuns:readLog', args),
     active: () => ipcRenderer.invoke('siteRuns:active'),
+    wpCli: (args) => ipcRenderer.invoke('siteRuns:wpCli', args),
     onEvent: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, event: SiteRunEvent): void =>
         callback(event)

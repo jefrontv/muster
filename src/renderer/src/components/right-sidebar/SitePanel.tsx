@@ -2,7 +2,7 @@
 // configuration with quick Import/Deploy actions. The full editing surface stays on the Sites
 // page; this panel answers "what would a run do right now" without leaving the workspace.
 
-import { ArrowUpRight, CircleStop, Loader2 } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteRun, SiteRunLogLine } from '../../../../shared/site-run-types'
@@ -10,17 +10,23 @@ import type { SiteRunGroup, SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { useRepoById } from '@/store/selectors'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useConfirmationDialog } from '@/components/confirmation-dialog'
 import { cn } from '@/lib/utils'
 import { useSiteRun } from '@/components/sites/use-site-run'
-import { RUN_STATUS_BADGE, RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
-import { InfoRow, SectionHeading, formatRelativeTime } from './site-panel-controls'
+import { RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
+import {
+  InfoRow,
+  RunStatusDot,
+  SectionCard,
+  SectionHeading,
+  formatRelativeTime
+} from './site-panel-controls'
 import { useSiteForActiveProject } from './use-site-for-active-project'
 import { SitePanelEnvironmentSection } from './site-panel-environment-section'
+import { SitePanelRunOutput } from './site-panel-run-output'
+import { SitePanelWpCliSection } from './site-panel-wp-cli'
 
 /** The sidebar shows a tail, not the console: enough to see the run is alive and where it died. */
 const SIDEBAR_LOG_TAIL = 200
@@ -80,6 +86,9 @@ export function SitePanelContent({
   // crash history, issue #7547). Summary refetch fires on running↔terminal transitions so step
   // counts and branch resolution stay current when an external run settles.
   const externallyRunningRef = useRef(new Set<string>())
+  // The panel's own streamed run id — its settle already notifies from use-site-run.
+  const runIdSeenRef = useRef<string | null>(null)
+  runIdSeenRef.current = run?.id ?? runIdSeenRef.current
   useEffect(() => {
     const tick = async (): Promise<void> => {
       if (document.visibilityState !== 'visible') {
@@ -99,6 +108,26 @@ export function SitePanelContent({
         [...before].some((id) => !nowRunning.has(id))
       externallyRunningRef.current = nowRunning
       if (changed) {
+        // Agent-started runs settle in another process, so nothing else notifies for them. The
+        // panel's own streamed run already notified from use-site-run; skip it by id.
+        for (const id of before) {
+          if (nowRunning.has(id) || id === runIdSeenRef.current) {
+            continue
+          }
+          const settled = result.value.find((entry) => entry.id === id)
+          if (settled && settled.status !== 'running') {
+            void window.api.notifications.dispatch({
+              source: 'site-run-complete',
+              notificationId: `site-run:${settled.id}`,
+              siteRun: {
+                siteName: settled.siteName,
+                group: settled.group,
+                environment: settled.environment,
+                status: settled.status
+              }
+            })
+          }
+        }
         onRunSettledRef.current()
       }
     }
@@ -237,7 +266,7 @@ export function SitePanelContent({
         </Tooltip>
       </header>
 
-      <section className="space-y-1.5">
+      <SectionCard>
         <SectionHeading>
           {translate('auto.components.right.sidebar.SitePanel.localSection', 'Local')}
         </SectionHeading>
@@ -262,137 +291,71 @@ export function SitePanelContent({
               : '—'
           }
         />
-      </section>
+      </SectionCard>
 
-      <SitePanelEnvironmentSection
-        summary={summary}
-        targetName={targetName ?? null}
-        targetEnvironment={targetEnvironment}
-        importReason={importReason}
-        deployReason={deployReason}
-        busy={running || starting}
-        requestRun={(group) => void requestRun(group)}
-        onStepsChanged={onStepsChanged}
-      />
+      <SectionCard>
+        <SitePanelEnvironmentSection
+          summary={summary}
+          targetName={targetName ?? null}
+          targetEnvironment={targetEnvironment}
+          importReason={importReason}
+          deployReason={deployReason}
+          busy={running || starting}
+          requestRun={(group) => void requestRun(group)}
+          onStepsChanged={onStepsChanged}
+        />
+      </SectionCard>
+
+      {noEnvironmentReason === null ? (
+        <SectionCard>
+          <SitePanelWpCliSection
+            siteId={site.id}
+            targetName={targetName ?? null}
+            disabledReason={noEnvironmentReason}
+          />
+        </SectionCard>
+      ) : null}
 
       {/* Output only: the Import/Deploy actions live with their step toggles above. The section
           disappears while idle so the panel carries no empty chrome. */}
-      <section
-        className={cn(
-          'space-y-2 border-t border-border pt-3',
-          !run && !starting && !error && lines.length === 0 && externalTail === null && 'hidden'
-        )}
-      >
-        {running || starting ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {running ? (
-              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => void cancel()}>
-                <CircleStop className="size-3.5" />
-                {translate('auto.components.right.sidebar.SitePanel.cancel', 'Cancel')}
-              </Button>
-            ) : null}
-            <Loader2 className="size-4 animate-spin" />
-          </div>
-        ) : null}
-
-        {run ? (
-          <p className={cn('text-xs', RUN_STATUS_TONE[run.status])}>
-            {run.group} · {run.environment} · {run.status}
-            {progress && progress.percent !== null && running ? ` · ${progress.percent}%` : ''}
-          </p>
-        ) : null}
-        {error ? <p className="text-xs text-destructive">{error}</p> : null}
-
-        {progress && running ? (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="truncate">{progress.stage}</span>
-              {progress.percent === null ? null : <span>{progress.percent}%</span>}
-            </div>
-            <Progress value={progress.percent ?? 0} />
-          </div>
-        ) : null}
-
-        {externalTail !== null ? (
-          <>
-            <p className="text-xs text-muted-foreground">
-              {(() => {
-                const entry = recentRuns.find((candidate) => candidate.id === externalTail.runId)
-                return entry
-                  ? `${entry.group} · ${entry.environment} · ${translate(
-                      'auto.components.right.sidebar.SitePanel.externalRun',
-                      'running (started by an agent)'
-                    )}`
-                  : translate(
-                      'auto.components.right.sidebar.SitePanel.externalRunBare',
-                      'running (started by an agent)'
-                    )
-              })()}
-            </p>
-            {externalTail.lines.length > 0 ? (
-              <div
-                ref={externalLogRef}
-                className="max-h-48 overflow-y-auto scrollbar-sleek rounded-md bg-muted/40 p-2 font-mono text-[11px]"
-              >
-                {externalTail.lines.map((line, index) => (
-                  <div
-                    key={`${line.at}-${index}`}
-                    className={cn(
-                      'whitespace-pre-wrap break-words',
-                      line.level === 'error' && 'text-destructive',
-                      line.level === 'status' && 'font-medium'
-                    )}
-                  >
-                    {line.text}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </>
-        ) : null}
-
-        {tailLines.length > 0 ? (
-          <div
-            ref={logRef}
-            className="max-h-48 overflow-y-auto scrollbar-sleek rounded-md bg-muted/40 p-2 font-mono text-[11px]"
-          >
-            {tailLines.map((line, index) => (
-              <div
-                key={`${line.at}-${index}`}
-                className={cn(
-                  'whitespace-pre-wrap break-words',
-                  line.level === 'error' && 'text-destructive',
-                  line.level === 'status' && 'font-medium'
-                )}
-              >
-                {line.text}
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </section>
+      <SitePanelRunOutput
+        run={run}
+        running={running}
+        starting={starting}
+        error={error}
+        progress={progress}
+        tailLines={tailLines}
+        externalTail={externalTail}
+        recentRuns={recentRuns}
+        logRef={logRef}
+        externalLogRef={externalLogRef}
+        onCancel={() => void cancel()}
+      />
 
       {recentRuns.length > 0 ? (
-        <section className="space-y-1.5 border-t border-border pt-3">
+        <SectionCard>
           <SectionHeading>
             {translate('auto.components.right.sidebar.SitePanel.recentRuns', 'Recent runs')}
           </SectionHeading>
           <ul className="space-y-1">
             {recentRuns.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-2 text-xs">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Badge variant={RUN_STATUS_BADGE[entry.status]}>{entry.status}</Badge>
+                <span className="flex min-w-0 items-center gap-2">
+                  <RunStatusDot status={entry.status} />
                   <span className="truncate">
                     {entry.group} · {entry.environment}
                   </span>
+                  <span className={cn('shrink-0 text-[11px]', RUN_STATUS_TONE[entry.status])}>
+                    {entry.status}
+                  </span>
                 </span>
-                <span className="shrink-0 text-muted-foreground">
+                <span className="shrink-0 text-[11px] text-muted-foreground">
                   {formatRelativeTime(entry.startedAt)}
                 </span>
               </li>
             ))}
           </ul>
-        </section>
+        </SectionCard>
       ) : null}
     </div>
   )

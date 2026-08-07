@@ -2384,6 +2384,12 @@ export type NotificationSettings = {
   /** Import/deploy runs; they take minutes, so completion is worth surfacing. */
   siteRunComplete: boolean
   /**
+   * Slack incoming-webhook URL for site-run results. Its own delivery channel: fires whenever a
+   * run settles and a URL is set, independent of the native-notification toggles — the team
+   * channel wants deploys even when this machine's banners are off. Empty string = off.
+   */
+  siteRunSlackWebhookUrl: string
+  /**
    * The four ActiveCollab change kinds. ActiveCollab has no webhooks and no incremental API, so
    * each is only observable by polling the user's work server. All default false: a user who never
    * connects ActiveCollab must never be polled on its behalf.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { GlobalSettings } from '../../../../shared/types'
 import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 import { Separator } from '../ui/separator'
 import { BellRing, Bot, Globe, Siren } from 'lucide-react'
 import { useAppStore } from '@/store'
@@ -182,6 +183,32 @@ export function NotificationsPane({
           })
         }
       />
+
+      {/* Its own channel, deliberately outside the master toggle: the team channel wants deploy
+          results even when this machine's banners are off. */}
+      <div className="space-y-1 pl-7">
+        <label className="text-xs text-muted-foreground" htmlFor="site-run-slack-webhook">
+          {translate(
+            'auto.components.settings.NotificationsPane.siteRunSlackWebhook',
+            'Slack webhook for site runs'
+          )}
+        </label>
+        <Input
+          id="site-run-slack-webhook"
+          type="url"
+          placeholder="https://hooks.slack.com/services/…"
+          value={notificationSettings.siteRunSlackWebhookUrl ?? ''}
+          onChange={(event) =>
+            void updateNotificationSettings({ siteRunSlackWebhookUrl: event.target.value.trim() })
+          }
+        />
+        <p className="text-[11px] text-muted-foreground">
+          {translate(
+            'auto.components.settings.NotificationsPane.siteRunSlackWebhookDescription',
+            'Posts every import/deploy result to this Slack incoming webhook. Leave empty to disable.'
+          )}
+        </p>
+      </div>
 
       <Separator />
 

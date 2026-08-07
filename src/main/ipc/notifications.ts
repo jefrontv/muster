@@ -18,6 +18,7 @@ import { buildNotificationOptions } from './notification-options'
 import { resolveNotificationSoundFile } from './notification-sound-selection'
 import { readNotificationAuthorizationStatus } from './notification-authorization-status'
 import { parsePaneKey } from '../../shared/stable-pane-id'
+import { postSiteRunSlackWebhook } from '../sites/site-run-slack-webhook'
 import { setTrayAttention } from '../tray/system-tray'
 import { isMainWindowVisible } from '../window/main-window-visibility'
 
@@ -418,6 +419,16 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
     }
 
     const settings = store.getSettings().notifications
+
+    // Slack is its own delivery channel: the team channel wants deploy results even when this
+    // machine's banners are off, so it fires before the enabled/source gates below.
+    if (args.source === 'site-run-complete' && args.siteRun) {
+      const webhookUrl = settings.siteRunSlackWebhookUrl?.trim() ?? ''
+      if (webhookUrl.length > 0) {
+        postSiteRunSlackWebhook(webhookUrl, args.siteRun)
+      }
+    }
+
     if (!settings.enabled) {
       return { delivered: false, reason: 'disabled' }
     }

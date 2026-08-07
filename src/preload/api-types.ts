@@ -29,6 +29,7 @@ import type {
   SiteSummary
 } from '../shared/site-types'
 import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../shared/site-run-types'
+import type { SiteWpCliResult } from '../shared/site-wp-cli-actions'
 import type {
   LocalWpControlOutcome,
   LocalWpMigrationPlan,
@@ -844,6 +845,13 @@ export type SiteRunsApi = {
   }) => Promise<SiteResult<SiteRunLogPage>>
   /** Current in-flight runs plus their last progress, so a remounted panel recovers its state. */
   active: () => Promise<SiteResult<SiteActiveRun[]>>
+  /** One whitelisted WP-CLI quick action, executed inline over SSH — see site-wp-cli-actions. */
+  wpCli: (args: {
+    siteId: string
+    actionId: string
+    environment?: string
+    confirmed?: boolean
+  }) => Promise<SiteResult<SiteWpCliResult>>
   onEvent: (callback: (event: SiteRunEvent) => void) => () => void
 }
 

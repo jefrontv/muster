@@ -44,7 +44,44 @@ export function InfoRow({
 }
 
 export function SectionHeading({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <h3 className="text-xs font-medium text-muted-foreground">{children}</h3>
+  return (
+    <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      {children}
+    </h3>
+  )
+}
+
+/** Bordered group so a section reads as one card instead of a run of loose rows. */
+export function SectionCard({
+  children,
+  className
+}: {
+  children: React.ReactNode
+  className?: string
+}): React.JSX.Element {
+  return (
+    <div
+      className={cn('space-y-1.5 rounded-lg border border-border/60 bg-card/40 p-2.5', className)}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Terminal-state dot for run history rows: colour carries the state, text stays quiet. */
+export function RunStatusDot({ status }: { status: string }): React.JSX.Element {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'inline-block size-1.5 shrink-0 rounded-full',
+        status === 'running' && 'animate-pulse bg-primary',
+        status === 'succeeded' && 'bg-emerald-500/80',
+        (status === 'failed' || status === 'blocked') && 'bg-destructive',
+        status === 'cancelled' && 'bg-muted-foreground/60'
+      )}
+    />
+  )
 }
 
 export function QuickActionButton({

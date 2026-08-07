@@ -136,6 +136,7 @@ export function getDefaultNotificationSettings(): NotificationSettings {
     enabled: true,
     agentTaskComplete: true,
     siteRunComplete: true,
+    siteRunSlackWebhookUrl: '',
     terminalBell: false,
     // Off until asked for: turning one on starts polling a third-party work server.
     activeCollabAssigned: false,

@@ -13,6 +13,8 @@ import type {
   SiteRunLogPage
 } from '../../shared/site-run-types'
 import type { SiteResult } from '../../shared/site-types'
+import type { SiteWpCliResult } from '../../shared/site-wp-cli-actions'
+import { executeSiteWpCliAction } from '../sites/site-wp-cli-exec'
 import type { Store } from '../persistence'
 import { pruneSiteRuns, SITE_RUNS_DIR_NAME } from '../sites/site-run-log'
 import { createSiteRunJob } from '../sites/site-run-dispatch'
@@ -26,7 +28,8 @@ const SITE_RUN_CHANNELS = [
   'siteRuns:cancel',
   'siteRuns:list',
   'siteRuns:readLog',
-  'siteRuns:active'
+  'siteRuns:active',
+  'siteRuns:wpCli'
 ] as const
 
 const EVENT_CHANNEL = 'siteRuns:event'
@@ -155,6 +158,40 @@ export function registerSiteRunHandlers(
     const requested = typeof maxLines === 'number' ? maxLines : DEFAULT_LOG_LINES
     return { ok: true, value: runs.readLog(siteId, runId, Math.min(requested, MAX_LOG_LINES)) }
   })
+
+  // WP-CLI quick actions: a whitelisted command run inline over SSH, result returned directly —
+  // no run record, because a ten-second read has no life beyond the panel that asked for it.
+  ipcMain.handle(
+    'siteRuns:wpCli',
+    async (_event, args: unknown): Promise<SiteResult<SiteWpCliResult>> => {
+      try {
+        const { siteId, actionId, environment, confirmed } = (args ?? {}) as {
+          siteId?: unknown
+          actionId?: unknown
+          environment?: unknown
+          confirmed?: unknown
+        }
+        if (typeof siteId !== 'string' || typeof actionId !== 'string') {
+          return { ok: false, error: 'Invalid WP-CLI request.' }
+        }
+        if (environment !== undefined && !isSiteEnvironmentName(environment)) {
+          return { ok: false, error: 'Invalid environment.' }
+        }
+        const site = requireSite(store, siteId)
+        return {
+          ok: true,
+          value: await executeSiteWpCliAction({
+            site,
+            actionId,
+            ...(typeof environment === 'string' ? { environment } : {}),
+            confirmed: confirmed === true
+          })
+        }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
 
   // The catch-up call: a remounted panel reads live runs plus their last progress from main.
   ipcMain.handle('siteRuns:active', (event): SiteResult<SiteActiveRun[]> => {

@@ -139,7 +139,8 @@ describe('registerSiteRunHandlers', () => {
       'siteRuns:cancel',
       'siteRuns:list',
       'siteRuns:readLog',
-      'siteRuns:start'
+      'siteRuns:start',
+      'siteRuns:wpCli'
     ])
   })
 
