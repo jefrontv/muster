@@ -107,7 +107,9 @@ export function ChatWorkspaceCreateDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        {/* min-w-0: DialogContent is a grid; without it a long unbreakable
+            folder path widens the whole column past the dialog edge. */}
+        <div className="min-w-0 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="chat-workspace-name">
               {translate('auto.components.chat.workspaceDialog.nameLabel', 'Name')}
@@ -132,8 +134,13 @@ export function ChatWorkspaceCreateDialog({
                     key={directory}
                     className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1"
                   >
-                    <span className="min-w-0 flex-1 truncate font-mono text-xs" title={directory}>
-                      {directory}
+                    <span className="flex min-w-0 flex-1 items-baseline gap-1.5" title={directory}>
+                      <span className="shrink-0 text-xs font-medium">
+                        {directory.split(/[\\/]/).findLast((part) => part !== '') ?? directory}
+                      </span>
+                      <span className="min-w-0 truncate font-mono text-[10px] text-muted-foreground">
+                        {directory}
+                      </span>
                     </span>
                     {index === 0 ? (
                       <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">

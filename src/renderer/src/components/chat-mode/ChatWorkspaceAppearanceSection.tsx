@@ -2,6 +2,7 @@
 // icon tabs (icon/emoji/favicon — no GitHub avatar, chat workspaces have no repo identity).
 
 import type React from 'react'
+import { useState } from 'react'
 import type { RepoIcon } from '../../../../shared/repo-icon'
 import { DEFAULT_REPO_BADGE_COLOR } from '../../../../shared/constants'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
@@ -29,6 +30,9 @@ export function ChatWorkspaceAppearanceSection({
       : icon?.type === 'image' && icon.source === 'favicon'
         ? 'favicon'
         : 'icon'
+  // Color tints lucide icons only — emoji and favicons carry their own colors,
+  // so the swatches hide on those tabs.
+  const [activeTab, setActiveTab] = useState<string>(initialTab)
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
@@ -44,8 +48,11 @@ export function ChatWorkspaceAppearanceSection({
         defaultFaviconDomain=""
         onSetIcon={onIconChange}
         onUseGitHubAvatar={() => undefined}
+        onTabChange={setActiveTab}
       />
-      <RepositoryIconColorSection badgeColor={badgeColor} onBadgeColorChange={onColorChange} />
+      {activeTab === 'icon' ? (
+        <RepositoryIconColorSection badgeColor={badgeColor} onBadgeColorChange={onColorChange} />
+      ) : null}
     </div>
   )
 }

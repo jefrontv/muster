@@ -24,6 +24,9 @@ type RepositoryIconTabsProps = {
   defaultFaviconDomain: string
   onSetIcon: (repoIcon: RepoIcon | null) => void
   onUseGitHubAvatar: () => void
+  /** Fires as the user switches tabs — lets callers show tab-specific chrome
+   *  (e.g. the color swatches only apply to lucide icons). */
+  onTabChange?: (tab: 'avatar' | 'icon' | 'emoji' | 'favicon') => void
 }
 
 export function RepositoryIconTabs({
@@ -34,7 +37,8 @@ export function RepositoryIconTabs({
   loadingGitHub,
   defaultFaviconDomain,
   onSetIcon,
-  onUseGitHubAvatar
+  onUseGitHubAvatar,
+  onTabChange
 }: RepositoryIconTabsProps): React.JSX.Element {
   const [website, setWebsite] = useState('')
   // Null means untouched, so the Site's live domain prefills until the user types.
@@ -127,6 +131,7 @@ export function RepositoryIconTabs({
     <Tabs
       defaultValue={hideAvatarTab && initialTab === 'avatar' ? 'icon' : initialTab}
       className="gap-3"
+      onValueChange={(value) => onTabChange?.(value as 'avatar' | 'icon' | 'emoji' | 'favicon')}
     >
       <TabsList variant="line" className="h-8">
         {hideAvatarTab ? null : (
