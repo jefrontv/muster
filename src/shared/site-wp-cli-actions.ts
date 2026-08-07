@@ -51,6 +51,8 @@ export type SiteWpCliResult = {
   needsConfirmation?: boolean
   message?: string
   environment?: string
+  /** `user@hostname` the command actually ran on, so the panel can say WHERE. */
+  host?: string
   exitCode?: number
   output?: string
   truncated?: boolean

@@ -122,6 +122,7 @@ export function SitePanelWpCliSection({
           <p className={cn('text-[11px]', shown.ok ? 'text-muted-foreground' : 'text-destructive')}>
             {action?.label ?? result?.actionId}
             {shown.environment ? ` · ${shown.environment}` : ''}
+            {shown.host ? ` · ${shown.host}` : ''}
             {typeof shown.exitCode === 'number' ? ` · exit ${shown.exitCode}` : ''}
             {shown.message ? ` — ${shown.message}` : ''}
             {shown.truncated

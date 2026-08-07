@@ -91,6 +91,7 @@ export async function executeSiteWpCliAction(args: {
     return {
       ok: result.code === 0,
       environment: plan.environment,
+      host: `${config.environment.username}@${config.environment.hostname}`,
       exitCode: result.code,
       output: output.text,
       truncated: output.truncated
