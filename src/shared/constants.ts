@@ -279,7 +279,10 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     localhostWorktreeLabelsEnabled: false,
     openLinksInAppPreferencePrompted: false,
     openAgentTabsInChatByDefault: false,
-    experimentalNativeChat: false,
+    // Muster: on by default (chat plan phase 0). Terminal stays the default view;
+    // this only makes the per-tab Chat toggle available. Still disableable in
+    // Settings → Experimental.
+    experimentalNativeChat: true,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,
