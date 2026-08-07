@@ -1,5 +1,9 @@
 import type { AgentType } from '../../../../shared/agent-status-types'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
+import type {
+  NativeChatPermissionBehavior,
+  NativeChatPermissionRequest
+} from './native-chat-view-types'
 
 export type NativeChatComposerProps = {
   /** Tab hosting the agent; used to resolve the live ptyId + runtime settings. */
@@ -31,6 +35,16 @@ export type NativeChatComposerProps = {
   onSwitchToTerminal?: () => void
   /** Reads the hosted TUI's current rendered screen when chat is entered. */
   readTerminalScreen?: () => string | null
+  /** Oldest pending tool-permission request (stream transport only); while set
+   *  the editor is disabled and the approval actions replace the footer. */
+  permissionRequest?: NativeChatPermissionRequest | null
+  /** Total queued permission requests, for the "1/N" counter. */
+  permissionRequestCount?: number
+  /** Answer a pending permission request. */
+  onRespondPermission?: (requestId: string, behavior: NativeChatPermissionBehavior) => void
+  /** Enables the context-window donut; off for runtime-owned panes whose
+   *  transcript is not on the local disk. */
+  contextUsageEnabled?: boolean
 }
 
 export type NativeChatComposerHandle = {

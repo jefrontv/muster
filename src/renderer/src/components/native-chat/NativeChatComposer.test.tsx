@@ -8,12 +8,14 @@ import type {
 } from '../../../../shared/native-chat-session-options'
 import type * as nativeChatAgentProfiles from '../../../../shared/native-chat-agent-profiles'
 import { clearNativeChatSessionOptionCacheForTests } from './native-chat-session-option-cache'
+import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
 
 const mocks = vi.hoisted(() => ({
   cancelPendingSends: vi.fn(),
   fieldProps: null as {
     onSend?: () => void
     onStop?: () => void
+    approval?: NativeChatComposerApproval | null
     sessionOptionsSurface?: SessionOptionsSurface | null
     sessionOptionsSnapshot?: SessionOptionDescriptor[]
   } | null,
@@ -229,6 +231,50 @@ describe('NativeChatComposer', () => {
     )
 
     expect(new Set(mocks.draftScopeKeys)).toEqual(new Set(['tab-1:leaf-1']))
+  })
+
+  it('hands the oldest pending permission request to the composer field', () => {
+    const onRespondPermission = vi.fn()
+    const onStop = vi.fn()
+    const transportInterrupt = vi.fn().mockResolvedValue(true)
+    render(
+      <NativeChatComposer
+        terminalTabId="tab-1"
+        paneKey="tab-1:leaf-1"
+        targetPtyId={null}
+        agent="claude"
+        transportSend={vi.fn().mockResolvedValue(true)}
+        transportInterrupt={transportInterrupt}
+        onStop={onStop}
+        permissionRequest={{ requestId: 'req-1', toolName: 'Bash', input: { command: 'ls' } }}
+        permissionRequestCount={2}
+        onRespondPermission={onRespondPermission}
+      />
+    )
+
+    const approval = mocks.fieldProps?.approval
+    expect(approval?.request.requestId).toBe('req-1')
+    expect(approval?.count).toBe(2)
+
+    approval?.respond('req-1', 'allow-always')
+    expect(onRespondPermission).toHaveBeenCalledWith('req-1', 'allow-always')
+
+    act(() => approval?.cancelTurn())
+    expect(onStop).toHaveBeenCalledOnce()
+    expect(transportInterrupt).toHaveBeenCalledOnce()
+  })
+
+  it('passes no approval to the field without a pending permission request', () => {
+    render(
+      <NativeChatComposer
+        terminalTabId="tab-1"
+        paneKey="tab-1:leaf-1"
+        targetPtyId="pty-1"
+        agent="claude"
+      />
+    )
+
+    expect(mocks.fieldProps?.approval).toBeNull()
   })
 
   it('shows the model already selected in the Claude TUI when chat opens', async () => {

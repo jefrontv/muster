@@ -4152,7 +4152,13 @@ const api = {
         ipcRenderer.removeListener('nativeChat:appended', listener)
         ipcRenderer.send('nativeChat:unsubscribe', { subscriptionId: args.subscriptionId })
       }
-    }
+    },
+    readContextUsage: (
+      agent: AgentType,
+      sessionId: string,
+      transcriptPath?: string
+    ): Promise<{ usedTokens: number } | null> =>
+      ipcRenderer.invoke('nativeChat:readContextUsage', { agent, sessionId, transcriptPath })
   },
 
   runtime: {

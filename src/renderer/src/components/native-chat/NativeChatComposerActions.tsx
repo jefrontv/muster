@@ -7,6 +7,9 @@ import type {
   SessionOptionsSurface
 } from '../../../../shared/native-chat-session-options'
 import { NativeChatSessionOptionPickers } from './NativeChatSessionOptionPickers'
+import { NativeChatStashMenu } from './NativeChatStashMenu'
+import { NativeChatContextWindowMeter } from './NativeChatContextWindowMeter'
+import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 
 export type NativeChatComposerActionsProps = {
   attachDisabled: boolean
@@ -23,6 +26,9 @@ export type NativeChatComposerActionsProps = {
   onStop?: () => void
   sessionOptionsSurface: SessionOptionsSurface | null
   sessionOptionsSnapshot: SessionOptionDescriptor[]
+  stash: NativeChatPromptStash
+  /** Context-window donut input; null hides the meter. */
+  contextUsedTokens: number | null
 }
 
 export function NativeChatComposerActions({
@@ -39,7 +45,9 @@ export function NativeChatComposerActions({
   onSend,
   onStop,
   sessionOptionsSurface,
-  sessionOptionsSnapshot
+  sessionOptionsSnapshot,
+  stash,
+  contextUsedTokens
 }: NativeChatComposerActionsProps): React.JSX.Element {
   const dictationLabel = isDictating
     ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
@@ -65,6 +73,7 @@ export function NativeChatComposerActions({
             {translate('components.native-chat.composer.attach', 'Attach file')}
           </TooltipContent>
         </Tooltip>
+        <NativeChatStashMenu stash={stash} />
       </div>
       <div className="ml-auto flex items-center gap-1.5">
         {/* Why: keep session controls beside the actions they affect; the
@@ -118,6 +127,9 @@ export function NativeChatComposerActions({
             {dictationLabel}
           </TooltipContent>
         </Tooltip>
+        {contextUsedTokens !== null ? (
+          <NativeChatContextWindowMeter usedTokens={contextUsedTokens} />
+        ) : null}
         <Button
           type="button"
           aria-label={

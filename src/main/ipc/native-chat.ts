@@ -5,6 +5,11 @@ import type {
   NativeChatTurnLifecycle
 } from '../../shared/native-chat-types'
 import { clearNativeChatTranscriptCache } from '../native-chat/transcript-read-cache'
+import { resolveSessionFilePath } from '../native-chat/session-file-resolver'
+import {
+  readTranscriptContextUsage,
+  type TranscriptContextUsage
+} from '../native-chat/transcript-context-usage'
 import type { ReadTranscriptResult } from '../native-chat/transcript-reader'
 import {
   subscribeNativeChatTranscript,
@@ -41,6 +46,25 @@ async function readSession(args: NativeChatReadSessionArgs): Promise<ReadTranscr
     transcriptPath: args.transcriptPath,
     limit
   })
+}
+
+export type NativeChatReadContextUsageArgs = {
+  agent: AgentType
+  sessionId: string
+  transcriptPath?: string
+}
+
+async function readContextUsage(
+  args: NativeChatReadContextUsageArgs
+): Promise<TranscriptContextUsage | null> {
+  // Why: only Claude's stream records carry the message.usage shape summed here.
+  if (args.agent !== 'claude') {
+    return null
+  }
+  const filePath = await resolveSessionFilePath(args.agent, args.sessionId, {
+    transcriptPath: args.transcriptPath
+  })
+  return filePath ? readTranscriptContextUsage(filePath) : null
 }
 
 export type NativeChatSubscribeArgs = {
@@ -276,6 +300,9 @@ export function _getNativeChatPendingSubscriptionCountForTest(): number {
 export function registerNativeChatHandlers(): void {
   ipcMain.handle('nativeChat:readSession', (_event, args: NativeChatReadSessionArgs) =>
     readSession(args)
+  )
+  ipcMain.handle('nativeChat:readContextUsage', (_event, args: NativeChatReadContextUsageArgs) =>
+    readContextUsage(args)
   )
   ipcMain.on('nativeChat:subscribe', (event, args: NativeChatSubscribeArgs) => {
     void handleSubscribe(event, args)

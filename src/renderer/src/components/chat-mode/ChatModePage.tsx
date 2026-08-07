@@ -4,7 +4,7 @@
 import type React from 'react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
-import { ChatModeEmptyState } from './ChatModeEmptyState'
+import { ChatModeDraftHero } from './ChatModeDraftHero'
 import { ChatModeSidebar } from './ChatModeSidebar'
 import { ChatThreadView } from './ChatThreadView'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
@@ -76,6 +76,11 @@ export default function ChatModePage(): React.JSX.Element {
           void store.updateChatThread(event.threadId, { lastActivityAt: Date.now() })
           break
         case 'permission-request':
+          // "Always allow this session" verdicts short-circuit the queue.
+          if (store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName)) {
+            store.respondChatThreadPermission(event.threadId, event.requestId, 'allow')
+            break
+          }
           store.addChatThreadPermissionRequest(event.threadId, {
             requestId: event.requestId,
             toolName: event.toolName,
@@ -95,6 +100,8 @@ export default function ChatModePage(): React.JSX.Element {
           cancelSealClear(event.threadId)
           store.clearChatThreadStreamingText(event.threadId)
           store.clearChatThreadPermissionRequests(event.threadId)
+          // Session-scoped "always allow" verdicts die with the session.
+          store.clearChatThreadSessionAllowedTools(event.threadId)
           store.setChatThreadSession(event.threadId, null)
           break
         }
@@ -126,10 +133,7 @@ export default function ChatModePage(): React.JSX.Element {
         ) : activeThread && (activeThread.workspaceId === null || activeWorkspace) ? (
           <ChatThreadView key={activeThread.id} thread={activeThread} workspace={activeWorkspace} />
         ) : (
-          <ChatModeEmptyState
-            hasWorkspaces={workspaces.length > 0}
-            onCreateWorkspace={() => setCreateOpen(true)}
-          />
+          <ChatModeDraftHero onCreateWorkspace={() => setCreateOpen(true)} />
         )}
       </main>
       <ChatWorkspaceCreateDialog open={createOpen} onOpenChange={setCreateOpen} />

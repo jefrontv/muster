@@ -34,11 +34,7 @@ import {
 } from './native-chat-pending'
 import { nativeChatStreamingMessage } from '../../../../shared/native-chat-streaming'
 import { useNativeChatStreamingBubble } from './use-native-chat-streaming-bubble'
-import {
-  shouldFocusNativeChatComposerFromEditingKey,
-  shouldFocusNativeChatPaneFromPointerTarget,
-  shouldRedirectNativeChatTyping
-} from './native-chat-typing-redirect'
+import { useNativeChatRootCapture } from './use-native-chat-root-capture'
 import {
   emptyNativeChatContextMenuActions,
   useNativeChatContextMenu
@@ -342,6 +338,12 @@ function NativeChatResolvedView({
     interrupted: workingInterrupted
   })
 
+  const rootCapture = useNativeChatRootCapture({
+    rootRef,
+    composerRef,
+    onSelectionCapture: contextMenu.onSelectionCapture
+  })
+
   const stopAgent = useCallback(() => {
     setWorkingInterrupted(true)
     // Why: Stop after a submitted turn drops the delayed-write handle once it
@@ -361,33 +363,8 @@ function NativeChatResolvedView({
       ref={rootRef}
       data-native-chat-root="true"
       tabIndex={-1}
-      onPointerDownCapture={(event) => {
-        if (event.button === 2) {
-          contextMenu.onSelectionCapture()
-          event.preventDefault()
-          event.stopPropagation()
-          return
-        }
-        if (event.button === 0 && shouldFocusNativeChatPaneFromPointerTarget(event.target)) {
-          rootRef.current?.focus({ preventScroll: true })
-        }
-      }}
-      onKeyDownCapture={(event) => {
-        // Backspace/Delete outside an input focuses the composer (like typing)
-        // but inserts nothing — let the now-focused field handle the keystroke.
-        if (shouldFocusNativeChatComposerFromEditingKey(event)) {
-          composerRef.current?.focus()
-          return
-        }
-        if (!shouldRedirectNativeChatTyping(event)) {
-          return
-        }
-        if (!composerRef.current?.insertTypedText(event.key)) {
-          return
-        }
-        event.preventDefault()
-        event.stopPropagation()
-      }}
+      onPointerDownCapture={rootCapture.onPointerDownCapture}
+      onKeyDownCapture={rootCapture.onKeyDownCapture}
       onMouseUpCapture={contextMenu.onSelectionCapture}
       onKeyUpCapture={contextMenu.onSelectionCapture}
       onContextMenuCapture={contextMenu.onContextMenuCapture}
@@ -446,6 +423,10 @@ function NativeChatResolvedView({
           onSlashCommand={onSlashCommand}
           onSwitchToTerminal={onSwitchToTerminal}
           readTerminalScreen={readTerminalScreen}
+          permissionRequest={transport?.permissionRequests?.[0] ?? null}
+          permissionRequestCount={transport?.permissionRequests?.length ?? 0}
+          onRespondPermission={transport?.respondPermission}
+          contextUsageEnabled={runtimeEnvironmentId === null}
         />
       )}
       {contextMenu.menu}

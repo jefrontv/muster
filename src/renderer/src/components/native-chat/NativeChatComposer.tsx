@@ -1,28 +1,17 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '../../store'
-import { sendRuntimePtyInput } from '@/runtime/runtime-terminal-inspection'
 import { getSettingsForAgentTabRuntimeOwner } from '@/lib/agent-paste-draft'
-import {
-  sendNativeChatMessage,
-  sendNativeChatMessageWithImageAttachments,
-  submitNativeChatPrompt
-} from './native-chat-runtime-send'
-import type { NativeChatSendHandle } from './native-chat-runtime-send'
 import { getVerifiedNativeChatCommands } from '../../../../shared/native-chat-agent-profiles'
-import { emitNativeChatMessageSent } from '@/lib/native-chat-telemetry'
 import {
   applyMentionSuggestion,
   EMPTY_HISTORY,
-  pushHistory,
   type HistoryState
 } from './native-chat-composer-state'
 import { readNativeChatDraftCache } from './native-chat-draft-cache'
 import { useNativeChatDraft } from './use-native-chat-draft'
 import { NativeChatComposerField } from './NativeChatComposerField'
-import {
-  nativeChatComposerTargetIsRemote,
-  type NativeChatResolvedTarget
-} from './native-chat-composer-target'
+import type { NativeChatResolvedTarget } from './native-chat-composer-target'
+import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
 import { useNativeChatComposerAttachments } from './use-native-chat-composer-attachments'
 import { useNativeChatComposerPaste } from './use-native-chat-composer-paste'
 import { useNativeChatExternalAttachments } from './use-native-chat-external-attachments'
@@ -36,6 +25,9 @@ import { useNativeChatPickerState } from './use-native-chat-picker-state'
 import { useNativeChatPickerCommandDispatch } from './use-native-chat-picker-command-dispatch'
 import { useNativeChatTransportSend } from './use-native-chat-transport-send'
 import { useNativeChatTypedInsertion } from './use-native-chat-typed-insertion'
+import { useNativeChatComposerSend } from './use-native-chat-composer-send'
+import { useNativeChatPromptStash } from './use-native-chat-prompt-stash'
+import { useNativeChatContextUsage } from './use-native-chat-context-usage'
 import type {
   NativeChatComposerHandle,
   NativeChatComposerProps
@@ -45,12 +37,6 @@ export type {
   NativeChatComposerHandle,
   NativeChatComposerProps
 } from './native-chat-composer-types'
-
-// Why: a plain ESC byte is what the agent TUIs read as the interrupt key over a
-// PTY (matching how xterm forwards Escape). The richer interrupt-intent
-// inference (agent-interrupt-intent.ts) is driven by the existing PTY input
-// observers, so writing ESC through the same send path feeds that machinery.
-const ESC = '\x1b'
 
 /**
  * Rich native input for the chat view. Sends prompts into the running agent
@@ -77,7 +63,11 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       onOptimisticSendCanceled,
       onSlashCommand,
       onSwitchToTerminal,
-      readTerminalScreen
+      readTerminalScreen,
+      permissionRequest,
+      permissionRequestCount,
+      onRespondPermission,
+      contextUsageEnabled = false
     },
     ref
   ): React.JSX.Element {
@@ -244,119 +234,60 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       setNotice
     })
 
-    const send = useCallback(() => {
-      const text = draft
-      const imagePaths = imageAttachments.map((attachment) => attachment.path)
-      if ((text.trim() === '' && imagePaths.length === 0) || disabled) {
-        return
-      }
-      // Why: block a normal send while a session-option command (e.g. /model) is
-      // still writing its body+delayed-Enter to the same pty, so the two write
-      // sequences can't interleave on one input line.
-      if (isDispatchingSessionOption) {
-        return
-      }
-      if (hasTransport) {
-        // Stream transport: plain user turns only. Slash/skill sends and image
-        // attachments have no headless delivery path yet — say so, don't drop.
-        if (imagePaths.length > 0) {
-          setNotice('Attachments are not supported in chat threads yet.')
-          return
-        }
-        if (classifySend(text) !== 'chat') {
-          setNotice('Commands are not supported in chat threads yet — use the pickers below.')
-          return
-        }
-        sendViaTransport(text)
-        return
-      }
-      const target = resolveTarget()
-      if (!target) {
-        return
-      }
-      const classification = classifySend(text)
-      let pendingHandle: NativeChatSendHandle | null = null
-      // Why: image attachments take the attachment send path even for a
-      // command/unknown send, otherwise `clearImageAttachments()` below drops
-      // them silently when the text starts with the agent's slash/skill prefix.
-      if (classification !== 'chat' && imagePaths.length === 0) {
-        pendingHandle = sendNativeChatMessage(target.settings, target.ptyId, text)
-      } else if (imagePaths.length > 0) {
-        pendingHandle = sendNativeChatMessageWithImageAttachments(
-          target.settings,
-          target.ptyId,
-          text,
-          imagePaths
-        )
-      } else if (text.trim().length > 0) {
-        pendingHandle = sendNativeChatMessage(target.settings, target.ptyId, text)
-      } else {
-        submitNativeChatPrompt(target.settings, target.ptyId)
-      }
-      if (classification !== 'chat') {
-        if (pendingHandle) {
-          trackPendingSend(pendingHandle)
-        }
-        // Why: only verified catalog commands can truthfully claim they ran or
-        // mutate session-option state; unknown slash-like text has no such proof.
-        if (classification === 'command') {
-          onSlashCommand?.(text.trim())
-          sessionOptionsSurface?.recordOutgoingCommand(text.trim())
-        }
-      } else {
-        const pendingId = onOptimisticSend?.(text, imagePaths)
-        if (pendingHandle) {
-          trackPendingSend(pendingHandle, pendingId)
-        }
-      }
-      // Why: U10 telemetry — record adoption + local-vs-remote runtime split. The
-      // agent prop is the loose AgentType; the emitter narrows unknowns to 'other'.
-      emitNativeChatMessageSent({
-        agent,
-        runtime: nativeChatComposerTargetIsRemote(target.ptyId) ? 'remote' : 'local'
-      })
-      setHistory((prev) => pushHistory(prev, text))
-      setDraft('')
-      setCaret(0)
-      clearSkillOrigin()
-      clearImageAttachments()
-      setNotice(null)
-    }, [
+    const imageAttachmentPaths = useMemo(
+      () => imageAttachments.map((attachment) => attachment.path),
+      [imageAttachments]
+    )
+    const { send, interrupt } = useNativeChatComposerSend({
       agent,
-      classifySend,
-      clearSkillOrigin,
-      clearImageAttachments,
       draft,
-      imageAttachments,
+      imageAttachmentPaths,
       disabled,
       hasTransport,
+      isWorking,
       isDispatchingSessionOption,
+      classifySend,
       resolveTarget,
+      sendViaTransport,
+      cancelPendingSends,
+      trackPendingSend,
+      transportInterrupt,
+      onStop,
       onOptimisticSend,
       onSlashCommand,
-      sendViaTransport,
       sessionOptionsSurface,
-      trackPendingSend,
-      setDraft
-    ])
+      clearSkillOrigin,
+      clearImageAttachments,
+      setHistory,
+      setDraft,
+      setCaret,
+      setNotice
+    })
 
-    const interrupt = useCallback(() => {
-      cancelPendingSends()
-      if (isWorking && (onStop || transportInterrupt)) {
-        onStop?.()
-        // Real stream interrupt; onStop only cleans renderer-side echo state.
-        void transportInterrupt?.()
-        return
+    const stash = useNativeChatPromptStash({ draft, setDraft, setCaret, textareaRef })
+    const contextUsedTokens = useNativeChatContextUsage({
+      paneKey,
+      agent,
+      isWorking,
+      enabled: contextUsageEnabled
+    })
+
+    // Oldest queued permission request owns the composer until answered.
+    const approval = useMemo<NativeChatComposerApproval | null>(() => {
+      if (!permissionRequest || !onRespondPermission) {
+        return null
       }
-      // Why: no PTY means no ESC byte to write; an idle stream has nothing to interrupt.
-      if (hasTransport) {
-        return
+      return {
+        request: permissionRequest,
+        count: permissionRequestCount ?? 1,
+        respond: onRespondPermission,
+        cancelTurn: () => {
+          onStop?.()
+          // Interrupting the turn also cancels the question CLI-side.
+          void transportInterrupt?.()
+        }
       }
-      const target = resolveTarget()
-      if (target) {
-        sendRuntimePtyInput(target.settings, target.ptyId, ESC)
-      }
-    }, [cancelPendingSends, hasTransport, isWorking, onStop, resolveTarget, transportInterrupt])
+    }, [permissionRequest, permissionRequestCount, onRespondPermission, onStop, transportInterrupt])
 
     const dispatchPickerCommand = useNativeChatPickerCommandDispatch({
       agent,
@@ -391,6 +322,17 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       setCaret,
       setHistory
     })
+    const stashHandleKeyDown = stash.handleKeyDown
+    const handleKeyDownWithStash = useCallback<typeof handleKeyDown>(
+      (event) => {
+        // The stash chord wins over history/send handling when it consumes the key.
+        if (stashHandleKeyDown(event)) {
+          return
+        }
+        handleKeyDown(event)
+      },
+      [stashHandleKeyDown, handleKeyDown]
+    )
 
     return (
       <NativeChatComposerField
@@ -421,7 +363,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
           handleDraftOrCaretChange(element.value, element.selectionStart ?? element.value.length)
           setActiveSuggestion(0)
         }}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleKeyDownWithStash}
         onCompositionStart={() => {
           isComposingRef.current = true
         }}
@@ -452,6 +394,9 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         onStop={interrupt}
         sessionOptionsSurface={sessionOptionsSurface}
         sessionOptionsSnapshot={sessionOptionsSnapshot}
+        approval={approval}
+        stash={stash}
+        contextUsedTokens={contextUsedTokens}
       />
     )
   }

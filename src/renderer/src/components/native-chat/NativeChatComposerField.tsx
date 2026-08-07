@@ -13,6 +13,12 @@ import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import type { ComposerAutocomplete, NativeChatPickerItem } from './native-chat-composer-state'
 import { NativeChatMentionHint, NativeChatPickerMenu } from './NativeChatAutocompleteMenus'
 import { NativeChatComposerActions } from './NativeChatComposerActions'
+import {
+  NativeChatApprovalActions,
+  NativeChatApprovalPanel,
+  type NativeChatComposerApproval
+} from './NativeChatApprovalPanel'
+import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 import { nativeChatComposerPlaceholder } from './native-chat-composer-target'
 import type {
   SessionOptionDescriptor,
@@ -54,6 +60,11 @@ export type NativeChatComposerFieldProps = {
   onStop?: () => void
   sessionOptionsSurface: SessionOptionsSurface | null
   sessionOptionsSnapshot: SessionOptionDescriptor[]
+  /** While set, the editor is disabled and the approval actions own the footer. */
+  approval: NativeChatComposerApproval | null
+  stash: NativeChatPromptStash
+  /** Context-window donut input; null hides the meter. */
+  contextUsedTokens: number | null
 }
 
 export type NativeChatComposerImageAttachment = {
@@ -95,7 +106,10 @@ export function NativeChatComposerField({
   onSend,
   onStop,
   sessionOptionsSurface,
-  sessionOptionsSnapshot
+  sessionOptionsSnapshot,
+  approval,
+  stash,
+  contextUsedTokens
 }: NativeChatComposerFieldProps): React.JSX.Element {
   return (
     <div className="shrink-0 bg-background">
@@ -130,6 +144,7 @@ export function NativeChatComposerField({
               'bg-muted/50 dark:bg-input/40'
             )}
           >
+            {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
             {imageAttachments.length > 0 ? (
               <div className="mb-2 flex flex-wrap gap-1.5 px-1">
                 {imageAttachments.map((attachment) => (
@@ -165,7 +180,7 @@ export function NativeChatComposerField({
             <textarea
               ref={textareaRef}
               value={draft}
-              disabled={disabled}
+              disabled={disabled || approval !== null}
               rows={2}
               onChange={(e) => onDraftChange(e.target.value, e.currentTarget)}
               onKeyDown={onKeyDown}
@@ -195,22 +210,28 @@ export function NativeChatComposerField({
               )}
             />
             <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              <NativeChatComposerActions
-                attachDisabled={attachDisabled}
-                dictationDisabled={dictationDisabled}
-                sendDisabled={sendButtonDisabled}
-                isWorking={isWorking}
-                isDictating={isDictating}
-                isDictationHoldMode={isDictationHoldMode}
-                onAttach={onAttach}
-                onDictationToggle={onDictationToggle}
-                onDictationHoldStart={onDictationHoldStart}
-                onDictationHoldEnd={onDictationHoldEnd}
-                onSend={onSend}
-                onStop={onStop}
-                sessionOptionsSurface={sessionOptionsSurface}
-                sessionOptionsSnapshot={sessionOptionsSnapshot}
-              />
+              {approval ? (
+                <NativeChatApprovalActions approval={approval} />
+              ) : (
+                <NativeChatComposerActions
+                  attachDisabled={attachDisabled}
+                  dictationDisabled={dictationDisabled}
+                  sendDisabled={sendButtonDisabled}
+                  isWorking={isWorking}
+                  isDictating={isDictating}
+                  isDictationHoldMode={isDictationHoldMode}
+                  onAttach={onAttach}
+                  onDictationToggle={onDictationToggle}
+                  onDictationHoldStart={onDictationHoldStart}
+                  onDictationHoldEnd={onDictationHoldEnd}
+                  onSend={onSend}
+                  onStop={onStop}
+                  sessionOptionsSurface={sessionOptionsSurface}
+                  sessionOptionsSnapshot={sessionOptionsSnapshot}
+                  stash={stash}
+                  contextUsedTokens={contextUsedTokens}
+                />
+              )}
             </div>
           </div>
         </div>

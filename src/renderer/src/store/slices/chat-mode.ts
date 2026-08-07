@@ -38,6 +38,11 @@ export type ChatModeSlice = {
   chatThreadStreamingText: Record<string, { text: string; sealed: boolean }>
   /** Pending tool-permission questions per thread, oldest first. */
   chatThreadPermissionRequests: Record<string, ChatThreadPermissionRequest[]>
+  /** Tool names "Always allow this session" approved, per thread. Runtime-only;
+   *  cleared with the session (exit event / thread delete). */
+  chatThreadSessionAllowedTools: Record<string, string[]>
+  /** Draft-first landing: the hero's text, sent once the thread's session is up. */
+  chatThreadFirstMessage: Record<string, string>
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
   chatTasksOpen: boolean
   setChatTasksOpen: (open: boolean) => void
@@ -71,6 +76,10 @@ export type ChatModeSlice = {
     requestId: string,
     behavior: 'allow' | 'deny'
   ) => void
+  allowChatThreadToolForSession: (threadId: string, toolName: string) => void
+  clearChatThreadSessionAllowedTools: (threadId: string) => void
+  setChatThreadFirstMessage: (threadId: string, text: string) => void
+  clearChatThreadFirstMessage: (threadId: string) => void
   appendChatThreadStreamingText: (threadId: string, text: string) => void
   sealChatThreadStreamingText: (threadId: string) => void
   clearChatThreadStreamingText: (threadId: string) => void
@@ -85,6 +94,8 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   chatThreadSessions: {},
   chatThreadStreamingText: {},
   chatThreadPermissionRequests: {},
+  chatThreadSessionAllowedTools: {},
+  chatThreadFirstMessage: {},
   chatTasksOpen: false,
 
   setChatTasksOpen: (open) => set({ chatTasksOpen: open }),
@@ -186,11 +197,15 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       const { [id]: _dropped, ...remainingSessions } = s.chatThreadSessions
       const { [id]: _droppedText, ...remainingStreamingText } = s.chatThreadStreamingText
       const { [id]: _droppedRequests, ...remainingRequests } = s.chatThreadPermissionRequests
+      const { [id]: _droppedAllowed, ...remainingAllowed } = s.chatThreadSessionAllowedTools
+      const { [id]: _droppedFirst, ...remainingFirstMessages } = s.chatThreadFirstMessage
       return {
         chatThreads: s.chatThreads.filter((t) => t.id !== id),
         chatThreadSessions: remainingSessions,
         chatThreadStreamingText: remainingStreamingText,
         chatThreadPermissionRequests: remainingRequests,
+        chatThreadSessionAllowedTools: remainingAllowed,
+        chatThreadFirstMessage: remainingFirstMessages,
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
     })
@@ -253,6 +268,43 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       .respondPermission({ threadId, requestId, behavior })
       .catch(() => undefined)
   },
+
+  allowChatThreadToolForSession: (threadId, toolName) =>
+    set((s) => {
+      const allowed = s.chatThreadSessionAllowedTools[threadId] ?? []
+      if (allowed.includes(toolName)) {
+        return {}
+      }
+      return {
+        chatThreadSessionAllowedTools: {
+          ...s.chatThreadSessionAllowedTools,
+          [threadId]: [...allowed, toolName]
+        }
+      }
+    }),
+
+  clearChatThreadSessionAllowedTools: (threadId) =>
+    set((s) => {
+      if (!(threadId in s.chatThreadSessionAllowedTools)) {
+        return {}
+      }
+      const { [threadId]: _dropped, ...remaining } = s.chatThreadSessionAllowedTools
+      return { chatThreadSessionAllowedTools: remaining }
+    }),
+
+  setChatThreadFirstMessage: (threadId, text) =>
+    set((s) => ({
+      chatThreadFirstMessage: { ...s.chatThreadFirstMessage, [threadId]: text }
+    })),
+
+  clearChatThreadFirstMessage: (threadId) =>
+    set((s) => {
+      if (!(threadId in s.chatThreadFirstMessage)) {
+        return {}
+      }
+      const { [threadId]: _dropped, ...remaining } = s.chatThreadFirstMessage
+      return { chatThreadFirstMessage: remaining }
+    }),
 
   appendChatThreadStreamingText: (threadId, text) =>
     set((s) => {

@@ -31,7 +31,21 @@ vi.mock('./NativeChatSessionOptionPickers', () => ({
   NativeChatSessionOptionPickers: () => <div data-testid="session-option-pickers" />
 }))
 
+vi.mock('./NativeChatStashMenu', () => ({
+  NativeChatStashMenu: () => <div data-testid="stash-menu" />
+}))
+
 import { NativeChatComposerActions } from './NativeChatComposerActions'
+import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
+
+const stubStash: NativeChatPromptStash = {
+  entries: [],
+  pulse: false,
+  refresh: () => undefined,
+  restore: () => undefined,
+  remove: () => undefined,
+  handleKeyDown: () => false
+}
 
 afterEach(() => cleanup())
 
@@ -52,6 +66,8 @@ describe('NativeChatComposerActions', () => {
         onSend={vi.fn()}
         sessionOptionsSurface={null}
         sessionOptionsSnapshot={[]}
+        stash={stubStash}
+        contextUsedTokens={null}
       />
     )
 

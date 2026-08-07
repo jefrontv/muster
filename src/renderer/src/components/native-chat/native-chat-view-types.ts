@@ -2,6 +2,17 @@ import type { TuiAgent } from '../../../../shared/types'
 import type { NativeChatContextMenuActions } from './use-native-chat-context-menu'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
 
+/** A pending can_use_tool question surfaced by the stream transport. */
+export type NativeChatPermissionRequest = {
+  requestId: string
+  toolName: string
+  /** Raw tool input JSON, rendered by the approval panel as-is. */
+  input: unknown
+}
+
+/** 'allow-always' allows the request AND remembers the tool for the session. */
+export type NativeChatPermissionBehavior = 'allow' | 'allow-always' | 'deny'
+
 /** Non-PTY message transport (chat-mode's headless stream-json child). When
  *  present it replaces the PTY send path; PTY-only affordances (interrupt ESC,
  *  attachments) degrade gracefully. */
@@ -16,6 +27,10 @@ export type NativeChatTransport = {
   /** Interrupt the in-flight turn via the stream's control protocol; resolves
    *  false when the stream is gone. */
   interrupt: () => Promise<boolean>
+  /** Pending tool-permission questions, oldest first. Absent for PTY chat. */
+  permissionRequests?: NativeChatPermissionRequest[]
+  /** Answer the given pending request. Absent for PTY chat. */
+  respondPermission?: (requestId: string, behavior: NativeChatPermissionBehavior) => void
 }
 
 export type NativeChatViewProps = {

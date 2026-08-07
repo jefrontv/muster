@@ -74,4 +74,27 @@ describe('chat-mode permission request state', () => {
       behavior: 'deny'
     })
   })
+
+  it('records session-allowed tools per thread without duplicates', () => {
+    const store = makeStore()
+    store.getState().allowChatThreadToolForSession('t1', 'Bash')
+    store.getState().allowChatThreadToolForSession('t1', 'Bash')
+    store.getState().allowChatThreadToolForSession('t1', 'Edit')
+    store.getState().allowChatThreadToolForSession('t2', 'Bash')
+    expect(store.getState().chatThreadSessionAllowedTools.t1).toEqual(['Bash', 'Edit'])
+    expect(store.getState().chatThreadSessionAllowedTools.t2).toEqual(['Bash'])
+    store.getState().clearChatThreadSessionAllowedTools('t1')
+    expect('t1' in store.getState().chatThreadSessionAllowedTools).toBe(false)
+    expect(store.getState().chatThreadSessionAllowedTools.t2).toEqual(['Bash'])
+  })
+
+  it('holds and clears a thread first message', () => {
+    const store = makeStore()
+    store.getState().setChatThreadFirstMessage('t1', 'build me a site')
+    expect(store.getState().chatThreadFirstMessage.t1).toBe('build me a site')
+    store.getState().clearChatThreadFirstMessage('t1')
+    expect('t1' in store.getState().chatThreadFirstMessage).toBe(false)
+    // Clearing an absent entry is a no-op, not a crash.
+    store.getState().clearChatThreadFirstMessage('ghost')
+  })
 })

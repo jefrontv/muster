@@ -1227,6 +1227,13 @@ export type NativeChatApi = {
     args: NativeChatSubscribeArgs,
     onFrame: (frame: NativeChatSubscriptionFrame) => void
   ) => () => void
+  /** Context-window usage from the latest assistant record (Claude only);
+   *  null when the transcript is missing or carries no usage. */
+  readContextUsage: (
+    agent: AgentType,
+    sessionId: string,
+    transcriptPath?: string
+  ) => Promise<{ usedTokens: number } | null>
 }
 
 export type AppApi = {

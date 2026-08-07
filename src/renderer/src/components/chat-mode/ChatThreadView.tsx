@@ -13,6 +13,7 @@ import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
 import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-option-relaunch'
 import { useAppStore } from '@/store'
 import NativeChatView, { type NativeChatTransport } from '@/components/native-chat/NativeChatView'
+import type { NativeChatPermissionBehavior } from '@/components/native-chat/native-chat-view-types'
 
 type LaunchState = 'starting' | 'running' | 'exited' | 'failed'
 
@@ -115,14 +116,64 @@ export function ChatThreadView({
     [thread.id]
   )
   const interrupt = useCallback(() => window.api.chatThreadStream.interrupt(thread.id), [thread.id])
-  const transport = useMemo<NativeChatTransport>(
-    () => ({ send: sendMessage, streamingText, dispatchOption, interrupt }),
-    [sendMessage, streamingText, dispatchOption, interrupt]
+  const permissionRequests = useAppStore((s) => s.chatThreadPermissionRequests[thread.id])
+  const respondPermission = useCallback(
+    (requestId: string, behavior: NativeChatPermissionBehavior) => {
+      const store = useAppStore.getState()
+      if (behavior === 'allow-always') {
+        // Record the tool so ChatModePage auto-allows its later requests this session.
+        const request = store.chatThreadPermissionRequests[thread.id]?.find(
+          (r) => r.requestId === requestId
+        )
+        if (request) {
+          store.allowChatThreadToolForSession(thread.id, request.toolName)
+        }
+      }
+      store.respondChatThreadPermission(
+        thread.id,
+        requestId,
+        behavior === 'deny' ? 'deny' : 'allow'
+      )
+    },
+    [thread.id]
   )
+  const transport = useMemo<NativeChatTransport>(
+    () => ({
+      send: sendMessage,
+      streamingText,
+      dispatchOption,
+      interrupt,
+      ...(permissionRequests && permissionRequests.length > 0 ? { permissionRequests } : {}),
+      respondPermission
+    }),
+    [sendMessage, streamingText, dispatchOption, interrupt, permissionRequests, respondPermission]
+  )
+
+  // Draft-first landing: the hero stores the thread's opening prompt, delivered
+  // here exactly once as soon as the stream session is up.
+  const firstMessage = useAppStore((s) => s.chatThreadFirstMessage[thread.id])
+  const firstMessageSentRef = useRef(false)
+  useEffect(() => {
+    if (!session || !firstMessage || firstMessageSentRef.current) {
+      return
+    }
+    firstMessageSentRef.current = true
+    const store = useAppStore.getState()
+    // Echo the prompt immediately; NativeChatView prunes the launch-prompt echo
+    // once the real transcript user turn lands.
+    store.seedNativeChatLaunchPrompt({
+      tabId: session.tabId,
+      agent: thread.agent,
+      text: firstMessage,
+      createdAt: Date.now()
+    })
+    store.clearChatThreadFirstMessage(thread.id)
+    void window.api.chatThreadStream.send(thread.id, firstMessage).catch(() => undefined)
+  }, [session, firstMessage, thread.id, thread.agent])
 
   if (session) {
     return (
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-full min-h-0 flex-col duration-200 ease-in animate-in fade-in slide-in-from-bottom-2">
         <NativeChatView
           terminalTabId={session.tabId}
           paneKey={session.paneKey}
