@@ -2,7 +2,7 @@
 // accepts an action id and resolves the command here, so the renderer can never send an arbitrary
 // shell string across the bridge. Agents wanting arbitrary commands have run_ssh_command instead.
 
-export type SiteWpCliActionId = 'core-version' | 'plugin-list' | 'cache-flush' | 'db-size'
+export type SiteWpCliActionId = 'core-version' | 'plugin-list' | 'cache-flush'
 
 export type SiteWpCliAction = {
   id: SiteWpCliActionId
@@ -24,12 +24,6 @@ export const SITE_WP_CLI_ACTIONS: readonly SiteWpCliAction[] = [
     id: 'plugin-list',
     label: 'Active plugins',
     command: 'wp plugin list --status=active --fields=name,version,update',
-    writes: false
-  },
-  {
-    id: 'db-size',
-    label: 'DB size',
-    command: 'wp db size --human',
     writes: false
   },
   {
