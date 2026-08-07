@@ -4,6 +4,7 @@
 // transport only streams deltas and lifecycle.
 
 import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process'
+import { homedir } from 'node:os'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder } from './chat-thread-stream-decode'
@@ -87,7 +88,9 @@ export function startChatThreadStream(
   let child: ChildProcess
   try {
     child = spawnFn(shellPath, ['-lc', command], {
-      ...(cwd ? { cwd } : {}),
+      // Standalone chats have no workspace dir; home beats inheriting the
+      // Electron process cwd (repo dir in dev, filesystem root when packaged).
+      cwd: cwd ?? homedir(),
       env: mergedEnv
     })
   } catch (error) {
