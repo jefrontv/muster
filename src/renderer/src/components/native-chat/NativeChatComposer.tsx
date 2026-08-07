@@ -153,6 +153,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       useNativeChatComposerAttachments({
         attachmentScopeKey: paneKey,
         caret,
+        hasTransport,
         resolveTarget,
         textareaRef,
         setCaret,

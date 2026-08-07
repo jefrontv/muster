@@ -12,6 +12,8 @@ import { setBoundedScopeCacheEntry } from './native-chat-composer-scope-cache'
 export type UseNativeChatComposerAttachmentsArgs = {
   attachmentScopeKey: string
   caret: number
+  /** Stream-transport panes have no PTY target; attachments ride the stream. */
+  hasTransport?: boolean
   resolveTarget: () => NativeChatResolvedTarget | null
   textareaRef: RefObject<HTMLTextAreaElement | null>
   setCaret: (caret: number) => void
@@ -22,6 +24,7 @@ export type UseNativeChatComposerAttachmentsArgs = {
 export function useNativeChatComposerAttachments({
   attachmentScopeKey,
   caret,
+  hasTransport = false,
   resolveTarget,
   textareaRef,
   setCaret,
@@ -106,15 +109,19 @@ export function useNativeChatComposerAttachments({
   // before calling this — see native-chat-attachment-upload.ts).
   const attachResolvedPaths = useCallback(
     (paths: string[]) => {
-      const target = resolveTarget()
-      if (!target || nativeChatComposerTargetIsRemote(target.ptyId)) {
-        setNotice(
-          translate(
-            'components.native-chat.composer.localAttachmentUnsupported',
-            'Local attachments are not available for remote sessions.'
+      // Transport panes send images as base64 blocks over the local stream —
+      // there is no PTY target to validate.
+      if (!hasTransport) {
+        const target = resolveTarget()
+        if (!target || nativeChatComposerTargetIsRemote(target.ptyId)) {
+          setNotice(
+            translate(
+              'components.native-chat.composer.localAttachmentUnsupported',
+              'Local attachments are not available for remote sessions.'
+            )
           )
-        )
-        return
+          return
+        }
       }
       const imagePaths = paths.filter(isNativeChatImageAttachmentPath)
       const filePaths = paths.filter((path) => !isNativeChatImageAttachmentPath(path))
@@ -128,7 +135,14 @@ export function useNativeChatComposerAttachments({
         requestAnimationFrame(() => textareaRef.current?.focus())
       }
     },
-    [appendImageAttachments, insertFileReferences, resolveTarget, setNotice, textareaRef]
+    [
+      appendImageAttachments,
+      hasTransport,
+      insertFileReferences,
+      resolveTarget,
+      setNotice,
+      textareaRef
+    ]
   )
 
   return {
