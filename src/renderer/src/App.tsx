@@ -1944,7 +1944,8 @@ function App(): React.JSX.Element {
         ) : (
           <div className="pl-2" />
         )}
-        {showSidebar && !hasCustomTitleBar && (
+        {/* Chat hides the worktree sidebar but still owns the global titlebar, so it keeps the app name. */}
+        {(showSidebar || activeView === 'chat') && !hasCustomTitleBar && (
           <>
             {settings?.showTitlebarAppName !== false && (
               <ContextMenu>
