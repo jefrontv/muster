@@ -29,19 +29,15 @@ function claudeUserRecordText(message: Record<string, unknown> | null): string |
   return null
 }
 
-/** Local slash-command bookkeeping Claude writes into the transcript. The command
- *  itself becomes a quiet "Ran /model sonnet" status; its caveat and stdout echo
- *  are dropped — they are terminal chrome, not conversation turns. */
-function claudeLocalCommandStatus(text: string): { status: string } | 'drop' | null {
-  if (text.startsWith('<local-command-caveat>') || text.startsWith('<local-command-stdout>')) {
-    return 'drop'
-  }
-  const name = /<command-name>([^<]*)<\/command-name>/.exec(text)?.[1]?.trim()
-  if (!name) {
-    return null
-  }
-  const args = /<command-args>([^<]*)<\/command-args>/.exec(text)?.[1]?.trim()
-  return { status: `Ran ${name}${args ? ` ${args}` : ''}` }
+/** Local slash-command bookkeeping Claude writes into the transcript. The command,
+ *  its caveat, and its stdout echo are all dropped — they are terminal chrome, not
+ *  conversation turns; the composer's pickers already reflect the outcome. */
+function isClaudeLocalCommandRecord(text: string): boolean {
+  return (
+    text.startsWith('<local-command-caveat>') ||
+    text.startsWith('<local-command-stdout>') ||
+    /<command-name>[^<]*<\/command-name>/.test(text)
+  )
 }
 
 export function decodeClaudeTranscriptLine(
@@ -60,18 +56,8 @@ export function decodeClaudeTranscriptLine(
   const recordMessageId = extractString(record.uuid) ?? fallbackId
   if (role === 'user') {
     const rawText = claudeUserRecordText(asRecord(record.message))
-    const command = rawText ? claudeLocalCommandStatus(rawText) : null
-    if (command === 'drop') {
+    if (rawText && isClaudeLocalCommandRecord(rawText)) {
       return null
-    }
-    if (command) {
-      return {
-        id: recordMessageId,
-        role: 'system',
-        blocks: [{ type: 'text', text: command.status }],
-        timestamp,
-        source: 'transcript'
-      }
     }
   }
   if (claudeInterruptedMessageId(record)) {
