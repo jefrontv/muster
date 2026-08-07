@@ -283,6 +283,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     // this only makes the per-tab Chat toggle available. Still disableable in
     // Settings → Experimental.
     experimentalNativeChat: true,
+    experimentalNativeChatDefaultedOnForMuster: true,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,

@@ -2831,8 +2831,10 @@ export type GlobalSettings = {
   openLinksInAppPreferencePrompted: boolean
   /** Opt-in: open new coding-agent tabs in native chat instead of the raw terminal; optional for legacy settings. */
   openAgentTabsInChatByDefault?: boolean
-  /** Experimental native chat surface for Claude/Codex sessions; off by default. */
+  /** Experimental native chat surface for Claude/Codex sessions; Muster defaults this on. */
   experimentalNativeChat?: boolean
+  /** One-shot marker: profile has been flipped to Muster's on-by-default native chat. */
+  experimentalNativeChatDefaultedOnForMuster?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
   nativeChatSessionOptions?: PersistedNativeChatSessionOptions
   /** Extra launcher rows for the worktree "Open in" submenu. VS Code is always shown first. */

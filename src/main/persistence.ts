@@ -2965,6 +2965,16 @@ export class Store {
         if (!openLinksInAppChosen && parsed.settings?.openLinksInApp !== true) {
           this.loadNeedsSave = true
         }
+        // Why: Muster flipped native chat on by default; old profiles persisted the off
+        // default, so flip only unmigrated profiles and let a later opt-out survive reload.
+        const nativeChatDefaultedOnForMuster =
+          parsed.settings?.experimentalNativeChatDefaultedOnForMuster === true
+        const migratedExperimentalNativeChat = nativeChatDefaultedOnForMuster
+          ? (parsed.settings?.experimentalNativeChat ?? true)
+          : true
+        if (!nativeChatDefaultedOnForMuster && parsed.settings?.experimentalNativeChat !== true) {
+          this.loadNeedsSave = true
+        }
         const floatingTerminalDefaultedForAllUsers =
           parsed.settings?.floatingTerminalDefaultedForAllUsers === true
         // Why: early builds persisted the old off default; flip only unmigrated profiles so a later opt-out survives reload.
@@ -3232,6 +3242,8 @@ export class Store {
             localAccountRuntime: migratedLocalAccountRuntime,
             localAccountRuntimeDefaultedToAutoForAllUsers: true,
             openLinksInApp: migratedOpenLinksInApp,
+            experimentalNativeChat: migratedExperimentalNativeChat,
+            experimentalNativeChatDefaultedOnForMuster: true,
             floatingTerminalEnabled: migratedFloatingTerminalEnabled,
             floatingTerminalDefaultedForAllUsers: true,
             floatingTerminalCwd: migratedFloatingTerminalCwd,
