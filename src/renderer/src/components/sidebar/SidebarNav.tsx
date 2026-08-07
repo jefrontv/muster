@@ -20,6 +20,7 @@ import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { SetupGuideSidebarEntry } from './SetupGuideSidebarEntry'
 import { SidebarTaskNavButton } from './SidebarTaskNavButton'
 import { HideSidebarMenu } from './sidebar-nav-controls'
+import { ChatModeToggle } from '@/components/chat-mode/ChatModeToggle'
 import { translate } from '@/i18n/i18n'
 
 export { getSetupGuideSidebarEntryReady, shouldShowSetupGuideEntry } from './SetupGuideSidebarEntry'
@@ -161,6 +162,9 @@ const SidebarNav = React.memo(function SidebarNav() {
       className="flex flex-col gap-0.5 px-2 pt-2 pb-1"
       data-contextual-tour-target="sidebar-navigation"
     >
+      <div className="pb-1 empty:hidden">
+        <ChatModeToggle />
+      </div>
       <SetupGuideSidebarEntry />
       <SidebarTaskNavButton />
       {showAutomationsButton ? (

@@ -844,6 +844,16 @@ const api = {
     delete: (args) => ipcRenderer.invoke('siteDbSnapshots:delete', args)
   } satisfies PreloadApi['siteDbSnapshots'],
 
+  chatMode: {
+    getState: () => ipcRenderer.invoke('chatMode:getState'),
+    createWorkspace: (args) => ipcRenderer.invoke('chatMode:createWorkspace', args),
+    updateWorkspace: (id, patch) => ipcRenderer.invoke('chatMode:updateWorkspace', id, patch),
+    deleteWorkspace: (id) => ipcRenderer.invoke('chatMode:deleteWorkspace', id),
+    createThread: (args) => ipcRenderer.invoke('chatMode:createThread', args),
+    updateThread: (id, patch) => ipcRenderer.invoke('chatMode:updateThread', id, patch),
+    deleteThread: (id) => ipcRenderer.invoke('chatMode:deleteThread', id)
+  } satisfies PreloadApi['chatMode'],
+
   siteRoots: {
     list: () => ipcRenderer.invoke('siteRoots:list'),
     configured: () => ipcRenderer.invoke('siteRoots:configured'),

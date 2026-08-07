@@ -316,6 +316,7 @@ const ActivityPrototypePage = lazy(() => import('./components/activity/ActivityP
 const Settings = lazy(() => import('./components/settings/Settings'))
 const SkillsPage = lazy(() => import('./components/skills/SkillsPage'))
 const SitesPage = lazy(() => import('./components/sites/SitesPage'))
+const ChatModePage = lazy(() => import('./components/chat-mode/ChatModePage'))
 const SiteBindDialog = lazy(() =>
   import('./components/sites/SiteBindDialog').then((m) => ({ default: m.SiteBindDialog }))
 )
@@ -1459,7 +1460,9 @@ function App(): React.JSX.Element {
     activeView !== 'settings' &&
     activeView !== 'activity' &&
     activeView !== 'space' &&
-    activeView !== 'skills'
+    activeView !== 'skills' &&
+    // Chat owns its whole surface, including its own sidebar.
+    activeView !== 'chat'
   // Tasks/Landing show the full titlebar only when the sidebar is collapsed; open, they mirror workspace view (creation suppresses it).
   const stackedSidebarOpen =
     !workspaceChromeActive && !creationLayoutActive && showSidebar && sidebarOpen
@@ -2274,6 +2277,7 @@ function App(): React.JSX.Element {
                               {activeView === 'settings' ? <Settings /> : null}
                               {activeView === 'skills' ? <SkillsPage /> : null}
                               {activeView === 'sites' ? <SitesPage /> : null}
+                              {activeView === 'chat' ? <ChatModePage /> : null}
                               {activeView === 'tasks' ? <TaskPage /> : null}
                               {activeView === 'automations' ? <AutomationsPage /> : null}
                               {activeView === 'activity' ? <ActivityPrototypePage /> : null}

@@ -2835,6 +2835,8 @@ export type GlobalSettings = {
   experimentalNativeChat?: boolean
   /** One-shot marker: profile has been flipped to Muster's on-by-default native chat. */
   experimentalNativeChatDefaultedOnForMuster?: boolean
+  /** The top-level Chat mode (Chat/Code tabs, chat workspaces + threads); off by default. */
+  experimentalChatMode?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
   nativeChatSessionOptions?: PersistedNativeChatSessionOptions
   /** Extra launcher rows for the worktree "Open in" submenu. VS Code is always shown first. */
@@ -3331,6 +3333,7 @@ export type TopLevelView =
   | 'skills'
   | 'sites'
   | 'mobile'
+  | 'chat'
 
 export type PersistedUIState = {
   lastActiveRepoId: string | null

@@ -14,21 +14,36 @@ const FAVICON_FETCH_BUDGET_MS = 5_000
 const MAX_REDIRECT_HOPS = 3
 // Icon hrefs live in <head>; reading more of the homepage buys nothing.
 const MAX_HTML_SNIFF_BYTES = 256 * 1024
+// Why: WAFs commonly 403 UA-less requests (node sends no User-Agent by default).
+const BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+const HTML_ACCEPT = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'
+const ICON_ACCEPT = 'image/*,text/html;q=0.9,*/*;q=0.5'
 
-/** Accepts bare domains, host:port, or full URLs; returns the lowercased host or null. */
-export function normalizeFaviconDomain(raw: string): string | null {
+export type FaviconFetchTarget = {
+  host: string
+  /** Scheme the user typed, or null for bare domains (https is tried first). */
+  explicitScheme: 'http:' | 'https:' | null
+}
+
+/** Accepts bare domains, host:port, or full URLs; keeps an explicit scheme. */
+export function normalizeFaviconTarget(raw: string): FaviconFetchTarget | null {
   const trimmed = raw.trim()
   if (!trimmed) {
     return null
   }
+  const hasScheme = trimmed.includes('://')
   try {
     // Why: prefix a scheme so `foo.local:10004` parses as host:port, not scheme:path.
-    const url = new URL(trimmed.includes('://') ? trimmed : `http://${trimmed}`)
+    const url = new URL(hasScheme ? trimmed : `https://${trimmed}`)
     if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) {
       return null
     }
     // Keep an explicit port (LocalWP maps sites to odd ports); drop creds/path/query.
-    return url.host.toLowerCase()
+    return {
+      host: url.host.toLowerCase(),
+      explicitScheme: hasScheme ? (url.protocol as 'http:' | 'https:') : null
+    }
   } catch {
     return null
   }
@@ -37,27 +52,74 @@ export function normalizeFaviconDomain(raw: string): string | null {
 const LINK_TAG_RE = /<link\b[^>]*>/gi
 const REL_ATTR_RE = /\brel\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/i
 const HREF_ATTR_RE = /\bhref\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/i
+const SIZES_ATTR_RE = /\bsizes\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/i
+const TYPE_ATTR_RE = /\btype\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/i
 
-/**
- * Returns the href of the last `<link rel~=icon>` in the document, or null.
- * Last wins: sites commonly list icons smallest-first, so the last declared
- * candidate is the largest — good enough without parsing `sizes`.
- */
-export function extractIconLinkHref(html: string): string | null {
-  let href: string | null = null
-  for (const [tag] of html.matchAll(LINK_TAG_RE)) {
-    const rel = REL_ATTR_RE.exec(tag)
-    const relValue = rel?.[2] ?? rel?.[3] ?? rel?.[4] ?? ''
-    if (!relValue.toLowerCase().split(/\s+/).includes('icon')) {
+function attrValue(re: RegExp, tag: string): string {
+  const match = re.exec(tag)
+  return match?.[2] ?? match?.[3] ?? match?.[4] ?? ''
+}
+
+// De-facto apple-touch-icon size when the tag declares none.
+const APPLE_TOUCH_DEFAULT_SIZE = 180
+// `sizes="any"` (scalable svg) should beat any fixed-size raster.
+const SCALABLE_SIZE = 1024
+
+function iconSizeScore(sizes: string, isAppleTouch: boolean): number {
+  let max = 0
+  for (const token of sizes.toLowerCase().split(/\s+/)) {
+    if (token === 'any') {
+      max = Math.max(max, SCALABLE_SIZE)
       continue
     }
-    const link = HREF_ATTR_RE.exec(tag)
-    const linkValue = link?.[2] ?? link?.[3] ?? link?.[4] ?? ''
-    if (linkValue) {
-      href = linkValue
+    const dims = /^(\d+)x(\d+)$/.exec(token)
+    if (dims) {
+      max = Math.max(max, Number(dims[1]), Number(dims[2]))
     }
   }
-  return href
+  return max === 0 && isAppleTouch ? APPLE_TOUCH_DEFAULT_SIZE : max
+}
+
+function iconFormatScore(type: string, href: string): number {
+  const format =
+    type.toLowerCase() || /\.([a-z0-9]+)(?:[?#]|$)/i.exec(href)?.[1]?.toLowerCase() || ''
+  if (format === 'image/svg+xml' || format === 'svg') {
+    return 3
+  }
+  if (['image/png', 'png', 'image/webp', 'webp'].includes(format)) {
+    return 2
+  }
+  if (['image/x-icon', 'image/vnd.microsoft.icon', 'ico'].includes(format)) {
+    return 0
+  }
+  return 1
+}
+
+/**
+ * Returns the best icon href declared via `<link rel~=icon|apple-touch-icon>`,
+ * or null. Prefers larger declared sizes, then png/svg over ico; ties go to
+ * the last declaration since sites commonly list icons smallest-first.
+ */
+export function extractIconLinkHref(html: string): string | null {
+  let best: { href: string; size: number; format: number } | null = null
+  for (const [tag] of html.matchAll(LINK_TAG_RE)) {
+    const relTokens = attrValue(REL_ATTR_RE, tag).toLowerCase().split(/\s+/)
+    const isAppleTouch =
+      relTokens.includes('apple-touch-icon') || relTokens.includes('apple-touch-icon-precomposed')
+    if (!relTokens.includes('icon') && !isAppleTouch) {
+      continue
+    }
+    const href = attrValue(HREF_ATTR_RE, tag)
+    if (!href) {
+      continue
+    }
+    const size = iconSizeScore(attrValue(SIZES_ATTR_RE, tag), isAppleTouch)
+    const format = iconFormatScore(attrValue(TYPE_ATTR_RE, tag), href)
+    if (!best || size > best.size || (size === best.size && format >= best.format)) {
+      best = { href, size, format }
+    }
+  }
+  return best?.href ?? null
 }
 
 const SVG_DOCUMENT_RE = /^(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]/i
@@ -102,17 +164,20 @@ export function sniffFaviconMimeType(bytes: Uint8Array): string | null {
   return null
 }
 
+/** Failure after the server answered — a WAF 403 must not trigger the http downgrade. */
+class ServerRespondedError extends Error {}
+
 type ResponseBytes = { statusCode: number; body: Buffer; finalUrl: URL }
 
 function requestBytes(
   url: URL,
-  options: { deadlineAt: number; maxBytes: number; truncateOverflow: boolean },
+  options: { deadlineAt: number; maxBytes: number; truncateOverflow: boolean; accept: string },
   redirectsLeft = MAX_REDIRECT_HOPS
 ): Promise<ResponseBytes> {
   const { promise, resolve, reject } = Promise.withResolvers<ResponseBytes>()
   const budget = options.deadlineAt - Date.now()
   if (budget <= 0) {
-    reject(new Error('Timed out fetching favicon.'))
+    reject(new Error(`Timed out fetching ${url.href}.`))
     return promise
   }
   const transport = url.protocol === 'https:' ? httpsRequest : httpRequest
@@ -122,7 +187,7 @@ function requestBytes(
       // Why: LocalWP serves *.local sites over https with a self-signed cert.
       // Tolerate invalid certs ONLY for .local hosts — never globally.
       rejectUnauthorized: !url.hostname.endsWith('.local'),
-      headers: { Accept: 'image/*,text/html;q=0.9,*/*;q=0.5' }
+      headers: { 'User-Agent': BROWSER_USER_AGENT, Accept: options.accept }
     },
     (res: IncomingMessage) => {
       const { statusCode = 0 } = res
@@ -130,18 +195,18 @@ function requestBytes(
       if (statusCode >= 300 && statusCode < 400 && location) {
         res.resume()
         if (redirectsLeft <= 0) {
-          reject(new Error('Too many redirects.'))
+          reject(new ServerRespondedError(`Too many redirects fetching ${url.href}.`))
           return
         }
         let next: URL
         try {
           next = new URL(location, url)
         } catch {
-          reject(new Error('Invalid redirect location.'))
+          reject(new ServerRespondedError(`${url.href} sent an invalid redirect location.`))
           return
         }
         if (!['http:', 'https:'].includes(next.protocol)) {
-          reject(new Error('Redirected to a non-http URL.'))
+          reject(new ServerRespondedError(`${url.href} redirected to a non-http URL.`))
           return
         }
         resolve(requestBytes(next, options, redirectsLeft - 1))
@@ -158,7 +223,7 @@ function requestBytes(
             resolve({ statusCode, body: Buffer.concat(chunks), finalUrl: url })
           } else {
             res.destroy()
-            reject(new Error('Favicon is larger than 256KB.'))
+            reject(new ServerRespondedError('Favicon is larger than 256KB.'))
           }
           return
         }
@@ -168,7 +233,7 @@ function requestBytes(
       res.on('error', (error) => reject(error))
     }
   )
-  req.setTimeout(budget, () => req.destroy(new Error('Timed out fetching favicon.')))
+  req.setTimeout(budget, () => req.destroy(new Error(`Timed out fetching ${url.href}.`)))
   req.on('error', (error) => reject(error))
   req.end()
   return promise
@@ -178,14 +243,15 @@ async function fetchIconDataUrl(iconUrl: URL, deadlineAt: number): Promise<strin
   const response = await requestBytes(iconUrl, {
     deadlineAt,
     maxBytes: MAX_REPO_ICON_UPLOAD_BYTES,
-    truncateOverflow: false
+    truncateOverflow: false,
+    accept: ICON_ACCEPT
   })
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw new Error(`${iconUrl.href} responded with status ${response.statusCode}.`)
+    throw new ServerRespondedError(`${iconUrl.href} responded with status ${response.statusCode}.`)
   }
   const mimeType = sniffFaviconMimeType(response.body)
   if (!mimeType) {
-    throw new Error(`${iconUrl.href} is not an image.`)
+    throw new ServerRespondedError(`${iconUrl.href} is not an image.`)
   }
   return `data:${mimeType};base64,${response.body.toString('base64')}`
 }
@@ -194,10 +260,11 @@ async function resolveDeclaredIconUrl(origin: string, deadlineAt: number): Promi
   const response = await requestBytes(new URL('/', origin), {
     deadlineAt,
     maxBytes: MAX_HTML_SNIFF_BYTES,
-    truncateOverflow: true
+    truncateOverflow: true,
+    accept: HTML_ACCEPT
   })
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw new Error(`${origin}/ responded with status ${response.statusCode}.`)
+    throw new ServerRespondedError(`${origin}/ responded with status ${response.statusCode}.`)
   }
   const href = extractIconLinkHref(response.body.toString('utf8'))
   if (!href) {
@@ -209,36 +276,59 @@ async function resolveDeclaredIconUrl(origin: string, deadlineAt: number): Promi
 }
 
 /**
- * Fetches a site's favicon as an inline data URL. Resolution order, per scheme
- * (https first, then plain http for .local sites that only answer over http):
- * /favicon.ico, then the homepage's declared <link rel~=icon>. Never throws.
+ * Fetches a site's favicon as an inline data URL. Per scheme (explicit scheme
+ * first; https before http for bare domains): the homepage's declared
+ * `<link rel~=icon>`, then /favicon.ico — tried even when the page fetch
+ * fails, since WAFs often block pages but not static icons. An explicit https
+ * input only falls back to http when https failed at the network level, never
+ * on an HTTP error status. Never throws.
  */
 export async function fetchFaviconAsDataUrl(rawDomain: string): Promise<FaviconFetchResult> {
-  const host = normalizeFaviconDomain(rawDomain)
-  if (!host) {
+  const target = normalizeFaviconTarget(rawDomain)
+  if (!target) {
     return { ok: false, error: 'Enter a valid domain, e.g. example.com.' }
   }
+  const { host, explicitScheme } = target
+  const schemes: ('http:' | 'https:')[] =
+    explicitScheme === 'http:' ? ['http:', 'https:'] : ['https:', 'http:']
   const deadlineAt = Date.now() + FAVICON_FETCH_BUDGET_MS
+  // Prefer the first post-response failure: it names the URL the server
+  // actually rejected, instead of whichever fallback happened to run last.
+  let respondedError: string | null = null
   let lastError = `No favicon found for ${host}.`
-  for (const origin of [`https://${host}`, `http://${host}`]) {
-    for (const candidate of ['direct', 'declared'] as const) {
+  let httpsResponded = false
+  for (const scheme of schemes) {
+    if (scheme === 'http:' && explicitScheme === 'https:' && httpsResponded) {
+      break
+    }
+    const origin = `${scheme}//${host}`
+    for (const candidate of ['declared', 'direct'] as const) {
       if (deadlineAt - Date.now() <= 0) {
-        return { ok: false, error: lastError }
+        return { ok: false, error: respondedError ?? lastError }
       }
       try {
         const iconUrl =
-          candidate === 'direct'
-            ? new URL('/favicon.ico', origin)
-            : await resolveDeclaredIconUrl(origin, deadlineAt)
+          candidate === 'declared'
+            ? await resolveDeclaredIconUrl(origin, deadlineAt)
+            : new URL('/favicon.ico', origin)
         if (!iconUrl) {
+          if (scheme === 'https:') {
+            httpsResponded = true
+          }
           lastError = `No <link rel="icon"> declared at ${origin}/.`
           continue
         }
         return { ok: true, dataUrl: await fetchIconDataUrl(iconUrl, deadlineAt) }
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error)
+        if (error instanceof ServerRespondedError) {
+          respondedError ??= lastError
+          if (scheme === 'https:') {
+            httpsResponded = true
+          }
+        }
       }
     }
   }
-  return { ok: false, error: lastError }
+  return { ok: false, error: respondedError ?? lastError }
 }

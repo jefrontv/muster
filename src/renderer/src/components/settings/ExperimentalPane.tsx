@@ -8,6 +8,7 @@ import { HiddenExperimentalGroup } from './HiddenExperimentalGroup'
 import { NumberField, SettingsSwitch } from './SettingsFormControls'
 import { translate } from '@/i18n/i18n'
 import { NativeChatExperimentalSetting } from './NativeChatExperimentalSetting'
+import { ChatModeExperimentalSetting } from './ChatModeExperimentalSetting'
 import { AgentDashboardExperimentalSetting } from './AgentDashboardExperimentalSetting'
 import { EphemeralVmsExperimentalSetting } from './EphemeralVmsExperimentalSetting'
 import {
@@ -44,6 +45,7 @@ export function ExperimentalPane({
   const showNativeChat = matchesSettingsSearch(searchQuery, [
     getExperimentalSearchEntry().nativeChat
   ])
+  const showChatMode = matchesSettingsSearch(searchQuery, [getExperimentalSearchEntry().chatMode])
   const showTerminalAttention = matchesSettingsSearch(searchQuery, [
     getExperimentalSearchEntry().terminalAttention
   ])
@@ -158,6 +160,10 @@ export function ExperimentalPane({
 
       {showNativeChat ? (
         <NativeChatExperimentalSetting settings={settings} updateSettings={updateSettings} />
+      ) : null}
+
+      {showChatMode ? (
+        <ChatModeExperimentalSetting settings={settings} updateSettings={updateSettings} />
       ) : null}
 
       {showTerminalAttention ? (

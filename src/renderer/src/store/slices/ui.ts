@@ -604,78 +604,17 @@ export type UISlice = {
   acknowledgeAgents: (paneKeys: string[]) => void
   unacknowledgeAgents: (paneKeys: string[]) => void
   activeView: TopLevelView
-  previousViewBeforeTasks:
-    | 'activity'
-    | 'automations'
-    | 'mobile'
-    | 'settings'
-    | 'sites'
-    | 'skills'
-    | 'space'
-    | 'terminal'
-  previousViewBeforeSettings:
-    | 'activity'
-    | 'automations'
-    | 'mobile'
-    | 'sites'
-    | 'skills'
-    | 'space'
-    | 'tasks'
-    | 'terminal'
-  previousViewBeforeActivity:
-    | 'automations'
-    | 'mobile'
-    | 'settings'
-    | 'sites'
-    | 'skills'
-    | 'space'
-    | 'tasks'
-    | 'terminal'
-  previousViewBeforeAutomations:
-    | 'activity'
-    | 'mobile'
-    | 'settings'
-    | 'sites'
-    | 'skills'
-    | 'space'
-    | 'tasks'
-    | 'terminal'
-  previousViewBeforeSpace:
-    | 'activity'
-    | 'automations'
-    | 'mobile'
-    | 'settings'
-    | 'sites'
-    | 'skills'
-    | 'tasks'
-    | 'terminal'
-  previousViewBeforeSkills:
-    | 'activity'
-    | 'automations'
-    | 'mobile'
-    | 'settings'
-    | 'sites'
-    | 'space'
-    | 'tasks'
-    | 'terminal'
-  previousViewBeforeSites:
-    | 'terminal'
-    | 'settings'
-    | 'tasks'
-    | 'activity'
-    | 'automations'
-    | 'space'
-    | 'skills'
-    | 'mobile'
-  previousViewBeforeMobile:
-    | 'activity'
-    | 'automations'
-    | 'settings'
-    | 'sites'
-    | 'skills'
-    | 'space'
-    | 'tasks'
-    | 'terminal'
+  previousViewBeforeTasks: Exclude<TopLevelView, 'tasks'>
+  previousViewBeforeSettings: Exclude<TopLevelView, 'settings'>
+  previousViewBeforeActivity: Exclude<TopLevelView, 'activity'>
+  previousViewBeforeAutomations: Exclude<TopLevelView, 'automations'>
+  previousViewBeforeSpace: Exclude<TopLevelView, 'space'>
+  previousViewBeforeSkills: Exclude<TopLevelView, 'skills'>
+  previousViewBeforeSites: Exclude<TopLevelView, 'sites'>
+  previousViewBeforeMobile: Exclude<TopLevelView, 'mobile'>
+  previousViewBeforeChat: Exclude<TopLevelView, 'chat'>
+  openChatPage: () => void
+  closeChatPage: () => void
   setActiveView: (view: UISlice['activeView']) => void
   taskPageData: {
     preselectedRepoId?: string
@@ -1215,6 +1154,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   previousViewBeforeSkills: 'terminal',
   previousViewBeforeSites: 'terminal',
   previousViewBeforeMobile: 'terminal',
+  previousViewBeforeChat: 'terminal',
   setActiveView: (view) => set({ activeView: view }),
   taskPageData: {},
   taskResumeState: undefined,
@@ -1479,6 +1419,16 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   closeMobilePage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeMobile
+    })),
+  openChatPage: () =>
+    set((state) => ({
+      activeView: 'chat',
+      previousViewBeforeChat:
+        state.activeView === 'chat' ? state.previousViewBeforeChat : state.activeView
+    })),
+  closeChatPage: () =>
+    set((state) => ({
+      activeView: state.previousViewBeforeChat
     })),
   setNewWorkspaceDraft: (draft) => set({ newWorkspaceDraft: draft }),
   clearNewWorkspaceDraft: () => set({ newWorkspaceDraft: null }),
