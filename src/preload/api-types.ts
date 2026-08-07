@@ -871,7 +871,7 @@ export type ChatModeApi = {
   createWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
   updateWorkspace: (
     id: string,
-    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories'>>
+    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color'>>
   ) => Promise<ChatWorkspace | null>
   deleteWorkspace: (id: string) => Promise<boolean>
   createThread: (args: { workspaceId: string; title?: string }) => Promise<ChatThread | null>

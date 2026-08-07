@@ -4,6 +4,8 @@
 
 import { app, ipcMain } from 'electron'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../../shared/chat-mode-types'
+import { sanitizeRepoIcon } from '../../shared/repo-icon'
+import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
 import { ChatWorkspaceStore } from '../chat-mode/chat-workspace-store'
 
 const CHANNELS = [
@@ -61,12 +63,18 @@ export function registerChatModeHandlers(): void {
     async (
       _event,
       id: unknown,
-      patch: { name?: unknown; directories?: unknown }
+      patch: { name?: unknown; directories?: unknown; icon?: unknown; color?: unknown }
     ): Promise<ChatWorkspace | null> =>
       chatStore().updateWorkspace(asString(id, 'id'), {
         ...(patch?.name !== undefined ? { name: asString(patch.name, 'name') } : {}),
         ...(patch?.directories !== undefined
           ? { directories: asDirectories(patch.directories) }
+          : {}),
+        // Why: icon/color are sanitized (not asserted) — a malformed value from a
+        // stale renderer degrades to the default look instead of failing the save.
+        ...('icon' in (patch ?? {}) ? { icon: sanitizeRepoIcon(patch.icon) ?? null } : {}),
+        ...(typeof patch?.color === 'string'
+          ? { color: normalizeRepoBadgeColor(patch.color) ?? undefined }
           : {})
       })
   )

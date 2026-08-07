@@ -15,6 +15,8 @@ const EMOJI_OPTIONS = ['🚀', '✨', '💻', '🧠', '📦', '🔧', '🎨', '�
 
 type RepositoryIconTabsProps = {
   initialTab: 'avatar' | 'icon' | 'emoji' | 'favicon'
+  /** Chat workspaces have no GitHub identity; hides the Avatar tab. */
+  hideAvatarTab?: boolean
   selectedLucideName: string | null
   selectedEmoji: string
   loadingGitHub: boolean
@@ -26,6 +28,7 @@ type RepositoryIconTabsProps = {
 
 export function RepositoryIconTabs({
   initialTab,
+  hideAvatarTab,
   selectedLucideName,
   selectedEmoji,
   loadingGitHub,
@@ -121,11 +124,16 @@ export function RepositoryIconTabs({
   }
 
   return (
-    <Tabs defaultValue={initialTab} className="gap-3">
+    <Tabs
+      defaultValue={hideAvatarTab && initialTab === 'avatar' ? 'icon' : initialTab}
+      className="gap-3"
+    >
       <TabsList variant="line" className="h-8">
-        <TabsTrigger value="avatar" className="h-7 text-xs">
-          {translate('auto.components.settings.RepositoryIconPicker.2d8bd302fa', 'Avatar')}
-        </TabsTrigger>
+        {hideAvatarTab ? null : (
+          <TabsTrigger value="avatar" className="h-7 text-xs">
+            {translate('auto.components.settings.RepositoryIconPicker.2d8bd302fa', 'Avatar')}
+          </TabsTrigger>
+        )}
         <TabsTrigger value="icon" className="h-7 text-xs">
           {translate('auto.components.settings.RepositoryIconPicker.b2d7fd2116', 'Icon')}
         </TabsTrigger>

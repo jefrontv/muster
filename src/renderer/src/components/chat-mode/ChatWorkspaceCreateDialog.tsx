@@ -5,6 +5,7 @@ import { FolderPlus, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
+import type { RepoIcon } from '../../../../shared/repo-icon'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/store'
+import { ChatWorkspaceAppearanceSection } from './ChatWorkspaceAppearanceSection'
 
 export function ChatWorkspaceCreateDialog({
   open,
@@ -33,12 +35,16 @@ export function ChatWorkspaceCreateDialog({
   const updateChatWorkspace = useAppStore((s) => s.updateChatWorkspace)
   const [name, setName] = useState('')
   const [directories, setDirectories] = useState<string[]>([])
+  const [icon, setIcon] = useState<RepoIcon | null>(null)
+  const [color, setColor] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
       setName(workspace?.name ?? '')
       setDirectories(workspace?.directories ?? [])
+      setIcon(workspace?.icon ?? null)
+      setColor(workspace?.color ?? null)
       setSaving(false)
     }
   }, [open, workspace])
@@ -55,9 +61,15 @@ export function ChatWorkspaceCreateDialog({
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
-      await (workspace
-        ? updateChatWorkspace(workspace.id, { name: name.trim(), directories })
-        : createChatWorkspace({ name: name.trim(), directories }))
+      const appearance = { icon, ...(color ? { color } : {}) }
+      if (workspace) {
+        await updateChatWorkspace(workspace.id, { name: name.trim(), directories, ...appearance })
+      } else {
+        const created = await createChatWorkspace({ name: name.trim(), directories })
+        if (icon || color) {
+          await updateChatWorkspace(created.id, appearance)
+        }
+      }
       onOpenChange(false)
     } finally {
       setSaving(false)
@@ -66,7 +78,7 @@ export function ChatWorkspaceCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-sleek sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {workspace
@@ -146,6 +158,18 @@ export function ChatWorkspaceCreateDialog({
               <FolderPlus className="size-3.5" />
               {translate('auto.components.chat.workspaceDialog.addDir', 'Add folder')}
             </Button>
+          </div>
+          <div className="space-y-1.5 border-t border-border pt-3">
+            <Label>
+              {translate('auto.components.chat.workspaceDialog.appearance', 'Appearance')}
+            </Label>
+            <ChatWorkspaceAppearanceSection
+              name={name}
+              icon={icon}
+              color={color}
+              onIconChange={setIcon}
+              onColorChange={setColor}
+            />
           </div>
         </div>
         <DialogFooter>

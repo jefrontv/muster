@@ -11,6 +11,8 @@ import {
   type ChatThread,
   type ChatWorkspace
 } from '../../shared/chat-mode-types'
+import { sanitizeRepoIcon } from '../../shared/repo-icon'
+import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
 
 const CHAT_MODE_FILE_NAME = 'chat-workspaces.json'
 const SAVE_DEBOUNCE_MS = 100
@@ -26,10 +28,14 @@ function normalizeWorkspace(raw: unknown): ChatWorkspace | null {
   const directories = Array.isArray(raw.directories)
     ? raw.directories.filter((d): d is string => typeof d === 'string' && d !== '')
     : []
+  const icon = sanitizeRepoIcon(raw.icon)
+  const color = normalizeRepoBadgeColor(raw.color)
   return {
     id: raw.id,
     name: typeof raw.name === 'string' && raw.name !== '' ? raw.name : 'Untitled',
     directories,
+    ...(icon !== undefined ? { icon } : {}),
+    ...(color !== null ? { color } : {}),
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : 0,
     updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : 0
   }
@@ -113,7 +119,7 @@ export class ChatWorkspaceStore {
 
   updateWorkspace(
     id: string,
-    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories'>>
+    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color'>>
   ): ChatWorkspace | null {
     const existing = this.state.workspaces.find((w) => w.id === id)
     if (!existing) {

@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
+import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from './ChatModeToggle'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
@@ -37,7 +39,12 @@ function WorkspaceSection({
 
   return (
     <section className="space-y-0.5">
-      <div className="group flex items-center gap-1 px-1">
+      <div className="group flex items-center gap-1.5 px-1">
+        <RepoIconGlyph
+          repoIcon={workspace.icon}
+          className="size-4 shrink-0"
+          color={normalizeRepoBadgeColor(workspace.color) ?? undefined}
+        />
         <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {workspace.name}
         </h3>
