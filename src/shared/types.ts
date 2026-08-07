@@ -489,6 +489,8 @@ export type Worktree = {
   linkedLinearIssue: string | null
   linkedLinearIssueWorkspaceId?: string | null
   linkedLinearIssueOrganizationUrlKey?: string | null
+  /** See WorkspaceLinkedItem — read by PR/commit generation. */
+  linkedWorkItem?: WorkspaceLinkedItem | null
   // Why: parallel slots for non-GitHub work-item references. Kept as separate
   // fields (rather than reusing linkedIssue / linkedPR with a provider
   // discriminator) so the persistence layer is unambiguous when a user
@@ -585,9 +587,27 @@ export type GitHubPrStartPoint = {
 }
 
 // ─── Worktree metadata (persisted user-authored fields only) ─────────
+/**
+ * Shim for the upstream workspace-link plumbing (#11296): the {linkedIssue} template and PR
+ * guidance picks read this, but the full Jira link dialog was not taken. Nothing sets it yet, so
+ * the template degrades to empty until a linker (e.g. ActiveCollab start-work) writes it.
+ */
+export type WorkspaceLinkedItem = {
+  provider: 'github' | 'gitlab' | 'linear' | 'jira'
+  type: 'issue' | 'pr' | 'mr'
+  number: number
+  title: string
+  url: string
+  linearIdentifier?: string
+  jiraIdentifier?: string
+  repoId?: string
+}
+
 export type WorktreeMeta = {
   /** Immutable per-workspace-instance ID used to reject stale lineage after path reuse. */
   instanceId?: string
+  /** See WorkspaceLinkedItem — optional, currently only read by PR/commit generation. */
+  linkedWorkItem?: WorkspaceLinkedItem | null
   /** See Worktree.projectId. Persisted for project-first workspace ownership. */
   projectId?: string
   /** See Worktree.hostId. Persisted for project-first workspace ownership. */
