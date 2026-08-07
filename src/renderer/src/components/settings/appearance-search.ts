@@ -83,6 +83,18 @@ export const getZoomEntries = createLocalizedCatalog((): SettingsSearchEntry[] =
       ...translateSearchKeyword('auto.components.settings.appearance.search.0952091186', 'scale'),
       ...translateSearchKeyword('auto.components.settings.appearance.search.0c83659f48', 'shortcut')
     ]
+  },
+  {
+    title: translate('auto.components.settings.appearance.search.terminalZoom', 'Terminal Zoom'),
+    description: translate(
+      'auto.components.settings.appearance.search.terminalZoomDesc',
+      'Default zoom for terminal panes.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.appearance.search.3ae5de6101', 'zoom'),
+      ...translateSearchKeyword('auto.components.settings.appearance.search.0952091186', 'scale'),
+      ...translateSearchKeyword('auto.components.settings.appearance.search.terminal', 'terminal')
+    ]
   }
 ])
 

@@ -3,6 +3,7 @@ import type React from 'react'
 import type { GlobalSettings } from '../../../../shared/types'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { UIZoomControl } from './UIZoomControl'
+import { TerminalZoomControl } from './TerminalZoomControl'
 import { SearchableSetting } from './SearchableSetting'
 import { AppearanceAdvancedDisclosure } from './AppearanceAdvancedDisclosure'
 import { useAppStore } from '../../store'
@@ -133,6 +134,33 @@ export function AppearanceInterfaceSection({
             </>
           }
           control={<UIZoomControl />}
+        />
+      </SearchableSetting>
+
+      <SearchableSetting
+        title={translate('auto.components.settings.AppearancePane.terminalZoom', 'Terminal Zoom')}
+        description={translate(
+          'auto.components.settings.AppearancePane.terminalZoomDesc',
+          'Default zoom for terminal panes; applies to new panes and Cmd+0 reset.'
+        )}
+        keywords={['zoom', 'terminal', 'scale', 'font size']}
+        forceVisible={forceVisiblePrimary}
+      >
+        <SettingsRow
+          label={translate('auto.components.settings.AppearancePane.terminalZoom', 'Terminal Zoom')}
+          // Why: the same gesture zooms only the focused pane; this row is the
+          // persisted default those per-pane zooms reset back to.
+          description={
+            <>
+              <ShortcutHintList combos={zoomInKeyCombos} /> /{' '}
+              <ShortcutHintList combos={zoomOutKeyCombos} />{' '}
+              {translate(
+                'auto.components.settings.AppearancePane.terminalZoomHint',
+                'inside a terminal pane zooms that pane only.'
+              )}
+            </>
+          }
+          control={<TerminalZoomControl settings={settings} updateSettings={updateSettings} />}
         />
       </SearchableSetting>
 
