@@ -11,14 +11,25 @@ export function useNativeChatStreamingBubble(args: {
   pendingMessages: readonly NativeChatMessage[]
   hookPreview: string | null | undefined
   liveWorking: boolean
+  /** True when a stream transport owns this pane — its deltas are then the only
+   *  preview source. Falling back to hook snapshots between messages makes the
+   *  bubble content jump (and can surface raw tool payloads). */
+  hasTransport: boolean
   transportStreamingText: string | null
 }): string | null {
-  const { messages, pendingMessages, hookPreview, liveWorking, transportStreamingText } = args
+  const {
+    messages,
+    pendingMessages,
+    hookPreview,
+    liveWorking,
+    hasTransport,
+    transportStreamingText
+  } = args
   return useMemo(() => {
     return deriveNativeChatStreamingText({
       messages: pendingMessages.length > 0 ? [...messages, ...pendingMessages] : messages,
-      previewText: transportStreamingText ?? hookPreview,
+      previewText: hasTransport ? transportStreamingText : hookPreview,
       working: liveWorking || transportStreamingText !== null
     })
-  }, [messages, pendingMessages, hookPreview, liveWorking, transportStreamingText])
+  }, [messages, pendingMessages, hookPreview, liveWorking, hasTransport, transportStreamingText])
 }

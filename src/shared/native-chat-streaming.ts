@@ -22,6 +22,18 @@ function assistantText(message: NativeChatMessage | undefined): string {
     .trim()
 }
 
+/** Text of the most recent assistant turn, scanning past trailing non-assistant
+ *  rows (tool results, optimistic user echoes) that land between turns. */
+function lastAssistantTextInTail(messages: readonly NativeChatMessage[]): string {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const text = assistantText(messages[index])
+    if (text) {
+      return text
+    }
+  }
+  return ''
+}
+
 /**
  * Decide the streaming text to show, or null to show nothing. Returns the
  * preview only while it leads the transcript — i.e. it's longer than (and not
@@ -44,8 +56,14 @@ export function deriveNativeChatStreamingText(args: {
   if (!text) {
     return null
   }
-  const lastText = assistantText(messages.at(-1))
-  if (lastText.includes(text) || text.length <= lastText.length) {
+  // Containment checks the last assistant turn even past trailing tool-result
+  // rows (a sealed preview must hide once its message lands). The length check
+  // only applies when that turn is still the tail — a fresh message's first
+  // short tokens must not be gated on outgrowing the previous reply.
+  if (lastAssistantTextInTail(messages).includes(text)) {
+    return null
+  }
+  if (text.length <= assistantText(messages.at(-1)).length) {
     return null
   }
   return text

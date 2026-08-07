@@ -24,9 +24,10 @@ export type ChatModeSlice = {
   activeChatWorkspaceId: string | null
   activeChatThreadId: string | null
   chatThreadSessions: Record<string, ChatThreadSession>
-  /** In-flight assistant text per thread, accumulated from stream deltas and
-   *  cleared when the turn's final message lands in the transcript. */
-  chatThreadStreamingText: Record<string, string>
+  /** In-flight assistant text per thread, accumulated from stream deltas.
+   *  `sealed` marks a completed message kept visible until the transcript
+   *  catches up — clearing it eagerly flashes a gap before the real turn lands. */
+  chatThreadStreamingText: Record<string, { text: string; sealed: boolean }>
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
   chatTasksOpen: boolean
   setChatTasksOpen: (open: boolean) => void
@@ -52,6 +53,7 @@ export type ChatModeSlice = {
   deleteChatThread: (id: string) => Promise<void>
   setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
   appendChatThreadStreamingText: (threadId: string, text: string) => void
+  sealChatThreadStreamingText: (threadId: string) => void
   clearChatThreadStreamingText: (threadId: string) => void
 }
 
@@ -182,12 +184,31 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
     }),
 
   appendChatThreadStreamingText: (threadId, text) =>
-    set((s) => ({
-      chatThreadStreamingText: {
-        ...s.chatThreadStreamingText,
-        [threadId]: (s.chatThreadStreamingText[threadId] ?? '') + text
+    set((s) => {
+      const current = s.chatThreadStreamingText[threadId]
+      // A delta after a sealed message starts the next message's accumulation.
+      const nextText = current && !current.sealed ? current.text + text : text
+      return {
+        chatThreadStreamingText: {
+          ...s.chatThreadStreamingText,
+          [threadId]: { text: nextText, sealed: false }
+        }
       }
-    })),
+    }),
+
+  sealChatThreadStreamingText: (threadId) =>
+    set((s) => {
+      const current = s.chatThreadStreamingText[threadId]
+      if (!current || current.sealed) {
+        return {}
+      }
+      return {
+        chatThreadStreamingText: {
+          ...s.chatThreadStreamingText,
+          [threadId]: { ...current, sealed: true }
+        }
+      }
+    }),
 
   clearChatThreadStreamingText: (threadId) =>
     set((s) => {

@@ -27,7 +27,7 @@ export function ChatThreadView({
   const session = useAppStore((s) => s.chatThreadSessions[thread.id])
   const setChatThreadSession = useAppStore((s) => s.setChatThreadSession)
   const updateChatThread = useAppStore((s) => s.updateChatThread)
-  const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id] ?? null)
+  const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.text ?? null)
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
   const launchingRef = useRef(false)

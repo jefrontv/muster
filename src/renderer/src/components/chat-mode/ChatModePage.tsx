@@ -2,7 +2,7 @@
 // sidebar beside the active thread's conversation. Owns chat-store hydration.
 
 import type React from 'react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { ChatModeEmptyState } from './ChatModeEmptyState'
 import { ChatModeSidebar } from './ChatModeSidebar'
@@ -28,8 +28,29 @@ export default function ChatModePage(): React.JSX.Element {
 
   // One window-wide stream-event subscription: threads keep receiving deltas
   // and lifecycle updates while another thread (or the Tasks page) is focused.
+  // Safety timers bound how long a sealed preview can outlive its turn if the
+  // transcript never catches up (interrupt, decode gap).
+  const sealClearTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   useEffect(() => {
-    return window.api.chatThreadStream.onEvent((event) => {
+    const timers = sealClearTimersRef.current
+    const cancelSealClear = (threadId: string): void => {
+      const timer = timers.get(threadId)
+      if (timer) {
+        clearTimeout(timer)
+        timers.delete(threadId)
+      }
+    }
+    const scheduleSealClear = (threadId: string): void => {
+      cancelSealClear(threadId)
+      timers.set(
+        threadId,
+        setTimeout(() => {
+          timers.delete(threadId)
+          useAppStore.getState().clearChatThreadStreamingText(threadId)
+        }, 6_000)
+      )
+    }
+    const unsubscribe = window.api.chatThreadStream.onEvent((event) => {
       const store = useAppStore.getState()
       switch (event.kind) {
         case 'init': {
@@ -43,11 +64,15 @@ export default function ChatModePage(): React.JSX.Element {
           break
         }
         case 'delta':
+          cancelSealClear(event.threadId)
           store.appendChatThreadStreamingText(event.threadId, event.text)
           break
+        // Sealing (not clearing) keeps the preview until the transcript renders
+        // the finished message — an eager clear flashes an empty gap first.
         case 'message-final':
         case 'turn-complete':
-          store.clearChatThreadStreamingText(event.threadId)
+          store.sealChatThreadStreamingText(event.threadId)
+          scheduleSealClear(event.threadId)
           void store.updateChatThread(event.threadId, { lastActivityAt: Date.now() })
           break
         case 'exit': {
@@ -57,12 +82,20 @@ export default function ChatModePage(): React.JSX.Element {
           if (session) {
             store.clearAgentLaunchConfig(session.paneKey)
           }
+          cancelSealClear(event.threadId)
           store.clearChatThreadStreamingText(event.threadId)
           store.setChatThreadSession(event.threadId, null)
           break
         }
       }
     })
+    return () => {
+      unsubscribe()
+      for (const timer of timers.values()) {
+        clearTimeout(timer)
+      }
+      timers.clear()
+    }
   }, [])
 
   const activeThread = threads.find((t) => t.id === activeChatThreadId) ?? null

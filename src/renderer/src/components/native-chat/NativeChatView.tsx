@@ -296,6 +296,7 @@ function NativeChatResolvedView({
     pendingMessages,
     hookPreview,
     liveWorking,
+    hasTransport: transport !== null,
     transportStreamingText: transport?.streamingText ?? null
   })
   const sessionWithPending = useMemo<typeof session>(() => {
