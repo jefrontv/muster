@@ -151,7 +151,7 @@ header('X-Robots-Tag: noindex, nofollow');
               </div>
               <div>
                 <dt>Task trackers</dt>
-                <dd><span data-count="7">7</span></dd>
+                <dd><span data-count="5">5</span></dd>
               </div>
               <div>
                 <dt>Tools for agents</dt>
@@ -386,7 +386,7 @@ header('X-Robots-Tag: noindex, nofollow');
             <p class="strip"><span class="strip-n">05</span> Tasks</p>
             <h2>Your tracker, in the sidebar</h2>
             <p class="phead-note">
-              ActiveCollab, Jira, Linear, GitHub, GitLab, Azure DevOps and Gitea. My Work lists what
+              ActiveCollab by default, with Jira, Linear, GitHub and GitLab a toggle away. My Work lists what
               is assigned to you; open a project to see every task under its own lists, with labels,
               assignee avatars and who created it.
             </p>
