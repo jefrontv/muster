@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
+import { SiteRunLogLines } from '@/components/sites/SiteRunLogLines'
 
 function LogTail({
   lines,
@@ -27,18 +28,7 @@ function LogTail({
       ref={logRef}
       className="max-h-48 overflow-y-auto scrollbar-sleek rounded-md bg-muted/40 p-2 font-mono text-[11px]"
     >
-      {lines.map((line, index) => (
-        <div
-          key={`${line.at}-${index}`}
-          className={cn(
-            'whitespace-pre-wrap break-words',
-            line.level === 'error' && 'text-destructive',
-            line.level === 'status' && 'font-medium'
-          )}
-        >
-          {line.text}
-        </div>
-      ))}
+      <SiteRunLogLines lines={lines} />
     </div>
   )
 }

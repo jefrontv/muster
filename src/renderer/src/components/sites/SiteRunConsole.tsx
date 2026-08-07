@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { useConfirmationDialog } from '@/components/confirmation-dialog'
-import { cn } from '@/lib/utils'
+import { SiteRunLogLines } from './SiteRunLogLines'
 import { useSiteRun } from './use-site-run'
 
 export type SiteRunConsoleState = {
@@ -156,18 +156,7 @@ export function SiteRunOutput({
           ref={logRef}
           className="max-h-64 overflow-y-auto scrollbar-sleek rounded-md bg-muted/40 p-3 font-mono text-xs"
         >
-          {lines.map((line, index) => (
-            <div
-              key={`${line.at}-${index}`}
-              className={cn(
-                'whitespace-pre-wrap break-words',
-                line.level === 'error' && 'text-destructive',
-                line.level === 'status' && 'font-medium'
-              )}
-            >
-              {line.text}
-            </div>
-          ))}
+          <SiteRunLogLines lines={lines} />
         </div>
       ) : null}
     </section>
