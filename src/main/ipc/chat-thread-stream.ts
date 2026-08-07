@@ -8,6 +8,8 @@ import { agentHookServer } from '../agent-hooks/server'
 import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
 import type { Store } from '../persistence'
 import {
+  interruptChatThreadStream,
+  respondChatThreadPermission,
   sendChatThreadStreamMessage,
   startChatThreadStream,
   stopChatThreadStream
@@ -16,6 +18,8 @@ import {
 const CHANNELS = [
   'chatThreadStream:start',
   'chatThreadStream:send',
+  'chatThreadStream:respondPermission',
+  'chatThreadStream:interrupt',
   'chatThreadStream:stop'
 ] as const
 
@@ -81,6 +85,38 @@ export function registerChatThreadStreamHandlers(store: Store): void {
     'chatThreadStream:send',
     async (_event, threadId: unknown, text: unknown): Promise<boolean> =>
       sendChatThreadStreamMessage(asString(threadId, 'threadId'), asString(text, 'text'))
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:respondPermission',
+    async (
+      _event,
+      args: {
+        threadId?: unknown
+        requestId?: unknown
+        behavior?: unknown
+        message?: unknown
+        updatedInput?: unknown
+      }
+    ): Promise<boolean> => {
+      const behavior = args?.behavior
+      if (behavior !== 'allow' && behavior !== 'deny') {
+        throw new Error('chatThreadStream: behavior must be "allow" or "deny"')
+      }
+      return respondChatThreadPermission({
+        threadId: asString(args?.threadId, 'threadId'),
+        requestId: asString(args?.requestId, 'requestId'),
+        behavior,
+        ...(typeof args?.message === 'string' ? { message: args.message } : {}),
+        ...(args?.updatedInput !== undefined ? { updatedInput: args.updatedInput } : {})
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:interrupt',
+    async (_event, threadId: unknown): Promise<boolean> =>
+      interruptChatThreadStream(asString(threadId, 'threadId'))
   )
 
   ipcMain.handle('chatThreadStream:stop', async (_event, threadId: unknown): Promise<void> => {

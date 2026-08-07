@@ -7,6 +7,14 @@ import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-typ
 import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
 import type { AppState } from '../types'
 
+/** A pending can_use_tool question from the stream, awaiting Approve/Decline. */
+export type ChatThreadPermissionRequest = {
+  requestId: string
+  toolName: string
+  /** Raw tool input JSON, rendered by the approval panel as-is. */
+  input: unknown
+}
+
 /** A live stream-json session for a thread. Runtime-only — never persisted. */
 export type ChatThreadSession = {
   tabId: string
@@ -28,6 +36,8 @@ export type ChatModeSlice = {
    *  `sealed` marks a completed message kept visible until the transcript
    *  catches up — clearing it eagerly flashes a gap before the real turn lands. */
   chatThreadStreamingText: Record<string, { text: string; sealed: boolean }>
+  /** Pending tool-permission questions per thread, oldest first. */
+  chatThreadPermissionRequests: Record<string, ChatThreadPermissionRequest[]>
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
   chatTasksOpen: boolean
   setChatTasksOpen: (open: boolean) => void
@@ -52,6 +62,15 @@ export type ChatModeSlice = {
   ) => Promise<void>
   deleteChatThread: (id: string) => Promise<void>
   setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
+  addChatThreadPermissionRequest: (threadId: string, request: ChatThreadPermissionRequest) => void
+  removeChatThreadPermissionRequest: (threadId: string, requestId: string) => void
+  clearChatThreadPermissionRequests: (threadId: string) => void
+  /** Answer a pending request: removes it optimistically, then tells main. */
+  respondChatThreadPermission: (
+    threadId: string,
+    requestId: string,
+    behavior: 'allow' | 'deny'
+  ) => void
   appendChatThreadStreamingText: (threadId: string, text: string) => void
   sealChatThreadStreamingText: (threadId: string) => void
   clearChatThreadStreamingText: (threadId: string) => void
@@ -65,6 +84,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   activeChatThreadId: null,
   chatThreadSessions: {},
   chatThreadStreamingText: {},
+  chatThreadPermissionRequests: {},
   chatTasksOpen: false,
 
   setChatTasksOpen: (open) => set({ chatTasksOpen: open }),
@@ -165,10 +185,12 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
     set((s) => {
       const { [id]: _dropped, ...remainingSessions } = s.chatThreadSessions
       const { [id]: _droppedText, ...remainingStreamingText } = s.chatThreadStreamingText
+      const { [id]: _droppedRequests, ...remainingRequests } = s.chatThreadPermissionRequests
       return {
         chatThreads: s.chatThreads.filter((t) => t.id !== id),
         chatThreadSessions: remainingSessions,
         chatThreadStreamingText: remainingStreamingText,
+        chatThreadPermissionRequests: remainingRequests,
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
     })
@@ -182,6 +204,55 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       }
       return { chatThreadSessions: { ...s.chatThreadSessions, [threadId]: session } }
     }),
+
+  addChatThreadPermissionRequest: (threadId, request) =>
+    set((s) => {
+      const queue = s.chatThreadPermissionRequests[threadId] ?? []
+      // Why: a replayed record must not duplicate an already-queued question.
+      if (queue.some((r) => r.requestId === request.requestId)) {
+        return {}
+      }
+      return {
+        chatThreadPermissionRequests: {
+          ...s.chatThreadPermissionRequests,
+          [threadId]: [...queue, request]
+        }
+      }
+    }),
+
+  removeChatThreadPermissionRequest: (threadId, requestId) =>
+    set((s) => {
+      const queue = s.chatThreadPermissionRequests[threadId]
+      if (!queue?.some((r) => r.requestId === requestId)) {
+        return {}
+      }
+      const remaining = queue.filter((r) => r.requestId !== requestId)
+      if (remaining.length === 0) {
+        const { [threadId]: _dropped, ...rest } = s.chatThreadPermissionRequests
+        return { chatThreadPermissionRequests: rest }
+      }
+      return {
+        chatThreadPermissionRequests: { ...s.chatThreadPermissionRequests, [threadId]: remaining }
+      }
+    }),
+
+  clearChatThreadPermissionRequests: (threadId) =>
+    set((s) => {
+      if (!(threadId in s.chatThreadPermissionRequests)) {
+        return {}
+      }
+      const { [threadId]: _dropped, ...remaining } = s.chatThreadPermissionRequests
+      return { chatThreadPermissionRequests: remaining }
+    }),
+
+  respondChatThreadPermission: (threadId, requestId, behavior) => {
+    // Optimistic removal: the composer moves on immediately; main writes the
+    // verdict and the CLI tolerates a stale id if the turn was interrupted.
+    get().removeChatThreadPermissionRequest(threadId, requestId)
+    void window.api.chatThreadStream
+      .respondPermission({ threadId, requestId, behavior })
+      .catch(() => undefined)
+  },
 
   appendChatThreadStreamingText: (threadId, text) =>
     set((s) => {

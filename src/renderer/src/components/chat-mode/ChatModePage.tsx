@@ -75,6 +75,16 @@ export default function ChatModePage(): React.JSX.Element {
           scheduleSealClear(event.threadId)
           void store.updateChatThread(event.threadId, { lastActivityAt: Date.now() })
           break
+        case 'permission-request':
+          store.addChatThreadPermissionRequest(event.threadId, {
+            requestId: event.requestId,
+            toolName: event.toolName,
+            input: event.input
+          })
+          break
+        case 'permission-cancel':
+          store.removeChatThreadPermissionRequest(event.threadId, event.requestId)
+          break
         case 'exit': {
           // Only unexpected deaths arrive here (intentional stops are silent);
           // dropping the session record flips ChatThreadView to its resume state.
@@ -84,6 +94,7 @@ export default function ChatModePage(): React.JSX.Element {
           }
           cancelSealClear(event.threadId)
           store.clearChatThreadStreamingText(event.threadId)
+          store.clearChatThreadPermissionRequests(event.threadId)
           store.setChatThreadSession(event.threadId, null)
           break
         }

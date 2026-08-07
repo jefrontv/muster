@@ -31,9 +31,11 @@ import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 
 /** Headless stream transport flags; the CLI reads turns on stdin and writes
- *  NDJSON (with partial deltas) on stdout. */
+ *  NDJSON (with partial deltas) on stdout. `--permission-prompt-tool stdio`
+ *  (hidden from --help, verified on 2.1.224) makes un-allowlisted tool calls
+ *  emit can_use_tool control_requests instead of silently denying. */
 const CLAUDE_STREAM_FLAGS =
-  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages'
+  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages --permission-prompt-tool stdio'
 
 export type ChatThreadLaunchResult = {
   tabId: string

@@ -9,6 +9,8 @@ import {
 } from './chat-thread-stream-decode'
 import {
   chatThreadStreamCountForTests,
+  interruptChatThreadStream,
+  respondChatThreadPermission,
   sendChatThreadStreamMessage,
   startChatThreadStream,
   stopAllChatThreadStreams,
@@ -93,6 +95,57 @@ describe('mapChatThreadStreamRecord', () => {
 
   it('ignores unknown record types', () => {
     expect(mapChatThreadStreamRecord('t1', { type: 'user' })).toBeNull()
+  })
+
+  it('maps can_use_tool control requests to permission-request', () => {
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'control_request',
+        request_id: 'perm-1',
+        request: {
+          subtype: 'can_use_tool',
+          tool_name: 'Bash',
+          input: { command: 'touch /tmp/x' },
+          permission_suggestions: []
+        }
+      })
+    ).toEqual({
+      threadId: 't1',
+      kind: 'permission-request',
+      requestId: 'perm-1',
+      toolName: 'Bash',
+      input: { command: 'touch /tmp/x' }
+    })
+  })
+
+  it('drops malformed or non-can_use_tool control requests', () => {
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'control_request',
+        request_id: 'x',
+        request: { subtype: 'hook_callback' }
+      })
+    ).toBeNull()
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'control_request',
+        request: { subtype: 'can_use_tool', tool_name: 'Bash', input: {} }
+      })
+    ).toBeNull()
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'control_request',
+        request_id: 'x',
+        request: { subtype: 'can_use_tool', input: {} }
+      })
+    ).toBeNull()
+  })
+
+  it('maps control_cancel_request to permission-cancel', () => {
+    expect(
+      mapChatThreadStreamRecord('t1', { type: 'control_cancel_request', request_id: 'perm-1' })
+    ).toEqual({ threadId: 't1', kind: 'permission-cancel', requestId: 'perm-1' })
+    expect(mapChatThreadStreamRecord('t1', { type: 'control_cancel_request' })).toBeNull()
   })
 })
 
@@ -227,6 +280,151 @@ describe('startChatThreadStream', () => {
     child.emit('close', 0)
     expect(sent).toEqual([])
     expect(chatThreadStreamCountForTests()).toBe(0)
+  })
+
+  it('writes an allow verdict echoing the original input from the pending request', () => {
+    const child = createFakeChild()
+    const { sent, sender } = createSender()
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      { spawn: () => child, hookEnv: () => ({}) }
+    )
+    const request = {
+      type: 'control_request',
+      request_id: 'perm-1',
+      request: { subtype: 'can_use_tool', tool_name: 'Bash', input: { command: 'ls' } }
+    }
+    child.stdout.write(`${JSON.stringify(request)}\n`)
+    expect(sent).toEqual([
+      {
+        threadId: 't1',
+        kind: 'permission-request',
+        requestId: 'perm-1',
+        toolName: 'Bash',
+        input: { command: 'ls' }
+      }
+    ])
+    expect(
+      respondChatThreadPermission({ threadId: 't1', requestId: 'perm-1', behavior: 'allow' })
+    ).toBe(true)
+    const written = (child.stdin.read() as Buffer).toString()
+    expect(JSON.parse(written.trim())).toEqual({
+      type: 'control_response',
+      response: {
+        subtype: 'success',
+        request_id: 'perm-1',
+        response: { behavior: 'allow', updatedInput: { command: 'ls' } }
+      }
+    })
+    expect(
+      respondChatThreadPermission({ threadId: 'nope', requestId: 'x', behavior: 'allow' })
+    ).toBe(false)
+    child.emit('close', 0)
+  })
+
+  it('writes a deny verdict with the message and tolerates stale request ids', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      { spawn: () => child, hookEnv: () => ({}) }
+    )
+    // Stale id (never requested): main still writes; the CLI ignores unknown ids.
+    expect(
+      respondChatThreadPermission({
+        threadId: 't1',
+        requestId: 'stale-1',
+        behavior: 'deny',
+        message: 'No thanks'
+      })
+    ).toBe(true)
+    const written = (child.stdin.read() as Buffer).toString()
+    expect(JSON.parse(written.trim())).toEqual({
+      type: 'control_response',
+      response: {
+        subtype: 'success',
+        request_id: 'stale-1',
+        response: { behavior: 'deny', message: 'No thanks' }
+      }
+    })
+    child.emit('close', 0)
+  })
+
+  it('writes interrupt control requests with a per-child id counter', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      { spawn: () => child, hookEnv: () => ({}) }
+    )
+    expect(interruptChatThreadStream('t1')).toBe(true)
+    expect(interruptChatThreadStream('t1')).toBe(true)
+    expect(interruptChatThreadStream('missing')).toBe(false)
+    const lines = (child.stdin.read() as Buffer).toString().trim().split('\n')
+    expect(lines.map((line) => JSON.parse(line))).toEqual([
+      { type: 'control_request', request_id: 'req_1', request: { subtype: 'interrupt' } },
+      { type: 'control_request', request_id: 'req_2', request: { subtype: 'interrupt' } }
+    ])
+    child.emit('close', 0)
+  })
+
+  it('denies outstanding permission requests on stop', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      { spawn: () => child, hookEnv: () => ({}) }
+    )
+    child.stdout.write(
+      `${JSON.stringify({
+        type: 'control_request',
+        request_id: 'perm-9',
+        request: { subtype: 'can_use_tool', tool_name: 'Write', input: { file_path: '/x' } }
+      })}\n`
+    )
+    stopChatThreadStream('t1')
+    const lines = (child.stdin.read() as Buffer).toString().trim().split('\n')
+    expect(lines.map((line) => JSON.parse(line))).toEqual([
+      {
+        type: 'control_response',
+        response: {
+          subtype: 'success',
+          request_id: 'perm-9',
+          response: { behavior: 'deny', message: 'The chat session was closed.' }
+        }
+      }
+    ])
+    child.emit('close', 0)
+  })
+
+  it('flushes pending deltas before a permission-request event', () => {
+    const child = createFakeChild()
+    const { sent, sender } = createSender()
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      { spawn: () => child, hookEnv: () => ({}) }
+    )
+    child.stdout.write(
+      `${JSON.stringify({
+        type: 'stream_event',
+        event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'hi' } }
+      })}\n${JSON.stringify({
+        type: 'control_request',
+        request_id: 'perm-2',
+        request: { subtype: 'can_use_tool', tool_name: 'Bash', input: {} }
+      })}\n`
+    )
+    expect(sent).toEqual([
+      { threadId: 't1', kind: 'delta', text: 'hi' },
+      {
+        threadId: 't1',
+        kind: 'permission-request',
+        requestId: 'perm-2',
+        toolName: 'Bash',
+        input: {}
+      }
+    ])
+    child.emit('close', 0)
   })
 
   it('replaces an existing child when the same thread starts again', () => {

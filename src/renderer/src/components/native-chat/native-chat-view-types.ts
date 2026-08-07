@@ -13,6 +13,9 @@ export type NativeChatTransport = {
   /** Session-option command dispatch (e.g. "/model …") — restarts the stream
    *  with the new launch flags and resumes the provider session. */
   dispatchOption: NativeChatSessionOptionDispatchCommand
+  /** Interrupt the in-flight turn via the stream's control protocol; resolves
+   *  false when the stream is gone. */
+  interrupt: () => Promise<boolean>
 }
 
 export type NativeChatViewProps = {

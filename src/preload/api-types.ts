@@ -32,6 +32,7 @@ import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../sh
 import type { SiteDbSnapshot } from '../shared/site-db-snapshot-types'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../shared/chat-mode-types'
 import type {
+  ChatThreadPermissionResponseArgs,
   ChatThreadStreamEvent,
   ChatThreadStreamStartArgs,
   ChatThreadStreamStartResult
@@ -898,6 +899,10 @@ export type ChatModeApi = {
 export type ChatThreadStreamApi = {
   start: (args: ChatThreadStreamStartArgs) => Promise<ChatThreadStreamStartResult>
   send: (threadId: string, text: string) => Promise<boolean>
+  /** Answer a pending can_use_tool control request (Approve/Decline). */
+  respondPermission: (args: ChatThreadPermissionResponseArgs) => Promise<boolean>
+  /** Interrupt the in-flight turn over the stream's control protocol. */
+  interrupt: (threadId: string) => Promise<boolean>
   stop: (threadId: string) => Promise<void>
   onEvent: (callback: (event: ChatThreadStreamEvent) => void) => () => void
 }

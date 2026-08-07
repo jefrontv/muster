@@ -437,6 +437,7 @@ function NativeChatResolvedView({
           agent={agent}
           transportSend={transport?.send}
           transportDispatchOption={transport?.dispatchOption}
+          transportInterrupt={transport?.interrupt}
           canSend={canSend}
           isWorking={isWorking}
           onStop={stopAgent}

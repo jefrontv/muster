@@ -69,6 +69,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       agent,
       transportSend,
       transportDispatchOption,
+      transportInterrupt,
       canSend = true,
       isWorking = false,
       onStop,
@@ -341,20 +342,21 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
 
     const interrupt = useCallback(() => {
       cancelPendingSends()
-      if (isWorking && onStop) {
-        onStop()
+      if (isWorking && (onStop || transportInterrupt)) {
+        onStop?.()
+        // Real stream interrupt; onStop only cleans renderer-side echo state.
+        void transportInterrupt?.()
         return
       }
-      // Why: no PTY means no ESC byte to write; stream interrupts aren't wired yet.
+      // Why: no PTY means no ESC byte to write; an idle stream has nothing to interrupt.
       if (hasTransport) {
         return
       }
       const target = resolveTarget()
-      if (!target) {
-        return
+      if (target) {
+        sendRuntimePtyInput(target.settings, target.ptyId, ESC)
       }
-      sendRuntimePtyInput(target.settings, target.ptyId, ESC)
-    }, [cancelPendingSends, hasTransport, isWorking, onStop, resolveTarget])
+    }, [cancelPendingSends, hasTransport, isWorking, onStop, resolveTarget, transportInterrupt])
 
     const dispatchPickerCommand = useNativeChatPickerCommandDispatch({
       agent,

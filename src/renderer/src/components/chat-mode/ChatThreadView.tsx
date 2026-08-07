@@ -114,9 +114,10 @@ export function ChatThreadView({
     (command: string) => dispatchChatThreadSessionOption({ threadId: thread.id, command }),
     [thread.id]
   )
+  const interrupt = useCallback(() => window.api.chatThreadStream.interrupt(thread.id), [thread.id])
   const transport = useMemo<NativeChatTransport>(
-    () => ({ send: sendMessage, streamingText, dispatchOption }),
-    [sendMessage, streamingText, dispatchOption]
+    () => ({ send: sendMessage, streamingText, dispatchOption, interrupt }),
+    [sendMessage, streamingText, dispatchOption, interrupt]
   )
 
   if (session) {

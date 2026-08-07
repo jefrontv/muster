@@ -13,6 +13,8 @@ export type NativeChatComposerProps = {
   transportSend?: (text: string) => Promise<boolean>
   /** Stream-transport session-option dispatch (relaunch with new launch flags). */
   transportDispatchOption?: NativeChatSessionOptionDispatchCommand
+  /** Stream-transport interrupt; Stop sends this instead of a PTY ESC byte. */
+  transportInterrupt?: () => Promise<boolean>
   /** Guard desktop sends while a mobile client owns the terminal input lease. */
   canSend?: boolean
   /** True while the hosted TUI reports an in-flight turn; swaps Send to Stop. */

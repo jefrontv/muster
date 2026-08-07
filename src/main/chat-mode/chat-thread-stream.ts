@@ -46,6 +46,12 @@ type StreamEntry = {
    *  intentional stop/relaunch never races the renderer's session bookkeeping. */
   stopping: boolean
   killTimer: ReturnType<typeof setTimeout> | null
+  /** can_use_tool requests awaiting a renderer verdict, id → original input.
+   *  The input is kept so an allow without updatedInput echoes it back; entries
+   *  are denied on stop so the CLI never hangs on an unanswerable question. */
+  pendingPermissionRequests: Map<string, unknown>
+  /** Outgoing control_request id counter (interrupts) — unique per child. */
+  controlRequestCounter: number
 }
 
 const registry = new Map<string, StreamEntry>()
@@ -98,7 +104,13 @@ export function startChatThreadStream(
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 
-  const entry: StreamEntry = { child, stopping: false, killTimer: null }
+  const entry: StreamEntry = {
+    child,
+    stopping: false,
+    killTimer: null,
+    pendingPermissionRequests: new Map(),
+    controlRequestCounter: 0
+  }
   registry.set(threadId, entry)
 
   const send = (event: ChatThreadStreamEvent): void => {
@@ -112,7 +124,16 @@ export function startChatThreadStream(
     }
   }
   const emitter = createCoalescingStreamEmitter(threadId, send)
-  const emit = emitter.emit
+  const emit = (event: ChatThreadStreamEvent): void => {
+    // Book-keep pending can_use_tool requests so stop can deny what's open and
+    // an allow verdict can echo the original input back.
+    if (event.kind === 'permission-request') {
+      entry.pendingPermissionRequests.set(event.requestId, event.input)
+    } else if (event.kind === 'permission-cancel') {
+      entry.pendingPermissionRequests.delete(event.requestId)
+    }
+    emitter.emit(event)
+  }
   const decoder = createChatThreadStreamDecoder(threadId, emit)
   let stderrTail = ''
 
@@ -143,15 +164,10 @@ export function startChatThreadStream(
   return { ok: true }
 }
 
-export function sendChatThreadStreamMessage(threadId: string, text: string): boolean {
-  const entry = registry.get(threadId)
-  const stdin = entry?.child.stdin
-  if (!entry || entry.stopping || !stdin || stdin.destroyed || !stdin.writable) {
+function writeStdinLine(entry: StreamEntry, payload: unknown): boolean {
+  const stdin = entry.child.stdin
+  if (entry.stopping || !stdin || stdin.destroyed || !stdin.writable) {
     return false
-  }
-  const payload = {
-    type: 'user',
-    message: { role: 'user', content: [{ type: 'text', text }] }
   }
   try {
     stdin.write(`${JSON.stringify(payload)}\n`)
@@ -161,11 +177,92 @@ export function sendChatThreadStreamMessage(threadId: string, text: string): boo
   return true
 }
 
+export function sendChatThreadStreamMessage(threadId: string, text: string): boolean {
+  const entry = registry.get(threadId)
+  if (!entry) {
+    return false
+  }
+  return writeStdinLine(entry, {
+    type: 'user',
+    message: { role: 'user', content: [{ type: 'text', text }] }
+  })
+}
+
+/** Verdict payload the CLI accepts for a can_use_tool control_request. */
+function buildPermissionControlResponse(args: {
+  requestId: string
+  behavior: 'allow' | 'deny'
+  message?: string
+  updatedInput?: unknown
+}): unknown {
+  return {
+    type: 'control_response',
+    response: {
+      subtype: 'success',
+      request_id: args.requestId,
+      response:
+        args.behavior === 'allow'
+          ? { behavior: 'allow', updatedInput: args.updatedInput ?? {} }
+          : { behavior: 'deny', message: args.message ?? 'The user declined this tool use.' }
+    }
+  }
+}
+
+export function respondChatThreadPermission(args: {
+  threadId: string
+  requestId: string
+  behavior: 'allow' | 'deny'
+  message?: string
+  updatedInput?: unknown
+}): boolean {
+  const entry = registry.get(args.threadId)
+  if (!entry) {
+    return false
+  }
+  // A stale request_id (turn already interrupted) is written anyway; the CLI
+  // tolerates unknown ids silently (verified against 2.1.224).
+  const originalInput = entry.pendingPermissionRequests.get(args.requestId)
+  entry.pendingPermissionRequests.delete(args.requestId)
+  return writeStdinLine(
+    entry,
+    buildPermissionControlResponse({
+      ...args,
+      updatedInput: args.updatedInput ?? originalInput
+    })
+  )
+}
+
+export function interruptChatThreadStream(threadId: string): boolean {
+  const entry = registry.get(threadId)
+  if (!entry) {
+    return false
+  }
+  entry.controlRequestCounter += 1
+  return writeStdinLine(entry, {
+    type: 'control_request',
+    request_id: `req_${entry.controlRequestCounter}`,
+    request: { subtype: 'interrupt' }
+  })
+}
+
 export function stopChatThreadStream(threadId: string): void {
   const entry = registry.get(threadId)
   if (!entry || entry.stopping) {
     return
   }
+  // Deny outstanding permission questions before closing stdin, so the CLI's
+  // pending tool_use settles instead of dangling into the kill.
+  for (const [requestId] of entry.pendingPermissionRequests) {
+    writeStdinLine(
+      entry,
+      buildPermissionControlResponse({
+        requestId,
+        behavior: 'deny',
+        message: 'The chat session was closed.'
+      })
+    )
+  }
+  entry.pendingPermissionRequests.clear()
   entry.stopping = true
   registry.delete(threadId)
   try {

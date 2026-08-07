@@ -42,6 +42,31 @@ export function mapChatThreadStreamRecord(
     case 'assistant': {
       return fromSubagent ? null : { threadId, kind: 'message-final' }
     }
+    // Tool-permission control protocol (--permission-prompt-tool stdio): the CLI
+    // asks before running an un-allowlisted tool instead of silently denying.
+    case 'control_request': {
+      const request = asRecord(record.request)
+      if (
+        request?.subtype !== 'can_use_tool' ||
+        typeof record.request_id !== 'string' ||
+        typeof request.tool_name !== 'string'
+      ) {
+        return null
+      }
+      return {
+        threadId,
+        kind: 'permission-request',
+        requestId: record.request_id,
+        toolName: request.tool_name,
+        input: request.input
+      }
+    }
+    case 'control_cancel_request': {
+      if (typeof record.request_id !== 'string') {
+        return null
+      }
+      return { threadId, kind: 'permission-cancel', requestId: record.request_id }
+    }
     case 'result': {
       const isError = record.subtype !== 'success'
       const errorMessage =
