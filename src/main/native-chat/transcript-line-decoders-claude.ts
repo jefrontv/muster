@@ -14,6 +14,36 @@ import {
 import { claudeContentBlocks } from './transcript-record-blocks'
 import { claudeInterruptedMessageId } from './transcript-turn-markers'
 
+/** Raw text of a user record whose content is a plain string or a single text block. */
+function claudeUserRecordText(message: Record<string, unknown> | null): string | null {
+  const content = message?.content
+  if (typeof content === 'string') {
+    return content
+  }
+  if (Array.isArray(content) && content.length === 1) {
+    const only = asRecord(content[0])
+    if (only?.type === 'text' && typeof only.text === 'string') {
+      return only.text
+    }
+  }
+  return null
+}
+
+/** Local slash-command bookkeeping Claude writes into the transcript. The command
+ *  itself becomes a quiet "Ran /model sonnet" status; its caveat and stdout echo
+ *  are dropped — they are terminal chrome, not conversation turns. */
+function claudeLocalCommandStatus(text: string): { status: string } | 'drop' | null {
+  if (text.startsWith('<local-command-caveat>') || text.startsWith('<local-command-stdout>')) {
+    return 'drop'
+  }
+  const name = /<command-name>([^<]*)<\/command-name>/.exec(text)?.[1]?.trim()
+  if (!name) {
+    return null
+  }
+  const args = /<command-args>([^<]*)<\/command-args>/.exec(text)?.[1]?.trim()
+  return { status: `Ran ${name}${args ? ` ${args}` : ''}` }
+}
+
 export function decodeClaudeTranscriptLine(
   line: string,
   fallbackId: string
@@ -28,6 +58,22 @@ export function decodeClaudeTranscriptLine(
   }
   const timestamp = parseTimestamp(record.timestamp)
   const recordMessageId = extractString(record.uuid) ?? fallbackId
+  if (role === 'user') {
+    const rawText = claudeUserRecordText(asRecord(record.message))
+    const command = rawText ? claudeLocalCommandStatus(rawText) : null
+    if (command === 'drop') {
+      return null
+    }
+    if (command) {
+      return {
+        id: recordMessageId,
+        role: 'system',
+        blocks: [{ type: 'text', text: command.status }],
+        timestamp,
+        source: 'transcript'
+      }
+    }
+  }
   if (claudeInterruptedMessageId(record)) {
     // Why: keep Claude's injected boilerplate out of the user-bubble path while
     // preserving the interruption as a quiet, replayable conversation status.
