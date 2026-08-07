@@ -7,6 +7,8 @@
 
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
+import { app } from 'electron'
+import { snapshotSiteDatabase } from './site-db-snapshot'
 import { extractZipArchive } from './local-archive-extract'
 import { importLocalDatabase } from './local-database-import'
 import { checkLocalMysqlConnection } from './local-mysql-connection'
@@ -71,6 +73,11 @@ export type SiteImportDependencies = {
     dumpPath: string,
     dbName: string
   ) => Promise<void>
+  /** Pre-import safety net; reports failure instead of throwing so a missing mysqldump cannot block imports. */
+  snapshotLocalDatabase: (
+    context: SiteRunContext,
+    config: SiteRunConfig
+  ) => Promise<{ ok: boolean; reason?: string }>
   pullRemoteFileArchives: (
     context: SiteRunContext,
     config: SiteRunConfig,
@@ -98,6 +105,14 @@ export function createDefaultSiteImportDependencies(): SiteImportDependencies {
     dumpAndDownloadRemoteDatabase,
     readLocalWpConfigDbName,
     importLocalDatabase,
+    snapshotLocalDatabase: (context, config) =>
+      snapshotSiteDatabase({
+        baseDir: app.getPath('userData'),
+        config,
+        reason: 'pre-import',
+        onStatus: (message) => context.log(message),
+        signal: context.signal
+      }),
     pullRemoteFileArchives,
     extractZipArchive,
     applyWpUploadRewrite,
@@ -229,6 +244,14 @@ async function importDatabase(
     context.log(
       `Remote DB is '${dump.remoteDbName}', importing into local DB '${localDbName}' from wp-config.php.`
     )
+  }
+
+  // The point of no return is the local import below — snapshot the database it will overwrite.
+  context.throwIfCancelled()
+  context.status('Snapshotting local database…')
+  const snapshot = await deps.snapshotLocalDatabase(context, config)
+  if (!snapshot.ok) {
+    context.log(`Warning: pre-import snapshot skipped — ${snapshot.reason ?? 'unknown reason'}`)
   }
 
   context.throwIfCancelled()

@@ -125,6 +125,7 @@ type Harness = {
     checkLocalMysqlConnection: ReturnType<typeof vi.fn>
     createSiteSshSession: ReturnType<typeof vi.fn>
     importLocalDatabase: ReturnType<typeof vi.fn>
+    snapshotLocalDatabase: ReturnType<typeof vi.fn>
     extractZipArchive: ReturnType<typeof vi.fn>
     applyWpUploadRewrite: ReturnType<typeof vi.fn>
     cleanUpLocalHtaccess: ReturnType<typeof vi.fn>
@@ -150,6 +151,7 @@ function createHarness(overrides: Partial<SiteImportDependencies> = {}): Harness
     checkLocalMysqlConnection: record('checkLocalMysqlConnection', undefined),
     createSiteSshSession: record('createSiteSshSession', session),
     importLocalDatabase: record('importLocalDatabase', undefined),
+    snapshotLocalDatabase: record('snapshotLocalDatabase', { ok: true }),
     extractZipArchive: vi.fn(async () => {
       order.push('extractZipArchive')
     }),
@@ -244,6 +246,8 @@ describe('runImportPipeline', () => {
       'readRemoteDbCredentials',
       'dumpAndDownloadRemoteDatabase',
       'readLocalWpConfigDbName',
+      // The safety net dumps the database importLocalDatabase is about to overwrite.
+      'snapshotLocalDatabase',
       'importLocalDatabase'
     ])
   })

@@ -29,6 +29,7 @@ import type {
   SiteSummary
 } from '../shared/site-types'
 import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../shared/site-run-types'
+import type { SiteDbSnapshot } from '../shared/site-db-snapshot-types'
 import type { SiteWpCliResult } from '../shared/site-wp-cli-actions'
 import type {
   LocalWpControlOutcome,
@@ -855,6 +856,14 @@ export type SiteRunsApi = {
   onEvent: (callback: (event: SiteRunEvent) => void) => () => void
 }
 
+/** Local-database snapshots: the pre-import safety net, plus manual create/restore/delete. */
+export type SiteDbSnapshotsApi = {
+  list: (siteId: string) => Promise<SiteResult<SiteDbSnapshot[]>>
+  create: (siteId: string) => Promise<SiteResult<SiteDbSnapshot>>
+  restore: (args: { siteId: string; snapshotId: string }) => Promise<SiteResult<{ log: string[] }>>
+  delete: (args: { siteId: string; snapshotId: string }) => Promise<SiteResult<boolean>>
+}
+
 /** A site's local WordPress stack. macOS-only; every call returns a structured result elsewhere. */
 export type SiteStacksApi = {
   detect: (siteId: string) => Promise<SiteResult<LocalWpStackDetection>>
@@ -1548,6 +1557,7 @@ export type PreloadApi = {
   }
   sites: SitesApi
   siteRuns: SiteRunsApi
+  siteDbSnapshots: SiteDbSnapshotsApi
   siteRoots: SiteRootsApi
   siteStacks: SiteStacksApi
   siteTools: SiteToolsApi

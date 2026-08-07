@@ -837,6 +837,13 @@ const api = {
     }
   } satisfies PreloadApi['siteRuns'],
 
+  siteDbSnapshots: {
+    list: (siteId) => ipcRenderer.invoke('siteDbSnapshots:list', siteId),
+    create: (siteId) => ipcRenderer.invoke('siteDbSnapshots:create', siteId),
+    restore: (args) => ipcRenderer.invoke('siteDbSnapshots:restore', args),
+    delete: (args) => ipcRenderer.invoke('siteDbSnapshots:delete', args)
+  } satisfies PreloadApi['siteDbSnapshots'],
+
   siteRoots: {
     list: () => ipcRenderer.invoke('siteRoots:list'),
     configured: () => ipcRenderer.invoke('siteRoots:configured'),

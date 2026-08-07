@@ -43,6 +43,7 @@ import { registerDiagnosticsHandlers } from './diagnostics'
 import { registerSkillsHandlers } from './skills'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
+import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
 import { registerSiteRunHandlers } from './site-runs'
 import { registerSiteRootsHandlers } from './site-roots'
 import { registerSiteStackHandlers } from './site-stacks'
@@ -231,6 +232,7 @@ export function registerCoreHandlers(
   registerWorkspaceSpaceHandlers(store)
   registerSiteHandlers(store)
   registerSiteRunHandlers(store)
+  registerSiteDbSnapshotHandlers(store)
   registerSiteRootsHandlers(store)
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)

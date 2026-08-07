@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
 import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
+import { SiteDbSnapshotsSection } from './SiteDbSnapshotsSection'
 import { SiteRunHistory } from './SiteRunHistory'
 
 type SiteDetailPanelProps = {
@@ -214,6 +215,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
       />
 
       <SiteRunOutput console={runConsole} />
+      <SiteDbSnapshotsSection siteId={site.id} />
       <SiteRunHistory siteId={site.id} />
     </div>
   )
