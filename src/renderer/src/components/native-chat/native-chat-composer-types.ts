@@ -1,4 +1,5 @@
 import type { AgentType } from '../../../../shared/agent-status-types'
+import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
 
 export type NativeChatComposerProps = {
   /** Tab hosting the agent; used to resolve the live ptyId + runtime settings. */
@@ -8,6 +9,10 @@ export type NativeChatComposerProps = {
   /** Specific split-pane PTY this chat view owns. */
   targetPtyId: string | null
   agent: AgentType
+  /** Stream-transport send; when set, composer text bypasses the PTY entirely. */
+  transportSend?: (text: string) => Promise<boolean>
+  /** Stream-transport session-option dispatch (relaunch with new launch flags). */
+  transportDispatchOption?: NativeChatSessionOptionDispatchCommand
   /** Guard desktop sends while a mobile client owns the terminal input lease. */
   canSend?: boolean
   /** True while the hosted TUI reports an in-flight turn; swaps Send to Stop. */

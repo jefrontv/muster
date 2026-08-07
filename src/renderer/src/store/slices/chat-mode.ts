@@ -7,12 +7,11 @@ import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-typ
 import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
 import type { AppState } from '../types'
 
-/** A live PTY-backed session for a thread. Runtime-only — never persisted. */
+/** A live stream-json session for a thread. Runtime-only — never persisted. */
 export type ChatThreadSession = {
   tabId: string
   leafId: string
   paneKey: string
-  ptyId: string
   /** Model/effort launch flags the launcher applied; the composer pickers show
    *  these since a headless pane has no terminal frame to scrape. */
   appliedSessionOptions?: Record<string, SessionOptionValue>
@@ -25,6 +24,9 @@ export type ChatModeSlice = {
   activeChatWorkspaceId: string | null
   activeChatThreadId: string | null
   chatThreadSessions: Record<string, ChatThreadSession>
+  /** In-flight assistant text per thread, accumulated from stream deltas and
+   *  cleared when the turn's final message lands in the transcript. */
+  chatThreadStreamingText: Record<string, string>
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
   chatTasksOpen: boolean
   setChatTasksOpen: (open: boolean) => void
@@ -49,6 +51,8 @@ export type ChatModeSlice = {
   ) => Promise<void>
   deleteChatThread: (id: string) => Promise<void>
   setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
+  appendChatThreadStreamingText: (threadId: string, text: string) => void
+  clearChatThreadStreamingText: (threadId: string) => void
 }
 
 export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> = (set, get) => ({
@@ -58,6 +62,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   activeChatWorkspaceId: null,
   activeChatThreadId: null,
   chatThreadSessions: {},
+  chatThreadStreamingText: {},
   chatTasksOpen: false,
 
   setChatTasksOpen: (open) => set({ chatTasksOpen: open }),
@@ -150,17 +155,18 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   },
 
   deleteChatThread: async (id) => {
-    const session = get().chatThreadSessions[id]
-    if (session) {
-      // Why: the PTY is invisible; deleting the thread is the only close affordance.
-      void window.api.pty.kill(session.ptyId).catch(() => undefined)
+    if (get().chatThreadSessions[id]) {
+      // Why: the session is invisible; deleting the thread is the only close affordance.
+      void window.api.chatThreadStream.stop(id).catch(() => undefined)
     }
     await window.api.chatMode.deleteThread(id)
     set((s) => {
       const { [id]: _dropped, ...remainingSessions } = s.chatThreadSessions
+      const { [id]: _droppedText, ...remainingStreamingText } = s.chatThreadStreamingText
       return {
         chatThreads: s.chatThreads.filter((t) => t.id !== id),
         chatThreadSessions: remainingSessions,
+        chatThreadStreamingText: remainingStreamingText,
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
     })
@@ -173,5 +179,22 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
         return { chatThreadSessions: remaining }
       }
       return { chatThreadSessions: { ...s.chatThreadSessions, [threadId]: session } }
+    }),
+
+  appendChatThreadStreamingText: (threadId, text) =>
+    set((s) => ({
+      chatThreadStreamingText: {
+        ...s.chatThreadStreamingText,
+        [threadId]: (s.chatThreadStreamingText[threadId] ?? '') + text
+      }
+    })),
+
+  clearChatThreadStreamingText: (threadId) =>
+    set((s) => {
+      if (!(threadId in s.chatThreadStreamingText)) {
+        return {}
+      }
+      const { [threadId]: _dropped, ...remaining } = s.chatThreadStreamingText
+      return { chatThreadStreamingText: remaining }
     })
 })

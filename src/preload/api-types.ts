@@ -31,6 +31,11 @@ import type {
 import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../shared/site-run-types'
 import type { SiteDbSnapshot } from '../shared/site-db-snapshot-types'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../shared/chat-mode-types'
+import type {
+  ChatThreadStreamEvent,
+  ChatThreadStreamStartArgs,
+  ChatThreadStreamStartResult
+} from '../shared/chat-thread-stream-types'
 import type { SiteWpCliResult } from '../shared/site-wp-cli-actions'
 import type {
   LocalWpControlOutcome,
@@ -887,6 +892,16 @@ export type ChatModeApi = {
   deleteThread: (id: string) => Promise<boolean>
 }
 
+/** Chat mode's headless stream-json transport: one child process per thread.
+ *  Assistant deltas and lifecycle arrive via onEvent; the transcript file stays
+ *  the authoritative message source. */
+export type ChatThreadStreamApi = {
+  start: (args: ChatThreadStreamStartArgs) => Promise<ChatThreadStreamStartResult>
+  send: (threadId: string, text: string) => Promise<boolean>
+  stop: (threadId: string) => Promise<void>
+  onEvent: (callback: (event: ChatThreadStreamEvent) => void) => () => void
+}
+
 /** A site's local WordPress stack. macOS-only; every call returns a structured result elsewhere. */
 export type SiteStacksApi = {
   detect: (siteId: string) => Promise<SiteResult<LocalWpStackDetection>>
@@ -1582,6 +1597,7 @@ export type PreloadApi = {
   siteRuns: SiteRunsApi
   siteDbSnapshots: SiteDbSnapshotsApi
   chatMode: ChatModeApi
+  chatThreadStream: ChatThreadStreamApi
   siteRoots: SiteRootsApi
   siteStacks: SiteStacksApi
   siteTools: SiteToolsApi

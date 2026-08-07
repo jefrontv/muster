@@ -32,10 +32,8 @@ import {
   type NativeChatCommandMarker,
   type NativeChatPendingSend
 } from './native-chat-pending'
-import {
-  deriveNativeChatStreamingText,
-  nativeChatStreamingMessage
-} from '../../../../shared/native-chat-streaming'
+import { nativeChatStreamingMessage } from '../../../../shared/native-chat-streaming'
+import { useNativeChatStreamingBubble } from './use-native-chat-streaming-bubble'
 import {
   shouldFocusNativeChatComposerFromEditingKey,
   shouldFocusNativeChatPaneFromPointerTarget,
@@ -50,9 +48,9 @@ import { resolveNativeChatFileLinkContext } from './native-chat-file-link'
 import { selectNativeChatRuntimeEnvironmentId } from './native-chat-runtime-owner'
 import { useNativeChatPasteBridge } from './use-native-chat-paste-bridge'
 import { useNativeChatFileLinkClick } from './use-native-chat-file-link-click'
-import type { NativeChatViewProps } from './native-chat-view-types'
+import type { NativeChatTransport, NativeChatViewProps } from './native-chat-view-types'
 
-export type { NativeChatViewProps } from './native-chat-view-types'
+export type { NativeChatTransport, NativeChatViewProps } from './native-chat-view-types'
 
 /** Resolves an agent terminal into its native conversation and composer UI. */
 export default function NativeChatView({
@@ -63,7 +61,8 @@ export default function NativeChatView({
   resolvedAgent,
   onSwitchToTerminal,
   readTerminalScreen,
-  contextMenuActions
+  contextMenuActions,
+  transport
 }: NativeChatViewProps): React.JSX.Element {
   // Select only this tab's status entry (shallow-compared) so an unrelated
   // pane's status tick doesn't re-render this view or re-run the resolution.
@@ -97,6 +96,7 @@ export default function NativeChatView({
           onSwitchToTerminal={onSwitchToTerminal}
           readTerminalScreen={readTerminalScreen}
           contextMenuActions={contextMenuActions}
+          transport={transport ?? null}
         />
       )}
     </NativeChatSessionGate>
@@ -112,7 +112,8 @@ function NativeChatResolvedView({
   terminalTabId,
   onSwitchToTerminal,
   readTerminalScreen,
-  contextMenuActions
+  contextMenuActions,
+  transport
 }: {
   paneKey: string
   agent: NativeChatSession['agent']
@@ -123,6 +124,7 @@ function NativeChatResolvedView({
   onSwitchToTerminal?: () => void
   readTerminalScreen?: () => string | null
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
+  transport: NativeChatTransport | null
 }): React.JSX.Element {
   // Primitive owner selection (no useShallow): routes the pane's read/subscribe to
   // the remote runtime host for a runtime-owned pane; null keeps the local path.
@@ -289,16 +291,13 @@ function NativeChatResolvedView({
     () => pendingSendsAsMessages(pending, sessionAfterCommandBoundaries.messages),
     [pending, sessionAfterCommandBoundaries.messages]
   )
-  const streamingText = useMemo(() => {
-    return deriveNativeChatStreamingText({
-      messages:
-        pendingMessages.length > 0
-          ? [...sessionAfterCommandBoundaries.messages, ...pendingMessages]
-          : sessionAfterCommandBoundaries.messages,
-      previewText: hookPreview,
-      working: liveWorking
-    })
-  }, [sessionAfterCommandBoundaries.messages, pendingMessages, hookPreview, liveWorking])
+  const streamingText = useNativeChatStreamingBubble({
+    messages: sessionAfterCommandBoundaries.messages,
+    pendingMessages,
+    hookPreview,
+    liveWorking,
+    transportStreamingText: transport?.streamingText ?? null
+  })
   const sessionWithPending = useMemo<typeof session>(() => {
     if (pending.length === 0 && !streamingText) {
       return sessionAfterCommandBoundaries
@@ -432,6 +431,8 @@ function NativeChatResolvedView({
           paneKey={paneKey}
           targetPtyId={targetPtyId}
           agent={agent}
+          transportSend={transport?.send}
+          transportDispatchOption={transport?.dispatchOption}
           canSend={canSend}
           isWorking={isWorking}
           onStop={stopAgent}

@@ -854,6 +854,20 @@ const api = {
     deleteThread: (id) => ipcRenderer.invoke('chatMode:deleteThread', id)
   } satisfies PreloadApi['chatMode'],
 
+  chatThreadStream: {
+    start: (args) => ipcRenderer.invoke('chatThreadStream:start', args),
+    send: (threadId, text) => ipcRenderer.invoke('chatThreadStream:send', threadId, text),
+    stop: (threadId) => ipcRenderer.invoke('chatThreadStream:stop', threadId),
+    onEvent: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: Parameters<typeof callback>[0]
+      ): void => callback(payload)
+      ipcRenderer.on('chatThreadStream:event', listener)
+      return () => ipcRenderer.removeListener('chatThreadStream:event', listener)
+    }
+  } satisfies PreloadApi['chatThreadStream'],
+
   siteRoots: {
     list: () => ipcRenderer.invoke('siteRoots:list'),
     configured: () => ipcRenderer.invoke('siteRoots:configured'),

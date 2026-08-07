@@ -26,6 +26,45 @@ export default function ChatModePage(): React.JSX.Element {
     }
   }, [hydrated, hydrateChatMode])
 
+  // One window-wide stream-event subscription: threads keep receiving deltas
+  // and lifecycle updates while another thread (or the Tasks page) is focused.
+  useEffect(() => {
+    return window.api.chatThreadStream.onEvent((event) => {
+      const store = useAppStore.getState()
+      switch (event.kind) {
+        case 'init': {
+          const thread = store.chatThreads.find((t) => t.id === event.threadId)
+          if (thread && thread.claudeSessionId !== event.sessionId) {
+            void store.updateChatThread(event.threadId, {
+              claudeSessionId: event.sessionId,
+              lastActivityAt: Date.now()
+            })
+          }
+          break
+        }
+        case 'delta':
+          store.appendChatThreadStreamingText(event.threadId, event.text)
+          break
+        case 'message-final':
+        case 'turn-complete':
+          store.clearChatThreadStreamingText(event.threadId)
+          void store.updateChatThread(event.threadId, { lastActivityAt: Date.now() })
+          break
+        case 'exit': {
+          // Only unexpected deaths arrive here (intentional stops are silent);
+          // dropping the session record flips ChatThreadView to its resume state.
+          const session = store.chatThreadSessions[event.threadId]
+          if (session) {
+            store.clearAgentLaunchConfig(session.paneKey)
+          }
+          store.clearChatThreadStreamingText(event.threadId)
+          store.setChatThreadSession(event.threadId, null)
+          break
+        }
+      }
+    })
+  }, [])
+
   const activeThread = threads.find((t) => t.id === activeChatThreadId) ?? null
   const activeWorkspace =
     activeThread && activeThread.workspaceId !== null

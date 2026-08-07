@@ -45,6 +45,8 @@ export function useNativeChatSessionOptions(args: {
   agent: AgentType
   terminalTabId: string
   targetPtyId: string | null
+  /** Stream-transport pane: live pickers without a PTY (dispatch relaunches). */
+  hasTransport?: boolean
   dispatchCommand: NativeChatSessionOptionDispatchCommand
   onAgentPicker?: () => void
   readTerminalScreen?: () => string | null
@@ -52,8 +54,15 @@ export function useNativeChatSessionOptions(args: {
   surface: NativeChatPtySessionOptionsSurface | null
   snapshot: SessionOptionDescriptor[]
 } {
-  const { agent, terminalTabId, targetPtyId, dispatchCommand, onAgentPicker, readTerminalScreen } =
-    args
+  const {
+    agent,
+    terminalTabId,
+    targetPtyId,
+    hasTransport = false,
+    dispatchCommand,
+    onAgentPicker,
+    readTerminalScreen
+  } = args
   const discoveryContext = useMemo(
     () => resolveNativeChatModelDiscoveryContext(terminalTabId),
     [terminalTabId]
@@ -61,7 +70,7 @@ export function useNativeChatSessionOptions(args: {
   const surface = useMemo(() => {
     // Why: native chat currently attaches only after startup is already queued;
     // exposing a draft picker here would claim it can still mutate that command.
-    if (!targetPtyId) {
+    if (!targetPtyId && !hasTransport) {
       return null
     }
     const scopeKey = targetPtyId ?? terminalTabId
@@ -81,7 +90,7 @@ export function useNativeChatSessionOptions(args: {
               readNativeChatEnrichedModels(agent, discoveryContext.hostKey) ?? undefined
           }
         : {}),
-      mode: targetPtyId ? 'live' : 'draft',
+      mode: targetPtyId || hasTransport ? 'live' : 'draft',
       reportedValues,
       dispatchCommand,
       onAgentPicker,
@@ -112,6 +121,7 @@ export function useNativeChatSessionOptions(args: {
     agent,
     dispatchCommand,
     discoveryContext,
+    hasTransport,
     onAgentPicker,
     readTerminalScreen,
     targetPtyId,

@@ -34,6 +34,7 @@ import { useNativeChatDictationActions } from './use-native-chat-dictation-actio
 import { useNativeChatSessionOptionCommand } from './use-native-chat-session-option-command'
 import { useNativeChatPickerState } from './use-native-chat-picker-state'
 import { useNativeChatPickerCommandDispatch } from './use-native-chat-picker-command-dispatch'
+import { useNativeChatTransportSend } from './use-native-chat-transport-send'
 import { useNativeChatTypedInsertion } from './use-native-chat-typed-insertion'
 import type {
   NativeChatComposerHandle,
@@ -66,6 +67,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       paneKey,
       targetPtyId,
       agent,
+      transportSend,
+      transportDispatchOption,
       canSend = true,
       isWorking = false,
       onStop,
@@ -145,7 +148,11 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       return { ptyId: targetPtyId, settings: getSettingsForAgentTabRuntimeOwner(terminalTabId) }
     }, [targetPtyId, terminalTabId])
 
-    const [hasPty, disabled] = [targetPtyId !== null, targetPtyId === null || !canSend]
+    const hasTransport = transportSend !== undefined
+    const [hasPty, disabled] = [
+      targetPtyId !== null || hasTransport,
+      (targetPtyId === null && !hasTransport) || !canSend
+    ]
 
     const syncCaret = useCallback((el: HTMLTextAreaElement) => {
       setCaret(el.selectionStart ?? el.value.length)
@@ -216,10 +223,25 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         agent,
         terminalTabId,
         targetPtyId,
-        dispatchCommand: dispatchSessionOptionCommand,
+        hasTransport,
+        // Stream threads restart the child with new launch flags instead of
+        // typing a slash command into a PTY.
+        dispatchCommand: transportDispatchOption ?? dispatchSessionOptionCommand,
         onAgentPicker: onSwitchToTerminal,
         readTerminalScreen
       })
+
+    const sendViaTransport = useNativeChatTransportSend({
+      agent,
+      transportSend,
+      onOptimisticSend,
+      onOptimisticSendCanceled,
+      setHistory,
+      setDraft,
+      setCaret,
+      clearSkillOrigin,
+      setNotice
+    })
 
     const send = useCallback(() => {
       const text = draft
@@ -231,6 +253,20 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       // still writing its body+delayed-Enter to the same pty, so the two write
       // sequences can't interleave on one input line.
       if (isDispatchingSessionOption) {
+        return
+      }
+      if (hasTransport) {
+        // Stream transport: plain user turns only. Slash/skill sends and image
+        // attachments have no headless delivery path yet — say so, don't drop.
+        if (imagePaths.length > 0) {
+          setNotice('Attachments are not supported in chat threads yet.')
+          return
+        }
+        if (classifySend(text) !== 'chat') {
+          setNotice('Commands are not supported in chat threads yet — use the pickers below.')
+          return
+        }
+        sendViaTransport(text)
         return
       }
       const target = resolveTarget()
@@ -292,10 +328,12 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       draft,
       imageAttachments,
       disabled,
+      hasTransport,
       isDispatchingSessionOption,
       resolveTarget,
       onOptimisticSend,
       onSlashCommand,
+      sendViaTransport,
       sessionOptionsSurface,
       trackPendingSend,
       setDraft
@@ -307,12 +345,16 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         onStop()
         return
       }
+      // Why: no PTY means no ESC byte to write; stream interrupts aren't wired yet.
+      if (hasTransport) {
+        return
+      }
       const target = resolveTarget()
       if (!target) {
         return
       }
       sendRuntimePtyInput(target.settings, target.ptyId, ESC)
-    }, [cancelPendingSends, isWorking, onStop, resolveTarget])
+    }, [cancelPendingSends, hasTransport, isWorking, onStop, resolveTarget])
 
     const dispatchPickerCommand = useNativeChatPickerCommandDispatch({
       agent,
@@ -361,7 +403,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         imageAttachments={imageAttachments}
         sendButtonDisabled={sendButtonDisabled}
         isWorking={isWorking}
-        attachDisabled={disabled}
+        attachDisabled={disabled || hasTransport}
         dictationDisabled={dictationDisabled}
         isDictating={isDictating}
         isDictationHoldMode={isDictationHoldMode}

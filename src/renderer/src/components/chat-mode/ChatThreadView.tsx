@@ -1,16 +1,18 @@
-// Hosts the native-chat surface for one chat thread. Ensures the hidden PTY session is
-// running (launching or resuming as needed), captures the session identity onto the
-// thread when hooks report it, and renders NativeChatView against the live pane.
+// Hosts the native-chat surface for one chat thread. Ensures the headless
+// stream-json session is running (launching or resuming as needed), captures the
+// session identity onto the thread when hooks report it, and renders
+// NativeChatView against the live pane with the stream transport.
 
 import { Loader2, RotateCcw } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
+import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-option-relaunch'
 import { useAppStore } from '@/store'
-import NativeChatView from '@/components/native-chat/NativeChatView'
+import NativeChatView, { type NativeChatTransport } from '@/components/native-chat/NativeChatView'
 
 type LaunchState = 'starting' | 'running' | 'exited' | 'failed'
 
@@ -25,9 +27,9 @@ export function ChatThreadView({
   const session = useAppStore((s) => s.chatThreadSessions[thread.id])
   const setChatThreadSession = useAppStore((s) => s.setChatThreadSession)
   const updateChatThread = useAppStore((s) => s.updateChatThread)
+  const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id] ?? null)
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
-  const [resumeNonce, setResumeNonce] = useState(0)
   const launchingRef = useRef(false)
   // Why: hook callbacks outlive a thread switch; write to the thread they launched for.
   const threadIdRef = useRef(thread.id)
@@ -37,20 +39,18 @@ export function ChatThreadView({
     if (session || launchingRef.current) {
       return
     }
+    if (launchState !== 'starting') {
+      // The stream died while showing: the global exit handler dropped the
+      // session record, so land on the ended state instead of auto-relaunching.
+      if (launchState === 'running') {
+        setLaunchState('exited')
+      }
+      return
+    }
     launchingRef.current = true
-    setLaunchState('starting')
     setError(null)
     const launchedForThreadId = thread.id
-    void launchChatThreadSession({
-      thread,
-      workspace,
-      onExit: () => {
-        useAppStore.getState().setChatThreadSession(launchedForThreadId, null)
-        if (threadIdRef.current === launchedForThreadId) {
-          setLaunchState('exited')
-        }
-      }
-    })
+    void launchChatThreadSession({ thread, workspace })
       .then((result) => {
         if (result) {
           setChatThreadSession(launchedForThreadId, result)
@@ -76,11 +76,10 @@ export function ChatThreadView({
       .finally(() => {
         launchingRef.current = false
       })
-    // Why: resumeNonce re-arms the launch after an exit; session presence resets the cycle.
-  }, [session, thread, workspace, resumeNonce, setChatThreadSession, updateChatThread])
+  }, [session, launchState, thread, workspace, setChatThreadSession])
 
   // Session identity arrives via main's hook scanner into agentStatusByPaneKey;
-  // persist it so the thread survives app restarts and PTY death.
+  // persist it so the thread survives app restarts and stream death.
   const providerSession = useAppStore((s) =>
     session ? s.agentStatusByPaneKey[session.paneKey]?.providerSession : undefined
   )
@@ -107,14 +106,27 @@ export function ChatThreadView({
     })
   }, [providerSession, thread.claudeSessionId, thread.id, updateChatThread])
 
+  const sendMessage = useCallback(
+    (text: string) => window.api.chatThreadStream.send(thread.id, text),
+    [thread.id]
+  )
+  const dispatchOption = useCallback(
+    (command: string) => dispatchChatThreadSessionOption({ threadId: thread.id, command }),
+    [thread.id]
+  )
+  const transport = useMemo<NativeChatTransport>(
+    () => ({ send: sendMessage, streamingText, dispatchOption }),
+    [sendMessage, streamingText, dispatchOption]
+  )
+
   if (session) {
     return (
       <div className="flex h-full min-h-0 flex-col">
         <NativeChatView
           terminalTabId={session.tabId}
           paneKey={session.paneKey}
-          targetPtyId={session.ptyId}
           launchAgent={thread.agent}
+          transport={transport}
         />
       </div>
     )
@@ -141,7 +153,7 @@ export function ChatThreadView({
             size="sm"
             variant="outline"
             className="gap-1.5"
-            onClick={() => setResumeNonce((n) => n + 1)}
+            onClick={() => setLaunchState('starting')}
           >
             <RotateCcw className="size-3.5" />
             {thread.claudeSessionId

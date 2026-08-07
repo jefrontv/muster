@@ -1,9 +1,11 @@
-// Launches the hidden Claude PTY behind a chat-mode thread. Modeled on the local branch
-// of launchAgentBackgroundSession, minus its worktree/tab coupling: chat threads have no
-// worktree and no store tab — the tabId is a plain uuid whose only job is pane-key routing
-// (colon-prefixed synthetic ids are illegal in the pane-key grammar; see
-// docs/specs/chat-mode-tab-plan.md risk 1). Local-only for now; SSH/runtime variants slot
-// in behind the thread transport later.
+// Launches the headless stream-json child behind a chat-mode thread. Keeps the
+// PTY launcher's plan building (trust, startup plans, pane-key identity, hook
+// env) but transports through chatThreadStream: stdout NDJSON streams deltas to
+// the UI while the Claude transcript file stays the message source of truth.
+// The tabId is a plain uuid whose only job is pane-key routing (colon-prefixed
+// synthetic ids are illegal in the pane-key grammar; see
+// docs/specs/chat-mode-tab-plan.md risk 1). Local-only for now; SSH/runtime
+// variants slot in behind the thread transport later.
 
 import { useAppStore } from '@/store'
 import {
@@ -14,34 +16,29 @@ import {
   type AgentStartupPlan
 } from '@/lib/tui-agent-startup'
 import { CLIENT_PLATFORM } from '@/lib/new-workspace'
-import { tuiAgentToAgentKind } from '@/lib/telemetry'
 import {
   resolveTuiAgentLaunchArgs,
   resolveTuiAgentLaunchEnv
 } from '../../../shared/tui-agent-launch-defaults'
 import { resolveNativeChatSessionOptionDefaults } from '../../../shared/native-chat-session-option-defaults'
+import { resolveAgentSessionOptionLaunch } from '../../../shared/agent-session-option-launch'
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
 import { makePaneKey } from '../../../shared/stable-pane-id'
 import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import type { AgentProviderSessionMetadata } from '../../../shared/agent-session-resume'
-import type { ParsedAgentStatusPayload } from '../../../shared/agent-status-types'
 import type { SessionOptionValue } from '../../../shared/native-chat-session-options'
 import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
-import {
-  registerEagerPtyBuffer,
-  subscribeToPtyExit,
-  type EagerPtyHandle
-} from '@/components/terminal-pane/pty-dispatcher'
-import { subscribeToPtyData } from '@/components/terminal-pane/pty-data-sidecar-subscriptions'
 import { createBrowserUuid } from '@/lib/browser-uuid'
-import { runBestEffortAgentBackgroundCleanups } from '@/lib/agent-background-session-cleanup'
-import { createBackgroundAgentStatusConsumer } from '@/lib/background-agent-status-consumer'
+
+/** Headless stream transport flags; the CLI reads turns on stdin and writes
+ *  NDJSON (with partial deltas) on stdout. */
+const CLAUDE_STREAM_FLAGS =
+  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages'
 
 export type ChatThreadLaunchResult = {
   tabId: string
   leafId: string
   paneKey: string
-  ptyId: string
   appliedSessionOptions?: Record<string, SessionOptionValue>
 }
 
@@ -49,12 +46,17 @@ export async function launchChatThreadSession(args: {
   thread: ChatThread
   /** Null for standalone chats — the session starts in the provider's default (home). */
   workspace: ChatWorkspace | null
-  onAgentStatus?: (payload: ParsedAgentStatusPayload) => void
-  onExit?: (ptyId: string, code: number) => void
+  /** Overrides the persisted model/effort defaults (option-change relaunch). */
+  sessionOptions?: Record<string, SessionOptionValue>
 }): Promise<ChatThreadLaunchResult | null> {
-  const { thread, workspace, onAgentStatus, onExit } = args
+  const { thread, workspace } = args
   const store = useAppStore.getState()
   const agent = thread.agent
+  if (agent !== 'claude') {
+    // Why: the stream-json contract (flags, stdin turn format, record shapes)
+    // is Claude's; other agents need their own transport mapping first.
+    throw new Error(`Chat threads only support Claude today (got "${agent}").`)
+  }
   const primaryDirectory = workspace ? workspace.directories[0] : undefined
   if (workspace && !primaryDirectory) {
     throw new Error('This chat workspace has no directory yet; add one first.')
@@ -84,8 +86,16 @@ export async function launchChatThreadSession(args: {
     .map((dir) => `--add-dir ${quoteStartupArg(dir, shell)}`)
     .join(' ')
   const baseArgs = resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
-  const agentArgs = [baseArgs, addDirArgs].filter((part) => part.length > 0).join(' ')
+  const agentArgs = [baseArgs, addDirArgs, CLAUDE_STREAM_FLAGS]
+    .filter((part) => part.length > 0)
+    .join(' ')
   const agentEnv = resolveTuiAgentLaunchEnv(agent, store.settings?.agentDefaultEnv)
+  // Persisted model/effort defaults (or the caller's override) become launch
+  // flags; the composer's pickers read them back from the thread's session
+  // record since a headless pane has no terminal frame to scrape.
+  const sessionOptions =
+    args.sessionOptions ??
+    resolveNativeChatSessionOptionDefaults(store.settings?.nativeChatSessionOptions, agent)
 
   const resumeSession: AgentProviderSessionMetadata | null =
     thread.claudeSessionId !== null
@@ -95,6 +105,14 @@ export async function launchChatThreadSession(args: {
           ...(thread.transcriptPath ? { transcriptPath: thread.transcriptPath } : {})
         }
       : null
+  // Why: the resume plan builder takes no sessionOptions, so model/effort flags
+  // ride agentArgs for resumed streams; appliedValues still feed the pickers.
+  const resumeOptionLaunch = resumeSession
+    ? resolveAgentSessionOptionLaunch(agent, sessionOptions)
+    : null
+  const resumeOptionArgs = (resumeOptionLaunch?.args ?? [])
+    .map((arg) => quoteStartupArg(arg, shell))
+    .join(' ')
   const startupPlan: AgentStartupPlan | null = resumeSession
     ? buildAgentResumeStartupPlan({
         agent,
@@ -102,7 +120,7 @@ export async function launchChatThreadSession(args: {
         cmdOverrides,
         platform: CLIENT_PLATFORM,
         shell: startupShell,
-        agentArgs,
+        agentArgs: [resumeOptionArgs, agentArgs].filter((part) => part.length > 0).join(' '),
         agentEnv,
         isRemote: false
       })
@@ -116,17 +134,14 @@ export async function launchChatThreadSession(args: {
         shell: startupShell,
         isRemote: false,
         allowEmptyPromptLaunch: true,
-        // Persisted model/effort defaults become launch flags; the composer's
-        // pickers read them back from the thread's session record since a
-        // headless pane has no terminal frame to scrape.
-        sessionOptions: resolveNativeChatSessionOptionDefaults(
-          store.settings?.nativeChatSessionOptions,
-          agent
-        )
+        ...(sessionOptions ? { sessionOptions } : {})
       })
   if (!startupPlan) {
     return null
   }
+  const appliedSessionOptions = resumeSession
+    ? resumeOptionLaunch?.appliedValues
+    : startupPlan.sessionOptions
 
   const tabId = createBrowserUuid()
   const leafId = createBrowserUuid()
@@ -141,76 +156,26 @@ export async function launchChatThreadSession(args: {
     ORCA_AGENT_LAUNCH_TOKEN: launchToken
   }
 
-  let ptyId = ''
-  let exitHandled = false
-  let eagerPtyBuffer: EagerPtyHandle | null = null
-  let unsubscribeExit = (): void => {}
-  let unsubscribeData = (): void => {}
-  const handleExit = (exitPtyId: string, code: number): void => {
-    if (exitHandled) {
-      return
-    }
-    exitHandled = true
-    unsubscribeExit()
-    unsubscribeData()
-    useAppStore.getState().clearAgentLaunchConfig(paneKey)
-    onExit?.(exitPtyId, code)
-  }
-  const agentStatusConsumer = createBackgroundAgentStatusConsumer({
-    paneKey,
-    launchToken,
-    // Local PTY facts flow through main's authoritative scanner.
-    mainOwnsAgentStatusWrites: true,
-    expectedConnectionId: null,
-    runtimeEnvironmentId: null,
-    getPtyId: () => ptyId,
-    ...(onAgentStatus ? { onAgentStatus } : {})
-  })
-
   try {
-    const result = await window.api.pty.spawn({
-      cols: 120,
-      rows: 40,
-      ...(primaryDirectory ? { cwd: primaryDirectory } : {}),
+    const result = await window.api.chatThreadStream.start({
+      threadId: thread.id,
       command: startupPlan.launchCommand,
-      ...(startupPlan.startupCommandDelivery
-        ? { startupCommandDelivery: startupPlan.startupCommandDelivery }
-        : {}),
-      env: paneEnv,
-      launchConfig: startupPlan.launchConfig,
-      launchToken,
-      launchAgent: agent,
-      tabId,
-      leafId,
-      ...(resumeSession ? { resumeProviderSession: resumeSession } : {}),
-      telemetry: {
-        agent_kind: tuiAgentToAgentKind(agent),
-        launch_source: 'unknown',
-        request_kind: resumeSession ? 'resume' : 'new'
-      }
+      ...(primaryDirectory ? { cwd: primaryDirectory } : {}),
+      env: paneEnv
     })
-    ptyId = result.id
-    if (result.launchConfig) {
-      store.registerAgentLaunchConfig(paneKey, result.launchConfig, launchRegistration)
-    }
-    eagerPtyBuffer = registerEagerPtyBuffer(ptyId, handleExit)
-    unsubscribeData = subscribeToPtyData(ptyId, (data) => agentStatusConsumer.consume(data))
-    unsubscribeExit = subscribeToPtyExit(ptyId, (code) => handleExit(ptyId, code))
-    return {
-      tabId,
-      leafId,
-      paneKey,
-      ptyId,
-      ...(startupPlan.sessionOptions ? { appliedSessionOptions: startupPlan.sessionOptions } : {})
+    if (!result.ok) {
+      throw new Error(result.error ?? 'The chat session could not be started.')
     }
   } catch (error) {
-    exitHandled = true
-    runBestEffortAgentBackgroundCleanups(unsubscribeExit, unsubscribeData)
-    runBestEffortAgentBackgroundCleanups(() => eagerPtyBuffer?.dispose())
-    runBestEffortAgentBackgroundCleanups(() => store.clearAgentLaunchConfig(paneKey))
-    if (ptyId) {
-      runBestEffortAgentBackgroundCleanups(() => void window.api.pty.kill(ptyId))
-    }
+    useAppStore.getState().clearAgentLaunchConfig(paneKey)
     throw error
+  }
+  return {
+    tabId,
+    leafId,
+    paneKey,
+    ...(appliedSessionOptions && Object.keys(appliedSessionOptions).length > 0
+      ? { appliedSessionOptions }
+      : {})
   }
 }

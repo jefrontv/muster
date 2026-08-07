@@ -22,6 +22,7 @@ import { ClaudeUsageStore, initClaudeUsagePath } from './claude-usage/store'
 import { CodexUsageStore, initCodexUsagePath } from './codex-usage/store'
 import { OpenCodeUsageStore, initOpenCodeUsagePath } from './opencode-usage/store'
 import { killAllPty } from './ipc/pty'
+import { stopAllChatThreadStreams } from './chat-mode/chat-thread-stream'
 import { initDaemonPtyProvider, disconnectDaemon, shutdownDaemon } from './daemon/daemon-init'
 import { closeAllWatchers } from './ipc/filesystem-watcher'
 import { disposeWorktreeBaseDirectoryWatchers } from './ipc/worktree-base-directory-watcher'
@@ -2614,6 +2615,8 @@ app.on('will-quit', (e) => {
   runtime?.getOffscreenBrowserBackend()?.destroyAll?.()
   browserManager.setBrowserGuestStateChangedListener(null)
   killAllPty()
+  // Why: chat-mode stream children are not PTYs; they'd outlive quit otherwise.
+  stopAllChatThreadStreams()
   const watcherShutdown = shutdownWatchersOnce()
   store?.flush()
 
