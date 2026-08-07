@@ -1,239 +1,29 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Image as ImageIcon } from 'lucide-react'
-import CommentMarkdown, {
-  type CommentMarkdownLinkClickHandler
-} from '@/components/sidebar/CommentMarkdown'
-import { cn } from '@/lib/utils'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ArrowDown } from 'lucide-react'
+import type { CommentMarkdownLinkClickHandler } from '@/components/sidebar/CommentMarkdown'
 import { translate } from '@/i18n/i18n'
-import { basename } from '@/lib/path'
-import {
-  isTextBlock,
-  type NativeChatBlock,
-  type NativeChatMessage
-} from '../../../../shared/native-chat-types'
 import type { NativeChatLiveSession } from './use-native-chat-live-session'
 import { orderNativeChatMessages } from './native-chat-message-grouping'
 import { stripNoiseMessages } from './native-chat-noise'
-import { foldToolMessages, splitNativeChatBlocks } from './native-chat-tool-fold'
-import { isNearBottom, shouldShowJumpToLatest, type ScrollGeometry } from './native-chat-autoscroll'
-import { isNativeChatPastedImagePath } from './native-chat-image-paste'
-import { NativeChatToolRun } from './NativeChatToolRun'
-import { NativeChatCopyButton } from './NativeChatCopyButton'
+import { foldToolMessages } from './native-chat-tool-fold'
+import { buildNativeChatTimelineRows } from './native-chat-timeline-rows'
+import { nativeChatMessageText } from './native-chat-turn-folds'
+import { useNativeChatScrollAnchoring } from './use-native-chat-scroll-anchoring'
+import { NATIVE_CHAT_SCROLL_CONTAINER_ATTR } from './use-native-chat-toggle-scroll-compensation'
+import { NativeChatMessageRow } from './NativeChatMessageRow'
+import { NativeChatTurnFoldRow, NativeChatLiveToolToggleRow } from './NativeChatTurnFoldRow'
+import { NativeChatWorkingRow } from './NativeChatWorkingRow'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
 
-function geometryOf(el: HTMLElement): ScrollGeometry {
-  return { scrollTop: el.scrollTop, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }
-}
-
-function proseToMarkdown(blocks: NativeChatBlock[]): string {
-  return blocks
-    .map((block) => {
-      if (isTextBlock(block)) {
-        return block.text
-      }
-      return ''
-    })
-    .filter((part) => part.length > 0)
-    .join('\n\n')
-}
-
-function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.JSX.Element | null {
-  const images = blocks.filter((block) => block.type === 'image-ref')
-  if (images.length === 0) {
-    return null
+function toggled(set: ReadonlySet<string>, id: string): Set<string> {
+  const next = new Set(set)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
   }
-  return (
-    <div className="mb-2 flex flex-wrap gap-1.5">
-      {images.map((image, index) => {
-        const label = image.alt ?? image.path ?? image.url ?? 'Image'
-        const name =
-          image.path && isNativeChatPastedImagePath(image.path)
-            ? translate('components.native-chat.composer.pastedImageLabel', 'Pasted image')
-            : image.path
-              ? basename(image.path)
-              : label
-        return (
-          <div
-            key={`${label}-${index}`}
-            className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
-            title={label}
-          >
-            <ImageIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{name}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
+  return next
 }
-
-/** Inline controls for an agent message (mobile AgentControls parity): copy the
- *  message's prose, and scroll so this message's top aligns to the viewport top.
- *  Reveals on hover / keyboard focus like the prior copy affordance. */
-function AgentControls({
-  markdown,
-  onScrollToTop,
-  className
-}: {
-  markdown: string
-  onScrollToTop: () => void
-  className?: string
-}): React.JSX.Element {
-  return (
-    <div className={cn('flex items-center gap-1', className)}>
-      <NativeChatCopyButton text={markdown} />
-      <button
-        type="button"
-        onClick={onScrollToTop}
-        aria-label={translate(
-          'components.native-chat.scrollMessageToTop',
-          'Scroll this message to top'
-        )}
-        title={translate('components.native-chat.scrollMessageToTop', 'Scroll this message to top')}
-        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ArrowUp className="size-3.5" />
-      </button>
-    </div>
-  )
-}
-
-function TypingIndicatorRow(): React.JSX.Element {
-  return (
-    <div
-      className="flex items-center justify-start"
-      aria-label={translate('components.native-chat.status.responding', 'Agent is responding')}
-      aria-live="polite"
-    >
-      <div className="flex h-8 items-center gap-1.5 text-muted-foreground">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="size-1.5 animate-bounce rounded-full bg-muted-foreground/70"
-            // Stagger the three dots so they ripple rather than pulse in unison.
-            style={{ animationDelay: `${i * 160}ms` }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** One message: its prose first, then a collapsible run folding all of the
- *  turn's tool activity. Monochrome per STYLEGUIDE: user prompts read as a
- *  lifted card, assistant prose as body copy, reasoning de-emphasized. */
-// Memoized so a streaming tick re-renders only the row whose message object
-// changed — without this every delta re-parses every message's markdown.
-const MessageRow = memo(function MessageRow({
-  message,
-  expandSignal,
-  onScrollMessageToTop,
-  onLinkClick,
-  allowFileUriLinks = false,
-  deliveryFailed = false
-}: {
-  message: NativeChatMessage
-  expandSignal: boolean
-  /** Align this message's top to the top of the scroll viewport. */
-  onScrollMessageToTop: (el: HTMLElement) => void
-  onLinkClick?: CommentMarkdownLinkClickHandler
-  allowFileUriLinks?: boolean
-  deliveryFailed?: boolean
-}): React.JSX.Element | null {
-  const rowRef = useRef<HTMLDivElement | null>(null)
-  const { prose, tools } = useMemo(() => splitNativeChatBlocks(message.blocks), [message.blocks])
-  const markdown = proseToMarkdown(prose)
-  const hasImages = prose.some((block) => block.type === 'image-ref')
-  const isUser = message.role === 'user'
-  const isReasoning = message.role === 'reasoning'
-  const isSystem = message.role === 'system'
-
-  const scrollToTop = useCallback(() => {
-    if (rowRef.current) {
-      onScrollMessageToTop(rowRef.current)
-    }
-  }, [onScrollMessageToTop])
-
-  // Skip rows with nothing renderable so the transcript shows no empty/ghost
-  // bubble.
-  // After all hooks, so hook order stays unconditional.
-  if (markdown.length === 0 && !hasImages && tools.length === 0) {
-    return null
-  }
-
-  if (isUser) {
-    // Why: an optimistic echo is rendered identically to a real user turn (no
-    // muting, no "Queued" label) so that when the real transcript turn lands and
-    // replaces it, there is no visible state change — the send just appears and
-    // stays. (A distinct "queued" treatment flickered normal→queued→normal as the
-    // transcript caught up.)
-    return (
-      <div ref={rowRef} className="flex flex-col items-end gap-0.5">
-        {/* User turns get a distinct muted fill (not the card/canvas color) so
-            the prompt reads apart from the assistant's body copy. */}
-        <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
-          {markdown ? (
-            <>
-              <ImageAttachmentRefs blocks={prose} />
-              <CommentMarkdown
-                content={markdown}
-                variant="document"
-                className="text-sm"
-                onLinkClick={onLinkClick}
-                allowFileUriLinks={allowFileUriLinks}
-              />
-            </>
-          ) : (
-            <ImageAttachmentRefs blocks={prose} />
-          )}
-        </div>
-        {deliveryFailed ? (
-          <div className="max-w-[85%] text-[11px] text-destructive/80">
-            {translate(
-              'components.native-chat.launchPromptNotDelivered',
-              'Not delivered — check the terminal'
-            )}
-          </div>
-        ) : null}
-      </div>
-    )
-  }
-
-  // Plain assistant prose is the copyable unit; reasoning/system asides stay
-  // chrome-free. The controls reveal on hover (and on keyboard focus-within).
-  const showControls = !isReasoning && !isSystem && markdown.length > 0
-
-  return (
-    <div
-      ref={rowRef}
-      className={cn(
-        'group relative max-w-full text-sm leading-relaxed text-foreground',
-        // Reasoning is the agent thinking aloud — quieter, italic, like an aside.
-        isReasoning && 'border-l-2 border-border/60 pl-3 italic text-muted-foreground',
-        isSystem && 'text-xs text-muted-foreground'
-      )}
-    >
-      {showControls ? (
-        <AgentControls
-          markdown={markdown}
-          onScrollToTop={scrollToTop}
-          className="absolute -top-8 right-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-        />
-      ) : null}
-      <ImageAttachmentRefs blocks={prose} />
-      {markdown ? (
-        <CommentMarkdown
-          content={markdown}
-          variant="document"
-          className="text-sm"
-          onLinkClick={onLinkClick}
-          allowFileUriLinks={allowFileUriLinks}
-        />
-      ) : null}
-      {tools.length > 0 ? <NativeChatToolRun blocks={tools} expandSignal={expandSignal} /> : null}
-    </div>
-  )
-})
 
 export function NativeChatMessageList({
   session,
@@ -242,7 +32,8 @@ export function NativeChatMessageList({
   fontScale,
   onLinkClick,
   allowFileUriLinks = false,
-  failedDeliveryMessageIds
+  failedDeliveryMessageIds,
+  workingSince = null
 }: {
   session: NativeChatLiveSession
   isWorking: boolean
@@ -253,19 +44,14 @@ export function NativeChatMessageList({
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
   failedDeliveryMessageIds?: ReadonlySet<string>
+  /** Epoch ms the current working state began (drives "Working for {t}"). */
+  workingSince?: number | null
 }): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
-  const [stuckToBottom, setStuckToBottom] = useState(true)
-  const [showJump, setShowJump] = useState(false)
+  const spacerRef = useRef<HTMLDivElement | null>(null)
 
-  // Why: mirror stuck state into a ref so the auto-scroll layout effect can read
-  // it without depending on it — depending on stuckToBottom (which scrollToBottom
-  // sets) would re-fire the effect in a self-loop.
-  const stuckToBottomRef = useRef(stuckToBottom)
-  stuckToBottomRef.current = stuckToBottom
-
-  const { hasMore, loadingEarlier, loadEarlier } = session
+  const { hasMore, loadingEarlier, loadEarlier, sessionId } = session
 
   // Strip harness noise (task-notifications, system reminders, slash-command
   // envelopes) before folding so they don't render as the user's own bubbles —
@@ -276,8 +62,53 @@ export function NativeChatMessageList({
     () => foldToolMessages(orderNativeChatMessages(stripNoiseMessages(session.messages))),
     [session.messages]
   )
-  const showTypingIndicator =
+  const showWorkingRow =
     isWorking && !messages.some((message) => message.id === NATIVE_CHAT_STREAMING_ID)
+
+  // Settled turns the user re-opened / running turns with tool overflow shown.
+  const [expandedTurnIds, setExpandedTurnIds] = useState<ReadonlySet<string>>(new Set())
+  const [expandedLiveToolTurnIds, setExpandedLiveToolTurnIds] = useState<ReadonlySet<string>>(
+    new Set()
+  )
+  const rows = useMemo(
+    () =>
+      buildNativeChatTimelineRows({
+        messages,
+        isWorking,
+        expandedTurnIds,
+        expandedLiveToolTurnIds
+      }),
+    [messages, isWorking, expandedTurnIds, expandedLiveToolTurnIds]
+  )
+
+  // An interrupt that lands while this list is mounted leaves its turn
+  // expanded (the user just stopped it — hiding the evidence reads as loss);
+  // interrupted turns from history stay collapsed like any settled turn.
+  const seenInterruptedTurnIdsRef = useRef<Set<string> | null>(null)
+  useEffect(() => {
+    const interrupted = rows.flatMap((row) =>
+      row.kind === 'turn-fold' && row.interrupted ? [row.turnId] : []
+    )
+    const seen = seenInterruptedTurnIdsRef.current
+    if (seen === null) {
+      seenInterruptedTurnIdsRef.current = new Set(interrupted)
+      return
+    }
+    const fresh = interrupted.filter((turnId) => !seen.has(turnId))
+    if (fresh.length > 0) {
+      fresh.forEach((turnId) => seen.add(turnId))
+      setExpandedTurnIds((prev) => new Set([...prev, ...fresh]))
+    }
+  }, [rows])
+
+  const anchoring = useNativeChatScrollAnchoring({ scrollRef, contentRef, spacerRef, isWorking })
+  const {
+    anchorToMessage,
+    scrollToEnd,
+    maintainAfterRender,
+    breakToFreeScrolling,
+    onScroll: onAnchoringScroll
+  } = anchoring
 
   // When an older page prepends, the scroll content grows above the viewport.
   // Capture the pre-render scroll height so the layout effect can restore the
@@ -289,46 +120,64 @@ export function NativeChatMessageList({
     if (!el) {
       return
     }
-    const geometry = geometryOf(el)
-    const stick = isNearBottom(geometry)
-    setStuckToBottom(stick)
-    setShowJump(shouldShowJumpToLatest(stick, geometry))
+    onAnchoringScroll()
     // Near the top — page in older history, anchoring the current position so the
     // prepend doesn't yank the view.
-    if (geometry.scrollTop < 80 && hasMore && !loadingEarlier) {
+    if (el.scrollTop < 80 && hasMore && !loadingEarlier) {
       prependAnchorRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop }
       loadEarlier()
     }
-  }, [hasMore, loadingEarlier, loadEarlier])
-
-  const scrollToBottom = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) {
-      return
-    }
-    el.scrollTop = el.scrollHeight
-    setStuckToBottom(true)
-    setShowJump(false)
-  }, [])
+  }, [onAnchoringScroll, hasMore, loadingEarlier, loadEarlier])
 
   // Align a single message's top to the top of the scroll viewport.
-  const scrollMessageToTop = useCallback((el: HTMLElement) => {
-    const container = scrollRef.current
-    if (!container) {
+  const scrollMessageToTop = useCallback(
+    (el: HTMLElement) => {
+      const container = scrollRef.current
+      if (!container) {
+        return
+      }
+      // Detach synchronously so an in-place streaming growth can't re-pin to
+      // the bottom mid-flight and fight this deliberate scroll.
+      breakToFreeScrolling()
+      const delta = el.getBoundingClientRect().top - container.getBoundingClientRect().top
+      container.scrollTo({ top: container.scrollTop + delta, behavior: 'smooth' })
+    },
+    [breakToFreeScrolling]
+  )
+
+  // Enter anchoring when a user message lands at the tail (real send or
+  // optimistic echo) — but not for the tail of a freshly opened conversation.
+  const tailUserRef = useRef<{ id: string; source: string; text: string } | null>(null)
+  const openedSessionRef = useRef<string | null | undefined>(undefined)
+  useLayoutEffect(() => {
+    const tail = messages.at(-1)
+    const tailUser =
+      tail?.role === 'user'
+        ? { id: tail.id, source: tail.source, text: nativeChatMessageText(tail) }
+        : null
+    const freshSession = openedSessionRef.current !== sessionId
+    openedSessionRef.current = sessionId
+    if (freshSession) {
+      tailUserRef.current = tailUser
+      scrollToEnd()
       return
     }
-    // Detach synchronously (not just via the pending onScroll) so an in-place
-    // streaming growth can't re-pin to the bottom mid-flight and fight this
-    // deliberate scroll. The ref is what the resize observer reads.
-    stuckToBottomRef.current = false
-    setStuckToBottom(false)
-    const delta = el.getBoundingClientRect().top - container.getBoundingClientRect().top
-    container.scrollTo({ top: container.scrollTop + delta, behavior: 'smooth' })
-  }, [])
+    if (tailUser && tailUser.id !== tailUserRef.current?.id) {
+      // An optimistic echo swapping to its transcript identity is the same
+      // send, not a new one — re-running the anchor scroll would yank a
+      // reader who has since moved.
+      const isEchoSwap =
+        tailUserRef.current?.source === 'scrape' && tailUserRef.current.text === tailUser.text
+      if (!isEchoSwap) {
+        anchorToMessage(tailUser.id)
+      }
+    }
+    tailUserRef.current = tailUser ?? tailUserRef.current
+  }, [messages, sessionId, anchorToMessage, scrollToEnd])
 
-  // Re-pin to the bottom when new content arrives, but only if the user hasn't
-  // scrolled up. Layout effect so the jump happens before paint (no flicker).
-  // When an older page just prepended, restore the prior position instead.
+  // Re-assert the active scroll mode when rows change. Layout effect so the
+  // adjustment happens before paint (no flicker). When an older page just
+  // prepended, restore the prior position instead.
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (el && prependAnchorRef.current) {
@@ -339,42 +188,18 @@ export function NativeChatMessageList({
       prependAnchorRef.current = null
       return
     }
-    if (stuckToBottomRef.current) {
-      scrollToBottom()
-    }
-  }, [messages.length, isWorking, showTypingIndicator, scrollToBottom])
-
-  // Content growing without a message-count change (a streaming assistant turn
-  // extends its own message in place) never re-fires the layout effect above.
-  // Observe the container so those in-place growths still re-pin: stay glued to
-  // the bottom while stuck, otherwise just refresh the jump affordance. This is
-  // what removes most "Jump to latest" clicks during a live response.
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el || typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const observer = new ResizeObserver(() => {
-      if (stuckToBottomRef.current) {
-        scrollToBottom()
-      } else {
-        handleScroll()
-      }
-    })
-    // Observe the growing content, not just the fixed-height viewport, so an
-    // in-place streaming growth is seen; also watch the viewport for reflows.
-    observer.observe(el)
-    if (contentRef.current) {
-      observer.observe(contentRef.current)
-    }
-    return () => observer.disconnect()
-  }, [handleScroll, scrollToBottom])
+    maintainAfterRender()
+  }, [rows.length, isWorking, showWorkingRow, maintainAfterRender])
 
   return (
     <div className="relative min-h-0 flex-1">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
+        onWheel={anchoring.onWheel}
+        onKeyDown={anchoring.onKeyDown}
+        onPointerDown={anchoring.onPointerDown}
+        {...{ [NATIVE_CHAT_SCROLL_CONTAINER_ATTR]: 'true' }}
         className="scrollbar-sleek h-full overflow-y-auto px-3 pt-10 pb-4 sm:px-4"
       >
         <div
@@ -385,7 +210,9 @@ export function NativeChatMessageList({
           // Why: `zoom` scales the chat transcript's text and layout together,
           // scoped to this container so the rest of the app is untouched. It's
           // the desktop analog of the mobile pinch-zoom (Chromium/Electron only).
-          style={{ zoom: fontScale }}
+          // overflow-anchor is ours to manage — the browser's native anchoring
+          // fights the three-mode scroll model.
+          style={{ zoom: fontScale, overflowAnchor: 'none' }}
         >
           {hasMore ? (
             <div className="flex justify-center py-1">
@@ -401,24 +228,45 @@ export function NativeChatMessageList({
               </button>
             </div>
           ) : null}
-          {messages.map((message) => (
-            <MessageRow
-              key={message.id}
-              message={message}
-              expandSignal={expandSignal}
-              onScrollMessageToTop={scrollMessageToTop}
-              onLinkClick={onLinkClick}
-              allowFileUriLinks={allowFileUriLinks}
-              deliveryFailed={failedDeliveryMessageIds?.has(message.id) === true}
-            />
-          ))}
-          {showTypingIndicator ? <TypingIndicatorRow /> : null}
+          {rows.map((row) =>
+            row.kind === 'message' ? (
+              <NativeChatMessageRow
+                key={row.message.id}
+                message={row.message}
+                expandSignal={expandSignal}
+                suppressTools={row.suppressTools}
+                onScrollMessageToTop={scrollMessageToTop}
+                onLinkClick={onLinkClick}
+                allowFileUriLinks={allowFileUriLinks}
+                deliveryFailed={failedDeliveryMessageIds?.has(row.message.id) === true}
+              />
+            ) : row.kind === 'turn-fold' ? (
+              <NativeChatTurnFoldRow
+                key={`turn-fold:${row.turnId}`}
+                durationMs={row.durationMs}
+                interrupted={row.interrupted}
+                expanded={row.expanded}
+                onToggle={() => setExpandedTurnIds((prev) => toggled(prev, row.turnId))}
+              />
+            ) : (
+              <NativeChatLiveToolToggleRow
+                key={`live-tools:${row.turnId}`}
+                hiddenCount={row.hiddenCount}
+                expanded={row.expanded}
+                onToggle={() => setExpandedLiveToolTurnIds((prev) => toggled(prev, row.turnId))}
+              />
+            )
+          )}
+          {showWorkingRow ? <NativeChatWorkingRow workingSince={workingSince} /> : null}
+          {/* Reserved end space while a new turn is anchored; height is written
+              imperatively by the anchoring hook. */}
+          <div ref={spacerRef} aria-hidden className="w-full shrink-0" />
         </div>
       </div>
-      {showJump ? (
+      {anchoring.showJumpToLatest ? (
         <button
           type="button"
-          onClick={scrollToBottom}
+          onClick={scrollToEnd}
           aria-label={translate('components.native-chat.jumpToLatest', 'Jump to latest')}
           className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >

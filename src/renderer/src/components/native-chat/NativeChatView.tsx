@@ -409,6 +409,9 @@ function NativeChatResolvedView({
             onLinkClick={nativeChatFileLinkClick}
             allowFileUriLinks={fileLinkContext !== null}
             failedDeliveryMessageIds={failedLaunchPromptMessageIds}
+            // Working-timer start: the hook's state epoch is when this
+            // working stretch began.
+            workingSince={liveWorking ? hookWorkingEpoch : null}
           />
         )}
       </div>

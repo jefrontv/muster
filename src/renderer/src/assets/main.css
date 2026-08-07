@@ -2274,6 +2274,35 @@
   }
 }
 
+/* Native chat working row — duty-cycled dot pulse. Long holds with stepped
+   ramps so the compositor paints discrete frames instead of every vsync. */
+@keyframes native-chat-status-pulse {
+  0%,
+  40% {
+    opacity: 1;
+    animation-timing-function: steps(6);
+  }
+  50%,
+  90% {
+    opacity: 0.5;
+    animation-timing-function: steps(6);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-native-chat-status-pulse {
+  animation: native-chat-status-pulse 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-native-chat-status-pulse {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
 /* ── Feature wall: agents-orchestration animations ───────────────── */
 
 /* Why: drives the supported-agents marquee on page 1 of the agents tile.

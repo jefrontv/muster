@@ -8,6 +8,7 @@ import {
   type NativeChatBlock
 } from '../../../../shared/native-chat-types'
 import { diffFromText, diffFromToolCall, type DiffLine } from './native-chat-diff'
+import { useNativeChatToggleScrollCompensation } from './use-native-chat-toggle-scroll-compensation'
 import {
   countToolCalls,
   formatToolInput,
@@ -28,6 +29,7 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
   // Why: tool results (MCP JSON payloads especially) are working material, not
   // conversation — keep them behind the preview until asked for.
   const [expanded, setExpanded] = useState(() => !isToolResultBlock(block))
+  const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(expanded)
 
   let name: string
   let preview: string
@@ -56,10 +58,16 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
   const hasDetail = diff !== null || body !== null || detailAddsInfo
 
   return (
-    <div>
+    <div ref={elementRef}>
       <button
         type="button"
-        onClick={() => hasDetail && setExpanded((v) => !v)}
+        onClick={() => {
+          if (!hasDetail) {
+            return
+          }
+          captureBeforeToggle()
+          setExpanded((v) => !v)
+        }}
         className={cn(
           'group flex w-full items-center gap-1.5 py-0.5 text-left',
           hasDetail ? 'cursor-pointer' : 'cursor-default'
@@ -129,6 +137,7 @@ export function NativeChatToolRun({
   const [open, setOpen] = useState(expandSignal)
   // Re-sync when the global toolbar toggle flips.
   useEffect(() => setOpen(expandSignal), [expandSignal])
+  const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(open)
 
   const callCount = countToolCalls(blocks) || blocks.length
   const summary = summarizeToolRun(blocks)
@@ -141,10 +150,13 @@ export function NativeChatToolRun({
   return (
     // Extra top margin sets the tool run apart from the assistant prose above it
     // so the turn's activity doesn't crowd the message text.
-    <div className="mt-3">
+    <div ref={elementRef} className="mt-3">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          captureBeforeToggle()
+          setOpen((v) => !v)
+        }}
         className="group flex w-full items-center gap-1.5 py-0.5 text-left"
       >
         <span className="shrink-0 font-mono text-[11px] font-bold text-muted-foreground transition-colors group-hover:text-foreground/80">
