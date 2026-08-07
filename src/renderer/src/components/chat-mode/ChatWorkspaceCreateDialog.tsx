@@ -56,6 +56,21 @@ export function ChatWorkspaceCreateDialog({
     }
   }
 
+  // Why: appearance edits apply immediately (like project settings) — a favicon
+  // "Apply" that still waits on the dialog's Save reads as a broken button.
+  const applyIcon = (nextIcon: RepoIcon | null): void => {
+    setIcon(nextIcon)
+    if (workspace) {
+      void updateChatWorkspace(workspace.id, { icon: nextIcon })
+    }
+  }
+  const applyColor = (nextColor: string): void => {
+    setColor(nextColor)
+    if (workspace) {
+      void updateChatWorkspace(workspace.id, { color: nextColor })
+    }
+  }
+
   const canSave = name.trim().length > 0 && directories.length > 0 && !saving
 
   const save = async (): Promise<void> => {
@@ -167,8 +182,8 @@ export function ChatWorkspaceCreateDialog({
               name={name}
               icon={icon}
               color={color}
-              onIconChange={setIcon}
-              onColorChange={setColor}
+              onIconChange={applyIcon}
+              onColorChange={applyColor}
             />
           </div>
         </div>
