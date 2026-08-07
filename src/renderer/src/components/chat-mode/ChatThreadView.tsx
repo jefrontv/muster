@@ -83,6 +83,18 @@ export function ChatThreadView({
   const providerSession = useAppStore((s) =>
     session ? s.agentStatusByPaneKey[session.paneKey]?.providerSession : undefined
   )
+  // First prompt becomes the title while the thread still has the placeholder name.
+  const reportedPrompt = useAppStore((s) =>
+    session ? s.agentStatusByPaneKey[session.paneKey]?.prompt : undefined
+  )
+  useEffect(() => {
+    const prompt = reportedPrompt?.trim()
+    if (!prompt || thread.title !== 'New chat') {
+      return
+    }
+    const title = prompt.length > 48 ? `${prompt.slice(0, 47).trimEnd()}…` : prompt
+    void updateChatThread(thread.id, { title })
+  }, [reportedPrompt, thread.id, thread.title, updateChatThread])
   useEffect(() => {
     if (!providerSession?.id || providerSession.id === thread.claudeSessionId) {
       return

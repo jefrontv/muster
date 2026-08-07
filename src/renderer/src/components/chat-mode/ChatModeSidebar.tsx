@@ -20,6 +20,21 @@ import { useAppStore } from '@/store'
 import { ChatModeToggle } from './ChatModeToggle'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
 
+/** T3-style attention colors: amber = needs you, sky pulse = in motion, plain = resting. */
+function ThreadStatusDot({ threadId }: { threadId: string }): React.JSX.Element | null {
+  const state = useAppStore((s) => {
+    const session = s.chatThreadSessions[threadId]
+    return session ? s.agentStatusByPaneKey[session.paneKey]?.state : undefined
+  })
+  if (state === 'working') {
+    return <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-sky-400" />
+  }
+  if (state === 'blocked' || state === 'waiting') {
+    return <span className="size-1.5 shrink-0 rounded-full bg-amber-400" />
+  }
+  return null
+}
+
 function WorkspaceSection({
   workspace,
   onEdit
@@ -33,9 +48,11 @@ function WorkspaceSection({
   const createChatThread = useAppStore((s) => s.createChatThread)
   const deleteChatWorkspace = useAppStore((s) => s.deleteChatWorkspace)
   const deleteChatThread = useAppStore((s) => s.deleteChatThread)
+  // Why (T3 pattern): creation-order stays static while agents work — a list that
+  // reorders on every activity tick steals the row out from under the pointer.
   const workspaceThreads = threads
     .filter((t) => t.workspaceId === workspace.id && t.archived !== true)
-    .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+    .sort((a, b) => a.createdAt - b.createdAt)
 
   return (
     <section className="space-y-0.5">
@@ -96,14 +113,15 @@ function WorkspaceSection({
               <button
                 type="button"
                 className={cn(
-                  'min-w-0 flex-1 truncate rounded-md px-2 py-1.5 text-left text-sm',
+                  'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
                   thread.id === activeChatThreadId
                     ? 'bg-accent text-accent-foreground'
                     : 'text-foreground/90 hover:bg-muted/60'
                 )}
                 onClick={() => setActiveChatThread(thread.id)}
               >
-                {thread.title}
+                <span className="min-w-0 flex-1 truncate">{thread.title}</span>
+                <ThreadStatusDot threadId={thread.id} />
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
