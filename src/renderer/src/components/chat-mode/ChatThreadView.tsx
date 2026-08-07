@@ -29,6 +29,7 @@ export function ChatThreadView({
   const setChatThreadSession = useAppStore((s) => s.setChatThreadSession)
   const updateChatThread = useAppStore((s) => s.updateChatThread)
   const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.text ?? null)
+  const streamingSealed = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.sealed === true)
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
   const launchingRef = useRef(false)
@@ -141,12 +142,21 @@ export function ChatThreadView({
     () => ({
       send: sendMessage,
       streamingText,
+      streamingSealed,
       dispatchOption,
       interrupt,
       ...(permissionRequests && permissionRequests.length > 0 ? { permissionRequests } : {}),
       respondPermission
     }),
-    [sendMessage, streamingText, dispatchOption, interrupt, permissionRequests, respondPermission]
+    [
+      sendMessage,
+      streamingText,
+      streamingSealed,
+      dispatchOption,
+      interrupt,
+      permissionRequests,
+      respondPermission
+    ]
   )
 
   // Draft-first landing: the hero stores the thread's opening prompt, delivered

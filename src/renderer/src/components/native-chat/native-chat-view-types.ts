@@ -21,6 +21,8 @@ export type NativeChatTransport = {
   send: (text: string) => Promise<boolean>
   /** Token-streamed assistant text for the in-flight turn, or null. */
   streamingText: string | null
+  /** True once the in-flight message completed (typewriter sprints to the end). */
+  streamingSealed?: boolean
   /** Session-option command dispatch (e.g. "/model …") — restarts the stream
    *  with the new launch flags and resumes the provider session. */
   dispatchOption: NativeChatSessionOptionDispatchCommand

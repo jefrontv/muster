@@ -34,6 +34,7 @@ import {
 } from './native-chat-pending'
 import { nativeChatStreamingMessage } from '../../../../shared/native-chat-streaming'
 import { useNativeChatStreamingBubble } from './use-native-chat-streaming-bubble'
+import { useNativeChatTypewriter } from './use-native-chat-typewriter'
 import { useNativeChatRootCapture } from './use-native-chat-root-capture'
 import {
   emptyNativeChatContextMenuActions,
@@ -289,7 +290,7 @@ function NativeChatResolvedView({
     () => pendingSendsAsMessages(pending, sessionAfterCommandBoundaries.messages),
     [pending, sessionAfterCommandBoundaries.messages]
   )
-  const streamingText = useNativeChatStreamingBubble({
+  const rawStreamingText = useNativeChatStreamingBubble({
     messages: sessionAfterCommandBoundaries.messages,
     pendingMessages,
     hookPreview,
@@ -297,6 +298,13 @@ function NativeChatResolvedView({
     hasTransport: transport !== null,
     transportStreamingText: transport?.streamingText ?? null
   })
+  // Typewriter pacing applies only to transport (token-stream) panes; hook
+  // previews on PTY panes arrive as whole snapshots where pacing reads as lag.
+  const typedStreamingText = useNativeChatTypewriter(
+    transport ? rawStreamingText : null,
+    transport?.streamingSealed === true
+  )
+  const streamingText = transport ? typedStreamingText : rawStreamingText
   const sessionWithPending = useMemo<typeof session>(() => {
     if (pending.length === 0 && !streamingText) {
       return sessionAfterCommandBoundaries
