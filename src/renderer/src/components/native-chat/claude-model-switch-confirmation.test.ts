@@ -41,6 +41,7 @@ describe('Claude model switch confirmation detection', () => {
   })
 
   it('accepts the exact cached-history confirmation once and keeps observing', async () => {
+    vi.useFakeTimers()
     const dataObserver = { current: (_data: string): void => {} }
     const submitConfirmation = vi.fn()
     const observer = createClaudeModelSwitchConfirmationObserver({
@@ -61,10 +62,46 @@ describe('Claude model switch confirmation detection', () => {
     dataObserver.current('for\u001b[36Gthe\u001b[40Gcurrent\u001b[48Gmodel.')
     dataObserver.current(' redraw of the same Switch model? prompt')
 
+    // The accept is deferred past the dialog's paint window.
+    expect(submitConfirmation).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(150)
     expect(submitConfirmation).toHaveBeenCalledOnce()
     dataObserver.current('Set model to Fable 5 and saved as your default for new sessions')
 
     await expect(observer.result).resolves.toBe('applied')
+    vi.useRealTimers()
+  })
+
+  it('retries the confirmation accept once if the dialog swallows the first Enter', async () => {
+    vi.useFakeTimers()
+    const dataObserver = { current: (_data: string): void => {} }
+    const submitConfirmation = vi.fn()
+    const observer = createClaudeModelSwitchConfirmationObserver({
+      ptyId: 'pty-1',
+      settings: {},
+      expectedModelLabel: 'Fable 5',
+      subscribeToData: (watcher) => {
+        dataObserver.current = watcher
+        return vi.fn(() => {})
+      },
+      submitConfirmation,
+      timeoutMs: 5_000
+    })
+
+    await observer.ready
+    observer.arm()
+    dataObserver.current(
+      'Switch model? This[9Gconversation[22Gis[25Gcached for the current model.'
+    )
+    await vi.advanceTimersByTimeAsync(150)
+    expect(submitConfirmation).toHaveBeenCalledOnce()
+
+    await vi.advanceTimersByTimeAsync(1_200)
+    expect(submitConfirmation).toHaveBeenCalledTimes(2)
+
+    dataObserver.current('Set model to Fable 5')
+    await expect(observer.result).resolves.toBe('applied')
+    vi.useRealTimers()
   })
 
   it('reports a canceled model switch without opening an interaction', async () => {

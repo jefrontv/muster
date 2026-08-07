@@ -7,6 +7,10 @@ import { stripScrollbackAnsi } from './native-chat-scrape-fallback'
 
 const DETECTION_TIMEOUT_MS = 5_000
 const MAX_OBSERVED_BYTES = 64 * 1024
+// Why: an Enter that lands while the confirmation dialog is still painting gets
+// swallowed and the dialog sticks open, so the accept waits a beat and retries once.
+const CONFIRMATION_SUBMIT_DELAY_MS = 150
+const CONFIRMATION_RETRY_DELAY_MS = 1_200
 
 type SubscribeToData = (watcher: (data: string) => void) => Promise<() => void> | (() => void)
 
@@ -86,6 +90,7 @@ export function createClaudeModelSwitchConfirmationObserver(args: {
   let confirmationSubmitted = false
   let observed = ''
   let timeout: ReturnType<typeof setTimeout> | null = null
+  let confirmationTimer: ReturnType<typeof setTimeout> | null = null
   let unsubscribe: (() => void) | null = null
   let resolveResult!: (outcome: ClaudeModelSwitchOutcome) => void
   let resolveReady!: () => void
@@ -105,8 +110,21 @@ export function createClaudeModelSwitchConfirmationObserver(args: {
       clearTimeout(timeout)
       timeout = null
     }
+    if (confirmationTimer !== null) {
+      clearTimeout(confirmationTimer)
+      confirmationTimer = null
+    }
     unsubscribe?.()
     unsubscribe = null
+    if (outcome === 'unknown' && armed && observed.length > 0) {
+      // Why: 'unknown' surfaces as a user-facing failure toast; keep the raw
+      // evidence in the console so a report can be root-caused without a repro.
+      console.warn('[native-chat] model switch unverified', {
+        expected: args.expectedModelLabel,
+        confirmationSubmitted,
+        tail: observed.slice(-400)
+      })
+    }
     resolveResult(outcome)
   }
 
@@ -136,21 +154,38 @@ export function createClaudeModelSwitchConfirmationObserver(args: {
     }
     if (!confirmationSubmitted && hasClaudeModelSwitchConfirmation(observed)) {
       confirmationSubmitted = true
-      try {
-        // Why: the picker selection already expresses consent to switch; this
-        // exact Claude warning defaults to “Yes” and needs only one Enter.
-        const accepted = args.submitConfirmation
-          ? args.submitConfirmation() !== false
-          : sendRuntimePtyInput(args.settings, args.ptyId, NATIVE_CHAT_SUBMIT)
-        if (!accepted) {
-          finish('unknown')
-          return
-        }
-        scheduleTimeout()
-      } catch {
-        finish('unknown')
-      }
+      scheduleConfirmationSubmit(CONFIRMATION_SUBMIT_DELAY_MS, true)
     }
+  }
+
+  const submitConfirmationAccept = (allowRetry: boolean): void => {
+    if (settled) {
+      return
+    }
+    try {
+      // Why: the picker selection already expresses consent to switch; this
+      // exact Claude warning defaults to “Yes” and needs only one Enter.
+      const accepted = args.submitConfirmation
+        ? args.submitConfirmation() !== false
+        : sendRuntimePtyInput(args.settings, args.ptyId, NATIVE_CHAT_SUBMIT)
+      if (!accepted) {
+        finish('unknown')
+        return
+      }
+      scheduleTimeout()
+      if (allowRetry) {
+        scheduleConfirmationSubmit(CONFIRMATION_RETRY_DELAY_MS, false)
+      }
+    } catch {
+      finish('unknown')
+    }
+  }
+
+  function scheduleConfirmationSubmit(delayMs: number, allowRetry: boolean): void {
+    confirmationTimer = setTimeout(() => {
+      confirmationTimer = null
+      submitConfirmationAccept(allowRetry)
+    }, delayMs)
   }
 
   try {
