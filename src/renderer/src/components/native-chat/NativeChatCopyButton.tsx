@@ -6,15 +6,22 @@ import { translate } from '@/i18n/i18n'
 /**
  * Per-message copy affordance for the native chat. Copies the message's text to
  * the clipboard and briefly swaps the icon to a check tint as success feedback —
- * matching the app's other inline copy buttons (icon swap, no toast). Uses
- * Electron's clipboard IPC, which wraps navigator.clipboard.writeText and avoids
- * the silent failures navigator.clipboard hits inside some renderer contexts.
+ * matching the app's other inline copy buttons (icon swap, no toast).
+ *
+ * With `getHtml`, writes a dual-flavor payload (text/plain markdown +
+ * text/html rendered markup) via ClipboardItem so pastes into rich editors
+ * keep formatting; any failure falls back to the plain-text Electron clipboard
+ * IPC, which avoids the silent rejections navigator.clipboard hits inside some
+ * renderer contexts.
  */
 export function NativeChatCopyButton({
   text,
+  getHtml,
   className
 }: {
   text: string
+  /** Rendered HTML for the text/html clipboard flavor; read lazily at click time. */
+  getHtml?: () => string | null
   className?: string
 }): React.JSX.Element {
   const [copied, setCopied] = useState(false)
@@ -30,7 +37,24 @@ export function NativeChatCopyButton({
 
   const handleCopy = useCallback(async () => {
     try {
-      await window.api.ui.writeClipboardText(text)
+      const html = getHtml?.() ?? null
+      let wroteRich = false
+      if (html && typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/plain': new Blob([text], { type: 'text/plain' }),
+              'text/html': new Blob([html], { type: 'text/html' })
+            })
+          ])
+          wroteRich = true
+        } catch {
+          // Rich write can reject (focus, permissions); plain text still lands below.
+        }
+      }
+      if (!wroteRich) {
+        await window.api.ui.writeClipboardText(text)
+      }
       setCopied(true)
       if (resetTimerRef.current !== null) {
         window.clearTimeout(resetTimerRef.current)
@@ -42,7 +66,7 @@ export function NativeChatCopyButton({
     } catch {
       /* best-effort: clipboard can reject when unfocused */
     }
-  }, [text])
+  }, [text, getHtml])
 
   const label = copied
     ? translate('components.native-chat.copyMessage.copied', 'Copied')

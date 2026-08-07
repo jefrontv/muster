@@ -202,6 +202,9 @@ type CommentMarkdownProps = React.ComponentPropsWithoutRef<'div'> & {
   githubRepo?: GitHubRepoReference | null
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
+  /** Opts document-variant fenced code blocks into the header row (language,
+   *  wrap toggle, copy). Native-chat only; every other surface keeps bare <pre>. */
+  codeBlockActions?: boolean
   /** Opts a provider body into the ActiveCollab mention/callout/inline-image handling. */
   activeCollabHtml?: ActiveCollabHtmlOptions | null
 }
@@ -218,6 +221,7 @@ const CommentMarkdown = React.memo(
       githubRepo,
       onLinkClick,
       allowFileUriLinks = false,
+      codeBlockActions = false,
       activeCollabHtml,
       ...rest
     },
@@ -226,15 +230,18 @@ const CommentMarkdown = React.memo(
     const activeCollabInstanceUrl = activeCollabHtml ? activeCollabHtml.instanceUrl : null
     const usesActiveCollabHtml = activeCollabHtml != null
     const components = React.useMemo(() => {
-      const base = onLinkClick
-        ? variant === 'document'
-          ? createDocumentCommentMarkdownComponents(onLinkClick)
-          : createCompactCommentMarkdownComponents(onLinkClick)
-        : variant === 'document'
-          ? documentCommentMarkdownComponents
-          : compactCommentMarkdownComponents
+      // The precreated component maps stay the default path; only an opted-in
+      // document surface pays for a fresh map with code-block actions.
+      const base =
+        variant === 'document'
+          ? onLinkClick || codeBlockActions
+            ? createDocumentCommentMarkdownComponents(onLinkClick, codeBlockActions)
+            : documentCommentMarkdownComponents
+          : onLinkClick
+            ? createCompactCommentMarkdownComponents(onLinkClick)
+            : compactCommentMarkdownComponents
       return usesActiveCollabHtml ? { ...base, ...activeCollabMarkdownComponents } : base
-    }, [variant, onLinkClick, usesActiveCollabHtml])
+    }, [variant, onLinkClick, codeBlockActions, usesActiveCollabHtml])
     const activeRemarkPlugins = React.useMemo(
       () => (githubRepo ? [...remarkPlugins, remarkGitHubReferences(githubRepo)] : remarkPlugins),
       [githubRepo]

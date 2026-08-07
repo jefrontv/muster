@@ -3,10 +3,11 @@
 // limit by a page to load older history. Kept pure (no React/IO) so the limit
 // growth and the "is there more?" decision are unit-testable.
 
-// First page mirrors the desktop default window (300 most-recent turns) so the
-// initial paint matches the prior behavior; each load-earlier grows by a page.
-export const NATIVE_CHAT_INITIAL_LIMIT = 300
-export const NATIVE_CHAT_PAGE = 200
+// First page ≈ the last ~10 user turns' worth of transcript records (a turn is
+// roughly a user message + assistant prose + a handful of tool records), so a
+// long session opens fast; each load-earlier grows the window by a page.
+export const NATIVE_CHAT_INITIAL_LIMIT = 60
+export const NATIVE_CHAT_PAGE = 100
 
 /** The limit to request for the next older page. */
 export function nextNativeChatLimit(currentLimit: number): number {

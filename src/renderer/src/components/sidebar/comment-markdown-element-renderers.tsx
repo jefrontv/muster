@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Components } from 'react-markdown'
+import { CommentMarkdownCodeBlock } from './comment-markdown-code-block'
 import { isMermaidFence, isMermaidPre, renderMermaidFence } from './comment-mermaid-fence'
 import {
   GitHubUserAttachmentImage,
@@ -192,7 +193,8 @@ export function createCompactCommentMarkdownComponents(
 }
 
 export function createDocumentCommentMarkdownComponents(
-  onLinkClick?: CommentMarkdownLinkClickHandler
+  onLinkClick?: CommentMarkdownLinkClickHandler,
+  codeBlockActions = false
 ): Components {
   return {
     p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
@@ -227,6 +229,8 @@ export function createDocumentCommentMarkdownComponents(
     pre: ({ children }) =>
       isMermaidPre(children) ? (
         <>{children}</>
+      ) : codeBlockActions ? (
+        <CommentMarkdownCodeBlock>{children}</CommentMarkdownCodeBlock>
       ) : (
         <pre className="my-3 max-h-80 max-w-full overflow-x-auto rounded-md bg-accent p-3 font-mono text-[12px]">
           {children}

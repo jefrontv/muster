@@ -19,12 +19,18 @@ describe('nextNativeChatLimit', () => {
 
 describe('hasMoreNativeChatHistory', () => {
   it('reports more when the read filled the requested window', () => {
-    expect(hasMoreNativeChatHistory(300, 300)).toBe(true)
-    expect(hasMoreNativeChatHistory(301, 300)).toBe(true)
+    expect(hasMoreNativeChatHistory(NATIVE_CHAT_INITIAL_LIMIT, NATIVE_CHAT_INITIAL_LIMIT)).toBe(
+      true
+    )
+    expect(hasMoreNativeChatHistory(NATIVE_CHAT_INITIAL_LIMIT + 1, NATIVE_CHAT_INITIAL_LIMIT)).toBe(
+      true
+    )
   })
 
   it('reports done when the read returned fewer than requested (head reached)', () => {
-    expect(hasMoreNativeChatHistory(120, 300)).toBe(false)
-    expect(hasMoreNativeChatHistory(0, 300)).toBe(false)
+    expect(hasMoreNativeChatHistory(NATIVE_CHAT_INITIAL_LIMIT - 1, NATIVE_CHAT_INITIAL_LIMIT)).toBe(
+      false
+    )
+    expect(hasMoreNativeChatHistory(0, NATIVE_CHAT_INITIAL_LIMIT)).toBe(false)
   })
 })

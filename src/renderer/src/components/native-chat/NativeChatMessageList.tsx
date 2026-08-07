@@ -115,6 +115,17 @@ export function NativeChatMessageList({
   // user's position (no jump) instead of letting the browser keep scrollTop.
   const prependAnchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null)
 
+  // Shared by the scroll-to-top trigger and the "Load earlier" button so both
+  // paths restore the viewport after the prepend (the button path used to skip
+  // the anchor and jump to the top of the new page).
+  const loadEarlierAnchored = useCallback(() => {
+    const el = scrollRef.current
+    if (el) {
+      prependAnchorRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop }
+    }
+    loadEarlier()
+  }, [loadEarlier])
+
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) {
@@ -124,10 +135,9 @@ export function NativeChatMessageList({
     // Near the top — page in older history, anchoring the current position so the
     // prepend doesn't yank the view.
     if (el.scrollTop < 80 && hasMore && !loadingEarlier) {
-      prependAnchorRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop }
-      loadEarlier()
+      loadEarlierAnchored()
     }
-  }, [onAnchoringScroll, hasMore, loadingEarlier, loadEarlier])
+  }, [onAnchoringScroll, hasMore, loadingEarlier, loadEarlierAnchored])
 
   // Align a single message's top to the top of the scroll viewport.
   const scrollMessageToTop = useCallback(
@@ -178,9 +188,15 @@ export function NativeChatMessageList({
   // Re-assert the active scroll mode when rows change. Layout effect so the
   // adjustment happens before paint (no flicker). When an older page just
   // prepended, restore the prior position instead.
+  const wasLoadingEarlierRef = useRef(false)
   useLayoutEffect(() => {
     const el = scrollRef.current
-    if (el && prependAnchorRef.current) {
+    // Consume the anchor only on the commit where the page actually landed
+    // (loadingEarlier flips off) — a live append arriving mid-load, or a load
+    // that never started, must not spend it on the wrong height delta.
+    const pageLanded = wasLoadingEarlierRef.current && !loadingEarlier
+    wasLoadingEarlierRef.current = loadingEarlier
+    if (el && prependAnchorRef.current && pageLanded) {
       // Preserve the viewport: shift scrollTop by however much taller the content
       // got, so the message the user was reading stays put.
       const grew = el.scrollHeight - prependAnchorRef.current.scrollHeight
@@ -188,8 +204,12 @@ export function NativeChatMessageList({
       prependAnchorRef.current = null
       return
     }
+    if (!loadingEarlier) {
+      // Stale capture from a load that aborted before setting loadingEarlier.
+      prependAnchorRef.current = null
+    }
     maintainAfterRender()
-  }, [rows.length, isWorking, showWorkingRow, maintainAfterRender])
+  }, [rows.length, isWorking, showWorkingRow, loadingEarlier, maintainAfterRender])
 
   return (
     <div className="relative min-h-0 flex-1">
@@ -218,7 +238,7 @@ export function NativeChatMessageList({
             <div className="flex justify-center py-1">
               <button
                 type="button"
-                onClick={loadEarlier}
+                onClick={loadEarlierAnchored}
                 disabled={loadingEarlier}
                 className="rounded-md px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
               >

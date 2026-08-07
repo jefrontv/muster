@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon } from 'lucide-react'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
@@ -13,6 +13,10 @@ import {
   type NativeChatMessage
 } from '../../../../shared/native-chat-types'
 import { splitNativeChatBlocks } from './native-chat-tool-fold'
+import {
+  NATIVE_CHAT_USER_MESSAGE_FADE_MASK,
+  shouldCollapseUserMessage
+} from './native-chat-user-message-collapse'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
@@ -60,16 +64,18 @@ function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.J
  *  Reveals on hover / keyboard focus like the prior copy affordance. */
 function AgentControls({
   markdown,
+  getHtml,
   onScrollToTop,
   className
 }: {
   markdown: string
+  getHtml?: () => string | null
   onScrollToTop: () => void
   className?: string
 }): React.JSX.Element {
   return (
     <div className={cn('flex items-center gap-1', className)}>
-      <NativeChatCopyButton text={markdown} />
+      <NativeChatCopyButton text={markdown} getHtml={getHtml} />
       <button
         type="button"
         onClick={onScrollToTop}
@@ -111,6 +117,11 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   suppressTools?: boolean
 }): React.JSX.Element | null {
   const rowRef = useRef<HTMLDivElement | null>(null)
+  // Rendered-markup source for the copy button's text/html clipboard flavor.
+  const proseRef = useRef<HTMLDivElement | null>(null)
+  // Long user prompts start collapsed; per-row state so expanding one row
+  // doesn't reflow its neighbors.
+  const [userMessageExpanded, setUserMessageExpanded] = useState(false)
   const { prose, tools } = useMemo(() => splitNativeChatBlocks(message.blocks), [message.blocks])
   const markdown = proseToMarkdown(prose)
   const hasImages = prose.some((block) => block.type === 'image-ref')
@@ -125,6 +136,8 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
     }
   }, [onScrollMessageToTop])
 
+  const getProseHtml = useCallback(() => proseRef.current?.innerHTML ?? null, [])
+
   // Skip rows with nothing renderable so the transcript shows no empty/ghost
   // bubble.
   // After all hooks, so hook order stays unconditional.
@@ -133,6 +146,8 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   }
 
   if (isUser) {
+    const canCollapse = shouldCollapseUserMessage(markdown)
+    const collapsed = canCollapse && !userMessageExpanded
     // Why: an optimistic echo is rendered identically to a real user turn (no
     // muting, no "Queued" label) so that when the real transcript turn lands and
     // replaces it, there is no visible state change — the send just appears and
@@ -147,21 +162,49 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         {/* User turns get a distinct muted fill (not the card/canvas color) so
             the prompt reads apart from the assistant's body copy. */}
         <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
-          {markdown ? (
-            <>
+          <div
+            className={cn('relative', collapsed && 'max-h-44 overflow-hidden')}
+            data-user-message-collapsed={collapsed ? 'true' : 'false'}
+            // Mask fade so the cut-off reads as "more below" over the bubble fill.
+            style={
+              collapsed
+                ? {
+                    WebkitMaskImage: NATIVE_CHAT_USER_MESSAGE_FADE_MASK,
+                    maskImage: NATIVE_CHAT_USER_MESSAGE_FADE_MASK
+                  }
+                : undefined
+            }
+          >
+            {markdown ? (
+              <>
+                <ImageAttachmentRefs blocks={prose} />
+                <CommentMarkdown
+                  ref={proseRef}
+                  content={markdown}
+                  variant="document"
+                  className="text-sm"
+                  onLinkClick={onLinkClick}
+                  allowFileUriLinks={allowFileUriLinks}
+                  codeBlockActions
+                />
+              </>
+            ) : (
               <ImageAttachmentRefs blocks={prose} />
-              <CommentMarkdown
-                content={markdown}
-                variant="document"
-                className="text-sm"
-                onLinkClick={onLinkClick}
-                allowFileUriLinks={allowFileUriLinks}
-              />
-            </>
-          ) : (
-            <ImageAttachmentRefs blocks={prose} />
-          )}
+            )}
+          </div>
         </div>
+        {canCollapse ? (
+          <button
+            type="button"
+            aria-expanded={userMessageExpanded}
+            onClick={() => setUserMessageExpanded((value) => !value)}
+            className="rounded-md text-[11px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {userMessageExpanded
+              ? translate('components.native-chat.userMessage.showLess', 'Show less')
+              : translate('components.native-chat.userMessage.showFull', 'Show full message')}
+          </button>
+        ) : null}
         {deliveryFailed ? (
           <div className="max-w-[85%] text-[11px] text-destructive/80">
             {translate(
@@ -178,7 +221,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
               {formatRelativeTime(message.timestamp)}
             </span>
           ) : null}
-          {markdown ? <NativeChatCopyButton text={markdown} /> : null}
+          {markdown ? <NativeChatCopyButton text={markdown} getHtml={getProseHtml} /> : null}
         </div>
       </div>
     )
@@ -203,6 +246,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
       {showControls ? (
         <AgentControls
           markdown={markdown}
+          getHtml={getProseHtml}
           onScrollToTop={scrollToTop}
           className="absolute -top-8 right-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
         />
@@ -210,11 +254,13 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
       <ImageAttachmentRefs blocks={prose} />
       {markdown ? (
         <CommentMarkdown
+          ref={proseRef}
           content={markdown}
           variant="document"
           className="text-sm"
           onLinkClick={onLinkClick}
           allowFileUriLinks={allowFileUriLinks}
+          codeBlockActions
         />
       ) : null}
       {tools.length > 0 && !suppressTools ? (
