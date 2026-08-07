@@ -103,6 +103,8 @@ export function registerChatModeHandlers(): void {
         claudeSessionId?: unknown
         transcriptPath?: unknown
         lastActivityAt?: unknown
+        lastVisitedAt?: unknown
+        lastCompletedAt?: unknown
         archived?: unknown
       }
     ): Promise<ChatThread | null> =>
@@ -116,6 +118,10 @@ export function registerChatModeHandlers(): void {
           : {}),
         ...(typeof patch?.lastActivityAt === 'number'
           ? { lastActivityAt: patch.lastActivityAt }
+          : {}),
+        ...(typeof patch?.lastVisitedAt === 'number' ? { lastVisitedAt: patch.lastVisitedAt } : {}),
+        ...(typeof patch?.lastCompletedAt === 'number'
+          ? { lastCompletedAt: patch.lastCompletedAt }
           : {}),
         ...(typeof patch?.archived === 'boolean' ? { archived: patch.archived } : {})
       })

@@ -886,7 +886,13 @@ export type ChatModeApi = {
     patch: Partial<
       Pick<
         ChatThread,
-        'title' | 'claudeSessionId' | 'transcriptPath' | 'lastActivityAt' | 'archived'
+        | 'title'
+        | 'claudeSessionId'
+        | 'transcriptPath'
+        | 'lastActivityAt'
+        | 'lastVisitedAt'
+        | 'lastCompletedAt'
+        | 'archived'
       >
     >
   ) => Promise<ChatThread | null>

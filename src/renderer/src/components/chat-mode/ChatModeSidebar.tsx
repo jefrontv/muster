@@ -1,7 +1,9 @@
 // Chat mode's own sidebar: a search bar over everything, ungrouped standalone chats,
-// then workspaces with their threads. Selection state lives in the chat slice.
+// workspaces with their threads, then a collapsed "Settled" shelf for long-quiet
+// threads. Selection state lives in the chat slice.
 
 import {
+  ChevronRight,
   List,
   MessageSquarePlus,
   MoreHorizontal,
@@ -10,7 +12,8 @@ import {
   Settings as SettingsIcon
 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
@@ -25,6 +28,12 @@ import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import {
+  CHAT_SETTLED_SHELF_MAX_ROWS,
+  hasUnseenCompletion,
+  isChatThreadSettled,
+  resolveChatThreadStatus
+} from './chat-thread-status'
 import { ChatModeToggle } from './ChatModeToggle'
 import { ChatThreadRow } from './ChatThreadRow'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
@@ -33,21 +42,102 @@ function matchesQuery(value: string, query: string): boolean {
   return value.toLowerCase().includes(query)
 }
 
-function visibleThreads(threads: ChatThread[], query: string): ChatThread[] {
+function visibleThreads(
+  threads: ChatThread[],
+  query: string,
+  settledIds: Set<string>
+): ChatThread[] {
   // Creation order stays static while agents work (T3 pattern) — a list that
   // reorders on every activity tick steals the row out from under the pointer.
   const sorted = threads
-    .filter((t) => t.archived !== true)
+    .filter((t) => t.archived !== true && !settledIds.has(t.id))
     .sort((a, b) => a.createdAt - b.createdAt)
   return query ? sorted.filter((t) => matchesQuery(t.title, query)) : sorted
 }
 
-function StandaloneChatsSection({ query }: { query: string }): React.JSX.Element | null {
+/** Long-quiet idle threads land in the shelf; anything needing a human stays out. */
+function useSettledThreadIds(): Set<string> {
+  const ids = useAppStore(
+    useShallow((s) => {
+      const now = Date.now()
+      return s.chatThreads
+        .filter((t) => {
+          if (t.archived === true) {
+            return false
+          }
+          const session = s.chatThreadSessions[t.id]
+          const status = resolveChatThreadStatus({
+            agentState: session ? s.agentStatusByPaneKey[session.paneKey]?.state : undefined,
+            hasPendingApproval: (s.chatThreadPermissionRequests[t.id]?.length ?? 0) > 0,
+            hasUnseenCompletion: hasUnseenCompletion(t)
+          })
+          return isChatThreadSettled({ status, lastActivityAt: t.lastActivityAt, now })
+        })
+        .map((t) => t.id)
+    })
+  )
+  return useMemo(() => new Set(ids), [ids])
+}
+
+function SettledSection({
+  query,
+  settledIds
+}: {
+  query: string
+  settledIds: Set<string>
+}): React.JSX.Element | null {
+  const threads = useAppStore((s) => s.chatThreads)
+  const [expanded, setExpanded] = useState(false)
+  const settled = threads
+    .filter((t) => settledIds.has(t.id) && (!query || matchesQuery(t.title, query)))
+    .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+  // Count reflects everything settled; the expanded list caps (no paging yet).
+  const rows = settled.slice(0, CHAT_SETTLED_SHELF_MAX_ROWS)
+  if (rows.length === 0) {
+    return null
+  }
+  return (
+    <section className="space-y-0.5">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        className="group flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left hover:bg-muted/60"
+        onClick={() => setExpanded((open) => !open)}
+      >
+        <ChevronRight
+          className={cn(
+            'size-3 shrink-0 text-muted-foreground transition-transform',
+            expanded && 'rotate-90'
+          )}
+        />
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {translate('auto.components.chat.sidebar.settled', 'Settled')} · {settled.length}
+        </span>
+      </button>
+      {expanded ? (
+        <ul className="space-y-px">
+          {rows.map((thread) => (
+            <ChatThreadRow key={thread.id} thread={thread} />
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  )
+}
+
+function StandaloneChatsSection({
+  query,
+  settledIds
+}: {
+  query: string
+  settledIds: Set<string>
+}): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
   const createChatThread = useAppStore((s) => s.createChatThread)
   const rows = visibleThreads(
     threads.filter((t) => t.workspaceId === null),
-    query
+    query,
+    settledIds
   )
   if (query && rows.length === 0) {
     return null
@@ -90,10 +180,12 @@ function StandaloneChatsSection({ query }: { query: string }): React.JSX.Element
 function WorkspaceSection({
   workspace,
   query,
+  settledIds,
   onEdit
 }: {
   workspace: ChatWorkspace
   query: string
+  settledIds: Set<string>
   onEdit: (workspace: ChatWorkspace) => void
 }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
@@ -103,7 +195,8 @@ function WorkspaceSection({
   // A workspace-name match keeps all its threads; otherwise the query filters them.
   const rows = visibleThreads(
     threads.filter((t) => t.workspaceId === workspace.id),
-    workspaceMatches ? '' : query
+    workspaceMatches ? '' : query,
+    settledIds
   )
   if (query && !workspaceMatches && rows.length === 0) {
     return null
@@ -181,6 +274,7 @@ export function ChatModeSidebar(): React.JSX.Element {
   const [editing, setEditing] = useState<ChatWorkspace | undefined>(undefined)
   const [rawQuery, setRawQuery] = useState('')
   const query = rawQuery.trim().toLowerCase()
+  const settledIds = useSettledThreadIds()
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-sidebar">
@@ -219,7 +313,7 @@ export function ChatModeSidebar(): React.JSX.Element {
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-sleek p-3">
-        <StandaloneChatsSection query={query} />
+        <StandaloneChatsSection query={query} settledIds={settledIds} />
         <div className="flex items-center justify-between px-1">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
@@ -241,12 +335,14 @@ export function ChatModeSidebar(): React.JSX.Element {
             key={workspace.id}
             workspace={workspace}
             query={query}
+            settledIds={settledIds}
             onEdit={(target) => {
               setEditing(target)
               setDialogOpen(true)
             }}
           />
         ))}
+        <SettledSection query={query} settledIds={settledIds} />
       </div>
       <div className="flex items-center gap-1 border-t border-border p-2">
         <div className="flex-1" />

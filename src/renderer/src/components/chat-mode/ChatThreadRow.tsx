@@ -1,7 +1,7 @@
-// One thread row in the chat sidebar: title, live status dot, and the row menu
-// (rename/delete). Rename edits inline so the list keeps its place.
+// One thread row in the chat sidebar: title, T3-style status label cluster, and
+// the row menu (rename/delete). Rename edits inline so the list keeps its place.
 
-import { MoreHorizontal } from 'lucide-react'
+import { CircleCheck, MoreHorizontal, ShieldQuestion } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
@@ -16,18 +16,74 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import { formatNativeChatWorkingElapsed } from '../native-chat/native-chat-duration-format'
+import {
+  hasUnseenCompletion,
+  resolveChatThreadStatus,
+  type ChatThreadStatus
+} from './chat-thread-status'
 
-/** T3-style attention colors: amber = needs you, sky pulse = in motion, plain = resting. */
-function ThreadStatusDot({ threadId }: { threadId: string }): React.JSX.Element | null {
-  const state = useAppStore((s) => {
-    const session = s.chatThreadSessions[threadId]
-    return session ? s.agentStatusByPaneKey[session.paneKey]?.state : undefined
-  })
-  if (state === 'working') {
-    return <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-sky-400" />
+/** Self-ticking elapsed (setInterval → textContent), NOT React state: a state
+ *  tick would re-commit every working row each second (T3/NativeChatWorkingRow). */
+function WorkingElapsed({ since }: { since: number }): React.JSX.Element {
+  const textRef = useRef<HTMLSpanElement | null>(null)
+  useEffect(() => {
+    const update = (): void => {
+      if (textRef.current) {
+        textRef.current.textContent = formatNativeChatWorkingElapsed(Date.now() - since)
+      }
+    }
+    update()
+    const id = window.setInterval(update, 1_000)
+    return () => window.clearInterval(id)
+  }, [since])
+  return (
+    <span ref={textRef} className="tabular-nums">
+      {formatNativeChatWorkingElapsed(Date.now() - since)}
+    </span>
+  )
+}
+
+/** T3 SidebarV2 attention hues: amber = act now, sky = in motion, emerald = unread done. */
+function ThreadStatusLabel({
+  status,
+  workingSince
+}: {
+  status: ChatThreadStatus
+  workingSince: number | undefined
+}): React.JSX.Element | null {
+  if (status === 'approval') {
+    return (
+      <span className="flex shrink-0 items-center gap-1 text-[11px] text-amber-700 dark:text-amber-300">
+        <ShieldQuestion className="size-3" />
+        {translate('auto.components.chat.sidebar.statusApproval', 'Approval')}
+      </span>
+    )
   }
-  if (state === 'blocked' || state === 'waiting') {
-    return <span className="size-1.5 shrink-0 rounded-full bg-amber-400" />
+  if (status === 'working') {
+    return (
+      <span className="flex shrink-0 items-center gap-1 text-[11px] text-sky-600 dark:text-sky-400">
+        <span className="size-1.5 animate-pulse rounded-full bg-sky-400" />
+        {/* aria-hidden: a ticking timer would be announced every second. */}
+        <span aria-hidden>
+          {translate('auto.components.chat.sidebar.statusWorking', 'Working')}
+          {workingSince !== undefined ? (
+            <>
+              {' '}
+              <WorkingElapsed since={workingSince} />
+            </>
+          ) : null}
+        </span>
+      </span>
+    )
+  }
+  if (status === 'unread-done') {
+    return (
+      <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+        <CircleCheck className="size-3" />
+        {translate('auto.components.chat.sidebar.statusDone', 'Done')}
+      </span>
+    )
   }
   return null
 }
@@ -37,6 +93,18 @@ export function ChatThreadRow({ thread }: { thread: ChatThread }): React.JSX.Ele
   const setActiveChatThread = useAppStore((s) => s.setActiveChatThread)
   const updateChatThread = useAppStore((s) => s.updateChatThread)
   const deleteChatThread = useAppStore((s) => s.deleteChatThread)
+  const agentStatus = useAppStore((s) => {
+    const session = s.chatThreadSessions[thread.id]
+    return session ? s.agentStatusByPaneKey[session.paneKey] : undefined
+  })
+  const hasPendingApproval = useAppStore(
+    (s) => (s.chatThreadPermissionRequests[thread.id]?.length ?? 0) > 0
+  )
+  const status = resolveChatThreadStatus({
+    agentState: agentStatus?.state,
+    hasPendingApproval,
+    hasUnseenCompletion: hasUnseenCompletion(thread)
+  })
   const [renaming, setRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(thread.title)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -87,12 +155,15 @@ export function ChatThreadRow({ thread }: { thread: ChatThread }): React.JSX.Ele
           'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
           thread.id === activeChatThreadId
             ? 'bg-accent text-accent-foreground'
-            : 'text-foreground/90 hover:bg-muted/60'
+            : status === 'idle'
+              ? // Recede (T3): nothing here needs a human, so the row rests dim.
+                'font-normal text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground/90'
+              : 'text-foreground/90 hover:bg-muted/60'
         )}
         onClick={() => setActiveChatThread(thread.id)}
       >
         <span className="min-w-0 flex-1 truncate">{thread.title}</span>
-        <ThreadStatusDot threadId={thread.id} />
+        <ThreadStatusLabel status={status} workingSince={agentStatus?.stateStartedAt} />
       </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

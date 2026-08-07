@@ -4,6 +4,7 @@
 import type React from 'react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
+import { nextVisitStamp } from './chat-thread-status'
 import { ChatModeDraftHero } from './ChatModeDraftHero'
 import { ChatModeSidebar } from './ChatModeSidebar'
 import { ChatThreadView } from './ChatThreadView'
@@ -70,11 +71,24 @@ export default function ChatModePage(): React.JSX.Element {
         // Sealing (not clearing) keeps the preview until the transcript renders
         // the finished message — an eager clear flashes an empty gap first.
         case 'message-final':
-        case 'turn-complete':
           store.sealChatThreadStreamingText(event.threadId)
           scheduleSealClear(event.threadId)
           void store.updateChatThread(event.threadId, { lastActivityAt: Date.now() })
           break
+        case 'turn-complete': {
+          store.sealChatThreadStreamingText(event.threadId)
+          scheduleSealClear(event.threadId)
+          const now = Date.now()
+          // A completion the user is watching (thread active, window focused)
+          // is read on arrival — it must not light the sidebar's unread "Done".
+          const watched = store.activeChatThreadId === event.threadId && document.hasFocus()
+          void store.updateChatThread(event.threadId, {
+            lastActivityAt: now,
+            lastCompletedAt: now,
+            ...(watched ? { lastVisitedAt: now } : {})
+          })
+          break
+        }
         case 'permission-request':
           // "Always allow this session" verdicts short-circuit the queue.
           if (store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName)) {
@@ -115,6 +129,29 @@ export default function ChatModePage(): React.JSX.Element {
       timers.clear()
     }
   }, [])
+
+  // Visiting = the thread is active in a focused window. Stamped on activation
+  // and on window refocus so a completion read in place clears its unread mark.
+  useEffect(() => {
+    const stampVisited = (): void => {
+      if (!document.hasFocus()) {
+        return
+      }
+      const s = useAppStore.getState()
+      const thread = s.chatThreads.find((t) => t.id === s.activeChatThreadId)
+      if (!thread) {
+        return
+      }
+      const stamp = nextVisitStamp(Date.now(), thread.lastCompletedAt)
+      if (thread.lastVisitedAt !== undefined && thread.lastVisitedAt >= stamp) {
+        return
+      }
+      void s.updateChatThread(thread.id, { lastVisitedAt: stamp })
+    }
+    stampVisited()
+    window.addEventListener('focus', stampVisited)
+    return () => window.removeEventListener('focus', stampVisited)
+  }, [activeChatThreadId])
 
   const activeThread = threads.find((t) => t.id === activeChatThreadId) ?? null
   const activeWorkspace =

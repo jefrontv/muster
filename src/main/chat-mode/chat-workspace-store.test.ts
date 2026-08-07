@@ -27,6 +27,39 @@ describe('normalizeChatModeState', () => {
     expect(state.threads.map((t) => t.id)).toEqual(['t1'])
     expect(state.threads[0]?.claudeSessionId).toBeNull()
   })
+
+  it('loads old JSON without visit/completion stamps and drops malformed ones', () => {
+    const state = normalizeChatModeState({
+      workspaces: [],
+      threads: [
+        { id: 'old', workspaceId: null, title: 'Old', createdAt: 1, lastActivityAt: 1 },
+        {
+          id: 'bad',
+          workspaceId: null,
+          title: 'Bad stamps',
+          createdAt: 1,
+          lastActivityAt: 1,
+          lastVisitedAt: 'yesterday',
+          lastCompletedAt: null
+        },
+        {
+          id: 'new',
+          workspaceId: null,
+          title: 'New',
+          createdAt: 1,
+          lastActivityAt: 1,
+          lastVisitedAt: 5,
+          lastCompletedAt: 9
+        }
+      ]
+    })
+    expect(state.threads[0]).not.toHaveProperty('lastVisitedAt')
+    expect(state.threads[0]).not.toHaveProperty('lastCompletedAt')
+    expect(state.threads[1]).not.toHaveProperty('lastVisitedAt')
+    expect(state.threads[1]).not.toHaveProperty('lastCompletedAt')
+    expect(state.threads[2]?.lastVisitedAt).toBe(5)
+    expect(state.threads[2]?.lastCompletedAt).toBe(9)
+  })
 })
 
 describe('ChatWorkspaceStore', () => {
@@ -66,6 +99,17 @@ describe('ChatWorkspaceStore', () => {
     const reloaded = new ChatWorkspaceStore(dir)
     expect(reloaded.getState().workspaces[0]?.directories).toEqual(['/a', '/b'])
     expect(reloaded.getState().threads[0]?.title).toBe('First')
+  })
+
+  it('persists visit/completion stamps through updateThread and reload', () => {
+    const store = new ChatWorkspaceStore(dir, () => 7)
+    const thread = store.createThread({ workspaceId: null, title: 'Stamped' })
+    store.updateThread(thread!.id, { lastVisitedAt: 11, lastCompletedAt: 22 })
+    store.flush()
+
+    const reloaded = new ChatWorkspaceStore(dir)
+    expect(reloaded.getState().threads[0]?.lastVisitedAt).toBe(11)
+    expect(reloaded.getState().threads[0]?.lastCompletedAt).toBe(22)
   })
 
   it('survives a corrupt store file', () => {

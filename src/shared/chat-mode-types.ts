@@ -33,6 +33,11 @@ export type ChatThread = {
   transcriptPath: string | null
   createdAt: number
   lastActivityAt: number
+  /** When the user last had this thread open in a focused window. Absent =
+   *  never visited, which counts as read (T3 rule). */
+  lastVisitedAt?: number
+  /** When the latest turn completed; with lastVisitedAt drives the unread "Done". */
+  lastCompletedAt?: number
   archived?: boolean
 }
 

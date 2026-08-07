@@ -59,6 +59,8 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
     transcriptPath: typeof raw.transcriptPath === 'string' ? raw.transcriptPath : null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : 0,
     lastActivityAt: typeof raw.lastActivityAt === 'number' ? raw.lastActivityAt : 0,
+    ...(typeof raw.lastVisitedAt === 'number' ? { lastVisitedAt: raw.lastVisitedAt } : {}),
+    ...(typeof raw.lastCompletedAt === 'number' ? { lastCompletedAt: raw.lastCompletedAt } : {}),
     ...(raw.archived === true ? { archived: true } : {})
   }
 }
@@ -178,7 +180,13 @@ export class ChatWorkspaceStore {
     patch: Partial<
       Pick<
         ChatThread,
-        'title' | 'claudeSessionId' | 'transcriptPath' | 'lastActivityAt' | 'archived'
+        | 'title'
+        | 'claudeSessionId'
+        | 'transcriptPath'
+        | 'lastActivityAt'
+        | 'lastVisitedAt'
+        | 'lastCompletedAt'
+        | 'archived'
       >
     >
   ): ChatThread | null {
