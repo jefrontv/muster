@@ -26,8 +26,11 @@ export function nativeChatPendingContentKey(
   if (text) {
     return `text:${text}`
   }
-  const imagePaths = pending.imagePaths?.filter(Boolean) ?? []
-  return imagePaths.length > 0 ? `images:${JSON.stringify(imagePaths)}` : 'empty'
+  // Count, not paths: stream sends land in the transcript as base64 data URLs,
+  // so the echo's local paths can never equal the transcript's refs. Duplicate
+  // counts disambiguate through the same occurrence logic as identical texts.
+  const imageCount = (pending.imagePaths?.filter(Boolean) ?? []).length
+  return imageCount > 0 ? `images:${imageCount}` : 'empty'
 }
 
 function nativeChatUserMessageContentKey(message: NativeChatMessage): string | null {
@@ -40,8 +43,8 @@ function nativeChatUserMessageContentKey(message: NativeChatMessage): string | n
     .join(' ')
   const imagePaths = message.blocks
     .filter(isImageRefBlock)
-    .map((block) => block.path)
-    .filter((path): path is string => Boolean(path))
+    .map((block) => block.path ?? block.url)
+    .filter((ref): ref is string => Boolean(ref))
   const key = nativeChatPendingContentKey({ text, imagePaths })
   return key === 'empty' ? null : key
 }

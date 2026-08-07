@@ -102,7 +102,14 @@ function toolResultBlock(record: Record<string, unknown>): NativeChatToolResultB
 
 function imageRefBlock(record: Record<string, unknown>): NativeChatImageRefBlock | null {
   const source = asRecord(record.source)
-  const url = extractString(source?.url) ?? extractString(record.url)
+  // Stream sends embed images as base64; surface them as data URLs so an
+  // image-only user turn still decodes (and its optimistic echo can retire).
+  const base64Data = source?.type === 'base64' ? extractString(source.data) : null
+  const base64MediaType = source?.type === 'base64' ? extractString(source.media_type) : null
+  const url =
+    extractString(source?.url) ??
+    extractString(record.url) ??
+    (base64Data && base64MediaType ? `data:${base64MediaType};base64,${base64Data}` : null)
   const path = extractString(record.path)
   const alt = extractString(record.alt) ?? undefined
   if (!url && !path) {

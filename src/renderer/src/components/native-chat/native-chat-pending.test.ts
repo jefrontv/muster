@@ -102,6 +102,23 @@ describe('prunePendingSends', () => {
     expect(prunePendingSends(pending, transcript)).toEqual([])
   })
 
+  it('drops an image-only send whose transcript turn carries data-URL refs', () => {
+    // Stream sends land as base64 data URLs — local echo paths never equal the
+    // transcript refs, so matching is by image count.
+    const pending = [{ ...pendingOf('p1', ''), imagePaths: ['/tmp/shot.png'] }]
+    const transcript: NativeChatMessage[] = [
+      {
+        id: 'm1',
+        role: 'user',
+        blocks: [{ type: 'image-ref', url: 'data:image/png;base64,AAAA' }],
+        timestamp: 1,
+        source: 'transcript'
+      },
+      assistantMessage('m2', 'a screenshot')
+    ]
+    expect(prunePendingSends(pending, transcript)).toEqual([])
+  })
+
   it('keeps a pending send that has not landed yet', () => {
     const pending = [pendingOf('p1', 'not yet')]
     const next = prunePendingSends(pending, [assistantMessage('m1', 'working on it')])
