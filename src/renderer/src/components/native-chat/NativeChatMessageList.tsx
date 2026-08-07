@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, Image as ImageIcon } from 'lucide-react'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
@@ -122,7 +122,9 @@ function TypingIndicatorRow(): React.JSX.Element {
 /** One message: its prose first, then a collapsible run folding all of the
  *  turn's tool activity. Monochrome per STYLEGUIDE: user prompts read as a
  *  lifted card, assistant prose as body copy, reasoning de-emphasized. */
-function MessageRow({
+// Memoized so a streaming tick re-renders only the row whose message object
+// changed — without this every delta re-parses every message's markdown.
+const MessageRow = memo(function MessageRow({
   message,
   expandSignal,
   onScrollMessageToTop,
@@ -231,7 +233,7 @@ function MessageRow({
       {tools.length > 0 ? <NativeChatToolRun blocks={tools} expandSignal={expandSignal} /> : null}
     </div>
   )
-}
+})
 
 export function NativeChatMessageList({
   session,

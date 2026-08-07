@@ -8,6 +8,7 @@ import { homedir } from 'node:os'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder } from './chat-thread-stream-decode'
+import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
 
 const STDERR_TAIL_LIMIT = 4_096
 const STOP_KILL_GRACE_MS = 1_500
@@ -100,7 +101,7 @@ export function startChatThreadStream(
   const entry: StreamEntry = { child, stopping: false, killTimer: null }
   registry.set(threadId, entry)
 
-  const emit = (event: ChatThreadStreamEvent): void => {
+  const send = (event: ChatThreadStreamEvent): void => {
     if (sender.isDestroyed()) {
       return
     }
@@ -110,6 +111,8 @@ export function startChatThreadStream(
       // A closing window can destroy the sender between the check and the send.
     }
   }
+  const emitter = createCoalescingStreamEmitter(threadId, send)
+  const emit = emitter.emit
   const decoder = createChatThreadStreamDecoder(threadId, emit)
   let stderrTail = ''
 
@@ -124,6 +127,7 @@ export function startChatThreadStream(
   })
   child.on('close', (code) => {
     decoder.flush()
+    emitter.dispose()
     if (entry.killTimer) {
       clearTimeout(entry.killTimer)
       entry.killTimer = null
