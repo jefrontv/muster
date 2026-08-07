@@ -1,5 +1,5 @@
 import { FLOATING_TERMINAL_WORKTREE_ID } from './constants'
-import { resolveRuntimePath } from './cross-platform-path'
+import { isRuntimePathAbsolute, resolveRuntimePath } from './cross-platform-path'
 import { parseWorkspaceKey } from './workspace-scope'
 import { splitWorktreeIdForFilesystem } from './worktree-id'
 
@@ -59,6 +59,12 @@ export function resolveTerminalStartupCwdForWorkspace(args: {
     args.resolveFolderWorkspacePath
   )
   if (!workspacePath) {
+    // Why: worktree-less spawns (chat-mode threads, bare background sessions)
+    // have no root to anchor against, but an absolute request needs none —
+    // dropping it would silently start the session in the provider's default.
+    if (!args.workspaceId && isRuntimePathAbsolute(args.requestedCwd)) {
+      return args.requestedCwd
+    }
     // Why: without a worktree root we can't anchor a relative request, so fall
     // back to the provider default rather than guessing a base.
     return undefined

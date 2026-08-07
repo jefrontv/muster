@@ -72,13 +72,23 @@ describe('resolveTerminalStartupCwd', () => {
     ).toBe('/Volumes/work/notes')
   })
 
-  it('falls back to the provider default when no workspace root is resolvable', () => {
+  it('honors an absolute cwd for a workspace-less spawn', () => {
+    // Chat-mode threads and bare background sessions spawn without a worktree.
     expect(
       resolveTerminalStartupCwdForWorkspace({
         workspaceId: undefined,
         requestedCwd: '/anywhere'
       })
+    ).toBe('/anywhere')
+    expect(
+      resolveTerminalStartupCwdForWorkspace({
+        workspaceId: undefined,
+        requestedCwd: 'relative/dir'
+      })
     ).toBeUndefined()
+  })
+
+  it('falls back to the provider default when no workspace root is resolvable', () => {
     expect(
       resolveTerminalStartupCwdForWorkspace({
         workspaceId: 'opaque-worktree-id',

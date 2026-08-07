@@ -3481,6 +3481,20 @@ function resolvePaneKey(
   }
   const { tabId, leafId } = parsed
   const layout = store.terminalLayoutsByTabId?.[tabId]
+  // Chat-mode threads run headless PTYs with no store tab; their live session map
+  // is the ownership record, so hook status must not park in the pending queue.
+  for (const chatSession of Object.values(store.chatThreadSessions)) {
+    if (chatSession.paneKey === paneKey) {
+      return {
+        exists: true,
+        title: undefined,
+        identityTitle: undefined,
+        repoConnectionId: null,
+        repoConnectionResolved: true,
+        owningWorktreeId: undefined
+      }
+    }
+  }
   let exists = false
   let tabTitle: string | undefined
   let unifiedTabLabel: string | undefined

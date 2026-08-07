@@ -4,6 +4,7 @@
 
 import type { StateCreator } from 'zustand'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
+import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
 import type { AppState } from '../types'
 
 /** A live PTY-backed session for a thread. Runtime-only — never persisted. */
@@ -12,6 +13,9 @@ export type ChatThreadSession = {
   leafId: string
   paneKey: string
   ptyId: string
+  /** Model/effort launch flags the launcher applied; the composer pickers show
+   *  these since a headless pane has no terminal frame to scrape. */
+  appliedSessionOptions?: Record<string, SessionOptionValue>
 }
 
 export type ChatModeSlice = {

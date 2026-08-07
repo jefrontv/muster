@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { AgentType } from '../../../../shared/agent-status-types'
 import { updateNativeChatSessionOptionDefaults } from '../../../../shared/native-chat-session-option-defaults'
-import type { SessionOptionDescriptor } from '../../../../shared/native-chat-session-options'
+import type {
+  SessionOptionDescriptor,
+  SessionOptionValue
+} from '../../../../shared/native-chat-session-options'
 import { useAppStore } from '../../store'
 import {
   createNativeChatPtySessionOptions,
@@ -22,6 +25,20 @@ import { readClaudeSessionOptionsFromTerminalScreen } from './claude-terminal-se
 const EMPTY_SNAPSHOT: SessionOptionDescriptor[] = []
 const subscribeEmpty = (): (() => void) => () => {}
 const getEmptySnapshot = (): SessionOptionDescriptor[] => EMPTY_SNAPSHOT
+
+/** Launch-flag session options registered for this tab's pane, if any. Headless
+ *  panes (chat-mode threads) have no terminal frame to scrape, so the values the
+ *  launcher applied via --model/--effort are the only truthful current state. */
+function readLaunchAppliedSessionOptions(
+  terminalTabId: string
+): Record<string, SessionOptionValue> | null {
+  for (const session of Object.values(useAppStore.getState().chatThreadSessions)) {
+    if (session.tabId === terminalTabId && session.appliedSessionOptions) {
+      return session.appliedSessionOptions
+    }
+  }
+  return null
+}
 
 export function useNativeChatSessionOptions(args: {
   agent: AgentType
@@ -48,7 +65,10 @@ export function useNativeChatSessionOptions(args: {
     }
     const scopeKey = targetPtyId ?? terminalTabId
     const reportedValues =
-      agent === 'claude' ? readClaudeSessionOptionsFromTerminalScreen(readTerminalScreen?.()) : null
+      agent === 'claude'
+        ? (readClaudeSessionOptionsFromTerminalScreen(readTerminalScreen?.()) ??
+          readLaunchAppliedSessionOptions(terminalTabId))
+        : null
     let settingsWrite = Promise.resolve()
     return createNativeChatPtySessionOptions({
       agent,
@@ -118,7 +138,8 @@ export function useNativeChatSessionOptions(args: {
       }
       const reportedValues =
         readClaudeSessionOptionsFromTerminalScreen(authoritativeScreen) ??
-        readClaudeSessionOptionsFromTerminalScreen(readTerminalScreen?.())
+        readClaudeSessionOptionsFromTerminalScreen(readTerminalScreen?.()) ??
+        readLaunchAppliedSessionOptions(terminalTabId)
       if (!cancelled && reportedValues) {
         surface.reportSessionOptions(reportedValues)
       }

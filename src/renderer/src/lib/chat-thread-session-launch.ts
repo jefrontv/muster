@@ -19,11 +19,13 @@ import {
   resolveTuiAgentLaunchArgs,
   resolveTuiAgentLaunchEnv
 } from '../../../shared/tui-agent-launch-defaults'
+import { resolveNativeChatSessionOptionDefaults } from '../../../shared/native-chat-session-option-defaults'
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
 import { makePaneKey } from '../../../shared/stable-pane-id'
 import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import type { AgentProviderSessionMetadata } from '../../../shared/agent-session-resume'
 import type { ParsedAgentStatusPayload } from '../../../shared/agent-status-types'
+import type { SessionOptionValue } from '../../../shared/native-chat-session-options'
 import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
 import {
   registerEagerPtyBuffer,
@@ -40,6 +42,7 @@ export type ChatThreadLaunchResult = {
   leafId: string
   paneKey: string
   ptyId: string
+  appliedSessionOptions?: Record<string, SessionOptionValue>
 }
 
 export async function launchChatThreadSession(args: {
@@ -112,7 +115,14 @@ export async function launchChatThreadSession(args: {
         platform: CLIENT_PLATFORM,
         shell: startupShell,
         isRemote: false,
-        allowEmptyPromptLaunch: true
+        allowEmptyPromptLaunch: true,
+        // Persisted model/effort defaults become launch flags; the composer's
+        // pickers read them back from the thread's session record since a
+        // headless pane has no terminal frame to scrape.
+        sessionOptions: resolveNativeChatSessionOptionDefaults(
+          store.settings?.nativeChatSessionOptions,
+          agent
+        )
       })
   if (!startupPlan) {
     return null
@@ -186,7 +196,13 @@ export async function launchChatThreadSession(args: {
     eagerPtyBuffer = registerEagerPtyBuffer(ptyId, handleExit)
     unsubscribeData = subscribeToPtyData(ptyId, (data) => agentStatusConsumer.consume(data))
     unsubscribeExit = subscribeToPtyExit(ptyId, (code) => handleExit(ptyId, code))
-    return { tabId, leafId, paneKey, ptyId }
+    return {
+      tabId,
+      leafId,
+      paneKey,
+      ptyId,
+      ...(startupPlan.sessionOptions ? { appliedSessionOptions: startupPlan.sessionOptions } : {})
+    }
   } catch (error) {
     exitHandled = true
     runBestEffortAgentBackgroundCleanups(unsubscribeExit, unsubscribeData)
