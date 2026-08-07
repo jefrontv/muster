@@ -33,10 +33,9 @@ export default function ChatModePage(): React.JSX.Element {
     <div className="flex h-full min-h-0 flex-col bg-background">
       {/* Full-page views hide the worktree titlebar strip, so Chat draws its own:
           window drag region, traffic-light clearance, and the app name. */}
-      <div className="titlebar justify-center">
-        <span className="text-xs font-semibold tracking-wide text-muted-foreground select-none">
-          Muster
-        </span>
+      {/* pl clears the macOS traffic lights so the name sits beside them, matching Code view. */}
+      <div className="titlebar pl-20">
+        <span className="text-sm font-semibold text-foreground select-none">Muster</span>
       </div>
       <div className="flex min-h-0 flex-1">
         <ChatModeSidebar />
