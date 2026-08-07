@@ -30,6 +30,7 @@ import type {
 } from '../shared/site-types'
 import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../shared/site-run-types'
 import type { SiteDbSnapshot } from '../shared/site-db-snapshot-types'
+import type { ChatModeState, ChatThread, ChatWorkspace } from '../shared/chat-mode-types'
 import type { SiteWpCliResult } from '../shared/site-wp-cli-actions'
 import type {
   LocalWpControlOutcome,
@@ -864,6 +865,28 @@ export type SiteDbSnapshotsApi = {
   delete: (args: { siteId: string; snapshotId: string }) => Promise<SiteResult<boolean>>
 }
 
+/** Chat mode's workspace/thread store. Sessions launch via the pty api; this is metadata only. */
+export type ChatModeApi = {
+  getState: () => Promise<ChatModeState>
+  createWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
+  updateWorkspace: (
+    id: string,
+    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories'>>
+  ) => Promise<ChatWorkspace | null>
+  deleteWorkspace: (id: string) => Promise<boolean>
+  createThread: (args: { workspaceId: string; title?: string }) => Promise<ChatThread | null>
+  updateThread: (
+    id: string,
+    patch: Partial<
+      Pick<
+        ChatThread,
+        'title' | 'claudeSessionId' | 'transcriptPath' | 'lastActivityAt' | 'archived'
+      >
+    >
+  ) => Promise<ChatThread | null>
+  deleteThread: (id: string) => Promise<boolean>
+}
+
 /** A site's local WordPress stack. macOS-only; every call returns a structured result elsewhere. */
 export type SiteStacksApi = {
   detect: (siteId: string) => Promise<SiteResult<LocalWpStackDetection>>
@@ -1558,6 +1581,7 @@ export type PreloadApi = {
   sites: SitesApi
   siteRuns: SiteRunsApi
   siteDbSnapshots: SiteDbSnapshotsApi
+  chatMode: ChatModeApi
   siteRoots: SiteRootsApi
   siteStacks: SiteStacksApi
   siteTools: SiteToolsApi

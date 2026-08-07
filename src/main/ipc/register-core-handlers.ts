@@ -44,6 +44,7 @@ import { registerSkillsHandlers } from './skills'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
 import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
+import { registerChatModeHandlers } from './chat-mode'
 import { registerSiteRunHandlers } from './site-runs'
 import { registerSiteRootsHandlers } from './site-roots'
 import { registerSiteStackHandlers } from './site-stacks'
@@ -233,6 +234,7 @@ export function registerCoreHandlers(
   registerSiteHandlers(store)
   registerSiteRunHandlers(store)
   registerSiteDbSnapshotHandlers(store)
+  registerChatModeHandlers()
   registerSiteRootsHandlers(store)
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)

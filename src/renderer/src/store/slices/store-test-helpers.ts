@@ -52,6 +52,7 @@ import { createRecentlyClosedTabsSlice } from './recently-closed-tabs'
 import { createOrcaProfilesSlice } from './orca-profiles'
 import { createNewIssueDraftSlice } from './new-issue-draft'
 import { createRemoteServerUpdatesSlice } from './remote-server-updates'
+import { createChatModeSlice } from './chat-mode'
 import { translate } from '@/i18n/i18n'
 
 export const TEST_REPO = {
@@ -107,7 +108,8 @@ export function createTestStore() {
     ...createRecentlyClosedTabsSlice(...a),
     ...createOrcaProfilesSlice(...a),
     ...createNewIssueDraftSlice(...a),
-    ...createRemoteServerUpdatesSlice(...a)
+    ...createRemoteServerUpdatesSlice(...a),
+    ...createChatModeSlice(...a)
   }))
 }
 
