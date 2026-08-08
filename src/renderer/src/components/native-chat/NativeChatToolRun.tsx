@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ChevronRight, Wrench } from 'lucide-react'
+import { ChevronRight, CircleCheck, MessageSquareText, Wrench } from 'lucide-react'
+import {
+  activeCollabToolEvent,
+  type ActiveCollabToolEvent
+} from '../../../../shared/native-chat-activecollab-events'
+import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import {
@@ -123,6 +128,31 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
   )
 }
 
+/** An ActiveCollab write rendered as a task event instead of a wrench row —
+ *  "Completed task #77" reads as an outcome, not plumbing. */
+function ActiveCollabEventChip({ event }: { event: ActiveCollabToolEvent }): React.JSX.Element {
+  const done = event.kind === 'complete'
+  return (
+    <span
+      className={cn(
+        'flex max-w-full items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-3 text-xs font-medium',
+        done
+          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+          : 'border-border/60 bg-muted/40 text-muted-foreground'
+      )}
+    >
+      {done ? (
+        <CircleCheck className="size-3.5 shrink-0" />
+      ) : event.kind === 'comment' ? (
+        <MessageSquareText className="size-3.5 shrink-0" />
+      ) : (
+        <ActiveCollabIcon className="size-3 shrink-0" />
+      )}
+      <span className="min-w-0 truncate">{event.label}</span>
+    </span>
+  )
+}
+
 /** A run of a message's tool calls/results, collapsed to a one-line summary that
  *  expands to the individual inline tool lines. `expandSignal` lets the global
  *  toolbar toggle drive every run at once while still allowing per-run override. */
@@ -139,8 +169,18 @@ export function NativeChatToolRun({
   useEffect(() => setOpen(expandSignal), [expandSignal])
   const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(open)
 
-  const callCount = countToolCalls(blocks) || blocks.length
-  const nameCounts = toolRunNameCounts(blocks)
+  // AC writes surface as task-event chips; the wrench pill covers the rest.
+  const events = blocks
+    .filter(isToolCallBlock)
+    .map((block) => activeCollabToolEvent(block.name, block.input))
+    .filter((event): event is ActiveCollabToolEvent => event !== null)
+  const plainBlocks = blocks.filter(
+    (block) => !isToolCallBlock(block) || activeCollabToolEvent(block.name, block.input) === null
+  )
+  // Result-only runs keep the pill (their body is only reachable through it);
+  // a run that is purely AC events needs no wrench at all.
+  const callCount = countToolCalls(plainBlocks) || (events.length > 0 ? 0 : plainBlocks.length)
+  const nameCounts = toolRunNameCounts(plainBlocks)
   const countLabel = translate(
     callCount === 1 ? 'components.native-chat.tool.countOne' : 'components.native-chat.tool.countN',
     callCount === 1 ? '1 tool call' : `${callCount} tool calls`,
@@ -150,36 +190,45 @@ export function NativeChatToolRun({
   return (
     // Extra top margin sets the tool run apart from the assistant prose above it
     // so the turn's activity doesn't crowd the message text.
-    <div ref={elementRef} className="mt-3">
-      <button
-        type="button"
-        onClick={() => {
-          captureBeforeToggle()
-          setOpen((v) => !v)
-        }}
-        className={cn(
-          'group flex max-w-full items-center gap-1.5 rounded-full border border-border/60 py-1 pl-2.5 pr-2 text-left transition-colors',
-          open ? 'bg-muted/70' : 'bg-muted/40 hover:bg-muted/70'
-        )}
-      >
-        <Wrench className="size-3 shrink-0 text-muted-foreground" />
-        <span className="shrink-0 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground/80">
-          {countLabel}
-        </span>
-        {nameCounts.length > 0 ? (
-          <span className="min-w-0 truncate text-xs text-muted-foreground/70 transition-colors group-hover:text-muted-foreground">
-            {nameCounts
-              .map((entry) => (entry.count > 1 ? `${entry.name} ×${entry.count}` : entry.name))
-              .join(' · ')}
-          </span>
-        ) : null}
-        <ChevronRight
+    <div ref={elementRef} className="mt-3 space-y-1.5">
+      {events.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {events.map((event, index) => (
+            <ActiveCollabEventChip key={index} event={event} />
+          ))}
+        </div>
+      ) : null}
+      {callCount > 0 ? (
+        <button
+          type="button"
+          onClick={() => {
+            captureBeforeToggle()
+            setOpen((v) => !v)
+          }}
           className={cn(
-            'size-3.5 shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-90'
+            'group flex max-w-full items-center gap-1.5 rounded-full border border-border/60 py-1 pl-2.5 pr-2 text-left transition-colors',
+            open ? 'bg-muted/70' : 'bg-muted/40 hover:bg-muted/70'
           )}
-        />
-      </button>
+        >
+          <Wrench className="size-3 shrink-0 text-muted-foreground" />
+          <span className="shrink-0 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground/80">
+            {countLabel}
+          </span>
+          {nameCounts.length > 0 ? (
+            <span className="min-w-0 truncate text-xs text-muted-foreground/70 transition-colors group-hover:text-muted-foreground">
+              {nameCounts
+                .map((entry) => (entry.count > 1 ? `${entry.name} ×${entry.count}` : entry.name))
+                .join(' · ')}
+            </span>
+          ) : null}
+          <ChevronRight
+            className={cn(
+              'size-3.5 shrink-0 text-muted-foreground transition-transform',
+              open && 'rotate-90'
+            )}
+          />
+        </button>
+      ) : null}
       {open ? (
         <div className="ml-2 mt-1.5 border-l border-border/60 pl-3">
           {blocks.map((block, i) => (
