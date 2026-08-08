@@ -6,14 +6,12 @@ import type { StateCreator } from 'zustand'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
 import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
 import type { AppState } from '../types'
+import {
+  createChatThreadPermissionSlice,
+  type ChatThreadPermissionSlice
+} from './chat-thread-permission-state'
 
-/** A pending can_use_tool question from the stream, awaiting Approve/Decline. */
-export type ChatThreadPermissionRequest = {
-  requestId: string
-  toolName: string
-  /** Raw tool input JSON, rendered by the approval panel as-is. */
-  input: unknown
-}
+export type { ChatThreadPermissionRequest } from './chat-thread-permission-state'
 
 /** A live stream-json session for a thread. Runtime-only — never persisted. */
 export type ChatThreadSession = {
@@ -25,7 +23,7 @@ export type ChatThreadSession = {
   appliedSessionOptions?: Record<string, SessionOptionValue>
 }
 
-export type ChatModeSlice = {
+export type ChatModeSlice = ChatThreadPermissionSlice & {
   chatWorkspaces: ChatWorkspace[]
   chatThreads: ChatThread[]
   chatModeHydrated: boolean
@@ -36,11 +34,9 @@ export type ChatModeSlice = {
    *  `sealed` marks a completed message kept visible until the transcript
    *  catches up — clearing it eagerly flashes a gap before the real turn lands. */
   chatThreadStreamingText: Record<string, { text: string; sealed: boolean }>
-  /** Pending tool-permission questions per thread, oldest first. */
-  chatThreadPermissionRequests: Record<string, ChatThreadPermissionRequest[]>
-  /** Tool names "Always allow this session" approved, per thread. Runtime-only;
-   *  cleared with the session (exit event / thread delete). */
-  chatThreadSessionAllowedTools: Record<string, string[]>
+  /** Current model's context window per thread, reported by the CLI's result
+   *  records — drives the composer's context meter max. */
+  chatThreadContextWindow: Record<string, number>
   /** Draft-first landing: the hero's text, sent once the thread's session is up. */
   chatThreadFirstMessage: Record<string, string>
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
@@ -73,17 +69,7 @@ export type ChatModeSlice = {
   ) => Promise<void>
   deleteChatThread: (id: string) => Promise<void>
   setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
-  addChatThreadPermissionRequest: (threadId: string, request: ChatThreadPermissionRequest) => void
-  removeChatThreadPermissionRequest: (threadId: string, requestId: string) => void
-  clearChatThreadPermissionRequests: (threadId: string) => void
-  /** Answer a pending request: removes it optimistically, then tells main. */
-  respondChatThreadPermission: (
-    threadId: string,
-    requestId: string,
-    behavior: 'allow' | 'deny'
-  ) => void
-  allowChatThreadToolForSession: (threadId: string, toolName: string) => void
-  clearChatThreadSessionAllowedTools: (threadId: string) => void
+  setChatThreadContextWindow: (threadId: string, contextWindow: number) => void
   setChatThreadFirstMessage: (threadId: string, text: string) => void
   clearChatThreadFirstMessage: (threadId: string) => void
   appendChatThreadStreamingText: (threadId: string, text: string) => void
@@ -91,7 +77,12 @@ export type ChatModeSlice = {
   clearChatThreadStreamingText: (threadId: string) => void
 }
 
-export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> = (set, get) => ({
+export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> = (
+  set,
+  get,
+  api
+) => ({
+  ...createChatThreadPermissionSlice(set, get, api),
   chatWorkspaces: [],
   chatThreads: [],
   chatModeHydrated: false,
@@ -99,8 +90,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   activeChatThreadId: null,
   chatThreadSessions: {},
   chatThreadStreamingText: {},
-  chatThreadPermissionRequests: {},
-  chatThreadSessionAllowedTools: {},
+  chatThreadContextWindow: {},
   chatThreadFirstMessage: {},
   chatTasksOpen: false,
 
@@ -205,6 +195,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       const { [id]: _droppedRequests, ...remainingRequests } = s.chatThreadPermissionRequests
       const { [id]: _droppedAllowed, ...remainingAllowed } = s.chatThreadSessionAllowedTools
       const { [id]: _droppedFirst, ...remainingFirstMessages } = s.chatThreadFirstMessage
+      const { [id]: _droppedWindow, ...remainingWindows } = s.chatThreadContextWindow
       return {
         chatThreads: s.chatThreads.filter((t) => t.id !== id),
         chatThreadSessions: remainingSessions,
@@ -212,10 +203,16 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
         chatThreadPermissionRequests: remainingRequests,
         chatThreadSessionAllowedTools: remainingAllowed,
         chatThreadFirstMessage: remainingFirstMessages,
+        chatThreadContextWindow: remainingWindows,
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
     })
   },
+
+  setChatThreadContextWindow: (threadId, contextWindow) =>
+    set((s) => ({
+      chatThreadContextWindow: { ...s.chatThreadContextWindow, [threadId]: contextWindow }
+    })),
 
   setChatThreadSession: (threadId, session) =>
     set((s) => {
@@ -224,78 +221,6 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
         return { chatThreadSessions: remaining }
       }
       return { chatThreadSessions: { ...s.chatThreadSessions, [threadId]: session } }
-    }),
-
-  addChatThreadPermissionRequest: (threadId, request) =>
-    set((s) => {
-      const queue = s.chatThreadPermissionRequests[threadId] ?? []
-      // Why: a replayed record must not duplicate an already-queued question.
-      if (queue.some((r) => r.requestId === request.requestId)) {
-        return {}
-      }
-      return {
-        chatThreadPermissionRequests: {
-          ...s.chatThreadPermissionRequests,
-          [threadId]: [...queue, request]
-        }
-      }
-    }),
-
-  removeChatThreadPermissionRequest: (threadId, requestId) =>
-    set((s) => {
-      const queue = s.chatThreadPermissionRequests[threadId]
-      if (!queue?.some((r) => r.requestId === requestId)) {
-        return {}
-      }
-      const remaining = queue.filter((r) => r.requestId !== requestId)
-      if (remaining.length === 0) {
-        const { [threadId]: _dropped, ...rest } = s.chatThreadPermissionRequests
-        return { chatThreadPermissionRequests: rest }
-      }
-      return {
-        chatThreadPermissionRequests: { ...s.chatThreadPermissionRequests, [threadId]: remaining }
-      }
-    }),
-
-  clearChatThreadPermissionRequests: (threadId) =>
-    set((s) => {
-      if (!(threadId in s.chatThreadPermissionRequests)) {
-        return {}
-      }
-      const { [threadId]: _dropped, ...remaining } = s.chatThreadPermissionRequests
-      return { chatThreadPermissionRequests: remaining }
-    }),
-
-  respondChatThreadPermission: (threadId, requestId, behavior) => {
-    // Optimistic removal: the composer moves on immediately; main writes the
-    // verdict and the CLI tolerates a stale id if the turn was interrupted.
-    get().removeChatThreadPermissionRequest(threadId, requestId)
-    void window.api.chatThreadStream
-      .respondPermission({ threadId, requestId, behavior })
-      .catch(() => undefined)
-  },
-
-  allowChatThreadToolForSession: (threadId, toolName) =>
-    set((s) => {
-      const allowed = s.chatThreadSessionAllowedTools[threadId] ?? []
-      if (allowed.includes(toolName)) {
-        return {}
-      }
-      return {
-        chatThreadSessionAllowedTools: {
-          ...s.chatThreadSessionAllowedTools,
-          [threadId]: [...allowed, toolName]
-        }
-      }
-    }),
-
-  clearChatThreadSessionAllowedTools: (threadId) =>
-    set((s) => {
-      if (!(threadId in s.chatThreadSessionAllowedTools)) {
-        return {}
-      }
-      const { [threadId]: _dropped, ...remaining } = s.chatThreadSessionAllowedTools
-      return { chatThreadSessionAllowedTools: remaining }
     }),
 
   setChatThreadFirstMessage: (threadId, text) =>

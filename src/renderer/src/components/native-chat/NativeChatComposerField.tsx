@@ -68,6 +68,7 @@ export type NativeChatComposerFieldProps = {
   stash: NativeChatPromptStash
   /** Context-window donut input; null hides the meter. */
   contextUsedTokens: number | null
+  contextMaxTokens?: number
 }
 
 export type NativeChatComposerImageAttachment = {
@@ -114,7 +115,8 @@ export function NativeChatComposerField({
   sessionOptionsSnapshot,
   approval,
   stash,
-  contextUsedTokens
+  contextUsedTokens,
+  contextMaxTokens
 }: NativeChatComposerFieldProps): React.JSX.Element {
   return (
     <div className="shrink-0 bg-background">
@@ -255,6 +257,7 @@ export function NativeChatComposerField({
                   sessionOptionsSnapshot={sessionOptionsSnapshot}
                   stash={stash}
                   contextUsedTokens={contextUsedTokens}
+                  contextMaxTokens={contextMaxTokens}
                 />
               )}
             </div>

@@ -437,6 +437,7 @@ function NativeChatResolvedView({
           permissionRequestCount={transport?.permissionRequests?.length ?? 0}
           onRespondPermission={transport?.respondPermission}
           contextUsageEnabled={runtimeEnvironmentId === null}
+          contextMaxTokens={transport?.contextWindowTokens}
         />
       )}
       {contextMenu.menu}

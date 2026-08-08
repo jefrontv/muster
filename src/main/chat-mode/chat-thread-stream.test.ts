@@ -93,6 +93,27 @@ describe('mapChatThreadStreamRecord', () => {
     )
   })
 
+  it('reports the main model context window from result modelUsage', () => {
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'result',
+        subtype: 'success',
+        modelUsage: {
+          'claude-haiku-4-5': { inputTokens: 12, contextWindow: 200_000 },
+          'claude-opus-5': { inputTokens: 4_800, contextWindow: 1_000_000 }
+        }
+      })
+    ).toEqual({ threadId: 't1', kind: 'turn-complete', isError: false, contextWindow: 1_000_000 })
+    // Malformed usage entries (missing/invalid contextWindow) are skipped.
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'result',
+        subtype: 'success',
+        modelUsage: { 'claude-opus-5': { inputTokens: 10 }, other: 'junk' }
+      })
+    ).toEqual({ threadId: 't1', kind: 'turn-complete', isError: false })
+  })
+
   it('ignores unknown record types', () => {
     expect(mapChatThreadStreamRecord('t1', { type: 'user' })).toBeNull()
   })

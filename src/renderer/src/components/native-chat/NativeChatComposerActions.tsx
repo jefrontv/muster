@@ -29,6 +29,7 @@ export type NativeChatComposerActionsProps = {
   stash: NativeChatPromptStash
   /** Context-window donut input; null hides the meter. */
   contextUsedTokens: number | null
+  contextMaxTokens?: number
 }
 
 export function NativeChatComposerActions({
@@ -47,7 +48,8 @@ export function NativeChatComposerActions({
   sessionOptionsSurface,
   sessionOptionsSnapshot,
   stash,
-  contextUsedTokens
+  contextUsedTokens,
+  contextMaxTokens
 }: NativeChatComposerActionsProps): React.JSX.Element {
   const dictationLabel = isDictating
     ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
@@ -128,7 +130,10 @@ export function NativeChatComposerActions({
           </TooltipContent>
         </Tooltip>
         {contextUsedTokens !== null ? (
-          <NativeChatContextWindowMeter usedTokens={contextUsedTokens} />
+          <NativeChatContextWindowMeter
+            usedTokens={contextUsedTokens}
+            maxTokens={contextMaxTokens}
+          />
         ) : null}
         <Button
           type="button"

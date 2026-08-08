@@ -24,6 +24,8 @@ export type NativeChatTransport = {
   streamingText: string | null
   /** True once the in-flight message completed (typewriter sprints to the end). */
   streamingSealed?: boolean
+  /** Current model's context window (tokens), from the CLI's result records. */
+  contextWindowTokens?: number
   /** Session-option command dispatch (e.g. "/model …") — restarts the stream
    *  with the new launch flags and resumes the provider session. */
   dispatchOption: NativeChatSessionOptionDispatchCommand

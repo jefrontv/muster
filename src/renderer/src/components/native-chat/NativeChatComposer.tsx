@@ -67,7 +67,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       permissionRequest,
       permissionRequestCount,
       onRespondPermission,
-      contextUsageEnabled = false
+      contextUsageEnabled = false,
+      contextMaxTokens
     },
     ref
   ): React.JSX.Element {
@@ -412,6 +413,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         approval={approval}
         stash={stash}
         contextUsedTokens={contextUsedTokens}
+        contextMaxTokens={contextMaxTokens}
       />
     )
   }

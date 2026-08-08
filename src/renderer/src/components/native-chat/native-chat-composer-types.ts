@@ -45,6 +45,8 @@ export type NativeChatComposerProps = {
   /** Enables the context-window donut; off for runtime-owned panes whose
    *  transcript is not on the local disk. */
   contextUsageEnabled?: boolean
+  /** Current model's context window for the meter; defaults to 200k. */
+  contextMaxTokens?: number
 }
 
 export type NativeChatComposerHandle = {

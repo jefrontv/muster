@@ -10,6 +10,28 @@ function asRecord(value: unknown): StreamRecord | null {
   return typeof value === 'object' && value !== null ? (value as StreamRecord) : null
 }
 
+/** The main model's context window from a result record's modelUsage map —
+ *  the entry with the most input tokens (subagent models can differ). */
+function resultContextWindow(record: StreamRecord): number | null {
+  const modelUsage = asRecord(record.modelUsage)
+  if (!modelUsage) {
+    return null
+  }
+  let best: { inputTokens: number; contextWindow: number } | null = null
+  for (const value of Object.values(modelUsage)) {
+    const usage = asRecord(value)
+    const contextWindow = usage?.contextWindow
+    if (typeof contextWindow !== 'number' || contextWindow <= 0) {
+      continue
+    }
+    const inputTokens = typeof usage.inputTokens === 'number' ? usage.inputTokens : 0
+    if (!best || inputTokens > best.inputTokens) {
+      best = { inputTokens, contextWindow }
+    }
+  }
+  return best?.contextWindow ?? null
+}
+
 /** Map one parsed stream-json record to a renderer event, or null to drop it. */
 export function mapChatThreadStreamRecord(
   threadId: string,
@@ -75,11 +97,13 @@ export function mapChatThreadStreamRecord(
           : isError && typeof record.subtype === 'string'
             ? record.subtype
             : undefined
+      const contextWindow = resultContextWindow(record)
       return {
         threadId,
         kind: 'turn-complete',
         isError,
-        ...(errorMessage ? { errorMessage } : {})
+        ...(errorMessage ? { errorMessage } : {}),
+        ...(contextWindow !== null ? { contextWindow } : {})
       }
     }
     default:

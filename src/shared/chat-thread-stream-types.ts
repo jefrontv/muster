@@ -6,7 +6,14 @@ export type ChatThreadStreamEvent =
   | { threadId: string; kind: 'init'; sessionId: string }
   | { threadId: string; kind: 'delta'; text: string }
   | { threadId: string; kind: 'message-final' }
-  | { threadId: string; kind: 'turn-complete'; isError: boolean; errorMessage?: string }
+  | {
+      threadId: string
+      kind: 'turn-complete'
+      isError: boolean
+      errorMessage?: string
+      /** The model's context window from the CLI's result record (modelUsage). */
+      contextWindow?: number
+    }
   | {
       threadId: string
       kind: 'permission-request'

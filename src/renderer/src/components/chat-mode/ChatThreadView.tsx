@@ -30,6 +30,7 @@ export function ChatThreadView({
   const updateChatThread = useAppStore((s) => s.updateChatThread)
   const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.text ?? null)
   const streamingSealed = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.sealed === true)
+  const contextWindowTokens = useAppStore((s) => s.chatThreadContextWindow[thread.id])
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
   const launchingRef = useRef(false)
@@ -146,6 +147,7 @@ export function ChatThreadView({
       streamingSealed,
       dispatchOption,
       interrupt,
+      ...(contextWindowTokens !== undefined ? { contextWindowTokens } : {}),
       ...(permissionRequests && permissionRequests.length > 0 ? { permissionRequests } : {}),
       respondPermission
     }),
@@ -155,6 +157,7 @@ export function ChatThreadView({
       streamingSealed,
       dispatchOption,
       interrupt,
+      contextWindowTokens,
       permissionRequests,
       respondPermission
     ]

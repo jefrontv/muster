@@ -78,6 +78,9 @@ export default function ChatModePage(): React.JSX.Element {
         case 'turn-complete': {
           store.sealChatThreadStreamingText(event.threadId)
           scheduleSealClear(event.threadId)
+          if (event.contextWindow !== undefined) {
+            store.setChatThreadContextWindow(event.threadId, event.contextWindow)
+          }
           const now = Date.now()
           // A completion the user is watching (thread active, window focused)
           // is read on arrival — it must not light the sidebar's unread "Done".
