@@ -113,50 +113,6 @@ export function NativeChatComposerActions({
           snapshot={sessionOptionsSnapshot}
           isWorking={isWorking}
         />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant={isDictating ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              aria-label={dictationLabel}
-              disabled={dictationDisabled}
-              onClick={isDictationHoldMode ? undefined : onDictationToggle}
-              onPointerDown={(event) => {
-                if (!isDictationHoldMode || dictationDisabled) {
-                  return
-                }
-                event.preventDefault()
-                onDictationHoldStart()
-              }}
-              onPointerUp={() => {
-                if (isDictationHoldMode && !dictationDisabled) {
-                  onDictationHoldEnd()
-                }
-              }}
-              onPointerCancel={() => {
-                if (isDictationHoldMode && !dictationDisabled) {
-                  onDictationHoldEnd()
-                }
-              }}
-              onPointerLeave={(event) => {
-                if (isDictationHoldMode && event.buttons === 1 && !dictationDisabled) {
-                  onDictationHoldEnd()
-                }
-              }}
-              className="pointer-coarse:size-11"
-            >
-              {isDictating ? (
-                <Square className="size-3.5 fill-current" />
-              ) : (
-                <Mic className="size-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
-            {dictationLabel}
-          </TooltipContent>
-        </Tooltip>
         {onSetFullAccess ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -224,6 +180,50 @@ export function NativeChatComposerActions({
             maxTokens={contextMaxTokens}
           />
         ) : null}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant={isDictating ? 'secondary' : 'ghost'}
+              size="icon-sm"
+              aria-label={dictationLabel}
+              disabled={dictationDisabled}
+              onClick={isDictationHoldMode ? undefined : onDictationToggle}
+              onPointerDown={(event) => {
+                if (!isDictationHoldMode || dictationDisabled) {
+                  return
+                }
+                event.preventDefault()
+                onDictationHoldStart()
+              }}
+              onPointerUp={() => {
+                if (isDictationHoldMode && !dictationDisabled) {
+                  onDictationHoldEnd()
+                }
+              }}
+              onPointerCancel={() => {
+                if (isDictationHoldMode && !dictationDisabled) {
+                  onDictationHoldEnd()
+                }
+              }}
+              onPointerLeave={(event) => {
+                if (isDictationHoldMode && event.buttons === 1 && !dictationDisabled) {
+                  onDictationHoldEnd()
+                }
+              }}
+              className="pointer-coarse:size-11"
+            >
+              {isDictating ? (
+                <Square className="size-3.5 fill-current" />
+              ) : (
+                <Mic className="size-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            {dictationLabel}
+          </TooltipContent>
+        </Tooltip>
         <Button
           type="button"
           aria-label={
@@ -235,7 +235,7 @@ export function NativeChatComposerActions({
           onClick={isWorking ? onStop : onSend}
           variant={isWorking ? 'secondary' : 'default'}
           size="icon"
-          className="ml-1.5 size-8 rounded-full pointer-coarse:size-10"
+          className="ml-0.5 size-8 rounded-full pointer-coarse:size-10"
         >
           {isWorking ? (
             <Square className="size-3.5 fill-current" />
