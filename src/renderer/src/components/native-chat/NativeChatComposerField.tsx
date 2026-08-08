@@ -19,6 +19,8 @@ import {
   type NativeChatComposerApproval
 } from './NativeChatApprovalPanel'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
+import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
+import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { NativeChatImageThumb } from './NativeChatImageThumb'
 import { nativeChatComposerPlaceholder } from './native-chat-composer-target'
 import type {
@@ -57,6 +59,8 @@ export type NativeChatComposerFieldProps = {
   onAcceptMention: () => void
   onRemoveImageAttachment: (id: string) => void
   onRemoveFileAttachment: (id: string) => void
+  taskAttachments?: readonly NativeChatTaskAttachment[]
+  onRemoveTaskAttachment?: (taskId: number) => void
   onAttach: () => void
   onDictationToggle: () => void
   onDictationHoldStart: () => void
@@ -73,7 +77,7 @@ export type NativeChatComposerFieldProps = {
   contextMaxTokens?: number
   fullAccess?: boolean
   onSetFullAccess?: (enabled: boolean) => void
-  onInsertTaskRef?: (taskId: number) => void
+  onAttachTask?: (task: NativeChatTaskAttachment) => void
   activeCollabProjectId?: number | null
 }
 
@@ -81,6 +85,8 @@ export type NativeChatComposerImageAttachment = {
   id: string
   path: string
 }
+
+const NO_TASK_ATTACHMENTS: readonly NativeChatTaskAttachment[] = []
 
 export function NativeChatComposerField({
   textareaRef,
@@ -112,6 +118,8 @@ export function NativeChatComposerField({
   onAcceptMention,
   onRemoveImageAttachment,
   onRemoveFileAttachment,
+  taskAttachments = NO_TASK_ATTACHMENTS,
+  onRemoveTaskAttachment,
   onAttach,
   onDictationToggle,
   onDictationHoldStart,
@@ -126,7 +134,7 @@ export function NativeChatComposerField({
   contextMaxTokens,
   fullAccess,
   onSetFullAccess,
-  onInsertTaskRef,
+  onAttachTask,
   activeCollabProjectId
 }: NativeChatComposerFieldProps): React.JSX.Element {
   return (
@@ -163,8 +171,34 @@ export function NativeChatComposerField({
             )}
           >
             {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
-            {imageAttachments.length > 0 || fileAttachments.length > 0 ? (
+            {imageAttachments.length > 0 ||
+            fileAttachments.length > 0 ||
+            taskAttachments.length > 0 ? (
               <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+                {taskAttachments.map((task) => (
+                  <div
+                    key={task.taskId}
+                    className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground"
+                    title={task.name}
+                  >
+                    <ActiveCollabIcon className="size-3.5 shrink-0" />
+                    <span className="max-w-56 truncate font-medium text-foreground/90">
+                      {task.name}
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px]">#{task.taskId}</span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveTaskAttachment?.(task.taskId)}
+                      aria-label={translate(
+                        'components.native-chat.composer.removeAttachment',
+                        'Remove attachment'
+                      )}
+                      className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                ))}
                 {fileAttachments.map((attachment) => (
                   <div
                     key={attachment.id}
@@ -272,7 +306,7 @@ export function NativeChatComposerField({
                   contextMaxTokens={contextMaxTokens}
                   fullAccess={fullAccess}
                   onSetFullAccess={onSetFullAccess}
-                  onInsertTaskRef={onInsertTaskRef}
+                  onAttachTask={onAttachTask}
                   activeCollabProjectId={activeCollabProjectId}
                 />
               )}

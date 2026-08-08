@@ -10,13 +10,16 @@ export function resolveChatThreadStatus(args: {
   agentState: AgentStatusState | undefined
   hasPendingApproval: boolean
   hasUnseenCompletion: boolean
+  /** Full access auto-allows every permission request, so a hook-reported
+   *  blocked/waiting is a stale permission prompt, not a human stall. */
+  hasFullAccess?: boolean
 }): ChatThreadStatus {
   if (args.hasPendingApproval) {
     return 'approval'
   }
   // blocked/waiting = the agent stalled on a human; reads amber like an approval.
   if (args.agentState === 'blocked' || args.agentState === 'waiting') {
-    return 'approval'
+    return args.hasFullAccess ? 'working' : 'approval'
   }
   if (args.agentState === 'working') {
     return 'working'

@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
+import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
 import { useAppStore } from '@/store'
 
 type ProjectGroup = { projectId: number; projectName: string; tasks: ActiveCollabTask[] }
@@ -50,11 +51,11 @@ export function groupTasksByProject(
 }
 
 export function NativeChatTaskPickerMenu({
-  onInsertTaskRef,
+  onAttachTask,
   preferredProjectId = null
 }: {
-  /** Insert `AC#<id> ` at the caret; the composer owns draft/caret state. */
-  onInsertTaskRef: (taskId: number) => void
+  /** Attach the picked task as a composer chip; it rides the send as an AC# reference. */
+  onAttachTask: (task: NativeChatTaskAttachment) => void
   /** The workspace's bound AC project — its tasks group first. */
   preferredProjectId?: number | null
 }): React.JSX.Element | null {
@@ -143,7 +144,7 @@ export function NativeChatTaskPickerMenu({
                     key={task.id}
                     value={`${task.name} ${task.id}`}
                     onSelect={() => {
-                      onInsertTaskRef(task.id)
+                      onAttachTask({ taskId: task.id, projectId: task.projectId, name: task.name })
                       setOpen(false)
                     }}
                   >

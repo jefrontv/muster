@@ -19,6 +19,8 @@ import {
 } from './native-chat-composer-target'
 import type { NativeChatPtySessionOptionsSurface } from './native-chat-pty-session-options'
 import type { AgentType } from '../../../../shared/agent-status-types'
+import { formatActiveCollabTaskReference } from './native-chat-activecollab-references'
+import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
 
 // Why: a plain ESC byte is what the agent TUIs read as the interrupt key over a
 // PTY (matching how xterm forwards Escape). The richer interrupt-intent
@@ -32,6 +34,9 @@ export type UseNativeChatComposerSendArgs = {
   imageAttachmentPaths: string[]
   /** Non-image attachments, appended to the outgoing text as @-references. */
   fileAttachmentPaths: string[]
+  /** Attached ActiveCollab tasks, appended as AC# reference lines with MCP context. */
+  taskAttachments: NativeChatTaskAttachment[]
+  clearTaskAttachments: () => void
   disabled: boolean
   hasTransport: boolean
   isWorking: boolean
@@ -63,6 +68,8 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     draft,
     imageAttachmentPaths,
     fileAttachmentPaths,
+    taskAttachments,
+    clearTaskAttachments,
     disabled,
     hasTransport,
     isWorking,
@@ -86,12 +93,12 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
   } = args
 
   const send = useCallback(() => {
-    // File chips become @-references appended after the typed text, so the
-    // agent can read them while the composer shows a clean chip instead.
+    // File and task chips become references appended after the typed text, so
+    // the agent can read them while the composer shows clean chips instead.
     const fileReferences = fileAttachmentPaths.map(formatNativeChatFileReference).join(' ')
-    const text = fileReferences
-      ? `${draft.trimEnd()}${draft.trim() ? '\n' : ''}${fileReferences}`
-      : draft
+    const taskReferences = taskAttachments.map(formatActiveCollabTaskReference).join('\n')
+    const references = [fileReferences, taskReferences].filter(Boolean).join('\n')
+    const text = references ? `${draft.trimEnd()}${draft.trim() ? '\n' : ''}${references}` : draft
     const imagePaths = imageAttachmentPaths
     if ((text.trim() === '' && imagePaths.length === 0) || disabled) {
       return
@@ -111,6 +118,7 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
       }
       sendViaTransport(text, imagePaths.length > 0 ? imagePaths : undefined)
       clearImageAttachments()
+      clearTaskAttachments()
       return
     }
     const target = resolveTarget()
@@ -163,6 +171,7 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     setCaret(0)
     clearSkillOrigin()
     clearImageAttachments()
+    clearTaskAttachments()
     setNotice(null)
   }, [
     agent,
@@ -172,6 +181,8 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     draft,
     imageAttachmentPaths,
     fileAttachmentPaths,
+    taskAttachments,
+    clearTaskAttachments,
     disabled,
     hasTransport,
     isDispatchingSessionOption,

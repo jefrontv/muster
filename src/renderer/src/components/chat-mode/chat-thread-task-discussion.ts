@@ -3,6 +3,7 @@
 // seeds the opening prompt with the task brief, and jumps to Chat view.
 
 import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
+import { formatActiveCollabTaskReference } from '@/components/native-chat/native-chat-activecollab-references'
 import { useAppStore } from '@/store'
 
 const BODY_EXCERPT_MAX = 600
@@ -27,7 +28,14 @@ export function buildTaskDiscussionPrompt(task: ActiveCollabTask): string {
   return [
     `Let's work on ActiveCollab task AC#${task.id} — "${task.name}" (project: ${task.projectName}).`,
     excerpt ? `Task brief:\n${excerpt}` : null,
-    'Read the brief, then tell me how you would approach it before changing anything.'
+    'Read the brief, then tell me how you would approach it before changing anything.',
+    // Bracketed reference line: tells the agent how to resolve the id through
+    // the ActiveCollab MCP; the chat surface strips it (the chip carries it).
+    formatActiveCollabTaskReference({
+      taskId: task.id,
+      projectId: task.projectId,
+      name: task.name
+    })
   ]
     .filter((part): part is string => part !== null)
     .join('\n\n')

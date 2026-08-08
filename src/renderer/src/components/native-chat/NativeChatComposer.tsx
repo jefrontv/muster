@@ -27,6 +27,7 @@ import { useNativeChatTransportSend } from './use-native-chat-transport-send'
 import { useNativeChatTypedInsertion } from './use-native-chat-typed-insertion'
 import { useNativeChatComposerSend } from './use-native-chat-composer-send'
 import { useNativeChatPromptStash } from './use-native-chat-prompt-stash'
+import { useNativeChatTaskAttachments } from './use-native-chat-task-attachments'
 import { useNativeChatContextUsage } from './use-native-chat-context-usage'
 import type {
   NativeChatComposerHandle,
@@ -174,10 +175,15 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       textareaRef,
       setNotice
     })
+    const { taskAttachments, attachTask, removeTaskAttachment, clearTaskAttachments } =
+      useNativeChatTaskAttachments(paneKey)
     const sendButtonDisabled = isWorking
       ? !hasPty || !onStop
       : disabled ||
-        (draft.trim() === '' && imageAttachments.length === 0 && fileAttachments.length === 0)
+        (draft.trim() === '' &&
+          imageAttachments.length === 0 &&
+          fileAttachments.length === 0 &&
+          taskAttachments.length === 0)
 
     const { insertTypedText, focus } = useNativeChatTypedInsertion({
       textareaRef,
@@ -266,6 +272,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       draft,
       imageAttachmentPaths,
       fileAttachmentPaths,
+      taskAttachments,
+      clearTaskAttachments,
       disabled,
       hasTransport,
       isWorking,
@@ -289,18 +297,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     })
 
     const stash = useNativeChatPromptStash({ draft, setDraft, setCaret, textareaRef })
-    const insertTaskRef = useCallback(
-      (taskId: number) => {
-        const token = `AC#${taskId} `
-        setDraft((previous) => {
-          const at = Math.min(caret, previous.length)
-          return `${previous.slice(0, at)}${token}${previous.slice(at)}`
-        })
-        setCaret(Math.min(caret, draft.length) + token.length)
-        textareaRef.current?.focus()
-      },
-      [caret, draft.length, setDraft, setCaret]
-    )
     const contextUsedTokens = useNativeChatContextUsage({
       paneKey,
       agent,
@@ -425,6 +421,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         }}
         onRemoveImageAttachment={(id) => removeImageAttachment(id)}
         onRemoveFileAttachment={(id) => removeFileAttachment(id)}
+        taskAttachments={taskAttachments}
+        onRemoveTaskAttachment={removeTaskAttachment}
         onAttach={pickAttachment}
         onDictationToggle={dictationConfigured ? toggleDictation : openVoiceSettings}
         onDictationHoldStart={dictationConfigured ? startHoldDictation : openVoiceSettings}
@@ -439,7 +437,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         contextMaxTokens={contextMaxTokens}
         fullAccess={fullAccess}
         onSetFullAccess={onSetFullAccess}
-        onInsertTaskRef={insertTaskRef}
+        onAttachTask={attachTask}
         activeCollabProjectId={activeCollabProjectId ?? null}
       />
     )

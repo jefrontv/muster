@@ -30,6 +30,30 @@ describe('resolveChatThreadStatus', () => {
     }
   })
 
+  it('full access reads blocked/waiting as working — permissions auto-allow', () => {
+    for (const agentState of ['blocked', 'waiting'] as const) {
+      expect(
+        resolveChatThreadStatus({
+          agentState,
+          hasPendingApproval: false,
+          hasUnseenCompletion: false,
+          hasFullAccess: true
+        })
+      ).toBe('working')
+    }
+  })
+
+  it('a queued approval still wins under full access', () => {
+    expect(
+      resolveChatThreadStatus({
+        agentState: 'blocked',
+        hasPendingApproval: true,
+        hasUnseenCompletion: false,
+        hasFullAccess: true
+      })
+    ).toBe('approval')
+  })
+
   it('working outranks unread completion', () => {
     expect(
       resolveChatThreadStatus({

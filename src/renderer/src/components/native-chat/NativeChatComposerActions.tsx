@@ -24,6 +24,7 @@ import type {
 import { NativeChatSessionOptionPickers } from './NativeChatSessionOptionPickers'
 import { NativeChatStashMenu } from './NativeChatStashMenu'
 import { NativeChatTaskPickerMenu } from './NativeChatTaskPickerMenu'
+import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
 import { NativeChatContextWindowMeter } from './NativeChatContextWindowMeter'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 
@@ -51,7 +52,7 @@ export type NativeChatComposerActionsProps = {
   /** Full-access session (auto-approve all tools); click turns it off. */
   fullAccess?: boolean
   onSetFullAccess?: (enabled: boolean) => void
-  onInsertTaskRef?: (taskId: number) => void
+  onAttachTask?: (task: NativeChatTaskAttachment) => void
   activeCollabProjectId?: number | null
 }
 
@@ -76,7 +77,7 @@ export function NativeChatComposerActions({
   contextMaxTokens,
   fullAccess,
   onSetFullAccess,
-  onInsertTaskRef,
+  onAttachTask,
   activeCollabProjectId
 }: NativeChatComposerActionsProps): React.JSX.Element {
   const dictationLabel = !dictationConfigured
@@ -109,9 +110,9 @@ export function NativeChatComposerActions({
           </TooltipContent>
         </Tooltip>
         <NativeChatStashMenu stash={stash} />
-        {onInsertTaskRef ? (
+        {onAttachTask ? (
           <NativeChatTaskPickerMenu
-            onInsertTaskRef={onInsertTaskRef}
+            onAttachTask={onAttachTask}
             preferredProjectId={activeCollabProjectId}
           />
         ) : null}

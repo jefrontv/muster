@@ -121,10 +121,15 @@ export function ChatThreadRow({
   const hasPendingApproval = useAppStore(
     (s) => (s.chatThreadPermissionRequests[thread.id]?.length ?? 0) > 0
   )
+  const hasFullAccess = useAppStore(
+    (s) =>
+      s.settings?.nativeChatPermissionMode === 'full' || s.chatThreadFullAccess[thread.id] === true
+  )
   const status = resolveChatThreadStatus({
     agentState: agentStatus?.state,
     hasPendingApproval,
-    hasUnseenCompletion: hasUnseenCompletion(thread)
+    hasUnseenCompletion: hasUnseenCompletion(thread),
+    hasFullAccess
   })
   const [renaming, setRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(thread.title)

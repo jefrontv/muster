@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { parseActiveCollabTaskReferences } from './native-chat-activecollab-references'
+import {
+  formatActiveCollabTaskReference,
+  parseActiveCollabTaskReferences
+} from './native-chat-activecollab-references'
 
 describe('parseActiveCollabTaskReferences', () => {
   it('lifts tokens out of the displayed text', () => {
@@ -29,5 +32,24 @@ describe('parseActiveCollabTaskReferences', () => {
     const parsed = parseActiveCollabTaskReferences('AC#5\nsecond line')
     expect(parsed.taskIds).toEqual([5])
     expect(parsed.text).toBe('second line')
+  })
+
+  it('strips a formatted attachment reference line, keeping the id', () => {
+    const line = formatActiveCollabTaskReference({
+      taskId: 511083,
+      projectId: 5463,
+      name: 'PCYC mobile nav not working'
+    })
+    const parsed = parseActiveCollabTaskReferences(`fix this today\n${line}`)
+    expect(parsed.taskIds).toEqual([511083])
+    expect(parsed.text).toBe('fix this today')
+  })
+
+  it('formatted reference tells the agent the MCP route', () => {
+    const line = formatActiveCollabTaskReference({ taskId: 7, projectId: 9, name: 'Task "x"' })
+    expect(line).toContain('AC#7')
+    expect(line).toContain('activecollab MCP')
+    expect(line).toContain('project_id 9')
+    expect(line).toContain('task_id 7')
   })
 })
