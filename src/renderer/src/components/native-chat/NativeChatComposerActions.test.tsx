@@ -44,7 +44,9 @@ const stubStash: NativeChatPromptStash = {
   refresh: () => undefined,
   restore: () => undefined,
   remove: () => undefined,
-  handleKeyDown: () => false
+  handleKeyDown: () => false,
+  hasDraft: false,
+  stashCurrent: () => undefined
 }
 
 afterEach(() => cleanup())

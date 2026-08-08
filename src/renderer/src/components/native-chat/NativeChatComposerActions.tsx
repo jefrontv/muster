@@ -14,6 +14,8 @@ import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 export type NativeChatComposerActionsProps = {
   attachDisabled: boolean
   dictationDisabled: boolean
+  /** False = voice not set up; the mic routes to settings and says so. */
+  dictationConfigured?: boolean
   sendDisabled: boolean
   isWorking: boolean
   isDictating: boolean
@@ -38,6 +40,7 @@ export type NativeChatComposerActionsProps = {
 export function NativeChatComposerActions({
   attachDisabled,
   dictationDisabled,
+  dictationConfigured = true,
   sendDisabled,
   isWorking,
   isDictating,
@@ -56,9 +59,14 @@ export function NativeChatComposerActions({
   fullAccess,
   onSetFullAccess
 }: NativeChatComposerActionsProps): React.JSX.Element {
-  const dictationLabel = isDictating
-    ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
-    : translate('components.native-chat.composer.startDictation', 'Start dictation')
+  const dictationLabel = !dictationConfigured
+    ? translate(
+        'auto.components.native-chat.composer.setUpDictation',
+        'Set up voice dictation in Settings'
+      )
+    : isDictating
+      ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
+      : translate('components.native-chat.composer.startDictation', 'Start dictation')
   return (
     <div className="flex w-full items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-0.5">

@@ -95,7 +95,14 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     const dictationState = useAppStore((store) => store.dictationState)
     const voiceSettings = useAppStore((store) => store.settings?.voice)
     const isDictationHoldMode = voiceSettings?.dictationMode === 'hold'
-    const dictationDisabled = voiceSettings?.enabled !== true || !voiceSettings.sttModel
+    // Unconfigured ≠ disabled: the mic stays clickable and routes to the voice
+    // settings section, instead of silently doing nothing.
+    const dictationConfigured = voiceSettings?.enabled === true && !!voiceSettings.sttModel
+    const openVoiceSettings = useCallback(() => {
+      const store = useAppStore.getState()
+      store.openSettingsPage()
+      store.setSettingsSearchQuery('voice')
+    }, [])
     const isDictating =
       dictationPressed ||
       dictationState === 'starting' ||
@@ -365,7 +372,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         sendButtonDisabled={sendButtonDisabled}
         isWorking={isWorking}
         attachDisabled={disabled}
-        dictationDisabled={dictationDisabled}
+        dictationDisabled={false}
+        dictationConfigured={dictationConfigured}
         isDictating={isDictating}
         isDictationHoldMode={isDictationHoldMode}
         onDraftChange={(value, element) => {
@@ -405,9 +413,9 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         onRemoveImageAttachment={(id) => removeImageAttachment(id)}
         onRemoveFileAttachment={(id) => removeFileAttachment(id)}
         onAttach={pickAttachment}
-        onDictationToggle={toggleDictation}
-        onDictationHoldStart={startHoldDictation}
-        onDictationHoldEnd={stopHoldDictation}
+        onDictationToggle={dictationConfigured ? toggleDictation : openVoiceSettings}
+        onDictationHoldStart={dictationConfigured ? startHoldDictation : openVoiceSettings}
+        onDictationHoldEnd={dictationConfigured ? stopHoldDictation : () => undefined}
         onSend={send}
         onStop={interrupt}
         sessionOptionsSurface={sessionOptionsSurface}

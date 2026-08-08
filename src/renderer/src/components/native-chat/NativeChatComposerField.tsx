@@ -41,6 +41,8 @@ export type NativeChatComposerFieldProps = {
   isWorking: boolean
   attachDisabled: boolean
   dictationDisabled: boolean
+  /** False = voice not set up; the mic routes to settings and says so. */
+  dictationConfigured?: boolean
   isDictating: boolean
   isDictationHoldMode: boolean
   onDraftChange: (value: string, element: HTMLTextAreaElement) => void
@@ -93,6 +95,7 @@ export function NativeChatComposerField({
   isWorking,
   attachDisabled,
   dictationDisabled,
+  dictationConfigured,
   isDictating,
   isDictationHoldMode,
   onDraftChange,
@@ -247,6 +250,7 @@ export function NativeChatComposerField({
                 <NativeChatComposerActions
                   attachDisabled={attachDisabled}
                   dictationDisabled={dictationDisabled}
+                  dictationConfigured={dictationConfigured}
                   sendDisabled={sendButtonDisabled}
                   isWorking={isWorking}
                   isDictating={isDictating}

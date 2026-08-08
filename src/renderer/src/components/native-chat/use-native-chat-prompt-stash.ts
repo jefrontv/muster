@@ -23,6 +23,10 @@ export type NativeChatPromptStash = {
   remove: (id: string) => void
   /** Returns true when the event was the stash chord and was consumed. */
   handleKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => boolean
+  /** True when the composer holds a stashable draft (menu action enablement). */
+  hasDraft: boolean
+  /** Stash the current draft (the menu's explicit action; same as the chord). */
+  stashCurrent: () => void
 }
 
 export function useNativeChatPromptStash({
@@ -51,6 +55,20 @@ export function useNativeChatPromptStash({
 
   const refresh = useCallback(() => setEntries(readPromptStash()), [])
 
+  const stashCurrent = useCallback((): void => {
+    if (draft.trim() === '') {
+      return
+    }
+    setEntries(stashPrompt(draft))
+    setDraft('')
+    setCaret(0)
+    setPulse(true)
+    if (pulseTimerRef.current) {
+      clearTimeout(pulseTimerRef.current)
+    }
+    pulseTimerRef.current = setTimeout(() => setPulse(false), PULSE_MS)
+  }, [draft, setDraft, setCaret])
+
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>): boolean => {
       // Never a bare metaKey check: ⌘S on Mac, Ctrl+S elsewhere.
@@ -59,20 +77,10 @@ export function useNativeChatPromptStash({
         return false
       }
       event.preventDefault()
-      if (draft.trim() === '') {
-        return true
-      }
-      setEntries(stashPrompt(draft))
-      setDraft('')
-      setCaret(0)
-      setPulse(true)
-      if (pulseTimerRef.current) {
-        clearTimeout(pulseTimerRef.current)
-      }
-      pulseTimerRef.current = setTimeout(() => setPulse(false), PULSE_MS)
+      stashCurrent()
       return true
     },
-    [draft, setDraft, setCaret]
+    [stashCurrent]
   )
 
   const restore = useCallback(
@@ -89,5 +97,14 @@ export function useNativeChatPromptStash({
 
   const remove = useCallback((id: string) => setEntries(deletePromptStashEntry(id)), [])
 
-  return { entries, pulse, refresh, restore, remove, handleKeyDown }
+  return {
+    entries,
+    pulse,
+    refresh,
+    restore,
+    remove,
+    handleKeyDown,
+    hasDraft: draft.trim() !== '',
+    stashCurrent
+  }
 }

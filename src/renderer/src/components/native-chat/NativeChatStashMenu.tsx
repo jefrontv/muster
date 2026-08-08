@@ -1,7 +1,7 @@
 // Composer-footer prompt-stash control: a stack icon with a count badge that
 // pulses on stash, opening a menu of stashed prompts to restore or delete.
 
-import { Layers, X } from 'lucide-react'
+import { ArchiveRestore, Layers, X } from 'lucide-react'
 import type React from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -23,6 +24,7 @@ export function NativeChatStashMenu({
   stash: NativeChatPromptStash
 }): React.JSX.Element {
   const label = translate('auto.components.native-chat.stash.label', 'Stashed prompts')
+  const stashChord = navigator.userAgent.includes('Mac') ? '⌘S' : 'Ctrl+S'
   const now = Date.now()
   return (
     <DropdownMenu
@@ -58,18 +60,26 @@ export function NativeChatStashMenu({
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={4}>
-          {label}
+          {label} · {stashChord}
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="start" side="top" className="w-80">
         <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           {label}
         </DropdownMenuLabel>
+        <DropdownMenuItem disabled={!stash.hasDraft} onSelect={() => stash.stashCurrent()}>
+          <ArchiveRestore className="size-4" />
+          <span className="flex-1">
+            {translate('auto.components.native-chat.stash.stashCurrent', 'Stash current prompt')}
+          </span>
+          <span className="text-xs text-muted-foreground">{stashChord}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {stash.entries.length === 0 ? (
           <p className="px-2 pb-2 pt-1 text-xs text-muted-foreground">
             {translate(
-              'auto.components.native-chat.stash.empty',
-              'Nothing stashed yet. Press the save shortcut with a prompt in the composer to stash it.'
+              'auto.components.native-chat.stash.emptyHint',
+              'Nothing stashed yet. Stash a typed prompt to park it for later, then restore it from here.'
             )}
           </p>
         ) : (
