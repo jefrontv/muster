@@ -149,20 +149,24 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       setCaret(el.selectionStart ?? el.value.length)
     }, [])
 
-    const { imageAttachments, attachResolvedPaths, clearImageAttachments, removeImageAttachment } =
-      useNativeChatComposerAttachments({
-        attachmentScopeKey: paneKey,
-        caret,
-        hasTransport,
-        resolveTarget,
-        textareaRef,
-        setCaret,
-        setDraft,
-        setNotice
-      })
+    const {
+      imageAttachments,
+      fileAttachments,
+      attachResolvedPaths,
+      clearImageAttachments,
+      removeImageAttachment,
+      removeFileAttachment
+    } = useNativeChatComposerAttachments({
+      attachmentScopeKey: paneKey,
+      hasTransport,
+      resolveTarget,
+      textareaRef,
+      setNotice
+    })
     const sendButtonDisabled = isWorking
       ? !hasPty || !onStop
-      : disabled || (draft.trim() === '' && imageAttachments.length === 0)
+      : disabled ||
+        (draft.trim() === '' && imageAttachments.length === 0 && fileAttachments.length === 0)
 
     const { insertTypedText, focus } = useNativeChatTypedInsertion({
       textareaRef,
@@ -242,10 +246,15 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       () => imageAttachments.map((attachment) => attachment.path),
       [imageAttachments]
     )
+    const fileAttachmentPaths = useMemo(
+      () => fileAttachments.map((attachment) => attachment.path),
+      [fileAttachments]
+    )
     const { send, interrupt } = useNativeChatComposerSend({
       agent,
       draft,
       imageAttachmentPaths,
+      fileAttachmentPaths,
       disabled,
       hasTransport,
       isWorking,
@@ -349,6 +358,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         activeSuggestion={activeSuggestion}
         notice={notice}
         imageAttachments={imageAttachments}
+        fileAttachments={fileAttachments}
         sendButtonDisabled={sendButtonDisabled}
         isWorking={isWorking}
         attachDisabled={disabled}
@@ -390,6 +400,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
           requestAnimationFrame(() => textarea?.setSelectionRange(result.caret, result.caret))
         }}
         onRemoveImageAttachment={(id) => removeImageAttachment(id)}
+        onRemoveFileAttachment={(id) => removeFileAttachment(id)}
         onAttach={pickAttachment}
         onDictationToggle={toggleDictation}
         onDictationHoldStart={startHoldDictation}

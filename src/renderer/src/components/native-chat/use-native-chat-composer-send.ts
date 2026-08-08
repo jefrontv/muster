@@ -13,6 +13,7 @@ import { emitNativeChatMessageSent } from '@/lib/native-chat-telemetry'
 import { pushHistory, type HistoryState } from './native-chat-composer-state'
 import type { NativeChatSendClassification } from './native-chat-picker-items'
 import {
+  formatNativeChatFileReference,
   nativeChatComposerTargetIsRemote,
   type NativeChatResolvedTarget
 } from './native-chat-composer-target'
@@ -29,6 +30,8 @@ export type UseNativeChatComposerSendArgs = {
   agent: AgentType
   draft: string
   imageAttachmentPaths: string[]
+  /** Non-image attachments, appended to the outgoing text as @-references. */
+  fileAttachmentPaths: string[]
   disabled: boolean
   hasTransport: boolean
   isWorking: boolean
@@ -59,6 +62,7 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     agent,
     draft,
     imageAttachmentPaths,
+    fileAttachmentPaths,
     disabled,
     hasTransport,
     isWorking,
@@ -82,7 +86,12 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
   } = args
 
   const send = useCallback(() => {
-    const text = draft
+    // File chips become @-references appended after the typed text, so the
+    // agent can read them while the composer shows a clean chip instead.
+    const fileReferences = fileAttachmentPaths.map(formatNativeChatFileReference).join(' ')
+    const text = fileReferences
+      ? `${draft.trimEnd()}${draft.trim() ? '\n' : ''}${fileReferences}`
+      : draft
     const imagePaths = imageAttachmentPaths
     if ((text.trim() === '' && imagePaths.length === 0) || disabled) {
       return
@@ -162,6 +171,7 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     clearImageAttachments,
     draft,
     imageAttachmentPaths,
+    fileAttachmentPaths,
     disabled,
     hasTransport,
     isDispatchingSessionOption,

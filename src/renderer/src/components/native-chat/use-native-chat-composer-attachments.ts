@@ -2,7 +2,6 @@ import { useCallback, useRef, useState, type RefObject } from 'react'
 import { translate } from '@/i18n/i18n'
 import { isNativeChatImageAttachmentPath } from './native-chat-image-paste'
 import {
-  formatNativeChatFileReference,
   nativeChatComposerTargetIsRemote,
   type NativeChatResolvedTarget
 } from './native-chat-composer-target'
@@ -11,34 +10,33 @@ import { setBoundedScopeCacheEntry } from './native-chat-composer-scope-cache'
 
 export type UseNativeChatComposerAttachmentsArgs = {
   attachmentScopeKey: string
-  caret: number
   /** Stream-transport panes have no PTY target; attachments ride the stream. */
   hasTransport?: boolean
   resolveTarget: () => NativeChatResolvedTarget | null
   textareaRef: RefObject<HTMLTextAreaElement | null>
-  setCaret: (caret: number) => void
-  setDraft: (updater: (previous: string) => string) => void
   setNotice: (notice: string | null) => void
 }
 
 export function useNativeChatComposerAttachments({
   attachmentScopeKey,
-  caret,
   hasTransport = false,
   resolveTarget,
   textareaRef,
-  setCaret,
-  setDraft,
   setNotice
 }: UseNativeChatComposerAttachmentsArgs): {
   imageAttachments: NativeChatComposerImageAttachment[]
+  fileAttachments: NativeChatComposerImageAttachment[]
   appendImageAttachments: (paths: string[]) => void
   attachResolvedPaths: (paths: string[]) => void
   clearImageAttachments: () => void
   removeImageAttachment: (id: string) => void
+  removeFileAttachment: (id: string) => void
 } {
   const [imageAttachments, setImageAttachments] = useState<NativeChatComposerImageAttachment[]>(
     () => readNativeChatAttachmentCache(attachmentScopeKey)
+  )
+  const [fileAttachments, setFileAttachments] = useState<NativeChatComposerImageAttachment[]>(() =>
+    readNativeChatFileAttachmentCache(attachmentScopeKey)
   )
   const imageAttachmentCounter = useRef(0)
 
@@ -50,6 +48,7 @@ export function useNativeChatComposerAttachments({
   if (lastScopeKey.current !== attachmentScopeKey) {
     lastScopeKey.current = attachmentScopeKey
     setImageAttachments(readNativeChatAttachmentCache(attachmentScopeKey))
+    setFileAttachments(readNativeChatFileAttachmentCache(attachmentScopeKey))
   }
 
   const updateImageAttachments = useCallback(
@@ -83,25 +82,39 @@ export function useNativeChatComposerAttachments({
     [updateImageAttachments]
   )
 
-  const insertFileReferences = useCallback(
-    (paths: string[]) => {
-      const references = paths.map(formatNativeChatFileReference).join(' ')
-      if (references.length === 0) {
-        return
-      }
-      const insertion = `${references} `
-      const caretAtInsert = textareaRef.current?.selectionStart ?? caret
-      setDraft((prev) => {
-        const before = prev.slice(0, caretAtInsert)
-        const after = prev.slice(caretAtInsert)
-        const next = before + insertion + after
-        setCaret(before.length + insertion.length)
+  const updateFileAttachments = useCallback(
+    (
+      updater: (
+        previous: NativeChatComposerImageAttachment[]
+      ) => NativeChatComposerImageAttachment[]
+    ) => {
+      setFileAttachments((prev) => {
+        const next = updater(prev)
+        writeNativeChatFileAttachmentCache(attachmentScopeKey, next)
         return next
       })
+    },
+    [attachmentScopeKey]
+  )
+
+  const appendFileAttachments = useCallback(
+    (paths: string[]) => {
+      if (paths.length === 0) {
+        return
+      }
+      updateFileAttachments((prev) => [
+        ...prev,
+        ...paths
+          .filter((path) => !prev.some((attachment) => attachment.path === path))
+          .map((path) => {
+            imageAttachmentCounter.current += 1
+            return { id: `${Date.now()}-${imageAttachmentCounter.current}`, path }
+          })
+      ])
       setNotice(null)
       requestAnimationFrame(() => textareaRef.current?.focus())
     },
-    [caret, setCaret, setDraft, setNotice, textareaRef]
+    [setNotice, textareaRef, updateFileAttachments]
   )
 
   // Attach paths the TARGET AGENT can read: local paths for local worktrees,
@@ -125,20 +138,21 @@ export function useNativeChatComposerAttachments({
       }
       const imagePaths = paths.filter(isNativeChatImageAttachmentPath)
       const filePaths = paths.filter((path) => !isNativeChatImageAttachmentPath(path))
-      // Images are NOT sent to the TUI here — they ride along on submit (see
-      // NativeChatComposer.send) so the GUI chips and the TUI input never
-      // diverge and removing a chip needs no TUI un-paste.
+      // Neither kind touches the draft here — both render as chips and ride
+      // along on submit (files as @-references appended to the outgoing text),
+      // so the GUI chips and the input never diverge and removing a chip needs
+      // no text surgery.
       appendImageAttachments(imagePaths)
-      insertFileReferences(filePaths)
+      appendFileAttachments(filePaths)
       if (imagePaths.length > 0) {
         setNotice(null)
         requestAnimationFrame(() => textareaRef.current?.focus())
       }
     },
     [
+      appendFileAttachments,
       appendImageAttachments,
       hasTransport,
-      insertFileReferences,
       resolveTarget,
       setNotice,
       textareaRef
@@ -147,12 +161,36 @@ export function useNativeChatComposerAttachments({
 
   return {
     imageAttachments,
+    fileAttachments,
     appendImageAttachments,
     attachResolvedPaths,
-    clearImageAttachments: () => updateImageAttachments(() => []),
+    // Send-time clear drops both kinds — the message carried them.
+    clearImageAttachments: () => {
+      updateImageAttachments(() => [])
+      updateFileAttachments(() => [])
+    },
     removeImageAttachment: (id) =>
-      updateImageAttachments((prev) => prev.filter((attachment) => attachment.id !== id))
+      updateImageAttachments((prev) => prev.filter((attachment) => attachment.id !== id)),
+    removeFileAttachment: (id) =>
+      updateFileAttachments((prev) => prev.filter((attachment) => attachment.id !== id))
   }
+}
+
+const fileAttachmentCache = new Map<string, NativeChatComposerImageAttachment[]>()
+
+function readNativeChatFileAttachmentCache(scopeKey: string): NativeChatComposerImageAttachment[] {
+  return [...(fileAttachmentCache.get(scopeKey) ?? [])]
+}
+
+function writeNativeChatFileAttachmentCache(
+  scopeKey: string,
+  attachments: readonly NativeChatComposerImageAttachment[]
+): void {
+  if (attachments.length === 0) {
+    fileAttachmentCache.delete(scopeKey)
+    return
+  }
+  setBoundedScopeCacheEntry(fileAttachmentCache, scopeKey, [...attachments])
 }
 
 const attachmentCache = new Map<string, NativeChatComposerImageAttachment[]>()

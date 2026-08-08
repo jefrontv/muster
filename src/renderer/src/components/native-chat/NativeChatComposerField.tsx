@@ -4,7 +4,7 @@ import type {
   KeyboardEventHandler,
   RefObject
 } from 'react'
-import { ImageOff, X } from 'lucide-react'
+import { FileText, ImageOff, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { NATIVE_FILE_DROP_TARGET } from '../../../../shared/native-file-drop'
@@ -36,6 +36,7 @@ export type NativeChatComposerFieldProps = {
   activeSuggestion: number
   notice: string | null
   imageAttachments: readonly NativeChatComposerImageAttachment[]
+  fileAttachments: readonly NativeChatComposerImageAttachment[]
   sendButtonDisabled: boolean
   isWorking: boolean
   attachDisabled: boolean
@@ -53,6 +54,7 @@ export type NativeChatComposerFieldProps = {
   onRetrySkills: () => void
   onAcceptMention: () => void
   onRemoveImageAttachment: (id: string) => void
+  onRemoveFileAttachment: (id: string) => void
   onAttach: () => void
   onDictationToggle: () => void
   onDictationHoldStart: () => void
@@ -83,6 +85,7 @@ export function NativeChatComposerField({
   activeSuggestion,
   notice,
   imageAttachments,
+  fileAttachments,
   sendButtonDisabled,
   isWorking,
   attachDisabled,
@@ -100,6 +103,7 @@ export function NativeChatComposerField({
   onRetrySkills,
   onAcceptMention,
   onRemoveImageAttachment,
+  onRemoveFileAttachment,
   onAttach,
   onDictationToggle,
   onDictationHoldStart,
@@ -146,8 +150,29 @@ export function NativeChatComposerField({
             )}
           >
             {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
-            {imageAttachments.length > 0 ? (
-              <div className="mb-2 flex flex-wrap gap-2 px-1">
+            {imageAttachments.length > 0 || fileAttachments.length > 0 ? (
+              <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+                {fileAttachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground"
+                    title={attachment.path}
+                  >
+                    <FileText className="size-3.5 shrink-0" />
+                    <span className="max-w-56 truncate">{basename(attachment.path)}</span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveFileAttachment(attachment.id)}
+                      aria-label={translate(
+                        'components.native-chat.composer.removeAttachment',
+                        'Remove attachment'
+                      )}
+                      className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                ))}
                 {imageAttachments.map((attachment) => (
                   <div key={attachment.id} className="group/thumb relative">
                     <NativeChatImageThumb
