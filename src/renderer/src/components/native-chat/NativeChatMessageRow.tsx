@@ -30,13 +30,19 @@ function proseToMarkdown(blocks: NativeChatBlock[]): string {
     .join('\n\n')
 }
 
-function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.JSX.Element | null {
+function ImageAttachmentRefs({
+  blocks,
+  align = 'start'
+}: {
+  blocks: NativeChatBlock[]
+  align?: 'start' | 'end'
+}): React.JSX.Element | null {
   const images = blocks.filter((block) => block.type === 'image-ref')
   if (images.length === 0) {
     return null
   }
   return (
-    <div className="mb-2 flex flex-wrap gap-2">
+    <div className={cn('mb-2 flex w-full flex-wrap gap-2', align === 'end' && 'justify-end')}>
       {images.map((image, index) => {
         const label = image.alt ?? image.path ?? image.url ?? 'Image'
         const name =
@@ -46,21 +52,23 @@ function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.J
               ? basename(image.path)
               : label
         // Remote URLs render directly; local paths go through the thumb's
-        // data-URL bridge. Both stay square (1:1 crop).
+        // data-URL bridge. Both keep their natural ratio, capped at half the
+        // chat column's width.
         return image.url ? (
           <img
             key={`${label}-${index}`}
             src={image.url}
             alt={name}
             title={label}
-            className="size-24 rounded-lg border border-border object-cover"
+            className="h-auto max-w-[50%] rounded-lg border border-border"
           />
         ) : (
           <NativeChatImageThumb
             key={`${label}-${index}`}
             path={image.path}
             alt={name}
-            className="size-24 rounded-lg"
+            className="h-auto max-w-[50%] rounded-lg"
+            placeholderClassName="size-24 rounded-lg"
           />
         )
       })}
@@ -168,40 +176,39 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         data-message-id={message.id}
         className="group flex flex-col items-end gap-0.5"
       >
+        {/* Images sit outside the bubble so their 50%-width cap resolves
+            against the full chat column, not the shrink-to-fit bubble. */}
+        <ImageAttachmentRefs blocks={prose} align="end" />
         {/* User turns get a distinct muted fill (not the card/canvas color) so
-            the prompt reads apart from the assistant's body copy. */}
-        <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
-          <div
-            className={cn('relative', collapsed && 'max-h-44 overflow-hidden')}
-            data-user-message-collapsed={collapsed ? 'true' : 'false'}
-            // Mask fade so the cut-off reads as "more below" over the bubble fill.
-            style={
-              collapsed
-                ? {
-                    WebkitMaskImage: NATIVE_CHAT_USER_MESSAGE_FADE_MASK,
-                    maskImage: NATIVE_CHAT_USER_MESSAGE_FADE_MASK
-                  }
-                : undefined
-            }
-          >
-            {markdown ? (
-              <>
-                <ImageAttachmentRefs blocks={prose} />
-                <CommentMarkdown
-                  ref={proseRef}
-                  content={markdown}
-                  variant="document"
-                  className="text-sm"
-                  onLinkClick={onLinkClick}
-                  allowFileUriLinks={allowFileUriLinks}
-                  codeBlockActions
-                />
-              </>
-            ) : (
-              <ImageAttachmentRefs blocks={prose} />
-            )}
+            the prompt reads apart from the assistant's body copy. An image-only
+            send has no bubble — the thumbnails are the message. */}
+        {markdown ? (
+          <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
+            <div
+              className={cn('relative', collapsed && 'max-h-44 overflow-hidden')}
+              data-user-message-collapsed={collapsed ? 'true' : 'false'}
+              // Mask fade so the cut-off reads as "more below" over the bubble fill.
+              style={
+                collapsed
+                  ? {
+                      WebkitMaskImage: NATIVE_CHAT_USER_MESSAGE_FADE_MASK,
+                      maskImage: NATIVE_CHAT_USER_MESSAGE_FADE_MASK
+                    }
+                  : undefined
+              }
+            >
+              <CommentMarkdown
+                ref={proseRef}
+                content={markdown}
+                variant="document"
+                className="text-sm"
+                onLinkClick={onLinkClick}
+                allowFileUriLinks={allowFileUriLinks}
+                codeBlockActions
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
         {canCollapse ? (
           <button
             type="button"

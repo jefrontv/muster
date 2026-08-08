@@ -160,7 +160,7 @@ export function NativeChatComposerField({
                             )
                           : basename(attachment.path)
                       }
-                      className="size-16 rounded-md"
+                      className="size-16 rounded-md object-cover"
                     />
                     <button
                       type="button"

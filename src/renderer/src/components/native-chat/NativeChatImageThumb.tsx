@@ -39,12 +39,16 @@ export function useNativeChatImageDataUrl(path: string | undefined): string | nu
 export function NativeChatImageThumb({
   path,
   alt,
-  className
+  className,
+  placeholderClassName
 }: {
   path: string | undefined
   alt: string
-  /** Sizing/rounding from the call site; the 1:1 crop is fixed here. */
+  /** Sizing/fit from the call site: square crop in the composer (`object-cover`
+   *  + fixed size), natural ratio in message bubbles (`max-w-*` + h-auto). */
   className?: string
+  /** Fixed footprint for the fallback tile (a natural-ratio class collapses). */
+  placeholderClassName?: string
 }): React.JSX.Element {
   const dataUrl = useNativeChatImageDataUrl(path)
   if (!dataUrl) {
@@ -52,7 +56,7 @@ export function NativeChatImageThumb({
       <div
         className={cn(
           'flex items-center justify-center border border-border bg-muted/40 text-muted-foreground',
-          className
+          placeholderClassName ?? className
         )}
         title={alt}
       >
@@ -61,11 +65,6 @@ export function NativeChatImageThumb({
     )
   }
   return (
-    <img
-      src={dataUrl}
-      alt={alt}
-      title={alt}
-      className={cn('border border-border object-cover', className)}
-    />
+    <img src={dataUrl} alt={alt} title={alt} className={cn('border border-border', className)} />
   )
 }
