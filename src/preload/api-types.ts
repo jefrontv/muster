@@ -877,7 +877,9 @@ export type ChatModeApi = {
   createWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
   updateWorkspace: (
     id: string,
-    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color'>>
+    patch: Partial<
+      Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color' | 'activeCollabProject'>
+    >
   ) => Promise<ChatWorkspace | null>
   deleteWorkspace: (id: string) => Promise<boolean>
   createThread: (args: { workspaceId: string | null; title?: string }) => Promise<ChatThread | null>
@@ -892,6 +894,9 @@ export type ChatModeApi = {
         | 'lastActivityAt'
         | 'lastVisitedAt'
         | 'lastCompletedAt'
+        | 'contextWindow'
+        | 'sortOrder'
+        | 'activeCollabTask'
         | 'archived'
       >
     >

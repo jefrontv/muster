@@ -14,6 +14,8 @@ export type ChatWorkspace = {
   icon?: RepoIcon | null
   /** Hex accent color, validated like a repo badge color. */
   color?: string
+  /** Bound ActiveCollab project; task pickers and new threads inherit it. */
+  activeCollabProject?: { id: number; name: string } | null
   createdAt: number
   updatedAt: number
 }
@@ -43,6 +45,8 @@ export type ChatThread = {
   contextWindow?: number
   /** Manual sidebar position (drag-drop); absent rows key on -createdAt. */
   sortOrder?: number
+  /** Linked ActiveCollab task; drives the thread header strip + row badge. */
+  activeCollabTask?: { projectId: number; taskId: number } | null
   archived?: boolean
 }
 

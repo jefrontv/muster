@@ -48,7 +48,9 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   createChatWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
   updateChatWorkspace: (
     id: string,
-    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color'>>
+    patch: Partial<
+      Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color' | 'activeCollabProject'>
+    >
   ) => Promise<void>
   deleteChatWorkspace: (id: string) => Promise<void>
   createChatThread: (workspaceId: string | null, title?: string) => Promise<ChatThread | null>
@@ -65,6 +67,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
         | 'lastCompletedAt'
         | 'contextWindow'
         | 'sortOrder'
+        | 'activeCollabTask'
         | 'archived'
       >
     >

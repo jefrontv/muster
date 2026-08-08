@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
+import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import {
   WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
   WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
@@ -219,6 +220,11 @@ function WorkspaceSection({
         <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {workspace.name}
         </h3>
+        {workspace.activeCollabProject ? (
+          <span title={workspace.activeCollabProject.name} className="shrink-0">
+            <ActiveCollabIcon className="size-3 text-muted-foreground/70" />
+          </span>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

@@ -29,6 +29,33 @@ function chatStore(): ChatWorkspaceStore {
   return storeSingleton
 }
 
+function asActiveCollabProject(value: unknown): { id: number; name: string } | null {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+  const record = value as { id?: unknown; name?: unknown }
+  if (typeof record.id !== 'number' || !Number.isFinite(record.id)) {
+    return null
+  }
+  return { id: record.id, name: typeof record.name === 'string' ? record.name : '' }
+}
+
+function asActiveCollabTask(value: unknown): { projectId: number; taskId: number } | null {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+  const record = value as { projectId?: unknown; taskId?: unknown }
+  if (
+    typeof record.projectId !== 'number' ||
+    !Number.isFinite(record.projectId) ||
+    typeof record.taskId !== 'number' ||
+    !Number.isFinite(record.taskId)
+  ) {
+    return null
+  }
+  return { projectId: record.projectId, taskId: record.taskId }
+}
+
 function asString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value === '') {
     throw new Error(`chatMode: ${field} must be a non-empty string`)
@@ -64,7 +91,13 @@ export function registerChatModeHandlers(): void {
     async (
       _event,
       id: unknown,
-      patch: { name?: unknown; directories?: unknown; icon?: unknown; color?: unknown }
+      patch: {
+        name?: unknown
+        directories?: unknown
+        icon?: unknown
+        color?: unknown
+        activeCollabProject?: unknown
+      }
     ): Promise<ChatWorkspace | null> =>
       chatStore().updateWorkspace(asString(id, 'id'), {
         ...(patch?.name !== undefined ? { name: asString(patch.name, 'name') } : {}),
@@ -76,6 +109,9 @@ export function registerChatModeHandlers(): void {
         ...('icon' in (patch ?? {}) ? { icon: sanitizeRepoIcon(patch.icon) ?? null } : {}),
         ...(typeof patch?.color === 'string'
           ? { color: normalizeRepoBadgeColor(patch.color) ?? undefined }
+          : {}),
+        ...('activeCollabProject' in (patch ?? {})
+          ? { activeCollabProject: asActiveCollabProject(patch.activeCollabProject) }
           : {})
       })
   )
@@ -108,6 +144,7 @@ export function registerChatModeHandlers(): void {
         lastCompletedAt?: unknown
         contextWindow?: unknown
         sortOrder?: unknown
+        activeCollabTask?: unknown
         archived?: unknown
       }
     ): Promise<ChatThread | null> =>
@@ -131,6 +168,9 @@ export function registerChatModeHandlers(): void {
           : {}),
         ...(typeof patch?.sortOrder === 'number' && Number.isFinite(patch.sortOrder)
           ? { sortOrder: patch.sortOrder }
+          : {}),
+        ...('activeCollabTask' in (patch ?? {})
+          ? { activeCollabTask: asActiveCollabTask(patch.activeCollabTask) }
           : {}),
         ...(typeof patch?.archived === 'boolean' ? { archived: patch.archived } : {})
       })

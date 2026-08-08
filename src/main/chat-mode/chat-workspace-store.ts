@@ -21,6 +21,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+function normalizeActiveCollabProject(raw: unknown): { id: number; name: string } | null {
+  if (!isRecord(raw) || typeof raw.id !== 'number' || !Number.isFinite(raw.id)) {
+    return null
+  }
+  return { id: raw.id, name: typeof raw.name === 'string' ? raw.name : '' }
+}
+
+function normalizeActiveCollabTask(raw: unknown): { projectId: number; taskId: number } | null {
+  if (
+    !isRecord(raw) ||
+    typeof raw.projectId !== 'number' ||
+    !Number.isFinite(raw.projectId) ||
+    typeof raw.taskId !== 'number' ||
+    !Number.isFinite(raw.taskId)
+  ) {
+    return null
+  }
+  return { projectId: raw.projectId, taskId: raw.taskId }
+}
+
 function normalizeWorkspace(raw: unknown): ChatWorkspace | null {
   if (!isRecord(raw) || typeof raw.id !== 'string' || raw.id === '') {
     return null
@@ -36,6 +56,9 @@ function normalizeWorkspace(raw: unknown): ChatWorkspace | null {
     directories,
     ...(icon !== undefined ? { icon } : {}),
     ...(color !== null ? { color } : {}),
+    ...(normalizeActiveCollabProject(raw.activeCollabProject)
+      ? { activeCollabProject: normalizeActiveCollabProject(raw.activeCollabProject) }
+      : {}),
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : 0,
     updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : 0
   }
@@ -66,6 +89,9 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
       : {}),
     ...(typeof raw.sortOrder === 'number' && Number.isFinite(raw.sortOrder)
       ? { sortOrder: raw.sortOrder }
+      : {}),
+    ...(normalizeActiveCollabTask(raw.activeCollabTask)
+      ? { activeCollabTask: normalizeActiveCollabTask(raw.activeCollabTask) }
       : {}),
     ...(raw.archived === true ? { archived: true } : {})
   }
@@ -129,7 +155,9 @@ export class ChatWorkspaceStore {
 
   updateWorkspace(
     id: string,
-    patch: Partial<Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color'>>
+    patch: Partial<
+      Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color' | 'activeCollabProject'>
+    >
   ): ChatWorkspace | null {
     const existing = this.state.workspaces.find((w) => w.id === id)
     if (!existing) {
@@ -194,6 +222,7 @@ export class ChatWorkspaceStore {
         | 'lastCompletedAt'
         | 'contextWindow'
         | 'sortOrder'
+        | 'activeCollabTask'
         | 'archived'
       >
     >

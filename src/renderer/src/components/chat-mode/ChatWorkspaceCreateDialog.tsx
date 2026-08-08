@@ -20,6 +20,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/store'
 import { ChatWorkspaceAppearanceSection } from './ChatWorkspaceAppearanceSection'
+import {
+  ChatWorkspaceProjectBinding,
+  type ChatWorkspaceProjectRef
+} from './ChatWorkspaceProjectBinding'
 
 export function ChatWorkspaceCreateDialog({
   open,
@@ -37,6 +41,7 @@ export function ChatWorkspaceCreateDialog({
   const [directories, setDirectories] = useState<string[]>([])
   const [icon, setIcon] = useState<RepoIcon | null>(null)
   const [color, setColor] = useState<string | null>(null)
+  const [acProject, setAcProject] = useState<ChatWorkspaceProjectRef | null>(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -45,6 +50,7 @@ export function ChatWorkspaceCreateDialog({
       setDirectories(workspace?.directories ?? [])
       setIcon(workspace?.icon ?? null)
       setColor(workspace?.color ?? null)
+      setAcProject(workspace?.activeCollabProject ?? null)
       setSaving(false)
     }
   }, [open, workspace])
@@ -78,11 +84,19 @@ export function ChatWorkspaceCreateDialog({
     try {
       const appearance = { icon, ...(color ? { color } : {}) }
       if (workspace) {
-        await updateChatWorkspace(workspace.id, { name: name.trim(), directories, ...appearance })
+        await updateChatWorkspace(workspace.id, {
+          name: name.trim(),
+          directories,
+          ...appearance,
+          activeCollabProject: acProject
+        })
       } else {
         const created = await createChatWorkspace({ name: name.trim(), directories })
-        if (icon || color) {
-          await updateChatWorkspace(created.id, appearance)
+        if (icon || color || acProject) {
+          await updateChatWorkspace(created.id, {
+            ...appearance,
+            activeCollabProject: acProject
+          })
         }
       }
       onOpenChange(false)
@@ -181,6 +195,7 @@ export function ChatWorkspaceCreateDialog({
               {translate('auto.components.chat.workspaceDialog.addDir', 'Add folder')}
             </Button>
           </div>
+          <ChatWorkspaceProjectBinding value={acProject} onChange={setAcProject} />
           <div className="space-y-1.5 border-t border-border pt-3">
             <Label>
               {translate('auto.components.chat.workspaceDialog.appearance', 'Appearance')}
