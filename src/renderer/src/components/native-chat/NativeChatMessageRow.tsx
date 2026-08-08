@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp, FileText } from 'lucide-react'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
 } from '@/components/sidebar/CommentMarkdown'
@@ -19,6 +19,7 @@ import {
 } from './native-chat-user-message-collapse'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import { NativeChatImageThumb } from './NativeChatImageThumb'
+import { parseNativeChatFileReferences } from './native-chat-file-reference-display'
 import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
@@ -163,7 +164,10 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   }
 
   if (isUser) {
-    const canCollapse = shouldCollapseUserMessage(markdown)
+    // Attached files travel as @-references in the prompt text; lift them back
+    // out so the row shows attachment chips instead of raw paths.
+    const { files: referencedFiles, text: userMarkdown } = parseNativeChatFileReferences(markdown)
+    const canCollapse = shouldCollapseUserMessage(userMarkdown)
     const collapsed = canCollapse && !userMessageExpanded
     // Why: an optimistic echo is rendered identically to a real user turn (no
     // muting, no "Queued" label) so that when the real transcript turn lands and
@@ -179,10 +183,24 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         {/* Images sit outside the bubble so their 50%-width cap resolves
             against the full chat column, not the shrink-to-fit bubble. */}
         <ImageAttachmentRefs blocks={prose} align="end" />
+        {referencedFiles.length > 0 ? (
+          <div className="flex w-full flex-wrap justify-end gap-1.5">
+            {referencedFiles.map((path, index) => (
+              <div
+                key={`${path}-${index}`}
+                className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground"
+                title={path}
+              >
+                <FileText className="size-3.5 shrink-0" />
+                <span className="max-w-56 truncate">{basename(path)}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
         {/* User turns get a distinct muted fill (not the card/canvas color) so
-            the prompt reads apart from the assistant's body copy. An image-only
-            send has no bubble — the thumbnails are the message. */}
-        {markdown ? (
+            the prompt reads apart from the assistant's body copy. An
+            attachment-only send has no bubble — the chips are the message. */}
+        {userMarkdown ? (
           <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
             <div
               className={cn('relative', collapsed && 'max-h-44 overflow-hidden')}
@@ -199,7 +217,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
             >
               <CommentMarkdown
                 ref={proseRef}
-                content={markdown}
+                content={userMarkdown}
                 variant="document"
                 className="text-sm"
                 onLinkClick={onLinkClick}
