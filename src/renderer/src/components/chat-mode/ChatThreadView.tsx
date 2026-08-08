@@ -234,6 +234,7 @@ export function ChatThreadView({
               ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
               : null
           }
+          activeCollabProjectId={workspace?.activeCollabProject?.id ?? null}
         />
       </div>
     )

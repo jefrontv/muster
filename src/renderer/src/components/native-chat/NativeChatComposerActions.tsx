@@ -23,6 +23,7 @@ import type {
 } from '../../../../shared/native-chat-session-options'
 import { NativeChatSessionOptionPickers } from './NativeChatSessionOptionPickers'
 import { NativeChatStashMenu } from './NativeChatStashMenu'
+import { NativeChatTaskPickerMenu } from './NativeChatTaskPickerMenu'
 import { NativeChatContextWindowMeter } from './NativeChatContextWindowMeter'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 
@@ -50,6 +51,8 @@ export type NativeChatComposerActionsProps = {
   /** Full-access session (auto-approve all tools); click turns it off. */
   fullAccess?: boolean
   onSetFullAccess?: (enabled: boolean) => void
+  onInsertTaskRef?: (taskId: number) => void
+  activeCollabProjectId?: number | null
 }
 
 export function NativeChatComposerActions({
@@ -72,7 +75,9 @@ export function NativeChatComposerActions({
   contextUsedTokens,
   contextMaxTokens,
   fullAccess,
-  onSetFullAccess
+  onSetFullAccess,
+  onInsertTaskRef,
+  activeCollabProjectId
 }: NativeChatComposerActionsProps): React.JSX.Element {
   const dictationLabel = !dictationConfigured
     ? translate(
@@ -104,6 +109,12 @@ export function NativeChatComposerActions({
           </TooltipContent>
         </Tooltip>
         <NativeChatStashMenu stash={stash} />
+        {onInsertTaskRef ? (
+          <NativeChatTaskPickerMenu
+            onInsertTaskRef={onInsertTaskRef}
+            preferredProjectId={activeCollabProjectId}
+          />
+        ) : null}
       </div>
       <div className="ml-auto flex items-center gap-1.5">
         {/* Why: keep session controls beside the actions they affect; the

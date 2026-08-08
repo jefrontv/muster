@@ -20,6 +20,8 @@ import {
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import { NativeChatImageThumb } from './NativeChatImageThumb'
 import { parseNativeChatFileReferences } from './native-chat-file-reference-display'
+import { parseActiveCollabTaskRefs } from './native-chat-activecollab-references'
+import { NativeChatTaskChip } from './NativeChatTaskChip'
 import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
@@ -167,6 +169,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
     // Attached files travel as @-references in the prompt text; lift them back
     // out so the row shows attachment chips instead of raw paths.
     const { files: referencedFiles, text: userMarkdown } = parseNativeChatFileReferences(markdown)
+    const taskRefs = parseActiveCollabTaskRefs(userMarkdown)
     const canCollapse = shouldCollapseUserMessage(userMarkdown)
     const collapsed = canCollapse && !userMessageExpanded
     // Why: an optimistic echo is rendered identically to a real user turn (no
@@ -183,6 +186,13 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         {/* Images sit outside the bubble so their 50%-width cap resolves
             against the full chat column, not the shrink-to-fit bubble. */}
         <ImageAttachmentRefs blocks={prose} align="end" />
+        {taskRefs.length > 0 ? (
+          <div className="flex w-full flex-wrap justify-end gap-1.5">
+            {taskRefs.map((taskId) => (
+              <NativeChatTaskChip key={taskId} taskId={taskId} />
+            ))}
+          </div>
+        ) : null}
         {referencedFiles.length > 0 ? (
           <div className="flex w-full flex-wrap justify-end gap-1.5">
             {referencedFiles.map((path, index) => (

@@ -50,6 +50,8 @@ export type NativeChatComposerProps = {
   /** Full-access session state + toggle (stream transport only). */
   fullAccess?: boolean
   onSetFullAccess?: (enabled: boolean) => void
+  /** Bound AC project of the hosting chat workspace; task picker sorts it first. */
+  activeCollabProjectId?: number | null
 }
 
 export type NativeChatComposerHandle = {

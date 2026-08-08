@@ -60,7 +60,8 @@ export default function NativeChatView({
   readTerminalScreen,
   contextMenuActions,
   transport,
-  fallbackProviderSession
+  fallbackProviderSession,
+  activeCollabProjectId
 }: NativeChatViewProps): React.JSX.Element {
   // Select only this tab's status entry (shallow-compared) so an unrelated
   // pane's status tick doesn't re-render this view or re-run the resolution.
@@ -96,6 +97,7 @@ export default function NativeChatView({
           readTerminalScreen={readTerminalScreen}
           contextMenuActions={contextMenuActions}
           transport={transport ?? null}
+          activeCollabProjectId={activeCollabProjectId ?? null}
         />
       )}
     </NativeChatSessionGate>
@@ -112,7 +114,8 @@ function NativeChatResolvedView({
   onSwitchToTerminal,
   readTerminalScreen,
   contextMenuActions,
-  transport
+  transport,
+  activeCollabProjectId
 }: {
   paneKey: string
   agent: NativeChatSession['agent']
@@ -124,6 +127,7 @@ function NativeChatResolvedView({
   readTerminalScreen?: () => string | null
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
   transport: NativeChatTransport | null
+  activeCollabProjectId: number | null
 }): React.JSX.Element {
   // Primitive owner selection (no useShallow): routes the pane's read/subscribe to
   // the remote runtime host for a runtime-owned pane; null keeps the local path.
@@ -441,6 +445,7 @@ function NativeChatResolvedView({
           contextMaxTokens={transport?.contextWindowTokens}
           fullAccess={transport?.fullAccess}
           onSetFullAccess={transport?.setFullAccess}
+          activeCollabProjectId={activeCollabProjectId}
         />
       )}
       {contextMenu.menu}

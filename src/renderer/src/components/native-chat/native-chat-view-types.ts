@@ -64,4 +64,6 @@ export type NativeChatViewProps = {
   /** Persisted session identity for resumed conversations — renders history
    *  before the live hook entry reports a providerSession. */
   fallbackProviderSession?: { id: string; transcriptPath?: string | null } | null
+  /** Bound AC project of the hosting chat workspace (task picker bias). */
+  activeCollabProjectId?: number | null
 }

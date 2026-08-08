@@ -73,6 +73,8 @@ export type NativeChatComposerFieldProps = {
   contextMaxTokens?: number
   fullAccess?: boolean
   onSetFullAccess?: (enabled: boolean) => void
+  onInsertTaskRef?: (taskId: number) => void
+  activeCollabProjectId?: number | null
 }
 
 export type NativeChatComposerImageAttachment = {
@@ -123,7 +125,9 @@ export function NativeChatComposerField({
   contextUsedTokens,
   contextMaxTokens,
   fullAccess,
-  onSetFullAccess
+  onSetFullAccess,
+  onInsertTaskRef,
+  activeCollabProjectId
 }: NativeChatComposerFieldProps): React.JSX.Element {
   return (
     <div className="shrink-0 bg-background">
@@ -268,6 +272,8 @@ export function NativeChatComposerField({
                   contextMaxTokens={contextMaxTokens}
                   fullAccess={fullAccess}
                   onSetFullAccess={onSetFullAccess}
+                  onInsertTaskRef={onInsertTaskRef}
+                  activeCollabProjectId={activeCollabProjectId}
                 />
               )}
             </div>

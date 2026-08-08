@@ -70,7 +70,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       contextUsageEnabled = false,
       contextMaxTokens,
       fullAccess,
-      onSetFullAccess
+      onSetFullAccess,
+      activeCollabProjectId
     },
     ref
   ): React.JSX.Element {
@@ -288,6 +289,18 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     })
 
     const stash = useNativeChatPromptStash({ draft, setDraft, setCaret, textareaRef })
+    const insertTaskRef = useCallback(
+      (taskId: number) => {
+        const token = `AC#${taskId} `
+        setDraft((previous) => {
+          const at = Math.min(caret, previous.length)
+          return `${previous.slice(0, at)}${token}${previous.slice(at)}`
+        })
+        setCaret(Math.min(caret, draft.length) + token.length)
+        textareaRef.current?.focus()
+      },
+      [caret, draft.length, setDraft, setCaret]
+    )
     const contextUsedTokens = useNativeChatContextUsage({
       paneKey,
       agent,
@@ -426,6 +439,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         contextMaxTokens={contextMaxTokens}
         fullAccess={fullAccess}
         onSetFullAccess={onSetFullAccess}
+        onInsertTaskRef={insertTaskRef}
+        activeCollabProjectId={activeCollabProjectId ?? null}
       />
     )
   }
