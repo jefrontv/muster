@@ -7,6 +7,7 @@ import { getNativeChatAgentProfile } from '../../../../shared/native-chat-agent-
 import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import { emitNativeChatSkillDiscovery } from '@/lib/native-chat-telemetry'
 import {
+  NATIVE_CHAT_HOME_SKILL_DISCOVERY_CONTEXT,
   resolveNativeChatSkillDiscoveryContext,
   selectNativeChatSkillStateInputs,
   type NativeChatSkillDiscoveryContext
@@ -73,12 +74,16 @@ export function isNativeChatSkillForAgent(
 export function useNativeChatSkills(
   agent: AgentType,
   terminalTabId: string,
-  enabled = false
+  enabled = false,
+  scope: 'pane' | 'home' = 'pane'
 ): NativeChatSkillDiscovery {
   const inputs = useAppStore(useShallow(selectNativeChatSkillStateInputs))
   const context = useMemo(
-    () => resolveNativeChatSkillDiscoveryContext(inputs, terminalTabId),
-    [inputs, terminalTabId]
+    () =>
+      scope === 'home'
+        ? NATIVE_CHAT_HOME_SKILL_DISCOVERY_CONTEXT
+        : resolveNativeChatSkillDiscoveryContext(inputs, terminalTabId),
+    [inputs, scope, terminalTabId]
   )
   const [state, setState] = useState<StoredDiscoveryState>(IDLE_STATE)
   const [retryGeneration, setRetryGeneration] = useState(0)

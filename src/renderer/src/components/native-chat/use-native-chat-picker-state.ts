@@ -50,6 +50,8 @@ export function useNativeChatPickerState(args: {
   setDraft: (value: string) => void
   setCaret: Dispatch<SetStateAction<number>>
   setActiveSuggestion: Dispatch<SetStateAction<number>>
+  /** 'home' = pane-less chat threads; skills scan the user-level roots. */
+  skillScope?: 'pane' | 'home'
 }): NativeChatPickerState {
   const {
     agent,
@@ -61,7 +63,8 @@ export function useNativeChatPickerState(args: {
     textareaRef,
     setDraft,
     setCaret,
-    setActiveSuggestion
+    setActiveSuggestion,
+    skillScope = 'pane'
   } = args
   const profile = useMemo(() => getNativeChatAgentProfile(agent), [agent])
   const beforeCaret = draft.slice(0, caret)
@@ -71,7 +74,7 @@ export function useNativeChatPickerState(args: {
       : profile?.skillPrefix === '/'
         ? beforeCaret.startsWith('/') && !/\s/.test(beforeCaret)
         : false
-  const discovery = useNativeChatSkills(agent, terminalTabId, skillPickerTriggered)
+  const discovery = useNativeChatSkills(agent, terminalTabId, skillPickerTriggered, skillScope)
   const listboxId = `native-chat-picker-${useId().replaceAll(':', '')}`
   const dismissalContext = `${draftScopeKey}:${agent}`
   const [dismissed, setDismissed] = useState<{ context: string; triggerKey: string } | null>(null)

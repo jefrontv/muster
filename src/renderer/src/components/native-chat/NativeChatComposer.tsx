@@ -131,7 +131,9 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       textareaRef,
       setDraft,
       setCaret,
-      setActiveSuggestion
+      setActiveSuggestion,
+      // Stream threads have no pane/worktree — scan the user-level skill roots.
+      skillScope: transportSend !== undefined ? 'home' : 'pane'
     })
     const {
       autocomplete,

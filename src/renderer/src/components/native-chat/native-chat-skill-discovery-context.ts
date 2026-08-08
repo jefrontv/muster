@@ -38,6 +38,17 @@ export type NativeChatSkillDiscoveryContext = {
   discoveryTarget: SkillDiscoveryTarget
 }
 
+/** Chat threads run a headless child from the user's home — no pane, no
+ *  worktree. Scan the user-level skill roots only (discovery always includes
+ *  them; a null cwd just skips workspace-local roots). */
+export const NATIVE_CHAT_HOME_SKILL_DISCOVERY_CONTEXT: NativeChatSkillDiscoveryContext = {
+  key: JSON.stringify(['local-home']),
+  cwd: '~',
+  executionHostKind: 'local',
+  runtimeTarget: { kind: 'local' },
+  discoveryTarget: { cwd: null }
+}
+
 export function selectNativeChatSkillStateInputs(state: AppState): NativeChatSkillStateInputs {
   return {
     activeRepoId: state.activeRepoId,
