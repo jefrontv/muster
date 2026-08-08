@@ -336,7 +336,7 @@ export function ChatModeSidebar(): React.JSX.Element {
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-sleek p-3">
         <StandaloneChatsSection query={query} settledIds={settledIds} />
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
           </h2>
           <Button
