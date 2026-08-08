@@ -1,5 +1,5 @@
 import React from 'react'
-import { Check, LoaderCircle, Play, X } from 'lucide-react'
+import { Check, LoaderCircle, MessageSquarePlus, Play, X } from 'lucide-react'
 
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
 import { activeCollabStamp } from './activecollab-task-timestamps'
 import { useActiveCollabStartWork } from './use-activecollab-start-work'
+import { discussTaskInChat } from './chat-mode/chat-thread-task-discussion'
 import { ACTIVECOLLAB_SITE_BINDING_UI_ENABLED } from '@/lib/activecollab-site-binding-visibility'
 
 // A drawn dot rather than a typed middot: the identity line is decoration between localized
@@ -170,6 +171,25 @@ export function ActiveCollabTaskHeader({
               <TooltipContent side="bottom">{startWorkHint}</TooltipContent>
             </Tooltip>
           ) : null}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="-mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label={translate(
+                  'auto.components.activecollab.task_workspace.discuss',
+                  'Discuss in chat'
+                )}
+                onClick={() => void discussTaskInChat(task)}
+              >
+                <MessageSquarePlus className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {translate('auto.components.activecollab.task_workspace.discuss', 'Discuss in chat')}
+            </TooltipContent>
+          </Tooltip>
           {onClose ? (
             <Tooltip>
               <TooltipTrigger asChild>

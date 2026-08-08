@@ -13,6 +13,7 @@ import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
 import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-option-relaunch'
 import { useAppStore } from '@/store'
 import NativeChatView, { type NativeChatTransport } from '@/components/native-chat/NativeChatView'
+import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
 import type { NativeChatPermissionBehavior } from '@/components/native-chat/native-chat-view-types'
 
 type LaunchState = 'starting' | 'running' | 'exited' | 'failed'
@@ -224,6 +225,12 @@ export function ChatThreadView({
   if (session) {
     return (
       <div className="flex h-full min-h-0 flex-col duration-200 ease-in animate-in fade-in slide-in-from-bottom-2">
+        {thread.activeCollabTask ? (
+          <ChatThreadTaskStrip
+            projectId={thread.activeCollabTask.projectId}
+            taskId={thread.activeCollabTask.taskId}
+          />
+        ) : null}
         <NativeChatView
           terminalTabId={session.tabId}
           paneKey={session.paneKey}

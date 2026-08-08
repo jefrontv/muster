@@ -2,6 +2,7 @@
 // the row menu (rename/delete). Rename edits inline so the list keeps its place.
 
 import { CircleCheck, MoreHorizontal, ShieldQuestion } from 'lucide-react'
+import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
@@ -193,6 +194,9 @@ export function ChatThreadRow({
         )}
         onClick={() => setActiveChatThread(thread.id)}
       >
+        {thread.activeCollabTask ? (
+          <ActiveCollabIcon className="size-3 shrink-0 text-muted-foreground/60" />
+        ) : null}
         <span className="min-w-0 flex-1 truncate">{thread.title}</span>
         <ThreadStatusLabel status={status} workingSince={agentStatus?.stateStartedAt} />
       </button>
