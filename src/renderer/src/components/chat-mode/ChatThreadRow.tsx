@@ -88,7 +88,27 @@ function ThreadStatusLabel({
   return null
 }
 
-export function ChatThreadRow({ thread }: { thread: ChatThread }): React.JSX.Element {
+export type ChatThreadRowDragProps = {
+  draggable: boolean
+  onDragStart: (event: React.DragEvent<HTMLLIElement>) => void
+  onDragOver: (event: React.DragEvent<HTMLLIElement>) => void
+  onDragLeave: (event: React.DragEvent<HTMLLIElement>) => void
+  onDrop: (event: React.DragEvent<HTMLLIElement>) => void
+  onDragEnd: (event: React.DragEvent<HTMLLIElement>) => void
+}
+
+export function ChatThreadRow({
+  thread,
+  dragProps,
+  isDragging = false,
+  dropEdge = null
+}: {
+  thread: ChatThread
+  dragProps?: ChatThreadRowDragProps
+  isDragging?: boolean
+  /** Insert-position indicator while another row is dragged over this one. */
+  dropEdge?: 'above' | 'below' | null
+}): React.JSX.Element {
   const activeChatThreadId = useAppStore((s) => s.activeChatThreadId)
   const setActiveChatThread = useAppStore((s) => s.setActiveChatThread)
   const updateChatThread = useAppStore((s) => s.updateChatThread)
@@ -150,7 +170,15 @@ export function ChatThreadRow({ thread }: { thread: ChatThread }): React.JSX.Ele
   return (
     // The menu button overlays the row's right edge so the hover/active surface
     // spans the full sidebar width instead of stopping short of the dots.
-    <li className="group/thread relative">
+    <li className={cn('group/thread relative', isDragging && 'opacity-50')} {...dragProps}>
+      {dropEdge ? (
+        <span
+          className={cn(
+            'pointer-events-none absolute inset-x-1 z-10 h-0.5 rounded-full bg-ring',
+            dropEdge === 'above' ? '-top-px' : '-bottom-px'
+          )}
+        />
+      ) : null}
       <button
         type="button"
         className={cn(

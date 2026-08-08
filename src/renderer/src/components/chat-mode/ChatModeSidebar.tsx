@@ -40,6 +40,8 @@ import {
   resolveChatThreadStatus
 } from './chat-thread-status'
 import { ChatModeToggle } from './ChatModeToggle'
+import { sortChatThreads } from './chat-thread-ordering'
+import { ChatThreadDragList } from './ChatThreadDragList'
 import { ChatThreadRow } from './ChatThreadRow'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
 
@@ -55,11 +57,12 @@ function visibleThreads(
   query: string,
   settledIds: Set<string>
 ): ChatThread[] {
-  // Creation order stays static while agents work (T3 pattern) — a list that
-  // reorders on every activity tick steals the row out from under the pointer.
-  const sorted = threads
-    .filter((t) => t.archived !== true && !settledIds.has(t.id))
-    .sort((a, b) => a.createdAt - b.createdAt)
+  // Order is static while agents work (T3 pattern) — a list that reorders on
+  // every activity tick steals the row out from under the pointer. New chats
+  // land on top; drags persist an explicit position.
+  const sorted = sortChatThreads(
+    threads.filter((t) => t.archived !== true && !settledIds.has(t.id))
+  )
   return query ? sorted.filter((t) => matchesQuery(t.title, query)) : sorted
 }
 
@@ -159,7 +162,6 @@ function StandaloneChatsSection({
         <Button
           variant="ghost"
           size="icon-xs"
-          className="opacity-0 transition-opacity group-hover:opacity-100"
           aria-label={translate('auto.components.chat.sidebar.newStandaloneChat', 'New chat')}
           onClick={() => void createChatThread(null)}
         >
@@ -175,11 +177,7 @@ function StandaloneChatsSection({
           {translate('auto.components.chat.sidebar.startQuickChat', 'Start a quick chat…')}
         </button>
       ) : (
-        <ul className="space-y-px">
-          {rows.map((thread) => (
-            <ChatThreadRow key={thread.id} thread={thread} />
-          ))}
-        </ul>
+        <ChatThreadDragList threads={rows} />
       )}
     </section>
   )
@@ -224,7 +222,6 @@ function WorkspaceSection({
         <Button
           variant="ghost"
           size="icon-xs"
-          className="opacity-0 transition-opacity group-hover:opacity-100"
           aria-label={translate('auto.components.chat.sidebar.newThread', 'New chat')}
           onClick={() => void createChatThread(workspace.id)}
         >
@@ -263,11 +260,7 @@ function WorkspaceSection({
           {translate('auto.components.chat.sidebar.startFirstChat', 'Start a chat…')}
         </button>
       ) : (
-        <ul className="space-y-px">
-          {rows.map((thread) => (
-            <ChatThreadRow key={thread.id} thread={thread} />
-          ))}
-        </ul>
+        <ChatThreadDragList threads={rows} />
       )}
     </section>
   )

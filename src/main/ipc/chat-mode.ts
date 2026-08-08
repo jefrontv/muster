@@ -3,6 +3,7 @@
 // (it composes the existing pty:spawn + agent-hooks machinery).
 
 import { app, ipcMain } from 'electron'
+import { getChatGreetingName } from '../chat-mode/chat-greeting-name'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../../shared/chat-mode-types'
 import { sanitizeRepoIcon } from '../../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
@@ -106,6 +107,7 @@ export function registerChatModeHandlers(): void {
         lastVisitedAt?: unknown
         lastCompletedAt?: unknown
         contextWindow?: unknown
+        sortOrder?: unknown
         archived?: unknown
       }
     ): Promise<ChatThread | null> =>
@@ -127,6 +129,9 @@ export function registerChatModeHandlers(): void {
         ...(typeof patch?.contextWindow === 'number' && patch.contextWindow > 0
           ? { contextWindow: patch.contextWindow }
           : {}),
+        ...(typeof patch?.sortOrder === 'number' && Number.isFinite(patch.sortOrder)
+          ? { sortOrder: patch.sortOrder }
+          : {}),
         ...(typeof patch?.archived === 'boolean' ? { archived: patch.archived } : {})
       })
   )
@@ -134,5 +139,10 @@ export function registerChatModeHandlers(): void {
   ipcMain.handle(
     'chatMode:deleteThread',
     async (_event, id: unknown): Promise<boolean> => chatStore().deleteThread(asString(id, 'id'))
+  )
+
+  ipcMain.handle(
+    'chatMode:getGreetingName',
+    async (): Promise<string | null> => getChatGreetingName()
   )
 }

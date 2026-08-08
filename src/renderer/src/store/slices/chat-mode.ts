@@ -64,6 +64,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
         | 'lastVisitedAt'
         | 'lastCompletedAt'
         | 'contextWindow'
+        | 'sortOrder'
         | 'archived'
       >
     >

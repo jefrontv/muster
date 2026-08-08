@@ -851,7 +851,8 @@ const api = {
     deleteWorkspace: (id) => ipcRenderer.invoke('chatMode:deleteWorkspace', id),
     createThread: (args) => ipcRenderer.invoke('chatMode:createThread', args),
     updateThread: (id, patch) => ipcRenderer.invoke('chatMode:updateThread', id, patch),
-    deleteThread: (id) => ipcRenderer.invoke('chatMode:deleteThread', id)
+    deleteThread: (id) => ipcRenderer.invoke('chatMode:deleteThread', id),
+    getGreetingName: () => ipcRenderer.invoke('chatMode:getGreetingName')
   } satisfies PreloadApi['chatMode'],
 
   chatThreadStream: {

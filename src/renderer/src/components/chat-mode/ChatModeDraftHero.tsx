@@ -22,6 +22,34 @@ import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
 /** Radio value for the standalone (no-workspace) chat option. */
 const STANDALONE = ''
 
+/** Fetched once per app run; undefined = not asked yet (distinct from "no name"). */
+let greetingNameCache: string | null | undefined
+
+function useGreetingName(): string | null {
+  const [name, setName] = useState<string | null>(greetingNameCache ?? null)
+  useEffect(() => {
+    if (greetingNameCache !== undefined) {
+      return
+    }
+    let cancelled = false
+    void window.api.chatMode
+      .getGreetingName?.()
+      .then((resolved) => {
+        greetingNameCache = resolved
+        if (!cancelled) {
+          setName(resolved)
+        }
+      })
+      .catch(() => {
+        greetingNameCache = null
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return name
+}
+
 export function ChatModeDraftHero({
   onCreateWorkspace
 }: {
@@ -36,6 +64,7 @@ export function ChatModeDraftHero({
   )
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const greetingName = useGreetingName()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Follow the sidebar selection and newly created workspaces; drop a stale pick.
@@ -71,40 +100,51 @@ export function ChatModeDraftHero({
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
-      <h1 className="mx-auto w-full max-w-2xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
-        {translate('auto.components.chat.hero.headlinePrefix', 'What should we work on in')}{' '}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="inline-block max-w-64 cursor-pointer truncate border-b border-dotted border-foreground/60 align-bottom text-foreground transition-colors hover:border-foreground/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            title={selectedWorkspace?.name}
-          >
-            {selectedWorkspace?.name ??
-              translate('auto.components.chat.hero.noWorkspace', 'a new chat')}
-            <ChevronDown className="ml-1 inline size-4 align-middle text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="max-h-80 w-64 overflow-y-auto">
-            <DropdownMenuRadioGroup
-              value={selectedWorkspace?.id ?? STANDALONE}
-              onValueChange={(value) => setSelectedWorkspaceId(value === STANDALONE ? null : value)}
+      <div className="flex w-full flex-col gap-1.5">
+        {greetingName ? (
+          <p className="mx-auto w-full max-w-2xl text-center text-2xl font-normal tracking-tight text-muted-foreground sm:text-3xl">
+            {translate('auto.components.chat.hero.greeting', 'Hey, {{value0}}', {
+              value0: greetingName
+            })}
+          </p>
+        ) : null}
+        <h1 className="mx-auto w-full max-w-2xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
+          {translate('auto.components.chat.hero.headlinePrefix', 'What should we work on in')}{' '}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="inline-block max-w-64 cursor-pointer truncate border-b border-dotted border-foreground/60 align-bottom text-foreground transition-colors hover:border-foreground/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title={selectedWorkspace?.name}
             >
-              {workspaces.map((workspace) => (
-                <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
-                  <span className="min-w-0 truncate">{workspace.name}</span>
+              {selectedWorkspace?.name ??
+                translate('auto.components.chat.hero.noWorkspace', 'a new chat')}
+              <ChevronDown className="ml-1 inline size-4 align-middle text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="max-h-80 w-64 overflow-y-auto">
+              <DropdownMenuRadioGroup
+                value={selectedWorkspace?.id ?? STANDALONE}
+                onValueChange={(value) =>
+                  setSelectedWorkspaceId(value === STANDALONE ? null : value)
+                }
+              >
+                {workspaces.map((workspace) => (
+                  <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
+                    <span className="min-w-0 truncate">{workspace.name}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+                <DropdownMenuRadioItem value={STANDALONE}>
+                  {translate('auto.components.chat.hero.standalone', 'No workspace')}
                 </DropdownMenuRadioItem>
-              ))}
-              <DropdownMenuRadioItem value={STANDALONE}>
-                {translate('auto.components.chat.hero.standalone', 'No workspace')}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onCreateWorkspace}>
-              <FolderPlus className="size-4" />
-              {translate('auto.components.chat.hero.newWorkspace', 'New workspace…')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        ?
-      </h1>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onCreateWorkspace}>
+                <FolderPlus className="size-4" />
+                {translate('auto.components.chat.hero.newWorkspace', 'New workspace…')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          ?
+        </h1>
+      </div>
       <div className="w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40">
         <textarea
           ref={textareaRef}

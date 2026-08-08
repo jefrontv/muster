@@ -897,6 +897,8 @@ export type ChatModeApi = {
     >
   ) => Promise<ChatThread | null>
   deleteThread: (id: string) => Promise<boolean>
+  /** First name for the hero greeting (git identity, then OS account); null hides it. */
+  getGreetingName: () => Promise<string | null>
 }
 
 /** Chat mode's headless stream-json transport: one child process per thread.
