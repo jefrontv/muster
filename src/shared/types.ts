@@ -2839,6 +2839,8 @@ export type GlobalSettings = {
   experimentalChatMode?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
   nativeChatSessionOptions?: PersistedNativeChatSessionOptions
+  /** Chat-thread tool permission default: 'full' auto-approves every tool. */
+  nativeChatPermissionMode?: 'ask' | 'full'
   /** Extra launcher rows for the worktree "Open in" submenu. VS Code is always shown first. */
   openInApplications?: OpenInApplication[]
   /** Deprecated: migration/backward-compat only. Use PersistedUIState.rightSidebarOpen. */

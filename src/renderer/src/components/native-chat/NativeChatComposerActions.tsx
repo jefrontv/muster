@@ -1,5 +1,11 @@
-import { ArrowUp, Mic, Plus, ShieldAlert, Square } from 'lucide-react'
+import { ArrowUp, Check, Mic, Plus, ShieldAlert, ShieldQuestion, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type {
@@ -142,25 +148,65 @@ export function NativeChatComposerActions({
             {dictationLabel}
           </TooltipContent>
         </Tooltip>
-        {fullAccess && onSetFullAccess ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
+        {onSetFullAccess ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-500 transition-colors hover:bg-amber-500/25"
-                onClick={() => onSetFullAccess(false)}
+                aria-label={translate(
+                  'auto.components.native-chat.composer.accessLevel',
+                  'Tool access level'
+                )}
+                className={
+                  fullAccess
+                    ? 'flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-500 transition-colors hover:bg-amber-500/25'
+                    : 'flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted'
+                }
               >
-                <ShieldAlert className="size-3" />
-                {translate('auto.components.native-chat.composer.fullAccess', 'Full access')}
+                {fullAccess ? (
+                  <ShieldAlert className="size-3" />
+                ) : (
+                  <ShieldQuestion className="size-3" />
+                )}
+                {fullAccess
+                  ? translate('auto.components.native-chat.composer.fullAccess', 'Full access')
+                  : translate('auto.components.native-chat.composer.askFirst', 'Ask first')}
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={4}>
-              {translate(
-                'auto.components.native-chat.composer.fullAccessOff',
-                'All tools auto-approve. Click to ask again.'
-              )}
-            </TooltipContent>
-          </Tooltip>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top">
+              <DropdownMenuItem onSelect={() => onSetFullAccess(false)}>
+                <Check className={fullAccess ? 'size-4 opacity-0' : 'size-4'} />
+                <span className="flex flex-col gap-0.5">
+                  <span>
+                    {translate('auto.components.native-chat.composer.askFirstItem', 'Ask first')}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {translate(
+                      'auto.components.native-chat.composer.askFirstHint',
+                      'Every tool needs your approval'
+                    )}
+                  </span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onSetFullAccess(true)}>
+                <Check className={fullAccess ? 'size-4' : 'size-4 opacity-0'} />
+                <span className="flex flex-col gap-0.5">
+                  <span>
+                    {translate(
+                      'auto.components.native-chat.composer.fullAccessItem',
+                      'Full access'
+                    )}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {translate(
+                      'auto.components.native-chat.composer.fullAccessItemHint',
+                      'Runs every tool without asking — remembered for all chats'
+                    )}
+                  </span>
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
         {contextUsedTokens !== null ? (
           <NativeChatContextWindowMeter

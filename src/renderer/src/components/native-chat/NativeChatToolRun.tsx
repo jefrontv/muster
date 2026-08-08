@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import {
@@ -14,7 +14,7 @@ import {
   formatToolInput,
   humanizeToolName,
   summarizeToolInput,
-  summarizeToolRun
+  toolRunNameCounts
 } from './native-chat-tool-summary'
 import { NativeChatDiffView } from './NativeChatDiffView'
 
@@ -140,8 +140,8 @@ export function NativeChatToolRun({
   const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(open)
 
   const callCount = countToolCalls(blocks) || blocks.length
-  const summary = summarizeToolRun(blocks)
-  const fallbackLabel = translate(
+  const nameCounts = toolRunNameCounts(blocks)
+  const countLabel = translate(
     callCount === 1 ? 'components.native-chat.tool.countOne' : 'components.native-chat.tool.countN',
     callCount === 1 ? '1 tool call' : `${callCount} tool calls`,
     { count: callCount }
@@ -157,25 +157,31 @@ export function NativeChatToolRun({
           captureBeforeToggle()
           setOpen((v) => !v)
         }}
-        className="group flex w-full items-center gap-1.5 py-0.5 text-left"
+        className={cn(
+          'group flex max-w-full items-center gap-1.5 rounded-full border border-border/60 py-1 pl-2.5 pr-2 text-left transition-colors',
+          open ? 'bg-muted/70' : 'bg-muted/40 hover:bg-muted/70'
+        )}
       >
-        <span className="shrink-0 font-mono text-[11px] font-bold text-muted-foreground transition-colors group-hover:text-foreground/80">
-          {callCount}×
+        <Wrench className="size-3 shrink-0 text-muted-foreground" />
+        <span className="shrink-0 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground/80">
+          {countLabel}
         </span>
-        <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground transition-colors group-hover:text-foreground/80">
-          {summary || fallbackLabel}
-        </span>
-        {/* Chevron on the right, revealed on hover when collapsed and pointing
-            down when open — matches Codex's tool-run disclosure. */}
+        {nameCounts.length > 0 ? (
+          <span className="min-w-0 truncate text-xs text-muted-foreground/70 transition-colors group-hover:text-muted-foreground">
+            {nameCounts
+              .map((entry) => (entry.count > 1 ? `${entry.name} ×${entry.count}` : entry.name))
+              .join(' · ')}
+          </span>
+        ) : null}
         <ChevronRight
           className={cn(
-            'size-3.5 shrink-0 text-muted-foreground transition-all',
-            open ? 'rotate-90 opacity-100' : 'opacity-0 group-hover:opacity-100'
+            'size-3.5 shrink-0 text-muted-foreground transition-transform',
+            open && 'rotate-90'
           )}
         />
       </button>
       {open ? (
-        <div className="mt-1">
+        <div className="ml-2 mt-1.5 border-l border-border/60 pl-3">
           {blocks.map((block, i) => (
             <ToolLine key={i} block={block} />
           ))}

@@ -5,5 +5,6 @@ export {
   humanizeToolName,
   summarizeToolInput,
   summarizeToolRun,
+  toolRunNameCounts,
   toolFilePath
 } from '../../../../shared/native-chat-tool-summary'

@@ -33,7 +33,10 @@ export function ChatThreadView({
   const contextWindowTokens = useAppStore(
     (s) => s.chatThreadContextWindow[thread.id] ?? thread.contextWindow
   )
-  const fullAccess = useAppStore((s) => s.chatThreadFullAccess[thread.id] === true)
+  const fullAccess = useAppStore(
+    (s) =>
+      s.settings?.nativeChatPermissionMode === 'full' || s.chatThreadFullAccess[thread.id] === true
+  )
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
   const launchingRef = useRef(false)
@@ -155,7 +158,18 @@ export function ChatThreadView({
     [thread.id]
   )
   const setFullAccess = useCallback(
-    (enabled: boolean) => useAppStore.getState().setChatThreadFullAccess(thread.id, enabled),
+    (enabled: boolean) => {
+      const store = useAppStore.getState()
+      // The composer switch is the permanent choice; the thread flag follows so
+      // "off" also ends an approval-dropdown session grant.
+      void store.updateSettings({ nativeChatPermissionMode: enabled ? 'full' : 'ask' })
+      store.setChatThreadFullAccess(thread.id, enabled)
+      if (enabled) {
+        for (const request of store.chatThreadPermissionRequests[thread.id] ?? []) {
+          store.respondChatThreadPermission(thread.id, request.requestId, 'allow')
+        }
+      }
+    },
     [thread.id]
   )
   const transport = useMemo<NativeChatTransport>(

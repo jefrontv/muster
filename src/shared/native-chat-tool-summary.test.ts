@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { NativeChatBlock } from './native-chat-types'
-import { briefToolArg, summarizeToolInput, summarizeToolRun } from './native-chat-tool-summary'
+import {
+  briefToolArg,
+  summarizeToolInput,
+  summarizeToolRun,
+  toolRunNameCounts
+} from './native-chat-tool-summary'
 
 describe('summarizeToolInput bounded preview', () => {
   it('collapses depth beyond the bound instead of serializing the whole tree', () => {
@@ -46,5 +51,22 @@ describe('summarizeToolRun', () => {
     ]
     const summary = summarizeToolRun(blocks)
     expect(summary).toBe('Bash ls  ·  Read a.ts  ·  Edit b.ts')
+  })
+})
+
+describe('toolRunNameCounts', () => {
+  it('groups repeated tools with counts in first-call order', () => {
+    const blocks = [
+      { type: 'tool-call', name: 'ToolSearch', input: {} },
+      { type: 'tool-call', name: 'WebSearch', input: {} },
+      { type: 'tool-call', name: 'ToolSearch', input: {} },
+      { type: 'tool-result', output: 'x' },
+      { type: 'tool-call', name: 'WebFetch', input: {} }
+    ] as unknown as NativeChatBlock[]
+    expect(toolRunNameCounts(blocks)).toEqual([
+      { name: 'ToolSearch', count: 2 },
+      { name: 'WebSearch', count: 1 },
+      { name: 'WebFetch', count: 1 }
+    ])
   })
 })

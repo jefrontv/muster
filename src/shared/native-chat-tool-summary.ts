@@ -97,6 +97,25 @@ export function countToolCalls(blocks: readonly NativeChatBlock[]): number {
   return blocks.filter(isToolCallBlock).length
 }
 
+/** Distinct tool names in call order with per-name counts — the collapsed
+ *  run row reads "ToolSearch ×3 · WebSearch ×2" instead of raw arg spam. */
+export function toolRunNameCounts(
+  blocks: readonly NativeChatBlock[]
+): { name: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const block of blocks) {
+    if (!isToolCallBlock(block)) {
+      continue
+    }
+    const name = humanizeToolName(block.name.trim())
+    if (!name) {
+      continue
+    }
+    counts.set(name, (counts.get(name) ?? 0) + 1)
+  }
+  return [...counts.entries()].map(([name, count]) => ({ name, count }))
+}
+
 function toRawPreview(input: unknown): string {
   if (input === null || input === undefined) {
     return ''

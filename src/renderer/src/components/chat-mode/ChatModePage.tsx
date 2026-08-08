@@ -96,6 +96,7 @@ export default function ChatModePage(): React.JSX.Element {
         case 'permission-request':
           // Full access + "Always allow this session" verdicts short-circuit the queue.
           if (
+            store.settings?.nativeChatPermissionMode === 'full' ||
             store.chatThreadFullAccess[event.threadId] === true ||
             store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName)
           ) {
