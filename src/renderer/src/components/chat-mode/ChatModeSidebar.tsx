@@ -26,6 +26,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
+import {
+  WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
+  WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
+} from '@/components/sidebar/sidebar-resize-handle-style'
+import { useSidebarResize } from '@/hooks/useSidebarResize'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import {
@@ -37,6 +42,9 @@ import {
 import { ChatModeToggle } from './ChatModeToggle'
 import { ChatThreadRow } from './ChatThreadRow'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
+
+const MIN_WIDTH = 220
+const MAX_WIDTH = 500
 
 function matchesQuery(value: string, query: string): boolean {
   return value.toLowerCase().includes(query)
@@ -270,14 +278,27 @@ export function ChatModeSidebar(): React.JSX.Element {
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const openTaskPage = useAppStore((s) => s.openTaskPage)
   const tasksOpen = useAppStore((s) => s.chatTasksOpen)
+  const chatSidebarWidth = useAppStore((s) => s.chatSidebarWidth)
+  const setChatSidebarWidth = useAppStore((s) => s.setChatSidebarWidth)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ChatWorkspace | undefined>(undefined)
   const [rawQuery, setRawQuery] = useState('')
   const query = rawQuery.trim().toLowerCase()
   const settledIds = useSettledThreadIds()
+  const { containerRef, onResizeStart, isResizing } = useSidebarResize<HTMLElement>({
+    isOpen: true,
+    width: chatSidebarWidth,
+    minWidth: MIN_WIDTH,
+    maxWidth: MAX_WIDTH,
+    deltaSign: 1,
+    setWidth: setChatSidebarWidth
+  })
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-sidebar">
+    <aside
+      ref={containerRef}
+      className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar"
+    >
       <div className="flex flex-col gap-3 p-3 pb-0">
         <ChatModeToggle />
         <button
@@ -302,7 +323,7 @@ export function ChatModeSidebar(): React.JSX.Element {
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={rawQuery}
-            className="h-8 pl-7 text-sm"
+            className="h-8 border-transparent bg-muted/50 pl-7 text-sm shadow-none transition-colors hover:bg-muted/70 focus-visible:bg-background"
             placeholder={translate('auto.components.chat.sidebar.searchPlaceholder', 'Search…')}
             aria-label={translate(
               'auto.components.chat.sidebar.searchLabel',
@@ -354,6 +375,15 @@ export function ChatModeSidebar(): React.JSX.Element {
         >
           <SettingsIcon className="size-3.5" />
         </Button>
+      </div>
+      <div
+        data-sidebar-resize-handle=""
+        className={cn(WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME, isResizing && 'bg-ring/10')}
+        onMouseDown={onResizeStart}
+      >
+        <div
+          className={cn(WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME, isResizing && 'bg-ring')}
+        />
       </div>
       <ChatWorkspaceCreateDialog
         open={dialogOpen}

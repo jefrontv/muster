@@ -3341,6 +3341,8 @@ export type PersistedUIState = {
   /** Active top-level view at save time, restored on relaunch; sanitized to 'terminal' if unknown or now-gated. */
   activeView: TopLevelView
   sidebarWidth: number
+  /** Chat mode's sidebar width; independent of the code sidebar. */
+  chatSidebarWidth?: number
   rightSidebarOpen: boolean
   rightSidebarTab: RightSidebarTab
   rightSidebarExplorerView: RightSidebarExplorerView

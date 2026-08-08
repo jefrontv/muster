@@ -587,9 +587,12 @@ function sanitizeTaskResumeState(value: unknown): TaskResumeState | undefined {
 export type UISlice = {
   sidebarOpen: boolean
   sidebarWidth: number
+  /** Chat mode's sidebar width; persisted separately from the code sidebar. */
+  chatSidebarWidth: number
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   setSidebarWidth: (width: number) => void
+  setChatSidebarWidth: (width: number) => void
   agentSendPopoverTargetMode: AgentSendPopoverTargetMode | null
   openAgentSendPopoverTargetMode: (args: OpenAgentSendPopoverTargetModeArgs) => void
   closeAgentSendPopoverTargetMode: (id?: string, instanceId?: string) => void
@@ -917,9 +920,11 @@ export type UISlice = {
 export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get) => ({
   sidebarOpen: true,
   sidebarWidth: 280,
+  chatSidebarWidth: 280,
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setSidebarWidth: (width) => set({ sidebarWidth: width }),
+  setChatSidebarWidth: (width) => set({ chatSidebarWidth: width }),
   agentSendPopoverTargetMode: null,
   openAgentSendPopoverTargetMode: (args) => {
     const targets = deriveRunningAgentSendTargets(get(), args.worktreeId)
@@ -2347,6 +2352,11 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
         sidebarWidth: sanitizePersistedSidebarWidth(
           ui.sidebarWidth,
           s.sidebarWidth,
+          MAX_LEFT_SIDEBAR_WIDTH
+        ),
+        chatSidebarWidth: sanitizePersistedSidebarWidth(
+          ui.chatSidebarWidth,
+          s.chatSidebarWidth,
           MAX_LEFT_SIDEBAR_WIDTH
         ),
         rightSidebarWidth: sanitizePersistedSidebarWidth(

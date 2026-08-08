@@ -634,6 +634,7 @@ function App(): React.JSX.Element {
   }, [floatingTerminalEnabled, setFloatingTerminalOpenWithFocus])
 
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const chatSidebarWidth = useAppStore((s) => s.chatSidebarWidth)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const groupBy = useAppStore((s) => s.groupBy)
   const sortBy = useAppStore((s) => s.sortBy)
@@ -1319,6 +1320,7 @@ function App(): React.JSX.Element {
     const timer = window.setTimeout(() => {
       void window.api.ui.set({
         sidebarWidth,
+        chatSidebarWidth,
         rightSidebarOpen,
         rightSidebarTab,
         rightSidebarExplorerView,
@@ -1351,6 +1353,7 @@ function App(): React.JSX.Element {
   }, [
     persistedUIReady,
     sidebarWidth,
+    chatSidebarWidth,
     rightSidebarOpen,
     rightSidebarTab,
     rightSidebarExplorerView,
