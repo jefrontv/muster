@@ -219,20 +219,12 @@ function WorkspaceSection({
         <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {workspace.name}
         </h3>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={translate('auto.components.chat.sidebar.newThread', 'New chat')}
-          onClick={() => void createChatThread(workspace.id)}
-        >
-          <MessageSquarePlus className="size-3.5" />
-        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon-xs"
-              className="opacity-0 transition-opacity group-hover:opacity-100"
+              className="opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
               aria-label={translate('auto.components.chat.sidebar.workspaceMenu', 'Workspace menu')}
             >
               <MoreHorizontal className="size-3.5" />
@@ -250,6 +242,14 @@ function WorkspaceSection({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          aria-label={translate('auto.components.chat.sidebar.newThread', 'New chat')}
+          onClick={() => void createChatThread(workspace.id)}
+        >
+          <MessageSquarePlus className="size-3.5" />
+        </Button>
       </div>
       {rows.length === 0 ? (
         <button

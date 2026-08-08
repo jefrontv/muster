@@ -7,6 +7,7 @@ import { useState } from 'react'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
 import { useAppStore } from '@/store'
 import { ChatThreadRow, type ChatThreadRowDragProps } from './ChatThreadRow'
+import { ORCA_INTERNAL_FILE_DRAG_TYPE } from '../../../../shared/native-file-drop'
 import { computeDropSortOrder } from './chat-thread-ordering'
 
 export function ChatThreadDragList({ threads }: { threads: ChatThread[] }): React.JSX.Element {
@@ -26,7 +27,9 @@ export function ChatThreadDragList({ threads }: { threads: ChatThread[] }): Reac
           draggable: true,
           onDragStart: (event) => {
             setDragId(thread.id)
-            event.dataTransfer.setData('text/plain', thread.id)
+            // Why: preload's capture-phase native-file-drop guard swallows any
+            // drop whose types lack this marker; without it drops never land.
+            event.dataTransfer.setData(ORCA_INTERNAL_FILE_DRAG_TYPE, thread.id)
             event.dataTransfer.effectAllowed = 'move'
           },
           onDragOver: (event) => {
