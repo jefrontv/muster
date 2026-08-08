@@ -33,9 +33,12 @@ import { createBrowserUuid } from '@/lib/browser-uuid'
 /** Headless stream transport flags; the CLI reads turns on stdin and writes
  *  NDJSON (with partial deltas) on stdout. `--permission-prompt-tool stdio`
  *  (hidden from --help, verified on 2.1.224) makes un-allowlisted tool calls
- *  emit can_use_tool control_requests instead of silently denying. */
+ *  emit can_use_tool control_requests instead of silently denying.
+ *  `--permission-mode manual` overrides a user-level "auto" default whose
+ *  classifier denies risky tools outright — manual asks, so the question
+ *  reaches the composer's approval card instead of a silent denial. */
 const CLAUDE_STREAM_FLAGS =
-  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages --permission-prompt-tool stdio'
+  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages --permission-mode manual --permission-prompt-tool stdio'
 
 export type ChatThreadLaunchResult = {
   tabId: string
