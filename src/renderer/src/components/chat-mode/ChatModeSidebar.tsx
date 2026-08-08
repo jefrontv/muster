@@ -45,6 +45,11 @@ import { sortChatThreads } from './chat-thread-ordering'
 import { ChatThreadDragList } from './ChatThreadDragList'
 import { ChatThreadRow } from './ChatThreadRow'
 import { ChatWorkspaceCreateDialog } from './ChatWorkspaceCreateDialog'
+import {
+  isDueToday,
+  isOverdue,
+  useAssignedActiveCollabTasks
+} from './use-active-collab-assigned-tasks'
 
 const MIN_WIDTH = 220
 const MAX_WIDTH = 500
@@ -284,6 +289,10 @@ export function ChatModeSidebar(): React.JSX.Element {
   const [rawQuery, setRawQuery] = useState('')
   const query = rawQuery.trim().toLowerCase()
   const settledIds = useSettledThreadIds()
+  const assignedTasks = useAssignedActiveCollabTasks()
+  const now = Date.now()
+  const overdueCount = (assignedTasks ?? []).filter((t) => isOverdue(t, now)).length
+  const dueCount = overdueCount + (assignedTasks ?? []).filter((t) => isDueToday(t, now)).length
   const { containerRef, onResizeStart, isResizing } = useSidebarResize<HTMLElement>({
     isOpen: true,
     width: chatSidebarWidth,
@@ -317,6 +326,22 @@ export function ChatModeSidebar(): React.JSX.Element {
             strokeWidth={tasksOpen ? 2.25 : 1.75}
           />
           <span className="flex-1">{translate('auto.components.chat.sidebar.tasks', 'Tasks')}</span>
+          {dueCount > 0 ? (
+            <span
+              title={translate(
+                'auto.components.chat.sidebar.tasksDue',
+                'Tasks due today or overdue'
+              )}
+              className={cn(
+                'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium tabular-nums',
+                overdueCount > 0
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                  : 'bg-muted text-muted-foreground'
+              )}
+            >
+              {dueCount}
+            </span>
+          ) : null}
         </button>
         <div className="relative">
           <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />

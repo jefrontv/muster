@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/store'
 import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
+import { ChatModeHeroTaskShortcuts } from './ChatModeHeroTaskShortcuts'
 
 /** Radio value for the standalone (no-workspace) chat option. */
 const STANDALONE = ''
@@ -167,6 +168,7 @@ export function ChatModeDraftHero({
           onSend={() => void submit()}
         />
       </div>
+      <ChatModeHeroTaskShortcuts />
     </div>
   )
 }
