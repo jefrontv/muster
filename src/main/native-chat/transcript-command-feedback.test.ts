@@ -54,6 +54,19 @@ describe('claude transcript command feedback', () => {
     expect(decodeClaudeTranscriptLine(line({ type: 'system', subtype: 'init' }), 'f')).toBeNull()
   })
 
+  it('strips hook execution reports from stdout, keeping the real outcome', () => {
+    const message = decodeClaudeTranscriptLine(
+      line({
+        type: 'system',
+        subtype: 'local_command',
+        content:
+          '<local-command-stdout>Compacted PreCompact ["/x/gk" ai hook run --host claude-code] completed successfully\nPostCompact ["/x/gk" ai hook run --host claude-code] completed successfully</local-command-stdout>'
+      }),
+      'f'
+    )
+    expect(message?.blocks).toEqual([{ type: 'text', text: 'Compacted' }])
+  })
+
   it('truncates hook-spam stdout to a status line, not a log', () => {
     const message = decodeClaudeTranscriptLine(
       line({

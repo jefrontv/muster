@@ -41,6 +41,9 @@ function isClaudeLocalCommandRecord(text: string): boolean {
 
 const LOCAL_COMMAND_STDOUT = /^<local-command-stdout>([\s\S]*?)<\/local-command-stdout>$/
 const LOCAL_COMMAND_STDOUT_MAX = 400
+// Hook execution reports the CLI appends to command stdout, e.g.
+// `PreCompact ["…/gk" ai hook run --host claude-code] completed successfully`.
+const HOOK_RUN_REPORT = /\s*[A-Z][A-Za-z]* \[[^\]]*\] (?:completed successfully|failed[^\n]*)/g
 
 /** The `<local-command-stdout>` payload as a system status line, or null when
  *  empty. Long payloads (hook spam) truncate — this is feedback, not a log. */
@@ -49,10 +52,11 @@ function claudeCommandStdoutMessage(
   id: string,
   timestamp: number | null
 ): NativeChatMessage | null {
-  const inner = LOCAL_COMMAND_STDOUT.exec(text.trim())?.[1]?.trim()
-  if (inner === undefined) {
+  const raw = LOCAL_COMMAND_STDOUT.exec(text.trim())?.[1]
+  if (raw === undefined) {
     return null
   }
+  const inner = raw.replace(HOOK_RUN_REPORT, '').trim()
   if (inner === '') {
     return null
   }

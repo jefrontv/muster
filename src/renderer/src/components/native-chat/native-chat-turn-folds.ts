@@ -119,11 +119,20 @@ export function deriveNativeChatTurnFolds(input: {
       continue
     }
     const finalAssistant = turn.messages.findLast((message) => message.role === 'assistant') ?? null
+    // A turn with no assistant reply (a slash command) ends in its feedback
+    // line — keep the trailing system row visible so the outcome isn't folded
+    // away with the machinery.
+    const finalVisible =
+      finalAssistant ??
+      turn.messages.findLast(
+        (message) => message.role === 'system' && !isInterruptStatusMessage(message)
+      ) ??
+      null
     const dropped = new Set<string>()
     const hidden = new Set<string>()
     let interrupted = false
     for (const message of turn.messages) {
-      if (message === turn.userMessage || message === finalAssistant) {
+      if (message === turn.userMessage || message === finalVisible) {
         continue
       }
       if (isInterruptStatusMessage(message)) {

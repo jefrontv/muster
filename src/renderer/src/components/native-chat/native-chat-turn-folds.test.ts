@@ -179,3 +179,45 @@ describe('nativeChatMessageText', () => {
     expect(nativeChatMessageText(msg('u1', 'user', '  hi  '))).toBe('hi')
   })
 })
+
+describe('slash-command turns keep their feedback visible', () => {
+  it('leaves the trailing system line outside the fold when no assistant reply exists', () => {
+    const folds = deriveNativeChatTurnFolds({
+      messages: [
+        msg('u1', 'user', '/foobar', { timestamp: 1 }),
+        msg('r1', 'reasoning', 'thinking', { timestamp: 2 }),
+        msg('s1', 'system', 'Unknown command: /foobar', { timestamp: 3 })
+      ],
+      isWorking: false
+    })
+    const fold = folds.get('u1')
+    expect(fold?.hiddenMessageIds.has('s1')).toBe(false)
+    expect(fold?.hiddenMessageIds.has('r1')).toBe(true)
+  })
+
+  it('still folds system rows when an assistant reply closes the turn', () => {
+    const folds = deriveNativeChatTurnFolds({
+      messages: [
+        msg('u1', 'user', 'hi', { timestamp: 1 }),
+        msg('s1', 'system', 'Conversation compacted', { timestamp: 2 }),
+        msg('a1', 'assistant', 'done', { timestamp: 3 })
+      ],
+      isWorking: false
+    })
+    expect(folds.get('u1')?.hiddenMessageIds.has('s1')).toBe(true)
+  })
+
+  it('never surfaces the interrupt status row as the visible tail', () => {
+    const folds = deriveNativeChatTurnFolds({
+      messages: [
+        msg('u1', 'user', '/x', { timestamp: 1 }),
+        msg('r1', 'reasoning', 'thinking', { timestamp: 2 }),
+        msg('i1', 'system', NATIVE_CHAT_INTERRUPTED_STATUS_TEXT, { timestamp: 3 })
+      ],
+      isWorking: false
+    })
+    const fold = folds.get('u1')
+    expect(fold?.droppedMessageIds.has('i1')).toBe(true)
+    expect(fold?.interrupted).toBe(true)
+  })
+})
