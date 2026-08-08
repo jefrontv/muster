@@ -9,6 +9,7 @@ import {
   type DictationInsertionTarget
 } from './dictation-insertion-target'
 import { formatFinalTranscriptSegment } from './dictation-final-segments'
+import { createDictationLiveInserter, type DictationLiveInserter } from './dictation-live-insert'
 import { recordStoppedSession, waitForStoppedSession } from './dictation-stopped-sessions'
 import { translate } from '@/i18n/i18n'
 import { showDictationStartErrorToast } from './dictation-start-error-toast'
@@ -35,6 +36,7 @@ export function DictationController() {
   const dictationRunRef = useRef(0)
   const holdGestureActiveRef = useRef(false)
   const insertionTargetRef = useRef<DictationInsertionTarget | null>(null)
+  const liveInserterRef = useRef<DictationLiveInserter | null>(null)
   const activeSessionIdRef = useRef<string | null>(null)
   const stoppedSessionIdsRef = useRef(new Set<string>())
   const stoppedResolversRef = useRef(new Map<string, () => void>())
@@ -72,6 +74,8 @@ export function DictationController() {
         )
       }
       insertionTargetRef.current = null
+      liveInserterRef.current?.cancel()
+      liveInserterRef.current = null
       finalTranscriptReceivedRef.current = false
       insertedFinalTranscriptRef.current = ''
       intentionalTargetCancellationRef.current = false
@@ -118,6 +122,13 @@ export function DictationController() {
     dictationRunRef.current = runId
     activeSessionIdRef.current = sessionId
     insertionTargetRef.current = captureInsertionTarget()
+    // Plain text controls get live word-by-word insertion; terminal and
+    // contenteditable targets keep insert-on-final.
+    liveInserterRef.current?.cancel()
+    liveInserterRef.current =
+      insertionTargetRef.current?.kind === 'text'
+        ? createDictationLiveInserter(insertionTargetRef.current.element)
+        : null
     stopRequestedDuringStartRef.current = false
     finalTranscriptReceivedRef.current = false
     erroredSessionIdsRef.current.clear()
@@ -182,6 +193,8 @@ export function DictationController() {
       discardBufferedAudio()
       const message = String(err)
       insertionTargetRef.current = null
+      liveInserterRef.current?.cancel()
+      liveInserterRef.current = null
       intentionalTargetCancellationRef.current = false
       stopRequestedDuringStartRef.current = false
       finalTranscriptReceivedRef.current = false
@@ -311,6 +324,13 @@ export function DictationController() {
       if (data.sessionId !== activeSessionIdRef.current) {
         return
       }
+      const live = liveInserterRef.current
+      if (live && !live.isAbandoned()) {
+        // Words land in the field itself; the indicator stays on "Listening…".
+        live.applyPartial(data.text)
+        setPartialTranscript('')
+        return
+      }
       setPartialTranscript(data.text)
     })
 
@@ -321,7 +341,15 @@ export function DictationController() {
       setPartialTranscript('')
       finalTranscriptReceivedRef.current = true
       const target = insertionTargetRef.current
-      if (target) {
+      const live = liveInserterRef.current
+      if (live && !live.isAbandoned()) {
+        const textToInsert = formatFinalTranscriptSegment(
+          data.text,
+          insertedFinalTranscriptRef.current
+        )
+        live.applyFinal(textToInsert)
+        insertedFinalTranscriptRef.current += textToInsert
+      } else if (target) {
         const textToInsert = formatFinalTranscriptSegment(
           data.text,
           insertedFinalTranscriptRef.current
