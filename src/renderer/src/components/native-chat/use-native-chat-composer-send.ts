@@ -112,9 +112,13 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     }
     if (hasTransport) {
       // Stream transport: plain user turns (with optional images as base64
-      // content blocks). Slash/skill sends still have no headless path.
+      // content blocks).
       if (classifySend(text) !== 'chat') {
-        setNotice('Commands are not supported in chat threads yet — use the pickers below.')
+        // The headless CLI runs slash text itself — built-ins, custom commands,
+        // and a graceful "Unknown command: /x" for the rest — so the draft goes
+        // through verbatim. Reference trailers are withheld (they would read as
+        // command arguments); chips stay staged for the next prose turn.
+        sendViaTransport(draft)
         return
       }
       // Base64 image blocks carry no filesystem identity — append each image's

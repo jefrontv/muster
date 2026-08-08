@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => ({
   sendNativeChatMessageVerified: vi.fn(),
   trackPendingSend: vi.fn(),
   setDraft: vi.fn(),
+  draftValue: 'hello',
   draftScopeKeys: [] as string[]
 }))
 
@@ -79,7 +80,7 @@ vi.mock('@/lib/native-chat-telemetry', () => ({
 vi.mock('./use-native-chat-draft', () => ({
   useNativeChatDraft: (scopeKey: string) => {
     mocks.draftScopeKeys.push(scopeKey)
-    return { draft: 'hello', setDraft: mocks.setDraft }
+    return { draft: mocks.draftValue, setDraft: mocks.setDraft }
   }
 }))
 vi.mock('./native-chat-draft-cache', () => ({
@@ -264,6 +265,29 @@ describe('NativeChatComposer', () => {
     act(() => approval?.cancelTurn())
     expect(onStop).toHaveBeenCalledOnce()
     expect(transportInterrupt).toHaveBeenCalledOnce()
+  })
+
+  it('sends slash commands through the stream transport verbatim', async () => {
+    const transportSend = vi.fn().mockResolvedValue(true)
+    mocks.draftValue = '/init'
+    render(
+      <NativeChatComposer
+        terminalTabId="tab-1"
+        paneKey="tab-1:leaf-cmd"
+        targetPtyId={null}
+        agent="claude"
+        transportSend={transportSend}
+      />
+    )
+
+    await act(async () => {
+      ;(mocks.fieldProps as unknown as { onSend: () => void }).onSend()
+    })
+    mocks.draftValue = 'hello'
+
+    // The headless CLI owns slash handling (runs known/custom commands, answers
+    // "Unknown command" otherwise) — the composer must not block or rewrite it.
+    expect(transportSend).toHaveBeenCalledWith('/init', undefined)
   })
 
   it('passes no approval to the field without a pending permission request', () => {
