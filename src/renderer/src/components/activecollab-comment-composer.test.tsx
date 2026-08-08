@@ -289,13 +289,15 @@ describe('ActiveCollabCommentComposer layout', () => {
     const buttonRow = submitButton().parentElement
 
     // Regression guard: the button used to sit `self-end` BESIDE the field, which left it floating
-    // against the field's bottom corner aligned to nothing.
+    // against the field's bottom corner aligned to nothing. The footer row now also carries the
+    // attach action so the whole composer reads as one framed control.
     expect(field).not.toBeNull()
     expect(buttonRow?.contains(field!)).toBe(false)
     expect(
       field!.compareDocumentPosition(buttonRow!) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
-    expect(buttonRow?.className).toContain('justify-end')
+    expect(buttonRow?.className).toContain('justify-between')
+    expect(buttonRow?.textContent).toContain('Attach Files')
   })
 
   it('carries the placeholder onto the field, which is what the empty-state CSS reads', async () => {
@@ -681,18 +683,19 @@ describe('ActiveCollabCommentComposer attachments', () => {
     )
     expect(surface).not.toBeNull()
 
+    const frame = surface?.firstElementChild as HTMLElement
     const drag = new Event('dragover', { bubbles: true })
     Object.defineProperty(drag, 'dataTransfer', { value: { types: ['Files'] } })
     await act(async () => {
       surface?.dispatchEvent(drag)
     })
-    expect(container.querySelector('.border-dashed')?.className).toContain('bg-accent/40')
+    expect(frame.className).toContain('ring-ring/30')
 
     // The router swallows the drop in the capture phase, so the highlight clears from there too.
     await act(async () => {
       document.dispatchEvent(new Event('drop', { bubbles: true }))
     })
-    expect(container.querySelector('.border-dashed')?.className).not.toContain('bg-accent/40')
+    expect(frame.className).not.toContain('ring-ring/30')
   })
 
   it('stages a picked file with its name and its size', async () => {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
-import { LoaderCircle, Send } from 'lucide-react'
+import { LoaderCircle, Paperclip, Send } from 'lucide-react'
 
 import { RichMarkdownLinkBubble } from '@/components/editor/RichMarkdownLinkBubble'
 import { Button } from '@/components/ui/button'
@@ -138,13 +138,14 @@ export function ActiveCollabCommentComposer({
   }, [attachments, disabled, editor, onSubmit])
 
   return (
-    // Stacked, not side-by-side: the button used to sit `self-end` beside a two-row textarea, which
-    // left it floating against the field's bottom corner aligned to nothing.
-    <div className="mt-2 flex flex-col gap-2" {...attachments.dropTargetProps}>
+    // One frame: toolbar, editor, staged attachments, and the action footer all
+    // live inside the same bordered box, so the composer reads as one control.
+    <div className="mt-2" {...attachments.dropTargetProps}>
       <div
         ref={rootRef}
         className={cn(
-          'relative rounded-md border border-input bg-transparent focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+          'relative rounded-md border border-input bg-transparent transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+          attachments.dragging && 'border-ring ring-[3px] ring-ring/30',
           disabled && 'pointer-events-none opacity-50'
         )}
       >
@@ -177,32 +178,40 @@ export function ActiveCollabCommentComposer({
             onCopy={link.onCopy}
           />
         )}
-      </div>
+        <ActiveCollabCommentAttachmentStrip
+          files={attachments.files}
+          busy={attachments.busy}
+          error={attachments.error}
+          disabled={disabled}
+          onRemove={attachments.remove}
+        />
 
-      <ActiveCollabCommentAttachmentStrip
-        files={attachments.files}
-        busy={attachments.busy}
-        dragging={attachments.dragging}
-        error={attachments.error}
-        disabled={disabled}
-        onPick={attachments.pick}
-        onRemove={attachments.remove}
-      />
-
-      <div className="flex justify-end">
-        <Button
-          size="sm"
-          onClick={submit}
-          disabled={disabled || !hasText || attachments.busy || attachments.blocked}
-          className="gap-2"
-        >
-          {busy || attachments.busy ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <Send className="size-4" />
-          )}
-          {translate('auto.components.activecollab.task_workspace.comment_submit', 'Comment')}
-        </Button>
+        <div className="flex items-center justify-between gap-2 border-t border-border px-1.5 py-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+            disabled={disabled || attachments.busy}
+            onClick={attachments.pick}
+          >
+            <Paperclip className="size-3.5" />
+            {translate('auto.components.activecollab.comment_attachments.attach', 'Attach Files')}
+          </Button>
+          <Button
+            size="sm"
+            onClick={submit}
+            disabled={disabled || !hasText || attachments.busy || attachments.blocked}
+            className="gap-2"
+          >
+            {busy || attachments.busy ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" />
+            )}
+            {translate('auto.components.activecollab.task_workspace.comment_submit', 'Comment')}
+          </Button>
+        </div>
       </div>
     </div>
   )

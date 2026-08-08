@@ -17,6 +17,7 @@ import {
   nativeChatComposerTargetIsRemote,
   type NativeChatResolvedTarget
 } from './native-chat-composer-target'
+import { formatNativeChatImagePathNote } from './native-chat-file-reference-display'
 import type { NativeChatPtySessionOptionsSurface } from './native-chat-pty-session-options'
 import type { AgentType } from '../../../../shared/agent-status-types'
 import { formatActiveCollabTaskReference } from './native-chat-activecollab-references'
@@ -116,7 +117,13 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
         setNotice('Commands are not supported in chat threads yet — use the pickers below.')
         return
       }
-      sendViaTransport(text, imagePaths.length > 0 ? imagePaths : undefined)
+      // Base64 image blocks carry no filesystem identity — append each image's
+      // path as a note line so the agent can act on the file, not just see it.
+      const textWithImageNotes =
+        imagePaths.length > 0
+          ? `${text.trimEnd()}\n${imagePaths.map(formatNativeChatImagePathNote).join('\n')}`
+          : text
+      sendViaTransport(textWithImageNotes, imagePaths.length > 0 ? imagePaths : undefined)
       clearImageAttachments()
       clearTaskAttachments()
       return

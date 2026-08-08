@@ -13,6 +13,26 @@ export type NativeChatParsedFileReferences = {
   text: string
 }
 
+// Image attachments ride chat-thread sends as base64 blocks, which carry no
+// filesystem identity — the agent can see the image but cannot attach, move,
+// or reference the file. This note line gives it the path; the chat surface
+// strips it (the thumbnail already shows the image).
+const IMAGE_PATH_NOTE_RE = /^\[attached image: .*\]$/gm
+
+export function formatNativeChatImagePathNote(path: string): string {
+  return `[attached image: ${path}]`
+}
+
+export function stripNativeChatImagePathNotes(text: string): string {
+  if (!text.includes('[attached image: ')) {
+    return text
+  }
+  return text
+    .replace(IMAGE_PATH_NOTE_RE, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 export function parseNativeChatFileReferences(text: string): NativeChatParsedFileReferences {
   const files: string[] = []
   let next = text.replace(QUOTED_REFERENCE, (_match, lead: string, escaped: string) => {

@@ -4,12 +4,11 @@ import { LoaderCircle, Paperclip, X } from 'lucide-react'
 import { formatBytes } from '@/components/status-bar/workspace-space-format'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
-import { cn } from '@/lib/utils'
 import type { ActiveCollabStagedFile } from '../../../shared/activecollab-api-types'
 
 /**
- * The attachments strip under the comment editor, matching what ActiveCollab's own composer puts
- * there: a labelled drop area with an "Attach Files" button and one row per staged file.
+ * Staged-attachment rows inside the comment composer (the attach button and the
+ * drop affordance live on the composer frame itself).
  *
  * Nothing here uploads. Rows are described from disk — a real name and a real size — so the author
  * can see what is about to go and drop the wrong file before it does. A row that can never upload
@@ -73,49 +72,23 @@ function StagedRow({
 export function ActiveCollabCommentAttachmentStrip({
   files,
   busy,
-  dragging,
   error,
   disabled,
-  onPick,
   onRemove
 }: {
   files: ActiveCollabStagedFile[]
   busy: boolean
-  dragging: boolean
   error: string | null
   disabled: boolean
-  onPick: () => void
   onRemove: (path: string) => void
-}): React.JSX.Element {
+}): React.JSX.Element | null {
+  if (files.length === 0 && error === null) {
+    return null
+  }
   return (
-    <div
-      className={cn(
-        'rounded-md border border-dashed border-input px-2 py-1.5 transition-colors',
-        dragging && 'border-ring bg-accent/40'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-[11px] text-muted-foreground">
-          {translate(
-            'auto.components.activecollab.comment_attachments.heading',
-            'Attachments (you can drag and drop here)'
-          )}
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 shrink-0 gap-1.5 text-[12px]"
-          disabled={disabled || busy}
-          onClick={onPick}
-        >
-          <Paperclip className="size-3.5" />
-          {translate('auto.components.activecollab.comment_attachments.attach', 'Attach Files')}
-        </Button>
-      </div>
-
+    <div className="px-1.5 pb-1.5">
       {files.length === 0 ? null : (
-        <ul className="mt-1.5 flex flex-col gap-1">
+        <ul className="flex flex-col gap-1">
           {files.map((file) => (
             <StagedRow
               key={file.path}

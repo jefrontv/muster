@@ -19,7 +19,10 @@ import {
 } from './native-chat-user-message-collapse'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import { NativeChatImageThumb } from './NativeChatImageThumb'
-import { parseNativeChatFileReferences } from './native-chat-file-reference-display'
+import {
+  parseNativeChatFileReferences,
+  stripNativeChatImagePathNotes
+} from './native-chat-file-reference-display'
 import { parseActiveCollabTaskReferences } from './native-chat-activecollab-references'
 import { NativeChatTaskChip } from './NativeChatTaskChip'
 import { NativeChatToolRun } from './NativeChatToolRun'
@@ -168,7 +171,9 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   if (isUser) {
     // Attached files travel as @-references in the prompt text; lift them back
     // out so the row shows attachment chips instead of raw paths.
-    const { files: referencedFiles, text: withoutFiles } = parseNativeChatFileReferences(markdown)
+    const { files: referencedFiles, text: withoutFiles } = parseNativeChatFileReferences(
+      stripNativeChatImagePathNotes(markdown)
+    )
     // AC# tokens follow the same contract as @-file references: the agent reads
     // the token, the user sees the chip.
     const { taskIds: taskRefs, text: userMarkdown } = parseActiveCollabTaskReferences(withoutFiles)

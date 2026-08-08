@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { parseNativeChatFileReferences } from './native-chat-file-reference-display'
+import {
+  formatNativeChatImagePathNote,
+  parseNativeChatFileReferences,
+  stripNativeChatImagePathNotes
+} from './native-chat-file-reference-display'
 
 describe('parseNativeChatFileReferences', () => {
   it('lifts a quoted reference out of the prompt text', () => {
@@ -26,5 +30,21 @@ describe('parseNativeChatFileReferences', () => {
     const parsed = parseNativeChatFileReferences(text)
     expect(parsed.files).toEqual([])
     expect(parsed.text).toBe(text)
+  })
+})
+
+describe('image path notes', () => {
+  it('round-trips: formatted note lines strip cleanly from display text', () => {
+    const sent = `look at this\n${formatNativeChatImagePathNote('/tmp/shot 1.png')}`
+    expect(stripNativeChatImagePathNotes(sent)).toBe('look at this')
+  })
+
+  it('leaves ordinary text alone', () => {
+    expect(stripNativeChatImagePathNotes('no notes here')).toBe('no notes here')
+  })
+
+  it('strips several notes and collapses the leftover gap', () => {
+    const sent = `a\n\n${formatNativeChatImagePathNote('/a.png')}\n${formatNativeChatImagePathNote('/b.png')}\n\nb`
+    expect(stripNativeChatImagePathNotes(sent)).toBe('a\n\nb')
   })
 })
