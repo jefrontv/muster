@@ -153,6 +153,87 @@ function ActiveCollabEventChip({ event }: { event: ActiveCollabToolEvent }): Rea
   )
 }
 
+// Deck geometry: how far each older card peeks above the front one, and how
+// many peek before the rest hide behind the stack.
+const DECK_PEEK_PX = 7
+const DECK_MAX_PEEK = 2
+const DECK_CARD_HEIGHT_PX = 30
+
+/** Collapsed tool calls as a cascading card deck: the newest call rides in
+ *  front, earlier calls peek behind it and shift up as new calls stream in.
+ *  The whole deck is the expand/collapse toggle. */
+function ToolCallDeck({
+  calls,
+  onToggle
+}: {
+  calls: { name: string; preview: string }[]
+  onToggle: () => void
+}): React.JSX.Element {
+  const last = calls.length - 1
+  const peek = Math.min(last, DECK_MAX_PEEK)
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={translate('components.native-chat.tool.expandRun', 'Show tool calls')}
+      title={calls.map((call) => call.name).join(' · ')}
+      className="group relative block w-full max-w-xl text-left"
+      style={{ height: DECK_CARD_HEIGHT_PX + peek * DECK_PEEK_PX }}
+    >
+      {calls.map((call, index) => {
+        const depth = last - index
+        if (depth > DECK_MAX_PEEK) {
+          return null
+        }
+        return (
+          <div
+            key={index}
+            className={cn(
+              'absolute inset-x-0 flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-2.5',
+              'transition-all duration-300 motion-reduce:transition-none',
+              depth === 0 &&
+                'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 group-hover:bg-accent'
+            )}
+            style={{
+              top: (peek - depth) * DECK_PEEK_PX,
+              height: DECK_CARD_HEIGHT_PX,
+              zIndex: 10 - depth,
+              transform: `scale(${1 - depth * 0.04})`,
+              opacity: 1 - depth * 0.35
+            }}
+          >
+            {depth === 0 ? (
+              <>
+                <Wrench className="size-3 shrink-0 text-muted-foreground" />
+                <code className="shrink-0 font-mono text-xs font-medium text-foreground/90">
+                  {call.name}
+                </code>
+                {call.preview ? (
+                  <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
+                    {call.preview}
+                  </span>
+                ) : null}
+                {calls.length > 1 ? (
+                  <span className="ml-auto shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+                    ×{calls.length}
+                  </span>
+                ) : null}
+                <ChevronRight
+                  className={cn(
+                    'size-3.5 shrink-0 text-muted-foreground transition-opacity',
+                    calls.length > 1 ? '' : 'ml-auto',
+                    'opacity-0 group-hover:opacity-100'
+                  )}
+                />
+              </>
+            ) : null}
+          </div>
+        )
+      })}
+    </button>
+  )
+}
+
 /** A run of a message's tool calls/results, collapsed to a one-line summary that
  *  expands to the individual inline tool lines. `expandSignal` lets the global
  *  toolbar toggle drive every run at once while still allowing per-run override. */
@@ -180,6 +261,10 @@ export function NativeChatToolRun({
   // Result-only runs keep the pill (their body is only reachable through it);
   // a run that is purely AC events needs no wrench at all.
   const callCount = countToolCalls(plainBlocks) || (events.length > 0 ? 0 : plainBlocks.length)
+  const deckCalls = plainBlocks.filter(isToolCallBlock).map((block) => ({
+    name: humanizeToolName(block.name),
+    preview: summarizeToolInput(block.input)
+  }))
   const nameCounts = toolRunNameCounts(plainBlocks)
   const countLabel = translate(
     callCount === 1 ? 'components.native-chat.tool.countOne' : 'components.native-chat.tool.countN',
@@ -198,7 +283,18 @@ export function NativeChatToolRun({
           ))}
         </div>
       ) : null}
-      {callCount > 0 ? (
+      {callCount > 0 && !open && deckCalls.length > 0 ? (
+        // Collapsed: the deck IS the summary — newest call in front, the rest
+        // cascading behind it as they stream in.
+        <ToolCallDeck
+          calls={deckCalls}
+          onToggle={() => {
+            captureBeforeToggle()
+            setOpen(true)
+          }}
+        />
+      ) : null}
+      {callCount > 0 && (open || deckCalls.length === 0) ? (
         <button
           type="button"
           onClick={() => {
