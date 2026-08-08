@@ -21,6 +21,8 @@ export type ActiveCollabTaskWorkspaceProps = {
   taskId: number | null
   /** Present when the header's project name can open the project drill-in view. */
   onOpenProject?: (id: number, name: string) => void
+  /** Collapse the detail pane back to the list. */
+  onClose?: () => void
 }
 
 // One class list for every state the pane can be in, so a skeleton, a failure and a loaded task all
@@ -60,7 +62,8 @@ function ActiveCollabFailureNotice({
 export function ActiveCollabTaskWorkspace({
   projectId,
   taskId,
-  onOpenProject
+  onOpenProject,
+  onClose
 }: ActiveCollabTaskWorkspaceProps): React.JSX.Element | null {
   const { detail, failure, reload, replaceTask, appendComment } = useActiveCollabTaskDetail(
     projectId,
@@ -109,6 +112,7 @@ export function ActiveCollabTaskWorkspace({
         completing={writes.pending === 'completion'}
         onCompletedChange={(completed) => void writes.setCompleted(completed)}
         onOpenProject={onOpenProject}
+        onClose={onClose}
       />
 
       <ActiveCollabTaskMetadataBar

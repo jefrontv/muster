@@ -135,6 +135,7 @@ export function TaskPageActiveCollabPanel({
             projectId={selected.projectId}
             taskId={selected.taskId}
             onOpenProject={handleOpenProject}
+            onClose={() => setSelected(null)}
           />
         </aside>
       ) : null}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Check, LoaderCircle, Play } from 'lucide-react'
+import { Check, LoaderCircle, Play, X } from 'lucide-react'
 
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -23,6 +23,8 @@ type ActiveCollabTaskHeaderProps = {
   onCompletedChange: (completed: boolean) => void
   /** Present when the project name should open the project drill-in view. */
   onOpenProject?: (id: number, name: string) => void
+  /** Collapse the detail pane back to the list. */
+  onClose?: () => void
 }
 
 /**
@@ -37,7 +39,8 @@ export function ActiveCollabTaskHeader({
   disabled,
   completing,
   onCompletedChange,
-  onOpenProject
+  onOpenProject,
+  onClose
 }: ActiveCollabTaskHeaderProps): React.JSX.Element {
   const created = activeCollabStamp(task.createdOn, 'date')
   const toggleLabel = task.isCompleted
@@ -165,6 +168,30 @@ export function ActiveCollabTaskHeader({
                 </span>
               </TooltipTrigger>
               <TooltipContent side="bottom">{startWorkHint}</TooltipContent>
+            </Tooltip>
+          ) : null}
+          {onClose ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="-mr-1 -mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                  aria-label={translate(
+                    'auto.components.activecollab.task_workspace.close',
+                    'Close task details'
+                  )}
+                  onClick={onClose}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {translate(
+                  'auto.components.activecollab.task_workspace.close',
+                  'Close task details'
+                )}
+              </TooltipContent>
             </Tooltip>
           ) : null}
         </div>
