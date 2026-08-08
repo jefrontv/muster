@@ -1,4 +1,13 @@
-import { ArrowUp, Check, Mic, Plus, ShieldAlert, ShieldQuestion, Square } from 'lucide-react'
+import {
+  ArrowUp,
+  Check,
+  ChevronDown,
+  Mic,
+  Plus,
+  ShieldAlert,
+  ShieldQuestion,
+  Square
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -159,18 +168,19 @@ export function NativeChatComposerActions({
                 )}
                 className={
                   fullAccess
-                    ? 'flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-500 transition-colors hover:bg-amber-500/25'
-                    : 'flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted'
+                    ? 'flex h-7 items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 pl-2.5 pr-2 text-xs font-medium text-amber-500 transition-colors hover:bg-amber-500/20'
+                    : 'flex h-7 items-center gap-1.5 rounded-full border border-border/70 pl-2.5 pr-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground'
                 }
               >
                 {fullAccess ? (
-                  <ShieldAlert className="size-3" />
+                  <ShieldAlert className="size-3.5" />
                 ) : (
-                  <ShieldQuestion className="size-3" />
+                  <ShieldQuestion className="size-3.5" />
                 )}
                 {fullAccess
                   ? translate('auto.components.native-chat.composer.fullAccess', 'Full access')
                   : translate('auto.components.native-chat.composer.askFirst', 'Ask first')}
+                <ChevronDown className="size-3 text-muted-foreground/70" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top">
@@ -225,7 +235,7 @@ export function NativeChatComposerActions({
           onClick={isWorking ? onStop : onSend}
           variant={isWorking ? 'secondary' : 'default'}
           size="icon"
-          className="size-8 rounded-full pointer-coarse:size-10"
+          className="ml-1.5 size-8 rounded-full pointer-coarse:size-10"
         >
           {isWorking ? (
             <Square className="size-3.5 fill-current" />
