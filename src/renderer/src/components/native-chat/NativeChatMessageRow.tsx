@@ -20,7 +20,7 @@ import {
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import { NativeChatImageThumb } from './NativeChatImageThumb'
 import { parseNativeChatFileReferences } from './native-chat-file-reference-display'
-import { parseActiveCollabTaskRefs } from './native-chat-activecollab-references'
+import { parseActiveCollabTaskReferences } from './native-chat-activecollab-references'
 import { NativeChatTaskChip } from './NativeChatTaskChip'
 import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
@@ -168,8 +168,10 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   if (isUser) {
     // Attached files travel as @-references in the prompt text; lift them back
     // out so the row shows attachment chips instead of raw paths.
-    const { files: referencedFiles, text: userMarkdown } = parseNativeChatFileReferences(markdown)
-    const taskRefs = parseActiveCollabTaskRefs(userMarkdown)
+    const { files: referencedFiles, text: withoutFiles } = parseNativeChatFileReferences(markdown)
+    // AC# tokens follow the same contract as @-file references: the agent reads
+    // the token, the user sees the chip.
+    const { taskIds: taskRefs, text: userMarkdown } = parseActiveCollabTaskReferences(withoutFiles)
     const canCollapse = shouldCollapseUserMessage(userMarkdown)
     const collapsed = canCollapse && !userMessageExpanded
     // Why: an optimistic echo is rendered identically to a real user turn (no
