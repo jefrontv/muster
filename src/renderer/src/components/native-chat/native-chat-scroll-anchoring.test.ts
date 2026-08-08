@@ -108,14 +108,14 @@ describe('shouldShowJumpToLatest', () => {
 
 describe('resolveAnchorSpacerPx', () => {
   it('reserves the space below the anchor up to the viewport minus the offset', () => {
-    // 600px viewport, 16px offset, 100px of content below the anchor → 484px.
+    // 600px viewport, 40px offset, 100px of content below the anchor → 460px.
     expect(
       resolveAnchorSpacerPx({
         viewportHeight: 600,
         anchorTop: 900,
         contentHeightWithoutSpacer: 1000
       })
-    ).toBe(484)
+    ).toBe(460)
   })
   it('shrinks to zero once the turn fills the viewport', () => {
     expect(

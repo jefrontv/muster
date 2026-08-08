@@ -20,8 +20,9 @@ export type NativeChatScrollMode = 'following-end' | 'anchoring-new-turn' | 'fre
  *  back down on the next stream chunk. */
 export const NATIVE_CHAT_FOLLOW_REARM_BAND_PX = 40
 
-/** Gap kept between the viewport top and an anchored user message. */
-export const NATIVE_CHAT_ANCHOR_TOP_OFFSET_PX = 16
+/** Gap kept between the viewport top and an anchored user message. Roomy
+ *  enough that a fresh send doesn't read as pinned against the header. */
+export const NATIVE_CHAT_ANCHOR_TOP_OFFSET_PX = 40
 
 /** Debounce before the "jump to latest" pill appears; hiding is instant. */
 export const NATIVE_CHAT_JUMP_SHOW_DEBOUNCE_MS = 150

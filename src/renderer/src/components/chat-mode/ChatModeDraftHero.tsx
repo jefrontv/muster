@@ -161,7 +161,7 @@ export function ChatModeDraftHero({
               void submit()
             }
           }}
-          className="scrollbar-sleek max-h-40 min-h-16 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-20"
+          className="scrollbar-sleek field-sizing-content max-h-64 min-h-16 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-20"
         />
         <ChatModeDraftHeroControls
           sendDisabled={text.trim() === '' || submitting}
