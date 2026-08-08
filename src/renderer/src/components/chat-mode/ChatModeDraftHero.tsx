@@ -72,7 +72,7 @@ export function ChatModeDraftHero({
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
       <h1 className="mx-auto w-full max-w-2xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
-        {translate('auto.components.chat.hero.headlinePrefix', 'What should we build in')}{' '}
+        {translate('auto.components.chat.hero.headlinePrefix', 'What should we work on in')}{' '}
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-block max-w-64 cursor-pointer truncate border-b border-dotted border-foreground/60 align-bottom text-foreground transition-colors hover:border-foreground/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
