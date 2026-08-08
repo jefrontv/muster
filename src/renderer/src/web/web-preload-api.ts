@@ -1265,7 +1265,10 @@ function createNativeChatApi(): NativeChatApi {
         cancelled = true
         handle?.unsubscribe()
       }
-    }
+    },
+    // Web has no local transcript/file access; the meter and thumbnails hide.
+    readContextUsage: async () => null,
+    readImageDataUrl: async () => null
   }
 }
 

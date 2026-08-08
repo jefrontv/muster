@@ -61,6 +61,9 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
     lastActivityAt: typeof raw.lastActivityAt === 'number' ? raw.lastActivityAt : 0,
     ...(typeof raw.lastVisitedAt === 'number' ? { lastVisitedAt: raw.lastVisitedAt } : {}),
     ...(typeof raw.lastCompletedAt === 'number' ? { lastCompletedAt: raw.lastCompletedAt } : {}),
+    ...(typeof raw.contextWindow === 'number' && raw.contextWindow > 0
+      ? { contextWindow: raw.contextWindow }
+      : {}),
     ...(raw.archived === true ? { archived: true } : {})
   }
 }
@@ -186,6 +189,7 @@ export class ChatWorkspaceStore {
         | 'lastActivityAt'
         | 'lastVisitedAt'
         | 'lastCompletedAt'
+        | 'contextWindow'
         | 'archived'
       >
     >

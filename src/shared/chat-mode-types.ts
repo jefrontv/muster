@@ -38,6 +38,9 @@ export type ChatThread = {
   lastVisitedAt?: number
   /** When the latest turn completed; with lastVisitedAt drives the unread "Done". */
   lastCompletedAt?: number
+  /** Model's context window (tokens) from the CLI's last result record;
+   *  persisted so the meter is right before the first turn of a new app run. */
+  contextWindow?: number
   archived?: boolean
 }
 

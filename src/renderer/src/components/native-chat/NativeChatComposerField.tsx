@@ -69,6 +69,8 @@ export type NativeChatComposerFieldProps = {
   /** Context-window donut input; null hides the meter. */
   contextUsedTokens: number | null
   contextMaxTokens?: number
+  fullAccess?: boolean
+  onSetFullAccess?: (enabled: boolean) => void
 }
 
 export type NativeChatComposerImageAttachment = {
@@ -116,7 +118,9 @@ export function NativeChatComposerField({
   approval,
   stash,
   contextUsedTokens,
-  contextMaxTokens
+  contextMaxTokens,
+  fullAccess,
+  onSetFullAccess
 }: NativeChatComposerFieldProps): React.JSX.Element {
   return (
     <div className="shrink-0 bg-background">
@@ -258,6 +262,8 @@ export function NativeChatComposerField({
                   stash={stash}
                   contextUsedTokens={contextUsedTokens}
                   contextMaxTokens={contextMaxTokens}
+                  fullAccess={fullAccess}
+                  onSetFullAccess={onSetFullAccess}
                 />
               )}
             </div>

@@ -10,8 +10,9 @@ export type NativeChatPermissionRequest = {
   input: unknown
 }
 
-/** 'allow-always' allows the request AND remembers the tool for the session. */
-export type NativeChatPermissionBehavior = 'allow' | 'allow-always' | 'deny'
+/** 'allow-always' allows AND remembers the tool for the session; 'allow-all'
+ *  switches the session to full access (every later request auto-approves). */
+export type NativeChatPermissionBehavior = 'allow' | 'allow-always' | 'allow-all' | 'deny'
 
 /** Non-PTY message transport (chat-mode's headless stream-json child). When
  *  present it replaces the PTY send path; PTY-only affordances (interrupt ESC,
@@ -36,6 +37,10 @@ export type NativeChatTransport = {
   permissionRequests?: NativeChatPermissionRequest[]
   /** Answer the given pending request. Absent for PTY chat. */
   respondPermission?: (requestId: string, behavior: NativeChatPermissionBehavior) => void
+  /** True while the session auto-approves every tool (full access). */
+  fullAccess?: boolean
+  /** Turn full access on/off for the session. */
+  setFullAccess?: (enabled: boolean) => void
 }
 
 export type NativeChatViewProps = {

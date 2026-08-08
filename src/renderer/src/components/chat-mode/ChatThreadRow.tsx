@@ -148,11 +148,14 @@ export function ChatThreadRow({ thread }: { thread: ChatThread }): React.JSX.Ele
   }
 
   return (
-    <li className="group/thread flex items-center">
+    // The menu button overlays the row's right edge so the hover/active surface
+    // spans the full sidebar width instead of stopping short of the dots.
+    <li className="group/thread relative">
       <button
         type="button"
         className={cn(
-          'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
+          'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-2 pr-2 text-left text-sm transition-[padding]',
+          'group-hover/thread:pr-8',
           thread.id === activeChatThreadId
             ? 'bg-accent text-accent-foreground'
             : status === 'idle'
@@ -170,7 +173,7 @@ export function ChatThreadRow({ thread }: { thread: ChatThread }): React.JSX.Ele
           <Button
             variant="ghost"
             size="icon-xs"
-            className="opacity-0 transition-opacity group-hover/thread:opacity-100"
+            className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover/thread:opacity-100 data-[state=open]:opacity-100"
             aria-label={translate('auto.components.chat.sidebar.threadMenu', 'Chat menu')}
           >
             <MoreHorizontal className="size-3.5" />

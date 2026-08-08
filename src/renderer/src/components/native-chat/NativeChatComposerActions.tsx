@@ -1,4 +1,4 @@
-import { ArrowUp, Mic, Plus, Square } from 'lucide-react'
+import { ArrowUp, Mic, Plus, ShieldAlert, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
@@ -30,6 +30,9 @@ export type NativeChatComposerActionsProps = {
   /** Context-window donut input; null hides the meter. */
   contextUsedTokens: number | null
   contextMaxTokens?: number
+  /** Full-access session (auto-approve all tools); click turns it off. */
+  fullAccess?: boolean
+  onSetFullAccess?: (enabled: boolean) => void
 }
 
 export function NativeChatComposerActions({
@@ -49,7 +52,9 @@ export function NativeChatComposerActions({
   sessionOptionsSnapshot,
   stash,
   contextUsedTokens,
-  contextMaxTokens
+  contextMaxTokens,
+  fullAccess,
+  onSetFullAccess
 }: NativeChatComposerActionsProps): React.JSX.Element {
   const dictationLabel = isDictating
     ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
@@ -129,6 +134,26 @@ export function NativeChatComposerActions({
             {dictationLabel}
           </TooltipContent>
         </Tooltip>
+        {fullAccess && onSetFullAccess ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-500 transition-colors hover:bg-amber-500/25"
+                onClick={() => onSetFullAccess(false)}
+              >
+                <ShieldAlert className="size-3" />
+                {translate('auto.components.native-chat.composer.fullAccess', 'Full access')}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={4}>
+              {translate(
+                'auto.components.native-chat.composer.fullAccessOff',
+                'All tools auto-approve. Click to ask again.'
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
         {contextUsedTokens !== null ? (
           <NativeChatContextWindowMeter
             usedTokens={contextUsedTokens}

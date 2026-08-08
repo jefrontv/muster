@@ -25,7 +25,8 @@ export function NativeChatInteractiveCard({
   send,
   canSend,
   onShowingQuestionChange,
-  answerInputRef
+  answerInputRef,
+  suppressApproval = false
 }: {
   paneKey: string
   send: NativeChatInteractiveSend
@@ -36,6 +37,9 @@ export function NativeChatInteractiveCard({
   /** Forwarded to the question card's free-text row so pane-level Paste keeps
    *  a target while the composer is unmounted. */
   answerInputRef?: React.RefObject<HTMLInputElement | null>
+  /** Stream-transport panes answer approvals in the composer (stdio control
+   *  protocol); the hook-driven card would be a dead duplicate there. */
+  suppressApproval?: boolean
 }): React.JSX.Element | null {
   const interactivePrompt = useAppStore(
     (s) => s.agentStatusByPaneKey[paneKey]?.interactivePrompt ?? null
@@ -93,6 +97,9 @@ export function NativeChatInteractiveCard({
   }, [showingQuestion, onShowingQuestionChange])
 
   if (!card || !canSend || cardKey === dismissedKey) {
+    return null
+  }
+  if (card.kind === 'approval' && suppressApproval) {
     return null
   }
   if (card.kind === 'question') {

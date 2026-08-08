@@ -88,13 +88,17 @@ export default function ChatModePage(): React.JSX.Element {
           void store.updateChatThread(event.threadId, {
             lastActivityAt: now,
             lastCompletedAt: now,
+            ...(event.contextWindow !== undefined ? { contextWindow: event.contextWindow } : {}),
             ...(watched ? { lastVisitedAt: now } : {})
           })
           break
         }
         case 'permission-request':
-          // "Always allow this session" verdicts short-circuit the queue.
-          if (store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName)) {
+          // Full access + "Always allow this session" verdicts short-circuit the queue.
+          if (
+            store.chatThreadFullAccess[event.threadId] === true ||
+            store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName)
+          ) {
             store.respondChatThreadPermission(event.threadId, event.requestId, 'allow')
             break
           }
@@ -117,8 +121,9 @@ export default function ChatModePage(): React.JSX.Element {
           cancelSealClear(event.threadId)
           store.clearChatThreadStreamingText(event.threadId)
           store.clearChatThreadPermissionRequests(event.threadId)
-          // Session-scoped "always allow" verdicts die with the session.
+          // Session-scoped "always allow" and full-access verdicts die with the session.
           store.clearChatThreadSessionAllowedTools(event.threadId)
+          store.setChatThreadFullAccess(event.threadId, false)
           store.setChatThreadSession(event.threadId, null)
           break
         }

@@ -20,7 +20,10 @@ function resultContextWindow(record: StreamRecord): number | null {
   let best: { inputTokens: number; contextWindow: number } | null = null
   for (const value of Object.values(modelUsage)) {
     const usage = asRecord(value)
-    const contextWindow = usage?.contextWindow
+    if (!usage) {
+      continue
+    }
+    const contextWindow = usage.contextWindow
     if (typeof contextWindow !== 'number' || contextWindow <= 0) {
       continue
     }

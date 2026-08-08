@@ -411,6 +411,7 @@ function NativeChatResolvedView({
         canSend={canSend}
         onShowingQuestionChange={setQuestionActive}
         answerInputRef={questionAnswerInputRef}
+        suppressApproval={transport !== null}
       />
       {/* canSend reflects the mobile presence-lock: when a mobile client holds
           the pty, the composer shows its guarded state instead of racing the
@@ -438,6 +439,8 @@ function NativeChatResolvedView({
           onRespondPermission={transport?.respondPermission}
           contextUsageEnabled={runtimeEnvironmentId === null}
           contextMaxTokens={transport?.contextWindowTokens}
+          fullAccess={transport?.fullAccess}
+          onSetFullAccess={transport?.setFullAccess}
         />
       )}
       {contextMenu.menu}

@@ -19,6 +19,9 @@ export type ChatThreadPermissionSlice = {
   /** Tool names "Always allow this session" approved, per thread. Runtime-only;
    *  cleared with the session (exit event / thread delete). */
   chatThreadSessionAllowedTools: Record<string, string[]>
+  /** Full-access (auto-approve every tool) per thread. Runtime-only; dies with
+   *  the session like the allowed-tools list. */
+  chatThreadFullAccess: Record<string, boolean>
   addChatThreadPermissionRequest: (threadId: string, request: ChatThreadPermissionRequest) => void
   removeChatThreadPermissionRequest: (threadId: string, requestId: string) => void
   clearChatThreadPermissionRequests: (threadId: string) => void
@@ -30,6 +33,7 @@ export type ChatThreadPermissionSlice = {
   ) => void
   allowChatThreadToolForSession: (threadId: string, toolName: string) => void
   clearChatThreadSessionAllowedTools: (threadId: string) => void
+  setChatThreadFullAccess: (threadId: string, enabled: boolean) => void
 }
 
 export const createChatThreadPermissionSlice: StateCreator<
@@ -40,6 +44,7 @@ export const createChatThreadPermissionSlice: StateCreator<
 > = (set, get) => ({
   chatThreadPermissionRequests: {},
   chatThreadSessionAllowedTools: {},
+  chatThreadFullAccess: {},
 
   addChatThreadPermissionRequest: (threadId, request) =>
     set((s) => {
@@ -111,5 +116,17 @@ export const createChatThreadPermissionSlice: StateCreator<
       }
       const { [threadId]: _dropped, ...remaining } = s.chatThreadSessionAllowedTools
       return { chatThreadSessionAllowedTools: remaining }
+    }),
+
+  setChatThreadFullAccess: (threadId, enabled) =>
+    set((s) => {
+      if (!enabled) {
+        if (!(threadId in s.chatThreadFullAccess)) {
+          return {}
+        }
+        const { [threadId]: _dropped, ...remaining } = s.chatThreadFullAccess
+        return { chatThreadFullAccess: remaining }
+      }
+      return { chatThreadFullAccess: { ...s.chatThreadFullAccess, [threadId]: true } }
     })
 })

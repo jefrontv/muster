@@ -63,6 +63,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
         | 'lastActivityAt'
         | 'lastVisitedAt'
         | 'lastCompletedAt'
+        | 'contextWindow'
         | 'archived'
       >
     >
@@ -196,6 +197,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       const { [id]: _droppedAllowed, ...remainingAllowed } = s.chatThreadSessionAllowedTools
       const { [id]: _droppedFirst, ...remainingFirstMessages } = s.chatThreadFirstMessage
       const { [id]: _droppedWindow, ...remainingWindows } = s.chatThreadContextWindow
+      const { [id]: _droppedAccess, ...remainingAccess } = s.chatThreadFullAccess
       return {
         chatThreads: s.chatThreads.filter((t) => t.id !== id),
         chatThreadSessions: remainingSessions,
@@ -204,6 +206,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
         chatThreadSessionAllowedTools: remainingAllowed,
         chatThreadFirstMessage: remainingFirstMessages,
         chatThreadContextWindow: remainingWindows,
+        chatThreadFullAccess: remainingAccess,
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
     })

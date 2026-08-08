@@ -31,17 +31,12 @@ function Probe({
   scopeKey: string
   onReady: (api: ProbeApi) => void
 }): React.JSX.Element {
-  const [caret, setCaret] = useState(0)
-  const [, setDraftValue] = useState('')
   const [, setNotice] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const api = useNativeChatComposerAttachments({
     attachmentScopeKey: scopeKey,
-    caret,
     resolveTarget: () => target,
     textareaRef,
-    setCaret,
-    setDraft: (updater) => setDraftValue((previous) => updater(previous)),
     setNotice
   })
   onReady(api)

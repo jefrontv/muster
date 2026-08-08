@@ -30,7 +30,10 @@ export function ChatThreadView({
   const updateChatThread = useAppStore((s) => s.updateChatThread)
   const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.text ?? null)
   const streamingSealed = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.sealed === true)
-  const contextWindowTokens = useAppStore((s) => s.chatThreadContextWindow[thread.id])
+  const contextWindowTokens = useAppStore(
+    (s) => s.chatThreadContextWindow[thread.id] ?? thread.contextWindow
+  )
+  const fullAccess = useAppStore((s) => s.chatThreadFullAccess[thread.id] === true)
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
   const launchingRef = useRef(false)
@@ -132,12 +135,27 @@ export function ChatThreadView({
           store.allowChatThreadToolForSession(thread.id, request.toolName)
         }
       }
+      if (behavior === 'allow-all') {
+        // Full access: approve this and everything queued; ChatModePage
+        // auto-approves later requests while the flag is on.
+        store.setChatThreadFullAccess(thread.id, true)
+        const queued = store.chatThreadPermissionRequests[thread.id] ?? []
+        for (const queuedRequest of queued) {
+          if (queuedRequest.requestId !== requestId) {
+            store.respondChatThreadPermission(thread.id, queuedRequest.requestId, 'allow')
+          }
+        }
+      }
       store.respondChatThreadPermission(
         thread.id,
         requestId,
         behavior === 'deny' ? 'deny' : 'allow'
       )
     },
+    [thread.id]
+  )
+  const setFullAccess = useCallback(
+    (enabled: boolean) => useAppStore.getState().setChatThreadFullAccess(thread.id, enabled),
     [thread.id]
   )
   const transport = useMemo<NativeChatTransport>(
@@ -149,7 +167,9 @@ export function ChatThreadView({
       interrupt,
       ...(contextWindowTokens !== undefined ? { contextWindowTokens } : {}),
       ...(permissionRequests && permissionRequests.length > 0 ? { permissionRequests } : {}),
-      respondPermission
+      respondPermission,
+      fullAccess,
+      setFullAccess
     }),
     [
       sendMessage,
@@ -159,7 +179,9 @@ export function ChatThreadView({
       interrupt,
       contextWindowTokens,
       permissionRequests,
-      respondPermission
+      respondPermission,
+      fullAccess,
+      setFullAccess
     ]
   )
 

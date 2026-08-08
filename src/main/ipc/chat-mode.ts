@@ -105,6 +105,7 @@ export function registerChatModeHandlers(): void {
         lastActivityAt?: unknown
         lastVisitedAt?: unknown
         lastCompletedAt?: unknown
+        contextWindow?: unknown
         archived?: unknown
       }
     ): Promise<ChatThread | null> =>
@@ -122,6 +123,9 @@ export function registerChatModeHandlers(): void {
         ...(typeof patch?.lastVisitedAt === 'number' ? { lastVisitedAt: patch.lastVisitedAt } : {}),
         ...(typeof patch?.lastCompletedAt === 'number'
           ? { lastCompletedAt: patch.lastCompletedAt }
+          : {}),
+        ...(typeof patch?.contextWindow === 'number' && patch.contextWindow > 0
+          ? { contextWindow: patch.contextWindow }
           : {}),
         ...(typeof patch?.archived === 'boolean' ? { archived: patch.archived } : {})
       })
