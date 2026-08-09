@@ -5,17 +5,17 @@
 
 import { MessageCircle, Code2 } from 'lucide-react'
 import type React from 'react'
-import { useRef } from 'react'
+import { useEffect } from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 
-// Why module scope: switching modes swaps sidebars, so this component unmounts and a
-// different instance mounts — the slide has to be a mount animation, and a fresh
-// instance cannot know it is a re-entry. Only the app's very first mount is a cold
-// render that must not slide; every later mount followed a sidebar swap, so the
-// direction is simply the mode being entered. The view switch is never delayed by it.
-let toggleHasMounted = false
+// Why a bare "seen one" flag rather than remembering which side: the Chat page is lazy,
+// so its toggle mounts in a LATER commit than the one that switched modes — by then any
+// remembered mode has already advanced and the incoming pill computes "already there"
+// and never slides. A pill that is not the session's first can only exist because the
+// mode changed, so the direction is just the mode being entered.
+let pillSeenOnce = false
 
 export function ChatModeToggle(): React.JSX.Element | null {
   const activeView = useAppStore((s) => s.activeView)
@@ -23,22 +23,20 @@ export function ChatModeToggle(): React.JSX.Element | null {
   const openChatPage = useAppStore((s) => s.openChatPage)
   const closeChatPage = useAppStore((s) => s.closeChatPage)
   const inChat = activeView === 'chat'
-  // Claimed once per instance, on its first render; ref-guarded so a StrictMode double
-  // render (and any later re-render) keeps the same answer.
-  const slideRef = useRef<string | null | undefined>(undefined)
-  if (slideRef.current === undefined) {
-    slideRef.current = !toggleHasMounted
-      ? null
-      : inChat
-        ? 'chat-mode-pill-to-chat'
-        : 'chat-mode-pill-to-code'
-    toggleHasMounted = true
-  }
+  // Read during render, set after it: the app's first paint is a cold render that must
+  // not slide, every pill after it followed a switch.
+  const slideClass = !pillSeenOnce
+    ? null
+    : inChat
+      ? 'chat-mode-pill-to-chat'
+      : 'chat-mode-pill-to-code'
+  useEffect(() => {
+    pillSeenOnce = true
+  }, [])
 
   if (!enabled) {
     return null
   }
-  const slideClass = slideRef.current
   const segment =
     'relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors'
   return (
@@ -49,13 +47,14 @@ export function ChatModeToggle(): React.JSX.Element | null {
     >
       {/* Sliding active-pill indicator: sized to one segment, translated to the
           selected half. Width math relies on the two flex-1 segments having no gap.
-          The transition covers in-place flips (mode changed from elsewhere); the
-          animation class covers the sidebar-swap remount. */}
+          Keyed by mode so the element is rebuilt on every switch: returning to Code
+          re-reveals a sidebar that never unmounted, and a transform changed while it
+          was hidden would otherwise land already-settled with nothing to animate. */}
       <div
+        key={inChat ? 'chat' : 'code'}
         aria-hidden
         className={cn(
           'absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-md bg-background shadow-sm',
-          'transition-transform duration-200 ease-out motion-reduce:transition-none',
           !inChat && 'translate-x-full',
           slideClass
         )}
