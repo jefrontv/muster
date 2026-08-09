@@ -3346,7 +3346,6 @@ export type PersistedUIState = {
   activeView: TopLevelView
   sidebarWidth: number
   /** Chat mode's sidebar width; independent of the code sidebar. */
-  chatSidebarWidth?: number
   rightSidebarOpen: boolean
   rightSidebarTab: RightSidebarTab
   rightSidebarExplorerView: RightSidebarExplorerView

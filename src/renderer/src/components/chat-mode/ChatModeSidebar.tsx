@@ -253,8 +253,11 @@ export function ChatModeSidebar(): React.JSX.Element {
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const openTaskPage = useAppStore((s) => s.openTaskPage)
   const tasksOpen = useAppStore((s) => s.chatTasksOpen)
-  const chatSidebarWidth = useAppStore((s) => s.chatSidebarWidth)
-  const setChatSidebarWidth = useAppStore((s) => s.setChatSidebarWidth)
+  // Why the shared width: Chat and Code are two faces of one window, so a
+  // resize in either must survive the switch — separate widths made the sidebar
+  // jump on every toggle.
+  const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ChatWorkspace | undefined>(undefined)
   const [rawQuery, setRawQuery] = useState('')
@@ -266,11 +269,11 @@ export function ChatModeSidebar(): React.JSX.Element {
   const dueCount = overdueCount + (assignedTasks ?? []).filter((t) => isDueToday(t, now)).length
   const { containerRef, onResizeStart, isResizing } = useSidebarResize<HTMLElement>({
     isOpen: true,
-    width: chatSidebarWidth,
+    width: sidebarWidth,
     minWidth: MIN_WIDTH,
     maxWidth: MAX_WIDTH,
     deltaSign: 1,
-    setWidth: setChatSidebarWidth
+    setWidth: setSidebarWidth
   })
 
   return (

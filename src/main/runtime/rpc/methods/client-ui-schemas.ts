@@ -174,7 +174,6 @@ export const UiUpdate = z
     lastActiveRepoId: NullableString.optional(),
     lastActiveWorktreeId: NullableString.optional(),
     sidebarWidth: z.number().finite().optional(),
-    chatSidebarWidth: z.number().finite().optional(),
     rightSidebarOpen: z.boolean().optional(),
     rightSidebarTab: z
       .enum(['explorer', 'search', 'vault', 'source-control', 'checks', 'ports'])
