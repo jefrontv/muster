@@ -162,7 +162,9 @@ const SidebarNav = React.memo(function SidebarNav() {
       className="flex flex-col gap-0.5 px-2 pt-2 pb-1"
       data-contextual-tour-target="sidebar-navigation"
     >
-      <div className="pb-1 empty:hidden">
+      {/* px-1/pt-1 on top of the nav's px-2/pt-2 lands the toggle at the same
+          12px inset the chat sidebar's p-3 gives it — no jump on mode switch. */}
+      <div className="px-1 pt-1 pb-1 empty:hidden">
         <ChatModeToggle />
       </div>
       <SetupGuideSidebarEntry />

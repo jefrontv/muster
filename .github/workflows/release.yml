@@ -122,6 +122,16 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: gh release delete "$TAG" --yes --repo "${{ github.repository }}" || true
 
+      # Why: electron-builder's parallel upload tasks race to CREATE the release
+      # (it only adopts existing DRAFT releases) — one wins, the rest die with
+      # 422 already_exists mid-publish. Pre-creating the draft removes the race;
+      # the "Ensure release is not draft" step below publishes it at the end.
+      - name: Pre-create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release create "$TAG" --draft --title "$TAG" --notes "" --repo "${{ github.repository }}" || true
+
       - name: Build desktop + native mac helpers
         run: |
           pnpm run build:desktop
