@@ -2835,8 +2835,10 @@ export type GlobalSettings = {
   experimentalNativeChat?: boolean
   /** One-shot marker: profile has been flipped to Muster's on-by-default native chat. */
   experimentalNativeChatDefaultedOnForMuster?: boolean
-  /** The top-level Chat mode (Chat/Code tabs, chat workspaces + threads); off by default. */
+  /** The top-level Chat mode (Chat/Code tabs, chat workspaces + threads); Muster defaults this on. */
   experimentalChatMode?: boolean
+  /** One-shot marker: profile has been flipped to Muster's on-by-default Chat mode. */
+  experimentalChatModeDefaultedOnForMuster?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
   nativeChatSessionOptions?: PersistedNativeChatSessionOptions
   /** Chat-thread tool permission default: 'full' auto-approves every tool. */

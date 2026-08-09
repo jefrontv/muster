@@ -3056,6 +3056,41 @@ describe('Store', () => {
     expect(store.getSettings().experimentalNativeChatDefaultedOnForMuster).toBe(true)
   })
 
+  it('flips a persisted chat-mode off default on once', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: { experimentalChatMode: false },
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().experimentalChatMode).toBe(true)
+    expect(store.getSettings().experimentalChatModeDefaultedOnForMuster).toBe(true)
+  })
+
+  it('preserves a post-migration chat-mode opt-out', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: {
+        experimentalChatMode: false,
+        experimentalChatModeDefaultedOnForMuster: true
+      },
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().experimentalChatMode).toBe(false)
+    expect(store.getSettings().experimentalChatModeDefaultedOnForMuster).toBe(true)
+  })
+
   it('migrates the legacy Linux primary-selection default to enabled', async () => {
     await withPlatform('linux', async () => {
       writeDataFile({

@@ -2975,6 +2975,16 @@ export class Store {
         if (!nativeChatDefaultedOnForMuster && parsed.settings?.experimentalNativeChat !== true) {
           this.loadNeedsSave = true
         }
+        // Why: Muster flipped the top-level Chat mode on by default; same one-shot
+        // migration shape as native chat so a later opt-out survives reload.
+        const chatModeDefaultedOnForMuster =
+          parsed.settings?.experimentalChatModeDefaultedOnForMuster === true
+        const migratedExperimentalChatMode = chatModeDefaultedOnForMuster
+          ? (parsed.settings?.experimentalChatMode ?? true)
+          : true
+        if (!chatModeDefaultedOnForMuster && parsed.settings?.experimentalChatMode !== true) {
+          this.loadNeedsSave = true
+        }
         const floatingTerminalDefaultedForAllUsers =
           parsed.settings?.floatingTerminalDefaultedForAllUsers === true
         // Why: early builds persisted the old off default; flip only unmigrated profiles so a later opt-out survives reload.
@@ -3244,6 +3254,8 @@ export class Store {
             openLinksInApp: migratedOpenLinksInApp,
             experimentalNativeChat: migratedExperimentalNativeChat,
             experimentalNativeChatDefaultedOnForMuster: true,
+            experimentalChatMode: migratedExperimentalChatMode,
+            experimentalChatModeDefaultedOnForMuster: true,
             floatingTerminalEnabled: migratedFloatingTerminalEnabled,
             floatingTerminalDefaultedForAllUsers: true,
             floatingTerminalCwd: migratedFloatingTerminalCwd,

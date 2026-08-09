@@ -284,8 +284,8 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     // Settings → Experimental.
     experimentalNativeChat: true,
     experimentalNativeChatDefaultedOnForMuster: true,
-    // Off until chat mode's Phase B lands (docs/specs/chat-mode-tab-plan.md).
-    experimentalChatMode: false,
+    experimentalChatMode: true,
+    experimentalChatModeDefaultedOnForMuster: true,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,
