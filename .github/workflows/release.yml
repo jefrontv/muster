@@ -31,7 +31,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Muster-line tags only: this repo also receives upstream orca tags via
+  # branch syncs, and building those poisons the update feed with upstream
+  # binaries (see src/main/updater-release-feed-source.ts).
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      muster: ${{ steps.check.outputs.muster }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+      - name: Verify tag is on muster
+        id: check
+        run: |
+          git fetch origin muster --quiet
+          if git merge-base --is-ancestor "$(git rev-parse HEAD)" origin/muster; then
+            echo "muster=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "muster=false" >> "$GITHUB_OUTPUT"
+            echo "Ref is not on muster - skipping release build."
+          fi
+
   release-mac:
+    needs: guard
+    if: needs.guard.outputs.muster == 'true'
     runs-on: macos-latest
     timeout-minutes: 90
     env:
