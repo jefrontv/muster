@@ -54,6 +54,9 @@ describe('resolveLeftSidebarStyleVariables', () => {
     )
 
     expect(vars?.['--worktree-sidebar']).toBe('rgba(18, 52, 86, 0.5)')
+    // Surfaces stacked over a terminal (native chat) read this instead of --background.
+    expect(vars?.['--background']).toBe('rgba(18, 52, 86, 0.5)')
+    expect(vars?.['--background-solid']).toBe('#123456')
   })
 
   it('builds a tinted surface from normalized tint settings', () => {

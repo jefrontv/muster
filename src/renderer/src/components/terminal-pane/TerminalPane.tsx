@@ -2878,7 +2878,9 @@ export default function TerminalPane({
       />
       {effectiveChatViewMode && chatPane?.container
         ? createPortal(
-            <div className="absolute inset-0 z-10 flex min-h-0 min-w-0 bg-background">
+            // Solid, not bg-background: this covers a live terminal, and Match Terminal gives
+            // --background the terminal's alpha, which would show the buffer through.
+            <div className="absolute inset-0 z-10 flex min-h-0 min-w-0 bg-[var(--background-solid)]">
               <NativeChatView
                 terminalTabId={tabId}
                 paneKey={makePaneKey(tabId, chatPane.leafId)}

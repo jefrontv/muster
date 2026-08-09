@@ -131,6 +131,9 @@
     monospace;
   --radius: 0.625rem;
   --background: #fff;
+  /* Same surface as --background but never translucent. Match Terminal can give
+     --background an alpha; surfaces stacked over a terminal must not let it through. */
+  --background-solid: var(--background);
   --editor-surface: #ffffff;
   --foreground: #0a0a0a;
   --card: #fff;

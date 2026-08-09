@@ -49,9 +49,12 @@ function applyAlpha(color: string, alpha: number | undefined): string {
 function buildSurfaceVariables(args: {
   background: string
   foreground: string
+  /** Opaque twin of `background`; defaults to it when the surface has no alpha. */
+  backgroundSolid?: string
   overrideTextTokens?: boolean
 }): LeftSidebarStyleVariables {
   const { background, foreground, overrideTextTokens = false } = args
+  const backgroundSolid = args.backgroundSolid ?? background
   const accent = `color-mix(in srgb, ${foreground} 9%, ${background})`
   // 7% keeps the sidebar divider at the same prominence as the global --border
   // (7% in dark mode) so it reads like the rest of the UI; 14% rendered brighter (#5906).
@@ -81,6 +84,7 @@ function buildSurfaceVariables(args: {
     // Why: Match Terminal paints the whole app chrome (titlebar, status bar,
     // right sidebar, settings surfaces) — not only the left worktree list.
     vars['--background'] = background
+    vars['--background-solid'] = backgroundSolid
     vars['--foreground'] = foreground
     vars['--card'] = card
     vars['--card-foreground'] = foreground
@@ -116,6 +120,7 @@ export const MATCH_TERMINAL_APP_CHROME_VARIABLE_KEYS = [
   '--sidebar-border',
   '--sidebar-ring',
   '--background',
+  '--background-solid',
   '--foreground',
   '--card',
   '--card-foreground',
@@ -165,13 +170,17 @@ function resolveTerminalSurfaceVariables(
   systemPrefersDark: boolean
 ): LeftSidebarStyleVariables {
   const appearance = resolveEffectiveTerminalAppearance(settings, systemPrefersDark)
-  const background = applyAlpha(
-    settings.terminalColorOverrides?.background ?? appearance.theme?.background ?? '#000000',
-    settings.terminalBackgroundOpacity
-  )
+  const backgroundSolid =
+    settings.terminalColorOverrides?.background ?? appearance.theme?.background ?? '#000000'
+  const background = applyAlpha(backgroundSolid, settings.terminalBackgroundOpacity)
   const foreground =
     settings.terminalColorOverrides?.foreground ?? appearance.theme?.foreground ?? '#fafafa'
-  return buildSurfaceVariables({ background, foreground, overrideTextTokens: true })
+  return buildSurfaceVariables({
+    background,
+    backgroundSolid,
+    foreground,
+    overrideTextTokens: true
+  })
 }
 
 function resolveTintedSurfaceVariables(
