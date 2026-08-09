@@ -165,7 +165,7 @@ const SidebarNav = React.memo(function SidebarNav() {
       {/* px-1/pt-1 on top of the nav's px-2/pt-2 lands the toggle at the same
           12px inset the chat sidebar's p-3 gives it — no jump on mode switch. */}
       <div className="px-1 pt-1 pb-1 empty:hidden">
-        <ChatModeToggle />
+        <ChatModeToggle mode="code" />
       </div>
       <SetupGuideSidebarEntry />
       <SidebarTaskNavButton />

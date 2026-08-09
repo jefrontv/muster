@@ -282,7 +282,7 @@ export function ChatModeSidebar(): React.JSX.Element {
       className="relative flex h-full shrink-0 flex-col border-r border-border bg-sidebar"
     >
       <div className="flex flex-col gap-3 p-3 pb-0">
-        <ChatModeToggle />
+        <ChatModeToggle mode="chat" />
         <button
           type="button"
           aria-current={tasksOpen ? 'page' : undefined}

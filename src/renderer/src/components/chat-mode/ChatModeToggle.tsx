@@ -5,34 +5,55 @@
 
 import { MessageCircle, Code2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 
-// Why a bare "seen one" flag rather than remembering which side: the Chat page is lazy,
-// so its toggle mounts in a LATER commit than the one that switched modes — by then any
-// remembered mode has already advanced and the incoming pill computes "already there"
-// and never slides. A pill that is not the session's first can only exist because the
-// mode changed, so the direction is just the mode being entered.
+const SLIDE_MS = 200
+
+// Why a bare "seen one" flag: the two sidebars are separate subtrees (Chat's lives
+// inside the lazy chat page), so no instance state spans a switch. A toggle that is not
+// the session's first is mounting because the mode changed, so it slides in — and the
+// app's cold first paint must not.
 let pillSeenOnce = false
 
-export function ChatModeToggle(): React.JSX.Element | null {
-  const activeView = useAppStore((s) => s.activeView)
+export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.Element | null {
   const enabled = useAppStore((s) => s.settings?.experimentalChatMode === true)
   const openChatPage = useAppStore((s) => s.openChatPage)
   const closeChatPage = useAppStore((s) => s.closeChatPage)
-  const inChat = activeView === 'chat'
-  // Read during render, set after it: the app's first paint is a cold render that must
-  // not slide, every pill after it followed a switch.
-  const slideClass = !pillSeenOnce
-    ? null
-    : inChat
-      ? 'chat-mode-pill-to-chat'
-      : 'chat-mode-pill-to-code'
+  // Why the owning sidebar's mode, not the live view: on a switch the outgoing sidebar
+  // re-renders before it unmounts, and a view-driven pill would snap across inside a
+  // sidebar that is about to vanish — the user sees the jump, then the incoming pill
+  // arrives already settled. Pinning each toggle to its own surface keeps the pill still
+  // and makes the slide a pure entrance.
+  const inChat = mode === 'chat'
+  const pillRef = useRef<HTMLDivElement | null>(null)
+
+  // Why script the slide here instead of a CSS mount animation: a CSS animation starts
+  // at style recalc, and the chat sidebar's first paint lands well after that (lazy
+  // chunk + heavy mount) — the slide would be over before anything reached the screen.
+  // An effect runs after paint, so the pill is visibly at its old side when it starts.
   useEffect(() => {
-    pillSeenOnce = true
-  }, [])
+    const el = pillRef.current
+    if (!pillSeenOnce) {
+      pillSeenOnce = true
+      return
+    }
+    // typeof check: jsdom/happy-dom have no Web Animations API.
+    if (
+      !el ||
+      typeof el.animate !== 'function' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return
+    }
+    const animation = el.animate(
+      [{ transform: inChat ? 'translateX(100%)' : 'translateX(-100%)' }, { transform: 'none' }],
+      { duration: SLIDE_MS, easing: 'ease-out', composite: 'add' }
+    )
+    return () => animation.cancel()
+  }, [inChat])
 
   if (!enabled) {
     return null
@@ -45,18 +66,15 @@ export function ChatModeToggle(): React.JSX.Element | null {
       aria-label={translate('auto.components.chat.mode.toggleLabel', 'App mode')}
       className="relative flex rounded-lg bg-muted/60 p-0.5"
     >
-      {/* Sliding active-pill indicator: sized to one segment, translated to the
-          selected half. Width math relies on the two flex-1 segments having no gap.
-          Keyed by mode so the element is rebuilt on every switch: returning to Code
-          re-reveals a sidebar that never unmounted, and a transform changed while it
-          was hidden would otherwise land already-settled with nothing to animate. */}
+      {/* Sliding active-pill indicator: sized to one segment, translated to the selected
+          half. Width math relies on the two flex-1 segments having no gap. The keyframes
+          above animate relative to whichever half this resolves to. */}
       <div
-        key={inChat ? 'chat' : 'code'}
+        ref={pillRef}
         aria-hidden
         className={cn(
           'absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-md bg-background shadow-sm',
-          !inChat && 'translate-x-full',
-          slideClass
+          !inChat && 'translate-x-full'
         )}
       />
       <button

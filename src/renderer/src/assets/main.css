@@ -1605,37 +1605,6 @@
   }
 }
 
-/* Chat/Code mode pill. Switching modes swaps whole sidebars, so the pill is a
-   freshly mounted element and a CSS transition has nothing to animate from —
-   these run on mount instead, starting at the side the pill just left. The
-   element's static transform is the end state, so only `from` is specified. */
-@keyframes chat-mode-pill-to-chat {
-  from {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes chat-mode-pill-to-code {
-  from {
-    transform: translateX(0);
-  }
-}
-
-.chat-mode-pill-to-chat {
-  animation: chat-mode-pill-to-chat 200ms ease-out;
-}
-
-.chat-mode-pill-to-code {
-  animation: chat-mode-pill-to-code 200ms ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chat-mode-pill-to-chat,
-  .chat-mode-pill-to-code {
-    animation: none;
-  }
-}
-
 .sidebar.collapsed {
   width: 0;
   border-right: none;
