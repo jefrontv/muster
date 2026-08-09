@@ -102,6 +102,7 @@ docs/**
 .stably/*
 !.stably/docs/
 .playwright-cli
+.playwright-mcp/
 .validate-ui-screenshots/
 validation-screenshots/
 .stably-browser
