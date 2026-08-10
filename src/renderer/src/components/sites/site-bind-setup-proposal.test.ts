@@ -13,13 +13,13 @@ function candidate(overrides: Partial<SiteBindCandidate> = {}): SiteBindCandidat
   }
 }
 
-const ROOTS = ['/Users/dev/Documents/Sites', '/Volumes/devcenter-repos']
+const PRIMARY_ROOT = '/Users/dev/Documents/Sites'
 
 describe('buildSiteBindSetupProposal', () => {
   it('proposes the primary root plus the folder git will create', () => {
     expect(
       buildSiteBindSetupProposal({
-        roots: ROOTS,
+        primaryRoot: PRIMARY_ROOT,
         cloneUrl: 'git@bitbucket.org:efront_au/sulo.git',
         candidates: []
       })
@@ -33,7 +33,7 @@ describe('buildSiteBindSetupProposal', () => {
   it('falls back to the stale record folder when the link carried no clonable repo', () => {
     // Regression: a record whose checkout was deleted still names the folder the user expects.
     expect(
-      buildSiteBindSetupProposal({ roots: ROOTS, cloneUrl: '', candidates: [candidate()] })
+      buildSiteBindSetupProposal({ primaryRoot: PRIMARY_ROOT, cloneUrl: '', candidates: [candidate()] })
         .proposedPath
     ).toBe('/Users/dev/Documents/Sites/sulo')
   })
@@ -41,7 +41,7 @@ describe('buildSiteBindSetupProposal', () => {
   it('does not need fresh setup when a candidate is reachable', () => {
     expect(
       buildSiteBindSetupProposal({
-        roots: ROOTS,
+        primaryRoot: PRIMARY_ROOT,
         cloneUrl: 'git@bitbucket.org:efront_au/sulo.git',
         candidates: [candidate({ exists: true })]
       }).needsFreshSetup
@@ -51,7 +51,7 @@ describe('buildSiteBindSetupProposal', () => {
   it('still needs fresh setup when every candidate is gone', () => {
     expect(
       buildSiteBindSetupProposal({
-        roots: ROOTS,
+        primaryRoot: PRIMARY_ROOT,
         cloneUrl: '',
         candidates: [candidate(), candidate({ path: '/old/sulo', exists: false })]
       }).needsFreshSetup
@@ -61,7 +61,7 @@ describe('buildSiteBindSetupProposal', () => {
   it('proposes nothing when no root is configured or derived', () => {
     expect(
       buildSiteBindSetupProposal({
-        roots: [],
+        primaryRoot: '',
         cloneUrl: 'git@bitbucket.org:efront_au/sulo.git',
         candidates: []
       })
@@ -71,7 +71,7 @@ describe('buildSiteBindSetupProposal', () => {
   it('does not double the separator when a root has a trailing slash', () => {
     expect(
       buildSiteBindSetupProposal({
-        roots: ['/Users/dev/Sites/'],
+        primaryRoot: '/Users/dev/Sites/',
         cloneUrl: 'https://bitbucket.org/efront_au/sulo',
         candidates: []
       }).proposedPath

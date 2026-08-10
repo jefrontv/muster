@@ -124,10 +124,13 @@ export function SiteBindDialog(): React.JSX.Element | null {
     }
   }, [reponame, linkCloneUrl])
 
-  // Why the configured roots: ocsites cloned a not-yet-checked-out site straight into the user's
-  // projects folder instead of asking for a path, so a link for an unknown site is one click.
-  // `list()` already falls back to derived roots when the user has configured none.
-  const [siteRoots, setSiteRoots] = useState<string[]>([])
+  // Why a root at all: ocsites cloned a not-yet-checked-out site straight into the user's projects
+  // folder instead of asking for a path, so a link for an unknown site is one click.
+  //
+  // `primary()`, not `list()[0]`. The derived set renders alphabetically, so its first entry is
+  // whichever path sorts first — which is how `~/.agent-local/sites` came to be proposed as the
+  // clone destination for a user whose 160 projects live under Documents/Sites.
+  const [primaryRoot, setPrimaryRoot] = useState('')
   const pendingRequestId = pending?.requestId ?? ''
   useEffect(() => {
     if (pendingRequestId.length === 0) {
@@ -135,9 +138,9 @@ export function SiteBindDialog(): React.JSX.Element | null {
     }
     let cancelled = false
     void (async () => {
-      const result = await window.api.siteRoots.list()
+      const result = await window.api.siteRoots.primary()
       if (!cancelled && result.ok) {
-        setSiteRoots(result.value)
+        setPrimaryRoot(result.value)
       }
     })()
     return () => {
@@ -277,9 +280,8 @@ export function SiteBindDialog(): React.JSX.Element | null {
   }
   const active = pending
   const effectiveCloneUrl = active.suggestedCloneUrl || resolvedCloneUrl
-  const primaryRoot = siteRoots[0] ?? ''
   const { proposedPath, proposedRootLabel, needsFreshSetup } = buildSiteBindSetupProposal({
-    roots: siteRoots,
+    primaryRoot,
     cloneUrl: effectiveCloneUrl,
     candidates: active.candidates
   })

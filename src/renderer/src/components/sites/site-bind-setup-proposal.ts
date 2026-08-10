@@ -31,12 +31,17 @@ function cloneFolderName(cloneUrl: string): string {
 }
 
 export function buildSiteBindSetupProposal(input: {
-  /** Roots in scan order, as `siteRoots.list()` reports them (configured, else derived). */
-  roots: readonly string[]
+  /**
+   * The one folder new checkouts belong in, from `siteRoots.primary()`.
+   *
+   * Not the scan list's first entry: that list is rendered in a stable alphabetical order and its
+   * head is whichever path sorts first, not the folder holding the user's projects.
+   */
+  primaryRoot: string
   cloneUrl: string
   candidates: readonly SiteBindCandidate[]
 }): SiteBindSetupProposal {
-  const primaryRoot = input.roots[0] ?? ''
+  const primaryRoot = input.primaryRoot
   // Prefer the name git will use; fall back to the stale record's folder so the proposed path reads
   // as the one the user expects even when the link carried no clonable repo name.
   const folderName = cloneFolderName(input.cloneUrl) || lastSegment(input.candidates[0]?.path ?? '')

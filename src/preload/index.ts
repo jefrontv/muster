@@ -874,6 +874,7 @@ const api = {
 
   siteRoots: {
     list: () => ipcRenderer.invoke('siteRoots:list'),
+    primary: () => ipcRenderer.invoke('siteRoots:primary'),
     configured: () => ipcRenderer.invoke('siteRoots:configured'),
     discover: () => ipcRenderer.invoke('siteRoots:discover'),
     refresh: () => ipcRenderer.invoke('siteRoots:refresh'),

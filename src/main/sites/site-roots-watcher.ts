@@ -102,6 +102,21 @@ function parentDirectory(candidate: string): string | null {
   return parent === candidate ? null : parent
 }
 
+/**
+ * A directory an application keeps its own state in, not a folder the user puts projects in.
+ *
+ * This exists because of `~/.agent-local/sites`: adopting one site that agent-local hosts made that
+ * private directory a derived root, and it then sorted ahead of the user's real projects folder and
+ * was offered as the place to clone a new checkout into. Any hidden segment is treated the same way
+ * — `.local/share`, `.config`, Local's internals. A user who genuinely keeps projects somewhere
+ * hidden can still name it explicitly, because a configured list replaces derivation entirely.
+ */
+function isApplicationPrivateDirectory(candidate: string): boolean {
+  return candidate
+    .split(/[/\\]/)
+    .some((segment) => segment.length > 1 && segment.startsWith('.') && segment !== '..')
+}
+
 function* collectParentDirectories(store: SiteRootsStore): Generator<string> {
   for (const repo of store.getRepos()) {
     // A remote repo's path names a directory on the SSH host. Watching it locally either fails or,
@@ -117,6 +132,14 @@ function* collectParentDirectories(store: SiteRootsStore): Generator<string> {
   for (const site of store.listSites()) {
     const parent = parentDirectory(site.path)
     if (parent !== null) {
+      yield parent
+    }
+  }
+}
+
+function* collectUserDirectories(store: SiteRootsStore): Generator<string> {
+  for (const parent of collectParentDirectories(store)) {
+    if (!isApplicationPrivateDirectory(parent)) {
       yield parent
     }
   }
@@ -146,7 +169,7 @@ function rankSiteRoots(
   directoryExists: (candidate: string) => boolean
 ): RankedSiteRoot[] {
   const byKey = new Map<string, RankedSiteRoot>()
-  for (const parent of collectParentDirectories(store)) {
+  for (const parent of collectUserDirectories(store)) {
     const key = normalizeRuntimePathForComparison(parent)
     const existing = byKey.get(key)
     if (existing) {

@@ -132,6 +132,7 @@ describe('registerSiteRootsHandlers', () => {
       'siteRoots:configured',
       'siteRoots:discover',
       'siteRoots:list',
+      'siteRoots:primary',
       'siteRoots:refresh',
       'siteRoots:remove',
       'siteRoots:reorder'

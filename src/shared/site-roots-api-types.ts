@@ -13,6 +13,14 @@ export type SiteRootsApi = {
   /** The roots in effect, in scan order: the configured list, or the derived set when it is empty. */
   list: () => Promise<SiteResult<string[]>>
   /**
+   * Where a new checkout should land. Not `list()[0]`: the derived set renders in a stable
+   * alphabetical order, so its first entry is whichever path sorts first rather than the folder
+   * that actually holds the user's projects. Empty when there is no usable root, which the caller
+   * must treat as "ask, do not guess".
+   */
+  primary: () => Promise<SiteResult<string>>
+
+  /**
    * The folder list the user manages, in their order, unreachable entries included and flagged.
    * Empty means nothing is configured and `list` is reporting derived roots.
    */

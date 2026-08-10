@@ -40,6 +40,7 @@ import { failure } from './sites-result'
 
 const SITE_ROOTS_CHANNELS = [
   'siteRoots:list',
+  'siteRoots:primary',
   'siteRoots:configured',
   'siteRoots:discover',
   'siteRoots:refresh',
@@ -104,6 +105,19 @@ export function registerSiteRootsHandlers(store: Store): void {
   ipcMain.handle('siteRoots:list', (event): SiteResult<string[]> => {
     subscribe(event.sender)
     return { ok: true, value: roots.getRoots() }
+  })
+
+  /**
+   * The single folder a new checkout should land in.
+   *
+   * Deliberately not `list()[0]`: the derived set is rendered in a stable alphabetical order, so
+   * its first entry is whichever path sorts first, not the folder holding the most projects. That
+   * is how a private application directory came to be offered as the clone destination for a user
+   * whose projects all live somewhere else.
+   */
+  ipcMain.handle('siteRoots:primary', (event): SiteResult<string> => {
+    subscribe(event.sender)
+    return { ok: true, value: derivePrimarySiteRoot(store) }
   })
 
   ipcMain.handle('siteRoots:discover', async (event): Promise<SiteResult<SiteDiscoveryResult>> => {

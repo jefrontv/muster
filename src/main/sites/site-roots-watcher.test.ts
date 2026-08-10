@@ -164,6 +164,23 @@ describe('deriveSiteRoots', () => {
     expect(deriveSiteRoots(store, (candidate) => candidate === '/projects')).toEqual(['/projects'])
   })
 
+  // Adopting one site that agent-local hosts made its private store a derived root, which then
+  // sorted ahead of the user's real projects folder and was offered as a clone destination.
+  it('never derives a root inside an application-private directory', () => {
+    const { store } = createStore(
+      [],
+      ['/Users/dev/.agent-local/sites/acme', '/Users/dev/Documents/Sites/blog']
+    )
+
+    expect(deriveSiteRoots(store, () => true)).toEqual(['/Users/dev/Documents/Sites'])
+  })
+
+  it('keeps a visible folder whose name merely contains a dot', () => {
+    const { store } = createStore([], ['/Users/dev/Sites/melbournejazz.com/app/public'])
+
+    expect(deriveSiteRoots(store, () => true)).toEqual(['/Users/dev/Sites/melbournejazz.com/app'])
+  })
+
   it('skips an empty or relative path, which has no parent worth watching', () => {
     const { store } = createStore(['relative/api', '/projects/api'], [''])
 

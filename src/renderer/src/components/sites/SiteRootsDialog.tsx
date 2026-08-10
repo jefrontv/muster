@@ -95,9 +95,12 @@ export function SiteRootsDialog({
             {translate('auto.components.sites.SiteRootsDialog.title', 'Site folders')}
           </DialogTitle>
           <DialogDescription>
+            {/* The old wording promised clones land in the first listed folder. True once you
+                choose folders; untrue while Muster is inferring them, where the order is
+                alphabetical and the destination is the folder holding the most projects. */}
             {translate(
               'auto.components.sites.SiteRootsDialog.description',
-              'Sites are listed from these folders, in this order. New clones land in the first one that is reachable.'
+              'Sites are listed from these folders. Choose one to decide where new clones land — the first reachable folder wins.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -150,20 +153,37 @@ export function SiteRootsDialog({
           ))}
 
           {/* Why spell out the derived roots: an empty list is a working state, not a broken one,
-              and without naming the folders it reads as "Muster is looking nowhere". */}
+              and without naming the folders it reads as "Muster is looking nowhere". They are a
+              list, not a sentence — inlining a dozen paths into prose was unreadable, and the
+              count is the part that tells the user whether adding one is worth it. */}
           {entries.length === 0 ? (
-            <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-              {effectiveRoots.length > 0
-                ? translate(
-                    'auto.components.sites.SiteRootsDialog.derived',
-                    'No folders chosen yet, so Muster is using the parent folders of the projects you already have: {{roots}}. Add one to take over.',
-                    { roots: effectiveRoots.join(', ') }
-                  )
-                : translate(
+            <div className="space-y-1.5 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+              {effectiveRoots.length > 0 ? (
+                <>
+                  <p>
+                    {translate(
+                      'auto.components.sites.SiteRootsDialog.derived',
+                      'No folders chosen, so Muster is scanning the {{count}} folders your existing projects sit in. Add one to take over.',
+                      { count: effectiveRoots.length }
+                    )}
+                  </p>
+                  <ul className="scrollbar-sleek max-h-32 space-y-0.5 overflow-y-auto">
+                    {effectiveRoots.map((root) => (
+                      <li key={root} className="truncate font-mono text-[11px]" title={root}>
+                        {root}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p>
+                  {translate(
                     'auto.components.sites.SiteRootsDialog.none',
                     'No folders chosen, and there are no projects to infer one from. Add the folder your sites live in.'
                   )}
-            </p>
+                </p>
+              )}
+            </div>
           ) : null}
         </div>
 
