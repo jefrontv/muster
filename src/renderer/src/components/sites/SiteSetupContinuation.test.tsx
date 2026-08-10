@@ -181,6 +181,7 @@ async function advanceTo(step: 'https' | 'import'): Promise<void> {
 
 beforeEach(() => {
   installedStacks = ['localwp']
+  window.localStorage.clear()
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -239,33 +240,53 @@ describe('SiteSetupContinuation paging', () => {
     expect(findButton('Set up LocalWP')).toBeDefined()
   })
 
-  // Two stacks installed and nothing detected: picking one is the user's call, and the import must
-  // not be reachable — nor the setup runnable — until they make it.
-  it('blocks the import until a stack is chosen when both are installed', async () => {
+  // The group used to open with neither option selected, which reads as a broken control.
+  it('opens on the first installed stack when nothing is remembered', async () => {
     installedStacks = ['localwp', 'agent-local']
     await render(makePlan())
 
-    expect(findButton('Next')?.disabled).toBe(true)
-    expect(text()).toContain('Pick which stack runs this site to continue.')
-    expect(findButton('Set up LocalWP')?.disabled).toBe(true)
-
     const picker = [...(container?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [])]
     expect(picker.map((option) => option.textContent)).toEqual(['LocalWP', 'Agent Local'])
+    expect(picker.map((option) => option.getAttribute('data-state'))).toEqual(['on', 'off'])
+    expect(findButton('Next')?.disabled).toBe(false)
+    expect(findButton('Set up LocalWP')?.disabled).toBe(false)
+  })
+
+  it('opens on the stack the last setup actually used', async () => {
+    window.localStorage.setItem('muster.sites.lastLocalStackChoice', 'agent-local')
+    installedStacks = ['localwp', 'agent-local']
+    await render(makePlan())
+
+    const picker = [...(container?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [])]
+    expect(picker.map((option) => option.getAttribute('data-state'))).toEqual(['off', 'on'])
+    expect(findButton('Set up Agent Local')).toBeDefined()
+  })
+
+  // Uninstalling the remembered stack must not leave the group pointing at something unrunnable.
+  it('falls back when the remembered stack is no longer installed', async () => {
+    window.localStorage.setItem('muster.sites.lastLocalStackChoice', 'agent-local')
+    await render(makePlan())
+
+    expect(findButton('Set up LocalWP')).toBeDefined()
+    expect(findButton('Next')?.disabled).toBe(false)
+  })
+
+  it('remembers the stack a successful setup ran on', async () => {
+    installedStacks = ['localwp', 'agent-local']
+    await render(makePlan())
+    const picker = [...(container?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [])]
     await act(async () => {
       picker[1]?.click()
     })
 
-    expect(findButton('Next')?.disabled).toBe(false)
-    await advanceTo('import')
-    expect(findButton('Run import now')).toBeDefined()
-  })
+    // Not on the click: a hovered-then-abandoned option is not a decision worth carrying forward.
+    expect(window.localStorage.getItem('muster.sites.lastLocalStackChoice')).toBeNull()
 
-  // One installed stack is a fact, not a choice — gating on it would be a dead end.
-  it('does not ask for a choice when only one stack is installed', async () => {
-    await render(makePlan())
+    await act(async () => {
+      findButton('Set up Agent Local')?.click()
+    })
 
-    expect(findButton('Next')?.disabled).toBe(false)
-    expect(text()).not.toContain('Pick which stack runs this site to continue.')
+    expect(window.localStorage.getItem('muster.sites.lastLocalStackChoice')).toBe('agent-local')
   })
 })
 

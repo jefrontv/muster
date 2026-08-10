@@ -23,6 +23,7 @@ import type { SiteLocalStack } from '../../../../shared/site-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { readLastLocalStackChoice, rememberLocalStackChoice } from './last-local-stack-choice'
 import { getSiteSetupStrings } from './site-setup-strings'
 
 /** Enough to hold a whole migration's chatter; the head is dropped so a runaway log cannot grow. */
@@ -50,7 +51,7 @@ export function SiteSetupStackStage({
   preferredStack = null,
   unavailableStacks = NO_STACKS,
   onMigrated,
-  onStackChosen,
+  onChoicePendingChange,
   onBusyChange
 }: {
   siteId: string
@@ -63,8 +64,11 @@ export function SiteSetupStackStage({
   unavailableStacks?: SiteLocalStack[]
   /** Fired once the migration really succeeded — the local domain only exists from that point. */
   onMigrated: (domain: string, stack: SiteLocalStack) => void
-  /** Mirrors the choice out so the pager can refuse to advance until one has been made. */
-  onStackChosen?: (stack: SiteLocalStack | null) => void
+  /**
+   * True while a stack could be picked but none is. Normally false — the group opens on a default —
+   * but it stays the pager's guard against advancing into an import with nothing to run it.
+   */
+  onChoicePendingChange?: (pending: boolean) => void
   /** Locks the pager's nav: this setup moves files and can be waiting on an OS password prompt. */
   onBusyChange?: (busy: boolean) => void
 }): React.JSX.Element {
@@ -135,18 +139,24 @@ export function SiteSetupStackStage({
         setStack(detectedStack)
         return
       }
-      // Only auto-pick when there is nothing to pick: one installed stack is a fact, not a choice.
-      // With two, the answer stays empty until the user gives one.
-      setStack(answer.value.length === 1 ? (answer.value[0] ?? null) : null)
+      // Whatever the last site was actually set up with, so a user who works on one stack is not
+      // re-picking it every time. Falling back to the first installed one keeps the group from
+      // opening with nothing selected, which reads as a broken control.
+      const remembered = readLastLocalStackChoice()
+      setStack(
+        (remembered && answer.value.includes(remembered) ? remembered : answer.value[0]) ?? null
+      )
     })()
     return () => {
       cancelled = true
     }
   }, [detectedStack, preferredStack])
 
+  // Zero installed stacks is not a pending choice, it is a machine with nothing to offer — blocking
+  // the pager there would trap the user on a page with no control to satisfy it.
   useEffect(() => {
-    onStackChosen?.(stack)
-  }, [stack, onStackChosen])
+    onChoicePendingChange?.(availableStacks !== null && availableStacks.length > 0 && stack === null)
+  }, [stack, availableStacks, onChoicePendingChange])
 
   useEffect(() => {
     onBusyChange?.(phase === 'running')
@@ -231,6 +241,8 @@ export function SiteSetupStackStage({
         previous.at(-1) === doneLine ? previous : [...previous, doneLine].slice(-MAX_LOG_LINES)
       )
       settledRef.current = true
+      // A carried-through decision, so it becomes the default the next setup opens on.
+      rememberLocalStackChoice(stack)
       setPhase('done')
       onMigrated(domain, stack)
     } catch (error) {

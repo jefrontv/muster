@@ -84,9 +84,9 @@ export function SiteSetupContinuation({
   // Which stack owns the certificate. Seeded from detection, then replaced by whatever the stack
   // stage actually migrated onto — the two differ for exactly one dialog: a plain site being set up.
   const [certStack, setCertStack] = useState<SiteLocalStack>('localwp')
-  // Mirrored out of the stack stage so this page can refuse to advance. Null means the machine runs
-  // more than one stack and the user has not said which — the state the import must never start in.
-  const [chosenStack, setChosenStack] = useState<SiteLocalStack | null>(null)
+  // Mirrored out of the stack stage so this page can refuse to advance into an import with no stack
+  // behind it. The group opens on a default, so this is a guard rather than a routine state.
+  const [choicePending, setChoicePending] = useState(false)
   // A stage is mid-run. Nav locks entirely while it is: both stages own work that has no way back
   // if the dialog closes under it.
   const [stageBusy, setStageBusy] = useState(false)
@@ -210,7 +210,7 @@ export function SiteSetupContinuation({
   const stackStage = plan ? findSetupStage(plan, 'stack') : null
   const importStage = plan ? findSetupStage(plan, 'import') : null
   // A stage the planner ruled out has nothing to pick, so it cannot be what holds the user up.
-  const needsStackChoice = plan !== null && isActionable(stackStage) && chosenStack === null
+  const needsStackChoice = plan !== null && isActionable(stackStage) && choicePending
   const canAdvance = plan !== null && !(step === 'stack' && needsStackChoice)
 
   return (
@@ -238,7 +238,7 @@ export function SiteSetupContinuation({
               // Both stacks handle a folder with no WordPress yet: LocalWP creates an install, Agent
               // Local attaches the folder to an empty database for the import to fill.
               preferredStack={plan.stack.alreadyLocalWp ? (plan.stack.alternatives[0] ?? null) : null}
-              onStackChosen={setChosenStack}
+              onChoicePendingChange={setChoicePending}
               onBusyChange={setStageBusy}
               onMigrated={onMigrated}
             />
