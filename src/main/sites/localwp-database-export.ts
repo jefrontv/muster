@@ -25,6 +25,12 @@ export type LocalDatabaseExportRequest = {
   databasePassword: string
   /** Unix socket for a per-site daemon; empty falls back to 127.0.0.1 TCP. */
   databaseSocket?: string
+  /**
+   * TCP port when there is no socket. Null means MySQL's default — which is wrong for any stack
+   * that does not use it: agent-local's MariaDB listens on 10360, and dumping without this dialled
+   * 3306 and failed with ECONNREFUSED.
+   */
+  databasePort?: number | null
   onStatus?: (message: string) => void
   signal?: AbortSignal
 }
@@ -48,7 +54,7 @@ export async function exportLocalDatabase(
   }
   const transport: MysqlOptionFileTransport = request.databaseSocket
     ? { kind: 'socket', socketPath: request.databaseSocket }
-    : { kind: 'tcp', port: null }
+    : { kind: 'tcp', port: request.databasePort ?? null }
   const workDirectory = await mkdtemp(path.join(tmpdir(), EXPORT_DIRECTORY_PREFIX))
   const optionFile = path.join(workDirectory, 'client.cnf')
   const dumpPath = path.join(workDirectory, 'local-db-export.sql.gz')

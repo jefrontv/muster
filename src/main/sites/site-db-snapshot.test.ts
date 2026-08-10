@@ -75,6 +75,39 @@ describe('snapshotSiteDatabase', () => {
     expect(stored).toBe('dump-bytes')
   })
 
+  // The live agent-local failure: the snapshot dumped 'local' on 127.0.0.1:3306 and died with
+  // ECONNREFUSED while the run itself was happily talking to al_<slug> on 10360.
+  it('dumps the stack-owned schema over the stack-owned port', async () => {
+    const agentLocal = {
+      ...config,
+      site: { ...config.site, dbSocket: '', dbPort: 10360 },
+      localDatabaseName: 'al_acme'
+    } as unknown as SiteRunConfig
+
+    const result = await snapshotSiteDatabase({ baseDir, config: agentLocal, reason: 'pre-import' })
+
+    expect(result.ok).toBe(true)
+    expect(exportLocalDatabaseMock.mock.calls[0]?.[0]).toMatchObject({
+      databaseName: 'al_acme',
+      databasePort: 10360
+    })
+    expect(exportLocalDatabaseMock.mock.calls[0]?.[0]).not.toHaveProperty('databaseSocket')
+  })
+
+  it('passes the socket, not a port, for a socket stack', async () => {
+    const localWp = {
+      ...config,
+      site: { ...config.site, dbSocket: '/tmp/mysqld.sock', dbPort: null }
+    } as unknown as SiteRunConfig
+
+    await snapshotSiteDatabase({ baseDir, config: localWp, reason: 'pre-import' })
+
+    expect(exportLocalDatabaseMock.mock.calls[0]?.[0]).toMatchObject({
+      databaseSocket: '/tmp/mysqld.sock'
+    })
+    expect(exportLocalDatabaseMock.mock.calls[0]?.[0]).not.toHaveProperty('databasePort')
+  })
+
   it('reports export failure without throwing', async () => {
     exportLocalDatabaseMock.mockResolvedValue({
       ok: false,

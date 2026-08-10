@@ -34,7 +34,19 @@ function metaPathFor(baseDir: string, siteId: string, id: string): string {
   return path.join(snapshotDir(baseDir, siteId), `${id}.json`)
 }
 
+/**
+ * Which schema to dump.
+ *
+ * The stack that started this run is the authority when it names one — agent-local owns
+ * `al_<slug>` and hands it over with the live credentials. Only then fall back to reading
+ * wp-config.php, and only then to LocalWP's `local`, which is a guess that silently dumped the
+ * wrong (or a non-existent) database for every other stack.
+ */
 async function resolveLocalDbName(config: SiteRunConfig): Promise<string> {
+  const named = config.localDatabaseName?.trim() ?? ''
+  if (named) {
+    return named
+  }
   return (await readLocalWpConfigDbName(config.wpDir).catch(() => '')) || 'local'
 }
 
@@ -56,7 +68,10 @@ export async function snapshotSiteDatabase(args: {
     databaseName: dbName,
     databaseUser: config.site.dbUser,
     databasePassword: config.dbPassword,
-    ...(config.site.dbSocket.trim() ? { databaseSocket: config.site.dbSocket } : {}),
+    // Socket or port, never neither: a TCP stack on a non-default port is unreachable without it.
+    ...(config.site.dbSocket.trim()
+      ? { databaseSocket: config.site.dbSocket }
+      : { databasePort: config.site.dbPort }),
     ...(args.onStatus ? { onStatus: args.onStatus } : {}),
     ...(args.signal ? { signal: args.signal } : {})
   })
