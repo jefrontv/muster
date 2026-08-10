@@ -24,6 +24,7 @@ import { detectSiteStack } from './local-stack-detection'
 import { localStackProviders } from './local-stack-provider'
 import { LOCALWP_UNSUPPORTED_PLATFORM } from './localwp-host'
 import { defaultLocalDomain } from './site-bind-url'
+import { resolveSiteWpDir } from './site-run-config'
 import { buildSiteRunPlan, canStartRun } from './site-run-plan'
 import { getSiteSecretPresence } from './site-secret-store'
 import { resolveSiteSetupCloneTargets } from './site-setup-clone-targets'
@@ -129,6 +130,10 @@ function buildStackReadiness(
     // Where the folder could go instead. With two stacks installed, "LocalWP already has this" is
     // no longer the end of the conversation — it is the reason to offer Agent Local.
     alternatives: installed.filter((id) => id !== detection.stack),
+    // Whether there is a WordPress install here at all. Agent Local can only adopt one that
+    // already exists; LocalWP can build one. For a freshly cloned theme-only repo that difference
+    // decides which stack can work, so the wizard must know it before proposing either.
+    hasWordPress: existsSync(path.join(resolveSiteWpDir(site), 'wp-load.php')),
     stack: detection.stack,
     // Local rejects a blank domain, so fall back to the folder name rather than offering nothing —
     // through ocsites' own default_local_domain, so a domain-shaped folder gives acme.local rather

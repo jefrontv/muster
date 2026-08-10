@@ -27,6 +27,8 @@ import { getSiteSetupStrings } from './site-setup-strings'
 
 /** Enough to hold a whole migration's chatter; the head is dropped so a runaway log cannot grow. */
 const MAX_LOG_LINES = 200
+/** Module scope so the default prop keeps referential equality across renders. */
+const NO_STACKS: SiteLocalStack[] = []
 /** Local requires a wp-admin account to build the install; it is local-only and never asked for. */
 const LOCALWP_ADMIN_EMAIL = 'hello@efront.com.au'
 const LOCALWP_ADMIN_PASSWORD = 'admin'
@@ -46,6 +48,7 @@ export function SiteSetupStackStage({
   suggestedDomain,
   detectedStack = null,
   preferredStack = null,
+  unavailableStacks = NO_STACKS,
   onMigrated
 }: {
   siteId: string
@@ -54,6 +57,8 @@ export function SiteSetupStackStage({
   detectedStack?: SiteLocalStack | null
   /** Where the folder should move to, when something already manages it. Outranks `detectedStack`. */
   preferredStack?: SiteLocalStack | null
+  /** Stacks that cannot run this folder as it stands; shown, but not selectable. */
+  unavailableStacks?: SiteLocalStack[]
   /** Fired once the migration really succeeded — the local domain only exists from that point. */
   onMigrated: (domain: string, stack: SiteLocalStack) => void
 }): React.JSX.Element {
@@ -199,6 +204,8 @@ export function SiteSetupStackStage({
   const busy = phase === 'running'
   const creating = preview?.mode === 'create'
   const onAgentLocal = stack === 'agent-local'
+  /** Why the chosen stack cannot run this folder, straight from the planner. */
+  const blocked = preview?.blockedReason ?? ''
   // Only a real choice is worth a control: one installed stack means there is nothing to pick.
   const stackChoices = (availableStacks ?? []).length > 1 ? (availableStacks ?? []) : []
   const body = onAgentLocal
@@ -246,7 +253,14 @@ export function SiteSetupStackStage({
               }}
             >
               {stackChoices.map((choice) => (
-                <ToggleGroupItem key={choice} value={choice} className="px-2.5 text-xs">
+                <ToggleGroupItem
+                  key={choice}
+                  value={choice}
+                  // Shown rather than hidden: the user needs to see that Agent Local exists and
+                  // learn why it cannot take this folder yet, not wonder where it went.
+                  disabled={unavailableStacks.includes(choice)}
+                  className="px-2.5 text-xs"
+                >
                   {choice === 'agent-local' ? 'Agent Local' : 'LocalWP'}
                 </ToggleGroupItem>
               ))}
@@ -271,7 +285,10 @@ export function SiteSetupStackStage({
               size="sm"
               variant="outline"
               className="shrink-0"
-              disabled={domain.trim().length === 0}
+              // A blocked preview is the planner saying this cannot work. Pressing the button then
+              // only reprints the same sentence as a failure, which is how the dialog ended up
+              // showing one error twice.
+              disabled={domain.trim().length === 0 || blocked.length > 0}
               onClick={() => void run()}
             >
               {phase === 'failed' ? strings.stackRetry : action}
@@ -330,7 +347,9 @@ export function SiteSetupStackStage({
         </div>
       ) : null}
 
-      {phase === 'failed' ? (
+      {/* Suppressed when the preview is already saying the same thing above: a run that failed for
+          the reason the planner had already printed does not need to print it a second time. */}
+      {phase === 'failed' && failure !== blocked ? (
         <div className="ml-6.5 space-y-0.5">
           <p className="flex items-center gap-1.5 text-xs font-medium text-destructive">
             <TriangleAlert className="size-3.5 shrink-0" />

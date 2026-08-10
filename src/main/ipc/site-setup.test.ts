@@ -36,6 +36,7 @@ const PLAN: SiteSetupPlan = {
     supported: true,
     alreadyLocalWp: false,
     alternatives: [],
+    hasWordPress: true,
     stack: 'plain',
     suggestedDomain: 'acme.local',
     reason: ''

@@ -176,9 +176,19 @@ export function SiteSetupContinuation({
           // What the planner found on disk, so a folder agent-local already serves does not open
           // on a proposal to set it up with LocalWP.
           detectedStack={plan.stack.stack === 'agent-local' ? 'agent-local' : null}
-          // Already managed by the detected stack? Then open on the stack it could move TO —
-          // leaving the picker on the current one proposes a migration that cannot do anything.
-          preferredStack={plan.stack.alreadyLocalWp ? (plan.stack.alternatives[0] ?? null) : null}
+          // No WordPress here yet? Then only LocalWP can help — it builds an install, where Agent
+          // Local can only adopt one. Otherwise, if something already manages the folder, open on
+          // the stack it could move TO, since the current one proposes a migration that cannot do
+          // anything.
+          preferredStack={
+            !plan.stack.hasWordPress
+              ? 'localwp'
+              : plan.stack.alreadyLocalWp
+                ? (plan.stack.alternatives[0] ?? null)
+                : null
+          }
+          // Agent Local has nothing to adopt until core is on disk; offering it would dead-end.
+          unavailableStacks={plan.stack.hasWordPress ? [] : ['agent-local']}
           onMigrated={(migratedDomain, migratedStack) => {
             // The migration is what gives the site its local domain, so the certificate question
             // only becomes answerable now — and it must be asked of the stack just migrated onto,

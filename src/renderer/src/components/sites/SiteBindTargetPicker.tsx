@@ -33,23 +33,28 @@ export function SiteBindTargetPicker({
 }: SiteBindTargetPickerProps): React.JSX.Element {
   const strings = getSiteBindStrings()
   const known = candidates.some((entry) => entry.path === selectedPath)
+  // Only folders that are actually there can be bound — confirm() rejects the rest — so the ones
+  // that are gone are listed as a count below rather than as cards nobody can pick.
+  const bindable = candidates.filter((candidate) => candidate.exists)
+  const staleCount = candidates.length - bindable.length
 
   return (
     <section className="space-y-2">
-      <h3 className="text-xs font-medium text-muted-foreground">{strings.chooseFolder}</h3>
+      {/* No heading when there is nothing to choose between: "Which local folder should this bind
+          to?" over zero options is a question the user cannot answer. */}
+      {bindable.length > 0 ? (
+        <h3 className="text-xs font-medium text-muted-foreground">{strings.chooseFolder}</h3>
+      ) : null}
 
       {candidates.length === 0 ? (
         <p className="text-sm text-muted-foreground">{strings.noCandidates}</p>
-      ) : (
+      ) : bindable.length === 0 ? null : (
         <ul className="space-y-1">
-          {candidates.map((candidate) => (
+          {bindable.map((candidate) => (
             <li key={candidate.path}>
               <button
                 type="button"
                 aria-pressed={candidate.path === selectedPath}
-                // Why disabled: confirm() rejects a path that is not on disk, so offering it as a
-                // bind target would only produce an error. The clone/browse actions are the way out.
-                disabled={!candidate.exists}
                 onClick={() => onSelect(candidate.path)}
                 className="flex w-full items-start gap-2 rounded-md border border-border px-2 py-2 text-left text-sm hover:bg-accent aria-pressed:border-primary aria-pressed:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
               >
@@ -73,11 +78,7 @@ export function SiteBindTargetPicker({
                   <span className="block truncate font-mono text-[11px] text-muted-foreground">
                     {candidate.path}
                   </span>
-                  {!candidate.exists ? (
-                    <span className="mt-0.5 block text-xs text-destructive">
-                      {strings.missingFolder}
-                    </span>
-                  ) : candidate.siteId ? (
+                  {candidate.siteId ? (
                     <span className="mt-0.5 block text-xs text-muted-foreground">
                       {strings.updatesExisting}
                     </span>
@@ -91,6 +92,14 @@ export function SiteBindTargetPicker({
 
       {selectedPath.length > 0 && !known ? (
         <p className="truncate font-mono text-xs text-muted-foreground">{selectedPath}</p>
+      ) : null}
+      {staleCount > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {(staleCount === 1 ? strings.staleRecords : strings.staleRecordsPlural).replace(
+            '{{count}}',
+            String(staleCount)
+          )}
+        </p>
       ) : null}
       {needsFreshSetup ? (
         <p className="text-xs text-muted-foreground">

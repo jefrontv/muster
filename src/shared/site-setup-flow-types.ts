@@ -69,6 +69,12 @@ export type SiteSetupStackReadiness = {
    * offer Agent Local rather than a reason to close the stage.
    */
   alternatives: SiteLocalStack[]
+  /**
+   * True when the docroot actually holds a WordPress install. Agent Local adopts one that exists;
+   * LocalWP can create one. A freshly cloned theme-only repo has none, which rules Agent Local out
+   * until the server import has brought core down.
+   */
+  hasWordPress: boolean
   /** Which stack detection found; `plain` when none manages the folder. */
   stack: SiteLocalStack
   /** Proposed local domain, derived from the link or the folder name. */

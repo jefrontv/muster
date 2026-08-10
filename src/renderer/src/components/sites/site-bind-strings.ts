@@ -34,9 +34,16 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteBindDialog.updatesExisting',
     'This folder already has a site record; confirming updates it.'
   ),
-  missingFolder: translate(
-    'auto.components.sites.SiteBindDialog.missingFolder',
-    'Its folder is gone, so this record cannot be bound. Choose or clone a folder to set it up fresh.'
+  // One line for all of them, rather than an unpickable card each repeating the same sentence. The
+  // fact still matters — it explains why a site the user knows about is not on offer — but it is a
+  // footnote, not the choice.
+  staleRecords: translate(
+    'auto.components.sites.SiteBindDialog.staleRecords',
+    '{{count}} earlier record points at a folder that is gone.'
+  ),
+  staleRecordsPlural: translate(
+    'auto.components.sites.SiteBindDialog.staleRecordsPlural',
+    '{{count}} earlier records point at folders that are gone.'
   ),
   setUpInRoot: translate(
     'auto.components.sites.SiteBindDialog.setUpInRoot',

@@ -26,6 +26,7 @@ function makePlan(overrides: Partial<SiteSetupPlan> = {}): SiteSetupPlan {
       supported: true,
       alreadyLocalWp: false,
       alternatives: [],
+      hasWordPress: true,
       stack: 'plain',
       suggestedDomain: 'acme.local',
       reason: ''
@@ -209,6 +210,7 @@ describe('SiteSetupContinuation', () => {
           supported: true,
           alreadyLocalWp: true,
           alternatives: ['agent-local'],
+          hasWordPress: true,
           stack: 'localwp',
           suggestedDomain: 'acme.local',
           reason: 'This project is already a LocalWP site.'

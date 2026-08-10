@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -10,6 +10,13 @@ import {
   type SiteEnvironment
 } from '../../shared/site-types'
 import type { Store } from '../persistence'
+import type { registerLocalStackProvider, providerFor } from './local-stack-provider'
+
+/** The exports the partial mock below has to preserve for the registry to still work. */
+type LocalStackProviderModule = {
+  registerLocalStackProvider: typeof registerLocalStackProvider
+  providerFor: typeof providerFor
+}
 
 const { detectSiteStack, resolveSiteSetupCloneTargets, getSiteSecretPresence, localStackProviders } =
   vi.hoisted(() => ({
@@ -20,10 +27,14 @@ const { detectSiteStack, resolveSiteSetupCloneTargets, getSiteSecretPresence, lo
   }))
 
 vi.mock('./local-stack-detection', () => ({ detectSiteStack }))
-// Mocked because the real registry probes the machine: LocalWP's support check and an HTTP call to
-// the agent-local daemon. Whether the stack stage stays open must not depend on what happens to be
-// installed on the machine running the tests.
-vi.mock('./local-stack-provider', () => ({ localStackProviders }))
+// Only `localStackProviders` is replaced, because the real one probes the machine: LocalWP's
+// support check and an HTTP call to the agent-local daemon. Whether the stack stage stays open must
+// not depend on what happens to be installed on the machine running the tests. The rest of the
+// module stays real — the registry's own registration runs on import elsewhere in this graph.
+vi.mock('./local-stack-provider', async (importOriginal) => ({
+  ...(await importOriginal<LocalStackProviderModule>()),
+  localStackProviders
+}))
 vi.mock('./site-setup-clone-targets', () => ({ resolveSiteSetupCloneTargets }))
 // Mocked for the seam, not just the electron dependency: "is an SSH password stored" is the input
 // that decides whether the import stage blocks.
@@ -152,6 +163,8 @@ describe('buildSiteSetupPlan', () => {
       alreadyLocalWp: false,
       // Nothing manages `plain`, so every installed stack is somewhere it could go.
       alternatives: ['localwp'],
+      // The fixture directory is a bare temp folder, so there is no wp-load.php in it.
+      hasWordPress: false,
       stack: 'plain',
       suggestedDomain: 'acme.local',
       reason: ''
@@ -248,6 +261,32 @@ describe('buildSiteSetupPlan', () => {
 
     expect(stageState(plan.stages, 'stack')).toBe('pending')
     expect(plan.stack).toMatchObject({ alreadyLocalWp: true, alternatives: ['agent-local'] })
+  })
+
+  // Agent Local adopts an install that exists; it cannot build one. A freshly cloned theme-only
+  // repo has no core, so offering it would dead-end on "wp-load.php is missing" — which is exactly
+  // what happened live.
+  it('reports whether there is a WordPress install to adopt', async () => {
+    installed('localwp', 'agent-local')
+
+    const bare = await buildSiteSetupPlan(storeStub(), {
+      siteId: SITE_ID,
+      reponame: 'acme',
+      branch: 'main'
+    })
+    expect(bare.stack.hasWordPress).toBe(false)
+
+    writeFileSync(path.join(EXISTING_PATH, 'wp-load.php'), '<?php')
+    try {
+      const withCore = await buildSiteSetupPlan(storeStub(), {
+        siteId: SITE_ID,
+        reponame: 'acme',
+        branch: 'main'
+      })
+      expect(withCore.stack.hasWordPress).toBe(true)
+    } finally {
+      rmSync(path.join(EXISTING_PATH, 'wp-load.php'), { force: true })
+    }
   })
 
   it('closes it when the only installed stack is the one already managing the folder', async () => {
