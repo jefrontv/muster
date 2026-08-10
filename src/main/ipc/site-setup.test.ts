@@ -35,6 +35,7 @@ const PLAN: SiteSetupPlan = {
   stack: {
     supported: true,
     alreadyLocalWp: false,
+    alternatives: [],
     stack: 'plain',
     suggestedDomain: 'acme.local',
     reason: ''

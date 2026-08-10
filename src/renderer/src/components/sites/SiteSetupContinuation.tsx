@@ -176,6 +176,9 @@ export function SiteSetupContinuation({
           // What the planner found on disk, so a folder agent-local already serves does not open
           // on a proposal to set it up with LocalWP.
           detectedStack={plan.stack.stack === 'agent-local' ? 'agent-local' : null}
+          // Already managed by the detected stack? Then open on the stack it could move TO —
+          // leaving the picker on the current one proposes a migration that cannot do anything.
+          preferredStack={plan.stack.alreadyLocalWp ? (plan.stack.alternatives[0] ?? null) : null}
           onMigrated={(migratedDomain, migratedStack) => {
             // The migration is what gives the site its local domain, so the certificate question
             // only becomes answerable now — and it must be asked of the stack just migrated onto,

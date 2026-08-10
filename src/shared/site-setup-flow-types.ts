@@ -61,8 +61,14 @@ export type SiteSetupCloneResolution = {
 export type SiteSetupStackReadiness = {
   /** False off macOS, where neither managed stack can be driven at all. */
   supported: boolean
-  /** True when the folder is already on a managed stack, so migration is a no-op. */
+  /** True when the folder is already on a managed stack, so migration onto THAT stack is a no-op. */
   alreadyLocalWp: boolean
+  /**
+   * Installed stacks other than the detected one — i.e. what the folder could be moved to. The
+   * stage stays open while this has entries, because "LocalWP already has this" is a reason to
+   * offer Agent Local rather than a reason to close the stage.
+   */
+  alternatives: SiteLocalStack[]
   /** Which stack detection found; `plain` when none manages the folder. */
   stack: SiteLocalStack
   /** Proposed local domain, derived from the link or the folder name. */

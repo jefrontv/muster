@@ -45,12 +45,15 @@ export function SiteSetupStackStage({
   siteId,
   suggestedDomain,
   detectedStack = null,
+  preferredStack = null,
   onMigrated
 }: {
   siteId: string
   suggestedDomain: string
   /** The stack already serving this folder, when the planner found one; it wins over the default. */
   detectedStack?: SiteLocalStack | null
+  /** Where the folder should move to, when something already manages it. Outranks `detectedStack`. */
+  preferredStack?: SiteLocalStack | null
   /** Fired once the migration really succeeded — the local domain only exists from that point. */
   onMigrated: (domain: string, stack: SiteLocalStack) => void
 }): React.JSX.Element {
@@ -95,10 +98,16 @@ export function SiteSetupStackStage({
         return
       }
       setAvailableStacks(answer.value)
-      // What is already serving the folder wins: proposing a LocalWP migration for a site
-      // agent-local runs would be offering to move files that do not need moving. Otherwise default
-      // to LocalWP, since that is what existing sites use, and fall back to whatever is installed
-      // rather than offering a stack that cannot run.
+      // Where the folder should END UP wins first: when something already manages it, the useful
+      // proposal is the stack it can move to, not the one that already has it. Otherwise what is
+      // already serving it wins, since proposing a LocalWP migration for a site agent-local runs
+      // would offer to move files that do not need moving. Failing both, default to LocalWP —
+      // what existing sites use — and fall back to whatever is installed rather than offering a
+      // stack that cannot run.
+      if (preferredStack && answer.value.includes(preferredStack)) {
+        setStack(preferredStack)
+        return
+      }
       if (detectedStack && answer.value.includes(detectedStack)) {
         setStack(detectedStack)
         return
@@ -108,7 +117,7 @@ export function SiteSetupStackStage({
     return () => {
       cancelled = true
     }
-  }, [detectedStack])
+  }, [detectedStack, preferredStack])
 
   // Read-only: this is the same planner the run re-consults, so asking it now costs one call and
   // buys the honest heading, the honest button, and the list of what is about to move or be deleted.

@@ -17,10 +17,11 @@ import type {
   SiteSetupStage
 } from '../../shared/site-setup-flow-types'
 import type { LocalWpStackDetection } from '../../shared/site-stack-types'
-import type { Site } from '../../shared/site-types'
+import type { Site, SiteLocalStack } from '../../shared/site-types'
 import { requireSite } from '../ipc/sites-result'
 import type { Store } from '../persistence'
 import { detectSiteStack } from './local-stack-detection'
+import { localStackProviders } from './local-stack-provider'
 import { LOCALWP_UNSUPPORTED_PLATFORM } from './localwp-host'
 import { defaultLocalDomain } from './site-bind-url'
 import { buildSiteRunPlan, canStartRun } from './site-run-plan'
@@ -58,15 +59,16 @@ export async function buildSiteSetupPlan(
 
   // Both probes touch the machine (Local's config, the connector's API) and neither feeds the
   // other, so they run together rather than serialising the dialog's first paint.
-  const [detection, clone] = await Promise.all([
+  const [detection, clone, installed] = await Promise.all([
     // Every stack, not just LocalWP: asking only LocalWP reported a folder agent-local already
     // serves as unmanaged, so the wizard offered to set up a site that was already set up.
     detectSiteStack(site.path),
-    resolveCloneTargets(input.reponame)
+    resolveCloneTargets(input.reponame),
+    installedStacks()
   ])
 
   const pathExists = existsSync(site.path)
-  const stack = buildStackReadiness(site, detection)
+  const stack = buildStackReadiness(site, detection, installed)
   const importReadiness = buildImportReadiness(site, input.branch, pathExists)
 
   return {
@@ -102,17 +104,31 @@ async function resolveCloneTargets(reponame: string): Promise<SiteSetupCloneReso
   }
 }
 
+/** The stacks this machine can actually run, so the stage knows whether a switch is on offer. */
+async function installedStacks(): Promise<SiteLocalStack[]> {
+  const answers = await Promise.all(
+    localStackProviders()
+      .filter((provider) => provider.id !== 'plain' && provider.id !== 'mamp')
+      .map(async (provider) => ((await provider.isAvailable().catch(() => false)) ? provider.id : null))
+  )
+  return answers.filter((id): id is SiteLocalStack => id !== null)
+}
+
 function buildStackReadiness(
   site: Site,
-  detection: LocalWpStackDetection
+  detection: LocalWpStackDetection,
+  installed: SiteLocalStack[]
 ): SiteSetupStackReadiness {
-  // Managed by either stack: the stage has nothing left to offer, and the certificate stage needs
-  // to know which one so it asks that stack about the domain rather than always asking LocalWP.
+  // Managed by either stack: the certificate stage needs to know which one so it asks that stack
+  // about the domain rather than always asking LocalWP.
   const managedStack = detection.stack === 'localwp' || detection.stack === 'agent-local'
   const alreadyLocalWp = managedStack
   return {
     supported: detection.supported,
     alreadyLocalWp,
+    // Where the folder could go instead. With two stacks installed, "LocalWP already has this" is
+    // no longer the end of the conversation — it is the reason to offer Agent Local.
+    alternatives: installed.filter((id) => id !== detection.stack),
     stack: detection.stack,
     // Local rejects a blank domain, so fall back to the folder name rather than offering nothing —
     // through ocsites' own default_local_domain, so a domain-shaped folder gives acme.local rather
@@ -158,7 +174,10 @@ function buildImportReadiness(
 function buildStackStage(stack: SiteSetupStackReadiness): SiteSetupStage {
   // Both cases are dead ends rather than obstacles: no amount of user action makes a LocalWP
   // migration meaningful off macOS or on a site Local already manages.
-  if (!stack.supported || stack.alreadyLocalWp) {
+  // Closed only when there is genuinely nothing to choose: the platform cannot run a stack, or one
+  // already manages the folder and no other installed stack could take it. Closing it merely
+  // because LocalWP got there first is what stopped a user moving a site onto Agent Local.
+  if (!stack.supported || (stack.alreadyLocalWp && stack.alternatives.length === 0)) {
     return { id: 'stack', state: 'unavailable', reason: stack.reason }
   }
   return { id: 'stack', state: 'pending', reason: '' }

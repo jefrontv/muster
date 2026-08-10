@@ -11,15 +11,19 @@ import {
 } from '../../shared/site-types'
 import type { Store } from '../persistence'
 
-const { detectSiteStack, resolveSiteSetupCloneTargets, getSiteSecretPresence } = vi.hoisted(
-  () => ({
+const { detectSiteStack, resolveSiteSetupCloneTargets, getSiteSecretPresence, localStackProviders } =
+  vi.hoisted(() => ({
     detectSiteStack: vi.fn(),
     resolveSiteSetupCloneTargets: vi.fn(),
-    getSiteSecretPresence: vi.fn()
-  })
-)
+    getSiteSecretPresence: vi.fn(),
+    localStackProviders: vi.fn()
+  }))
 
 vi.mock('./local-stack-detection', () => ({ detectSiteStack }))
+// Mocked because the real registry probes the machine: LocalWP's support check and an HTTP call to
+// the agent-local daemon. Whether the stack stage stays open must not depend on what happens to be
+// installed on the machine running the tests.
+vi.mock('./local-stack-provider', () => ({ localStackProviders }))
 vi.mock('./site-setup-clone-targets', () => ({ resolveSiteSetupCloneTargets }))
 // Mocked for the seam, not just the electron dependency: "is an SSH password stored" is the input
 // that decides whether the import stage blocks.
@@ -103,11 +107,22 @@ function stageReason(
   return stages.find((stage) => stage.id === id)?.reason ?? ''
 }
 
+/** The registry as the planner reads it: id plus whether the machine can run it. */
+function installed(...ids: string[]): void {
+  localStackProviders.mockReturnValue(
+    ['localwp', 'agent-local', 'plain', 'mamp'].map((id) => ({
+      id,
+      isAvailable: async () => ids.includes(id)
+    }))
+  )
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   detectSiteStack.mockResolvedValue(detection())
   resolveSiteSetupCloneTargets.mockResolvedValue(NO_CLONE_TARGETS)
   getSiteSecretPresence.mockReturnValue({ ssh: false, db: false })
+  installed('localwp')
 })
 
 describe('buildSiteSetupPlan', () => {
@@ -135,6 +150,8 @@ describe('buildSiteSetupPlan', () => {
     expect(plan.stack).toEqual({
       supported: true,
       alreadyLocalWp: false,
+      // Nothing manages `plain`, so every installed stack is somewhere it could go.
+      alternatives: ['localwp'],
       stack: 'plain',
       suggestedDomain: 'acme.local',
       reason: ''
@@ -217,9 +234,38 @@ describe('buildSiteSetupPlan', () => {
     expect(plan.stack).toMatchObject({ supported: true, alreadyLocalWp: true })
   })
 
-  // The bug this pins: the planner asked only LocalWP, so a folder Agent Local already served came
-  // back `plain` and the wizard offered to set up a site that was already set up.
+  // The bug this pins: LocalWP still had the folder registered, so the stage closed outright and
+  // there was no way to move the site onto Agent Local from the wizard.
+  it('keeps the stack stage open when another installed stack could take the folder', async () => {
+    installed('localwp', 'agent-local')
+    detectSiteStack.mockResolvedValue(detection({ stack: 'localwp', registered: true }))
+
+    const plan = await buildSiteSetupPlan(storeStub(), {
+      siteId: SITE_ID,
+      reponame: 'acme',
+      branch: 'main'
+    })
+
+    expect(stageState(plan.stages, 'stack')).toBe('pending')
+    expect(plan.stack).toMatchObject({ alreadyLocalWp: true, alternatives: ['agent-local'] })
+  })
+
+  it('closes it when the only installed stack is the one already managing the folder', async () => {
+    installed('localwp')
+    detectSiteStack.mockResolvedValue(detection({ stack: 'localwp', registered: true }))
+
+    const plan = await buildSiteSetupPlan(storeStub(), {
+      siteId: SITE_ID,
+      reponame: 'acme',
+      branch: 'main'
+    })
+
+    expect(stageState(plan.stages, 'stack')).toBe('unavailable')
+    expect(plan.stack.alternatives).toEqual([])
+  })
+
   it('closes the stack stage when the checkout is already an Agent Local site', async () => {
+    installed('agent-local')
     detectSiteStack.mockResolvedValue(detection({ stack: 'agent-local', registered: true }))
 
     const plan = await buildSiteSetupPlan(storeStub(), {
