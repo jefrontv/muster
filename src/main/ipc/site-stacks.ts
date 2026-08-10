@@ -15,6 +15,7 @@ import type { Store } from '../persistence'
 import { importLocalDatabase } from '../sites/local-database-import'
 import { planAgentLocalMigration, runAgentLocalMigration } from '../sites/agent-local-migration'
 import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
+import { startStackWithPortHandover } from '../sites/local-stack-port-handover'
 import { currentSocketIfRunning } from '../sites/localwp-detection'
 import {
   createLocalWpHost,
@@ -109,7 +110,7 @@ export function registerSiteStackHandlers(store: Store): void {
     async (_event, siteId: unknown): Promise<SiteResult<LocalWpControlOutcome>> => {
       try {
         const site = requireSite(store, requireId(siteId))
-        const outcome = await providerFor(site.localStack).ensureRunning({
+        const outcome = await startStackWithPortHandover({
           path: site.path,
           localStack: site.localStack,
           localWpRoot: site.localWpRoot

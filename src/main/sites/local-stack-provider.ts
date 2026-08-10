@@ -71,6 +71,15 @@ export type LocalStackProvider = {
   credentials: (site: LocalStackSiteRef) => Promise<LocalStackCredentials | null>
   certStatus: (domain: string) => Promise<LocalWpCertStatus>
   certTrust: (domain: string) => Promise<LocalWpCertTrustResult>
+  /**
+   * Stand off :80/:443 for `seconds` so another stack can bind them. Optional, because only a stack
+   * that takes the privileged ports has anything to give up — LocalWP binds them itself and has no
+   * way to hand them back on request.
+   *
+   * Resolves true when this stack is no longer holding the ports, which includes "it was never
+   * running". Never throws: a failed handover degrades to the ports staying where they are.
+   */
+  releasePrivilegedPorts?: (seconds: number) => Promise<boolean>
 }
 
 export function localStackSkip(state: LocalWpControlState, message: string): LocalStackOutcome {

@@ -302,6 +302,28 @@ export async function detectAgentLocalStack(
   }
 }
 
+/**
+ * Stands the front router off :80/:443 so LocalWP can bind them; sites stay reachable on
+ * agent-local's own front ports meanwhile, and the router reclaims automatically.
+ *
+ * Probes rather than spawns — `host.request`, not `requestWithDaemon`. A daemon that is not running
+ * is not holding the ports, so booting one just to tell it to stand aside would be the opposite of
+ * what the caller wants. Same reasoning for the `/yield` route being absent on older builds: that
+ * daemon holds the ports and will not let go, and the caller proceeds either way.
+ */
+export async function releaseAgentLocalPrivilegedPorts(
+  seconds: number,
+  options: AgentLocalOptions = {}
+): Promise<boolean> {
+  const host = options.host ?? createAgentLocalHost()
+  if (!isAgentLocalSupported(host)) {
+    return false
+  }
+  const response = await host.request('POST', '/yield', { seconds })
+  // Daemon down means nothing of ours is on those ports, which is what the caller is asking about.
+  return response.ok || isAgentLocalDaemonDown(response)
+}
+
 export const agentLocalProvider: LocalStackProvider = {
   id: 'agent-local',
   isAvailable: async () => {
@@ -318,7 +340,8 @@ export const agentLocalProvider: LocalStackProvider = {
   stop: (site) => stopAgentLocalSite(site),
   credentials: (site) => agentLocalCredentials(site),
   certStatus: (domain) => agentLocalCertStatus(domain),
-  certTrust: (domain) => agentLocalCertTrust(domain)
+  certTrust: (domain) => agentLocalCertTrust(domain),
+  releasePrivilegedPorts: (seconds) => releaseAgentLocalPrivilegedPorts(seconds)
 }
 
 registerLocalStackProvider(agentLocalProvider)

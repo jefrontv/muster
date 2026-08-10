@@ -5,6 +5,7 @@ import {
   agentLocalCredentials,
   detectAgentLocalStack,
   ensureAgentLocalSiteRunning,
+  releaseAgentLocalPrivilegedPorts,
   resolveAgentLocalSite,
   stopAgentLocalSite
 } from './agent-local-site-control'
@@ -277,5 +278,64 @@ describe('detectAgentLocalStack', () => {
     expect(detection.stack).toBe('plain')
     expect(detection.registered).toBe(false)
     expect(detection.reason).toContain('daemon')
+  })
+})
+
+describe('releaseAgentLocalPrivilegedPorts', () => {
+  it('yields the ports for the requested window', async () => {
+    const bodies: unknown[] = []
+    const machine = host(
+      { 'POST /yield': { ok: true, status: 200, data: { seconds: 60 } } },
+      {
+        request: async (method: string, apiPath: string, body?: unknown) => {
+          bodies.push(body)
+          return method === 'POST' && apiPath === '/yield'
+            ? { ok: true, status: 200 }
+            : { ok: false, status: 404 }
+        }
+      }
+    )
+
+    await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(true)
+    expect(bodies).toEqual([{ seconds: 60 }])
+  })
+
+  // A daemon that is not running is not on those ports, which is what the caller is really asking.
+  it('reports the ports free when the daemon is down', async () => {
+    const machine = host({}, {
+      request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' })
+    })
+
+    await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(true)
+  })
+
+  // Older builds have no /yield route: they hold the ports and will not let go, so say so.
+  it('reports failure when the route is absent', async () => {
+    const machine = host({}, {
+      request: async () => ({ ok: false, status: 404, error: 'not found' })
+    })
+
+    await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(false)
+  })
+
+  it('never spawns a daemon just to make it stand aside', async () => {
+    let spawned = 0
+    const machine = host({}, {
+      request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' }),
+      spawnDaemon: async () => {
+        spawned += 1
+      }
+    })
+
+    await releaseAgentLocalPrivilegedPorts(60, { host: machine })
+
+    expect(spawned).toBe(0)
+  })
+
+  it('does nothing off macOS', async () => {
+    const machine = host({}, { platform: 'win32' })
+
+    await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(false)
+    expect(machine.calls).toEqual([])
   })
 })

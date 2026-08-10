@@ -5,7 +5,7 @@
 // here means the pipeline reads the same for all of them.
 
 import type { Site } from '../../shared/site-types'
-import { providerFor } from './local-stack-provider'
+import { startStackWithPortHandover } from './local-stack-port-handover'
 // Side-effect import: the agent-local provider registers itself with the registry on load.
 import './agent-local-site-control'
 import { SiteRunStepError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
@@ -37,7 +37,7 @@ export async function ensureLocalSiteRunning(
   site: Pick<Site, 'path' | 'localStack'>,
   onStatus?: (message: string) => void
 ): Promise<LocalStackRunningOutcome> {
-  const outcome = await providerFor(site.localStack).ensureRunning(
+  const outcome = await startStackWithPortHandover(
     { path: site.path, localStack: site.localStack },
     onStatus
   )
