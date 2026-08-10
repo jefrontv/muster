@@ -10,6 +10,7 @@ import type { SiteEnvironment, SiteSummary } from '../../../../shared/site-types
 import { SITE_DEPLOY_TOGGLES, SITE_IMPORT_TOGGLES } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
 import { getSiteToggleLabels } from '@/components/sites/site-toggle-labels'
 
 export function SiteStepToggles({
@@ -18,11 +19,14 @@ export function SiteStepToggles({
   environment,
   onChanged,
   importAction,
-  deployAction
+  deployAction,
+  className
 }: {
   siteId: string
   environmentName: string
   environment: SiteEnvironment
+  /** Lets the owner set this block apart from the rows above it. */
+  className?: string
   /** Receives the upsert's own fresh summary, so the owner can patch it in without a refetch. */
   onChanged: (summary: SiteSummary) => void
   /** Run button rendered at the foot of the import column, so action sits with its options. */
@@ -76,10 +80,12 @@ export function SiteStepToggles({
     toggles: readonly { key: string; label: string }[],
     action: React.ReactNode
   ): React.JSX.Element => (
-    <fieldset className="flex min-w-0 flex-1 flex-col space-y-1">
-      <legend className="text-[11px] font-medium text-muted-foreground">{heading}</legend>
+    <fieldset className="flex min-w-0 flex-1 flex-col gap-1.5">
+      <legend className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {heading}
+      </legend>
       {toggles.map((toggle) => (
-        <label key={toggle.key} className="flex items-center gap-1.5 text-xs">
+        <label key={toggle.key} className="flex items-center gap-2 text-xs">
           <Checkbox
             checked={
               pending[toggle.key] ?? Boolean(environment[toggle.key as keyof SiteEnvironment])
@@ -89,20 +95,22 @@ export function SiteStepToggles({
           <span className="truncate">{toggleLabels[toggle.key] ?? toggle.label}</span>
         </label>
       ))}
-      {action ? <div className="mt-auto pt-1.5">{action}</div> : null}
+      {/* mt-auto pins both buttons to the same baseline even though the columns hold a different
+          number of steps. */}
+      {action ? <div className="mt-auto pt-2.5">{action}</div> : null}
     </fieldset>
   )
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex gap-3">
+    <div className={cn('space-y-1.5', className)}>
+      <div className="flex gap-4">
         {group(
-          translate('auto.components.right.sidebar.SitePanel.importStepsHeading', 'Import steps'),
+          translate('auto.components.right.sidebar.SitePanel.importStepsHeading', 'Import'),
           SITE_IMPORT_TOGGLES,
           importAction
         )}
         {group(
-          translate('auto.components.right.sidebar.SitePanel.deployStepsHeading', 'Deploy steps'),
+          translate('auto.components.right.sidebar.SitePanel.deployStepsHeading', 'Deploy'),
           SITE_DEPLOY_TOGGLES,
           deployAction
         )}

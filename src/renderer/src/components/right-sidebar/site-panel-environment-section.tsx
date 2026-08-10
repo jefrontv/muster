@@ -31,43 +31,56 @@ export function SitePanelEnvironmentSection({
   const environmentNames = Object.keys(site.environments)
 
   return (
-    <section className="space-y-1.5">
-      <SectionHeading>
-        {translate('auto.components.right.sidebar.SitePanel.environmentSection', 'Environment')}
-      </SectionHeading>
-      {environmentNames.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {environmentNames.map((name) => (
-            <Badge key={name} variant={name === targetName ? 'default' : 'secondary'}>
-              {name}
-            </Badge>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          {translate(
-            'auto.components.right.sidebar.SitePanel.noEnvironments',
-            'This site has no environments yet.'
-          )}
-        </p>
-      )}
-      {branch ? (
-        <p className="text-xs text-muted-foreground">
-          {resolvedEnvironment.requiresConfirmation
-            ? translate(
-                'auto.components.right.sidebar.SitePanel.branchUnmatched',
-                'Branch {{branch}} matches no environment; runs must be confirmed.',
-                { branch }
-              )
-            : translate(
-                'auto.components.right.sidebar.SitePanel.branchResolution',
-                'Branch {{branch}} targets {{environment}}.',
-                { branch, environment: targetName ?? '—' }
-              )}
-        </p>
-      ) : null}
+    // Three groups at one rhythm apart, tight inside: which environment, where it points, what a
+    // run will do. Every row sat at the same 1.5 gap before, so four unrelated kinds of content
+    // read as one undifferentiated block.
+    <section className="space-y-3">
+      <div className="space-y-1.5">
+        <SectionHeading>
+          {translate('auto.components.right.sidebar.SitePanel.environmentSection', 'Environment')}
+        </SectionHeading>
+        {environmentNames.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1">
+            {environmentNames.map((name) => (
+              // Outline for the rest: only the resolved target earns a filled chip, so which one a
+              // run uses reads at a glance instead of four pills competing.
+              <Badge
+                key={name}
+                variant={name === targetName ? 'default' : 'outline'}
+                className="px-1.5 py-0 text-[11px] font-normal"
+              >
+                {name}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {translate(
+              'auto.components.right.sidebar.SitePanel.noEnvironments',
+              'This site has no environments yet.'
+            )}
+          </p>
+        )}
+        {branch ? (
+          // Quieter than the rows below: the filled chip already says which target won, and this
+          // only explains why.
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            {resolvedEnvironment.requiresConfirmation
+              ? translate(
+                  'auto.components.right.sidebar.SitePanel.branchUnmatched',
+                  'Branch {{branch}} matches no environment; runs must be confirmed.',
+                  { branch }
+                )
+              : translate(
+                  'auto.components.right.sidebar.SitePanel.branchResolution',
+                  'Branch {{branch}} targets {{environment}}.',
+                  { branch, environment: targetName ?? '—' }
+                )}
+          </p>
+        ) : null}
+      </div>
       {targetEnvironment ? (
-        <>
+        <div className="space-y-1 border-t border-border/50 pt-2.5">
           <InfoRow
             label={translate('auto.components.right.sidebar.SitePanel.sshHost', 'SSH host')}
             value={targetEnvironment.hostname || '—'}
@@ -88,16 +101,20 @@ export function SitePanelEnvironmentSection({
             value={targetEnvironment.liveDomain || '—'}
             mono
           />
-        </>
+        </div>
       ) : null}
       {targetName && targetEnvironment ? (
         <SiteStepToggles
+          className="border-t border-border/50 pt-2.5"
           siteId={site.id}
           environmentName={targetName}
           environment={targetEnvironment}
           onChanged={onStepsChanged}
+          // Full width inside their columns so the two run buttons match rather than sizing to
+          // their own labels.
           importAction={
             <SiteRunQuickAction
+              className="w-full"
               group="import"
               count={summary.importSelectedCount}
               disabledReason={importReason}
@@ -107,6 +124,7 @@ export function SitePanelEnvironmentSection({
           }
           deployAction={
             <SiteRunQuickAction
+              className="w-full"
               group="deploy"
               count={summary.deploySelectedCount}
               disabledReason={deployReason}

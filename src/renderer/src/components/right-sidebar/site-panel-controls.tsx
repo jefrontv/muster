@@ -90,7 +90,8 @@ export function QuickActionButton({
   count,
   disabledReason,
   busy,
-  onRun
+  onRun,
+  className
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
@@ -99,6 +100,8 @@ export function QuickActionButton({
   disabledReason: string | null
   busy: boolean
   onRun: () => void
+  /** Lets a column layout stretch the button; the loose row form leaves it content-width. */
+  className?: string
 }): React.JSX.Element {
   const disabled = disabledReason !== null || busy
   return (
@@ -109,7 +112,7 @@ export function QuickActionButton({
         <Button
           variant="outline"
           size="sm"
-          className={cn('gap-1.5', disabled && 'opacity-50 cursor-not-allowed')}
+          className={cn('gap-1.5', disabled && 'opacity-50 cursor-not-allowed', className)}
           aria-disabled={disabled}
           onClick={(event) => {
             if (disabled) {
@@ -139,16 +142,19 @@ export function SiteRunQuickAction({
   count,
   disabledReason,
   busy,
-  onRun
+  onRun,
+  className
 }: {
   group: 'import' | 'deploy'
   count: number
   disabledReason: string | null
   busy: boolean
   onRun: () => void
+  className?: string
 }): React.JSX.Element {
   return (
     <QuickActionButton
+      className={className}
       icon={group === 'import' ? DownloadCloud : UploadCloud}
       label={
         group === 'import'
