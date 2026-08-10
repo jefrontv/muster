@@ -121,7 +121,7 @@ type Harness = {
   order: string[]
   session: FakeSession
   calls: {
-    ensureLocalWpSiteRunning: ReturnType<typeof vi.fn>
+    ensureLocalSiteRunning: ReturnType<typeof vi.fn>
     checkLocalMysqlConnection: ReturnType<typeof vi.fn>
     createSiteSshSession: ReturnType<typeof vi.fn>
     importLocalDatabase: ReturnType<typeof vi.fn>
@@ -143,7 +143,7 @@ function createHarness(overrides: Partial<SiteImportDependencies> = {}): Harness
     })
 
   const calls = {
-    ensureLocalWpSiteRunning: record('ensureLocalWpSiteRunning', {
+    ensureLocalSiteRunning: record('ensureLocalSiteRunning', {
       ok: true,
       socketPath: '/fresh/mysqld.sock',
       message: ''
@@ -206,7 +206,7 @@ describe('runImportPipeline', () => {
     expect(calls.createSiteSshSession).not.toHaveBeenCalled()
     expect(calls.checkLocalMysqlConnection).not.toHaveBeenCalled()
     expect(order).toEqual([
-      'ensureLocalWpSiteRunning',
+      'ensureLocalSiteRunning',
       'applyWpUploadRewrite',
       'cleanUpLocalHtaccess',
       'runWpSearchReplace'
@@ -239,7 +239,7 @@ describe('runImportPipeline', () => {
       order.indexOf('createSiteSshSession')
     )
     expect(order).toEqual([
-      'ensureLocalWpSiteRunning',
+      'ensureLocalSiteRunning',
       'checkLocalMysqlConnection',
       'createSiteSshSession',
       'resolveRemoteLayout',
@@ -321,7 +321,7 @@ describe('runImportPipeline', () => {
 
     await runImportPipeline(context, createConfig({ exportFiles: true }), deps)
 
-    expect(calls.ensureLocalWpSiteRunning).not.toHaveBeenCalled()
+    expect(calls.ensureLocalSiteRunning).not.toHaveBeenCalled()
   })
 
   it('runs no stage at all when every toggle is off', async () => {
@@ -411,7 +411,7 @@ describe('runImportPipeline', () => {
     )
 
     // A stored socket goes stale whenever Local restarts and re-keys its run directory.
-    expect(logs).toContain('Using LocalWP MySQL socket /fresh/mysqld.sock')
+    expect(logs).toContain('Using local MySQL socket /fresh/mysqld.sock')
     const [checkedConfig] = calls.checkLocalMysqlConnection.mock.calls[0] as [SiteRunConfig]
     expect(checkedConfig.site.dbSocket).toBe('/fresh/mysqld.sock')
     const searchReplaceConfig = calls.runWpSearchReplace.mock.calls[0]?.[1] as SiteRunConfig
@@ -421,7 +421,7 @@ describe('runImportPipeline', () => {
   it('keeps the stored socket when LocalWP reports none', async () => {
     const { context } = createTestContext()
     const { deps, calls } = createHarness({
-      ensureLocalWpSiteRunning: vi.fn(async () => ({ ok: true, socketPath: '', message: '' }))
+      ensureLocalSiteRunning: vi.fn(async () => ({ ok: true, socketPath: '', message: '' }))
     })
 
     await runImportPipeline(context, createConfig({ wpSearchReplace: true }), deps)
@@ -433,7 +433,7 @@ describe('runImportPipeline', () => {
   it('fails the run when a LocalWP site cannot be started', async () => {
     const { context } = createTestContext()
     const { deps, calls } = createHarness({
-      ensureLocalWpSiteRunning: vi.fn(async () => ({
+      ensureLocalSiteRunning: vi.fn(async () => ({
         ok: false,
         socketPath: '',
         message: 'Local is not running.'
@@ -442,7 +442,7 @@ describe('runImportPipeline', () => {
 
     await expect(
       runImportPipeline(context, createConfig({ exportDatabase: true }), deps)
-    ).rejects.toThrow(new SiteRunStepError('ensure-localwp-running', 'Local is not running.'))
+    ).rejects.toThrow(new SiteRunStepError('ensure-local-stack-running', 'Local is not running.'))
     expect(calls.checkLocalMysqlConnection).not.toHaveBeenCalled()
   })
 

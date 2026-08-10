@@ -200,6 +200,27 @@ function replaceWpDefine(contents: string, name: string, value: string): string 
  * Points the imported wp-config.php at the local database. Absent wp-config.php is a no-op, as in
  * ocsites — a partial import may not have one yet.
  */
+/**
+ * The DB_HOST a local WordPress must use, per stack.
+ *
+ * - Socket stacks (LocalWP): literally `localhost`. PHP's mysqli only reaches a Unix socket for that
+ *   exact hostname; `127.0.0.1` forces TCP, which a LocalWP per-site daemon is not listening on.
+ * - TCP on the default port (MAMP, DBngin): bare `127.0.0.1`.
+ * - TCP on any other port (agent-local: 10360): `127.0.0.1:<port>`. Without the suffix WordPress
+ *   dials 3306 and the site dies with "Error establishing a database connection" the moment the
+ *   import finishes — the connection Muster itself makes is fine, because it passes the port
+ *   separately, which is exactly what hides this.
+ */
+export function localWpConfigDbHost(config: SiteRunConfig): string {
+  if (config.site.dbSocket) {
+    return 'localhost'
+  }
+  const port = config.site.dbPort
+  return port && port !== MYSQL_DEFAULT_PORT ? `127.0.0.1:${port}` : '127.0.0.1'
+}
+
+const MYSQL_DEFAULT_PORT = 3306
+
 async function writeLocalWpConfig(context: SiteRunContext, config: SiteRunConfig): Promise<void> {
   const wpConfigPath = path.join(config.wpDir, 'wp-config.php')
   let contents: string
@@ -209,14 +230,18 @@ async function writeLocalWpConfig(context: SiteRunContext, config: SiteRunConfig
     return
   }
 
-  // PHP's mysqli only uses a Unix socket when the host is literally 'localhost'; '127.0.0.1'
-  // forces TCP, which a LocalWP per-site daemon is not listening on.
-  const localDbHost = config.site.dbSocket ? 'localhost' : '127.0.0.1'
+  const localDbHost = localWpConfigDbHost(config)
   const updates = [`DB_HOST to ${localDbHost}`]
   let next = replaceWpDefine(contents, 'DB_HOST', localDbHost)
   if (config.site.dbUser) {
     next = replaceWpDefine(next, 'DB_USER', config.site.dbUser)
     updates.push(`DB_USER to ${config.site.dbUser}`)
+  }
+  if (config.localDatabaseName) {
+    // The stack owns the schema name (agent-local: al_<slug>); an imported wp-config.php still
+    // carries the source site's, which the per-site user has no rights on.
+    next = replaceWpDefine(next, 'DB_NAME', config.localDatabaseName)
+    updates.push(`DB_NAME to ${config.localDatabaseName}`)
   }
   if (config.dbPassword) {
     next = replaceWpDefine(next, 'DB_PASSWORD', config.dbPassword)

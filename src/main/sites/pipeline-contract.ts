@@ -92,6 +92,12 @@ export type SiteRunConfig = {
   wpDir: string
   sshPassword: string
   dbPassword: string
+  /**
+   * The schema the local stack owns for this site, when the stack names it rather than
+   * wp-config.php (agent-local: `al_<slug>`). Empty means wp-config.php is authoritative, which is
+   * the LocalWP and MAMP case.
+   */
+  localDatabaseName?: string
 }
 
 /** Remote layout, resolved once per run: standard WordPress or Bedrock (web/ + web/app). */

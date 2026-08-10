@@ -51,6 +51,8 @@ export type LocalStackOutcome = LocalWpControlOutcome & {
   port?: number | null
   user?: string
   password?: string
+  /** The schema the stack owns, when it names it rather than wp-config.php. */
+  database?: string
   /** The stack's own docroot, when it knows better than Muster's stored offset. */
   wpDir?: string
 }

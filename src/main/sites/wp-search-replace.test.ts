@@ -73,6 +73,8 @@ type ConfigOverrides = {
   dbSocket?: string
   dbUser?: string
   dbPassword?: string
+  dbPort?: number | null
+  localDatabaseName?: string
   searchReplaceTimeoutSeconds?: number
 }
 
@@ -91,7 +93,7 @@ function createConfig(overrides: ConfigOverrides = {}): SiteRunConfig {
     localStack: 'plain',
     dbUser: overrides.dbUser ?? 'root',
     dbSocket: overrides.dbSocket ?? '',
-    dbPort: null,
+    dbPort: overrides.dbPort ?? null,
     phpVersion: '8.2',
     activeEnvironment: 'main',
     environments: { main: environment },
@@ -105,7 +107,8 @@ function createConfig(overrides: ConfigOverrides = {}): SiteRunConfig {
     group: 'import',
     wpDir,
     sshPassword: 'ssh-secret',
-    dbPassword: overrides.dbPassword ?? 'db-secret'
+    dbPassword: overrides.dbPassword ?? 'db-secret',
+    localDatabaseName: overrides.localDatabaseName
   }
 }
 
@@ -174,6 +177,49 @@ describe('runWpSearchReplace', () => {
 
     // mysqli only takes the socket path when the host is literally 'localhost'.
     expect(wpConfig()).toContain("define('DB_HOST', 'localhost')")
+  })
+
+  it('writes the port into DB_HOST for a TCP stack on a non-default port', async () => {
+    const { context } = createTestContext()
+    writeFileSync(path.join(wpDir, 'wp-config.php'), WP_CONFIG)
+
+    // agent-local's shared MariaDB. Without the suffix WordPress dials 3306 and the site dies right
+    // after the import, even though Muster's own connection (which passes the port separately) works.
+    await runWpSearchReplace(context, createConfig({ dbPort: 10360 }), noLocalWpEnvironment)
+
+    expect(wpConfig()).toContain("define('DB_HOST', '127.0.0.1:10360')")
+  })
+
+  it('leaves DB_HOST bare on the default port, so MAMP and DBngin are unchanged', async () => {
+    const { context } = createTestContext()
+    writeFileSync(path.join(wpDir, 'wp-config.php'), WP_CONFIG)
+
+    await runWpSearchReplace(context, createConfig({ dbPort: 3306 }), noLocalWpEnvironment)
+
+    expect(wpConfig()).toContain("define('DB_HOST', '127.0.0.1')")
+  })
+
+  it('rewrites DB_NAME when the stack owns the schema name', async () => {
+    const { context } = createTestContext()
+    writeFileSync(path.join(wpDir, 'wp-config.php'), WP_CONFIG)
+
+    await runWpSearchReplace(
+      context,
+      createConfig({ dbPort: 10360, localDatabaseName: 'al_sulo' }),
+      noLocalWpEnvironment
+    )
+
+    // The imported wp-config.php carries the source site's name, which al_sulo has no rights on.
+    expect(wpConfig()).toContain("define('DB_NAME', 'al_sulo')")
+  })
+
+  it('leaves DB_NAME alone when no stack owns it', async () => {
+    const { context } = createTestContext()
+    writeFileSync(path.join(wpDir, 'wp-config.php'), WP_CONFIG)
+
+    await runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
+
+    expect(wpConfig()).toContain("define('DB_NAME', 'local')")
   })
 
   it('never logs the database password', async () => {
