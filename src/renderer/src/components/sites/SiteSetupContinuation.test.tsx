@@ -129,6 +129,8 @@ function installApi(plan: SiteSetupPlan, previewPlan: PreviewPlan): void {
   Reflect.set(globalThis.window, 'api', {
     siteSetup: { plan: planMock, cloneTargets: vi.fn() },
     siteStacks: {
+      // One stack installed, so the stage picks it and renders no picker.
+      available: vi.fn().mockResolvedValue({ ok: true, value: ['localwp'] }),
       previewMigration: previewMock,
       runMigration: migrateMock,
       onMigrationProgress: (callback: (event: { siteId: string; message: string }) => void) => {
@@ -227,7 +229,10 @@ describe('SiteSetupContinuation', () => {
       siteId: SITE_ID,
       domain: 'acme.local',
       adminEmail: 'hello@efront.com.au',
-      adminPassword: 'admin'
+      adminPassword: 'admin',
+      // Which stack runs it: the plan and the run must name the same one, or the preview blesses
+      // a migration the run does not perform.
+      stack: 'localwp'
     }
     expect(previewMock).toHaveBeenCalledWith(expected)
     expect(migrateMock).toHaveBeenCalledWith(expected)

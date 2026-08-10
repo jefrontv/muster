@@ -5,20 +5,20 @@
 // This is that control: it reports what the stacks say about the folder, lets the user commit to
 // one, and starts or stops it.
 //
-// It never guesses. `detect` asks the stacks themselves, and the button that changes anything is
-// the explicit one — an unmanaged folder is left alone until the user says otherwise.
+// It never guesses. `detect` asks the stacks themselves, and the only control that writes outside
+// Muster's own record is the explicit setup button.
 
-import { Check, Loader2, Play, Square } from 'lucide-react'
+import { CircleAlert, Loader2, Play, Square } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import type { SiteLocalStack, SiteSummary } from '../../../../shared/site-types'
-import type { LocalWpControlOutcome } from '../../../../shared/site-stack-types'
 import { translate } from '@/i18n/i18n'
-import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 const STACK_LABELS: Record<SiteLocalStack, string> = {
   plain: 'None',
@@ -30,13 +30,20 @@ const STACK_LABELS: Record<SiteLocalStack, string> = {
 /** `plain` is always offered: it is how a user says "Muster should not manage this". */
 const ALWAYS_OFFERED: SiteLocalStack[] = ['plain']
 
+/** Long enough that a local start shows nothing, short enough that an SSH one still reassures. */
+const SPINNER_DELAY_MS = 200
+
+type Pending = 'start' | 'stop' | 'setup' | ''
+
 export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): React.JSX.Element {
   const { site } = summary
   const updateSite = useAppStore((state) => state.updateSite)
   const [available, setAvailable] = useState<SiteLocalStack[] | null>(null)
   const [detected, setDetected] = useState<SiteLocalStack | null>(null)
-  const [busy, setBusy] = useState('')
+  const [pending, setPending] = useState<Pending>('')
+  const [spinning, setSpinning] = useState(false)
   const [status, setStatus] = useState('')
+  const [failure, setFailure] = useState('')
   const [domain, setDomain] = useState('')
 
   useEffect(() => {
@@ -58,6 +65,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     let cancelled = false
     setDetected(null)
     setStatus('')
+    setFailure('')
     void (async () => {
       const answer = await window.api.siteStacks.detect(site.id)
       if (!cancelled && answer.ok) {
@@ -70,159 +78,215 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
   }, [site.id])
 
   const run = useCallback(
-    async (label: string, action: () => Promise<{ ok: boolean; value?: LocalWpControlOutcome; error?: string }>) => {
-      setBusy(label)
+    async (
+      label: Exclude<Pending, ''>,
+      action: () => Promise<{ ok: boolean; message: string }>
+    ): Promise<void> => {
+      // Disabled immediately so a double click cannot double-submit; the spinner waits, because
+      // these calls are instant locally and only slow against a wedged daemon.
+      setPending(label)
       setStatus('')
+      setFailure('')
+      const spinner = setTimeout(() => setSpinning(true), SPINNER_DELAY_MS)
       try {
-        const answer = await action()
-        setStatus(answer.ok ? (answer.value?.message ?? '') : answer.error ?? '')
+        const outcome = await action()
+        if (outcome.ok) {
+          setStatus(outcome.message)
+        } else {
+          setFailure(outcome.message)
+        }
       } finally {
-        setBusy('')
+        clearTimeout(spinner)
+        setSpinning(false)
+        setPending('')
       }
     },
     []
   )
 
-  const choices = [...ALWAYS_OFFERED, ...(available ?? [])]
-  // Picking a stack only records the intent. A folder the stack does not manage yet has to be
-  // registered with it, which is what the setup action below does — and it is the only thing here
-  // that writes outside Muster's own record.
-  const needsAdoption = site.localStack !== 'plain' && detected !== site.localStack
-  const suggestedDomain =
-    site.localDomain.trim() || `${site.path.split('/').filter(Boolean).at(-1) ?? 'site'}.test`
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">
-        {translate('auto.components.sites.SiteDetailPanel.localStack', 'Local stack')}
-      </Label>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <div role="radiogroup" aria-label="Local stack" className="flex rounded-md bg-muted/60 p-0.5">
-          {choices.map((choice) => (
-            <button
-              key={choice}
-              type="button"
-              role="radio"
-              aria-checked={site.localStack === choice}
-              disabled={busy.length > 0}
-              onClick={() => void updateSite(site.id, { localStack: choice })}
-              className={cn(
-                'rounded px-2 py-1 text-[11px] font-medium transition-colors',
-                site.localStack === choice
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {STACK_LABELS[choice]}
-            </button>
-          ))}
-        </div>
+  const managed = site.localStack !== 'plain'
+  // Picking a stack only records the intent. A folder that stack does not manage yet has to be
+  // registered with it, which is what the setup action does.
+  const needsSetup = managed && detected !== null && detected !== site.localStack
+  const confirmed = managed && detected === site.localStack
+  // findLast, not filter().at(-1): a trailing slash leaves an empty final segment.
+  const folderName = site.path.split('/').findLast((segment) => segment.length > 0) ?? 'site'
+  const suggestedDomain = site.localDomain.trim() || `${folderName}.test`
+  const busy = pending !== ''
 
-        {site.localStack !== 'plain' ? (
-          <>
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">
+            {translate('auto.components.sites.SiteDetailPanel.localStack', 'Local stack')}
+          </Label>
+          {confirmed ? (
+            // "Ready", not "Set up": next to a "Set up with …" button, the past tense reads as
+            // another action.
+            <Badge variant="dot" className="gap-1 text-[11px] font-normal">
+              {translate('auto.components.sites.SiteDetailPanel.stackConfirmed', 'Ready')}
+            </Badge>
+          ) : null}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {translate(
+            'auto.components.sites.SiteDetailPanel.localStackHint',
+            'Which stack serves this site and owns its local database.'
+          )}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={site.localStack}
+          disabled={busy}
+          // Radix clears the value when the active item is pressed again; a site always has a
+          // stack, so that is a no-op rather than a third state.
+          onValueChange={(next) => {
+            if (next) {
+              void updateSite(site.id, { localStack: next as SiteLocalStack })
+            }
+          }}
+        >
+          {[...ALWAYS_OFFERED, ...(available ?? [])].map((choice) => (
+            <ToggleGroupItem key={choice} value={choice} className="px-2.5 text-xs">
+              {STACK_LABELS[choice]}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+
+        {confirmed ? (
+          <div className="flex items-center gap-1">
             <Button
               size="sm"
-              variant="outline"
-              disabled={busy.length > 0}
+              variant="ghost"
+              disabled={busy}
               onClick={() =>
-                void run('start', () => window.api.siteStacks.start(site.id))
+                void run('start', async () => {
+                  const answer = await window.api.siteStacks.start(site.id)
+                  return answer.ok
+                    ? { ok: answer.value.ok, message: answer.value.message }
+                    : { ok: false, message: answer.error }
+                })
               }
             >
-              {busy === 'start' ? (
-                <Loader2 className="size-3.5 animate-spin" />
+              {spinning && pending === 'start' ? (
+                <Loader2 className="animate-spin" />
               ) : (
-                <Play className="size-3.5" />
+                <Play />
               )}
               {translate('auto.components.sites.SiteDetailPanel.stackStart', 'Start')}
             </Button>
             <Button
               size="sm"
-              variant="outline"
-              disabled={busy.length > 0}
-              onClick={() => void run('stop', () => window.api.siteStacks.stop(site.id))}
+              variant="ghost"
+              disabled={busy}
+              onClick={() =>
+                void run('stop', async () => {
+                  const answer = await window.api.siteStacks.stop(site.id)
+                  return answer.ok
+                    ? { ok: answer.value.ok, message: answer.value.message }
+                    : { ok: false, message: answer.error }
+                })
+              }
             >
-              {busy === 'stop' ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Square className="size-3.5" />
-              )}
+              {spinning && pending === 'stop' ? <Loader2 className="animate-spin" /> : <Square />}
               {translate('auto.components.sites.SiteDetailPanel.stackStop', 'Stop')}
             </Button>
-          </>
+          </div>
         ) : null}
       </div>
 
-      {needsAdoption ? (
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          <Input
-            className="h-7 w-48 font-mono text-[11px]"
-            value={domain}
-            placeholder={suggestedDomain}
-            onChange={(event) => setDomain(event.target.value)}
-          />
-          <Button
-            size="sm"
-            disabled={busy.length > 0}
-            onClick={() =>
-              void run('adopt', async () => {
-                const answer = await window.api.siteStacks.runMigration({
-                  siteId: site.id,
-                  domain: (domain.trim() || suggestedDomain).trim(),
-                  // Only LocalWP seeds a wp-admin account; agent-local adopts the existing install.
-                  adminEmail: 'hello@efront.com.au',
-                  adminPassword: 'admin',
-                  stack: site.localStack
-                })
-                if (answer.ok && !answer.value.ok) {
-                  return { ok: false, error: answer.value.message }
-                }
-                if (answer.ok) {
-                  setDetected(site.localStack)
-                }
-                return answer.ok
-                  ? { ok: true, value: { message: answer.value.message } as LocalWpControlOutcome }
-                  : answer
-              })
-            }
-          >
-            {busy === 'adopt' ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Check className="size-3.5" />
-            )}
+      {needsSetup ? (
+        <div className="space-y-1.5 rounded-md border border-border bg-card/50 p-2.5">
+          <p className="text-xs text-muted-foreground">
             {translate(
-              'auto.components.sites.SiteDetailPanel.stackAdopt',
-              'Set up with {{stack}}'
+              'auto.components.sites.SiteDetailPanel.stackSetupHint',
+              '{{stack}} does not serve this folder yet. Registering it keeps the files where they are.'
             ).replace('{{stack}}', STACK_LABELS[site.localStack])}
-          </Button>
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              className="h-8 w-52 font-mono text-xs"
+              value={domain}
+              placeholder={suggestedDomain}
+              disabled={busy}
+              aria-label={translate(
+                'auto.components.sites.SiteDetailPanel.stackDomainLabel',
+                'Local domain'
+              )}
+              onChange={(event) => setDomain(event.target.value)}
+            />
+            <Button
+              size="sm"
+              // Fixed width so swapping in the in-flight label cannot resize the row.
+              className="w-40"
+              disabled={busy}
+              onClick={() =>
+                void run('setup', async () => {
+                  const answer = await window.api.siteStacks.runMigration({
+                    siteId: site.id,
+                    domain: (domain.trim() || suggestedDomain).trim(),
+                    // Only LocalWP seeds a wp-admin account; agent-local adopts the install as-is.
+                    adminEmail: 'hello@efront.com.au',
+                    adminPassword: 'admin',
+                    stack: site.localStack
+                  })
+                  if (!answer.ok) {
+                    return { ok: false, message: answer.error }
+                  }
+                  if (answer.value.ok) {
+                    setDetected(site.localStack)
+                  }
+                  return { ok: answer.value.ok, message: answer.value.message }
+                })
+              }
+            >
+              {spinning && pending === 'setup' ? <Loader2 className="animate-spin" /> : null}
+              {pending === 'setup'
+                ? translate('auto.components.sites.SiteDetailPanel.stackSettingUp', 'Setting up…')
+                : translate(
+                    'auto.components.sites.SiteDetailPanel.stackAdopt',
+                    'Set up with {{stack}}'
+                  ).replace('{{stack}}', STACK_LABELS[site.localStack])}
+            </Button>
+          </div>
         </div>
       ) : null}
 
-      {/* What the stacks themselves report, kept separate from what the record says — the two
-          disagreeing is exactly the case worth surfacing (a LocalWP site adopted by agent-local
-          still looks like LocalWP on disk). */}
-      {detected && detected !== site.localStack ? (
-        <p className="text-[11px] text-muted-foreground/80">
+      {/* What the stacks report, kept separate from what the record says. The two disagreeing is
+          the case worth surfacing: a LocalWP site adopted by agent-local still looks like LocalWP
+          on disk, so only the stacks themselves can settle it. */}
+      {detected && detected !== site.localStack && detected !== 'plain' ? (
+        <p className="text-[11px] text-muted-foreground">
           {translate(
             'auto.components.sites.SiteDetailPanel.stackDetected',
-            'Detected on disk: {{stack}}'
+            '{{stack}} reports it manages this folder.'
           ).replace('{{stack}}', STACK_LABELS[detected])}{' '}
-          <button
-            type="button"
-            className="underline underline-offset-2 hover:text-foreground"
+          <Button
+            variant="link"
+            className="h-auto p-0 text-[11px]"
+            disabled={busy}
             onClick={() => void updateSite(site.id, { localStack: detected })}
           >
-            {translate('auto.components.sites.SiteDetailPanel.stackUseDetected', 'Use it')}
-          </button>
+            {translate('auto.components.sites.SiteDetailPanel.stackUseDetected', 'Switch to it')}
+          </Button>
         </p>
       ) : null}
-      {detected && detected === site.localStack && detected !== 'plain' ? (
-        <p className="flex items-center gap-1 text-[11px] text-muted-foreground/80">
-          <Check className="size-3" />
-          {translate('auto.components.sites.SiteDetailPanel.stackConfirmed', 'Confirmed on disk')}
+
+      {status.length > 0 ? <p className="text-[11px] text-muted-foreground">{status}</p> : null}
+
+      {/* Inline and persistent, not a toast: these messages come from another process and the user
+          needs to be able to read, copy, and act on them. */}
+      {failure.length > 0 ? (
+        <p className="flex items-start gap-1.5 text-[11px] text-destructive">
+          <CircleAlert className="mt-px size-3 shrink-0" />
+          <span className="break-words">{failure}</span>
         </p>
-      ) : null}
-      {status.length > 0 ? (
-        <p className="text-[11px] text-muted-foreground/80">{status}</p>
       ) : null}
     </div>
   )

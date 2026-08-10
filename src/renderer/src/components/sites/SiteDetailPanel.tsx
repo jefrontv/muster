@@ -5,10 +5,10 @@ import type { SiteEnvironment, SiteSecretKind, SiteSummary } from '../../../../s
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { useAppStore } from '@/store'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
 import { SiteLocalStackControl } from './SiteLocalStackControl'
@@ -123,39 +123,50 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
           </Button>
         </div>
 
+        {/* Same segmented control as the local stack picker above it, so the two pickers in this
+            pane read as one design. Remove is a separate control acting on the selected
+            environment rather than a trash icon inside every chip: a destructive button nested in
+            the thing you click to switch is a mis-click waiting to happen. */}
         <div className="flex flex-wrap items-center gap-2">
-          {environmentNames.map((name) => (
-            <Badge
-              key={name}
-              variant={name === viewedName ? 'default' : 'secondary'}
-              className="group gap-1"
-            >
-              <button
-                type="button"
-                aria-pressed={name === viewedName}
-                onClick={() => setSelectedName(name)}
-                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-              >
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            aria-label={translate(
+              'auto.components.sites.SiteDetailPanel.environments',
+              'Environments'
+            )}
+            value={viewedName}
+            // Radix clears the value when the active item is pressed again; one environment is
+            // always being viewed, so that is a no-op rather than a third state.
+            onValueChange={(next) => {
+              if (next) {
+                setSelectedName(next)
+              }
+            }}
+          >
+            {environmentNames.map((name) => (
+              <ToggleGroupItem key={name} value={name} className="px-2.5 text-xs">
                 {name}
-              </button>
-              {environmentNames.length > 1 ? (
-                // Revealed on chip hover/focus: delete is rare and destructive, so it stays out
-                // of the switch-environment pointer path. Opacity (not display) keeps the chip
-                // width stable.
-                <button
-                  type="button"
-                  aria-label={translate(
-                    'auto.components.sites.SiteDetailPanel.removeEnvironment',
-                    'Remove environment'
-                  )}
-                  onClick={() => void removeSiteEnvironment(site.id, name)}
-                  className="rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                >
-                  <Trash2 className="size-3" />
-                </button>
-              ) : null}
-            </Badge>
-          ))}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          {environmentNames.length > 1 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive"
+              aria-label={translate(
+                'auto.components.sites.SiteDetailPanel.removeEnvironment',
+                'Remove environment {{environment}}',
+                { environment: viewedName }
+              )}
+              onClick={() => void removeSiteEnvironment(site.id, viewedName)}
+            >
+              <Trash2 />
+              {translate('auto.components.sites.SiteDetailPanel.removeEnvironmentAction', 'Remove')}
+            </Button>
+          ) : null}
         </div>
 
         <p className="text-xs text-muted-foreground">

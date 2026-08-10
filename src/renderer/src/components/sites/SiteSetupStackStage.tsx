@@ -22,7 +22,7 @@ import type { LocalWpSetupMode } from '../../../../shared/site-stack-types'
 import type { SiteLocalStack } from '../../../../shared/site-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { getSiteSetupStrings } from './site-setup-strings'
 
 /** Enough to hold a whole migration's chatter; the head is dropped so a runaway log cannot grow. */
@@ -211,31 +211,28 @@ export function SiteSetupStackStage({
 
       {phase === 'idle' || phase === 'failed' ? (
         <div className="space-y-1.5 pl-6.5">
+          {/* Same control as the site's own stack picker (SiteLocalStackControl) so the two read
+              as one design — a user meets them at adjacent moments in the same flow. */}
           {stackChoices.length > 0 ? (
-            <div
-              role="radiogroup"
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
               aria-label={strings.stackPickerLabel}
-              className="flex w-fit rounded-md bg-muted/60 p-0.5"
+              value={stack}
+              disabled={busy}
+              onValueChange={(next) => {
+                if (next) {
+                  setStack(next as SiteLocalStack)
+                }
+              }}
             >
               {stackChoices.map((choice) => (
-                <button
-                  key={choice}
-                  type="button"
-                  role="radio"
-                  aria-checked={stack === choice}
-                  disabled={busy}
-                  onClick={() => setStack(choice)}
-                  className={cn(
-                    'rounded px-2 py-1 text-[11px] font-medium transition-colors',
-                    stack === choice
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
+                <ToggleGroupItem key={choice} value={choice} className="px-2.5 text-xs">
                   {choice === 'agent-local' ? 'agent-local' : 'LocalWP'}
-                </button>
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           ) : null}
           {/* Local needs a wp-admin account to create the install, but it is a throwaway for a
               site whose real content arrives with the import — so the defaults are submitted

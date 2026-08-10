@@ -22,6 +22,9 @@ vi.mock('./SiteRunConsole', () => ({
   SiteRunOutput: () => null
 }))
 vi.mock('./SiteRunHistory', () => ({ SiteRunHistory: () => null }))
+// Snapshots reach for the confirmation-dialog context, which only exists under the app shell.
+vi.mock('./SiteDbSnapshotsSection', () => ({ SiteDbSnapshotsSection: () => null }))
+vi.mock('./SiteLocalStackControl', () => ({ SiteLocalStackControl: () => null }))
 
 const storeMocks = vi.hoisted(() => ({
   updateSite: vi.fn().mockResolvedValue(null),
@@ -90,12 +93,18 @@ async function render(fixture: SiteSummary): Promise<void> {
   })
 }
 
+// The picker is a segmented ToggleGroup, so an environment is a `radio` carrying aria-checked —
+// the same selection contract the older aria-pressed chips had.
 function chip(name: string): HTMLButtonElement | null {
   return (
-    [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-pressed]')].find(
+    [...document.body.querySelectorAll<HTMLButtonElement>('button[role="radio"]')].find(
       (button) => button.textContent?.trim() === name
     ) ?? null
   )
+}
+
+function selected(name: string): string | null | undefined {
+  return chip(name)?.getAttribute('aria-checked')
 }
 
 function buttonByText(text: string): HTMLButtonElement | null {
@@ -142,7 +151,7 @@ describe('SiteDetailPanel environment chips', () => {
   it('shows the resolved run target with no divergence note', async () => {
     await render(summary())
     expect(hostnameValue()).toBe('prod.example.com')
-    expect(chip('production')?.getAttribute('aria-pressed')).toBe('true')
+    expect(selected('production')).toBe('true')
     expect(document.body.textContent).not.toContain('runs target')
   })
 
@@ -151,7 +160,7 @@ describe('SiteDetailPanel environment chips', () => {
     await click(chip('dev'))
 
     expect(hostnameValue()).toBe('dev.example.com')
-    expect(chip('dev')?.getAttribute('aria-pressed')).toBe('true')
+    expect(selected('dev')).toBe('true')
     expect(document.body.textContent).toContain('Editing dev — runs target production.')
     // Selection is view state only — nothing may write site.activeEnvironment.
     expect(storeMocks.updateSite).not.toHaveBeenCalled()
@@ -212,7 +221,7 @@ describe('SiteDetailPanel environment chips', () => {
         }
       })
     )
-    expect(chip('staging')?.getAttribute('aria-pressed')).toBe('true')
+    expect(selected('staging')).toBe('true')
     expect(hostnameValue()).toBe('staging.example.com')
     expect(document.body.textContent).toContain('Editing staging — runs target production.')
   })
