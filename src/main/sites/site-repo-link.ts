@@ -5,7 +5,12 @@
 // whose checkout is actually on disk becomes a project automatically.
 //
 // Idempotent: addLocalRepoFromPath dedupes on a normalized path, so re-running relinks rather than
-// duplicating, and a site that already has a repoId is skipped outright.
+// duplicating, and a site already linked to a repo that still exists is skipped outright.
+//
+// "Still exists" is the load-bearing half. Removing a project from the sidebar deletes the repo but
+// leaves the site's repoId pointing at it, and a truthiness check on that field then skips the site
+// forever — "Add to sidebar" reports success and nothing appears, with no way to recover from the
+// UI. A repoId that no longer resolves is treated as no link at all.
 
 import { existsSync } from 'node:fs'
 import type { SiteRepoLinkResult } from '../../shared/site-types'
@@ -14,11 +19,17 @@ import type { Store } from '../persistence'
 
 export type { SiteRepoLinkResult }
 
-export async function linkSitesToRepos(store: Store): Promise<SiteRepoLinkResult> {
+/** Injected so the link rules can be tested without a real repo tree on disk. */
+export type AddRepoFn = typeof addLocalRepoFromPath
+
+export async function linkSitesToRepos(
+  store: Store,
+  addRepo: AddRepoFn = addLocalRepoFromPath
+): Promise<SiteRepoLinkResult> {
   const result: SiteRepoLinkResult = { eligible: 0, added: 0, linked: 0, skipped: [] }
 
   for (const site of store.listSites()) {
-    if (site.repoId) {
+    if (site.repoId && store.getRepo(site.repoId)) {
       continue
     }
     if (!site.path || !existsSync(site.path)) {
@@ -28,11 +39,10 @@ export async function linkSitesToRepos(store: Store): Promise<SiteRepoLinkResult
     result.eligible += 1
 
     // Non-git checkouts still belong in the sidebar — Orca models them as folder repos.
-    const outcome = await addLocalRepoFromPath(store, site.path, 'git').catch((error: unknown) => ({
+    const outcome = await addRepo(store, site.path, 'git').catch((error: unknown) => ({
       error: error instanceof Error ? error.message : String(error)
     }))
-    const resolved =
-      'error' in outcome ? await addLocalRepoFromPath(store, site.path, 'folder') : outcome
+    const resolved = 'error' in outcome ? await addRepo(store, site.path, 'folder') : outcome
 
     if ('error' in resolved) {
       result.skipped.push({ path: site.path, reason: resolved.error })
