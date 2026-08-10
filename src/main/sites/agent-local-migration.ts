@@ -6,7 +6,7 @@
 // place at its own docroot and keeping a wp-config.php.agent-local.bak, so this module is mostly
 // about reporting the plan honestly and mapping the response onto Muster's site record.
 
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import type { LocalWpMigrationPlan, LocalWpMigrationResult } from '../../shared/site-stack-types'
 import type { LocalWpMigrationRequest } from './localwp-migration-plan'
@@ -184,6 +184,40 @@ export async function runAgentLocalMigration(
  * rather than assuming a layout: sites imported from LocalWP keep `app/public`, sites agent-local
  * created use `wp`, and a bare checkout has no offset at all.
  */
+/**
+ * Which folder agent-local should actually serve.
+ *
+ * Muster's stored `localWpRoot` is LocalWP's convention (`app/public`) and outlives the stack that
+ * created it. A site that used to be on LocalWP, was deleted, and re-cloned as a bare repo keeps
+ * that subpath while the files sit at the repo root — handing it over attaches an empty directory
+ * and every later step runs against nothing. So the recorded subpath is honoured only when it
+ * holds WordPress or at least some files; otherwise the checkout itself is the site.
+ */
+export function resolveAgentLocalDocroot(sitePath: string, storedSubPath: string): string {
+  const subPath = storedSubPath.replace(/^[/\\]+|[/\\]+$/g, '')
+  if (subPath.length === 0) {
+    return sitePath
+  }
+  const candidate = path.join(sitePath, subPath)
+  if (existsSync(path.join(candidate, 'wp-load.php'))) {
+    return candidate
+  }
+  // WordPress at the root wins over an empty subfolder that only looks like a docroot.
+  if (existsSync(path.join(sitePath, 'wp-load.php'))) {
+    return sitePath
+  }
+  return hasAnyFiles(candidate) ? candidate : sitePath
+}
+
+function hasAnyFiles(directory: string): boolean {
+  try {
+    // `.htaccess` alone is what an interrupted import leaves behind; it is not a site.
+    return readdirSync(directory).some((entry) => entry !== '.htaccess' && entry !== '.DS_Store')
+  } catch {
+    return false
+  }
+}
+
 export function relativeDocroot(sitePath: string, wpDir: string): string {
   if (wpDir.length === 0) {
     return ''

@@ -77,6 +77,8 @@ export function SiteSetupStackStage({
   const [lines, setLines] = useState<string[]>([])
   const [failure, setFailure] = useState('')
   const logRef = useRef<HTMLDivElement | null>(null)
+  /** True once a setup has completed, freezing the picker on the stack that actually ran. */
+  const settledRef = useRef(false)
 
   useEffect(() => {
     return window.api.siteStacks.onMigrationProgress((event) => {
@@ -103,6 +105,13 @@ export function SiteSetupStackStage({
         return
       }
       setAvailableStacks(answer.value)
+      // Once a setup has actually run, the choice is history, not a proposal. Re-deriving it here
+      // flipped the picker to the other stack the moment the parent replanned — the run succeeded
+      // on Agent Local, detection then said "already managed", and the stage started describing
+      // LocalWP instead.
+      if (settledRef.current) {
+        return
+      }
       // Where the folder should END UP wins first: when something already manages it, the useful
       // proposal is the stack it can move to, not the one that already has it. Otherwise what is
       // already serving it wins, since proposing a LocalWP migration for a site agent-local runs
@@ -188,12 +197,13 @@ export function SiteSetupStackStage({
         return
       }
       // runMigration streams ocsites' own terminal line in create mode, so only add the localized
-      // marker when the log does not already end on it.
+      // marker when the log does not already end on it. Named per stack: this line was reporting
+      // "LocalWP site ready" after an Agent Local run.
+      const doneLine = stack === 'agent-local' ? strings.stackAgentLocalDone : strings.stackDone
       setLines((previous) =>
-        previous.at(-1) === strings.stackDone
-          ? previous
-          : [...previous, strings.stackDone].slice(-MAX_LOG_LINES)
+        previous.at(-1) === doneLine ? previous : [...previous, doneLine].slice(-MAX_LOG_LINES)
       )
+      settledRef.current = true
       setPhase('done')
       onMigrated(domain, stack)
     } catch (error) {
@@ -235,7 +245,7 @@ export function SiteSetupStackStage({
         {phase === 'done' ? (
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Check className="size-3.5" />
-            {strings.stackDone}
+            {onAgentLocal ? strings.stackAgentLocalDone : strings.stackDone}
           </span>
         ) : null}
       </div>

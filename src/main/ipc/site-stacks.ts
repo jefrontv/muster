@@ -13,7 +13,11 @@ import { createEmptySiteEnvironment } from '../../shared/site-types'
 import type { SiteLocalStack } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { importLocalDatabase } from '../sites/local-database-import'
-import { planAgentLocalMigration, runAgentLocalMigration } from '../sites/agent-local-migration'
+import {
+  planAgentLocalMigration,
+  resolveAgentLocalDocroot,
+  runAgentLocalMigration
+} from '../sites/agent-local-migration'
 import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
 import { startStackWithPortHandover } from '../sites/local-stack-port-handover'
 import { currentSocketIfRunning } from '../sites/localwp-detection'
@@ -32,7 +36,6 @@ import {
 } from '../sites/localwp-migration'
 import type { LocalWpControlOutcome } from '../sites/localwp-site-control'
 import type { SiteRunConfig, SiteRunContext } from '../sites/pipeline-contract'
-import { resolveSiteWpDir } from '../sites/site-run-config'
 import {
   buildMigrationRequest,
   detectSiteStack,
@@ -177,7 +180,10 @@ export function registerSiteStackHandlers(store: Store): void {
           // The same docroot runMigration hands over, so the gate and the action agree about which
           // folder has to contain WordPress.
           const site = requireSite(store, requireId(readField(args, 'siteId')))
-          return { ok: true, value: planAgentLocalMigration(request, resolveSiteWpDir(site)) }
+          return {
+            ok: true,
+            value: planAgentLocalMigration(request, resolveAgentLocalDocroot(site.path, site.localWpRoot))
+          }
         }
         return { ok: true, value: await previewLocalWpMigration(request) }
       } catch (error) {
@@ -202,8 +208,8 @@ export function registerSiteStackHandlers(store: Store): void {
           const result = await runAgentLocalMigration(request, {
             onStatus,
             phpVersion: site.phpVersion,
-            // The docroot, not the repo root: agent-local reads wp-config.php from what it is given.
-            sourcePath: resolveSiteWpDir(site)
+            // The docroot agent-local should serve, which is not always the stored LocalWP subpath.
+            sourcePath: resolveAgentLocalDocroot(site.path, site.localWpRoot)
           })
           if (result.ok) {
             store.updateSite(site.id, {

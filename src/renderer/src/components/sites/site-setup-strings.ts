@@ -87,6 +87,10 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackDone',
     'LocalWP site ready.'
   ),
+  stackAgentLocalDone: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalDone',
+    'Agent Local site ready.'
+  ),
   // The Local app raises a system password prompt to install its site certificate and hosts entry.
   // Nothing moves until that is answered, and it opens behind Muster — without this line the setup
   // simply looks frozen.

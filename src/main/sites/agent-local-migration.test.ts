@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -6,6 +6,7 @@ import type { AgentLocalHost, AgentLocalResponse } from './agent-local-host'
 import {
   planAgentLocalMigration,
   relativeDocroot,
+  resolveAgentLocalDocroot,
   runAgentLocalMigration
 } from './agent-local-migration'
 import type { LocalWpMigrationRequest } from './localwp-migration-plan'
@@ -211,6 +212,49 @@ describe('runAgentLocalMigration', () => {
 
     expect(result.ok).toBe(false)
     expect(result.message).toContain('macOS')
+  })
+})
+
+describe('resolveAgentLocalDocroot', () => {
+  // The live failure: a site that used to be on LocalWP kept `localWpRoot: 'app/public'`, was
+  // deleted and re-cloned as a bare theme repo, and agent-local was handed the empty subfolder —
+  // so it served a directory holding nothing but a stray .htaccess.
+  it('ignores a stored subpath that holds nothing', () => {
+    const root = checkout(false)
+    mkdirSync(path.join(root, 'app/public'), { recursive: true })
+    writeFileSync(path.join(root, 'app/public/.htaccess'), '# leftover')
+    writeFileSync(path.join(root, 'package.json'), '{}')
+
+    expect(resolveAgentLocalDocroot(root, 'app/public')).toBe(root)
+  })
+
+  it('honours a stored subpath that really holds the install', () => {
+    const root = checkout(false)
+    mkdirSync(path.join(root, 'app/public'), { recursive: true })
+    writeFileSync(path.join(root, 'app/public/wp-load.php'), '<?php')
+
+    expect(resolveAgentLocalDocroot(root, 'app/public')).toBe(path.join(root, 'app/public'))
+  })
+
+  it('prefers WordPress at the root over an empty subfolder', () => {
+    const root = checkout(true)
+    mkdirSync(path.join(root, 'app/public'), { recursive: true })
+
+    expect(resolveAgentLocalDocroot(root, 'app/public')).toBe(root)
+  })
+
+  it('keeps a subpath that has files but no core, which is a checkout mid-import', () => {
+    const root = checkout(false)
+    mkdirSync(path.join(root, 'app/public'), { recursive: true })
+    writeFileSync(path.join(root, 'app/public/wp-content'), 'x')
+
+    expect(resolveAgentLocalDocroot(root, 'app/public')).toBe(path.join(root, 'app/public'))
+  })
+
+  it('returns the site path when no subpath is stored', () => {
+    const root = checkout(true)
+
+    expect(resolveAgentLocalDocroot(root, '')).toBe(root)
   })
 })
 
