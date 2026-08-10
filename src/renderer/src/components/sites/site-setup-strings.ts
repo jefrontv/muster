@@ -60,6 +60,16 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackAgentLocalAction',
     'Set up Agent Local'
   ),
+  // The no-WordPress-yet pair: agent-local attaches the folder to an empty database rather than
+  // adopting an install, so the copy has to promise the import step, not a working site.
+  stackAgentLocalCreateBody: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalCreateBody',
+    'No WordPress here yet. Serve the folder with Agent Local on an empty database, then pull the site down with the import step.'
+  ),
+  stackAgentLocalCreateAction: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalCreateAction',
+    'Serve with Agent Local'
+  ),
   stackAgentLocalServesInPlace: translate(
     'auto.components.sites.SiteSetupContinuation.stackAgentLocalServesInPlace',
     'Nothing moves — the folder is served where it is'

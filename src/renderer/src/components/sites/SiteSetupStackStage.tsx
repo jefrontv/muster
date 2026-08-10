@@ -208,13 +208,19 @@ export function SiteSetupStackStage({
   const blocked = preview?.blockedReason ?? ''
   // Only a real choice is worth a control: one installed stack means there is nothing to pick.
   const stackChoices = (availableStacks ?? []).length > 1 ? (availableStacks ?? []) : []
+  // Four combinations, because "no WordPress yet" changes what each stack is about to do: LocalWP
+  // builds an install, agent-local attaches the folder to an empty database.
   const body = onAgentLocal
-    ? strings.stackAgentLocalBody
+    ? creating
+      ? strings.stackAgentLocalCreateBody
+      : strings.stackAgentLocalBody
     : creating
       ? strings.stackCreateBody
       : strings.stackBody
   const action = onAgentLocal
-    ? strings.stackAgentLocalAction
+    ? creating
+      ? strings.stackAgentLocalCreateAction
+      : strings.stackAgentLocalAction
     : creating
       ? strings.stackCreateAction
       : strings.stackAction

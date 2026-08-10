@@ -61,11 +61,11 @@ function readString(record: Record<string, unknown> | null, key: string): string
  * existing app/public, and showing that warning for a migration that cannot delete anything would
  * train the user to click through it.
  *
- * The one thing it must refuse is a folder with no WordPress in it. agent-local reads the database
- * out of the docroot's wp-config.php, so a checkout that is only a theme or plugin repo — no core,
- * no wp-load.php — fails inside the daemon partway through. The preview is the gate the renderer
- * relies on to turn that into a message before anything runs, so it has to look at the same folder
- * the run will hand over.
+ * Two shapes, decided by whether WordPress is on disk yet, mirroring what the daemon itself
+ * accepts. A checkout that already has core is adopted with its database (`POST /import`). A bare
+ * theme or plugin repo is attached instead (`POST /attach`): the folder is served as-is against an
+ * empty database, ready for the server import to fill. `POST /sites` is not the answer for either —
+ * it refuses a non-empty directory outright.
  */
 export function planAgentLocalMigration(
   request: LocalWpMigrationRequest,
@@ -74,11 +74,11 @@ export function planAgentLocalMigration(
   const source = sourcePath?.trim() || request.sitePath
   const hasWordPress = existsSync(path.join(source, 'wp-load.php'))
   return {
-    ok: hasWordPress,
-    blockedReason: hasWordPress
-      ? ''
-      : `No WordPress in ${source} — wp-load.php is missing. agent-local serves an install that already exists, so pull the site down from the server first, or point the WordPress subpath at the folder that holds wp-load.php.`,
-    mode: 'migrate',
+    ok: true,
+    blockedReason: '',
+    // `create` is the wizard's word for "there is no WordPress here yet", which is exactly the
+    // attach case — the copy and the button both key off it.
+    mode: hasWordPress ? 'migrate' : 'create',
     sitePath: request.sitePath,
     domain: request.domain,
     wordPressRoot: source,
@@ -86,12 +86,18 @@ export function planAgentLocalMigration(
     databaseUser: '',
     appPublicEntries: [],
     moves: [],
-    edits: [path.join(source, 'wp-config.php')],
-    steps: [
-      `Register ${source} with agent-local as '${request.domain}'`,
-      'Point wp-config.php at agent-local’s MariaDB (a .agent-local.bak copy is kept)',
-      'Start the site and issue its HTTPS certificate'
-    ]
+    edits: hasWordPress ? [path.join(source, 'wp-config.php')] : [],
+    steps: hasWordPress
+      ? [
+          `Register ${source} with agent-local as '${request.domain}'`,
+          'Point wp-config.php at agent-local’s MariaDB (a .agent-local.bak copy is kept)',
+          'Start the site and issue its HTTPS certificate'
+        ]
+      : [
+          `Serve ${source} as '${request.domain}' with an empty database`,
+          'Start the site and issue its HTTPS certificate',
+          'Pull the site down with the import step to fill it'
+        ]
   }
 }
 
@@ -127,20 +133,22 @@ export async function runAgentLocalMigration(
   if (!isAgentLocalSupported(host)) {
     return failed(AGENT_LOCAL_UNSUPPORTED_PLATFORM)
   }
-  // Refuse what the plan already refused, rather than letting the daemon discover it mid-import:
-  // the renderer previews before every run, but a caller that skips the preview must not get a
-  // half-registered site out of it.
-  if (!plan.ok) {
-    return failed(plan.blockedReason)
-  }
   const source = options.sourcePath?.trim() || request.sitePath
-  report(`Registering ${source} with agent-local…`)
+  // `/import` copies a database out of the docroot's wp-config.php, which a bare repo has not got.
+  // `/attach` is the daemon's own answer for that: serve the folder against a fresh empty database
+  // and let the server import fill it. Picking the wrong one fails inside the daemon partway.
+  const attaching = plan.mode === 'create'
+  report(
+    attaching
+      ? `Serving ${source} with agent-local…`
+      : `Registering ${source} with agent-local…`
+  )
   const response = await requestWithDaemon(
     host,
     'POST',
-    '/import',
+    attaching ? '/attach' : '/import',
     {
-      source,
+      ...(attaching ? { dir: source } : { source }),
       name: request.siteName,
       domain: request.domain,
       ...(options.phpVersion ? { php_version: options.phpVersion } : {})

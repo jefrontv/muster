@@ -55,24 +55,23 @@ describe('planAgentLocalMigration', () => {
     expect(plan.wordPressRoot).toBe(WORDPRESS_CHECKOUT)
   })
 
-  // The failure this pins: a theme-only checkout previewed as fine, the user pressed the button,
-  // and the daemon failed partway through with "missing wp-load.php".
-  it('blocks a checkout with no WordPress in it', () => {
-    const bare = checkout(false)
+  // A bare theme repo is not a dead end: agent-local attaches it to an empty database, which is
+  // what the server import then fills. `create` is the wizard's word for that state.
+  it('plans an attach for a checkout with no WordPress in it', () => {
+    const plan = planAgentLocalMigration(request({ sitePath: checkout(false) }))
 
-    const plan = planAgentLocalMigration(request({ sitePath: bare }))
-
-    expect(plan.ok).toBe(false)
-    expect(plan.blockedReason).toContain('wp-load.php is missing')
-    expect(plan.blockedReason).toContain(bare)
+    expect(plan.ok).toBe(true)
+    expect(plan.mode).toBe('create')
+    // Nothing to rewrite: there is no wp-config.php to point anywhere yet.
+    expect(plan.edits).toEqual([])
   })
 
-  it('gates on the docroot it will register, not the repo root', () => {
+  it('reads the docroot it will register, not the repo root', () => {
     const repoRoot = checkout(false)
     const docroot = checkout(true)
 
-    expect(planAgentLocalMigration(request({ sitePath: repoRoot })).ok).toBe(false)
-    expect(planAgentLocalMigration(request({ sitePath: repoRoot }), docroot).ok).toBe(true)
+    expect(planAgentLocalMigration(request({ sitePath: repoRoot })).mode).toBe('create')
+    expect(planAgentLocalMigration(request({ sitePath: repoRoot }), docroot).mode).toBe('migrate')
   })
 })
 
@@ -134,27 +133,48 @@ describe('runAgentLocalMigration', () => {
     expect((sent[0] as { source: string }).source).toBe(docroot)
   })
 
-  it('refuses a source with no WordPress instead of letting the daemon fail mid-import', async () => {
-    let called = false
+  // `/import` copies a database out of wp-config.php, which a bare repo has not got; the daemon
+  // itself refuses `POST /sites` on a non-empty folder and points at `/attach`.
+  it('attaches a source with no WordPress instead of trying to import one', async () => {
+    const calls: { path: string; body: unknown }[] = []
     const recording: AgentLocalHost = {
       platform: 'darwin',
       homeDir: '/home/test',
       readToken: async () => 'token',
-      request: async () => {
-        called = true
+      request: async (_method: string, apiPath: string, body?: unknown) => {
+        calls.push({ path: apiPath, body })
+        return importResponse
+      },
+      spawnDaemon: async () => undefined,
+      sleep: async () => undefined
+    }
+    const bare = checkout(false)
+
+    const result = await runAgentLocalMigration(request({ sitePath: bare }), { host: recording })
+
+    expect(result.ok).toBe(true)
+    expect(calls[0]?.path).toBe('/attach')
+    // `dir`, not `source`: the two endpoints name the folder differently.
+    expect(calls[0]?.body).toMatchObject({ dir: bare, domain: 'acme.test' })
+  })
+
+  it('imports a source that already has WordPress', async () => {
+    const calls: { path: string }[] = []
+    const recording: AgentLocalHost = {
+      platform: 'darwin',
+      homeDir: '/home/test',
+      readToken: async () => 'token',
+      request: async (_method: string, apiPath: string) => {
+        calls.push({ path: apiPath })
         return importResponse
       },
       spawnDaemon: async () => undefined,
       sleep: async () => undefined
     }
 
-    const result = await runAgentLocalMigration(request({ sitePath: checkout(false) }), {
-      host: recording
-    })
+    await runAgentLocalMigration(request(), { host: recording })
 
-    expect(result.ok).toBe(false)
-    expect(result.message).toContain('wp-load.php is missing')
-    expect(called).toBe(false)
+    expect(calls[0]?.path).toBe('/import')
   })
 
   it('falls back to the site path when there is no subpath', async () => {
