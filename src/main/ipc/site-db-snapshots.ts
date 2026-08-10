@@ -77,7 +77,7 @@ export function registerSiteDbSnapshotHandlers(store: Store): void {
           return { ok: false, error: 'Invalid site id.' }
         }
         const site = requireSite(store, siteId)
-        const config = buildSiteRunConfig(site, resolveEnvironmentName(store, siteId), 'import')
+        const config = await buildSiteRunConfig(site, resolveEnvironmentName(store, siteId), 'import')
         const result = await snapshotSiteDatabase({ baseDir, config, reason: 'manual' })
         return result.ok
           ? { ok: true, value: result.snapshot }
@@ -97,7 +97,7 @@ export function registerSiteDbSnapshotHandlers(store: Store): void {
           return { ok: false, error: 'Invalid restore request.' }
         }
         const site = requireSite(store, siteId)
-        const config = buildSiteRunConfig(site, resolveEnvironmentName(store, siteId), 'import')
+        const config = await buildSiteRunConfig(site, resolveEnvironmentName(store, siteId), 'import')
         const log: string[] = []
         await restoreSiteDbSnapshot({
           baseDir,

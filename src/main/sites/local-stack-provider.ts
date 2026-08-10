@@ -16,7 +16,7 @@ import type {
 } from '../../shared/site-stack-types'
 import type { LocalWpCertStatus, LocalWpCertTrustResult } from '../../shared/localwp-cert-types'
 import { getLocalWpCertStatus, trustLocalWpCert } from './localwp-cert-trust'
-import { detectLocalWpStack } from './localwp-detection'
+import { currentSocketIfRunning, detectLocalWpStack } from './localwp-detection'
 import {
   createLocalWpHost,
   isLocalWpSupported,
@@ -84,12 +84,15 @@ const localWpProvider: LocalStackProvider = {
   ensureRunning: (site, onStatus) => ensureSiteRunning(site.path, { onStatus }),
   stop: (site) => stopSite(site.path),
   credentials: async (site) => {
-    const outcome = await ensureSiteRunning(site.path)
-    if (!outcome.socketPath) {
+    // Probe, never start: building a run config must not have the side effect of launching Local.
+    // The import pipeline starts the site explicitly, and a stopped site keeps its stored socket so
+    // the failure surfaces at the connection step with LocalWP's own message.
+    const socketPath = await currentSocketIfRunning(createLocalWpHost(), site.path)
+    if (!socketPath) {
       return null
     }
     return {
-      socketPath: outcome.socketPath,
+      socketPath,
       port: null,
       user: LOCALWP_DATABASE_USER,
       password: LOCALWP_DATABASE_PASSWORD,

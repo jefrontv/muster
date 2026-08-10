@@ -77,7 +77,7 @@ export async function executeSiteWpCliAction(args: {
     }
   }
 
-  const config = buildSiteRunConfig(site, plan.environment, 'deploy')
+  const config = await buildSiteRunConfig(site, plan.environment, 'deploy')
   const controller = new AbortController()
   const session = await createSiteSshSession(config, controller.signal)
   try {

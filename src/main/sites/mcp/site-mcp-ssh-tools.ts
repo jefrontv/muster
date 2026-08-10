@@ -100,7 +100,7 @@ async function runSshCommand(
     }
   }
 
-  const config = buildSiteRunConfig(site, plan.environment, 'deploy')
+  const config = await buildSiteRunConfig(site, plan.environment, 'deploy')
   const controller = new AbortController()
   const session = await context.openSshSession(config, controller.signal)
   try {

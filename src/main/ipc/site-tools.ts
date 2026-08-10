@@ -229,7 +229,7 @@ async function startToolRun(request: ToolRunRequest): Promise<SiteResult<SiteRun
       job: async (context) => {
         // Rebuilt inside the job so a secret rotated between queueing and starting is picked up,
         // matching createSiteRunJob.
-        const config = buildSiteRunConfig(site, environment, 'import')
+        const config = await buildSiteRunConfig(site, environment, 'import')
         context.status(`${step.label} from ${environment}`)
         await withRemoteSiteTool(config, context.signal, (tool) =>
           request.work(context, config, tool, downloadDir)

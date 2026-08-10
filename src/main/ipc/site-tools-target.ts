@@ -50,7 +50,12 @@ export async function resolveSiteToolTarget(
   if (!Object.hasOwn(site.environments, environment)) {
     throw new Error(`Unknown environment: ${environment}`)
   }
-  return { site, summary, environment, config: buildSiteRunConfig(site, environment, group) }
+  return {
+    site,
+    summary,
+    environment,
+    config: await buildSiteRunConfig(site, environment, group)
+  }
 }
 
 export type SiteToolGuardInput = {

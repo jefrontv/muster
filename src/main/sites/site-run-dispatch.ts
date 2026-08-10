@@ -21,7 +21,7 @@ export function createSiteRunJob(
   return async (context) => {
     // Built inside the job so a secret rotated between queueing and starting is picked up, and so
     // a keychain prompt happens while the run is visibly in progress rather than before it starts.
-    const config = buildSiteRunConfig(site, environmentName, group)
+    const config = await buildSiteRunConfig(site, environmentName, group)
     if (group === 'import') {
       await runImportPipeline(context, config)
       return
