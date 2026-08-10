@@ -463,6 +463,28 @@ describe('stack dispatch', () => {
     expect(JSON.stringify(stub.updates)).not.toContain('secret')
   })
 
+  it('does not send the database password across the bridge', async () => {
+    vi.mocked(providerFor).mockImplementation((stack) => ({
+      ...baseProvider(stack),
+      ensureRunning: async () => ({
+        ok: true,
+        socketPath: '',
+        state: 'running' as const,
+        message: 'running',
+        port: 10360,
+        user: 'al_acme',
+        password: 'secret'
+      })
+    }))
+    registerSiteStackHandlers(storeStub(site({ localStack: 'agent-local' })).store)
+
+    const result = await call<{ password?: string }>('siteStacks:start', SITE_ID)
+
+    // The renderer never connects to MySQL; anything handed to it can reach devtools or a bug report.
+    expect(JSON.stringify(result)).not.toContain('secret')
+    expect(result.ok && result.value.password).toBeUndefined()
+  })
+
   it('rejects an unknown stack instead of silently falling back to LocalWP', async () => {
     registerSiteStackHandlers(storeStub().store)
 

@@ -203,6 +203,39 @@ describe('agentLocalCredentials', () => {
     })
   })
 
+  // Verbatim from a live daemon (v0.1.1): POST /sites/{slug}/db answers flat with `password` and
+  // `database`, while /resolve and /start nest under `db` with `pass` and `name`. Reading only the
+  // nested spelling loses the password silently and surfaces as an access-denied from MariaDB.
+  it('reads the flat shape POST /sites/{slug}/db actually returns', async () => {
+    const routes = {
+      ...listSites,
+      'POST /sites/sulo/db': {
+        ok: true,
+        status: 200,
+        data: {
+          database: 'al_sulo',
+          host: '127.0.0.1',
+          password: 'live-secret',
+          port: 10360,
+          user: 'al_sulo'
+        }
+      }
+    }
+
+    const credentials = await agentLocalCredentials(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      { host: host(routes) }
+    )
+
+    expect(credentials).toEqual({
+      socketPath: '',
+      port: 10360,
+      user: 'al_sulo',
+      password: 'live-secret',
+      database: 'al_sulo'
+    })
+  })
+
   it('returns null for an unmanaged site instead of guessing a transport', async () => {
     await expect(
       agentLocalCredentials({ path: '/tmp', localStack: 'agent-local' }, { host: host(listSites) })

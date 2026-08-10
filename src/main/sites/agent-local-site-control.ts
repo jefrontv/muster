@@ -125,8 +125,18 @@ export async function resolveAgentLocalSite(
   return { match: match ?? null, response }
 }
 
+/**
+ * Reads connection details from either shape the daemon uses.
+ *
+ * `/resolve` and `/sites/{slug}/start` nest them under `db` as `{name, user, pass}`;
+ * `POST /sites/{slug}/db` returns them flat as `{database, user, password}`. Accepting only the
+ * first is a silent failure: `password` reads as empty, the caller falls back to whatever is in the
+ * secret store, and MariaDB answers "Access denied ... (using password: YES)" — which looks like a
+ * wrong stored credential rather than a parsing bug.
+ */
 function credentialsFromPayload(data: unknown): LocalStackCredentials | null {
-  const db = asRecord(asRecord(data)?.db)
+  const payload = asRecord(data)
+  const db = asRecord(payload?.db) ?? payload
   if (!db) {
     return null
   }
@@ -140,8 +150,8 @@ function credentialsFromPayload(data: unknown): LocalStackCredentials | null {
     socketPath: '',
     port,
     user,
-    password: readString(db, 'pass'),
-    database: readString(db, 'name')
+    password: readString(db, 'pass') || readString(db, 'password'),
+    database: readString(db, 'name') || readString(db, 'database')
   }
 }
 
@@ -243,7 +253,7 @@ export async function agentLocalCredentials(
   if (!response.ok) {
     return null
   }
-  return credentialsFromPayload(response.data) ?? credentialsFromPayload({ db: response.data })
+  return credentialsFromPayload(response.data)
 }
 
 export async function detectAgentLocalStack(

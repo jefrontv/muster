@@ -14,7 +14,7 @@ import type { SiteLocalStack } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { importLocalDatabase } from '../sites/local-database-import'
 import { planAgentLocalMigration, runAgentLocalMigration } from '../sites/agent-local-migration'
-import { providerFor } from '../sites/local-stack-provider'
+import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
 import { currentSocketIfRunning } from '../sites/localwp-detection'
 import {
   createLocalWpHost,
@@ -54,6 +54,19 @@ const SITE_STACK_CHANNELS = [
 
 /** The stacks a user can be offered. `plain` is the absence of one and is never a choice. */
 const OFFERABLE_STACKS: SiteLocalStack[] = ['localwp', 'agent-local']
+
+/**
+ * Strips the live database password before an outcome crosses the bridge.
+ *
+ * A stack reports credentials so the main process can reach the database; the renderer never
+ * connects to MySQL itself, and anything handed to it can end up in component state, a devtools
+ * inspection, or a bug report. The password stays on the main side, where the run config picks it
+ * up per run.
+ */
+function withoutStackSecrets(outcome: LocalStackOutcome): LocalWpControlOutcome {
+  const { password: _password, ...safe } = outcome
+  return safe
+}
 
 export function registerSiteStackHandlers(store: Store): void {
   for (const channel of SITE_STACK_CHANNELS) {
@@ -105,7 +118,7 @@ export function registerSiteStackHandlers(store: Store): void {
         // cause of "Can't connect to local MySQL". The password is deliberately NOT persisted — it
         // is fetched live when a run needs it.
         persistResolvedTransport(store, site, outcome)
-        return { ok: true, value: outcome }
+        return { ok: true, value: withoutStackSecrets(outcome) }
       } catch (error) {
         return failure(error)
       }
@@ -119,11 +132,13 @@ export function registerSiteStackHandlers(store: Store): void {
         const site = requireSite(store, requireId(siteId))
         return {
           ok: true,
-          value: await providerFor(site.localStack).stop({
-            path: site.path,
-            localStack: site.localStack,
-            localWpRoot: site.localWpRoot
-          })
+          value: withoutStackSecrets(
+            await providerFor(site.localStack).stop({
+              path: site.path,
+              localStack: site.localStack,
+              localWpRoot: site.localWpRoot
+            })
+          )
         }
       } catch (error) {
         return failure(error)

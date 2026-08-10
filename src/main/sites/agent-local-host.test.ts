@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   AGENT_LOCAL_DAEMON_DOWN,
   agentLocalTokenPath,
@@ -159,6 +159,79 @@ describe('createAgentLocalHost', () => {
 
   it('reads the token from ~/.agent-local/token', () => {
     expect(agentLocalTokenPath({ homeDir: '/home/test' })).toBe('/home/test/.agent-local/token')
+  })
+
+  // The tests above stub `request` wholesale, so nothing exercised the real one until a live run
+  // failed with "Cannot access 'body' before initialization" — the request parameter and a local
+  // of the same name. These drive the actual implementation against a stubbed fetch.
+  describe('the real request implementation', () => {
+    const originalFetch = globalThis.fetch
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    function headersOf(call?: { init: RequestInit }): Record<string, string> {
+      return (call?.init.headers ?? {}) as Record<string, string>
+    }
+
+    function stubFetch(response: {
+      status?: number
+      body?: string
+    }): { calls: { url: string; init: RequestInit }[] } {
+      const calls: { url: string; init: RequestInit }[] = []
+      globalThis.fetch = (async (url: string, init: RequestInit) => {
+        calls.push({ url, init })
+        return {
+          ok: (response.status ?? 200) < 400,
+          status: response.status ?? 200,
+          text: async () => response.body ?? '',
+          body: null
+        }
+      }) as unknown as typeof fetch
+      return { calls }
+    }
+
+    it('sends a GET and unwraps the envelope', async () => {
+      const { calls } = stubFetch({ body: JSON.stringify({ ok: true, data: { sites: 2 } }) })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+
+      const result = await host.request('GET', '/status')
+
+      expect(result).toMatchObject({ ok: true, status: 200, data: { sites: 2 } })
+      expect(calls[0]?.url).toBe('http://127.0.0.1:10809/status')
+      expect(headersOf(calls[0]).Authorization).toBe('Bearer tok')
+    })
+
+    it('serialises a request body and sets the content type', async () => {
+      const { calls } = stubFetch({ body: JSON.stringify({ ok: true, data: 'imported' }) })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+
+      const result = await host.request('POST', '/import', { source: '/Sites/acme' })
+
+      expect(result.data).toBe('imported')
+      expect(calls[0]?.init.body).toBe('{"source":"/Sites/acme"}')
+      expect(headersOf(calls[0])['Content-Type']).toBe('application/json')
+    })
+
+    it('carries the daemon error text through on a failure envelope', async () => {
+      stubFetch({ status: 404, body: JSON.stringify({ ok: false, error: 'no site manages /tmp' }) })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+
+      const result = await host.request('GET', '/resolve?path=%2Ftmp')
+
+      expect(result).toMatchObject({ ok: false, status: 404, error: 'no site manages /tmp' })
+    })
+
+    it('treats an unparseable body as a failed call rather than throwing', async () => {
+      stubFetch({ status: 500, body: '<html>gateway</html>' })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+
+      const result = await host.request('GET', '/status')
+
+      expect(result.ok).toBe(false)
+      expect(result.status).toBe(500)
+    })
   })
 })
 

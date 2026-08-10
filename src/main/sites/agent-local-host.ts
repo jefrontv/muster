@@ -140,11 +140,13 @@ async function requestAgentLocal(
     })
     // Read the body on every path, !ok included: leaving it unread can crash the process from
     // inside undici (orca#8695). `.text()` always drains; only the parse is allowed to fail.
-    const body = await response.text().catch(async () => {
+    // Named for the response, not `body` — that is this function's request parameter, and shadowing
+    // it puts the `fetch` call above in the temporal dead zone of the const below.
+    const responseBody = await response.text().catch(async () => {
       await cancelUnreadResponseBody(response)
       return ''
     })
-    const payload: unknown = body.length > 0 ? safeParseJson(body) : null
+    const payload: unknown = responseBody.length > 0 ? safeParseJson(responseBody) : null
     const envelope = (payload ?? {}) as { ok?: unknown; data?: unknown; error?: unknown }
     return {
       // The envelope is authoritative when present; a bare non-2xx with no body is still a failure.
