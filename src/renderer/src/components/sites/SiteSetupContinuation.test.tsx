@@ -94,6 +94,9 @@ const MIGRATE_PREVIEW: PreviewPlan = {
   appPublicEntries: []
 }
 
+/** Overridden per test: two entries is the case where the user has to make a choice. */
+let installedStacks: string[] = ['localwp']
+
 function installApi(plan: SiteSetupPlan, previewPlan: PreviewPlan): void {
   planMock = vi.fn().mockResolvedValue({ ok: true, value: plan })
   // Both migration calls answer with a tagged envelope wrapping a result that has its own `ok`.
@@ -132,7 +135,7 @@ function installApi(plan: SiteSetupPlan, previewPlan: PreviewPlan): void {
     siteSetup: { plan: planMock, cloneTargets: vi.fn() },
     siteStacks: {
       // One stack installed, so the stage picks it and renders no picker.
-      available: vi.fn().mockResolvedValue({ ok: true, value: ['localwp'] }),
+      available: vi.fn().mockResolvedValue({ ok: true, value: installedStacks }),
       previewMigration: previewMock,
       runMigration: migrateMock,
       onMigrationProgress: (callback: (event: { siteId: string; message: string }) => void) => {
@@ -174,7 +177,17 @@ function findButton(label: string): HTMLButtonElement | undefined {
   )
 }
 
+/** The stages are pages now, so anything past the stack page has to be walked to. */
+async function advanceTo(step: 'https' | 'import'): Promise<void> {
+  for (let hop = 0; hop < (step === 'https' ? 1 : 2); hop += 1) {
+    await act(async () => {
+      findButton('Next')?.click()
+    })
+  }
+}
+
 beforeEach(() => {
+  installedStacks = ['localwp']
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -187,6 +200,80 @@ afterEach(() => {
   container?.remove()
   root = null
   container = null
+})
+
+describe('SiteSetupContinuation paging', () => {
+  // The stages used to stack on one surface under the host dialog's Done, so Done was the most
+  // obvious button on screen while the plan was still loading and nothing had rendered.
+  it('offers no Done while the plan is still loading', async () => {
+    installApi(makePlan(), MIGRATE_PREVIEW)
+    // Never settles, so the component stays in its loading state for the assertion.
+    planMock.mockReturnValue(new Promise(() => {}))
+    await act(async () => {
+      root?.render(
+        <SiteSetupContinuation siteId={SITE_ID} reponame="acme" branch={null} onDone={() => {}} />
+      )
+    })
+
+    expect(text()).toContain('Checking what this site needs…')
+    expect(findButton('Done')).toBeUndefined()
+    expect(findButton('Next')?.disabled).toBe(true)
+  })
+
+  it('keeps the import a page away until the stack page is passed', async () => {
+    await render(makePlan())
+
+    expect(findButton('Run import now')).toBeUndefined()
+    expect(findButton('Done')).toBeUndefined()
+
+    await advanceTo('import')
+
+    expect(findButton('Run import now')).toBeDefined()
+    expect(findButton('Done')).toBeDefined()
+  })
+
+  it('walks stack, then https, then import', async () => {
+    await render(makePlan())
+    expect(text()).toContain('Local WordPress')
+
+    await advanceTo('https')
+    expect(text()).toContain('HTTPS certificate')
+    expect(findButton('Run import now')).toBeUndefined()
+
+    await act(async () => {
+      findButton('Back')?.click()
+    })
+    expect(findButton('Set up LocalWP')).toBeDefined()
+  })
+
+  // Two stacks installed and nothing detected: picking one is the user's call, and the import must
+  // not be reachable — nor the setup runnable — until they make it.
+  it('blocks the import until a stack is chosen when both are installed', async () => {
+    installedStacks = ['localwp', 'agent-local']
+    await render(makePlan())
+
+    expect(findButton('Next')?.disabled).toBe(true)
+    expect(text()).toContain('Pick which stack runs this site to continue.')
+    expect(findButton('Set up LocalWP')?.disabled).toBe(true)
+
+    const picker = [...(container?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [])]
+    expect(picker.map((option) => option.textContent)).toEqual(['LocalWP', 'Agent Local'])
+    await act(async () => {
+      picker[1]?.click()
+    })
+
+    expect(findButton('Next')?.disabled).toBe(false)
+    await advanceTo('import')
+    expect(findButton('Run import now')).toBeDefined()
+  })
+
+  // One installed stack is a fact, not a choice — gating on it would be a dead end.
+  it('does not ask for a choice when only one stack is installed', async () => {
+    await render(makePlan())
+
+    expect(findButton('Next')?.disabled).toBe(false)
+    expect(text()).not.toContain('Pick which stack runs this site to continue.')
+  })
 })
 
 describe('SiteSetupContinuation', () => {
@@ -341,6 +428,7 @@ describe('SiteSetupContinuation', () => {
 
   it('starts the import against the environment the planner resolved', async () => {
     await render(makePlan())
+    await advanceTo('import')
     await act(async () => {
       findButton('Run import now')?.click()
     })
@@ -355,6 +443,7 @@ describe('SiteSetupContinuation', () => {
   // that started a multi-minute SSH run to find out whether it worked.
   it('streams the run log into the dialog instead of sending the user elsewhere', async () => {
     await render(makePlan())
+    await advanceTo('import')
     await act(async () => {
       findButton('Run import now')?.click()
     })
@@ -369,6 +458,7 @@ describe('SiteSetupContinuation', () => {
 
   it('ignores log lines belonging to another site\u2019s run', async () => {
     await render(makePlan())
+    await advanceTo('import')
     await act(async () => {
       findButton('Run import now')?.click()
     })
@@ -380,6 +470,7 @@ describe('SiteSetupContinuation', () => {
 
   it('reports the terminal status rather than leaving the stage spinning', async () => {
     await render(makePlan())
+    await advanceTo('import')
     await act(async () => {
       findButton('Run import now')?.click()
     })
@@ -391,6 +482,7 @@ describe('SiteSetupContinuation', () => {
 
   it('surfaces the failure reason from a failed run', async () => {
     await render(makePlan())
+    await advanceTo('import')
     await act(async () => {
       findButton('Run import now')?.click()
     })
@@ -418,6 +510,7 @@ describe('SiteSetupContinuation', () => {
         }
       })
     )
+    await advanceTo('import')
     expect(findButton('Run anyway')).toBeDefined()
     expect(findButton('Run import now')).toBeUndefined()
   })
@@ -444,6 +537,7 @@ describe('SiteSetupContinuation', () => {
         }
       })
     )
+    await advanceTo('import')
     expect(findButton('Run import now')).toBeUndefined()
     expect(findButton('Run anyway')).toBeUndefined()
     expect(text()).toContain('Add the SSH password for this environment before importing.')
@@ -461,6 +555,7 @@ describe('SiteSetupContinuation', () => {
         }
       })
     )
+    await advanceTo('import')
     expect(findButton('Run import now')?.disabled).toBe(true)
   })
 
@@ -531,6 +626,7 @@ describe('SiteSetupContinuation', () => {
         }
       })
     )
+    await advanceTo('import')
     expect(text()).toContain('Import steps for production')
     expect(text()).toContain('Pull/import server DB')
     expect(text()).toContain('Nothing is enabled yet.')
@@ -552,6 +648,7 @@ describe('SiteSetupContinuation', () => {
         }
       })
     )
+    await advanceTo('import')
     expect(upsertEnvironmentMock).not.toHaveBeenCalled()
     const boxes = [...(container?.querySelectorAll('[role="checkbox"]') ?? [])]
     expect(boxes.length).toBe(4)
@@ -570,6 +667,7 @@ describe('SiteSetupContinuation', () => {
         }
       })
     )
+    await advanceTo('import')
     const planCallsBefore = planMock.mock.calls.length
     await act(async () => {
       container?.querySelector<HTMLElement>('[role="checkbox"]')?.click()

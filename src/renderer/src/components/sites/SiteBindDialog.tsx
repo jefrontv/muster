@@ -258,18 +258,14 @@ export function SiteBindDialog(): React.JSX.Element | null {
             <DialogDescription>{setupStrings.description}</DialogDescription>
           </DialogHeader>
 
-          <div className="scrollbar-sleek max-h-[55vh] overflow-y-auto pr-1">
-            <SiteSetupContinuation
-              siteId={boundSiteId}
-              reponame={boundFields?.reponame ?? ''}
-              branch={null}
-              onDone={finish}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button onClick={finish}>{setupStrings.done}</Button>
-          </DialogFooter>
+          {/* No DialogFooter here: the setup pages own their own Back/Next/Done, so Done only
+              appears on the last page instead of sitting next to the loading spinner. */}
+          <SiteSetupContinuation
+            siteId={boundSiteId}
+            reponame={boundFields?.reponame ?? ''}
+            branch={null}
+            onDone={finish}
+          />
         </DialogContent>
       </Dialog>
     )

@@ -396,18 +396,18 @@ export function AddSiteFromGitDialog({
           </div>
         ) : null}
 
+        {/* Owns its own Back/Next/Done, so this branch renders no DialogFooter of its own. */}
         {step === 'setup' && createdSiteId.length > 0 ? (
-          <div className="scrollbar-sleek max-h-[55vh] overflow-y-auto pr-1">
-            <SiteSetupContinuation
-              siteId={createdSiteId}
-              reponame={selected?.fullName ?? ''}
-              branch={null}
-              onDone={() => onOpenChange(false)}
-            />
-          </div>
+          <SiteSetupContinuation
+            siteId={createdSiteId}
+            reponame={selected?.fullName ?? ''}
+            branch={null}
+            onDone={() => onOpenChange(false)}
+          />
         ) : null}
 
-        <DialogFooter>
+        {/* Omitted on the setup step so an empty footer does not add a gap under its own nav. */}
+        <DialogFooter className={step === 'setup' ? 'hidden' : undefined}>
           {step === 'confirm' ? (
             <>
               <Button variant="ghost" onClick={() => setStep('pick')}>
@@ -438,9 +438,6 @@ export function AddSiteFromGitDialog({
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               {strings.cancel}
             </Button>
-          ) : null}
-          {step === 'setup' ? (
-            <Button onClick={() => onOpenChange(false)}>{strings.done}</Button>
           ) : null}
         </DialogFooter>
       </DialogContent>

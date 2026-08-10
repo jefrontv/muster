@@ -16,6 +16,27 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.loading',
     'Checking what this site needs…'
   ),
+  // One page per decision. The stack has to be chosen before the import can be aimed anywhere, and
+  // the certificate only exists once the stack has served the domain — so the order is a dependency
+  // chain, not a preference.
+  stepStack: translate('auto.components.sites.SiteSetupContinuation.stepStack', 'Local stack'),
+  stepHttps: translate('auto.components.sites.SiteSetupContinuation.stepHttps', 'HTTPS'),
+  stepImport: translate('auto.components.sites.SiteSetupContinuation.stepImport', 'Import'),
+  stepCounter: translate(
+    'auto.components.sites.SiteSetupContinuation.stepCounter',
+    'Step {{current}} of {{total}}'
+  ),
+  stepListLabel: translate(
+    'auto.components.sites.SiteSetupContinuation.stepListLabel',
+    'Setup steps'
+  ),
+  back: translate('auto.components.sites.SiteSetupContinuation.back', 'Back'),
+  next: translate('auto.components.sites.SiteSetupContinuation.next', 'Next'),
+  // Shown under a disabled Next: without it the button reads as broken rather than waiting.
+  stackPickFirst: translate(
+    'auto.components.sites.SiteSetupContinuation.stackPickFirst',
+    'Pick which stack runs this site to continue.'
+  ),
   stackHeading: translate(
     'auto.components.sites.SiteSetupContinuation.stackHeading',
     'Local WordPress'
@@ -133,6 +154,12 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'Trust certificate'
   ),
   certTrusting: translate('auto.components.sites.SiteSetupContinuation.certTrusting', 'Trusting…'),
+  // The page is reachable before the stack has served the domain, so it needs something honest to
+  // say while there is no certificate to report on yet.
+  certPending: translate(
+    'auto.components.sites.SiteSetupContinuation.certPending',
+    'Available once the stack has served this site once.'
+  ),
   certTrusted: translate(
     'auto.components.sites.SiteSetupContinuation.certTrusted',
     'Trusted — the local site loads over https without a warning.'

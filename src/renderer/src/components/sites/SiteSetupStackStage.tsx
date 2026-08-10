@@ -49,7 +49,8 @@ export function SiteSetupStackStage({
   detectedStack = null,
   preferredStack = null,
   unavailableStacks = NO_STACKS,
-  onMigrated
+  onMigrated,
+  onStackChosen
 }: {
   siteId: string
   suggestedDomain: string
@@ -61,13 +62,18 @@ export function SiteSetupStackStage({
   unavailableStacks?: SiteLocalStack[]
   /** Fired once the migration really succeeded — the local domain only exists from that point. */
   onMigrated: (domain: string, stack: SiteLocalStack) => void
+  /** Mirrors the choice out so the pager can refuse to advance until one has been made. */
+  onStackChosen?: (stack: SiteLocalStack | null) => void
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const [domain, setDomain] = useState(suggestedDomain)
   // Which stacks this machine can run, and which one the user picked. Until the probe answers the
   // picker is not rendered at all: a control that appears and then loses an option reads as a bug.
   const [availableStacks, setAvailableStacks] = useState<SiteLocalStack[] | null>(null)
-  const [stack, setStack] = useState<SiteLocalStack>('localwp')
+  // Null until something actually decides. Seeding this with 'localwp' meant a machine running both
+  // stacks silently pre-picked one, and the user could set the site up on it without ever noticing
+  // there was a choice.
+  const [stack, setStack] = useState<SiteLocalStack | null>(null)
   // ocsites used one house account for both of its setups (tui_deploy:2792, :3035) and Local only
   // ever sees it locally, so these are fixed rather than asked for.
   const adminEmail = LOCALWP_ADMIN_EMAIL
@@ -126,16 +132,27 @@ export function SiteSetupStackStage({
         setStack(detectedStack)
         return
       }
-      setStack(answer.value.includes('localwp') ? 'localwp' : (answer.value[0] ?? 'localwp'))
+      // Only auto-pick when there is nothing to pick: one installed stack is a fact, not a choice.
+      // With two, the answer stays empty until the user gives one.
+      setStack(answer.value.length === 1 ? (answer.value[0] ?? null) : null)
     })()
     return () => {
       cancelled = true
     }
   }, [detectedStack, preferredStack])
 
+  useEffect(() => {
+    onStackChosen?.(stack)
+  }, [stack, onStackChosen])
+
   // Read-only: this is the same planner the run re-consults, so asking it now costs one call and
   // buys the honest heading, the honest button, and the list of what is about to move or be deleted.
   useEffect(() => {
+    if (!stack) {
+      // Nothing to preview yet: the planner's answer depends on which stack is being proposed.
+      setPreview(null)
+      return
+    }
     let cancelled = false
     void (async () => {
       const answer = await window.api.siteStacks.previewMigration({
@@ -161,6 +178,9 @@ export function SiteSetupStackStage({
   }, [siteId, suggestedDomain, stack])
 
   const run = async (): Promise<void> => {
+    if (!stack) {
+      return
+    }
     setPhase('running')
     setLines([])
     setFailure('')
@@ -218,15 +238,18 @@ export function SiteSetupStackStage({
   const blocked = preview?.blockedReason ?? ''
   // Only a real choice is worth a control: one installed stack means there is nothing to pick.
   const stackChoices = (availableStacks ?? []).length > 1 ? (availableStacks ?? []) : []
+  const awaitingChoice = stack === null
   // Four combinations, because "no WordPress yet" changes what each stack is about to do: LocalWP
   // builds an install, agent-local attaches the folder to an empty database.
-  const body = onAgentLocal
-    ? creating
-      ? strings.stackAgentLocalCreateBody
-      : strings.stackAgentLocalBody
-    : creating
-      ? strings.stackCreateBody
-      : strings.stackBody
+  const body = awaitingChoice
+    ? strings.stackPickFirst
+    : onAgentLocal
+      ? creating
+        ? strings.stackAgentLocalCreateBody
+        : strings.stackAgentLocalBody
+      : creating
+        ? strings.stackCreateBody
+        : strings.stackBody
   const action = onAgentLocal
     ? creating
       ? strings.stackAgentLocalCreateAction
@@ -260,7 +283,7 @@ export function SiteSetupStackStage({
               variant="outline"
               size="sm"
               aria-label={strings.stackPickerLabel}
-              value={stack}
+              value={stack ?? ''}
               disabled={busy}
               onValueChange={(next) => {
                 if (next) {
@@ -304,7 +327,9 @@ export function SiteSetupStackStage({
               // A blocked preview is the planner saying this cannot work. Pressing the button then
               // only reprints the same sentence as a failure, which is how the dialog ended up
               // showing one error twice.
-              disabled={domain.trim().length === 0 || blocked.length > 0}
+              // No stack picked means there is nothing to run this with — the button would have to
+              // guess, which is the thing the picker exists to stop.
+              disabled={domain.trim().length === 0 || blocked.length > 0 || awaitingChoice}
               onClick={() => void run()}
             >
               {phase === 'failed' ? strings.stackRetry : action}
