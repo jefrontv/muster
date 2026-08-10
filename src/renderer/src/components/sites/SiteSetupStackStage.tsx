@@ -44,10 +44,13 @@ type StackPreview = {
 export function SiteSetupStackStage({
   siteId,
   suggestedDomain,
+  detectedStack = null,
   onMigrated
 }: {
   siteId: string
   suggestedDomain: string
+  /** The stack already serving this folder, when the planner found one; it wins over the default. */
+  detectedStack?: SiteLocalStack | null
   /** Fired once the migration really succeeded — the local domain only exists from that point. */
   onMigrated: (domain: string, stack: SiteLocalStack) => void
 }): React.JSX.Element {
@@ -92,14 +95,20 @@ export function SiteSetupStackStage({
         return
       }
       setAvailableStacks(answer.value)
-      // Default to LocalWP when it is here, since that is what existing sites use; otherwise take
-      // whatever is installed rather than offering a stack that cannot run.
+      // What is already serving the folder wins: proposing a LocalWP migration for a site
+      // agent-local runs would be offering to move files that do not need moving. Otherwise default
+      // to LocalWP, since that is what existing sites use, and fall back to whatever is installed
+      // rather than offering a stack that cannot run.
+      if (detectedStack && answer.value.includes(detectedStack)) {
+        setStack(detectedStack)
+        return
+      }
       setStack(answer.value.includes('localwp') ? 'localwp' : (answer.value[0] ?? 'localwp'))
     })()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [detectedStack])
 
   // Read-only: this is the same planner the run re-consults, so asking it now costs one call and
   // buys the honest heading, the honest button, and the list of what is about to move or be deleted.
@@ -229,7 +238,7 @@ export function SiteSetupStackStage({
             >
               {stackChoices.map((choice) => (
                 <ToggleGroupItem key={choice} value={choice} className="px-2.5 text-xs">
-                  {choice === 'agent-local' ? 'agent-local' : 'LocalWP'}
+                  {choice === 'agent-local' ? 'Agent Local' : 'LocalWP'}
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>

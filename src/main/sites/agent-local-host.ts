@@ -12,7 +12,7 @@ import process from 'node:process'
 import { streamCommand } from '../lib/stream-command'
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 
-export const AGENT_LOCAL_UNSUPPORTED_PLATFORM = 'agent-local is only available on macOS.'
+export const AGENT_LOCAL_UNSUPPORTED_PLATFORM = 'Agent Local is only available on macOS.'
 
 export const AGENT_LOCAL_API_ORIGIN = 'http://127.0.0.1:10809'
 
@@ -119,7 +119,8 @@ async function requestAgentLocal(
 ): Promise<AgentLocalResponse> {
   const token = await host.readToken()
   if (token === null) {
-    return { ok: false, status: 0, error: 'agent-local has no API token; run agent-local once.' }
+    // The binary name stays literal here — it is what the user has to run.
+    return { ok: false, status: 0, error: 'Agent Local has no API token; run `agent-local` once.' }
   }
   const controller = new AbortController()
   const timeout = setTimeout(

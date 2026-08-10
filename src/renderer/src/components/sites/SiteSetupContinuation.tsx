@@ -173,6 +173,9 @@ export function SiteSetupContinuation({
         <SiteSetupStackStage
           siteId={siteId}
           suggestedDomain={plan.stack.suggestedDomain}
+          // What the planner found on disk, so a folder agent-local already serves does not open
+          // on a proposal to set it up with LocalWP.
+          detectedStack={plan.stack.stack === 'agent-local' ? 'agent-local' : null}
           onMigrated={(migratedDomain, migratedStack) => {
             // The migration is what gives the site its local domain, so the certificate question
             // only becomes answerable now — and it must be asked of the stack just migrated onto,

@@ -19,7 +19,7 @@ type SiteRowProps = {
 const STACK_LABELS: Partial<Record<SiteSummary['site']['localStack'], string>> = {
   mamp: 'MAMP',
   localwp: 'LocalWP',
-  'agent-local': 'agent-local'
+  'agent-local': 'Agent Local'
 }
 
 export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): React.JSX.Element {

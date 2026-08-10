@@ -39,9 +39,9 @@ import {
   type LocalStackSiteRef
 } from './local-stack-provider'
 
-export const AGENT_LOCAL_NOT_MANAGED = 'Not an agent-local site'
+export const AGENT_LOCAL_NOT_MANAGED = 'Not an Agent Local site'
 export const AGENT_LOCAL_DAEMON_UNREACHABLE =
-  'agent-local is installed but its daemon is not answering. Run `agent-local doctor`.'
+  'Agent Local is installed but its daemon is not answering. Run `agent-local doctor`.'
 
 export type AgentLocalSiteMatch = {
   slug: string
@@ -181,7 +181,7 @@ export async function ensureAgentLocalSiteRunning(
       ? localStackSkip('not-managed', AGENT_LOCAL_NOT_MANAGED)
       : unavailableOutcome(response)
   }
-  onStatus?.(`Starting agent-local site '${match.slug}'…`)
+  onStatus?.(`Starting Agent Local site '${match.slug}'…`)
   // Idempotent by design: start on a running site returns the same payload rather than an error.
   const started = await requestWithDaemon(host, 'POST', `/sites/${match.slug}/start`, undefined, {
     timeoutMs: AGENT_LOCAL_START_TIMEOUT_MS
@@ -195,7 +195,7 @@ export async function ensureAgentLocalSiteRunning(
     ok: true,
     socketPath: '',
     state: 'running',
-    message: `agent-local site '${match.slug}' is running`,
+    message: `Agent Local site '${match.slug}' is running`,
     port: credentials?.port ?? AGENT_LOCAL_DATABASE_PORT,
     user: credentials?.user,
     password: credentials?.password,
@@ -226,7 +226,7 @@ export async function stopAgentLocalSite(
     ok: true,
     socketPath: '',
     state: 'stopped',
-    message: `agent-local site '${match.slug}' stopped`
+    message: `Agent Local site '${match.slug}' stopped`
   }
 }
 

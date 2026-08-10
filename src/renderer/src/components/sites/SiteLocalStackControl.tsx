@@ -24,7 +24,7 @@ const STACK_LABELS: Record<SiteLocalStack, string> = {
   plain: 'None',
   mamp: 'MAMP',
   localwp: 'LocalWP',
-  'agent-local': 'agent-local'
+  'agent-local': 'Agent Local'
 }
 
 /** `plain` is always offered: it is how a user says "Muster should not manage this". */

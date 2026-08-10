@@ -54,11 +54,11 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
   ),
   stackAgentLocalBody: translate(
     'auto.components.sites.SiteSetupContinuation.stackAgentLocalBody',
-    'Serve this folder where it is with agent-local, on its own domain and database.'
+    'Serve this folder where it is with Agent Local, on its own domain and database.'
   ),
   stackAgentLocalAction: translate(
     'auto.components.sites.SiteSetupContinuation.stackAgentLocalAction',
-    'Set up agent-local'
+    'Set up Agent Local'
   ),
   stackAgentLocalServesInPlace: translate(
     'auto.components.sites.SiteSetupContinuation.stackAgentLocalServesInPlace',
