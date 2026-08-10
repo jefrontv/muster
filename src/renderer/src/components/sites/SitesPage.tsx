@@ -193,7 +193,9 @@ export default function SitesPage(): React.JSX.Element {
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-background">
+    // border-l: the sidebar and this page share a background, so without it the site list reads as
+    // a third sidebar column rather than the start of the page.
+    <main className="flex min-h-0 flex-1 flex-col border-l border-border bg-background">
       <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-3">
         <Button variant="outline" size="sm" onClick={closeSitesPage} className="shrink-0 gap-1.5">
           <ArrowLeft className="size-3.5" />
