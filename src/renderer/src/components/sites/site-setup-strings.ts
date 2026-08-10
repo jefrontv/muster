@@ -30,6 +30,11 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stepListLabel',
     'Setup steps'
   ),
+  // Replaces the step counter while a stage runs, so a locked Done reads as "wait", not "broken".
+  stepBusy: translate(
+    'auto.components.sites.SiteSetupContinuation.stepBusy',
+    'Running — leave this open until it finishes.'
+  ),
   back: translate('auto.components.sites.SiteSetupContinuation.back', 'Back'),
   next: translate('auto.components.sites.SiteSetupContinuation.next', 'Next'),
   // Shown under a disabled Next: without it the button reads as broken rather than waiting.
@@ -212,23 +217,14 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.importSteps',
     '{{count}} steps enabled'
   ),
-  // Steps are off by default, exactly as in ocsites: pulling a live database or live files is
-  // destructive, so nothing runs until it is asked for. What was missing is a way to ask from here.
-  importChooseSteps: translate(
-    'auto.components.sites.SiteSetupContinuation.importChooseSteps',
-    'Choose steps'
-  ),
   importStepsLegend: translate(
     'auto.components.sites.SiteSetupContinuation.importStepsLegend',
     'Import steps for {{environment}}'
   ),
+  // Only reachable by unticking everything, since setup starts with all four on.
   importNoSteps: translate(
     'auto.components.sites.SiteSetupContinuation.importNoSteps',
-    'Nothing is enabled yet. Pick what to pull down — each one is off until you choose it.'
-  ),
-  importBranchWarning: translate(
-    'auto.components.sites.SiteSetupContinuation.importBranchWarning',
-    'The checked-out branch does not match an environment — confirm the target before importing.'
+    'Nothing is enabled — tick at least one step to run the import.'
   ),
   overrideAction: translate(
     'auto.components.sites.SiteSetupContinuation.overrideAction',

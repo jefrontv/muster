@@ -89,6 +89,8 @@ export function SiteBindDialog(): React.JSX.Element | null {
   // the dialog open.
   const [boundSiteId, setBoundSiteId] = useState('')
   const [boundFields, setBoundFields] = useState<SiteBindFields | null>(null)
+  /** A setup stage is mid-run; the dialog must not close out from under it. */
+  const [setupBusy, setSetupBusy] = useState(false)
 
   // A newer link replaces the old request outright, so the chosen folder must not carry over.
   // Only a candidate that is actually on disk may be preselected: a stale Site/Repo record whose
@@ -244,7 +246,9 @@ export function SiteBindDialog(): React.JSX.Element | null {
       <Dialog
         open
         onOpenChange={(open) => {
-          if (!open) {
+          // Escape and outside-clicks are the other ways out of the dialog; a stage mid-run has to
+          // refuse them too, or the nav's disabled Done is a lock with the door left open.
+          if (!open && !setupBusy) {
             finish()
           }
         }}
@@ -265,6 +269,7 @@ export function SiteBindDialog(): React.JSX.Element | null {
             reponame={boundFields?.reponame ?? ''}
             branch={null}
             onDone={finish}
+            onBusyChange={setSetupBusy}
           />
         </DialogContent>
       </Dialog>

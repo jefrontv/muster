@@ -50,7 +50,8 @@ export function SiteSetupStackStage({
   preferredStack = null,
   unavailableStacks = NO_STACKS,
   onMigrated,
-  onStackChosen
+  onStackChosen,
+  onBusyChange
 }: {
   siteId: string
   suggestedDomain: string
@@ -64,6 +65,8 @@ export function SiteSetupStackStage({
   onMigrated: (domain: string, stack: SiteLocalStack) => void
   /** Mirrors the choice out so the pager can refuse to advance until one has been made. */
   onStackChosen?: (stack: SiteLocalStack | null) => void
+  /** Locks the pager's nav: this setup moves files and can be waiting on an OS password prompt. */
+  onBusyChange?: (busy: boolean) => void
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const [domain, setDomain] = useState(suggestedDomain)
@@ -144,6 +147,10 @@ export function SiteSetupStackStage({
   useEffect(() => {
     onStackChosen?.(stack)
   }, [stack, onStackChosen])
+
+  useEffect(() => {
+    onBusyChange?.(phase === 'running')
+  }, [phase, onBusyChange])
 
   // Read-only: this is the same planner the run re-consults, so asking it now costs one call and
   // buys the honest heading, the honest button, and the list of what is about to move or be deleted.

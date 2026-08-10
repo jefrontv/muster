@@ -104,30 +104,23 @@ function installApi(plan: SiteSetupPlan, previewPlan: PreviewPlan): void {
   previewMock = vi.fn().mockResolvedValue({ ok: true, value: previewPlan })
   migrateMock = vi.fn().mockResolvedValue({ ok: true, value: { ok: true, message: '' } })
   startRunMock = vi.fn().mockResolvedValue({ ok: true, value: { id: 'run-1', status: 'running' } })
-  siteGetMock = vi.fn().mockResolvedValue({
-    ok: true,
-    value: makeSummary(
-      {
-        exportDatabase: false,
-        exportFiles: false,
-        wpUploadRewrite: false,
-        wpSearchReplace: false
-      },
-      plan.import.enabledStepCount
-    )
-  })
-  upsertEnvironmentMock = vi.fn().mockResolvedValue({
-    ok: true,
-    value: makeSummary(
-      {
-        exportDatabase: true,
-        exportFiles: false,
-        wpUploadRewrite: false,
-        wpSearchReplace: false
-      },
-      1
-    )
-  })
+  // Stateful, because the stage now seeds every step on and the user unticks from there: a mock
+  // that ignored the patch would answer with a fixed environment and hide both halves of that.
+  const environment: Record<string, boolean> = {
+    exportDatabase: false,
+    exportFiles: false,
+    wpUploadRewrite: false,
+    wpSearchReplace: false
+  }
+  const currentSummary = (): unknown =>
+    makeSummary({ ...environment }, Object.values(environment).filter(Boolean).length)
+  siteGetMock = vi.fn().mockImplementation(async () => ({ ok: true, value: currentSummary() }))
+  upsertEnvironmentMock = vi
+    .fn()
+    .mockImplementation(async ({ patch }: { patch: Record<string, boolean> }) => {
+      Object.assign(environment, patch)
+      return { ok: true, value: currentSummary() }
+    })
   progressListeners = []
   runEventListeners = []
   // Only the channels this component uses; anything else would be a silent dependency.
@@ -556,7 +549,8 @@ describe('SiteSetupContinuation', () => {
       })
     )
     await advanceTo('import')
-    expect(findButton('Run import now')?.disabled).toBe(true)
+    // Seeded on, so the link's own zero-step configuration no longer dead-ends the setup.
+    expect(findButton('Run import now')?.disabled).toBe(false)
   })
 
   it('offers to create a LocalWP site when the folder has no WordPress yet', async () => {
@@ -601,42 +595,9 @@ describe('SiteSetupContinuation', () => {
     expect(text()).toContain('The Local app is not running.')
   })
 
-  it('offers the import toggles instead of a dead end when no steps are enabled', async () => {
-    // "No import steps are enabled for this environment — pick at least one" was an instruction
-    // with nowhere to follow it: the toggles live on the site page and this dialog had neither.
-    await render(
-      makePlan({
-        stages: [
-          { id: 'target', state: 'done', reason: '' },
-          { id: 'bind', state: 'done', reason: '' },
-          { id: 'stack', state: 'pending', reason: '' },
-          {
-            id: 'import',
-            state: 'blocked',
-            reason:
-              'No import steps are enabled for this environment — pick at least one. The checked-out branch does not match an environment — confirm the target before importing.'
-          }
-        ],
-        import: {
-          ready: false,
-          blockedBy: ['no-steps-selected', 'unmatched-branch'],
-          confirmable: false,
-          environment: 'production',
-          enabledStepCount: 0
-        }
-      })
-    )
-    await advanceTo('import')
-    expect(text()).toContain('Import steps for production')
-    expect(text()).toContain('Pull/import server DB')
-    expect(text()).toContain('Nothing is enabled yet.')
-    // The branch mismatch stays visible as a confirm-the-target warning, not a second blocker.
-    expect(text()).toContain('The checked-out branch does not match an environment')
-    // Nothing may start until a step is picked.
-    expect(findButton('Run anyway')?.disabled).toBe(true)
-  })
-
-  it('never enables an import step on its own', async () => {
+  // The steps used to hide behind a "Choose steps" button, so the destructive thing about to run
+  // was the one thing not on screen.
+  it('always shows the four import steps without asking for them', async () => {
     await render(
       makePlan({
         import: {
@@ -649,13 +610,18 @@ describe('SiteSetupContinuation', () => {
       })
     )
     await advanceTo('import')
-    expect(upsertEnvironmentMock).not.toHaveBeenCalled()
+
+    expect(text()).toContain('Import steps for production')
+    expect(findButton('Choose steps')).toBeUndefined()
     const boxes = [...(container?.querySelectorAll('[role="checkbox"]') ?? [])]
     expect(boxes.length).toBe(4)
-    expect(boxes.every((box) => box.getAttribute('data-state') === 'unchecked')).toBe(true)
+    // The branch-mismatch line is gone: it fired on a fresh clone, which is this flow's normal case.
+    expect(text()).not.toContain('The checked-out branch does not match an environment')
   })
 
-  it('enables the step the user picked and re-plans, so the run can unblock', async () => {
+  // Reversal of the old "never enables a step on its own": this is first-time setup, and a partial
+  // default is what shipped a checkout with no WordPress core in it.
+  it('ticks all four steps for a first-time setup', async () => {
     await render(
       makePlan({
         import: {
@@ -668,17 +634,77 @@ describe('SiteSetupContinuation', () => {
       })
     )
     await advanceTo('import')
-    const planCallsBefore = planMock.mock.calls.length
-    await act(async () => {
-      container?.querySelector<HTMLElement>('[role="checkbox"]')?.click()
-    })
+
     expect(upsertEnvironmentMock).toHaveBeenCalledWith({
       siteId: SITE_ID,
       name: 'production',
-      patch: { exportDatabase: true }
+      patch: {
+        exportDatabase: true,
+        exportFiles: true,
+        wpUploadRewrite: true,
+        wpSearchReplace: true
+      }
+    })
+    const boxes = [...(container?.querySelectorAll('[role="checkbox"]') ?? [])]
+    expect(boxes.every((box) => box.getAttribute('data-state') === 'checked')).toBe(true)
+    expect(text()).toContain('4 steps enabled')
+  })
+
+  it('lets the user untick a seeded step and re-plans, so the run can re-gate', async () => {
+    await render(makePlan())
+    await advanceTo('import')
+    const planCallsBefore = planMock.mock.calls.length
+
+    await act(async () => {
+      container?.querySelector<HTMLElement>('[role="checkbox"]')?.click()
+    })
+
+    expect(upsertEnvironmentMock).toHaveBeenLastCalledWith({
+      siteId: SITE_ID,
+      name: 'production',
+      patch: { exportDatabase: false }
     })
     // The planner, not this component, decides whether the run may start.
     expect(planMock.mock.calls.length).toBeGreaterThan(planCallsBefore)
-    expect(text()).toContain('1 steps enabled')
+    expect(text()).toContain('3 steps enabled')
+  })
+
+  it('cannot start an import with every step unticked', async () => {
+    await render(makePlan())
+    await advanceTo('import')
+
+    for (const box of container?.querySelectorAll<HTMLElement>('[role="checkbox"]') ?? []) {
+      await act(async () => {
+        box.click()
+      })
+    }
+
+    expect(findButton('Run import now')?.disabled).toBe(true)
+  })
+
+  it('locks Back and Done while the import is running', async () => {
+    // Closing the dialog mid-import abandons a live SSH run with no view left on it.
+    await render(makePlan())
+    await advanceTo('import')
+    const { promise, resolve } = Promise.withResolvers<unknown>()
+    startRunMock.mockReturnValue(promise)
+
+    await act(async () => {
+      findButton('Run import now')?.click()
+    })
+
+    expect(findButton('Done')?.disabled).toBe(true)
+    expect(findButton('Back')?.disabled).toBe(true)
+    expect(text()).toContain('Running — leave this open until it finishes.')
+
+    await act(async () => {
+      resolve({ ok: true, value: { id: 'run-1', status: 'running' } })
+      await promise
+    })
+    await act(async () => {
+      emitRunEvent({ type: 'status', runId: 'run-1', status: 'succeeded' })
+    })
+
+    expect(findButton('Done')?.disabled).toBe(false)
   })
 })

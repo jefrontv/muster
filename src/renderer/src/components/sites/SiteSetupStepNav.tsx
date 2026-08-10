@@ -53,6 +53,7 @@ export function SiteSetupStepNav({
   current,
   canAdvance,
   blockedReason,
+  busy = false,
   onBack,
   onNext,
   onDone
@@ -61,6 +62,11 @@ export function SiteSetupStepNav({
   /** False keeps the user on this page; `blockedReason` is what tells them why. */
   canAdvance: boolean
   blockedReason: string
+  /**
+   * A stage is mid-run. Everything locks, Done included: the migration is moving files and the
+   * import is a live SSH run, and closing the dialog is how you lose the only view of either.
+   */
+  busy?: boolean
   onBack: () => void
   onNext: () => void
   onDone: () => void
@@ -71,25 +77,27 @@ export function SiteSetupStepNav({
   return (
     <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
       <p className="min-w-0 text-xs text-muted-foreground">
-        {!canAdvance && blockedReason.length > 0
-          ? blockedReason
-          : strings.stepCounter
-              .replace('{{current}}', String(index + 1))
-              .replace('{{total}}', String(SETUP_STEP_ORDER.length))}
+        {busy
+          ? strings.stepBusy
+          : !canAdvance && blockedReason.length > 0
+            ? blockedReason
+            : strings.stepCounter
+                .replace('{{current}}', String(index + 1))
+                .replace('{{total}}', String(SETUP_STEP_ORDER.length))}
       </p>
       <div className="flex shrink-0 items-center gap-2">
         {index > 0 ? (
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={onBack}>
             <ArrowLeft className="size-3.5" />
             {strings.back}
           </Button>
         ) : null}
         {last ? (
-          <Button size="sm" onClick={onDone}>
+          <Button size="sm" disabled={busy} onClick={onDone}>
             {strings.done}
           </Button>
         ) : (
-          <Button size="sm" disabled={!canAdvance} onClick={onNext}>
+          <Button size="sm" disabled={busy || !canAdvance} onClick={onNext}>
             {strings.next}
             <ArrowRight className="size-3.5" />
           </Button>

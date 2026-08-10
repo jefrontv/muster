@@ -62,12 +62,15 @@ export function SiteSetupContinuation({
   siteId,
   reponame,
   branch,
-  onDone
+  onDone,
+  onBusyChange
 }: {
   siteId: string
   reponame: string
   branch: string | null
   onDone: () => void
+  /** Lets the host dialog refuse Escape and outside-clicks while a stage is mid-run. */
+  onBusyChange?: (busy: boolean) => void
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const [step, setStep] = useState<SetupStepId>('stack')
@@ -84,6 +87,13 @@ export function SiteSetupContinuation({
   // Mirrored out of the stack stage so this page can refuse to advance. Null means the machine runs
   // more than one stack and the user has not said which — the state the import must never start in.
   const [chosenStack, setChosenStack] = useState<SiteLocalStack | null>(null)
+  // A stage is mid-run. Nav locks entirely while it is: both stages own work that has no way back
+  // if the dialog closes under it.
+  const [stageBusy, setStageBusy] = useState(false)
+
+  useEffect(() => {
+    onBusyChange?.(stageBusy)
+  }, [stageBusy, onBusyChange])
 
   useEffect(() => {
     let cancelled = false
@@ -229,6 +239,7 @@ export function SiteSetupContinuation({
               // Local attaches the folder to an empty database for the import to fill.
               preferredStack={plan.stack.alreadyLocalWp ? (plan.stack.alternatives[0] ?? null) : null}
               onStackChosen={setChosenStack}
+              onBusyChange={setStageBusy}
               onMigrated={onMigrated}
             />
           ) : (
@@ -258,7 +269,12 @@ export function SiteSetupContinuation({
           plan.import.confirmable ||
           (plan.import.environment.length > 0 &&
             plan.import.blockedBy.includes('no-steps-selected')) ? (
-            <SiteSetupImportStage siteId={siteId} readiness={plan.import} onStepsChanged={replan} />
+            <SiteSetupImportStage
+              siteId={siteId}
+              readiness={plan.import}
+              onStepsChanged={replan}
+              onBusyChange={setStageBusy}
+            />
           ) : (
             <UnavailableRow
               icon={<Database className="size-4" />}
@@ -273,6 +289,7 @@ export function SiteSetupContinuation({
 
       <SiteSetupStepNav
         current={step}
+        busy={stageBusy}
         canAdvance={canAdvance}
         blockedReason={needsStackChoice ? strings.stackPickFirst : strings.loading}
         onBack={goBack}

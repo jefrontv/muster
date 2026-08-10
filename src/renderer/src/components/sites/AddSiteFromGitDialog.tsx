@@ -80,6 +80,8 @@ export function AddSiteFromGitDialog({
 }: AddSiteFromGitDialogProps): React.JSX.Element {
   const strings = getSiteCloneSourceStrings()
   const [step, setStep] = useState<Step>('pick')
+  /** A setup stage is mid-run; the dialog must not close out from under it. */
+  const [setupBusy, setSetupBusy] = useState(false)
   const [providers, setProviders] = useState<CloneSourceProvider[]>([])
   const [active, setActive] = useState<CloneSourceProviderId | null>(null)
   const [repos, setRepos] = useState<CloneSourceRepo[]>([])
@@ -237,7 +239,16 @@ export function AddSiteFromGitDialog({
     selected && destinationRoot.length > 0 ? `${destinationRoot}/${repoSlug(selected)}` : ''
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // A setup stage mid-run owns files and a live SSH connection; Escape must not end it.
+        if (!next && setupBusy) {
+          return
+        }
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
@@ -403,6 +414,7 @@ export function AddSiteFromGitDialog({
             reponame={selected?.fullName ?? ''}
             branch={null}
             onDone={() => onOpenChange(false)}
+            onBusyChange={setSetupBusy}
           />
         ) : null}
 

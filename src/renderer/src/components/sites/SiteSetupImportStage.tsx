@@ -1,13 +1,12 @@
 // The "Import from the server" stage of the guided setup.
 //
-// Import steps are off by default and that is correct — ocsites' `_empty_environment_payload`
-// (deploy/config.py:52-68) defaults every toggle to False, and only enabled toggles become steps
-// (mcp_server.py:731-757). Silently enabling a live database or file pull would be destructive.
-//
-// What was wrong was reachability: "No import steps are enabled for this environment — pick at
-// least one" was an instruction the user could not follow, because the toggles live on the site page
-// and this dialog neither linked to them nor offered them. So the toggles are offered here, still
-// off until chosen.
+// Import steps are off by default everywhere else — ocsites' `_empty_environment_payload`
+// (deploy/config.py:52-68) defaults every toggle to False — but this is first-time setup, where
+// pulling the whole site down IS the task. A partial default is what produced the live failure:
+// `exportFiles` off meant no WordPress core ever landed, and search-replace then died on "This does
+// not seem to be a WordPress installation". So all four start on here, and the list is always on
+// screen rather than behind a "Choose steps" button: what is about to run has to be visible, and
+// every one of them stays a checkbox the user can clear before pressing the button.
 //
 // The run is also watched here rather than handed off to the site page: this is a multi-minute
 // operation over SSH, and "progress is on the site page" asked the user to leave the dialog that
@@ -16,7 +15,7 @@
 // The planner stays the authority on whether a run may start: every toggle change asks the parent to
 // re-plan rather than re-deriving `ready`/`confirmable` locally.
 
-import { Check, Database, Loader2, TriangleAlert } from 'lucide-react'
+import { Check, Database, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { SiteSetupImportReadiness } from '../../../../shared/site-setup-flow-types'
@@ -37,20 +36,21 @@ const TERMINAL_STATUSES: readonly SiteRunStatus[] = ['succeeded', 'failed', 'can
 export function SiteSetupImportStage({
   siteId,
   readiness,
-  onStepsChanged
+  onStepsChanged,
+  onBusyChange
 }: {
   siteId: string
   readiness: SiteSetupImportReadiness
   /** Re-plans the whole setup: enabling a step can be what unblocks the run. */
   onStepsChanged: () => void
+  /** Locks the pager's nav: leaving mid-import abandons a live SSH run with no way back to it. */
+  onBusyChange?: (busy: boolean) => void
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const toggleLabels = getSiteToggleLabels()
   const [summary, setSummary] = useState<SiteSummary | null>(null)
   const [phase, setPhase] = useState<ImportPhase>('idle')
   const [error, setError] = useState('')
-  // Expanded from the start when there is nothing to run: that is the state the user is stuck in.
-  const [showSteps, setShowSteps] = useState(readiness.enabledStepCount === 0)
   const [status, setStatus] = useState<SiteRunStatus | null>(null)
   const [lines, setLines] = useState<string[]>([])
   const [progress, setProgress] = useState<{ stage: string; percent: number | null } | null>(null)
@@ -59,6 +59,8 @@ export function SiteSetupImportStage({
   // arrive before this component knows which run is its own. Adopt them once the id lands.
   const bufferRef = useRef(new Map<string, string[]>())
   const logRef = useRef<HTMLDivElement | null>(null)
+  /** One shot: after this, an unticked box is the user's decision and must not be re-ticked. */
+  const seededRef = useRef(false)
 
   useEffect(() => {
     return window.api.siteRuns.onEvent((event) => {
@@ -115,6 +117,32 @@ export function SiteSetupImportStage({
 
   const environment = summary?.site.environments[readiness.environment] ?? null
 
+  // First-time setup runs the whole import, so the four steps arrive ticked instead of leaving the
+  // user to work out which ones a working local site needs. Runs once — clearing a box afterwards
+  // must stick.
+  useEffect(() => {
+    if (seededRef.current || !environment) {
+      return
+    }
+    seededRef.current = true
+    const missing = SITE_IMPORT_TOGGLES.filter((toggle) => !environment[toggle.key])
+    if (missing.length === 0) {
+      return
+    }
+    void (async () => {
+      const patch = Object.fromEntries(missing.map((toggle) => [toggle.key, true]))
+      const result = await window.api.sites.upsertEnvironment({
+        siteId,
+        name: readiness.environment,
+        patch
+      })
+      if (result.ok) {
+        setSummary(result.value)
+        onStepsChanged()
+      }
+    })()
+  }, [environment, siteId, readiness.environment, onStepsChanged])
+
   const toggleStep = async (key: string, enabled: boolean): Promise<void> => {
     setError('')
     const result = await window.api.sites.upsertEnvironment({
@@ -163,6 +191,11 @@ export function SiteSetupImportStage({
   const startable = enabledCount > 0 && (readiness.ready || readiness.confirmable)
   const settled = phase === 'finished'
   const busy = phase === 'starting' || phase === 'running'
+
+  useEffect(() => {
+    onBusyChange?.(busy)
+  }, [busy, onBusyChange])
+
   const statusMessages: Record<SiteRunStatus, string> = {
     running: strings.importRunning,
     succeeded: strings.importSucceeded,
@@ -189,23 +222,14 @@ export function SiteSetupImportStage({
               {strings.importSteps.replace('{{count}}', String(enabledCount))}
             </p>
           ) : null}
-          {/* A warning to confirm the target, not a second blocker: ocsites guards the same way. */}
-          {!settled && !busy && readiness.blockedBy.includes('unmatched-branch') ? (
-            <p className="flex items-start gap-1 text-[11px] text-muted-foreground/70">
-              <TriangleAlert className="mt-0.5 size-3 shrink-0" />
-              {strings.importBranchWarning}
-            </p>
-          ) : null}
+          {/* No branch-mismatch warning here. It fired on the setup flow's normal case — a fresh
+              clone on the default branch — and "Run anyway" already says the target is unconfirmed.
+              The planner still reports `unmatched-branch`; only the extra line is gone. */}
         </div>
         {settled && status === 'succeeded' ? (
           <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
         ) : (
           <div className="flex shrink-0 items-center gap-1.5">
-            {readiness.environment.length > 0 && !showSteps ? (
-              <Button size="sm" variant="ghost" onClick={() => setShowSteps(true)}>
-                {strings.importChooseSteps}
-              </Button>
-            ) : null}
             <Button
               size="sm"
               variant="outline"
@@ -222,7 +246,9 @@ export function SiteSetupImportStage({
         )}
       </div>
 
-      {showSteps && environment && !settled && !busy ? (
+      {/* Always on screen, never behind a disclosure: the run is destructive and what it is about
+          to do to this checkout is the one thing the user has to be able to read first. */}
+      {environment && !settled && !busy ? (
         <fieldset className="space-y-1.5 pl-6.5">
           <legend className="text-xs font-medium text-muted-foreground">
             {strings.importStepsLegend.replace('{{environment}}', readiness.environment)}
