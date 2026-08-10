@@ -59,6 +59,8 @@ let wpDir: string
 
 beforeEach(() => {
   wpDir = mkdtempSync(path.join(tmpdir(), 'muster-search-replace-'))
+  // WP-CLI needs core to bootstrap, and so does the step's own precondition check.
+  writeFileSync(path.join(wpDir, 'wp-load.php'), '<?php')
   streamCommandMock.mockReset()
   streamCommandMock.mockResolvedValue(commandResult({ stdout: 'Success: Made 42 replacements.\n' }))
 })
@@ -306,6 +308,21 @@ describe('runWpSearchReplace', () => {
     expect(wpCall().options?.env?.WP_CLI_PHP_ARGS).toBe(
       '-d error_reporting=E_ERROR -d display_errors=0'
     )
+  })
+
+  // The live failure: a theme repo imported without "Pull server files" has wp-content but no core,
+  // so WP-CLI aborts with "This does not seem to be a WordPress installation" and took the whole
+  // import down with it — after the database had already landed.
+  it('degrades instead of failing when the checkout has no WordPress core', async () => {
+    const { context, logs } = createTestContext()
+    rmSync(path.join(wpDir, 'wp-load.php'))
+
+    await expect(
+      runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
+    ).resolves.toBeUndefined()
+
+    expect(streamCommandMock).not.toHaveBeenCalled()
+    expect(logs.join('\n')).toContain('no WordPress core')
   })
 
   it('points --path at Bedrock core when wp/wp-load.php is present', async () => {

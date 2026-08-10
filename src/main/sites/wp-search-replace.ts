@@ -50,6 +50,15 @@ export async function runWpSearchReplace(
 
   context.throwIfCancelled()
   const abspath = await resolveWpCliPath(config.wpDir)
+  if (!(await hasWordPressCore(abspath))) {
+    // Same degrade as a missing `wp` binary: the database is already imported, only the domain
+    // rewrite is missing. Hard-failing here loses that work over a checkout with no core in it —
+    // which is every theme/plugin repo imported without "Pull server files".
+    context.log(
+      `⚠ Skipping WP Search and Replace: no WordPress core in ${abspath}. Enable "Pull server files" (or run \`wp core download\`) and re-run the import to rewrite domains.`
+    )
+    return
+  }
   const environment = await resolveWpEnvironment(
     context,
     config,
@@ -162,6 +171,16 @@ async function resolveWpCliPath(wpDir: string): Promise<string> {
     return path.join(wpDir, 'wp')
   } catch {
     return wpDir
+  }
+}
+
+/** wp-load.php is what WP-CLI itself looks for when it reports "not a WordPress installation". */
+async function hasWordPressCore(abspath: string): Promise<boolean> {
+  try {
+    await stat(path.join(abspath, 'wp-load.php'))
+    return true
+  } catch {
+    return false
   }
 }
 
