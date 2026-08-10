@@ -19,8 +19,10 @@ import { Check, HardDrive, Loader2, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { LocalWpSetupMode } from '../../../../shared/site-stack-types'
+import type { SiteLocalStack } from '../../../../shared/site-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { getSiteSetupStrings } from './site-setup-strings'
 
 /** Enough to hold a whole migration's chatter; the head is dropped so a runaway log cannot grow. */
@@ -47,10 +49,14 @@ export function SiteSetupStackStage({
   siteId: string
   suggestedDomain: string
   /** Fired once the migration really succeeded — the local domain only exists from that point. */
-  onMigrated: (domain: string) => void
+  onMigrated: (domain: string, stack: SiteLocalStack) => void
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const [domain, setDomain] = useState(suggestedDomain)
+  // Which stacks this machine can run, and which one the user picked. Until the probe answers the
+  // picker is not rendered at all: a control that appears and then loses an option reads as a bug.
+  const [availableStacks, setAvailableStacks] = useState<SiteLocalStack[] | null>(null)
+  const [stack, setStack] = useState<SiteLocalStack>('localwp')
   // ocsites used one house account for both of its setups (tui_deploy:2792, :3035) and Local only
   // ever sees it locally, so these are fixed rather than asked for.
   const adminEmail = LOCALWP_ADMIN_EMAIL
@@ -78,6 +84,23 @@ export function SiteSetupStackStage({
     }
   }, [lines])
 
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const answer = await window.api.siteStacks.available()
+      if (cancelled || !answer.ok) {
+        return
+      }
+      setAvailableStacks(answer.value)
+      // Default to LocalWP when it is here, since that is what existing sites use; otherwise take
+      // whatever is installed rather than offering a stack that cannot run.
+      setStack(answer.value.includes('localwp') ? 'localwp' : (answer.value[0] ?? 'localwp'))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   // Read-only: this is the same planner the run re-consults, so asking it now costs one call and
   // buys the honest heading, the honest button, and the list of what is about to move or be deleted.
   useEffect(() => {
@@ -86,8 +109,9 @@ export function SiteSetupStackStage({
       const answer = await window.api.siteStacks.previewMigration({
         siteId,
         domain: suggestedDomain,
-        adminEmail: 'hello@efront.com.au',
-        adminPassword: 'admin'
+        adminEmail: LOCALWP_ADMIN_EMAIL,
+        adminPassword: LOCALWP_ADMIN_PASSWORD,
+        stack
       })
       if (cancelled || !answer.ok) {
         return
@@ -102,7 +126,7 @@ export function SiteSetupStackStage({
     return () => {
       cancelled = true
     }
-  }, [siteId, suggestedDomain])
+  }, [siteId, suggestedDomain, stack])
 
   const run = async (): Promise<void> => {
     setPhase('running')
@@ -112,7 +136,8 @@ export function SiteSetupStackStage({
       siteId,
       domain,
       adminEmail: adminEmail.trim(),
-      adminPassword: adminPassword.trim()
+      adminPassword: adminPassword.trim(),
+      stack
     }
     const fail = (reason: string): void => {
       setFailure(reason)
@@ -147,7 +172,7 @@ export function SiteSetupStackStage({
           : [...previous, strings.stackDone].slice(-MAX_LOG_LINES)
       )
       setPhase('done')
-      onMigrated(domain)
+      onMigrated(domain, stack)
     } catch (error) {
       fail(error instanceof Error ? error.message : String(error))
     }
@@ -155,15 +180,26 @@ export function SiteSetupStackStage({
 
   const busy = phase === 'running'
   const creating = preview?.mode === 'create'
+  const onAgentLocal = stack === 'agent-local'
+  // Only a real choice is worth a control: one installed stack means there is nothing to pick.
+  const stackChoices = (availableStacks ?? []).length > 1 ? (availableStacks ?? []) : []
+  const body = onAgentLocal
+    ? strings.stackAgentLocalBody
+    : creating
+      ? strings.stackCreateBody
+      : strings.stackBody
+  const action = onAgentLocal
+    ? strings.stackAgentLocalAction
+    : creating
+      ? strings.stackCreateAction
+      : strings.stackAction
   return (
     <div className="space-y-2 rounded-md border border-border px-3 py-2.5">
       <div className="flex items-start gap-2.5">
         <HardDrive className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="text-sm font-medium">{strings.stackHeading}</p>
-          <p className="text-xs text-muted-foreground">
-            {creating ? strings.stackCreateBody : strings.stackBody}
-          </p>
+          <p className="text-xs text-muted-foreground">{body}</p>
         </div>
         {phase === 'done' ? (
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -175,9 +211,36 @@ export function SiteSetupStackStage({
 
       {phase === 'idle' || phase === 'failed' ? (
         <div className="space-y-1.5 pl-6.5">
+          {stackChoices.length > 0 ? (
+            <div
+              role="radiogroup"
+              aria-label={strings.stackPickerLabel}
+              className="flex w-fit rounded-md bg-muted/60 p-0.5"
+            >
+              {stackChoices.map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  role="radio"
+                  aria-checked={stack === choice}
+                  disabled={busy}
+                  onClick={() => setStack(choice)}
+                  className={cn(
+                    'rounded px-2 py-1 text-[11px] font-medium transition-colors',
+                    stack === choice
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {choice === 'agent-local' ? 'agent-local' : 'LocalWP'}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {/* Local needs a wp-admin account to create the install, but it is a throwaway for a
               site whose real content arrives with the import — so the defaults are submitted
-              silently (as ocsites does) and only the domain is worth asking about. */}
+              silently (as ocsites does) and only the domain is worth asking about. agent-local
+              adopts an install that already has its own users and ignores them entirely. */}
           <div className="flex items-center gap-1.5">
             <label className="sr-only" htmlFor="setup-local-domain">
               {strings.stackDomainLabel}
@@ -196,19 +259,17 @@ export function SiteSetupStackStage({
               disabled={domain.trim().length === 0}
               onClick={() => void run()}
             >
-              {phase === 'failed'
-                ? strings.stackRetry
-                : creating
-                  ? strings.stackCreateAction
-                  : strings.stackAction}
+              {phase === 'failed' ? strings.stackRetry : action}
             </Button>
           </div>
           {/* Both setups delete and move real files, so the counts are shown before the button is
               pressed rather than discovered in the log afterwards. */}
           {preview && preview.blockedReason.length === 0 ? (
             <p className="text-[11px] text-muted-foreground/70">
-              {strings.stackMoves.replace('{{count}}', String(preview.moveCount))}
-              {preview.deleteCount > 0
+              {onAgentLocal
+                ? strings.stackAgentLocalServesInPlace
+                : strings.stackMoves.replace('{{count}}', String(preview.moveCount))}
+              {!onAgentLocal && preview.deleteCount > 0
                 ? ` · ${strings.stackDeletes.replace('{{count}}', String(preview.deleteCount))}`
                 : ''}
             </p>
@@ -229,7 +290,9 @@ export function SiteSetupStackStage({
       {/* ocsites printed this the moment the wait began. Local's prompt opens behind the app, so
           without it the setup reads as frozen — the single most common "nothing happened". */}
       {busy ? (
-        <p className="pl-6.5 text-[11px] text-muted-foreground/70">{strings.stackOsPasswordHint}</p>
+        <p className="pl-6.5 text-[11px] text-muted-foreground/70">
+          {onAgentLocal ? strings.stackAgentLocalSudoHint : strings.stackOsPasswordHint}
+        </p>
       ) : null}
 
       {lines.length > 0 ? (

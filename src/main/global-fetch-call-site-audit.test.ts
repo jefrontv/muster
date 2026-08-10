@@ -20,6 +20,7 @@ const AUDITED_GLOBAL_FETCH_LINES = new Map<string, number>([
   ['main/bitbucket/client.ts', 1],
   ['main/gitea/client.ts', 1],
   ['main/orca-profiles/profile-cloud-client.ts', 1],
+  ['main/sites/agent-local-host.ts', 1],
   ['main/sites/bitbucket-workspace-repos.ts', 1],
   ['main/sites/localwp-site-creation.ts', 1],
   ['main/sites/site-http-probe.ts', 1],

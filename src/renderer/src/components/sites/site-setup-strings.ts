@@ -46,6 +46,24 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackAction',
     'Set up LocalWP'
   ),
+  // Shown only when more than one stack is installed, so the label names the choice rather than
+  // explaining what a local stack is.
+  stackPickerLabel: translate(
+    'auto.components.sites.SiteSetupContinuation.stackPickerLabel',
+    'Run this site with'
+  ),
+  stackAgentLocalBody: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalBody',
+    'Serve this folder where it is with agent-local, on its own domain and database.'
+  ),
+  stackAgentLocalAction: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalAction',
+    'Set up agent-local'
+  ),
+  stackAgentLocalServesInPlace: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalServesInPlace',
+    'Nothing moves — the folder is served where it is'
+  ),
   stackPreviewing: translate(
     'auto.components.sites.SiteSetupContinuation.stackPreviewing',
     'Checking…'
@@ -65,6 +83,13 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
   stackOsPasswordHint: translate(
     'auto.components.sites.SiteSetupContinuation.stackOsPasswordHint',
     'LocalWP may ask for your macOS password — check the Local app.'
+  ),
+  // agent-local writes to /etc/hosts and the System keychain. With the one-time grant in place it
+  // never prompts; without it the prompt goes to a background process that cannot show one, so the
+  // setup would hang with no visible cause.
+  stackAgentLocalSudoHint: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalSudoHint',
+    'If this stalls, run `agent-local sudo` once in a terminal to grant hosts and certificate access.'
   ),
   stackLogLabel: translate(
     'auto.components.sites.SiteSetupContinuation.stackLogLabel',

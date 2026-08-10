@@ -14,6 +14,7 @@
 // would fail, and it can always say why a stage is unavailable.
 
 import type { SiteRunBlockedReason } from './site-run-types'
+import type { SiteLocalStack } from './site-types'
 
 export type SiteSetupStageId = 'target' | 'bind' | 'stack' | 'import'
 
@@ -58,10 +59,12 @@ export type SiteSetupCloneResolution = {
 }
 
 export type SiteSetupStackReadiness = {
-  /** False off macOS, where LocalWP cannot be driven at all. */
+  /** False off macOS, where neither managed stack can be driven at all. */
   supported: boolean
-  /** True when the folder is already a LocalWP site, so migration is a no-op. */
+  /** True when the folder is already on a managed stack, so migration is a no-op. */
   alreadyLocalWp: boolean
+  /** Which stack detection found; `plain` when none manages the folder. */
+  stack: SiteLocalStack
   /** Proposed local domain, derived from the link or the folder name. */
   suggestedDomain: string
   reason: string

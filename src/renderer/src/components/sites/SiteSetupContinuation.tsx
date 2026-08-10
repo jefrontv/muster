@@ -16,6 +16,7 @@ import type { SiteSetupPlan, SiteSetupStage } from '../../../../shared/site-setu
 import { findSetupStage } from '../../../../shared/site-setup-flow-types'
 import { Button } from '@/components/ui/button'
 import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
+import type { SiteLocalStack } from '../../../../shared/site-types'
 import { getSiteSetupStrings } from './site-setup-strings'
 import { SiteSetupImportStage } from './SiteSetupImportStage'
 import { SiteSetupStackStage } from './SiteSetupStackStage'
@@ -64,6 +65,9 @@ export function SiteSetupContinuation({
   const [error, setError] = useState('')
   const [cert, setCert] = useState<LocalWpCertStatus | null>(null)
   const [trusting, setTrusting] = useState(false)
+  // Which stack owns the certificate. Seeded from detection, then replaced by whatever the stack
+  // stage actually migrated onto — the two differ for exactly one dialog: a plain site being set up.
+  const [certStack, setCertStack] = useState<SiteLocalStack>('localwp')
 
   useEffect(() => {
     let cancelled = false
@@ -81,9 +85,15 @@ export function SiteSetupContinuation({
       setDomain(result.value.stack.suggestedDomain)
       // Already-LocalWP sites have a domain from the start, so the certificate stage is
       // answerable before the user touches anything.
+      const detectedStack =
+        result.value.stack.stack === 'agent-local' ? 'agent-local' : ('localwp' as const)
+      setCertStack(detectedStack)
       const domainNow = result.value.stack.suggestedDomain.trim()
       if (domainNow.length > 0) {
-        const status = await window.api.localwpCert?.status({ domain: domainNow })
+        const status = await window.api.localwpCert?.status({
+          domain: domainNow,
+          stack: detectedStack
+        })
         if (!cancelled && status?.ok) {
           setCert(status.value)
         }
@@ -129,11 +139,11 @@ export function SiteSetupContinuation({
   // Why a separate probe rather than a field on the plan: the certificate only exists after
   // LocalWP has served the site over https once, so this answer changes during the dialog's
   // lifetime while the rest of the plan does not.
-  const refreshCert = async (forDomain: string): Promise<void> => {
+  const refreshCert = async (forDomain: string, stack = certStack): Promise<void> => {
     if (forDomain.trim().length === 0) {
       return
     }
-    const result = await window.api.localwpCert?.status({ domain: forDomain.trim() })
+    const result = await window.api.localwpCert?.status({ domain: forDomain.trim(), stack })
     if (result?.ok) {
       setCert(result.value)
     }
@@ -143,7 +153,7 @@ export function SiteSetupContinuation({
     setTrusting(true)
     setError('')
     try {
-      const result = await window.api.localwpCert.trust({ domain: domain.trim() })
+      const result = await window.api.localwpCert.trust({ domain: domain.trim(), stack: certStack })
       if (!result.ok) {
         setError(result.error)
         return
@@ -163,11 +173,13 @@ export function SiteSetupContinuation({
         <SiteSetupStackStage
           siteId={siteId}
           suggestedDomain={plan.stack.suggestedDomain}
-          onMigrated={(migratedDomain) => {
+          onMigrated={(migratedDomain, migratedStack) => {
             // The migration is what gives the site its local domain, so the certificate question
-            // only becomes answerable now.
+            // only becomes answerable now — and it must be asked of the stack just migrated onto,
+            // not the one detection saw before the migration ran.
             setDomain(migratedDomain)
-            void refreshCert(migratedDomain)
+            setCertStack(migratedStack)
+            void refreshCert(migratedDomain, migratedStack)
           }}
         />
       ) : (

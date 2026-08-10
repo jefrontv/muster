@@ -14,8 +14,8 @@
 //    the site path over `GET /sites`. See resolveAgentLocalSite for the ordering.
 
 import path from 'node:path'
-import type { LocalWpCertStatus, LocalWpCertTrustResult } from '../../shared/localwp-cert-types'
 import type { LocalWpStackDetection } from '../../shared/site-stack-types'
+import { agentLocalCertStatus, agentLocalCertTrust } from './agent-local-cert'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import {
   AGENT_LOCAL_DATABASE_PORT,
@@ -289,68 +289,6 @@ export async function detectAgentLocalStack(
     socketPath: '',
     socketReady: match.running,
     phpVersion: match.phpVersion
-  }
-}
-
-export async function agentLocalCertStatus(
-  domain: string,
-  options: AgentLocalOptions = {}
-): Promise<LocalWpCertStatus> {
-  const host = options.host ?? createAgentLocalHost()
-  const response = await requestWithDaemon(
-    host,
-    'GET',
-    `/certs/${encodeURIComponent(domain)}`,
-    undefined,
-    { timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS }
-  )
-  const data = asRecord(response.data)
-  const exists = response.ok && data?.exists === true
-  const trusted = response.ok && data?.trusted === true
-  return {
-    supported: isAgentLocalSupported(host),
-    domain,
-    certPath: readString(data, 'cert_path'),
-    exists,
-    trusted,
-    reason: certReason({ ok: response.ok, exists, trusted, response })
-  }
-}
-
-function certReason(args: {
-  ok: boolean
-  exists: boolean
-  trusted: boolean
-  response: AgentLocalResponse
-}): string {
-  if (!args.ok) {
-    return describeAgentLocalResponse(args.response)
-  }
-  if (!args.exists) {
-    return `No certificate yet. Trusting it issues one.`
-  }
-  return args.trusted ? '' : 'The certificate exists but is not trusted in the System keychain.'
-}
-
-export async function agentLocalCertTrust(
-  domain: string,
-  options: AgentLocalOptions = {}
-): Promise<LocalWpCertTrustResult> {
-  const host = options.host ?? createAgentLocalHost()
-  const response = await requestWithDaemon(
-    host,
-    'POST',
-    `/certs/${encodeURIComponent(domain)}/trust`,
-    undefined,
-    { timeoutMs: AGENT_LOCAL_START_TIMEOUT_MS }
-  )
-  return {
-    ok: response.ok,
-    // A trust failure is usually the missing one-time `agent-local sudo` grant, which a background
-    // Electron process cannot satisfy with a GUI prompt — say so rather than retrying forever.
-    message: response.ok
-      ? `Trusted ${domain}.`
-      : `${describeAgentLocalResponse(response)} (if this needs a password prompt, run \`agent-local sudo\` once in a terminal)`
   }
 }
 

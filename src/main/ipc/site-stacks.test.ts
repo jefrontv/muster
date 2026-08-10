@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createEmptySiteEnvironment, type Site, type SiteResult } from '../../shared/site-types'
+import {
+  createEmptySiteEnvironment,
+  type Site,
+  type SiteLocalStack,
+  type SiteResult
+} from '../../shared/site-types'
 import type { Store } from '../persistence'
+import type * as LocalStackProviderModuleNamespace from '../sites/local-stack-provider'
 import type * as LocalWpMigrationModuleNamespace from '../sites/localwp-migration'
 
 type LocalWpMigrationModule = typeof LocalWpMigrationModuleNamespace
@@ -32,10 +38,44 @@ vi.mock('../sites/localwp-migration', async (importActual) => {
 // safeStorage needs a live Electron app, and a real write would touch the developer's keychain.
 vi.mock('../sites/site-secret-store', () => ({ setSiteSecret: vi.fn() }))
 
+// The registry is spied rather than replaced: the LocalWP tests above still run against the real
+// providers, and only the dispatch tests below swap one in.
+// Captured so beforeEach can restore it: mockImplementation overwrites what vi.fn was seeded with.
+const { realRegistry } = vi.hoisted(() => ({
+  realRegistry: { providerFor: null as null | ((stack: string) => unknown) }
+}))
+
+vi.mock('../sites/local-stack-provider', async (importActual) => {
+  const actual = await importActual<typeof LocalStackProviderModuleNamespace>()
+  realRegistry.providerFor = actual.providerFor as (stack: string) => unknown
+  return { ...actual, providerFor: vi.fn(actual.providerFor) }
+})
+
 import type { WebContents } from 'electron'
+import { providerFor, type LocalStackProvider } from '../sites/local-stack-provider'
 import { runLocalWpMigration } from '../sites/localwp-migration'
 import { setSiteSecret } from '../sites/site-secret-store'
 import { registerSiteStackHandlers } from './site-stacks'
+
+/**
+ * An inert provider to override one method on. Every method throws, so a dispatch test that reaches
+ * a method it did not stub fails loudly instead of silently exercising the real stack.
+ */
+function baseProvider(stack: SiteLocalStack): LocalStackProvider {
+  const unexpected = (name: string) => async (): Promise<never> => {
+    throw new Error(`Unexpected ${name} on the ${stack} provider`)
+  }
+  return {
+    id: stack,
+    isAvailable: unexpected('isAvailable'),
+    detect: unexpected('detect'),
+    ensureRunning: unexpected('ensureRunning'),
+    stop: unexpected('stop'),
+    credentials: unexpected('credentials'),
+    certStatus: unexpected('certStatus'),
+    certTrust: unexpected('certTrust')
+  } as unknown as LocalStackProvider
+}
 
 const SITE_ID = 'site-1'
 
@@ -102,6 +142,11 @@ beforeEach(() => {
   handlers.clear()
   removed.length = 0
   vi.mocked(setSiteSecret).mockClear()
+  // Back to the real registry, so a dispatch test's stub cannot leak into the LocalWP tests.
+  vi.mocked(providerFor).mockReset()
+  if (realRegistry.providerFor) {
+    vi.mocked(providerFor).mockImplementation(realRegistry.providerFor as typeof providerFor)
+  }
 })
 
 describe('registerSiteStackHandlers', () => {
@@ -109,6 +154,7 @@ describe('registerSiteStackHandlers', () => {
     const { store } = storeStub()
     registerSiteStackHandlers(store)
     expect([...handlers.keys()].sort()).toEqual([
+      'siteStacks:available',
       'siteStacks:detect',
       'siteStacks:previewMigration',
       'siteStacks:resolveSocket',
@@ -364,5 +410,70 @@ describe('migration progress streaming', () => {
     respondWith(['Waiting for LocalWP to complete setup…'], false)
     await call('siteStacks:runMigration', MIGRATION_ARGS)
     expect(setSiteSecret).not.toHaveBeenCalled()
+  })
+})
+
+describe('stack dispatch', () => {
+  it('offers only the stacks whose provider answers', async () => {
+    vi.mocked(providerFor).mockImplementation((stack) => ({
+      ...baseProvider(stack),
+      isAvailable: async () => stack === 'agent-local'
+    }))
+    registerSiteStackHandlers(storeStub().store)
+
+    const result = await call<SiteLocalStack[]>('siteStacks:available')
+
+    expect(result).toEqual({ ok: true, value: ['agent-local'] })
+  })
+
+  it('treats a provider that throws as unavailable rather than failing the channel', async () => {
+    vi.mocked(providerFor).mockImplementation((stack) => ({
+      ...baseProvider(stack),
+      isAvailable: async () => {
+        throw new Error('daemon exploded')
+      }
+    }))
+    registerSiteStackHandlers(storeStub().store)
+
+    const result = await call<SiteLocalStack[]>('siteStacks:available')
+
+    expect(result).toEqual({ ok: true, value: [] })
+  })
+
+  it('persists the TCP transport a start resolved, and never the password', async () => {
+    const stub = storeStub(site({ localStack: 'agent-local', dbSocket: '/stale/mysqld.sock' }))
+    vi.mocked(providerFor).mockImplementation((stack) => ({
+      ...baseProvider(stack),
+      ensureRunning: async () => ({
+        ok: true,
+        socketPath: '',
+        state: 'running' as const,
+        message: 'running',
+        port: 10360,
+        user: 'al_acme',
+        password: 'secret'
+      })
+    }))
+    registerSiteStackHandlers(stub.store)
+
+    await call('siteStacks:start', SITE_ID)
+
+    expect(stub.updates).toEqual([{ dbSocket: '', dbPort: 10360, dbUser: 'al_acme' }])
+    // The password is fetched live for each run; a stored copy would go stale on re-provision.
+    expect(JSON.stringify(stub.updates)).not.toContain('secret')
+  })
+
+  it('rejects an unknown stack instead of silently falling back to LocalWP', async () => {
+    registerSiteStackHandlers(storeStub().store)
+
+    const result = await call('siteStacks:previewMigration', {
+      siteId: SITE_ID,
+      domain: 'acme.local',
+      adminEmail: 'a@b.c',
+      adminPassword: 'hunter2',
+      stack: 'not-a-stack'
+    })
+
+    expect(result.ok).toBe(false)
   })
 })

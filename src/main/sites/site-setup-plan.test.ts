@@ -135,6 +135,7 @@ describe('buildSiteSetupPlan', () => {
     expect(plan.stack).toEqual({
       supported: true,
       alreadyLocalWp: false,
+      stack: 'plain',
       suggestedDomain: 'acme.local',
       reason: ''
     })

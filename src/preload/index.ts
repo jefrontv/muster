@@ -893,6 +893,7 @@ const api = {
     resolveSocket: (siteId) => ipcRenderer.invoke('siteStacks:resolveSocket', siteId),
     start: (siteId) => ipcRenderer.invoke('siteStacks:start', siteId),
     stop: (siteId) => ipcRenderer.invoke('siteStacks:stop', siteId),
+    available: () => ipcRenderer.invoke('siteStacks:available'),
     previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
     runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args),
     onMigrationProgress: (callback) => {

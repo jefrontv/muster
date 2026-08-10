@@ -10,6 +10,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { streamCommand } from '../lib/stream-command'
+import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 
 export const AGENT_LOCAL_UNSUPPORTED_PLATFORM = 'agent-local is only available on macOS.'
 
@@ -101,6 +102,14 @@ function isConnectionRefusal(error: unknown): boolean {
 
 export const AGENT_LOCAL_DAEMON_DOWN = 'agent-local daemon is not running'
 
+function safeParseJson(body: string): unknown {
+  try {
+    return JSON.parse(body)
+  } catch {
+    return null
+  }
+}
+
 async function requestAgentLocal(
   host: Pick<AgentLocalHost, 'readToken'>,
   method: string,
@@ -129,7 +138,13 @@ async function requestAgentLocal(
       },
       body: body === undefined ? undefined : JSON.stringify(body)
     })
-    const payload: unknown = await response.json().catch(() => null)
+    // Read the body on every path, !ok included: leaving it unread can crash the process from
+    // inside undici (orca#8695). `.text()` always drains; only the parse is allowed to fail.
+    const body = await response.text().catch(async () => {
+      await cancelUnreadResponseBody(response)
+      return ''
+    })
+    const payload: unknown = body.length > 0 ? safeParseJson(body) : null
     const envelope = (payload ?? {}) as { ok?: unknown; data?: unknown; error?: unknown }
     return {
       // The envelope is authoritative when present; a bare non-2xx with no body is still a failure.

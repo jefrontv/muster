@@ -103,10 +103,14 @@ function buildStackReadiness(
   site: Site,
   detection: LocalWpStackDetection
 ): SiteSetupStackReadiness {
-  const alreadyLocalWp = detection.stack === 'localwp'
+  // Managed by either stack: the stage has nothing left to offer, and the certificate stage needs
+  // to know which one so it asks that stack about the domain rather than always asking LocalWP.
+  const managedStack = detection.stack === 'localwp' || detection.stack === 'agent-local'
+  const alreadyLocalWp = managedStack
   return {
     supported: detection.supported,
     alreadyLocalWp,
+    stack: detection.stack,
     // Local rejects a blank domain, so fall back to the folder name rather than offering nothing —
     // through ocsites' own default_local_domain, so a domain-shaped folder gives acme.local rather
     // than acme.com.au.local.

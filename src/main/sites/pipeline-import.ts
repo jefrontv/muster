@@ -13,9 +13,11 @@ import { extractZipArchive } from './local-archive-extract'
 import { importLocalDatabase } from './local-database-import'
 import { checkLocalMysqlConnection } from './local-mysql-connection'
 import type { Site } from '../../shared/site-types'
-import { providerFor } from './local-stack-provider'
-// Side-effect import: the agent-local provider registers itself with the registry on load.
-import './agent-local-site-control'
+import {
+  ensureLocalSiteRunning,
+  startLocalStack,
+  type LocalStackRunningOutcome
+} from './pipeline-local-stack-start'
 import {
   type RemoteLayout,
   type SiteRunConfig,
@@ -45,20 +47,9 @@ import { runWpSearchReplace } from './wp-search-replace'
 import { applyWpUploadRewrite, cleanUpLocalHtaccess } from './wp-upload-rewrite'
 
 const VALIDATE_STEP = 'validate-remote'
-const LOCAL_STACK_STEP = 'ensure-local-stack-running'
 
-export type LocalWpRunningOutcome = {
-  ok: boolean
-  /** Empty when the stack is not socket-based (agent-local, MAMP) or not managing this site. */
-  socketPath: string
-  message: string
-  /** TCP stacks report their transport and live credentials here instead of a socket. */
-  port?: number | null
-  user?: string
-  password?: string
-  /** The database the stack owns for this site, when it owns the naming (agent-local: al_<slug>). */
-  database?: string
-}
+/** Kept as the module's own name for the outcome the local-stack step reports. */
+export type LocalWpRunningOutcome = LocalStackRunningOutcome
 
 export type SiteImportDependencies = {
   ensureLocalSiteRunning: (
@@ -104,31 +95,6 @@ export type SiteImportDependencies = {
   runWpSearchReplace: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
 }
 
-/**
- * Dispatches to whichever stack the site is on. LocalWP keeps returning a socket; agent-local
- * returns TCP details plus live credentials; `plain`/`mamp` report "not managed" and the run
- * proceeds on the site's stored transport.
- */
-export async function ensureLocalSiteRunning(
-  site: Pick<Site, 'path' | 'localStack'>,
-  onStatus?: (message: string) => void
-): Promise<LocalWpRunningOutcome> {
-  const provider = providerFor(site.localStack)
-  const outcome = await provider.ensureRunning(
-    { path: site.path, localStack: site.localStack },
-    onStatus
-  )
-  return {
-    ok: outcome.ok,
-    socketPath: outcome.socketPath,
-    message: outcome.message,
-    port: outcome.port,
-    user: outcome.user,
-    password: outcome.password,
-    database: outcome.database
-  }
-}
-
 export function createDefaultSiteImportDependencies(): SiteImportDependencies {
   return {
     ensureLocalSiteRunning,
@@ -165,7 +131,7 @@ export async function runImportPipeline(
   let active = config
 
   if (exportDatabase || wpSearchReplace || wpUploadRewrite) {
-    active = await startLocalStack(context, active, deps)
+    active = await startLocalStack(context, active, deps.ensureLocalSiteRunning)
   }
   if (exportDatabase) {
     // Fail before any SSH work rather than after a multi-GB download.
@@ -217,50 +183,6 @@ export async function runImportPipeline(
         // A close failure must never replace the error that actually ended the run.
       }
     }
-  }
-}
-
-/**
- * Starts a stopped local site and adopts whichever transport the stack reports.
- *
- * LocalWP re-keys its socket directory per site id, so a stored socket goes stale after a Local
- * restart — reusing it is the most common cause of "Can't connect to local MySQL" straight after an
- * import begins. TCP stacks have the same problem in a different shape: agent-local hands out the
- * per-site password on demand and can re-provision a site behind Muster's back, so the credentials
- * ride the run config for this run only and are never written to the secret store.
- */
-async function startLocalStack(
-  context: SiteRunContext,
-  config: SiteRunConfig,
-  deps: SiteImportDependencies
-): Promise<SiteRunConfig> {
-  const outcome = await deps.ensureLocalSiteRunning(config.site, context.status)
-  if (!outcome.ok) {
-    throw new SiteRunStepError(LOCAL_STACK_STEP, outcome.message)
-  }
-  if (outcome.socketPath) {
-    if (outcome.socketPath === config.site.dbSocket) {
-      return config
-    }
-    context.log(`Using local MySQL socket ${outcome.socketPath}`)
-    return { ...config, site: { ...config.site, dbSocket: outcome.socketPath } }
-  }
-  if (!outcome.port && !outcome.user && !outcome.password) {
-    return config
-  }
-  const site = { ...config.site, dbSocket: '' }
-  if (outcome.port) {
-    site.dbPort = outcome.port
-  }
-  if (outcome.user) {
-    site.dbUser = outcome.user
-  }
-  context.log(`Using local MySQL 127.0.0.1:${site.dbPort ?? 3306} as ${site.dbUser}`)
-  return {
-    ...config,
-    site,
-    dbPassword: outcome.password ?? config.dbPassword,
-    localDatabaseName: outcome.database ?? config.localDatabaseName
   }
 }
 

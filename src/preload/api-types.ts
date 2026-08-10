@@ -22,6 +22,7 @@ import type {
   OcsitesImportApplyResult,
   Site,
   SiteEnvironment,
+  SiteLocalStack,
   SiteRepoLinkResult,
   SiteResult,
   SiteRunGroup,
@@ -926,6 +927,8 @@ export type SiteStacksApi = {
   resolveSocket: (siteId: string) => Promise<SiteResult<string>>
   start: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
   stop: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
+  /** The managed stacks installed and answering on this machine, for offering a choice. */
+  available: () => Promise<SiteResult<SiteLocalStack[]>>
   previewMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationPlan>>
   /** Destructive: show the preview and take an explicit confirmation before calling this. */
   runMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationResult>>
@@ -936,13 +939,18 @@ export type SiteStacksApi = {
   onMigrationProgress: (callback: (event: LocalWpMigrationProgressEvent) => void) => () => void
 }
 
-/** LocalWP creates a real WordPress install, so the wp-admin account is required, not optional. */
+/**
+ * LocalWP creates a real WordPress install, so the wp-admin account is required, not optional.
+ * agent-local adopts an install that already has its own users and ignores both fields.
+ */
 export type LocalWpMigrationArgs = {
   siteId: string
   domain: string
   adminEmail: string
   adminPassword: string
   force?: boolean
+  /** Which stack to migrate onto. Omitted means LocalWP. */
+  stack?: SiteLocalStack
 }
 
 /**
