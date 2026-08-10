@@ -6,7 +6,7 @@
 // renderer agree by construction rather than by two hand-copied shapes — the same split
 // site-setup-api-types.ts makes.
 
-import type { SiteResult } from './site-types'
+import type { SiteLocalStack, SiteResult } from './site-types'
 
 export type LocalWpCertStatus = {
   /** false off darwin — `security` and the login keychain are macOS-only. */
@@ -27,7 +27,18 @@ export type LocalWpCertStatus = {
 
 export type LocalWpCertTrustResult = { ok: boolean; message: string }
 
+/**
+ * `stack` selects which local stack owns the certificate; omitted means LocalWP, so existing
+ * callers keep working. The channel names stay `localwpCert:*` because renaming them would churn
+ * the preload surface for no behavioural gain.
+ */
 export type LocalWpCertApi = {
-  status: (args: { domain: string }) => Promise<SiteResult<LocalWpCertStatus>>
-  trust: (args: { domain: string }) => Promise<SiteResult<LocalWpCertTrustResult>>
+  status: (args: {
+    domain: string
+    stack?: SiteLocalStack
+  }) => Promise<SiteResult<LocalWpCertStatus>>
+  trust: (args: {
+    domain: string
+    stack?: SiteLocalStack
+  }) => Promise<SiteResult<LocalWpCertTrustResult>>
 }

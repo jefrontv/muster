@@ -138,6 +138,14 @@ function convertEnvironment(raw: Record<string, unknown>): SiteEnvironment {
   }
 }
 
+/**
+ * A guess from an imported ocsites config, deliberately still LocalWP-biased.
+ *
+ * The layout alone cannot separate the two managed stacks: agent-local adopts a LocalWP site in
+ * place, docroot and all, so `app/public` describes both. Nothing here can tell them apart, and
+ * only agent-local's own registry can — so this keeps the historical answer and leaves the
+ * correction to the live detection pass in ipc/site-stacks.ts, which probes agent-local first.
+ */
 function detectLocalStack(localWpRoot: string, dbSocket: string): SiteLocalStack {
   if (dbSocket.length > 0 || localWpRoot === 'app/public') {
     return 'localwp'

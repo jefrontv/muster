@@ -9,9 +9,15 @@
 
 import path from 'node:path'
 import { ipcMain } from 'electron'
-import { createEmptySiteEnvironment } from '../../shared/site-types'
+import { createEmptySiteEnvironment, SITE_LOCAL_STACKS } from '../../shared/site-types'
+import type { Site, SiteLocalStack } from '../../shared/site-types'
+import type { LocalWpStackDetection } from '../../shared/site-stack-types'
 import type { Store } from '../persistence'
 import { importLocalDatabase } from '../sites/local-database-import'
+import { planAgentLocalMigration, runAgentLocalMigration } from '../sites/agent-local-migration'
+import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
+// Side-effect import: the agent-local provider registers itself with the registry on load.
+import '../sites/agent-local-site-control'
 import { currentSocketIfRunning, detectLocalWpStack } from '../sites/localwp-detection'
 import {
   createLocalWpHost,
@@ -27,11 +33,7 @@ import {
   runLocalWpMigration,
   type LocalWpMigrationResult
 } from '../sites/localwp-migration'
-import {
-  ensureSiteRunning,
-  stopSite,
-  type LocalWpControlOutcome
-} from '../sites/localwp-site-control'
+import type { LocalWpControlOutcome } from '../sites/localwp-site-control'
 import type { SiteRunConfig, SiteRunContext } from '../sites/pipeline-contract'
 import { createMigrationProgressForwarder } from './site-stack-progress'
 import { failure, requireSite, type SiteResult } from './sites-result'
@@ -55,7 +57,7 @@ export function registerSiteStackHandlers(store: Store): void {
   ipcMain.handle('siteStacks:detect', async (_event, siteId: unknown) => {
     try {
       const site = requireSite(store, requireId(siteId))
-      return { ok: true, value: await detectLocalWpStack(createLocalWpHost(), site.path) }
+      return { ok: true, value: await detectSiteStack(site.path) }
     } catch (error) {
       return failure(error)
     }
@@ -65,11 +67,16 @@ export function registerSiteStackHandlers(store: Store): void {
     'siteStacks:resolveSocket',
     async (_event, siteId: unknown): Promise<SiteResult<string>> => {
       try {
+        const site = requireSite(store, requireId(siteId))
+        // A TCP stack has no socket to resolve, and must answer '' rather than probing LocalWP's
+        // socket directory for a site that was never in it.
+        if (site.localStack !== 'localwp') {
+          return { ok: true, value: '' }
+        }
         const host = createLocalWpHost()
         if (!isLocalWpSupported(host)) {
           return { ok: true, value: '' }
         }
-        const site = requireSite(store, requireId(siteId))
         return { ok: true, value: (await currentSocketIfRunning(host, site.path)) ?? '' }
       } catch (error) {
         return failure(error)
@@ -82,12 +89,16 @@ export function registerSiteStackHandlers(store: Store): void {
     async (_event, siteId: unknown): Promise<SiteResult<LocalWpControlOutcome>> => {
       try {
         const site = requireSite(store, requireId(siteId))
-        const outcome = await ensureSiteRunning(site.path)
-        // A LocalWP restart re-keys the socket directory, so persist whatever it resolved to;
-        // a stale stored socket is the usual cause of "Can't connect to local MySQL".
-        if (outcome.socketPath && outcome.socketPath !== site.dbSocket) {
-          store.updateSite(site.id, { dbSocket: outcome.socketPath })
-        }
+        const outcome = await providerFor(site.localStack).ensureRunning({
+          path: site.path,
+          localStack: site.localStack,
+          localWpRoot: site.localWpRoot
+        })
+        // Persist whatever transport the stack resolved to. LocalWP re-keys its socket directory on
+        // restart and agent-local can re-provision a site's user; a stale stored value is the usual
+        // cause of "Can't connect to local MySQL". The password is deliberately NOT persisted — it
+        // is fetched live when a run needs it.
+        persistResolvedTransport(store, site, outcome)
         return { ok: true, value: outcome }
       } catch (error) {
         return failure(error)
@@ -100,7 +111,14 @@ export function registerSiteStackHandlers(store: Store): void {
     async (_event, siteId: unknown): Promise<SiteResult<LocalWpControlOutcome>> => {
       try {
         const site = requireSite(store, requireId(siteId))
-        return { ok: true, value: await stopSite(site.path) }
+        return {
+          ok: true,
+          value: await providerFor(site.localStack).stop({
+            path: site.path,
+            localStack: site.localStack,
+            localWpRoot: site.localWpRoot
+          })
+        }
       } catch (error) {
         return failure(error)
       }
@@ -111,8 +129,15 @@ export function registerSiteStackHandlers(store: Store): void {
     'siteStacks:previewMigration',
     async (_event, args: unknown): Promise<SiteResult<LocalWpMigrationPlan>> => {
       try {
-        const request = buildMigrationRequest(store, args)
-        return { ok: true, value: await previewLocalWpMigration(request) }
+        const stack = readTargetStack(args)
+        const request = buildMigrationRequest(store, args, stack)
+        return {
+          ok: true,
+          value:
+            stack === 'agent-local'
+              ? planAgentLocalMigration(request)
+              : await previewLocalWpMigration(request)
+        }
       } catch (error) {
         return failure(error)
       }
@@ -125,11 +150,36 @@ export function registerSiteStackHandlers(store: Store): void {
     'siteStacks:runMigration',
     async (event, args: unknown): Promise<SiteResult<LocalWpMigrationResult>> => {
       try {
-        const request = buildMigrationRequest(store, args)
+        const stack = readTargetStack(args)
+        const request = buildMigrationRequest(store, args, stack)
         const site = requireSite(store, requireId(readField(args, 'siteId')))
+        const onStatus = createMigrationProgressForwarder(event.sender, site.id, [
+          request.adminPassword
+        ])
+        if (stack === 'agent-local') {
+          const result = await runAgentLocalMigration(request, {
+            onStatus,
+            phpVersion: site.phpVersion
+          })
+          if (result.ok) {
+            store.updateSite(site.id, {
+              localStack: 'agent-local',
+              localWpRoot: result.localWpRoot,
+              localDomain: result.domain,
+              // Empty socket is what selects the TCP branch downstream; never a placeholder path.
+              dbSocket: '',
+              dbUser: result.dbUser,
+              dbPort: result.dbPort,
+              ...(result.phpVersion ? { phpVersion: result.phpVersion } : {})
+            })
+            // No password is stored: agent-local mints it and hands it out on demand, so a copy here
+            // would only go stale the next time the site is re-provisioned.
+          }
+          return { ok: true, value: result }
+        }
         const result = await runLocalWpMigration(request, {
           importDatabase: (options) => importMigratedDatabase(store, site.id, options),
-          onStatus: createMigrationProgressForwarder(event.sender, site.id, [request.adminPassword])
+          onStatus
         })
         if (result.ok) {
           store.updateSite(site.id, {
@@ -207,19 +257,90 @@ async function importMigratedDatabase(
   await importLocalDatabase(context, config, options.dumpPath, options.databaseName)
 }
 
-function buildMigrationRequest(store: Store, args: unknown): LocalWpMigrationRequest {
-  if (!isLocalWpSupported(createLocalWpHost())) {
+/**
+ * Which stack a detection pass should report.
+ *
+ * agent-local is probed first because the layout heuristics cannot tell the two apart: agent-local
+ * imports a LocalWP site in place, docroot and all, so an `app/public` checkout managed by
+ * agent-local looks exactly like a LocalWP one on disk. Only agent-local's own registry knows.
+ */
+export async function detectSiteStack(sitePath: string): Promise<LocalWpStackDetection> {
+  const agentLocal = await providerFor('agent-local')
+    .detect(sitePath)
+    // A missing or wedged daemon must not stop LocalWP detection from answering.
+    .catch(() => null)
+  if (agentLocal?.stack === 'agent-local') {
+    return agentLocal
+  }
+  return detectLocalWpStack(createLocalWpHost(), sitePath)
+}
+
+/** Persists the transport a start resolved to, leaving the fields the stack did not report alone. */
+function persistResolvedTransport(store: Store, site: Site, outcome: LocalStackOutcome): void {
+  const updates: Partial<Site> = {}
+  if (outcome.socketPath) {
+    if (outcome.socketPath !== site.dbSocket) {
+      updates.dbSocket = outcome.socketPath
+    }
+  } else if (outcome.port || outcome.user) {
+    if (site.dbSocket) {
+      updates.dbSocket = ''
+    }
+    if (outcome.port && outcome.port !== site.dbPort) {
+      updates.dbPort = outcome.port
+    }
+    if (outcome.user && outcome.user !== site.dbUser) {
+      updates.dbUser = outcome.user
+    }
+  }
+  if (Object.keys(updates).length > 0) {
+    store.updateSite(site.id, updates)
+  }
+}
+
+/** The stack a migration targets. Absent means LocalWP, which is what every existing caller means. */
+function readTargetStack(args: unknown): SiteLocalStack {
+  const value = readField(args, 'stack')
+  if (value === undefined || value === null) {
+    return 'localwp'
+  }
+  if (!SITE_LOCAL_STACKS.some((stack) => stack === value)) {
+    throw new TypeError(`Unknown local stack: ${String(value)}`)
+  }
+  return value as SiteLocalStack
+}
+
+function buildMigrationRequest(
+  store: Store,
+  args: unknown,
+  stack: SiteLocalStack = 'localwp'
+): LocalWpMigrationRequest {
+  // LocalWP's platform gate is its own; agent-local reports unsupported through its provider so the
+  // renderer gets a structured result instead of a thrown string.
+  if (stack === 'localwp' && !isLocalWpSupported(createLocalWpHost())) {
     throw new Error(LOCALWP_UNSUPPORTED_PLATFORM)
   }
   const site = requireSite(store, requireId(readField(args, 'siteId')))
+  // LocalWP creates the WordPress install, so it needs admin credentials to seed it. agent-local
+  // adopts an install that already has its own users and never sees them — requiring them there
+  // would only be a form the user has to fill in for nothing.
+  const adminRequired = stack === 'localwp'
   return {
     sitePath: site.path,
     siteName: site.displayName || path.basename(site.path),
     domain: requireField(readField(args, 'domain'), 'domain'),
-    adminEmail: requireField(readField(args, 'adminEmail'), 'adminEmail'),
-    adminPassword: requireField(readField(args, 'adminPassword'), 'adminPassword'),
+    adminEmail: adminRequired
+      ? requireField(readField(args, 'adminEmail'), 'adminEmail')
+      : optionalField(readField(args, 'adminEmail')),
+    adminPassword: adminRequired
+      ? requireField(readField(args, 'adminPassword'), 'adminPassword')
+      : optionalField(readField(args, 'adminPassword')),
     force: readField(args, 'force') === true
   }
+}
+
+function optionalField(value: unknown): string {
+  return typeof value === 'string' && value.length <= MAX_FIELD_LENGTH ? value : ''
 }
 
 function readField(args: unknown, key: string): unknown {

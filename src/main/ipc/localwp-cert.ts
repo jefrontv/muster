@@ -10,7 +10,10 @@
 
 import { ipcMain } from 'electron'
 import type { LocalWpCertStatus, LocalWpCertTrustResult } from '../../shared/localwp-cert-types'
-import { getLocalWpCertStatus, trustLocalWpCert } from '../sites/localwp-cert-trust'
+import { SITE_LOCAL_STACKS, type SiteLocalStack } from '../../shared/site-types'
+import { providerFor } from '../sites/local-stack-provider'
+// Side-effect import: the agent-local provider registers itself with the registry on load.
+import '../sites/agent-local-site-control'
 import { failure, type SiteResult } from './sites-result'
 
 const LOCALWP_CERT_CHANNELS = ['localwpCert:status', 'localwpCert:trust'] as const
@@ -30,8 +33,9 @@ export function registerLocalWpCertHandlers(): void {
     'localwpCert:status',
     async (_event, args: unknown): Promise<SiteResult<LocalWpCertStatus>> => {
       try {
-        const input = (args ?? {}) as { domain?: unknown }
-        return { ok: true, value: await getLocalWpCertStatus(requireDomain(input.domain)) }
+        const input = (args ?? {}) as { domain?: unknown; stack?: unknown }
+        const domain = requireDomain(input.domain)
+        return { ok: true, value: await providerFor(readStack(input.stack)).certStatus(domain) }
       } catch (error) {
         return failure(error)
       }
@@ -42,13 +46,27 @@ export function registerLocalWpCertHandlers(): void {
     'localwpCert:trust',
     async (_event, args: unknown): Promise<SiteResult<LocalWpCertTrustResult>> => {
       try {
-        const input = (args ?? {}) as { domain?: unknown }
-        return { ok: true, value: await trustLocalWpCert(requireDomain(input.domain)) }
+        const input = (args ?? {}) as { domain?: unknown; stack?: unknown }
+        const domain = requireDomain(input.domain)
+        return { ok: true, value: await providerFor(readStack(input.stack)).certTrust(domain) }
       } catch (error) {
         return failure(error)
       }
     }
   )
+}
+
+/**
+ * Which stack owns this domain's certificate.
+ *
+ * The channel carries only a domain — it predates there being more than one stack — so the caller
+ * passes the site's stack alongside it. Absent means LocalWP, which is what every existing caller
+ * means, and keeps the renderer's channel names and call sites unchanged.
+ */
+function readStack(value: unknown): SiteLocalStack {
+  return SITE_LOCAL_STACKS.some((stack) => stack === value)
+    ? (value as SiteLocalStack)
+    : 'localwp'
 }
 
 function requireDomain(value: unknown): string {
