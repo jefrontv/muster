@@ -1,7 +1,7 @@
 // The planner behind the guided `muster://configure` setup: one read that answers "what can this
 // link still do for this site, and what is stopping each stage".
 //
-// Nothing here re-derives a judgement. The stack stage asks detectLocalWpStack, the import stage
+// Nothing here re-derives a judgement. The stack stage asks detectSiteStack, the import stage
 // asks buildSiteRunPlan/canStartRun — the very producers the real actions gate on — so the wizard
 // physically cannot offer a button the action itself would refuse. Ported from the ocsites flow,
 // where the same four questions were answered ad hoc at each prompt and drifted apart.
@@ -20,8 +20,8 @@ import type { LocalWpStackDetection } from '../../shared/site-stack-types'
 import type { Site } from '../../shared/site-types'
 import { requireSite } from '../ipc/sites-result'
 import type { Store } from '../persistence'
-import { detectLocalWpStack } from './localwp-detection'
-import { createLocalWpHost, LOCALWP_UNSUPPORTED_PLATFORM } from './localwp-host'
+import { detectSiteStack } from './local-stack-detection'
+import { LOCALWP_UNSUPPORTED_PLATFORM } from './localwp-host'
 import { defaultLocalDomain } from './site-bind-url'
 import { buildSiteRunPlan, canStartRun } from './site-run-plan'
 import { getSiteSecretPresence } from './site-secret-store'
@@ -40,6 +40,7 @@ const IMPORT_BLOCKED_REASON: Record<SiteRunBlockedReason, string> = {
 // Matches the wording localwp-migration-plan.ts refuses with, so the wizard and the migration
 // itself explain the same no-op the same way.
 const ALREADY_LOCALWP_REASON = 'This project is already a LocalWP site.'
+const ALREADY_AGENT_LOCAL_REASON = 'This project is already an Agent Local site.'
 
 export type SiteSetupPlanInput = {
   siteId: string
@@ -58,7 +59,9 @@ export async function buildSiteSetupPlan(
   // Both probes touch the machine (Local's config, the connector's API) and neither feeds the
   // other, so they run together rather than serialising the dialog's first paint.
   const [detection, clone] = await Promise.all([
-    detectLocalWpStack(createLocalWpHost(), site.path),
+    // Every stack, not just LocalWP: asking only LocalWP reported a folder agent-local already
+    // serves as unmanaged, so the wizard offered to set up a site that was already set up.
+    detectSiteStack(site.path),
     resolveCloneTargets(input.reponame)
   ])
 
@@ -117,10 +120,14 @@ function buildStackReadiness(
     suggestedDomain: site.localDomain.trim() || defaultLocalDomain(path.basename(site.path)),
     // `reason` is only a contract when the stage is closed, and the type does not promise
     // detection filled it in, so the platform message is the floor.
+    // Name the stack that actually owns it: "already a LocalWP site" was shown for agent-local
+    // folders too, which reads as a detection bug to anyone who knows their own setup.
     reason: !detection.supported
       ? detection.reason || LOCALWP_UNSUPPORTED_PLATFORM
       : alreadyLocalWp
-        ? ALREADY_LOCALWP_REASON
+        ? detection.stack === 'agent-local'
+          ? ALREADY_AGENT_LOCAL_REASON
+          : ALREADY_LOCALWP_REASON
         : ''
   }
 }

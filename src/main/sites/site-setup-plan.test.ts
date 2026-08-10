@@ -11,15 +11,15 @@ import {
 } from '../../shared/site-types'
 import type { Store } from '../persistence'
 
-const { detectLocalWpStack, resolveSiteSetupCloneTargets, getSiteSecretPresence } = vi.hoisted(
+const { detectSiteStack, resolveSiteSetupCloneTargets, getSiteSecretPresence } = vi.hoisted(
   () => ({
-    detectLocalWpStack: vi.fn(),
+    detectSiteStack: vi.fn(),
     resolveSiteSetupCloneTargets: vi.fn(),
     getSiteSecretPresence: vi.fn()
   })
 )
 
-vi.mock('./localwp-detection', () => ({ detectLocalWpStack }))
+vi.mock('./local-stack-detection', () => ({ detectSiteStack }))
 vi.mock('./site-setup-clone-targets', () => ({ resolveSiteSetupCloneTargets }))
 // Mocked for the seam, not just the electron dependency: "is an SSH password stored" is the input
 // that decides whether the import stage blocks.
@@ -105,7 +105,7 @@ function stageReason(
 
 beforeEach(() => {
   vi.clearAllMocks()
-  detectLocalWpStack.mockResolvedValue(detection())
+  detectSiteStack.mockResolvedValue(detection())
   resolveSiteSetupCloneTargets.mockResolvedValue(NO_CLONE_TARGETS)
   getSiteSecretPresence.mockReturnValue({ ssh: false, db: false })
 })
@@ -183,7 +183,7 @@ describe('buildSiteSetupPlan', () => {
   })
 
   it('closes the stack stage off macOS, where LocalWP cannot be driven at all', async () => {
-    detectLocalWpStack.mockResolvedValue(
+    detectSiteStack.mockResolvedValue(
       detection({ supported: false, reason: 'LocalWP integration is only available on macOS.' })
     )
 
@@ -204,7 +204,7 @@ describe('buildSiteSetupPlan', () => {
   })
 
   it('closes the stack stage when the checkout is already a LocalWP site', async () => {
-    detectLocalWpStack.mockResolvedValue(detection({ stack: 'localwp', registered: true }))
+    detectSiteStack.mockResolvedValue(detection({ stack: 'localwp', registered: true }))
 
     const plan = await buildSiteSetupPlan(storeStub(), {
       siteId: SITE_ID,
@@ -215,6 +215,36 @@ describe('buildSiteSetupPlan', () => {
     expect(stageState(plan.stages, 'stack')).toBe('unavailable')
     expect(stageReason(plan.stages, 'stack')).toBe('This project is already a LocalWP site.')
     expect(plan.stack).toMatchObject({ supported: true, alreadyLocalWp: true })
+  })
+
+  // The bug this pins: the planner asked only LocalWP, so a folder Agent Local already served came
+  // back `plain` and the wizard offered to set up a site that was already set up.
+  it('closes the stack stage when the checkout is already an Agent Local site', async () => {
+    detectSiteStack.mockResolvedValue(detection({ stack: 'agent-local', registered: true }))
+
+    const plan = await buildSiteSetupPlan(storeStub(), {
+      siteId: SITE_ID,
+      reponame: 'acme',
+      branch: 'main'
+    })
+
+    expect(stageState(plan.stages, 'stack')).toBe('unavailable')
+    // Naming the wrong stack here reads as a detection bug to anyone who knows their own setup.
+    expect(stageReason(plan.stages, 'stack')).toBe('This project is already an Agent Local site.')
+    expect(plan.stack).toMatchObject({ supported: true, alreadyLocalWp: true, stack: 'agent-local' })
+  })
+
+  it('reports the detected stack so the picker can open on it', async () => {
+    detectSiteStack.mockResolvedValue(detection({ stack: 'plain' }))
+
+    const plan = await buildSiteSetupPlan(storeStub(), {
+      siteId: SITE_ID,
+      reponame: 'acme',
+      branch: 'main'
+    })
+
+    expect(stageState(plan.stages, 'stack')).toBe('pending')
+    expect(plan.stack.stack).toBe('plain')
   })
 
   it('blocks the import with an actionable reason when the SSH password is missing', async () => {

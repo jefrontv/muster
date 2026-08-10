@@ -325,7 +325,7 @@ export function SiteSetupStackStage({
         <div className="ml-6.5 space-y-0.5">
           <p className="flex items-center gap-1.5 text-xs font-medium text-destructive">
             <TriangleAlert className="size-3.5 shrink-0" />
-            {strings.stackFailed}
+            {onAgentLocal ? strings.stackAgentLocalFailed : strings.stackFailed}
           </p>
           <p className="text-xs text-destructive">{failure}</p>
         </div>

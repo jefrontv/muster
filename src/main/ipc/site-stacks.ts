@@ -173,13 +173,13 @@ export function registerSiteStackHandlers(store: Store): void {
       try {
         const stack = readTargetStack(args)
         const request = buildMigrationRequest(store, args, stack)
-        return {
-          ok: true,
-          value:
-            stack === 'agent-local'
-              ? planAgentLocalMigration(request)
-              : await previewLocalWpMigration(request)
+        if (stack === 'agent-local') {
+          // The same docroot runMigration hands over, so the gate and the action agree about which
+          // folder has to contain WordPress.
+          const site = requireSite(store, requireId(readField(args, 'siteId')))
+          return { ok: true, value: planAgentLocalMigration(request, resolveSiteWpDir(site)) }
         }
+        return { ok: true, value: await previewLocalWpMigration(request) }
       } catch (error) {
         return failure(error)
       }

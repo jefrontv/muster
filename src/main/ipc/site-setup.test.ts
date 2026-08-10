@@ -32,7 +32,13 @@ const PLAN: SiteSetupPlan = {
   siteId: 'site-1',
   stages: [{ id: 'bind', state: 'done', reason: '' }],
   clone: { connectorConfigured: false, targets: [], error: '' },
-  stack: { supported: true, alreadyLocalWp: false, suggestedDomain: 'acme.local', reason: '' },
+  stack: {
+    supported: true,
+    alreadyLocalWp: false,
+    stack: 'plain',
+    suggestedDomain: 'acme.local',
+    reason: ''
+  },
   import: {
     ready: true,
     blockedBy: [],

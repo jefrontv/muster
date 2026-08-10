@@ -95,9 +95,15 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackLogLabel',
     'Setup progress'
   ),
+  // Named per stack: "LocalWP setup did not finish" over an Agent Local failure is simply wrong,
+  // and it is the line the user reads first when something breaks.
   stackFailed: translate(
     'auto.components.sites.SiteSetupContinuation.stackFailed',
     'LocalWP setup did not finish.'
+  ),
+  stackAgentLocalFailed: translate(
+    'auto.components.sites.SiteSetupContinuation.stackAgentLocalFailed',
+    'Agent Local setup did not finish.'
   ),
   stackRetry: translate('auto.components.sites.SiteSetupContinuation.stackRetry', 'Try again'),
   stackDomainLabel: translate(

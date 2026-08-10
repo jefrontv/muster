@@ -6,12 +6,11 @@
 
 import path from 'node:path'
 import { SITE_LOCAL_STACKS, type Site, type SiteLocalStack } from '../../shared/site-types'
-import type { LocalWpStackDetection } from '../../shared/site-stack-types'
 import type { Store } from '../persistence'
-import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
+import type { LocalStackOutcome } from '../sites/local-stack-provider'
 // Side-effect import: the agent-local provider registers itself with the registry on load.
 import '../sites/agent-local-site-control'
-import { detectLocalWpStack } from '../sites/localwp-detection'
+import { detectSiteStack } from '../sites/local-stack-detection'
 import {
   createLocalWpHost,
   isLocalWpSupported,
@@ -22,23 +21,9 @@ import { requireSite } from './sites-result'
 
 const MAX_FIELD_LENGTH = 256
 
-/**
- * Which stack a detection pass should report.
- *
- * agent-local is probed first because the layout heuristics cannot tell the two apart: agent-local
- * imports a LocalWP site in place, docroot and all, so an `app/public` checkout managed by
- * agent-local looks exactly like a LocalWP one on disk. Only agent-local's own registry knows.
- */
-export async function detectSiteStack(sitePath: string): Promise<LocalWpStackDetection> {
-  const agentLocal = await providerFor('agent-local')
-    .detect(sitePath)
-    // A missing or wedged daemon must not stop LocalWP detection from answering.
-    .catch(() => null)
-  if (agentLocal?.stack === 'agent-local') {
-    return agentLocal
-  }
-  return detectLocalWpStack(createLocalWpHost(), sitePath)
-}
+// Re-exported for the handlers that already import it from here; the detector itself moved to
+// sites/, because the setup planner needs it too and must not reach into an IPC module for it.
+export { detectSiteStack }
 
 /** Persists the transport a start resolved to, leaving the fields the stack did not report alone. */
 export function persistResolvedTransport(

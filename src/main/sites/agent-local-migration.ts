@@ -6,6 +6,7 @@
 // place at its own docroot and keeping a wp-config.php.agent-local.bak, so this module is mostly
 // about reporting the plan honestly and mapping the response onto Muster's site record.
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import type { LocalWpMigrationPlan, LocalWpMigrationResult } from '../../shared/site-stack-types'
 import type { LocalWpMigrationRequest } from './localwp-migration-plan'
@@ -59,22 +60,35 @@ function readString(record: Record<string, unknown> | null, key: string): string
  * explicitly matters: the renderer's confirmation step exists to warn about LocalWP deleting an
  * existing app/public, and showing that warning for a migration that cannot delete anything would
  * train the user to click through it.
+ *
+ * The one thing it must refuse is a folder with no WordPress in it. agent-local reads the database
+ * out of the docroot's wp-config.php, so a checkout that is only a theme or plugin repo — no core,
+ * no wp-load.php — fails inside the daemon partway through. The preview is the gate the renderer
+ * relies on to turn that into a message before anything runs, so it has to look at the same folder
+ * the run will hand over.
  */
-export function planAgentLocalMigration(request: LocalWpMigrationRequest): LocalWpMigrationPlan {
+export function planAgentLocalMigration(
+  request: LocalWpMigrationRequest,
+  sourcePath?: string
+): LocalWpMigrationPlan {
+  const source = sourcePath?.trim() || request.sitePath
+  const hasWordPress = existsSync(path.join(source, 'wp-load.php'))
   return {
-    ok: true,
-    blockedReason: '',
+    ok: hasWordPress,
+    blockedReason: hasWordPress
+      ? ''
+      : `No WordPress in ${source} — wp-load.php is missing. agent-local serves an install that already exists, so pull the site down from the server first, or point the WordPress subpath at the folder that holds wp-load.php.`,
     mode: 'migrate',
     sitePath: request.sitePath,
     domain: request.domain,
-    wordPressRoot: request.sitePath,
+    wordPressRoot: source,
     databaseName: '',
     databaseUser: '',
     appPublicEntries: [],
     moves: [],
-    edits: [path.join(request.sitePath, 'wp-config.php')],
+    edits: [path.join(source, 'wp-config.php')],
     steps: [
-      `Register ${request.sitePath} with agent-local as '${request.domain}'`,
+      `Register ${source} with agent-local as '${request.domain}'`,
       'Point wp-config.php at agent-local’s MariaDB (a .agent-local.bak copy is kept)',
       'Start the site and issue its HTTPS certificate'
     ]
@@ -90,7 +104,7 @@ export async function runAgentLocalMigration(
   options: AgentLocalMigrationOptions = {}
 ): Promise<AgentLocalMigrationOutcome> {
   const host = options.host ?? createAgentLocalHost()
-  const plan = planAgentLocalMigration(request)
+  const plan = planAgentLocalMigration(request, options.sourcePath)
   const log: string[] = []
   const report = (message: string): void => {
     log.push(message)
@@ -112,6 +126,12 @@ export async function runAgentLocalMigration(
 
   if (!isAgentLocalSupported(host)) {
     return failed(AGENT_LOCAL_UNSUPPORTED_PLATFORM)
+  }
+  // Refuse what the plan already refused, rather than letting the daemon discover it mid-import:
+  // the renderer previews before every run, but a caller that skips the preview must not get a
+  // half-registered site out of it.
+  if (!plan.ok) {
+    return failed(plan.blockedReason)
   }
   const source = options.sourcePath?.trim() || request.sitePath
   report(`Registering ${source} with agent-local…`)
