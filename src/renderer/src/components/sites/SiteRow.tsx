@@ -18,7 +18,8 @@ type SiteRowProps = {
 // to most rows while telling the user nothing. MAMP and LocalWP change how the site is run.
 const STACK_LABELS: Partial<Record<SiteSummary['site']['localStack'], string>> = {
   mamp: 'MAMP',
-  localwp: 'LocalWP'
+  localwp: 'LocalWP',
+  'agent-local': 'agent-local'
 }
 
 export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): React.JSX.Element {

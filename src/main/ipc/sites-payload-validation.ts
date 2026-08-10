@@ -3,6 +3,7 @@
 // so a compromised renderer cannot push a multi-megabyte string into orca-data.json, and unknown
 // keys are rejected outright rather than merged into a persisted record.
 
+import { SITE_LOCAL_STACKS } from '../../shared/site-types'
 import type { SiteEnvironment, SiteLocalStack } from '../../shared/site-types'
 
 const MAX_PATH_LENGTH = 4_096
@@ -32,7 +33,7 @@ export function isSiteSecretKind(value: unknown): value is 'ssh' | 'db' {
 }
 
 function isLocalStack(value: unknown): value is SiteLocalStack {
-  return value === 'plain' || value === 'mamp' || value === 'localwp'
+  return SITE_LOCAL_STACKS.some((stack) => stack === value)
 }
 
 const SITE_STRING_FIELDS = {

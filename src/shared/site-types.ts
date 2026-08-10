@@ -31,7 +31,15 @@ export type SiteToggleKey = SiteImportToggleKey | SiteDeployToggleKey
 
 export type SiteRunGroup = 'import' | 'deploy'
 
-export type SiteLocalStack = 'plain' | 'mamp' | 'localwp'
+export type SiteLocalStack = 'plain' | 'mamp' | 'localwp' | 'agent-local'
+
+/** Every stack a site can be set to, for validation and pickers. */
+export const SITE_LOCAL_STACKS: readonly SiteLocalStack[] = [
+  'plain',
+  'mamp',
+  'localwp',
+  'agent-local'
+]
 
 export const DEFAULT_SITE_ENVIRONMENT_NAME = 'main'
 export const DEFAULT_SITE_REMOTE_ROOT_PATH = 'public_html'
