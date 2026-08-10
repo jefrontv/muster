@@ -24,6 +24,14 @@ export type AgentLocalMigrationOptions = {
   onStatus?: (message: string) => void
   /** Defaults to the site's current PHP; agent-local picks its own when this is empty. */
   phpVersion?: string
+  /**
+   * The docroot to register, when WordPress is not at the site path itself.
+   *
+   * agent-local resolves the database from the docroot's wp-config.php, so handing it a repo root
+   * whose WordPress lives in `wp/` or `app/public/` fails with "missing wp-load.php". Muster
+   * already records that offset as `localWpRoot`; the caller resolves it and passes the result.
+   */
+  sourcePath?: string
 }
 
 export type AgentLocalMigrationOutcome = LocalWpMigrationResult & {
@@ -105,13 +113,14 @@ export async function runAgentLocalMigration(
   if (!isAgentLocalSupported(host)) {
     return failed(AGENT_LOCAL_UNSUPPORTED_PLATFORM)
   }
-  report(`Registering ${request.sitePath} with agent-local…`)
+  const source = options.sourcePath?.trim() || request.sitePath
+  report(`Registering ${source} with agent-local…`)
   const response = await requestWithDaemon(
     host,
     'POST',
     '/import',
     {
-      source: request.sitePath,
+      source,
       name: request.siteName,
       domain: request.domain,
       ...(options.phpVersion ? { php_version: options.phpVersion } : {})

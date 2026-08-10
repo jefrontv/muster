@@ -75,6 +75,49 @@ describe('runAgentLocalMigration', () => {
     expect(JSON.stringify(result)).not.toContain('secret')
   })
 
+  it('registers the docroot, not the repo root', async () => {
+    // agent-local reads wp-config.php from whatever it is given, so a repo root whose WordPress
+    // lives in `wp/` fails with "missing wp-load.php" — which is exactly what happened live.
+    const sent: unknown[] = []
+    const recording: AgentLocalHost = {
+      platform: 'darwin',
+      homeDir: '/home/test',
+      readToken: async () => 'token',
+      request: async (_method, _path, body) => {
+        sent.push(body)
+        return importResponse
+      },
+      spawnDaemon: async () => undefined,
+      sleep: async () => undefined
+    }
+
+    await runAgentLocalMigration(request(), {
+      host: recording,
+      sourcePath: '/Sites/acme/wp'
+    })
+
+    expect((sent[0] as { source: string }).source).toBe('/Sites/acme/wp')
+  })
+
+  it('falls back to the site path when there is no subpath', async () => {
+    const sent: unknown[] = []
+    const recording: AgentLocalHost = {
+      platform: 'darwin',
+      homeDir: '/home/test',
+      readToken: async () => 'token',
+      request: async (_method, _path, body) => {
+        sent.push(body)
+        return importResponse
+      },
+      spawnDaemon: async () => undefined,
+      sleep: async () => undefined
+    }
+
+    await runAgentLocalMigration(request(), { host: recording })
+
+    expect((sent[0] as { source: string }).source).toBe('/Sites/acme')
+  })
+
   it('reports the daemon error instead of throwing', async () => {
     const failure = await runAgentLocalMigration(request(), {
       host: host({ ok: false, status: 500, error: 'source path has no wp-config.php' })

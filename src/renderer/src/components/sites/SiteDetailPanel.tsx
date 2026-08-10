@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
+import { SiteLocalStackControl } from './SiteLocalStackControl'
 import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
 import { SiteDbSnapshotsSection } from './SiteDbSnapshotsSection'
 import { SiteRunHistory } from './SiteRunHistory'
@@ -96,6 +97,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         <h3 className="text-xs font-medium text-muted-foreground">
           {translate('auto.components.sites.SiteDetailPanel.localSection', 'Local environment')}
         </h3>
+        <SiteLocalStackControl summary={summary} />
         <div className="grid gap-3 sm:grid-cols-2">
           {getLocalFields().map((field) => (
             <div key={field.key} className="space-y-1">

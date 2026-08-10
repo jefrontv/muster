@@ -31,6 +31,7 @@ import {
 } from '../sites/localwp-migration'
 import type { LocalWpControlOutcome } from '../sites/localwp-site-control'
 import type { SiteRunConfig, SiteRunContext } from '../sites/pipeline-contract'
+import { resolveSiteWpDir } from '../sites/site-run-config'
 import {
   buildMigrationRequest,
   detectSiteStack,
@@ -199,7 +200,9 @@ export function registerSiteStackHandlers(store: Store): void {
         if (stack === 'agent-local') {
           const result = await runAgentLocalMigration(request, {
             onStatus,
-            phpVersion: site.phpVersion
+            phpVersion: site.phpVersion,
+            // The docroot, not the repo root: agent-local reads wp-config.php from what it is given.
+            sourcePath: resolveSiteWpDir(site)
           })
           if (result.ok) {
             store.updateSite(site.id, {
