@@ -2129,7 +2129,8 @@ export default function AutomationsPage(): React.JSX.Element {
   }, [closeAutomationsPage, createOpen, deleteTarget, externalDeleteTarget])
 
   return (
-    <main className="relative flex h-full min-h-0 flex-col bg-background text-foreground">
+    // border-l: as on SitesPage — the shared background otherwise runs straight into the sidebar.
+    <main className="relative flex h-full min-h-0 flex-col border-l border-border bg-background text-foreground">
       <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-1.5 md:px-8">
         <div className="flex items-center gap-2">
           <Tooltip>

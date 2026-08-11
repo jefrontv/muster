@@ -8,6 +8,7 @@ import {
   ShieldQuestion,
   Square
 } from 'lucide-react'
+import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -80,6 +81,9 @@ export function NativeChatComposerActions({
   onAttachTask,
   activeCollabProjectId
 }: NativeChatComposerActionsProps): React.JSX.Element {
+  // One slot for every picker on this bar (thought level / model / access), so opening one closes
+  // whichever was open instead of stacking a second panel over it.
+  const [openPicker, setOpenPicker] = React.useState<string | null>(null)
   const dictationLabel = !dictationConfigured
     ? translate(
         'auto.components.native-chat.composer.setUpDictation',
@@ -124,9 +128,14 @@ export function NativeChatComposerActions({
           surface={sessionOptionsSurface}
           snapshot={sessionOptionsSnapshot}
           isWorking={isWorking}
+          openPicker={openPicker}
+          onOpenPickerChange={setOpenPicker}
         />
         {onSetFullAccess ? (
-          <DropdownMenu>
+          <DropdownMenu
+            open={openPicker === 'access'}
+            onOpenChange={(open) => setOpenPicker(open ? 'access' : null)}
+          >
             <DropdownMenuTrigger asChild>
               <button
                 type="button"

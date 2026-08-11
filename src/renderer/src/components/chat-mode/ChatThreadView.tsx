@@ -13,6 +13,7 @@ import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
 import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-option-relaunch'
 import { useAppStore } from '@/store'
 import NativeChatView, { type NativeChatTransport } from '@/components/native-chat/NativeChatView'
+import { seedTaskAttachmentsForTab } from '@/components/native-chat/use-native-chat-task-attachments'
 import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
 import type { NativeChatPermissionBehavior } from '@/components/native-chat/native-chat-view-types'
 
@@ -199,6 +200,20 @@ export function ChatThreadView({
       setFullAccess
     ]
   )
+
+  // A task-linked thread lands with the task already on the composer, so the user's own first
+  // message carries the AC# reference. Seeded per tab because the pane id does not exist yet.
+  const linkedTask = thread.activeCollabTask
+  const seededTaskRef = useRef('')
+  useEffect(() => {
+    if (!session || !linkedTask || seededTaskRef.current === session.tabId) {
+      return
+    }
+    seededTaskRef.current = session.tabId
+    seedTaskAttachmentsForTab(session.tabId, [
+      { taskId: linkedTask.taskId, projectId: linkedTask.projectId, name: thread.title }
+    ])
+  }, [session, linkedTask, thread.title])
 
   // Draft-first landing: the hero stores the thread's opening prompt, delivered
   // here exactly once as soon as the stream session is up.

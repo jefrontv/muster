@@ -300,7 +300,7 @@ describe('SidebarNav', () => {
     expect(mocks.openSitesPage).toHaveBeenCalledTimes(1)
   })
 
-  it('sizes Sites like the other nav rows and separates it with a hairline', async () => {
+  it('sizes Sites like the other nav rows and leads the page list', async () => {
     const container = await renderSidebarNav()
 
     const sites = getButtonByText(container, 'Sites')
@@ -308,13 +308,32 @@ describe('SidebarNav', () => {
     expect(sites.className).toContain('h-8')
     expect(automations.className).toContain('h-8')
 
+    // Sites leads the stack: it is the row users reach for most, so it sits at the top rather than
+    // below Tasks/Automations behind a divider.
+    const tasks = getButtonByText(container, 'Tasks')
+    expect(sites.compareDocumentPosition(tasks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      sites.compareDocumentPosition(automations) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  it('isolates Search below the hairline instead of grouping it with the pages', async () => {
+    const container = await renderSidebarNav()
+
     const separator = container.querySelector('[role="separator"]')
-    expect(separator).not.toBeNull()
     if (!separator) {
-      throw new Error('expected Sites hairline separator')
+      throw new Error('expected the nav hairline separator')
     }
-    // Why: separator must sit above Sites so the Sites row is visually grouped off Tasks/Automations.
-    expect(separator.compareDocumentPosition(sites) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // Everything above the rule is a destination; Search is an action, and the rule is what stops
+    // the two reading as one list.
+    const sites = getButtonByText(container, 'Sites')
+    // By label, not text: the row also renders its shortcut key caps.
+    const search = container.querySelector('[aria-label="Search worktrees and browser tabs"]')
+    if (!search) {
+      throw new Error('expected the Search row')
+    }
+    expect(separator.compareDocumentPosition(sites) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    expect(separator.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows the Automations entry by default for older settings', () => {

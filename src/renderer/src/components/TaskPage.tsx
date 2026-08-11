@@ -7908,7 +7908,9 @@ export default function TaskPage(): React.JSX.Element {
   })
 
   return (
-    <div className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-background text-foreground">
+    // border-l: shares a background with the sidebar, so without it the page's first column reads
+    // as more sidebar. Matches SitesPage and AutomationsPage.
+    <div className="relative flex h-full min-h-0 flex-1 overflow-hidden border-l border-border bg-background text-foreground">
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Why: pt-1.5 (6px) aligns this 32px icon cluster's center with the sidebar Tasks row, 22px below the titlebar.
             ActiveCollab is exempt: its surface is a full-bleed list + side panel with its own

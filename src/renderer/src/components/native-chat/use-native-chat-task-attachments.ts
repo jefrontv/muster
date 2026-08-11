@@ -59,8 +59,40 @@ export function useNativeChatTaskAttachments(scopeKey: string): {
 
 const taskAttachmentCache = new Map<string, NativeChatTaskAttachment[]>()
 
+/**
+ * Chips waiting for a composer that does not exist yet, keyed by tab.
+ *
+ * "Discuss in chat" knows the task before the thread has a session, let alone a pane, so it cannot
+ * write to the scope cache directly — scope keys are `<tabId>:<paneId>` and the pane id is assigned
+ * on mount. The first composer to open on that tab claims the seed.
+ */
+const pendingTaskAttachmentsByTabId = new Map<string, NativeChatTaskAttachment[]>()
+
+export function seedTaskAttachmentsForTab(
+  tabId: string,
+  attachments: readonly NativeChatTaskAttachment[]
+): void {
+  if (attachments.length === 0) {
+    pendingTaskAttachmentsByTabId.delete(tabId)
+    return
+  }
+  pendingTaskAttachmentsByTabId.set(tabId, [...attachments])
+}
+
 function readTaskAttachmentCache(scopeKey: string): NativeChatTaskAttachment[] {
-  return [...(taskAttachmentCache.get(scopeKey) ?? [])]
+  const cached = taskAttachmentCache.get(scopeKey)
+  if (cached) {
+    return [...cached]
+  }
+  // Claimed once: a chip the user removes must not come back when the composer remounts.
+  const tabId = scopeKey.split(':')[0] ?? ''
+  const seeded = pendingTaskAttachmentsByTabId.get(tabId)
+  if (!seeded) {
+    return []
+  }
+  pendingTaskAttachmentsByTabId.delete(tabId)
+  writeTaskAttachmentCache(scopeKey, seeded)
+  return [...seeded]
 }
 
 function writeTaskAttachmentCache(

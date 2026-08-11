@@ -1,46 +1,18 @@
-// "Discuss in chat": spins up a linked chat thread for an ActiveCollab task —
-// lands in the workspace bound to the task's project (standalone otherwise),
-// seeds the opening prompt with the task brief, and jumps to Chat view.
+// "Discuss in chat": opens a linked chat thread for an ActiveCollab task — lands in the workspace
+// bound to the task's project (standalone otherwise), attaches the task, and jumps to Chat view.
+// It deliberately sends nothing; the opening message is the user's to write.
 
 import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
-import { formatActiveCollabTaskReference } from '@/components/native-chat/native-chat-activecollab-references'
 import { useAppStore } from '@/store'
 
-const BODY_EXCERPT_MAX = 600
-
-/** ActiveCollab task bodies are HTML-only; the seed prompt wants plain text. */
-export function activeCollabBodyExcerpt(bodyHtml: string, max = BODY_EXCERPT_MAX): string {
-  const text = bodyHtml
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
-}
-
-export function buildTaskDiscussionPrompt(task: ActiveCollabTask): string {
-  const excerpt = activeCollabBodyExcerpt(task.bodyHtml)
-  return [
-    `Let's work on ActiveCollab task AC#${task.id} — "${task.name}" (project: ${task.projectName}).`,
-    excerpt ? `Task brief:\n${excerpt}` : null,
-    'Read the brief, then tell me how you would approach it before changing anything.',
-    // Bracketed reference line: tells the agent how to resolve the id through
-    // the ActiveCollab MCP; the chat surface strips it (the chip carries it).
-    formatActiveCollabTaskReference({
-      taskId: task.id,
-      projectId: task.projectId,
-      name: task.name
-    })
-  ]
-    .filter((part): part is string => part !== null)
-    .join('\n\n')
-}
-
+/**
+ * Opens a chat thread for a task with the task attached, and sends nothing.
+ *
+ * It used to seed the thread's first message, which ChatThreadView fires the instant the stream
+ * session is up — so pressing "Discuss in chat" committed the user to a generated prompt and a
+ * running agent before they had read anything. The task now arrives the way the composer's own task
+ * picker delivers one: as a chip, carrying the AC# reference into whatever the user does send.
+ */
 export async function discussTaskInChat(task: ActiveCollabTask): Promise<void> {
   const store = useAppStore.getState()
   const workspace =
@@ -52,7 +24,6 @@ export async function discussTaskInChat(task: ActiveCollabTask): Promise<void> {
   await store.updateChatThread(thread.id, {
     activeCollabTask: { projectId: task.projectId, taskId: task.id }
   })
-  store.setChatThreadFirstMessage(thread.id, buildTaskDiscussionPrompt(task))
   store.setActiveChatThread(thread.id)
   store.setActiveView('chat')
 }

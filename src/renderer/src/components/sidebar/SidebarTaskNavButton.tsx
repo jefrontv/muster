@@ -210,21 +210,6 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
           <span className="flex-1">
             {translate('auto.components.sidebar.SidebarNav.fee535205b', 'Tasks')}
           </span>
-          {activeCollabUnreadTotal > 0 ? (
-            // Why not inside the hover-only shortcut strip: the whole point is to be visible
-            // without hovering. Rendered only above zero — a "0" badge is noise that trains the
-            // eye to ignore the spot where a real count will appear.
-            <span
-              className="ml-1 shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary"
-              aria-label={translate(
-                'auto.components.sidebar.SidebarNav.activeCollabUnread',
-                '{{value0}} unread ActiveCollab changes',
-                { value0: String(activeCollabUnreadTotal) }
-              )}
-            >
-              {activeCollabUnreadTotal > 9 ? '9+' : activeCollabUnreadTotal}
-            </span>
-          ) : null}
           <span className="hidden items-center gap-1 group-hover:flex group-focus-within:flex">
             {visibleTaskProviders.includes('github') ? (
               <TaskProviderShortcut
@@ -275,6 +260,25 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
               </TaskProviderShortcut>
             ) : null}
           </span>
+          {activeCollabUnreadTotal > 0 ? (
+            // Why not inside the hover-only shortcut strip: the whole point is to be visible
+            // without hovering. Rendered only above zero — a "0" badge is noise that trains the
+            // eye to ignore the spot where a real count will appear.
+            //
+            // Why last: it used to sit before the strip, so revealing the strip on hover pushed the
+            // count sideways. Pinned to the end, the flex-1 label absorbs the strip's width and the
+            // badge does not move.
+            <span
+              className="ml-1 shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary"
+              aria-label={translate(
+                'auto.components.sidebar.SidebarNav.activeCollabUnread',
+                '{{value0}} unread ActiveCollab changes',
+                { value0: String(activeCollabUnreadTotal) }
+              )}
+            >
+              {activeCollabUnreadTotal > 9 ? '9+' : activeCollabUnreadTotal}
+            </span>
+          ) : null}
         </button>
       </ContextMenuTrigger>
       <HideTaskSidebarMenu onHide={hideTasksButton} />

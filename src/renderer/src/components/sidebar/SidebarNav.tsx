@@ -163,11 +163,32 @@ const SidebarNav = React.memo(function SidebarNav() {
       data-contextual-tour-target="sidebar-navigation"
     >
       {/* px-1/pt-1 on top of the nav's px-2/pt-2 lands the toggle at the same
-          12px inset the chat sidebar's p-3 gives it — no jump on mode switch. */}
-      <div className="px-1 pt-1 pb-1 empty:hidden">
+          12px inset the chat sidebar's p-3 gives it — no jump on mode switch.
+          pb-2.5 + the parent's gap-0.5 (2px) makes the gap below 12px too, matching both the
+          inset above and the chat sidebar's gap-3 under its own copy of this toggle. */}
+      <div className="px-1 pt-1 pb-2.5 empty:hidden">
         <ChatModeToggle mode="code" />
       </div>
       <SetupGuideSidebarEntry />
+      <button
+        type="button"
+        onClick={openSitesPage}
+        aria-current={sitesActive ? 'page' : undefined}
+        className={cn(
+          SIDEBAR_NAV_ITEM_CLASS,
+          sitesActive
+            ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
+            : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+        )}
+      >
+        <Globe
+          className={cn('size-4 shrink-0', !sitesActive && 'text-worktree-sidebar-foreground/30')}
+          strokeWidth={sitesActive ? 2.25 : 1.75}
+        />
+        <span className="flex-1">
+          {translate('auto.components.sidebar.SidebarNav.sites', 'Sites')}
+        </span>
+      </button>
       <SidebarTaskNavButton />
       {showAutomationsButton ? (
         <ContextMenu>
@@ -228,31 +249,12 @@ const SidebarNav = React.memo(function SidebarNav() {
           ) : null}
         </button>
       ) : null}
-      {/* Why: Sites is a separate product surface from Tasks/Automations — hairline + gap so it
-          doesn't read as another row in the same stack. */}
+      {/* Why: Search is an action, not a destination — the hairline separates it from the stack of
+          pages above so the two don't read as one list. */}
       <div
         role="separator"
         className="mx-1 mt-1.5 mb-1 border-t border-worktree-sidebar-border/70"
       />
-      <button
-        type="button"
-        onClick={openSitesPage}
-        aria-current={sitesActive ? 'page' : undefined}
-        className={cn(
-          SIDEBAR_NAV_ITEM_CLASS,
-          sitesActive
-            ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-            : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
-        )}
-      >
-        <Globe
-          className={cn('size-4 shrink-0', !sitesActive && 'text-worktree-sidebar-foreground/30')}
-          strokeWidth={sitesActive ? 2.25 : 1.75}
-        />
-        <span className="flex-1">
-          {translate('auto.components.sidebar.SidebarNav.sites', 'Sites')}
-        </span>
-      </button>
       <button
         type="button"
         onClick={() => openModal('worktree-palette')}

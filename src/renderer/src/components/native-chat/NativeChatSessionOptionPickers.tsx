@@ -32,6 +32,15 @@ export type NativeChatSessionOptionPickersProps = {
   surface: SessionOptionsSurface | null
   snapshot: SessionOptionDescriptor[]
   isWorking: boolean
+  /**
+   * The one composer picker allowed to be open, shared with the Full access menu next door.
+   *
+   * These were independent uncontrolled menus, so a second could open over the first and leave two
+   * panels stacked on screen. Routing them through a single slot makes "only one" structural rather
+   * than something each menu has to remember to do.
+   */
+  openPicker?: string | null
+  onOpenPickerChange?: (picker: string | null) => void
 }
 
 const CATEGORY_ORDER: Record<string, number> = {
@@ -222,9 +231,18 @@ function runSurfaceCall(
 function NativeChatSessionOptionPickersInner({
   surface,
   snapshot,
-  isWorking
+  isWorking,
+  openPicker,
+  onOpenPickerChange
 }: NativeChatSessionOptionPickersProps): React.JSX.Element | null {
   const [pendingId, setPendingId] = useState<string | null>(null)
+  // Uncontrolled when no slot is supplied, so a caller that does not care keeps the old behaviour.
+  const menuProps = (
+    id: string
+  ): { open?: boolean; onOpenChange?: (open: boolean) => void } =>
+    onOpenPickerChange
+      ? { open: openPicker === id, onOpenChange: (open) => onOpenPickerChange(open ? id : null) }
+      : {}
   const model = snapshot.find((descriptor) => descriptor.category === 'model')
   const options = sortedOptions(snapshot)
   if (!surface || !model) {
@@ -249,7 +267,7 @@ function NativeChatSessionOptionPickersInner({
   return (
     <div className="flex min-w-0 items-center gap-0.5">
       {options.length > 0 ? (
-        <DropdownMenu>
+        <DropdownMenu {...menuProps('options')}>
           <PickerTrigger
             label={nativeChatOptionsPillLabel(options)}
             tooltipLabel={optionsTooltip}
@@ -279,7 +297,7 @@ function NativeChatSessionOptionPickersInner({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
-      <DropdownMenu>
+      <DropdownMenu {...menuProps('model')}>
         <PickerTrigger
           label={nativeChatModelPillLabel(model)}
           tooltipLabel={modelTooltip}
