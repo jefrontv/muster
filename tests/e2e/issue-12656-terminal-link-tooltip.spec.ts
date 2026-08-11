@@ -25,8 +25,8 @@ type TooltipState = {
   paneBottom: number
   terminalBottom: number
   tooltipTop: number
+  tooltipBottom: number
   tooltipHeight: number
-  reserveHeight: number
 }
 
 async function locateUrl(page: Page, url: string): Promise<LinkProbe | null> {
@@ -98,7 +98,6 @@ async function readTooltipState(page: Page, tabId: string): Promise<TooltipState
     const paneRect = pane.container.getBoundingClientRect()
     const terminalRect = pane.terminal.element?.parentElement?.getBoundingClientRect()
     const tooltipRect = pane.linkTooltip.getBoundingClientRect()
-    const reserveHeight = tooltipRect.height
 
     return {
       display: pane.linkTooltip.style.display,
@@ -108,8 +107,8 @@ async function readTooltipState(page: Page, tabId: string): Promise<TooltipState
       paneBottom: paneRect.bottom,
       terminalBottom: terminalRect?.bottom ?? 0,
       tooltipTop: tooltipRect.top,
-      tooltipHeight: tooltipRect.height,
-      reserveHeight
+      tooltipBottom: tooltipRect.bottom,
+      tooltipHeight: tooltipRect.height
     }
   }, tabId)
 }
@@ -119,7 +118,7 @@ async function captureProof(page: Page, testInfo: TestInfo, name: string): Promi
 }
 
 test.describe('Issue #12656 terminal link tooltip', () => {
-  test('clears hover state on window blur and reserves the tooltip strip', async ({
+  test('clears hover state on window blur and overlays the tooltip strip', async ({
     orcaPage
   }, testInfo) => {
     await waitForSessionReady(orcaPage)
@@ -160,16 +159,12 @@ test.describe('Issue #12656 terminal link tooltip', () => {
     const hovered = await readTooltipState(orcaPage, probe.tabId)
     expect(hovered.text).toContain(url)
     expect(hovered.tooltipHeight).toBeGreaterThan(0)
-    expect(hovered.tooltipTop).toBeGreaterThanOrEqual(hovered.terminalBottom - 1)
-    // Why: bound the gap on both sides. A lower bound alone also passes when the
-    // reserve var fails to resolve and .xterm-container collapses to height:auto,
-    // which leaves a huge gap and an undersized terminal.
-    expect(hovered.paneBottom - hovered.terminalBottom).toBeGreaterThanOrEqual(
-      hovered.reserveHeight - 1
-    )
-    expect(hovered.paneBottom - hovered.terminalBottom).toBeLessThanOrEqual(
-      hovered.reserveHeight + 1
-    )
+    // Why: the terminal must reach the pane's bottom edge. Any reserved strip
+    // here reads as dead space above the status bar and costs the PTY a row.
+    expect(Math.abs(hovered.paneBottom - hovered.terminalBottom)).toBeLessThanOrEqual(1)
+    // The tooltip overlays that final row on hover instead of displacing it.
+    expect(hovered.tooltipTop).toBeLessThan(hovered.terminalBottom)
+    expect(Math.abs(hovered.tooltipBottom - hovered.paneBottom)).toBeLessThanOrEqual(1)
     await captureProof(orcaPage, testInfo, 'issue-12656-fixed-hover.png')
 
     await orcaPage.evaluate(() => window.dispatchEvent(new Event('blur')))
@@ -178,8 +173,8 @@ test.describe('Issue #12656 terminal link tooltip', () => {
       .toMatchObject({ display: 'none', currentLinkText: null, cursor: 'text' })
     await captureProof(orcaPage, testInfo, 'issue-12656-fixed-after-blur.png')
 
-    // Keep the output assertion adjacent to the visual state checks so the
-    // reserved strip cannot hide the final terminal line without detection.
+    // Keep the output assertion adjacent to the visual state checks so a
+    // dismissed tooltip cannot leave the final terminal line hidden.
     await expect.poll(() => getTerminalContent(orcaPage)).toContain(url)
   })
 })

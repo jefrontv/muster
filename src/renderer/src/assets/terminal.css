@@ -6,8 +6,8 @@
   position: relative;
 }
 
-/* Why: .pane-manager-root matches no live element, so a var declared there
-   never resolves and every calc() using it is dropped. Keep it on :root. */
+/* Why on :root: `.pane-manager-root` matches no live element, so a var declared
+   there never resolves and every calc() using it is dropped. */
 :root {
   --orca-terminal-link-tooltip-height: 25px;
 }
@@ -495,14 +495,15 @@
 
 /* Baseline xterm-container layout — padding is driven by CSS custom properties
    so Ghostty-imported window-padding-x/y can be applied without inline styles.
-   The fallback 4px preserves the legacy default. */
+   The fallback is 0: unset means the terminal sits flush to the pane edges. */
 .xterm-container {
   box-sizing: border-box;
   position: relative;
-  width: calc(100% - var(--pane-padding-x, 4px));
-  height: calc(100% - var(--pane-padding-y, 4px) - var(--orca-terminal-link-tooltip-height, 25px));
-  margin-top: var(--pane-padding-y, 4px);
-  margin-left: var(--pane-padding-x, 4px);
+  /* Why doubled: the margin insets one side, so the width/height must lose the
+     padding twice or the pane keeps a gutter on top/left and none on bottom/right. */
+  width: calc(100% - var(--pane-padding-x, 0px) * 2);
+  height: calc(100% - var(--pane-padding-y, 0px) * 2);
+  margin: var(--pane-padding-y, 0px) var(--pane-padding-x, 0px);
 }
 
 /* When a pane has a title, shift the terminal content down to make room.
@@ -511,12 +512,13 @@
    same amount to prevent overflow/clipping. */
 .pane[data-has-title] .xterm-container {
   margin-top: var(--orca-pane-title-height);
-  height: calc(
-    100% - var(--orca-pane-title-height) - var(--orca-terminal-link-tooltip-height, 25px)
-  ); /* match margin-top and the tooltip reserve */
+  /* Title replaces the top inset; the bottom one still applies. */
+  height: calc(100% - var(--orca-pane-title-height) - var(--pane-padding-y, 0px));
 }
 
-/* Ghostty-style URL hover: glued to the pane's true bottom-left corner. */
+/* Ghostty-style URL hover: glued to the pane's true bottom-left corner. Why: it
+   overlays the last row on hover rather than reserving a strip — a permanent
+   reserve left dead space under every pane and shrank the PTY by a row. */
 .pane-link-tooltip {
   position: absolute;
   box-sizing: border-box;
