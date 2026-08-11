@@ -44,6 +44,32 @@ export type AgentLocalMigrationOutcome = LocalWpMigrationResult & {
   phpVersion: string
 }
 
+/**
+ * Does this `/import` failure mean "the old database is not reachable" rather than "the folder is
+ * wrong"?
+ *
+ * Only the first is worth retrying without the database. A missing wp-load.php or a domain clash is
+ * a real refusal and must keep failing — silently attaching there would register a site the user
+ * never asked for. The daemon reports the copy step verbatim, e.g.
+ *   copy database acme_wp from 127.0.0.1:3306 as root: dump: exit status 2
+ *   (mariadb-dump: Got error: 2002: "Can't connect to server on '127.0.0.1' (36)")
+ */
+export function isSourceDatabaseUnreachable(message: string): boolean {
+  const text = message.toLowerCase()
+  if (!text.includes('copy database') && !text.includes('dump')) {
+    return false
+  }
+  return (
+    text.includes("can't connect") ||
+    text.includes('cannot connect') ||
+    text.includes('connection refused') ||
+    text.includes('unknown database') ||
+    text.includes('access denied') ||
+    text.includes('2002') ||
+    text.includes('2003')
+  )
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -91,6 +117,9 @@ export function planAgentLocalMigration(
       ? [
           `Register ${source} with agent-local as '${request.domain}'`,
           'Point wp-config.php at agent-local’s MariaDB (a .agent-local.bak copy is kept)',
+          // Honest about the fallback: the old database is copied when its server answers, and the
+          // registration goes ahead without it when it does not.
+          'Copy the existing local database if its server is reachable, otherwise start empty',
           'Start the site and issue its HTTPS certificate'
         ]
       : [
@@ -138,23 +167,41 @@ export async function runAgentLocalMigration(
   // `/attach` is the daemon's own answer for that: serve the folder against a fresh empty database
   // and let the server import fill it. Picking the wrong one fails inside the daemon partway.
   const attaching = plan.mode === 'create'
+  const register = (
+    endpoint: '/attach' | '/import'
+  ): ReturnType<typeof requestWithDaemon> =>
+    requestWithDaemon(
+      host,
+      'POST',
+      endpoint,
+      {
+        ...(endpoint === '/attach' ? { dir: source } : { source }),
+        name: request.siteName,
+        domain: request.domain,
+        ...(options.phpVersion ? { php_version: options.phpVersion } : {})
+      },
+      { timeoutMs: AGENT_LOCAL_START_TIMEOUT_MS }
+    )
+
   report(
     attaching
       ? `Serving ${source} with agent-local…`
       : `Registering ${source} with agent-local…`
   )
-  const response = await requestWithDaemon(
-    host,
-    'POST',
-    attaching ? '/attach' : '/import',
-    {
-      ...(attaching ? { dir: source } : { source }),
-      name: request.siteName,
-      domain: request.domain,
-      ...(options.phpVersion ? { php_version: options.phpVersion } : {})
-    },
-    { timeoutMs: AGENT_LOCAL_START_TIMEOUT_MS }
-  )
+  let response = await register(attaching ? '/attach' : '/import')
+  let databaseCopied = !attaching
+
+  // Adopting the old database is a convenience, not a precondition. LocalWP being uninstalled (or
+  // simply not running) makes the copy fail with a connection error, and that used to abort the
+  // whole switch — leaving the user on a stack that no longer exists with no way off it. Serving
+  // the files is the part that matters; the database comes back on the next server import.
+  if (!response.ok && !attaching && isSourceDatabaseUnreachable(describeAgentLocalResponse(response))) {
+    report(
+      'Could not copy the existing local database — registering the files without it. Re-run the import to bring the database back.'
+    )
+    response = await register('/attach')
+    databaseCopied = false
+  }
   if (!response.ok) {
     return failed(describeAgentLocalResponse(response))
   }
@@ -162,15 +209,18 @@ export async function runAgentLocalMigration(
   const wpDir = readString(data, 'wp_dir')
   const db = asRecord(data?.db)
   report(`agent-local is serving ${request.domain}.`)
+  const slug = readString(data, 'slug') || request.siteName
   return {
     ok: true,
-    message: `Site registered with agent-local as '${readString(data, 'slug') || request.siteName}'.`,
+    message: databaseCopied
+      ? `Site registered with agent-local as '${slug}'.`
+      : `Site registered with agent-local as '${slug}', on an empty database. Run the import to pull the site's data down.`,
     plan,
     // Always TCP — see agent-local-site-control.ts on why this must stay empty.
     socketPath: '',
     localWpRoot: relativeDocroot(request.sitePath, wpDir),
     // agent-local imports the site's existing database itself, reading wp-config.php in the docroot.
-    databaseImported: true,
+    databaseImported: databaseCopied,
     log,
     domain: readString(data, 'domain') || request.domain,
     dbPort: typeof db?.port === 'number' ? db.port : null,

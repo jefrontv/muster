@@ -4,6 +4,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { AgentLocalHost, AgentLocalResponse } from './agent-local-host'
 import {
+  isSourceDatabaseUnreachable,
   planAgentLocalMigration,
   relativeDocroot,
   resolveAgentLocalDocroot,
@@ -197,6 +198,59 @@ describe('runAgentLocalMigration', () => {
     expect((sent[0] as { source: string }).source).toBe(WORDPRESS_CHECKOUT)
   })
 
+  // The live failure: a site whose LocalWP install was gone could not move to Agent Local at all,
+  // because /import insists on copying a database from a MySQL that is no longer running.
+  it('registers the files when the old database cannot be copied', async () => {
+    const calls: string[] = []
+    const recording: AgentLocalHost = {
+      platform: 'darwin',
+      homeDir: '/home/test',
+      readToken: async () => 'token',
+      request: async (_method: string, apiPath: string) => {
+        calls.push(apiPath)
+        return apiPath === '/import'
+          ? {
+              ok: false,
+              status: 500,
+              error:
+                'copy database pactgroup_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server on \'127.0.0.1\' (36)")'
+            }
+          : importResponse
+      },
+      spawnDaemon: async () => undefined,
+      sleep: async () => undefined
+    }
+
+    const result = await runAgentLocalMigration(request(), { host: recording })
+
+    expect(calls).toEqual(['/import', '/attach'])
+    expect(result.ok).toBe(true)
+    // The caller persists this; claiming the database landed would skip the import that has to run.
+    expect(result.databaseImported).toBe(false)
+    expect(result.message).toContain('empty database')
+  })
+
+  it('does not attach behind a refusal that is not about the database', async () => {
+    const calls: string[] = []
+    const recording: AgentLocalHost = {
+      platform: 'darwin',
+      homeDir: '/home/test',
+      readToken: async () => 'token',
+      request: async (_method: string, apiPath: string) => {
+        calls.push(apiPath)
+        return { ok: false, status: 409, error: "domain 'acme.test' is already in use" }
+      },
+      spawnDaemon: async () => undefined,
+      sleep: async () => undefined
+    }
+
+    const result = await runAgentLocalMigration(request(), { host: recording })
+
+    expect(calls).toEqual(['/import'])
+    expect(result.ok).toBe(false)
+    expect(result.message).toContain('already in use')
+  })
+
   it('reports the daemon error instead of throwing', async () => {
     const failure = await runAgentLocalMigration(request(), {
       host: host({ ok: false, status: 500, error: 'source path has no wp-config.php' })
@@ -212,6 +266,24 @@ describe('runAgentLocalMigration', () => {
 
     expect(result.ok).toBe(false)
     expect(result.message).toContain('macOS')
+  })
+})
+
+describe('isSourceDatabaseUnreachable', () => {
+  it.each([
+    'copy database acme_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server")',
+    'copy database acme_wp: dump failed: Got error: 2003: connection refused',
+    'copy database acme_wp: dump: Unknown database \'acme_wp\''
+  ])('treats a failed copy as retryable: %s', (message) => {
+    expect(isSourceDatabaseUnreachable(message)).toBe(true)
+  })
+
+  it.each([
+    "domain 'acme.test' is already in use",
+    'source path has no wp-config.php',
+    'php 8.3 is not installed'
+  ])('leaves a real refusal alone: %s', (message) => {
+    expect(isSourceDatabaseUnreachable(message)).toBe(false)
   })
 })
 
