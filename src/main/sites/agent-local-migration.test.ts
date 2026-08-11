@@ -271,6 +271,8 @@ describe('runAgentLocalMigration', () => {
 
 describe('isSourceDatabaseUnreachable', () => {
   it.each([
+    // Verbatim from the reported failure, trailing "when trying to connect" included.
+    'copy database pactgroup_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server on \'127.0.0.1\' (36)" when trying to connect)',
     'copy database acme_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server")',
     'copy database acme_wp: dump failed: Got error: 2003: connection refused',
     'copy database acme_wp: dump: Unknown database \'acme_wp\''
