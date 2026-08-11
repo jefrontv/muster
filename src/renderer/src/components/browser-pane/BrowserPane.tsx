@@ -698,32 +698,19 @@ function getRemoteBrowserDeviceScaleFactor(): number {
   return Math.min(2, Math.max(1, Number(scale.toFixed(2))))
 }
 
-function getOpenableExternalUrl(
-  webview: Electron.WebviewTag | null,
-  fallbackUrl: string
-): string | null {
-  let currentUrl = fallbackUrl
-  if (webview) {
-    try {
-      currentUrl = webview.getURL() || fallbackUrl
-    } catch {
-      // Why: querying nav state before dom-ready throws and blanks the whole IDE on launch; fall back to the persisted URL.
-      currentUrl = fallbackUrl
-    }
-  }
+// Both read the tab's stored URL instead of asking the guest for its own.
+//
+// `webview.getURL()` is a SYNCHRONOUS main-process round trip, and these two ran on every render
+// of every browser pane. When main is busy — a Chat→Code switch is the worst case, since it does
+// session and layout work — the renderer blocked on them for seconds with nothing on screen.
+//
+// The stored URL is not a stale substitute: handleDidNavigate writes it through onSetUrl on every
+// main-frame navigation, in-page ones included, so a render always sees the current address.
+function getOpenableExternalUrl(currentUrl: string): string | null {
   return normalizeExternalBrowserUrl(redactKagiSessionToken(currentUrl))
 }
 
-function getCurrentBrowserUrl(webview: Electron.WebviewTag | null, fallbackUrl: string): string {
-  let currentUrl = fallbackUrl
-  if (webview) {
-    try {
-      currentUrl = webview.getURL() || fallbackUrl
-    } catch {
-      // Why: toolbar actions need a stable URL during early guest attach/restore; fall back to the persisted URL instead of throwing.
-      currentUrl = fallbackUrl
-    }
-  }
+function getCurrentBrowserUrl(currentUrl: string): string {
   return toDisplayUrl(currentUrl)
 }
 
@@ -4588,8 +4575,8 @@ function BrowserPagePane({
 
   // Why: a blank tab reads as 'about:blank' or the resolved data: URL, so match both to keep the "New Browser Tab" overlay visible.
   const isBlankTab = browserTab.url === 'about:blank' || browserTab.url === ORCA_BROWSER_BLANK_URL
-  const externalUrl = getOpenableExternalUrl(webviewRef.current, browserTab.url)
-  const currentBrowserUrl = getCurrentBrowserUrl(webviewRef.current, browserTab.url)
+  const externalUrl = getOpenableExternalUrl(browserTab.url)
+  const currentBrowserUrl = getCurrentBrowserUrl(browserTab.url)
   const failedNavigationUrl = browserTab.loadError?.validatedUrl ?? currentBrowserUrl
   const failureExternalUrl = normalizeExternalBrowserUrl(failedNavigationUrl)
   const showFailureOverlay = Boolean(browserTab.loadError) && !isBlankTab
