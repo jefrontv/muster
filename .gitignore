@@ -16,7 +16,9 @@ src/**/*.d.ts
 !src/types/build-constants.d.ts
 
 # Dependencies
-node_modules/
+# No trailing slash: a `node_modules` symlink is a file, and committing one breaks
+# CI installs (pnpm mkdir over it dies with ENOTDIR).
+node_modules
 
 # Build output
 dist/
