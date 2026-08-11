@@ -76,14 +76,22 @@ jobs:
         with:
           run_install: false
 
+      # Why: PNPM_HOME points at setup-pnpm's .bin, so `pnpm store path` resolves
+      # to a throwaway dir there and setup-node's cache never hits — every release
+      # re-downloads all deps. Pin the store somewhere cacheable first.
+      - name: Pin pnpm store
+        run: pnpm config set store-dir "$RUNNER_TEMP/pnpm-store" --global
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: pnpm
 
+      # Retry: hosted mac runners intermittently fail the first install with
+      # filesystem errors (seen: ENOTDIR on mkdir node_modules) on a clean checkout.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --frozen-lockfile
 
       - name: Resolve release version
         id: version
