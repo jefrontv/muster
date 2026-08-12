@@ -5,6 +5,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { SiteSecretKind } from '../../../../shared/site-types'
 import { SiteSecretField } from './SiteSecretField'
 
 let root: Root | null = null
@@ -24,7 +25,7 @@ afterEach(() => {
   container = null
 })
 
-async function render(isSet: boolean, onSetSecret: (kind: 'ssh', value: string) => void) {
+async function render(isSet: boolean, onSetSecret: (kind: SiteSecretKind, value: string) => void) {
   await act(async () => {
     root?.render(
       <SiteSecretField kind="ssh" label="SSH password" isSet={isSet} onSetSecret={onSetSecret} />

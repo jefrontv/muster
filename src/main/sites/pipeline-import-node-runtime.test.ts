@@ -11,7 +11,7 @@ import type { SiteRunConfig, SiteRunContext } from './pipeline-contract'
 // Named (rather than absent) so vitest's mock validation still resolves the imports the graph makes.
 vi.mock('electron', () => ({ app: undefined, safeStorage: undefined, ipcMain: undefined }))
 
-const snapshotSiteDatabase = vi.fn(async () => ({ ok: true }))
+const snapshotSiteDatabase = vi.fn(async (_options: { baseDir: string }) => ({ ok: true }))
 vi.mock('./site-db-snapshot', () => ({ snapshotSiteDatabase }))
 
 const { createDefaultSiteImportDependencies } = await import('./pipeline-import')
