@@ -10,8 +10,6 @@ type StableFitPane = ManagedPane &
   Partial<Pick<ManagedPaneInternal, 'xtermContainer' | 'pendingObservedFitRafId'>>
 
 const MAX_STABILITY_FRAMES = 8
-/** Consecutive equal proposals a plain (drag/observer) settle needs before it reflows. */
-const DEFAULT_STABLE_PROPOSALS = 2
 const pendingStableFitRafIds = new WeakMap<StableFitPane, number>()
 const stableFitCallbacks = new WeakMap<StableFitPane, Set<() => void>>()
 
@@ -83,20 +81,7 @@ function finishStableFit(pane: StableFitPane): void {
   safeFitAndThen(pane, 'stable-pane-fit', () => flushStableFitCallbacks(pane))
 }
 
-export type StablePaneFitOptions = {
-  /** Consecutive equal proposals required before reflowing. Higher = waits out longer wobbles. */
-  stableProposals?: number
-  /** Frames to wait before fitting anyway, so a never-settling grid still converges. */
-  maxFrames?: number
-}
-
-export function requestStablePaneFit(
-  pane: StableFitPane,
-  onSettled?: () => void,
-  options: StablePaneFitOptions = {}
-): void {
-  const stableProposals = Math.max(2, options.stableProposals ?? DEFAULT_STABLE_PROPOSALS)
-  const maxFrames = Math.max(stableProposals, options.maxFrames ?? MAX_STABILITY_FRAMES)
+export function requestStablePaneFit(pane: StableFitPane, onSettled?: () => void): void {
   addStableFitCallback(pane, onSettled)
   if (getPendingObservedFitRafId(pane) !== null) {
     return
@@ -112,9 +97,6 @@ export function requestStablePaneFit(
   // the right sidebar is open. Requiring a stable proposed grid before fitting
   // prevents Codex from receiving a rapid SIGWINCH loop and visibly vibrating.
   let previous = getProposedDimensions(pane)
-  // The first sample counts as one observation, so the default of 2 finishes on the first
-  // matching frame — exactly the drag behaviour this loop shipped with.
-  let equalProposals = 1
   let frameCount = 0
   const waitForStableGrid = (): void => {
     setPendingObservedFitRafId(
@@ -138,14 +120,13 @@ export function requestStablePaneFit(
           return
         }
 
-        equalProposals = dimensionsEqual(previous, next) ? equalProposals + 1 : 1
-        previous = next
-        if (equalProposals >= stableProposals) {
+        if (dimensionsEqual(previous, next)) {
           finishStableFit(pane)
           return
         }
 
-        if (frameCount >= maxFrames) {
+        previous = next
+        if (frameCount >= MAX_STABILITY_FRAMES) {
           finishStableFit(pane)
           return
         }

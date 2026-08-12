@@ -9,11 +9,6 @@ import { requestStablePaneFit } from './pane-fit-resize-observer'
 import { clearPaneFitContinuationRetry } from './pane-fit-continuation-retry'
 import { resumePendingFitScrollRestoreAfterFit } from './pane-scroll'
 
-/** ~5 frames of an unchanged proposal: long enough to outlast a Space-switch re-layout. */
-const REVEAL_STABLE_PROPOSALS = 6
-/** ~0.5s cap, so a grid that never settles still gets repaired. */
-const REVEAL_MAX_STABILITY_FRAMES = 30
-
 // Why: a real resize changes the element's pixels; a metric-only wobble does not.
 // No baseline / unmeasurable counts as changed so a first reveal still fits.
 export function paneFitClientSizeChanged(pane: ManagedPane): boolean {
@@ -71,15 +66,7 @@ export function fitRevealedPane(pane: ManagedPane): void {
     return
   }
   if (!proposedGridMatchesTerminal(pane)) {
-    // Why a longer settle than a drag gets: returning from another macOS Space (or a display
-    // wake) re-attaches WebGL and re-lays-out over several hundred ms, and the two-frame settle
-    // could land inside that window — reflowing on a transient grid, then reflowing back when the
-    // metrics recovered. That double reflow is the jitter. A repair is not interactive, so it can
-    // afford to wait for the geometry to hold still.
-    requestStablePaneFit(pane, undefined, {
-      stableProposals: REVEAL_STABLE_PROPOSALS,
-      maxFrames: REVEAL_MAX_STABILITY_FRAMES
-    })
+    requestStablePaneFit(pane)
     return
   }
   releaseMeasurableFitContinuations(pane)

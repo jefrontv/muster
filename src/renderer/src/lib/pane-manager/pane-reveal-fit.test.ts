@@ -112,12 +112,6 @@ describe('fitRevealedPane routing', () => {
     fitRevealedPane(pane)
 
     expect(mocks.requestStablePaneFit).toHaveBeenCalledTimes(1)
-    // Why the longer settle is asserted: a Space switch or display wake re-lays-out for hundreds
-    // of milliseconds, and the drag-sized two-frame settle reflowed inside that window.
-    expect(mocks.requestStablePaneFit.mock.calls[0]?.[2]).toMatchObject({
-      stableProposals: 6,
-      maxFrames: 30
-    })
     expect(mocks.safeFit).not.toHaveBeenCalled()
     // Not the plain-release path — the stable fit owns continuation release here.
     expect(mocks.flushPendingSafeFitContinuations).not.toHaveBeenCalled()
