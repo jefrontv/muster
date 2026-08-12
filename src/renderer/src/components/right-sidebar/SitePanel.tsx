@@ -16,6 +16,7 @@ import { useConfirmationDialog } from '@/components/confirmation-dialog'
 import { cn } from '@/lib/utils'
 import { useSiteRun } from '@/components/sites/use-site-run'
 import { RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
+import { openSiteInSitesPage } from './site-panel-open-in-sites'
 import {
   InfoRow,
   RunStatusDot,
@@ -371,6 +372,7 @@ function SitePanel(): React.JSX.Element {
   const selectSite = useAppStore((s) => s.selectSite)
   const openSitesPage = useAppStore((s) => s.openSitesPage)
   const fetchSites = useAppStore((s) => s.fetchSites)
+  const setRightSidebarOpen = useAppStore((s) => s.setRightSidebarOpen)
 
   if (!summary) {
     // Only reachable in the gap between a workspace switch and the tab-visibility fallback.
@@ -387,10 +389,14 @@ function SitePanel(): React.JSX.Element {
   return (
     <SitePanelContent
       summary={summary}
-      onOpenInSites={() => {
-        selectSite(summary.site.id)
-        openSitesPage()
-      }}
+      onOpenInSites={() =>
+        openSiteInSitesPage({
+          siteId: summary.site.id,
+          selectSite,
+          openSitesPage,
+          setRightSidebarOpen
+        })
+      }
       onRunSettled={() => void fetchSites()}
     />
   )
