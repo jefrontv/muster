@@ -1,6 +1,6 @@
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import type { SiteEnvironment, SiteSecretKind, SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
+import { SiteSecretField } from './SiteSecretField'
 import { SiteLocalStackControl } from './SiteLocalStackControl'
 import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
 import { SiteDbSnapshotsSection } from './SiteDbSnapshotsSection'
@@ -100,14 +101,33 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         <SiteLocalStackControl summary={summary} />
         <div className="grid gap-3 sm:grid-cols-2">
           {getLocalFields().map((field) => (
-            <div key={field.key} className="space-y-1">
-              <Label className="text-xs">{field.label}</Label>
-              <Input
-                value={site[field.key]}
-                placeholder={field.placeholder}
-                onChange={(event) => void updateSite(site.id, { [field.key]: event.target.value })}
-              />
-            </div>
+            <Fragment key={field.key}>
+              <div className="space-y-1">
+                <Label className="text-xs">{field.label}</Label>
+                <Input
+                  value={site[field.key]}
+                  placeholder={field.placeholder}
+                  onChange={(event) =>
+                    void updateSite(site.id, { [field.key]: event.target.value })
+                  }
+                />
+              </div>
+              {/* The db secret is keyed per environment (an ocsites carry-over) but authenticates
+                  the LOCAL database — see site-run-config.ts — so it belongs beside the local user
+                  rather than in a password block under the remote settings. */}
+              {field.key === 'dbUser' && viewedEnvironment ? (
+                <SiteSecretField
+                  key={`db-secret:${viewedName}`}
+                  kind="db"
+                  label={translate(
+                    'auto.components.sites.SiteDetailPanel.dbPassword',
+                    'Local DB password'
+                  )}
+                  isSet={summary.secrets[viewedName]?.db ?? false}
+                  onSetSecret={setSecret}
+                />
+              ) : null}
+            </Fragment>
           ))}
         </div>
       </section>

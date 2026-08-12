@@ -1,6 +1,5 @@
-import { KeyRound, ShieldCheck, ShieldX } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { Fragment } from 'react'
 import {
   SITE_DEPLOY_TOGGLES,
   SITE_IMPORT_TOGGLES,
@@ -11,11 +10,10 @@ import {
 import { getSiteToggleLabels } from './site-toggle-labels'
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SiteSecretField } from './SiteSecretField'
 
 type SiteEnvironmentSectionProps = {
   summary: SiteSummary
@@ -29,6 +27,8 @@ type SiteEnvironmentSectionProps = {
   deployAction?: React.ReactNode
 }
 
+// Order pairs each field with its partner across the two-column grid: host+root locate the
+// server, user+password authenticate to it (the secret is injected after `username` below).
 const getTextFields = createLocalizedCatalog(() => [
   {
     key: 'hostname' as const,
@@ -39,17 +39,17 @@ const getTextFields = createLocalizedCatalog(() => [
     )
   },
   {
-    key: 'username' as const,
-    label: translate('auto.components.sites.SiteEnvironmentSection.username', 'SSH user'),
-    placeholder: translate('auto.components.sites.SiteEnvironmentSection.usernameHint', 'acme')
-  },
-  {
     key: 'rootPath' as const,
     label: translate('auto.components.sites.SiteEnvironmentSection.rootPath', 'Remote root'),
     placeholder: translate(
       'auto.components.sites.SiteEnvironmentSection.rootPathHint',
       'public_html'
     )
+  },
+  {
+    key: 'username' as const,
+    label: translate('auto.components.sites.SiteEnvironmentSection.username', 'SSH user'),
+    placeholder: translate('auto.components.sites.SiteEnvironmentSection.usernameHint', 'acme')
   },
   {
     key: 'liveDomain' as const,
@@ -80,72 +80,6 @@ const getTextFields = createLocalizedCatalog(() => [
   }
 ])
 
-function SecretRow({
-  kind,
-  isSet,
-  onSetSecret
-}: {
-  kind: SiteSecretKind
-  isSet: boolean
-  onSetSecret: (kind: SiteSecretKind, value: string) => void
-}): React.JSX.Element {
-  const [value, setValue] = useState('')
-  const label =
-    kind === 'ssh'
-      ? translate('auto.components.sites.SiteEnvironmentSection.sshPassword', 'SSH password')
-      : translate('auto.components.sites.SiteEnvironmentSection.dbPassword', 'Database password')
-
-  return (
-    <div className="flex items-end gap-2">
-      <div className="min-w-0 flex-1 space-y-1">
-        <Label className="flex items-center gap-1.5 text-xs">
-          <KeyRound className="size-3" />
-          {label}
-          {isSet ? (
-            <Badge variant="secondary" className="gap-1">
-              <ShieldCheck className="size-3" />
-              {translate('auto.components.sites.SiteEnvironmentSection.secretSet', 'Stored')}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1">
-              <ShieldX className="size-3" />
-              {translate('auto.components.sites.SiteEnvironmentSection.secretUnset', 'Not set')}
-            </Badge>
-          )}
-        </Label>
-        <Input
-          type="password"
-          value={value}
-          autoComplete="off"
-          placeholder={
-            isSet
-              ? translate(
-                  'auto.components.sites.SiteEnvironmentSection.secretReplace',
-                  'Enter a new value to replace'
-                )
-              : translate('auto.components.sites.SiteEnvironmentSection.secretEnter', 'Enter value')
-          }
-          onChange={(event) => setValue(event.target.value)}
-        />
-      </div>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={value.length === 0}
-        onClick={() => {
-          onSetSecret(kind, value)
-          setValue('')
-        }}
-      >
-        {translate('auto.components.sites.SiteEnvironmentSection.secretSave', 'Save')}
-      </Button>
-      <Button variant="ghost" size="sm" disabled={!isSet} onClick={() => onSetSecret(kind, '')}>
-        {translate('auto.components.sites.SiteEnvironmentSection.secretClear', 'Clear')}
-      </Button>
-    </div>
-  )
-}
-
 export function SiteEnvironmentSection({
   summary,
   environmentName,
@@ -162,22 +96,30 @@ export function SiteEnvironmentSection({
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {getTextFields().map((field) => (
-          <div key={field.key} className="space-y-1">
-            <Label className="text-xs">{field.label}</Label>
-            <Input
-              value={environment[field.key]}
-              placeholder={field.placeholder}
-              onChange={(event) => onPatch({ [field.key]: event.target.value })}
-            />
-          </div>
+          <Fragment key={field.key}>
+            <div className="space-y-1">
+              <Label className="text-xs">{field.label}</Label>
+              <Input
+                value={environment[field.key]}
+                placeholder={field.placeholder}
+                onChange={(event) => onPatch({ [field.key]: event.target.value })}
+              />
+            </div>
+            {/* The password belongs beside the user it authenticates, not in a block of its own. */}
+            {field.key === 'username' ? (
+              <SiteSecretField
+                key={`ssh-secret:${environmentName}`}
+                kind="ssh"
+                label={translate(
+                  'auto.components.sites.SiteEnvironmentSection.sshPassword',
+                  'SSH password'
+                )}
+                isSet={presence.ssh}
+                onSetSecret={onSetSecret}
+              />
+            ) : null}
+          </Fragment>
         ))}
-      </div>
-
-      {/* Secrets sit with the other connection settings; the step toggles and their run buttons
-          close the section as the action area. */}
-      <div className="space-y-3">
-        <SecretRow kind="ssh" isSet={presence.ssh} onSetSecret={onSetSecret} />
-        <SecretRow kind="db" isSet={presence.db} onSetSecret={onSetSecret} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
