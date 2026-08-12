@@ -79,6 +79,12 @@ export async function runWpSearchReplace(
     // user_email would corrupt accounts at a matching domain.
     '--skip-columns=guid',
     '--skip-columns=user_email',
+    // Why skipped: the rewrite only touches database rows, but WP-CLI boots the whole site to get
+    // there — so one broken plugin (a double-registered NitroPack, a theme fatal) took down a step
+    // that never needed either. Mu-plugins still load; WP-CLI has no flag for those.
+    '--skip-plugins',
+    '--skip-themes',
+    '--skip-packages',
     `--path=${abspath}`
   ]
   const result = await runWpCli(context, config, args, environment, timeoutMs)

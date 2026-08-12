@@ -288,7 +288,9 @@ describe('runWpSearchReplace', () => {
     expect(readFileSync(packageJsonPath, 'utf8')).toBe(original)
   })
 
-  it('rewrites live to local across every table, skipping guid and user_email', async () => {
+  // Plugins and themes are skipped for a reason with a bug behind it: a site whose plugin fatals
+  // on load (NitroPack redeclaring a function) failed the rewrite even though it only reads rows.
+  it('rewrites live to local across every table, skipping guid, user_email, plugins and themes', async () => {
     const { context } = createTestContext()
 
     await runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
@@ -302,6 +304,9 @@ describe('runWpSearchReplace', () => {
       '--report-changed-only',
       '--skip-columns=guid',
       '--skip-columns=user_email',
+      '--skip-plugins',
+      '--skip-themes',
+      '--skip-packages',
       `--path=${wpDir}`
     ])
     expect(wpCall().options?.cwd).toBe(wpDir)
