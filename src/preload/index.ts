@@ -3961,6 +3961,9 @@ const api = {
     syncTrafficLights: (zoomFactor: number): void =>
       ipcRenderer.send('ui:sync-traffic-lights', zoomFactor),
     // Why: one-way send so main's before-input-event can synchronously skip Cmd+B while the markdown editor is focused (TipTap bold).
+    setBrowserPaneActive: (active: boolean): void => {
+      ipcRenderer.send('ui:setBrowserPaneActive', active)
+    },
     setMarkdownEditorFocused: (focused: boolean): void => {
       ipcRenderer.send('ui:setMarkdownEditorFocused', focused)
     },

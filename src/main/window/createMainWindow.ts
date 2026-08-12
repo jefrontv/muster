@@ -481,6 +481,9 @@ export function createMainWindow(
 
   // Why: mirror markdown-editor focus so before-input-event skips Cmd/Ctrl+B while TipTap owns focus (docs/markdown-cmd-b-bold-design.md).
   let markdownEditorFocused = false
+  // Why: Cmd/Ctrl+Shift+R means "hard reload the page" while a browser tab is on screen; without
+  // this mirror before-input-event resolved it to forceReload and reloaded the whole app instead.
+  let browserPaneActive = false
   let terminalInputFocused = false
   let floatingTerminalInputFocused = false
   let shortcutRecorderFocused = false
@@ -521,6 +524,14 @@ export function createMainWindow(
     shortcutRecorderFocused = focused === true
   }
   ipcMain.on(shortcutRecorderFocusChannel, onShortcutRecorderFocused)
+  const browserPaneActiveChannel = 'ui:setBrowserPaneActive'
+  const onBrowserPaneActive = (event: Electron.IpcMainEvent, active: unknown): void => {
+    if (event.sender !== mainWindow.webContents) {
+      return
+    }
+    browserPaneActive = active === true
+  }
+  ipcMain.on(browserPaneActiveChannel, onBrowserPaneActive)
 
   const onMainContextMenu = (_event: Electron.Event, params: Electron.ContextMenuParams): void => {
     const template = buildEditableContextMenuTemplate(params, mainWindow.webContents)
@@ -544,6 +555,9 @@ export function createMainWindow(
   }
   const resetShortcutRecorderFocus = (): void => {
     shortcutRecorderFocused = false
+  }
+  const resetBrowserPaneActive = (): void => {
+    browserPaneActive = false
   }
   let rendererProcessGone = false
   let rendererRecoveryTimer: ReturnType<typeof setTimeout> | null = null
@@ -602,6 +616,7 @@ export function createMainWindow(
     resetTerminalInputFocus()
     resetFloatingTerminalInputFocus()
     resetShortcutRecorderFocus()
+    resetBrowserPaneActive()
     // Why: macOS reports BrowserWindow teardown as renderer killed/SIGKILL after close — window noise, not a crash.
     if (!windowClosing) {
       // Why: the recorder owns crash classification; filtering here made expected-teardown evidence unreachable.
@@ -617,6 +632,7 @@ export function createMainWindow(
     resetTerminalInputFocus()
     resetFloatingTerminalInputFocus()
     resetShortcutRecorderFocus()
+    resetBrowserPaneActive()
   })
   mainWindow.webContents.on('did-start-navigation', (_e, _url, _isInPlace, isMainFrame) => {
     if (isMainFrame) {
@@ -624,6 +640,7 @@ export function createMainWindow(
       resetTerminalInputFocus()
       resetFloatingTerminalInputFocus()
       resetShortcutRecorderFocus()
+      resetBrowserPaneActive()
     }
   })
   mainWindow.webContents.on('did-finish-load', () => {
@@ -647,8 +664,14 @@ export function createMainWindow(
         mainWindow.webContents.send('ui:openSettings')
         return
       case 'forceReload':
-        opts?.onBeforeReload?.({ ignoreCache: true, webContentsId: mainWindow.webContents.id })
-        mainWindow.webContents.reloadIgnoringCache()
+        // Why forwarded: with a browser tab on screen this chord belongs to the page, matching the
+        // guest-focused path in browser-guest-ui.ts. View > Force Reload still reloads the app.
+        if (browserPaneActive) {
+          mainWindow.webContents.send('ui:hardReloadBrowserPage')
+        } else {
+          opts?.onBeforeReload?.({ ignoreCache: true, webContentsId: mainWindow.webContents.id })
+          mainWindow.webContents.reloadIgnoringCache()
+        }
         return
       case 'toggleLeftSidebar':
         mainWindow.webContents.send('ui:toggleLeftSidebar')
@@ -1100,6 +1123,7 @@ export function createMainWindow(
     ipcMain.removeListener(terminalInputFocusChannel, onTerminalInputFocused)
     ipcMain.removeListener(floatingTerminalInputFocusChannel, onFloatingTerminalInputFocused)
     ipcMain.removeListener(shortcutRecorderFocusChannel, onShortcutRecorderFocused)
+    ipcMain.removeListener(browserPaneActiveChannel, onBrowserPaneActive)
     // Why: powerMonitor is app-global; without this the resume relay leaks and fires against a destroyed webContents.
     powerMonitor.removeListener('resume', onSystemResume)
     clearTrustedUIRendererWebContentsId(rendererWebContentsId)

@@ -862,6 +862,76 @@ describe('createMainWindow', () => {
     expect(webContents.send).not.toHaveBeenCalled()
   })
 
+  // The bug: Cmd/Ctrl+Shift+R over an in-app browser tab reloaded the whole of Muster, because
+  // before-input-event resolves the chord to forceReload long before the BrowserPane's own keydown
+  // handler ever sees it.
+  it.each([true, false])(
+    'routes force reload to the page when a browser pane is active (%s)',
+    (browserActive) => {
+      const windowHandlers: Record<string, (...args: any[]) => void> = {}
+      const webContents = {
+        on: vi.fn((event, handler) => {
+          windowHandlers[event] = handler
+        }),
+        setZoomLevel: vi.fn(),
+        setBackgroundThrottling: vi.fn(),
+        invalidate: vi.fn(),
+        setWindowOpenHandler: vi.fn(),
+        send: vi.fn(),
+        reloadIgnoringCache: vi.fn(),
+        isDevToolsOpened: vi.fn(),
+        openDevTools: vi.fn(),
+        closeDevTools: vi.fn()
+      }
+      const browserWindowInstance = {
+        webContents,
+        on: vi.fn(),
+        isDestroyed: vi.fn(() => false),
+        isMaximized: vi.fn(() => true),
+        isFullScreen: vi.fn(() => false),
+        getSize: vi.fn(() => [1200, 800]),
+        setSize: vi.fn(),
+        maximize: vi.fn(),
+        show: vi.fn(),
+        loadFile: vi.fn(),
+        loadURL: vi.fn()
+      }
+      browserWindowMock.mockImplementation(function () {
+        return browserWindowInstance
+      })
+
+      createMainWindow(null)
+
+      const setBrowserPaneActive = vi
+        .mocked(ipcMain.on)
+        .mock.calls.find(([channel]) => channel === 'ui:setBrowserPaneActive')?.[1]
+      expect(setBrowserPaneActive).toBeTypeOf('function')
+      setBrowserPaneActive?.({ sender: webContents } as never, browserActive)
+
+      const isDarwin = process.platform === 'darwin'
+      windowHandlers['before-input-event'](
+        { preventDefault: vi.fn() } as never,
+        {
+          type: 'keyDown',
+          code: 'KeyR',
+          key: 'R',
+          meta: isDarwin,
+          control: !isDarwin,
+          alt: false,
+          shift: true
+        } as never
+      )
+
+      if (browserActive) {
+        expect(webContents.send).toHaveBeenCalledWith('ui:hardReloadBrowserPage')
+        expect(webContents.reloadIgnoringCache).not.toHaveBeenCalled()
+      } else {
+        expect(webContents.reloadIgnoringCache).toHaveBeenCalledTimes(1)
+        expect(webContents.send).not.toHaveBeenCalledWith('ui:hardReloadBrowserPage')
+      }
+    }
+  )
+
   it('forwards the platform tab-number jump shortcut to the renderer', () => {
     const windowHandlers: Record<string, (...args: any[]) => void> = {}
     const webContents = {

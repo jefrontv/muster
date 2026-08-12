@@ -3575,6 +3575,16 @@ function BrowserPagePane({
     })
   }, [isActive])
 
+  // Why mirrored to main: before-input-event resolves Cmd/Ctrl+Shift+R ahead of any renderer
+  // keydown, so main has to know a page is on screen or it reloads the whole app instead of it.
+  useEffect(() => {
+    if (!isActive) {
+      return
+    }
+    window.api.ui.setBrowserPaneActive(true)
+    return () => window.api.ui.setBrowserPaneActive(false)
+  }, [isActive])
+
   useEffect(() => {
     onUpdatePageStateRef.current = onUpdatePageState
     onSetUrlRef.current = onSetUrl

@@ -3395,6 +3395,7 @@ export type PreloadApi = {
     setTerminalInputFocused: (focused: boolean) => void
     setFloatingTerminalInputFocused: (focused: boolean) => void
     setShortcutRecorderFocused: (focused: boolean) => void
+    setBrowserPaneActive: (active: boolean) => void
     onRichMarkdownContextCommand: (
       callback: (payload: RichMarkdownContextMenuCommandPayload) => void
     ) => () => void

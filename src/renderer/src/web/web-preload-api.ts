@@ -2586,6 +2586,7 @@ function createWebUiApi(): NonNullable<Partial<PreloadApi>['ui']> {
     onSystemResumed: () => noopUnsubscribe,
     onFileDrop: () => noopUnsubscribe,
     syncTrafficLights: () => {},
+    setBrowserPaneActive: () => {},
     setMarkdownEditorFocused: () => {},
     setTerminalInputFocused: () => {},
     setFloatingTerminalInputFocused: () => {},
