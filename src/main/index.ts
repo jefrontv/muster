@@ -537,6 +537,7 @@ if (isSiteMcpMode) {
     await runSiteMcpEntry({
       version: app.getVersion(),
       store: new Store({ dataFile: profile.dataFile }),
+      dataFile: profile.dataFile,
       runsBaseDir: join(siteMcpRealUserData, 'site-runs')
     })
   })().catch((error: unknown) => {

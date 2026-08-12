@@ -20,6 +20,7 @@ import { getCanonicalUserDataPath, initDataPath, Store } from '../../persistence
 import { SITE_RUNS_DIR_NAME } from '../site-run-log'
 import { createSiteMcpContext } from './site-mcp-engine'
 import { createSiteMcpServer } from './site-mcp-server'
+import { createRefreshingSiteMcpStore } from './site-mcp-store-refresh'
 
 /** The argv flag the launcher routes on. Kept here so the CLI and the registrar agree on one name. */
 export const SITE_MCP_CLI_FLAG = '--site-mcp'
@@ -47,6 +48,8 @@ export type SiteMcpEntryOptions = {
   /** Injected by index.ts, which resolves the REAL profile before moving this instance's
    *  Chromium userData to a scratch dir (see the isSiteMcpMode branch for why). */
   store?: Store
+  /** The profile data file behind `store`. Needed because the GUI keeps writing to it. */
+  dataFile?: string
   runsBaseDir?: string
 }
 
@@ -151,15 +154,19 @@ export async function runSiteMcpEntry(options: SiteMcpEntryOptions = {}): Promis
   // empty site list next to a GUI that has plenty. index.ts has already run
   // configureDevUserDataPath/configureOrcaUserDataPathEnv at module scope, so dev and packaged
   // runs land on the same userData the GUI uses.
+  let dataFile = options.dataFile ?? null
   const store =
     options.store ??
     (() => {
       initDataPath()
       initOrcaProfilePaths()
-      return new Store({ dataFile: ensureActiveOrcaProfile(getProfileUserDataPath()).dataFile })
+      dataFile = ensureActiveOrcaProfile(getProfileUserDataPath()).dataFile
+      return new Store({ dataFile })
     })()
   const context = createSiteMcpContext({
-    store,
+    // Why wrapped: this server outlives GUI edits to the same file, and its snapshot would
+    // otherwise hide every site and environment created after it booted.
+    store: dataFile ? createRefreshingSiteMcpStore(store, { dataFile }) : store,
     runsBaseDir: options.runsBaseDir ?? join(getCanonicalUserDataPath(), SITE_RUNS_DIR_NAME),
     cwd: options.cwd ?? process.env.MUSTER_MCP_CWD ?? process.cwd()
   })

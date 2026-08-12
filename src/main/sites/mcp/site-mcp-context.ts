@@ -17,6 +17,8 @@ export type SiteMcpStore = {
   getSite: (siteId: string) => Site | null
   findSiteByPath: (sitePath: string) => Site | null
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
+  /** Optional: lets a write land on a site this process only learned about from disk. */
+  upsertSite?: (site: Site) => Site
 }
 
 /** ocsites' get_git_status payload, snake_cased to keep existing agent prompts working. */
