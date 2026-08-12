@@ -164,6 +164,8 @@ export type ManagedPaneInternal = {
   compositionHandler: (() => void) | null
   // Stored so disposePane() can remove DOM-renderer focus synchronization.
   focusClassSyncCleanup?: (() => void) | null
+  // Stored so disposePane() can stop matching the host to the painted grid background.
+  paintedBackgroundSyncCleanup?: (() => void) | null
   // Stored so disposePane() can remove user-scroll intent listeners.
   terminalScrollIntentDisposable?: IDisposable | null
   // Stored so disposePane() can detach the streamed-output hover-cache reset
