@@ -81,6 +81,7 @@ import {
   searchCmdJProjectResults,
   type CmdJProjectSearchResult
 } from '@/components/cmd-j/palette-project-results'
+import { resolveProjectDefaultWorkspaceId } from '@/components/cmd-j/palette-project-activation'
 import {
   buildCmdJQuickActionContext,
   captureCmdJActiveGroupSnapshot,
@@ -1292,8 +1293,20 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
 
   const handleSelectProjectTarget = useCallback(
     (result: CmdJProjectSearchResult) => {
+      // Why: a project row opens the project — revealing alone did nothing when the
+      // hide-sleeping filter had already dropped every row it could scroll to.
+      if (result.kind === 'project') {
+        const worktreeId = resolveProjectDefaultWorkspaceId(
+          result.repo.id,
+          useAppStore.getState().worktreesByRepo
+        )
+        if (worktreeId) {
+          handleSelectWorktree(worktreeId)
+          return
+        }
+      }
       skipRestoreFocusRef.current = true
-      // Why: selecting a project/repo group is sidebar navigation — reveal the row without activating an arbitrary workspace.
+      // Why: a repo group has no single workspace to open, so it stays sidebar navigation.
       revealSidebarRow(result.rowKey, { behavior: 'smooth', highlight: true })
       recordFeatureInteraction('cmd-j')
       closeModal()
@@ -1312,6 +1325,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
     [
       closeModal,
       focusFallbackSurface,
+      handleSelectWorktree,
       recordFeatureInteraction,
       requestBrowserFocus,
       revealSidebarRow
