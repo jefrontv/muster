@@ -7,7 +7,7 @@
 
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
-import { app } from 'electron'
+import { getCanonicalUserDataPath } from '../persistence'
 import { snapshotSiteDatabase } from './site-db-snapshot'
 import { extractZipArchive } from './local-archive-extract'
 import { importLocalDatabase } from './local-database-import'
@@ -107,7 +107,12 @@ export function createDefaultSiteImportDependencies(): SiteImportDependencies {
     importLocalDatabase,
     snapshotLocalDatabase: (context, config) =>
       snapshotSiteDatabase({
-        baseDir: app.getPath('userData'),
+        // Why not app.getPath: the muster-sites MCP server runs this pipeline under
+        // ELECTRON_RUN_AS_NODE, where `app` is undefined — the snapshot step died with
+        // "Cannot read properties of undefined (reading 'getPath')" right before the import
+        // overwrote the local database. The canonical path resolves in both runtimes and keeps
+        // MCP snapshots in the directory the GUI's snapshot list reads.
+        baseDir: getCanonicalUserDataPath(),
         config,
         reason: 'pre-import',
         onStatus: (message) => context.log(message),
