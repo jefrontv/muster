@@ -41,6 +41,8 @@ export type ChatThreadStreamStartArgs = {
   command: string
   cwd?: string
   env?: Record<string, string>
+  /** Written to a temp file and passed as --append-system-prompt-file. */
+  appendSystemPrompt?: string
 }
 
 export type ChatThreadStreamStartResult = { ok: boolean; error?: string }

@@ -7,6 +7,13 @@ import { Loader2, RotateCcw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
+import {
+  buildChatWorkspaceAgentBrief,
+  deriveChatThreadTitle,
+  isChatWorkspaceBriefTitle,
+  unwrapChatWorkspaceUserTurn,
+  wrapChatWorkspaceUserTurn
+} from '../../../../shared/chat-workspace-site-info'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
@@ -99,12 +106,14 @@ export function ChatThreadView({
     session ? s.agentStatusByPaneKey[session.paneKey]?.prompt : undefined
   )
   useEffect(() => {
-    const prompt = reportedPrompt?.trim()
-    if (!prompt || thread.title !== 'New chat') {
+    const prompt = unwrapChatWorkspaceUserTurn(reportedPrompt?.trim() ?? '')
+    if (!prompt) {
       return
     }
-    const title = prompt.length > 48 ? `${prompt.slice(0, 47).trimEnd()}…` : prompt
-    void updateChatThread(thread.id, { title })
+    if (thread.title !== 'New chat' && !isChatWorkspaceBriefTitle(thread.title)) {
+      return
+    }
+    void updateChatThread(thread.id, { title: deriveChatThreadTitle(prompt) })
   }, [reportedPrompt, thread.id, thread.title, updateChatThread])
   useEffect(() => {
     if (!providerSession?.id || providerSession.id === thread.claudeSessionId) {
@@ -117,11 +126,26 @@ export function ChatThreadView({
     })
   }, [providerSession, thread.claudeSessionId, thread.id, updateChatThread])
 
-  const sendMessage = useCallback(
-    (text: string, imagePaths?: string[]) =>
-      window.api.chatThreadStream.send(thread.id, text, imagePaths),
-    [thread.id]
+  // Resume already has the conversation; a new thread injects the brief once.
+  const briefInjectedRef = useRef(thread.claudeSessionId !== null)
+  const sendWithWorkspaceBrief = useCallback(
+    (text: string, imagePaths?: string[]): ReturnType<typeof window.api.chatThreadStream.send> => {
+      let payload = text
+      if (!briefInjectedRef.current) {
+        briefInjectedRef.current = true
+        const brief = workspace ? buildChatWorkspaceAgentBrief(workspace) : null
+        if (brief) {
+          payload = wrapChatWorkspaceUserTurn(brief, text)
+        }
+      }
+      if (thread.title === 'New chat' || isChatWorkspaceBriefTitle(thread.title)) {
+        void updateChatThread(thread.id, { title: deriveChatThreadTitle(text) })
+      }
+      return window.api.chatThreadStream.send(thread.id, payload, imagePaths)
+    },
+    [thread.id, thread.title, updateChatThread, workspace]
   )
+  const sendMessage = sendWithWorkspaceBrief
   const dispatchOption = useCallback(
     (command: string) => dispatchChatThreadSessionOption({ threadId: thread.id, command }),
     [thread.id]
@@ -129,7 +153,7 @@ export function ChatThreadView({
   const interrupt = useCallback(() => window.api.chatThreadStream.interrupt(thread.id), [thread.id])
   const permissionRequests = useAppStore((s) => s.chatThreadPermissionRequests[thread.id])
   const respondPermission = useCallback(
-    (requestId: string, behavior: NativeChatPermissionBehavior) => {
+    (requestId: string, behavior: NativeChatPermissionBehavior, message?: string) => {
       const store = useAppStore.getState()
       if (behavior === 'allow-always') {
         // Record the tool so ChatModePage auto-allows its later requests this session.
@@ -154,7 +178,8 @@ export function ChatThreadView({
       store.respondChatThreadPermission(
         thread.id,
         requestId,
-        behavior === 'deny' ? 'deny' : 'allow'
+        behavior === 'deny' ? 'deny' : 'allow',
+        message
       )
     },
     [thread.id]
@@ -234,8 +259,8 @@ export function ChatThreadView({
       createdAt: Date.now()
     })
     store.clearChatThreadFirstMessage(thread.id)
-    void window.api.chatThreadStream.send(thread.id, firstMessage).catch(() => undefined)
-  }, [session, firstMessage, thread.id, thread.agent])
+    void sendWithWorkspaceBrief(firstMessage).catch(() => undefined)
+  }, [session, firstMessage, thread.id, thread.agent, sendWithWorkspaceBrief])
 
   if (session) {
     return (
@@ -256,7 +281,9 @@ export function ChatThreadView({
               ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
               : null
           }
-          activeCollabProjectId={workspace?.activeCollabProject?.id ?? null}
+          activeCollabProjectId={
+            workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
+          }
         />
       </div>
     )

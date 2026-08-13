@@ -55,17 +55,28 @@ export function registerChatThreadStreamHandlers(store: Store): void {
     'chatThreadStream:start',
     async (
       event,
-      args: { threadId?: unknown; command?: unknown; cwd?: unknown; env?: unknown }
+      args: {
+        threadId?: unknown
+        command?: unknown
+        cwd?: unknown
+        env?: unknown
+        appendSystemPrompt?: unknown
+      }
     ): Promise<ChatThreadStreamStartResult> => {
       try {
         const cwd = args?.cwd === undefined ? undefined : asString(args.cwd, 'cwd')
         const env = asEnv(args?.env)
+        const appendSystemPrompt =
+          typeof args?.appendSystemPrompt === 'string' && args.appendSystemPrompt !== ''
+            ? args.appendSystemPrompt
+            : undefined
         return startChatThreadStream(
           {
             threadId: asString(args?.threadId, 'threadId'),
             command: asString(args?.command, 'command'),
             ...(cwd ? { cwd } : {}),
             ...(env ? { env } : {}),
+            ...(appendSystemPrompt ? { appendSystemPrompt } : {}),
             sender: event.sender
           },
           {

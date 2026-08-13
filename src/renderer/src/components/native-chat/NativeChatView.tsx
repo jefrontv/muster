@@ -5,10 +5,10 @@ import type { NativeChatSession } from '../../../../shared/native-chat-types'
 import { useNativeChatLiveSession } from './use-native-chat-live-session'
 import { selectNativeChatViewState } from './native-chat-view-state'
 import { NativeChatMessageList } from './NativeChatMessageList'
-import { NativeChatComposer, type NativeChatComposerHandle } from './NativeChatComposer'
+import type { NativeChatComposerHandle } from './NativeChatComposer'
+import { NativeChatViewInput } from './NativeChatViewInput'
 import { useNativeChatFontScale } from './use-native-chat-font-scale'
 import { useNativeChatCanSend } from './use-native-chat-can-send'
-import { NativeChatInteractiveCard } from './NativeChatInteractiveCard'
 import { NativeChatEmptyState } from './NativeChatEmptyState'
 import { NativeChatSessionGate } from './NativeChatSessionGate'
 import { useNativeChatInteractiveSend } from './use-native-chat-interactive-send'
@@ -406,48 +406,28 @@ function NativeChatResolvedView({
           />
         )}
       </div>
-      {/* Live interactive prompt (question / approval) is the bottom input region
-          (mobile parity). A question card supplies its own answer input, so it
-          fully replaces the composer while active — no stray "Send a message". */}
-      <NativeChatInteractiveCard
+      <NativeChatViewInput
         paneKey={paneKey}
-        send={interactiveSend}
+        terminalTabId={terminalTabId}
+        targetPtyId={targetPtyId}
+        agent={agent}
+        transport={transport}
+        interactiveSend={interactiveSend}
         canSend={canSend}
-        onShowingQuestionChange={setQuestionActive}
-        answerInputRef={questionAnswerInputRef}
-        suppressApproval={transport !== null}
+        isWorking={isWorking}
+        questionActive={questionActive}
+        setQuestionActive={setQuestionActive}
+        questionAnswerInputRef={questionAnswerInputRef}
+        composerRef={composerRef}
+        stopAgent={stopAgent}
+        onOptimisticSend={onOptimisticSend}
+        onOptimisticSendCanceled={onOptimisticSendCanceled}
+        onSlashCommand={onSlashCommand}
+        onSwitchToTerminal={onSwitchToTerminal}
+        readTerminalScreen={readTerminalScreen}
+        runtimeEnvironmentId={runtimeEnvironmentId}
+        activeCollabProjectId={activeCollabProjectId}
       />
-      {/* canSend reflects the mobile presence-lock: when a mobile client holds
-          the pty, the composer shows its guarded state instead of racing the
-          mobile driver (R8). */}
-      {questionActive ? null : (
-        <NativeChatComposer
-          ref={composerRef}
-          terminalTabId={terminalTabId}
-          paneKey={paneKey}
-          targetPtyId={targetPtyId}
-          agent={agent}
-          transportSend={transport?.send}
-          transportDispatchOption={transport?.dispatchOption}
-          transportInterrupt={transport?.interrupt}
-          canSend={canSend}
-          isWorking={isWorking}
-          onStop={stopAgent}
-          onOptimisticSend={onOptimisticSend}
-          onOptimisticSendCanceled={onOptimisticSendCanceled}
-          onSlashCommand={onSlashCommand}
-          onSwitchToTerminal={onSwitchToTerminal}
-          readTerminalScreen={readTerminalScreen}
-          permissionRequest={transport?.permissionRequests?.[0] ?? null}
-          permissionRequestCount={transport?.permissionRequests?.length ?? 0}
-          onRespondPermission={transport?.respondPermission}
-          contextUsageEnabled={runtimeEnvironmentId === null}
-          contextMaxTokens={transport?.contextWindowTokens}
-          fullAccess={transport?.fullAccess}
-          onSetFullAccess={transport?.setFullAccess}
-          activeCollabProjectId={activeCollabProjectId}
-        />
-      )}
       {contextMenu.menu}
     </div>
   )

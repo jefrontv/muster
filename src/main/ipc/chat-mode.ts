@@ -5,6 +5,12 @@
 import { app, ipcMain } from 'electron'
 import { getChatGreetingName } from '../chat-mode/chat-greeting-name'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../../shared/chat-mode-types'
+import {
+  normalizeChatWorkspaceEmails,
+  normalizeChatWorkspaceNotes,
+  normalizeChatWorkspaceProjects,
+  normalizeChatWorkspaceUrls
+} from '../../shared/chat-workspace-site-info'
 import { sanitizeRepoIcon } from '../../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
 import { ChatWorkspaceStore } from '../chat-mode/chat-workspace-store'
@@ -27,17 +33,6 @@ function chatStore(): ChatWorkspaceStore {
     app.on('before-quit', () => storeSingleton?.flush())
   }
   return storeSingleton
-}
-
-function asActiveCollabProject(value: unknown): { id: number; name: string } | null {
-  if (typeof value !== 'object' || value === null) {
-    return null
-  }
-  const record = value as { id?: unknown; name?: unknown }
-  if (typeof record.id !== 'number' || !Number.isFinite(record.id)) {
-    return null
-  }
-  return { id: record.id, name: typeof record.name === 'string' ? record.name : '' }
 }
 
 function asActiveCollabTask(value: unknown): { projectId: number; taskId: number } | null {
@@ -97,6 +92,11 @@ export function registerChatModeHandlers(): void {
         icon?: unknown
         color?: unknown
         activeCollabProject?: unknown
+        activeCollabProjects?: unknown
+        urls?: unknown
+        clientEmails?: unknown
+        notes?: unknown
+        iconOverridden?: unknown
       }
     ): Promise<ChatWorkspace | null> =>
       chatStore().updateWorkspace(asString(id, 'id'), {
@@ -110,8 +110,30 @@ export function registerChatModeHandlers(): void {
         ...(typeof patch?.color === 'string'
           ? { color: normalizeRepoBadgeColor(patch.color) ?? undefined }
           : {}),
-        ...('activeCollabProject' in (patch ?? {})
-          ? { activeCollabProject: asActiveCollabProject(patch.activeCollabProject) }
+        ...('activeCollabProjects' in (patch ?? {})
+          ? {
+              activeCollabProjects: normalizeChatWorkspaceProjects(
+                patch.activeCollabProjects,
+                patch.activeCollabProject
+              )
+            }
+          : 'activeCollabProject' in (patch ?? {})
+            ? {
+                activeCollabProjects: normalizeChatWorkspaceProjects(
+                  null,
+                  patch.activeCollabProject
+                )
+              }
+            : {}),
+        ...(patch?.urls !== undefined ? { urls: normalizeChatWorkspaceUrls(patch.urls) } : {}),
+        ...(patch?.clientEmails !== undefined
+          ? { clientEmails: normalizeChatWorkspaceEmails(patch.clientEmails) }
+          : {}),
+        ...(patch?.notes !== undefined
+          ? { notes: normalizeChatWorkspaceNotes(patch.notes) ?? '' }
+          : {}),
+        ...(typeof patch?.iconOverridden === 'boolean'
+          ? { iconOverridden: patch.iconOverridden }
           : {})
       })
   )

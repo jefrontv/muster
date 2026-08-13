@@ -29,7 +29,8 @@ export type ChatThreadPermissionSlice = {
   respondChatThreadPermission: (
     threadId: string,
     requestId: string,
-    behavior: 'allow' | 'deny'
+    behavior: 'allow' | 'deny',
+    message?: string
   ) => void
   allowChatThreadToolForSession: (threadId: string, toolName: string) => void
   clearChatThreadSessionAllowedTools: (threadId: string) => void
@@ -86,12 +87,17 @@ export const createChatThreadPermissionSlice: StateCreator<
       return { chatThreadPermissionRequests: remaining }
     }),
 
-  respondChatThreadPermission: (threadId, requestId, behavior) => {
+  respondChatThreadPermission: (threadId, requestId, behavior, message) => {
     // Optimistic removal: the composer moves on immediately; main writes the
     // verdict and the CLI tolerates a stale id if the turn was interrupted.
     get().removeChatThreadPermissionRequest(threadId, requestId)
     void window.api.chatThreadStream
-      .respondPermission({ threadId, requestId, behavior })
+      .respondPermission({
+        threadId,
+        requestId,
+        behavior,
+        ...(typeof message === 'string' && message !== '' ? { message } : {})
+      })
       .catch(() => undefined)
   },
 

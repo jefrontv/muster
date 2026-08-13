@@ -3,7 +3,11 @@
 // Sessions launch through chat-thread-session-launch, which fills threadSessions.
 
 import type { StateCreator } from 'zustand'
-import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
+import type {
+  ChatThread,
+  ChatWorkspace,
+  ChatWorkspacePatch
+} from '../../../../shared/chat-mode-types'
 import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
 import type { AppState } from '../types'
 import {
@@ -46,12 +50,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   setActiveChatWorkspace: (id: string | null) => void
   setActiveChatThread: (id: string | null) => void
   createChatWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
-  updateChatWorkspace: (
-    id: string,
-    patch: Partial<
-      Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color' | 'activeCollabProject'>
-    >
-  ) => Promise<void>
+  updateChatWorkspace: (id: string, patch: ChatWorkspacePatch) => Promise<void>
   deleteChatWorkspace: (id: string) => Promise<void>
   createChatThread: (workspaceId: string | null, title?: string) => Promise<ChatThread | null>
   updateChatThread: (

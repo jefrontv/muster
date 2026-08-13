@@ -1,24 +1,51 @@
-// Chat mode's persisted domain: non-technical workspaces (name + directories) holding chat
-// threads. Messages are never stored here — they live in the agent's own transcript files;
-// threads keep only the pointers needed to resume and cold-render a session.
+// Chat mode's persisted domain: non-technical workspaces (name, folders, site URLs)
+// holding chat threads. Messages are never stored here — they live in the agent's own
+// transcript files; threads keep only the pointers needed to resume and cold-render a session.
 
 import type { RepoIcon } from './repo-icon'
 
 export type ChatWorkspace = {
   id: string
   name: string
-  /** Absolute paths. directories[0] is the primary directory (the agent's cwd);
-   *  the rest are granted via --add-dir. */
+  /** Absolute paths. Empty = no project folder; the agent starts in home.
+   *  directories[0] is the primary cwd; the rest are granted via --add-dir. */
   directories: string[]
   /** Same icon model as projects (lucide/emoji/image); null or absent = default glyph. */
   icon?: RepoIcon | null
   /** Hex accent color, validated like a repo badge color. */
   color?: string
-  /** Bound ActiveCollab project; task pickers and new threads inherit it. */
+  /** Bound ActiveCollab project; task pickers and new threads inherit it.
+   *  Legacy single-binding field — still written as projects[0] for old readers. */
   activeCollabProject?: { id: number; name: string } | null
+  /** Ordered ActiveCollab projects. [0] is the primary (task-picker default). */
+  activeCollabProjects?: { id: number; name: string }[]
+  /** Ordered site/project URLs. urls[0] is the primary site. */
+  urls?: string[]
+  /** Client contact emails. clientEmails[0] is the primary contact. */
+  clientEmails?: string[]
+  /** Free-text notes about the site/project; injected into new chats. */
+  notes?: string
+  /** True once the user picked an icon; primary-URL favicon must not overwrite. */
+  iconOverridden?: boolean
   createdAt: number
   updatedAt: number
 }
+
+export type ChatWorkspacePatch = Partial<
+  Pick<
+    ChatWorkspace,
+    | 'name'
+    | 'directories'
+    | 'icon'
+    | 'color'
+    | 'activeCollabProject'
+    | 'activeCollabProjects'
+    | 'urls'
+    | 'clientEmails'
+    | 'notes'
+    | 'iconOverridden'
+  >
+>
 
 export type ChatThread = {
   id: string

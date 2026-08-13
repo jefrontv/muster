@@ -14,6 +14,7 @@ import {
 import type React from 'react'
 import { useState } from 'react'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
+import { chatWorkspaceProjects } from '../../../../shared/chat-workspace-site-info'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -184,6 +185,7 @@ function WorkspaceSection({
   if (query && !workspaceMatches && rows.length === 0) {
     return null
   }
+  const linkedProjects = chatWorkspaceProjects(workspace)
 
   return (
     <section className="space-y-0.5">
@@ -196,11 +198,6 @@ function WorkspaceSection({
         <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {workspace.name}
         </h3>
-        {workspace.activeCollabProject ? (
-          <span title={workspace.activeCollabProject.name} className="shrink-0">
-            <ActiveCollabIcon className="size-3 text-muted-foreground/70" />
-          </span>
-        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -224,6 +221,14 @@ function WorkspaceSection({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {linkedProjects.length > 0 ? (
+          <span
+            title={linkedProjects.map((project) => project.name).join(', ')}
+            className="shrink-0"
+          >
+            <ActiveCollabIcon className="size-3 text-muted-foreground/70" />
+          </span>
+        ) : null}
         <Button
           variant="ghost"
           size="icon-xs"

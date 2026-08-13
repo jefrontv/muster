@@ -49,14 +49,14 @@ const getTextFields = createLocalizedCatalog(() => [
   {
     key: 'username' as const,
     label: translate('auto.components.sites.SiteEnvironmentSection.username', 'SSH user'),
-    placeholder: translate('auto.components.sites.SiteEnvironmentSection.usernameHint', 'acme')
+    placeholder: translate('auto.components.sites.SiteEnvironmentSection.usernameHint', 'deploy')
   },
   {
     key: 'liveDomain' as const,
     label: translate('auto.components.sites.SiteEnvironmentSection.liveDomain', 'Live domain'),
     placeholder: translate(
       'auto.components.sites.SiteEnvironmentSection.liveDomainHint',
-      'acme.com'
+      'example.com'
     )
   },
   {

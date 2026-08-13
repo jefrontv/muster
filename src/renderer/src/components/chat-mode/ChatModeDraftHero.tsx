@@ -109,41 +109,45 @@ export function ChatModeDraftHero({
             })}
           </p>
         ) : null}
-        <h1 className="mx-auto w-full max-w-2xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
+        <h1 className="mx-auto w-full max-w-4xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
           {translate('auto.components.chat.hero.headlinePrefix', 'What should we work on in')}{' '}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="inline-block max-w-64 cursor-pointer truncate border-b border-dotted border-foreground/60 align-bottom text-foreground transition-colors hover:border-foreground/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              title={selectedWorkspace?.name}
-            >
-              {selectedWorkspace?.name ??
-                translate('auto.components.chat.hero.noWorkspace', 'a new chat')}
-              <ChevronDown className="ml-1 inline size-4 align-middle text-muted-foreground" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="max-h-80 w-64 overflow-y-auto">
-              <DropdownMenuRadioGroup
-                value={selectedWorkspace?.id ?? STANDALONE}
-                onValueChange={(value) =>
-                  setSelectedWorkspaceId(value === STANDALONE ? null : value)
-                }
-              >
-                {workspaces.map((workspace) => (
-                  <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
-                    <span className="min-w-0 truncate">{workspace.name}</span>
+          <span className="whitespace-nowrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <span
+                  className="cursor-pointer border-b border-dotted border-foreground/60 text-foreground outline-none transition-colors hover:border-foreground/80 focus:outline-none focus-visible:outline-none"
+                  title={selectedWorkspace?.name}
+                >
+                  {selectedWorkspace?.name ??
+                    translate('auto.components.chat.hero.noWorkspace', 'a new chat')}
+                  <ChevronDown className="ml-1 inline size-4 align-baseline text-muted-foreground" />
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="max-h-80 w-64 overflow-y-auto">
+                <DropdownMenuRadioGroup
+                  value={selectedWorkspace?.id ?? STANDALONE}
+                  onValueChange={(value) =>
+                    setSelectedWorkspaceId(value === STANDALONE ? null : value)
+                  }
+                >
+                  {workspaces.map((workspace) => (
+                    <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
+                      <span className="min-w-0 truncate">{workspace.name}</span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                  <DropdownMenuRadioItem value={STANDALONE}>
+                    {translate('auto.components.chat.hero.standalone', 'No workspace')}
                   </DropdownMenuRadioItem>
-                ))}
-                <DropdownMenuRadioItem value={STANDALONE}>
-                  {translate('auto.components.chat.hero.standalone', 'No workspace')}
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={onCreateWorkspace}>
-                <FolderPlus className="size-4" />
-                {translate('auto.components.chat.hero.newWorkspace', 'New workspace…')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          ?
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={onCreateWorkspace}>
+                  <FolderPlus className="size-4" />
+                  {translate('auto.components.chat.hero.newWorkspace', 'New workspace…')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            ?
+          </span>
         </h1>
       </div>
       <div className="w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40">

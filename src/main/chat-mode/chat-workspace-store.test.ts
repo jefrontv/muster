@@ -13,7 +13,17 @@ describe('normalizeChatModeState', () => {
   it('drops malformed rows and threads pointing at missing workspaces', () => {
     const state = normalizeChatModeState({
       workspaces: [
-        { id: 'w1', name: 'Site', directories: ['/a', 7, ''], createdAt: 1, updatedAt: 1 },
+        {
+          id: 'w1',
+          name: 'Site',
+          directories: ['/a', 7, ''],
+          urls: ['example.com', '', 'https://staging.example.com'],
+          clientEmails: ['  Jane@Client.com ', 'nope', 'ops@client.com'],
+          notes: '  WordPress  ',
+          iconOverridden: true,
+          createdAt: 1,
+          updatedAt: 1
+        },
         { name: 'no id' }
       ],
       threads: [
@@ -24,8 +34,24 @@ describe('normalizeChatModeState', () => {
     })
     expect(state.workspaces).toHaveLength(1)
     expect(state.workspaces[0]?.directories).toEqual(['/a'])
+    expect(state.workspaces[0]?.urls).toEqual([
+      'https://example.com/',
+      'https://staging.example.com/'
+    ])
+    expect(state.workspaces[0]?.clientEmails).toEqual(['jane@client.com', 'ops@client.com'])
+    expect(state.workspaces[0]?.notes).toBe('WordPress')
+    expect(state.workspaces[0]?.iconOverridden).toBe(true)
     expect(state.threads.map((t) => t.id)).toEqual(['t1'])
     expect(state.threads[0]?.claudeSessionId).toBeNull()
+  })
+
+  it('keeps a workspace that has no project folder', () => {
+    const state = normalizeChatModeState({
+      workspaces: [{ id: 'w-empty', name: 'Inbox', directories: [], createdAt: 1, updatedAt: 1 }],
+      threads: []
+    })
+    expect(state.workspaces).toHaveLength(1)
+    expect(state.workspaces[0]?.directories).toEqual([])
   })
 
   it('loads old JSON without visit/completion stamps and drops malformed ones', () => {
@@ -90,6 +116,18 @@ describe('ChatWorkspaceStore', () => {
     expect(store.createThread({ workspaceId: 'nope' })).toBeNull()
   })
 
+  it('creates and reloads a workspace with no project folder', () => {
+    const store = new ChatWorkspaceStore(dir, () => 3)
+    const workspace = store.createWorkspace({ name: 'Inbox', directories: [] })
+    expect(workspace.directories).toEqual([])
+    store.createThread({ workspaceId: workspace.id, title: 'Chat' })
+    store.flush()
+
+    const reloaded = new ChatWorkspaceStore(dir)
+    expect(reloaded.getState().workspaces[0]?.directories).toEqual([])
+    expect(reloaded.getState().threads[0]?.workspaceId).toBe(workspace.id)
+  })
+
   it('round-trips through flush and a fresh load', () => {
     const store = new ChatWorkspaceStore(dir, () => 7)
     const workspace = store.createWorkspace({ name: 'Site', directories: ['/a', '/b'] })
@@ -99,6 +137,57 @@ describe('ChatWorkspaceStore', () => {
     const reloaded = new ChatWorkspaceStore(dir)
     expect(reloaded.getState().workspaces[0]?.directories).toEqual(['/a', '/b'])
     expect(reloaded.getState().threads[0]?.title).toBe('First')
+  })
+
+  it('persists urls, notes, and icon override, and can clear them', () => {
+    const store = new ChatWorkspaceStore(dir, () => 7)
+    const workspace = store.createWorkspace({ name: 'Site', directories: ['/a'] })
+    store.updateWorkspace(workspace.id, {
+      urls: ['example.com', 'https://staging.example.com'],
+      clientEmails: ['Jane@Client.com', 'ops@client.com'],
+      notes: '  WordPress  ',
+      iconOverridden: true
+    })
+    store.flush()
+
+    const reloaded = new ChatWorkspaceStore(dir)
+    expect(reloaded.getState().workspaces[0]?.urls).toEqual([
+      'https://example.com/',
+      'https://staging.example.com/'
+    ])
+    expect(reloaded.getState().workspaces[0]?.clientEmails).toEqual([
+      'jane@client.com',
+      'ops@client.com'
+    ])
+    expect(reloaded.getState().workspaces[0]?.notes).toBe('WordPress')
+    expect(reloaded.getState().workspaces[0]?.iconOverridden).toBe(true)
+    reloaded.updateWorkspace(workspace.id, {
+      activeCollabProjects: [
+        { id: 1, name: 'A' },
+        { id: 2, name: 'B' }
+      ]
+    })
+    expect(reloaded.getState().workspaces[0]?.activeCollabProjects?.map((p) => p.id)).toEqual([
+      1, 2
+    ])
+    expect(reloaded.getState().workspaces[0]?.activeCollabProject?.id).toBe(1)
+    reloaded.flush()
+    expect(
+      new ChatWorkspaceStore(dir).getState().workspaces[0]?.activeCollabProjects?.map((p) => p.id)
+    ).toEqual([1, 2])
+
+    reloaded.updateWorkspace(workspace.id, {
+      urls: [],
+      clientEmails: [],
+      notes: '',
+      iconOverridden: false
+    })
+    reloaded.flush()
+    const cleared = new ChatWorkspaceStore(dir).getState().workspaces[0]
+    expect(cleared).not.toHaveProperty('urls')
+    expect(cleared).not.toHaveProperty('clientEmails')
+    expect(cleared).not.toHaveProperty('notes')
+    expect(cleared).not.toHaveProperty('iconOverridden')
   })
 
   it('persists visit/completion stamps through updateThread and reload', () => {

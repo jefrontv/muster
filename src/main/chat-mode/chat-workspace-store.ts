@@ -9,23 +9,23 @@ import {
   EMPTY_CHAT_MODE_STATE,
   type ChatModeState,
   type ChatThread,
-  type ChatWorkspace
+  type ChatWorkspace,
+  type ChatWorkspacePatch
 } from '../../shared/chat-mode-types'
 import { sanitizeRepoIcon } from '../../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
+import {
+  normalizeChatWorkspaceEmails,
+  normalizeChatWorkspaceNotes,
+  normalizeChatWorkspaceProjects,
+  normalizeChatWorkspaceUrls
+} from '../../shared/chat-workspace-site-info'
 
 const CHAT_MODE_FILE_NAME = 'chat-workspaces.json'
 const SAVE_DEBOUNCE_MS = 100
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
-}
-
-function normalizeActiveCollabProject(raw: unknown): { id: number; name: string } | null {
-  if (!isRecord(raw) || typeof raw.id !== 'number' || !Number.isFinite(raw.id)) {
-    return null
-  }
-  return { id: raw.id, name: typeof raw.name === 'string' ? raw.name : '' }
 }
 
 function normalizeActiveCollabTask(raw: unknown): { projectId: number; taskId: number } | null {
@@ -50,15 +50,23 @@ function normalizeWorkspace(raw: unknown): ChatWorkspace | null {
     : []
   const icon = sanitizeRepoIcon(raw.icon)
   const color = normalizeRepoBadgeColor(raw.color)
+  const urls = normalizeChatWorkspaceUrls(raw.urls)
+  const clientEmails = normalizeChatWorkspaceEmails(raw.clientEmails)
+  const notes = normalizeChatWorkspaceNotes(raw.notes)
+  const projects = normalizeChatWorkspaceProjects(raw.activeCollabProjects, raw.activeCollabProject)
   return {
     id: raw.id,
     name: typeof raw.name === 'string' && raw.name !== '' ? raw.name : 'Untitled',
     directories,
     ...(icon !== undefined ? { icon } : {}),
     ...(color !== null ? { color } : {}),
-    ...(normalizeActiveCollabProject(raw.activeCollabProject)
-      ? { activeCollabProject: normalizeActiveCollabProject(raw.activeCollabProject) }
+    ...(projects.length > 0
+      ? { activeCollabProjects: projects, activeCollabProject: projects[0] }
       : {}),
+    ...(urls.length > 0 ? { urls } : {}),
+    ...(clientEmails.length > 0 ? { clientEmails } : {}),
+    ...(notes ? { notes } : {}),
+    ...(raw.iconOverridden === true ? { iconOverridden: true } : {}),
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : 0,
     updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : 0
   }
@@ -153,17 +161,54 @@ export class ChatWorkspaceStore {
     return workspace
   }
 
-  updateWorkspace(
-    id: string,
-    patch: Partial<
-      Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color' | 'activeCollabProject'>
-    >
-  ): ChatWorkspace | null {
+  updateWorkspace(id: string, patch: ChatWorkspacePatch): ChatWorkspace | null {
     const existing = this.state.workspaces.find((w) => w.id === id)
     if (!existing) {
       return null
     }
-    const updated: ChatWorkspace = { ...existing, ...patch, updatedAt: this.now() }
+    const { urls, clientEmails, notes, iconOverridden, activeCollabProjects, ...rest } = patch
+    const updated: ChatWorkspace = { ...existing, ...rest, updatedAt: this.now() }
+    if (activeCollabProjects !== undefined) {
+      const nextProjects = normalizeChatWorkspaceProjects(activeCollabProjects)
+      if (nextProjects.length > 0) {
+        updated.activeCollabProjects = nextProjects
+        updated.activeCollabProject = nextProjects[0]
+      } else {
+        delete updated.activeCollabProjects
+        delete updated.activeCollabProject
+      }
+    }
+    if (urls !== undefined) {
+      const nextUrls = normalizeChatWorkspaceUrls(urls)
+      if (nextUrls.length > 0) {
+        updated.urls = nextUrls
+      } else {
+        delete updated.urls
+      }
+    }
+    if (clientEmails !== undefined) {
+      const nextEmails = normalizeChatWorkspaceEmails(clientEmails)
+      if (nextEmails.length > 0) {
+        updated.clientEmails = nextEmails
+      } else {
+        delete updated.clientEmails
+      }
+    }
+    if (notes !== undefined) {
+      const nextNotes = normalizeChatWorkspaceNotes(notes)
+      if (nextNotes) {
+        updated.notes = nextNotes
+      } else {
+        delete updated.notes
+      }
+    }
+    if (iconOverridden !== undefined) {
+      if (iconOverridden) {
+        updated.iconOverridden = true
+      } else {
+        delete updated.iconOverridden
+      }
+    }
     this.state = {
       ...this.state,
       workspaces: this.state.workspaces.map((w) => (w.id === id ? updated : w))

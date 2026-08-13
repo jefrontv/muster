@@ -1,11 +1,17 @@
-// Create/edit dialog for a chat workspace: a name plus the directories the agent may
-// touch. Deliberately non-technical — no branch, worktree, or agent configuration.
+// Create/edit dialog for a chat workspace: name, site URLs, notes, and the
+// directories the agent may touch. Deliberately non-technical — no branch or agent config.
 
 import { FolderPlus, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useState } from 'react'
-import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ChatWorkspace, ChatWorkspacePatch } from '../../../../shared/chat-mode-types'
 import type { RepoIcon } from '../../../../shared/repo-icon'
+import {
+  MAX_CHAT_WORKSPACE_NOTES_LENGTH,
+  chatWorkspaceProjects,
+  isChatWorkspaceIconOverridden,
+  websiteHostname
+} from '../../../../shared/chat-workspace-site-info'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,12 +24,22 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
+import { useChatWorkspaceFaviconSync } from '@/lib/use-chat-workspace-favicon-sync'
 import { useAppStore } from '@/store'
 import { ChatWorkspaceAppearanceSection } from './ChatWorkspaceAppearanceSection'
 import {
   ChatWorkspaceProjectBinding,
   type ChatWorkspaceProjectRef
 } from './ChatWorkspaceProjectBinding'
+import { ChatWorkspaceEmailList, emailsFromDrafts } from './ChatWorkspaceEmailList'
+import { ChatWorkspaceUrlList } from './ChatWorkspaceUrlList'
+import {
+  draftsFromUrls,
+  primaryDraftUrl,
+  urlsFromDrafts,
+  type ChatWorkspaceUrlDraft
+} from './chat-workspace-url-drafts'
 
 export function ChatWorkspaceCreateDialog({
   open,
@@ -38,19 +54,27 @@ export function ChatWorkspaceCreateDialog({
   const createChatWorkspace = useAppStore((s) => s.createChatWorkspace)
   const updateChatWorkspace = useAppStore((s) => s.updateChatWorkspace)
   const [name, setName] = useState('')
+  const [notes, setNotes] = useState('')
+  const [urlDrafts, setUrlDrafts] = useState<ChatWorkspaceUrlDraft[]>([])
+  const [emailDrafts, setEmailDrafts] = useState<ChatWorkspaceUrlDraft[]>([])
   const [directories, setDirectories] = useState<string[]>([])
   const [icon, setIcon] = useState<RepoIcon | null>(null)
   const [color, setColor] = useState<string | null>(null)
-  const [acProject, setAcProject] = useState<ChatWorkspaceProjectRef | null>(null)
+  const [iconOverridden, setIconOverridden] = useState(false)
+  const [acProjects, setAcProjects] = useState<ChatWorkspaceProjectRef[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
       setName(workspace?.name ?? '')
+      setNotes(workspace?.notes ?? '')
+      setUrlDrafts(draftsFromUrls(workspace?.urls ?? []))
+      setEmailDrafts(draftsFromUrls(workspace?.clientEmails ?? []))
       setDirectories(workspace?.directories ?? [])
       setIcon(workspace?.icon ?? null)
       setColor(workspace?.color ?? null)
-      setAcProject(workspace?.activeCollabProject ?? null)
+      setIconOverridden(isChatWorkspaceIconOverridden(workspace))
+      setAcProjects(workspace ? chatWorkspaceProjects(workspace) : [])
       setSaving(false)
     }
   }, [open, workspace])
@@ -64,40 +88,69 @@ export function ChatWorkspaceCreateDialog({
 
   // Why: appearance edits apply immediately (like project settings) — a favicon
   // "Apply" that still waits on the dialog's Save reads as a broken button.
+  const persistAppearance = useCallback(
+    (patch: ChatWorkspacePatch): void => {
+      if (workspace) {
+        void updateChatWorkspace(workspace.id, patch)
+      }
+    },
+    [updateChatWorkspace, workspace]
+  )
+
+  const applyAutoIcon = useCallback(
+    (nextIcon: RepoIcon): void => {
+      setIcon(nextIcon)
+      persistAppearance({ icon: nextIcon, iconOverridden: false })
+    },
+    [persistAppearance]
+  )
+
   const applyIcon = (nextIcon: RepoIcon | null): void => {
     setIcon(nextIcon)
-    if (workspace) {
-      void updateChatWorkspace(workspace.id, { icon: nextIcon })
-    }
+    setIconOverridden(true)
+    persistAppearance({ icon: nextIcon, iconOverridden: true })
   }
   const applyColor = (nextColor: string): void => {
     setColor(nextColor)
-    if (workspace) {
-      void updateChatWorkspace(workspace.id, { color: nextColor })
-    }
+    persistAppearance({ color: nextColor })
   }
 
-  const canSave = name.trim().length > 0 && directories.length > 0 && !saving
+  const primaryUrl = useMemo(() => primaryDraftUrl(urlDrafts), [urlDrafts])
+  useChatWorkspaceFaviconSync({
+    open,
+    primaryUrl,
+    iconOverridden,
+    hasAutoIcon: icon?.type === 'image' && icon.source === 'favicon',
+    onAutoIcon: applyAutoIcon
+  })
+
+  const canSave = name.trim().length > 0 && !saving
+
+  const siteFields = (): Pick<
+    ChatWorkspacePatch,
+    'urls' | 'clientEmails' | 'notes' | 'icon' | 'color' | 'iconOverridden' | 'activeCollabProjects'
+  > => ({
+    urls: urlsFromDrafts(urlDrafts),
+    clientEmails: emailsFromDrafts(emailDrafts),
+    notes,
+    icon,
+    iconOverridden,
+    activeCollabProjects: acProjects,
+    ...(color ? { color } : {})
+  })
 
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
-      const appearance = { icon, ...(color ? { color } : {}) }
       if (workspace) {
         await updateChatWorkspace(workspace.id, {
           name: name.trim(),
           directories,
-          ...appearance,
-          activeCollabProject: acProject
+          ...siteFields()
         })
       } else {
         const created = await createChatWorkspace({ name: name.trim(), directories })
-        if (icon || color || acProject) {
-          await updateChatWorkspace(created.id, {
-            ...appearance,
-            activeCollabProject: acProject
-          })
-        }
+        await updateChatWorkspace(created.id, siteFields())
       }
       onOpenChange(false)
     } finally {
@@ -107,8 +160,8 @@ export function ChatWorkspaceCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-sleek sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="shrink-0 space-y-1 border-b border-border px-6 py-4 pr-12">
           <DialogTitle>
             {workspace
               ? translate('auto.components.chat.workspaceDialog.editTitle', 'Edit workspace')
@@ -117,13 +170,13 @@ export function ChatWorkspaceCreateDialog({
           <DialogDescription>
             {translate(
               'auto.components.chat.workspaceDialog.description',
-              'Name the workspace and choose the folders Claude can work in.'
+              'Name the workspace and add site details. Folders are optional.'
             )}
           </DialogDescription>
         </DialogHeader>
         {/* min-w-0: DialogContent is a grid; without it a long unbreakable
             folder path widens the whole column past the dialog edge. */}
-        <div className="min-w-0 space-y-4">
+        <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto px-6 py-4 scrollbar-sleek">
           <div className="space-y-1.5">
             <Label htmlFor="chat-workspace-name">
               {translate('auto.components.chat.workspaceDialog.nameLabel', 'Name')}
@@ -140,13 +193,53 @@ export function ChatWorkspaceCreateDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>{translate('auto.components.chat.workspaceDialog.dirsLabel', 'Folders')}</Label>
+            <div className="space-y-1">
+              <Label htmlFor="chat-workspace-notes">
+                {translate('auto.components.chat.workspaceDialog.notesLabel', 'About')}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {translate(
+                  'auto.components.chat.workspaceDialog.notesHint',
+                  'Optional context new chats in this workspace will see — stack, clients, gotchas.'
+                )}
+              </p>
+            </div>
+            <textarea
+              id="chat-workspace-notes"
+              value={notes}
+              rows={3}
+              maxLength={MAX_CHAT_WORKSPACE_NOTES_LENGTH}
+              placeholder={translate(
+                'auto.components.chat.workspaceDialog.notesPlaceholder',
+                'e.g. WordPress site. Staging is on LocalWP.'
+              )}
+              onChange={(event) => setNotes(event.target.value)}
+              className={cn(
+                'w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground/60 dark:bg-input/30',
+                'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+              )}
+            />
+          </div>
+          <ChatWorkspaceUrlList drafts={urlDrafts} onChange={setUrlDrafts} />
+          <ChatWorkspaceEmailList drafts={emailDrafts} onChange={setEmailDrafts} />
+          <div className="space-y-1.5">
+            <div className="space-y-1">
+              <Label>
+                {translate('auto.components.chat.workspaceDialog.dirsLabel', 'Folders')}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {translate(
+                  'auto.components.chat.workspaceDialog.dirsHint',
+                  'Optional. The first folder is the working directory. Extra folders are added to the session.'
+                )}
+              </p>
+            </div>
             {directories.length > 0 ? (
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {directories.map((directory, index) => (
                   <li
                     key={directory}
-                    className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1"
+                    className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
                   >
                     <span className="flex min-w-0 flex-1 items-baseline gap-1.5" title={directory}>
                       <span className="shrink-0 text-xs font-medium">
@@ -157,7 +250,7 @@ export function ChatWorkspaceCreateDialog({
                       </span>
                     </span>
                     {index === 0 ? (
-                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                         {translate('auto.components.chat.workspaceDialog.primary', 'primary')}
                       </span>
                     ) : null}
@@ -181,7 +274,7 @@ export function ChatWorkspaceCreateDialog({
               <p className="text-xs text-muted-foreground">
                 {translate(
                   'auto.components.chat.workspaceDialog.noDirs',
-                  'No folders yet. The first folder becomes the main working folder.'
+                  'No folders. Chats start in your home folder until you add one.'
                 )}
               </p>
             )}
@@ -195,8 +288,8 @@ export function ChatWorkspaceCreateDialog({
               {translate('auto.components.chat.workspaceDialog.addDir', 'Add folder')}
             </Button>
           </div>
-          <ChatWorkspaceProjectBinding value={acProject} onChange={setAcProject} />
-          <div className="space-y-1.5 border-t border-border pt-3">
+          <ChatWorkspaceProjectBinding value={acProjects} onChange={setAcProjects} />
+          <div className="space-y-2 border-t border-border pt-4">
             <Label>
               {translate('auto.components.chat.workspaceDialog.appearance', 'Appearance')}
             </Label>
@@ -204,12 +297,13 @@ export function ChatWorkspaceCreateDialog({
               name={name}
               icon={icon}
               color={color}
+              defaultFaviconDomain={primaryUrl ? (websiteHostname(primaryUrl) ?? '') : ''}
               onIconChange={applyIcon}
               onColorChange={applyColor}
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-border px-6 py-3">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {translate('auto.components.chat.workspaceDialog.cancel', 'Cancel')}
           </Button>

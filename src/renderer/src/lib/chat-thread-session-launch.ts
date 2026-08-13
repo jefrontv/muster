@@ -28,6 +28,7 @@ import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-te
 import type { AgentProviderSessionMetadata } from '../../../shared/agent-session-resume'
 import type { SessionOptionValue } from '../../../shared/native-chat-session-options'
 import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
+import { buildChatWorkspaceAgentBrief } from '../../../shared/chat-workspace-site-info'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 
 /** Headless stream transport flags; the CLI reads turns on stdin and writes
@@ -62,10 +63,9 @@ export async function launchChatThreadSession(args: {
     // is Claude's; other agents need their own transport mapping first.
     throw new Error(`Chat threads only support Claude today (got "${agent}").`)
   }
-  const primaryDirectory = workspace ? workspace.directories[0] : undefined
-  if (workspace && !primaryDirectory) {
-    throw new Error('This chat workspace has no directory yet; add one first.')
-  }
+  // Folder-less workspaces (and standalone chats) start in the provider default
+  // (home). The stream spawn already falls back to homedir when cwd is omitted.
+  const primaryDirectory = workspace?.directories[0]
 
   // Why: the session is invisible, so the trust menu would stall it with no way to answer.
   const preflight = TUI_AGENT_CONFIG[agent].preflightTrust
@@ -90,6 +90,11 @@ export async function launchChatThreadSession(args: {
   const addDirArgs = (workspace?.directories.slice(1) ?? [])
     .map((dir) => `--add-dir ${quoteStartupArg(dir, shell)}`)
     .join(' ')
+  // Why: the brief is a separate start arg (temp file + --append-system-prompt-file).
+  // Stuffing the multiline string into agentArgs went through tokenize + zsh -lc
+  // and never reached Claude.
+  const workspaceBrief =
+    thread.claudeSessionId === null && workspace ? buildChatWorkspaceAgentBrief(workspace) : null
   const baseArgs = resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
   const agentArgs = [baseArgs, addDirArgs, CLAUDE_STREAM_FLAGS]
     .filter((part) => part.length > 0)
@@ -158,7 +163,8 @@ export async function launchChatThreadSession(args: {
     ...startupPlan.env,
     ORCA_PANE_KEY: paneKey,
     ORCA_TAB_ID: tabId,
-    ORCA_AGENT_LAUNCH_TOKEN: launchToken
+    ORCA_AGENT_LAUNCH_TOKEN: launchToken,
+    ORCA_CHAT_THREAD_STREAM: '1'
   }
 
   try {
@@ -166,7 +172,8 @@ export async function launchChatThreadSession(args: {
       threadId: thread.id,
       command: startupPlan.launchCommand,
       ...(primaryDirectory ? { cwd: primaryDirectory } : {}),
-      env: paneEnv
+      env: paneEnv,
+      ...(workspaceBrief ? { appendSystemPrompt: workspaceBrief } : {})
     })
     if (!result.ok) {
       throw new Error(result.error ?? 'The chat session could not be started.')

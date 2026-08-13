@@ -31,7 +31,12 @@ import type {
 } from '../shared/site-types'
 import type { SiteActiveRun, SiteRun, SiteRunEvent, SiteRunLogPage } from '../shared/site-run-types'
 import type { SiteDbSnapshot } from '../shared/site-db-snapshot-types'
-import type { ChatModeState, ChatThread, ChatWorkspace } from '../shared/chat-mode-types'
+import type {
+  ChatModeState,
+  ChatThread,
+  ChatWorkspace,
+  ChatWorkspacePatch
+} from '../shared/chat-mode-types'
 import type {
   ChatThreadPermissionResponseArgs,
   ChatThreadStreamEvent,
@@ -876,12 +881,7 @@ export type SiteDbSnapshotsApi = {
 export type ChatModeApi = {
   getState: () => Promise<ChatModeState>
   createWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
-  updateWorkspace: (
-    id: string,
-    patch: Partial<
-      Pick<ChatWorkspace, 'name' | 'directories' | 'icon' | 'color' | 'activeCollabProject'>
-    >
-  ) => Promise<ChatWorkspace | null>
+  updateWorkspace: (id: string, patch: ChatWorkspacePatch) => Promise<ChatWorkspace | null>
   deleteWorkspace: (id: string) => Promise<boolean>
   createThread: (args: { workspaceId: string | null; title?: string }) => Promise<ChatThread | null>
   updateThread: (

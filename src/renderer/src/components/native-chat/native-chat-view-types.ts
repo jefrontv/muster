@@ -36,7 +36,11 @@ export type NativeChatTransport = {
   /** Pending tool-permission questions, oldest first. Absent for PTY chat. */
   permissionRequests?: NativeChatPermissionRequest[]
   /** Answer the given pending request. Absent for PTY chat. */
-  respondPermission?: (requestId: string, behavior: NativeChatPermissionBehavior) => void
+  respondPermission?: (
+    requestId: string,
+    behavior: NativeChatPermissionBehavior,
+    message?: string
+  ) => void
   /** True while the session auto-approves every tool (full access). */
   fullAccess?: boolean
   /** Turn full access on/off for the session. */

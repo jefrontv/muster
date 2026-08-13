@@ -110,6 +110,17 @@ function getManagedScript(
     '  --data-urlencode "env=${ORCA_AGENT_HOOK_ENV}" \\',
     '  --data-urlencode "version=${ORCA_AGENT_HOOK_VERSION}" \\',
     '  --data-urlencode "payload@-" >/dev/null 2>&1 || true',
+    // Why: headless chat-mode has no TTY. AskUserQuestion auto-runs, fails
+    // immediately, and the model keeps talking. Force can_use_tool so the
+    // stream UI can collect the answer before the turn continues.
+    'if [ -n "$ORCA_CHAT_THREAD_STREAM" ]; then',
+    '  case "$payload" in',
+    '    *PreToolUse*AskUserQuestion*|*AskUserQuestion*PreToolUse*)',
+    '      printf \'%s\\n\' \'{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask"}}\'',
+    '      exit 0',
+    '      ;;',
+    '  esac',
+    'fi',
     'exit 0',
     ''
   ].join('\n')

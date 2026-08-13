@@ -91,17 +91,18 @@ header('X-Robots-Tag: noindex, nofollow');
         <nav class="index-nav">
           <a href="#overview"><span class="idx">01</span><span>Overview</span></a>
           <a href="#model"><span class="idx">02</span><span>How it works</span></a>
-          <a href="#agents-sec"><span class="idx">03</span><span>Agents</span></a>
-          <a href="#sites-sec"><span class="idx">04</span><span>Sites</span></a>
-          <a href="#tasks-sec"><span class="idx">05</span><span>Tasks</span></a>
-          <a href="#review"><span class="idx">06</span><span>Review</span></a>
-          <a href="#workbench"><span class="idx">07</span><span>Workbench</span></a>
-          <a href="#automations"><span class="idx">08</span><span>Automations</span></a>
-          <a href="#install"><span class="idx">09</span><span>Install</span></a>
-          <a href="#updates"><span class="idx">10</span><span>Updates</span></a>
-          <a href="#spec"><span class="idx">11</span><span>Spec</span></a>
-          <a href="#agents"><span class="idx">12</span><span>MCP</span></a>
-          <a href="#trouble"><span class="idx">13</span><span>Trouble</span></a>
+          <a href="#chat-sec"><span class="idx">03</span><span>Chat</span></a>
+          <a href="#agents-sec"><span class="idx">04</span><span>Agents</span></a>
+          <a href="#sites-sec"><span class="idx">05</span><span>Sites</span></a>
+          <a href="#tasks-sec"><span class="idx">06</span><span>Tasks</span></a>
+          <a href="#review"><span class="idx">07</span><span>Review</span></a>
+          <a href="#workbench"><span class="idx">08</span><span>Workbench</span></a>
+          <a href="#automations"><span class="idx">09</span><span>Automations</span></a>
+          <a href="#install"><span class="idx">10</span><span>Install</span></a>
+          <a href="#updates"><span class="idx">11</span><span>Updates</span></a>
+          <a href="#spec"><span class="idx">12</span><span>Spec</span></a>
+          <a href="#agents"><span class="idx">13</span><span>MCP</span></a>
+          <a href="#trouble"><span class="idx">14</span><span>Trouble</span></a>
         </nav>
 
         <div class="index-foot">
@@ -140,8 +141,9 @@ header('X-Robots-Tag: noindex, nofollow');
 
             <p class="lede">
               A desktop app for running several coding agents at once — with your team's tasks,
-              WordPress imports and deploys, terminals and code review in the same window. The
-              sidebar shows which agent has stopped and needs attention.
+              WordPress imports and deploys, terminals and code review in the same window. Ask in
+              Chat or run them across branches in Code; either way the sidebar shows which agent has
+              stopped and needs attention.
             </p>
 
             <dl class="figures">
@@ -270,10 +272,57 @@ header('X-Robots-Tag: noindex, nofollow');
           </div>
         </section>
 
-        <!-- ======================================================= 03 agents -->
+        <!-- ======================================================= 03 chat -->
+        <section class="panel" id="chat-sec">
+          <header class="phead">
+            <p class="strip"><span class="strip-n">03</span> Chat</p>
+            <h2>Two modes: Chat and Code</h2>
+            <p class="phead-note">
+              Code mode is the workspace-and-terminal view above. Chat mode is the same agents
+              without the terminal — threads in a sidebar, replies streaming in, and no branch or
+              checkout to think about. The tabs sit at the top of the window; Chat is on by default.
+            </p>
+          </header>
+
+          <div class="feature">
+            <div class="feature-copy">
+              <ul class="ticks">
+                <li>Threads per workspace, renamed and searched from the sidebar</li>
+                <li>Pick the model and its effort level per thread</li>
+                <li>Slash commands work the same as they do in the terminal</li>
+                <li>Drop in files and images — they attach to the message as chips</li>
+                <li>Approvals ask once, with a full-access option when you trust the run</li>
+                <li>Dictation types straight into the composer</li>
+              </ul>
+            </div>
+
+            <!-- Decorative recreation of a chat thread. -->
+            <div class="mock chat" aria-hidden="true">
+              <div class="mock-bar">
+                Chat · roads-australia
+                <span class="env-pill">Claude</span>
+                <span class="mock-n">thinking</span>
+              </div>
+              <ul class="chat-rows">
+                <li class="chat-you">
+                  <span class="chat-who">You</span>
+                  <span class="chat-msg">Why is the cart total wrong on staging?</span>
+                  <span class="chat-chip">#657 Sections Syncer</span>
+                </li>
+                <li class="chat-agent">
+                  <span class="chat-who">Claude</span>
+                  <span class="chat-msg">Checked the totals helper — tax is applied twice for…</span>
+                </li>
+              </ul>
+              <div class="chat-foot"><span class="dim">⌘↵ to send · /commands · ⇧ to dictate</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================= 04 agents -->
         <section class="panel" id="agents-sec">
           <header class="phead">
-            <p class="strip"><span class="strip-n">03</span> Agents</p>
+            <p class="strip"><span class="strip-n">04</span> Agents</p>
             <h2>19 CLI agents, tracked live</h2>
             <p class="phead-note">
               Each agent runs as a session with real state — working, waiting on you, done — reported
@@ -326,7 +375,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 04 sites -->
         <section class="panel" id="sites-sec">
           <header class="phead">
-            <p class="strip"><span class="strip-n">04</span> Sites</p>
+            <p class="strip"><span class="strip-n">05</span> Sites</p>
             <h2>WordPress imports and deploys</h2>
             <p class="phead-note">
               Each site keeps its environments, SSH credentials and per-branch targets. The branch
@@ -354,11 +403,18 @@ header('X-Robots-Tag: noindex, nofollow');
                     <li>Clear server cache</li>
                     <li>Deploy theme dist</li>
                   </ul>
+                  <p class="mini">Local stacks</p>
+                  <ul class="ticks">
+                    <li>LocalWP, MAMP, plain or Agent Local</li>
+                  </ul>
                 </div>
               </div>
               <ul class="ticks">
-                <li>Live logs stream while a run executes</li>
+                <li>Live logs stream while a run executes, grouped by stage</li>
+                <li>The local database is snapshotted before an import, and restorable after</li>
+                <li>WP-CLI quick actions for the jobs you run by hand</li>
                 <li>Runs started by an agent show the same logs</li>
+                <li>Long runs can post their result to Slack</li>
                 <li>Credentials stored per environment in the keychain</li>
               </ul>
             </div>
@@ -383,7 +439,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 05 tasks -->
         <section class="panel" id="tasks-sec">
           <header class="phead">
-            <p class="strip"><span class="strip-n">05</span> Tasks</p>
+            <p class="strip"><span class="strip-n">06</span> Tasks</p>
             <h2>Your tracker, in the sidebar</h2>
             <p class="phead-note">
               ActiveCollab by default, with Jira, Linear, GitHub and GitLab a toggle away. My Work lists what
@@ -396,8 +452,10 @@ header('X-Robots-Tag: noindex, nofollow');
             <div class="feature-copy">
               <ul class="ticks">
                 <li>Start a workspace straight from a task — branch and context prefilled</li>
+                <li>Or discuss it in Chat, with the task attached as context</li>
                 <li>Comment on the task without leaving the app</li>
                 <li>Labels and priorities shown as your tracker sets them</li>
+                <li>What's due shows as a badge, with the day's tasks one click from the hero</li>
                 <li>New assignments appear as they land</li>
               </ul>
             </div>
@@ -435,7 +493,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 06 review -->
         <section class="panel" id="review">
           <header class="phead">
-            <p class="strip"><span class="strip-n">06</span> Review</p>
+            <p class="strip"><span class="strip-n">07</span> Review</p>
             <h2>Read the diff, comment, open the PR</h2>
             <p class="phead-note">
               Every workspace has a diff view of what its agent changed. Leave a comment on a line
@@ -475,7 +533,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 07 workbench -->
         <section class="panel" id="workbench">
           <header class="phead">
-            <p class="strip"><span class="strip-n">07</span> Workbench</p>
+            <p class="strip"><span class="strip-n">08</span> Workbench</p>
             <h2>Terminals, browser and palette</h2>
             <p class="phead-note">
               The rest of the working surface: real split terminals that survive a window close, a
@@ -500,6 +558,13 @@ header('X-Robots-Tag: noindex, nofollow');
               </p>
             </article>
             <article class="tile">
+              <h3>Dictation</h3>
+              <p>
+                Speak instead of typing. Transcription lands in whatever field has focus — the chat
+                composer, a commit message, a task comment.
+              </p>
+            </article>
+            <article class="tile">
               <h3>Command palette</h3>
               <p>
                 <kbd>⌘J</kbd> jumps to any workspace, task or action. Recently used entries come
@@ -512,7 +577,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 08 automations -->
         <section class="panel" id="automations">
           <header class="phead">
-            <p class="strip"><span class="strip-n">08</span> Automations</p>
+            <p class="strip"><span class="strip-n">09</span> Automations</p>
             <h2>Agents on a schedule</h2>
             <p class="phead-note">
               An automation is a prompt, a project and a schedule. Muster starts the agent run
@@ -548,7 +613,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 04 install -->
         <section class="panel" id="install">
           <header class="phead">
-            <p class="strip"><span class="strip-n">09</span> Install</p>
+            <p class="strip"><span class="strip-n">10</span> Install</p>
             <h2>Four steps, once per Mac</h2>
             <p class="phead-note">
               Step three is a Terminal command; what it does and why is explained under it.
@@ -639,7 +704,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 05 updates -->
         <section class="panel" id="updates">
           <header class="phead">
-            <p class="strip"><span class="strip-n">10</span> Updates</p>
+            <p class="strip"><span class="strip-n">11</span> Updates</p>
             <h2>Updates</h2>
           </header>
 
@@ -671,7 +736,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 06 spec -->
         <section class="panel" id="spec">
           <header class="phead">
-            <p class="strip"><span class="strip-n">11</span> Spec</p>
+            <p class="strip"><span class="strip-n">12</span> Spec</p>
             <h2>Technical details</h2>
           </header>
 
@@ -704,7 +769,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 07 for agents -->
         <section class="panel" id="agents">
           <header class="phead">
-            <p class="strip"><span class="strip-n">12</span> For agents</p>
+            <p class="strip"><span class="strip-n">13</span> For agents</p>
             <h2>The MCP server</h2>
             <p class="phead-note">
               Muster ships an MCP server. An agent working in a checkout gets 25 tools to inspect and
@@ -754,7 +819,7 @@ header('X-Robots-Tag: noindex, nofollow');
         <!-- ======================================================= 08 trouble -->
         <section class="panel" id="trouble">
           <header class="phead">
-            <p class="strip"><span class="strip-n">13</span> Trouble</p>
+            <p class="strip"><span class="strip-n">14</span> Trouble</p>
             <h2>If something goes wrong</h2>
           </header>
 

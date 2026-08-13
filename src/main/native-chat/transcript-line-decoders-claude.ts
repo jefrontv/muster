@@ -11,6 +11,7 @@ import {
   parseJsonObject,
   timestampMs
 } from '../ai-vault/session-scanner-values'
+import { unwrapChatWorkspaceUserTurn } from '../../shared/chat-workspace-site-info'
 import { claudeContentBlocks } from './transcript-record-blocks'
 import { claudeInterruptedMessageId } from './transcript-turn-markers'
 
@@ -149,7 +150,11 @@ export function decodeClaudeTranscriptLine(
     }
   }
   const message = asRecord(record.message)
-  const decodedBlocks = claudeContentBlocks(message?.content)
+  const decodedBlocks = claudeContentBlocks(message?.content).map((block) =>
+    role === 'user' && block.type === 'text'
+      ? { ...block, text: unwrapChatWorkspaceUserTurn(block.text) }
+      : block
+  )
   if (decodedBlocks.length === 0) {
     return null
   }

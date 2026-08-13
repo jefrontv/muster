@@ -6,6 +6,10 @@ import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
+import {
+  deriveChatThreadTitle,
+  isChatWorkspaceBriefTitle
+} from '../../../../shared/chat-workspace-site-info'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -202,7 +206,11 @@ export function ChatThreadRow({
         {thread.activeCollabTask ? (
           <ActiveCollabIcon className="size-3 shrink-0 text-muted-foreground/60" />
         ) : null}
-        <span className="min-w-0 flex-1 truncate">{thread.title}</span>
+        <span className="min-w-0 flex-1 truncate">
+          {isChatWorkspaceBriefTitle(thread.title)
+            ? deriveChatThreadTitle(thread.title)
+            : thread.title}
+        </span>
         <ThreadStatusLabel status={status} workingSince={agentStatus?.stateStartedAt} />
       </button>
       <DropdownMenu>

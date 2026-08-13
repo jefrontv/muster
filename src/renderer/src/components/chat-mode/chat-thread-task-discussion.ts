@@ -16,7 +16,11 @@ import { useAppStore } from '@/store'
 export async function discussTaskInChat(task: ActiveCollabTask): Promise<void> {
   const store = useAppStore.getState()
   const workspace =
-    store.chatWorkspaces.find((w) => w.activeCollabProject?.id === task.projectId) ?? null
+    store.chatWorkspaces.find(
+      (w) =>
+        w.activeCollabProject?.id === task.projectId ||
+        w.activeCollabProjects?.some((project) => project.id === task.projectId)
+    ) ?? null
   const thread = await store.createChatThread(workspace?.id ?? null, task.name)
   if (!thread) {
     return

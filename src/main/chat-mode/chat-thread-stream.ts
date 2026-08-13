@@ -9,6 +9,7 @@ import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-strea
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder } from './chat-thread-stream-decode'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
+import { commandWithAppendedSystemPromptFile } from './chat-thread-stream-system-prompt'
 import { buildChatStreamUserContent, readChatStreamImages } from './chat-thread-stream-user-content'
 
 const STDERR_TAIL_LIMIT = 4_096
@@ -71,11 +72,15 @@ export function startChatThreadStream(
     command: string
     cwd?: string
     env?: Record<string, string>
+    appendSystemPrompt?: string
     sender: ChatThreadStreamSender
   },
   deps: ChatThreadStreamDeps = {}
 ): { ok: boolean; error?: string } {
-  const { threadId, command, cwd, env, sender } = args
+  const { threadId, cwd, env, sender } = args
+  const command = args.appendSystemPrompt
+    ? commandWithAppendedSystemPromptFile(args.command, args.appendSystemPrompt, threadId)
+    : args.command
   if (process.platform === 'win32') {
     // Command quoting is built for a POSIX shell; a clean error beats a
     // mis-quoted cmd.exe launch. Windows support lands with its own shell plan.

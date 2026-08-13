@@ -403,6 +403,8 @@ describe('ClaudeHookService.installRemote', () => {
     // matching the Windows curl.exe hook post.
     expect(script).toContain('printf \'%s\' "$payload" | curl')
     expect(script).toContain('--data-urlencode "payload@-"')
+    expect(script).toContain('ORCA_CHAT_THREAD_STREAM')
+    expect(script).toContain('"permissionDecision":"ask"')
     expect(script).not.toContain('--data-urlencode "payload=${payload}"')
     expect(fs.modes.get('/home/dev/.orca/agent-hooks/claude-hook.sh')).toBe(0o755)
     // Why: no remote statusLine — this path serves SSH remotes and WSL guests, whose relay

@@ -14,12 +14,15 @@ export function ChatWorkspaceAppearanceSection({
   name,
   icon,
   color,
+  defaultFaviconDomain,
   onIconChange,
   onColorChange
 }: {
   name: string
   icon: RepoIcon | null
   color: string | null
+  /** Hostname of the primary website, so the Favicon tab prefills. */
+  defaultFaviconDomain?: string
   onIconChange: (icon: RepoIcon | null) => void
   onColorChange: (color: string) => void
 }): React.JSX.Element {
@@ -45,7 +48,7 @@ export function ChatWorkspaceAppearanceSection({
         selectedLucideName={icon?.type === 'lucide' ? icon.name : null}
         selectedEmoji={icon?.type === 'emoji' ? icon.emoji : ''}
         loadingGitHub={false}
-        defaultFaviconDomain=""
+        defaultFaviconDomain={defaultFaviconDomain ?? ''}
         onSetIcon={onIconChange}
         onUseGitHubAvatar={() => undefined}
         onTabChange={setActiveTab}

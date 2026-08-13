@@ -3,6 +3,7 @@
 
 import type React from 'react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { isAskUserQuestionTool } from '../../../../shared/agent-question-answered-intent'
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
 import { ChatModeDraftHero } from './ChatModeDraftHero'
@@ -94,11 +95,13 @@ export default function ChatModePage(): React.JSX.Element {
           break
         }
         case 'permission-request':
-          // Full access + "Always allow this session" verdicts short-circuit the queue.
+          // AskUserQuestion has no TTY on this transport — auto-allow makes it
+          // return "user did not answer". Queue it so the question card can run.
           if (
-            store.settings?.nativeChatPermissionMode === 'full' ||
-            store.chatThreadFullAccess[event.threadId] === true ||
-            store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName)
+            !isAskUserQuestionTool(event.toolName) &&
+            (store.settings?.nativeChatPermissionMode === 'full' ||
+              store.chatThreadFullAccess[event.threadId] === true ||
+              store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName))
           ) {
             store.respondChatThreadPermission(event.threadId, event.requestId, 'allow')
             break

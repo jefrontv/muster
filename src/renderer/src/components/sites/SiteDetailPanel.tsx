@@ -25,7 +25,7 @@ const getLocalFields = createLocalizedCatalog(() => [
   {
     key: 'localDomain' as const,
     label: translate('auto.components.sites.SiteDetailPanel.localDomain', 'Local domain'),
-    placeholder: translate('auto.components.sites.SiteDetailPanel.localDomainHint', 'acme.local')
+    placeholder: translate('auto.components.sites.SiteDetailPanel.localDomainHint', 'site.local')
   },
   {
     key: 'localWpRoot' as const,
