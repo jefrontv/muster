@@ -59,21 +59,20 @@ export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.E
     return null
   }
   const segment =
-    'relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors'
+    'relative z-10 flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[7px] px-2 text-[13px] font-medium tracking-tight outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/60'
   return (
     <div
       role="tablist"
       aria-label={translate('auto.components.chat.mode.toggleLabel', 'App mode')}
-      className="relative flex rounded-lg bg-muted/60 p-0.5"
+      className="relative flex rounded-[9px] border border-border bg-foreground/[0.04] p-0.5"
     >
-      {/* Sliding active-pill indicator: sized to one segment, translated to the selected
-          half. Width math relies on the two flex-1 segments having no gap. The keyframes
-          above animate relative to whichever half this resolves to. */}
+      {/* Sliding active-pill: a lift, not a hole. bg-background is darker than
+          the worktree sidebar, so a foreground wash + hairline reads as the thumb. */}
       <div
         ref={pillRef}
         aria-hidden
         className={cn(
-          'absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-md bg-background shadow-sm',
+          'absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-[7px] bg-foreground/10 shadow-xs ring-1 ring-foreground/10',
           !inChat && 'translate-x-full'
         )}
       />
@@ -83,7 +82,7 @@ export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.E
         aria-selected={inChat}
         className={cn(
           segment,
-          inChat ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+          inChat ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'
         )}
         onClick={() => {
           if (!inChat) {
@@ -91,7 +90,7 @@ export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.E
           }
         }}
       >
-        <MessageCircle className="size-3.5" />
+        <MessageCircle className="size-3.5" strokeWidth={inChat ? 2.25 : 1.75} />
         {translate('auto.components.chat.mode.chat', 'Chat')}
       </button>
       <button
@@ -100,7 +99,7 @@ export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.E
         aria-selected={!inChat}
         className={cn(
           segment,
-          !inChat ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+          !inChat ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'
         )}
         onClick={() => {
           if (inChat) {
@@ -108,7 +107,7 @@ export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.E
           }
         }}
       >
-        <Code2 className="size-3.5" />
+        <Code2 className="size-3.5" strokeWidth={!inChat ? 2.25 : 1.75} />
         {translate('auto.components.chat.mode.code', 'Code')}
       </button>
     </div>
