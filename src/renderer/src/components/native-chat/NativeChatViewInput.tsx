@@ -67,7 +67,7 @@ export function NativeChatViewInput({
         suppressApproval={transport !== null}
         suppressQuestion={transport !== null}
       />
-      {transport?.respondPermission && transport.send ? (
+      {transport?.respondPermission ? (
         <NativeChatStreamAskCard
           paneKey={paneKey}
           liveRequest={streamAsk}
