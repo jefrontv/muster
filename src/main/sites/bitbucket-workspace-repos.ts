@@ -30,7 +30,7 @@ export type BitbucketCredentials =
 
 export function hasBitbucketListingCredentials(
   credentials: BitbucketCredentials | null | undefined
-): boolean {
+): credentials is BitbucketCredentials {
   if (!credentials) {
     return false
   }
