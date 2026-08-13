@@ -941,7 +941,8 @@ const api = {
 
   localwpCert: {
     status: (args) => ipcRenderer.invoke('localwpCert:status', args),
-    trust: (args) => ipcRenderer.invoke('localwpCert:trust', args)
+    trust: (args) => ipcRenderer.invoke('localwpCert:trust', args),
+    ensure: (args) => ipcRenderer.invoke('localwpCert:ensure', args)
   } satisfies PreloadApi['localwpCert'],
 
   siteBitbucket: {
@@ -1319,7 +1320,8 @@ const api = {
   },
   bitbucketAuth: {
     status: () => ipcRenderer.invoke('bitbucketAuth:status'),
-    setCredentials: (input) => ipcRenderer.invoke('bitbucketAuth:setCredentials', input),
+    beginOAuth: () => ipcRenderer.invoke('bitbucketAuth:beginOAuth'),
+    cancelOAuth: () => ipcRenderer.invoke('bitbucketAuth:cancelOAuth'),
     clear: () => ipcRenderer.invoke('bitbucketAuth:clear')
   } satisfies PreloadApi['bitbucketAuth'],
 

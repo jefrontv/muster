@@ -4,6 +4,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { AgentLocalHost, AgentLocalResponse } from './agent-local-host'
 import {
+  isAlreadyRegisteredSite,
   isSourceDatabaseUnreachable,
   planAgentLocalMigration,
   relativeDocroot,
@@ -213,7 +214,7 @@ describe('runAgentLocalMigration', () => {
               ok: false,
               status: 500,
               error:
-                'copy database pactgroup_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server on \'127.0.0.1\' (36)")'
+                "copy database pactgroup_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: \"Can't connect to server on '127.0.0.1' (36)\")"
             }
           : importResponse
       },
@@ -228,6 +229,60 @@ describe('runAgentLocalMigration', () => {
     // The caller persists this; claiming the database landed would skip the import that has to run.
     expect(result.databaseImported).toBe(false)
     expect(result.message).toContain('empty database')
+  })
+
+  it('adopts a leftover Agent Local slug instead of failing site already exists', async () => {
+    const result = await runAgentLocalMigration(
+      request({ siteName: 'ebes', domain: 'ebes.local' }),
+      {
+        host: {
+          platform: 'darwin',
+          homeDir: '/home/test',
+          readToken: async () => 'token',
+          request: async (_method: string, apiPath: string) => {
+            if (apiPath === '/import' || apiPath === '/attach') {
+              return { ok: false, status: 409, error: 'site "ebes" already exists' }
+            }
+            if (apiPath.startsWith('/resolve') || apiPath === '/sites') {
+              return {
+                ok: true,
+                status: 200,
+                data:
+                  apiPath === '/sites'
+                    ? [
+                        {
+                          slug: 'ebes',
+                          work_dir: WORDPRESS_CHECKOUT,
+                          wp_dir: WORDPRESS_CHECKOUT,
+                          domain: 'ebes.local',
+                          php_version: '8.4',
+                          state: 'running'
+                        }
+                      ]
+                    : {
+                        slug: 'ebes',
+                        site: {
+                          slug: 'ebes',
+                          work_dir: WORDPRESS_CHECKOUT,
+                          wp_dir: WORDPRESS_CHECKOUT,
+                          domain: 'ebes.local',
+                          php_version: '8.4',
+                          state: 'running'
+                        }
+                      }
+              }
+            }
+            return { ok: false, status: 404, error: 'not found' }
+          },
+          spawnDaemon: async () => undefined,
+          sleep: async () => undefined
+        }
+      }
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.domain).toBe('ebes.local')
+    expect(result.message).toContain('ebes')
   })
 
   it('does not attach behind a refusal that is not about the database', async () => {
@@ -269,13 +324,20 @@ describe('runAgentLocalMigration', () => {
   })
 })
 
+describe('isAlreadyRegisteredSite', () => {
+  it('matches the daemon conflict from a leftover slug', () => {
+    expect(isAlreadyRegisteredSite('site "ebes" already exists')).toBe(true)
+    expect(isAlreadyRegisteredSite("domain 'acme.test' is already in use")).toBe(false)
+  })
+})
+
 describe('isSourceDatabaseUnreachable', () => {
   it.each([
     // Verbatim from the reported failure, trailing "when trying to connect" included.
-    'copy database pactgroup_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server on \'127.0.0.1\' (36)" when trying to connect)',
+    "copy database pactgroup_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: \"Can't connect to server on '127.0.0.1' (36)\" when trying to connect)",
     'copy database acme_wp from 127.0.0.1:3306 as root: dump: exit status 2 (mariadb-dump: Got error: 2002: "Can\'t connect to server")',
     'copy database acme_wp: dump failed: Got error: 2003: connection refused',
-    'copy database acme_wp: dump: Unknown database \'acme_wp\''
+    "copy database acme_wp: dump: Unknown database 'acme_wp'"
   ])('treats a failed copy as retryable: %s', (message) => {
     expect(isSourceDatabaseUnreachable(message)).toBe(true)
   })

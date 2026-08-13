@@ -59,8 +59,17 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     }
   }, [])
 
-  // Re-detect per site, not once: the answer is about this folder, and it changes when the user
-  // adopts or drops a stack.
+  const refreshDetection = useCallback(async (): Promise<SiteLocalStack | null> => {
+    const answer = await window.api.siteStacks.detect(site.id)
+    if (!answer.ok) {
+      return null
+    }
+    setDetected(answer.value.stack)
+    return answer.value.stack
+  }, [site.id])
+
+  // Re-detect per site and stack: the answer is about this folder, and it changes when the user
+  // adopts a stack or when a leftover Agent Local slug is already serving it.
   useEffect(() => {
     let cancelled = false
     setDetected(null)
@@ -75,7 +84,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     return () => {
       cancelled = true
     }
-  }, [site.id])
+  }, [site.id, site.localStack, refreshDetection])
 
   const run = useCallback(
     async (
@@ -174,11 +183,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
                 })
               }
             >
-              {spinning && pending === 'start' ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <Play />
-              )}
+              {spinning && pending === 'start' ? <Loader2 className="animate-spin" /> : <Play />}
               {translate('auto.components.sites.SiteDetailPanel.stackStart', 'Start')}
             </Button>
             <Button
@@ -236,13 +241,21 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
                     adminPassword: 'admin',
                     stack: site.localStack
                   })
-                  if (!answer.ok) {
-                    return { ok: false, message: answer.error }
+                  const serving = await refreshDetection()
+                  if (answer.ok && answer.value.ok) {
+                    return { ok: true, message: answer.value.message }
                   }
-                  if (answer.value.ok) {
-                    setDetected(site.localStack)
+                  // A leftover slug from a deleted checkout is already serving this folder.
+                  if (serving === site.localStack) {
+                    return {
+                      ok: true,
+                      message: `${STACK_LABELS[site.localStack]} is already serving this folder.`
+                    }
                   }
-                  return { ok: answer.value.ok, message: answer.value.message }
+                  return {
+                    ok: false,
+                    message: answer.ok ? answer.value.message : answer.error
+                  }
                 })
               }
             >

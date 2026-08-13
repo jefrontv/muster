@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LocalWpCertStatus, LocalWpCertTrustResult } from '../../shared/localwp-cert-types'
 import type { SiteResult } from '../../shared/site-types'
 
-const { handlers, removed, getLocalWpCertStatus, trustLocalWpCert } = vi.hoisted(() => ({
-  handlers: new Map<string, (event: unknown, args?: unknown) => unknown>(),
-  removed: [] as string[],
-  getLocalWpCertStatus: vi.fn(),
-  trustLocalWpCert: vi.fn()
-}))
+const { handlers, removed, getLocalWpCertStatus, trustLocalWpCert, ensureLocalWpHttpsCert } =
+  vi.hoisted(() => ({
+    handlers: new Map<string, (event: unknown, args?: unknown) => unknown>(),
+    removed: [] as string[],
+    getLocalWpCertStatus: vi.fn(),
+    trustLocalWpCert: vi.fn(),
+    ensureLocalWpHttpsCert: vi.fn()
+  }))
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -23,6 +25,7 @@ vi.mock('electron', () => ({
 // The keychain logic has its own tests; what is under test here is the channel surface — names,
 // domain validation, and the tagged-union wrapping.
 vi.mock('../sites/localwp-cert-trust', () => ({ getLocalWpCertStatus, trustLocalWpCert }))
+vi.mock('../sites/localwp-cert-ensure', () => ({ ensureLocalWpHttpsCert }))
 
 import { registerLocalWpCertHandlers } from './localwp-cert'
 
@@ -51,12 +54,24 @@ beforeEach(() => {
   vi.clearAllMocks()
   getLocalWpCertStatus.mockResolvedValue(STATUS)
   trustLocalWpCert.mockResolvedValue(TRUSTED)
-  registerLocalWpCertHandlers()
+  ensureLocalWpHttpsCert.mockResolvedValue({ ok: true, message: 'ensured' })
+  registerLocalWpCertHandlers({
+    getSite: () => ({
+      id: 'site-1',
+      path: '/Sites/ebes',
+      localStack: 'localwp',
+      localWpRoot: ''
+    })
+  } as never)
 })
 
 describe('registerLocalWpCertHandlers', () => {
   it('removes every channel before registering it, so a re-register cannot double-bind', () => {
-    expect([...handlers.keys()].sort()).toEqual(['localwpCert:status', 'localwpCert:trust'])
+    expect([...handlers.keys()].sort()).toEqual([
+      'localwpCert:ensure',
+      'localwpCert:status',
+      'localwpCert:trust'
+    ])
     expect(removed.sort()).toEqual([...handlers.keys()].sort())
   })
 
@@ -66,6 +81,14 @@ describe('registerLocalWpCertHandlers', () => {
       value: STATUS
     })
     expect(getLocalWpCertStatus).toHaveBeenCalledWith('117pacific.local')
+  })
+
+  it('starts the site then trusts when asked to ensure a missing certificate', async () => {
+    expect(await call('localwpCert:ensure', { domain: 'ebes.local', siteId: 'site-1' })).toEqual({
+      ok: true,
+      value: { ok: true, message: 'ensured' }
+    })
+    expect(ensureLocalWpHttpsCert).toHaveBeenCalledWith('ebes.local', '/Sites/ebes')
   })
 
   it('wraps the trust outcome the same way', async () => {

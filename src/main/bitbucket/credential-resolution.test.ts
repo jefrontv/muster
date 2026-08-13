@@ -125,7 +125,8 @@ describe('Bitbucket credential resolution', () => {
     expect(getBitbucketEnvironmentAuthStatus()).toEqual({
       configured: false,
       method: null,
-      email: null
+      email: null,
+      account: null
     })
 
     process.env.ORCA_BITBUCKET_EMAIL = 'env@example.com'
@@ -133,7 +134,8 @@ describe('Bitbucket credential resolution', () => {
     expect(getBitbucketEnvironmentAuthStatus()).toEqual({
       configured: true,
       method: 'api-token',
-      email: 'env@example.com'
+      email: 'env@example.com',
+      account: null
     })
 
     process.env.ORCA_BITBUCKET_ACCESS_TOKEN = 'env-access'

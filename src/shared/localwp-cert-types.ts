@@ -41,4 +41,10 @@ export type LocalWpCertApi = {
     domain: string
     stack?: SiteLocalStack
   }) => Promise<SiteResult<LocalWpCertTrustResult>>
+  /** Start the site if needed, wait for LocalWP to write the cert, then trust it. */
+  ensure: (args: {
+    domain: string
+    siteId: string
+    stack?: SiteLocalStack
+  }) => Promise<SiteResult<LocalWpCertTrustResult>>
 }

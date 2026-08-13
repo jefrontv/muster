@@ -2,7 +2,7 @@
 //
 // Orca's src/main/bitbucket/client.ts is pull-request oriented and authenticates from ORCA_BITBUCKET_*
 // environment variables only (client.ts:41-53). The "+ New Site" flow needs the other half of what
-// ocsites had: a stored App Password and the workspace's repo list. That is all this module does —
+// OAuth session has: a workspace (optional) and the user's repo list. That is all this module does —
 // cloning is Orca's existing `repos:clone`, which already streams progress.
 //
 // Deliberately free of Electron and node:fs so it stays unit-testable: credentials and the HTTP call
@@ -11,11 +11,33 @@
 import { Buffer } from 'node:buffer'
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 import type { BitbucketRepoListResult, BitbucketRepoSummary } from '../../shared/site-bind-types'
+import {
+  collectBitbucketPages,
+  mapPool,
+  type BitbucketPageCollect
+} from './bitbucket-page-collection'
+import {
+  bitbucketUserWorkspacesUrl,
+  clearBitbucketWorkspaceSlugCache,
+  listBitbucketUserWorkspaceSlugs
+} from './bitbucket-user-workspaces'
 
-export type BitbucketCredentials = {
-  /** Atlassian account email for an API token, or the Bitbucket nickname for a legacy App Password. */
-  username: string
-  appPassword: string
+export { bitbucketUserWorkspacesUrl }
+
+export type BitbucketCredentials =
+  | { accessToken: string }
+  | { username: string; appPassword: string }
+
+export function hasBitbucketListingCredentials(
+  credentials: BitbucketCredentials | null | undefined
+): boolean {
+  if (!credentials) {
+    return false
+  }
+  if ('accessToken' in credentials) {
+    return credentials.accessToken.length > 0
+  }
+  return credentials.username.length > 0 && credentials.appPassword.length > 0
 }
 
 export type BitbucketApiResponse = { ok: boolean; status: number; body: unknown }
@@ -36,10 +58,15 @@ const PAGE_LENGTH = 100
 /** Hard stop so a malformed `next` chain cannot spin forever; 100 pages is 10k repos. */
 const MAX_PAGES = 100
 const REQUEST_TIMEOUT_MS = 15_000
+const WORKSPACE_FETCH_CONCURRENCY = 4
+const PAGE_FETCH_CONCURRENCY = 4
 
 const cacheByWorkspace = new Map<string, BitbucketRepoSummary[]>()
 
 export function bitbucketAuthHeaders(credentials: BitbucketCredentials): Record<string, string> {
+  if ('accessToken' in credentials) {
+    return { Authorization: `Bearer ${credentials.accessToken}`, Accept: 'application/json' }
+  }
   const basic = Buffer.from(`${credentials.username}:${credentials.appPassword}`, 'utf8').toString(
     'base64'
   )
@@ -58,6 +85,10 @@ function bitbucketNameFilter(term: string): string {
 }
 
 export function bitbucketWorkspaceReposUrl(workspace: string, query = ''): string {
+  const slug = workspace.trim()
+  if (slug.length === 0) {
+    throw new TypeError('workspace slug is required; list /user/workspaces first')
+  }
   const params = new URLSearchParams({
     pagelen: String(PAGE_LENGTH),
     fields: REPO_FIELDS,
@@ -65,12 +96,12 @@ export function bitbucketWorkspaceReposUrl(workspace: string, query = ''): strin
   })
   const typed = query.trim()
   // `owner/name` pasted whole still has to find the repo: `name~` matches the repository name alone,
-  // and the workspace is already fixed by the path, so keeping the prefix would match nothing.
+  // and a scoped workspace is already in the path, so keeping the prefix would match nothing.
   const term = typed.slice(typed.lastIndexOf('/') + 1)
   if (term.length > 0) {
     params.set('q', bitbucketNameFilter(term))
   }
-  return `${BITBUCKET_API_BASE}/repositories/${encodeURIComponent(workspace)}?${params.toString()}`
+  return `${BITBUCKET_API_BASE}/repositories/${encodeURIComponent(slug)}?${params.toString()}`
 }
 
 /** Workspace slug out of any Bitbucket remote, for auto-detection from an existing checkout. */
@@ -97,17 +128,26 @@ export function pickBitbucketCloneUrl(links: unknown): string {
   return byName('ssh') || byName('https') || asText(entries[0]?.href)
 }
 
-function toRepoSummaries(body: unknown): { repos: BitbucketRepoSummary[]; next: string } {
+function pageSize(body: unknown): number {
+  const size = asRecord(body).size
+  return typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : 0
+}
+
+function toRepoSummaries(body: unknown): {
+  items: BitbucketRepoSummary[]
+  next: string
+  size: number
+} {
   const page = asRecord(body)
   const values = Array.isArray(page.values) ? page.values : []
-  const repos: BitbucketRepoSummary[] = []
+  const items: BitbucketRepoSummary[] = []
   for (const raw of values) {
     const entry = asRecord(raw)
     const slug = asText(entry.slug)
     if (slug.length === 0) {
       continue
     }
-    repos.push({
+    items.push({
       slug,
       fullName: asText(entry.full_name) || slug,
       cloneUrl: pickBitbucketCloneUrl(asRecord(entry.links).clone),
@@ -115,25 +155,56 @@ function toRepoSummaries(body: unknown): { repos: BitbucketRepoSummary[]; next: 
       updatedOn: asText(entry.updated_on)
     })
   }
-  return { repos, next: asText(page.next) }
+  return { items, next: asText(page.next), size: pageSize(body) }
+}
+
+function newestFirst(repos: BitbucketRepoSummary[]): BitbucketRepoSummary[] {
+  return [...repos].sort((left, right) => right.updatedOn.localeCompare(left.updatedOn))
+}
+
+function collectPages<T>(
+  startUrl: string,
+  request: BitbucketRepoListRequest,
+  headers: Record<string, string>,
+  parse: (body: unknown) => { items: T[]; next: string; size: number },
+  workspaceForError: string,
+  maxItems?: number
+): Promise<BitbucketPageCollect<T>> {
+  return collectBitbucketPages({
+    startUrl,
+    fetchJson: request.fetchJson,
+    headers,
+    signal: request.signal,
+    parse,
+    describeError: (status) => describeFailure(status, workspaceForError),
+    pageLength: PAGE_LENGTH,
+    maxPages: MAX_PAGES,
+    maxItems,
+    pageConcurrency: PAGE_FETCH_CONCURRENCY
+  })
 }
 
 function describeFailure(status: number, workspace: string): string {
   if (status === 401) {
-    return 'Bitbucket rejected the stored credentials (HTTP 401). For an Atlassian API token the username must be your account email.'
+    return 'Bitbucket rejected the saved sign-in (HTTP 401). Reconnect Bitbucket in Settings → Integrations.'
   }
   if (status === 403) {
     return 'Authenticated, but the token is missing a read scope (HTTP 403). Grant read:repository and read:workspace.'
   }
   if (status === 404) {
-    return `Workspace '${workspace}' was not found, or the token has no access to it (HTTP 404).`
+    return workspace.length > 0
+      ? `Workspace '${workspace}' was not found, or the token has no access to it (HTTP 404).`
+      : 'Bitbucket could not list workspaces for this sign-in (HTTP 404).'
+  }
+  if (status === 410) {
+    return 'Bitbucket removed the unscoped repository list (HTTP 410). Reconnect Bitbucket in Settings → Integrations.'
   }
   return `Bitbucket request failed: HTTP ${status}.`
 }
 
 export type BitbucketRepoListRequest = {
   workspace: string
-  /** Null when no App Password is stored — reported as not-configured rather than thrown. */
+  /** Null when Bitbucket is not connected — reported as not-configured rather than thrown. */
   credentials: BitbucketCredentials | null
   fetchJson: BitbucketFetchJson
   /**
@@ -143,6 +214,8 @@ export type BitbucketRepoListRequest = {
   query?: string
   /** Serve the process cache when it is populated, skipping the network entirely. */
   preferCache?: boolean
+  /** Stop after this many repos (per workspace, then again after the merge). */
+  maxRepos?: number
   signal?: AbortSignal
 }
 
@@ -157,15 +230,12 @@ export async function listBitbucketWorkspaceRepos(
   const cached = query.length === 0 ? (cacheByWorkspace.get(workspace) ?? null) : null
   const base = { workspace, repos: [] as BitbucketRepoSummary[], fromCache: false }
 
-  if (workspace.length === 0) {
-    return { ...base, configured: true, error: 'No Bitbucket workspace is configured.' }
-  }
   const credentials = request.credentials
-  if (!credentials || credentials.username.length === 0 || credentials.appPassword.length === 0) {
+  if (!hasBitbucketListingCredentials(credentials)) {
     return {
       ...base,
       configured: false,
-      error: 'No Bitbucket App Password is stored for Muster.'
+      error: 'Connect Bitbucket in Settings → Integrations.'
     }
   }
   if (request.preferCache && cached) {
@@ -173,39 +243,64 @@ export async function listBitbucketWorkspaceRepos(
   }
 
   const headers = bitbucketAuthHeaders(credentials)
-  const collected: BitbucketRepoSummary[] = []
-  const seenUrls = new Set<string>()
-  let url = bitbucketWorkspaceReposUrl(workspace, query)
+  const listed =
+    workspace.length === 0
+      ? await listReposAcrossWorkspaces(request, headers, query)
+      : await collectPages(
+          bitbucketWorkspaceReposUrl(workspace, query),
+          request,
+          headers,
+          toRepoSummaries,
+          workspace,
+          request.maxRepos
+        )
 
-  for (let page = 0; page < MAX_PAGES && url.length > 0; page += 1) {
-    if (seenUrls.has(url)) {
-      break
-    }
-    seenUrls.add(url)
-    let response: BitbucketApiResponse
-    try {
-      response = await request.fetchJson(url, headers, request.signal)
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error)
-      return finishWithFailure(workspace, collected, cached, `Could not reach Bitbucket: ${reason}`)
-    }
-    if (!response.ok) {
-      return finishWithFailure(
-        workspace,
-        collected,
-        cached,
-        describeFailure(response.status, workspace)
-      )
-    }
-    const { repos, next } = toRepoSummaries(response.body)
-    collected.push(...repos)
-    url = next
+  const merged = workspace.length === 0 ? newestFirst(listed.items) : listed.items
+  const cap = request.maxRepos
+  const collected =
+    typeof cap === 'number' && cap > 0 && merged.length > cap ? merged.slice(0, cap) : merged
+  if (listed.error.length > 0) {
+    return finishWithFailure(workspace, collected, cached, listed.error)
   }
-
   if (query.length === 0) {
     cacheByWorkspace.set(workspace, collected)
   }
   return { workspace, configured: true, repos: collected, fromCache: false, error: '' }
+}
+
+async function listReposAcrossWorkspaces(
+  request: BitbucketRepoListRequest,
+  headers: Record<string, string>,
+  query: string
+): Promise<BitbucketPageCollect<BitbucketRepoSummary>> {
+  const slugs = await listBitbucketUserWorkspaceSlugs({
+    fetchJson: request.fetchJson,
+    headers,
+    signal: request.signal,
+    describeError: (status) => describeFailure(status, '')
+  })
+  if (slugs.error.length > 0 && slugs.items.length === 0) {
+    return { items: [], error: slugs.error }
+  }
+  const pages = await mapPool(slugs.items, WORKSPACE_FETCH_CONCURRENCY, (slug) =>
+    collectPages(
+      bitbucketWorkspaceReposUrl(slug, query),
+      request,
+      headers,
+      toRepoSummaries,
+      slug,
+      request.maxRepos
+    )
+  )
+  const collected: BitbucketRepoSummary[] = []
+  let error = slugs.error
+  for (const page of pages) {
+    collected.push(...page.items)
+    if (page.error.length > 0 && error.length === 0) {
+      error = page.error
+    }
+  }
+  return { items: collected, error }
 }
 
 /** A partial page still beats nothing; otherwise fall back to the last good list for this workspace. */
@@ -229,6 +324,7 @@ function finishWithFailure(
 
 export function clearBitbucketRepoCache(): void {
   cacheByWorkspace.clear()
+  clearBitbucketWorkspaceSlugCache()
 }
 
 /** The production HTTP binding. Kept here so callers never hand-roll the timeout or the decode. */

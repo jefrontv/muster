@@ -198,7 +198,7 @@ export function BitbucketRow(props: { compact?: boolean } = {}): React.JSX.Eleme
                   )
                 : translate(
                     'auto.components.onboarding.IntegrationsStep.bitbucketDescription',
-                    'Pull requests and build statuses via a Bitbucket API token.'
+                    'Pull requests and build statuses via your Bitbucket account.'
                   )}
             </p>
           </div>
@@ -215,14 +215,21 @@ export function BitbucketRow(props: { compact?: boolean } = {}): React.JSX.Eleme
         open={dialogOpen}
         status={credential}
         onOpenChange={setDialogOpen}
-        onSave={async (input) => {
-          const result = await window.api.bitbucketAuth.setCredentials(input)
+        onConnect={async () => {
+          const api = window.api.bitbucketAuth
+          if (!api?.beginOAuth) {
+            return 'Restart the Muster dev app to load Bitbucket OAuth.'
+          }
+          const result = await api.beginOAuth()
           if ('error' in result) {
             return result.error
           }
           await syncCredential()
           void refreshPreflightStatus({ force: true })
           return null
+        }}
+        onCancelConnect={() => {
+          void window.api.bitbucketAuth?.cancelOAuth?.()
         }}
         onClear={async () => {
           await window.api.bitbucketAuth.clear()

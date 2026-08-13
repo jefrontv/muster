@@ -7,18 +7,16 @@ import {
 } from '../../shared/site-clone-source-types'
 
 const {
-  getBitbucketCredentialRecord,
-  getBitbucketCredentials,
-  getBitbucketCredentialStatus,
+  isBitbucketListingConfigured,
+  resolveBitbucketListingCredentials,
   listBitbucketWorkspaceRepos,
   getGithubCloneSourceStatus,
   listGithubCloneSourceRepos,
   discoverSiteCandidates,
   probeRepoRemoteKeys
 } = vi.hoisted(() => ({
-  getBitbucketCredentialRecord: vi.fn(),
-  getBitbucketCredentials: vi.fn(),
-  getBitbucketCredentialStatus: vi.fn(),
+  isBitbucketListingConfigured: vi.fn(),
+  resolveBitbucketListingCredentials: vi.fn(),
   listBitbucketWorkspaceRepos: vi.fn(),
   getGithubCloneSourceStatus: vi.fn(),
   listGithubCloneSourceRepos: vi.fn(),
@@ -29,10 +27,9 @@ const {
 // Each host module owns its own tests. What is under test here is the seam: ordering, the
 // per-provider degrade, and the mapping into the shared repo shape. Mocking the modules rather
 // than their transports also keeps this hermetic — no keychain, no network, no `gh`.
-vi.mock('./bitbucket-credential-store', () => ({
-  getBitbucketCredentialRecord,
-  getBitbucketCredentials,
-  getBitbucketCredentialStatus
+vi.mock('./bitbucket-listing-auth', () => ({
+  isBitbucketListingConfigured,
+  resolveBitbucketListingCredentials
 }))
 vi.mock('./bitbucket-workspace-repos', () => ({
   listBitbucketWorkspaceRepos,
@@ -89,28 +86,23 @@ function bitbucketResult(
 // site-roots-watcher never reaches a real directory — the trick ipc/site-roots.test.ts already uses.
 function store(
   repos: { path: string; gitRemoteIdentity?: { canonicalKey: string } | null }[] = [],
-  sitePaths: string[] = []
+  sitePaths: string[] = [],
+  extras: Pick<CloneSourceStore, 'pathExists'> = {}
 ): CloneSourceStore {
   return {
     getRepos: () => repos,
     listSites: () => sitePaths.map((path) => ({ path })),
-    getConfiguredSiteRoots: () => []
+    getConfiguredSiteRoots: () => [],
+    ...extras
   }
 }
 
+const stillOnDisk = { pathExists: async (): Promise<boolean> => true }
+
 beforeEach(() => {
   vi.clearAllMocks()
-  getBitbucketCredentialStatus.mockReturnValue({
-    configured: true,
-    username: 'jake',
-    workspace: 'acme'
-  })
-  getBitbucketCredentialRecord.mockReturnValue({
-    username: 'jake',
-    appPassword: 'secret',
-    workspace: 'acme'
-  })
-  getBitbucketCredentials.mockReturnValue({ username: 'jake', appPassword: 'secret' })
+  isBitbucketListingConfigured.mockReturnValue(true)
+  resolveBitbucketListingCredentials.mockResolvedValue({ accessToken: 'oauth-token' })
   listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult())
   getGithubCloneSourceStatus.mockResolvedValue(GITHUB_CONFIGURED)
   discoverSiteCandidates.mockResolvedValue({
@@ -131,7 +123,7 @@ describe('listCloneSourceProviders', () => {
     ])
   })
 
-  it('reports a stored credential and workspace as configured', async () => {
+  it('reports a stored OAuth session as configured', async () => {
     expect((await listCloneSourceProviders())[0]).toEqual({
       id: 'bitbucket',
       label: 'Bitbucket',
@@ -140,30 +132,12 @@ describe('listCloneSourceProviders', () => {
     })
   })
 
-  it('points a credential-less Bitbucket at Settings instead of hiding the row', async () => {
-    getBitbucketCredentialStatus.mockReturnValue({
-      configured: false,
-      username: '',
-      workspace: ''
-    })
-    getBitbucketCredentialRecord.mockReturnValue(null)
+  it('points a signed-out Bitbucket at Settings instead of hiding the row', async () => {
+    isBitbucketListingConfigured.mockReturnValue(false)
 
     const [bitbucket] = await listCloneSourceProviders()
     expect(bitbucket.configured).toBe(false)
-    expect(bitbucket.reason).toBe('Add a Bitbucket App Password in Settings → Integrations.')
-  })
-
-  // A password with no workspace cannot list anything, so it must not read as configured.
-  it('treats a stored credential with no workspace as unconfigured, with its own reason', async () => {
-    getBitbucketCredentialRecord.mockReturnValue({
-      username: 'jake',
-      appPassword: 'secret',
-      workspace: ''
-    })
-
-    const [bitbucket] = await listCloneSourceProviders()
-    expect(bitbucket.configured).toBe(false)
-    expect(bitbucket.reason).toBe('Set a Bitbucket workspace in Settings → Integrations.')
+    expect(bitbucket.reason).toBe('Connect Bitbucket in Settings → Integrations.')
   })
 
   it('delegates the GitHub row verbatim to the gh-backed module', async () => {
@@ -192,7 +166,7 @@ describe('listCloneSourceProviders', () => {
   })
 
   it('degrades a throwing Bitbucket probe while GitHub still reports', async () => {
-    getBitbucketCredentialStatus.mockImplementation(() => {
+    isBitbucketListingConfigured.mockImplementation(() => {
       throw new Error('Keychain is locked')
     })
 
@@ -210,13 +184,15 @@ describe('listCloneSourceProviders', () => {
 })
 
 describe('listCloneSourceRepos', () => {
-  it('lists Bitbucket against the stored workspace and credentials', async () => {
+  it('lists Bitbucket with the OAuth session across the signed-in account', async () => {
     await listCloneSourceRepos(store(), 'bitbucket')
 
     expect(listBitbucketWorkspaceRepos).toHaveBeenCalledWith(
       expect.objectContaining({
-        workspace: 'acme',
-        credentials: { username: 'jake', appPassword: 'secret' }
+        workspace: '',
+        credentials: { accessToken: 'oauth-token' },
+        preferCache: true,
+        maxRepos: CLONE_SOURCE_REPO_LIMIT
       })
     )
   })
@@ -225,7 +201,11 @@ describe('listCloneSourceRepos', () => {
     await listCloneSourceRepos(store(), 'bitbucket', 'sulo')
 
     expect(listBitbucketWorkspaceRepos).toHaveBeenCalledWith(
-      expect.objectContaining({ query: 'sulo' })
+      expect.objectContaining({
+        query: 'sulo',
+        preferCache: false,
+        maxRepos: CLONE_SOURCE_REPO_LIMIT
+      })
     )
   })
 
@@ -381,12 +361,16 @@ describe('listCloneSourceRepos exclusions', () => {
     )
 
     const result = await listCloneSourceRepos(
-      store([
-        {
-          path: '/nowhere/renamed-locally',
-          gitRemoteIdentity: { canonicalKey: 'bitbucket.org/acme/website' }
-        }
-      ]),
+      store(
+        [
+          {
+            path: '/nowhere/renamed-locally',
+            gitRemoteIdentity: { canonicalKey: 'bitbucket.org/acme/website' }
+          }
+        ],
+        [],
+        stillOnDisk
+      ),
       'bitbucket'
     )
 
@@ -423,7 +407,7 @@ describe('listCloneSourceRepos exclusions', () => {
       .filter((_unused, index) => index % 2 === 0)
       .map((repo) => ({ path: `/nowhere/${repo.slug}` }))
 
-    const result = await listCloneSourceRepos(store(alreadyHere), 'bitbucket')
+    const result = await listCloneSourceRepos(store(alreadyHere, [], stillOnDisk), 'bitbucket')
 
     expect(result.repos).toHaveLength(CLONE_SOURCE_REPO_LIMIT)
     expect(result.repos.map((repo) => repo.fullName)).toEqual(
@@ -438,7 +422,11 @@ describe('listCloneSourceRepos exclusions', () => {
     listBitbucketWorkspaceRepos.mockResolvedValue(bitbucketResult({ repos: hostRepos }))
 
     const result = await listCloneSourceRepos(
-      store(hostRepos.slice(1).map((repo) => ({ path: `/nowhere/${repo.slug}` }))),
+      store(
+        hostRepos.slice(1).map((repo) => ({ path: `/nowhere/${repo.slug}` })),
+        [],
+        stillOnDisk
+      ),
       'bitbucket'
     )
 
@@ -464,7 +452,7 @@ describe('listCloneSourceRepos exclusions', () => {
       searchesRemotely: false
     })
 
-    const result = await listCloneSourceRepos(store([], ['/nowhere/api']), 'github')
+    const result = await listCloneSourceRepos(store([], ['/nowhere/api'], stillOnDisk), 'github')
 
     expect(result.repos).toEqual([])
   })
@@ -509,16 +497,35 @@ describe('listCloneSourceRepos exclusions', () => {
     await listCloneSourceRepos(store([{ path: '/nowhere/repo' }], ['/nowhere/site']), 'bitbucket')
 
     expect(probeRepoRemoteKeys).toHaveBeenCalledTimes(1)
-    expect([...probeRepoRemoteKeys.mock.calls[0][0]].sort()).toEqual([
-      '/nowhere/repo',
-      '/nowhere/site',
-      '/nowhere/unadopted'
-    ])
+    expect([...probeRepoRemoteKeys.mock.calls[0][0]].sort()).toEqual(['/nowhere/unadopted'])
   })
 
-  // The footprint costs a directory sweep and a read per folder, so an unconfigured or broken
-  // provider must not pay for either.
-  it('skips the footprint entirely when the provider returned nothing', async () => {
+  it('does not hide a host repo because a deleted site still occupies the store', async () => {
+    listBitbucketWorkspaceRepos.mockResolvedValue(
+      bitbucketResult({
+        repos: [
+          bitbucketRepo({
+            slug: 'ebes',
+            fullName: 'efront_au/ebes',
+            cloneUrl: 'git@bitbucket.org:efront_au/ebes.git'
+          })
+        ]
+      })
+    )
+
+    const result = await listCloneSourceRepos(
+      store([], ['/Users/jakevarrese/Documents/Sites/ebes']),
+      'bitbucket'
+    )
+
+    expect(result.repos.map((repo) => repo.fullName)).toEqual(['efront_au/ebes'])
+  })
+
+  // The footprint costs a directory sweep. Unconfigured Bitbucket returns instantly and must
+  // not start that walk; a live connector overlaps it with the host fetch.
+  it('skips the footprint when Bitbucket is not configured', async () => {
+    isBitbucketListingConfigured.mockReturnValue(false)
+
     await listCloneSourceRepos(store(), 'bitbucket')
 
     expect(discoverSiteCandidates).not.toHaveBeenCalled()

@@ -16,6 +16,7 @@ import type {
   SiteSetupCloneTarget
 } from '../../shared/site-setup-flow-types'
 import { getBitbucketCredentialRecord } from './bitbucket-credential-store'
+import { resolveBitbucketListingCredentials } from './bitbucket-listing-auth'
 import { fetchBitbucketJson, listBitbucketWorkspaceRepos } from './bitbucket-workspace-repos'
 
 /** Enough to disambiguate a fuzzy name; past that the picker is noise rather than help. */
@@ -101,17 +102,12 @@ export async function resolveSiteSetupCloneTargets(
   // One read of the record rather than a status call plus a credentials call: both derive from the
   // same decrypt, and we need the secret anyway to list.
   const record = getBitbucketCredentialRecord()
-  const credentials =
-    record && record.username.length > 0 && record.appPassword.length > 0
-      ? { username: record.username, appPassword: record.appPassword }
-      : null
+  const credentials = await resolveBitbucketListingCredentials()
 
   const { workspace: linkWorkspace, slug } = splitReponame(reponame)
   const workspace = linkWorkspace || record?.workspace || ''
 
-  // A stored secret with nowhere to point it is as unusable as no secret: same "finish Settings"
-  // outcome for the user, so report it the same way instead of as a failure.
-  if (!credentials || workspace.length === 0) {
+  if (!credentials) {
     return { connectorConfigured: false, targets: [], error: '' }
   }
   if (slug.length === 0) {

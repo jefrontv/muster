@@ -1,7 +1,7 @@
 // The provider-agnostic half of "add a site from a repo you already have on a git host".
 //
 // Each host keeps its own module (bitbucket-workspace-repos.ts, github-clone-source.ts) because
-// they authenticate nothing alike — Bitbucket reads a stored App Password, GitHub rides the `gh`
+// they authenticate nothing alike — Bitbucket uses the OAuth session, GitHub rides the `gh`
 // CLI's own login. This file is the seam that lets the picker treat them as one list.
 //
 // Two rules the UI depends on:
@@ -17,6 +17,7 @@
 // That belongs here rather than in the renderer: it is the same fact as "cloning there would
 // collide", so main owns it and every window gets the same answer.
 
+import { stat } from 'node:fs/promises'
 import {
   CLONE_SOURCE_REPO_LIMIT,
   type CloneSourceListResult,
@@ -26,10 +27,9 @@ import {
 } from '../../shared/site-clone-source-types'
 import type { BitbucketRepoListResult } from '../../shared/site-bind-types'
 import {
-  getBitbucketCredentialRecord,
-  getBitbucketCredentials,
-  getBitbucketCredentialStatus
-} from './bitbucket-credential-store'
+  isBitbucketListingConfigured,
+  resolveBitbucketListingCredentials
+} from './bitbucket-listing-auth'
 import { fetchBitbucketJson, listBitbucketWorkspaceRepos } from './bitbucket-workspace-repos'
 import { getGithubCloneSourceStatus, listGithubCloneSourceRepos } from './github-clone-source'
 import { probeRepoRemoteKeys } from './repo-remote-probe'
@@ -57,6 +57,8 @@ export type CloneSourceStore = {
   }[]
   listSites: () => readonly { path: string }[]
   getConfiguredSiteRoots: () => readonly string[]
+  /** Tests inject this. Production uses a local exists check. */
+  pathExists?: (targetPath: string) => Promise<boolean>
 }
 
 /** Display order in the picker. Bitbucket first: it is the one ocsites shipped with. */
@@ -78,19 +80,12 @@ export function isCloneSourceProviderId(value: unknown): value is CloneSourcePro
 
 function getBitbucketCloneSourceStatus(): CloneSourceProvider {
   const base = { id: 'bitbucket', label: PROVIDER_LABELS.bitbucket } as const
-  const credential = getBitbucketCredentialStatus()
-  if (!credential.configured) {
+  if (!isBitbucketListingConfigured()) {
     return {
       ...base,
       configured: false,
-      reason: `Add a Bitbucket App Password in ${SETTINGS_HINT}.`
+      reason: `Connect Bitbucket in ${SETTINGS_HINT}.`
     }
-  }
-  // A credential without a workspace cannot list anything: the Bitbucket repo endpoint is scoped to
-  // one workspace, so an empty slug is just as unusable as a missing password.
-  const workspace = getBitbucketCredentialRecord()?.workspace ?? ''
-  if (workspace.length === 0) {
-    return { ...base, configured: false, reason: `Set a Bitbucket workspace in ${SETTINGS_HINT}.` }
   }
   return { ...base, configured: true, reason: '' }
 }
@@ -124,9 +119,36 @@ async function resolveProvider(
   }
 }
 
+async function localPathExists(targetPath: string): Promise<boolean> {
+  try {
+    await stat(targetPath)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function keepExistingPaths(
+  paths: readonly string[],
+  pathExists: (targetPath: string) => Promise<boolean>
+): Promise<string[]> {
+  const flags = await Promise.all(paths.map((targetPath) => pathExists(targetPath)))
+  return paths.filter((_path, index) => flags[index] === true)
+}
+
 async function buildStoreFootprint(store: CloneSourceStore): Promise<ExistingSiteFootprint> {
-  const repos = store.getRepos()
-  const sitePaths = store.listSites().map((site) => site.path)
+  const pathExists = store.pathExists ?? localPathExists
+  // A deleted checkout still sitting in the store must not hide the host row — the clone would
+  // succeed again. SSH repos stay: their path is not on this machine.
+  const storedRepos = store.getRepos()
+  const repoStillHere = await Promise.all(
+    storedRepos.map(async (repo) => Boolean(repo.connectionId) || pathExists(repo.path))
+  )
+  const repos = storedRepos.filter((_repo, index) => repoStillHere[index] === true)
+  const sitePaths = await keepExistingPaths(
+    store.listSites().map((site) => site.path),
+    pathExists
+  )
   // The on-disk sweep matters as much as the store records: a folder nobody has adopted yet still
   // occupies the name a clone would want, and is exactly the case the store cannot see.
   const discovered = await discoverSiteCandidates({
@@ -165,14 +187,21 @@ export async function listCloneSourceRepos(
   /** Handed to the host so the match happens where the whole repo list lives, not on this page. */
   query = ''
 ): Promise<CloneSourceListResult> {
-  const listed = await listProviderRepos(provider, query)
-  // Nothing to filter, and the footprint costs a directory sweep — so do not pay for it when the
-  // provider is unconfigured or its lookup failed.
+  const listedPromise = listProviderRepos(provider, query)
+  // Overlap the disk sweep with the host round-trip when we already know the connector is live.
+  // Unconfigured Bitbucket returns instantly and must not pay for a directory walk.
+  const overlapFootprint =
+    provider === 'github' || (provider === 'bitbucket' && isBitbucketListingConfigured())
+  const footprintPromise = overlapFootprint ? buildStoreFootprint(store) : null
+  const listed = await listedPromise
   if (listed.repos.length === 0) {
+    if (footprintPromise) {
+      await footprintPromise
+    }
     return listed
   }
 
-  const footprint = await buildStoreFootprint(store)
+  const footprint = footprintPromise ? await footprintPromise : await buildStoreFootprint(store)
   const usable = listed.repos.filter((repo) => !isAlreadyPresent(repo, footprint))
   return {
     ...listed,
@@ -203,13 +232,15 @@ async function listProviderRepos(
 }
 
 async function listBitbucketCloneSourceRepos(query: string): Promise<CloneSourceListResult> {
-  // No `preferCache`: the picker is often opened right after creating a repo, and a stale cache
-  // would hide it. The lister still falls back to its cache when the live fetch fails.
   const result = await listBitbucketWorkspaceRepos({
-    workspace: getBitbucketCredentialRecord()?.workspace ?? '',
-    credentials: getBitbucketCredentials(),
+    workspace: '',
+    credentials: await resolveBitbucketListingCredentials(),
     fetchJson: fetchBitbucketJson,
-    query
+    query,
+    // Browse is stable enough to reuse the last successful list; a search must hit the host.
+    preferCache: query.length === 0,
+    // The picker caps at CLONE_SOURCE_REPO_LIMIT after exclusions — do not page the whole workspace.
+    maxRepos: CLONE_SOURCE_REPO_LIMIT
   })
   const usable = toCloneSourceRepos(result)
   return {

@@ -16,6 +16,7 @@ import type {
 } from '../../shared/site-stack-types'
 import type { LocalWpCertStatus, LocalWpCertTrustResult } from '../../shared/localwp-cert-types'
 import { getLocalWpCertStatus, trustLocalWpCert } from './localwp-cert-trust'
+import { ensureLocalWpHttpsCert } from './localwp-cert-ensure'
 import { currentSocketIfRunning, detectLocalWpStack } from './localwp-detection'
 import {
   createLocalWpHost,
@@ -72,6 +73,11 @@ export type LocalStackProvider = {
   certStatus: (domain: string) => Promise<LocalWpCertStatus>
   certTrust: (domain: string) => Promise<LocalWpCertTrustResult>
   /**
+   * Start the stack if needed, mint the cert when Local has not written one, then trust it.
+   * Optional: stacks that issue a cert inside `certTrust` (agent-local) can omit this.
+   */
+  certEnsure?: (domain: string, site: LocalStackSiteRef) => Promise<LocalWpCertTrustResult>
+  /**
    * Stand off :80/:443 for `seconds` so another stack can bind them. Optional, because only a stack
    * that takes the privileged ports has anything to give up — LocalWP binds them itself and has no
    * way to hand them back on request.
@@ -109,7 +115,8 @@ const localWpProvider: LocalStackProvider = {
     }
   },
   certStatus: getLocalWpCertStatus,
-  certTrust: trustLocalWpCert
+  certTrust: trustLocalWpCert,
+  certEnsure: (domain, site) => ensureLocalWpHttpsCert(domain, site.path)
 }
 
 /**

@@ -19,6 +19,7 @@ import {
   requestWithDaemon,
   type AgentLocalHost
 } from './agent-local-host'
+import { resolveAgentLocalSite } from './agent-local-site-control'
 
 export type AgentLocalMigrationOptions = {
   host?: AgentLocalHost
@@ -54,6 +55,10 @@ export type AgentLocalMigrationOutcome = LocalWpMigrationResult & {
  *   copy database acme_wp from 127.0.0.1:3306 as root: dump: exit status 2
  *   (mariadb-dump: Got error: 2002: "Can't connect to server on '127.0.0.1' (36)")
  */
+export function isAlreadyRegisteredSite(message: string): boolean {
+  return message.toLowerCase().includes('already exists')
+}
+
 export function isSourceDatabaseUnreachable(message: string): boolean {
   const text = message.toLowerCase()
   if (!text.includes('copy database') && !text.includes('dump')) {
@@ -167,9 +172,7 @@ export async function runAgentLocalMigration(
   // `/attach` is the daemon's own answer for that: serve the folder against a fresh empty database
   // and let the server import fill it. Picking the wrong one fails inside the daemon partway.
   const attaching = plan.mode === 'create'
-  const register = (
-    endpoint: '/attach' | '/import'
-  ): ReturnType<typeof requestWithDaemon> =>
+  const register = (endpoint: '/attach' | '/import'): ReturnType<typeof requestWithDaemon> =>
     requestWithDaemon(
       host,
       'POST',
@@ -184,9 +187,7 @@ export async function runAgentLocalMigration(
     )
 
   report(
-    attaching
-      ? `Serving ${source} with agent-local…`
-      : `Registering ${source} with agent-local…`
+    attaching ? `Serving ${source} with agent-local…` : `Registering ${source} with agent-local…`
   )
   let response = await register(attaching ? '/attach' : '/import')
   let databaseCopied = !attaching
@@ -195,7 +196,11 @@ export async function runAgentLocalMigration(
   // simply not running) makes the copy fail with a connection error, and that used to abort the
   // whole switch — leaving the user on a stack that no longer exists with no way off it. Serving
   // the files is the part that matters; the database comes back on the next server import.
-  if (!response.ok && !attaching && isSourceDatabaseUnreachable(describeAgentLocalResponse(response))) {
+  if (
+    !response.ok &&
+    !attaching &&
+    isSourceDatabaseUnreachable(describeAgentLocalResponse(response))
+  ) {
     report(
       'Could not copy the existing local database — registering the files without it. Re-run the import to bring the database back.'
     )
@@ -203,13 +208,60 @@ export async function runAgentLocalMigration(
     databaseCopied = false
   }
   if (!response.ok) {
-    return failed(describeAgentLocalResponse(response))
+    const reason = describeAgentLocalResponse(response)
+    if (isAlreadyRegisteredSite(reason)) {
+      const adopted = await adoptExistingAgentLocalSite(request, host, plan, log, report)
+      if (adopted) {
+        return adopted
+      }
+    }
+    return failed(reason)
   }
-  const data = asRecord(response.data)
+  report(`agent-local is serving ${request.domain}.`)
+  return mappedRegistration(request, plan, log, response.data, databaseCopied)
+}
+
+async function adoptExistingAgentLocalSite(
+  request: LocalWpMigrationRequest,
+  host: AgentLocalHost,
+  plan: LocalWpMigrationPlan,
+  log: string[],
+  report: (message: string) => void
+): Promise<AgentLocalMigrationOutcome | null> {
+  const { match } = await resolveAgentLocalSite(
+    { path: request.sitePath, localStack: 'agent-local' },
+    { host }
+  )
+  if (!match) {
+    return null
+  }
+  report(`agent-local already has '${match.slug}' for this folder.`)
+  return mappedRegistration(
+    request,
+    plan,
+    log,
+    {
+      slug: match.slug,
+      domain: match.domain,
+      wp_dir: match.wpDir,
+      php_version: match.phpVersion
+    },
+    false
+  )
+}
+
+function mappedRegistration(
+  request: LocalWpMigrationRequest,
+  plan: LocalWpMigrationPlan,
+  log: string[],
+  payload: unknown,
+  databaseCopied: boolean
+): AgentLocalMigrationOutcome {
+  const data = asRecord(payload)
   const wpDir = readString(data, 'wp_dir')
   const db = asRecord(data?.db)
-  report(`agent-local is serving ${request.domain}.`)
   const slug = readString(data, 'slug') || request.siteName
+  const domain = readString(data, 'domain') || request.domain
   return {
     ok: true,
     message: databaseCopied
@@ -219,10 +271,9 @@ export async function runAgentLocalMigration(
     // Always TCP — see agent-local-site-control.ts on why this must stay empty.
     socketPath: '',
     localWpRoot: relativeDocroot(request.sitePath, wpDir),
-    // agent-local imports the site's existing database itself, reading wp-config.php in the docroot.
     databaseImported: databaseCopied,
     log,
-    domain: readString(data, 'domain') || request.domain,
+    domain,
     dbPort: typeof db?.port === 'number' ? db.port : null,
     dbUser: readString(db, 'user'),
     phpVersion: readString(data, 'php_version')

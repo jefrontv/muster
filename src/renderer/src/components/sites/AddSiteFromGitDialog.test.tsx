@@ -219,12 +219,14 @@ describe('AddSiteFromGitDialog search', () => {
 
   it('reports an unconfigured provider as a reason instead of an empty search', async () => {
     installApi(
-      [{ ...BITBUCKET, configured: false, reason: 'No Bitbucket App Password is stored.' }],
+      [
+        { ...BITBUCKET, configured: false, reason: 'Connect Bitbucket in Settings → Integrations.' }
+      ],
       alwaysReturns()
     )
     await render()
 
-    expect(document.body.textContent).toContain('No Bitbucket App Password is stored.')
+    expect(document.body.textContent).toContain('Connect Bitbucket in Settings → Integrations.')
     expect(document.body.querySelector('input')).toBeNull()
   })
 

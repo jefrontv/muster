@@ -86,7 +86,7 @@ describe('getLocalWpCertStatus', () => {
     expect(status.trusted).toBe(false)
     expect(status.certPath).toBe(CERT)
     // The common state right after a migration, so the reason has to read as the next step.
-    expect(status.reason).toContain('https://')
+    expect(status.reason).toContain('Set up HTTPS')
     expect(calls).toEqual([])
   })
 

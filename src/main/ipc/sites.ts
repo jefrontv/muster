@@ -1,12 +1,5 @@
-import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
-import {
-  createEmptySiteEnvironment,
-  DEFAULT_SITE_ENVIRONMENT_NAME,
-  type Site,
-  type SiteSecretKind,
-  type SiteSummary
-} from '../../shared/site-types'
+import type { SiteSecretKind, SiteSummary } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { importOcsitesConfig } from '../sites/ocsites-config-import'
 import { applyOcsitesImport, type OcsitesImportApplyResult } from '../sites/ocsites-import-apply'
@@ -21,6 +14,7 @@ import {
   isSitePath,
   isSiteSecretKind
 } from './sites-payload-validation'
+import { adoptOrCreateSite } from '../sites/site-create'
 import { failure, requireSite, type SiteResult } from './sites-result'
 
 export type { SiteResult } from './sites-result'
@@ -87,32 +81,16 @@ export function registerSiteHandlers(store: Store): void {
         if (!isSitePath(input.path)) {
           throw new TypeError('path must be a non-empty absolute path')
         }
-        if (store.findSiteByPath(input.path)) {
-          throw new Error(`A site already exists for ${input.path}`)
+        return {
+          ok: true,
+          value: await buildSiteSummary(
+            adoptOrCreateSite(store, {
+              path: input.path,
+              displayName: typeof input.displayName === 'string' ? input.displayName : undefined,
+              repoId: typeof input.repoId === 'string' ? input.repoId : null
+            })
+          )
         }
-        const segments = input.path.split(/[/\\]/)
-        const fallbackName = segments.findLast((segment) => segment.length > 0) ?? input.path
-        const site: Site = {
-          id: randomUUID(),
-          path: input.path,
-          repoId: typeof input.repoId === 'string' ? input.repoId : null,
-          displayName:
-            typeof input.displayName === 'string' && input.displayName.trim().length > 0
-              ? input.displayName.trim()
-              : fallbackName,
-          localWpRoot: '',
-          localDomain: '',
-          localStack: 'plain',
-          dbUser: 'root',
-          dbSocket: '',
-          dbPort: null,
-          phpVersion: '',
-          activeEnvironment: DEFAULT_SITE_ENVIRONMENT_NAME,
-          environments: { [DEFAULT_SITE_ENVIRONMENT_NAME]: createEmptySiteEnvironment() },
-          notes: '',
-          searchReplaceTimeoutSeconds: 600
-        }
-        return { ok: true, value: await buildSiteSummary(store.upsertSite(site)) }
       } catch (error) {
         return failure(error)
       }

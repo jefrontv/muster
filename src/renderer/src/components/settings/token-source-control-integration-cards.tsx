@@ -48,7 +48,7 @@ export function BitbucketIntegrationCard(): React.JSX.Element {
               )
           : translate(
               'auto.components.settings.token.source.control.integration.cards.a924e8dcd1',
-              'Pull requests and build statuses via Bitbucket Cloud API tokens.'
+              'Pull requests and build statuses via your Bitbucket account.'
             )
       }
       checking={status === 'checking'}
@@ -79,7 +79,7 @@ export function BitbucketIntegrationCard(): React.JSX.Element {
                 : status === 'not-configured'
                   ? translate(
                       'auto.components.settings.token.source.control.integration.cards.needsSetup',
-                      'Connect with your Atlassian account email and an API token.'
+                      'Connect with your Bitbucket account in the browser.'
                     )
                   : connected
                     ? translate(
@@ -110,7 +110,7 @@ export function BitbucketIntegrationCard(): React.JSX.Element {
               size="sm"
               onClick={() =>
                 window.api.shell.openUrl(
-                  'https://support.atlassian.com/bitbucket-cloud/docs/using-api-tokens/'
+                  'https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/'
                 )
               }
             >
@@ -131,14 +131,21 @@ export function BitbucketIntegrationCard(): React.JSX.Element {
             open={dialogOpen}
             status={credential}
             onOpenChange={setDialogOpen}
-            onSave={async (input) => {
-              const result = await window.api.bitbucketAuth.setCredentials(input)
+            onConnect={async () => {
+              const api = window.api.bitbucketAuth
+              if (!api?.beginOAuth) {
+                return 'Restart the Muster dev app to load Bitbucket OAuth.'
+              }
+              const result = await api.beginOAuth()
               if ('error' in result) {
                 return result.error
               }
               await syncCredential()
               refresh()
               return null
+            }}
+            onCancelConnect={() => {
+              void window.api.bitbucketAuth?.cancelOAuth?.()
             }}
             onClear={async () => {
               await window.api.bitbucketAuth.clear()

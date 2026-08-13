@@ -4,10 +4,14 @@ import type { BitbucketApiResponse } from './bitbucket-workspace-repos'
 import type { BitbucketRepoListResult, BitbucketRepoSummary } from '../../shared/site-bind-types'
 import { fetchBitbucketJson, listBitbucketWorkspaceRepos } from './bitbucket-workspace-repos'
 import { getBitbucketCredentialRecord } from './bitbucket-credential-store'
+import { resolveBitbucketListingCredentials } from './bitbucket-listing-auth'
 import { resolveSiteSetupCloneTargets } from './site-setup-clone-targets'
 
 // The credential store is mocked whole (no importOriginal) so `electron`'s safeStorage never loads.
 vi.mock('./bitbucket-credential-store', () => ({ getBitbucketCredentialRecord: vi.fn() }))
+vi.mock('./bitbucket-listing-auth', () => ({
+  resolveBitbucketListingCredentials: vi.fn()
+}))
 
 // The lister keeps its real helpers — the SSH-preference test drives the genuine implementation with
 // only the HTTP binding stubbed, since that is where the clone-URL choice actually happens.
@@ -18,6 +22,7 @@ vi.mock('./bitbucket-workspace-repos', async (importOriginal) => ({
 }))
 
 const recordMock = vi.mocked(getBitbucketCredentialRecord)
+const listingAuthMock = vi.mocked(resolveBitbucketListingCredentials)
 const listMock = vi.mocked(listBitbucketWorkspaceRepos)
 const fetchMock = vi.mocked(fetchBitbucketJson)
 
@@ -62,11 +67,13 @@ function apiPage(slug: string, clone: { name: string; href: string }[]): Bitbuck
 beforeEach(() => {
   vi.clearAllMocks()
   recordMock.mockReturnValue(RECORD)
+  listingAuthMock.mockResolvedValue({ accessToken: 'oauth-token' })
 })
 
 describe('connector configuration', () => {
   it('reports no connector without an error when nothing is stored', async () => {
     recordMock.mockReturnValue(null)
+    listingAuthMock.mockResolvedValue(null)
 
     expect(await resolveSiteSetupCloneTargets('adamson-eoi')).toEqual({
       connectorConfigured: false,
@@ -76,23 +83,19 @@ describe('connector configuration', () => {
     expect(listMock).not.toHaveBeenCalled()
   })
 
-  it('reports no connector when the stored credential lacks an App Password', async () => {
-    recordMock.mockReturnValue({ ...RECORD, appPassword: '' })
-
-    const result = await resolveSiteSetupCloneTargets('adamson-eoi')
-
-    expect(result.connectorConfigured).toBe(false)
-    expect(result.error).toBe('')
-    expect(listMock).not.toHaveBeenCalled()
-  })
-
-  it('reports no connector when neither the link nor the store names a workspace', async () => {
+  it('lists across the signed-in account when no workspace is stored', async () => {
     recordMock.mockReturnValue({ ...RECORD, workspace: '' })
+    listMock.mockResolvedValue(listed([repo('adamson-eoi')], { workspace: '' }))
 
     const result = await resolveSiteSetupCloneTargets('adamson-eoi')
 
-    expect(result.connectorConfigured).toBe(false)
-    expect(listMock).not.toHaveBeenCalled()
+    expect(result.connectorConfigured).toBe(true)
+    expect(listMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspace: '',
+        credentials: { accessToken: 'oauth-token' }
+      })
+    )
   })
 })
 

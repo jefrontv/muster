@@ -13,10 +13,8 @@
 //    the site's work_dir — a repo root 404s. resolveAgentLocalSite therefore matches downwards from
 //    the site path over `GET /sites`. See resolveAgentLocalSite for the ordering.
 
-import path from 'node:path'
 import type { LocalWpStackDetection } from '../../shared/site-stack-types'
 import { agentLocalCertStatus, agentLocalCertTrust } from './agent-local-cert'
-import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import {
   AGENT_LOCAL_DATABASE_PORT,
   AGENT_LOCAL_READ_TIMEOUT_MS,
@@ -30,6 +28,7 @@ import {
   type AgentLocalHost,
   type AgentLocalResponse
 } from './agent-local-host'
+import { resolveAgentLocalSite } from './agent-local-site-resolve'
 import {
   localStackSkip,
   registerLocalStackProvider,
@@ -39,19 +38,12 @@ import {
   type LocalStackSiteRef
 } from './local-stack-provider'
 
+export type { AgentLocalSiteMatch } from './agent-local-site-resolve'
+export { resolveAgentLocalSite }
+
 export const AGENT_LOCAL_NOT_MANAGED = 'Not an Agent Local site'
 export const AGENT_LOCAL_DAEMON_UNREACHABLE =
   'Agent Local is installed but its daemon is not answering. Run `agent-local doctor`.'
-
-export type AgentLocalSiteMatch = {
-  slug: string
-  /** agent-local's docroot for this site — authoritative over any stored localWpRoot. */
-  wpDir: string
-  workDir: string
-  domain: string
-  phpVersion: string
-  running: boolean
-}
 
 type AgentLocalOptions = { host?: AgentLocalHost }
 
@@ -64,65 +56,6 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 function readString(record: Record<string, unknown> | null, key: string): string {
   const value = record?.[key]
   return typeof value === 'string' ? value : ''
-}
-
-/** Trailing-separator-safe containment, so `/sites/app` never matches `/sites/appendix`. */
-function isAtOrUnder(candidate: string, ancestor: string): boolean {
-  const normalizedCandidate = normalizeRuntimePathForComparison(candidate)
-  const normalizedAncestor = normalizeRuntimePathForComparison(ancestor)
-  if (normalizedCandidate === normalizedAncestor) {
-    return true
-  }
-  const relative = path.relative(normalizedAncestor, normalizedCandidate)
-  return relative.length > 0 && !relative.startsWith('..') && !path.isAbsolute(relative)
-}
-
-function toSiteMatch(record: Record<string, unknown>): AgentLocalSiteMatch | null {
-  const slug = readString(record, 'slug')
-  if (slug.length === 0) {
-    return null
-  }
-  return {
-    slug,
-    wpDir: readString(record, 'wp_dir'),
-    workDir: readString(record, 'work_dir'),
-    domain: readString(record, 'domain'),
-    phpVersion: readString(record, 'php_version'),
-    // `state` on a list entry, `running` on a start/resolve payload.
-    running: readString(record, 'state') === 'running' || record.running === true
-  }
-}
-
-/**
- * Muster path → agent-local site.
- *
- * `GET /sites` first, matching any site whose docroot or work dir lies at or under the Muster site
- * path: that is the only direction that works for a repo root, and it is one request. `/resolve` is
- * then used to confirm and enrich, because it is authoritative for worktree previews and reports
- * live state. A 404 from either is the "this site is not on agent-local" signal, not an error.
- */
-export async function resolveAgentLocalSite(
-  site: LocalStackSiteRef,
-  options: AgentLocalOptions = {}
-): Promise<{ match: AgentLocalSiteMatch | null; response: AgentLocalResponse }> {
-  const host = options.host ?? createAgentLocalHost()
-  const response = await requestWithDaemon(host, 'GET', '/sites')
-  if (!response.ok || !Array.isArray(response.data)) {
-    return { match: null, response }
-  }
-  const candidates = response.data
-    .map((entry) => asRecord(entry))
-    .filter((entry): entry is Record<string, unknown> => entry !== null)
-    .map(toSiteMatch)
-    .filter((entry): entry is AgentLocalSiteMatch => entry !== null)
-    .filter(
-      (entry) =>
-        (entry.wpDir.length > 0 && isAtOrUnder(entry.wpDir, site.path)) ||
-        (entry.workDir.length > 0 && isAtOrUnder(entry.workDir, site.path))
-    )
-  // Deepest docroot wins: a site nested inside another's tree is the more specific answer.
-  const match = candidates.sort((left, right) => right.wpDir.length - left.wpDir.length)[0] ?? null
-  return { match: match ?? null, response }
 }
 
 /**
@@ -280,11 +213,17 @@ export async function detectAgentLocalStack(
   })
   if (!status.ok) {
     // Honest degradation: unreachable is reported, not thrown, and never claims "not a site".
-    return { ...absent, reason: isAgentLocalDaemonDown(status) ? AGENT_LOCAL_DAEMON_UNREACHABLE : '' }
+    return {
+      ...absent,
+      reason: isAgentLocalDaemonDown(status) ? AGENT_LOCAL_DAEMON_UNREACHABLE : ''
+    }
   }
-  const { match } = await resolveAgentLocalSite({ path: sitePath, localStack: 'agent-local' }, {
-    host
-  })
+  const { match } = await resolveAgentLocalSite(
+    { path: sitePath, localStack: 'agent-local' },
+    {
+      host
+    }
+  )
   if (!match) {
     return { ...absent, appRunning: true }
   }
@@ -341,6 +280,7 @@ export const agentLocalProvider: LocalStackProvider = {
   credentials: (site) => agentLocalCredentials(site),
   certStatus: (domain) => agentLocalCertStatus(domain),
   certTrust: (domain) => agentLocalCertTrust(domain),
+  certEnsure: (domain) => agentLocalCertTrust(domain),
   releasePrivilegedPorts: (seconds) => releaseAgentLocalPrivilegedPorts(seconds)
 }
 

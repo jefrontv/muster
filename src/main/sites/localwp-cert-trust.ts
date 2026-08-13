@@ -41,8 +41,7 @@ const NO_DOMAIN =
   'Finish setting the site up in LocalWP first.'
 
 const NOT_GENERATED =
-  'LocalWP has not written the HTTPS certificate yet. Start the site and open it over ' +
-  'https:// once, then check again.'
+  'LocalWP has not written the HTTPS certificate yet. Set up HTTPS to start the site and issue it.'
 
 /**
  * The exact message ocsites returned, kept verbatim: it is the one the user sees after pressing

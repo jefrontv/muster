@@ -22,7 +22,8 @@ export function SiteSetupHttpsStage({
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const trusted = cert?.supported === true && cert.trusted
-  const actionable = cert?.supported === true && cert.exists && !cert.trusted
+  const missing = cert?.supported === true && !cert.exists
+  const actionable = cert?.supported === true && !cert.trusted
   return (
     <div className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5">
       <ShieldCheck
@@ -36,7 +37,7 @@ export function SiteSetupHttpsStage({
       </div>
       {actionable ? (
         <Button size="sm" variant="outline" disabled={trusting} onClick={onTrust}>
-          {trusting ? strings.certTrusting : strings.certAction}
+          {trusting ? strings.certTrusting : missing ? strings.certSetup : strings.certAction}
         </Button>
       ) : null}
       {trusted ? <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" /> : null}

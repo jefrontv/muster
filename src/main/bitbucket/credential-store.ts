@@ -30,11 +30,21 @@ export type BitbucketCredentialRecord = {
   email: string
   apiToken: string
   accessToken: string
+  refreshToken: string
+  expiresAt: number
+  account: string
 }
 
 const FILE_NAME = 'bitbucket-review-credential.enc'
 
-const EMPTY: BitbucketCredentialRecord = { email: '', apiToken: '', accessToken: '' }
+const EMPTY: BitbucketCredentialRecord = {
+  email: '',
+  apiToken: '',
+  accessToken: '',
+  refreshToken: '',
+  expiresAt: 0,
+  account: ''
+}
 
 function credentialPath(): string {
   return path.join(getCanonicalUserDataPath(), 'integration-secrets', FILE_NAME)
@@ -56,7 +66,13 @@ function readRecord(): BitbucketCredentialRecord | null {
     return {
       email: typeof parsed.email === 'string' ? parsed.email : '',
       apiToken: typeof parsed.apiToken === 'string' ? parsed.apiToken : '',
-      accessToken: typeof parsed.accessToken === 'string' ? parsed.accessToken : ''
+      accessToken: typeof parsed.accessToken === 'string' ? parsed.accessToken : '',
+      refreshToken: typeof parsed.refreshToken === 'string' ? parsed.refreshToken : '',
+      expiresAt:
+        typeof parsed.expiresAt === 'number' && Number.isFinite(parsed.expiresAt)
+          ? parsed.expiresAt
+          : 0,
+      account: typeof parsed.account === 'string' ? parsed.account : ''
     }
   } catch {
     return null
@@ -64,7 +80,11 @@ function readRecord(): BitbucketCredentialRecord | null {
 }
 
 function hasSecret(record: BitbucketCredentialRecord): boolean {
-  return record.accessToken.length > 0 || (record.email.length > 0 && record.apiToken.length > 0)
+  return (
+    record.accessToken.length > 0 ||
+    record.refreshToken.length > 0 ||
+    (record.email.length > 0 && record.apiToken.length > 0)
+  )
 }
 
 function writeRecord(record: BitbucketCredentialRecord): void {
@@ -82,6 +102,9 @@ function writeRecord(record: BitbucketCredentialRecord): void {
 }
 
 function methodOf(record: BitbucketCredentialRecord): BitbucketAuthMethod | null {
+  if (record.refreshToken.length > 0) {
+    return 'oauth'
+  }
   if (record.accessToken.length > 0) {
     return 'access-token'
   }
@@ -97,13 +120,22 @@ export function getStoredBitbucketCredential(): BitbucketCredentialRecord | null
 export function getStoredBitbucketCredentialStatus(): BitbucketAuthCredentialStatus {
   const record = getStoredBitbucketCredential()
   if (!record) {
-    return { configured: false, method: null, email: null, fromEnvironment: false }
+    return {
+      configured: false,
+      method: null,
+      email: null,
+      account: null,
+      fromEnvironment: false,
+      oauthAvailable: true
+    }
   }
   return {
     configured: true,
     method: methodOf(record),
     email: record.email.length > 0 ? record.email : null,
-    fromEnvironment: false
+    account: record.account.length > 0 ? record.account : null,
+    fromEnvironment: false,
+    oauthAvailable: true
   }
 }
 
@@ -116,7 +148,11 @@ export function setStoredBitbucketCredential(input: Partial<BitbucketCredentialR
   writeRecord({
     email: input.email?.trim() ?? '',
     apiToken: input.apiToken?.trim() ?? '',
-    accessToken: input.accessToken?.trim() ?? ''
+    accessToken: input.accessToken?.trim() ?? '',
+    refreshToken: input.refreshToken?.trim() ?? '',
+    expiresAt:
+      typeof input.expiresAt === 'number' && Number.isFinite(input.expiresAt) ? input.expiresAt : 0,
+    account: input.account?.trim() ?? ''
   })
 }
 

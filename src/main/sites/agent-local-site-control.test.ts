@@ -41,8 +41,9 @@ function host(
     homeDir: '/home/test',
     readToken: async () => 'token',
     request: async (method: string, apiPath: string) => {
-      calls.push(`${method} ${apiPath}`)
-      return routes[`${method} ${apiPath}`] ?? { ok: false, status: 404, error: 'not found' }
+      const route = apiPath.startsWith('/resolve') ? `${method} /resolve` : `${method} ${apiPath}`
+      calls.push(route)
+      return routes[route] ?? { ok: false, status: 404, error: 'not found' }
     },
     spawnDaemon: async () => undefined,
     sleep: async () => undefined,
@@ -56,6 +57,60 @@ const listSites: Record<string, AgentLocalResponse> = {
 }
 
 describe('resolveAgentLocalSite', () => {
+  it('trusts GET /resolve when the live path is already registered', async () => {
+    const { match } = await resolveAgentLocalSite(
+      { path: '/Users/jake/Sites/ebes', localStack: 'agent-local' },
+      {
+        host: host({
+          'GET /resolve': {
+            ok: true,
+            status: 200,
+            data: {
+              slug: 'ebes',
+              running: true,
+              site: {
+                slug: 'ebes',
+                work_dir: '/Users/jake/Sites/ebes',
+                wp_dir: '/Users/jake/Sites/ebes',
+                domain: 'ebes.local',
+                php_version: '8.4',
+                state: 'running'
+              }
+            }
+          }
+        })
+      }
+    )
+
+    expect(match).toMatchObject({ slug: 'ebes', running: true, wpDir: '/Users/jake/Sites/ebes' })
+  })
+
+  it('matches a leftover slug when the recorded work dir is gone', async () => {
+    const { match } = await resolveAgentLocalSite(
+      { path: '/Users/jake/Sites/ebes', localStack: 'agent-local' },
+      {
+        host: host({
+          'GET /sites': {
+            ok: true,
+            status: 200,
+            data: [
+              {
+                slug: 'ebes',
+                work_dir: '/old/deleted/ebes',
+                wp_dir: '/old/deleted/ebes',
+                domain: 'ebes.local',
+                php_version: '8.4',
+                state: 'stopped'
+              }
+            ]
+          }
+        })
+      }
+    )
+
+    expect(match?.slug).toBe('ebes')
+  })
+
   it('matches a repo root whose docroot sits below it — the case GET /resolve 404s on', async () => {
     const { match } = await resolveAgentLocalSite(
       { path: '/Sites/orleton-om', localStack: 'agent-local' },
@@ -116,9 +171,13 @@ describe('ensureAgentLocalSiteRunning', () => {
       }
     }
 
-    const outcome = await ensureAgentLocalSiteRunning({ path: '/Sites/sulo', localStack: 'agent-local' }, undefined, {
-      host: host(routes)
-    })
+    const outcome = await ensureAgentLocalSiteRunning(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      undefined,
+      {
+        host: host(routes)
+      }
+    )
 
     expect(outcome).toMatchObject({
       ok: true,
@@ -133,19 +192,31 @@ describe('ensureAgentLocalSiteRunning', () => {
   })
 
   it('reports not-managed for a path agent-local does not own, and does not fail the run', async () => {
-    const outcome = await ensureAgentLocalSiteRunning({ path: '/tmp', localStack: 'agent-local' }, undefined, {
-      host: host(listSites)
-    })
+    const outcome = await ensureAgentLocalSiteRunning(
+      { path: '/tmp', localStack: 'agent-local' },
+      undefined,
+      {
+        host: host(listSites)
+      }
+    )
 
-    expect(outcome).toMatchObject({ ok: true, state: 'not-managed', message: AGENT_LOCAL_NOT_MANAGED })
+    expect(outcome).toMatchObject({
+      ok: true,
+      state: 'not-managed',
+      message: AGENT_LOCAL_NOT_MANAGED
+    })
   })
 
   it('is unsupported off macOS instead of dialling a daemon that cannot exist', async () => {
     const machine = host(listSites, { platform: 'linux' })
 
-    const outcome = await ensureAgentLocalSiteRunning({ path: '/Sites/sulo', localStack: 'agent-local' }, undefined, {
-      host: machine
-    })
+    const outcome = await ensureAgentLocalSiteRunning(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      undefined,
+      {
+        host: machine
+      }
+    )
 
     expect(outcome.state).toBe('unsupported')
     expect(machine.calls).toEqual([])
@@ -157,9 +228,13 @@ describe('ensureAgentLocalSiteRunning', () => {
       'POST /sites/sulo/start': { ok: false, status: 500, error: 'php-fpm failed to bind' }
     }
 
-    const outcome = await ensureAgentLocalSiteRunning({ path: '/Sites/sulo', localStack: 'agent-local' }, undefined, {
-      host: host(routes)
-    })
+    const outcome = await ensureAgentLocalSiteRunning(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      undefined,
+      {
+        host: host(routes)
+      }
+    )
 
     expect(outcome).toMatchObject({ ok: false, state: 'failed', message: 'php-fpm failed to bind' })
   })
@@ -172,7 +247,10 @@ describe('stopAgentLocalSite', () => {
       'POST /sites/sulo/stop': { ok: true, status: 200, data: 'stopped' }
     })
 
-    const outcome = await stopAgentLocalSite({ path: '/Sites/sulo', localStack: 'agent-local' }, { host: machine })
+    const outcome = await stopAgentLocalSite(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      { host: machine }
+    )
 
     expect(outcome).toMatchObject({ ok: true, state: 'stopped' })
     expect(machine.calls).toContain('POST /sites/sulo/stop')
@@ -263,15 +341,20 @@ describe('detectAgentLocalStack', () => {
   })
 
   it('reports plain for an unmanaged path while the daemon is up', async () => {
-    const detection = await detectAgentLocalStack('/tmp', { host: host({ ...status, ...listSites }) })
+    const detection = await detectAgentLocalStack('/tmp', {
+      host: host({ ...status, ...listSites })
+    })
 
     expect(detection).toMatchObject({ stack: 'plain', registered: false, appRunning: true })
   })
 
   it('degrades honestly when the daemon is unreachable', async () => {
-    const machine = host({}, {
-      request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' })
-    })
+    const machine = host(
+      {},
+      {
+        request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' })
+      }
+    )
 
     const detection = await detectAgentLocalStack('/Sites/sulo', { host: machine })
 
@@ -302,30 +385,39 @@ describe('releaseAgentLocalPrivilegedPorts', () => {
 
   // A daemon that is not running is not on those ports, which is what the caller is really asking.
   it('reports the ports free when the daemon is down', async () => {
-    const machine = host({}, {
-      request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' })
-    })
+    const machine = host(
+      {},
+      {
+        request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' })
+      }
+    )
 
     await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(true)
   })
 
   // Older builds have no /yield route: they hold the ports and will not let go, so say so.
   it('reports failure when the route is absent', async () => {
-    const machine = host({}, {
-      request: async () => ({ ok: false, status: 404, error: 'not found' })
-    })
+    const machine = host(
+      {},
+      {
+        request: async () => ({ ok: false, status: 404, error: 'not found' })
+      }
+    )
 
     await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(false)
   })
 
   it('never spawns a daemon just to make it stand aside', async () => {
     let spawned = 0
-    const machine = host({}, {
-      request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' }),
-      spawnDaemon: async () => {
-        spawned += 1
+    const machine = host(
+      {},
+      {
+        request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' }),
+        spawnDaemon: async () => {
+          spawned += 1
+        }
       }
-    })
+    )
 
     await releaseAgentLocalPrivilegedPorts(60, { host: machine })
 

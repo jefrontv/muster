@@ -1,7 +1,5 @@
-// IPC for the Bitbucket review credential entered in Settings → Integrations.
-//
-// The secret only travels inbound. `status` returns whether something is stored and which identity
-// it belongs to, never the token itself, so a compromised renderer cannot read it back out.
+// IPC for Bitbucket review auth: OAuth Connect in Settings → Integrations.
+// Tokens never leave main on the read path. status reports identity only.
 
 import { ipcMain } from 'electron'
 import {
@@ -9,57 +7,33 @@ import {
   getStoredBitbucketCredentialStatus,
   setStoredBitbucketCredential
 } from '../bitbucket/credential-store'
-import { getBitbucketEnvironmentAuthStatus } from '../bitbucket/client'
+import { getBitbucketAuthStatus, getBitbucketEnvironmentAuthStatus } from '../bitbucket/client'
+import { isBitbucketOAuthAvailable } from '../bitbucket/oauth-config'
+import { beginBitbucketOAuthLogin, cancelBitbucketOAuth } from '../bitbucket/oauth-flow'
 import { _resetPreflightCache } from './preflight'
-import type {
-  BitbucketAuthCredentialInput,
-  BitbucketAuthCredentialStatus
-} from '../../shared/bitbucket-auth-types'
+import type { BitbucketAuthCredentialStatus } from '../../shared/bitbucket-auth-types'
 
 const BITBUCKET_AUTH_CHANNELS = [
   'bitbucketAuth:status',
-  'bitbucketAuth:setCredentials',
+  'bitbucketAuth:beginOAuth',
+  'bitbucketAuth:cancelOAuth',
   'bitbucketAuth:clear'
 ] as const
 
-// Bitbucket caps API tokens well below this; the bound just stops a hostile renderer from
-// streaming megabytes into the keychain file.
-const MAX_SECRET_LENGTH = 4_096
-const MAX_EMAIL_LENGTH = 320
-
-function readField(value: unknown, max: number): string {
-  if (typeof value !== 'string') {
-    return ''
-  }
-  const trimmed = value.trim()
-  if (trimmed.length > max) {
-    throw new Error(`Value exceeds ${max} characters.`)
-  }
-  return trimmed
-}
-
-function readInput(args: unknown): BitbucketAuthCredentialInput {
-  const input = (args ?? {}) as Record<string, unknown>
-  return {
-    email: readField(input.email, MAX_EMAIL_LENGTH),
-    apiToken: readField(input.apiToken, MAX_SECRET_LENGTH),
-    accessToken: readField(input.accessToken, MAX_SECRET_LENGTH)
-  }
-}
-
 function currentStatus(): BitbucketAuthCredentialStatus {
-  // Environment variables win in getAuthConfig, so surface that: the form must not imply it can
-  // edit a credential the process was launched with.
+  const oauthAvailable = isBitbucketOAuthAvailable()
   const fromEnv = getBitbucketEnvironmentAuthStatus()
   if (fromEnv.configured) {
     return {
       configured: true,
       method: fromEnv.method,
       email: fromEnv.email,
-      fromEnvironment: true
+      account: fromEnv.account,
+      fromEnvironment: true,
+      oauthAvailable
     }
   }
-  return getStoredBitbucketCredentialStatus()
+  return { ...getStoredBitbucketCredentialStatus(), oauthAvailable }
 }
 
 export function registerBitbucketAuthHandlers(): void {
@@ -72,23 +46,36 @@ export function registerBitbucketAuthHandlers(): void {
   })
 
   ipcMain.handle(
-    'bitbucketAuth:setCredentials',
-    async (_event, args: unknown): Promise<{ ok: true } | { error: string }> => {
+    'bitbucketAuth:beginOAuth',
+    async (): Promise<{ ok: true; account: string | null } | { error: string }> => {
       try {
-        const input = readInput(args)
-        const hasPair = Boolean(input.email && input.apiToken)
-        if (!hasPair && !input.accessToken) {
-          return { error: 'Enter an email and API token, or an access token.' }
-        }
-        setStoredBitbucketCredential(input)
-        // The preflight result is process-cached, so the card would keep reporting the old state.
+        const tokens = await beginBitbucketOAuthLogin()
+        setStoredBitbucketCredential({
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresAt: tokens.expiresAt
+        })
         _resetPreflightCache()
-        return { ok: true }
+        const live = await getBitbucketAuthStatus()
+        if (live.account) {
+          setStoredBitbucketCredential({
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresAt: tokens.expiresAt,
+            account: live.account
+          })
+        }
+        return { ok: true, account: live.account }
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) }
       }
     }
   )
+
+  ipcMain.handle('bitbucketAuth:cancelOAuth', async (): Promise<{ ok: true }> => {
+    cancelBitbucketOAuth()
+    return { ok: true }
+  })
 
   ipcMain.handle('bitbucketAuth:clear', async (): Promise<{ ok: true } | { error: string }> => {
     try {

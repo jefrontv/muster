@@ -158,6 +158,7 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.certAction',
     'Trust certificate'
   ),
+  certSetup: translate('auto.components.sites.SiteSetupContinuation.certSetup', 'Set up HTTPS'),
   certTrusting: translate('auto.components.sites.SiteSetupContinuation.certTrusting', 'Trusting…'),
   // The page is reachable before the stack has served the domain, so it needs something honest to
   // say while there is no certificate to report on yet.

@@ -170,7 +170,13 @@ export function SiteSetupContinuation({
     setTrusting(true)
     setError('')
     try {
-      const result = await window.api.localwpCert.trust({ domain: domain.trim(), stack: certStack })
+      const result = cert?.exists
+        ? await window.api.localwpCert.trust({ domain: domain.trim(), stack: certStack })
+        : await window.api.localwpCert.ensure({
+            domain: domain.trim(),
+            siteId,
+            stack: certStack
+          })
       if (!result.ok) {
         setError(result.error)
         return
@@ -237,7 +243,9 @@ export function SiteSetupContinuation({
               // leaving the picker on the current one proposes a migration that cannot do anything.
               // Both stacks handle a folder with no WordPress yet: LocalWP creates an install, Agent
               // Local attaches the folder to an empty database for the import to fill.
-              preferredStack={plan.stack.alreadyLocalWp ? (plan.stack.alternatives[0] ?? null) : null}
+              preferredStack={
+                plan.stack.alreadyLocalWp ? (plan.stack.alternatives[0] ?? null) : null
+              }
               onChoicePendingChange={setChoicePending}
               onBusyChange={setStageBusy}
               onMigrated={onMigrated}
@@ -289,7 +297,7 @@ export function SiteSetupContinuation({
 
       <SiteSetupStepNav
         current={step}
-        busy={stageBusy}
+        busy={stageBusy || trusting}
         canAdvance={canAdvance}
         blockedReason={needsStackChoice ? strings.stackPickFirst : strings.loading}
         onBack={goBack}

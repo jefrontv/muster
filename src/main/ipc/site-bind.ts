@@ -22,9 +22,12 @@ import type { SiteResult, SiteSummary } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import {
   getBitbucketCredentialStatus,
-  getBitbucketCredentials,
   setBitbucketCredentials
 } from '../sites/bitbucket-credential-store'
+import {
+  isBitbucketListingConfigured,
+  resolveBitbucketListingCredentials
+} from '../sites/bitbucket-listing-auth'
 import {
   detectBitbucketWorkspace,
   fetchBitbucketJson,
@@ -207,7 +210,14 @@ export function registerSiteBindHandlers(store: Store): void {
 
   ipcMain.handle('siteBitbucket:status', (): SiteResult<BitbucketCredentialStatus> => {
     try {
-      return { ok: true, value: getBitbucketCredentialStatus() }
+      const stored = getBitbucketCredentialStatus()
+      return {
+        ok: true,
+        value: {
+          ...stored,
+          configured: isBitbucketListingConfigured()
+        }
+      }
     } catch (error) {
       return failure(error)
     }
@@ -265,7 +275,7 @@ export function registerSiteBindHandlers(store: Store): void {
           ok: true,
           value: await listBitbucketWorkspaceRepos({
             workspace: requested || stored || fromLink,
-            credentials: getBitbucketCredentials(),
+            credentials: await resolveBitbucketListingCredentials(),
             fetchJson: fetchBitbucketJson,
             preferCache: input.refresh !== true
           })

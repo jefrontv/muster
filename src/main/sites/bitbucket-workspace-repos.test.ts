@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   bitbucketAuthHeaders,
+  bitbucketUserWorkspacesUrl,
   bitbucketWorkspaceReposUrl,
   clearBitbucketRepoCache,
   detectBitbucketWorkspace,
@@ -12,24 +13,40 @@ import {
 
 const CREDENTIALS = { username: 'jake@example.com', appPassword: 'ATBBsecret' }
 
-function repoPage(slug: string, next?: string): Record<string, unknown> {
+function repoPage(
+  slug: string,
+  next?: string,
+  extras: { workspace?: string; updatedOn?: string } = {}
+): Record<string, unknown> {
+  const workspace = extras.workspace ?? 'efront_au'
   return {
     size: 2,
     ...(next ? { next } : {}),
     values: [
       {
         slug,
-        full_name: `efront_au/${slug}`,
+        full_name: `${workspace}/${slug}`,
         description: `  the ${slug} site  `,
-        updated_on: '2026-07-01T00:00:00Z',
+        updated_on: extras.updatedOn ?? '2026-07-01T00:00:00Z',
         links: {
           clone: [
-            { name: 'https', href: `https://bitbucket.org/efront_au/${slug}.git` },
-            { name: 'ssh', href: `git@bitbucket.org:efront_au/${slug}.git` }
+            { name: 'https', href: `https://bitbucket.org/${workspace}/${slug}.git` },
+            { name: 'ssh', href: `git@bitbucket.org:${workspace}/${slug}.git` }
           ]
         }
       }
     ]
+  }
+}
+
+function workspacePage(slugs: string[], next?: string): Record<string, unknown> {
+  return {
+    size: slugs.length,
+    ...(next ? { next } : {}),
+    values: slugs.map((slug) => ({
+      type: 'workspace_access',
+      workspace: { slug, type: 'workspace_base' }
+    }))
   }
 }
 
@@ -59,7 +76,14 @@ beforeEach(() => {
 })
 
 describe('request construction', () => {
-  it('sends basic auth built from the stored credential', () => {
+  it('sends a Bearer header for an OAuth access token', () => {
+    expect(bitbucketAuthHeaders({ accessToken: 'oauth-token' })).toEqual({
+      Authorization: 'Bearer oauth-token',
+      Accept: 'application/json'
+    })
+  })
+
+  it('sends basic auth for a leftover email/token pair', () => {
     expect(bitbucketAuthHeaders(CREDENTIALS)).toEqual({
       Authorization: `Basic ${Buffer.from('jake@example.com:ATBBsecret').toString('base64')}`,
       Accept: 'application/json'
@@ -74,6 +98,19 @@ describe('request construction', () => {
     expect(decodeURIComponent(url)).toContain('values.links.clone')
     // No filter at all when browsing, or Bitbucket would answer with an empty match set.
     expect(url).not.toContain('q=')
+  })
+
+  it('lists workspaces on the post-CHANGE-2770 user endpoint', () => {
+    const url = bitbucketUserWorkspacesUrl()
+    expect(url).toContain('/user/workspaces?')
+    expect(url).toContain('pagelen=100')
+    expect(url).toContain('values.workspace.slug')
+    expect(url).not.toContain('/repositories?')
+  })
+
+  it('refuses to build the removed unscoped repository URL', () => {
+    expect(() => bitbucketWorkspaceReposUrl('')).toThrow(/workspace slug is required/)
+    expect(() => bitbucketWorkspaceReposUrl('  ')).toThrow(/workspace slug is required/)
   })
 
   it('asks Bitbucket to do the matching when a query is given', () => {
@@ -171,24 +208,63 @@ describe('listBitbucketWorkspaceRepos', () => {
         workspace: 'efront_au',
         repos: [],
         fromCache: false,
-        error: 'No Bitbucket App Password is stored for Muster.'
+        error: 'Connect Bitbucket in Settings → Integrations.'
       })
     }
     expect(script.urls).toEqual([])
   })
 
-  it('reports a missing workspace without a request', async () => {
-    const script = scriptedFetch([])
+  it('browses every member repo when the workspace is blank', async () => {
+    const script = scriptedFetch([
+      { ok: true, status: 200, body: workspacePage(['efront_au', 'personal']) },
+      { ok: true, status: 200, body: repoPage('anywhere') },
+      {
+        ok: true,
+        status: 200,
+        body: repoPage('notes', undefined, {
+          workspace: 'personal',
+          updatedOn: '2026-08-01T00:00:00Z'
+        })
+      }
+    ])
     const result = await listBitbucketWorkspaceRepos({
       workspace: '  ',
-      credentials: CREDENTIALS,
+      credentials: { accessToken: 'oauth-token' },
       fetchJson: script.fetchJson
     })
-    expect(result).toMatchObject({
-      configured: true,
-      error: 'No Bitbucket workspace is configured.'
+    expect(script.urls[0]).toContain('/user/workspaces?')
+    expect(script.urls[1]).toContain('/repositories/efront_au?')
+    expect(script.urls[2]).toContain('/repositories/personal?')
+    expect(script.urls.some((url) => url.includes('role=member'))).toBe(false)
+    expect(result).toMatchObject({ configured: true, error: '', fromCache: false })
+    // Newest across workspaces first — not workspace order.
+    expect(result.repos.map((repo) => repo.slug)).toEqual(['notes', 'anywhere'])
+  })
+
+  it('returns an empty configured list when the account has no workspaces', async () => {
+    const script = scriptedFetch([{ ok: true, status: 200, body: workspacePage([]) }])
+    const result = await listBitbucketWorkspaceRepos({
+      workspace: '',
+      credentials: { accessToken: 'oauth-token' },
+      fetchJson: script.fetchJson
     })
-    expect(script.urls).toEqual([])
+    expect(script.urls).toHaveLength(1)
+    expect(result).toMatchObject({ configured: true, error: '', repos: [] })
+  })
+
+  it('keeps repos from a later workspace when an earlier one fails', async () => {
+    const script = scriptedFetch([
+      { ok: true, status: 200, body: workspacePage(['efront_au', 'personal']) },
+      { ok: false, status: 403, body: null },
+      { ok: true, status: 200, body: repoPage('notes', undefined, { workspace: 'personal' }) }
+    ])
+    const result = await listBitbucketWorkspaceRepos({
+      workspace: '',
+      credentials: { accessToken: 'oauth-token' },
+      fetchJson: script.fetchJson
+    })
+    expect(result.repos.map((repo) => repo.slug)).toEqual(['notes'])
+    expect(result.error).toContain('HTTP 403')
   })
 
   it('translates each auth failure into an actionable message', async () => {
@@ -196,6 +272,7 @@ describe('listBitbucketWorkspaceRepos', () => {
       [401, 'HTTP 401'],
       [403, 'read:repository'],
       [404, "Workspace 'efront_au' was not found"],
+      [410, 'HTTP 410'],
       [500, 'HTTP 500']
     ] as const) {
       clearBitbucketRepoCache()
@@ -277,6 +354,85 @@ describe('listBitbucketWorkspaceRepos', () => {
     })
     expect(script.urls).toHaveLength(2)
     expect(result.repos.map((repo) => repo.slug)).toEqual(['acme'])
+  })
+
+  it('fans remaining pages out by page= when Bitbucket reports a multi-page size', async () => {
+    const script = scriptedFetch([
+      {
+        ok: true,
+        status: 200,
+        body: { ...repoPage('acme', 'https://api.bitbucket.org/ignored-next'), size: 250 }
+      },
+      { ok: true, status: 200, body: repoPage('beta') },
+      { ok: true, status: 200, body: repoPage('gamma') }
+    ])
+    const result = await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: script.fetchJson
+    })
+    expect(script.urls[0]).toContain('/repositories/efront_au?')
+    expect(script.urls[0]).not.toContain('page=')
+    expect(script.urls[1]).toContain('page=2')
+    expect(script.urls[2]).toContain('page=3')
+    expect(script.urls.some((url) => url.includes('ignored-next'))).toBe(false)
+    expect(result.repos.map((repo) => repo.slug)).toEqual(['acme', 'beta', 'gamma'])
+  })
+
+  it('stops after the first page when maxRepos is already filled', async () => {
+    const script = scriptedFetch([
+      {
+        ok: true,
+        status: 200,
+        body: { ...repoPage('acme', 'https://api.bitbucket.org/page2'), size: 250 }
+      },
+      { ok: true, status: 200, body: repoPage('beta') }
+    ])
+    const result = await listBitbucketWorkspaceRepos({
+      workspace: 'efront_au',
+      credentials: CREDENTIALS,
+      fetchJson: script.fetchJson,
+      maxRepos: 1
+    })
+    expect(script.urls).toHaveLength(1)
+    expect(result.repos.map((repo) => repo.slug)).toEqual(['acme'])
+  })
+
+  it('reuses the workspace slug list on the next account-wide browse', async () => {
+    const first = scriptedFetch([
+      { ok: true, status: 200, body: workspacePage(['efront_au']) },
+      { ok: true, status: 200, body: repoPage('acme') }
+    ])
+    await listBitbucketWorkspaceRepos({
+      workspace: '',
+      credentials: { accessToken: 'oauth-token' },
+      fetchJson: first.fetchJson
+    })
+
+    const second = scriptedFetch([{ ok: true, status: 200, body: repoPage('acme') }])
+    await listBitbucketWorkspaceRepos({
+      workspace: '',
+      credentials: { accessToken: 'oauth-token' },
+      fetchJson: second.fetchJson
+    })
+    expect(second.urls).toHaveLength(1)
+    expect(second.urls[0]).toContain('/repositories/efront_au?')
+    expect(second.urls[0]).not.toContain('/user/workspaces')
+  })
+
+  it('fans a search out to each workspace instead of the removed role=member URL', async () => {
+    const script = scriptedFetch([
+      { ok: true, status: 200, body: workspacePage(['efront_au']) },
+      { ok: true, status: 200, body: repoPage('sulo') }
+    ])
+    const result = await listBitbucketWorkspaceRepos({
+      workspace: '',
+      credentials: { accessToken: 'oauth-token' },
+      fetchJson: script.fetchJson,
+      query: 'sulo'
+    })
+    expect(new URL(script.urls[1] ?? '').searchParams.get('q')).toBe('name~"sulo"')
+    expect(result.repos.map((repo) => repo.slug)).toEqual(['sulo'])
   })
 
   it('sends the query to Bitbucket and still follows its paging', async () => {

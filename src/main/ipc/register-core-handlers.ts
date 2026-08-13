@@ -244,7 +244,7 @@ export function registerCoreHandlers(
   registerSiteCloneSourceHandlers(store)
   registerRepoHeadBranchHandlers()
   registerSiteSetupHandlers(store)
-  registerLocalWpCertHandlers()
+  registerLocalWpCertHandlers(store)
   registerBitbucketAuthHandlers()
   registerSiteMcpHandlers(store)
   registerActiveCollabMcpHandlers()
