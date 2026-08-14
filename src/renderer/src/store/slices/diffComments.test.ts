@@ -122,6 +122,7 @@ import { createJiraSlice } from './jira'
 import { createActiveCollabSlice } from './activecollab'
 import { createActiveCollabUnreadSlice } from './activecollab-unread'
 import { createActiveCollabOpenRequestSlice } from './activecollab-open-request'
+import { createActiveCollabTaskPageViewSlice } from './activecollab-task-page-view'
 import { createEditorSlice } from './editor'
 import { createStatsSlice } from './stats'
 import { createMemorySlice } from './memory'
@@ -170,6 +171,7 @@ function createTestStore() {
     ...createActiveCollabSlice(...a),
     ...createActiveCollabUnreadSlice(...a),
     ...createActiveCollabOpenRequestSlice(...a),
+    ...createActiveCollabTaskPageViewSlice(...a),
     ...createEditorSlice(...a),
     ...createStatsSlice(...a),
     ...createMemorySlice(...a),

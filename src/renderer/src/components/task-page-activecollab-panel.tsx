@@ -4,17 +4,20 @@
 // grandfathered max-lines suppression, so every branch added inline makes it worse. Composition
 // lives here and TaskPage keeps one line per provider.
 //
-// Selection is owned here, not by either child, because the list and the detail pane must not know
-// about each other — the list reports a ref, the pane renders one, and this is the only place that
-// knows they are two halves of the same surface.
+// Selection is routed through here, not through either child, because the list and the detail pane
+// must not know about each other — the list reports a ref, the pane renders one, and this is the
+// only place that knows they are two halves of the same surface. The state itself lives in the
+// store (activecollab-task-page-view): held locally it died with every trip to another view, so
+// coming back from a chat or a workspace dumped the user at the bare list.
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { ActiveCollabTaskList } from '@/components/task-page-activecollab-task-list'
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
 import { TaskPageActiveCollabSetup } from '@/components/task-page-activecollab-setup'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { useAppStore } from '@/store'
+import { getActiveCollabReadScope } from '@/store/slices/activecollab-cache'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
 
@@ -34,10 +37,16 @@ export function TaskPageActiveCollabPanel({
   const lastFailureKind = useAppStore((s) => s.activeCollabLastFailureKind)
   const settings = useAppStore((s) => s.settings)
   const checkConnection = useAppStore((s) => s.checkActiveCollabConnection)
-  const [selected, setSelected] = useState<ActiveCollabTaskRef | null>(null)
-  // Owned here, like selection: the list's project headings AND the detail pane's project link
-  // both open the same drill-in view.
-  const [openProject, setOpenProject] = useState<{ id: number; name: string } | null>(null)
+  // Read defensively (like openRequest below): several suites mount this panel against partial
+  // store stand-ins that predate this slice.
+  const storedView = useAppStore((s) => s.activeCollabTaskPageView ?? null)
+  const setSelection = useAppStore((s) => s.setActiveCollabTaskPageSelection)
+  const setProjectView = useAppStore((s) => s.setActiveCollabTaskPageProject)
+  // Same scope the reads cache under, so a runtime switch never reopens another host's task ids.
+  const viewScope = getActiveCollabReadScope(settings, sourceContext).cachePrefix
+  const view = storedView?.scope === viewScope ? storedView : null
+  const selected = view?.selected ?? null
+  const openProject = view?.openProject ?? null
 
   // Why the context key and not `statusChecked` alone: the flag stays true after the runtime changes,
   // so a stale answer from the previous host would read as resolved and could flash the setup screen
@@ -56,14 +65,23 @@ export function TaskPageActiveCollabPanel({
 
   // Why useCallback: the list re-renders per row, and a fresh handler identity each render would
   // defeat any memoisation added to the row later.
-  const handleSelect = useCallback((ref: ActiveCollabTaskRef) => {
-    setSelected(ref)
-  }, [])
+  const handleSelect = useCallback(
+    (ref: ActiveCollabTaskRef) => {
+      setSelection?.(viewScope, ref)
+    },
+    [setSelection, viewScope]
+  )
 
-  const handleOpenProject = useCallback((id: number, name: string) => {
-    setOpenProject({ id, name })
-  }, [])
-  const handleCloseProject = useCallback(() => setOpenProject(null), [])
+  const handleOpenProject = useCallback(
+    (id: number, name: string) => {
+      setProjectView?.(viewScope, { id, name })
+    },
+    [setProjectView, viewScope]
+  )
+  const handleCloseProject = useCallback(
+    () => setProjectView?.(viewScope, null),
+    [setProjectView, viewScope]
+  )
 
   // Honours a notification click. The request lives in the store rather than being passed down
   // because the click usually arrives while this panel is unmounted, so it has to survive until
@@ -78,9 +96,9 @@ export function TaskPageActiveCollabPanel({
     if (openRequest === null) {
       return
     }
-    setSelected(openRequest)
+    setSelection?.(viewScope, openRequest)
     clearOpenRequest?.()
-  }, [openRequest, clearOpenRequest])
+  }, [openRequest, clearOpenRequest, setSelection, viewScope])
 
   if (statusUnknown) {
     return (
@@ -135,7 +153,7 @@ export function TaskPageActiveCollabPanel({
             projectId={selected.projectId}
             taskId={selected.taskId}
             onOpenProject={handleOpenProject}
-            onClose={() => setSelected(null)}
+            onClose={() => setSelection?.(viewScope, null)}
           />
         </aside>
       ) : null}
