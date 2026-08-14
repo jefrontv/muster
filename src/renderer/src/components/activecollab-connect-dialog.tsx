@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { hasRemoteProviderRuntime } from '@/lib/provider-runtime-context'
 import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
 import { translate } from '@/i18n/i18n'
+import { DEFAULT_ACTIVECOLLAB_INSTANCE_URL } from '../../../shared/activecollab-instance'
 import type { ActiveCollabConnection } from '../../../shared/activecollab-types'
 
 type ActiveCollabConnectDialogProps = {
@@ -70,7 +71,7 @@ export function ActiveCollabConnectDialog({
   const passwordId = useId()
   const errorId = useId()
 
-  const [instanceUrl, setInstanceUrl] = useState('')
+  const [instanceUrl, setInstanceUrl] = useState(DEFAULT_ACTIVECOLLAB_INSTANCE_URL)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [connectState, setConnectState] = useState<ConnectState>('idle')
@@ -83,7 +84,7 @@ export function ActiveCollabConnectDialog({
     if (!open) {
       return
     }
-    setInstanceUrl('')
+    setInstanceUrl(DEFAULT_ACTIVECOLLAB_INSTANCE_URL)
     setEmail('')
     setPassword('')
     setConnectState('idle')
@@ -182,6 +183,12 @@ export function ActiveCollabConnectDialog({
                 </p>
                 <p className="truncate text-xs text-muted-foreground">{connection.userEmail}</p>
                 <p className="truncate text-xs text-muted-foreground">{connection.instanceUrl}</p>
+                <p className="text-xs text-muted-foreground">
+                  {translate(
+                    'auto.components.activecollab.connect.dialog.mcp_shared',
+                    'This login is also written for the ActiveCollab MCP, so agents do not need a second sign-in.'
+                  )}
+                </p>
               </div>
             </div>
             <DialogFooter>
@@ -212,7 +219,7 @@ export function ActiveCollabConnectDialog({
                   autoFocus
                   placeholder={translate(
                     'auto.components.activecollab.connect.dialog.instance_url_placeholder',
-                    'https://projects.example.com'
+                    DEFAULT_ACTIVECOLLAB_INSTANCE_URL
                   )}
                   value={instanceUrl}
                   onChange={(event) => {

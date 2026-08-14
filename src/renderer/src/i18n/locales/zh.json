@@ -10798,11 +10798,29 @@
           "984338477a": "主题",
           "c47e1bd149": "智能体",
           "windowsTerminalTitle": "设置 Windows 终端默认值",
-          "windowsTerminalSubtitle": "为新面板选择默认 Shell，以及终端中右键单击的行为。"
+          "windowsTerminalSubtitle": "为新面板选择默认 Shell，以及终端中右键单击的行为。",
+          "defaultViewTitle": "How do you want to start?",
+          "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
+          "integrationsTitle": "Connect your sources",
+          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:"
+        },
+        "welcome": {
+          "eyebrow": "Welcome to",
+          "tagline": "Your agents, projects, and work — one quiet desk.",
+          "start": "Get started"
+        },
+        "defaultView": {
+          "chat": "Chat Mode",
+          "chatHint": "Talk first",
+          "chatDescription": "A conversation desk. Threads, projects, and agents in one place.",
+          "code": "Code Mode",
+          "codeHint": "Build first",
+          "codeDescription": "Worktrees, terminals, and the classic IDE layout."
         },
         "OnboardingFooter": {
           "ba58547306": "返回",
-          "111d3f8d92": "跳至项目设置"
+          "111d3f8d92": "跳至项目设置",
+          "done": "完成"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "启动终端..."
@@ -13629,7 +13647,7 @@
             "description": "Muster exchanges your email and password for a long-lived ActiveCollab token once. The password itself is never stored.",
             "done": "Done",
             "instance_url_label": "ActiveCollab URL",
-            "instance_url_placeholder": "https://projects.example.com",
+            "instance_url_placeholder": "https://projects.efront.com.au",
             "email_label": "Email",
             "email_placeholder": "you@example.com",
             "password_label": "Password",

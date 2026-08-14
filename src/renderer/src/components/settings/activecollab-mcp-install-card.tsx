@@ -11,7 +11,7 @@ import { activeCollabMcpAgentStateKind } from './activecollab-mcp-agent-state'
 import { ActiveCollabMcpBinaryRow } from './activecollab-mcp-binary-row'
 import { ActiveCollabMcpCredentialsRow } from './activecollab-mcp-credentials-row'
 import { ActiveCollabMcpSetupTerminal } from './activecollab-mcp-setup-terminal'
-import { buildActiveCollabMcpSetupCommand } from './activecollab-mcp-setup-command'
+import { buildActiveCollabMcpGuidedCommand } from './activecollab-mcp-setup-command'
 import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
 import { useActiveCollabMcpStatus } from './use-activecollab-mcp-status'
 
@@ -32,7 +32,7 @@ export function ActiveCollabMcpInstallCard(): React.JSX.Element {
   // render would tear down and respawn the PTY under the user mid-question.
   const setupCommand = useMemo(
     () =>
-      buildActiveCollabMcpSetupCommand({
+      buildActiveCollabMcpGuidedCommand({
         binaryPath: status?.binary.path ?? null,
         platform: getShortcutPlatform(),
         windowsShell: settings?.terminalWindowsShell ?? null
@@ -79,9 +79,14 @@ export function ActiveCollabMcpInstallCard(): React.JSX.Element {
               setupCommand === null
                 ? translate(
                     'auto.components.settings.activecollab.mcp.run_setup_blocked',
-                    'Install the server first — guided setup runs the detected binary.'
+                    'The detected server path cannot be quoted for this shell.'
                   )
-                : undefined
+                : !status?.binary.found
+                  ? translate(
+                      'auto.components.settings.activecollab.mcp.run_setup_install',
+                      'Opens a terminal with pipx install. Press Enter to run it.'
+                    )
+                  : undefined
             }
             onClick={() => setSetupOpen(true)}
           >

@@ -347,8 +347,7 @@ export function ChatModeSidebar(): React.JSX.Element {
             size="icon-xs"
             aria-label={translate('auto.components.chat.sidebar.newWorkspace', 'New workspace')}
             onClick={() => {
-              setEditing(undefined)
-              setDialogOpen(true)
+              useAppStore.getState().setChatWorkspaceCreateOpen(true)
             }}
           >
             <Plus className="size-3.5" />

@@ -84,7 +84,7 @@ vi.mock('../activecollab/task-notification-service', () => ({
 // Not a courtesy stub: the real one resolves the REAL home directory, so `acConnect` below would
 // rewrite the developer's own ~/.activecollab-mcp/credentials.json with this file's fixtures.
 vi.mock('../activecollab/mcp-install', () => ({
-  resyncActiveCollabMcpCredentials: vi.fn()
+  shareActiveCollabLoginWithMcp: vi.fn()
 }))
 
 import {

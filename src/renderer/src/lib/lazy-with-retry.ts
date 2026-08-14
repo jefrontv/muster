@@ -39,22 +39,44 @@ export function isLazyChunkLoadError(error: unknown): error is LazyChunkLoadErro
   return error instanceof LazyChunkLoadError
 }
 
-// One recovery reload per session. The guard survives the reload itself (so we
-// never loop) but resets when the window/app closes, so a later launch — e.g.
-// after an update ships fresh chunks — can earn another reload. sessionStorage
-// (not localStorage) gives exactly that lifetime; it is never cleared mid-session,
-// otherwise a sibling chunk's healthy load would re-arm the reload and an
-// auto-mounted corrupt chunk would loop.
-const RELOAD_GUARD_KEY = 'orca:lazy-chunk-reload-attempted'
+// One recovery reload per short window. The guard must survive location.reload()
+// so a still-broken chunk cannot loop, but Electron persists sessionStorage across
+// app relaunches — a bare '1' flag permanently killed Tasks after a Vite 504.
+// Timestamp + TTL: same-reload stays blocked; a later launch can try again.
+export const LAZY_CHUNK_RELOAD_GUARD_KEY = 'orca:lazy-chunk-reload-attempted'
+export const LAZY_CHUNK_RELOAD_GUARD_TTL_MS = 60_000
 const DEFAULT_RETRIES = 2
 const DEFAULT_BASE_DELAY_MS = 250
 
-function readChunkReloadGuardState(): ReloadGuardState {
+function parseReloadGuardTimestamp(raw: string | null): number | null {
+  if (raw === null || raw.length === 0) {
+    return null
+  }
+  // Why: pre-TTL installs wrote '1'. That value has no clock, so treat it as
+  // expired — otherwise Electron would keep the one-shot kill switch forever.
+  if (raw === '1') {
+    return null
+  }
+  const timestamp = Number(raw)
+  return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null
+}
+
+function readChunkReloadGuardState(now = Date.now()): ReloadGuardState {
   if (typeof window === 'undefined') {
     return 'unavailable'
   }
   try {
-    return window.sessionStorage.getItem(RELOAD_GUARD_KEY) === '1' ? 'attempted' : 'not-attempted'
+    const timestamp = parseReloadGuardTimestamp(
+      window.sessionStorage.getItem(LAZY_CHUNK_RELOAD_GUARD_KEY)
+    )
+    if (timestamp === null) {
+      return 'not-attempted'
+    }
+    if (now - timestamp > LAZY_CHUNK_RELOAD_GUARD_TTL_MS) {
+      window.sessionStorage.removeItem(LAZY_CHUNK_RELOAD_GUARD_KEY)
+      return 'not-attempted'
+    }
+    return 'attempted'
   } catch {
     // Why: when storage is blocked we cannot prove a reload happened, but still
     // fail closed on reloads so a broken chunk never loops.
@@ -62,13 +84,24 @@ function readChunkReloadGuardState(): ReloadGuardState {
   }
 }
 
-function markChunkReloadAttempted(): boolean {
+function markChunkReloadAttempted(now = Date.now()): boolean {
   try {
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    window.sessionStorage.setItem(LAZY_CHUNK_RELOAD_GUARD_KEY, String(now))
     return true
   } catch {
     // A reload without a durable guard can loop, so treat write failure as unavailable.
     return false
+  }
+}
+
+export function clearLazyChunkReloadGuard(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+  try {
+    window.sessionStorage.removeItem(LAZY_CHUNK_RELOAD_GUARD_KEY)
+  } catch {
+    // Clearing is best-effort; Retry still falls through to a remount.
   }
 }
 

@@ -3,17 +3,14 @@
 
 import { Plus, X } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ActiveCollabProject } from '../../../../shared/activecollab-types'
+import { useCallback, useRef, useState } from 'react'
+import {
+  ActiveCollabProjectCommandList,
+  useActiveCollabProjectCatalog
+} from '@/components/activecollab-project-picker'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command'
+import { Command, CommandInput } from '@/components/ui/command'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
@@ -29,32 +26,13 @@ export function ChatWorkspaceProjectBinding({
   onChange: (next: ChatWorkspaceProjectRef[]) => void
 }): React.JSX.Element | null {
   const connected = useAppStore((s) => s.activeCollabStatus.configured)
-  const [projects, setProjects] = useState<ActiveCollabProject[] | null>(null)
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    if (!connected || projects !== null) {
-      return
-    }
-    let cancelled = false
-    void window.api.activecollab
-      .listProjects()
-      .then((result) => {
-        if (!cancelled && result.ok) {
-          setProjects(result.value.filter((project) => !project.isCompleted))
-        }
-      })
-      .catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
-  }, [connected, projects])
-
-  const available = useMemo(() => {
-    const taken = new Set(value.map((item) => item.id))
-    return (projects ?? []).filter((project) => !taken.has(project.id))
-  }, [projects, value])
+  const { projects } = useActiveCollabProjectCatalog(connected)
+  const takenIds = new Set(value.map((item) => item.id))
+  const canAdd = (projects ?? []).some(
+    (project) => !project.isCompleted && !takenIds.has(project.id)
+  )
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen)
@@ -115,7 +93,12 @@ export function ChatWorkspaceProjectBinding({
       )}
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1.5" disabled={available.length === 0}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={projects !== null && !canAdd}
+          >
             <Plus className="size-3.5" />
             {translate('auto.components.chat.workspaceDialog.addAcProject', 'Add project')}
           </Button>
@@ -136,36 +119,14 @@ export function ChatWorkspaceProjectBinding({
                 'Search projects…'
               )}
             />
-            <CommandList className="max-h-72">
-              <CommandEmpty>
-                {projects === null
-                  ? translate(
-                      'auto.components.chat.workspaceDialog.acProjectLoading',
-                      'Loading projects…'
-                    )
-                  : translate(
-                      'auto.components.chat.workspaceDialog.acProjectEmpty',
-                      'No matching projects.'
-                    )}
-              </CommandEmpty>
-              {available.map((project) => (
-                <CommandItem
-                  key={project.id}
-                  value={`${project.name} ${project.id}`}
-                  onSelect={() => {
-                    onChange([...value, { id: project.id, name: project.name }])
-                    setOpen(false)
-                  }}
-                >
-                  <span className="min-w-0 truncate">{project.name}</span>
-                  {project.openTaskCount !== null && project.openTaskCount > 0 ? (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {project.openTaskCount}
-                    </span>
-                  ) : null}
-                </CommandItem>
-              ))}
-            </CommandList>
+            <ActiveCollabProjectCommandList
+              projects={projects}
+              excludedIds={takenIds}
+              onSelect={(project) => {
+                onChange([...value, project])
+                setOpen(false)
+              }}
+            />
           </Command>
         </PopoverContent>
       </Popover>

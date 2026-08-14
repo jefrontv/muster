@@ -14,7 +14,7 @@ const {
   clearCredentialMock,
   connectMock,
   resetPreflightMock,
-  resyncMcpMock
+  seedMcpMock
 } = vi.hoisted(() => ({
   handleMock: vi.fn(),
   removeHandlerMock: vi.fn(),
@@ -26,7 +26,7 @@ const {
   clearCredentialMock: vi.fn(),
   connectMock: vi.fn(),
   resetPreflightMock: vi.fn(),
-  resyncMcpMock: vi.fn()
+  seedMcpMock: vi.fn()
 }))
 
 // `dialog`/`shell`/`app` exist only because the download op imports them; every assertion here
@@ -72,7 +72,7 @@ vi.mock('../activecollab/task-snapshot-store', () => ({
 // Not a courtesy stub: the real one resolves the REAL home directory, so connecting in this suite
 // would rewrite the developer's own ~/.activecollab-mcp/credentials.json with fixture values.
 vi.mock('../activecollab/mcp-install', () => ({
-  resyncActiveCollabMcpCredentials: resyncMcpMock
+  shareActiveCollabLoginWithMcp: seedMcpMock
 }))
 
 import { AC_MAX_ATTACHMENT_IMAGE_BYTES } from '../activecollab/attachment-image'
@@ -225,7 +225,7 @@ beforeEach(() => {
   clearCredentialMock.mockReset()
   connectMock.mockReset()
   resetPreflightMock.mockReset()
-  resyncMcpMock.mockReset()
+  seedMcpMock.mockReset()
   // Module-level and credential-keyed by design, so each test starts from a cold directory.
   resetAcNameDirectoryCache()
   resetAcProjectMembersCache()
@@ -769,6 +769,7 @@ describe('connect and disconnect', () => {
       password: ' pa ss '
     })
     expect(resetPreflightMock).toHaveBeenCalledTimes(1)
+    expect(seedMcpMock).toHaveBeenCalledTimes(1)
   })
 
   it('reports rejected credentials as an auth failure with the API\u2019s own message', async () => {
@@ -784,11 +785,11 @@ describe('connect and disconnect', () => {
     expect(resetPreflightMock).not.toHaveBeenCalled()
   })
 
-  it('keeps a linked MCP credential in step, and still succeeds when that resync throws', async () => {
-    // The agent must follow the account the human just switched to; a disk or keychain problem on
-    // that side is not a sign-in failure, because the sign-in already worked.
+  it('shares the login with the MCP, and still succeeds when that write throws', async () => {
+    // First login mints the MCP credential and wires Claude when the binary is present. A
+    // disk or keychain problem on that side is not a sign-in failure.
     connectMock.mockResolvedValue({ ok: true, connection: CONNECTED_STATUS.connection })
-    resyncMcpMock.mockImplementationOnce(() => {
+    seedMcpMock.mockImplementationOnce(() => {
       throw new Error('disk full')
     })
     const result = await invoke('activecollab:connect', {
@@ -797,7 +798,7 @@ describe('connect and disconnect', () => {
       password: 'pw'
     })
 
-    expect(resyncMcpMock).toHaveBeenCalledTimes(1)
+    expect(seedMcpMock).toHaveBeenCalledTimes(1)
     expect(result).toMatchObject({ ok: true })
   })
 
@@ -810,7 +811,7 @@ describe('connect and disconnect', () => {
       password: 'wrong'
     })
 
-    expect(resyncMcpMock).not.toHaveBeenCalled()
+    expect(seedMcpMock).not.toHaveBeenCalled()
   })
 
   it('rejects an incomplete connect form without attempting a sign-in', async () => {

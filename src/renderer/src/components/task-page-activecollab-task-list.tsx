@@ -14,6 +14,7 @@ import {
   type ActiveCollabTaskListError
 } from './task-page-activecollab-load-state'
 import { activeCollabGroupCollapseKey } from './task-page-activecollab-group-collapse'
+import { ActiveCollabProjectSearchControl } from './task-page-activecollab-project-search'
 import { ActiveCollabProjectView } from './task-page-activecollab-project-view'
 import { ActiveCollabTaskGroupSection } from './task-page-activecollab-task-group-section'
 import { groupActiveCollabTasksByProject } from './task-page-activecollab-task-grouping'
@@ -221,6 +222,13 @@ export function ActiveCollabTaskList({
           <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
             {rows.tasks.length}
           </span>
+        ) : null}
+        {onOpenProject ? (
+          <div className="ml-auto shrink-0">
+            <ActiveCollabProjectSearchControl
+              onSelect={(project) => onOpenProject(project.id, project.name)}
+            />
+          </div>
         ) : null}
       </div>
 

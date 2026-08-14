@@ -62,8 +62,8 @@ export function normalizeAgentActivityDisplayMode(value: unknown): AgentActivity
 }
 
 // Why: onboarding wizard's last step index, centralized so backfill, clamps, and UI agree on the bound.
-export const ONBOARDING_FINAL_STEP = 5
-export const ONBOARDING_FLOW_VERSION = 4
+export const ONBOARDING_FINAL_STEP = 6
+export const ONBOARDING_FLOW_VERSION = 5
 
 export const ORCA_BROWSER_PARTITION = 'persist:orca-browser'
 // Why: inert blank-tab URL shared by main/renderer so the attach policy can allow just this one data URL and reject others.

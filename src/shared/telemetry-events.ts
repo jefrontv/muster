@@ -656,7 +656,7 @@ const agentHookUnattributedSchema = z
 // Why: event names still carry legacy seven-step payloads; keep validation backward-compatible for old rows.
 const ONBOARDING_TELEMETRY_LEGACY_MAX_STEP = 7
 const onboardingStepSchema = z.number().int().min(1).max(ONBOARDING_TELEMETRY_LEGACY_MAX_STEP)
-const onboardingPathSchema = z.enum(['open_folder', 'clone_url', 'add_project_modal'])
+const onboardingPathSchema = z.enum(['open_folder', 'clone_url', 'add_project_modal', 'done'])
 const onboardingFailureReasonSchema = z.enum([
   'invalid_path',
   'clone_failed',
@@ -666,6 +666,7 @@ const onboardingFailureReasonSchema = z.enum([
 const onboardingValueKindSchema = z.enum([
   'agent',
   'theme',
+  'default_view',
   'notifications',
   'agent_setup',
   'integrations',

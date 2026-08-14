@@ -2,9 +2,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ComponentType } from 'react'
 
-import { isLazyChunkLoadError, loadLazyWithRetry } from './lazy-with-retry'
+import {
+  LAZY_CHUNK_RELOAD_GUARD_KEY,
+  LAZY_CHUNK_RELOAD_GUARD_TTL_MS,
+  clearLazyChunkReloadGuard,
+  isLazyChunkLoadError,
+  loadLazyWithRetry
+} from './lazy-with-retry'
 
-const RELOAD_GUARD_KEY = 'orca:lazy-chunk-reload-attempted'
+const RELOAD_GUARD_KEY = LAZY_CHUNK_RELOAD_GUARD_KEY
+
+function markGuardFresh(now = Date.now()): void {
+  window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(now))
+}
 const Comp: ComponentType = () => null
 const chunkParseError = (): SyntaxError => new SyntaxError("Unexpected token ']'")
 const chunkFetchError = (): TypeError =>
@@ -103,7 +113,8 @@ describe('loadLazyWithRetry', () => {
 
     expect(factory).toHaveBeenCalledTimes(3)
     expect(reload).toHaveBeenCalledTimes(1)
-    expect(window.sessionStorage.getItem(RELOAD_GUARD_KEY)).toBe('1')
+    const stamped = Number(window.sessionStorage.getItem(RELOAD_GUARD_KEY))
+    expect(stamped).toBeGreaterThan(0)
     // The load promise must suspend (never settle) while the page reloads, so the
     // error boundary never flashes.
     expect(settled).toBe(false)
@@ -111,7 +122,7 @@ describe('loadLazyWithRetry', () => {
 
   it('does NOT reload twice — wraps known chunk failures once the guard is already set', async () => {
     const reload = spyOnReload()
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    markGuardFresh()
     const error = chunkFetchError()
     const factory = vi.fn(() => Promise.reject(error))
 
@@ -130,7 +141,7 @@ describe('loadLazyWithRetry', () => {
 
   it('preserves the original error when the guarded failure is not a dynamic import failure', async () => {
     const reload = spyOnReload()
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    markGuardFresh()
     const error = new Error('render bug from lazy module evaluation')
     const factory = vi.fn(() => Promise.reject(error))
 
@@ -152,7 +163,7 @@ describe('loadLazyWithRetry', () => {
     // same dead import). Regression guard for crash report e08749bb (right
     // sidebar, "Unexpected token ')'").
     const reload = spyOnReload()
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    markGuardFresh()
     const error = chunkParseError()
     const factory = vi.fn(() => Promise.reject(error))
 
@@ -172,7 +183,7 @@ describe('loadLazyWithRetry', () => {
     // An ordinary Error from a lazy module is a genuine evaluation bug, not a
     // corrupt chunk; it must still surface raw after the guard is set.
     const reload = spyOnReload()
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    markGuardFresh()
     const error = new Error('render bug from lazy module evaluation')
     const factory = vi.fn(() => Promise.reject(error))
 
@@ -250,14 +261,62 @@ describe('loadLazyWithRetry', () => {
 
   it('keeps the reload guard set across a successful load (no second reload in one session)', async () => {
     const reload = spyOnReload()
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    markGuardFresh(1_700_000_000_000)
     const factory = vi.fn(() => Promise.resolve({ default: Comp }))
 
     await loadLazyWithRetry(factory)
 
     // The guard must survive a healthy load — otherwise a sibling chunk's success
     // would re-arm the reload and an auto-mounted corrupt chunk would loop.
-    expect(window.sessionStorage.getItem(RELOAD_GUARD_KEY)).toBe('1')
+    expect(window.sessionStorage.getItem(RELOAD_GUARD_KEY)).toBe('1700000000000')
     expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('allows another recovery reload after the guard TTL expires', async () => {
+    const reload = spyOnReload()
+    markGuardFresh(Date.now() - LAZY_CHUNK_RELOAD_GUARD_TTL_MS - 1)
+    const factory = vi.fn(() => Promise.reject(chunkFetchError()))
+
+    const loaded = loadLazyWithRetry(factory, { retries: 0 })
+    let settled = false
+    void loaded.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      }
+    )
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(reload).toHaveBeenCalledTimes(1)
+    expect(settled).toBe(false)
+  })
+
+  it('treats a legacy boolean guard as expired so Electron relaunches can recover', async () => {
+    const reload = spyOnReload()
+    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    const factory = vi.fn(() => Promise.reject(chunkFetchError()))
+
+    const loaded = loadLazyWithRetry(factory, { retries: 0 })
+    let settled = false
+    void loaded.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      }
+    )
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(reload).toHaveBeenCalledTimes(1)
+    expect(settled).toBe(false)
+  })
+
+  it('clears the persisted guard so Retry can earn another reload', () => {
+    markGuardFresh()
+    clearLazyChunkReloadGuard()
+    expect(window.sessionStorage.getItem(RELOAD_GUARD_KEY)).toBeNull()
   })
 })

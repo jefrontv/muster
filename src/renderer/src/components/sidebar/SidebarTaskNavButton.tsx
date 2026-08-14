@@ -21,6 +21,7 @@ import {
   restoreAvailableDefaultTaskProvider,
   resolveVisibleTaskProvider
 } from '../../../../shared/task-providers'
+import { canBrowseSidebarTasks } from './sidebar-tasks-browse'
 
 function HideTaskSidebarMenu({ onHide }: { onHide: () => void }): React.JSX.Element {
   return (
@@ -73,7 +74,11 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
   const activeView = useAppStore((s) => s.activeView)
   const repos = useAppStore((s) => s.repos)
   const repoMap = useRepoMap()
-  const canBrowseTasks = repos.some((repo) => isGitRepoKind(repo))
+  const activeCollabConfigured = useAppStore((s) => s.activeCollabStatus?.configured === true)
+  const canBrowseTasks = canBrowseSidebarTasks({
+    repos,
+    activeCollabConfigured
+  })
   const showTasksButton = useAppStore((s) => s.settings?.showTasksButton !== false)
   const rawVisibleTaskProviders = useAppStore((s) => s.settings?.visibleTaskProviders)
   const defaultTaskSource = useAppStore((s) => s.settings?.defaultTaskSource ?? DEFAULT_TASK_SOURCE)
@@ -87,6 +92,8 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
   const linearStatus = useAppStore((s) => s.linearStatus)
   const linearStatusChecked = useAppStore((s) => s.linearStatusChecked)
   const checkLinearConnection = useAppStore((s) => s.checkLinearConnection)
+  const activeCollabStatusChecked = useAppStore((s) => s.activeCollabStatusChecked)
+  const checkActiveCollabConnection = useAppStore((s) => s.checkActiveCollabConnection)
   const prefetchWorkItems = useAppStore((s) => s.prefetchWorkItems)
   const activeRepoId = useAppStore((s) => s.activeRepoId)
   const defaultTaskViewPreset = useAppStore((s) => s.settings?.defaultTaskViewPreset ?? 'all')
@@ -135,7 +142,12 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
     if (!linearStatusChecked) {
       void checkLinearConnection()
     }
+    if (!activeCollabStatusChecked) {
+      void checkActiveCollabConnection?.()
+    }
   }, [
+    activeCollabStatusChecked,
+    checkActiveCollabConnection,
     checkLinearConnection,
     linearStatusChecked,
     preflightStatusChecked,

@@ -545,7 +545,9 @@ describe('ActiveCollabTaskList activation', () => {
     // ACTIVECOLLAB_SITE_BINDING_UI_ENABLED; re-enabling it adds one tab stop per heading here.
     const [firstHeading, secondHeading] = screen.getAllByRole('button', { name: 'Muster UI' })
 
-    // Heading toggle → project drill-in button → first row, per group.
+    // Header project search sits before the groups. Then heading → drill-in → row.
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Search projects' })).toHaveFocus()
     await user.tab()
     expect(firstHeading).toHaveFocus()
     await user.tab()

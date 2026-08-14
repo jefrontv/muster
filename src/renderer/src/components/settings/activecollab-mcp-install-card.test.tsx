@@ -303,7 +303,7 @@ describe('ActiveCollabMcpInstallCard', () => {
     expect(rendered.querySelector('.animate-spin')).toBeNull()
   })
 
-  it('offers guided setup only once the server binary is detected', async () => {
+  it('opens guided setup with pipx install when the server binary is missing', async () => {
     statusMock.mockResolvedValue({
       ok: true,
       value: mcpStatus({
@@ -319,8 +319,10 @@ describe('ActiveCollabMcpInstallCard', () => {
 
     const rendered = await renderCard()
 
-    expect(button(rendered, 'Run Setup').disabled).toBe(true)
-    expect(rendered.querySelector('[data-testid="activecollab-mcp-setup-terminal"]')).toBeNull()
+    expect(button(rendered, 'Run Setup').disabled).toBe(false)
+    await click(button(rendered, 'Run Setup'))
+    expect(setupTerminalHarness.props.at(-1)?.command).toBe('pipx install activecollab-mcp; exit')
+    expect(rendered.querySelector('[data-testid="activecollab-mcp-setup-terminal"]')).toBeTruthy()
   })
 
   it('runs setup from the resolved absolute path and re-reads status when it exits', async () => {

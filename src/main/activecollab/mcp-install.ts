@@ -18,24 +18,17 @@ import {
 } from './mcp-agents'
 import { getActiveCollabCredential } from './credential-store'
 import { isPlainJsonObject } from '../sites/mcp/site-mcp-jsonrpc'
-import type {
-  ActiveCollabMcpAgentId,
-  ActiveCollabMcpAgentWriteResult,
-  ActiveCollabMcpBinary,
-  ActiveCollabMcpInstallResult,
-  ActiveCollabMcpSeedResult,
-  ActiveCollabMcpStatus
+import {
+  ACTIVECOLLAB_MCP_INSTALL_COMMAND,
+  type ActiveCollabMcpAgentId,
+  type ActiveCollabMcpAgentWriteResult,
+  type ActiveCollabMcpBinary,
+  type ActiveCollabMcpInstallResult,
+  type ActiveCollabMcpSeedResult,
+  type ActiveCollabMcpStatus
 } from '../../shared/activecollab-mcp-types'
 
-/**
- * The documented install route; `install.sh` is a wrapper around exactly this.
- *
- * Published on PyPI, so this needs no Bitbucket SSH key — it used to install from
- * `git+ssh://git@bitbucket.org/efront_au/active-collab-mcp.git`, which silently failed for anyone
- * without repo access. Deliberately NOT `&& activecollab-mcp setup`: that command also registers
- * agents and logs in, both of which this card already does from the token Muster holds.
- */
-export const ACTIVECOLLAB_MCP_INSTALL_COMMAND = 'pipx install activecollab-mcp'
+export { ACTIVECOLLAB_MCP_INSTALL_COMMAND }
 
 const MISSING_BINARY_HINT = `activecollab-mcp is not installed. Run: ${ACTIVECOLLAB_MCP_INSTALL_COMMAND}`
 
@@ -192,10 +185,9 @@ export function seedActiveCollabMcpCredentials(
 /**
  * Keeps an ALREADY-LINKED MCP credential file in step with the account Muster just connected to.
  *
- * Rewrites only a file that is already there, and never creates one. That file existing is the
- * user's prior consent to share this token with the MCP server; minting it here would drop an API
- * token on disk for someone who never asked for the agent integration at all. First-time linking
- * stays the explicit button on the install card.
+ * Rewrites only a file that is already there, and never creates one. First-time minting is
+ * `seedActiveCollabMcpCredentials`, which connect now calls so the Tasks login is the only
+ * password the user types. This helper stays for callers that must not create the file.
  *
  * Drift is the half worth automating: reconnecting Muster to a different instance or account used
  * to leave the agent silently authenticated as the previous one, which is the exact failure this
@@ -208,4 +200,28 @@ export function resyncActiveCollabMcpCredentials(
     return { seeded: false, reason: NOT_LINKED_REASON }
   }
   return seedActiveCollabMcpCredentials(env)
+}
+
+export type ActiveCollabMcpShareResult = {
+  credentials: ActiveCollabMcpSeedResult
+  /** Null when the binary is missing — we refuse to write a Claude entry that cannot spawn. */
+  claude: ActiveCollabMcpAgentWriteResult | null
+}
+
+/**
+ * What connect does: mint (or rewrite) the MCP credential from this login, then wire Claude Code
+ * when `activecollab-mcp` is already on the machine.
+ *
+ * Claude is the only agent written unprompted. Codex and Cursor stay on the Settings card. A
+ * missing binary is a skip, not an error. This still does not run pipx.
+ */
+export function shareActiveCollabLoginWithMcp(
+  env: ActiveCollabMcpEnv = createDefaultActiveCollabMcpEnv()
+): ActiveCollabMcpShareResult {
+  const credentials = seedActiveCollabMcpCredentials(env)
+  if (!credentials.seeded || !detectActiveCollabMcp(env).found) {
+    return { credentials, claude: null }
+  }
+  const installed = installActiveCollabMcpForAgents(['claude-code'], env)
+  return { credentials, claude: installed.results[0] ?? null }
 }

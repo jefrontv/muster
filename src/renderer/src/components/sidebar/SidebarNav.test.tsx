@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   updateSettings: vi.fn(),
   refreshPreflightStatus: vi.fn(),
   checkLinearConnection: vi.fn(),
+  checkActiveCollabConnection: vi.fn(),
   agentBucketCounts: { attention: 0, working: 0, idle: 0 },
   setSetupGuideSidebarDismissed: vi.fn()
 }))
@@ -103,10 +104,12 @@ function folderRepo(): Repo {
 
 function setSidebarState({
   settings = getDefaultSettings('/tmp'),
-  repos = [gitRepo()]
+  repos = [gitRepo()],
+  activeCollabConfigured = false
 }: {
   settings?: GlobalSettings
   repos?: Repo[]
+  activeCollabConfigured?: boolean
 } = {}): void {
   mocks.state = {
     settings,
@@ -124,6 +127,9 @@ function setSidebarState({
     linearStatus: { connected: false },
     linearStatusChecked: true,
     checkLinearConnection: mocks.checkLinearConnection,
+    activeCollabStatus: { configured: activeCollabConfigured, connection: null, reason: '' },
+    activeCollabStatusChecked: true,
+    checkActiveCollabConnection: mocks.checkActiveCollabConnection,
     prefetchWorkItems: vi.fn(),
     activeRepoId: null,
     persistedUIReady: true,
@@ -333,7 +339,9 @@ describe('SidebarNav', () => {
       throw new Error('expected the Search row')
     }
     expect(separator.compareDocumentPosition(sites) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-    expect(separator.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      separator.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
   })
 
   it('shows the Automations entry by default for older settings', () => {
@@ -437,6 +445,18 @@ describe('SidebarNav', () => {
     await clickButton(getHideButton(tasksMenu as HTMLElement))
 
     expect(mocks.updateSettings).toHaveBeenCalledWith({ showTasksButton: false })
+  })
+
+  it('unlocks Tasks after ActiveCollab login with no git repo', async () => {
+    setSidebarState({ repos: [folderRepo()], activeCollabConfigured: true })
+    const container = await renderSidebarNav()
+
+    const tasksButton = getButtonByText(container, 'Tasks')
+    expect(tasksButton.getAttribute('aria-disabled')).toBe('false')
+    expect(tasksButton.className).not.toContain('cursor-not-allowed')
+
+    await clickButton(tasksButton)
+    expect(mocks.openTaskPage).toHaveBeenCalledTimes(1)
   })
 
   it('shows the setup guide entry only after readiness, before completion, and before explicit hide', () => {

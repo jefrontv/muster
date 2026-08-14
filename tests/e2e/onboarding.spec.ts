@@ -94,8 +94,18 @@ async function expectOnboardingCustomSoundOption(page: Page): Promise<void> {
   await expectOnboardingSkipConfirmationClosed(page)
 }
 
+async function startOnboardingWizard(page: Page): Promise<void> {
+  const welcome = page.locator('[data-onboarding-welcome]')
+  await expect(welcome).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: /^Get started\b/ }).click()
+  await expect(welcome).toHaveCount(0)
+}
+
 async function continueOnboarding(page: Page): Promise<void> {
-  await onboardingFooterButton(page, /^(Continue|Add your first project)\b/).click()
+  await onboardingFooterButton(
+    page,
+    /^(Continue|Add your first project|Add first workspace)\b/
+  ).click()
 }
 
 async function expectOnboardingProgress(page: Page, label: RegExp): Promise<void> {
@@ -112,8 +122,10 @@ async function continueFromPostNotificationsToRepo(page: Page): Promise<void> {
   }
   await continueThroughOptionalTaskSourcesAndWindowsTerminal(page)
   await expect(page.getByRole('heading', { name: /Set up notifications/i })).toBeVisible()
-  await expectOnboardingProgress(page, /^[345] of [345]$/)
-  await expect(onboardingFooterButton(page, /^Add your first project\b/)).toBeVisible()
+  await expectOnboardingProgress(page, /^[3-6] of [3-6]$/)
+  await expect(
+    onboardingFooterButton(page, /^(Add your first project|Add first workspace)\b/)
+  ).toBeVisible()
   await continueOnboarding(page)
   await expectAddProjectDialog(page)
 }
@@ -125,7 +137,7 @@ async function continueThroughOptionalTaskSourcesAndWindowsTerminal(page: Page):
     .then(() => true)
     .catch(() => false)
   if (taskSourcesVisible) {
-    await expectOnboardingProgress(page, /^3 of [45]$/)
+    await expectOnboardingProgress(page, /^[34] of [4-6]$/)
     await continueOnboarding(page)
   }
   const windowsTerminalVisible = await page
@@ -134,7 +146,7 @@ async function continueThroughOptionalTaskSourcesAndWindowsTerminal(page: Page):
     .then(() => true)
     .catch(() => false)
   if (windowsTerminalVisible) {
-    await expectOnboardingProgress(page, /^[34] of [45]$/)
+    await expectOnboardingProgress(page, /^[3-5] of [4-6]$/)
     await continueOnboarding(page)
   }
   await expect(page.getByRole('heading', { name: /Set up notifications/i })).toBeVisible()
@@ -142,8 +154,35 @@ async function continueThroughOptionalTaskSourcesAndWindowsTerminal(page: Page):
 
 async function continueFromThemeToNotifications(page: Page): Promise<void> {
   await continueOnboarding(page)
+  const defaultViewVisible = await page
+    .getByRole('heading', { name: /How do you want to start\?/i })
+    .waitFor({ state: 'visible', timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (defaultViewVisible) {
+    await continueOnboarding(page)
+  }
   await continueThroughOptionalTaskSourcesAndWindowsTerminal(page)
 }
+
+test.describe('Onboarding welcome splash', () => {
+  test.use({ dismissOnboarding: false })
+
+  test.beforeEach(async ({ orcaPage }) => {
+    await waitForSessionReady(orcaPage)
+  })
+
+  test('holds the welcome splash until Get started is pressed', async ({ orcaPage }) => {
+    const welcome = orcaPage.locator('[data-onboarding-welcome]')
+    await expect(welcome).toBeVisible({ timeout: 15_000 })
+    await expect(orcaPage.getByRole('button', { name: /^Get started\b/ })).toBeVisible()
+    await expect(orcaPage.getByRole('heading', { name: /Pick your default agent/i })).toHaveCount(0)
+
+    await orcaPage.getByRole('button', { name: /^Get started\b/ }).click()
+    await expect(welcome).toHaveCount(0)
+    await expect(orcaPage.getByRole('heading', { name: /Pick your default agent/i })).toBeVisible()
+  })
+})
 
 test.describe('Onboarding flow', () => {
   // Why: the shared fixture pre-seeds onboarding as closed so non-onboarding
@@ -156,13 +195,14 @@ test.describe('Onboarding flow', () => {
     // onboarding state defaults to `closedAt: null, lastCompletedStep: -1` and
     // the overlay paints on its own once App's bootstrap effect resolves.
     await waitForSessionReady(orcaPage)
+    await startOnboardingWizard(orcaPage)
   })
 
   test('renders on first launch with the agent step active', async ({ orcaPage }) => {
     await expect(orcaPage.getByRole('heading', { name: /Pick your default agent/i })).toBeVisible({
       timeout: 15_000
     })
-    await expectOnboardingProgress(orcaPage, /^1 of [345]$/)
+    await expectOnboardingProgress(orcaPage, /^1 of [3-6]$/)
     await expect(onboardingFooterButton(orcaPage, /^Continue\b/)).toBeVisible()
     await expect(onboardingFooterButton(orcaPage, SKIP_TO_PROJECT_SETUP_BUTTON)).toBeVisible()
     // Why: Back is not rendered on the first step (was previously rendered-but-
@@ -210,7 +250,7 @@ test.describe('Onboarding flow', () => {
 
     await continueOnboarding(orcaPage)
     await expect(orcaPage.getByRole('heading', { name: /Make it feel like home/i })).toBeVisible()
-    await expectOnboardingProgress(orcaPage, /^2 of [345]$/)
+    await expectOnboardingProgress(orcaPage, /^2 of [3-6]$/)
     await expect
       .poll(async () => (await getOnboardingState(orcaPage)).lastCompletedStep, {
         timeout: 5_000,
@@ -259,7 +299,7 @@ test.describe('Onboarding flow', () => {
       .poll(async () => (await getSettings(orcaPage)).theme, { timeout: 5_000 })
       .toBe(oppositeTheme)
     await continueThroughOptionalTaskSourcesAndWindowsTerminal(orcaPage)
-    await expectOnboardingProgress(orcaPage, /^[345] of [345]$/)
+    await expectOnboardingProgress(orcaPage, /^[3-6] of [3-6]$/)
     await expect
       .poll(async () => [3, 4].includes((await getOnboardingState(orcaPage)).lastCompletedStep), {
         timeout: 5_000,
@@ -609,7 +649,7 @@ test.describe('Onboarding flow', () => {
     // would otherwise match this regex.
     await orcaPage.getByRole('button', { name: 'Back', exact: true }).click()
     await expect(orcaPage.getByRole('heading', { name: /Pick your default agent/i })).toBeVisible()
-    await expectOnboardingProgress(orcaPage, /^1 of [345]$/)
+    await expectOnboardingProgress(orcaPage, /^1 of [3-6]$/)
 
     // Why: "without losing progress" means persisted lastCompletedStep stays
     // at 1 — Back rewinds the visible step but must not roll persistence back.

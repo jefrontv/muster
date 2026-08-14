@@ -1176,9 +1176,9 @@ describe('Store', () => {
   it.each([
     [3, 2],
     [4, 2],
-    [5, 3],
-    [6, 3],
-    [9, 3]
+    [5, 4],
+    [6, 4],
+    [9, 4]
   ])(
     'migrates unversioned seven-step onboarding progress %i before applying the current step bound',
     async (legacyStep, expectedStep) => {
@@ -1203,9 +1203,9 @@ describe('Store', () => {
 
   it.each([
     [3, 2],
-    [4, 3],
-    [5, 3],
-    [9, 3]
+    [4, 4],
+    [5, 4],
+    [9, 4]
   ])(
     'migrates versioned five-step onboarding progress %i before applying the current step bound',
     async (legacyStep, expectedStep) => {
@@ -1230,9 +1230,9 @@ describe('Store', () => {
   )
 
   it.each([
-    [3, 3],
-    [4, 4],
-    [9, 4]
+    [3, 4],
+    [4, 5],
+    [9, 5]
   ])(
     'migrates versioned four-step onboarding progress %i around the inserted Windows step',
     async (legacyStep, expectedStep) => {
@@ -1256,7 +1256,35 @@ describe('Store', () => {
     }
   )
 
-  it('keeps current onboarding progress marked as the five-step flow', async () => {
+  it.each([
+    [2, 2],
+    [3, 4],
+    [4, 5],
+    [5, 6]
+  ])(
+    'migrates versioned five-step v4 onboarding progress %i around the inserted default-view page',
+    async (legacyStep, expectedStep) => {
+      writeDataFile({
+        onboarding: {
+          flowVersion: 4,
+          closedAt: null,
+          outcome: null,
+          lastCompletedStep: legacyStep,
+          checklist: {}
+        }
+      })
+
+      const store = await createStore()
+      const onboarding = store.getOnboarding()
+
+      expect(onboarding.flowVersion).toBe(ONBOARDING_FLOW_VERSION)
+      expect(onboarding.lastCompletedStep).toBe(expectedStep)
+      expect(onboarding.closedAt).toBeNull()
+      expect(onboarding.outcome).toBeNull()
+    }
+  )
+
+  it('keeps current onboarding progress marked as the six-step flow', async () => {
     writeDataFile({
       onboarding: {
         flowVersion: ONBOARDING_FLOW_VERSION,

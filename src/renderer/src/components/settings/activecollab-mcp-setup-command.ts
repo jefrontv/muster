@@ -13,6 +13,7 @@
 //     setup, so without it the shell drops back to a prompt when setup returns and the card never
 //     learns that new agents were registered.
 
+import { ACTIVECOLLAB_MCP_INSTALL_COMMAND } from '../../../../shared/activecollab-mcp-types'
 import { isPowerShellProcess } from '../../../../shared/shell-process-detection'
 
 export const ACTIVECOLLAB_MCP_SETUP_SUBCOMMAND = 'setup'
@@ -56,4 +57,37 @@ export function buildActiveCollabMcpSetupCommand(args: {
   // Inside POSIX single quotes only `'` retains meaning, so close/escape/reopen is the whole rule.
   const quoted = `'${binaryPath.replaceAll("'", `'\\''`)}'`
   return `${quoted} ${ACTIVECOLLAB_MCP_SETUP_SUBCOMMAND}; exit`
+}
+
+/** pipx install in the same PTY chrome as setup. No path to quote, so this never returns null. */
+export function buildActiveCollabMcpPipxInstallCommand(args: {
+  platform: NodeJS.Platform
+  windowsShell?: string | null
+}): string {
+  if (args.platform === 'win32') {
+    if (isPowerShellProcess(args.windowsShell)) {
+      return `${ACTIVECOLLAB_MCP_INSTALL_COMMAND}; exit`
+    }
+    const shellName = (args.windowsShell ?? '').trim().split(/[\\/]/).pop() ?? ''
+    if (shellName.replace(/\.exe$/i, '').toLowerCase() === 'cmd') {
+      return `${ACTIVECOLLAB_MCP_INSTALL_COMMAND} & exit`
+    }
+  }
+  return `${ACTIVECOLLAB_MCP_INSTALL_COMMAND}; exit`
+}
+
+/**
+ * Guided terminal command: `setup` against the detected binary, or pipx install when it is missing.
+ * Null only when a detected path cannot be quoted for the current Windows shell.
+ */
+export function buildActiveCollabMcpGuidedCommand(args: {
+  binaryPath: string | null
+  platform: NodeJS.Platform
+  windowsShell?: string | null
+}): string | null {
+  const binaryPath = args.binaryPath?.trim() ?? ''
+  if (binaryPath.length === 0) {
+    return buildActiveCollabMcpPipxInstallCommand(args)
+  }
+  return buildActiveCollabMcpSetupCommand(args)
 }

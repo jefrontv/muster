@@ -57,42 +57,35 @@ const SidebarHeader = React.memo(function SidebarHeader({
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => {
-                if (!canCreateWorkspace) {
-                  return
-                }
-                // Why: the parallel-work tour must click the real sidebar
-                // control so it can hand off to the workspace-creation tour.
-                openWorkspaceCreationComposerWithTourHandoff()
-              }}
-              aria-label={translate(
-                'auto.components.sidebar.SidebarHeader.92154beb7e',
-                'New workspace'
-              )}
-              disabled={!canCreateWorkspace}
-              data-contextual-tour-target="workspace-create-control"
-            >
-              <Plus className="size-3.5" strokeWidth={2.25} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={6}>
-            {canCreateWorkspace
-              ? translate(
-                  'auto.components.sidebar.SidebarHeader.ca6f729da2',
-                  'New workspace ({{value0}})',
-                  { value0: newWorktreeShortcutLabel }
-                )
-              : translate(
-                  'auto.components.sidebar.SidebarHeader.5c9c7c16aa',
-                  'Add a project to create workspaces'
+        {canCreateWorkspace ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => {
+                  // Why: the parallel-work tour must click the real sidebar
+                  // control so it can hand off to the workspace-creation tour.
+                  openWorkspaceCreationComposerWithTourHandoff()
+                }}
+                aria-label={translate(
+                  'auto.components.sidebar.SidebarHeader.92154beb7e',
+                  'New workspace'
                 )}
-          </TooltipContent>
-        </Tooltip>
+                data-contextual-tour-target="workspace-create-control"
+              >
+                <Plus className="size-3.5" strokeWidth={2.25} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={6}>
+              {translate(
+                'auto.components.sidebar.SidebarHeader.ca6f729da2',
+                'New workspace ({{value0}})',
+                { value0: newWorktreeShortcutLabel }
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
     </div>
   )

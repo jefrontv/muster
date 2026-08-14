@@ -10798,11 +10798,29 @@
           "984338477a": "테마",
           "c47e1bd149": "agent",
           "windowsTerminalTitle": "Windows terminal 기본값 설정",
-          "windowsTerminalSubtitle": "새 창에서 사용할 기본 셸과 terminal에서 오른쪽 클릭이 동작하는 방식을 선택하세요."
+          "windowsTerminalSubtitle": "새 창에서 사용할 기본 셸과 terminal에서 오른쪽 클릭이 동작하는 방식을 선택하세요.",
+          "defaultViewTitle": "How do you want to start?",
+          "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
+          "integrationsTitle": "Connect your sources",
+          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:"
+        },
+        "welcome": {
+          "eyebrow": "Welcome to",
+          "tagline": "Your agents, projects, and work — one quiet desk.",
+          "start": "Get started"
+        },
+        "defaultView": {
+          "chat": "Chat Mode",
+          "chatHint": "Talk first",
+          "chatDescription": "A conversation desk. Threads, projects, and agents in one place.",
+          "code": "Code Mode",
+          "codeHint": "Build first",
+          "codeDescription": "Worktrees, terminals, and the classic IDE layout."
         },
         "OnboardingFooter": {
           "ba58547306": "뒤로",
-          "111d3f8d92": "프로젝트 설정으로 건너뛰기"
+          "111d3f8d92": "프로젝트 설정으로 건너뛰기",
+          "done": "완료"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "terminal 시작 중..."
@@ -13629,7 +13647,7 @@
             "description": "Muster exchanges your email and password for a long-lived ActiveCollab token once. The password itself is never stored.",
             "done": "Done",
             "instance_url_label": "ActiveCollab URL",
-            "instance_url_placeholder": "https://projects.example.com",
+            "instance_url_placeholder": "https://projects.efront.com.au",
             "email_label": "Email",
             "email_placeholder": "you@example.com",
             "password_label": "Password",

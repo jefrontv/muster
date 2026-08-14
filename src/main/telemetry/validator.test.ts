@@ -175,6 +175,14 @@ describe('validate', () => {
     expect(result.ok).toBe(true)
   })
 
+  it('accepts onboarding_completed when the user finishes without adding', () => {
+    const result = validate('onboarding_completed', {
+      path: 'done',
+      total_duration_ms: 100
+    })
+    expect(result.ok).toBe(true)
+  })
+
   it('accepts events without nth_repo_added (classifier degraded mode)', () => {
     const result = validate('agent_started', {
       agent_kind: 'claude-code',

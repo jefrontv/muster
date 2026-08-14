@@ -118,6 +118,7 @@ import {
   ONBOARDING_FLOW_VERSION,
   ONBOARDING_FINAL_STEP
 } from '../shared/constants'
+import { remapOnboardingLastCompletedStep } from '../shared/onboarding-step-remap'
 import { parseWorkspaceSession } from '../shared/workspace-session-schema'
 import { normalizeUsagePercentageDisplay } from '../shared/usage-percentage-display'
 import { normalizeStatusBarUsageMode } from '../shared/status-bar-usage-mode'
@@ -1203,33 +1204,14 @@ function remapLegacyOnboardingLastCompletedStep(
   lastCompletedStep: number,
   raw: Record<string, unknown>
 ): number {
-  if (raw.outcome === 'completed' && lastCompletedStep >= 4) {
-    return ONBOARDING_FINAL_STEP
-  }
-  // Why: v3 (pre-Windows-terminal-page) step 4 already meant notifications, so resume there, not the inserted Windows step.
-  if (raw.flowVersion === 3) {
-    return Math.min(4, lastCompletedStep)
-  }
-  // Why: v2's five-step flow had step 4 = removed agent setup, not completed integrations.
-  if (raw.flowVersion === 2) {
-    if (lastCompletedStep === 3) {
-      return 2
-    }
-    if (lastCompletedStep >= 4) {
-      return 3
-    }
-    return lastCompletedStep
-  }
-  if (lastCompletedStep === 3) {
-    return 2
-  }
-  if (lastCompletedStep === 4) {
-    return 2
-  }
-  if (lastCompletedStep >= 5) {
-    return 3
-  }
-  return lastCompletedStep
+  return remapOnboardingLastCompletedStep(
+    {
+      flowVersion: typeof raw.flowVersion === 'number' ? raw.flowVersion : 1,
+      lastCompletedStep,
+      outcome: raw.outcome === 'completed' || raw.outcome === 'dismissed' ? raw.outcome : null
+    },
+    { flowVersion: ONBOARDING_FLOW_VERSION, finalStep: ONBOARDING_FINAL_STEP }
+  )
 }
 
 export function sanitizeOnboardingUpdate(

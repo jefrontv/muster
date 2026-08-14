@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- Why: repo selector, task-source controls, and task list stay co-located so their wiring reads in one place. */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import {
@@ -139,10 +139,9 @@ import {
 import { createGitHubWorkItemWorkspaceInBackground } from '@/lib/github-work-item-background-create'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { useRepoAssigneesBySlug } from '@/hooks/useGitHubSlugMetadata'
-import GitHubItemDialog, { type ItemDialogTab } from '@/components/GitHubItemDialog'
-import PullRequestPage from '@/components/PullRequestPage'
+import { lazyWithRetry } from '@/lib/lazy-with-retry'
+import type { ItemDialogTab } from '@/components/GitHubItemDialog'
 import GitLabItemDialog from '@/components/GitLabItemDialog'
-import ProjectViewWrapper from '@/components/github-project/ProjectViewWrapper'
 import { getSettingsForRepoRuntimeOwner } from '@/lib/repo-runtime-owner'
 import {
   buildExecutionHostRegistry,
@@ -369,6 +368,17 @@ import {
   type LinearOrderBy,
   type LinearViewMode
 } from '@/components/task-page-localized-options'
+
+const GitHubItemDialog = lazyWithRetry(() => import('@/components/GitHubItemDialog'), {
+  reloadKey: 'task-page.github-item-dialog'
+})
+const PullRequestPage = lazyWithRetry(() => import('@/components/PullRequestPage'), {
+  reloadKey: 'task-page.pull-request-page'
+})
+const ProjectViewWrapper = lazyWithRetry(
+  () => import('@/components/github-project/ProjectViewWrapper'),
+  { reloadKey: 'task-page.github-project-view' }
+)
 
 function isGitLabMRFilter(value: GitLabTaskFilter | GitLabIssueFilter): value is GitLabTaskFilter {
   return value === 'opened' || value === 'merged' || value === 'closed' || value === 'all'
@@ -8971,40 +8981,44 @@ export default function TaskPage(): React.JSX.Element {
           </div>
 
           {taskSource === 'github' && dialogWorkItem ? (
-            dialogWorkItem.type === 'pr' ? (
-              <PullRequestPage
-                workItem={dialogWorkItem}
-                initialTab={dialogInitialTab}
-                repoPath={dialogRepoPath}
-                repoId={dialogWorkItem.repoId}
-                sourceContext={dialogSourceContext}
-                backLabel="Pull requests"
-                onUse={(item) => {
-                  setDialogWorkItem(null)
-                  handleUseWorkItem(item)
-                }}
-                onReviewRequestsChange={handleDialogReviewRequestsChange}
-                onClose={closeTaskDetailPage}
-              />
-            ) : (
-              <GitHubItemDialog
-                workItem={dialogWorkItem}
-                initialTab={dialogInitialTab}
-                repoPath={dialogRepoPath}
-                repoId={dialogWorkItem.repoId}
-                sourceContext={dialogSourceContext}
-                backLabel="GitHub list"
-                onUse={(item) => {
-                  setDialogWorkItem(null)
-                  handleUseWorkItem(item)
-                }}
-                onReviewRequestsChange={handleDialogReviewRequestsChange}
-                onClose={closeTaskDetailPage}
-              />
-            )
+            <Suspense fallback={null}>
+              {dialogWorkItem.type === 'pr' ? (
+                <PullRequestPage
+                  workItem={dialogWorkItem}
+                  initialTab={dialogInitialTab}
+                  repoPath={dialogRepoPath}
+                  repoId={dialogWorkItem.repoId}
+                  sourceContext={dialogSourceContext}
+                  backLabel="Pull requests"
+                  onUse={(item) => {
+                    setDialogWorkItem(null)
+                    handleUseWorkItem(item)
+                  }}
+                  onReviewRequestsChange={handleDialogReviewRequestsChange}
+                  onClose={closeTaskDetailPage}
+                />
+              ) : (
+                <GitHubItemDialog
+                  workItem={dialogWorkItem}
+                  initialTab={dialogInitialTab}
+                  repoPath={dialogRepoPath}
+                  repoId={dialogWorkItem.repoId}
+                  sourceContext={dialogSourceContext}
+                  backLabel="GitHub list"
+                  onUse={(item) => {
+                    setDialogWorkItem(null)
+                    handleUseWorkItem(item)
+                  }}
+                  onReviewRequestsChange={handleDialogReviewRequestsChange}
+                  onClose={closeTaskDetailPage}
+                />
+              )}
+            </Suspense>
           ) : taskSource === 'github' && githubMode === 'project' ? (
             <div className="mt-3 flex min-h-0 min-w-0 max-h-full flex-col overflow-hidden rounded-md border border-border/50 bg-muted/50 shadow-sm">
-              <ProjectViewWrapper selectedRepoIds={repoSelection} />
+              <Suspense fallback={null}>
+                <ProjectViewWrapper selectedRepoIds={repoSelection} />
+              </Suspense>
             </div>
           ) : taskSource === 'github' ? (
             <div className="flex min-h-0 min-w-0 max-h-full flex-col overflow-hidden rounded-md rounded-t-none border border-t-0 border-border/50 bg-muted/50 shadow-sm">

@@ -2,7 +2,7 @@
 // sidebar beside the active thread's conversation. Owns chat-store hydration.
 
 import type React from 'react'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { isAskUserQuestionTool } from '../../../../shared/agent-question-answered-intent'
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
@@ -20,7 +20,8 @@ export default function ChatModePage(): React.JSX.Element {
   const threads = useAppStore((s) => s.chatThreads)
   const activeChatThreadId = useAppStore((s) => s.activeChatThreadId)
   const tasksOpen = useAppStore((s) => s.chatTasksOpen)
-  const [createOpen, setCreateOpen] = useState(false)
+  const createOpen = useAppStore((s) => s.chatWorkspaceCreateOpen ?? false)
+  const setCreateOpen = useAppStore((s) => s.setChatWorkspaceCreateOpen)
 
   useEffect(() => {
     if (!hydrated) {
@@ -182,10 +183,10 @@ export default function ChatModePage(): React.JSX.Element {
         ) : activeThread && (activeThread.workspaceId === null || activeWorkspace) ? (
           <ChatThreadView key={activeThread.id} thread={activeThread} workspace={activeWorkspace} />
         ) : (
-          <ChatModeDraftHero onCreateWorkspace={() => setCreateOpen(true)} />
+          <ChatModeDraftHero onCreateWorkspace={() => setCreateOpen?.(true)} />
         )}
       </main>
-      <ChatWorkspaceCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <ChatWorkspaceCreateDialog open={createOpen} onOpenChange={(open) => setCreateOpen?.(open)} />
     </div>
   )
 }

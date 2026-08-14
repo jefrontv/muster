@@ -5,7 +5,11 @@ import { ONBOARDING_FINAL_STEP, ONBOARDING_FLOW_VERSION } from '../../../../shar
 import type { EventProps } from '../../../../shared/telemetry-events'
 import type { GlobalSettings, OnboardingState, TuiAgent } from '../../../../shared/types'
 import { applyAgentPermissionMode } from '../../../../shared/tui-agent-permissions'
-import type { StepId, StepNumber } from './use-onboarding-flow-types'
+import {
+  applyOnboardingDefaultView,
+  type OnboardingDefaultView
+} from './onboarding-default-view-step'
+import { STEPS, type StepId, type StepNumber } from './use-onboarding-flow-types'
 
 export async function persistStep(
   stepNumber: number,
@@ -85,7 +89,7 @@ export function useCloseWith({
       outcome: 'completed' | 'dismissed',
       checklist: Partial<OnboardingState['checklist']>,
       lastStepReached: StepNumber,
-      completedPath?: 'open_folder' | 'clone_url' | 'add_project_modal',
+      completedPath?: 'open_folder' | 'clone_url' | 'add_project_modal' | 'done',
       dismissedExtras?: DismissedExtras
     ): Promise<boolean> => {
       if (closedRef.current) {
@@ -155,6 +159,7 @@ type PersistCurrentStepDeps = {
   selectedAgent: TuiAgent | null
   yoloPermissions: boolean
   theme: GlobalSettings['theme']
+  defaultView: OnboardingDefaultView
   settings: GlobalSettings | null
   updateSettings: (updates: Partial<GlobalSettings>) => Promise<void> | void
   onboardingChecklist: OnboardingState['checklist']
@@ -171,6 +176,7 @@ export function usePersistCurrentStep({
   selectedAgent,
   yoloPermissions,
   theme,
+  defaultView,
   settings,
   updateSettings,
   onboardingChecklist,
@@ -220,18 +226,21 @@ export function usePersistCurrentStep({
         onOnboardingChange(await persistStep(ONBOARDING_FINAL_STEP))
         return { ok: true }
       }
-      if (currentStepId === 'windows_terminal') {
-        // Why: the Windows terminal controls persist on selection. Continuing
-        // only marks the preference page complete for resume/telemetry state.
-        onOnboardingChange(await persistStep(4))
-        return { ok: true }
+      if (currentStepId === 'default_view') {
+        applyOnboardingDefaultView(defaultView)
       }
-      if (currentStepId === 'integrations') {
-        // Why: GitHub and Linear connections persist through their own
-        // store slices when the user actually wires them up. The step itself
-        // is a no-op for settings/onboarding state beyond marking it
-        // completed.
-        onOnboardingChange(await persistStep(3))
+      if (
+        currentStepId === 'default_view' ||
+        currentStepId === 'windows_terminal' ||
+        currentStepId === 'integrations'
+      ) {
+        // Why: these pages persist their own preference on selection. Continue
+        // only marks the page complete for resume/telemetry state.
+        const stepNumber = STEPS.find((step) => step.id === currentStepId)?.stepNumber
+        if (stepNumber == null) {
+          return { ok: false }
+        }
+        onOnboardingChange(await persistStep(stepNumber))
         return { ok: true }
       }
       return { ok: false }
@@ -246,6 +255,7 @@ export function usePersistCurrentStep({
     selectedAgent,
     settings,
     theme,
+    defaultView,
     updateSettings,
     yoloPermissions,
     setError

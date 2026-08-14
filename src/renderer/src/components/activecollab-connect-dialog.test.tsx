@@ -33,6 +33,7 @@ vi.mock('@/components/ui/dialog', () => ({
   DialogTitle: ({ children }: { children?: ReactNode }) => <h2>{children}</h2>
 }))
 
+import { DEFAULT_ACTIVECOLLAB_INSTANCE_URL } from '../../../shared/activecollab-instance'
 import { ActiveCollabConnectDialog } from './activecollab-connect-dialog'
 
 const CONNECTION: ActiveCollabConnection = {
@@ -68,7 +69,7 @@ afterEach(() => {
 
 function urlField(): HTMLInputElement {
   const input = container.querySelector<HTMLInputElement>(
-    'input[placeholder="https://projects.example.com"]'
+    'input:not([type="email"]):not([type="password"])'
   )
   expect(input).toBeTruthy()
   return input as HTMLInputElement
@@ -116,6 +117,10 @@ function errorText(): string {
 }
 
 describe('ActiveCollabConnectDialog instance URL validation', () => {
+  it('opens with the efront instance URL already filled', () => {
+    expect(urlField().value).toBe(DEFAULT_ACTIVECOLLAB_INSTANCE_URL)
+  })
+
   it('refuses a bare host that is not a parseable URL', async () => {
     await fillAndSubmit('projects.example.com')
 
@@ -146,6 +151,7 @@ describe('ActiveCollabConnectDialog credential exchange', () => {
     expect(container.textContent).toContain('Ada Lovelace')
     expect(container.textContent).toContain('ada@example.com')
     expect(container.textContent).toContain('https://projects.example.com')
+    expect(container.textContent).toContain('ActiveCollab MCP')
     expect(onConnected).toHaveBeenCalledTimes(1)
   })
 

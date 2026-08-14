@@ -2569,6 +2569,184 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   }
 }
 
+/* ── Onboarding welcome splash ───────────────────────────────────── */
+
+@keyframes onboarding-welcome-glow {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes onboarding-welcome-bloom {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes onboarding-welcome-mark {
+  0% {
+    opacity: 0;
+    transform: scale(0.84);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes onboarding-welcome-ring {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.72);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes onboarding-welcome-kicker {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.42em;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0.28em;
+    transform: translateY(0);
+  }
+}
+
+@keyframes onboarding-welcome-letter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes onboarding-welcome-rule {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes onboarding-welcome-copy {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes onboarding-welcome-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.985) translateY(-10px);
+  }
+}
+
+@keyframes onboarding-welcome-handoff-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.onboarding-welcome-glow {
+  animation: onboarding-welcome-glow 1s ease-out both;
+}
+
+.onboarding-welcome-bloom {
+  animation: onboarding-welcome-bloom 7s ease-in-out 0.8s infinite;
+}
+
+.onboarding-welcome-mark {
+  animation: onboarding-welcome-mark 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+.onboarding-welcome-ring {
+  border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
+  animation: onboarding-welcome-ring 1.35s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+.onboarding-welcome-kicker {
+  animation: onboarding-welcome-kicker 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+.onboarding-welcome-letter {
+  display: inline-block;
+  animation: onboarding-welcome-letter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.46s + (var(--welcome-i, 0) * 62ms));
+}
+
+.onboarding-welcome-rule {
+  transform-origin: center;
+  animation: onboarding-welcome-rule 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
+}
+
+.onboarding-welcome-tagline {
+  animation: onboarding-welcome-copy 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.98s both;
+}
+
+.onboarding-welcome-cta {
+  animation: onboarding-welcome-copy 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.14s both;
+}
+
+.onboarding-welcome[data-exiting] {
+  animation: onboarding-welcome-exit 0.56s cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+
+.onboarding-welcome-handoff {
+  animation: onboarding-welcome-handoff-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-welcome-glow,
+  .onboarding-welcome-bloom,
+  .onboarding-welcome-mark,
+  .onboarding-welcome-ring,
+  .onboarding-welcome-kicker,
+  .onboarding-welcome-letter,
+  .onboarding-welcome-rule,
+  .onboarding-welcome-tagline,
+  .onboarding-welcome-cta,
+  .onboarding-welcome[data-exiting],
+  .onboarding-welcome-handoff {
+    animation: none !important;
+  }
+}
+
 /* ── Feature tour nudge: cycling preview ─────────────────────────── */
 
 /* Why: the bottom-right nudge cycles through 4 silhouette frames

@@ -46,6 +46,9 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
   chatTasksOpen: boolean
   setChatTasksOpen: (open: boolean) => void
+  /** Create-workspace dialog. Store-owned so onboarding can open it after Chat Mode lands. */
+  chatWorkspaceCreateOpen: boolean
+  setChatWorkspaceCreateOpen: (open: boolean) => void
   hydrateChatMode: () => Promise<void>
   setActiveChatWorkspace: (id: string | null) => void
   setActiveChatThread: (id: string | null) => void
@@ -97,8 +100,10 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   chatThreadContextWindow: {},
   chatThreadFirstMessage: {},
   chatTasksOpen: false,
+  chatWorkspaceCreateOpen: false,
 
   setChatTasksOpen: (open) => set({ chatTasksOpen: open }),
+  setChatWorkspaceCreateOpen: (open) => set({ chatWorkspaceCreateOpen: open }),
 
   hydrateChatMode: async () => {
     const state = await window.api.chatMode.getState()

@@ -12,6 +12,8 @@ type OnboardingFooterProps = {
   primaryLabel: string
   shortcutModifierLabel: string
   onPrimary: () => void
+  secondaryLabel?: string
+  onSecondary?: () => void
 }
 
 export function OnboardingFooter({
@@ -24,7 +26,9 @@ export function OnboardingFooter({
   primaryBusy,
   primaryLabel,
   shortcutModifierLabel,
-  onPrimary
+  onPrimary,
+  secondaryLabel,
+  onSecondary
 }: OnboardingFooterProps): React.JSX.Element {
   return (
     <footer className="mt-6 flex flex-none items-center justify-between border-t border-border pt-5">
@@ -53,6 +57,16 @@ export function OnboardingFooter({
             {translate('auto.components.onboarding.OnboardingFooter.ba58547306', 'Back')}
           </button>
         )}
+        {secondaryLabel && onSecondary ? (
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-md border border-border bg-muted/60 px-5 py-2 text-sm text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={Boolean(busyLabel)}
+            onClick={onSecondary}
+          >
+            {secondaryLabel}
+          </button>
+        ) : null}
         {showPrimary && (
           <button
             className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"

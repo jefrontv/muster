@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ActiveCollabApiError, type AcHttpClient, type AcRequestOptions } from './http'
-import { getTaskDetail, listAssignedTasks, listProjects } from './tasks'
+import { getTaskDetail, listAssignedTasks, listProjectTasks, listProjects } from './tasks'
 
 type Reply = { data: unknown; totalItems?: number; page?: number; perPage?: number }
 
@@ -245,6 +245,74 @@ describe('listProjects', () => {
       { id: 3791, name: 'Archived Site', isCompleted: true, openTaskCount: null },
       { id: 3792, name: 'Wrapped Up', isCompleted: true, openTaskCount: null }
     ])
+  })
+})
+
+describe('listProjectTasks', () => {
+  function projectTask(id: number, name: string): typeof OPEN_TASK {
+    return { ...OPEN_TASK, id, task_number: id, name, task_list_id: 10 }
+  }
+
+  function pagingHttp(pages: Reply[]): StubHttp {
+    const calls: StubHttp['calls'] = []
+    return {
+      calls,
+      client: {
+        async request<T>(path: string, options?: AcRequestOptions) {
+          calls.push({ path, options })
+          if (path.endsWith('/task-lists')) {
+            return { data: { task_lists: [] } as T, totalItems: null, page: null, perPage: null }
+          }
+          const requested =
+            typeof options?.query?.page === 'number' && options.query.page > 0
+              ? options.query.page
+              : 1
+          const route = pages[requested - 1] ?? pages[0]
+          return {
+            data: route.data as T,
+            totalItems: route.totalItems ?? null,
+            page: route.page ?? null,
+            perPage: route.perPage ?? null
+          }
+        },
+        requestBinary(): never {
+          throw new Error('requestBinary is not stubbed for task reads')
+        },
+        requestStream(): never {
+          throw new Error('requestStream is not stubbed for task reads')
+        }
+      }
+    }
+  }
+
+  it('stops paging when the server reprints page one instead of advancing', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) =>
+      projectTask(1000 + index, `Task ${index + 1}`)
+    )
+    const http = pagingHttp([
+      { data: { tasks: firstPage }, totalItems: 1200, page: 1, perPage: 100 }
+    ])
+
+    const result = await listProjectTasks({ http: http.client, projectId: 3790 })
+
+    expect(result.tasks).toHaveLength(100)
+    expect(result.tasks.map((task) => task.id)).toEqual(firstPage.map((row) => row.id))
+    expect(http.calls.filter((call) => call.path === 'projects/3790/tasks')).toHaveLength(2)
+  })
+
+  it('keeps walking when later pages actually add new tasks', async () => {
+    const pageOne = Array.from({ length: 100 }, (_, index) => projectTask(index + 1, `A ${index}`))
+    const pageTwo = Array.from({ length: 20 }, (_, index) => projectTask(index + 101, `B ${index}`))
+    const http = pagingHttp([
+      { data: { tasks: pageOne }, totalItems: 120, page: 1, perPage: 100 },
+      { data: { tasks: pageTwo }, totalItems: 120, page: 2, perPage: 100 }
+    ])
+
+    const result = await listProjectTasks({ http: http.client, projectId: 3790 })
+
+    expect(result.tasks).toHaveLength(120)
+    expect(result.tasks[0]?.id).toBe(1)
+    expect(result.tasks[119]?.id).toBe(120)
   })
 })
 

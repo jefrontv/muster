@@ -10798,11 +10798,29 @@
           "984338477a": "tema",
           "c47e1bd149": "agente",
           "windowsTerminalTitle": "Configura los valores predeterminados de la terminal de Windows",
-          "windowsTerminalSubtitle": "Elige la Shell predeterminada para los paneles nuevos y cómo se comporta el clic derecho en la terminal."
+          "windowsTerminalSubtitle": "Elige la Shell predeterminada para los paneles nuevos y cómo se comporta el clic derecho en la terminal.",
+          "defaultViewTitle": "How do you want to start?",
+          "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
+          "integrationsTitle": "Connect your sources",
+          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:"
+        },
+        "welcome": {
+          "eyebrow": "Welcome to",
+          "tagline": "Your agents, projects, and work — one quiet desk.",
+          "start": "Get started"
+        },
+        "defaultView": {
+          "chat": "Chat Mode",
+          "chatHint": "Talk first",
+          "chatDescription": "A conversation desk. Threads, projects, and agents in one place.",
+          "code": "Code Mode",
+          "codeHint": "Build first",
+          "codeDescription": "Worktrees, terminals, and the classic IDE layout."
         },
         "OnboardingFooter": {
           "ba58547306": "Atrás",
-          "111d3f8d92": "Saltar a la configuración del proyecto"
+          "111d3f8d92": "Saltar a la configuración del proyecto",
+          "done": "Listo"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "Iniciando terminal..."
@@ -13629,7 +13647,7 @@
             "description": "Muster exchanges your email and password for a long-lived ActiveCollab token once. The password itself is never stored.",
             "done": "Done",
             "instance_url_label": "ActiveCollab URL",
-            "instance_url_placeholder": "https://projects.example.com",
+            "instance_url_placeholder": "https://projects.efront.com.au",
             "email_label": "Email",
             "email_placeholder": "you@example.com",
             "password_label": "Password",

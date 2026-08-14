@@ -9,6 +9,7 @@ import { track } from '@/lib/telemetry'
 import { getSelectedNestedRepoPathsInScanOrder } from '@/lib/nested-repo-selected-paths'
 import { buildAgentPickedPayload } from './agent-picked-payload'
 import { ONBOARDING_FINAL_STEP, ONBOARDING_FLOW_VERSION } from '../../../../shared/constants'
+import { remapOnboardingLastCompletedStep } from '../../../../shared/onboarding-step-remap'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import {
   buildNestedRepoImportActionTelemetry,
@@ -36,6 +37,12 @@ import { translate } from '@/i18n/i18n'
 import { resolveAgentPermissionModeSummary } from '../../../../shared/tui-agent-permissions'
 import { isWindowsUserAgent } from '@/components/terminal-pane/pane-helpers'
 import { buildWindowsTerminalSnapshotPayload } from './windows-terminal-onboarding-telemetry'
+import { onboardingFinishBusyLabel, openOnboardingFinishSurface } from './onboarding-finish-cta'
+import {
+  applyOnboardingDefaultView,
+  resolveOnboardingDefaultView,
+  type OnboardingDefaultView
+} from './onboarding-default-view-step'
 
 export { STEPS } from './use-onboarding-flow-types'
 export type { StepId, StepNumber } from './use-onboarding-flow-types'
@@ -48,13 +55,15 @@ type TaskSourcesLinearStatus = TaskSourcesSnapshotProps['linear_status']
 type TaskSourcesExitAction = TaskSourcesSnapshotProps['exit_action']
 
 function shouldSkipIntegrationsStep(
-  status: ReturnType<typeof useAppStore.getState>['preflightStatus']
+  status: ReturnType<typeof useAppStore.getState>['preflightStatus'],
+  activeCollabConfigured: boolean
 ): boolean {
-  // Why the extra clauses: the step also hosts the Bitbucket connection and the one-click ocsites
-  // import, so it stays visible while either still has something for the user to do.
+  // Why the extra clauses: the step also hosts Bitbucket, ActiveCollab, and the one-click
+  // ocsites import, so it stays visible while any of those still has something to do.
   return (
     status?.gh.installed === true &&
     status.bitbucket?.configured === true &&
+    activeCollabConfigured &&
     status.ocsites?.detected !== true
   )
 }
@@ -132,36 +141,10 @@ export function remapOpenOnboardingLastCompletedStep({
   lastCompletedStep,
   outcome
 }: OnboardingProgressSnapshot): number {
-  if (flowVersion === ONBOARDING_FLOW_VERSION) {
-    return lastCompletedStep
-  }
-  if (outcome === 'completed' && lastCompletedStep >= 4) {
-    return ONBOARDING_FINAL_STEP
-  }
-  // Why: in v3 (four-step, pre-Windows-terminal) step 4 already meant notifications, so resume there.
-  if (flowVersion === 3) {
-    return Math.min(4, lastCompletedStep)
-  }
-  // Why: v2 (five-step) and older seven-step data used step 4 for removed agent setup, not integrations.
-  if (flowVersion === 2) {
-    if (lastCompletedStep === 3) {
-      return 2
-    }
-    if (lastCompletedStep >= 4) {
-      return 3
-    }
-    return lastCompletedStep
-  }
-  if (lastCompletedStep === 3) {
-    return 2
-  }
-  if (lastCompletedStep === 4) {
-    return 2
-  }
-  if (lastCompletedStep >= 5) {
-    return 3
-  }
-  return lastCompletedStep
+  return remapOnboardingLastCompletedStep(
+    { flowVersion, lastCompletedStep, outcome },
+    { flowVersion: ONBOARDING_FLOW_VERSION, finalStep: ONBOARDING_FINAL_STEP }
+  )
 }
 
 type SkippedOnboardingPreferenceOptions = {
@@ -234,7 +217,6 @@ export function useOnboardingFlow(
   const scanNestedRepos = useAppStore((s) => s.scanNestedRepos)
   const cancelNestedRepoScan = useAppStore((s) => s.cancelNestedRepoScan)
   const importNestedRepos = useAppStore((s) => s.importNestedRepos)
-  const openModal = useAppStore((s) => s.openModal)
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const preflightStatus = useAppStore((s) => s.preflightStatus)
@@ -247,8 +229,16 @@ export function useOnboardingFlow(
   const repos = useAppStore((s) => s.repos)
   // Why: renderToStaticMarkup uses Zustand's initial snapshot; the sync read keeps tests and the first client render aligned.
   const effectivePreflightStatus = preflightStatus ?? useAppStore.getState().preflightStatus
+  // Why: renderToStaticMarkup uses Zustand's initial snapshot for hook selectors,
+  // so the skip check reads the live store. The selector still runs so a connect
+  // during onboarding re-renders and the skip can fire.
+  useAppStore((s) => s.activeCollabStatus.configured)
+  const activeCollabConfigured = useAppStore.getState().activeCollabStatus.configured
 
-  const skipIntegrations = shouldSkipIntegrationsStep(effectivePreflightStatus)
+  const skipIntegrations = shouldSkipIntegrationsStep(
+    effectivePreflightStatus,
+    activeCollabConfigured
+  )
   const skipWindowsTerminal = shouldSkipWindowsTerminalStep(isWindowsUserAgent())
   const skipOptions = useMemo(
     () => ({ skipIntegrations, skipWindowsTerminal }),
@@ -274,6 +264,9 @@ export function useOnboardingFlow(
   )
   // Why: hydrate theme from saved settings so users who already chose one see it preselected.
   const [theme, setTheme] = useState<GlobalSettings['theme']>(settings?.theme ?? 'dark')
+  const [defaultView, setDefaultView] = useState<OnboardingDefaultView>(() =>
+    resolveOnboardingDefaultView(useAppStore.getState().activeView)
+  )
   const [cloneUrl, setCloneUrl] = useState('')
   const [serverPath, setServerPath] = useState('')
   const [cloneDestination, setCloneDestination] = useState('')
@@ -326,6 +319,10 @@ export function useOnboardingFlow(
   const setThemeInteractive = useCallback((value: GlobalSettings['theme']) => {
     themeInteractedRef.current = true
     setTheme(value)
+  }, [])
+  const setDefaultViewInteractive = useCallback((value: OnboardingDefaultView) => {
+    setDefaultView(value)
+    applyOnboardingDefaultView(value)
   }, [])
   // `fromCollapsedSection`: whether the picked agent lived under AgentStep's `<details>` disclosure — only that call site knows.
   const detectedAgentIdsRef = useRef<readonly TuiAgent[]>(detectedAgentIds ?? [])
@@ -593,6 +590,7 @@ export function useOnboardingFlow(
     selectedAgent,
     yoloPermissions,
     theme,
+    defaultView,
     settings,
     updateSettings,
     onboardingChecklist: onboarding.checklist,
@@ -646,7 +644,7 @@ export function useOnboardingFlow(
         if (result.ok) {
           trackCurrentStepCompleted(advancedVia)
           if (currentStep.id === 'notifications') {
-            setBusyLabel('Opening Add Project...')
+            setBusyLabel(onboardingFinishBusyLabel(defaultView))
             const closed = await closeWith(
               'completed',
               {},
@@ -654,7 +652,7 @@ export function useOnboardingFlow(
               'add_project_modal'
             )
             if (closed) {
-              openModal('add-repo')
+              openOnboardingFinishSurface(defaultView)
             }
             return
           }
@@ -688,13 +686,37 @@ export function useOnboardingFlow(
       closeWith,
       currentStep.id,
       currentStep.stepNumber,
+      defaultView,
       getNextStepIndex,
       onOnboardingChange,
-      openModal,
       persistCurrentStep,
       stepIndex,
       trackCurrentStepCompleted
     ]
+  )
+
+  const finishWithoutAdding = useCallback(
+    async (advancedVia: 'button' | 'keyboard' = 'button') => {
+      if (nextInFlightRef.current || busyLabel || currentStep.id !== 'notifications') {
+        return
+      }
+      nextInFlightRef.current = true
+      try {
+        const result = await persistCurrentStep()
+        if (!result.ok) {
+          return
+        }
+        trackCurrentStepCompleted(advancedVia)
+        setBusyLabel(
+          translate('auto.components.onboarding.use.onboarding.flow.finishing', 'Finishing...')
+        )
+        await closeWith('completed', {}, ONBOARDING_FINAL_STEP, 'done')
+      } finally {
+        setBusyLabel(null)
+        nextInFlightRef.current = false
+      }
+    },
+    [busyLabel, closeWith, currentStep.id, persistCurrentStep, trackCurrentStepCompleted]
   )
 
   const showNestedRepoReview = useCallback(
@@ -1104,7 +1126,7 @@ export function useOnboardingFlow(
     const stepId = currentStep.id
     const stepNumber = currentStep.stepNumber
     const valueKind = currentStep.valueKind
-    setBusyLabel('Opening Add Project...')
+    setBusyLabel(onboardingFinishBusyLabel(defaultView))
     try {
       const closed = await closeWith('completed', {}, ONBOARDING_FINAL_STEP, 'add_project_modal')
       if (!closed) {
@@ -1131,7 +1153,7 @@ export function useOnboardingFlow(
           })
         )
       }
-      openModal('add-repo')
+      openOnboardingFinishSurface(defaultView)
     } finally {
       setBusyLabel(null)
     }
@@ -1142,7 +1164,7 @@ export function useOnboardingFlow(
     currentStep.id,
     currentStep.stepNumber,
     currentStep.valueKind,
-    openModal,
+    defaultView,
     selectedAgent,
     settings,
     trackTaskSourcesSnapshot,
@@ -1240,6 +1262,8 @@ export function useOnboardingFlow(
     setYoloPermissions: setYoloPermissionsInteractive,
     theme,
     setTheme: setThemeInteractive,
+    defaultView,
+    setDefaultView: setDefaultViewInteractive,
     cloneUrl,
     setCloneUrl,
     nestedScan,
@@ -1260,6 +1284,7 @@ export function useOnboardingFlow(
     detectedSet,
     isDetectingAgents,
     next,
+    finishWithoutAdding,
     skipToRepo,
     dismissOnboarding,
     back,

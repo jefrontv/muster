@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { isLazyChunkLoadError, loadLazyWithRetry } from './lazy-with-retry'
+import {
+  LAZY_CHUNK_RELOAD_GUARD_KEY,
+  isLazyChunkLoadError,
+  loadLazyWithRetry
+} from './lazy-with-retry'
 
 // Regression guard for crash report e08749bb-777c-446e-b407-5d1f154b6173 (Orca 1.4.104).
 // boundary_id=right-sidebar, surface=right-sidebar, error_name=SyntaxError,
@@ -24,7 +28,11 @@ import { isLazyChunkLoadError, loadLazyWithRetry } from './lazy-with-retry'
 // reported crash. The fix treats a parse-time SyntaxError as a recoverable
 // corrupt-chunk failure; these tests pin that behavior.
 
-const RELOAD_GUARD_KEY = 'orca:lazy-chunk-reload-attempted'
+const RELOAD_GUARD_KEY = LAZY_CHUNK_RELOAD_GUARD_KEY
+
+function markGuardFresh(): void {
+  window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(Date.now()))
+}
 
 // The exact error the renderer received from the corrupt right-sidebar chunk.
 const reportedCrashError = (): SyntaxError => new SyntaxError("Unexpected token ')'")
@@ -59,7 +67,7 @@ describe('right-sidebar lazy chunk SyntaxError crash (regression)', () => {
     const reload = spyOnReload()
     // The one guarded reload already happened earlier this session: the user has
     // navigated/reloaded once after the stale chunk was first hit.
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    markGuardFresh()
 
     // import('./SourceControl') rejects with the native parse error from the
     // corrupt chunk — exactly what the crash report captured.
@@ -87,7 +95,7 @@ describe('right-sidebar lazy chunk SyntaxError crash (regression)', () => {
     // chunk, surfaced as a fetch failure, IS recovered; surfaced as a parse error,
     // it is not. Both are the same unrecoverable corrupt right-sidebar chunk.
     const recover = async (makeError: () => Error): Promise<unknown> => {
-      window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+      markGuardFresh()
       const factory = vi.fn(() => Promise.reject(makeError()))
       const loaded = loadLazyWithRetry(factory, { retries: 0, reloadKey: 'right-sidebar' })
       try {

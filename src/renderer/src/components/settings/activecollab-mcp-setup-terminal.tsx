@@ -23,11 +23,15 @@ const ACTIVECOLLAB_MCP_SETUP_WORKTREE_ID = 'settings-activecollab-mcp-setup-term
 export function ActiveCollabMcpSetupTerminal({
   command,
   onProcessExit,
-  onDismiss
+  onDismiss,
+  worktreeId = ACTIVECOLLAB_MCP_SETUP_WORKTREE_ID,
+  description
 }: {
   command: string
   onProcessExit: () => void
   onDismiss: () => void
+  worktreeId?: string
+  description?: string
 }): React.JSX.Element {
   const rowClass = useIntegrationSubordinateRowClass('space-y-2')
   const [exited, setExited] = useState(false)
@@ -46,7 +50,7 @@ export function ActiveCollabMcpSetupTerminal({
       </div>
       <OnboardingInlineCommandTerminal
         command={command}
-        worktreeId={ACTIVECOLLAB_MCP_SETUP_WORKTREE_ID}
+        worktreeId={worktreeId}
         title={translate(
           'auto.components.settings.activecollab.mcp.setup_tab_title',
           'ActiveCollab MCP setup'
@@ -55,10 +59,13 @@ export function ActiveCollabMcpSetupTerminal({
           'auto.components.settings.activecollab.mcp.setup_terminal_label',
           'ActiveCollab MCP setup terminal'
         )}
-        description={translate(
-          'auto.components.settings.activecollab.mcp.setup_running',
-          'Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits.'
-        )}
+        description={
+          description ??
+          translate(
+            'auto.components.settings.activecollab.mcp.setup_running',
+            'Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits.'
+          )
+        }
         terminalHeightPx={320}
         terminalTopMarginPx={8}
         descriptionPaddingClassName="px-4 py-2"

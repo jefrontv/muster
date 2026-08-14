@@ -34,7 +34,7 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 3
+        lastCompletedStep: 4
       },
       onOnboardingChange: vi.fn()
     })
@@ -44,12 +44,13 @@ describe('OnboardingFlow', () => {
     expect(html).not.toContain('Explore Muster')
     expect(html).not.toContain('Take the tour')
     expect(html).toContain('Add your first project')
+    expect(html).toContain('Done')
     expect(html).not.toContain('Point Muster at some code')
   })
 
   it.each([
-    [3, 'Connect your sources'],
-    [4, 'Connect your sources'],
+    [3, 'How do you want to start?'],
+    [4, 'How do you want to start?'],
     [5, 'Set up notifications'],
     [9, 'Set up notifications']
   ])(
@@ -71,7 +72,7 @@ describe('OnboardingFlow', () => {
   )
 
   it.each([
-    [3, 'Connect your sources'],
+    [3, 'How do you want to start?'],
     [4, 'Set up notifications'],
     [5, 'Set up notifications'],
     [9, 'Set up notifications']
@@ -120,13 +121,13 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 3
+        lastCompletedStep: 4
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set Windows terminal defaults')
-    expect(html).toContain('4 of 5')
+    expect(html).toContain('5 of 6')
   })
 
   it('drops the skipped integrations step from the stepper on Windows', () => {
@@ -138,22 +139,23 @@ describe('OnboardingFlow', () => {
         bitbucket: { configured: true, authenticated: true, account: 'team' },
         ocsites: { detected: false }
       },
-      preflightStatusChecked: true
+      preflightStatusChecked: true,
+      activeCollabStatus: { configured: true, connection: null, reason: '' }
     })
 
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 2
+        lastCompletedStep: 3
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set Windows terminal defaults')
     // Why: integrations is skipped (gh already installed), so it is not a
-    // stepper dot at all — the four real steps are agent, theme, Windows
-    // terminal, notifications, and Windows terminal is the third of four.
-    expect(html).toContain('3 of 4')
+    // stepper dot at all — the five real steps are agent, theme, default view,
+    // Windows terminal, notifications, and Windows terminal is the fourth of five.
+    expect(html).toContain('4 of 5')
     expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Integrations')
   })
@@ -166,26 +168,45 @@ describe('OnboardingFlow', () => {
         bitbucket: { configured: true, authenticated: true, account: 'team' },
         ocsites: { detected: false }
       },
-      preflightStatusChecked: true
+      preflightStatusChecked: true,
+      activeCollabStatus: { configured: true, connection: null, reason: '' }
     })
 
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 2
+        lastCompletedStep: 3
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set up notifications')
     expect(html).toContain('Add your first project')
+    expect(html).toContain('Done')
     expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Connect your task sources')
     expect(html).not.toContain('Point Muster at some code')
     // Why: with both integrations (gh installed) and Windows terminal (Mac)
-    // skipped, the stepper shows only the three real steps — no dead dots.
-    expect(html).toContain('3 of 3')
+    // skipped, the stepper shows only the four real steps — no dead dots.
+    expect(html).toContain('4 of 4')
     expect(html).not.toContain('Integrations')
+  })
+
+  it('asks Chat Mode users to add a first workspace on the last step', () => {
+    useAppStore.setState({ activeView: 'chat' })
+
+    const html = renderOnboardingFlow({
+      onboarding: {
+        ...getDefaultOnboardingState(),
+        lastCompletedStep: 5
+      },
+      onOnboardingChange: vi.fn()
+    })
+
+    expect(html).toContain('Set up notifications')
+    expect(html).toContain('Add first workspace')
+    expect(html).toContain('Done')
+    expect(html).not.toContain('Add your first project')
   })
 
   it('shows only GitHub on the task setup page when the GitHub CLI is missing', () => {
@@ -200,17 +221,19 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 2
+        lastCompletedStep: 3
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Connect your sources')
-    expect(html).toContain('Link GitHub and Bitbucket to:')
+    expect(html).toContain('Link GitHub, Bitbucket, and ActiveCollab to:')
     expect(html).toContain('GitHub')
+    expect(html).toContain('ActiveCollab')
     expect(html).not.toContain('Linear')
     expect(html).not.toContain('Jira')
-    expect(html).toContain('GitLab, Azure DevOps, Gitea, and ActiveCollab live in Settings')
+    expect(html).not.toContain('More task sources')
+    expect(html).not.toContain('GitLab, Azure DevOps, Gitea, and ActiveCollab live in Settings')
   })
 
   it('renders onboarding inside a centered modal shell', () => {
@@ -224,7 +247,8 @@ describe('OnboardingFlow', () => {
     expect(html).toContain('data-onboarding-modal="true"')
     expect(html).toContain('h-[calc(100vh-2rem)]')
     expect(html).toContain('rounded-xl')
-    expect(html).toContain('h-7 w-auto shrink-0 invert dark:invert-0')
+    expect(html).toContain('data-onboarding-welcome="true"')
+    expect(html).toContain('Get started')
     expect(html).not.toContain('min-h-screen')
     expect(html).not.toContain('background-color:#12181e')
   })

@@ -83,6 +83,7 @@ describe('Electron runtime package contract', () => {
     const guardedScripts = [
       'start',
       'dev',
+      'dev-fresh',
       'dev-stable-name',
       'build:unpack',
       'build:win',

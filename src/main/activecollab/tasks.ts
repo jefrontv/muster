@@ -191,21 +191,35 @@ export async function listProjectTasks(args: {
   projectId: number
 }): Promise<ActiveCollabProjectTasks> {
   const tasks: ActiveCollabTask[] = []
+  const seenIds = new Set<number>()
   let taskLists: ActiveCollabTaskList[] = []
   for (let page = 1; page <= PROJECT_TASK_PAGE_LIMIT; page += 1) {
     const response = await args.http.request<unknown>(`projects/${args.projectId}/tasks`, {
       query: { page }
     })
     const rows = acCollection(response.data, 'tasks')
+    let added = 0
     for (const row of rows) {
       const task = normaliseTask(row)
       // Client-side because the server ignores a `completed` filter and returns closed tasks anyway.
-      if (task !== null && !task.isCompleted) {
-        tasks.push(task)
+      if (task === null || task.isCompleted || seenIds.has(task.id)) {
+        continue
       }
+      seenIds.add(task.id)
+      tasks.push(task)
+      added += 1
     }
     if (page === 1) {
       taskLists = normaliseTaskLists(response.data)
+    }
+    // Why: some instances ignore `page` on this endpoint (same class of bug as /users) and
+    // reprint page 1. Headers still claim more pages, so without this we staple the same
+    // 100 rows until PROJECT_TASK_PAGE_LIMIT and the project view shows each task N times.
+    if (page > 1 && added === 0) {
+      break
+    }
+    if (response.page !== null && response.page > 0 && response.page < page) {
+      break
     }
     if (!hasMorePages(response, page, rows.length)) {
       break

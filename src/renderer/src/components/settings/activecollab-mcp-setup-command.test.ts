@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildActiveCollabMcpSetupCommand } from './activecollab-mcp-setup-command'
+import { ACTIVECOLLAB_MCP_INSTALL_COMMAND } from '../../../../shared/activecollab-mcp-types'
+import {
+  buildActiveCollabMcpGuidedCommand,
+  buildActiveCollabMcpPipxInstallCommand,
+  buildActiveCollabMcpSetupCommand
+} from './activecollab-mcp-setup-command'
 
 const PIPX_PATH = '/Users/tester/.local/bin/activecollab-mcp'
 
@@ -84,6 +89,24 @@ describe('buildActiveCollabMcpSetupCommand', () => {
   it('has no command when the binary was not detected', () => {
     expect(buildActiveCollabMcpSetupCommand({ binaryPath: null, platform: 'darwin' })).toBeNull()
     expect(buildActiveCollabMcpSetupCommand({ binaryPath: '   ', platform: 'darwin' })).toBeNull()
+  })
+
+  it('falls back to pipx install when guided setup has no binary yet', () => {
+    expect(buildActiveCollabMcpGuidedCommand({ binaryPath: null, platform: 'darwin' })).toBe(
+      `${ACTIVECOLLAB_MCP_INSTALL_COMMAND}; exit`
+    )
+    expect(
+      buildActiveCollabMcpPipxInstallCommand({
+        platform: 'win32',
+        windowsShell: 'cmd.exe'
+      })
+    ).toBe(`${ACTIVECOLLAB_MCP_INSTALL_COMMAND} & exit`)
+  })
+
+  it('uses the detected binary for guided setup once it exists', () => {
+    expect(buildActiveCollabMcpGuidedCommand({ binaryPath: PIPX_PATH, platform: 'darwin' })).toBe(
+      `'${PIPX_PATH}' setup; exit`
+    )
   })
 
   it('refuses a path with a line break, which would submit a truncated command', () => {

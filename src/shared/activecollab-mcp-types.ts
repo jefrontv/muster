@@ -11,6 +11,9 @@ import type { SiteResult } from './site-types'
 /** The key Muster owns inside every agent config. Nothing else under mcpServers is ours to touch. */
 export const ACTIVECOLLAB_MCP_SERVER_KEY = 'activecollab'
 
+/** The documented install route. Published on PyPI — no Bitbucket SSH key required. */
+export const ACTIVECOLLAB_MCP_INSTALL_COMMAND = 'pipx install activecollab-mcp'
+
 /** The daemon's loopback endpoint. HTTP clients hold an inert entry until it is running. */
 export const ACTIVECOLLAB_MCP_HTTP_URL = 'http://127.0.0.1:8787/mcp'
 

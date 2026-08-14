@@ -2,7 +2,7 @@ import React from 'react'
 import { AlertTriangle, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { isLazyChunkLoadError } from '@/lib/lazy-with-retry'
+import { clearLazyChunkReloadGuard, isLazyChunkLoadError } from '@/lib/lazy-with-retry'
 import { reportReactErrorBoundaryCrash } from '@/lib/react-error-boundary-reporting'
 import type { ReactErrorBoundaryReportArgs } from '../../../../shared/crash-reporting'
 import { translate } from '@/i18n/i18n'
@@ -61,6 +61,14 @@ export class RecoverableRenderErrorBoundary extends React.Component<Props, State
   }
 
   handleReset = (): void => {
+    if (isLazyChunkLoadError(this.state.error)) {
+      // Why: React.lazy caches the rejected import. Remounting retries the same
+      // dead module map entry. Clear the Electron-persisted reload guard and
+      // hard-reload so Vite can serve fresh optimized deps.
+      clearLazyChunkReloadGuard()
+      window.location.reload()
+      return
+    }
     this.setState({ error: null })
   }
 

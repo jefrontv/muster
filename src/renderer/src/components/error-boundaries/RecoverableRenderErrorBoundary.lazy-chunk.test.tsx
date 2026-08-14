@@ -4,7 +4,7 @@ import { Suspense, act, type ReactElement, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { lazyWithRetry } from '@/lib/lazy-with-retry'
+import { LAZY_CHUNK_RELOAD_GUARD_KEY, lazyWithRetry } from '@/lib/lazy-with-retry'
 import { RecoverableRenderErrorBoundary } from './RecoverableRenderErrorBoundary'
 
 const reportCrashMock = vi.hoisted(() => vi.fn())
@@ -13,7 +13,7 @@ vi.mock('@/lib/react-error-boundary-reporting', () => ({
   reportReactErrorBoundaryCrash: reportCrashMock
 }))
 
-const RELOAD_GUARD_KEY = 'orca:lazy-chunk-reload-attempted'
+const RELOAD_GUARD_KEY = LAZY_CHUNK_RELOAD_GUARD_KEY
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -57,10 +57,11 @@ describe('RecoverableRenderErrorBoundary lazy chunk containment', () => {
     container = null
     window.sessionStorage.clear()
     consoleError.mockRestore()
+    vi.restoreAllMocks()
   })
 
   it('renders the fallback without reporting after guarded dynamic import exhaustion', async () => {
-    window.sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+    window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(Date.now()))
     const LazyRejectingImport = lazyWithRetry(
       () =>
         Promise.reject(
@@ -82,6 +83,41 @@ describe('RecoverableRenderErrorBoundary lazy chunk containment', () => {
 
     expect(container?.querySelector('[role="alert"]')).not.toBeNull()
     expect(reportCrashMock).not.toHaveBeenCalled()
+  })
+
+  it('hard-reloads on Retry for an exhausted lazy chunk instead of remounting the dead import', async () => {
+    const reload = vi.fn()
+    vi.spyOn(window.location, 'reload').mockImplementation(reload)
+    window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(Date.now()))
+    const LazyRejectingImport = lazyWithRetry(
+      () =>
+        Promise.reject(
+          new TypeError('Failed to fetch dynamically imported module: file://redacted/chunk.js')
+        ),
+      { retries: 0 }
+    )
+    ;({ container, root } = createContainer())
+
+    await act(async () => {
+      root?.render(
+        <BoundaryHarness>
+          <LazyRejectingImport />
+        </BoundaryHarness>
+      )
+    })
+    await flushReactWork()
+    await flushReactWork()
+
+    const retry = [...(container?.querySelectorAll('button') ?? [])].find((button) =>
+      /Retry/i.test(button.textContent ?? '')
+    )
+    expect(retry).toBeDefined()
+    await act(async () => {
+      retry?.click()
+    })
+
+    expect(reload).toHaveBeenCalledTimes(1)
+    expect(window.sessionStorage.getItem(RELOAD_GUARD_KEY)).toBeNull()
   })
 
   it('still reports ordinary render errors', async () => {
