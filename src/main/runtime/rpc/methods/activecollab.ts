@@ -72,25 +72,28 @@ const ProjectRef = z.object({
   projectId: requiredNumber('Project id is required')
 })
 
+const TaskFields = z.object({
+  name: OptionalString,
+  // Plain, not OptionalString: an empty body is a legitimate "clear the description".
+  bodyHtml: OptionalPlainString,
+  assigneeId: z.union([z.number(), z.null()]).optional(),
+  startOn: z.union([z.number(), z.null()]).optional(),
+  dueOn: z.union([z.number(), z.null()]).optional(),
+  // Full replacement set — the API overwrites a task's labels rather than merging.
+  labelNames: z.array(z.string()).optional()
+})
+
 const TaskCreate = z.object({
   projectId: requiredNumber('Project id is required'),
-  name: requiredString('Task name is required'),
-  taskListId: z.union([z.number(), z.null()])
+  taskListId: z.union([z.number(), z.null()]),
+  // name-required is enforced by the shared operation, so CLI and renderer hit one rule.
+  update: TaskFields
 })
 
 const TaskUpdate = z.object({
   projectId: requiredNumber('Project id is required'),
   taskId: requiredNumber('Task id is required'),
-  update: z.object({
-    name: OptionalString,
-    // Plain, not OptionalString: an empty body is a legitimate "clear the description".
-    bodyHtml: OptionalPlainString,
-    assigneeId: z.union([z.number(), z.null()]).optional(),
-    startOn: z.union([z.number(), z.null()]).optional(),
-    dueOn: z.union([z.number(), z.null()]).optional(),
-    // Full replacement set — the API overwrites a task's labels rather than merging.
-    labelNames: z.array(z.string()).optional()
-  })
+  update: TaskFields
 })
 
 // No upload method twin: `activecollab:uploadCommentAttachments` reads paths off the disk of the

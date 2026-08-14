@@ -28,7 +28,6 @@ import {
   boundedTextList,
   InvalidRequestError,
   MAX_BODY,
-  MAX_NAME,
   MAX_UPLOAD_CODE,
   positiveId,
   record,
@@ -41,9 +40,10 @@ export function acCreateTask(args: unknown): Promise<ActiveCollabResult<ActiveCo
   return guard(async () => {
     const input = record(args)
     const projectId = positiveId(input.projectId, 'projectId')
-    const name = boundedText(input.name, 'name', MAX_NAME).trim()
-    if (name === '') {
-      throw new InvalidRequestError('name is required.')
+    // Same field validation as an edit; only the name-required rule is create's own.
+    const fields = taskUpdate(input.update)
+    if ((fields.name ?? '').trim() === '') {
+      throw new InvalidRequestError('update.name is required.')
     }
     const taskListId =
       input.taskListId === undefined || input.taskListId === null
@@ -51,7 +51,7 @@ export function acCreateTask(args: unknown): Promise<ActiveCollabResult<ActiveCo
         : positiveId(input.taskListId, 'taskListId')
     const { http, names } = acClient()
     const directory = names()
-    const task = await createTask({ http, projectId, name, taskListId })
+    const task = await createTask({ http, projectId, taskListId, fields })
     await acResolveTaskNames(directory, [task])
     // Own write: should the creator also be the assignee on this instance, the next poll must
     // not announce the user's own new task back at them.

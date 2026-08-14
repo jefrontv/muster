@@ -151,17 +151,17 @@ function updatePayload(update: ActiveCollabTaskUpdate): Row {
 }
 
 /**
- * Creates one task in a project, optionally under a task list. Deliberately minimal — name and
- * placement — because the quick-add composer is for capturing a task, not authoring one; every
- * other field is a normal edit on the echoed row.
+ * Creates one task in a project, optionally under a task list. `fields` rides the same
+ * serialisation as an edit (dates as local calendar days, labels as bare names), so create and
+ * update cannot drift; the caller guarantees `fields.name` is present.
  */
 export async function createTask(args: {
   http: AcHttpClient
   projectId: number
-  name: string
   taskListId: number | null
+  fields: ActiveCollabTaskUpdate
 }): Promise<ActiveCollabTask | null> {
-  const body: Row = { name: args.name }
+  const body = updatePayload(args.fields)
   // Omitted, not null: the "Other tasks" group has no list, and the server files a listless
   // create under the project's default list on its own.
   if (args.taskListId !== null) {

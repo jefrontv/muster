@@ -385,8 +385,8 @@ describe('createTask', () => {
     const task = await createTask({
       http: http.client,
       projectId: 3790,
-      name: 'Write the brief',
-      taskListId: 55
+      taskListId: 55,
+      fields: { name: 'Write the brief' }
     })
 
     expect(http.calls).toEqual([
@@ -399,12 +399,50 @@ describe('createTask', () => {
     expect(task?.taskListId).toBe(55)
   })
 
+  it('serialises the full field set like an edit', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks': {
+        data: { single: { id: 993, project_id: 3790, name: 'Configured' } }
+      }
+    })
+
+    await withTimeZone('Australia/Sydney', () =>
+      createTask({
+        http: http.client,
+        projectId: 3790,
+        taskListId: 55,
+        fields: {
+          name: 'Configured',
+          bodyHtml: '<p>Details</p>',
+          assigneeId: 42,
+          // Local midnight on 2026-08-21 in Sydney, still the 20th in UTC.
+          dueOn: Date.parse('2026-08-20T14:00:00Z'),
+          labelNames: ['Blocked']
+        }
+      })
+    )
+
+    expect(http.calls[0]?.options?.body).toEqual({
+      name: 'Configured',
+      body: '<p>Details</p>',
+      assignee_id: 42,
+      due_on: '2026-08-21',
+      labels: ['Blocked'],
+      task_list_id: 55
+    })
+  })
+
   it('omits task_list_id entirely for a listless create', async () => {
     const http = stubHttp({
       'projects/3790/tasks': { data: { single: { id: 992, project_id: 3790, name: 'Loose end' } } }
     })
 
-    await createTask({ http: http.client, projectId: 3790, name: 'Loose end', taskListId: null })
+    await createTask({
+      http: http.client,
+      projectId: 3790,
+      taskListId: null,
+      fields: { name: 'Loose end' }
+    })
 
     expect(http.calls[0]?.options?.body).toEqual({ name: 'Loose end' })
   })
@@ -413,7 +451,7 @@ describe('createTask', () => {
     const http = stubHttp({ 'projects/3790/tasks': { data: { single: { no: 'id' } } } })
 
     await expect(
-      createTask({ http: http.client, projectId: 3790, name: 'X', taskListId: null })
+      createTask({ http: http.client, projectId: 3790, taskListId: null, fields: { name: 'X' } })
     ).resolves.toBeNull()
   })
 })
