@@ -3,7 +3,22 @@
 // It deliberately sends nothing; the opening message is the user's to write.
 
 import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
+import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { useAppStore } from '@/store'
+
+/** The workspace a task's discussion lands in, if any is bound to the task's project. */
+export function findChatWorkspaceForProject(
+  workspaces: readonly ChatWorkspace[],
+  projectId: number
+): ChatWorkspace | null {
+  return (
+    workspaces.find(
+      (w) =>
+        w.activeCollabProject?.id === projectId ||
+        w.activeCollabProjects?.some((project) => project.id === projectId)
+    ) ?? null
+  )
+}
 
 /**
  * Opens a chat thread for a task with the task attached, and sends nothing.
@@ -15,12 +30,7 @@ import { useAppStore } from '@/store'
  */
 export async function discussTaskInChat(task: ActiveCollabTask): Promise<void> {
   const store = useAppStore.getState()
-  const workspace =
-    store.chatWorkspaces.find(
-      (w) =>
-        w.activeCollabProject?.id === task.projectId ||
-        w.activeCollabProjects?.some((project) => project.id === task.projectId)
-    ) ?? null
+  const workspace = findChatWorkspaceForProject(store.chatWorkspaces, task.projectId)
   const thread = await store.createChatThread(workspace?.id ?? null, task.name)
   if (!thread) {
     return

@@ -228,17 +228,17 @@ export function ChatThreadView({
 
   // A task-linked thread lands with the task already on the composer, so the user's own first
   // message carries the AC# reference. Seeded per tab because the pane id does not exist yet.
+  // Must run during render, not in an effect: the composer claims the seed in its useState
+  // initializer while this render's children mount — an effect fires after that and the chip
+  // would wait for a remount.
   const linkedTask = thread.activeCollabTask
   const seededTaskRef = useRef('')
-  useEffect(() => {
-    if (!session || !linkedTask || seededTaskRef.current === session.tabId) {
-      return
-    }
+  if (session && linkedTask && seededTaskRef.current !== session.tabId) {
     seededTaskRef.current = session.tabId
     seedTaskAttachmentsForTab(session.tabId, [
       { taskId: linkedTask.taskId, projectId: linkedTask.projectId, name: thread.title }
     ])
-  }, [session, linkedTask, thread.title])
+  }
 
   // Draft-first landing: the hero stores the thread's opening prompt, delivered
   // here exactly once as soon as the stream session is up.

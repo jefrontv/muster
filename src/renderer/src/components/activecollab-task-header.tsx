@@ -9,7 +9,11 @@ import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
 import { activeCollabStamp } from './activecollab-task-timestamps'
 import { useActiveCollabStartWork } from './use-activecollab-start-work'
-import { discussTaskInChat } from './chat-mode/chat-thread-task-discussion'
+import {
+  discussTaskInChat,
+  findChatWorkspaceForProject
+} from './chat-mode/chat-thread-task-discussion'
+import { useAppStore } from '@/store'
 import { ACTIVECOLLAB_SITE_BINDING_UI_ENABLED } from '@/lib/activecollab-site-binding-visibility'
 
 // A drawn dot rather than a typed middot: the identity line is decoration between localized
@@ -48,6 +52,16 @@ export function ActiveCollabTaskHeader({
     ? translate('auto.components.activecollab.task_workspace.reopen', 'Reopen task')
     : translate('auto.components.activecollab.task_workspace.complete', 'Complete task')
   const { binding, startWork } = useActiveCollabStartWork(task.projectId)
+  // When a chat workspace owns this task's project, the discussion lands there — say so.
+  const discussWorkspace = useAppStore((s) =>
+    findChatWorkspaceForProject(s.chatWorkspaces, task.projectId)
+  )
+  const discussLabel = discussWorkspace
+    ? translate(
+        'auto.components.activecollab.task_workspace.discuss_workspace',
+        'Discuss in workspace'
+      )
+    : translate('auto.components.activecollab.task_workspace.discuss', 'Discuss in chat')
   const canStartWork = binding.kind === 'ready' || binding.kind === 'needs-repo'
   // Hidden, not disabled: a permanently greyed button with no way to enable it is worse than no
   // button at all while the binding UI is off.
@@ -177,18 +191,13 @@ export function ActiveCollabTaskHeader({
                 variant="ghost"
                 size="icon-xs"
                 className="-mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
-                aria-label={translate(
-                  'auto.components.activecollab.task_workspace.discuss',
-                  'Discuss in chat'
-                )}
+                aria-label={discussLabel}
                 onClick={() => void discussTaskInChat(task)}
               >
                 <MessageSquarePlus className="size-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {translate('auto.components.activecollab.task_workspace.discuss', 'Discuss in chat')}
-            </TooltipContent>
+            <TooltipContent side="bottom">{discussLabel}</TooltipContent>
           </Tooltip>
           {onClose ? (
             <Tooltip>
