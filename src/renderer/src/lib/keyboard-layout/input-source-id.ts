@@ -40,7 +40,12 @@
  */
 const META_INPUT_SOURCE_IDS: readonly string[] = [
   'com.apple.keylayout.us',
-  'com.apple.keylayout.usinternational-pc'
+  'com.apple.keylayout.usinternational-pc',
+  // Deliberate deviation from Ghostty's list: Apple's Australian layout is the
+  // US layout under another ID (identical base, shift, and Option layers), so
+  // Option-as-Meta carries exactly the US trade-off and no more. Without it the
+  // (Australian) team lands on 'compose' and Alt-chords in CLI agents type π/∂/….
+  'com.apple.keylayout.australian'
 ]
 
 export type InputSourceOverride =

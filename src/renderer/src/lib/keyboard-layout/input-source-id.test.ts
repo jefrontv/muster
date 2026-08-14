@@ -16,6 +16,10 @@ describe('classifyInputSourceId', () => {
     expect(classifyInputSourceId('com.apple.keylayout.USInternational-PC')).toBe('meta')
   })
 
+  it('allowlists Australian as meta (US layout under another ID)', () => {
+    expect(classifyInputSourceId('com.apple.keylayout.Australian')).toBe('meta')
+  })
+
   it('is case-insensitive on the allowlist (defaults differ between macOS versions)', () => {
     expect(classifyInputSourceId('COM.APPLE.KEYLAYOUT.US')).toBe('meta')
     expect(classifyInputSourceId('com.apple.keylayout.us')).toBe('meta')
