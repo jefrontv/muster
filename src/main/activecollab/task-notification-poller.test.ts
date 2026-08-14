@@ -77,6 +77,7 @@ let saveSnapshot = vi.fn<(key: string, snapshot: AcTaskSnapshot) => void>()
 let storedUnread: AcTaskUnread = {}
 let saveUnread = vi.fn<(key: string, unread: AcTaskUnread) => void>()
 let unreadSignals: AcTaskUnread[] = []
+let authFailures = 0
 
 function poller(): AcTaskPoller {
   return createAcTaskPoller({
@@ -99,6 +100,9 @@ function poller(): AcTaskPoller {
         cancelCount += 1
         pending = null
       }
+    },
+    onAuthFailure: () => {
+      authFailures += 1
     }
   })
 }
@@ -118,6 +122,7 @@ beforeEach(() => {
   cancelCount = 0
   stored = null
   emitted = []
+  authFailures = 0
   snapshotKey = KEY
   pollIntervalMs = undefined
   enabled = ['assigned', 'comments', 'due', 'updated']
@@ -413,6 +418,45 @@ describe('a fetch that did not work', () => {
     expect(saveSnapshot).not.toHaveBeenCalled()
     expect(emitted).toEqual([])
   })
+
+  it('stops the loop and reports once when the token is rejected', async () => {
+    fetchPage.mockResolvedValue({ ok: false, kind: 'auth', error: 'Invalid token', status: 401 })
+    const p = poller()
+    p.start()
+    pending?.run()
+    // The fired timer object is stale from here; only a re-arm would repopulate it.
+    pending = null
+    await vi.waitFor(() => expect(authFailures).toBe(1))
+    // Let tick's post-poll scheduling turn run before asserting it did nothing.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // Stopped, not backing off: no timer was re-armed against the dead credential.
+    expect(pending).toBeNull()
+    expect(saveSnapshot).not.toHaveBeenCalled()
+    expect(emitted).toEqual([])
+  })
+
+  it('a non-auth failure keeps the loop alive and never calls onAuthFailure', async () => {
+    fetchPage.mockResolvedValue(FETCH_FAILED)
+    const p = poller()
+    p.start()
+    pending?.run()
+    await vi.waitFor(() => expect(pending).not.toBeNull())
+
+    expect(authFailures).toBe(0)
+  })
+
+  it('reschedules even when the poll itself rejects, so one fault cannot end the loop', async () => {
+    fetchPage.mockResolvedValue(page([acTask({ id: 1 })]))
+    saveSnapshot.mockImplementation(() => {
+      throw new Error('disk full')
+    })
+    const p = poller()
+    p.start()
+    pending?.run()
+
+    await vi.waitFor(() => expect(pending).not.toBeNull())
+  })
 })
 
 describe('acFetchAssignedTasks', () => {
@@ -423,17 +467,87 @@ describe('acFetchAssignedTasks', () => {
         requested < 3 ? page([acTask({ id: requested })], true) : page([acTask({ id: 3 })])
       )
 
-    expect(await acFetchAssignedTasks(fetch)).toHaveLength(3)
+    expect(await acFetchAssignedTasks(fetch)).toEqual({
+      ok: true,
+      tasks: [acTask({ id: 1 }), acTask({ id: 2 }), acTask({ id: 3 })]
+    })
     expect(fetch).toHaveBeenCalledTimes(3)
   })
 
   it('refuses a list longer than the cap rather than diffing a truncated one', async () => {
     const fetch = vi
       .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
-      .mockResolvedValue(page([acTask({ id: 1 })], true))
+      .mockImplementation(async (requested) =>
+        // Distinct ids per page, or the dedupe guard would (correctly) end paging early.
+        page([acTask({ id: requested })], true)
+      )
 
-    expect(await acFetchAssignedTasks(fetch)).toBeNull()
+    expect(await acFetchAssignedTasks(fetch)).toEqual({ ok: false, auth: false })
     expect(fetch).toHaveBeenCalledTimes(AC_POLL_MAX_PAGES)
+  })
+
+  it('ends paging when a follow-up page reprints rows already seen (page-echo bug)', async () => {
+    // Models the instances that ignore `page` and answer page 1 forever while the headers
+    // still claim more pages exist.
+    const fetch = vi
+      .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
+      .mockResolvedValue(page([acTask({ id: 1 }), acTask({ id: 2 })], true))
+
+    expect(await acFetchAssignedTasks(fetch)).toEqual({
+      ok: true,
+      tasks: [acTask({ id: 1 }), acTask({ id: 2 })]
+    })
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('ends paging when the server echoes a smaller page number than was asked for', async () => {
+    const fetch = vi
+      .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
+      .mockImplementation(async (requested) => ({
+        ok: true,
+        value: {
+          tasks: [acTask({ id: requested === 1 ? 1 : 100 + requested })],
+          totalItems: null,
+          hasMore: true,
+          page: 1
+        }
+      }))
+
+    const fetched = await acFetchAssignedTasks(fetch)
+
+    expect(fetched.ok).toBe(true)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('de-duplicates a task that appears on two pages of one fetch', async () => {
+    const fetch = vi
+      .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
+      .mockImplementation(async (requested) =>
+        requested === 1
+          ? page([acTask({ id: 1 }), acTask({ id: 2 })], true)
+          : page([acTask({ id: 2 }), acTask({ id: 3 })])
+      )
+
+    expect(await acFetchAssignedTasks(fetch)).toEqual({
+      ok: true,
+      tasks: [acTask({ id: 1 }), acTask({ id: 2 }), acTask({ id: 3 })]
+    })
+  })
+
+  it('tags a rejected token as an auth failure', async () => {
+    const fetch = vi
+      .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
+      .mockResolvedValue({ ok: false, kind: 'auth', error: 'Invalid token', status: 401 })
+
+    expect(await acFetchAssignedTasks(fetch)).toEqual({ ok: false, auth: true })
+  })
+
+  it('turns a rejected fetch promise into a plain failure instead of throwing', async () => {
+    const fetch = vi
+      .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
+      .mockRejectedValue(new Error('socket hang up'))
+
+    expect(await acFetchAssignedTasks(fetch)).toEqual({ ok: false, auth: false })
   })
 })
 

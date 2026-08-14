@@ -159,7 +159,8 @@ export async function listAssignedTasks(args: {
   return {
     tasks,
     totalItems: response.totalItems,
-    hasMore: hasMorePages(response, page, rows.length)
+    hasMore: hasMorePages(response, page, rows.length),
+    page: response.page
   }
 }
 

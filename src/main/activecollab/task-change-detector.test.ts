@@ -271,14 +271,49 @@ describe('due state', () => {
 })
 
 describe('tasks that leave the list', () => {
-  it('drops them from the snapshot and reports nothing', () => {
+  it('retains a first absence for one poll of grace, reporting nothing', () => {
     const staying = acTask({ id: 1 })
     const previous = snapshotOf([staying, acTask({ id: 2, commentCount: 3 })])
 
     const { changes, snapshot } = acDiffTaskSnapshot({ previous, tasks: [staying], now: NOW })
 
     expect(changes).toEqual([])
-    expect(Object.keys(snapshot)).toEqual(['1'])
+    expect(Object.keys(snapshot).sort()).toEqual(['1', '2'])
+    expect(snapshot['2']?.missedPolls).toBe(1)
+  })
+
+  it('drops a task absent twice in a row, still reporting nothing', () => {
+    const staying = acTask({ id: 1 })
+    const first = acDiffTaskSnapshot({
+      previous: snapshotOf([staying, acTask({ id: 2, commentCount: 3 })]),
+      tasks: [staying],
+      now: NOW
+    })
+
+    const second = acDiffTaskSnapshot({ previous: first.snapshot, tasks: [staying], now: NOW })
+
+    expect(second.changes).toEqual([])
+    expect(Object.keys(second.snapshot)).toEqual(['1'])
+  })
+
+  it('does not re-announce a task that reappears within the grace poll', () => {
+    const staying = acTask({ id: 1 })
+    const shifting = acTask({ id: 2, commentCount: 3 })
+    const missedOnce = acDiffTaskSnapshot({
+      previous: snapshotOf([staying, shifting]),
+      tasks: [staying],
+      now: NOW
+    })
+
+    const reappeared = acDiffTaskSnapshot({
+      previous: missedOnce.snapshot,
+      tasks: [staying, shifting],
+      now: NOW
+    })
+
+    expect(reappeared.changes).toEqual([])
+    // The rebuilt entry has no missedPolls marker: a fresh absence starts a fresh grace poll.
+    expect(reappeared.snapshot['2']?.missedPolls).toBeUndefined()
   })
 })
 

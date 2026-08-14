@@ -160,6 +160,15 @@ export function startAcTaskNotifications(args: {
         () => undefined
       )
     },
+    onAuthFailure: () => {
+      // The poller has already stopped itself; without this the outage is silent until the user
+      // happens to open the Tasks page. One banner; reconnecting re-arms via refresh().
+      void dispatchMainProcessNotification({
+        source: 'activecollab-auth',
+        dedupeKey: 'activecollab:auth',
+        notificationId: 'activecollab:auth'
+      }).catch(() => undefined)
+    },
     schedule: (delayMs, run) => {
       const timer = setTimeout(run, delayMs)
       return () => clearTimeout(timer)

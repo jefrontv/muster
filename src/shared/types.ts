@@ -3119,6 +3119,9 @@ export type NotificationEventSource =
   | 'activecollab-comments'
   | 'activecollab-due'
   | 'activecollab-updated'
+  /** The stored ActiveCollab token was rejected and polling stopped; gated only by the master
+   *  notifications switch — an integration-health alert, not a task banner. */
+  | 'activecollab-auth'
   | 'test'
 
 export type NotificationDispatchRequest = {

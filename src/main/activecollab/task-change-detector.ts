@@ -19,6 +19,8 @@
 //   - Due escalation fires once per bucket. A bucket moving BACKWARDS (the date was pushed out)
 //     re-arms the recorded bucket so a later re-approach fires again.
 //   - Tasks absent from the fetch are dropped, never reported: they were completed or reassigned.
+//     Dropping waits out ONE poll of grace first (see `missedPolls`), because pagination shift can
+//     hide a task from a single fetch and an immediate drop re-announces it as new.
 //
 // Two rules live outside this function because neither is a diff. A FAILED fetch must never reach
 // it — diffing an empty result reports every task as gone and re-announces them all on recovery
@@ -39,6 +41,12 @@ export type AcTaskSnapshotEntry = {
   notifiedDueBucket: AcDueBucket
   /** null means "unknown": the next poll adopts the server's value without reporting an edit. */
   updatedOn: number | null
+  /**
+   * Set while the task is absent from a fetch it should have been in. Pagination shift can hide
+   * a task from one multi-page fetch (pages are read moments apart); dropping it immediately
+   * re-announces it as a brand-new assignment when it reappears. Absent twice in a row = gone.
+   */
+  missedPolls?: number
 }
 
 /** Keyed by task id as a string, because that is what survives a JSON round trip. */
@@ -116,6 +124,21 @@ export function acDiffTaskSnapshot(args: {
       notifiedDueBucket,
       // A row with no `updated_on` keeps whatever was known; only the server can raise it.
       updatedOn: task.updatedOn ?? state.updatedOn
+    }
+  }
+
+  // GRACE, ONE POLL WIDE: a known task absent from this fetch is retained once before it is
+  // dropped. Pages of a multi-page fetch are read moments apart, so a task that shifts pages
+  // mid-read is absent from a fetch that is otherwise complete; dropping it now would announce
+  // it as a new assignment on the very next poll. Reappearance rejoins the loop above (which
+  // clears the marker by rebuilding the entry); a second consecutive absence is a real removal
+  // — completed or reassigned — and stays unreported, as removals always were.
+  if (previous !== null) {
+    for (const [key, state] of Object.entries(previous)) {
+      if (snapshot[key] !== undefined || (state.missedPolls ?? 0) >= 1) {
+        continue
+      }
+      snapshot[key] = { ...state, missedPolls: (state.missedPolls ?? 0) + 1 }
     }
   }
 

@@ -77,6 +77,12 @@ export type AcTaskPollerDeps = {
   onUnread: (unread: AcTaskUnread) => void
   /** Schedules `run` once, and answers with its cancel. Injected so tests own the clock. */
   schedule: (delayMs: number, run: () => void) => () => void
+  /**
+   * Told once when the instance rejects the stored token. The poller stops itself first —
+   * backing off against a dead credential is retrying a request that can never succeed — and
+   * `refresh()` after a reconnect is what re-arms it.
+   */
+  onAuthFailure?: () => void
 }
 
 export type AcTaskPoller = {
@@ -92,25 +98,56 @@ export type AcTaskPoller = {
   poll: () => Promise<void>
 }
 
-/**
- * Every open assigned task, or null. Null is "this fetch is not usable" — a failed page, or more
- * pages than the cap allows — and the caller must leave the snapshot exactly as it found it.
- */
+export type AcAssignedTasksFetch =
+  | { ok: true; tasks: ActiveCollabTask[] }
+  /** "This fetch is not usable" — a failed page, a rejected fetch, or more pages than the cap
+   *  allows — and the caller must leave the snapshot exactly as it found it. `auth` marks the
+   *  one failure retrying can never fix: the instance rejected the stored token. */
+  | { ok: false; auth: boolean }
+
+/** Every open assigned task, de-duplicated by id, or a tagged failure. */
 export async function acFetchAssignedTasks(
   fetchPage: AcTaskPollerDeps['fetchPage']
-): Promise<ActiveCollabTask[] | null> {
+): Promise<AcAssignedTasksFetch> {
   const tasks: ActiveCollabTask[] = []
+  const seenIds = new Set<number>()
   for (let page = 1; page <= AC_POLL_MAX_PAGES; page += 1) {
-    const result = await fetchPage(page)
-    if (!result.ok) {
-      return null
+    let result: ActiveCollabResult<ActiveCollabTaskPage>
+    try {
+      result = await fetchPage(page)
+    } catch {
+      // A rejected fetch is a failed fetch; it must not escape and end the caller's loop.
+      return { ok: false, auth: false }
     }
-    tasks.push(...result.value.tasks)
+    if (!result.ok) {
+      return { ok: false, auth: result.kind === 'auth' }
+    }
+    let added = 0
+    for (const task of result.value.tasks) {
+      if (seenIds.has(task.id)) {
+        continue
+      }
+      seenIds.add(task.id)
+      tasks.push(task)
+      added += 1
+    }
+    // Some instances ignore `page` on this endpoint and reprint page 1 while the headers still
+    // claim more pages (the same class of bug listProjectTasks guards against). Either signal —
+    // the server echoing a smaller page than asked, or a follow-up page adding nothing new —
+    // means paging is DONE, not that the fetch failed; without these guards such an instance
+    // returns a permanent failure for anyone holding more than one page of tasks.
+    const echoedPage = result.value.page
+    if (
+      page > 1 &&
+      (added === 0 || (typeof echoedPage === 'number' && echoedPage > 0 && echoedPage < page))
+    ) {
+      return { ok: true, tasks }
+    }
     if (!result.value.hasMore) {
-      return tasks
+      return { ok: true, tasks }
     }
   }
-  return null
+  return { ok: false, auth: false }
 }
 
 export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
@@ -165,21 +202,28 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
     }
     inFlight = true
     try {
-      const tasks = await acFetchAssignedTasks(deps.fetchPage)
-      if (tasks === null) {
+      const fetched = await acFetchAssignedTasks(deps.fetchPage)
+      if (!fetched.ok) {
+        if (fetched.auth) {
+          // A rejected token cannot heal by retrying: stop instead of backing off, and say so
+          // once. refresh() after a successful reconnect re-arms the loop.
+          stop()
+          deps.onAuthFailure?.()
+          return
+        }
         failures += 1
         return
       }
       failures = 0
       const { changes, snapshot } = acDiffTaskSnapshot({
         previous: deps.loadSnapshot(key),
-        tasks,
+        tasks: fetched.tasks,
         now: deps.now()
       })
       deps.saveSnapshot(key, snapshot)
       // Snapshot first: saving counts cannot create the file, so the seeding poll has to.
       const previousUnread = deps.loadUnread(key)
-      const unread = acMergeTaskUnread({ unread: previousUnread, changes, tasks })
+      const unread = acMergeTaskUnread({ unread: previousUnread, changes, tasks: fetched.tasks })
       if (unread !== previousUnread) {
         deps.saveUnread(key, unread)
         deps.onUnread(unread)
@@ -198,10 +242,14 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
   function tick(): void {
     cancelTimer = null
     const startedAt = deps.now()
-    void poll().then(() => {
-      const interval = clampActiveCollabPollIntervalMs(deps.intervalMs())
-      scheduleNext(delayFor(interval, startedAt), interval)
-    })
+    // catch before then, not a bare then: a poll that rejects (a disk write, an unexpected
+    // fault) must not end the loop — the next tick IS the recovery path.
+    void poll()
+      .catch(() => undefined)
+      .then(() => {
+        const interval = clampActiveCollabPollIntervalMs(deps.intervalMs())
+        scheduleNext(delayFor(interval, startedAt), interval)
+      })
   }
 
   return {

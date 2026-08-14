@@ -249,19 +249,25 @@ function acRetryAfterMs(response: Response, now: () => number): number | null {
   return delta > 0 ? Math.min(delta, AC_MAX_RETRY_AFTER_MS) : null
 }
 
+/** Per-attempt ceiling on JSON calls with no caller signal: a hung socket must fail the REQUEST,
+ *  not the caller's loop — the notification poller's `inFlight` latch made one unsettled fetch
+ *  stop polling for the session. Binary paths are exempt; attachments may stream longer. */
+export const AC_REQUEST_TIMEOUT_MS = 30_000
+
 async function acFetchOnce(
   fetchImpl: AcFetch,
   url: string,
   init: RequestInit,
-  token: string | null
+  token: string | null,
+  /** The CALLER's signal, distinct from any per-attempt timeout signal riding in `init`. */
+  callerSignal?: AbortSignal | null
 ): Promise<Response> {
   try {
     return await fetchImpl(url, init)
   } catch (error) {
-    // Why: an abort is the caller's own cancellation and must not be dressed up
-    // as a server fault; anything else can carry the request URL — and with it
-    // the token — into its message.
-    if (init.signal?.aborted) {
+    // Why: an abort is the caller's own cancellation and must not be dressed up as a server
+    // fault; anything else — a timeout abort included — can carry the URL and token in its message.
+    if (callerSignal?.aborted) {
       throw error
     }
     const message = error instanceof Error ? error.message : String(error)
@@ -325,7 +331,11 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
     let attempt = 0
     let retryAfterSpentMs = 0
     for (;;) {
-      const response = await acFetchOnce(fetchImpl, url, init, token)
+      // Fresh timeout per attempt: a retry must get its own budget, not the dregs of the last one.
+      const attemptInit = options.signal
+        ? init
+        : { ...init, signal: AbortSignal.timeout(AC_REQUEST_TIMEOUT_MS) }
+      const response = await acFetchOnce(fetchImpl, url, attemptInit, token, options.signal ?? null)
       // Draining on every path — ok or not — is what keeps undici from stalling.
       const body = await acReadBody(response)
       if (response.ok) {
@@ -366,7 +376,8 @@ export function createAcHttp(args: AcHttpArgs): AcHttpClient {
       headers['X-Angie-AuthApiToken'] = token
     }
     const init: RequestInit = { method: 'GET', headers, signal }
-    const response = await acFetchOnce(fetchImpl, acUrl(baseUrl, path, undefined), init, token)
+    const url = acUrl(baseUrl, path, undefined)
+    const response = await acFetchOnce(fetchImpl, url, init, token, signal ?? null)
     if (!response.ok) {
       throw acError(response.status, await acReadBody(response), token)
     }

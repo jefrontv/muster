@@ -117,6 +117,9 @@ export type ActiveCollabTaskPage = {
   totalItems: number | null
   /** True when more pages exist. ActiveCollab caps every page at 100 regardless of any limit. */
   hasMore: boolean
+  /** The page the server SAYS it answered (`X-Angie-PaginationCurrentPage`). Some instances
+   *  ignore `page` and reprint page 1; callers that page use this echo to detect it. */
+  page?: number | null
 }
 
 /** A task list (section) within a project, in the project's own order. */

@@ -46,6 +46,14 @@ export function buildNotificationOptions(
     }
   }
 
+  // Before the generic activecollab- branch: this one carries no task payload to describe.
+  if (args.source === 'activecollab-auth') {
+    return {
+      title: 'ActiveCollab needs to reconnect',
+      body: 'The instance rejected the saved sign-in, so task notifications are paused. Reconnect from the Tasks page.'
+    }
+  }
+
   if (args.source.startsWith('activecollab-')) {
     return buildActiveCollabNotificationOptions(args, activeCollabStyle)
   }

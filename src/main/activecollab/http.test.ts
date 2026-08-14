@@ -369,3 +369,38 @@ describe('token redaction', () => {
     ).rejects.not.toBeInstanceOf(ActiveCollabApiError)
   })
 })
+
+describe('default request timeout', () => {
+  it('arms a per-attempt timeout signal when the caller passed none', async () => {
+    const { calls, http } = harness([json({ tasks: [] })])
+
+    await http.request('projects/3790/tasks')
+
+    expect(calls[0]?.init.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('keeps the caller-provided signal instead of replacing it', async () => {
+    const controller = new AbortController()
+    const { calls, http } = harness([json({ tasks: [] })])
+
+    await http.request('projects/3790/tasks', { signal: controller.signal })
+
+    expect(calls[0]?.init.signal).toBe(controller.signal)
+  })
+
+  it('reports a timed-out request as a redacted fault, not a raw abort', async () => {
+    // No caller signal: the timeout abort is OURS, so it must be wrapped like any other
+    // network fault (status 0) rather than escaping as a bare DOMException.
+    const http = createAcHttp({
+      baseUrl: BASE,
+      token: TOKEN,
+      fetchImpl: async () => {
+        throw new DOMException(`request to ${BASE} timed out ${TOKEN}`, 'TimeoutError')
+      }
+    })
+
+    const rejection = expect(http.request('projects/3790/tasks')).rejects
+    await rejection.toBeInstanceOf(ActiveCollabApiError)
+    await rejection.not.toThrow(TOKEN)
+  })
+})
