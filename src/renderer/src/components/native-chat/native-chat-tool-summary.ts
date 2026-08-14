@@ -1,8 +1,10 @@
 export {
   briefToolArg,
   countToolCalls,
+  describeToolCall,
   formatToolInput,
   humanizeToolName,
+  humanToolCallPreview,
   summarizeToolInput,
   summarizeToolRun,
   toolRunNameCounts,

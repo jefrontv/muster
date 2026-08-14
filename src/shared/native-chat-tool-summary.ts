@@ -6,20 +6,91 @@ const MAX_PREVIEW_COLLECTION_ITEMS = 8
 const MAX_PREVIEW_DEPTH = 2
 const MAX_TOOL_RUN_SUMMARY_PARTS = 3
 
-/** Reads `mcp__server__tool` into "Server · tool words"; other names pass through.
- *  claude.ai connector servers are prefixed `claude_ai_` — the product name is the tail. */
-export function humanizeToolName(rawName: string): string {
+/** claude.ai connector servers are prefixed `claude_ai_` — the product name is the tail. */
+function parseMcpToolName(rawName: string): { server: string; tool: string } | null {
   const match = /^mcp__([^_].*?)__(.+)$/.exec(rawName.trim())
   if (!match) {
-    return rawName
+    return null
   }
   const server = match[1]!
     .replace(/^claude_ai_/i, '')
     .replace(/_+/g, ' ')
     .trim()
-  const serverLabel = server.charAt(0).toUpperCase() + server.slice(1)
-  const tool = match[2]!.replace(/_+/g, ' ').trim()
-  return `${serverLabel} · ${tool}`
+  return {
+    server: server.charAt(0).toUpperCase() + server.slice(1),
+    tool: match[2]!.replace(/_+/g, ' ').trim()
+  }
+}
+
+/** Reads `mcp__server__tool` into "Server · tool words"; other names pass through. */
+export function humanizeToolName(rawName: string): string {
+  const mcp = parseMcpToolName(rawName)
+  return mcp ? `${mcp.server} · ${mcp.tool}` : rawName
+}
+
+/** Plain-English sentence for a tool call — "Reading main.js", "Asking Activecollab to
+ *  get task bundle" — so chat activity reads as actions, not API plumbing. Without
+ *  `input` the sentence stays generic ("Reading a file"), which keeps it usable as a
+ *  grouping key. */
+export function describeToolCall(rawName: string, input?: unknown): string {
+  const mcp = parseMcpToolName(rawName)
+  if (mcp) {
+    return `Asking ${mcp.server} to ${mcp.tool.toLowerCase()}`
+  }
+  const file = toolFilePath(input)
+  const fileName = file ? (file.split(/[\\/]/).findLast((part) => part !== '') ?? null) : null
+  switch (rawName.trim()) {
+    case 'Read':
+      return fileName ? `Reading ${fileName}` : 'Reading a file'
+    case 'Write':
+      return fileName ? `Writing ${fileName}` : 'Writing a file'
+    case 'Edit':
+    case 'MultiEdit':
+    case 'NotebookEdit':
+      return fileName ? `Editing ${fileName}` : 'Editing a file'
+    case 'Bash':
+    case 'BashOutput':
+      return 'Running a command'
+    case 'Grep':
+    case 'Glob':
+      return 'Searching the project'
+    case 'WebSearch':
+      return 'Searching the web'
+    case 'WebFetch':
+      return 'Reading a web page'
+    case 'Task':
+    case 'Agent':
+      return 'Starting a helper agent'
+    case 'TodoWrite':
+      return 'Updating the plan'
+    case 'Skill':
+      return 'Using a skill'
+    default:
+      return `Using ${rawName.trim()}`
+  }
+}
+
+/** The one input fragment worth showing beside the sentence — a description, command,
+ *  query, or URL. Object payloads with none of those return '' so raw JSON never
+ *  reaches a collapsed row; the expanded detail still shows the full input. */
+export function humanToolCallPreview(input: unknown): string {
+  if (typeof input === 'string') {
+    return summarizeToolInput(input)
+  }
+  if (!input || typeof input !== 'object') {
+    return ''
+  }
+  const value = input as Record<string, unknown>
+  // Description first: agent-written plain English beats the raw command.
+  const text =
+    value.description ??
+    value.command ??
+    value.cmd ??
+    value.query ??
+    value.pattern ??
+    value.url ??
+    value.prompt
+  return typeof text === 'string' ? summarizeToolInput(text) : ''
 }
 
 export function summarizeToolInput(input: unknown): string {
@@ -97,8 +168,8 @@ export function countToolCalls(blocks: readonly NativeChatBlock[]): number {
   return blocks.filter(isToolCallBlock).length
 }
 
-/** Distinct tool names in call order with per-name counts — the collapsed
- *  run row reads "ToolSearch ×3 · WebSearch ×2" instead of raw arg spam. */
+/** Distinct call sentences in call order with per-name counts — the collapsed
+ *  run row reads "Reading a file ×3 · Searching the web ×2" instead of raw arg spam. */
 export function toolRunNameCounts(
   blocks: readonly NativeChatBlock[]
 ): { name: string; count: number }[] {
@@ -107,7 +178,7 @@ export function toolRunNameCounts(
     if (!isToolCallBlock(block)) {
       continue
     }
-    const name = humanizeToolName(block.name.trim())
+    const name = describeToolCall(block.name)
     if (!name) {
       continue
     }

@@ -20,8 +20,8 @@ describe('NativeChatToolRun deck', () => {
       />
     )
     const deck = screen.getByRole('button', { name: 'Show tool calls' })
-    // Newest call fronts the deck with the total count.
-    expect(deck).toHaveTextContent('Bash')
+    // Newest call fronts the deck with the total count, as a plain-English sentence.
+    expect(deck).toHaveTextContent('Running a command')
     expect(deck).toHaveTextContent('×4')
     // 4 calls → front + 2 peeks mounted, the deepest hidden entirely.
     expect(deck.childElementCount).toBe(3)

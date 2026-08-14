@@ -16,9 +16,9 @@ import { diffFromText, diffFromToolCall, type DiffLine } from './native-chat-dif
 import { useNativeChatToggleScrollCompensation } from './use-native-chat-toggle-scroll-compensation'
 import {
   countToolCalls,
+  describeToolCall,
   formatToolInput,
-  humanizeToolName,
-  summarizeToolInput,
+  humanToolCallPreview,
   toolRunNameCounts
 } from './native-chat-tool-summary'
 import { NativeChatDiffView } from './NativeChatDiffView'
@@ -44,8 +44,8 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
   let detail: string | null = null
 
   if (isToolCallBlock(block)) {
-    name = humanizeToolName(block.name)
-    preview = summarizeToolInput(block.input)
+    name = describeToolCall(block.name, block.input)
+    preview = humanToolCallPreview(block.input)
     diff = diffFromToolCall(block.name, block.input)
     detail = diff ? null : formatToolInput(block.input)
   } else if (isToolResultBlock(block)) {
@@ -78,9 +78,9 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
           hasDetail ? 'cursor-pointer' : 'cursor-default'
         )}
       >
-        <code className="shrink-0 font-mono text-xs font-semibold text-foreground/90 transition-colors group-hover:text-foreground">
+        <span className="shrink-0 text-xs font-semibold text-foreground/90 transition-colors group-hover:text-foreground">
           {name}
-        </code>
+        </span>
         {preview ? (
           <span
             className="min-w-0 truncate font-mono text-[11px] text-muted-foreground transition-colors group-hover:text-foreground/70"
@@ -205,9 +205,9 @@ function ToolCallDeck({
             {depth === 0 ? (
               <>
                 <Wrench className="size-3 shrink-0 text-muted-foreground" />
-                <code className="shrink-0 font-mono text-xs font-medium text-foreground/90">
+                <span className="shrink-0 text-xs font-medium text-foreground/90">
                   {call.name}
-                </code>
+                </span>
                 {call.preview ? (
                   <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
                     {call.preview}
@@ -262,8 +262,8 @@ export function NativeChatToolRun({
   // a run that is purely AC events needs no wrench at all.
   const callCount = countToolCalls(plainBlocks) || (events.length > 0 ? 0 : plainBlocks.length)
   const deckCalls = plainBlocks.filter(isToolCallBlock).map((block) => ({
-    name: humanizeToolName(block.name),
-    preview: summarizeToolInput(block.input)
+    name: describeToolCall(block.name, block.input),
+    preview: humanToolCallPreview(block.input)
   }))
   const nameCounts = toolRunNameCounts(plainBlocks)
   const countLabel = translate(
