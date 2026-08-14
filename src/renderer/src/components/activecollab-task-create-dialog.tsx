@@ -1,11 +1,11 @@
-// The "new task" modal behind each task-list section's add row: name, list, description,
-// assignee, dates and labels in one form, so a task can arrive configured instead of being
-// created bare and edited into shape. The pickers are the SAME components the detail pane's
-// metadata bar uses — a field must not behave differently depending on where the task is in
-// its life.
+// The "new task" modal behind each task-list section's add row: name, list, rich description,
+// assignee, dates, labels and file attachments in one form, so a task can arrive configured
+// instead of being created bare and edited into shape. Every field is the SAME component the
+// detail pane uses — the description editor and attachment staging are the comment composer's
+// own — because a field must not behave differently depending on where the task is in its life.
 
 import React, { useState } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { LoaderCircle, Paperclip } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -30,34 +30,21 @@ import type {
   ActiveCollabTaskList,
   ActiveCollabTaskUpdate
 } from '../../../shared/activecollab-types'
+import { NATIVE_FILE_DROP_TARGET } from '../../../shared/native-file-drop'
+import { activeCollabCommentBodyHtml } from './activecollab-comment-body-html'
 import { describeActiveCollabFailure } from './activecollab-failure-message'
+import { ActiveCollabRichBodyFrame, useActiveCollabRichBody } from './activecollab-rich-body-editor'
 import { ActiveCollabTaskAssigneeField } from './activecollab-task-assignee-field'
 import { ActiveCollabTaskDueDateField } from './activecollab-task-due-date-field'
 import { ActiveCollabLabelChip, ActiveCollabLabelEditor } from './activecollab-task-label-editor'
 import { toggleActiveCollabLabelName } from './activecollab-task-label-set'
 import type { ActiveCollabSchedule } from './activecollab-task-schedule'
+import { useActiveCollabCommentAttachments } from './use-activecollab-comment-attachments'
 
 /** Sentinel for "no list": Radix Select values are strings and reject the empty string. */
 const NO_LIST = 'none'
 
 const FIELD_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground'
-
-/**
- * Plain textarea text as minimal HTML: paragraphs on blank lines, <br> within one. The comment
- * composer has a rich editor; a create form does not need one, but it must never ship raw < or &
- * into a field the instance renders as HTML.
- */
-export function activeCollabDescriptionHtml(text: string): string {
-  const trimmed = text.trim()
-  if (trimmed === '') {
-    return ''
-  }
-  const escaped = trimmed.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  return escaped
-    .split(/\n{2,}/)
-    .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
-    .join('')
-}
 
 type ActiveCollabTaskCreateDialogProps = {
   projectId: number
@@ -68,6 +55,7 @@ type ActiveCollabTaskCreateDialogProps = {
   onCreate: (args: {
     taskListId: number | null
     update: ActiveCollabTaskUpdate
+    attachmentCodes: string[]
   }) => Promise<ActiveCollabFailure | null>
 }
 
@@ -80,7 +68,6 @@ export function ActiveCollabTaskCreateDialog({
   onCreate
 }: ActiveCollabTaskCreateDialogProps): React.JSX.Element {
   const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
   const [taskListId, setTaskListId] = useState<number | null>(initialTaskListId)
   const [assigneeId, setAssigneeId] = useState<number | null>(null)
   const [schedule, setSchedule] = useState<ActiveCollabSchedule>({ startOn: null, dueOn: null })
@@ -88,7 +75,24 @@ export function ActiveCollabTaskCreateDialog({
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<ActiveCollabFailure | null>(null)
 
-  const canSubmit = name.trim() !== '' && !pending
+  const body = useActiveCollabRichBody({
+    projectId,
+    disabled: pending,
+    placeholder: translate(
+      'auto.components.activecollab.create_task.description_placeholder',
+      'Add a description…'
+    ),
+    ariaLabel: translate('auto.components.activecollab.create_task.description', 'Description')
+  })
+  const attachments = useActiveCollabCommentAttachments({
+    dropTarget: NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate,
+    orphanMessage: translate(
+      'auto.components.activecollab.create_task.orphaned_upload',
+      'The files uploaded but the task was not created, so nothing was attached. Your draft is still here — try again.'
+    )
+  })
+
+  const canSubmit = name.trim() !== '' && !pending && !attachments.busy && !attachments.blocked
 
   const toggleLabel = (labelName: string): void => {
     setLabels((previous) =>
@@ -106,7 +110,7 @@ export function ActiveCollabTaskCreateDialog({
       return
     }
     const update: ActiveCollabTaskUpdate = { name: name.trim() }
-    const bodyHtml = activeCollabDescriptionHtml(description)
+    const bodyHtml = body.editor === null ? '' : activeCollabCommentBodyHtml(body.editor.state.doc)
     if (bodyHtml !== '') {
       update.bodyHtml = bodyHtml
     }
@@ -124,10 +128,22 @@ export function ActiveCollabTaskCreateDialog({
     }
     setPending(true)
     setFailure(null)
-    const result = await onCreate({ taskListId, update })
+    // Upload FIRST, same as a comment: a create can only quote codes that already exist, and a
+    // refused upload creates nothing — the whole draft stays put. The upload's own error shows
+    // in the attachment strip.
+    const codes = await attachments.upload()
+    if (codes === null) {
+      setPending(false)
+      return
+    }
+    const result = await onCreate({ taskListId, update, attachmentCodes: codes })
     setPending(false)
     if (result) {
       setFailure(result)
+      if (codes.length > 0) {
+        // Files reached the instance but the task did not — the one outcome only this layer sees.
+        attachments.reportOrphanedUpload()
+      }
       return
     }
     onClose()
@@ -142,7 +158,7 @@ export function ActiveCollabTaskCreateDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4" {...attachments.dropTargetProps}>
           <div className="space-y-1.5">
             <label className={FIELD_LABEL} htmlFor="activecollab-create-task-name">
               {translate('auto.components.activecollab.create_task.name', 'Name')}
@@ -200,20 +216,32 @@ export function ActiveCollabTaskCreateDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className={FIELD_LABEL} htmlFor="activecollab-create-task-description">
+            <span className={FIELD_LABEL}>
               {translate('auto.components.activecollab.create_task.description', 'Description')}
-            </label>
-            <textarea
-              id="activecollab-create-task-description"
-              value={description}
+            </span>
+            <ActiveCollabRichBodyFrame
+              body={body}
+              attachments={attachments}
               disabled={pending}
-              rows={4}
-              placeholder={translate(
-                'auto.components.activecollab.create_task.description_placeholder',
-                'Optional details — a blank line starts a new paragraph'
-              )}
-              onChange={(event) => setDescription(event.target.value)}
-              className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+              dragging={attachments.dragging}
+              footer={
+                <div className="flex items-center border-t border-border px-1.5 py-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+                    disabled={pending || attachments.busy}
+                    onClick={attachments.pick}
+                  >
+                    <Paperclip className="size-3.5" />
+                    {translate(
+                      'auto.components.activecollab.comment_attachments.attach',
+                      'Attach Files'
+                    )}
+                  </Button>
+                </div>
+              }
             />
           </div>
 
@@ -267,7 +295,9 @@ export function ActiveCollabTaskCreateDialog({
             {translate('auto.components.activecollab.create_task.cancel', 'Cancel')}
           </Button>
           <Button disabled={!canSubmit} onClick={() => void submit()}>
-            {pending ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
+            {pending || attachments.busy ? (
+              <LoaderCircle className="size-3.5 animate-spin" />
+            ) : null}
             {translate('auto.components.activecollab.create_task.submit', 'Create task')}
           </Button>
         </DialogFooter>

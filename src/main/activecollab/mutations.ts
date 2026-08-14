@@ -160,12 +160,19 @@ export async function createTask(args: {
   projectId: number
   taskListId: number | null
   fields: ActiveCollabTaskUpdate
+  /** Upload codes minted by the comment-attachment upload route; the create route quotes them the
+   *  same way a comment does. */
+  attachmentCodes?: readonly string[]
 }): Promise<ActiveCollabTask | null> {
   const body = updatePayload(args.fields)
   // Omitted, not null: the "Other tasks" group has no list, and the server files a listless
   // create under the project's default list on its own.
   if (args.taskListId !== null) {
     body.task_list_id = args.taskListId
+  }
+  // Same rule as postComment: an empty list sends NO key at all.
+  if (args.attachmentCodes !== undefined && args.attachmentCodes.length > 0) {
+    body.attach_uploaded_files = [...args.attachmentCodes]
   }
   const response = await args.http.request<unknown>(`projects/${args.projectId}/tasks`, {
     method: 'POST',

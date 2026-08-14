@@ -87,7 +87,9 @@ const TaskCreate = z.object({
   projectId: requiredNumber('Project id is required'),
   taskListId: z.union([z.number(), z.null()]),
   // name-required is enforced by the shared operation, so CLI and renderer hit one rule.
-  update: TaskFields
+  update: TaskFields,
+  // Codes minted locally still travel — a code is just a string the instance already holds.
+  attachmentCodes: z.array(z.string()).optional()
 })
 
 const TaskUpdate = z.object({

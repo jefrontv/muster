@@ -12,6 +12,9 @@ export const NATIVE_FILE_DROP_TARGET = {
   /** The ActiveCollab comment composer. Its own target so a drop there never reaches the chat
    * composer, which shares no state with it and would silently swallow the files. */
   activeCollabComment: 'activecollab-comment',
+  /** The ActiveCollab create-task dialog. Distinct from the comment target because the detail
+   * pane's composer can be mounted behind the open dialog and both subscribe by target value. */
+  activeCollabTaskCreate: 'activecollab-task-create',
   fileExplorer: 'file-explorer',
   projectSidebar: 'project-sidebar'
 } as const
@@ -21,6 +24,7 @@ export type NativeDropResolution =
   | { target: typeof NATIVE_FILE_DROP_TARGET.terminal; tabId?: string; paneLeafId?: string }
   | { target: typeof NATIVE_FILE_DROP_TARGET.composer }
   | { target: typeof NATIVE_FILE_DROP_TARGET.activeCollabComment }
+  | { target: typeof NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate }
   | { target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer; destinationDir: string }
   | { target: typeof NATIVE_FILE_DROP_TARGET.projectSidebar }
   | { target: 'rejected' }
@@ -35,6 +39,7 @@ export type NativeFileDropPayload =
     }
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.composer }
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.activeCollabComment }
+  | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate }
   | {
       paths: string[]
       target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer
@@ -117,7 +122,8 @@ export function resolveNativeFileDropPath(
     if (
       target === NATIVE_FILE_DROP_TARGET.editor ||
       target === NATIVE_FILE_DROP_TARGET.composer ||
-      target === NATIVE_FILE_DROP_TARGET.activeCollabComment
+      target === NATIVE_FILE_DROP_TARGET.activeCollabComment ||
+      target === NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate
     ) {
       return { target }
     }
@@ -274,6 +280,7 @@ export function isNativeFileDropPayload(value: unknown): value is NativeFileDrop
     target === NATIVE_FILE_DROP_TARGET.editor ||
     target === NATIVE_FILE_DROP_TARGET.composer ||
     target === NATIVE_FILE_DROP_TARGET.activeCollabComment ||
+    target === NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate ||
     target === NATIVE_FILE_DROP_TARGET.projectSidebar
   )
 }

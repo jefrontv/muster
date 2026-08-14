@@ -186,10 +186,16 @@ export function ActiveCollabProjectView({
     async (args: {
       taskListId: number | null
       update: ActiveCollabTaskUpdate
+      attachmentCodes: string[]
     }): Promise<ActiveCollabFailure | null> => {
       const scope = getActiveCollabReadScope(settings, sourceContext)
       const response = await activeCollabCreateTask(
-        { projectId, taskListId: args.taskListId, update: args.update },
+        {
+          projectId,
+          taskListId: args.taskListId,
+          update: args.update,
+          attachmentCodes: args.attachmentCodes
+        },
         scope.settings
       )
       if (!mountedRef.current) {

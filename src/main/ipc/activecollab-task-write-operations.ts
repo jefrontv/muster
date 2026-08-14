@@ -49,9 +49,19 @@ export function acCreateTask(args: unknown): Promise<ActiveCollabResult<ActiveCo
       input.taskListId === undefined || input.taskListId === null
         ? null
         : positiveId(input.taskListId, 'taskListId')
+    // Same bounds as a comment's codes — they come from the same upload route.
+    const attachmentCodes =
+      input.attachmentCodes === undefined
+        ? []
+        : boundedTextList(
+            input.attachmentCodes,
+            'attachmentCodes',
+            AC_MAX_COMMENT_ATTACHMENTS,
+            MAX_UPLOAD_CODE
+          )
     const { http, names } = acClient()
     const directory = names()
-    const task = await createTask({ http, projectId, taskListId, fields })
+    const task = await createTask({ http, projectId, taskListId, fields, attachmentCodes })
     await acResolveTaskNames(directory, [task])
     // Own write: should the creator also be the assignee on this instance, the next poll must
     // not announce the user's own new task back at them.

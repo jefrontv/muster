@@ -57,7 +57,19 @@ export type ActiveCollabCommentAttachments = {
   reportOrphanedUpload: () => void
 }
 
-export function useActiveCollabCommentAttachments(): ActiveCollabCommentAttachments {
+/** The two surfaces that stage ActiveCollab uploads; each owns its own drop target so a drop on
+ *  the create dialog never also stages in the composer mounted behind it. */
+type ActiveCollabUploadDropTarget =
+  | typeof NATIVE_FILE_DROP_TARGET.activeCollabComment
+  | typeof NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate
+
+export function useActiveCollabCommentAttachments(options?: {
+  dropTarget?: ActiveCollabUploadDropTarget
+  /** Overrides the "uploaded but attached to nothing" wording for non-comment hosts. */
+  orphanMessage?: string
+}): ActiveCollabCommentAttachments {
+  const dropTarget = options?.dropTarget ?? NATIVE_FILE_DROP_TARGET.activeCollabComment
+  const orphanMessage = options?.orphanMessage
   const mountedRef = useMountedRef()
   const [files, setFiles] = useState<ActiveCollabStagedFile[]>([])
   const [busy, setBusy] = useState(false)
@@ -99,7 +111,7 @@ export function useActiveCollabCommentAttachments(): ActiveCollabCommentAttachme
   useEffect(
     () =>
       window.api.ui.onFileDrop((payload) => {
-        if (payload.target !== NATIVE_FILE_DROP_TARGET.activeCollabComment) {
+        if (payload.target !== dropTarget) {
           return
         }
         setDragging(false)
@@ -112,7 +124,7 @@ export function useActiveCollabCommentAttachments(): ActiveCollabCommentAttachme
           }
         })()
       }),
-    [run, stage]
+    [dropTarget, run, stage]
   )
 
   useEffect(() => {
@@ -148,12 +160,13 @@ export function useActiveCollabCommentAttachments(): ActiveCollabCommentAttachme
 
   const reportOrphanedUpload = useCallback(() => {
     setError(
-      translate(
-        'auto.components.activecollab.comment_attachments.orphaned_upload',
-        'The files uploaded but the comment did not post, so nothing was attached. Your comment is still here — try again.'
-      )
+      orphanMessage ??
+        translate(
+          'auto.components.activecollab.comment_attachments.orphaned_upload',
+          'The files uploaded but the comment did not post, so nothing was attached. Your comment is still here — try again.'
+        )
     )
-  }, [])
+  }, [orphanMessage])
 
   return {
     files,
@@ -162,7 +175,7 @@ export function useActiveCollabCommentAttachments(): ActiveCollabCommentAttachme
     error,
     dragging,
     dropTargetProps: {
-      'data-native-file-drop-target': NATIVE_FILE_DROP_TARGET.activeCollabComment,
+      'data-native-file-drop-target': dropTarget,
       onDragOver: (event) => {
         if (hasNativeFileDragTypes(event.dataTransfer.types)) {
           setDragging(true)

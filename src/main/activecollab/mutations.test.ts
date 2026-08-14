@@ -454,4 +454,33 @@ describe('createTask', () => {
       createTask({ http: http.client, projectId: 3790, taskListId: null, fields: { name: 'X' } })
     ).resolves.toBeNull()
   })
+
+  it('quotes upload codes in attach_uploaded_files and omits the key when empty', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks': { data: { single: { id: 994, project_id: 3790, name: 'With files' } } }
+    })
+
+    await createTask({
+      http: http.client,
+      projectId: 3790,
+      taskListId: null,
+      fields: { name: 'With files' },
+      attachmentCodes: ['code-1', 'code-2']
+    })
+    await createTask({
+      http: http.client,
+      projectId: 3790,
+      taskListId: null,
+      fields: { name: 'With files' },
+      attachmentCodes: []
+    })
+
+    expect(http.calls[0]?.options?.body).toEqual({
+      name: 'With files',
+      attach_uploaded_files: ['code-1', 'code-2']
+    })
+    expect(Object.keys(http.calls[1]?.options?.body as object)).not.toContain(
+      'attach_uploaded_files'
+    )
+  })
 })

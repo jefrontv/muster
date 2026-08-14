@@ -186,11 +186,13 @@ export type ActiveCollabApi = {
    * row. That is a refetch, not a failure.
    */
   /** Creates a task with the same field contract as an edit (`update.name` required);
-   *  `taskListId: null` files it under the project's default list. */
+   *  `taskListId: null` files it under the project's default list. `attachmentCodes` are
+   *  {@link uploadCommentAttachments} codes, quoted exactly as a comment quotes them. */
   createTask: (args: {
     projectId: number
     taskListId: number | null
     update: ActiveCollabTaskUpdate
+    attachmentCodes?: string[]
   }) => Promise<ActiveCollabResult<ActiveCollabTask | null>>
   updateTask: (
     args: ActiveCollabTaskRef & { update: ActiveCollabTaskUpdate }
