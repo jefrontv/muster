@@ -68,12 +68,25 @@ function applyRepoLocalEnv(): void {
   }
 }
 
+// Compile-time constants from electron-vite's `define`; `typeof` guards keep
+// vitest and plain-node execution (where no substitution happens) working.
+const BAKED_CLIENT_ID =
+  typeof ORCA_BITBUCKET_OAUTH_CLIENT_ID_BAKED !== 'undefined'
+    ? ORCA_BITBUCKET_OAUTH_CLIENT_ID_BAKED
+    : null
+const BAKED_CLIENT_SECRET =
+  typeof ORCA_BITBUCKET_OAUTH_CLIENT_SECRET_BAKED !== 'undefined'
+    ? ORCA_BITBUCKET_OAUTH_CLIENT_SECRET_BAKED
+    : null
+
 export function getBitbucketOAuthConsumer(
   env: NodeJS.ProcessEnv = process.env
 ): BitbucketOAuthConsumer | null {
   applyRepoLocalEnv()
-  const clientId = env[CLIENT_ID_ENV]?.trim() ?? ''
-  const clientSecret = env[CLIENT_SECRET_ENV]?.trim() ?? ''
+  // Env wins over the baked consumer so a packaged build can be pointed at a
+  // different consumer without a rebuild.
+  const clientId = env[CLIENT_ID_ENV]?.trim() || (BAKED_CLIENT_ID?.trim() ?? '')
+  const clientSecret = env[CLIENT_SECRET_ENV]?.trim() || (BAKED_CLIENT_SECRET?.trim() ?? '')
   if (clientId === '' || clientSecret === '') {
     return null
   }

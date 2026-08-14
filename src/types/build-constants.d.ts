@@ -20,3 +20,10 @@ declare const ORCA_POSTHOG_WRITE_KEY: string | null
 // point a packaged build at a staging server without re-running the
 // release pipeline.
 declare const ORCA_DIAGNOSTICS_TOKEN_URL: string | null
+
+// Bitbucket OAuth consumer for the desktop Connect flow. Substituted by CI
+// from repo secrets; `null` in contributor builds, which then rely on the
+// ORCA_BITBUCKET_OAUTH_CLIENT_ID/_SECRET env vars or `.env.local`
+// (src/main/bitbucket/oauth-config.ts). Env always wins over the baked value.
+declare const ORCA_BITBUCKET_OAUTH_CLIENT_ID_BAKED: string | null
+declare const ORCA_BITBUCKET_OAUTH_CLIENT_SECRET_BAKED: string | null

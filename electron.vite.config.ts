@@ -34,6 +34,18 @@ const ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL =
   typeof orcaDiagnosticsTokenUrl === 'string' && orcaDiagnosticsTokenUrl.length > 0
     ? JSON.stringify(orcaDiagnosticsTokenUrl)
     : 'null'
+// Bitbucket OAuth consumer baked into official builds; contributor builds get
+// `null` and fall back to env vars / `.env.local` (src/main/bitbucket/oauth-config.ts).
+const orcaBitbucketClientId = process.env.ORCA_BITBUCKET_OAUTH_CLIENT_ID
+const ORCA_BITBUCKET_OAUTH_CLIENT_ID_LITERAL =
+  typeof orcaBitbucketClientId === 'string' && orcaBitbucketClientId.length > 0
+    ? JSON.stringify(orcaBitbucketClientId)
+    : 'null'
+const orcaBitbucketClientSecret = process.env.ORCA_BITBUCKET_OAUTH_CLIENT_SECRET
+const ORCA_BITBUCKET_OAUTH_CLIENT_SECRET_LITERAL =
+  typeof orcaBitbucketClientSecret === 'string' && orcaBitbucketClientSecret.length > 0
+    ? JSON.stringify(orcaBitbucketClientSecret)
+    : 'null'
 
 function createStartupDiagnosticsBanner(chunkName: string): string {
   return `
@@ -238,7 +250,9 @@ export default defineConfig({
     define: {
       ORCA_BUILD_IDENTITY: ORCA_BUILD_IDENTITY_LITERAL,
       ORCA_POSTHOG_WRITE_KEY: ORCA_POSTHOG_WRITE_KEY_LITERAL,
-      ORCA_DIAGNOSTICS_TOKEN_URL: ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL
+      ORCA_DIAGNOSTICS_TOKEN_URL: ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL,
+      ORCA_BITBUCKET_OAUTH_CLIENT_ID_BAKED: ORCA_BITBUCKET_OAUTH_CLIENT_ID_LITERAL,
+      ORCA_BITBUCKET_OAUTH_CLIENT_SECRET_BAKED: ORCA_BITBUCKET_OAUTH_CLIENT_SECRET_LITERAL
     },
     // Why: @xterm/headless declares "exports": null in package.json, which
     // prevents Vite's default resolver from finding the CJS entry. Point

@@ -149,6 +149,12 @@ jobs:
         run: gh release create "$TAG" --draft --title "$TAG" --notes "" --repo "${{ github.repository }}" || true
 
       - name: Build desktop + native mac helpers
+        env:
+          # Baked into the main bundle by electron-vite's define block; without
+          # them the packaged app has no Bitbucket OAuth consumer and the
+          # Connect dialog dead-ends (src/main/bitbucket/oauth-config.ts).
+          ORCA_BITBUCKET_OAUTH_CLIENT_ID: ${{ secrets.ORCA_BITBUCKET_OAUTH_CLIENT_ID }}
+          ORCA_BITBUCKET_OAUTH_CLIENT_SECRET: ${{ secrets.ORCA_BITBUCKET_OAUTH_CLIENT_SECRET }}
         run: |
           pnpm run build:desktop
           pnpm run build:notification-status-macos
