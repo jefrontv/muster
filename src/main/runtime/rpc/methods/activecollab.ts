@@ -80,7 +80,8 @@ const TaskFields = z.object({
   startOn: z.union([z.number(), z.null()]).optional(),
   dueOn: z.union([z.number(), z.null()]).optional(),
   // Full replacement set — the API overwrites a task's labels rather than merging.
-  labelNames: z.array(z.string()).optional()
+  labelNames: z.array(z.string()).optional(),
+  isHiddenFromClients: z.boolean().optional()
 })
 
 const TaskCreate = z.object({

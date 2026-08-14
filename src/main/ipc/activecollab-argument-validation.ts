@@ -128,6 +128,12 @@ export function taskUpdate(value: unknown): ActiveCollabTaskUpdate {
       MAX_LABEL_NAME
     )
   }
+  if (input.isHiddenFromClients !== undefined) {
+    if (typeof input.isHiddenFromClients !== 'boolean') {
+      throw new InvalidRequestError('update.isHiddenFromClients must be a boolean.')
+    }
+    update.isHiddenFromClients = input.isHiddenFromClients
+  }
   if (Object.keys(update).length === 0) {
     throw new InvalidRequestError('update requires at least one field.')
   }

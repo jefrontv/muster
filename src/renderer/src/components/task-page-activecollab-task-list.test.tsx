@@ -141,6 +141,7 @@ function taskFixture(overrides: Partial<ActiveCollabTask> = {}): ActiveCollabTas
     commentCount: 0,
     urlPath: '/projects/3790/tasks/501',
     taskListId: null,
+    isHiddenFromClients: false,
     ...overrides
   }
 }

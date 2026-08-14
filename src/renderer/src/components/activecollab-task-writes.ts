@@ -18,6 +18,7 @@ export type ActiveCollabTaskWriteField =
   | 'labels'
   | 'dueDate'
   | 'assignee'
+  | 'visibility'
   | 'comment'
 
 export type ActiveCollabTaskWrites = {
@@ -43,6 +44,8 @@ export type ActiveCollabTaskWrites = {
   setSchedule: (schedule: ActiveCollabSchedule) => Promise<boolean>
   /** A user id, or an explicit null to unassign. */
   setAssigneeId: (assigneeId: number | null) => Promise<boolean>
+  /** ActiveCollab's hidden-from-clients flag; false makes the task visible to client-role users. */
+  setHiddenFromClients: (hidden: boolean) => Promise<boolean>
   /**
    * `attachmentCodes` are already-uploaded codes; the upload happens BEFORE this is called, so a
    * false here means the files reached the instance but the comment did not — see the composer,
@@ -158,6 +161,16 @@ export function useActiveCollabTaskWrites(
     [onTask, runWrite, updateTask]
   )
 
+  const setHiddenFromClients = useCallback(
+    (isHiddenFromClients: boolean) =>
+      runWrite(
+        'visibility',
+        (ids) => updateTask({ ...ids, update: { isHiddenFromClients } }),
+        onTask
+      ),
+    [onTask, runWrite, updateTask]
+  )
+
   const addComment = useCallback(
     (bodyHtml: string, attachmentCodes: string[]) =>
       runWrite(
@@ -175,5 +188,14 @@ export function useActiveCollabTaskWrites(
     [onComment, postComment, runWrite]
   )
 
-  return { pending, failure, setCompleted, toggleLabel, setSchedule, setAssigneeId, addComment }
+  return {
+    pending,
+    failure,
+    setCompleted,
+    toggleLabel,
+    setSchedule,
+    setAssigneeId,
+    setHiddenFromClients,
+    addComment
+  }
 }

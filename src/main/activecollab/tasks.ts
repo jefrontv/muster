@@ -82,7 +82,8 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,
     urlPath: asText(value.url_path) || `/projects/${projectId}/tasks/${id}`,
-    taskListId: acNullableId(value.task_list_id)
+    taskListId: acNullableId(value.task_list_id),
+    isHiddenFromClients: value.is_hidden_from_clients === true
   }
 }
 

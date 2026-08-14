@@ -1,5 +1,7 @@
 import React from 'react'
+import { LoaderCircle } from 'lucide-react'
 
+import { Checkbox } from '@/components/ui/checkbox'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { ActiveCollabTask } from '../../../shared/activecollab-types'
@@ -16,6 +18,7 @@ type ActiveCollabTaskMetadataBarProps = {
   onScheduleChange: (schedule: ActiveCollabSchedule) => void
   onAssigneeIdChange: (assigneeId: number | null) => void
   onLabelToggle: (labelName: string) => void
+  onHiddenFromClientsChange: (hidden: boolean) => void
 }
 
 const META_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground'
@@ -32,7 +35,8 @@ export function ActiveCollabTaskMetadataBar({
   pending,
   onScheduleChange,
   onAssigneeIdChange,
-  onLabelToggle
+  onLabelToggle,
+  onHiddenFromClientsChange
 }: ActiveCollabTaskMetadataBarProps): React.JSX.Element {
   const busy = pending !== null
 
@@ -89,6 +93,26 @@ export function ActiveCollabTaskMetadataBar({
           busy={pending === 'labels'}
           onToggle={onLabelToggle}
         />
+      </dd>
+
+      <dt className={META_LABEL}>
+        {translate('auto.components.activecollab.task_workspace.clients', 'Clients')}
+      </dt>
+      <dd className="flex min-w-0 items-center gap-2 text-[12px]">
+        <label className="flex cursor-pointer items-center gap-2 text-foreground">
+          <Checkbox
+            checked={task.isHiddenFromClients}
+            disabled={busy}
+            onCheckedChange={(checked) => onHiddenFromClientsChange(checked === true)}
+          />
+          {translate(
+            'auto.components.activecollab.task_workspace.hidden_from_clients',
+            'Hidden from clients'
+          )}
+        </label>
+        {pending === 'visibility' ? (
+          <LoaderCircle className="size-3 animate-spin text-muted-foreground" />
+        ) : null}
       </dd>
     </dl>
   )

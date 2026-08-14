@@ -89,6 +89,7 @@ function taskRow(over: Partial<ActiveCollabTask> = {}): ActiveCollabTask {
     commentCount: 0,
     urlPath: '/projects/3790/tasks/509323',
     taskListId: null,
+    isHiddenFromClients: false,
     ...over
   }
 }

@@ -94,7 +94,8 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,
     urlPath: asText(value.url_path) || `/projects/${projectId}/tasks/${id}`,
-    taskListId: acNullableId(value.task_list_id)
+    taskListId: acNullableId(value.task_list_id),
+    isHiddenFromClients: value.is_hidden_from_clients === true
   }
 }
 
@@ -146,6 +147,9 @@ function updatePayload(update: ActiveCollabTaskUpdate): Row {
   }
   if (update.labelNames !== undefined) {
     payload.labels = update.labelNames
+  }
+  if (update.isHiddenFromClients !== undefined) {
+    payload.is_hidden_from_clients = update.isHiddenFromClients
   }
   return payload
 }

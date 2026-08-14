@@ -115,7 +115,8 @@ const TASK: ActiveCollabTask = {
   labels: [],
   commentCount: 0,
   urlPath: '/projects/3790/tasks/509323',
-  taskListId: null
+  taskListId: null,
+  isHiddenFromClients: false
 }
 
 const DETAIL: ActiveCollabTaskDetail = { task: TASK, comments: [], attachments: [] }

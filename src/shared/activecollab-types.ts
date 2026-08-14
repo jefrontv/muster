@@ -77,6 +77,8 @@ export type ActiveCollabTask = {
   /** Relative, e.g. `/projects/3790/tasks/509323`. Join with instanceUrl for a permalink. */
   urlPath: string
   taskListId: number | null
+  /** ActiveCollab's per-object client visibility; hidden tasks never appear to client-role users. */
+  isHiddenFromClients: boolean
 }
 
 /**
@@ -150,4 +152,5 @@ export type ActiveCollabTaskUpdate = {
    * whatever was there. Callers wanting to add one label must send the merged list.
    */
   labelNames?: string[]
+  isHiddenFromClients?: boolean
 }

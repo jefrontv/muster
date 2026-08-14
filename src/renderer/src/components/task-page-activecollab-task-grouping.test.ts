@@ -32,6 +32,7 @@ function task(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveColl
     commentCount: 0,
     urlPath: `/tasks/${overrides.id}`,
     taskListId: null,
+    isHiddenFromClients: false,
     ...overrides
   }
 }

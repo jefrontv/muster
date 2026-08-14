@@ -31,7 +31,8 @@ function task(id: number): ActiveCollabTask {
     labels: [],
     commentCount: 0,
     urlPath: `/projects/7/tasks/${id}`,
-    taskListId: null
+    taskListId: null,
+    isHiddenFromClients: false
   }
 }
 

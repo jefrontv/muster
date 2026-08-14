@@ -8,6 +8,7 @@ import React, { useState } from 'react'
 import { LoaderCircle, Paperclip } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,7 @@ export function ActiveCollabTaskCreateDialog({
   const [assigneeId, setAssigneeId] = useState<number | null>(null)
   const [schedule, setSchedule] = useState<ActiveCollabSchedule>({ startOn: null, dueOn: null })
   const [labels, setLabels] = useState<ActiveCollabLabel[]>([])
+  const [hiddenFromClients, setHiddenFromClients] = useState(false)
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<ActiveCollabFailure | null>(null)
 
@@ -125,6 +127,10 @@ export function ActiveCollabTaskCreateDialog({
     }
     if (labels.length > 0) {
       update.labelNames = labels.map((label) => label.name)
+    }
+    if (hiddenFromClients) {
+      // Only when set: visible is the server default, so an unticked box sends nothing.
+      update.isHiddenFromClients = true
     }
     setPending(true)
     setFailure(null)
@@ -281,6 +287,21 @@ export function ActiveCollabTaskCreateDialog({
                 onToggle={toggleLabel}
               />
             </div>
+
+            <span className={FIELD_LABEL}>
+              {translate('auto.components.activecollab.task_workspace.clients', 'Clients')}
+            </span>
+            <label className="flex cursor-pointer items-center gap-2 text-[12px] text-foreground">
+              <Checkbox
+                checked={hiddenFromClients}
+                disabled={pending}
+                onCheckedChange={(checked) => setHiddenFromClients(checked === true)}
+              />
+              {translate(
+                'auto.components.activecollab.task_workspace.hidden_from_clients',
+                'Hidden from clients'
+              )}
+            </label>
           </div>
 
           {failure ? (

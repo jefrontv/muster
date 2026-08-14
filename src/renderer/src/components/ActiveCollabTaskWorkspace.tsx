@@ -121,6 +121,7 @@ export function ActiveCollabTaskWorkspace({
         onScheduleChange={(schedule) => void writes.setSchedule(schedule)}
         onAssigneeIdChange={(assigneeId) => void writes.setAssigneeId(assigneeId)}
         onLabelToggle={(labelName) => void writes.toggleLabel(labelName)}
+        onHiddenFromClientsChange={(hidden) => void writes.setHiddenFromClients(hidden)}
       />
 
       {notice ? (
