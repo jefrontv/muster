@@ -23,12 +23,10 @@ import type {
   ActiveCollabResult
 } from '../../shared/activecollab-api-types'
 import type {
-  ActiveCollabComment,
   ActiveCollabConnection,
   ActiveCollabConnectionStatus,
   ActiveCollabLabel,
   ActiveCollabProject,
-  ActiveCollabTask,
   ActiveCollabTaskDetail,
   ActiveCollabProjectTasks,
   ActiveCollabTaskPage
@@ -42,14 +40,7 @@ import {
 import { acResolveTaskNames, resetAcNameDirectoryCache } from '../activecollab/name-directory'
 import { resetAcProjectMembersCache } from '../activecollab/project-members'
 import { getAttachmentImage } from '../activecollab/attachment-image'
-import { AC_MAX_COMMENT_ATTACHMENTS } from '../activecollab/comment-attachment-upload'
-import {
-  completeTask,
-  listLabels,
-  postComment,
-  reopenTask,
-  updateTask
-} from '../activecollab/mutations'
+import { listLabels } from '../activecollab/mutations'
 import {
   getTaskDetail,
   listAssignedTasks,
@@ -61,24 +52,34 @@ import {
   refreshAcTaskNotifications,
   startAcTaskNotifications
 } from '../activecollab/task-notification-service'
-import { acClearTaskSnapshot, acFoldLocalTaskWrite } from '../activecollab/task-snapshot-store'
+import { acClearTaskSnapshot } from '../activecollab/task-snapshot-store'
 import type { Store } from '../persistence'
 import {
   boundedText,
-  boundedTextList,
   InvalidRequestError,
-  MAX_BODY,
   MAX_EMAIL,
   MAX_SECRET,
-  MAX_UPLOAD_CODE,
   MAX_URL,
   pageNumber,
   positiveId,
   record,
-  taskRef,
-  taskUpdate
+  taskRef
 } from './activecollab-argument-validation'
 import { acClient, guard, toFailure } from './activecollab-operation-context'
+export {
+  acCompleteTask,
+  acCreateTask,
+  acPostComment,
+  acReopenTask,
+  acUpdateTask
+} from './activecollab-task-write-operations'
+import {
+  acCompleteTask,
+  acCreateTask,
+  acPostComment,
+  acReopenTask,
+  acUpdateTask
+} from './activecollab-task-write-operations'
 import { acListProjectMembers, acListUsers } from './activecollab-people'
 import { acDownloadAttachment } from './activecollab-attachment-download'
 import { acMarkTaskRead, acTaskUnread } from './activecollab-unread'
@@ -102,6 +103,7 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:pickCommentAttachments',
   'activecollab:describeCommentAttachments',
   'activecollab:uploadCommentAttachments',
+  'activecollab:createTask',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',
@@ -225,81 +227,6 @@ export function acGetAttachmentImage(
   })
 }
 
-export function acUpdateTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
-  return guard(async () => {
-    const { projectId, taskId } = taskRef(args)
-    const update = taskUpdate(record(args).update)
-    const { http, names } = acClient()
-    const directory = names()
-    // The echoed row is patched straight into the renderer's caches, so it has to arrive with the
-    // same names the read path resolved — otherwise every edit blanks the heading it just fixed.
-    const task = await updateTask({ http, projectId, taskId, update })
-    await acResolveTaskNames(directory, [task])
-    // Own write: fold the echo in now, so the poll that observes it has nothing to report.
-    acFoldLocalTaskWrite({ taskId, task, dueOn: update.dueOn })
-    return task
-  })
-}
-
-export function acCompleteTask(
-  args: unknown
-): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
-  return guard(async () => {
-    const taskId = positiveId(record(args).taskId, 'taskId')
-    const { http, names } = acClient()
-    const directory = names()
-    const task = await completeTask({ http, taskId })
-    await acResolveTaskNames(directory, [task])
-    acFoldLocalTaskWrite({ taskId, task })
-    return task
-  })
-}
-
-export function acReopenTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
-  return guard(async () => {
-    const taskId = positiveId(record(args).taskId, 'taskId')
-    const { http, names } = acClient()
-    const directory = names()
-    const task = await reopenTask({ http, taskId })
-    await acResolveTaskNames(directory, [task])
-    acFoldLocalTaskWrite({ taskId, task })
-    return task
-  })
-}
-
-export function acPostComment(
-  args: unknown
-): Promise<ActiveCollabResult<ActiveCollabComment | null>> {
-  return guard(async () => {
-    const input = record(args)
-    const taskId = positiveId(input.taskId, 'taskId')
-    const bodyHtml = boundedText(input.bodyHtml, 'bodyHtml', MAX_BODY)
-    if (bodyHtml.trim() === '') {
-      throw new InvalidRequestError('bodyHtml is required.')
-    }
-    // Absent stays absent: postComment omits `attach_uploaded_files` entirely for an empty list,
-    // so a plain comment posts exactly the body it always did.
-    const attachmentCodes =
-      input.attachmentCodes === undefined
-        ? []
-        : boundedTextList(
-            input.attachmentCodes,
-            'attachmentCodes',
-            AC_MAX_COMMENT_ATTACHMENTS,
-            MAX_UPLOAD_CODE
-          )
-    const comment = await postComment({
-      http: acClient().http,
-      taskId,
-      bodyHtml,
-      attachmentCodes
-    })
-    // The posted comment carries no task row, so the count this app just added is folded by hand.
-    acFoldLocalTaskWrite({ taskId, postedComments: 1 })
-    return comment
-  })
-}
-
 export function acListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>> {
   return guard(async () => listLabels({ http: acClient().http }))
 }
@@ -338,6 +265,7 @@ export function registerActiveCollabHandlers(store: Store): void {
   ipcMain.handle('activecollab:uploadCommentAttachments', async (_event, args: unknown) =>
     acUploadCommentAttachments(args)
   )
+  ipcMain.handle('activecollab:createTask', async (_event, args: unknown) => acCreateTask(args))
   ipcMain.handle('activecollab:updateTask', async (_event, args: unknown) => acUpdateTask(args))
   ipcMain.handle('activecollab:completeTask', async (_event, args: unknown) => acCompleteTask(args))
   ipcMain.handle('activecollab:reopenTask', async (_event, args: unknown) => acReopenTask(args))

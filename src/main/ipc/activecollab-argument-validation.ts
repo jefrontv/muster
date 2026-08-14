@@ -18,7 +18,7 @@ export const MAX_BODY = 65_536
 export const MAX_PATH = 4_096
 /** An upload code is a fixed-length token; the bound is slack, not a format check. */
 export const MAX_UPLOAD_CODE = 256
-const MAX_NAME = 512
+export const MAX_NAME = 512
 const MAX_LABEL_NAME = 128
 const MAX_LABELS = 64
 

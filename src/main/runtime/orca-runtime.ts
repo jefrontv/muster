@@ -703,6 +703,7 @@ import {
 import {
   acCompleteTask,
   acConnect,
+  acCreateTask,
   acDisconnect,
   acGetAttachmentImage,
   acGetTaskDetail,
@@ -30083,6 +30084,10 @@ export class OrcaRuntimeService {
     args: unknown
   ): Promise<ActiveCollabResult<ActiveCollabAttachmentImage>> {
     return acGetAttachmentImage(args)
+  }
+
+  activeCollabCreateTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
+    return acCreateTask(args)
   }
 
   activeCollabUpdateTask(args: unknown): Promise<ActiveCollabResult<ActiveCollabTask | null>> {

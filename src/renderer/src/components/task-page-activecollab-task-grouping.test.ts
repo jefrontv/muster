@@ -191,6 +191,9 @@ describe('groupActiveCollabTasksByTaskList', () => {
     ).toEqual([
       [10, 'Important Dates', [5, 2]],
       [20, 'Project Overview', [1]],
+      // Kept although empty: the section carries the quick-add composer, so an empty named list
+      // must still render as somewhere to add into.
+      [30, 'Empty list', []],
       [99, '', [4]],
       [null, '', [3]]
     ])

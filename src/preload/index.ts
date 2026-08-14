@@ -2000,6 +2000,7 @@ const api = {
       ipcRenderer.invoke('activecollab:describeCommentAttachments', args),
     uploadCommentAttachments: (args) =>
       ipcRenderer.invoke('activecollab:uploadCommentAttachments', args),
+    createTask: (args) => ipcRenderer.invoke('activecollab:createTask', args),
     updateTask: (args) => ipcRenderer.invoke('activecollab:updateTask', args),
     completeTask: (args) => ipcRenderer.invoke('activecollab:completeTask', args),
     reopenTask: (args) => ipcRenderer.invoke('activecollab:reopenTask', args),

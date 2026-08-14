@@ -72,6 +72,12 @@ const ProjectRef = z.object({
   projectId: requiredNumber('Project id is required')
 })
 
+const TaskCreate = z.object({
+  projectId: requiredNumber('Project id is required'),
+  name: requiredString('Task name is required'),
+  taskListId: z.union([z.number(), z.null()])
+})
+
 const TaskUpdate = z.object({
   projectId: requiredNumber('Project id is required'),
   taskId: requiredNumber('Task id is required'),
@@ -136,6 +142,18 @@ export const ACTIVECOLLAB_METHODS: RpcMethod[] = [
     name: 'activecollab.getAttachmentImage',
     params: AttachmentRef,
     handler: async (params, { runtime }) => runtime.activeCollabGetAttachmentImage(params)
+  }),
+  defineMethod({
+    name: 'activecollab.createTask',
+    params: TaskCreate,
+    handler: async (params, { runtime }) => {
+      const result = await runtime.activeCollabCreateTask(params)
+      const echoed = (result as { value?: ActiveCollabTask | null }).value ?? undefined
+      if (echoed) {
+        foldRemoteWriteLocally(result, { taskId: echoed.id, task: echoed })
+      }
+      return result
+    }
   }),
   defineMethod({
     name: 'activecollab.updateTask',

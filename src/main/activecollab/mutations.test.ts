@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { ActiveCollabApiError, type AcHttpClient, type AcRequestOptions } from './http'
-import { completeTask, listLabels, postComment, reopenTask, updateTask } from './mutations'
+import {
+  completeTask,
+  createTask,
+  listLabels,
+  postComment,
+  reopenTask,
+  updateTask
+} from './mutations'
 
 type Reply = { data: unknown; totalItems?: number; page?: number; perPage?: number }
 
@@ -364,5 +371,49 @@ describe('listLabels', () => {
     await expect(listLabels({ http: http.client })).resolves.toEqual([
       { id: 17, name: 'Blocked', color: null }
     ])
+  })
+})
+
+describe('createTask', () => {
+  it('POSTs name and list to the project route and normalises the echoed row', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks': {
+        data: { single: { id: 991, project_id: 3790, name: 'Write the brief', task_list_id: 55 } }
+      }
+    })
+
+    const task = await createTask({
+      http: http.client,
+      projectId: 3790,
+      name: 'Write the brief',
+      taskListId: 55
+    })
+
+    expect(http.calls).toEqual([
+      {
+        path: 'projects/3790/tasks',
+        options: { method: 'POST', body: { name: 'Write the brief', task_list_id: 55 } }
+      }
+    ])
+    expect(task?.id).toBe(991)
+    expect(task?.taskListId).toBe(55)
+  })
+
+  it('omits task_list_id entirely for a listless create', async () => {
+    const http = stubHttp({
+      'projects/3790/tasks': { data: { single: { id: 992, project_id: 3790, name: 'Loose end' } } }
+    })
+
+    await createTask({ http: http.client, projectId: 3790, name: 'Loose end', taskListId: null })
+
+    expect(http.calls[0]?.options?.body).toEqual({ name: 'Loose end' })
+  })
+
+  it('answers null when the instance echoes no usable row', async () => {
+    const http = stubHttp({ 'projects/3790/tasks': { data: { single: { no: 'id' } } } })
+
+    await expect(
+      createTask({ http: http.client, projectId: 3790, name: 'X', taskListId: null })
+    ).resolves.toBeNull()
   })
 })

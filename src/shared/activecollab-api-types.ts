@@ -185,6 +185,13 @@ export type ActiveCollabApi = {
    * Resolves `ok: true` with a null value when the write landed but the instance echoed no usable
    * row. That is a refetch, not a failure.
    */
+  /** Quick-add: name and placement only; everything else is a normal edit on the echoed row.
+   *  `taskListId: null` files the task under the project's default list. */
+  createTask: (args: {
+    projectId: number
+    name: string
+    taskListId: number | null
+  }) => Promise<ActiveCollabResult<ActiveCollabTask | null>>
   updateTask: (
     args: ActiveCollabTaskRef & { update: ActiveCollabTaskUpdate }
   ) => Promise<ActiveCollabResult<ActiveCollabTask | null>>

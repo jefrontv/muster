@@ -3,15 +3,20 @@
 // the back control returns there with the assigned list's state untouched (it stays mounted).
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ChevronDown, LoaderCircle } from 'lucide-react'
+import { ArrowLeft, ChevronDown, LoaderCircle, Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
 import { getActiveCollabReadScope } from '@/store/slices/activecollab-cache'
-import { activeCollabListProjectTasks } from '@/runtime/runtime-activecollab-client'
+import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
+import {
+  activeCollabCreateTask,
+  activeCollabListProjectTasks
+} from '@/runtime/runtime-activecollab-client'
 import {
   groupActiveCollabTasksByTaskList,
   type ActiveCollabTaskListGroup
@@ -44,18 +49,111 @@ function taskListGroupLabel(group: ActiveCollabTaskListGroup): string {
       })
 }
 
+/**
+ * The per-list quick-add: a quiet row that becomes an inline composer. Enter files the task and
+ * keeps the composer open with a cleared field — capturing a backlog is usually several tasks in a
+ * row. Escape (or leaving an empty field) folds it back to the row.
+ */
+function ActiveCollabTaskQuickAdd({
+  onCreate
+}: {
+  onCreate: (name: string) => Promise<ActiveCollabFailure | null>
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [pending, setPending] = useState(false)
+  const [failure, setFailure] = useState<ActiveCollabFailure | null>(null)
+
+  const submit = async (): Promise<void> => {
+    const trimmed = name.trim()
+    if (trimmed === '' || pending) {
+      return
+    }
+    setPending(true)
+    setFailure(null)
+    const result = await onCreate(trimmed)
+    setPending(false)
+    if (result) {
+      setFailure(result)
+      return
+    }
+    setName('')
+  }
+
+  if (!open) {
+    return (
+      <li className="list-none">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+        >
+          <Plus className="size-3 shrink-0" />
+          {translate('auto.components.activecollab.project_view.add_task', 'Add task')}
+        </button>
+      </li>
+    )
+  }
+
+  return (
+    <li className="list-none px-3 py-2">
+      <div className="flex items-center gap-2">
+        <Input
+          autoFocus
+          value={name}
+          disabled={pending}
+          placeholder={translate(
+            'auto.components.activecollab.project_view.add_task_placeholder',
+            'Task name — Enter to add, Esc to cancel'
+          )}
+          aria-label={translate('auto.components.activecollab.project_view.add_task', 'Add task')}
+          className="h-8 text-sm"
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              void submit()
+            } else if (event.key === 'Escape') {
+              setOpen(false)
+              setName('')
+              setFailure(null)
+            }
+          }}
+          onBlur={() => {
+            // An abandoned empty composer folds away; typed text survives a stray click.
+            if (name.trim() === '' && !pending) {
+              setOpen(false)
+              setFailure(null)
+            }
+          }}
+        />
+        {pending ? (
+          <LoaderCircle className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+        ) : null}
+      </div>
+      {failure ? (
+        <p role="alert" className="mt-1.5 text-xs text-destructive">
+          {describeActiveCollabFailure(failure)}
+        </p>
+      ) : null}
+    </li>
+  )
+}
+
 function ActiveCollabTaskListSection({
   group,
   projectId,
   now,
   onSelect,
-  selectedTaskId
+  selectedTaskId,
+  onCreateTask
 }: {
   group: ActiveCollabTaskListGroup
   projectId: number
   now: number
   onSelect: (ref: ActiveCollabTaskRef) => void
   selectedTaskId: number | null
+  onCreateTask: (taskListId: number | null, name: string) => Promise<ActiveCollabFailure | null>
 }): React.JSX.Element {
   const collapseKey = `activecollab-task-list:${projectId}:${group.taskListId ?? 'none'}`
   const collapsed = useAppStore((s) => s.collapsedGroups.has(collapseKey))
@@ -98,9 +196,9 @@ function ActiveCollabTaskListSection({
         hidden={collapsed}
         id={listId}
       >
-        {collapsed
-          ? null
-          : group.tasks.map((task) => (
+        {collapsed ? null : (
+          <>
+            {group.tasks.map((task) => (
               <ActiveCollabTaskRow
                 key={task.id}
                 now={now}
@@ -110,6 +208,11 @@ function ActiveCollabTaskListSection({
                 task={task}
               />
             ))}
+            <ActiveCollabTaskQuickAdd
+              onCreate={(name) => onCreateTask(group.taskListId, name)}
+            />
+          </>
+        )}
       </ul>
     </section>
   )
@@ -150,6 +253,34 @@ export function ActiveCollabProjectView({
   useEffect(() => {
     void load()
   }, [load])
+
+  const createTaskInList = useCallback(
+    async (taskListId: number | null, name: string): Promise<ActiveCollabFailure | null> => {
+      const scope = getActiveCollabReadScope(settings, sourceContext)
+      const response = await activeCollabCreateTask(
+        { projectId, name, taskListId },
+        scope.settings
+      )
+      if (!mountedRef.current) {
+        return null
+      }
+      if (!response.ok) {
+        return response
+      }
+      const task = response.value
+      if (task) {
+        // The echoed row lands straight in the local result; grouping re-derives from it.
+        setResult((previous) =>
+          previous ? { ...previous, tasks: [...previous.tasks, task] } : previous
+        )
+      } else {
+        // Landed but no usable echo: refetch rather than showing a list missing its newest row.
+        void load()
+      }
+      return null
+    },
+    [load, mountedRef, projectId, settings, sourceContext]
+  )
 
   const now = Date.now()
   const groups = useMemo(
@@ -239,6 +370,7 @@ export function ActiveCollabProjectView({
               now={now}
               onSelect={onSelect}
               selectedTaskId={selectedTaskId}
+              onCreateTask={createTaskInList}
             />
           ))}
         </div>

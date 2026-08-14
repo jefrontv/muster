@@ -100,6 +100,7 @@ const CHANNELS = [
   'activecollab:pickCommentAttachments',
   'activecollab:describeCommentAttachments',
   'activecollab:uploadCommentAttachments',
+  'activecollab:createTask',
   'activecollab:updateTask',
   'activecollab:completeTask',
   'activecollab:reopenTask',

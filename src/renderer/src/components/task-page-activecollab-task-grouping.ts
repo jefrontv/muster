@@ -74,7 +74,8 @@ export type ActiveCollabTaskListGroup = {
  * Groups a project's tasks by task list, in the PROJECT'S OWN list order — the lists are how the
  * project structured its work (see the source instance's board), so alphabetising them here would
  * shuffle a deliberate sequence. Lists the wire did not name sort after the named ones by id, and
- * unfiled tasks close the view. Empty lists are dropped: a heading with no rows is noise.
+ * unfiled tasks close the view. Named lists are kept even when EMPTY: each section carries the
+ * quick-add composer, and a list you cannot add into because it happens to be empty is a trap.
  */
 export function groupActiveCollabTasksByTaskList(
   tasks: readonly ActiveCollabTask[],
@@ -96,11 +97,8 @@ export function groupActiveCollabTasksByTaskList(
 
   const groups: ActiveCollabTaskListGroup[] = []
   for (const list of taskLists) {
-    const bucket = byListId.get(list.id)
-    if (bucket) {
-      groups.push({ taskListId: list.id, taskListName: list.name, tasks: bucket })
-      byListId.delete(list.id)
-    }
+    groups.push({ taskListId: list.id, taskListName: list.name, tasks: byListId.get(list.id) ?? [] })
+    byListId.delete(list.id)
   }
   const unnamed = [...byListId.entries()]
     .filter((entry): entry is [number, ActiveCollabTask[]] => entry[0] !== null)

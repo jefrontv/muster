@@ -241,6 +241,15 @@ export async function activeCollabUploadCommentAttachments(args: {
   )
 }
 
+export async function activeCollabCreateTask(
+  args: { projectId: number; name: string; taskListId: number | null },
+  settings?: RuntimeActiveCollabSettings
+): Promise<ActiveCollabResult<ActiveCollabTask | null>> {
+  return callActiveCollab('activecollab.createTask', args, settings, OPERATION_TIMEOUT_MS, () =>
+    window.api.activecollab.createTask(args)
+  )
+}
+
 export async function activeCollabUpdateTask(
   args: ActiveCollabTaskRef & { update: ActiveCollabTaskUpdate },
   settings?: RuntimeActiveCollabSettings
