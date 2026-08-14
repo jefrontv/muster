@@ -9,7 +9,7 @@ import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import type { ActiveCollabLabel } from '../../../shared/activecollab-types'
 import type { ActiveCollabFailure } from '../../../shared/activecollab-api-types'
-import { hasActiveCollabLabel, toggleActiveCollabLabelName } from './activecollab-task-label-set'
+import { hasActiveCollabLabel } from './activecollab-task-label-set'
 import { activeCollabLabelChipStyle } from './task-page-activecollab-row-presentation'
 
 // The instance ships ~1600 labels; rendering them all janks the popover, so the list is filtered
@@ -40,8 +40,9 @@ type ActiveCollabLabelEditorProps = {
   labels: ActiveCollabLabel[]
   disabled: boolean
   busy: boolean
-  /** Receives the FULL replacement set, because a label write overwrites the task's labels. */
-  onChange: (labelNames: string[]) => void
+  /** Receives the ONE toggled label. The write layer builds the API's full replacement set from a
+   *  fresh read, so the UI's possibly-stale `labels` never overwrite a colleague's edit. */
+  onToggle: (labelName: string) => void
 }
 
 /**
@@ -51,7 +52,7 @@ type ActiveCollabLabelEditorProps = {
 export function ActiveCollabLabelPicker({
   labels,
   disabled,
-  onChange
+  onToggle
 }: Omit<ActiveCollabLabelEditorProps, 'busy'>): React.JSX.Element {
   const listLabels = useAppStore((s) => s.listActiveCollabLabels)
   const [vocabulary, setVocabulary] = useState<ActiveCollabLabel[]>([])
@@ -123,7 +124,7 @@ export function ActiveCollabLabelPicker({
                 type="button"
                 disabled={disabled}
                 aria-pressed={selected}
-                onClick={() => onChange(toggleActiveCollabLabelName(labels, label.name))}
+                onClick={() => onToggle(label.name)}
                 className={cn(
                   'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[12px] hover:bg-accent disabled:opacity-50',
                   selected && 'font-medium text-foreground'
@@ -158,7 +159,7 @@ export function ActiveCollabLabelEditor({
   labels,
   disabled,
   busy,
-  onChange
+  onToggle
 }: ActiveCollabLabelEditorProps): React.JSX.Element {
   // A task with no labels needs "Add", not "Edit" — there is nothing to edit yet.
   const label =
@@ -179,7 +180,7 @@ export function ActiveCollabLabelEditor({
         </button>
       </PopoverTrigger>
       <PopoverContent className="popover-scroll-content scrollbar-sleek w-72 p-2" align="start">
-        <ActiveCollabLabelPicker labels={labels} disabled={disabled} onChange={onChange} />
+        <ActiveCollabLabelPicker labels={labels} disabled={disabled} onToggle={onToggle} />
       </PopoverContent>
     </Popover>
   )

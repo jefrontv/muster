@@ -446,6 +446,80 @@ describe('a fetch that did not work', () => {
     expect(authFailures).toBe(0)
   })
 
+  it('a truncated fetch still diffs and does not count as a failure', async () => {
+    // Every page full and distinct: the cap trips, the first 1000 still land in the snapshot.
+    fetchPage.mockImplementation(async (requested) => page([acTask({ id: requested })], true))
+    const p = poller()
+    p.start()
+    pending?.run()
+    pending = null
+
+    await vi.waitFor(() => expect(saveSnapshot).toHaveBeenCalled())
+    await vi.waitFor(() => expect(pending).not.toBeNull())
+    // Read through a widened alias: TS narrows `pending` to null after the assignment above and
+    // cannot see the schedule closure repopulating it.
+    const rearmed = pending as PendingTimer
+    // Success cadence, not backoff: the next delay is the plain default interval.
+    expect(rearmed?.delayMs).toBe(DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS)
+  })
+
+  it('coalesces a banner storm into one summary per kind', async () => {
+    stored = {}
+    // Six new assignments against an empty (but existing) snapshot = six banner-eligible changes.
+    fetchPage.mockResolvedValue(
+      page([1, 2, 3, 4, 5, 6].map((id) => acTask({ id, name: `Task ${id}` })))
+    )
+    const summaries: { kind: AcTaskChangeKind; count: number }[] = []
+    const p = createAcTaskPoller({
+      now: () => NOW,
+      intervalMs: () => undefined,
+      snapshotKey: () => KEY,
+      shouldPoll: () => true,
+      notifyKinds: () => new Set<AcTaskChangeKind>(['assigned']),
+      fetchPage,
+      loadSnapshot: () => stored,
+      saveSnapshot,
+      loadUnread: () => storedUnread,
+      saveUnread,
+      emit: (change) => emitted.push(change),
+      onUnread: () => undefined,
+      schedule: () => () => undefined,
+      emitSummary: (kind, count) => summaries.push({ kind, count })
+    })
+
+    await p.poll()
+
+    expect(emitted).toEqual([])
+    expect(summaries).toEqual([{ kind: 'assigned', count: 6 }])
+  })
+
+  it('emits individually at or under the cap even when a summary channel exists', async () => {
+    stored = {}
+    fetchPage.mockResolvedValue(page([1, 2, 3].map((id) => acTask({ id }))))
+    const summaries: unknown[] = []
+    const p = createAcTaskPoller({
+      now: () => NOW,
+      intervalMs: () => undefined,
+      snapshotKey: () => KEY,
+      shouldPoll: () => true,
+      notifyKinds: () => new Set<AcTaskChangeKind>(['assigned']),
+      fetchPage,
+      loadSnapshot: () => stored,
+      saveSnapshot,
+      loadUnread: () => storedUnread,
+      saveUnread,
+      emit: (change) => emitted.push(change),
+      onUnread: () => undefined,
+      schedule: () => () => undefined,
+      emitSummary: (kind, count) => summaries.push({ kind, count })
+    })
+
+    await p.poll()
+
+    expect(emitted).toHaveLength(3)
+    expect(summaries).toEqual([])
+  })
+
   it('reschedules even when the poll itself rejects, so one fault cannot end the loop', async () => {
     fetchPage.mockResolvedValue(page([acTask({ id: 1 })]))
     saveSnapshot.mockImplementation(() => {
@@ -474,7 +548,7 @@ describe('acFetchAssignedTasks', () => {
     expect(fetch).toHaveBeenCalledTimes(3)
   })
 
-  it('refuses a list longer than the cap rather than diffing a truncated one', async () => {
+  it('flags a list longer than the cap as truncated success, never as a failure', async () => {
     const fetch = vi
       .fn<(page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>>()
       .mockImplementation(async (requested) =>
@@ -482,7 +556,11 @@ describe('acFetchAssignedTasks', () => {
         page([acTask({ id: requested })], true)
       )
 
-    expect(await acFetchAssignedTasks(fetch)).toEqual({ ok: false, auth: false })
+    const fetched = await acFetchAssignedTasks(fetch)
+
+    expect(fetched.ok).toBe(true)
+    expect(fetched.ok && fetched.truncated).toBe(true)
+    expect(fetched.ok && fetched.tasks).toHaveLength(AC_POLL_MAX_PAGES)
     expect(fetch).toHaveBeenCalledTimes(AC_POLL_MAX_PAGES)
   })
 

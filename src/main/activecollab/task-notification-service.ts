@@ -169,6 +169,14 @@ export function startAcTaskNotifications(args: {
         notificationId: 'activecollab:auth'
       }).catch(() => undefined)
     },
+    emitSummary: (kind, count) => {
+      void dispatchMainProcessNotification({
+        source: AC_SOURCE_BY_KIND[kind],
+        dedupeKey: `activecollab:summary:${kind}`,
+        notificationId: `activecollab:summary:${kind}`,
+        activeCollabSummary: { count }
+      }).catch(() => undefined)
+    },
     schedule: (delayMs, run) => {
       const timer = setTimeout(run, delayMs)
       return () => clearTimeout(timer)
@@ -182,6 +190,21 @@ export function startAcTaskNotifications(args: {
 /** Connect, disconnect and settings changes all land here: match the loop to the current world. */
 export function refreshAcTaskNotifications(): void {
   acPoller?.refresh()
+}
+
+/** Settle delay before the post-resume catch-up poll: the network is rarely up the instant the
+ *  lid opens, and an immediate poll would just burn the first backoff step. */
+export const AC_RESUME_POLL_DELAY_MS = 5_000
+
+/**
+ * Wake catch-up: after sleep, the pending timer may sit most of an interval away (or fire into a
+ * dead network), so a laptop opened in the morning would show overnight changes late. One direct
+ * poll, off the timer loop; the `inFlight` latch makes overlap with the timer harmless.
+ */
+export function pollAcTaskNotificationsAfterResume(): void {
+  setTimeout(() => {
+    void acPoller?.poll().catch(() => undefined)
+  }, AC_RESUME_POLL_DELAY_MS)
 }
 
 export function stopAcTaskNotifications(): void {

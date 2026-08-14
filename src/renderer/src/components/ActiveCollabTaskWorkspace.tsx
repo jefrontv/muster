@@ -120,7 +120,7 @@ export function ActiveCollabTaskWorkspace({
         pending={writes.pending}
         onScheduleChange={(schedule) => void writes.setSchedule(schedule)}
         onAssigneeIdChange={(assigneeId) => void writes.setAssigneeId(assigneeId)}
-        onLabelNamesChange={(labelNames) => void writes.setLabelNames(labelNames)}
+        onLabelToggle={(labelName) => void writes.toggleLabel(labelName)}
       />
 
       {notice ? (

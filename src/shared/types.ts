@@ -3153,6 +3153,10 @@ export type NotificationDispatchRequest = {
     /** Due phrase, e.g. "Overdue"; set for `activecollab-assigned` and `activecollab-due`. */
     duePhrase?: string
   }
+  /** Set instead of `activeCollab` when one poll coalesces many changes of one kind into a
+   *  single banner ("6 tasks assigned to you"). Carries no task ids on purpose: a summary click
+   *  surfaces the window rather than routing to any one task. */
+  activeCollabSummary?: { count: number }
   /**
    * Burst-dedupe key, when the worktree is the wrong grain. ActiveCollab changes carry no worktree,
    * so without one key per task-and-kind a poll returning three of them would deliver only the

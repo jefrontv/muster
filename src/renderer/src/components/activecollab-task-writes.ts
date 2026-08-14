@@ -11,6 +11,7 @@ import type {
   ActiveCollabFailure,
   ActiveCollabResult
 } from '../../../shared/activecollab-api-types'
+import { toggleActiveCollabLabelName } from './activecollab-task-label-set'
 
 export type ActiveCollabTaskWriteField =
   | 'completion'
@@ -29,8 +30,12 @@ export type ActiveCollabTaskWrites = {
    * and `failure` carries the reason. Callers that only fire and forget can ignore it.
    */
   setCompleted: (completed: boolean) => Promise<boolean>
-  /** Full replacement set — see `activecollab-task-label-set.ts`. */
-  setLabelNames: (labelNames: string[]) => Promise<boolean>
+  /**
+   * Toggles ONE label. The full replacement set the API demands is built here from a forced-fresh
+   * detail read, not from the caller's cached row: labels REPLACE wholesale, so a set built from a
+   * row up to a cache-TTL old silently deletes any label a colleague added since (lost update).
+   */
+  toggleLabel: (labelName: string) => Promise<boolean>
   /**
    * The picker's Save/Clear: BOTH date fields travel every time — Save writes the range, Clear
    * sends explicit nulls. An omitted key would leave the server's value alone.
@@ -59,6 +64,7 @@ export function useActiveCollabTaskWrites(
 ): ActiveCollabTaskWrites {
   const { projectId, taskId, onTask, onComment, reload } = target
   const updateTask = useAppStore((s) => s.updateActiveCollabTask)
+  const fetchTaskDetail = useAppStore((s) => s.fetchActiveCollabTaskDetail)
   const completeTask = useAppStore((s) => s.completeActiveCollabTask)
   const reopenTask = useAppStore((s) => s.reopenActiveCollabTask)
   const postComment = useAppStore((s) => s.postActiveCollabComment)
@@ -117,10 +123,23 @@ export function useActiveCollabTaskWrites(
     [completeTask, onTask, reopenTask, runWrite]
   )
 
-  const setLabelNames = useCallback(
-    (labelNames: string[]) =>
-      runWrite('labels', (ids) => updateTask({ ...ids, update: { labelNames } }), onTask),
-    [onTask, runWrite, updateTask]
+  const toggleLabel = useCallback(
+    (labelName: string) =>
+      runWrite(
+        'labels',
+        async (ids) => {
+          // Shrinks the read-modify-write race from a cache TTL to milliseconds. The API offers
+          // no precondition header, so a concurrent edit inside that window is accepted risk.
+          const fresh = await fetchTaskDetail(ids, { force: true })
+          if (!fresh.ok) {
+            return fresh
+          }
+          const labelNames = toggleActiveCollabLabelName(fresh.value.task.labels, labelName)
+          return updateTask({ ...ids, update: { labelNames } })
+        },
+        onTask
+      ),
+    [fetchTaskDetail, onTask, runWrite, updateTask]
   )
 
   const setSchedule = useCallback(
@@ -156,5 +175,5 @@ export function useActiveCollabTaskWrites(
     [onComment, postComment, runWrite]
   )
 
-  return { pending, failure, setCompleted, setLabelNames, setSchedule, setAssigneeId, addComment }
+  return { pending, failure, setCompleted, toggleLabel, setSchedule, setAssigneeId, addComment }
 }

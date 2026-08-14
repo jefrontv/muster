@@ -15,7 +15,7 @@ type ActiveCollabTaskMetadataBarProps = {
   pending: ActiveCollabTaskWriteField | null
   onScheduleChange: (schedule: ActiveCollabSchedule) => void
   onAssigneeIdChange: (assigneeId: number | null) => void
-  onLabelNamesChange: (labelNames: string[]) => void
+  onLabelToggle: (labelName: string) => void
 }
 
 const META_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground'
@@ -32,7 +32,7 @@ export function ActiveCollabTaskMetadataBar({
   pending,
   onScheduleChange,
   onAssigneeIdChange,
-  onLabelNamesChange
+  onLabelToggle
 }: ActiveCollabTaskMetadataBarProps): React.JSX.Element {
   const busy = pending !== null
 
@@ -87,7 +87,7 @@ export function ActiveCollabTaskMetadataBar({
           labels={task.labels}
           disabled={busy}
           busy={pending === 'labels'}
-          onChange={onLabelNamesChange}
+          onToggle={onLabelToggle}
         />
       </dd>
     </dl>

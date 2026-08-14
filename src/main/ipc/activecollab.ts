@@ -17,7 +17,7 @@
 // stop its poll loop, and every write below folds its own echo into the notifier's snapshot so the
 // next poll does not tell the user about their own edit — see ../activecollab/task-snapshot-store.ts.
 
-import { ipcMain } from 'electron'
+import { ipcMain, powerMonitor } from 'electron'
 import type {
   ActiveCollabAttachmentImage,
   ActiveCollabResult
@@ -57,6 +57,7 @@ import {
   listProjectTasks
 } from '../activecollab/tasks'
 import {
+  pollAcTaskNotificationsAfterResume,
   refreshAcTaskNotifications,
   startAcTaskNotifications
 } from '../activecollab/task-notification-service'
@@ -352,4 +353,7 @@ export function registerActiveCollabHandlers(store: Store): void {
   // Polls only while connected and something can surface the result; the service's refresh() decides
   // that, so registering is cheap for the vast majority who never connect ActiveCollab.
   startAcTaskNotifications({ store, fetchPage: (page) => acListAssignedTasks({ page }) })
+  // Wake catch-up: after sleep the pending poll timer may be most of an interval away, so
+  // overnight changes would otherwise surface minutes late (same pattern as agent-awake-service).
+  powerMonitor.on('resume', pollAcTaskNotificationsAfterResume)
 }

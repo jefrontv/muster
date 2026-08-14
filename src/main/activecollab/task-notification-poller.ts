@@ -51,8 +51,13 @@ import { acMergeTaskUnread, type AcTaskUnread } from './task-unread'
 export const AC_POLL_START_DELAY_MS = 15_000
 export const AC_POLL_MAX_BACKOFF_MS = 15 * 60_000
 
-/** 1000 tasks. Past this the fetch is treated as incomplete rather than silently truncated. */
+/** 1000 tasks. Past this the fetch is returned truncated and flagged, never failed: an outage
+ *  and a heavy workload must not look alike (a failure drives permanent backoff). */
 export const AC_POLL_MAX_PAGES = 10
+
+/** Banners a single poll may emit individually; above this each kind coalesces into one summary.
+ *  A bulk re-assignment of 40 tasks must not be 40 simultaneous native banners. */
+export const AC_POLL_BANNER_CAP = 3
 
 export type AcTaskPollerDeps = {
   now: () => number
@@ -83,6 +88,11 @@ export type AcTaskPollerDeps = {
    * `refresh()` after a reconnect is what re-arms it.
    */
   onAuthFailure?: () => void
+  /**
+   * One coalesced banner per kind when a poll's banner-eligible changes exceed
+   * AC_POLL_BANNER_CAP. Absent = no cap (tests mostly); production always provides it.
+   */
+  emitSummary?: (kind: AcTaskChangeKind, count: number) => void
 }
 
 export type AcTaskPoller = {
@@ -99,10 +109,12 @@ export type AcTaskPoller = {
 }
 
 export type AcAssignedTasksFetch =
-  | { ok: true; tasks: ActiveCollabTask[] }
-  /** "This fetch is not usable" — a failed page, a rejected fetch, or more pages than the cap
-   *  allows — and the caller must leave the snapshot exactly as it found it. `auth` marks the
-   *  one failure retrying can never fix: the instance rejected the stored token. */
+  /** `truncated` = more pages existed than the cap allows; the list is complete to 1000 and
+   *  still safe to diff — the grace window in the detector absorbs the tail. */
+  | { ok: true; tasks: ActiveCollabTask[]; truncated?: boolean }
+  /** "This fetch is not usable" — a failed page or a rejected fetch — and the caller must leave
+   *  the snapshot exactly as it found it. `auth` marks the one failure retrying can never fix:
+   *  the instance rejected the stored token. */
   | { ok: false; auth: boolean }
 
 /** Every open assigned task, de-duplicated by id, or a tagged failure. */
@@ -147,7 +159,7 @@ export async function acFetchAssignedTasks(
       return { ok: true, tasks }
     }
   }
-  return { ok: false, auth: false }
+  return { ok: true, tasks, truncated: true }
 }
 
 export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
@@ -155,6 +167,7 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
   let running = false
   let failures = 0
   let inFlight = false
+  let warnedTruncated = false
   /**
    * The cadence the pending timer was armed with, and when. Null while the timer is the start
    * delay, which is about app startup and so is not a cadence a settings edit may re-arm.
@@ -215,6 +228,13 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
         return
       }
       failures = 0
+      if (fetched.truncated && !warnedTruncated) {
+        warnedTruncated = true
+        console.warn(
+          `[ac-poller] more than ${AC_POLL_MAX_PAGES * 100} open assigned tasks; ` +
+            'notifications cover the first pages only'
+        )
+      }
       const { changes, snapshot } = acDiffTaskSnapshot({
         previous: deps.loadSnapshot(key),
         tasks: fetched.tasks,
@@ -229,9 +249,19 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
         deps.onUnread(unread)
       }
       const kinds = deps.notifyKinds()
-      for (const change of changes) {
-        if (kinds.has(change.kind)) {
+      const wanted = changes.filter((change) => kinds.has(change.kind))
+      if (wanted.length <= AC_POLL_BANNER_CAP || !deps.emitSummary) {
+        for (const change of wanted) {
           deps.emit(change)
+        }
+      } else {
+        // Storm cap: one summary banner per kind instead of one banner per task.
+        const counts = new Map<AcTaskChangeKind, number>()
+        for (const change of wanted) {
+          counts.set(change.kind, (counts.get(change.kind) ?? 0) + 1)
+        }
+        for (const [kind, count] of counts) {
+          deps.emitSummary(kind, count)
         }
       }
     } finally {

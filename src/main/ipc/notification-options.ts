@@ -1,4 +1,8 @@
-import type { ActiveCollabNotificationStyle, NotificationDispatchRequest } from '../../shared/types'
+import type {
+  ActiveCollabNotificationStyle,
+  NotificationDispatchRequest,
+  NotificationEventSource
+} from '../../shared/types'
 
 const NOTIFICATION_AGENT_LABEL_MAX_LENGTH = 40
 const NOTIFICATION_TITLE_CONTEXT_MAX_LENGTH = 80
@@ -51,6 +55,14 @@ export function buildNotificationOptions(
     return {
       title: 'ActiveCollab needs to reconnect',
       body: 'The instance rejected the saved sign-in, so task notifications are paused. Reconnect from the Tasks page.'
+    }
+  }
+
+  // Also before the generic branch: a summary has a count, not a task.
+  if (args.activeCollabSummary && args.source.startsWith('activecollab-')) {
+    return {
+      title: describeActiveCollabSummary(args.source, args.activeCollabSummary.count),
+      body: 'ActiveCollab'
     }
   }
 
@@ -108,6 +120,20 @@ function buildActiveCollabNotificationOptions(
     }
   }
   return { title: `${change}: ${taskName}`, body }
+}
+
+/** One coalesced line for a storm-capped poll: the kind and how many, never task names. */
+function describeActiveCollabSummary(source: NotificationEventSource, count: number): string {
+  if (source === 'activecollab-comments') {
+    return `New comments on ${count} tasks`
+  }
+  if (source === 'activecollab-due') {
+    return `${count} tasks due or overdue`
+  }
+  if (source === 'activecollab-updated') {
+    return `${count} tasks updated`
+  }
+  return `${count} tasks assigned to you`
 }
 
 /** The one phrase both styles agree on: what actually happened to the task. */

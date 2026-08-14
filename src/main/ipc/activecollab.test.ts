@@ -36,7 +36,8 @@ vi.mock('electron', () => ({
   app: { getPath: () => '/tmp/downloads' },
   dialog: { showSaveDialog: vi.fn() },
   shell: { showItemInFolder: vi.fn() },
-  BrowserWindow: { fromWebContents: () => null }
+  BrowserWindow: { fromWebContents: () => null },
+  powerMonitor: { on: vi.fn() }
 }))
 
 // The error class stays real: the failure mapping branches on `instanceof` and on `isAuthError`,
@@ -61,7 +62,8 @@ vi.mock('./preflight', () => ({ _resetPreflightCache: resetPreflightMock }))
 // graph stays clear of the notification stack, which pulls in the tray, sound assets and a window.
 vi.mock('../activecollab/task-notification-service', () => ({
   startAcTaskNotifications: vi.fn(),
-  refreshAcTaskNotifications: vi.fn()
+  refreshAcTaskNotifications: vi.fn(),
+  pollAcTaskNotificationsAfterResume: vi.fn()
 }))
 
 vi.mock('../activecollab/task-snapshot-store', () => ({
