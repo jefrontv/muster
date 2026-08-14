@@ -12,6 +12,10 @@ import {
 
 export const CACHE_TTL = 60_000
 export const MAX_CACHE_ENTRIES = 500
+/** Entries older than this are dropped outright on the next cache write. The detail cache holds
+ *  full comment threads, and count-only pruning let 500 of them sit on the heap for a whole
+ *  session; ten minutes comfortably outlives every stale-while-revalidate window. */
+export const CACHE_MAX_AGE = 10 * 60_000
 
 /** Matches the runtime client's settings parameter without importing it, so the two land apart. */
 export type ActiveCollabRuntimeSettings =
@@ -37,16 +41,27 @@ export function isFresh<T>(entry: CacheEntry<T> | undefined): entry is CacheEntr
 
 export function evictStaleEntries<T>(
   cache: Record<string, CacheEntry<T>>,
-  maxEntries = MAX_CACHE_ENTRIES
+  maxEntries = MAX_CACHE_ENTRIES,
+  maxAgeMs = CACHE_MAX_AGE
 ): Record<string, CacheEntry<T>> {
-  const keys = Object.keys(cache)
-  if (keys.length <= maxEntries) {
-    return cache
+  const oldest = Date.now() - maxAgeMs
+  let keys = Object.keys(cache)
+  const expired = keys.filter((key) => (cache[key]?.fetchedAt ?? 0) < oldest)
+  let base = cache
+  if (expired.length > 0) {
+    base = { ...cache }
+    for (const key of expired) {
+      delete base[key]
+    }
+    keys = Object.keys(base)
   }
-  const sorted = keys.sort((a, b) => (cache[a]?.fetchedAt ?? 0) - (cache[b]?.fetchedAt ?? 0))
+  if (keys.length <= maxEntries) {
+    return base
+  }
+  const sorted = keys.sort((a, b) => (base[a]?.fetchedAt ?? 0) - (base[b]?.fetchedAt ?? 0))
   const pruned: Record<string, CacheEntry<T>> = {}
   for (const key of sorted.slice(sorted.length - maxEntries)) {
-    const entry = cache[key]
+    const entry = base[key]
     if (entry) {
       pruned[key] = entry
     }

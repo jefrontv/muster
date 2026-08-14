@@ -57,7 +57,9 @@ export function selectActiveCollabAssignedTasks(
       break
     }
     for (const task of rows.tasks) {
-      if (!seenTaskIds.has(task.id)) {
+      // isCompleted: a locally completed row is patched back into the cache as completed and
+      // would otherwise linger in the "assigned" list until the cache turns over.
+      if (!seenTaskIds.has(task.id) && !task.isCompleted) {
         seenTaskIds.add(task.id)
         tasks.push(task)
       }

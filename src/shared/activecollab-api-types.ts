@@ -31,6 +31,9 @@ export type ActiveCollabFailureKind =
   | 'auth'
   | 'invalid-request'
   | 'api'
+  /** The request never reached the instance — offline, DNS, or a timed-out socket. Retryable by
+   *  definition, and must not be dressed as an instance fault ("reconnecting will not fix"). */
+  | 'network'
   | 'unknown'
 
 /**

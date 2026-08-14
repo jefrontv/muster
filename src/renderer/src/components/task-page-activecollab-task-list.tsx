@@ -148,12 +148,33 @@ export function ActiveCollabTaskList({
   // The main-process poller (Settings → Notifications cadence, default one minute) already detects
   // assignment and status changes; its unread broadcast doubles as the freshness signal here, so a
   // newly assigned task lands in an OPEN list at poll cadence instead of waiting for a remount.
+  // Only a RISING total refetches: mark-read broadcasts (total falls, fired by merely opening a
+  // task) were forcing a page-1 network read on top of the detail read that caused them. Debounced,
+  // because a burst of broadcasts must not become a burst of refetches.
   // Optional chaining: web/runtime stand-ins and unit suites mount this list without the bridge.
+  const lastUnreadTotalRef = useRef(0)
   useEffect(() => {
-    const unsubscribe = window.api?.activecollab?.onUnreadChanged?.(() => {
-      void loadPage(1, true)
+    let timer: number | null = null
+    const unsubscribe = window.api?.activecollab?.onUnreadChanged?.((unread) => {
+      const previous = lastUnreadTotalRef.current
+      lastUnreadTotalRef.current = unread.total
+      if (unread.total <= previous) {
+        return
+      }
+      if (timer !== null) {
+        window.clearTimeout(timer)
+      }
+      timer = window.setTimeout(() => {
+        timer = null
+        void loadPage(1, true)
+      }, 400)
     })
-    return () => unsubscribe?.()
+    return () => {
+      if (timer !== null) {
+        window.clearTimeout(timer)
+      }
+      unsubscribe?.()
+    }
   }, [loadPage])
 
   // Derived rather than reset from an effect: until the reload lands, a changed scope must not

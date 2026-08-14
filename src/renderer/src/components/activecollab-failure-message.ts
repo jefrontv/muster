@@ -33,6 +33,11 @@ export function describeActiveCollabFailure(failure: ActiveCollabFailure): strin
         'ActiveCollab returned an error that reconnecting will not fix: {{value0}}',
         { value0: failure.error }
       )
+    case 'network':
+      return translate(
+        'auto.components.activecollab.failure.network',
+        'Could not reach ActiveCollab. Check your internet connection and try again.'
+      )
     case 'unknown':
       return translate(
         'auto.components.activecollab.failure.unknown',

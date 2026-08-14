@@ -55,6 +55,8 @@ function renderSection(overrides: Partial<NotificationSettings> = {}): RenderedS
       notificationSettings={notificationSettings}
       notificationsEnabled={notificationSettings.enabled}
       onUpdateNotificationSettings={onUpdate}
+      pollIntervalMs={null}
+      onPollIntervalChange={() => undefined}
     />
   )
   return { onUpdate }

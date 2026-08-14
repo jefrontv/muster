@@ -144,6 +144,13 @@ export function acProjectMembers(args: {
     if (cached !== undefined && at < cached.expiresAt) {
       return cached.members
     }
+    // Sweep on insert — same growth trap as name-directory: one dead entry per project visited,
+    // held until connect/disconnect.
+    for (const [staleKey, staleEntry] of acProjectMembersCache) {
+      if (at >= staleEntry.expiresAt) {
+        acProjectMembersCache.delete(staleKey)
+      }
+    }
     const entry = acBeginMembersLoad({ http: args.http, names: args.names, projectId }, key, at)
     acProjectMembersCache.set(key, entry)
     return entry.members

@@ -157,6 +157,13 @@ export function acNameDirectory(args: {
     if (cached !== undefined && at < cached.expiresAt) {
       return cached.directory
     }
+    // Sweep on insert: an expired entry for a key never read again would otherwise sit in the
+    // map until connect/disconnect — one entry per project/credential visited, all session long.
+    for (const [staleKey, staleEntry] of acNameCache) {
+      if (at >= staleEntry.expiresAt) {
+        acNameCache.delete(staleKey)
+      }
+    }
     const entry = acBeginLoad(args.http, key, at)
     acNameCache.set(key, entry)
     return entry.directory

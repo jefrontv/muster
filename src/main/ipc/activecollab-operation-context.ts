@@ -19,11 +19,13 @@ import { InvalidRequestError, NotConfiguredError } from './activecollab-argument
 
 export function toFailure(error: unknown): ActiveCollabFailure {
   if (error instanceof ActiveCollabApiError) {
-    // A rejected token means reconnect; anything else is the instance misbehaving and is worth
-    // retrying. Collapsing the two would put a reconnect prompt in front of a 503.
+    // A rejected token means reconnect; status 0 means the request never reached the instance
+    // (offline, DNS, timeout) and is retryable; anything else is the instance misbehaving.
+    // Collapsing them would put a reconnect prompt in front of a 503 and blame the instance
+    // for a dropped wifi connection.
     return {
       ok: false,
-      kind: error.isAuthError ? 'auth' : 'api',
+      kind: error.isAuthError ? 'auth' : error.status === 0 ? 'network' : 'api',
       error: error.message,
       status: error.status
     }

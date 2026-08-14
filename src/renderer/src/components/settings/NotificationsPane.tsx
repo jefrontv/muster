@@ -216,6 +216,10 @@ export function NotificationsPane({
         notificationSettings={notificationSettings}
         notificationsEnabled={notificationSettings.enabled}
         onUpdateNotificationSettings={updateNotificationSettings}
+        pollIntervalMs={settings.activeCollabPollIntervalMs}
+        onPollIntervalChange={(intervalMs) =>
+          updateSettings({ activeCollabPollIntervalMs: intervalMs })
+        }
       />
 
       <Separator />

@@ -17,7 +17,7 @@ import {
 } from '../../../../shared/task-source-context'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { credentialDecryptionMessage } from '../../../../shared/integration-credential-errors'
-import { CACHE_TTL, MAX_CACHE_ENTRIES } from './activecollab-cache'
+import { CACHE_MAX_AGE, CACHE_TTL, MAX_CACHE_ENTRIES } from './activecollab-cache'
 import { createActiveCollabSlice } from './activecollab'
 import type { ActiveCollabTaskPageRows } from './activecollab-task-patch'
 
@@ -342,10 +342,12 @@ describe('createActiveCollabSlice cache eviction', () => {
   it('prunes the oldest detail entries once the cache passes MAX_CACHE_ENTRIES', async () => {
     const store = createTestStore()
     const seeded: Record<string, CacheEntry<ActiveCollabTaskDetail>> = {}
+    // Recent timestamps: age-based eviction must not fire here, only the LRU count cap.
+    const base = Date.now() - 1_000
     for (let index = 0; index < MAX_CACHE_ENTRIES; index += 1) {
       seeded[`seed::detail::${index}`] = {
         data: { task: task(1_000 + index), comments: [], attachments: [] },
-        fetchedAt: 1_000 + index
+        fetchedAt: base + index
       }
     }
     store.setState({ activeCollabTaskDetailCache: seeded })
@@ -360,6 +362,29 @@ describe('createActiveCollabSlice cache eviction', () => {
     expect(Object.keys(cache)).toHaveLength(MAX_CACHE_ENTRIES)
     expect(cache['seed::detail::0']).toBeUndefined()
     expect(cache[`seed::detail::${MAX_CACHE_ENTRIES - 1}`]).toBeDefined()
+    expect(cache[implicitDetailKey(1)]?.data?.task.id).toBe(1)
+  })
+
+  it('drops entries past CACHE_MAX_AGE outright, whatever the count', async () => {
+    const store = createTestStore()
+    const expired = Date.now() - CACHE_MAX_AGE - 1_000
+    store.setState({
+      activeCollabTaskDetailCache: {
+        'seed::detail::old': {
+          data: { task: task(999), comments: [], attachments: [] },
+          fetchedAt: expired
+        }
+      }
+    })
+    getTaskDetail.mockResolvedValue({
+      ok: true,
+      value: { task: task(1), comments: [], attachments: [] }
+    })
+
+    await store.getState().fetchActiveCollabTaskDetail({ projectId: 12, taskId: 1 })
+
+    const cache = store.getState().activeCollabTaskDetailCache
+    expect(cache['seed::detail::old']).toBeUndefined()
     expect(cache[implicitDetailKey(1)]?.data?.task.id).toBe(1)
   })
 })

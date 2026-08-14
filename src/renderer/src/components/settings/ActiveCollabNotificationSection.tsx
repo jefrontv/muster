@@ -1,23 +1,40 @@
 import type { GlobalSettings } from '../../../../shared/types'
 import { Label } from '../ui/label'
-import { CalendarClock, ClipboardList, MessageSquare, PencilLine, UserPlus } from 'lucide-react'
+import { CalendarClock, ClipboardList, MessageSquare, PencilLine, Timer, UserPlus } from 'lucide-react'
+import { clampActiveCollabPollIntervalMs } from '../../../../shared/activecollab-poll-interval'
 import { NotificationSettingToggle } from './NotificationSettingToggle'
 import { ActiveCollabNotificationDelivery } from './ActiveCollabNotificationDelivery'
+import { SettingsRow, SettingsSegmentedControl } from './SettingsFormControls'
 import { translate } from '@/i18n/i18n'
 
 type ActiveCollabNotificationSectionProps = {
   notificationSettings: GlobalSettings['notifications']
   notificationsEnabled: boolean
   onUpdateNotificationSettings: (updates: Partial<GlobalSettings['notifications']>) => Promise<void>
+  /** The stored cadence, raw; the poller clamps the same bounds this control renders. */
+  pollIntervalMs: number | null | undefined
+  onPollIntervalChange: (intervalMs: number) => void | Promise<void>
 }
+
+// Within the poller's clamp bounds (15s–15min); the value stored is milliseconds.
+const POLL_INTERVAL_OPTIONS = [
+  { value: 30_000, label: '30s' },
+  { value: 60_000, label: '1m' },
+  { value: 180_000, label: '3m' },
+  { value: 300_000, label: '5m' },
+  { value: 900_000, label: '15m' }
+] as const
 
 /** The four ActiveCollab task alerts, grouped so the shared polling cost can be
  *  stated once. Split out of NotificationsPane to keep that file under budget. */
 export function ActiveCollabNotificationSection({
   notificationSettings,
   notificationsEnabled,
-  onUpdateNotificationSettings
+  onUpdateNotificationSettings,
+  pollIntervalMs,
+  onPollIntervalChange
 }: ActiveCollabNotificationSectionProps): React.JSX.Element {
+  const effectiveInterval = clampActiveCollabPollIntervalMs(pollIntervalMs)
   return (
     <div className="space-y-1 py-2">
       <div className="space-y-0.5">
@@ -33,7 +50,7 @@ export function ActiveCollabNotificationSection({
         <p className="text-xs text-muted-foreground">
           {translate(
             'auto.components.settings.ActiveCollabNotificationSection.groupDescription',
-            'ActiveCollab has no webhooks, so Muster checks your ActiveCollab server every minute in the background while any of these are on.'
+            'ActiveCollab has no webhooks, so Muster checks your ActiveCollab server on the cadence below whenever ActiveCollab is connected — the sidebar Tasks badge relies on it even with every banner off.'
           )}
         </p>
       </div>
@@ -112,6 +129,37 @@ export function ActiveCollabNotificationSection({
             void onUpdateNotificationSettings({
               activeCollabUpdated: !notificationSettings.activeCollabUpdated
             })
+          }
+        />
+
+        <SettingsRow
+          label={
+            <span className="flex items-center gap-2">
+              <Timer className="size-4" />
+              {translate(
+                'auto.components.settings.ActiveCollabNotificationSection.pollInterval',
+                'Check Every'
+              )}
+            </span>
+          }
+          description={translate(
+            'auto.components.settings.ActiveCollabNotificationSection.pollIntervalDescription',
+            'How often Muster asks ActiveCollab for changes. Shorter is fresher; longer is lighter on a shared server.'
+          )}
+          control={
+            <SettingsSegmentedControl
+              ariaLabel={translate(
+                'auto.components.settings.ActiveCollabNotificationSection.pollInterval',
+                'Check Every'
+              )}
+              size="sm"
+              value={effectiveInterval}
+              onChange={(intervalMs) => void onPollIntervalChange(intervalMs)}
+              options={POLL_INTERVAL_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label
+              }))}
+            />
           }
         />
 
