@@ -23,7 +23,7 @@ describe('remapOnboardingLastCompletedStep', () => {
   })
 
   it('remaps unversioned seven-step open progress through v4 then v5', () => {
-    const base = { flowVersion: 1, outcome: null as const }
+    const base = { flowVersion: 1, outcome: null }
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 }, CURRENT)).toBe(2)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 }, CURRENT)).toBe(2)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 5 }, CURRENT)).toBe(4)
@@ -31,7 +31,7 @@ describe('remapOnboardingLastCompletedStep', () => {
   })
 
   it('remaps versioned five-step open progress through v4 then v5', () => {
-    const base = { flowVersion: 2, outcome: null as const }
+    const base = { flowVersion: 2, outcome: null }
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 }, CURRENT)).toBe(2)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 }, CURRENT)).toBe(4)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 5 }, CURRENT)).toBe(4)
@@ -39,14 +39,14 @@ describe('remapOnboardingLastCompletedStep', () => {
   })
 
   it('remaps versioned four-step open progress around Windows then default view', () => {
-    const base = { flowVersion: 3, outcome: null as const }
+    const base = { flowVersion: 3, outcome: null }
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 }, CURRENT)).toBe(4)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 }, CURRENT)).toBe(5)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 9 }, CURRENT)).toBe(5)
   })
 
   it('shifts v4 progress after theme so the new default-view page is seen', () => {
-    const base = { flowVersion: 4, outcome: null as const }
+    const base = { flowVersion: 4, outcome: null }
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 2 }, CURRENT)).toBe(2)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 }, CURRENT)).toBe(4)
     expect(remapOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 }, CURRENT)).toBe(5)
