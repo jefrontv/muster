@@ -56,68 +56,6 @@ describe('SshGitProvider', () => {
     expect(provider.getConnectionId()).toBe('conn-1')
   })
 
-  it('getStatus sends git.status request', async () => {
-    const statusResult = {
-      entries: [{ path: 'generated/a.ts', status: 'untracked', area: 'untracked' }],
-      conflictOperation: 'unknown',
-      didHitLimit: true,
-      statusLength: 1_001
-    }
-    mux.request.mockResolvedValue(statusResult)
-
-    const result = await provider.getStatus('/home/user/repo')
-    expect(mux.request).toHaveBeenCalledWith('git.status', { worktreePath: '/home/user/repo' })
-    expect(result).toEqual(statusResult)
-  })
-
-  it('getStatus forwards includeIgnored only when requested', async () => {
-    const statusResult = { entries: [], conflictOperation: 'unknown', ignoredPaths: ['dist/'] }
-    mux.request.mockResolvedValue(statusResult)
-
-    await provider.getStatus('/home/user/repo', { includeIgnored: true })
-    await provider.getStatus('/home/user/repo', { includeIgnored: false })
-
-    expect(mux.request).toHaveBeenNthCalledWith(1, 'git.status', {
-      worktreePath: '/home/user/repo',
-      includeIgnored: true
-    })
-    expect(mux.request).toHaveBeenNthCalledWith(2, 'git.status', {
-      worktreePath: '/home/user/repo'
-    })
-  })
-
-  it('getStatus forwards upstream-negative-cache bypass only when requested', async () => {
-    const statusResult = { entries: [], conflictOperation: 'unknown' }
-    mux.request.mockResolvedValue(statusResult)
-
-    await provider.getStatus('/home/user/repo', { bypassEffectiveUpstreamNegativeCache: true })
-    await provider.getStatus('/home/user/repo', { bypassEffectiveUpstreamNegativeCache: false })
-
-    expect(mux.request).toHaveBeenNthCalledWith(1, 'git.status', {
-      worktreePath: '/home/user/repo',
-      bypassEffectiveUpstreamNegativeCache: true
-    })
-    expect(mux.request).toHaveBeenNthCalledWith(2, 'git.status', {
-      worktreePath: '/home/user/repo'
-    })
-  })
-
-  it('getStatus forwards line-stat reuse and cancellation to the relay', async () => {
-    const controller = new AbortController()
-    mux.request.mockResolvedValue({ entries: [], conflictOperation: 'unknown' })
-
-    await provider.getStatus('/home/user/repo', {
-      reuseLineStats: true,
-      signal: controller.signal
-    })
-
-    expect(mux.request).toHaveBeenCalledWith(
-      'git.status',
-      { worktreePath: '/home/user/repo', reuseLineStats: true },
-      { signal: controller.signal }
-    )
-  })
-
   it('getSubmoduleStatus sends git.submoduleStatus request', async () => {
     const statusResult = { entries: [], conflictOperation: 'unknown' }
     mux.request.mockResolvedValue(statusResult)
@@ -1416,53 +1354,6 @@ describe('SshGitProvider', () => {
       remoteTrackingRef: 'refs/remotes/origin/main',
       ownerWorktreePath: '/home/user/repo'
     })
-  })
-
-  it('worktreeIsClean falls back to git.status for old relays', async () => {
-    const methodNotFound = Object.assign(new Error('Method not found: git.worktreeIsClean'), {
-      code: -32601
-    })
-    mux.request.mockRejectedValueOnce(methodNotFound).mockResolvedValueOnce({
-      entries: [{ path: 'scratch.txt', status: 'untracked', area: 'untracked' }],
-      conflictOperation: 'unknown'
-    })
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
-    try {
-      const result = await provider.worktreeIsClean('/home/user/feat')
-
-      expect(mux.request).toHaveBeenNthCalledWith(1, 'git.worktreeIsClean', {
-        worktreePath: '/home/user/feat'
-      })
-      expect(mux.request).toHaveBeenNthCalledWith(2, 'git.status', {
-        worktreePath: '/home/user/feat'
-      })
-      expect(result).toEqual({ clean: false, stdout: 'untracked untracked: scratch.txt' })
-    } finally {
-      warnSpy.mockRestore()
-    }
-  })
-
-  it('worktreeIsClean filters untracked entries in old-relay fallback', async () => {
-    const methodNotFound = Object.assign(new Error('Method not found: git.worktreeIsClean'), {
-      code: -32601
-    })
-    mux.request.mockRejectedValueOnce(methodNotFound).mockResolvedValueOnce({
-      entries: [{ path: 'scratch.txt', status: 'untracked', area: 'untracked' }],
-      conflictOperation: 'unknown'
-    })
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
-    try {
-      await expect(
-        provider.worktreeIsClean('/home/user/feat', { includeUntracked: false })
-      ).resolves.toEqual({ clean: true })
-      expect(mux.request).toHaveBeenNthCalledWith(2, 'git.status', {
-        worktreePath: '/home/user/feat'
-      })
-    } finally {
-      warnSpy.mockRestore()
-    }
   })
 
   it('renameCurrentBranch sends the narrow branch-rename request', async () => {
