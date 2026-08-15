@@ -9,15 +9,7 @@ export function showWorkspaceCleanupRemovalResultToasts(
   result: WorkspaceCleanupRemoveResult,
   pendingSettlementFailures?: ReadonlySet<WorkspaceCleanupFailure>
 ): void {
-  if (result.removedIds.length > 0) {
-    toast.success(
-      translate(
-        'auto.components.workspace.cleanup.backgroundRemoval.removed',
-        'Removed workspaces: {{value0}}',
-        { value0: result.removedIds.length }
-      )
-    )
-  }
+  // No success toast: removal already reads as the rows leaving the list.
   const definitiveFailures = pendingSettlementFailures
     ? result.failures.filter((failure) => !pendingSettlementFailures.has(failure))
     : result.failures
