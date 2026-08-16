@@ -15,6 +15,14 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    server: {
+      deps: {
+        // Why: this package imports 'electron' itself; externalized it loads the real
+        // CJS stub and dies on named exports before any suite's vi.mock('electron')
+        // can apply. Inlining routes its import through the mocked module graph.
+        inline: ['@electron-toolkit/utils']
+      }
+    },
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',

@@ -6,6 +6,7 @@ import {
   type TaskSourceContext
 } from '../../../../shared/task-source-context'
 import {
+  CACHE_MAX_AGE,
   CACHE_TTL,
   MAX_CACHE_ENTRIES,
   evictStaleEntries,
@@ -48,24 +49,36 @@ describe('activeCollab cache freshness', () => {
 })
 
 describe('activeCollab cache eviction', () => {
+  // Recent timestamps: eviction age-prunes anything older than CACHE_MAX_AGE first,
+  // so count-limit behavior is only observable on rows that survive the age rule.
+  const now = Date.now()
+
   it('leaves a cache at or under the limit untouched by identity', () => {
-    const cache = { a: entry(1), b: entry(2) }
+    const cache = { a: entry(now - 2_000), b: entry(now - 1_000) }
     expect(evictStaleEntries(cache, 2)).toBe(cache)
   })
 
   it('drops the oldest entries once the cache passes the limit', () => {
     const cache: Record<string, CacheEntry<string>> = {
-      oldest: entry(1),
-      middle: entry(2),
-      newest: entry(3)
+      oldest: entry(now - 3_000),
+      middle: entry(now - 2_000),
+      newest: entry(now - 1_000)
     }
     expect(Object.keys(evictStaleEntries(cache, 2)).sort()).toEqual(['middle', 'newest'])
+  })
+
+  it('drops entries older than CACHE_MAX_AGE even under the count limit', () => {
+    const cache: Record<string, CacheEntry<string>> = {
+      ancient: entry(now - CACHE_MAX_AGE - 1_000),
+      recent: entry(now - 1_000)
+    }
+    expect(Object.keys(evictStaleEntries(cache, 10))).toEqual(['recent'])
   })
 
   it('prunes to MAX_CACHE_ENTRIES on write, keeping the newly written row', () => {
     let cache: Record<string, CacheEntry<string>> = {}
     for (let index = 0; index < MAX_CACHE_ENTRIES; index += 1) {
-      cache[`seed-${index}`] = entry(1_000 + index)
+      cache[`seed-${index}`] = entry(now - MAX_CACHE_ENTRIES + index)
     }
     cache = writeCacheEntry(cache, 'fresh', 'value')
 

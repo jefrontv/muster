@@ -6,7 +6,7 @@ import { EventEmitter } from 'node:events'
 import { randomUUID } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
-import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { basename, join, win32 } from 'node:path'
 import { ipcMain } from 'electron'
@@ -6797,7 +6797,7 @@ describe('OrcaRuntimeService', () => {
   })
 
   it('sets up an existing folder on a fresh runtime after importing the repo project', async () => {
-    const tempRoot = await mkdtemp(join(tmpdir(), 'orca-runtime-project-setup-'))
+    const tempRoot = await realpath(await mkdtemp(join(tmpdir(), 'orca-runtime-project-setup-')))
     const repos: Record<string, unknown>[] = []
     getRepoUpstreamMock.mockResolvedValueOnce({ owner: 'stablyai', repo: 'orca' })
     const runtimeStore = {
@@ -6876,7 +6876,7 @@ describe('OrcaRuntimeService', () => {
   })
 
   it('keeps existing-folder imports split by runtime host on the same normalized path', async () => {
-    const tempRoot = await mkdtemp(join(tmpdir(), 'orca-runtime-project-host-'))
+    const tempRoot = await realpath(await mkdtemp(join(tmpdir(), 'orca-runtime-project-host-')))
     const repos: Record<string, unknown>[] = []
     getRepoUpstreamMock.mockResolvedValue({ owner: 'stablyai', repo: 'orca' })
     const runtimeStore = {
@@ -7065,7 +7065,7 @@ describe('OrcaRuntimeService', () => {
   })
 
   it('keeps project clone setup on the cloned host-qualified repo', async () => {
-    const destination = await mkdtemp(join(tmpdir(), 'orca-runtime-project-clone-'))
+    const destination = await realpath(await mkdtemp(join(tmpdir(), 'orca-runtime-project-clone-')))
     const clonePath = join(destination, 'orca')
     const spawnSpy = vi.spyOn(gitRunner, 'gitSpawn')
     const repos: Record<string, unknown>[] = []
@@ -7127,7 +7127,7 @@ describe('OrcaRuntimeService', () => {
   })
 
   it('adopts public clone repos into host-qualified project setup', async () => {
-    const destination = await mkdtemp(join(tmpdir(), 'orca-runtime-project-clone-'))
+    const destination = await realpath(await mkdtemp(join(tmpdir(), 'orca-runtime-project-clone-')))
     const clonePath = join(destination, 'orca')
     const spawnSpy = vi.spyOn(gitRunner, 'gitSpawn')
     const repos: Record<string, unknown>[] = []
@@ -7197,7 +7197,7 @@ describe('OrcaRuntimeService', () => {
   })
 
   it('keeps project clone repos split by runtime host on the same clone path', async () => {
-    const destination = await mkdtemp(join(tmpdir(), 'orca-runtime-project-clone-'))
+    const destination = await realpath(await mkdtemp(join(tmpdir(), 'orca-runtime-project-clone-')))
     const clonePath = join(destination, 'orca')
     const spawnSpy = vi.spyOn(gitRunner, 'gitSpawn')
     const repos: Record<string, unknown>[] = [

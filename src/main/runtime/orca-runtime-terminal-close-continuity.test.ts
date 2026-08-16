@@ -1,4 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
+
+// Why: the runtime's import chain reaches @electron-toolkit/utils, which reads
+// app.isPackaged at load time; outside an Electron runtime there is no real app.
+vi.mock('electron', () => ({
+  BrowserWindow: { fromId: vi.fn((_id: number): unknown => null) },
+  webContents: { fromId: vi.fn((_id: number): unknown => null) },
+  ipcMain: { on: vi.fn(), removeListener: vi.fn(), emit: vi.fn() },
+  app: { getPath: vi.fn(() => '/tmp'), isPackaged: false },
+  // node-safe-electron imports safeStorage from the same module; a partial mock throws at import.
+  safeStorage: undefined
+}))
+
 import { getDefaultWorkspaceSession } from '../../shared/constants'
 import { makePaneKey } from '../../shared/stable-pane-id'
 import type { WorkspaceSessionState } from '../../shared/types'
