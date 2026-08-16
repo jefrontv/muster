@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type * as FsPromises from 'node:fs/promises'
 import type * as GitRepo from '../git/repo'
-import type { Repo } from '../../shared/repo-types'
+import type { Repo } from '../../shared/types'
 
 // Why: the watch must stay one stat per folder project per tick — counting the real
 // calls is what keeps a directory-listing fan-out from creeping back in.
