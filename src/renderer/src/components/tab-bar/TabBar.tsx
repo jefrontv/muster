@@ -21,6 +21,7 @@ import type {
 } from '../../../../shared/types'
 import type { ProjectExecutionRuntimeResolution } from '../../../../shared/project-execution-runtime'
 import { resolveTerminalTabTitle } from '../../../../shared/tab-title-resolution'
+import { DEFAULT_DISABLED_TUI_AGENTS } from '../../../../shared/tui-agent-selection'
 import { useAppStore } from '../../store'
 import { buildStatusMap } from '../right-sidebar/status-display'
 import type { OpenFile } from '../../store/slices/editor'
@@ -288,6 +289,9 @@ function TabBarInner({
     return s.sshConnectionStates.get(worktreeConnectionId)?.remotePlatform ?? null
   })
   const defaultAgent = useAppStore((s) => s.settings?.defaultTuiAgent)
+  const disabledTuiAgents = useAppStore(
+    (s) => s.settings?.disabledTuiAgents ?? DEFAULT_DISABLED_TUI_AGENTS
+  )
   const agentCmdOverrides = useAppStore(
     (s) => s.settings?.agentCmdOverrides ?? EMPTY_AGENT_CMD_OVERRIDES
   )
@@ -296,10 +300,10 @@ function TabBarInner({
   const agentLaunchOptions = useMemo(
     () =>
       buildTabAgentLaunchOptions(
-        orderTabLaunchAgents(defaultAgent, detectedIds ?? []),
+        orderTabLaunchAgents(defaultAgent, detectedIds ?? [], disabledTuiAgents),
         agentCmdOverrides
       ),
-    [agentCmdOverrides, defaultAgent, detectedIds]
+    [agentCmdOverrides, defaultAgent, detectedIds, disabledTuiAgents]
   )
   const isWebClient = (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ === true
   const windowsTerminalCapabilityOwnerKey = getWindowsTerminalCapabilityOwnerKey(
