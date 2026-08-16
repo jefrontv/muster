@@ -2577,6 +2577,7 @@ export class OrcaRuntimeService {
     { handle: string; incarnationId: string; wslDistro?: string | null }
   >()
   private handleByPtyIncarnation = new Map<string, PtyIncarnationHandleRecord>()
+  private syntheticTerminalHandles = new Set<string>()
   private detachedPreAllocatedLeaves = new Map<string, RuntimeLeafRecord>()
   private graphSyncCallbacks: (() => void)[] = []
   private waitersByHandle = new Map<string, Set<TerminalWaiter>>()

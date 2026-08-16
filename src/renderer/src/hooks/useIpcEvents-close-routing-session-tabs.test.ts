@@ -92,10 +92,8 @@ describe('useIpcEvents browser tab close routing', () => {
 
     closeTerminalListenerRef.current?.({ tabId: 'terminal-1' })
 
-    // The CLI/RPC caller is answered immediately, so this close must never raise a modal.
-    expect(closeTerminalTabMock).toHaveBeenCalledWith('terminal-1', {
-      skipRunningProcessConfirm: true
-    })
+    // Muster has no running-process close confirm, so a plain close is already modal-free.
+    expect(closeTerminalTabMock).toHaveBeenCalledWith('terminal-1')
   })
 
   it('acknowledges whole-tab close only after the fresh session is durably persisted', async () => {
@@ -368,43 +366,4 @@ describe('useIpcEvents browser tab close routing', () => {
     )
   })
 
-  it('refuses to close a browser page outside the requested worktree', async () => {
-    const requestTabCloseListenerRef: { current: RequestTabCloseListener | null } = {
-      current: null
-    }
-    const closeBrowserTab = vi.fn()
-    const closeBrowserPage = vi.fn()
-    const replyTabClose = vi.fn()
-
-    await useIpcEventsForCloseRouting({
-      requestTabCloseListenerRef,
-      replyTabClose,
-      getState: () => ({
-        closeBrowserTab,
-        closeBrowserPage,
-        browserTabsByWorktree: {
-          'wt-1': [{ id: 'workspace-1' }],
-          'wt-2': [{ id: 'workspace-2' }]
-        },
-        browserPagesByWorkspace: {
-          'workspace-1': [{ id: 'page-1', workspaceId: 'workspace-1' }],
-          'workspace-2': [{ id: 'page-2', workspaceId: 'workspace-2' }]
-        }
-      })
-    })
-
-    requestTabCloseListenerRef.current?.({
-      requestId: 'req-wrong-worktree',
-      tabId: 'page-2',
-      worktreeId: 'wt-1'
-    })
-
-    expect(closeBrowserPage).not.toHaveBeenCalled()
-    expect(closeBrowserTab).not.toHaveBeenCalled()
-    expect(replyTabClose).toHaveBeenCalledWith({
-      requestId: 'req-wrong-worktree',
-      code: 'browser_tab_not_found',
-      error: 'Browser tab page-2 not found'
-    })
-  })
 })

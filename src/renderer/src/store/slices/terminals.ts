@@ -3117,7 +3117,7 @@ export const createTerminalSlice: StateCreator<AppState, [], [], TerminalSlice> 
                     pendingActivationSpawn: true
                   }
                 })
-            ]
+            ] as const
           })
           // Why: a session that explicitly persisted an empty workspace must hydrate it as
           // empty rather than dropping the key, so close state survives restart.

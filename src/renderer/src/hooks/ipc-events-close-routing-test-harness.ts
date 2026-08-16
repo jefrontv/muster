@@ -130,10 +130,14 @@ export async function useIpcEventsForCloseRouting({
 
   vi.stubGlobal('window', {
     dispatchEvent: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     api: {
       repos: { onChanged: () => () => {} },
       worktrees: {
         onChanged: () => () => {},
+        onCreateProgress: () => () => {},
+        onHeadIdentitiesChanged: () => () => {},
         onBaseStatus: () => () => {},
         onRemoteBranchConflict: () => () => {}
       },
@@ -150,6 +154,11 @@ export async function useIpcEventsForCloseRouting({
         onToggleQuickCommandsMenu: () => () => {},
         onOpenNewWorkspace: () => () => {},
         onOpenTasks: () => () => {},
+        onOpenActiveCollabTask: () => () => {},
+        onOpenWorkspaceBoard: () => () => {},
+        onOpenSetupGuide: () => () => {},
+        onDeleteCurrentWorkspace: () => () => {},
+        onTerminalShortcutCaptured: () => () => {},
         onJumpToWorktreeIndex: () => () => {},
         onJumpToTabIndex: () => () => {},
         onWorktreeHistoryNavigate: () => () => {},
@@ -238,6 +247,7 @@ export async function useIpcEventsForCloseRouting({
       },
       browser: {
         onGuestLoadFailed: () => () => {},
+        onCertificateFailureChanged: () => () => {},
         onOpenLinkInOrcaTab: () => () => {},
         onNavigationUpdate: () => () => {},
         onActivateView: () => () => {},
@@ -266,7 +276,13 @@ export async function useIpcEventsForCloseRouting({
         onTerminalDriverChanged: () => () => {},
         onBrowserDriverChanged: () => {}
       },
-      agentStatus: { onSet: () => () => {} }
+      gh: { onPRRefreshEvent: () => () => {} },
+      agentStatus: {
+        onSet: () => () => {},
+        onClear: () => () => {},
+        onMigrationUnsupported: () => () => {},
+        onMigrationUnsupportedClear: () => () => {}
+      }
     }
   })
 
