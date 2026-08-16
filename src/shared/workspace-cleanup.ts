@@ -1,3 +1,5 @@
+import type { ExecutionHostId } from './execution-host'
+
 export const WORKSPACE_CLEANUP_CLASSIFIER_VERSION = 2
 export const WORKSPACE_CLEANUP_ARCHIVED_IDLE_MS = 7 * 24 * 60 * 60 * 1000
 export const WORKSPACE_CLEANUP_IDLE_MS = 30 * 24 * 60 * 60 * 1000
@@ -45,6 +47,8 @@ export type WorkspaceCleanupCandidate = {
   repoId: string
   repoName: string
   connectionId: string | null
+  /** Host that owns this row; removal fails closed without it (STA-4343). */
+  executionHostId?: ExecutionHostId
   displayName: string
   branch: string
   path: string

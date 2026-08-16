@@ -7,6 +7,7 @@ import {
   type WorkspaceCleanupCandidate
 } from '../../shared/workspace-cleanup'
 import { splitWorktreeId } from '../../shared/worktree-id'
+import { getRepoExecutionHostId, normalizeExecutionHostId } from '../../shared/execution-host'
 import {
   getNewestWorkspaceCleanupDiffCommentAt,
   getWorkspaceCleanupInactivityReasonsForWorkspace,
@@ -59,6 +60,7 @@ function createDisconnectedSshCandidate(
     repoId: repo.id,
     repoName: repo.displayName,
     connectionId: repo.connectionId ?? null,
+    executionHostId: normalizeExecutionHostId(meta.hostId) ?? getRepoExecutionHostId(repo),
     displayName: meta.displayName || basename(path),
     branch: basename(path),
     path,

@@ -24,6 +24,9 @@ import {
 import { mapWithConcurrency } from '../../../../shared/map-with-concurrency'
 import { classifyTitleActivity, isExplicitAgentStatusFresh } from '@/lib/pane-agent-evidence'
 import { translate } from '@/i18n/i18n'
+import { resolveWorktreeOperationRoute } from '@/lib/worktree-operation-route'
+import { resolveWorkspaceCleanupRemovalHostId } from '../../../../shared/workspace-cleanup-host-identity'
+import { isWorkspaceCleanupRemovalHostCertain } from './workspace-cleanup-removal-host-guard'
 
 export type WorkspaceCleanupFailure = {
   worktreeId: string
@@ -327,6 +330,28 @@ export const createWorkspaceCleanupSlice: StateCreator<AppState, [], [], Workspa
     // Why: nested workspaces can belong to different repos; parent removal must
     // not race child cleanup hooks, PTY teardown, or metadata deletion.
     for (const candidate of [...candidatesToRemove].sort((a, b) => b.path.length - a.path.length)) {
+      // Why: earlier rows can await long enough for active-host routing to change
+      // after preflight; recheck in the same turn as removeWorktree (STA-4343).
+      const scannedHostId = resolveWorkspaceCleanupRemovalHostId(candidate)
+      if (
+        !isWorkspaceCleanupRemovalHostCertain({
+          confirmedCandidate: candidate,
+          scannedCandidate: candidate,
+          scannedHostIds: [scannedHostId],
+          routeHostId:
+            resolveWorktreeOperationRoute(get(), candidate.worktreeId)?.executionHostId ?? null
+        })
+      ) {
+        failures.push({
+          worktreeId: candidate.worktreeId,
+          displayName: candidate.displayName,
+          message: translate(
+            'auto.store.slices.workspace.cleanup.hostUnresolved',
+            'Muster cannot tell which host owns this workspace. Refresh projects and review it again.'
+          )
+        })
+        continue
+      }
       const result = await get().removeWorktree(
         candidate.worktreeId,
         shouldForceWorkspaceCleanupRemoval(candidate),
@@ -863,6 +888,35 @@ async function preflightWorkspaceCleanupCandidate(
             'Workspace changed after confirmation. Refresh to review it before removing.'
           )
         }
+      }
+    }
+  }
+  // STA-4343: fail closed rather than delete another host's uncommitted work — one
+  // worktreeId can exist on several hosts at the same path.
+  const scannedHostIds = scan.candidates.map((row) => resolveWorkspaceCleanupRemovalHostId(row))
+  const hostIsCertain = isWorkspaceCleanupRemovalHostCertain({
+    confirmedCandidate: approvedCandidate,
+    scannedCandidate: candidate,
+    scannedHostIds,
+    routeHostId: resolveWorktreeOperationRoute(getState(), worktreeId)?.executionHostId ?? null
+  })
+  if (!hostIsCertain) {
+    const distinctKnownHostCount = new Set(scannedHostIds.filter((hostId) => hostId !== null)).size
+    return {
+      ok: false,
+      failure: {
+        worktreeId,
+        displayName: candidate.displayName,
+        message:
+          distinctKnownHostCount > 1
+            ? translate(
+                'auto.store.slices.workspace.cleanup.hostCollision',
+                'Error: this workspace exists on multiple hosts at the same path'
+              )
+            : translate(
+                'auto.store.slices.workspace.cleanup.hostUnresolved',
+                'Muster cannot tell which host owns this workspace. Refresh projects and review it again.'
+              )
       }
     }
   }
