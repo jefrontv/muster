@@ -5,7 +5,7 @@
 
 import { ChevronDown, FolderPlus } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import {
   DropdownMenu,
@@ -17,6 +17,9 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/store'
+import { getVerifiedNativeChatCommands } from '../../../../shared/native-chat-agent-profiles'
+import { NativeChatPickerMenu } from '../native-chat/NativeChatAutocompleteMenus'
+import { useNativeChatPickerState } from '../native-chat/use-native-chat-picker-state'
 import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
 import { ChatModeHeroTaskShortcuts } from './ChatModeHeroTaskShortcuts'
 
@@ -67,6 +70,29 @@ export function ChatModeDraftHero({
   const [submitting, setSubmitting] = useState(false)
   const greetingName = useGreetingName()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [caret, setCaret] = useState(0)
+  const [activeSuggestion, setActiveSuggestion] = useState(0)
+
+  // Same slash-command/skill picker as the thread composer. New threads always
+  // launch Claude, and the draft has no pane yet, so skills scan the home roots.
+  // Completing an item only inserts text — the command runs as the thread's
+  // first message once the session is up, exactly as if typed there.
+  const agentCommands = useMemo(() => getVerifiedNativeChatCommands('claude'), [])
+  const picker = useNativeChatPickerState({
+    agent: 'claude',
+    terminalTabId: '',
+    draftScopeKey: 'chat-draft-hero',
+    draft: text,
+    caret,
+    agentCommands,
+    textareaRef,
+    setDraft: setText,
+    setCaret,
+    setActiveSuggestion,
+    skillScope: 'home'
+  })
+  const { autocomplete } = picker
+  const pickerOpen = autocomplete.mode === 'slash' || autocomplete.mode === 'skill'
 
   // Follow the sidebar selection and newly created workspaces; drop a stale pick.
   useEffect(() => {
@@ -150,17 +176,73 @@ export function ChatModeDraftHero({
           </span>
         </h1>
       </div>
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40">
+      <div className="relative w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40">
+        {pickerOpen ? (
+          <NativeChatPickerMenu
+            autocomplete={autocomplete}
+            activeIndex={activeSuggestion}
+            listboxId={picker.listboxId}
+            onChoose={picker.completeItem}
+            onRetry={picker.retrySkills}
+          />
+        ) : null}
         <textarea
           ref={textareaRef}
           value={text}
           rows={3}
           autoFocus
           disabled={submitting}
+          role="combobox"
+          aria-expanded={pickerOpen}
+          aria-controls={pickerOpen ? picker.listboxId : undefined}
           placeholder={translate('auto.components.chat.hero.placeholder', 'Ask anything…')}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value)
+            const nextCaret = e.target.selectionStart ?? e.target.value.length
+            setCaret(nextCaret)
+            picker.handleDraftOrCaretChange(e.target.value, nextCaret)
+            setActiveSuggestion(0)
+          }}
+          onSelect={(e) => {
+            const el = e.currentTarget
+            const nextCaret = el.selectionStart ?? el.value.length
+            setCaret(nextCaret)
+            picker.handleDraftOrCaretChange(el.value, nextCaret)
+            setActiveSuggestion(0)
+          }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+            if (e.nativeEvent.isComposing || e.keyCode === 229) {
+              // IME Enter confirms composition; falling through would accept a
+              // picker row or submit a partial draft.
+              if (e.key === 'Enter') {
+                e.preventDefault()
+              }
+              return
+            }
+            if (pickerOpen) {
+              const items = autocomplete.items
+              if (e.key === 'ArrowDown' && items.length > 0) {
+                e.preventDefault()
+                setActiveSuggestion((index) => (index + 1) % items.length)
+                return
+              }
+              if (e.key === 'ArrowUp' && items.length > 0) {
+                e.preventDefault()
+                setActiveSuggestion((index) => (index - 1 + items.length) % items.length)
+                return
+              }
+              if ((e.key === 'Enter' || e.key === 'Tab') && items.length > 0) {
+                e.preventDefault()
+                picker.completeItem(items[activeSuggestion] ?? items[0])
+                return
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                picker.dismiss(autocomplete.triggerKey)
+                return
+              }
+            }
+            if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
               void submit()
             }
