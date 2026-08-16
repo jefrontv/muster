@@ -1,6 +1,8 @@
 // Slash-command feedback in transcripts: stdout and compact markers surface as
 // quiet system lines (a chat thread's only feedback), command echoes as the
-// user turn they were, envelopes/caveats stay dropped.
+// user turn they were. Envelopes pass through as user turns — the renderer
+// surfaces skill invocations as `/name` and noise-hides catalog commands —
+// while caveats stay dropped.
 
 import { describe, expect, it } from 'vitest'
 import { decodeClaudeTranscriptLine } from './transcript-line-decoders-claude'
@@ -97,14 +99,26 @@ describe('claude transcript command feedback', () => {
     expect(message?.blocks).toEqual([{ type: 'text', text: 'Compacted' }])
   })
 
-  it('still drops command envelopes and caveats', () => {
-    for (const content of [
-      '<command-name>/compact</command-name>\n<command-message>compact</command-message>',
-      '<local-command-caveat>stuff</local-command-caveat>'
-    ]) {
-      expect(
-        decodeClaudeTranscriptLine(line({ type: 'user', message: { role: 'user', content } }), 'f')
-      ).toBeNull()
-    }
+  it('still drops local-command caveats', () => {
+    expect(
+      decodeClaudeTranscriptLine(
+        line({
+          type: 'user',
+          message: { role: 'user', content: '<local-command-caveat>stuff</local-command-caveat>' }
+        }),
+        'f'
+      )
+    ).toBeNull()
+  })
+
+  it('passes command envelopes through as user turns for renderer surfacing', () => {
+    const content =
+      '<command-message>efront-dev-index-audit</command-message>\n<command-name>/efront-dev-index-audit</command-name>'
+    const message = decodeClaudeTranscriptLine(
+      line({ type: 'user', uuid: 'u4', message: { role: 'user', content } }),
+      'f'
+    )
+    expect(message?.role).toBe('user')
+    expect(message?.blocks).toEqual([{ type: 'text', text: content }])
   })
 })

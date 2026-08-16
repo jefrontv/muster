@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { surfaceSkillInvocationUserTurns } from '../../../../shared/native-chat-command-envelope'
 import type { NativeChatMessage } from '../../../../shared/native-chat-types'
 import {
   appendPendingSendCache,
@@ -173,6 +174,23 @@ describe('prunePendingSends', () => {
         assistantMessage('a1', 'ok')
       ])
     ).toEqual(pending)
+  })
+
+  // Regression: the transcript records a skill invocation as a command envelope,
+  // not the typed token. The decoder must pass the envelope through and the
+  // surfaced `/name` turn must reconcile the echo — or the queued bubble trails
+  // every later message forever.
+  it('prunes a skill echo once its surfaced envelope turn advances', () => {
+    const envelope = userMessage(
+      'u1',
+      '<command-message>efront-dev-index-audit</command-message>\n<command-name>/efront-dev-index-audit</command-name>'
+    )
+    const surfaced = surfaceSkillInvocationUserTurns(
+      [envelope, assistantMessage('a1', 'auditing')],
+      new Set(['compact', 'clear'])
+    )
+    const pending = [pendingOf('p1', '/efront-dev-index-audit')]
+    expect(prunePendingSends(pending, surfaced)).toEqual([])
   })
 })
 

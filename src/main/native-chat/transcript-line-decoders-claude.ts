@@ -30,14 +30,13 @@ function claudeUserRecordText(message: Record<string, unknown> | null): string |
   return null
 }
 
-/** Local slash-command bookkeeping Claude writes into the transcript. The command
- *  envelope and its caveat are dropped — terminal chrome, the composer already
- *  echoes what was typed — but stdout is the command's only feedback in chat
- *  threads (no TUI), so it surfaces as a quiet system line. */
+/** Local slash-command caveat chrome Claude writes into the transcript. Only the
+ *  caveat is dropped here — command envelopes (`<command-name>…`) must pass
+ *  through as user turns so the renderer can surface skill invocations as the
+ *  typed `/name` token (and reconcile the optimistic echo); catalog-command
+ *  envelopes stay hidden by the noise filter downstream. */
 function isClaudeLocalCommandRecord(text: string): boolean {
-  return (
-    text.startsWith('<local-command-caveat>') || /<command-name>[^<]*<\/command-name>/.test(text)
-  )
+  return text.startsWith('<local-command-caveat>')
 }
 
 const LOCAL_COMMAND_STDOUT = /^<local-command-stdout>([\s\S]*?)<\/local-command-stdout>$/
