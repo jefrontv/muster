@@ -3119,7 +3119,12 @@ export const createTerminalSlice: StateCreator<AppState, [], [], TerminalSlice> 
                 })
             ]
           })
-          .filter(([, tabs]) => tabs.length > 0)
+          // Why: a session that explicitly persisted an empty workspace must hydrate it as
+          // empty rather than dropping the key, so close state survives restart.
+          .filter(
+            ([worktreeId, tabs]) =>
+              tabs.length > 0 || session.tabsByWorktree[worktreeId]?.length === 0
+          )
       )
 
       const validTabIds = new Set(
