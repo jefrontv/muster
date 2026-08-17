@@ -81,7 +81,11 @@ import {
   searchCmdJProjectResults,
   type CmdJProjectSearchResult
 } from '@/components/cmd-j/palette-project-results'
-import { resolveProjectDefaultWorkspaceId } from '@/components/cmd-j/palette-project-activation'
+import {
+  ensurePalettePickedWorkspaceOpens,
+  resolveProjectDefaultWorkspaceId,
+  resolveProjectGroupDefaultWorkspaceId
+} from '@/components/cmd-j/palette-project-activation'
 import {
   buildCmdJQuickActionContext,
   captureCmdJActiveGroupSnapshot,
@@ -1293,20 +1297,27 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
 
   const handleSelectProjectTarget = useCallback(
     (result: CmdJProjectSearchResult) => {
-      // Why: a project row opens the project — revealing alone did nothing when the
-      // hide-sleeping filter had already dropped every row it could scroll to.
-      if (result.kind === 'project') {
-        const worktreeId = resolveProjectDefaultWorkspaceId(
-          result.repo.id,
-          useAppStore.getState().worktreesByRepo
-        )
-        if (worktreeId) {
-          handleSelectWorktree(worktreeId)
-          return
-        }
+      // Why: project and group rows open their default workspace — revealing
+      // alone did nothing when the hide-sleeping filter had already dropped
+      // every row it could scroll to.
+      const state = useAppStore.getState()
+      const worktreeId =
+        result.kind === 'project'
+          ? resolveProjectDefaultWorkspaceId(result.repo.id, state.worktreesByRepo)
+          : resolveProjectGroupDefaultWorkspaceId(
+              result.groupId,
+              state.repos,
+              state.worktreesByRepo
+            )
+      if (worktreeId) {
+        handleSelectWorktree(worktreeId)
+        // A workspace whose terminals were all closed would otherwise activate
+        // into visible emptiness — open the default agent (or a terminal).
+        ensurePalettePickedWorkspaceOpens(worktreeId)
+        return
       }
       skipRestoreFocusRef.current = true
-      // Why: a repo group has no single workspace to open, so it stays sidebar navigation.
+      // No workspace anywhere in the target: sidebar navigation is all there is.
       revealSidebarRow(result.rowKey, { behavior: 'smooth', highlight: true })
       recordFeatureInteraction('cmd-j')
       closeModal()

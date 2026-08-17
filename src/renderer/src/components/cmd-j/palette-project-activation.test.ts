@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import type { Worktree } from '../../../../shared/types'
-import { resolveProjectDefaultWorkspaceId } from './palette-project-activation'
+import type { Repo, Worktree } from '../../../../shared/types'
+import {
+  resolveProjectDefaultWorkspaceId,
+  resolveProjectGroupDefaultWorkspaceId
+} from './palette-project-activation'
 
 function worktree(partial: Partial<Worktree> & { id: string }): Worktree {
   return { isMainWorktree: false, isArchived: false, ...partial } as Worktree
+}
+
+function repo(partial: Partial<Repo> & { id: string }): Repo {
+  return { displayName: partial.id, ...partial } as Repo
 }
 
 describe('resolveProjectDefaultWorkspaceId', () => {
@@ -44,6 +51,45 @@ describe('resolveProjectDefaultWorkspaceId', () => {
       resolveProjectDefaultWorkspaceId('repo-1', {
         'repo-1': [worktree({ id: 'repo-1::gone', isArchived: true })]
       })
+    ).toBeNull()
+  })
+})
+
+describe('resolveProjectGroupDefaultWorkspaceId', () => {
+  it('opens the first member repo (sidebar order) that has a workspace', () => {
+    const repos = [
+      repo({ id: 'repo-b', projectGroupId: 'g1', projectGroupOrder: 2 }),
+      repo({ id: 'repo-a', projectGroupId: 'g1', projectGroupOrder: 1 }),
+      repo({ id: 'repo-x', projectGroupId: 'g2' })
+    ]
+    expect(
+      resolveProjectGroupDefaultWorkspaceId('g1', repos, {
+        'repo-a': [worktree({ id: 'a::main', isMainWorktree: true })],
+        'repo-b': [worktree({ id: 'b::main', isMainWorktree: true })],
+        'repo-x': [worktree({ id: 'x::main', isMainWorktree: true })]
+      })
+    ).toBe('a::main')
+  })
+
+  it('skips members without workspaces', () => {
+    const repos = [
+      repo({ id: 'repo-a', projectGroupId: 'g1', projectGroupOrder: 1 }),
+      repo({ id: 'repo-b', projectGroupId: 'g1', projectGroupOrder: 2 })
+    ]
+    expect(
+      resolveProjectGroupDefaultWorkspaceId('g1', repos, {
+        'repo-b': [worktree({ id: 'b::only' })]
+      })
+    ).toBe('b::only')
+  })
+
+  it('reports nothing for a group with no openable workspace', () => {
+    expect(
+      resolveProjectGroupDefaultWorkspaceId(
+        'g1',
+        [repo({ id: 'repo-a', projectGroupId: 'g1' })],
+        {}
+      )
     ).toBeNull()
   })
 })

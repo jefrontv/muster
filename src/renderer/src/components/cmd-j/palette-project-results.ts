@@ -10,6 +10,8 @@ import {
 export type CmdJProjectGroupResult = {
   id: string
   kind: 'project-group'
+  /** The ProjectGroup id, for resolving a member workspace to open on select. */
+  groupId: string
   title: string
   description: string
   rowKey: string
@@ -127,6 +129,7 @@ function buildCmdJProjectSearchCandidates({
     candidates.push({
       id: `project-group:${group.id}`,
       kind: 'project-group',
+      groupId: group.id,
       title: group.name,
       description: translate(
         'auto.components.cmd.j.palette.project.results.repoGroup',

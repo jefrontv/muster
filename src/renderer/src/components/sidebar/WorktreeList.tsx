@@ -5506,10 +5506,17 @@ const WorktreeList = React.memo(function WorktreeList({
       visibleWorkspaceHostIds,
       defaultHostId: getSettingsFocusedExecutionHostId(settings),
       worktreeLineageById,
-      forcedVisibleWorktreeIds: agentSendTargetWorktreeId ? [agentSendTargetWorktreeId] : undefined
+      // Why activeWorktreeId: activating a sleeping workspace (Cmd+J, search)
+      // must show its card even under the hide-sleeping filter — until its PTY
+      // respawns it counts as inactive and the selection looked like a no-op.
+      forcedVisibleWorktreeIds: [
+        ...(agentSendTargetWorktreeId ? [agentSendTargetWorktreeId] : []),
+        ...(activeWorktreeId ? [activeWorktreeId] : [])
+      ]
     })
     return ids.map((id) => worktreeMap.get(id)).filter((w): w is Worktree => w != null)
   }, [
+    activeWorktreeId,
     agentSendTargetWorktreeId,
     agentStatusEpoch,
     filterRepoIds,
