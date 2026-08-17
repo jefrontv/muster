@@ -12,15 +12,6 @@ const SESSION_LIMIT = 500
 const FORCED_RESCAN_MIN_INTERVAL_MS = 5_000
 let lastForcedRescanAt = 0
 
-function consumeForcedRescanBudget(): boolean {
-  const now = Date.now()
-  if (now - lastForcedRescanAt < FORCED_RESCAN_MIN_INTERVAL_MS) {
-    return false
-  }
-  lastForcedRescanAt = now
-  return true
-}
-
 export function resetAiVaultForcedRescanThrottleForTest(): void {
   lastForcedRescanAt = 0
 }
@@ -179,15 +170,13 @@ export function useAiVaultSessionRefresh(
   }, [])
 
   // Re-scan on mount and whenever the active scope changes, since the scanner
-  // tailors its in-scope results to scopePaths. Force (throttled) so
-  // re-entering the panel shows sessions newer than the 15s cache; when the
-  // throttle denies it, paint from cache now and catch up once it frees.
+  // tailors its in-scope results to scopePaths. Paint from the cached scan
+  // first — blocking the first paint on a forced rescan made every panel open
+  // pay the slow path — then a throttled background force catches up on
+  // sessions newer than the 15s cache.
   useEffect(() => {
-    const force = consumeForcedRescanBudget()
-    void refresh({ force })
-    if (!force) {
-      requestForcedRescan()
-    }
+    void refresh({ force: false })
+    requestForcedRescan()
   }, [refresh, requestForcedRescan, scanScopeKey])
 
   // Sessions started while the app was backgrounded should appear when the

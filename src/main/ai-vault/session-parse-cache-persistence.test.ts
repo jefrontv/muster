@@ -186,7 +186,10 @@ describe('session parse cache persistence', () => {
     expect(stats.reused).toBe(0)
   })
 
-  it('ignores a cache file written by a different app version', async () => {
+  // Regression: matching on appVersion made every release wipe the cache, so
+  // users paid a multi-GB cold rescan after each update. Only schemaVersion
+  // gates reuse now.
+  it('reuses a cache file written by a different app version', async () => {
     const root = await makeTempDir()
     const cacheFile = join(root, 'session-parse-cache.json')
     initSessionParseCachePersistence({ filePath: cacheFile, appVersion: APP_VERSION })
@@ -195,8 +198,25 @@ describe('session parse cache persistence', () => {
 
     simulateRestart(cacheFile, '9.9.9-other')
     const stats = await coldParseStats(transcript)
-    expect(stats.fullParses).toBe(1)
-    expect(stats.reused).toBe(0)
+    expect(stats.fullParses).toBe(0)
+    expect(stats.reused).toBe(1)
+  })
+
+  it('skips a malformed entry but keeps the rest of the cache file', async () => {
+    const root = await makeTempDir()
+    const cacheFile = join(root, 'session-parse-cache.json')
+    initSessionParseCachePersistence({ filePath: cacheFile, appVersion: APP_VERSION })
+    const transcript = await writeTranscript(root)
+    await parseAndPersist(transcript)
+
+    const persisted = JSON.parse(await readFile(cacheFile, 'utf-8'))
+    persisted.entries = [['broken'], ...persisted.entries]
+    await writeFile(cacheFile, JSON.stringify(persisted))
+
+    simulateRestart(cacheFile)
+    const stats = await coldParseStats(transcript)
+    expect(stats.fullParses).toBe(0)
+    expect(stats.reused).toBe(1)
   })
 
   it('seeding never clobbers a live in-memory entry', async () => {

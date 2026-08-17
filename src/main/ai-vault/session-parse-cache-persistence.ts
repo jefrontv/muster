@@ -99,7 +99,7 @@ async function loadPersistedEntries(current: SessionParseCachePersistenceOptions
   await sweepOrphanedTempFiles(current.filePath)
   try {
     const raw = await readFile(current.filePath, 'utf-8')
-    const entries = parsePersistedFile(JSON.parse(raw), current.appVersion)
+    const entries = parsePersistedFile(JSON.parse(raw))
     if (entries) {
       seedSessionParseCache(entries)
     }
@@ -127,16 +127,17 @@ async function sweepOrphanedTempFiles(filePath: string): Promise<void> {
 }
 
 function parsePersistedFile(
-  parsed: unknown,
-  appVersion: string
+  parsed: unknown
 ): [string, PersistedSessionParseCacheEntry][] | null {
   if (typeof parsed !== 'object' || parsed === null) {
     return null
   }
   const file = parsed as Record<string, unknown>
-  // Why: parser output shape/semantics may change between app versions, so a
-  // cross-version file is discarded — one cold scan per update is the price.
-  if (file.schemaVersion !== SCHEMA_VERSION || file.appVersion !== appVersion) {
+  // Why: SCHEMA_VERSION alone gates reuse — bump it when parser output
+  // shape/semantics change. Matching on appVersion too made EVERY release wipe
+  // the cache, so users paid a multi-GB cold rescan on each update; appVersion
+  // is still written below, but only as provenance.
+  if (file.schemaVersion !== SCHEMA_VERSION) {
     return null
   }
   if (!Array.isArray(file.entries)) {
@@ -146,8 +147,9 @@ function parsePersistedFile(
   for (const item of file.entries) {
     const entry = parsePersistedEntry(item)
     if (entry === null) {
-      // One malformed entry means the file can't be trusted; discard it whole.
-      return null
+      // Entries are independent per-file caches keyed by mtime+size; one
+      // malformed row costs one re-parse, not the whole corpus.
+      continue
     }
     entries.push(entry)
   }

@@ -4,6 +4,10 @@ import type { AiVaultAgent, AiVaultScanIssue } from '../../shared/ai-vault-types
 import type { FileWithMtime, SessionFileDiscovery } from './session-scanner-types'
 import { errorMessage } from './session-scanner-values'
 
+// libuv's default threadpool is 4; going far past it just queues. 64 in-flight
+// stats keeps the pool saturated without unbounded promise fan-out.
+const STAT_CONCURRENCY = 64
+
 export async function discoverFiles(args: {
   rootDir: string
   limit: number
@@ -18,21 +22,33 @@ export async function discoverFiles(args: {
     filePredicate: args.filePredicate,
     directoryPredicate: args.directoryPredicate
   })
+  // Stat in bounded parallel batches: a serial loop over a thousand-file
+  // corpus was a dominant cost of the cold scan (one FS round-trip per file).
   const files: FileWithMtime[] = []
-  for (const path of paths) {
-    try {
-      const fileStat = await stat(path)
-      files.push({
-        path,
-        mtimeMs: fileStat.mtimeMs,
-        modifiedAt: fileStat.mtime.toISOString(),
-        sizeBytes: fileStat.size,
-        dev: fileStat.dev,
-        ino: fileStat.ino,
-        nlink: fileStat.nlink
+  for (let offset = 0; offset < paths.length; offset += STAT_CONCURRENCY) {
+    const batch = await Promise.all(
+      paths.slice(offset, offset + STAT_CONCURRENCY).map(async (path) => {
+        try {
+          const fileStat = await stat(path)
+          return {
+            path,
+            mtimeMs: fileStat.mtimeMs,
+            modifiedAt: fileStat.mtime.toISOString(),
+            sizeBytes: fileStat.size,
+            dev: fileStat.dev,
+            ino: fileStat.ino,
+            nlink: fileStat.nlink
+          }
+        } catch (err) {
+          args.issues.push({ agent: args.agent, path, message: errorMessage(err) })
+          return null
+        }
       })
-    } catch (err) {
-      args.issues.push({ agent: args.agent, path, message: errorMessage(err) })
+    )
+    for (const file of batch) {
+      if (file) {
+        files.push(file)
+      }
     }
   }
   return {
