@@ -428,6 +428,16 @@
   }
 }
 
+/* ── Hidden scrollbar (fade-edge scrollers own the affordance) ── */
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Sleek scrollbar (VS Code-like) ─────────────────── */
 
 .scrollbar-sleek {

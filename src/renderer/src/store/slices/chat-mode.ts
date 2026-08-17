@@ -75,6 +75,8 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
     >
   ) => Promise<void>
   deleteChatThread: (id: string) => Promise<void>
+  /** Delete every thread in one scope: null = standalone chats, id = one workspace's chats. */
+  deleteChatThreadsInScope: (workspaceId: string | null) => Promise<void>
   setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
   setChatThreadContextWindow: (threadId: string, contextWindow: number) => void
   setChatThreadFirstMessage: (threadId: string, text: string) => void
@@ -218,6 +220,16 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
     })
+  },
+
+  deleteChatThreadsInScope: async (workspaceId) => {
+    // Snapshot first: each delete mutates chatThreads, so iterating live state
+    // would skip entries. Sequential, reusing the single-delete path so every
+    // thread gets its session stop and per-thread state cleanup.
+    const targets = get().chatThreads.filter((t) => t.workspaceId === workspaceId)
+    for (const thread of targets) {
+      await get().deleteChatThread(thread.id)
+    }
   },
 
   setChatThreadContextWindow: (threadId, contextWindow) =>
