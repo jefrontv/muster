@@ -111,6 +111,60 @@ describe('resolveAgentLocalSite', () => {
     expect(match?.slug).toBe('ebes')
   })
 
+  it('rejects a greedy /resolve answer whose work_dir is a parent of many checkouts', async () => {
+    // Real incident: a site registered with work_dir=/Sites made the daemon "resolve" every
+    // sibling folder, so watchswiss.com adopted transportaustralia's domain (and Start/Stop
+    // would have driven the wrong site). The by-path list scan must win instead.
+    const { match } = await resolveAgentLocalSite(
+      { path: '/Sites/watchswiss.com', localStack: 'agent-local' },
+      {
+        host: host({
+          'GET /resolve': {
+            ok: true,
+            status: 200,
+            data: {
+              slug: 'roads-australia',
+              running: true,
+              site: {
+                slug: 'roads-australia',
+                work_dir: '/Sites',
+                wp_dir: '/Sites/roads-australia',
+                domain: 'transportaustralia.local',
+                php_version: '8.4',
+                state: 'running'
+              }
+            }
+          },
+          'GET /sites': {
+            ok: true,
+            status: 200,
+            data: [
+              {
+                slug: 'roads-australia',
+                work_dir: '/Sites',
+                wp_dir: '/Sites/roads-australia',
+                domain: 'transportaustralia.local',
+                php_version: '8.4',
+                state: 'running'
+              },
+              {
+                slug: 'watchswiss-com',
+                work_dir: '/Sites/watchswiss.com/app',
+                wp_dir: '/Sites/watchswiss.com/app/public',
+                domain: 'watchswiss-al.local',
+                php_version: '8.2',
+                state: 'running'
+              }
+            ]
+          }
+        })
+      }
+    )
+
+    expect(match?.slug).toBe('watchswiss-com')
+    expect(match?.domain).toBe('watchswiss-al.local')
+  })
+
   it('matches a repo root whose docroot sits below it — the case GET /resolve 404s on', async () => {
     const { match } = await resolveAgentLocalSite(
       { path: '/Sites/orleton-om', localStack: 'agent-local' },

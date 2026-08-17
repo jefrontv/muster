@@ -79,6 +79,20 @@ function coversSitePath(entry: AgentLocalSiteMatch, sitePath: string): boolean {
   )
 }
 
+/**
+ * Guard against the daemon's greedy work_dir matching. A site registered with a work_dir that is
+ * a PARENT of many checkouts (e.g. /Users/x/Sites itself) makes `GET /resolve` claim every sibling
+ * folder, so a blind trust starts/credentials/adopts the wrong site. Trust the answer only when
+ * its docroot and the requested path actually nest — either direction; work_dir deliberately does
+ * not count for the inside-direction, it is exactly the field that over-matches.
+ */
+function resolveAnswerNests(match: AgentLocalSiteMatch, sitePath: string): boolean {
+  return (
+    coversSitePath(match, sitePath) ||
+    (match.wpDir.length > 0 && isAtOrUnder(sitePath, match.wpDir))
+  )
+}
+
 export async function resolveAgentLocalSite(
   site: LocalStackSiteRef,
   options: AgentLocalResolveOptions = {}
@@ -90,7 +104,7 @@ export async function resolveAgentLocalSite(
     `/resolve?path=${encodeURIComponent(site.path)}`
   )
   const fromResolve = resolved.ok ? matchFromResolvePayload(resolved.data) : null
-  if (fromResolve) {
+  if (fromResolve && resolveAnswerNests(fromResolve, site.path)) {
     return { match: fromResolve, response: resolved }
   }
 
