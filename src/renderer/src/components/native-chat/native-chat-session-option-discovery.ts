@@ -9,6 +9,7 @@ import {
   type RuntimeGitContext
 } from '@/runtime/runtime-git-client'
 import { useAppStore } from '@/store'
+import { learnedClaudeCatalogModels } from './claude-learned-models'
 
 export type NativeChatModelDiscoveryContext = {
   hostKey: string
@@ -45,6 +46,11 @@ export async function discoverNativeChatCatalogModels(
   agent: AgentType,
   context: RuntimeGitContext
 ): Promise<CatalogModel[] | null> {
+  // Claude has no models command; its extra families come from the learned
+  // registry of observed model ids instead of a runtime CLI probe.
+  if (agent === 'claude') {
+    return learnedClaudeCatalogModels()
+  }
   const result = await discoverRuntimeCommitMessageModels(context, agent)
   if (!result.success || result.models.length === 0) {
     return null

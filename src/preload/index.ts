@@ -4167,8 +4167,11 @@ const api = {
       agent: AgentType,
       sessionId: string,
       transcriptPath?: string
-    ): Promise<{ usedTokens: number } | null> =>
+    ): Promise<{ usedTokens: number; model?: string | null; windowTokens?: number } | null> =>
       ipcRenderer.invoke('nativeChat:readContextUsage', { agent, sessionId, transcriptPath }),
+    learnedClaudeModels: (): Promise<
+      Record<string, { contextWindow?: number; lastSeenAt: number }>
+    > => ipcRenderer.invoke('nativeChat:learnedClaudeModels'),
     readImageDataUrl: (path: string): Promise<string | null> =>
       ipcRenderer.invoke('nativeChat:readImageDataUrl', path)
   },

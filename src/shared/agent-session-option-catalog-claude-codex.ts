@@ -1,4 +1,9 @@
-import type { AgentSessionOptionCatalog, CatalogOption } from './agent-session-option-catalog-types'
+import type {
+  AgentSessionOptionCatalog,
+  CatalogModel,
+  CatalogOption
+} from './agent-session-option-catalog-types'
+import type { ClaudeModelFamily } from './claude-model-family'
 
 function hasFlag(tokens: readonly string[], flags: readonly string[]): boolean {
   return tokens.some((token) =>
@@ -65,7 +70,16 @@ const CLAUDE_FAST_MODE: CatalogOption = {
   apply: { midSession: { kind: 'toggle-command', command: '/fast' } }
 }
 
+/** Picker entry for a family learned from transcripts rather than the static
+ *  list. Effort is the safe default option set — every current Claude family
+ *  supports it, and an unsupported flag degrades to a CLI warning, not a break. */
+export function learnedClaudeFamilyCatalogModel(family: ClaudeModelFamily): CatalogModel {
+  return { id: family.id, label: family.label, options: [claudeEffort(true)] }
+}
+
 export const CLAUDE_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
+  // Families learned from observed model ids may extend `models` at runtime.
+  learnedModels: true,
   // Why: these ids are Claude CLI aliases that resolve per-host ("opus" is Opus 5
   // on current CLIs, older Opus on older ones), so version-pinned labels lie on
   // part of the fleet — and the model-switch verifier matches the CLI's

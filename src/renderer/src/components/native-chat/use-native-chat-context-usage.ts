@@ -49,7 +49,8 @@ export function useNativeChatContextUsage({
             read
               ? {
                   usedTokens: read.usedTokens,
-                  windowTokens: claudeContextWindowForModel(read.model)
+                  // Learned (CLI-reported once, any thread) beats the static map.
+                  windowTokens: read.windowTokens ?? claudeContextWindowForModel(read.model)
                 }
               : null
           )

@@ -11,6 +11,11 @@ import {
   readTranscriptContextUsage,
   type TranscriptContextUsage
 } from '../native-chat/transcript-context-usage'
+import {
+  getLearnedClaudeModels,
+  learnedClaudeContextWindow,
+  recordClaudeModelSighting
+} from '../chat-mode/claude-model-registry'
 import type { ReadTranscriptResult } from '../native-chat/transcript-reader'
 import {
   subscribeNativeChatTranscript,
@@ -78,7 +83,7 @@ async function readImageDataUrl(path: string): Promise<string | null> {
 
 async function readContextUsage(
   args: NativeChatReadContextUsageArgs
-): Promise<TranscriptContextUsage | null> {
+): Promise<(TranscriptContextUsage & { windowTokens?: number }) | null> {
   // Why: only Claude's stream records carry the message.usage shape summed here.
   if (args.agent !== 'claude') {
     return null
@@ -86,7 +91,15 @@ async function readContextUsage(
   const filePath = await resolveSessionFilePath(args.agent, args.sessionId, {
     transcriptPath: args.transcriptPath
   })
-  return filePath ? readTranscriptContextUsage(filePath) : null
+  const usage = filePath ? await readTranscriptContextUsage(filePath) : null
+  if (!usage?.model) {
+    return usage
+  }
+  // Learn the sighting and serve the learned window (CLI-reported once, from
+  // any chat thread) so terminal panes get real sizes for unmapped models.
+  void recordClaudeModelSighting({ model: usage.model })
+  const windowTokens = await learnedClaudeContextWindow(usage.model)
+  return windowTokens ? { ...usage, windowTokens } : usage
 }
 
 export type NativeChatSubscribeArgs = {
@@ -329,6 +342,7 @@ export function registerNativeChatHandlers(): void {
   ipcMain.handle('nativeChat:readImageDataUrl', (_event, path: unknown) =>
     typeof path === 'string' && path !== '' ? readImageDataUrl(path) : null
   )
+  ipcMain.handle('nativeChat:learnedClaudeModels', () => getLearnedClaudeModels())
   ipcMain.on('nativeChat:subscribe', (event, args: NativeChatSubscribeArgs) => {
     void handleSubscribe(event, args)
   })

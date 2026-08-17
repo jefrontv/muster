@@ -1254,7 +1254,12 @@ export type NativeChatApi = {
     agent: AgentType,
     sessionId: string,
     transcriptPath?: string
-  ) => Promise<{ usedTokens: number; model?: string | null } | null>
+  ) => Promise<{ usedTokens: number; model?: string | null; windowTokens?: number } | null>
+  /** Learned Claude model ids (with CLI-reported context windows when seen) —
+   *  the adaptive source behind picker families and meter window sizes. */
+  learnedClaudeModels?: () => Promise<
+    Record<string, { contextWindow?: number; lastSeenAt: number }>
+  >
   /** Local image file → data URL for composer/message thumbnails; null when
    *  unsupported, oversized, or unreadable. */
   readImageDataUrl: (path: string) => Promise<string | null>

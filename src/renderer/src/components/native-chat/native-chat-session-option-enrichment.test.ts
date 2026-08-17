@@ -55,7 +55,13 @@ describe('native chat session option enrichment', () => {
 
   it('does not probe agents whose catalogs have no discovery command', () => {
     const discover = vi.fn()
-    ensureNativeChatModelEnrichment({ agent: 'claude', hostKey: 'local', discover })
+    ensureNativeChatModelEnrichment({ agent: 'codex', hostKey: 'local', discover })
     expect(discover).not.toHaveBeenCalled()
+  })
+
+  it('probes claude via its learned-model registry flag', () => {
+    const discover = vi.fn().mockResolvedValue(null)
+    ensureNativeChatModelEnrichment({ agent: 'claude', hostKey: 'local', discover })
+    expect(discover).toHaveBeenCalledOnce()
   })
 })

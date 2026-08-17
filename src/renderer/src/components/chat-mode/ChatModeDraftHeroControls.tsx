@@ -24,6 +24,7 @@ import {
   updateNativeChatSessionOptionDefaults
 } from '../../../../shared/native-chat-session-option-defaults'
 import { useAppStore } from '@/store'
+import { useClaudeCatalogModelsWithLearned } from '../native-chat/claude-learned-models'
 
 function PickerTrigger({ label }: { label: string }): React.JSX.Element {
   return (
@@ -44,11 +45,16 @@ export function ChatModeDraftHeroControls({
   const persisted = useAppStore((s) => s.settings?.nativeChatSessionOptions)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const catalog = getAgentSessionOptionCatalog('claude')
+  // Static families plus any learned from observed model ids (new releases).
+  const models = useClaudeCatalogModelsWithLearned()
   const defaults = resolveNativeChatSessionOptionDefaults(persisted, 'claude')
   const selectedModelId =
     (typeof defaults?.model === 'string' ? defaults.model : undefined) ??
     (catalog ? catalogDefaultModel(catalog)?.id : undefined)
-  const model = catalog && selectedModelId ? findCatalogModel(catalog, selectedModelId) : undefined
+  const model =
+    catalog && selectedModelId
+      ? findCatalogModel({ ...catalog, models }, selectedModelId)
+      : undefined
   const effortOption = findCatalogOption(model, 'effort')
   const effortChoices = effortOption?.kind.type === 'select' ? effortOption.kind.choices : []
   const effortValue =
@@ -80,7 +86,7 @@ export function ChatModeDraftHeroControls({
                 value={selectedModelId ?? ''}
                 onValueChange={(value) => persistPick(value, 'model', value)}
               >
-                {catalog.models.map((candidate) => (
+                {models.map((candidate) => (
                   <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
                     {candidate.label}
                   </DropdownMenuRadioItem>

@@ -10,15 +10,17 @@ function asRecord(value: unknown): StreamRecord | null {
   return typeof value === 'object' && value !== null ? (value as StreamRecord) : null
 }
 
-/** The main model's context window from a result record's modelUsage map —
- *  the entry with the most input tokens (subagent models can differ). */
-function resultContextWindow(record: StreamRecord): number | null {
+export type ResultModelWindow = { model: string; contextWindow: number; inputTokens: number }
+
+/** Every (model, contextWindow) pair a result record's modelUsage map reports —
+ *  the learned-model registry feeds on these. */
+export function resultModelWindows(record: StreamRecord): ResultModelWindow[] {
   const modelUsage = asRecord(record.modelUsage)
   if (!modelUsage) {
-    return null
+    return []
   }
-  let best: { inputTokens: number; contextWindow: number } | null = null
-  for (const value of Object.values(modelUsage)) {
+  const out: ResultModelWindow[] = []
+  for (const [model, value] of Object.entries(modelUsage)) {
     const usage = asRecord(value)
     if (!usage) {
       continue
@@ -29,9 +31,22 @@ function resultContextWindow(record: StreamRecord): number | null {
       continue
     }
     const rawInput = usage.inputTokens ?? usage.input_tokens
-    const inputTokens = typeof rawInput === 'number' ? rawInput : 0
-    if (!best || inputTokens > best.inputTokens) {
-      best = { inputTokens, contextWindow }
+    out.push({
+      model,
+      contextWindow,
+      inputTokens: typeof rawInput === 'number' ? rawInput : 0
+    })
+  }
+  return out
+}
+
+/** The main model's context window from a result record's modelUsage map —
+ *  the entry with the most input tokens (subagent models can differ). */
+function resultContextWindow(record: StreamRecord): number | null {
+  let best: ResultModelWindow | null = null
+  for (const entry of resultModelWindows(record)) {
+    if (!best || entry.inputTokens > best.inputTokens) {
+      best = entry
     }
   }
   return best?.contextWindow ?? null
@@ -124,7 +139,9 @@ export type ChatThreadStreamDecoder = {
 
 export function createChatThreadStreamDecoder(
   threadId: string,
-  emit: (event: ChatThreadStreamEvent) => void
+  emit: (event: ChatThreadStreamEvent) => void,
+  /** Sees every parsed record before mapping — model-registry learning taps here. */
+  observeRecord?: (record: StreamRecord) => void
 ): ChatThreadStreamDecoder {
   let buffered = ''
 
@@ -143,6 +160,7 @@ export function createChatThreadStreamDecoder(
     if (!record) {
       return
     }
+    observeRecord?.(record)
     const event = mapChatThreadStreamRecord(threadId, record)
     if (event) {
       emit(event)

@@ -7,7 +7,8 @@ import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process'
 import { homedir } from 'node:os'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
-import { createChatThreadStreamDecoder } from './chat-thread-stream-decode'
+import { createChatThreadStreamDecoder, resultModelWindows } from './chat-thread-stream-decode'
+import { recordClaudeModelSighting } from './claude-model-registry'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
 import { commandWithAppendedSystemPromptFile } from './chat-thread-stream-system-prompt'
 import { buildChatStreamUserContent, readChatStreamImages } from './chat-thread-stream-user-content'
@@ -140,7 +141,12 @@ export function startChatThreadStream(
     }
     emitter.emit(event)
   }
-  const decoder = createChatThreadStreamDecoder(threadId, emit)
+  const decoder = createChatThreadStreamDecoder(threadId, emit, (record) => {
+    // Learn every model the CLI reports so new models adapt without a release.
+    for (const entry of resultModelWindows(record)) {
+      void recordClaudeModelSighting({ model: entry.model, contextWindow: entry.contextWindow })
+    }
+  })
   let stderrTail = ''
 
   child.stdout?.setEncoding('utf-8')

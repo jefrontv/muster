@@ -58,6 +58,9 @@ export type AgentSessionOptionCatalog = {
     command: string
     parse: (stdout: string) => CatalogModel[]
   }
+  /** Model families learned from observed transcripts/streams may extend
+   *  `models` at runtime (no discovery command needed). */
+  learnedModels?: boolean
 }
 
 export type AgentSessionOptionCatalogMap = Partial<Record<AgentType, AgentSessionOptionCatalog>>

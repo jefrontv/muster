@@ -47,7 +47,7 @@ export function ensureNativeChatModelEnrichment(args: {
   discover: () => Promise<readonly CatalogModel[] | null>
 }): void {
   const catalog = getAgentSessionOptionCatalog(args.agent)
-  if (!catalog?.listModels) {
+  if (!catalog?.listModels && !catalog?.learnedModels) {
     return
   }
   const key = enrichmentKey(args.agent, args.hostKey)
