@@ -267,7 +267,11 @@ export function WorkspaceSection({
           {translate('auto.components.chat.sidebar.startFirstChat', 'Start a chat…')}
         </button>
       ) : (
-        <ChatThreadDragList threads={rows} />
+        // Same cap as standalone chats: one busy workspace must not push the
+        // rest of the sidebar out of view.
+        <ChatSidebarFadeScroller>
+          <ChatThreadDragList threads={rows} />
+        </ChatSidebarFadeScroller>
       )}
       <ChatClearAllDialog
         open={confirmingClear}
