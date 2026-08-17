@@ -23,11 +23,13 @@ function resultContextWindow(record: StreamRecord): number | null {
     if (!usage) {
       continue
     }
-    const contextWindow = usage.contextWindow
+    // CLI versions drift between camelCase and snake_case here.
+    const contextWindow = usage.contextWindow ?? usage.context_window
     if (typeof contextWindow !== 'number' || contextWindow <= 0) {
       continue
     }
-    const inputTokens = typeof usage.inputTokens === 'number' ? usage.inputTokens : 0
+    const rawInput = usage.inputTokens ?? usage.input_tokens
+    const inputTokens = typeof rawInput === 'number' ? rawInput : 0
     if (!best || inputTokens > best.inputTokens) {
       best = { inputTokens, contextWindow }
     }

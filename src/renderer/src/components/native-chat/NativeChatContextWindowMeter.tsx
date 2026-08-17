@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 export const CONTEXT_WINDOW_MAX_TOKENS = 200_000
 
-/** "842", "9.5k", "128k" — compact enough for a tooltip pair. */
+/** "842", "9.5k", "128k", "1M" — compact enough for a tooltip pair. */
 export function formatContextTokens(tokens: number): string {
   const safe = Math.max(0, Math.round(tokens))
   if (safe < 1_000) {
@@ -16,7 +16,10 @@ export function formatContextTokens(tokens: number): string {
   if (safe < 10_000) {
     return `${(safe / 1_000).toFixed(1).replace(/\.0$/, '')}k`
   }
-  return `${Math.round(safe / 1_000)}k`
+  if (safe < 1_000_000) {
+    return `${Math.round(safe / 1_000)}k`
+  }
+  return `${(safe / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
 }
 
 const RADIUS = 10
@@ -29,7 +32,10 @@ export function NativeChatContextWindowMeter({
   usedTokens: number
   maxTokens?: number
 }): React.JSX.Element {
-  const fraction = Math.max(0, Math.min(1, usedTokens / maxTokens))
+  // Never render a contradiction like "307k/200k": when usage outgrows an
+  // assumed window (unknown model, stale map), the window is what's wrong.
+  const effectiveMax = Math.max(maxTokens, usedTokens)
+  const fraction = Math.max(0, Math.min(1, usedTokens / effectiveMax))
   const percent = Math.round(fraction * 100)
   const overloaded = fraction > 0.9
   return (
@@ -72,7 +78,7 @@ export function NativeChatContextWindowMeter({
         </span>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={4} className="tabular-nums">
-        {`${percent}% · ${formatContextTokens(usedTokens)}/${formatContextTokens(maxTokens)} ${translate(
+        {`${percent}% · ${formatContextTokens(usedTokens)}/${formatContextTokens(effectiveMax)} ${translate(
           'auto.components.native-chat.contextWindow.tokens',
           'tokens'
         )}`}

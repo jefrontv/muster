@@ -4,6 +4,13 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
 import type { AgentType } from '../../../../shared/agent-status-types'
+import { claudeContextWindowForModel } from '../../../../shared/claude-context-window'
+
+export type NativeChatContextUsage = {
+  usedTokens: number
+  /** Model-sized window fallback; a CLI-reported window should win over this. */
+  windowTokens: number
+}
 
 export function useNativeChatContextUsage({
   paneKey,
@@ -17,8 +24,8 @@ export function useNativeChatContextUsage({
   isWorking: boolean
   /** False for runtime-owned panes — the transcript is not on the local disk. */
   enabled: boolean
-}): number | null {
-  const [usedTokens, setUsedTokens] = useState<number | null>(null)
+}): NativeChatContextUsage | null {
+  const [usage, setUsage] = useState<NativeChatContextUsage | null>(null)
   // The hook-reported provider session names the transcript authoritatively.
   // Defensive access: composer tests mount against partial store mocks.
   const providerSession = useAppStore((s) => s.agentStatusByPaneKey?.[paneKey]?.providerSession)
@@ -36,9 +43,16 @@ export function useNativeChatContextUsage({
     let cancelled = false
     void window.api.nativeChat
       .readContextUsage(agent, sessionId, transcriptPath ?? undefined)
-      .then((usage) => {
+      .then((read) => {
         if (!cancelled) {
-          setUsedTokens(usage?.usedTokens ?? null)
+          setUsage(
+            read
+              ? {
+                  usedTokens: read.usedTokens,
+                  windowTokens: claudeContextWindowForModel(read.model)
+                }
+              : null
+          )
         }
       })
       .catch(() => undefined)
@@ -49,8 +63,8 @@ export function useNativeChatContextUsage({
 
   // A session swap invalidates the previous reading immediately.
   useEffect(() => {
-    setUsedTokens(null)
+    setUsage(null)
   }, [sessionId])
 
-  return usedTokens
+  return usage
 }

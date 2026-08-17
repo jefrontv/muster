@@ -1254,7 +1254,7 @@ export type NativeChatApi = {
     agent: AgentType,
     sessionId: string,
     transcriptPath?: string
-  ) => Promise<{ usedTokens: number } | null>
+  ) => Promise<{ usedTokens: number; model?: string | null } | null>
   /** Local image file → data URL for composer/message thumbnails; null when
    *  unsupported, oversized, or unreadable. */
   readImageDataUrl: (path: string) => Promise<string | null>

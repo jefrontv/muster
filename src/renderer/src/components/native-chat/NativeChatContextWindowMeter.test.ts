@@ -21,4 +21,9 @@ describe('formatContextTokens', () => {
   it('clamps negatives to zero', () => {
     expect(formatContextTokens(-5)).toBe('0')
   })
+
+  it('shows M at a million and above', () => {
+    expect(formatContextTokens(1_000_000)).toBe('1M')
+    expect(formatContextTokens(1_500_000)).toBe('1.5M')
+  })
 })

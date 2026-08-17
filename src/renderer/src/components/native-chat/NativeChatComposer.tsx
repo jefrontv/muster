@@ -299,7 +299,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     })
 
     const stash = useNativeChatPromptStash({ draft, setDraft, setCaret, textareaRef })
-    const contextUsedTokens = useNativeChatContextUsage({
+    const contextUsage = useNativeChatContextUsage({
       paneKey,
       agent,
       isWorking,
@@ -435,8 +435,10 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         sessionOptionsSnapshot={sessionOptionsSnapshot}
         approval={approval}
         stash={stash}
-        contextUsedTokens={contextUsedTokens}
-        contextMaxTokens={contextMaxTokens}
+        contextUsedTokens={contextUsage?.usedTokens ?? null}
+        // The CLI-reported window (transport) is authoritative; the transcript's
+        // model-sized window covers surfaces that never see a stream result.
+        contextMaxTokens={contextMaxTokens ?? contextUsage?.windowTokens}
         fullAccess={fullAccess}
         onSetFullAccess={onSetFullAccess}
         onAttachTask={attachTask}

@@ -7,6 +7,8 @@ import { asRecord, parseJsonObject } from '../ai-vault/session-scanner-values'
 export type TranscriptContextUsage = {
   /** input + cache_read + cache_creation + output tokens of the latest assistant record. */
   usedTokens: number
+  /** The record's model id — lets the renderer size the window per model. */
+  model: string | null
 }
 
 /** Only the file tail is read per refresh; the latest assistant record lives there. */
@@ -45,9 +47,13 @@ export function latestContextUsageFromLines(
     if (!record || record.type !== 'assistant') {
       continue
     }
-    const tokens = usageTokens(asRecord(record.message)?.usage)
+    const message = asRecord(record.message)
+    const tokens = usageTokens(message?.usage)
     if (tokens !== null) {
-      return { usedTokens: tokens }
+      return {
+        usedTokens: tokens,
+        model: typeof message?.model === 'string' ? message.model : null
+      }
     }
   }
   return null
