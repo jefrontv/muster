@@ -1,4 +1,5 @@
 import type { Repo, Worktree } from '../../../../shared/types'
+import { filterEnabledTuiAgents } from '../../../../shared/tui-agent-selection'
 import { launchAgentInNewTab } from '@/lib/launch-agent-in-new-tab'
 import { useAppStore } from '@/store'
 
@@ -52,12 +53,21 @@ export function ensurePalettePickedWorkspaceOpens(worktreeId: string): void {
     // Existing tabs: activation's sleeping-session resume owns the wake-up.
     return
   }
-  const defaultAgent = state.settings?.defaultTuiAgent
-  // 'blank' is an explicit terminal preference; null/undefined means
-  // auto-detect, which is async — a plain terminal is the safe synchronous open.
-  if (defaultAgent && defaultAgent !== 'blank') {
+  const preference = state.settings?.defaultTuiAgent
+  // null/undefined preference means auto: first enabled locally-detected agent
+  // (matching the quick-launch ordering); 'blank' is an explicit terminal choice.
+  const agent =
+    preference === 'blank'
+      ? null
+      : (preference ??
+        filterEnabledTuiAgents(
+          state.detectedAgentIds ?? [],
+          state.settings?.disabledTuiAgents
+        )[0] ??
+        null)
+  if (agent) {
     const launched = launchAgentInNewTab({
-      agent: defaultAgent,
+      agent,
       worktreeId,
       groupId: worktreeId,
       launchSource: 'workspace_jump_palette'
