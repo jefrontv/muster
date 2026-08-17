@@ -52,6 +52,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     {
       terminalTabId,
       paneKey,
+      draftScopeKey: draftScopeKeyOverride,
       targetPtyId,
       agent,
       transportSend,
@@ -79,8 +80,10 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     // Scope key shared with image attachments so an unsent draft + its attached
     // images survive both TUI/GUI toggles and PTY replacement on reconnect.
     // Why: local, SSH, and runtime reconnects can replace or temporarily clear
-    // the PTY id. Pane identity is the stable ownership key for unsent input.
-    const draftScopeKey = paneKey
+    // the PTY id. Pane identity is the stable ownership key for unsent input —
+    // except where the caller owns a longer-lived identity (chat threads), whose
+    // override survives the relaunch-minted paneKey of a model switch.
+    const draftScopeKey = draftScopeKeyOverride ?? paneKey
     const { draft, setDraft } = useNativeChatDraft(draftScopeKey)
     const [caret, setCaret] = useState(draft.length)
     const [history, setHistory] = useState<HistoryState>(EMPTY_HISTORY)
@@ -171,14 +174,14 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       removeImageAttachment,
       removeFileAttachment
     } = useNativeChatComposerAttachments({
-      attachmentScopeKey: paneKey,
+      attachmentScopeKey: draftScopeKey,
       hasTransport,
       resolveTarget,
       textareaRef,
       setNotice
     })
     const { taskAttachments, attachTask, removeTaskAttachment, clearTaskAttachments } =
-      useNativeChatTaskAttachments(paneKey)
+      useNativeChatTaskAttachments(draftScopeKey)
     const sendButtonDisabled = isWorking
       ? !hasPty || !onStop
       : disabled ||

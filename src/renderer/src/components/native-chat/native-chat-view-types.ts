@@ -48,6 +48,9 @@ export type NativeChatTransport = {
 }
 
 export type NativeChatViewProps = {
+  /** Stable composer draft scope; chat threads pass their thread id so drafts
+   *  survive the relaunch-minted paneKey of a session-option change. */
+  draftScopeKey?: string
   /** The terminal tab hosting the agent. paneKey is `${tabId}:${leafId}`. */
   terminalTabId: string
   /** Specific split leaf this chat surface replaces. */

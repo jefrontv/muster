@@ -53,6 +53,7 @@ export type { NativeChatTransport, NativeChatViewProps } from './native-chat-vie
 export default function NativeChatView({
   terminalTabId,
   paneKey: preferredPaneKey,
+  draftScopeKey,
   targetPtyId = null,
   launchAgent,
   resolvedAgent,
@@ -88,6 +89,7 @@ export default function NativeChatView({
       {(resolution) => (
         <NativeChatResolvedView
           paneKey={resolution.paneKey}
+          draftScopeKey={draftScopeKey ?? null}
           agent={resolution.agent}
           sessionId={resolution.sessionId}
           transcriptPath={resolution.transcriptPath}
@@ -106,6 +108,7 @@ export default function NativeChatView({
 
 function NativeChatResolvedView({
   paneKey,
+  draftScopeKey,
   agent,
   sessionId,
   transcriptPath,
@@ -118,6 +121,7 @@ function NativeChatResolvedView({
   activeCollabProjectId
 }: {
   paneKey: string
+  draftScopeKey: string | null
   agent: NativeChatSession['agent']
   sessionId: string | null
   transcriptPath: string | null
@@ -408,6 +412,7 @@ function NativeChatResolvedView({
       </div>
       <NativeChatViewInput
         paneKey={paneKey}
+        draftScopeKey={draftScopeKey}
         terminalTabId={terminalTabId}
         targetPtyId={targetPtyId}
         agent={agent}

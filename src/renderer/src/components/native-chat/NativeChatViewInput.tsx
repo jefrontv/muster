@@ -13,6 +13,7 @@ import type { NativeChatSession } from '../../../../shared/native-chat-types'
 
 export function NativeChatViewInput({
   paneKey,
+  draftScopeKey,
   terminalTabId,
   targetPtyId,
   agent,
@@ -34,6 +35,7 @@ export function NativeChatViewInput({
   activeCollabProjectId
 }: {
   paneKey: string
+  draftScopeKey: string | null
   terminalTabId: string
   targetPtyId: string | null
   agent: NativeChatSession['agent']
@@ -81,6 +83,7 @@ export function NativeChatViewInput({
           ref={composerRef}
           terminalTabId={terminalTabId}
           paneKey={paneKey}
+          {...(draftScopeKey ? { draftScopeKey } : {})}
           targetPtyId={targetPtyId}
           agent={agent}
           transportSend={transport?.send}

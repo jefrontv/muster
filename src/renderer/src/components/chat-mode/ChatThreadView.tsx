@@ -274,6 +274,9 @@ export function ChatThreadView({
         <NativeChatView
           terminalTabId={session.tabId}
           paneKey={session.paneKey}
+          // Thread identity, not paneKey: a model switch relaunches the session
+          // with a fresh paneKey and must not read as wiped composer input.
+          draftScopeKey={`chat-thread:${thread.id}`}
           launchAgent={thread.agent}
           transport={transport}
           fallbackProviderSession={

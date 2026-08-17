@@ -10,6 +10,10 @@ export type NativeChatComposerProps = {
   terminalTabId: string
   /** Stable split-leaf identity; unlike a PTY id, this survives reconnects. */
   paneKey: string
+  /** Stable scope for the unsent draft + attachments. Chat threads pass their
+   *  thread id: a session-option relaunch mints a new paneKey, and a
+   *  paneKey-scoped draft would read as wiped input on every model switch. */
+  draftScopeKey?: string
   /** Specific split-pane PTY this chat view owns. */
   targetPtyId: string | null
   agent: AgentType
