@@ -215,6 +215,12 @@ export async function readSitePhpVersion(
   return typeof version === 'string' || typeof version === 'number' ? String(version) : null
 }
 
+/** The site's configured domain (e.g. 'acme.local') from sites.json. */
+export async function readSiteDomain(host: LocalWpHost, siteId: string): Promise<string> {
+  const domain = (await readLocalWpSites(host))[siteId]?.domain
+  return typeof domain === 'string' ? domain : ''
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -248,6 +254,7 @@ export async function detectLocalWpStack(
       appRunning: false,
       registered: false,
       siteId: '',
+      domain: '',
       socketPath: '',
       socketReady: false,
       phpVersion: ''
@@ -266,6 +273,7 @@ export async function detectLocalWpStack(
     appRunning: await isLocalWpAppRunning(host),
     registered: siteId !== null,
     siteId: siteId ?? '',
+    domain: siteId ? await readSiteDomain(host, siteId) : '',
     socketPath: liveSocket ?? '',
     socketReady: liveSocket !== null,
     phpVersion: siteId ? ((await readSitePhpVersion(host, siteId)) ?? '') : ''

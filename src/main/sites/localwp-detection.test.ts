@@ -230,7 +230,13 @@ describe('stack detection', () => {
   it('reports a registered, running LocalWP site', async () => {
     const host = fakeHost({
       commands: { 'pgrep -x Local': ok('4711') },
-      files: sitesJson({ [SITE_ID]: { path: SITE_PATH, services: { php: { version: '8.3.0' } } } }),
+      files: sitesJson({
+        [SITE_ID]: {
+          path: SITE_PATH,
+          domain: 'acme.local',
+          services: { php: { version: '8.3.0' } }
+        }
+      }),
       existing: [SOCKET, path.join(SITE_PATH, 'app', 'public', 'wp-config.php')],
       readySockets: [SOCKET]
     })
@@ -241,6 +247,7 @@ describe('stack detection', () => {
       appRunning: true,
       registered: true,
       siteId: SITE_ID,
+      domain: 'acme.local',
       socketPath: SOCKET,
       socketReady: true,
       phpVersion: '8.3.0'

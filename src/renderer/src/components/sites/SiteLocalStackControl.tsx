@@ -10,8 +10,9 @@
 
 import { CircleAlert, Loader2, Play, Square } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteLocalStack, SiteSummary } from '../../../../shared/site-types'
+import { siteStackAutodetectPatch } from './site-stack-autodetect'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { Badge } from '@/components/ui/badge'
@@ -35,11 +36,13 @@ const SPINNER_DELAY_MS = 200
 
 type Pending = 'start' | 'stop' | 'setup' | ''
 
+type Detected = { stack: SiteLocalStack; domain: string }
+
 export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): React.JSX.Element {
   const { site } = summary
   const updateSite = useAppStore((state) => state.updateSite)
   const [available, setAvailable] = useState<SiteLocalStack[] | null>(null)
-  const [detected, setDetected] = useState<SiteLocalStack | null>(null)
+  const [detected, setDetected] = useState<Detected | null>(null)
   const [pending, setPending] = useState<Pending>('')
   const [spinning, setSpinning] = useState(false)
   const [status, setStatus] = useState('')
@@ -64,7 +67,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     if (!answer.ok) {
       return null
     }
-    setDetected(answer.value.stack)
+    setDetected({ stack: answer.value.stack, domain: answer.value.domain })
     return answer.value.stack
   }, [site.id])
 
@@ -78,13 +81,37 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     void (async () => {
       const answer = await window.api.siteStacks.detect(site.id)
       if (!cancelled && answer.ok) {
-        setDetected(answer.value.stack)
+        setDetected({ stack: answer.value.stack, domain: answer.value.domain })
       }
     })()
     return () => {
       cancelled = true
     }
   }, [site.id, site.localStack, refreshDetection])
+
+  // Source what the stacks already know into the record: adopt the detected stack on an
+  // unconfigured site, and keep localDomain equal to the confirmed stack's serving domain —
+  // deploys and search-replace read it. The signature ref stops a re-render between the write
+  // and the store refresh from writing the same patch twice.
+  const appliedAutodetectRef = useRef('')
+  useEffect(() => {
+    if (!detected) {
+      return
+    }
+    const patch = siteStackAutodetectPatch(
+      { localStack: site.localStack, localDomain: site.localDomain },
+      detected
+    )
+    if (!patch) {
+      return
+    }
+    const signature = `${site.id}\0${patch.localStack ?? ''}\0${patch.localDomain ?? ''}`
+    if (appliedAutodetectRef.current === signature) {
+      return
+    }
+    appliedAutodetectRef.current = signature
+    void updateSite(site.id, patch)
+  }, [detected, site.id, site.localStack, site.localDomain, updateSite])
 
   const run = useCallback(
     async (
@@ -116,8 +143,8 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
   const managed = site.localStack !== 'plain'
   // Picking a stack only records the intent. A folder that stack does not manage yet has to be
   // registered with it, which is what the setup action does.
-  const needsSetup = managed && detected !== null && detected !== site.localStack
-  const confirmed = managed && detected === site.localStack
+  const needsSetup = managed && detected !== null && detected.stack !== site.localStack
+  const confirmed = managed && detected?.stack === site.localStack
   // findLast, not filter().at(-1): a trailing slash leaves an empty final segment.
   const folderName = site.path.split('/').findLast((segment) => segment.length > 0) ?? 'site'
   const suggestedDomain = site.localDomain.trim() || `${folderName}.test`
@@ -274,17 +301,25 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
       {/* What the stacks report, kept separate from what the record says. The two disagreeing is
           the case worth surfacing: a LocalWP site adopted by agent-local still looks like LocalWP
           on disk, so only the stacks themselves can settle it. */}
-      {detected && detected !== site.localStack && detected !== 'plain' ? (
+      {detected && detected.stack !== site.localStack && detected.stack !== 'plain' ? (
         <p className="text-[11px] text-muted-foreground">
           {translate(
             'auto.components.sites.SiteDetailPanel.stackDetected',
             '{{stack}} reports it manages this folder.'
-          ).replace('{{stack}}', STACK_LABELS[detected])}{' '}
+          ).replace('{{stack}}', STACK_LABELS[detected.stack])}{' '}
           <Button
             variant="link"
             className="h-auto p-0 text-[11px]"
             disabled={busy}
-            onClick={() => void updateSite(site.id, { localStack: detected })}
+            // Adopting the stack also adopts its serving domain — the two travel together.
+            onClick={() =>
+              void updateSite(site.id, {
+                localStack: detected.stack,
+                ...(detected.domain.trim() && detected.domain !== site.localDomain
+                  ? { localDomain: detected.domain.trim() }
+                  : {})
+              })
+            }
           >
             {translate('auto.components.sites.SiteDetailPanel.stackUseDetected', 'Switch to it')}
           </Button>

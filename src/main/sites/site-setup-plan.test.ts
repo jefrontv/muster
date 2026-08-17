@@ -65,6 +65,7 @@ function detection(overrides: Partial<LocalWpStackDetection> = {}): LocalWpStack
     appRunning: false,
     registered: false,
     siteId: '',
+    domain: '',
     socketPath: '',
     socketReady: false,
     phpVersion: '',

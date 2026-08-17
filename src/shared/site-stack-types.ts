@@ -14,6 +14,8 @@ export type LocalWpStackDetection = {
   appRunning: boolean
   registered: boolean
   siteId: string
+  /** The domain the managing stack serves this site on ('' when unknown/unregistered). */
+  domain: string
   /** The live socket, or empty when mysqld is not accepting connections. */
   socketPath: string
   socketReady: boolean

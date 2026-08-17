@@ -201,6 +201,7 @@ export async function detectAgentLocalStack(
     appRunning: false,
     registered: false,
     siteId: '',
+    domain: '',
     socketPath: '',
     socketReady: false,
     phpVersion: ''
@@ -234,6 +235,7 @@ export async function detectAgentLocalStack(
     appRunning: true,
     registered: true,
     siteId: match.slug,
+    domain: match.domain,
     // Always TCP; socketReady mirrors "the site is up" so callers reading it stay meaningful.
     socketPath: '',
     socketReady: match.running,

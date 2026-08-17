@@ -334,6 +334,7 @@ describe('detectAgentLocalStack', () => {
       stack: 'agent-local',
       registered: true,
       siteId: 'orleton-om',
+      domain: 'orleton-om.test',
       socketPath: '',
       socketReady: true,
       phpVersion: '8.2'
