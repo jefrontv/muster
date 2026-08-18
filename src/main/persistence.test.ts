@@ -1173,9 +1173,11 @@ describe('Store', () => {
     expect(persisted.ui.setupGuideSidebarDismissed).toBe(true)
   })
 
+  // v6 put the Chat/Code choice first, so progress that predates it resumes at index 0
+  // rather than dropping the user past a page they never answered.
   it.each([
-    [3, 2],
-    [4, 2],
+    [3, 0],
+    [4, 0],
     [5, 4],
     [6, 4],
     [9, 4]
@@ -1202,7 +1204,7 @@ describe('Store', () => {
   )
 
   it.each([
-    [3, 2],
+    [3, 0],
     [4, 4],
     [5, 4],
     [9, 4]
@@ -1257,7 +1259,7 @@ describe('Store', () => {
   )
 
   it.each([
-    [2, 2],
+    [2, 0],
     [3, 4],
     [4, 5],
     [5, 6]
@@ -1322,7 +1324,7 @@ describe('Store', () => {
 
   it.each([
     [{ outcome: 'completed', lastCompletedStep: 7 }, 'completed', ONBOARDING_FINAL_STEP],
-    [{ closedAt: null, outcome: 'dismissed', lastCompletedStep: 2 }, 'dismissed', 2],
+    [{ closedAt: null, outcome: 'dismissed', lastCompletedStep: 2 }, 'dismissed', 0],
     [
       { closedAt: 'invalid', outcome: 'completed', lastCompletedStep: 7 },
       'completed',
