@@ -42,7 +42,6 @@
     "checkForUpdates": "Buscar actualizaciones...",
     "settings": "Ajustes",
     "exploreOrca": "Explorar Muster",
-    "gettingStarted": "Primeros pasos con Muster",
     "reportCrash": "Informar fallo...",
     "file": "Archivo",
     "exit": "Salir",
@@ -699,9 +698,6 @@
         "724c440e72": "primeros pasos",
         "0505d0df29": "empezar con Muster",
         "ea0b1bc7b8": "guía de configuración",
-        "17005c73d4": "Abre la lista de configuración inicial para ver pasos de setup e hitos.",
-        "ded9e9032f": "Lista de configuración inicial",
-        "5f32ac08f3": "Completa la lista de configuración inicial para los flujos de trabajo principales de Muster.",
         "8ac3de82f5": "Dictado local de voz a texto con modelos en el dispositivo.",
         "6a50cdcd7c": "Voz",
         "cd50cec5d7": "Coordina múltiples coding agents a través de Muster.",
@@ -3980,8 +3976,7 @@
           "23989bb663": "Mostrar espacio de trabajo activo"
         },
         "SetupGuideSidebarEntry": {
-          "b0a7bfc34c": "Ocultar de la barra lateral",
-          "88d402b71d": "Checklist de onboarding"
+          "b0a7bfc34c": "Ocultar de la barra lateral"
         },
         "SetupScriptPromptCard": {
           "ff1e819a11": "Agregar un script de configuración",
@@ -4096,7 +4091,6 @@
           "4e8f5710d3": "No se pudo reiniciar Muster.",
           "5161eef55d": "Reiniciando Muster...",
           "d396773ef0": "comprobando",
-          "f8a2c91d4e": "Milestones",
           "b7e4d2a19c": "Onboarding",
           "c4f8e1b72a": "X"
         },
@@ -4880,8 +4874,6 @@
       "setup": {
         "guide": {
           "SetupGuideModal": {
-            "3598a3ca0c": "Completa los flujos de trabajo principales que hacen útil a Muster para trabajar con agentes en paralelo.",
-            "48a9e5ef2d": "Primeros pasos",
             "28cf59fcb4": "Esto ocultará el checklist de la barra lateral.",
             "f3b5ffb2a6": "Ocultar checklist de la barra lateral"
           },
@@ -6399,8 +6391,6 @@
           "c9ca101a3b": "Integraciones",
           "f9b77539fd": "Valores predeterminados del workspace, configuración de la app y mantenimiento.",
           "7807c11c4d": "General",
-          "6855b0f77d": "Termina los flujos de trabajo principales que hacen que Muster sea útil para el trabajo de agentes en paralelo.",
-          "6d119427ef": "Lista de verificación de incorporación",
           "eb1176a14e": "Dictado local de voz a texto con modelos en el dispositivo.",
           "5063bb47a5": "Voz",
           "475980f53d": "Coordina varios agentes de codificación a través de Muster.",
@@ -6456,8 +6446,6 @@
           "5c9669ff9c": "Proyectos",
           "dbceaa8840": "Buscar ajustes",
           "60f8a673a7": "Volver a la app",
-          "6503182299": "Checklist de onboarding",
-          "82db1b7de4": "Checklist de onboarding, {{value0}} de {{value1}} completados. Mostrar guía de configuración.",
           "df38d612b7": "Aún no se han agregado proyectos.",
           "3e483e256b": "No hay ajustes de proyecto coincidentes."
         },
@@ -10715,8 +10703,7 @@
           "hideAgents": "Ocultar agentes",
           "showMoreAgents": "Mostrar {{value0}} agentes más→",
           "yoloPermissionsLabel": "Yolo / Omitir permisos de forma peligrosa",
-          "yoloPermissionsInfo": "Información de permisos del agente",
-          "yoloPermissionsTooltip": "Omite las comprobaciones de permisos de los agentes para reducir interrupciones"
+          "yoloPermissionsInfo": "Información de permisos del agente"
         },
         "FeatureSetupChecklist": {
           "77f74946f5": "Los agentes pueden enviarse mensajes entre sí, tomar tareas y coordinar handoffs.",
@@ -10798,7 +10785,6 @@
           "984338477a": "tema",
           "c47e1bd149": "agente",
           "windowsTerminalTitle": "Configura los valores predeterminados de la terminal de Windows",
-          "windowsTerminalSubtitle": "Elige la Shell predeterminada para los paneles nuevos y cómo se comporta el clic derecho en la terminal.",
           "defaultViewTitle": "How do you want to start?",
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
@@ -10806,7 +10792,6 @@
         },
         "welcome": {
           "eyebrow": "Welcome to",
-          "tagline": "Your agents, projects, and work — one quiet desk.",
           "start": "Get started"
         },
         "defaultView": {
@@ -10826,7 +10811,6 @@
           "4123609efd": "Iniciando terminal..."
         },
         "OnboardingSkipConfirmationDialog": {
-          "9f47f345a4": "¡No tardará mucho!",
           "e4726b2d50": "¿Saltar la incorporación?"
         },
         "OnboardingTourStep": {

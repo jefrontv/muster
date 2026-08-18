@@ -42,7 +42,6 @@
     "checkForUpdates": "检查更新...",
     "settings": "设置",
     "exploreOrca": "探索 Muster",
-    "gettingStarted": "Muster 入门",
     "reportCrash": "发送错误报告...",
     "file": "文件",
     "exit": "退出",
@@ -699,9 +698,6 @@
         "724c440e72": "入门",
         "0505d0df29": "开始使用 Muster",
         "ea0b1bc7b8": "设置指南",
-        "17005c73d4": "打开入门清单以了解设置和里程碑步骤。",
-        "ded9e9032f": "入门清单",
-        "5f32ac08f3": "完成 Muster 核心工作流程的入门清单。",
         "8ac3de82f5": "使用设备端模型进行本地语音转文字听写。",
         "6a50cdcd7c": "语音",
         "cd50cec5d7": "通过 Muster 协调多个编码智能体。",
@@ -3961,8 +3957,7 @@
           "23989bb663": "显示活动工作区"
         },
         "SetupGuideSidebarEntry": {
-          "b0a7bfc34c": "从侧边栏隐藏",
-          "88d402b71d": "入门清单"
+          "b0a7bfc34c": "从侧边栏隐藏"
         },
         "SetupScriptPromptCard": {
           "ff1e819a11": "添加设置脚本",
@@ -4077,7 +4072,6 @@
           "4e8f5710d3": "无法重新启动 Muster。",
           "5161eef55d": "正在重启 Muster…",
           "d396773ef0": "检查中",
-          "f8a2c91d4e": "里程碑",
           "b7e4d2a19c": "入门引导",
           "c4f8e1b72a": "X"
         },
@@ -4880,8 +4874,6 @@
       "setup": {
         "guide": {
           "SetupGuideModal": {
-            "3598a3ca0c": "完成使 Muster 对于并行智能体工作有用的核心工作流程。",
-            "48a9e5ef2d": "入门",
             "28cf59fcb4": "这将从侧边栏隐藏清单",
             "f3b5ffb2a6": "从侧边栏隐藏清单"
           },
@@ -6384,8 +6376,6 @@
           "c9ca101a3b": "集成",
           "f9b77539fd": "工作区默认值、应用程序设置和维护。",
           "7807c11c4d": "通用",
-          "6855b0f77d": "完成使 Muster 对于并行智能体工作有用的核心工作流程。",
-          "6d119427ef": "入门清单",
           "eb1176a14e": "使用设备上模型进行本地语音到文本听写。",
           "5063bb47a5": "语音",
           "475980f53d": "通过 Muster 协调多个编码智能体。",
@@ -6441,8 +6431,6 @@
           "5c9669ff9c": "项目",
           "dbceaa8840": "搜索设置",
           "60f8a673a7": "返回应用",
-          "6503182299": "入门清单",
-          "82db1b7de4": "入门清单，已完成 {{value0}}/{{value1}}。显示设置指南。",
           "df38d612b7": "尚未添加项目。",
           "3e483e256b": "没有匹配的项目设置。"
         },
@@ -10715,8 +10703,7 @@
           "hideAgents": "隐藏智能体",
           "showMoreAgents": "显示另外 {{value0}} 个智能体→",
           "yoloPermissionsLabel": "Yolo / 危险地跳过权限检查",
-          "yoloPermissionsInfo": "智能体权限信息",
-          "yoloPermissionsTooltip": "跳过智能体权限检查，减少打断"
+          "yoloPermissionsInfo": "智能体权限信息"
         },
         "FeatureSetupChecklist": {
           "77f74946f5": "智能体可互相通信、领取任务并协调交接。",
@@ -10798,7 +10785,6 @@
           "984338477a": "主题",
           "c47e1bd149": "智能体",
           "windowsTerminalTitle": "设置 Windows 终端默认值",
-          "windowsTerminalSubtitle": "为新面板选择默认 Shell，以及终端中右键单击的行为。",
           "defaultViewTitle": "How do you want to start?",
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
@@ -10806,7 +10792,6 @@
         },
         "welcome": {
           "eyebrow": "Welcome to",
-          "tagline": "Your agents, projects, and work — one quiet desk.",
           "start": "Get started"
         },
         "defaultView": {
@@ -10826,7 +10811,6 @@
           "4123609efd": "启动终端..."
         },
         "OnboardingSkipConfirmationDialog": {
-          "9f47f345a4": "不会花很长时间的！",
           "e4726b2d50": "跳过入门引导？"
         },
         "OnboardingTourStep": {

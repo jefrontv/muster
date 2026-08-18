@@ -81,8 +81,8 @@ function SettingsSetupGuideNavRow({
       type="button"
       aria-current={setupActive ? 'page' : undefined}
       aria-label={translate(
-        'auto.components.settings.SettingsSidebar.82db1b7de4',
-        'Onboarding checklist, {{value0}} of {{value1}} done. Show setup guide.',
+        'auto.components.settings.SettingsSidebar.setupGuideAria',
+        'Setup guide, {{value0}} of {{value1}} done. Show setup guide.',
         { value0: progress.doneCount, value1: progress.total }
       )}
       onClick={(event) =>
@@ -108,7 +108,7 @@ function SettingsSetupGuideNavRow({
       />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[13px] font-medium leading-4">
-          {translate('auto.components.settings.SettingsSidebar.6503182299', 'Onboarding checklist')}
+          {translate('auto.components.settings.SettingsSidebar.setupGuide', 'Setup guide')}
         </span>
       </span>
     </button>

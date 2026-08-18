@@ -256,7 +256,7 @@ describe('OnboardingFlow', () => {
   it('renders concise skip confirmation copy', () => {
     expect(ONBOARDING_SKIP_CONFIRMATION_COPY).toEqual({
       title: 'Skip onboarding?',
-      description: "It won't take long!",
+      description: "You can set all of this up later in Settings, but this screen won't come back.",
       skipLabel: 'Skip',
       keepGoingLabel: 'No, keep going'
     })

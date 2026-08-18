@@ -229,8 +229,8 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
                   className="size-3.5 object-contain invert opacity-55 dark:invert-0"
                 />
                 {translate(
-                  'auto.components.sidebar.SidebarSettingsHelpMenu.f8a2c91d4e',
-                  'Milestones'
+                  'auto.components.sidebar.SidebarSettingsHelpMenu.setupGuide',
+                  'Setup guide'
                 )}
                 <SetupGuideProgressRing
                   done={setupProgress.coreDoneCount}

@@ -118,7 +118,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
   }
 
   const setupGuideItem: Electron.MenuItemConstructorOptions = {
-    label: translateMain('menu.gettingStarted', 'Getting Started with Muster'),
+    label: translateMain('menu.gettingStarted', 'Setup guide'),
     click: (_menuItem, window) => onOpenSetupGuide(window)
   }
 

@@ -101,7 +101,7 @@ const stepCopy = {
     get subtitle() {
       return translate(
         'auto.components.onboarding.OnboardingFlow.windowsTerminalSubtitle',
-        'Choose the DEFAULT Shell for new panes and how right-click behaves in the terminal.'
+        'Choose the default shell for new panes, and how right-click behaves.'
       )
     }
   }
@@ -378,6 +378,7 @@ export default function OnboardingFlow({
 
                 <OnboardingFooter
                   shouldShowSkipToProjectSetup={shouldShowSkipToProjectSetup}
+                  defaultView={flow.defaultView}
                   busyLabel={busyLabel}
                   onSkipToRepo={() => void flow.skipToRepo()}
                   stepIndex={stepIndex}

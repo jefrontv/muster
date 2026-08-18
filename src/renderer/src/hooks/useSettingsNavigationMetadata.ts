@@ -253,24 +253,21 @@ export function buildSettingsNavigationMetadata({
       : []),
     {
       id: 'setup-guide',
-      title: translate(
-        'auto.hooks.useSettingsNavigationMetadata.ded9e9032f',
-        'Onboarding checklist'
-      ),
+      title: translate('auto.hooks.useSettingsNavigationMetadata.setupGuideTitle', 'Setup guide'),
       description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.5f32ac08f3',
-        'Finish the onboarding checklist for core Muster workflows.'
+        'auto.hooks.useSettingsNavigationMetadata.setupGuideDescription',
+        'Finish the setup guide for core Muster workflows.'
       ),
       icon: OrcaLogoSettingsIcon,
       searchEntries: [
         {
           title: translate(
-            'auto.hooks.useSettingsNavigationMetadata.ded9e9032f',
-            'Onboarding checklist'
+            'auto.hooks.useSettingsNavigationMetadata.setupGuideTitle',
+            'Setup guide'
           ),
           description: translate(
-            'auto.hooks.useSettingsNavigationMetadata.17005c73d4',
-            'Open the onboarding checklist for setup and milestone steps.'
+            'auto.hooks.useSettingsNavigationMetadata.setupGuideSearchDescription',
+            'Open the setup guide for setup and milestone steps.'
           ),
           keywords: [
             translate('auto.hooks.useSettingsNavigationMetadata.ea0b1bc7b8', 'setup guide'),

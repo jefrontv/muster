@@ -1,8 +1,10 @@
 import { ChevronLeft, CornerDownLeft, Loader2 } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
+import type { OnboardingDefaultView } from './onboarding-default-view-step'
 
 type OnboardingFooterProps = {
   shouldShowSkipToProjectSetup: boolean
+  defaultView: OnboardingDefaultView
   busyLabel: string | null
   onSkipToRepo: () => void
   stepIndex: number
@@ -18,6 +20,7 @@ type OnboardingFooterProps = {
 
 export function OnboardingFooter({
   shouldShowSkipToProjectSetup,
+  defaultView,
   busyLabel,
   onSkipToRepo,
   stepIndex,
@@ -38,10 +41,15 @@ export function OnboardingFooter({
           disabled={Boolean(busyLabel)}
           onClick={onSkipToRepo}
         >
-          {translate(
-            'auto.components.onboarding.OnboardingFooter.111d3f8d92',
-            'Skip to project setup'
-          )}
+          {defaultView === 'chat'
+            ? translate(
+                'auto.components.onboarding.OnboardingFooter.skipToWorkspaceSetup',
+                'Skip to workspace setup'
+              )
+            : translate(
+                'auto.components.onboarding.OnboardingFooter.111d3f8d92',
+                'Skip to project setup'
+              )}
         </button>
       ) : (
         <span />

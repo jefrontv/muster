@@ -133,13 +133,13 @@ describe('SetupGuideSidebarEntry', () => {
   it('does not render before persisted UI hydration is ready', () => {
     persistedUIReady = false
 
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Setup guide')
   })
 
   it('does not render before setup progress readiness settles', () => {
     mocks.useSetupGuideProgress.mockReturnValue(makeProgress({ ready: false }))
 
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Setup guide')
   })
 
   it('does not flash when agent capability completion is still unresolved', () => {
@@ -153,45 +153,45 @@ describe('SetupGuideSidebarEntry', () => {
       })
     )
 
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Setup guide')
   })
 
   it('does not render after setup is complete and progress is ready', () => {
     mocks.useSetupGuideProgress.mockReturnValue(makeAllDoneProgress())
 
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Setup guide')
   })
 
   it('renders for fresh active users when only the browser step is incomplete', () => {
     mocks.useSetupGuideProgress.mockReturnValue(makeOnlyBrowserIncompleteProgress())
 
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).toContain('Setup guide')
   })
 
   it('does not render when the sidebar entry was dismissed with only browser incomplete', () => {
     mocks.useSetupGuideProgress.mockReturnValue(makeOnlyBrowserIncompleteProgress())
     setupGuideSidebarDismissed = true
 
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).not.toContain('Setup guide')
   })
 
   it('renders after persisted UI and setup progress are ready when setup is incomplete', () => {
-    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).toContain('Onboarding checklist')
+    expect(renderToStaticMarkup(<SetupGuideSidebarEntry />)).toContain('Setup guide')
   })
 
   it('keeps the visible entry mounted during transient setup progress refreshes', async () => {
     const { container, rerender } = await renderSetupGuideSidebarEntry()
 
-    expect(container.textContent).toContain('Onboarding checklist')
+    expect(container.textContent).toContain('Setup guide')
 
     mocks.useSetupGuideProgress.mockReturnValue(makeProgress({ ready: false }))
     await rerender()
 
-    expect(container.textContent).toContain('Onboarding checklist')
+    expect(container.textContent).toContain('Setup guide')
 
     mocks.useSetupGuideProgress.mockReturnValue(makeAllDoneProgress())
     await rerender()
 
-    expect(container.textContent).not.toContain('Onboarding checklist')
+    expect(container.textContent).not.toContain('Setup guide')
   })
 })

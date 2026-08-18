@@ -103,8 +103,8 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate">
               {translate(
-                'auto.components.sidebar.SetupGuideSidebarEntry.88d402b71d',
-                'Onboarding checklist'
+                'auto.components.sidebar.SetupGuideSidebarEntry.setupGuide',
+                'Setup guide'
               )}
             </span>
           </span>

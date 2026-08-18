@@ -131,8 +131,8 @@ export default function SetupGuideModal(): JSX.Element | null {
           <div className="flex items-center gap-2">
             <DialogTitle className="text-lg">
               {translate(
-                'auto.components.setup.guide.SetupGuideModal.48a9e5ef2d',
-                'Getting started'
+                'auto.components.setup.guide.SetupGuideModal.setupGuideTitle',
+                'Setup guide'
               )}
             </DialogTitle>
             <SetupGuideProgressRing
@@ -144,8 +144,8 @@ export default function SetupGuideModal(): JSX.Element | null {
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
             {translate(
-              'auto.components.setup.guide.SetupGuideModal.3598a3ca0c',
-              'Finish the core workflows that make Muster useful for parallel agent work.'
+              'auto.components.setup.guide.SetupGuideModal.setupGuideDescription',
+              'Finish the setup that makes Muster useful for your day-to-day work.'
             )}
           </DialogDescription>
         </DialogHeader>
