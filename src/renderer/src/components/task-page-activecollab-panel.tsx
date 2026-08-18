@@ -16,6 +16,11 @@ import { ActiveCollabTaskList } from '@/components/task-page-activecollab-task-l
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
 import { TaskPageActiveCollabSetup } from '@/components/task-page-activecollab-setup'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
+import { useSidebarResize } from '@/hooks/useSidebarResize'
+import {
+  ACTIVECOLLAB_TASK_PANE_MAX_WIDTH,
+  ACTIVECOLLAB_TASK_PANE_MIN_WIDTH
+} from '../../../shared/activecollab-task-pane-width'
 import { useAppStore } from '@/store'
 import { getActiveCollabReadScope } from '@/store/slices/activecollab-cache'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
@@ -90,6 +95,18 @@ export function TaskPageActiveCollabPanel({
   // Read defensively: this panel is mounted against partial store stand-ins in several suites, and
   // a bare read of an absent slice would take the whole Tasks surface down rather than merely
   // skipping a feature no stand-in exercises.
+  const paneWidth = useAppStore((s) => s.activeCollabTaskPaneWidth)
+  const setPaneWidth = useAppStore((s) => s.setActiveCollabTaskPaneWidth)
+  // deltaSign -1: the pane is on the right, so dragging the handle LEFT widens it.
+  const { containerRef: paneRef, onResizeStart } = useSidebarResize<HTMLElement>({
+    isOpen: true,
+    width: paneWidth,
+    minWidth: ACTIVECOLLAB_TASK_PANE_MIN_WIDTH,
+    maxWidth: ACTIVECOLLAB_TASK_PANE_MAX_WIDTH,
+    deltaSign: -1,
+    setWidth: setPaneWidth
+  })
+
   const openRequest = useAppStore((s) => s.activeCollabTaskOpenRequest ?? null)
   const clearOpenRequest = useAppStore((s) => s.clearActiveCollabTaskOpenRequest)
   useEffect(() => {
@@ -148,7 +165,18 @@ export function TaskPageActiveCollabPanel({
         // what the skeleton work depends on.
         // Why a bounded width: the pane's own class list is `h-full` with no basis, so as a bare
         // flex sibling it sized to its content and a long task body pushed the list off-screen.
-        <aside className="flex min-h-0 max-h-full w-[42%] min-w-[320px] max-w-[620px] shrink-0 flex-col overflow-hidden border-l border-border/60 bg-background duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none">
+        <aside
+          ref={paneRef}
+          // Width is applied by the resize hook (imperative during a drag); the class list
+          // keeps only the bounds so a stale persisted value can never outgrow the page.
+          style={{ width: `${paneWidth}px` }}
+          className="relative flex min-h-0 max-h-full min-w-[320px] max-w-[900px] shrink-0 flex-col overflow-hidden border-l border-border/60 bg-background duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none"
+        >
+          {/* Drag target on the shared seam; 4px because a 1px edge is too hard to grab. */}
+          <div
+            className="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize transition-colors hover:bg-ring/20 active:bg-ring/30"
+            onMouseDown={onResizeStart}
+          />
           <ActiveCollabTaskWorkspace
             projectId={selected.projectId}
             taskId={selected.taskId}

@@ -39,6 +39,10 @@ import type {
 } from '../../../../shared/types'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { clampMarkdownTocPanelWidth } from '../../../../shared/markdown-toc-panel-width'
+import {
+  ACTIVECOLLAB_TASK_PANE_DEFAULT_WIDTH,
+  clampActiveCollabTaskPaneWidth
+} from '../../../../shared/activecollab-task-pane-width'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { RemoteOpKind } from '@/components/right-sidebar/source-control-primary-action'
 import { invalidateAutomaticPushTargetUpstreamStatusCache } from '@/components/right-sidebar/push-target-upstream-refresh-cache'
@@ -400,6 +404,10 @@ export type EditorSlice = {
   // Markdown table of contents panel sizing
   markdownTocPanelWidth: number
   setMarkdownTocPanelWidth: (width: number) => void
+
+  // Tasks page task-detail pane sizing
+  activeCollabTaskPaneWidth: number
+  setActiveCollabTaskPaneWidth: (width: number) => void
 
   // Right sidebar
   rightSidebarOpen: boolean
@@ -1428,6 +1436,16 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
   setMarkdownTocPanelWidth: (width) =>
     set((s) => ({
       markdownTocPanelWidth: clampMarkdownTocPanelWidth(width, undefined, s.markdownTocPanelWidth)
+    })),
+
+  activeCollabTaskPaneWidth: ACTIVECOLLAB_TASK_PANE_DEFAULT_WIDTH,
+  setActiveCollabTaskPaneWidth: (width) =>
+    set((s) => ({
+      activeCollabTaskPaneWidth: clampActiveCollabTaskPaneWidth(
+        width,
+        undefined,
+        s.activeCollabTaskPaneWidth
+      )
     })),
 
   // Right sidebar
