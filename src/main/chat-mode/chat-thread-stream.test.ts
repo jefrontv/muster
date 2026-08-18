@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events'
+import { existsSync, readFileSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { ChildProcess } from 'node:child_process'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -445,6 +446,92 @@ describe('startChatThreadStream', () => {
         input: {}
       }
     ])
+    child.emit('close', 0)
+  })
+
+  it('appends --mcp-config with the registered coordinates and cleans up once on stop', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    let seenCommand = ''
+    const revoked: [string, string][] = []
+    startChatThreadStream(
+      { threadId: 't-mcp-stop', command: 'claude -p', sender },
+      {
+        spawn: (_cmd, args) => {
+          seenCommand = args[1]
+          return child
+        },
+        hookEnv: () => ({}),
+        mcp: {
+          register: () => ({ url: 'http://127.0.0.1:9999/mcp', token: 'tok-1' }),
+          revoke: (threadId, token) => revoked.push([threadId, token])
+        }
+      }
+    )
+    const file = /--mcp-config '([^']+)'/.exec(seenCommand)?.[1]
+    expect(file).toBeDefined()
+    const config = JSON.parse(readFileSync(file!, 'utf8'))
+    expect(config).toEqual({
+      mcpServers: {
+        muster: {
+          type: 'http',
+          url: 'http://127.0.0.1:9999/mcp',
+          headers: { Authorization: 'Bearer tok-1' }
+        }
+      }
+    })
+    // The user's other MCP servers must keep loading.
+    expect(seenCommand).not.toContain('--strict-mcp-config')
+    stopChatThreadStream('t-mcp-stop')
+    expect(revoked).toEqual([['t-mcp-stop', 'tok-1']])
+    expect(existsSync(file!)).toBe(false)
+    child.emit('close', 0)
+    // Close after an intentional stop must not revoke a second time.
+    expect(revoked).toHaveLength(1)
+  })
+
+  it('cleans up the mcp registration on an unexpected close', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    let seenCommand = ''
+    const revoked: string[] = []
+    startChatThreadStream(
+      { threadId: 't-mcp-crash', command: 'claude -p', sender },
+      {
+        spawn: (_cmd, args) => {
+          seenCommand = args[1]
+          return child
+        },
+        hookEnv: () => ({}),
+        mcp: {
+          register: () => ({ url: 'http://127.0.0.1:9999/mcp', token: 'tok-2' }),
+          revoke: (_threadId, token) => revoked.push(token)
+        }
+      }
+    )
+    const file = /--mcp-config '([^']+)'/.exec(seenCommand)?.[1]
+    expect(existsSync(file!)).toBe(true)
+    child.emit('close', 1)
+    expect(revoked).toEqual(['tok-2'])
+    expect(existsSync(file!)).toBe(false)
+  })
+
+  it('launches without the flag when the connector has nothing to register', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    let seenCommand = ''
+    startChatThreadStream(
+      { threadId: 't-no-mcp', command: 'claude -p', sender },
+      {
+        spawn: (_cmd, args) => {
+          seenCommand = args[1]
+          return child
+        },
+        hookEnv: () => ({}),
+        mcp: { register: () => null, revoke: () => undefined }
+      }
+    )
+    expect(seenCommand).toBe('claude -p')
     child.emit('close', 0)
   })
 

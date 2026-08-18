@@ -138,14 +138,12 @@ export function chatWorkspaceProjects(workspace: ChatWorkspace): ChatWorkspacePr
   )
 }
 
-export function buildChatWorkspaceAgentBrief(workspace: ChatWorkspace): string | null {
+/** Always non-empty: even a bare workspace gets the muster-tools notice. */
+export function buildChatWorkspaceAgentBrief(workspace: ChatWorkspace): string {
   const urls = normalizeChatWorkspaceUrls(workspace.urls ?? [])
   const emails = normalizeChatWorkspaceEmails(workspace.clientEmails ?? [])
   const notes = normalizeChatWorkspaceNotes(workspace.notes)
   const projects = chatWorkspaceProjects(workspace)
-  if (urls.length === 0 && emails.length === 0 && !notes && projects.length === 0) {
-    return null
-  }
 
   const lines: string[] = [
     `This chat belongs to the "${workspace.name}" workspace.`,
@@ -196,6 +194,11 @@ export function buildChatWorkspaceAgentBrief(workspace: ChatWorkspace): string |
       }
     }
   }
+
+  lines.push(
+    '',
+    'This session has "muster" MCP tools scoped to this workspace. Use them when the user asks to view or change workspace settings: rename the workspace, edit notes, URLs, or client emails, change the color or working folders, switch the default chat model, or rename, archive, or clean up chats.'
+  )
 
   return lines.join('\n')
 }

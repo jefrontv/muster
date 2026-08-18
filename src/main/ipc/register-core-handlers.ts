@@ -45,6 +45,7 @@ import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
 import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
 import { registerChatModeHandlers } from './chat-mode'
+import { registerChatConnectorHandlers } from './chat-connector'
 import { registerChatThreadStreamHandlers } from './chat-thread-stream'
 import { registerSiteRunHandlers } from './site-runs'
 import { registerSiteRootsHandlers } from './site-roots'
@@ -236,6 +237,7 @@ export function registerCoreHandlers(
   registerSiteRunHandlers(store)
   registerSiteDbSnapshotHandlers(store)
   registerChatModeHandlers()
+  registerChatConnectorHandlers()
   registerChatThreadStreamHandlers(store)
   registerSiteRootsHandlers(store)
   registerSiteStackHandlers(store)

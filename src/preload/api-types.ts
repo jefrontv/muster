@@ -37,6 +37,7 @@ import type {
   ChatWorkspace,
   ChatWorkspacePatch
 } from '../shared/chat-mode-types'
+import type { ChatConnectorConfirmRequest } from '../shared/chat-connector-types'
 import type {
   ChatThreadPermissionResponseArgs,
   ChatThreadStreamEvent,
@@ -905,6 +906,14 @@ export type ChatModeApi = {
   deleteThread: (id: string) => Promise<boolean>
   /** First name for the hero greeting (git identity, then OS account); null hides it. */
   getGreetingName: () => Promise<string | null>
+  /** Fires when main mutated the chat store outside this window's IPC (muster MCP tools). */
+  onExternalChange: (callback: () => void) => () => void
+}
+
+export type ChatConnectorApi = {
+  /** Answer a pending destructive-tool confirm from the muster MCP server. */
+  respondConfirm: (args: { requestId: string; confirmed: boolean }) => Promise<boolean>
+  onConfirmRequest: (callback: (request: ChatConnectorConfirmRequest) => void) => () => void
 }
 
 /** Chat mode's headless stream-json transport: one child process per thread.
@@ -1638,6 +1647,7 @@ export type PreloadApi = {
   siteRuns: SiteRunsApi
   siteDbSnapshots: SiteDbSnapshotsApi
   chatMode: ChatModeApi
+  chatConnector: ChatConnectorApi
   chatThreadStream: ChatThreadStreamApi
   siteRoots: SiteRootsApi
   siteStacks: SiteStacksApi

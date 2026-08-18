@@ -852,8 +852,25 @@ const api = {
     createThread: (args) => ipcRenderer.invoke('chatMode:createThread', args),
     updateThread: (id, patch) => ipcRenderer.invoke('chatMode:updateThread', id, patch),
     deleteThread: (id) => ipcRenderer.invoke('chatMode:deleteThread', id),
-    getGreetingName: () => ipcRenderer.invoke('chatMode:getGreetingName')
+    getGreetingName: () => ipcRenderer.invoke('chatMode:getGreetingName'),
+    onExternalChange: (callback) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('chatMode:externalChange', listener)
+      return () => ipcRenderer.removeListener('chatMode:externalChange', listener)
+    }
   } satisfies PreloadApi['chatMode'],
+
+  chatConnector: {
+    respondConfirm: (args) => ipcRenderer.invoke('chatConnector:respondConfirm', args),
+    onConfirmRequest: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        request: Parameters<typeof callback>[0]
+      ): void => callback(request)
+      ipcRenderer.on('chatConnector:confirmRequest', listener)
+      return () => ipcRenderer.removeListener('chatConnector:confirmRequest', listener)
+    }
+  } satisfies PreloadApi['chatConnector'],
 
   chatThreadStream: {
     start: (args) => ipcRenderer.invoke('chatThreadStream:start', args),

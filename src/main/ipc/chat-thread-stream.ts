@@ -7,6 +7,7 @@ import type { ChatThreadStreamStartResult } from '../../shared/chat-thread-strea
 import { agentHookServer } from '../agent-hooks/server'
 import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
 import type { Store } from '../persistence'
+import { chatConnectorMcpForStream } from './chat-connector'
 import {
   interruptChatThreadStream,
   respondChatThreadPermission,
@@ -70,6 +71,8 @@ export function registerChatThreadStreamHandlers(store: Store): void {
           typeof args?.appendSystemPrompt === 'string' && args.appendSystemPrompt !== ''
             ? args.appendSystemPrompt
             : undefined
+        // In-process muster MCP: a failed connector start degrades to no tools.
+        const mcp = await chatConnectorMcpForStream(store)
         return startChatThreadStream(
           {
             threadId: asString(args?.threadId, 'threadId'),
@@ -83,7 +86,8 @@ export function registerChatThreadStreamHandlers(store: Store): void {
             // Same hook-coordinate source and settings gate as PTY spawns, so
             // the user's Claude hooks post status for this child identically.
             hookEnv: () =>
-              isAgentStatusHooksEnabled(store.getSettings()) ? agentHookServer.buildPtyEnv() : {}
+              isAgentStatusHooksEnabled(store.getSettings()) ? agentHookServer.buildPtyEnv() : {},
+            ...(mcp ? { mcp } : {})
           }
         )
       } catch (error) {

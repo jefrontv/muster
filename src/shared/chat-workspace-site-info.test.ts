@@ -152,8 +152,11 @@ describe('chatWorkspaceProjects', () => {
 })
 
 describe('buildChatWorkspaceAgentBrief', () => {
-  it('returns null when there is nothing extra to tell the agent', () => {
-    expect(buildChatWorkspaceAgentBrief(workspace())).toBeNull()
+  it('still names the workspace and muster tools when there is no site info', () => {
+    const brief = buildChatWorkspaceAgentBrief(workspace())
+    expect(brief).toContain('This chat belongs to the "Client site" workspace.')
+    expect(brief).toContain('"muster" MCP tools')
+    expect(brief).not.toContain('Primary website')
   })
 
   it('names the primary URL first and includes notes plus the linked project', () => {
@@ -180,7 +183,7 @@ describe('buildChatWorkspaceAgentBrief', () => {
     )
   })
 
-  it('emits --append-system-prompt only for new sessions with site info', () => {
+  it('emits --append-system-prompt only for new sessions', () => {
     const site = workspace({ urls: ['https://example.com'] })
     const quote = (value: string): string => `'${value}'`
     expect(chatWorkspaceAppendSystemPromptArg(site, false, quote)).toContain(
@@ -190,7 +193,10 @@ describe('buildChatWorkspaceAgentBrief', () => {
       'Primary website: https://example.com/'
     )
     expect(chatWorkspaceAppendSystemPromptArg(site, true, quote)).toBe('')
-    expect(chatWorkspaceAppendSystemPromptArg(workspace(), false, quote)).toBe('')
+    // A bare workspace still briefs the agent about its muster MCP tools.
+    expect(chatWorkspaceAppendSystemPromptArg(workspace(), false, quote)).toContain(
+      '"muster" MCP tools'
+    )
   })
 
   it('wraps a user turn so the brief can be stripped from the visible bubble', () => {

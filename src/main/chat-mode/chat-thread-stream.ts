@@ -11,6 +11,10 @@ import { createChatThreadStreamDecoder, resultModelWindows } from './chat-thread
 import { recordClaudeModelSighting } from './claude-model-registry'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
 import { commandWithAppendedSystemPromptFile } from './chat-thread-stream-system-prompt'
+import {
+  commandWithMcpConfigFile,
+  removeChatThreadMcpConfigFile
+} from './chat-thread-stream-mcp-config'
 import { buildChatStreamUserContent, readChatStreamImages } from './chat-thread-stream-user-content'
 
 const STDERR_TAIL_LIMIT = 4_096
@@ -41,6 +45,13 @@ export type ChatThreadStreamDeps = {
   spawn?: ChatThreadStreamSpawn
   /** Live hook-server coordinates (ORCA_AGENT_HOOK_*), same source as PTY spawns. */
   hookEnv?: () => Record<string, string>
+  /** Chat-connector MCP coordinates: register mints the thread's bearer token
+   *  before spawn, revoke retires it on stop/close (token-matched, so a stale
+   *  child's late close can't kill a relaunch's fresh token). */
+  mcp?: {
+    register: (threadId: string) => { url: string; token: string } | null
+    revoke: (threadId: string, token: string) => void
+  }
 }
 
 type StreamEntry = {
@@ -55,6 +66,8 @@ type StreamEntry = {
   pendingPermissionRequests: Map<string, unknown>
   /** Outgoing control_request id counter (interrupts) — unique per child. */
   controlRequestCounter: number
+  /** Revokes the muster MCP token + deletes the config file; runs once. */
+  mcpCleanup: (() => void) | null
 }
 
 const registry = new Map<string, StreamEntry>()
@@ -79,16 +92,31 @@ export function startChatThreadStream(
   deps: ChatThreadStreamDeps = {}
 ): { ok: boolean; error?: string } {
   const { threadId, cwd, env, sender } = args
-  const command = args.appendSystemPrompt
-    ? commandWithAppendedSystemPromptFile(args.command, args.appendSystemPrompt, threadId)
-    : args.command
   if (process.platform === 'win32') {
     // Command quoting is built for a POSIX shell; a clean error beats a
     // mis-quoted cmd.exe launch. Windows support lands with its own shell plan.
     return { ok: false, error: 'Chat threads are not supported on Windows yet.' }
   }
   // Replace semantics: a relaunch for the same thread supersedes the old child.
+  // Must run before the MCP register/write below so the old session's cleanup
+  // can't delete the new session's config file or token.
   stopChatThreadStream(threadId)
+
+  const baseCommand = args.appendSystemPrompt
+    ? commandWithAppendedSystemPromptFile(args.command, args.appendSystemPrompt, threadId)
+    : args.command
+  const mcp = deps.mcp ?? null
+  const mcpRegistration = mcp?.register(threadId) ?? null
+  const command = mcpRegistration
+    ? commandWithMcpConfigFile(baseCommand, mcpRegistration, threadId)
+    : baseCommand
+  const mcpCleanup =
+    mcp && mcpRegistration
+      ? (): void => {
+          mcp.revoke(threadId, mcpRegistration.token)
+          removeChatThreadMcpConfigFile(threadId)
+        }
+      : null
 
   const mergedEnv: NodeJS.ProcessEnv = { ...process.env }
   for (const key of INHERITED_HOOK_ENV_KEYS) {
@@ -108,6 +136,7 @@ export function startChatThreadStream(
       env: mergedEnv
     })
   } catch (error) {
+    mcpCleanup?.()
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 
@@ -116,7 +145,8 @@ export function startChatThreadStream(
     stopping: false,
     killTimer: null,
     pendingPermissionRequests: new Map(),
-    controlRequestCounter: 0
+    controlRequestCounter: 0,
+    mcpCleanup
   }
   registry.set(threadId, entry)
 
@@ -161,6 +191,8 @@ export function startChatThreadStream(
   child.on('close', (code) => {
     decoder.flush()
     emitter.dispose()
+    entry.mcpCleanup?.()
+    entry.mcpCleanup = null
     if (entry.killTimer) {
       clearTimeout(entry.killTimer)
       entry.killTimer = null
@@ -291,6 +323,8 @@ export function stopChatThreadStream(threadId: string): void {
   }
   entry.pendingPermissionRequests.clear()
   entry.stopping = true
+  entry.mcpCleanup?.()
+  entry.mcpCleanup = null
   registry.delete(threadId)
   try {
     entry.child.stdin?.end()

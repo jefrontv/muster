@@ -2,7 +2,7 @@
 // state edits on a small JSON sidecar; session launching stays in the renderer
 // (it composes the existing pty:spawn + agent-hooks machinery).
 
-import { app, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import { getChatGreetingName } from '../chat-mode/chat-greeting-name'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../../shared/chat-mode-types'
 import {
@@ -13,7 +13,7 @@ import {
 } from '../../shared/chat-workspace-site-info'
 import { sanitizeRepoIcon } from '../../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
-import { ChatWorkspaceStore } from '../chat-mode/chat-workspace-store'
+import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
 
 const CHANNELS = [
   'chatMode:getState',
@@ -24,16 +24,6 @@ const CHANNELS = [
   'chatMode:updateThread',
   'chatMode:deleteThread'
 ] as const
-
-let storeSingleton: ChatWorkspaceStore | null = null
-
-function chatStore(): ChatWorkspaceStore {
-  if (!storeSingleton) {
-    storeSingleton = new ChatWorkspaceStore(app.getPath('userData'))
-    app.on('before-quit', () => storeSingleton?.flush())
-  }
-  return storeSingleton
-}
 
 function asActiveCollabTask(value: unknown): { projectId: number; taskId: number } | null {
   if (typeof value !== 'object' || value === null) {

@@ -6,6 +6,7 @@ import { lazy, Suspense, useEffect, useRef } from 'react'
 import { isAskUserQuestionTool } from '../../../../shared/agent-question-answered-intent'
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
+import { ChatConnectorConfirmDialog } from './ChatConnectorConfirmDialog'
 import { ChatModeDraftHero } from './ChatModeDraftHero'
 import { ChatModeSidebar } from './ChatModeSidebar'
 import { ChatThreadView } from './ChatThreadView'
@@ -28,6 +29,26 @@ export default function ChatModePage(): React.JSX.Element {
       void hydrateChatMode()
     }
   }, [hydrated, hydrateChatMode])
+
+  // Muster MCP tools mutate the chat store in main; re-pull and drop runtime
+  // session records for threads the tools deleted (their exit is suppressed).
+  useEffect(
+    () =>
+      window.api.chatMode.onExternalChange(() => {
+        void useAppStore
+          .getState()
+          .hydrateChatMode()
+          .then(() => {
+            const s = useAppStore.getState()
+            for (const threadId of Object.keys(s.chatThreadSessions)) {
+              if (!s.chatThreads.some((t) => t.id === threadId)) {
+                s.setChatThreadSession(threadId, null)
+              }
+            }
+          })
+      }),
+    []
+  )
 
   // One window-wide stream-event subscription: threads keep receiving deltas
   // and lifecycle updates while another thread (or the Tasks page) is focused.
@@ -187,6 +208,7 @@ export default function ChatModePage(): React.JSX.Element {
         )}
       </main>
       <ChatWorkspaceCreateDialog open={createOpen} onOpenChange={(open) => setCreateOpen?.(open)} />
+      <ChatConnectorConfirmDialog />
     </div>
   )
 }
