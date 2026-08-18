@@ -585,6 +585,14 @@ const api = {
       return () => ipcRenderer.removeListener('repos:clone-progress', listener)
     },
 
+    onCloneLog: (callback: (data: { line: string }) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, data: { line: string }) => {
+        callback(data)
+      }
+      ipcRenderer.on('repos:clone-log', listener)
+      return () => ipcRenderer.removeListener('repos:clone-log', listener)
+    },
+
     getGitUsername: (args: { repoId: string }): Promise<string> =>
       ipcRenderer.invoke('repos:getGitUsername', args),
 

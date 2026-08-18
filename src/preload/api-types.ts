@@ -1438,6 +1438,7 @@ export type PreloadApi = {
     isGitAvailable: () => Promise<boolean>
     getDefaultCreateProjectParent: () => Promise<string>
     onCloneProgress: (callback: (data: { phase: string; percent: number }) => void) => () => void
+    onCloneLog: (callback: (data: { line: string }) => void) => () => void
     getGitUsername: (args: { repoId: string }) => Promise<string>
     fetchFavicon: (args: {
       domain: string

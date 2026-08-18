@@ -66,7 +66,7 @@ function installApi(providers: CloneSourceProvider[], repos: ReposMock): void {
       providers: vi.fn().mockResolvedValue({ ok: true, value: providers }),
       repos
     },
-    repos: { onCloneProgress: () => () => {} },
+    repos: { onCloneProgress: () => () => {}, onCloneLog: () => () => {} },
     shell: { pickDirectory: vi.fn() },
     sites: { create: vi.fn() }
   })

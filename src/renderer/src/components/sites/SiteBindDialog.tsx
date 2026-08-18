@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { getSiteBindFieldLabels, getSiteBindStrings } from './site-bind-strings'
 import { SiteBindTargetPicker } from './SiteBindTargetPicker'
+import { appendCloneLogLine, SiteCloneLog } from './SiteCloneLog'
 import { buildSiteBindSetupProposal } from './site-bind-setup-proposal'
 import { SiteSetupContinuation } from './SiteSetupContinuation'
 import { getSiteSetupStrings } from './site-setup-strings'
@@ -82,6 +83,11 @@ export function SiteBindDialog(): React.JSX.Element | null {
   const selectSite = useAppStore((state) => state.selectSite)
   const [selectedPath, setSelectedPath] = useState('')
   const [cloning, setCloning] = useState(false)
+  const [cloneProgress, setCloneProgress] = useState<{ phase: string; percent: number } | null>(
+    null
+  )
+  const [cloneLog, setCloneLog] = useState<string[]>([])
+  const [cloneDestination, setCloneDestination] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
   // Set once the bind is written. Its presence is what swaps the body over to the follow-on
@@ -126,6 +132,22 @@ export function SiteBindDialog(): React.JSX.Element | null {
     }
   }, [reponame, linkCloneUrl])
 
+  // Both clone paths (`clone` and `setUpInRoot`) shell through `repos.clone`, which streams on the
+  // same channels the "new site" flow reads. Subscribe while a link is staged so the first git line
+  // is not missed; the state is only rendered while `cloning` is set.
+  useEffect(() => {
+    if (!pending) {
+      return
+    }
+    const offProgress = window.api.repos.onCloneProgress(setCloneProgress)
+    const offLog = window.api.repos.onCloneLog((data) => {
+      setCloneLog((prev) => appendCloneLogLine(prev, data.line))
+    })
+    return () => {
+      offProgress()
+      offLog()
+    }
+  }, [pending])
   // Why a root at all: ocsites cloned a not-yet-checked-out site straight into the user's projects
   // folder instead of asking for a path, so a link for an unknown site is one click.
   //
@@ -162,6 +184,9 @@ export function SiteBindDialog(): React.JSX.Element | null {
       return
     }
     setCloning(true)
+    setCloneProgress(null)
+    setCloneLog([])
+    setCloneDestination(destination)
     setError('')
     try {
       // Orca's own clone: it streams progress and registers the Repo, so this flow never shells git.
@@ -184,6 +209,9 @@ export function SiteBindDialog(): React.JSX.Element | null {
   // and mkdir -p's it, so a root that does not exist yet is created rather than an error.
   const setUpInRoot = async (pendingBind: PendingSiteBind, root: string): Promise<void> => {
     setCloning(true)
+    setCloneProgress(null)
+    setCloneLog([])
+    setCloneDestination(root)
     setError('')
     try {
       const repo = await window.api.repos.clone({
@@ -333,6 +361,31 @@ export function SiteBindDialog(): React.JSX.Element | null {
             canSetUpInRoot={canSetUpInRoot}
             needsFreshSetup={needsFreshSetup}
           />
+
+          {cloning ? (
+            <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 className="size-3.5 shrink-0 animate-spin" />
+                <span className="truncate">
+                  {cloneProgress
+                    ? `${cloneProgress.phase} ${cloneProgress.percent}%`
+                    : strings.cloning}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-200"
+                  style={{ width: `${Math.min(100, Math.max(0, cloneProgress?.percent ?? 0))}%` }}
+                />
+              </div>
+              {cloneLog.length > 0 ? <SiteCloneLog lines={cloneLog} /> : null}
+              {cloneDestination.length > 0 ? (
+                <p className="break-all font-mono text-[11px] text-muted-foreground/70">
+                  {cloneDestination}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {error.length > 0 ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>

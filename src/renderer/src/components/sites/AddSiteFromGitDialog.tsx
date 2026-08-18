@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
+import { SiteCloneStep } from './SiteCloneStep'
 import { SiteSetupContinuation } from './SiteSetupContinuation'
 
 type AddSiteFromGitDialogProps = {
@@ -46,8 +47,6 @@ type AddSiteFromGitDialogProps = {
 }
 
 type Step = 'pick' | 'confirm' | 'cloning' | 'setup'
-
-type CloneProgress = { phase: string; percent: number }
 
 /** How long typing settles before the provider is asked again — one request per word, not per key. */
 const SEARCH_DEBOUNCE_MS = 275
@@ -94,19 +93,14 @@ export function AddSiteFromGitDialog({
   /** Only the newest request may write the list; see the repo-listing effect. */
   const requestIdRef = useRef(0)
   const [selected, setSelected] = useState<CloneSourceRepo | null>(null)
-  const [progress, setProgress] = useState<CloneProgress | null>(null)
   const [cloneError, setCloneError] = useState('')
   const [createdSiteId, setCreatedSiteId] = useState('')
-
-  // Why reset on close rather than on open: leaving a finished clone's state behind would flash the
-  // previous run's log the next time the dialog opens.
   useEffect(() => {
     if (open) {
       return
     }
     setStep('pick')
     setSelected(null)
-    setProgress(null)
     setCloneError('')
     setCreatedSiteId('')
     setQuery('')
@@ -185,15 +179,6 @@ export function AddSiteFromGitDialog({
     }
   }, [open, active, remoteQuery])
 
-  // Subscribed for the whole dialog rather than only while cloning: git emits its first phase
-  // before the invoke promise settles, and a listener attached inside the clone call would miss it.
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-    return window.api.repos.onCloneProgress((data) => setProgress(data))
-  }, [open])
-
   const startClone = useCallback(
     async (repo: CloneSourceRepo): Promise<void> => {
       const destination =
@@ -202,7 +187,6 @@ export function AddSiteFromGitDialog({
         return
       }
       setStep('cloning')
-      setProgress(null)
       setCloneError('')
       try {
         const cloned = await window.api.repos.clone({ url: repo.cloneUrl, destination })
@@ -237,6 +221,13 @@ export function AddSiteFromGitDialog({
   const busy = loading || (searchesRemotely && typedQuery !== debouncedQuery)
   const destinationPath =
     selected && destinationRoot.length > 0 ? `${destinationRoot}/${repoSlug(selected)}` : ''
+  // Outside click and Escape must not end an in-flight run; the X button is the deliberate exit
+  // (aborts the clone via onOpenChange below).
+  const guardDismiss = (event: { preventDefault: () => void }) => {
+    if (setupBusy || (step === 'cloning' && cloneError.length === 0)) {
+      event.preventDefault()
+    }
+  }
 
   return (
     <Dialog
@@ -246,10 +237,20 @@ export function AddSiteFromGitDialog({
         if (!next && setupBusy) {
           return
         }
+        // The X button is the one deliberate exit left during a clone (outside/Escape are blocked);
+        // stop git so a site is not created after the dialog is gone.
+        if (!next && step === 'cloning') {
+          void window.api.repos.cloneAbort()
+        }
         onOpenChange(next)
       }}
     >
-      <DialogContent className="max-w-xl">
+      <DialogContent
+        className="max-w-xl"
+        onPointerDownOutside={guardDismiss}
+        onInteractOutside={guardDismiss}
+        onEscapeKeyDown={guardDismiss}
+      >
         <DialogHeader>
           <DialogTitle>
             {step === 'confirm'
@@ -378,33 +379,7 @@ export function AddSiteFromGitDialog({
         ) : null}
 
         {step === 'cloning' ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              {cloneError.length === 0 ? (
-                <Loader2 className="size-3.5 shrink-0 animate-spin" />
-              ) : null}
-              <span className="truncate">
-                {cloneError.length > 0
-                  ? cloneError
-                  : progress
-                    ? `${progress.phase} ${progress.percent}%`
-                    : strings.cloneStarting}
-              </span>
-            </div>
-            {cloneError.length === 0 ? (
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                {/* Width, not a spinner: git reports real percentages and a large repo can sit in
-                    "Receiving objects" for minutes. */}
-                <div
-                  className="h-full rounded-full bg-primary transition-[width] duration-200"
-                  style={{ width: `${Math.min(100, Math.max(0, progress?.percent ?? 0))}%` }}
-                />
-              </div>
-            ) : null}
-            <p className="break-all font-mono text-[11px] text-muted-foreground/70">
-              {destinationPath}
-            </p>
-          </div>
+          <SiteCloneStep destinationPath={destinationPath} cloneError={cloneError} />
         ) : null}
 
         {/* Owns its own Back/Next/Done, so this branch renders no DialogFooter of its own. */}

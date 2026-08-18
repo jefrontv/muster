@@ -669,14 +669,25 @@ const MAX_COMPLETED_NESTED_SCAN_RESULTS = 50
 const GIT_AVAILABILITY_TIMEOUT_MS = 1500
 
 function emitCloneProgressFromText(mainWindow: BrowserWindow, text: string): void {
-  for (const line of text.split(/[\r\n]+/)) {
+  if (mainWindow.isDestroyed()) {
+    return
+  }
+  for (const raw of text.split(/[\r\n]+/)) {
+    const line = raw.trim()
+    if (!line) {
+      continue
+    }
     const match = line.match(/^([\w\s]+):\s+(\d+)%/)
-    if (match && !mainWindow.isDestroyed()) {
+    if (match) {
       mainWindow.webContents.send('repos:clone-progress', {
         phase: match[1].trim(),
         percent: Number.parseInt(match[2], 10)
       })
     }
+    // Every stderr line, not just the ones carrying a percent: git spends minutes on
+    // "Enumerating objects" / "Compressing objects" with no percentage, and a silent
+    // spinner reads as stuck on a large repo.
+    mainWindow.webContents.send('repos:clone-log', { line })
   }
 }
 
