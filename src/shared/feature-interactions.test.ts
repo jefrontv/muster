@@ -79,7 +79,9 @@ describe('feature interactions', () => {
       'tab-splits',
       'usage-tracking',
       'voice-dictation',
-      'workspace-cleanup'
+      'workspace-cleanup',
+      'chat-mode',
+      'sites'
     ]
 
     expect(catalogMatchesPublicUnion).toBe(true)

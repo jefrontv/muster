@@ -42,7 +42,6 @@
     "checkForUpdates": "Buscar actualizaciones...",
     "settings": "Ajustes",
     "exploreOrca": "Explorar Muster",
-    "gettingStarted": "Primeros pasos con Muster",
     "reportCrash": "Informar fallo...",
     "file": "Archivo",
     "exit": "Salir",
@@ -699,9 +698,6 @@
         "724c440e72": "primeros pasos",
         "0505d0df29": "empezar con Muster",
         "ea0b1bc7b8": "guía de configuración",
-        "17005c73d4": "Abre la lista de configuración inicial para ver pasos de setup e hitos.",
-        "ded9e9032f": "Lista de configuración inicial",
-        "5f32ac08f3": "Completa la lista de configuración inicial para los flujos de trabajo principales de Muster.",
         "8ac3de82f5": "Dictado local de voz a texto con modelos en el dispositivo.",
         "6a50cdcd7c": "Voz",
         "cd50cec5d7": "Coordina múltiples coding agents a través de Muster.",
@@ -3980,8 +3976,7 @@
           "23989bb663": "Mostrar espacio de trabajo activo"
         },
         "SetupGuideSidebarEntry": {
-          "b0a7bfc34c": "Ocultar de la barra lateral",
-          "88d402b71d": "Checklist de onboarding"
+          "b0a7bfc34c": "Ocultar de la barra lateral"
         },
         "SetupScriptPromptCard": {
           "ff1e819a11": "Agregar un script de configuración",
@@ -4096,7 +4091,6 @@
           "4e8f5710d3": "No se pudo reiniciar Muster.",
           "5161eef55d": "Reiniciando Muster...",
           "d396773ef0": "comprobando",
-          "f8a2c91d4e": "Milestones",
           "b7e4d2a19c": "Onboarding",
           "c4f8e1b72a": "X"
         },
@@ -4880,8 +4874,6 @@
       "setup": {
         "guide": {
           "SetupGuideModal": {
-            "3598a3ca0c": "Completa los flujos de trabajo principales que hacen útil a Muster para trabajar con agentes en paralelo.",
-            "48a9e5ef2d": "Primeros pasos",
             "28cf59fcb4": "Esto ocultará el checklist de la barra lateral.",
             "f3b5ffb2a6": "Ocultar checklist de la barra lateral"
           },
@@ -6399,8 +6391,6 @@
           "c9ca101a3b": "Integraciones",
           "f9b77539fd": "Valores predeterminados del workspace, configuración de la app y mantenimiento.",
           "7807c11c4d": "General",
-          "6855b0f77d": "Termina los flujos de trabajo principales que hacen que Muster sea útil para el trabajo de agentes en paralelo.",
-          "6d119427ef": "Lista de verificación de incorporación",
           "eb1176a14e": "Dictado local de voz a texto con modelos en el dispositivo.",
           "5063bb47a5": "Voz",
           "475980f53d": "Coordina varios agentes de codificación a través de Muster.",
@@ -6456,8 +6446,6 @@
           "5c9669ff9c": "Proyectos",
           "dbceaa8840": "Buscar ajustes",
           "60f8a673a7": "Volver a la app",
-          "6503182299": "Checklist de onboarding",
-          "82db1b7de4": "Checklist de onboarding, {{value0}} de {{value1}} completados. Mostrar guía de configuración.",
           "df38d612b7": "Aún no se han agregado proyectos.",
           "3e483e256b": "No hay ajustes de proyecto coincidentes."
         },
@@ -10715,8 +10703,7 @@
           "hideAgents": "Ocultar agentes",
           "showMoreAgents": "Mostrar {{value0}} agentes más→",
           "yoloPermissionsLabel": "Yolo / Omitir permisos de forma peligrosa",
-          "yoloPermissionsInfo": "Información de permisos del agente",
-          "yoloPermissionsTooltip": "Omite las comprobaciones de permisos de los agentes para reducir interrupciones"
+          "yoloPermissionsInfo": "Información de permisos del agente"
         },
         "FeatureSetupChecklist": {
           "77f74946f5": "Los agentes pueden enviarse mensajes entre sí, tomar tareas y coordinar handoffs.",
@@ -10798,7 +10785,6 @@
           "984338477a": "tema",
           "c47e1bd149": "agente",
           "windowsTerminalTitle": "Configura los valores predeterminados de la terminal de Windows",
-          "windowsTerminalSubtitle": "Elige la Shell predeterminada para los paneles nuevos y cómo se comporta el clic derecho en la terminal.",
           "defaultViewTitle": "How do you want to start?",
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
@@ -10806,7 +10792,6 @@
         },
         "welcome": {
           "eyebrow": "Welcome to",
-          "tagline": "Your agents, projects, and work — one quiet desk.",
           "start": "Get started"
         },
         "defaultView": {
@@ -10826,39 +10811,11 @@
           "4123609efd": "Iniciando terminal..."
         },
         "OnboardingSkipConfirmationDialog": {
-          "9f47f345a4": "¡No tardará mucho!",
           "e4726b2d50": "¿Saltar la incorporación?"
         },
         "OnboardingTourStep": {
           "3f9586c043": "Haz el recorrido",
           "60c5576353": "Salir del recorrido"
-        },
-        "RepoStep": {
-          "e8fdb36338": "Escaneo de repositorios. Haga clic para detener.",
-          "b7c4da0504": "¿SSH? Configura hosts en Configuración",
-          "c33b190ca3": "Solo rutas del host",
-          "7b679207e4": "Espacio de trabajo",
-          "24c7c8696c": "Clonar en ruta del host",
-          "7932e95f68": "Clonar",
-          "955134915e": "git@github.com:org/repo.git",
-          "288d8444b7": "Pegue una URL HTTPS o SSH.",
-          "132425a3e3": "Clonar un repositorio",
-          "6558d50c69": "¿Quieres importar muchos repositorios a la vez? Seleccione la carpeta principal.",
-          "831524961f": "Elija cualquier directorio local, repositorio git o no.",
-          "f4e9c8dcf8": "Buscar una carpeta",
-          "e8214aa632": "Abrir como carpeta",
-          "3863747c56": "Agregar proyecto Git",
-          "2ebbc26343": "/home/user/project",
-          "466108ab89": "Introduce una ruta que exista en el host seleccionado.",
-          "8cab104e3c": "Abrir un proyecto en este host",
-          "2d20200346": "Importar repositorios",
-          "27ca610db1": "Atrás",
-          "cecd6593fa": "Carpeta escaneada:",
-          "c7af322fc3": "Dejar de escanear",
-          "c3d9d44ca2": "Detener escaneo",
-          "cf23006ba7": "Host seleccionado",
-          "7ec3f48820": "/home/user",
-          "2e6438dd34": "{{value0}}Se encontraron {{value1}} {{value2}} en esta carpeta."
         },
         "ThemeStep": {
           "a4b254779d": "Tecla de opción de macOS",
@@ -11636,19 +11593,6 @@
           }
         },
         "tips": {
-          "CliFeatureTipVisual": {
-            "badb4fc342": ">",
-            "22e62f3bab": "Sesión de Claude Code iniciada"
-          },
-          "CliSkillSetupTerminal": {
-            "1953e90447": "Presiona Enter para instalar el skill de orquestación de la CLI de Muster para tus agentes.",
-            "43b60ec5c3": "Terminal de instalación de CLI de Muster y skill de orquestación",
-            "84e9576dac": "Configuración de skill",
-            "5c3aee22c0": "Copiar comando",
-            "5eca672aac": "Copiar comando de instalación de skill",
-            "6ff813fc1d": "No se pudo copiar el comando de skill.",
-            "b8ad063571": "Comando de instalación de skill copiado."
-          },
           "CmdJPaletteTipDialog": {
             "c0bb9f869b": "Configuración → Atajos",
             "8241897205": "Puedes reasignar el atajo en cualquier momento en"
@@ -11657,14 +11601,6 @@
             "eb04abece8": "Quizás más tarde"
           },
           "FeatureTipsModal": {
-            "c169298e4d": "Hecho",
-            "3c6c478462": "X termina, envíale la tarea de revisión”.",
-            "298301b7a0": "worktree",
-            "864e2db28f": "“Cuando el agente en",
-            "7fc6f02099": "y crear PR para cada uno”.",
-            "27c567a89c": "worktrees",
-            "55846c7f95": "“Divide este PR en dos",
-            "4795ac2d4a": "Prueba a pedir:",
             "53905bd076": "Vista previa de desarrollo: abriendo la terminal de configuración de skills.",
             "1da82af45b": "Muster CLI necesita atención",
             "ce13a742d0": "`orca` registrado en PATH.",

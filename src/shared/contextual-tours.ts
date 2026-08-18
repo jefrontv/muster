@@ -8,6 +8,8 @@ export type ContextualTourId =
   | 'automations'
   | 'floating-workspace'
   | 'workspace-creation'
+  | 'chat-mode'
+  | 'sites'
 
 export type ContextualTourStepControl = {
   kind: 'auto-rename-branch-from-work'
@@ -200,6 +202,55 @@ export const CONTEXTUAL_TOURS = [
         title: 'Choose what agent starts the work',
         body: 'Pick the agent that should be opened when this worktree is created.',
         targetSelector: '[data-contextual-tour-target="workspace-creation-agent"]'
+      }
+    ]
+  },
+  {
+    id: 'chat-mode',
+    steps: [
+      {
+        title: 'Group work into workspaces',
+        body: 'A workspace collects the chat threads for one client or project. Create one here.',
+        targetSelector: '[data-contextual-tour-target="chat-workspaces"]',
+        requiredForStart: true,
+        preferredPlacement: 'right'
+      },
+      {
+        // Anchored inside the workspace dialog; skipped until it is open.
+        title: 'Bind ActiveCollab projects',
+        body: 'Link a workspace to its ActiveCollab projects so tasks and new chats default to the right place.',
+        targetSelector: '[data-contextual-tour-target="chat-workspace-project-binding"]',
+        preferredPlacement: 'right'
+      },
+      {
+        title: 'Start a thread',
+        body: 'Describe what you need and send it — a thread is a conversation with your agent.',
+        targetSelector: '[data-contextual-tour-target="chat-thread-composer"]',
+        preferredPlacement: 'top'
+      }
+    ]
+  },
+  {
+    id: 'sites',
+    steps: [
+      {
+        title: 'Your sites live here',
+        body: 'Every configured site is listed here. Muster also surfaces sites it finds on disk.',
+        targetSelector: '[data-contextual-tour-target="sites-list"]',
+        requiredForStart: true,
+        preferredPlacement: 'right'
+      },
+      {
+        title: 'Inspect and run a site locally',
+        body: 'Each site shows its environments and a local stack you can start and stop.',
+        targetSelector: '[data-contextual-tour-target="sites-detail"]',
+        preferredPlacement: 'left'
+      },
+      {
+        title: 'Deploy from the environment',
+        body: 'Run a deploy for the selected environment. Branch resolution picks the right target.',
+        targetSelector: '[data-contextual-tour-target="sites-deploy"]',
+        preferredPlacement: 'left'
       }
     ]
   }

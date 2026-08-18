@@ -14,6 +14,7 @@ vi.mock('../setup-guide/use-setup-guide-progress', () => ({
 function makeProgress(): FeatureWallSetupProgress {
   return {
     ready: true,
+    mode: 'code',
     stepDone: {
       'default-agent': true,
       'add-two-repos': false,
@@ -21,7 +22,9 @@ function makeProgress(): FeatureWallSetupProgress {
       'two-worktrees': true,
       browser: false,
       'task-sources': true,
-      'setup-script': false
+      'setup-script': false,
+      'create-first-workspace': false,
+      'start-first-thread': false
     },
     coreDoneCount: 4,
     coreTotal: 8

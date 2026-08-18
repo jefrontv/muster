@@ -4,11 +4,11 @@ import {
   type FeatureInteractionState
 } from './feature-interactions'
 
-export type FeatureTipId = 'voice-dictation' | 'orca-cli' | 'cmd-j-palette'
+export type FeatureTipId = 'voice-dictation' | 'cmd-j-palette'
 
 export type FeatureTipPriority = 'new' | 'unseen'
 
-export type FeatureTipAction = 'enable-voice' | 'setup-cli' | 'learn-cmd-j-palette'
+export type FeatureTipAction = 'enable-voice' | 'learn-cmd-j-palette'
 
 export type FeatureTip = {
   id: FeatureTipId
@@ -23,22 +23,11 @@ export type FeatureTip = {
 }
 
 export type CompletedFeatureTipState = {
-  cliInstalled: boolean
   voiceDictationEnabled: boolean
   featureInteractions?: FeatureInteractionState
 }
 
 export const FEATURE_TIPS = [
-  {
-    id: 'orca-cli',
-    priority: 'new',
-    eyebrow: 'Tip',
-    title: 'Let agents drive Muster with the Muster CLI',
-    description: 'Enable agents to coordinate child worktrees and communicate between worktrees.',
-    action: 'setup-cli',
-    ctaLabel: 'Install CLI & Skills',
-    completedByFeatureInteractions: []
-  },
   {
     id: 'cmd-j-palette',
     priority: 'new',
@@ -87,9 +76,6 @@ export function normalizeFeatureTipIds(value: unknown): FeatureTipId[] {
 
 export function getCompletedFeatureTipIds(state: CompletedFeatureTipState): Set<FeatureTipId> {
   const completedIds = new Set<FeatureTipId>()
-  if (state.cliInstalled) {
-    completedIds.add('orca-cli')
-  }
   if (state.voiceDictationEnabled) {
     completedIds.add('voice-dictation')
   }

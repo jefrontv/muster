@@ -10,7 +10,6 @@ import {
 import type { FeatureTipsModalPayload } from '@/store/slices/modal-payloads'
 
 export function getFeatureTipForModal(args: {
-  cliInstalled: boolean
   modalData: FeatureTipsModalPayload | null | undefined
   seenTipIds: readonly FeatureTipId[]
   featureInteractions: FeatureInteractionState
@@ -24,7 +23,6 @@ export function getFeatureTipForModal(args: {
   const pendingTips = getOrderedUnseenFeatureTips({
     seenTipIds: new Set(args.seenTipIds),
     completedTipIds: getCompletedFeatureTipIds({
-      cliInstalled: args.cliInstalled,
       voiceDictationEnabled: args.settings?.voice?.enabled === true,
       featureInteractions: args.featureInteractions
     })

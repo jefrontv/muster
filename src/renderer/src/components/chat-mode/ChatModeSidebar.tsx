@@ -14,6 +14,8 @@ import {
   WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
   WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
 } from '@/components/sidebar/sidebar-resize-handle-style'
+import { SetupGuideSidebarEntry } from '@/components/sidebar/SetupGuideSidebarEntry'
+import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
@@ -53,6 +55,7 @@ export function ChatModeSidebar(): React.JSX.Element {
   const now = Date.now()
   const overdueCount = (assignedTasks ?? []).filter((t) => isOverdue(t, now)).length
   const dueCount = overdueCount + (assignedTasks ?? []).filter((t) => isDueToday(t, now)).length
+  useContextualTour('chat-mode', true)
   const { containerRef, onResizeStart, isResizing } = useSidebarResize<HTMLElement>({
     isOpen: true,
     width: sidebarWidth,
@@ -69,6 +72,7 @@ export function ChatModeSidebar(): React.JSX.Element {
     >
       <div className="flex flex-col gap-3 p-3 pb-0">
         <ChatModeToggle mode="chat" />
+        <SetupGuideSidebarEntry variant="chat" />
         <button
           type="button"
           aria-current={tasksOpen ? 'page' : undefined}
@@ -123,7 +127,10 @@ export function ChatModeSidebar(): React.JSX.Element {
         {workspaces.length === 0 ? (
           <StandaloneChatsSection query={query} settledIds={settledIds} />
         ) : null}
-        <div className="flex items-center justify-between px-1">
+        <div
+          className="flex items-center justify-between px-1"
+          data-contextual-tour-target="chat-workspaces"
+        >
           <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
           </h2>

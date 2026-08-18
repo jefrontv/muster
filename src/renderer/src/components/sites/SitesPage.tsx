@@ -21,6 +21,7 @@ import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteDetailPanel } from './SiteDetailPanel'
 import { SiteRootsDialog } from './SiteRootsDialog'
 import { SiteRow } from './SiteRow'
+import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
 import type { DiscoveredSiteCandidate } from '../../../../shared/site-discovery-types'
 
 export default function SitesPage(): React.JSX.Element {
@@ -44,6 +45,7 @@ export default function SitesPage(): React.JSX.Element {
   const [adopting, setAdopting] = useState('')
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
   const [rootsDialogOpen, setRootsDialogOpen] = useState(false)
+  useContextualTour('sites', true)
 
   useEffect(() => {
     void fetchSites()
@@ -270,7 +272,10 @@ export default function SitesPage(): React.JSX.Element {
       ) : null}
 
       <div className="flex min-h-0 flex-1">
-        <aside className="flex w-80 shrink-0 flex-col border-r border-border">
+        <aside
+          className="flex w-80 shrink-0 flex-col border-r border-border"
+          data-contextual-tour-target="sites-list"
+        >
           <div className="shrink-0 p-3">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />

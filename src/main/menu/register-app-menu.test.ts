@@ -239,7 +239,7 @@ describe('registerAppMenu', () => {
     expect(helpLabels).toEqual(
       expect.arrayContaining([
         'Report Crash...',
-        'Getting Started with Muster',
+        'Setup guide',
         'Explore Muster',
         'Check for Updates...'
       ])
@@ -263,16 +263,16 @@ describe('registerAppMenu', () => {
       'Report Crash...',
       undefined,
       'Explore Muster',
-      'Getting Started with Muster'
+      'Setup guide'
     ])
   })
 
-  it('routes Getting Started with Muster through its callback', () => {
+  it('routes Setup guide through its callback', () => {
     const options = buildMenuOptions()
     registerAppMenu(options)
 
     const setupGuideItem = getSubmenu(getTemplate(), 'Help').find(
-      (entry) => entry.label === 'Getting Started with Muster'
+      (entry) => entry.label === 'Setup guide'
     )
     expect(setupGuideItem?.accelerator).toBeUndefined()
 

@@ -11,6 +11,7 @@ export type FeatureWallWorkflowId =
   | 'agents-orchestration'
   | 'workbench'
   | 'review'
+  | 'sites'
 
 export type FeatureWallWorkflow = {
   id: FeatureWallWorkflowId
@@ -33,18 +34,26 @@ export const FEATURE_WALL_WORKFLOWS: readonly FeatureWallWorkflow[] = [
   {
     id: 'tasks',
     title: 'Tasks',
-    meta: 'GitHub · Linear',
-    lede: 'Start work directly from GitHub or Linear.',
+    meta: 'ActiveCollab · GitHub',
+    lede: 'Start work directly from an ActiveCollab task or GitHub issue.',
     primaryTileId: 'tile-03',
+    relatedTileIds: []
+  },
+  {
+    id: 'sites',
+    title: 'Sites',
+    meta: 'WordPress · Local stacks · Deploys',
+    lede: 'Manage client WordPress sites: spin up local stacks, keep environments in sync, and deploy from Muster.',
+    primaryTileId: 'tile-13',
     relatedTileIds: []
   },
   {
     id: 'agents-orchestration',
     title: 'Agents',
-    meta: 'Agents · Usage · Muster CLI',
-    lede: 'Run several agents at once, track their progress, and let automation drive Muster when it helps.',
+    meta: 'Agents · Usage',
+    lede: 'Run several agents at once and track their progress across workspaces.',
     primaryTileId: 'tile-04',
-    relatedTileIds: ['tile-11', 'tile-09']
+    relatedTileIds: ['tile-11']
   },
   {
     id: 'workbench',

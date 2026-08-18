@@ -205,13 +205,13 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(html).toContain('Keyboard Shortcuts')
   })
 
-  it('renders Milestones with progress when setup is incomplete', () => {
+  it('renders Setup guide with progress when setup is incomplete', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Milestones')
+    expect(html).toContain('Setup guide')
     expect(html).toContain('data-testid="setup-guide-progress-ring"')
   })
 
-  it('hides Milestones when setup is complete', () => {
+  it('hides Setup guide when setup is complete', () => {
     mocks.setupProgress = {
       ready: true,
       coreDoneCount: 5,
@@ -219,50 +219,35 @@ describe('SidebarSettingsHelpMenu', () => {
       stepDone: {}
     }
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).not.toContain('Milestones')
+    expect(html).not.toContain('Setup guide')
   })
 
-  it('hides the Onboarding admin entry by default', () => {
-    const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).not.toContain('Onboarding')
+  it('renders Explore Muster and opens the feature wall like the OS menu', async () => {
+    const container = await renderMenu()
+    const exploreButton = findMenuItem(container, 'Explore Muster')
+
+    await act(async () => {
+      exploreButton.click()
+    })
+
+    expect(mocks.openModal).toHaveBeenCalledWith('feature-wall', { source: 'help_menu' })
   })
 
-  it('renders Docs link', () => {
-    const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Docs')
-  })
+  it('renders Replay Onboarding without holding Option', async () => {
+    const { showOnboardingFromRenderer } = await import('../onboarding/show-onboarding-event')
+    const container = await renderMenu()
+    const replayButton = findMenuItem(container, 'Replay Onboarding')
 
-  it('renders Changelog link', () => {
-    const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Changelog')
+    await act(async () => {
+      replayButton.click()
+    })
+
+    expect(showOnboardingFromRenderer).toHaveBeenCalled()
   })
 
   it('renders GitHub link', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
     expect(html).toContain('GitHub')
-  })
-
-  it('renders Discord link', () => {
-    const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Discord')
-    expect(html).toContain('viewBox="0 0 20 20"')
-    expect(html).toContain('M16.0742 4.45014C14.9244 3.92097 13.7106 3.54556 12.4638 3.3335')
-  })
-
-  it('opens Discord invite through the shell bridge', async () => {
-    const container = await renderMenu()
-    const discordButton = findMenuItem(container, 'Discord')
-
-    await act(async () => {
-      discordButton.click()
-    })
-
-    expect(mocks.shellOpenUrl).toHaveBeenCalledWith('https://discord.gg/fzjDKHxv8Q')
-  })
-
-  it('renders X link', () => {
-    const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('>X<')
   })
 
   it('renders Check for Updates menu item', () => {

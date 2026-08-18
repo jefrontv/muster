@@ -94,7 +94,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         ) : null}
       </header>
 
-      <section className="space-y-3">
+      <section className="space-y-3" data-contextual-tour-target="sites-detail">
         <h3 className="text-xs font-medium text-muted-foreground">
           {translate('auto.components.sites.SiteDetailPanel.localSection', 'Local environment')}
         </h3>
@@ -226,7 +226,12 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
             onPatch={patchEnvironment}
             onSetSecret={setSecret}
             importAction={<SiteRunActionButton console={runConsole} group="import" />}
-            deployAction={<SiteRunActionButton console={runConsole} group="deploy" />}
+            deployAction={
+              // inline-flex, not contents: the tour needs a measurable rect.
+              <span className="inline-flex" data-contextual-tour-target="sites-deploy">
+                <SiteRunActionButton console={runConsole} group="deploy" />
+              </span>
+            }
           />
         ) : (
           <p className="text-sm text-muted-foreground">

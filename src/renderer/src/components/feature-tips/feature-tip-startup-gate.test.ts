@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getDefaultOnboardingState, getDefaultVoiceSettings } from '../../../../shared/constants'
-import type { CliInstallStatus } from '../../../../shared/cli-install-types'
 import type { GlobalSettings, OnboardingState } from '../../../../shared/types'
-import { getFeatureTipsAppOpenDecision, isCliFeatureTipCompleted } from './feature-tip-startup-gate'
+import { getFeatureTipsAppOpenDecision } from './feature-tip-startup-gate'
 
 const existingUserOnboarding: OnboardingState = {
   ...getDefaultOnboardingState(),
@@ -22,30 +21,11 @@ function makeSettings(voiceEnabled = false): Pick<GlobalSettings, 'voice'> {
   }
 }
 
-function makeCliStatus(overrides: Partial<CliInstallStatus> = {}): CliInstallStatus {
-  return {
-    platform: 'darwin',
-    commandName: 'orca',
-    supported: true,
-    state: 'installed',
-    commandPath: '/usr/local/bin/orca',
-    pathDirectory: '/usr/local/bin',
-    pathConfigured: true,
-    launcherPath: '/Applications/Muster.app/Contents/MacOS/orca',
-    installMethod: 'symlink',
-    currentTarget: null,
-    unsupportedReason: null,
-    detail: null,
-    ...overrides
-  }
-}
-
 describe('feature tip startup gate', () => {
-  it('opens the CLI feature tip first for an existing user on app open', () => {
+  it('opens the command palette tip first for an existing user on app open', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: false,
         featureTipsSeenIds: [],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
@@ -54,14 +34,13 @@ describe('feature tip startup gate', () => {
         settings: makeSettings(),
         suppressedByOnboardingThisSession: false
       })
-    ).toEqual({ kind: 'open', tipId: 'orca-cli' })
+    ).toEqual({ kind: 'open', tipId: 'cmd-j-palette' })
   })
 
   it('suppresses feature tips for first-time users while onboarding is showing', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: false,
         featureTipsSeenIds: [],
         featureInteractions: {},
         onboarding: firstTimeOnboarding,
@@ -77,7 +56,6 @@ describe('feature tip startup gate', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: false,
         featureTipsSeenIds: [],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
@@ -89,12 +67,11 @@ describe('feature tip startup gate', () => {
     ).toEqual({ kind: 'skip' })
   })
 
-  it('opens the CLI tip after the voice tip was marked seen', () => {
+  it('opens the voice tip after the command palette tip was marked seen', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: false,
-        featureTipsSeenIds: ['voice-dictation'],
+        featureTipsSeenIds: ['cmd-j-palette'],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
@@ -102,78 +79,13 @@ describe('feature tip startup gate', () => {
         settings: makeSettings(),
         suppressedByOnboardingThisSession: false
       })
-    ).toEqual({ kind: 'open', tipId: 'orca-cli' })
-  })
-
-  it('opens the CLI tip after voice dictation is already enabled', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: false,
-        featureTipsSeenIds: [],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(true),
-        suppressedByOnboardingThisSession: false
-      })
-    ).toEqual({ kind: 'open', tipId: 'orca-cli' })
-  })
-
-  it('opens the command palette tip after the CLI tip was marked seen', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: true,
-        featureTipsSeenIds: ['orca-cli'],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(),
-        suppressedByOnboardingThisSession: false
-      })
-    ).toEqual({ kind: 'open', tipId: 'cmd-j-palette' })
+    ).toEqual({ kind: 'open', tipId: 'voice-dictation' })
   })
 
   it('does not open after every tip was marked seen', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: false,
-        featureTipsSeenIds: ['voice-dictation', 'orca-cli', 'cmd-j-palette'],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(),
-        suppressedByOnboardingThisSession: false
-      })
-    ).toEqual({ kind: 'skip' })
-  })
-
-  it('does not open the voice tip after Settings marked it seen and dictation is disabled', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: true,
-        featureTipsSeenIds: ['voice-dictation', 'cmd-j-palette'],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(false),
-        suppressedByOnboardingThisSession: false
-      })
-    ).toEqual({ kind: 'skip' })
-  })
-
-  it('does not open the CLI tip after the CLI is installed', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: true,
         featureTipsSeenIds: ['voice-dictation', 'cmd-j-palette'],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
@@ -185,33 +97,16 @@ describe('feature tip startup gate', () => {
     ).toEqual({ kind: 'skip' })
   })
 
-  it('waits for CLI install status before opening the CLI tip', () => {
+  it('does not open the voice tip after dictation is already enabled', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: null,
-        featureTipsSeenIds: ['voice-dictation'],
+        featureTipsSeenIds: ['cmd-j-palette'],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
         promptedThisSession: false,
-        settings: makeSettings(),
-        suppressedByOnboardingThisSession: false
-      })
-    ).toEqual({ kind: 'skip' })
-  })
-
-  it('waits for CLI install status before opening later tips', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: null,
-        featureTipsSeenIds: [],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(),
+        settings: makeSettings(true),
         suppressedByOnboardingThisSession: false
       })
     ).toEqual({ kind: 'skip' })
@@ -221,7 +116,6 @@ describe('feature tip startup gate', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
-        cliInstalled: true,
         featureTipsSeenIds: ['cmd-j-palette'],
         featureInteractions: {
           'voice-dictation': { firstInteractedAt: 100, interactionCount: 1 }
@@ -233,23 +127,5 @@ describe('feature tip startup gate', () => {
         suppressedByOnboardingThisSession: false
       })
     ).toEqual({ kind: 'skip' })
-  })
-
-  it('treats shell CLI registration as always complete after PATH setup was gutted', () => {
-    expect(isCliFeatureTipCompleted(makeCliStatus())).toBe(true)
-    expect(isCliFeatureTipCompleted(makeCliStatus({ pathConfigured: false }))).toBe(true)
-    expect(isCliFeatureTipCompleted(makeCliStatus({ state: 'not_installed' }))).toBe(true)
-  })
-
-  it('treats unsupported CLI setup as completed for feature tips', () => {
-    expect(
-      isCliFeatureTipCompleted(
-        makeCliStatus({
-          supported: false,
-          state: 'unsupported',
-          pathConfigured: false
-        })
-      )
-    ).toBe(true)
   })
 })

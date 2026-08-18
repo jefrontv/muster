@@ -38,7 +38,14 @@ function isSetupGuideSidebarComplete(progress: FeatureWallSetupProgress): boolea
   return progress.coreDoneCount >= progress.coreTotal
 }
 
-export function SetupGuideSidebarEntry(): React.JSX.Element | null {
+type SetupGuideSidebarEntryProps = {
+  /** Chat sidebar uses the standard accent tokens; code keeps worktree-sidebar ones. */
+  variant?: 'code' | 'chat'
+}
+
+export function SetupGuideSidebarEntry({
+  variant = 'code'
+}: SetupGuideSidebarEntryProps = {}): React.JSX.Element | null {
   const openModal = useAppStore((s) => s.openModal)
   const activeModal = useAppStore((s) => s.activeModal)
   const persistedUIReady = useAppStore((s) => s.persistedUIReady)
@@ -73,7 +80,7 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
     return null
   }
   const firstUnfinishedSetupStepId: FeatureWallSetupStepId =
-    getFirstIncompleteFeatureWallSetupStepId(renderedProgress.stepDone)
+    getFirstIncompleteFeatureWallSetupStepId(renderedProgress.stepDone, renderedProgress.mode)
 
   return (
     <ContextMenu>
@@ -90,9 +97,13 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
           aria-current={setupActive ? 'page' : undefined}
           className={cn(
             'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
-            setupActive
-              ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-              : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+            variant === 'chat'
+              ? setupActive
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-muted/60'
+              : setupActive
+                ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
+                : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
           )}
         >
           <SetupGuideProgressRing
@@ -103,8 +114,8 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate">
               {translate(
-                'auto.components.sidebar.SetupGuideSidebarEntry.88d402b71d',
-                'Onboarding checklist'
+                'auto.components.sidebar.SetupGuideSidebarEntry.setupGuide',
+                'Setup guide'
               )}
             </span>
           </span>

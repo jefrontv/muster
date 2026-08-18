@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import type { FeatureWallSetupProgress } from './feature-wall-setup-progress'
 import {
   AddReposAction,
+  ChatThreadStartAction,
+  ChatWorkspaceCreateAction,
   SetupScriptAction,
   WorkspacesAction
 } from './FeatureWallSetupWorkflowActions'
@@ -153,6 +155,12 @@ function SelectedStepAction(props: FeatureWallSetupChecklistProps): React.JSX.El
   if (activeStep.id === 'setup-script') {
     return <SetupScriptAction />
   }
+  if (activeStep.id === 'create-first-workspace') {
+    return <ChatWorkspaceCreateAction done={activeDone} />
+  }
+  if (activeStep.id === 'start-first-thread') {
+    return <ChatThreadStartAction done={activeDone} />
+  }
   return null
 }
 
@@ -258,8 +266,8 @@ export function FeatureWallSetupChecklist(
     activeStep?.id === 'two-worktrees' ||
     activeStep?.id === 'browser' ||
     activeStep?.id === 'add-two-repos'
-  const setupSteps = getFeatureWallSetupStepsForSection('setup')
-  const parallelWorkSteps = getFeatureWallSetupStepsForSection('parallel-work')
+  const setupSteps = getFeatureWallSetupStepsForSection('setup', progress.mode)
+  const parallelWorkSteps = getFeatureWallSetupStepsForSection('parallel-work', progress.mode)
   const visualBreakpoint = isEmbedded ? 'xl' : 'sm'
   const visualGridClass =
     visualBreakpoint === 'xl'
@@ -295,18 +303,20 @@ export function FeatureWallSetupChecklist(
           onSelectStep={onSelectStep}
           layout={layout}
         />
-        <SetupSection
-          title={translate(
-            'auto.components.feature.wall.FeatureWallSetupChecklist.713cc529a5',
-            'Milestones'
-          )}
-          steps={parallelWorkSteps}
-          startOrdinal={setupSteps.length + 1}
-          activeStepId={activeStep?.id ?? null}
-          progress={progress}
-          onSelectStep={onSelectStep}
-          layout={layout}
-        />
+        {parallelWorkSteps.length > 0 ? (
+          <SetupSection
+            title={translate(
+              'auto.components.feature.wall.FeatureWallSetupChecklist.713cc529a5',
+              'Milestones'
+            )}
+            steps={parallelWorkSteps}
+            startOrdinal={setupSteps.length + 1}
+            activeStepId={activeStep?.id ?? null}
+            progress={progress}
+            onSelectStep={onSelectStep}
+            layout={layout}
+          />
+        ) : null}
       </div>
 
       <section

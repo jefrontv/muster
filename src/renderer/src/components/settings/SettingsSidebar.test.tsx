@@ -133,14 +133,14 @@ describe('SettingsSidebar', () => {
       })
     )
 
-    expect(renderSidebar()).not.toContain('Onboarding checklist')
+    expect(renderSidebar()).not.toContain('Setup guide')
   })
 
   it('renders incomplete setup progress with the full checklist total', () => {
     const markup = renderSidebar()
 
-    expect(markup).toContain('Onboarding checklist')
-    expect(markup).toContain('Onboarding checklist, 5 of 7 done. Show setup guide.')
+    expect(markup).toContain('Setup guide')
+    expect(markup).toContain('Setup guide, 5 of 7 done. Show setup guide.')
     expect(markup).toContain('5 of 7 setup steps complete')
   })
 
@@ -152,13 +152,13 @@ describe('SettingsSidebar', () => {
       })
     )
 
-    expect(renderSidebar()).not.toContain('Onboarding checklist')
+    expect(renderSidebar()).not.toContain('Setup guide')
   })
 
   it('keeps the setup guide row available from Settings when incomplete', () => {
     const markup = renderSidebar('setup-guide')
 
     expect(markup).toContain('aria-current="page"')
-    expect(markup).toContain('Onboarding checklist')
+    expect(markup).toContain('Setup guide')
   })
 })

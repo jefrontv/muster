@@ -44,11 +44,13 @@ export function getFeatureWallCompletionProgress(
 ): FeatureWallCompletionProgress {
   const workspacesVisited = input.visitedWorkflows.has('workspaces')
   const tasksVisited = input.visitedWorkflows.has('tasks')
+  const sitesVisited = input.visitedWorkflows.has('sites')
   const agentsVisited = input.visitedWorkflows.has('agents-orchestration')
   const workbenchVisited = input.visitedWorkflows.has('workbench')
   const reviewVisited = input.visitedWorkflows.has('review')
 
   const workspacesDone = workspacesVisited || input.completedWorkflows?.has('workspaces') === true
+  const sitesDone = sitesVisited || input.completedWorkflows?.has('sites') === true
   const tasksDone =
     input.completedWorkflows?.has('tasks') === true ||
     (tasksVisited && !input.isCheckingTaskSources && input.hasConnectedTaskSource)
@@ -94,6 +96,7 @@ export function getFeatureWallCompletionProgress(
     workflowDone: {
       workspaces: workspacesDone,
       tasks: tasksDone,
+      sites: sitesDone,
       'agents-orchestration': agentsWorkflowDone,
       workbench: workbenchAllStepsDone,
       review: reviewAllStepsDone

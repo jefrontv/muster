@@ -18,8 +18,8 @@ export const ONBOARDING_SKIP_CONFIRMATION_COPY = {
   },
   get description() {
     return translate(
-      'auto.components.onboarding.OnboardingSkipConfirmationDialog.9f47f345a4',
-      "It won't take long!"
+      'auto.components.onboarding.OnboardingSkipConfirmationDialog.skipDescription',
+      "You can set all of this up later in Settings, but this screen won't come back."
     )
   },
   skipLabel: 'Skip',

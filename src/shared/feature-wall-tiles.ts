@@ -4,13 +4,12 @@ export type FeatureWallTileId =
   | 'tile-03'
   | 'tile-04'
   | 'tile-05'
-  | 'tile-06'
   | 'tile-07'
   | 'tile-08'
-  | 'tile-09'
   | 'tile-10'
   | 'tile-11'
   | 'tile-12'
+  | 'tile-13'
 
 type FeatureWallTileBase = {
   id: FeatureWallTileId
@@ -36,13 +35,12 @@ export const FEATURE_WALL_MEDIA_TILE_IDS = [
   'tile-03',
   'tile-04',
   'tile-05',
-  'tile-06',
   'tile-07',
   'tile-08',
-  'tile-09',
   'tile-10',
   'tile-11',
-  'tile-12'
+  'tile-12',
+  'tile-13'
 ] as const satisfies readonly FeatureWallTileId[]
 
 export type FeatureWallMediaTileId = (typeof FEATURE_WALL_MEDIA_TILE_IDS)[number]
@@ -79,9 +77,9 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
   {
     id: 'tile-03',
     kind: 'media',
-    title: 'GitHub & Linear, native',
+    title: 'ActiveCollab & GitHub, native',
     caption:
-      'Find connected GitHub or Linear work in Tasks, open its context, and start workspaces without switching tools.',
+      'Find your ActiveCollab tasks and GitHub work in Tasks, open their context, and start workspaces without switching tools.',
     gifPath: 'tile-03.gif',
     posterPath: 'tile-03.poster.jpg',
     recordedAtPath: 'tile-03.recorded-at.json',
@@ -109,17 +107,6 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     owner: 'browser-experience'
   },
   {
-    id: 'tile-06',
-    kind: 'media',
-    title: 'Remote workspaces',
-    caption:
-      'Run agents on a remote machine with the same Muster editing, git, and terminal workflow.',
-    gifPath: 'tile-06.gif',
-    posterPath: 'tile-06.poster.jpg',
-    recordedAtPath: 'tile-06.recorded-at.json',
-    owner: 'ssh-workspaces'
-  },
-  {
     id: 'tile-07',
     kind: 'media',
     title: 'Monaco editor, drag-to-agent',
@@ -140,16 +127,6 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     posterPath: 'tile-08.poster.jpg',
     recordedAtPath: 'tile-08.recorded-at.json',
     owner: 'diff-review'
-  },
-  {
-    id: 'tile-09',
-    kind: 'media',
-    title: 'Muster CLI',
-    caption: 'Agents can drive Muster too: create workspaces, snapshot screens, click, and fill.',
-    gifPath: 'tile-09.gif',
-    posterPath: 'tile-09.poster.jpg',
-    recordedAtPath: 'tile-09.recorded-at.json',
-    owner: 'orca-cli'
   },
   {
     id: 'tile-10',
@@ -183,5 +160,17 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     posterPath: 'tile-12.poster.jpg',
     recordedAtPath: 'tile-12.recorded-at.json',
     owner: 'file-preview'
+  },
+  {
+    id: 'tile-13',
+    kind: 'media',
+    title: 'Client sites, managed',
+    caption:
+      'Every client WordPress site in one list: spin up a local stack, work on it, and deploy without leaving Muster.',
+    // TODO: re-shoot a Sites capture; reuses the retired remote-workspaces media for now.
+    gifPath: 'tile-06.gif',
+    posterPath: 'tile-06.poster.jpg',
+    recordedAtPath: 'tile-06.recorded-at.json',
+    owner: 'sites'
   }
 ] as const

@@ -187,13 +187,12 @@ export const featureWallTileIdSchema = z.enum([
   'tile-03',
   'tile-04',
   'tile-05',
-  'tile-06',
   'tile-07',
   'tile-08',
-  'tile-09',
   'tile-10',
   'tile-11',
-  'tile-12'
+  'tile-12',
+  'tile-13'
 ])
 export type FeatureWallTileIdTelemetry = z.infer<typeof featureWallTileIdSchema>
 
@@ -205,7 +204,8 @@ export const featureWallWorkflowIdSchema = z.enum([
   'workspaces',
   'agents-orchestration',
   'workbench',
-  'review'
+  'review',
+  'sites'
 ])
 export type FeatureWallWorkflowIdTelemetry = z.infer<typeof featureWallWorkflowIdSchema>
 
@@ -454,9 +454,9 @@ const featureWallClosedSchema = z
     exit_action: featureWallExitActionSchema.optional(),
     furthest_step: featureWallTourDepthStepSchema.optional(),
     last_group_id: featureWallWorkflowIdSchema.optional(),
-    visited_workflow_count: z.number().int().min(0).max(5).optional(),
+    visited_workflow_count: z.number().int().min(0).max(6).optional(),
     visited_substep_count: z.number().int().min(0).max(9).optional(),
-    completed_workflow_count: z.number().int().min(0).max(5).optional(),
+    completed_workflow_count: z.number().int().min(0).max(6).optional(),
     completed_substep_count: z.number().int().min(0).max(9).optional()
   })
   .strict()
@@ -922,9 +922,9 @@ const onboardingTourOutcomeEventSchema = z
     intro_duration_ms: z.number().int().min(0).max(FEATURE_WALL_MAX_DWELL_MS).optional(),
     tour_dwell_ms: z.number().int().min(0).max(FEATURE_WALL_MAX_DWELL_MS).optional(),
     furthest_step: featureWallTourDepthStepSchema.optional(),
-    visited_workflow_count: z.number().int().min(0).max(5).optional(),
+    visited_workflow_count: z.number().int().min(0).max(6).optional(),
     visited_substep_count: z.number().int().min(0).max(9).optional(),
-    completed_workflow_count: z.number().int().min(0).max(5).optional(),
+    completed_workflow_count: z.number().int().min(0).max(6).optional(),
     completed_substep_count: z.number().int().min(0).max(9).optional(),
     advanced_via: advancedViaSchema,
     cohort: cohortSchema

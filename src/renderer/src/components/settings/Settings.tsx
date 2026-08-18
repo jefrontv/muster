@@ -1247,13 +1247,10 @@ function Settings(): React.JSX.Element {
 
                 <SettingsSection
                   id="setup-guide"
-                  title={translate(
-                    'auto.components.settings.Settings.6d119427ef',
-                    'Onboarding checklist'
-                  )}
+                  title={translate('auto.components.settings.Settings.setupGuideTitle', 'Setup guide')}
                   description={translate(
-                    'auto.components.settings.Settings.6855b0f77d',
-                    'Finish the core workflows that make Muster useful for parallel agent work.'
+                    'auto.components.settings.Settings.setupGuideDescription',
+                    'Finish the setup that makes Muster useful for your day-to-day work.'
                   )}
                   searchEntries={getSectionSearchEntries('setup-guide')}
                   bodyClassName="overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none"

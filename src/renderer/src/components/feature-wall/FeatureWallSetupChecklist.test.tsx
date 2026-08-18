@@ -52,7 +52,13 @@ function makeProgress(): FeatureWallSetupProgress {
   const stepDone = Object.fromEntries(
     FEATURE_WALL_SETUP_STEPS.map((step) => [step.id, false])
   ) as Record<FeatureWallSetupStepId, boolean>
-  return { ready: true, stepDone, coreDoneCount: 0, coreTotal: FEATURE_WALL_SETUP_STEPS.length }
+  return {
+    ready: true,
+    mode: 'code',
+    stepDone,
+    coreDoneCount: 0,
+    coreTotal: FEATURE_WALL_SETUP_STEPS.length
+  }
 }
 
 async function renderActiveCollabStep(): Promise<void> {
@@ -93,7 +99,7 @@ describe('FeatureWallSetupChecklist ActiveCollab step', () => {
     await renderActiveCollabStep()
 
     expect(container?.textContent).toContain('Connect ActiveCollab')
-    expect(container?.textContent).toContain('start workspaces from ActiveCollab issues')
+    expect(container?.textContent).toContain('start work from them without leaving Muster')
     expect(state.checkActiveCollabConnection).toHaveBeenCalled()
   })
 

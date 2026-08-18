@@ -49,8 +49,9 @@ describe('OnboardingFlow', () => {
   })
 
   it.each([
-    [3, 'How do you want to start?'],
-    [4, 'How do you want to start?'],
+    // Why welcome: pre-default_view progress restarts on the new first step.
+    [3, 'data-onboarding-welcome="true"'],
+    [4, 'data-onboarding-welcome="true"'],
     [5, 'Set up notifications'],
     [9, 'Set up notifications']
   ])(
@@ -72,7 +73,7 @@ describe('OnboardingFlow', () => {
   )
 
   it.each([
-    [3, 'How do you want to start?'],
+    [3, 'data-onboarding-welcome="true"'],
     [4, 'Set up notifications'],
     [5, 'Set up notifications'],
     [9, 'Set up notifications']
@@ -256,7 +257,7 @@ describe('OnboardingFlow', () => {
   it('renders concise skip confirmation copy', () => {
     expect(ONBOARDING_SKIP_CONFIRMATION_COPY).toEqual({
       title: 'Skip onboarding?',
-      description: "It won't take long!",
+      description: "You can set all of this up later in Settings, but this screen won't come back.",
       skipLabel: 'Skip',
       keepGoingLabel: 'No, keep going'
     })

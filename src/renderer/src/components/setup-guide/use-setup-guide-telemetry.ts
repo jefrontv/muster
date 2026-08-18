@@ -37,7 +37,7 @@ export function useSetupGuideOpenCloseTelemetry(args: {
   progress: FeatureWallSetupProgress
   activeStepId: FeatureWallSetupStepId | null
 }): void {
-  const setupSteps = useMemo(() => getFeatureWallSetupSteps(), [])
+  const setupSteps = useMemo(() => getFeatureWallSetupSteps(args.progress.mode), [args.progress.mode])
   const sessionRef = useRef<SetupGuideTelemetrySession | null>(null)
   const snapshotRef = useRef<SetupGuideTelemetrySnapshot>({
     completedCount: 0,
@@ -45,7 +45,8 @@ export function useSetupGuideOpenCloseTelemetry(args: {
     activeStepId: 'none'
   })
 
-  const completedCount = countCompletedSetupSteps(args.progress.stepDone)
+  // Why coreDoneCount: counts within the active mode's step set, matching totalSteps.
+  const completedCount = args.progress.coreDoneCount
   const firstIncompleteStepId = getSetupGuideTelemetryFirstIncompleteStepId(args.progress)
 
   snapshotRef.current = {
@@ -104,9 +105,9 @@ export function useSetupGuideOpenCloseTelemetry(args: {
 export function getSetupGuideTelemetryFirstIncompleteStepId(
   progress: FeatureWallSetupProgress
 ): FeatureWallSetupStepId | 'none' {
-  return countCompletedSetupSteps(progress.stepDone) >= FEATURE_WALL_SETUP_STEP_IDS.length
+  return progress.coreDoneCount >= progress.coreTotal
     ? 'none'
-    : getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)
+    : getFirstIncompleteFeatureWallSetupStepId(progress.stepDone, progress.mode)
 }
 
 export function useSetupGuideStepCompletionTelemetry(args: {

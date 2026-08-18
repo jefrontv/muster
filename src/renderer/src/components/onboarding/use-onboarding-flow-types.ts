@@ -7,14 +7,15 @@ export type StepId =
   | 'windows_terminal'
   | 'notifications'
 
+// Why default_view first: the Chat/Code choice frames every later step's copy.
 export const STEPS: readonly {
   id: StepId
   stepNumber: StepNumber
   valueKind: StepId
 }[] = [
-  { id: 'agent', stepNumber: 1, valueKind: 'agent' },
-  { id: 'theme', stepNumber: 2, valueKind: 'theme' },
-  { id: 'default_view', stepNumber: 3, valueKind: 'default_view' },
+  { id: 'default_view', stepNumber: 1, valueKind: 'default_view' },
+  { id: 'agent', stepNumber: 2, valueKind: 'agent' },
+  { id: 'theme', stepNumber: 3, valueKind: 'theme' },
   { id: 'integrations', stepNumber: 4, valueKind: 'integrations' },
   { id: 'windows_terminal', stepNumber: 5, valueKind: 'windows_terminal' },
   { id: 'notifications', stepNumber: 6, valueKind: 'notifications' }

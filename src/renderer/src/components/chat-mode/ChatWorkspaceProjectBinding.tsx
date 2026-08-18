@@ -43,7 +43,7 @@ export function ChatWorkspaceProjectBinding({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-contextual-tour-target="chat-workspace-project-binding">
       <div className="space-y-1">
         <Label>
           {translate('auto.components.chat.workspaceDialog.acProjects', 'ActiveCollab projects')}

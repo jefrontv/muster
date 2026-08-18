@@ -95,7 +95,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps): React
         <p className="onboarding-welcome-tagline mt-5 max-w-md text-[16px] leading-relaxed text-muted-foreground">
           {translate(
             'auto.components.onboarding.welcome.tagline',
-            'Your agents, projects, and work — one quiet desk.'
+            'Run AI agents on your projects, chat through work, and manage client sites — in one place.'
           )}
         </p>
       </div>

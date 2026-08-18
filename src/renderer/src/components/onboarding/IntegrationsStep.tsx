@@ -224,10 +224,10 @@ function OcsitesImportRow(): React.JSX.Element | null {
 }
 
 const CAPABILITIES = [
-  'Start a workspace from any GitHub issue or pull request, prefilled with its title and context',
-  'Browse GitHub issues and pull requests in the Tasks view without leaving Muster',
-  'See issue state, review status, and CI checks on every worktree',
-  'Read, comment on, and merge pull requests without leaving Muster'
+  'Pull ActiveCollab tasks into Muster and start work straight from one',
+  'Open GitHub and Bitbucket pull requests, reviews, and CI checks in-app',
+  "Start a workspace pre-loaded with a task's title and context",
+  'See task and review status on every workspace'
 ] as const
 
 export function IntegrationsStep(): React.JSX.Element {

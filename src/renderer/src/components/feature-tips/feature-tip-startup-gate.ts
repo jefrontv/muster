@@ -3,7 +3,6 @@ import {
   getCompletedFeatureTipIds,
   getOrderedUnseenFeatureTips
 } from '../../../../shared/feature-tips'
-import type { CliInstallStatus } from '../../../../shared/cli-install-types'
 import type { FeatureInteractionState } from '../../../../shared/feature-interactions'
 import type { GlobalSettings, OnboardingState } from '../../../../shared/types'
 import { shouldShowOnboarding } from '../onboarding/should-show-onboarding'
@@ -13,15 +12,8 @@ export type FeatureTipsAppOpenDecision =
   | { kind: 'skip' }
   | { kind: 'suppress-for-onboarding' }
 
-export function isCliFeatureTipCompleted(_status?: CliInstallStatus): boolean {
-  // Why: shell PATH registration was gutted — never hold feature tips or
-  // onboarding behind `/usr/local/bin/orca`.
-  return true
-}
-
 export function getFeatureTipsAppOpenDecision(args: {
   activeModal: string
-  cliInstalled: boolean | null
   featureTipsSeenIds: readonly FeatureTipId[]
   featureInteractions: FeatureInteractionState
   onboarding: OnboardingState | null
@@ -41,7 +33,6 @@ export function getFeatureTipsAppOpenDecision(args: {
     !args.settings ||
     args.onboarding === null ||
     args.activeModal !== 'none' ||
-    args.cliInstalled === null ||
     shouldShowOnboarding(args.onboarding)
   ) {
     return { kind: 'skip' }
@@ -50,7 +41,6 @@ export function getFeatureTipsAppOpenDecision(args: {
   const unseenTips = getOrderedUnseenFeatureTips({
     seenTipIds: new Set<FeatureTipId>(args.featureTipsSeenIds),
     completedTipIds: getCompletedFeatureTipIds({
-      cliInstalled: args.cliInstalled,
       voiceDictationEnabled: args.settings.voice?.enabled === true,
       featureInteractions: args.featureInteractions
     })

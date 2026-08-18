@@ -241,7 +241,7 @@ function YoloPermissionsControl({
         <TooltipContent side="top" sideOffset={6} style={{ zIndex: 120 }}>
           {translate(
             'auto.components.onboarding.AgentStep.yoloPermissionsTooltip',
-            'Skip permission checks for agents for less interruptions'
+            "Agents run commands without asking each time. Faster, but they can change or delete files unprompted. Leave off if you're unsure."
           )}
         </TooltipContent>
       </Tooltip>

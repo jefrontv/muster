@@ -65,7 +65,6 @@
     "checkForUpdates": "Check for Updates...",
     "settings": "Settings",
     "exploreOrca": "Explore Muster",
-    "gettingStarted": "Getting Started with Muster",
     "reportCrash": "Report Crash...",
     "file": "File",
     "exit": "Exit",
@@ -87,7 +86,8 @@
     "openWorktreePalette": "Open Worktree Palette",
     "window": "Window",
     "help": "Help",
-    "paste": "Paste"
+    "paste": "Paste",
+    "gettingStarted": "Setup guide"
   },
   "tray": {
     "openOrca": "Open Muster",
@@ -722,9 +722,6 @@
         "724c440e72": "getting started",
         "0505d0df29": "get started with Muster",
         "ea0b1bc7b8": "setup guide",
-        "17005c73d4": "Open the onboarding checklist for setup and milestone steps.",
-        "ded9e9032f": "Onboarding checklist",
-        "5f32ac08f3": "Finish the onboarding checklist for core Muster workflows.",
         "8ac3de82f5": "Local speech-to-text dictation with on-device models.",
         "6a50cdcd7c": "Voice",
         "cd50cec5d7": "Coordinate multiple coding agents through Muster.",
@@ -748,7 +745,10 @@
         "linearTitle": "Linear",
         "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
         "agentCapabilitiesTitle": "Agent Capabilities",
-        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
+        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+        "setupGuideTitle": "Setup guide",
+        "setupGuideDescription": "Finish the setup guide for core Muster workflows.",
+        "setupGuideSearchDescription": "Open the setup guide for setup and milestone steps."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "Paste is too large."
@@ -4019,7 +4019,7 @@
         },
         "SetupGuideSidebarEntry": {
           "b0a7bfc34c": "Hide from sidebar",
-          "88d402b71d": "Onboarding checklist"
+          "setupGuide": "Setup guide"
         },
         "SetupScriptPromptCard": {
           "ff1e819a11": "Add a setup script",
@@ -4134,9 +4134,10 @@
           "4e8f5710d3": "Couldn't restart Muster.",
           "5161eef55d": "Restarting Muster…",
           "d396773ef0": "checking",
-          "f8a2c91d4e": "Milestones",
-          "b7e4d2a19c": "Onboarding",
-          "c4f8e1b72a": "X"
+          "c4f8e1b72a": "X",
+          "setupGuide": "Setup guide",
+          "exploreMuster": "Explore Muster",
+          "replayOnboarding": "Replay Onboarding"
         },
         "SidebarToolbar": {
           "87d0064026": "Workspace board moved to the bottom bar",
@@ -4903,10 +4904,10 @@
       "setup": {
         "guide": {
           "SetupGuideModal": {
-            "3598a3ca0c": "Finish the core workflows that make Muster useful for parallel agent work.",
-            "48a9e5ef2d": "Getting started",
             "28cf59fcb4": "This will hide the checklist from the sidebar",
-            "f3b5ffb2a6": "Hide checklist from sidebar"
+            "f3b5ffb2a6": "Hide checklist from sidebar",
+            "setupGuideTitle": "Setup guide",
+            "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work."
           },
           "SetupGuideProgressRing": {
             "dac3a4724a": "{{value0}} of {{value1}} setup steps complete"
@@ -6459,8 +6460,6 @@
           "c9ca101a3b": "Integrations",
           "f9b77539fd": "Workspace defaults, app setup, and maintenance.",
           "7807c11c4d": "General",
-          "6855b0f77d": "Finish the core workflows that make Muster useful for parallel agent work.",
-          "6d119427ef": "Onboarding checklist",
           "eb1176a14e": "Local speech-to-text dictation with on-device models.",
           "5063bb47a5": "Voice",
           "475980f53d": "Coordinate multiple coding agents through Muster.",
@@ -6489,7 +6488,9 @@
           "linearTitle": "Linear",
           "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
           "agentCapabilitiesTitle": "Agent Capabilities",
-          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
+          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+          "setupGuideTitle": "Setup guide",
+          "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work."
         },
         "SettingsFormControls": {
           "42a4d15a30": "No matching fonts.",
@@ -6516,10 +6517,10 @@
           "5c9669ff9c": "Projects",
           "dbceaa8840": "Search settings",
           "60f8a673a7": "Back to app",
-          "6503182299": "Onboarding checklist",
-          "82db1b7de4": "Onboarding checklist, {{value0}} of {{value1}} done. Show setup guide.",
           "df38d612b7": "No projects added yet.",
-          "3e483e256b": "No matching project settings."
+          "3e483e256b": "No matching project settings.",
+          "setupGuideAria": "Setup guide, {{value0}} of {{value1}} done. Show setup guide.",
+          "setupGuide": "Setup guide"
         },
         "ShortcutFilterRail": {
           "28b63545bf": "Status",
@@ -10739,7 +10740,7 @@
           "showMoreAgents": "Show {{value0}} more agents→",
           "yoloPermissionsLabel": "Yolo / Dangerously skip permissions",
           "yoloPermissionsInfo": "Agent permission info",
-          "yoloPermissionsTooltip": "Skip permission checks for agents for less interruptions"
+          "yoloPermissionsTooltip": "Agents run commands without asking each time. Faster, but they can change or delete files unprompted. Leave off if you're unsure."
         },
         "FeatureSetupChecklist": {
           "77f74946f5": "Agents can message each other, take tasks, and coordinate handoffs.",
@@ -10821,16 +10822,17 @@
           "984338477a": "theme",
           "c47e1bd149": "agent",
           "windowsTerminalTitle": "Set Windows terminal defaults",
-          "windowsTerminalSubtitle": "Choose the DEFAULT Shell for new panes and how right-click behaves in the terminal.",
           "defaultViewTitle": "How do you want to start?",
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
-          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:"
+          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:",
+          "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
+          "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time."
         },
         "welcome": {
           "eyebrow": "Welcome to",
-          "tagline": "Your agents, projects, and work — one quiet desk.",
-          "start": "Get started"
+          "start": "Get started",
+          "tagline": "Run AI agents on your projects, chat through work, and manage client sites — in one place."
         },
         "defaultView": {
           "chat": "Chat Mode",
@@ -10843,45 +10845,19 @@
         "OnboardingFooter": {
           "ba58547306": "Back",
           "111d3f8d92": "Skip to project setup",
-          "done": "Done"
+          "done": "Done",
+          "skipToWorkspaceSetup": "Skip to workspace setup"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "Starting terminal..."
         },
         "OnboardingSkipConfirmationDialog": {
-          "9f47f345a4": "It won't take long!",
-          "e4726b2d50": "Skip onboarding?"
+          "e4726b2d50": "Skip onboarding?",
+          "skipDescription": "You can set all of this up later in Settings, but this screen won't come back."
         },
         "OnboardingTourStep": {
           "3f9586c043": "Take the tour",
           "60c5576353": "Exit tour"
-        },
-        "RepoStep": {
-          "e8fdb36338": "Scanning repositories. Click to stop.",
-          "b7c4da0504": "SSH? Set hosts up in Settings",
-          "c33b190ca3": "Host paths only",
-          "7b679207e4": "Workspace",
-          "24c7c8696c": "Clone into host path",
-          "7932e95f68": "Clone",
-          "955134915e": "git@github.com:org/repo.git",
-          "288d8444b7": "Paste an HTTPS or SSH URL.",
-          "132425a3e3": "Clone a repo",
-          "6558d50c69": "Want to import many repos at once? Select the parent folder.",
-          "831524961f": "Choose any local directory, git repo or not.",
-          "f4e9c8dcf8": "Browse for a folder",
-          "e8214aa632": "Open as Folder",
-          "3863747c56": "Add Git Project",
-          "2ebbc26343": "/home/user/project",
-          "466108ab89": "Enter a path that exists on the selected host.",
-          "8cab104e3c": "Open a project on this host",
-          "2d20200346": "Import repositories",
-          "27ca610db1": "Back",
-          "cecd6593fa": "Scanned folder:",
-          "c7af322fc3": "Stop scanning",
-          "c3d9d44ca2": "Stop scan",
-          "cf23006ba7": "Selected host",
-          "7ec3f48820": "/home/user",
-          "2e6438dd34": "{{value0}}Found {{value1}} {{value2}} in this folder."
         },
         "ThemeStep": {
           "a4b254779d": "macOS Option key",
@@ -11409,6 +11385,8 @@
             "open_integrations_settings": "Open Integrations settings"
           },
           "FeatureWallSetupWorkflowActions": {
+            "newChatWorkspace": "New workspace",
+            "openChat": "Open Chat",
             "486c2f4d8d": "Add a git project first, then configure the setup script for that repository.",
             "00078a6134": "View in settings",
             "14327073cc": "Save",
@@ -11659,35 +11637,15 @@
           }
         },
         "tips": {
-          "CliFeatureTipVisual": {
-            "badb4fc342": ">",
-            "22e62f3bab": "Claude Code session started"
-          },
-          "CliSkillSetupTerminal": {
-            "1953e90447": "Press Enter to install the Muster CLI orchestration skill for your agents.",
-            "43b60ec5c3": "Muster CLI and orchestration skill install terminal",
-            "84e9576dac": "Skill setup",
-            "5c3aee22c0": "Copy command",
-            "5eca672aac": "Copy skill install command",
-            "6ff813fc1d": "Failed to copy skill command.",
-            "b8ad063571": "Copied the skill install command."
-          },
           "CmdJPaletteTipDialog": {
             "c0bb9f869b": "Settings → Shortcuts",
             "8241897205": "Rebind the shortcut anytime in"
           },
           "FeatureTipActions": {
-            "eb04abece8": "Maybe Later"
+            "eb04abece8": "Maybe Later",
+            "working": "Working..."
           },
           "FeatureTipsModal": {
-            "c169298e4d": "Done",
-            "3c6c478462": "X finishes, send it the review task.”",
-            "298301b7a0": "worktree",
-            "864e2db28f": "“When the agent in",
-            "7fc6f02099": "and create PRs for each.”",
-            "27c567a89c": "worktrees",
-            "55846c7f95": "“Split this PR into two",
-            "4795ac2d4a": "Try asking:",
             "53905bd076": "Development preview: opening skills setup terminal.",
             "1da82af45b": "Muster CLI needs attention",
             "ce13a742d0": "Registered `orca` in PATH.",
