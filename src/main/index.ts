@@ -11,6 +11,7 @@ import {
   getCanonicalUserDataPath,
   migrateMobilePairingDataToCanonicalUserDataPath
 } from './persistence'
+import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
 import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
 import { getOrcaCloudAuthConfig } from './orca-profiles/profile-cloud-auth-config'
@@ -814,6 +815,19 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
         endpointNamespace: devAgentHookEndpointNamespace
       })
       logStartupMilestone('startup-service-done', { service: 'agent-hook-server' })
+      // Why here: the site-MCP process must reach the GUI's live store, and this
+      // runs once the store is up. Non-fatal — a failed bridge leaves MCP writes
+      // on the old direct-to-disk path rather than blocking startup.
+      if (store) {
+        try {
+          await siteWriteBridgeServer.start({
+            store,
+            userDataPath: getCanonicalUserDataPath()
+          })
+        } catch (error) {
+          console.error('[site-bridge] Failed to start local site write bridge:', error)
+        }
+      }
     },
     onDaemonError: (error) => {
       // Why: daemon failure silently falls back to non-persistent local PTYs; log + telemetry so a fleet-wide outage is observable (was invisible in v1.4.129-rc.1).
@@ -2574,6 +2588,8 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', () => {
+  // Drops the discovery file so a later MCP process cannot post to a dead port.
+  void siteWriteBridgeServer.stop().catch(() => {})
   if (isQuittingForUpdate()) {
     recordUpdaterLifecycle('before_quit_allowed', undefined, {
       message: 'before-quit allowed for update install'

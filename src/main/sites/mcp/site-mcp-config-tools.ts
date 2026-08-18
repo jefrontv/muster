@@ -66,11 +66,19 @@ async function applyEnvironmentPatch(
       available_environments: Object.keys(site.environments)
     })
   }
-  const updated = context.store.updateSite(site.id, {
+  const updated = await context.updateSite(site.id, {
     ...sitePatch,
     environments: { ...site.environments, [environmentName]: { ...base, ...environmentPatch } }
   })
-  const summary = await context.summarize(updated ?? site)
+  // Why not fall back to `site`: summarizing the pre-write record reported ok:true
+  // with the OLD values, so a write that never landed read as success.
+  if (!updated) {
+    throw new SiteMcpToolError('The site could not be updated; nothing was saved.', {
+      site_id: site.id,
+      environment: environmentName
+    })
+  }
+  const summary = await context.summarize(updated)
   return { ok: true, ...buildDeploymentConfigView(summary, environmentName) }
 }
 
@@ -198,8 +206,13 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
       const site = resolveMcpSite(context, readString(args, 'site'))
       const { sitePatch, environmentPatch } = buildFieldPatches(readRecord(args, 'fields'))
       if (Object.keys(environmentPatch).length === 0) {
-        const updated = context.store.updateSite(site.id, sitePatch)
-        return { ok: true, ...buildDeploymentConfigView(await context.summarize(updated ?? site)) }
+        const updated = await context.updateSite(site.id, sitePatch)
+        if (!updated) {
+          throw new SiteMcpToolError('The site could not be updated; nothing was saved.', {
+            site_id: site.id
+          })
+        }
+        return { ok: true, ...buildDeploymentConfigView(await context.summarize(updated)) }
       }
       const environmentName = await resolveTargetEnvironment(context, site, readString(args, 'env'))
       return applyEnvironmentPatch(context, site, environmentName, sitePatch, environmentPatch)

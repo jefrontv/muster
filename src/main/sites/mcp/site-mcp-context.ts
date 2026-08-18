@@ -46,6 +46,12 @@ export type SiteMcpContext = {
   /** The agent's working directory — resolves an omitted `site` to the checkout it is editing. */
   cwd: string
   store: SiteMcpStore
+  /**
+   * Applies a site write. Prefer this over `store.updateSite`: when the GUI is
+   * running it owns the live state, and a direct disk write here is reverted by
+   * the GUI's next whole-state save (and ignored by runs it starts).
+   */
+  updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Promise<Site | null>
   summarize: (site: Site) => Promise<SiteSummary>
   summarizeAll: (sites: Site[]) => Promise<SiteSummary[]>
   /** Presence only. A run is blocked on a missing credential; the value never leaves the host. */

@@ -53,6 +53,7 @@ function createContext(): SiteMcpContext {
   }
   return {
     cwd: '/Sites/acme',
+    updateSite: async () => null,
     openSshSession: async () => ({
       exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
       download: async () => undefined,

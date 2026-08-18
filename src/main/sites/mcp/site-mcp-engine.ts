@@ -18,12 +18,18 @@ import { buildSiteSummaries, buildSiteSummary } from '../site-summary'
 import { createSiteSshSession } from '../site-ssh-session'
 import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
+import { updateSiteThroughBridge } from './site-mcp-store-bridge'
 
 export type SiteMcpEngineOptions = {
   store: SiteMcpStore
   /** <userData>/site-runs — shared with the app, so run history is visible from both. */
   runsBaseDir: string
   cwd?: string
+  /**
+   * Discovery file for the running GUI's write bridge. Absent (tests, or a host
+   * with no userData) means writes go straight to this process's store.
+   */
+  bridgeFile?: string
 }
 
 export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpContext {
@@ -38,6 +44,10 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
   return {
     cwd: options.cwd ?? process.cwd(),
     store,
+    updateSite: (siteId, updates) =>
+      options.bridgeFile
+        ? updateSiteThroughBridge(store, { siteId, updates, bridgeFile: options.bridgeFile })
+        : Promise.resolve(store.updateSite(siteId, updates)),
     summarize: buildSiteSummary,
     summarizeAll: buildSiteSummaries,
     hasSshSecret: (siteId, environment) => hasSiteSecret(siteId, environment, 'ssh'),

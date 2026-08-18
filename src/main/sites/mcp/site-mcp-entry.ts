@@ -21,6 +21,7 @@ import { SITE_RUNS_DIR_NAME } from '../site-run-log'
 import { createSiteMcpContext } from './site-mcp-engine'
 import { createSiteMcpServer } from './site-mcp-server'
 import { createRefreshingSiteMcpStore } from './site-mcp-store-refresh'
+import { siteWriteBridgeFile } from '../site-write-bridge-server'
 
 /** The argv flag the launcher routes on. Kept here so the CLI and the registrar agree on one name. */
 export const SITE_MCP_CLI_FLAG = '--site-mcp'
@@ -168,6 +169,9 @@ export async function runSiteMcpEntry(options: SiteMcpEntryOptions = {}): Promis
     // otherwise hide every site and environment created after it booted.
     store: dataFile ? createRefreshingSiteMcpStore(store, { dataFile }) : store,
     runsBaseDir: options.runsBaseDir ?? join(getCanonicalUserDataPath(), SITE_RUNS_DIR_NAME),
+    // Writes prefer the running GUI, which owns the live in-memory sites; absent
+    // file means no GUI, and this process writes the profile data file itself.
+    bridgeFile: siteWriteBridgeFile(getCanonicalUserDataPath()),
     cwd: options.cwd ?? process.env.MUSTER_MCP_CWD ?? process.cwd()
   })
   const server = createSiteMcpServer({

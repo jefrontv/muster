@@ -120,6 +120,16 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
 
   return {
     cwd: '/Sites/acme/wp-content/themes/acme',
+    updateSite: async (siteId, updates) => {
+      const index = records.findIndex((site) => site.id === siteId)
+      const existing = records[index]
+      if (!existing) {
+        return null
+      }
+      const next = { ...existing, ...updates, id: siteId }
+      records[index] = next
+      return next
+    },
     openSshSession: async () => ({
       exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
       download: async () => undefined,

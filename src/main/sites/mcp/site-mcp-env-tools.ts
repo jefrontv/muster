@@ -44,7 +44,7 @@ async function createEnvironment(
     })
   }
   const seed: SiteEnvironment = source ? { ...source } : createEmptySiteEnvironment()
-  const updated = context.store.updateSite(site.id, {
+  const updated = await context.updateSite(site.id, {
     environments: { ...site.environments, [name]: seed },
     activeEnvironment: site.activeEnvironment || name
   })
@@ -136,7 +136,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       if (from !== to) {
         context.deleteEnvironmentSecrets(site.id, from)
       }
-      const updated = context.store.updateSite(site.id, {
+      const updated = await context.updateSite(site.id, {
         environments,
         activeEnvironment: site.activeEnvironment === from ? to : site.activeEnvironment
       })
@@ -188,7 +188,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       delete environments[name]
       context.deleteEnvironmentSecrets(site.id, name)
       const remaining = Object.keys(environments)
-      const updated = context.store.updateSite(site.id, {
+      const updated = await context.updateSite(site.id, {
         environments,
         activeEnvironment:
           site.activeEnvironment === name ? (remaining[0] ?? '') : site.activeEnvironment
