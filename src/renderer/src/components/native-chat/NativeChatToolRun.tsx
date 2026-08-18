@@ -7,6 +7,8 @@ import {
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { useAppStore } from '@/store'
+import { findActiveCollabTaskInCaches } from './native-chat-activecollab-references'
 import {
   isToolCallBlock,
   isToolResultBlock,
@@ -129,18 +131,23 @@ function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | nu
 }
 
 /** An ActiveCollab write rendered as a task event instead of a wrench row —
- *  "Completed task #77" reads as an outcome, not plumbing. */
+ *  "Completed task #77" reads as an outcome, not plumbing. With a task id it is
+ *  a button that opens the task on the Tasks page. */
 function ActiveCollabEventChip({ event }: { event: ActiveCollabToolEvent }): React.JSX.Element {
   const done = event.kind === 'complete'
-  return (
-    <span
-      className={cn(
-        'flex max-w-full items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-3 text-xs font-medium',
-        done
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-          : 'border-border/60 bg-muted/40 text-muted-foreground'
-      )}
-    >
+  const openable = event.taskId !== null
+  const className = cn(
+    'flex max-w-full items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-3 text-xs font-medium',
+    done
+      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+      : 'border-border/60 bg-muted/40 text-muted-foreground',
+    openable &&
+      (done
+        ? 'transition-colors hover:bg-emerald-500/20'
+        : 'transition-colors hover:bg-muted/70 hover:text-foreground')
+  )
+  const body = (
+    <>
       {done ? (
         <CircleCheck className="size-3.5 shrink-0" />
       ) : event.kind === 'comment' ? (
@@ -149,7 +156,32 @@ function ActiveCollabEventChip({ event }: { event: ActiveCollabToolEvent }): Rea
         <ActiveCollabIcon className="size-3 shrink-0" />
       )}
       <span className="min-w-0 truncate">{event.label}</span>
-    </span>
+    </>
+  )
+  if (!openable) {
+    return <span className={className}>{body}</span>
+  }
+  const open = (): void => {
+    const store = useAppStore.getState()
+    const taskId = event.taskId!
+    // Input carries the project when the tool required one; the polled caches
+    // cover the rest. Without either, still land on Tasks (chip pattern).
+    const projectId =
+      event.projectId ?? findActiveCollabTaskInCaches(store, taskId)?.projectId ?? null
+    if (projectId !== null) {
+      store.requestActiveCollabTask({ projectId, taskId })
+    }
+    store.openTaskPage()
+  }
+  return (
+    <button
+      type="button"
+      onClick={open}
+      title={translate('auto.components.native-chat.taskChip.unknown', 'Open in Tasks')}
+      className={cn(className, 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
+    >
+      {body}
+    </button>
   )
 }
 

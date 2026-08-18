@@ -7,6 +7,8 @@ export type ActiveCollabToolEvent = {
   kind: 'complete' | 'reopen' | 'comment' | 'update' | 'create' | 'time'
   label: string
   taskId: number | null
+  /** From the tool input when present; lets a chip open the task directly. */
+  projectId: number | null
 }
 
 const EVENT_TOOLS: Record<string, ActiveCollabToolEvent['kind']> = {
@@ -19,12 +21,12 @@ const EVENT_TOOLS: Record<string, ActiveCollabToolEvent['kind']> = {
   log_time: 'time'
 }
 
-function readTaskId(input: unknown): number | null {
+function readId(input: unknown, snake: string, camel: string): number | null {
   if (!input || typeof input !== 'object') {
     return null
   }
   const record = input as Record<string, unknown>
-  const id = record.task_id ?? record.taskId
+  const id = record[snake] ?? record[camel]
   return typeof id === 'number' && Number.isFinite(id) ? id : null
 }
 
@@ -52,22 +54,28 @@ export function activeCollabToolEvent(
   if (!kind) {
     return null
   }
-  const taskId = readTaskId(input)
+  const taskId = readId(input, 'task_id', 'taskId')
+  const projectId = readId(input, 'project_id', 'projectId')
   const task = taskId !== null ? `task #${taskId}` : 'a task'
   switch (kind) {
     case 'complete':
-      return { kind, taskId, label: `Completed ${task}` }
+      return { kind, taskId, projectId, label: `Completed ${task}` }
     case 'reopen':
-      return { kind, taskId, label: `Reopened ${task}` }
+      return { kind, taskId, projectId, label: `Reopened ${task}` }
     case 'comment':
-      return { kind, taskId, label: `Commented on ${task}` }
+      return { kind, taskId, projectId, label: `Commented on ${task}` }
     case 'create':
-      return { kind, taskId, label: 'Created a task' }
+      return { kind, taskId, projectId, label: 'Created a task' }
     case 'time':
-      return { kind, taskId, label: `Logged time on ${task}` }
+      return { kind, taskId, projectId, label: `Logged time on ${task}` }
     case 'update': {
       const labels = match[1] === 'set_task_labels' ? readLabels(input) : null
-      return { kind, taskId, label: labels ? `Labeled ${task} ${labels}` : `Updated ${task}` }
+      return {
+        kind,
+        taskId,
+        projectId,
+        label: labels ? `Labeled ${task} ${labels}` : `Updated ${task}`
+      }
     }
   }
 }
