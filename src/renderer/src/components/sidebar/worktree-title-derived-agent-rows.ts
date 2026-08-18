@@ -1,6 +1,6 @@
 import type { DashboardAgentRow } from '@/components/dashboard/useDashboardData'
 import { formatAgentTypeLabel, isClaudeManagementTitle } from '@/lib/agent-status'
-import { containsBrailleSpinner } from '../../../../shared/agent-title-core'
+import { CLAUDE_IDLE, containsBrailleSpinner } from '../../../../shared/agent-title-core'
 import { classifyTitleActivity, resolveTitleActivityLabel } from '@/lib/pane-agent-evidence'
 import { tabHasLivePty } from '@/lib/tab-has-live-pty'
 import type {
@@ -43,6 +43,23 @@ const TITLE_AGENT_LABEL_TO_TYPE: Record<string, AgentType> = {
 }
 
 const CLAUDE_AGENT_TOKEN_RE = /(?<![\w./\\-])claude(?![\w./\\-])/i
+
+/**
+ * Claude identity for a resumed session's "✳ <topic>" title. `claude --resume`
+ * and `--continue` title the prior conversation topic without naming Claude,
+ * so the token gate above hid the row until the first prompt's hook event.
+ * Owner-gated: a non-Claude launched tab keeps its own identity (Codex task
+ * titles can carry the same glyph).
+ */
+function claudeIdleTopicTitleAgent(
+  title: string,
+  ownerAgentType?: AgentType | null
+): AgentType | null {
+  if (ownerAgentType && ownerAgentType !== 'claude') {
+    return null
+  }
+  return title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE ? 'claude' : null
+}
 
 export function buildTitleDerivedAgentRows(args: {
   tabs: TerminalTab[]
@@ -152,7 +169,9 @@ function buildTitleDerivedAgentRow(args: {
   // title alone, so a non-agent title must never become a row. Residual: a split
   // pane whose own title carries a braille glyph is still attributed to launchAgent.
   const agentType =
-    titleAgentType ?? (containsBrailleSpinner(title) ? (args.tab.launchAgent ?? null) : null)
+    titleAgentType ??
+    claudeIdleTopicTitleAgent(title, args.tab.launchAgent) ??
+    (containsBrailleSpinner(title) ? (args.tab.launchAgent ?? null) : null)
   if (!agentType) {
     return null
   }
@@ -210,7 +229,8 @@ export function resolveAgentTypeFromTerminalTitle(
   const label = resolveTitleActivityLabel(normalizedTitle)
   return label
     ? (resolveCompatibleAgentTypeForOwner(
-        resolveTitleDerivedAgentType(normalizedTitle, label),
+        resolveTitleDerivedAgentType(normalizedTitle, label) ??
+          claudeIdleTopicTitleAgent(normalizedTitle, ownerAgentType),
         ownerAgentType
       ) ?? null)
     : null

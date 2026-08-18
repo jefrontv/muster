@@ -255,6 +255,62 @@ describe('buildTitleDerivedAgentRows', () => {
     expect(rows).toHaveLength(0)
   })
 
+  it('adds a Claude row for a resumed session topic title on a manual terminal', () => {
+    // `claude --resume <id>` / `--continue` title the prior conversation topic
+    // without naming Claude; the row must still appear before the first prompt.
+    for (const title of ['✳ Fix pnpm install node_modules ENOTDIR error', '✳']) {
+      const rows = buildWorktreeAgentRows({
+        tabs: [makeTab('tab-1')],
+        entries: [],
+        retained: [],
+        runtimePaneTitlesByTabId: {
+          'tab-1': { 1: title }
+        },
+        ptyIdsByTabId: { 'tab-1': ['pty-resumed'] },
+        terminalLayoutsByTabId: { 'tab-1': makeSingleLayout(LEAF_ID_1) },
+        now: 2000
+      })
+
+      expect(rows.map((row) => [row.agentType, row.state, row.entry.lastAssistantMessage])).toEqual(
+        [['claude', 'idle', 'Idle']]
+      )
+    }
+  })
+
+  it('adds a Claude row for a resumed session topic title on a Claude-launched tab', () => {
+    const launchAgent: TuiAgent = 'claude'
+    const rows = buildWorktreeAgentRows({
+      tabs: [makeTab('tab-1', { launchAgent })],
+      entries: [],
+      retained: [],
+      runtimePaneTitlesByTabId: {
+        'tab-1': { 1: '✳ refactor split-pane status' }
+      },
+      ptyIdsByTabId: { 'tab-1': ['pty-claude-resumed'] },
+      terminalLayoutsByTabId: { 'tab-1': makeSingleLayout(LEAF_ID_1) },
+      now: 2000
+    })
+
+    expect(rows.map((row) => [row.agentType, row.state])).toEqual([['claude', 'idle']])
+  })
+
+  it('adds a Claude row for the interactive resume picker title', () => {
+    // `claude --resume` (no id) and the picker title the CLI name directly.
+    const rows = buildWorktreeAgentRows({
+      tabs: [makeTab('tab-1')],
+      entries: [],
+      retained: [],
+      runtimePaneTitlesByTabId: {
+        'tab-1': { 1: 'claude · resume' }
+      },
+      ptyIdsByTabId: { 'tab-1': ['pty-picker'] },
+      terminalLayoutsByTabId: { 'tab-1': makeSingleLayout(LEAF_ID_1) },
+      now: 2000
+    })
+
+    expect(rows.map((row) => [row.agentType, row.state])).toEqual([['claude', 'idle']])
+  })
+
   it('does not turn generic Codex-launched task titles into Claude Code rows', () => {
     const launchAgent: TuiAgent = 'codex'
     const rows = buildWorktreeAgentRows({
