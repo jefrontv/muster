@@ -90,6 +90,7 @@ export function NativeChatStreamAskCard({
   const hookToolName = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.toolName ?? null)
   const [latched, setLatched] = useState<LatchedAsk | null>(null)
   const [dismissedKey, setDismissedKey] = useState<string | null>(null)
+  const [dismissedRequestId, setDismissedRequestId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -98,15 +99,20 @@ export function NativeChatStreamAskCard({
       setDismissedKey(null)
       return
     }
+    // A live request has its own identity. Answering is delivered as a denial,
+    // so the model often re-asks the same question — content-keying that away
+    // would hide a card the CLI is blocked on, stranding the turn on "Working".
+    if (incoming.requestId) {
+      if (incoming.requestId !== dismissedRequestId) {
+        setLatched(incoming)
+      }
+      return
+    }
     if (askDismissKey(incoming.prompt) === dismissedKey) {
       return
     }
-    if (incoming.requestId) {
-      setLatched(incoming)
-      return
-    }
     setLatched((current) => current ?? incoming)
-  }, [dismissedKey, hookPrompt, hookToolName, liveRequest])
+  }, [dismissedKey, dismissedRequestId, hookPrompt, hookToolName, liveRequest])
 
   useEffect(() => {
     onActiveChange?.(latched !== null)
@@ -119,6 +125,7 @@ export function NativeChatStreamAskCard({
       if (latched) {
         setDismissedKey(askDismissKey(latched.prompt))
       }
+      setDismissedRequestId(requestId ?? null)
       setLatched(null)
       setSubmitting(false)
       clearLingeringAskWait(paneKey)

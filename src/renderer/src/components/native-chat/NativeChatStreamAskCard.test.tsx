@@ -145,6 +145,30 @@ describe('NativeChatStreamAskCard dismiss latch', () => {
     expect(screen.getByText('Anything else?')).toBeInTheDocument()
   })
 
+  it('shows the same question again when the CLI re-asks it under a new request id', () => {
+    const view = render(
+      <NativeChatStreamAskCard
+        paneKey="chat:thread-1"
+        liveRequest={liveRequest}
+        onRespond={onRespond}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Espresso/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    expect(screen.queryByText('What coffee should I make you?')).not.toBeInTheDocument()
+
+    // The answer is delivered as a denial, so the model often retries the very
+    // same question. A new request id is a fresh blocking ask, not the linger.
+    view.rerender(
+      <NativeChatStreamAskCard
+        paneKey="chat:thread-1"
+        liveRequest={{ requestId: 'req-2', toolName: 'AskUserQuestion', input: COFFEE_INPUT }}
+        onRespond={onRespond}
+      />
+    )
+    expect(screen.getByText('What coffee should I make you?')).toBeInTheDocument()
+  })
+
   it('renders from the hook when the live request has already cancelled', () => {
     renderCard(null)
     expect(screen.getByText('What coffee should I make you?')).toBeInTheDocument()
