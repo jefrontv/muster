@@ -25,6 +25,38 @@ describe('native chat working suppression', () => {
     ).toBe(true)
   })
 
+  it('shows working while an optimistic send awaits its first agent signal', () => {
+    expect(
+      shouldShowNativeChatWorking({
+        isConversation: true,
+        working: false,
+        awaitingSend: true,
+        interrupted: false
+      })
+    ).toBe(true)
+  })
+
+  it('keeps an awaiting send hidden after an interrupt', () => {
+    expect(
+      shouldShowNativeChatWorking({
+        isConversation: true,
+        working: false,
+        awaitingSend: true,
+        interrupted: true
+      })
+    ).toBe(false)
+  })
+
+  it('stays idle with no work and no pending send', () => {
+    expect(
+      shouldShowNativeChatWorking({
+        isConversation: true,
+        working: false,
+        interrupted: false
+      })
+    ).toBe(false)
+  })
+
   it('clears suppression after reconciled working clears', () => {
     expect(shouldClearNativeChatWorkingSuppression({ working: true })).toBe(false)
     expect(shouldClearNativeChatWorkingSuppression({ working: false })).toBe(true)

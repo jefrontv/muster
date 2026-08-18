@@ -350,9 +350,14 @@ function NativeChatResolvedView({
       previousWorkingEpochRef.current = null
     }
   }, [liveWorking, workingInterrupted, hookWorkingEpoch])
+  // An un-pruned optimistic echo (composer send or hero launch prompt) means a
+  // turn is owed but no hook/stream signal has arrived yet.
+  const awaitingSend =
+    pending.length > 0 || (launchPromptVisible && paneLaunchPrompt?.failed !== true)
   const isWorking = shouldShowNativeChatWorking({
     isConversation,
     working: liveWorking,
+    awaitingSend,
     interrupted: workingInterrupted
   })
 
@@ -404,9 +409,15 @@ function NativeChatResolvedView({
             onLinkClick={nativeChatFileLinkClick}
             allowFileUriLinks={fileLinkContext !== null}
             failedDeliveryMessageIds={failedLaunchPromptMessageIds}
-            // Working-timer start: the hook's state epoch is when this
-            // working stretch began.
-            workingSince={liveWorking ? hookWorkingEpoch : null}
+            // Working-timer start: the hook's state epoch, or during the
+            // pre-signal optimistic phase, the moment the send left.
+            workingSince={
+              liveWorking
+                ? hookWorkingEpoch
+                : awaitingSend
+                  ? (pending[0]?.sentAt ?? paneLaunchPrompt?.createdAt ?? null)
+                  : null
+            }
           />
         )}
       </div>

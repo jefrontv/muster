@@ -1,9 +1,12 @@
 export function shouldShowNativeChatWorking(args: {
   isConversation: boolean
   working: boolean
+  /** A local optimistic send with no agent signal yet — covers CLI first-turn
+   *  spinup, which otherwise reads as dead air until hooks flip to working. */
+  awaitingSend?: boolean
   interrupted: boolean
 }): boolean {
-  return args.isConversation && args.working && !args.interrupted
+  return args.isConversation && (args.working || args.awaitingSend === true) && !args.interrupted
 }
 
 /**
