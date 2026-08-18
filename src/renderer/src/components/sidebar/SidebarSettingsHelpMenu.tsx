@@ -9,7 +9,8 @@ import {
   RefreshCw,
   RotateCw,
   School,
-  Settings
+  Settings,
+  Sparkles
 } from 'lucide-react'
 import { toast } from 'sonner'
 import logo from '../../../../../resources/logo.svg'
@@ -87,8 +88,8 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
   }
 
   const revealAdminOptions = (altKey: boolean): void => {
-    // Why: onboarding replay and restart stay off the default Help menu; holding
-    // Option/Alt before opening is an intentional power-user affordance.
+    // Why: restart stays off the default Help menu; holding Option/Alt before
+    // opening is an intentional power-user affordance.
     setShowAdminOptions(altKey)
   }
 
@@ -146,6 +147,11 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
 
   const openMilestones = (): void => {
     openModal('setup-guide', { telemetrySource: 'help_menu' })
+  }
+
+  const openFeatureWall = (): void => {
+    // Same surface the OS Help > Explore Muster menu item opens.
+    openModal('feature-wall', { source: 'help_menu' })
   }
 
   return (
@@ -240,19 +246,24 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
                 />
               </DropdownMenuItem>
             ) : null}
-            {showAdminOptions ? (
-              <DropdownMenuItem
-                className="whitespace-nowrap"
-                onClick={handleShowOnboarding}
-                onSelect={handleShowOnboarding}
-              >
-                <School className="size-3.5" />
-                {translate(
-                  'auto.components.sidebar.SidebarSettingsHelpMenu.b7e4d2a19c',
-                  'Onboarding'
-                )}
-              </DropdownMenuItem>
-            ) : null}
+            <DropdownMenuItem onSelect={openFeatureWall}>
+              <Sparkles className="size-3.5" />
+              {translate(
+                'auto.components.sidebar.SidebarSettingsHelpMenu.exploreMuster',
+                'Explore Muster'
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="whitespace-nowrap"
+              onClick={handleShowOnboarding}
+              onSelect={handleShowOnboarding}
+            >
+              <School className="size-3.5" />
+              {translate(
+                'auto.components.sidebar.SidebarSettingsHelpMenu.replayOnboarding',
+                'Replay Onboarding'
+              )}
+            </DropdownMenuItem>
             <ExternalMenuItem
               label={translate(
                 'auto.components.sidebar.SidebarSettingsHelpMenu.5687ab246a',

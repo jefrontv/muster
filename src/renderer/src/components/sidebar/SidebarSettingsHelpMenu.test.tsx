@@ -222,6 +222,29 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(html).not.toContain('Setup guide')
   })
 
+  it('renders Explore Muster and opens the feature wall like the OS menu', async () => {
+    const container = await renderMenu()
+    const exploreButton = findMenuItem(container, 'Explore Muster')
+
+    await act(async () => {
+      exploreButton.click()
+    })
+
+    expect(mocks.openModal).toHaveBeenCalledWith('feature-wall', { source: 'help_menu' })
+  })
+
+  it('renders Replay Onboarding without holding Option', async () => {
+    const { showOnboardingFromRenderer } = await import('../onboarding/show-onboarding-event')
+    const container = await renderMenu()
+    const replayButton = findMenuItem(container, 'Replay Onboarding')
+
+    await act(async () => {
+      replayButton.click()
+    })
+
+    expect(showOnboardingFromRenderer).toHaveBeenCalled()
+  })
+
   it('renders GitHub link', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
     expect(html).toContain('GitHub')

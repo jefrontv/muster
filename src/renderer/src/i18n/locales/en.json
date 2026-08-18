@@ -4134,9 +4134,10 @@
           "4e8f5710d3": "Couldn't restart Muster.",
           "5161eef55d": "Restarting Muster…",
           "d396773ef0": "checking",
-          "b7e4d2a19c": "Onboarding",
           "c4f8e1b72a": "X",
-          "setupGuide": "Setup guide"
+          "setupGuide": "Setup guide",
+          "exploreMuster": "Explore Muster",
+          "replayOnboarding": "Replay Onboarding"
         },
         "SidebarToolbar": {
           "87d0064026": "Workspace board moved to the bottom bar",
