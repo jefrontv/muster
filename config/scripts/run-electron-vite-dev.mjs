@@ -132,6 +132,46 @@ function setDevBundleUrlSchemes(plistPath, schemes) {
   ])
 }
 
+const LSREGISTER_PATH =
+  '/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister'
+
+/**
+ * Drop dev wrappers this worktree built for an earlier title/Electron version.
+ *
+ * Why it matters beyond disk: each wrapper declares the `muster` scheme, and
+ * LaunchServices keeps every registration it has ever seen. A renamed branch or
+ * an Electron bump therefore leaves a bundle that can win the handler election,
+ * so `muster://` bind links prompt to open a stale dev build instead of the
+ * installed app. Unregistering before deleting keeps the database in step.
+ */
+function pruneStaleDevElectronApps(devRoot, keepHash) {
+  let entries
+  try {
+    entries = readdirSync(devRoot, { withFileTypes: true })
+  } catch {
+    return
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name === keepHash) {
+      continue
+    }
+    const stalePath = path.join(devRoot, entry.name)
+    for (const bundle of readdirSync(stalePath, { withFileTypes: true })) {
+      if (bundle.isDirectory() && bundle.name.endsWith('.app')) {
+        try {
+          execFileSync(LSREGISTER_PATH, ['-u', path.join(stalePath, bundle.name)], {
+            stdio: 'ignore'
+          })
+        } catch {
+          // lsregister is best effort: a missing binary or an already-dropped
+          // record must not stop a dev run.
+        }
+      }
+    }
+    rmSync(stalePath, { recursive: true, force: true })
+  }
+}
+
 function sanitizeMacAppBundleName(value) {
   return (
     Array.from(value, (char) => {
@@ -173,7 +213,9 @@ function prepareMacDevElectronApp() {
     )
     .digest('hex')
     .slice(0, 12)
-  const distDir = path.join(repoRoot, 'out', 'electron-dev', hash)
+  const devRoot = path.join(repoRoot, 'out', 'electron-dev')
+  const distDir = path.join(devRoot, hash)
+  pruneStaleDevElectronApps(devRoot, hash)
   // Why: macOS Dock hover uses the bundle's filesystem display name for
   // electron-vite's direct binary launch path, even when Info.plist is patched.
   const appBundleName = `${sanitizeMacAppBundleName(title)}.app`
