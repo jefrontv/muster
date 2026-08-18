@@ -98,9 +98,10 @@ function turnDurationMs(turn: NativeChatTurn): number | null {
 
 /**
  * Derive the fold for each settled turn, keyed by turn id. A fold exists when
- * the turn holds more than just its user message + final assistant reply (or
- * ended via interruption — the fold row then carries the stop). User-role rows
- * (queued echoes glued onto a settled turn) never hide.
+ * the turn holds machinery beyond its user message and prose (or ended via
+ * interruption — the fold row then carries the stop). User-role rows (queued
+ * echoes glued onto a settled turn) and interim assistant prose never hide —
+ * only reasoning, tool runs, and non-final system rows collapse.
  */
 export function deriveNativeChatTurnFolds(input: {
   messages: readonly NativeChatMessage[]
@@ -141,6 +142,13 @@ export function deriveNativeChatTurnFolds(input: {
         continue
       }
       if (message.role === 'user') {
+        continue
+      }
+      // Interim assistant prose is part of the conversation's flow ("Found
+      // GeistMono, not GhostMono — installing") — folding it read as the agent's
+      // answers vanishing. Only machinery folds: reasoning, tool runs, and
+      // assistant rows that carry no text.
+      if (message.role === 'assistant' && nativeChatMessageText(message).length > 0) {
         continue
       }
       hidden.add(message.id)

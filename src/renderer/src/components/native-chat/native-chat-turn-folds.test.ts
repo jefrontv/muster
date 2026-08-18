@@ -79,16 +79,36 @@ describe('deriveNativeChatTurnFolds', () => {
     msg('a2', 'assistant', 'final', { timestamp: 10_000 })
   ]
 
-  it('folds a settled turn behind its intermediate rows', () => {
+  it('folds a settled turn behind its machinery, keeping interim prose visible', () => {
     const folds = deriveNativeChatTurnFolds({
       messages: [...foldable, msg('u2', 'user', 'two', { timestamp: 20_000 })],
       isWorking: true
     })
     const fold = folds.get('u1')
     expect(fold).toBeDefined()
-    expect([...fold!.hiddenMessageIds].sort()).toEqual(['a1', 'r1'])
+    // 'a1' carries prose ("progress") — it stays in the flow; only the
+    // reasoning row folds. Hiding assistant text read as answers vanishing.
+    expect([...fold!.hiddenMessageIds].sort()).toEqual(['r1'])
     expect(fold!.durationMs).toBe(8_000)
     expect(fold!.interrupted).toBe(false)
+  })
+
+  it('folds text-less assistant rows (pure tool calls) with the machinery', () => {
+    const folds = deriveNativeChatTurnFolds({
+      messages: [
+        msg('u1', 'user', 'one', { timestamp: 1_000 }),
+        {
+          id: 't1',
+          role: 'assistant' as const,
+          blocks: [{ type: 'tool-call' as const, name: 'Bash', input: {} }],
+          timestamp: 2_000,
+          source: 'transcript' as const
+        },
+        msg('a2', 'assistant', 'final', { timestamp: 3_000 })
+      ],
+      isWorking: false
+    })
+    expect([...(folds.get('u1')?.hiddenMessageIds ?? [])]).toEqual(['t1'])
   })
 
   it('never folds the running turn', () => {
