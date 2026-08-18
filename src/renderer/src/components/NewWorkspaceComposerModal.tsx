@@ -22,8 +22,15 @@ import { isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
 import type { TuiAgent } from '../../../shared/types'
 import type { NewWorkspaceComposerModalPayload } from '@/store/slices/modal-payloads'
 import { translate } from '@/i18n/i18n'
+import { toast } from 'sonner'
 import { getWorkspaceComposerInitialFocusTarget } from '@/lib/workspace-composer-initial-focus'
 import { getFolderWorkspacePrimaryActionLabel } from '@/components/sidebar/folder-workspace-composer-helpers'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { OpenExistingWorkspaceSection } from '@/components/new-workspace/OpenExistingWorkspaceSection'
+import {
+  describeExistingWorkspaceCheckout,
+  openExistingWorkspaceCheckout
+} from '@/components/new-workspace/open-existing-workspace'
 
 // Why: match App-level AddRepoDialog loading — the add flow is off the hot
 // path for the composer, so keep its clone/SSH machinery out of the entry render.
@@ -215,6 +222,41 @@ function QuickTabBody({
       ? translate('auto.components.NewWorkspaceComposerModal.createWorktree', 'Create worktree')
       : translate('auto.components.NewWorkspaceComposerModal.createWorkspace', 'Create workspace')
 
+  // Open vs New worktree: "Create workspace" always creating a worktree read
+  // as opening a project to many users, so opening the existing checkout is
+  // the default whenever the selected project has one. Folder-group targets
+  // keep the single folder-create body (open-vs-worktree doesn't apply).
+  const [mode, setMode] = useState<'open' | 'worktree'>(() => {
+    if (modalData.mode) {
+      return modalData.mode
+    }
+    const initialRepoId = modalData.initialRepoId
+    return initialRepoId && describeExistingWorkspaceCheckout(initialRepoId)
+      ? 'open'
+      : modalData.initialProjectGroupId || modalData.prefilledName || modalData.linkedWorkItem
+        ? 'worktree'
+        : describeExistingWorkspaceCheckout(cardProps.repoId)
+          ? 'open'
+          : 'worktree'
+  })
+  const openModeActive = mode === 'open' && !isFolderWorkspaceTarget
+  const handleOpenExisting = useCallback((): void => {
+    const outcome = openExistingWorkspaceCheckout({
+      repoId: cardProps.repoId,
+      agent: quickAgent
+    })
+    if (outcome === 'no-checkout') {
+      toast.error(
+        translate(
+          'auto.components.NewWorkspaceComposerModal.openNoCheckout',
+          'This project has no checkout to open yet — create a worktree instead.'
+        )
+      )
+      return
+    }
+    onClose()
+  }, [cardProps.repoId, onClose, quickAgent])
+
   // Cmd/Ctrl+Enter submits, Esc first blurs the focused input (like the full page).
   const nestedDialogOpen = agentSettingsOpen || addProjectOpen
   useEffect(() => {
@@ -254,6 +296,11 @@ function QuickTabBody({
       if (!isScreenSubmitShortcut(event)) {
         return
       }
+      if (openModeActive) {
+        event.preventDefault()
+        handleOpenExisting()
+        return
+      }
       if (!shouldAllowComposerEnterSubmitTarget(target, composerRef.current)) {
         return
       }
@@ -265,7 +312,16 @@ function QuickTabBody({
     }
     window.addEventListener('keydown', onKeyDown, { capture: true })
     return () => window.removeEventListener('keydown', onKeyDown, { capture: true })
-  }, [active, composerRef, createDisabled, handleCreate, nestedDialogOpen, onClose])
+  }, [
+    active,
+    composerRef,
+    createDisabled,
+    handleCreate,
+    handleOpenExisting,
+    nestedDialogOpen,
+    onClose,
+    openModeActive
+  ])
 
   return (
     <>
@@ -276,7 +332,9 @@ function QuickTabBody({
                 'auto.components.sidebar.FolderWorkspaceComposerDialog.title',
                 'Create Folder Workspace'
               )
-            : primaryActionLabel}
+            : openModeActive
+              ? translate('auto.components.NewWorkspaceComposerModal.openTitle', 'Open workspace')
+              : primaryActionLabel}
         </DialogTitle>
         <DialogDescription className="sr-only">
           {translate(
@@ -285,24 +343,51 @@ function QuickTabBody({
           )}
         </DialogDescription>
       </DialogHeader>
-      <NewWorkspaceComposerCard
-        contextualTourSource={modalData.contextualTourSource}
-        // Why: the scroll container clips children (overflow-y-auto forces overflow-x to auto),
-        // while Orca's standard field focus ring paints 3px outside the control and the ghost
-        // "Advanced" disclosure pulls its padded hover highlight ~8px left to align its label with
-        // the field labels. Inset px-2 so both stay fully visible instead of clipped at the edge.
-        containerClassName="min-h-0 flex-1 overflow-y-auto px-2 scrollbar-sleek"
-        composerRef={composerRef}
-        onComposerNodeChange={onComposerNodeChange}
-        nameInputRef={nameInputRef}
-        quickAgent={quickAgent}
-        onQuickAgentChange={handleQuickAgentChange}
-        {...cardProps}
-        primaryActionLabel={primaryActionLabel}
-        onOpenAgentSettings={() => setAgentSettingsOpen(true)}
-        onCreate={() => void handleCreate()}
-        onAddProjectOverride={handleOpenAddProject}
-      />
+      {!isFolderWorkspaceTarget ? (
+        <Tabs value={mode} onValueChange={(value) => setMode(value as 'open' | 'worktree')}>
+          <TabsList variant="line" className="w-full justify-start">
+            <TabsTrigger value="open">
+              {translate('auto.components.NewWorkspaceComposerModal.openTab', 'Open')}
+            </TabsTrigger>
+            <TabsTrigger value="worktree">
+              {translate('auto.components.NewWorkspaceComposerModal.worktreeTab', 'New worktree')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      ) : null}
+      {openModeActive ? (
+        <OpenExistingWorkspaceSection
+          projectOptions={cardProps.projectOptions}
+          selectedProjectId={cardProps.selectedProjectId}
+          selectedRepoId={cardProps.repoId || null}
+          onProjectChange={cardProps.onProjectChange}
+          onAddProject={handleOpenAddProject}
+          quickAgent={quickAgent}
+          onQuickAgentChange={handleQuickAgentChange}
+          detectedAgentIds={cardProps.detectedAgentIds}
+          onOpenAgentSettings={() => setAgentSettingsOpen(true)}
+          onOpen={handleOpenExisting}
+        />
+      ) : (
+        <NewWorkspaceComposerCard
+          contextualTourSource={modalData.contextualTourSource}
+          // Why: the scroll container clips children (overflow-y-auto forces overflow-x to auto),
+          // while Orca's standard field focus ring paints 3px outside the control and the ghost
+          // "Advanced" disclosure pulls its padded hover highlight ~8px left to align its label with
+          // the field labels. Inset px-2 so both stay fully visible instead of clipped at the edge.
+          containerClassName="min-h-0 flex-1 overflow-y-auto px-2 scrollbar-sleek"
+          composerRef={composerRef}
+          onComposerNodeChange={onComposerNodeChange}
+          nameInputRef={nameInputRef}
+          quickAgent={quickAgent}
+          onQuickAgentChange={handleQuickAgentChange}
+          {...cardProps}
+          primaryActionLabel={primaryActionLabel}
+          onOpenAgentSettings={() => setAgentSettingsOpen(true)}
+          onCreate={() => void handleCreate()}
+          onAddProjectOverride={handleOpenAddProject}
+        />
+      )}
       <AgentSettingsDialog open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
       {addProjectMounted ? (
         <Suspense fallback={null}>

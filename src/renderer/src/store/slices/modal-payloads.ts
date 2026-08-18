@@ -81,6 +81,9 @@ export type FeatureTipsModalPayload = {
 }
 
 export type NewWorkspaceComposerModalPayload = {
+  /** 'open' shows the open-existing-checkout tab first; 'worktree' the create
+   *  form. Omitted = smart default (open when the project has a checkout). */
+  mode?: 'open' | 'worktree'
   prefilledName?: string
   initialRepoId?: string
   initialEphemeralVmRecipeId?: string
