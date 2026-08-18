@@ -164,7 +164,7 @@ export function SidebarFeedbackDialog({
           <DialogDescription className="text-xs">
             {translate(
               'auto.components.sidebar.SidebarFeedbackDialog.a828fa4aee',
-              "Share what's working, what's broken, or what Muster should do next."
+              "Share what's working, what's broken, or what Muster should do next. This files an issue on the Muster repo from your GitHub account."
             )}
           </DialogDescription>
         </DialogHeader>
@@ -228,7 +228,7 @@ export function SidebarFeedbackDialog({
                 />
                 {translate(
                   'auto.components.sidebar.SidebarFeedbackDialog.5b120b9634',
-                  'Submit anonymously'
+                  'Leave my email out'
                 )}
               </label>
             </div>
@@ -243,7 +243,7 @@ export function SidebarFeedbackDialog({
             <div className="text-xs text-muted-foreground">
               {translate(
                 'auto.components.sidebar.SidebarFeedbackDialog.8de03e23c5',
-                'Submit with your typed feedback only, or connect `gh` to include GitHub identity.'
+                'Sign in with `gh` to send feedback — it is filed as an issue from your GitHub account.'
               )}
             </div>
           )}

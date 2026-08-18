@@ -1,18 +1,16 @@
 import os from 'node:os'
-import { app, ipcMain, net } from 'electron'
+import { app, ipcMain } from 'electron'
+import {
+  createFeedbackIssue,
+  feedbackIssueTitle,
+  type FeedbackIssueKind
+} from '../github/feedback-issue'
 
-// Why: the production Mac build loads the renderer from a file:// origin, so a
-// cross-origin POST from fetch() triggers a CORS preflight that the feedback
-// endpoint rejects. Electron's net module runs in the main process and is not
-// subject to CORS, so we proxy the submission through IPC. This mirrors the
-// same pattern used by updater-changelog.ts and updater-nudge.ts.
-const FEEDBACK_API_URL = 'https://www.onorca.dev/v1/feedback'
-const FEEDBACK_REQUEST_TIMEOUT_MS = 10_000
-const FEEDBACK_ATTACHMENT_REQUEST_TIMEOUT_MS = 60_000
-const DIAGNOSTIC_BUNDLE_CONTENT_TYPE = 'application/x-ndjson'
-// Why: corporate filters can reject multipart with 403 while allowing the
-// small JSON report, so content-shaped failures should shed the attachment.
-const DIAGNOSTIC_BUNDLE_JSON_RETRY_STATUSES = new Set([400, 403, 408, 413, 415, 422])
+// Feedback and crash reports are filed as issues on the Muster repo through the
+// user's own `gh` auth. They used to POST to upstream Orca's endpoint, which
+// sent this fork's reports — GitHub logins, emails, diagnostic bundles — to a
+// third party. Submission still runs in the main process: it shells out to gh,
+// which the renderer cannot do.
 
 export type FeedbackSubmissionType = 'feedback' | 'crash'
 
@@ -48,7 +46,7 @@ export type FeedbackRequestFailure = {
 }
 
 export type FeedbackSubmitResult =
-  | { ok: true; diagnosticBundleFailure?: FeedbackRequestFailure }
+  | { ok: true; issueUrl?: string; diagnosticBundleFailure?: FeedbackRequestFailure }
   | ({ ok: false } & FeedbackRequestFailure & {
         diagnosticBundleFailure?: FeedbackRequestFailure
       })
@@ -85,199 +83,68 @@ function buildSubmitBody(args: InternalFeedbackSubmitArgs): FeedbackSubmitBody {
   }
 }
 
-async function postFeedback(
-  url: string,
-  body: FeedbackSubmitBody,
-  timeoutMs = FEEDBACK_REQUEST_TIMEOUT_MS
-): Promise<Response> {
-  const controller = new AbortController()
-  // Why: a silent feedback endpoint should not leave IPC or crash-report
-  // submission flows pending forever.
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const init: RequestInit = {
-      method: 'POST',
-      ...feedbackRequestBodyInit(body),
-      signal: controller.signal
-    }
-    return await net.fetch(url, init)
-  } catch (error) {
-    // Why: Electron and Node use different AbortError messages. Normalize our
-    // client deadline so support logs explain which request budget expired.
-    if (controller.signal.aborted) {
-      throw new Error(`request timed out after ${timeoutMs / 1000} seconds`)
-    }
-    throw error
-  } finally {
-    clearTimeout(timeout)
-  }
-}
-
-function feedbackRequestBodyInit(body: FeedbackSubmitBody): Pick<RequestInit, 'body' | 'headers'> {
-  if (!body.diagnosticBundle) {
-    return {
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }
-  }
-
-  const formData = new FormData()
-  appendFeedbackFormField(formData, 'feedback', body.feedback)
-  appendFeedbackFormField(formData, 'submissionType', body.submissionType)
-  appendFeedbackFormField(formData, 'githubLogin', body.githubLogin)
-  appendFeedbackFormField(formData, 'githubEmail', body.githubEmail)
-  appendFeedbackFormField(formData, 'appVersion', body.appVersion)
-  appendFeedbackFormField(formData, 'platform', body.platform)
-  appendFeedbackFormField(formData, 'osRelease', body.osRelease)
-  appendFeedbackFormField(formData, 'arch', body.arch)
-  appendFeedbackFormField(
-    formData,
-    'diagnosticBundleSubmissionId',
-    body.diagnosticBundle.bundleSubmissionId
-  )
-  appendFeedbackFormField(formData, 'diagnosticBundleBytes', String(body.diagnosticBundle.bytes))
-  appendFeedbackFormField(
-    formData,
-    'diagnosticBundleSpanCount',
-    String(body.diagnosticBundle.spanCount)
-  )
-  formData.append(
-    'diagnosticBundleFile',
-    new Blob([body.diagnosticBundle.content], { type: DIAGNOSTIC_BUNDLE_CONTENT_TYPE }),
-    `orca-diagnostics-${body.diagnosticBundle.bundleSubmissionId}.ndjson`
-  )
-
-  // Why: multipart avoids JSON-escaping a near-cap NDJSON bundle over the
-  // backend request limit while still submitting one feedback request.
-  return { body: formData }
-}
-
-function appendFeedbackFormField(formData: FormData, key: string, value: string | null): void {
-  if (value !== null) {
-    formData.append(key, value)
-  }
-}
-
 function messageFromError(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-function responseFailure(response: Response): FeedbackRequestFailure {
-  return { status: response.status, error: `status ${response.status}` }
-}
-
-function errorFailure(error: unknown): FeedbackRequestFailure {
-  return { status: null, error: messageFromError(error) }
-}
-
-async function retryFeedbackOnPrimary(
-  body: FeedbackSubmitBody,
-  primaryError?: unknown
-): Promise<FeedbackSubmitResult> {
-  try {
-    const retry = await postFeedback(FEEDBACK_API_URL, body)
-    if (retry.ok) {
-      return { ok: true }
-    }
-    const retryMessage = `status ${retry.status}`
-    if (primaryError === undefined) {
-      return { ok: false, status: retry.status, error: retryMessage }
-    }
-    // Why: keep the first failure visible so support can see 5xx → retry outcome,
-    // not only the last error in a same-host retry chain.
-    return {
-      ok: false,
-      status: retry.status,
-      error: `${messageFromError(primaryError)}; retry: ${retryMessage}`
-    }
-  } catch (retryError) {
-    const message = messageFromError(retryError)
-    if (primaryError === undefined) {
-      return { ok: false, status: null, error: message }
-    }
-    return {
-      ok: false,
-      status: null,
-      error: `${messageFromError(primaryError)}; retry: ${message}`
-    }
+/** The metadata block every report carries, so a triager sees the build first. */
+function buildEnvironmentSection(body: FeedbackSubmitBody): string {
+  const rows = [
+    `- App version: ${body.appVersion}`,
+    `- Platform: ${body.platform} ${body.osRelease} (${body.arch})`
+  ]
+  if (body.githubLogin) {
+    rows.push(`- Reported by: @${body.githubLogin}${body.githubEmail ? ` (${body.githubEmail})` : ''}`)
   }
+  return rows.join('\n')
 }
 
-function shouldRetryWithoutDiagnosticBundle(status: number): boolean {
-  return DIAGNOSTIC_BUNDLE_JSON_RETRY_STATUSES.has(status) || status === 404 || status >= 500
+/**
+ * Why the bundle is inlined rather than attached: `gh api` posts JSON, and an
+ * issue has no attachment field. A collapsed block keeps a multi-thousand-line
+ * NDJSON dump out of the way while leaving it searchable in the issue.
+ */
+function buildDiagnosticSection(bundle: FeedbackDiagnosticBundleAttachment): string {
+  return [
+    '',
+    '<details>',
+    `<summary>Diagnostic bundle — ${bundle.spanCount} spans, ${bundle.bytes} bytes (id ${bundle.bundleSubmissionId})</summary>`,
+    '',
+    '```jsonl',
+    bundle.content,
+    '```',
+    '',
+    '</details>'
+  ].join('\n')
 }
 
-async function submitFeedbackWithoutDiagnosticBundle(
-  body: FeedbackSubmitBody,
-  diagnosticBundleFailure: FeedbackRequestFailure
-): Promise<FeedbackSubmitResult> {
-  try {
-    const response = await postFeedback(FEEDBACK_API_URL, body)
-    if (response.ok) {
-      return { ok: true, diagnosticBundleFailure }
-    }
-    return { ok: false, ...responseFailure(response), diagnosticBundleFailure }
-  } catch (error) {
-    return { ok: false, ...errorFailure(error), diagnosticBundleFailure }
+function buildIssueBody(body: FeedbackSubmitBody): string {
+  const sections = [body.feedback.trim(), '', '---', buildEnvironmentSection(body)]
+  if (body.diagnosticBundle) {
+    sections.push(buildDiagnosticSection(body.diagnosticBundle))
   }
-}
-
-async function submitFeedbackWithDiagnosticBundle(
-  body: FeedbackSubmitBody,
-  bodyWithoutDiagnosticBundle: FeedbackSubmitBody | null
-): Promise<FeedbackSubmitResult> {
-  try {
-    // Why: diagnostic bundles can approach 4 MiB and need more upload time than
-    // the small JSON report-only path, especially on constrained connections.
-    const response = await postFeedback(
-      FEEDBACK_API_URL,
-      body,
-      FEEDBACK_ATTACHMENT_REQUEST_TIMEOUT_MS
-    )
-    if (response.ok) {
-      return { ok: true }
-    }
-    const failure = responseFailure(response)
-    if (bodyWithoutDiagnosticBundle && shouldRetryWithoutDiagnosticBundle(response.status)) {
-      return submitFeedbackWithoutDiagnosticBundle(bodyWithoutDiagnosticBundle, failure)
-    }
-    return { ok: false, ...failure }
-  } catch (error) {
-    const failure = errorFailure(error)
-    return bodyWithoutDiagnosticBundle
-      ? submitFeedbackWithoutDiagnosticBundle(bodyWithoutDiagnosticBundle, failure)
-      : { ok: false, ...failure }
-  }
+  return sections.join('\n')
 }
 
 export async function submitFeedback(
   args: InternalFeedbackSubmitArgs
 ): Promise<FeedbackSubmitResult> {
   const body = buildSubmitBody(args)
-  if (body.diagnosticBundle) {
-    const bodyWithoutDiagnosticBundle =
-      args.feedbackWithoutDiagnosticBundle !== undefined
-        ? buildSubmitBody({
-            ...args,
-            feedback: args.feedbackWithoutDiagnosticBundle,
-            diagnosticBundle: undefined
-          })
-        : null
-    return submitFeedbackWithDiagnosticBundle(body, bodyWithoutDiagnosticBundle)
-  }
+  const kind: FeedbackIssueKind = body.submissionType === 'crash' ? 'crash' : 'feedback'
   try {
-    const res = await postFeedback(FEEDBACK_API_URL, body)
-    if (res.ok) {
-      return { ok: true }
+    const result = await createFeedbackIssue({
+      kind,
+      title: feedbackIssueTitle(kind, body.feedback),
+      body: buildIssueBody(body)
+    })
+    if (result.ok) {
+      return { ok: true, issueUrl: result.url }
     }
-    // Why: api.onorca.dev serves a different product, so transient failures
-    // retry the endpoint that owns feedback and crash delivery.
-    if (res.status >= 500) {
-      return retryFeedbackOnPrimary(body, new Error(`status ${res.status}`))
-    }
-    return { ok: false, status: res.status, error: `status ${res.status}` }
+    // Why status null: there is no HTTP round trip to report a code for — the
+    // failure is gh being absent, unauthenticated, or refused by the repo.
+    return { ok: false, status: null, error: result.error }
   } catch (error) {
-    return retryFeedbackOnPrimary(body, error)
+    return { ok: false, status: null, error: messageFromError(error) }
   }
 }
 
