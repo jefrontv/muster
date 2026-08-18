@@ -131,6 +131,14 @@ export default function OnboardingFlow({
   const continueShortcutModifierLabel = getScreenSubmitModifierLabel()
   const { currentStep, stepIndex, busyLabel } = flow
   const copy = stepCopy[currentStep.id]
+  // Why: default_view now precedes agent, so the agent step can speak to the chosen mode.
+  const subtitle =
+    currentStep.id === 'agent' && flow.defaultView === 'chat'
+      ? translate(
+          'auto.components.onboarding.OnboardingFlow.agentSubtitleChat',
+          "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time."
+        )
+      : copy.subtitle
   const [welcomeVisible, setWelcomeVisible] = useState(
     () => remapOpenOnboardingLastCompletedStep(onboarding) <= 0
   )
@@ -320,9 +328,9 @@ export default function OnboardingFlow({
                   <h1 className="text-[34px] font-semibold leading-[1.15] tracking-tight text-foreground">
                     {copy.title}
                   </h1>
-                  {copy.subtitle ? (
+                  {subtitle ? (
                     <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-                      {copy.subtitle}
+                      {subtitle}
                     </p>
                   ) : null}
                 </div>

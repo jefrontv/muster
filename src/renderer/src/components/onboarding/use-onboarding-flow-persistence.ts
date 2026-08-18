@@ -200,8 +200,9 @@ export function usePersistCurrentStep({
         })
         const choseAgent = defaultTuiAgent !== 'blank'
         const wasAlreadyChosen = onboardingChecklist.choseAgent
+        const agentStepNumber = STEPS.find((step) => step.id === 'agent')?.stepNumber ?? 2
         onOnboardingChange(
-          await persistStep(1, {
+          await persistStep(agentStepNumber, {
             checklist: { ...onboardingChecklist, choseAgent }
           })
         )
@@ -215,7 +216,8 @@ export function usePersistCurrentStep({
       }
       if (currentStepId === 'theme') {
         await updateSettings({ theme })
-        onOnboardingChange(await persistStep(2))
+        const themeStepNumber = STEPS.find((step) => step.id === 'theme')?.stepNumber ?? 3
+        onOnboardingChange(await persistStep(themeStepNumber))
         return { ok: true }
       }
       if (currentStepId === 'notifications') {

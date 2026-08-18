@@ -74,8 +74,9 @@ describe('remapOpenOnboardingLastCompletedStep', () => {
   it('remaps unversioned seven-step open progress to the current flow', () => {
     const base = { ...getDefaultOnboardingState(), flowVersion: 1 }
 
-    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 })).toBe(2)
-    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 })).toBe(2)
+    // Why 0: pre-default_view progress restarts on the new first step.
+    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 })).toBe(0)
+    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 })).toBe(0)
     expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 5 })).toBe(4)
     expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 9 })).toBe(4)
   })
@@ -83,7 +84,7 @@ describe('remapOpenOnboardingLastCompletedStep', () => {
   it('remaps versioned five-step open progress to the current flow', () => {
     const base = { ...getDefaultOnboardingState(), flowVersion: 2 }
 
-    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 })).toBe(2)
+    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 })).toBe(0)
     expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 })).toBe(4)
     expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 5 })).toBe(4)
     expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 9 })).toBe(4)

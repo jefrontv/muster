@@ -10825,7 +10825,8 @@
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
           "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:",
-          "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves."
+          "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
+          "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time."
         },
         "welcome": {
           "eyebrow": "Welcome to",

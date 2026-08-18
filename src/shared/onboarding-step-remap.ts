@@ -21,13 +21,19 @@ export function remapOnboardingLastCompletedStep(
     return current.finalStep
   }
 
+  // v6 moved default_view from step 3 to step 1; steps 4-6 kept their numbers.
+  // Progress that never reached default_view restarts on it (step 1 = index 0).
+  if (snapshot.flowVersion === 5) {
+    return lastCompletedStep >= 3 ? lastCompletedStep : 0
+  }
+
   const v4 = remapLegacyProgressToV4(snapshot.flowVersion, lastCompletedStep)
-  // Why: v5 inserted default_view at step 3, so anything that had already
-  // finished integrations-or-later in v4 must shift forward one slot.
-  if (current.flowVersion >= 5 && v4 >= 3) {
+  // Why: v5 inserted default_view after v4 step 3, so integrations-or-later
+  // shifts forward one slot; earlier progress predates default_view entirely.
+  if (v4 >= 3) {
     return Math.min(v4 + 1, current.finalStep)
   }
-  return v4
+  return 0
 }
 
 function remapLegacyProgressToV4(flowVersion: number, lastCompletedStep: number): number {
