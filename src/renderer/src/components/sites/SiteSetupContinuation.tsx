@@ -16,7 +16,7 @@
 
 import { Database, HardDrive, Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteSetupPlan, SiteSetupStage } from '../../../../shared/site-setup-flow-types'
 import { findSetupStage } from '../../../../shared/site-setup-flow-types'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,7 @@ import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import type { SiteLocalStack } from '../../../../shared/site-types'
 import { getSiteSetupStrings } from './site-setup-strings'
 import { SiteSetupHttpsStage } from './SiteSetupHttpsStage'
-import { SiteSetupImportStage } from './SiteSetupImportStage'
+import { SiteSetupImportStage, type SiteSetupImportStageHandle } from './SiteSetupImportStage'
 import { SiteSetupStackStage } from './SiteSetupStackStage'
 import {
   SETUP_STEP_ORDER,
@@ -85,12 +85,19 @@ export function SiteSetupContinuation({
   // stage actually migrated onto — the two differ for exactly one dialog: a plain site being set up.
   const [certStack, setCertStack] = useState<SiteLocalStack>('localwp')
   // Mirrored out of the stack stage so this page can refuse to advance into an import with no stack
-  // behind it. The group opens on a default, so this is a guard rather than a routine state.
   const [choicePending, setChoicePending] = useState(false)
+  // True once the local stack actually ran (or was already serving the folder) — the stack step
+  // now blocks Next until this is satisfied, so a fresh clone cannot advance into an import with
+  // nothing serving it locally.
+  const [stackDone, setStackDone] = useState(false)
   // A stage is mid-run. Nav locks entirely while it is: both stages own work that has no way back
   // if the dialog closes under it.
   const [stageBusy, setStageBusy] = useState(false)
-
+  // The import step's footer swaps Done for Run: these two track whether there is something to run
+  // and whether it finished, so the parent can render the right primary action.
+  const [importSucceeded, setImportSucceeded] = useState(false)
+  const [importStartable, setImportStartable] = useState(false)
+  const importStageRef = useRef<SiteSetupImportStageHandle | null>(null)
   useEffect(() => {
     onBusyChange?.(stageBusy)
   }, [stageBusy, onBusyChange])
@@ -159,6 +166,7 @@ export function SiteSetupContinuation({
       // The migration is what gives the site its local domain, so the certificate question only
       // becomes answerable now — and it must be asked of the stack just migrated onto, not the one
       // detection saw before the migration ran.
+      setStackDone(true)
       setDomain(migratedDomain)
       setCertStack(migratedStack)
       void refreshCert(migratedDomain, migratedStack)
@@ -204,6 +212,12 @@ export function SiteSetupContinuation({
     }
   }
 
+  // Skips the local stack (and the HTTPS step that depends on it) straight to the import, the
+  // last page — the user chose to leave the site not served locally for now.
+  const skipStack = (): void => {
+    setStep('import')
+  }
+
   if (error.length > 0 && !plan) {
     return (
       <div className="space-y-3">
@@ -217,8 +231,20 @@ export function SiteSetupContinuation({
   const importStage = plan ? findSetupStage(plan, 'import') : null
   // A stage the planner ruled out has nothing to pick, so it cannot be what holds the user up.
   const needsStackChoice = plan !== null && isActionable(stackStage) && choicePending
-  const canAdvance = plan !== null && !(step === 'stack' && needsStackChoice)
-
+  // The stack step is satisfied when the migration ran, the folder was already on a managed stack,
+  // or the stage is unavailable. Otherwise Next stays blocked until setup runs (or the user skips).
+  const stackSatisfied =
+    plan === null || !isActionable(stackStage) || stackDone || plan.stack.alreadyLocalWp
+  const canAdvance = plan !== null && (step !== 'stack' || stackSatisfied)
+  // Whether the import stage renders at all (rather than an unavailable row) — the same predicate
+  // the render below uses.
+  const importStageShown =
+    plan !== null &&
+    (plan.import.ready ||
+      plan.import.confirmable ||
+      (plan.import.environment.length > 0 && plan.import.blockedBy.includes('no-steps-selected')))
+  // Run shows in the footer while the import is actionable but has not finished; Done otherwise.
+  const showRun = step === 'import' && importStageShown && !importSucceeded && importStartable
   return (
     <div className="flex min-h-[16rem] flex-col gap-3">
       <SiteSetupStepRail current={step} />
@@ -273,15 +299,15 @@ export function SiteSetupContinuation({
             collapse into an unavailable row: the stage offers the toggles instead. Everything else
             (no environment, missing SSH password, missing checkout) is fixed elsewhere. */}
         {plan && step === 'import' ? (
-          plan.import.ready ||
-          plan.import.confirmable ||
-          (plan.import.environment.length > 0 &&
-            plan.import.blockedBy.includes('no-steps-selected')) ? (
+          importStageShown ? (
             <SiteSetupImportStage
+              ref={importStageRef}
               siteId={siteId}
               readiness={plan.import}
               onStepsChanged={replan}
               onBusyChange={setStageBusy}
+              onStartableChange={setImportStartable}
+              onSettledChange={setImportSucceeded}
             />
           ) : (
             <UnavailableRow
@@ -299,10 +325,20 @@ export function SiteSetupContinuation({
         current={step}
         busy={stageBusy || trusting}
         canAdvance={canAdvance}
-        blockedReason={needsStackChoice ? strings.stackPickFirst : strings.loading}
+        blockedReason={
+          step === 'stack' && !stackSatisfied
+            ? needsStackChoice
+              ? strings.stackPickFirst
+              : strings.stackSetUpFirst
+            : strings.loading
+        }
         onBack={goBack}
         onNext={goNext}
         onDone={onDone}
+        onSkip={
+          step === 'stack' ? (stackSatisfied ? undefined : skipStack) : showRun ? onDone : undefined
+        }
+        onRun={showRun ? () => importStageRef.current?.run() : undefined}
       />
     </div>
   )

@@ -17,11 +17,10 @@
 
 import { Check, Database, Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { SiteSetupImportReadiness } from '../../../../shared/site-setup-flow-types'
 import type { SiteRunStatus } from '../../../../shared/site-run-types'
 import { SITE_IMPORT_TOGGLES, type SiteSummary } from '../../../../shared/site-types'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { getSiteSetupStrings } from './site-setup-strings'
 import { getSiteToggleLabels } from './site-toggle-labels'
@@ -33,19 +32,28 @@ type ImportPhase = 'idle' | 'starting' | 'running' | 'finished'
 
 const TERMINAL_STATUSES: readonly SiteRunStatus[] = ['succeeded', 'failed', 'cancelled', 'blocked']
 
-export function SiteSetupImportStage({
-  siteId,
-  readiness,
-  onStepsChanged,
-  onBusyChange
-}: {
-  siteId: string
-  readiness: SiteSetupImportReadiness
-  /** Re-plans the whole setup: enabling a step can be what unblocks the run. */
-  onStepsChanged: () => void
-  /** Locks the pager's nav: leaving mid-import abandons a live SSH run with no way back to it. */
-  onBusyChange?: (busy: boolean) => void
-}): React.JSX.Element {
+export type SiteSetupImportStageHandle = {
+  run: () => void
+}
+
+export const SiteSetupImportStage = forwardRef<
+  SiteSetupImportStageHandle,
+  {
+    siteId: string
+    readiness: SiteSetupImportReadiness
+    /** Re-plans the whole setup: enabling a step can be what unblocks the run. */
+    onStepsChanged: () => void
+    /** Locks the pager's nav: leaving mid-import abandons a live SSH run with no way back to it. */
+    onBusyChange?: (busy: boolean) => void
+    /** Lets the host footer render Run instead of Done when there is something worth running. */
+    onStartableChange?: (startable: boolean) => void
+    /** Lets the host footer flip Run back to Done once the import succeeded. */
+    onSettledChange?: (success: boolean) => void
+  }
+>(function SiteSetupImportStage(
+  { siteId, readiness, onStepsChanged, onBusyChange, onStartableChange, onSettledChange },
+  ref
+): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const toggleLabels = getSiteToggleLabels()
   const [summary, setSummary] = useState<SiteSummary | null>(null)
@@ -88,11 +96,12 @@ export function SiteSetupImportStage({
       if (TERMINAL_STATUSES.includes(event.status)) {
         setPhase('finished')
         setProgress(null)
+        onSettledChange?.(event.status === 'succeeded')
         // The planner owns what the flow shows next, and a finished import changes its answer.
         onStepsChanged()
       }
     })
-  }, [onStepsChanged])
+  }, [onStepsChanged, onSettledChange])
 
   // The log is what says a multi-minute import is still alive, so keep the newest line in view.
   useEffect(() => {
@@ -164,6 +173,7 @@ export function SiteSetupImportStage({
     setStatus(null)
     setLines([])
     setProgress(null)
+    onSettledChange?.(false)
     const result = await window.api.siteRuns.start({
       siteId,
       group: 'import',
@@ -181,11 +191,14 @@ export function SiteSetupImportStage({
     if (TERMINAL_STATUSES.includes(result.value.status)) {
       setStatus(result.value.status)
       setPhase('finished')
+      onSettledChange?.(result.value.status === 'succeeded')
       onStepsChanged()
       return
     }
     setPhase('running')
   }
+
+  useImperativeHandle(ref, () => ({ run: () => void runImport() }))
 
   const enabledCount = summary?.importSelectedCount ?? readiness.enabledStepCount
   const startable = enabledCount > 0 && (readiness.ready || readiness.confirmable)
@@ -195,6 +208,10 @@ export function SiteSetupImportStage({
   useEffect(() => {
     onBusyChange?.(busy)
   }, [busy, onBusyChange])
+
+  useEffect(() => {
+    onStartableChange?.(startable && !settled)
+  }, [startable, settled, onStartableChange])
 
   const statusMessages: Record<SiteRunStatus, string> = {
     running: strings.importRunning,
@@ -228,22 +245,7 @@ export function SiteSetupImportStage({
         </div>
         {settled && status === 'succeeded' ? (
           <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy || !startable}
-              onClick={() => void runImport()}
-            >
-              {busy
-                ? strings.importStarting
-                : readiness.ready
-                  ? strings.importAction
-                  : strings.overrideAction}
-            </Button>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Always on screen, never behind a disclosure: the run is destructive and what it is about
@@ -304,6 +306,6 @@ export function SiteSetupImportStage({
       {error.length > 0 ? <p className="pl-6.5 text-xs text-destructive">{error}</p> : null}
     </div>
   )
-}
+})
 
 export default SiteSetupImportStage

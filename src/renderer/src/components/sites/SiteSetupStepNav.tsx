@@ -56,7 +56,9 @@ export function SiteSetupStepNav({
   busy = false,
   onBack,
   onNext,
-  onDone
+  onDone,
+  onSkip,
+  onRun
 }: {
   current: SetupStepId
   /** False keeps the user on this page; `blockedReason` is what tells them why. */
@@ -70,6 +72,10 @@ export function SiteSetupStepNav({
   onBack: () => void
   onNext: () => void
   onDone: () => void
+  /** Present only where the page can be skipped — jumps to the last page (or finishes). */
+  onSkip?: () => void
+  /** Present on the import step while there is something to run: Run replaces Done in the footer. */
+  onRun?: () => void
 }): React.JSX.Element {
   const strings = getSiteSetupStrings()
   const index = SETUP_STEP_ORDER.indexOf(current)
@@ -92,10 +98,21 @@ export function SiteSetupStepNav({
             {strings.back}
           </Button>
         ) : null}
-        {last ? (
-          <Button size="sm" disabled={busy} onClick={onDone}>
-            {strings.done}
+        {onSkip ? (
+          <Button variant="ghost" size="sm" disabled={busy} onClick={onSkip}>
+            {strings.skip}
           </Button>
+        ) : null}
+        {last ? (
+          onRun ? (
+            <Button size="sm" disabled={busy} onClick={onRun}>
+              {strings.run}
+            </Button>
+          ) : (
+            <Button size="sm" disabled={busy} onClick={onDone}>
+              {strings.done}
+            </Button>
+          )
         ) : (
           <Button size="sm" disabled={busy || !canAdvance} onClick={onNext}>
             {strings.next}

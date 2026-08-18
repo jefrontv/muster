@@ -170,8 +170,12 @@ function findButton(label: string): HTMLButtonElement | undefined {
   )
 }
 
-/** The stages are pages now, so anything past the stack page has to be walked to. */
+/** The stages are pages now, so anything past the stack page has to be walked to — and Next is
+ * gated on the local setup having run, so complete that before leaving the stack page. */
 async function advanceTo(step: 'https' | 'import'): Promise<void> {
+  await act(async () => {
+    findButton('Set up LocalWP')?.click()
+  })
   for (let hop = 0; hop < (step === 'https' ? 1 : 2); hop += 1) {
     await act(async () => {
       findButton('Next')?.click()
@@ -217,13 +221,13 @@ describe('SiteSetupContinuation paging', () => {
   it('keeps the import a page away until the stack page is passed', async () => {
     await render(makePlan())
 
-    expect(findButton('Run import now')).toBeUndefined()
+    expect(findButton('Run')).toBeUndefined()
     expect(findButton('Done')).toBeUndefined()
 
     await advanceTo('import')
 
-    expect(findButton('Run import now')).toBeDefined()
-    expect(findButton('Done')).toBeDefined()
+    expect(findButton('Run')).toBeDefined()
+    expect(findButton('Skip')).toBeDefined()
   })
 
   it('walks stack, then https, then import', async () => {
@@ -232,7 +236,7 @@ describe('SiteSetupContinuation paging', () => {
 
     await advanceTo('https')
     expect(text()).toContain('HTTPS certificate')
-    expect(findButton('Run import now')).toBeUndefined()
+    expect(findButton('Run')).toBeUndefined()
 
     await act(async () => {
       findButton('Back')?.click()
@@ -244,11 +248,11 @@ describe('SiteSetupContinuation paging', () => {
   it('opens on the first installed stack when nothing is remembered', async () => {
     installedStacks = ['localwp', 'agent-local']
     await render(makePlan())
-
     const picker = [...(container?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [])]
     expect(picker.map((option) => option.textContent)).toEqual(['LocalWP', 'Agent Local'])
     expect(picker.map((option) => option.getAttribute('data-state'))).toEqual(['on', 'off'])
-    expect(findButton('Next')?.disabled).toBe(false)
+    expect(findButton('Next')?.disabled).toBe(true)
+    expect(findButton('Skip')).toBeDefined()
     expect(findButton('Set up LocalWP')?.disabled).toBe(false)
   })
 
@@ -268,9 +272,34 @@ describe('SiteSetupContinuation paging', () => {
     await render(makePlan())
 
     expect(findButton('Set up LocalWP')).toBeDefined()
-    expect(findButton('Next')?.disabled).toBe(false)
+    expect(findButton('Next')?.disabled).toBe(true)
+  })
+  // Next is gated on the setup having run, not just on a stack being picked — and Skip is the
+  // deliberate way past a local setup the user wants to leave for later.
+  it('blocks Next until the setup runs, and Skip jumps straight to import', async () => {
+    await render(makePlan())
+    expect(findButton('Next')?.disabled).toBe(true)
+
+    await act(async () => {
+      findButton('Skip')?.click()
+    })
+
+    // Skipping lands on the last page (import), past HTTPS.
+    expect(findButton('Run')).toBeDefined()
+    expect(findButton('Skip')).toBeDefined()
   })
 
+  it('enables Next and drops Skip once the local setup completes', async () => {
+    await render(makePlan())
+    expect(findButton('Skip')).toBeDefined()
+
+    await act(async () => {
+      findButton('Set up LocalWP')?.click()
+    })
+
+    expect(findButton('Next')?.disabled).toBe(false)
+    expect(findButton('Skip')).toBeUndefined()
+  })
   it('remembers the stack a successful setup ran on', async () => {
     installedStacks = ['localwp', 'agent-local']
     await render(makePlan())
@@ -444,7 +473,7 @@ describe('SiteSetupContinuation', () => {
     await render(makePlan())
     await advanceTo('import')
     await act(async () => {
-      findButton('Run import now')?.click()
+      findButton('Run')?.click()
     })
     expect(startRunMock).toHaveBeenCalledWith({
       siteId: SITE_ID,
@@ -459,7 +488,7 @@ describe('SiteSetupContinuation', () => {
     await render(makePlan())
     await advanceTo('import')
     await act(async () => {
-      findButton('Run import now')?.click()
+      findButton('Run')?.click()
     })
     await act(async () => {
       emitRunEvent(runLog('Pulling database…'))
@@ -474,7 +503,7 @@ describe('SiteSetupContinuation', () => {
     await render(makePlan())
     await advanceTo('import')
     await act(async () => {
-      findButton('Run import now')?.click()
+      findButton('Run')?.click()
     })
     await act(async () => {
       emitRunEvent(runLog('not mine', 'run-2'))
@@ -486,7 +515,7 @@ describe('SiteSetupContinuation', () => {
     await render(makePlan())
     await advanceTo('import')
     await act(async () => {
-      findButton('Run import now')?.click()
+      findButton('Run')?.click()
     })
     await act(async () => {
       emitRunEvent({ type: 'status', runId: 'run-1', status: 'succeeded' })
@@ -498,7 +527,7 @@ describe('SiteSetupContinuation', () => {
     await render(makePlan())
     await advanceTo('import')
     await act(async () => {
-      findButton('Run import now')?.click()
+      findButton('Run')?.click()
     })
     await act(async () => {
       emitRunEvent({
@@ -519,14 +548,14 @@ describe('SiteSetupContinuation', () => {
           ready: false,
           blockedBy: ['unmatched-branch'],
           confirmable: true,
-          environment: 'staging',
+          environment: 'production',
           enabledStepCount: 2
         }
       })
     )
     await advanceTo('import')
-    expect(findButton('Run anyway')).toBeDefined()
-    expect(findButton('Run import now')).toBeUndefined()
+    expect(findButton('Run')).toBeDefined()
+    expect(findButton('Done')).toBeUndefined()
   })
 
   it('refuses the import outright when it is blocked and not confirmable', async () => {
@@ -552,8 +581,8 @@ describe('SiteSetupContinuation', () => {
       })
     )
     await advanceTo('import')
-    expect(findButton('Run import now')).toBeUndefined()
-    expect(findButton('Run anyway')).toBeUndefined()
+    expect(findButton('Run')).toBeUndefined()
+    expect(findButton('Done')).toBeDefined()
     expect(text()).toContain('Add the SSH password for this environment before importing.')
   })
 
@@ -571,7 +600,7 @@ describe('SiteSetupContinuation', () => {
     )
     await advanceTo('import')
     // Seeded on, so the link's own zero-step configuration no longer dead-ends the setup.
-    expect(findButton('Run import now')?.disabled).toBe(false)
+    expect(findButton('Run')?.disabled).toBe(false)
   })
 
   it('offers to create a LocalWP site when the folder has no WordPress yet', async () => {
@@ -700,7 +729,7 @@ describe('SiteSetupContinuation', () => {
       })
     }
 
-    expect(findButton('Run import now')?.disabled).toBe(true)
+    expect(findButton('Run')).toBeUndefined()
   })
 
   it('locks Back and Done while the import is running', async () => {
@@ -711,10 +740,10 @@ describe('SiteSetupContinuation', () => {
     startRunMock.mockReturnValue(promise)
 
     await act(async () => {
-      findButton('Run import now')?.click()
+      findButton('Run')?.click()
     })
 
-    expect(findButton('Done')?.disabled).toBe(true)
+    expect(findButton('Run')?.disabled).toBe(true)
     expect(findButton('Back')?.disabled).toBe(true)
     expect(text()).toContain('Running — leave this open until it finishes.')
 

@@ -42,6 +42,10 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupContinuation.stackPickFirst',
     'Pick which stack runs this site to continue.'
   ),
+  stackSetUpFirst: translate(
+    'auto.components.sites.SiteSetupContinuation.stackSetUpFirst',
+    'Set up a local stack to continue, or skip.'
+  ),
   stackHeading: translate(
     'auto.components.sites.SiteSetupContinuation.stackHeading',
     'Local WordPress'
@@ -232,6 +236,7 @@ export const getSiteSetupStrings = createLocalizedCatalog(() => ({
     'Run anyway'
   ),
   skip: translate('auto.components.sites.SiteSetupContinuation.skip', 'Skip'),
+  run: translate('auto.components.sites.SiteSetupContinuation.run', 'Run'),
   done: translate('auto.components.sites.SiteSetupContinuation.done', 'Done'),
   unavailable: translate('auto.components.sites.SiteSetupContinuation.unavailable', 'Not available')
 }))
