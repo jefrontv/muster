@@ -149,6 +149,8 @@ export function registerChatModeHandlers(): void {
       id: unknown,
       patch: {
         title?: unknown
+        autoTitle?: unknown
+        titleGenerated?: unknown
         claudeSessionId?: unknown
         transcriptPath?: unknown
         lastActivityAt?: unknown
@@ -162,6 +164,10 @@ export function registerChatModeHandlers(): void {
     ): Promise<ChatThread | null> =>
       chatStore().updateThread(asString(id, 'id'), {
         ...(patch?.title !== undefined ? { title: asString(patch.title, 'title') } : {}),
+        ...(typeof patch?.autoTitle === 'string' ? { autoTitle: patch.autoTitle } : {}),
+        ...(typeof patch?.titleGenerated === 'boolean'
+          ? { titleGenerated: patch.titleGenerated }
+          : {}),
         ...(typeof patch?.claudeSessionId === 'string'
           ? { claudeSessionId: patch.claudeSessionId }
           : {}),

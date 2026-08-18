@@ -184,6 +184,8 @@ export class ChatWorkspaceStore {
       Pick<
         ChatThread,
         | 'title'
+        | 'autoTitle'
+        | 'titleGenerated'
         | 'claudeSessionId'
         | 'transcriptPath'
         | 'lastActivityAt'

@@ -891,6 +891,8 @@ export type ChatModeApi = {
       Pick<
         ChatThread,
         | 'title'
+        | 'autoTitle'
+        | 'titleGenerated'
         | 'claudeSessionId'
         | 'transcriptPath'
         | 'lastActivityAt'
@@ -928,6 +930,15 @@ export type ChatThreadStreamApi = {
   interrupt: (threadId: string) => Promise<boolean>
   stop: (threadId: string) => Promise<void>
   onEvent: (callback: (event: ChatThreadStreamEvent) => void) => () => void
+}
+
+/** Semantic auto-naming for a chat thread, generated after its first turn. */
+export type ChatThreadTitleApi = {
+  generate: (args: {
+    firstPrompt: string
+    assistantMessage?: string
+    cwd?: string
+  }) => Promise<{ ok: true; title: string } | { ok: false; error: string }>
 }
 
 /** A site's local WordPress stack. macOS-only; every call returns a structured result elsewhere. */
@@ -1650,6 +1661,7 @@ export type PreloadApi = {
   chatMode: ChatModeApi
   chatConnector: ChatConnectorApi
   chatThreadStream: ChatThreadStreamApi
+  chatThreadTitle: ChatThreadTitleApi
   siteRoots: SiteRootsApi
   siteStacks: SiteStacksApi
   siteTools: SiteToolsApi

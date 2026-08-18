@@ -47,6 +47,7 @@ import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
 import { registerChatModeHandlers } from './chat-mode'
 import { registerChatConnectorHandlers } from './chat-connector'
 import { registerChatThreadStreamHandlers } from './chat-thread-stream'
+import { registerChatThreadTitleHandlers } from './chat-thread-title'
 import { registerSiteRunHandlers } from './site-runs'
 import { registerSiteRootsHandlers } from './site-roots'
 import { registerSiteStackHandlers } from './site-stacks'
@@ -239,6 +240,10 @@ export function registerCoreHandlers(
   registerChatModeHandlers()
   registerChatConnectorHandlers()
   registerChatThreadStreamHandlers(store)
+  registerChatThreadTitleHandlers({
+    getSettings: () => store.getSettings(),
+    getAgentEnvResolvers: () => commitMessageAgentEnv
+  })
   registerSiteRootsHandlers(store)
   registerSiteStackHandlers(store)
   registerSiteToolHandlers(store)

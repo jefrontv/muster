@@ -17,6 +17,20 @@ export function getAgentGeneratedTabTitlesDescription(): string {
   )
 }
 
+export function getChatGeneratedTitlesTitle(): string {
+  return translate(
+    'auto.components.settings.agent-generated-tab-title-copy.chat-title',
+    'Auto-name chats'
+  )
+}
+
+export function getChatGeneratedTitlesDescription(): string {
+  return translate(
+    'auto.components.settings.agent-generated-tab-title-copy.chat-description',
+    'Name a chat thread from its first exchange instead of the raw opening message. Uses the Source Control AI agent, and manual renames always win.'
+  )
+}
+
 export function getAgentGeneratedTabTitlesSearchKeywords(): string[] {
   return searchKeywords([
     { key: 'auto.components.settings.agents.search.96ba2373b6', fallback: 'agent' },

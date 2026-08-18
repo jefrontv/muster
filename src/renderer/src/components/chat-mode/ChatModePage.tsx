@@ -7,6 +7,7 @@ import { isAskUserQuestionTool } from '../../../../shared/agent-question-answere
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
 import { ChatConnectorConfirmDialog } from './ChatConnectorConfirmDialog'
+import { generateChatThreadTitleAfterFirstTurn } from './chat-thread-auto-title'
 import { ChatModeDraftHero } from './ChatModeDraftHero'
 import { ChatModeSidebar } from './ChatModeSidebar'
 import { ChatThreadView } from './ChatThreadView'
@@ -113,6 +114,7 @@ export default function ChatModePage(): React.JSX.Element {
           if (settlingPaneKey) {
             store.settleAgentStatusWorking(settlingPaneKey, now)
           }
+          void generateChatThreadTitleAfterFirstTurn(event.threadId)
           // A completion the user is watching (thread active, window focused)
           // is read on arrival — it must not light the sidebar's unread "Done".
           const watched = store.activeChatThreadId === event.threadId && document.hasFocus()

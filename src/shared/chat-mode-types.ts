@@ -53,6 +53,12 @@ export type ChatThread = {
   workspaceId: string | null
   /** User-set, or derived from the first prompt once one is sent. */
   title: string
+  /** The last title Muster set by itself. The title is still automatic while it
+   *  equals this, so a user rename permanently opts the thread out of renaming. */
+  autoTitle?: string
+  /** Set once the semantic title has been generated, so later turns don't pay
+   *  for a second generation. */
+  titleGenerated?: boolean
   agent: 'claude'
   /** The agent's own session id, captured from agent hooks; null until the first
    *  hook report. Drives --resume when the thread reopens after the PTY died. */

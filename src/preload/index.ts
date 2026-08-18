@@ -897,6 +897,10 @@ const api = {
     }
   } satisfies PreloadApi['chatThreadStream'],
 
+  chatThreadTitle: {
+    generate: (args) => ipcRenderer.invoke('chatThreadTitle:generate', args)
+  } satisfies PreloadApi['chatThreadTitle'],
+
   siteRoots: {
     list: () => ipcRenderer.invoke('siteRoots:list'),
     primary: () => ipcRenderer.invoke('siteRoots:primary'),

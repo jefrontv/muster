@@ -62,6 +62,8 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
       Pick<
         ChatThread,
         | 'title'
+        | 'autoTitle'
+        | 'titleGenerated'
         | 'claudeSessionId'
         | 'transcriptPath'
         | 'lastActivityAt'

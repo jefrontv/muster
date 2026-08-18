@@ -78,6 +78,10 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
     id: raw.id,
     workspaceId,
     title: typeof raw.title === 'string' && raw.title !== '' ? raw.title : 'New chat',
+    ...(typeof raw.autoTitle === 'string' && raw.autoTitle !== ''
+      ? { autoTitle: raw.autoTitle }
+      : {}),
+    ...(raw.titleGenerated === true ? { titleGenerated: true } : {}),
     agent: 'claude',
     claudeSessionId: typeof raw.claudeSessionId === 'string' ? raw.claudeSessionId : null,
     transcriptPath: typeof raw.transcriptPath === 'string' ? raw.transcriptPath : null,

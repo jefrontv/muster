@@ -113,7 +113,8 @@ export function ChatThreadView({
     if (thread.title !== 'New chat' && !isChatWorkspaceBriefTitle(thread.title)) {
       return
     }
-    void updateChatThread(thread.id, { title: deriveChatThreadTitle(prompt) })
+    const derived = deriveChatThreadTitle(prompt)
+    void updateChatThread(thread.id, { title: derived, autoTitle: derived })
   }, [reportedPrompt, thread.id, thread.title, updateChatThread])
   useEffect(() => {
     if (!providerSession?.id || providerSession.id === thread.claudeSessionId) {
@@ -139,7 +140,8 @@ export function ChatThreadView({
         }
       }
       if (thread.title === 'New chat' || isChatWorkspaceBriefTitle(thread.title)) {
-        void updateChatThread(thread.id, { title: deriveChatThreadTitle(text) })
+        const derived = deriveChatThreadTitle(text)
+        void updateChatThread(thread.id, { title: derived, autoTitle: derived })
       }
       return window.api.chatThreadStream.send(thread.id, payload, imagePaths)
     },

@@ -28,7 +28,9 @@ import {
 } from './codex-session-source-home-control'
 import {
   getAgentGeneratedTabTitlesDescription,
-  getAgentGeneratedTabTitlesTitle
+  getAgentGeneratedTabTitlesTitle,
+  getChatGeneratedTitlesDescription,
+  getChatGeneratedTitlesTitle
 } from './agent-generated-tab-title-copy'
 import { getAgentStatusHooksDescription, getAgentStatusHooksTitle } from './agent-status-hooks-copy'
 import {
@@ -867,6 +869,8 @@ export function AgentsPane({
 
       <AgentGeneratedTabTitlesSetting settings={settings} updateSettings={updateSettings} />
 
+      <ChatGeneratedTitlesSetting settings={settings} updateSettings={updateSettings} />
+
       <AgentAwakeSetting settings={settings} updateSettings={updateSettings} />
 
       <AgentCacheTimerSection settings={settings} updateSettings={updateSettings} />
@@ -1047,6 +1051,25 @@ export function AgentStatusHooksSetting({
           })
         }
         ariaLabel={getAgentStatusHooksTitle()}
+      />
+    </section>
+  )
+}
+
+export function ChatGeneratedTitlesSetting({
+  settings,
+  updateSettings
+}: AgentsPaneProps): React.JSX.Element {
+  // Missing reads as enabled, so the switch shows on for a settings file predating it.
+  const enabled = settings.chatAutoGenerateTitle !== false
+  return (
+    <section className="space-y-3">
+      <SettingsSwitchRow
+        label={getChatGeneratedTitlesTitle()}
+        description={getChatGeneratedTitlesDescription()}
+        checked={enabled}
+        onChange={() => updateSettings({ chatAutoGenerateTitle: !enabled })}
+        ariaLabel={getChatGeneratedTitlesTitle()}
       />
     </section>
   )

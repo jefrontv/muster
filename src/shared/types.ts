@@ -2988,6 +2988,10 @@ export type GlobalSettings = {
   agentCapabilityBundledSkills?: Record<string, boolean>
   /** Why: generated tab titles are subjective, so they stay opt-in and manual renames win. */
   tabAutoGenerateTitle: boolean
+  /** Chat-mode threads name themselves after their first turn. Missing reads as
+   *  enabled: the fallback title is a raw slice of what the user typed, and the
+   *  generation is skipped anyway unless a source-control AI agent is set up. */
+  chatAutoGenerateTitle?: boolean
   /** Why: pinned tabs can still be closed via keyboard/native-menu; this gates that behind a confirmation. Defaults on. */
   confirmClosePinnedTab: boolean
   /** When true, Orca requests local awake assertions while hook-reported agents are working. */
