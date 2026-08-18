@@ -382,7 +382,7 @@ export default function OnboardingFlow({
                   busyLabel={busyLabel}
                   onSkipToRepo={() => void flow.skipToRepo()}
                   stepIndex={stepIndex}
-                  onBack={flow.nestedScan ? flow.cancelNested : flow.back}
+                  onBack={flow.back}
                   showPrimary
                   primaryBusy={shouldShowFooterBusy}
                   primaryLabel={footerPrimaryLabel}

@@ -10857,33 +10857,6 @@
           "3f9586c043": "Take the tour",
           "60c5576353": "Exit tour"
         },
-        "RepoStep": {
-          "e8fdb36338": "Scanning repositories. Click to stop.",
-          "b7c4da0504": "SSH? Set hosts up in Settings",
-          "c33b190ca3": "Host paths only",
-          "7b679207e4": "Workspace",
-          "24c7c8696c": "Clone into host path",
-          "7932e95f68": "Clone",
-          "955134915e": "git@github.com:org/repo.git",
-          "288d8444b7": "Paste an HTTPS or SSH URL.",
-          "132425a3e3": "Clone a repo",
-          "6558d50c69": "Want to import many repos at once? Select the parent folder.",
-          "831524961f": "Choose any local directory, git repo or not.",
-          "f4e9c8dcf8": "Browse for a folder",
-          "e8214aa632": "Open as Folder",
-          "3863747c56": "Add Git Project",
-          "2ebbc26343": "/home/user/project",
-          "466108ab89": "Enter a path that exists on the selected host.",
-          "8cab104e3c": "Open a project on this host",
-          "2d20200346": "Import repositories",
-          "27ca610db1": "Back",
-          "cecd6593fa": "Scanned folder:",
-          "c7af322fc3": "Stop scanning",
-          "c3d9d44ca2": "Stop scan",
-          "cf23006ba7": "Selected host",
-          "7ec3f48820": "/home/user",
-          "2e6438dd34": "{{value0}}Found {{value1}} {{value2}} in this folder."
-        },
         "ThemeStep": {
           "a4b254779d": "macOS Option key",
           "6c51398942": "Mouse",
@@ -11660,35 +11633,15 @@
           }
         },
         "tips": {
-          "CliFeatureTipVisual": {
-            "badb4fc342": ">",
-            "22e62f3bab": "Claude Code session started"
-          },
-          "CliSkillSetupTerminal": {
-            "1953e90447": "Press Enter to install the Muster CLI orchestration skill for your agents.",
-            "43b60ec5c3": "Muster CLI and orchestration skill install terminal",
-            "84e9576dac": "Skill setup",
-            "5c3aee22c0": "Copy command",
-            "5eca672aac": "Copy skill install command",
-            "6ff813fc1d": "Failed to copy skill command.",
-            "b8ad063571": "Copied the skill install command."
-          },
           "CmdJPaletteTipDialog": {
             "c0bb9f869b": "Settings → Shortcuts",
             "8241897205": "Rebind the shortcut anytime in"
           },
           "FeatureTipActions": {
-            "eb04abece8": "Maybe Later"
+            "eb04abece8": "Maybe Later",
+            "working": "Working..."
           },
           "FeatureTipsModal": {
-            "c169298e4d": "Done",
-            "3c6c478462": "X finishes, send it the review task.”",
-            "298301b7a0": "worktree",
-            "864e2db28f": "“When the agent in",
-            "7fc6f02099": "and create PRs for each.”",
-            "27c567a89c": "worktrees",
-            "55846c7f95": "“Split this PR into two",
-            "4795ac2d4a": "Try asking:",
             "53905bd076": "Development preview: opening skills setup terminal.",
             "1da82af45b": "Muster CLI needs attention",
             "ce13a742d0": "Registered `orca` in PATH.",

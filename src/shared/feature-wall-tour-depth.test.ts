@@ -35,6 +35,7 @@ describe('feature wall tour depth summary', () => {
         workflowDone: {
           workspaces: true,
           tasks: false,
+          sites: false,
           'agents-orchestration': false,
           workbench: false,
           review: false

@@ -168,10 +168,7 @@ import type { VirtualizedScrollAnchor } from './hooks/useVirtualizedScrollAnchor
 import type { RemoteWorkspacePatchResult } from '../../shared/remote-workspace-types'
 import type { OnboardingState, UpdateStatus } from '../../shared/types'
 import { getFeatureTipsAppOpenDecision } from './components/feature-tips/feature-tip-startup-gate'
-import {
-  trackCmdJPaletteFeatureTipShown,
-  trackOrcaCliFeatureTipShown
-} from './components/feature-tips/feature-tip-telemetry'
+import { trackCmdJPaletteFeatureTipShown } from './components/feature-tips/feature-tip-telemetry'
 import {
   keybindingMatchesAction,
   type KeybindingActionId,
@@ -688,7 +685,6 @@ function App(): React.JSX.Element {
   const featureTipsPromptedThisSessionRef = useRef(false)
   const featureTipsSuppressedByOnboardingThisSessionRef = useRef(false)
   const unmountAddRepoDialogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [featureTipCliInstalled, setFeatureTipCliInstalled] = useState<boolean | null>(null)
   const [onboardingSettingsDetour, setOnboardingSettingsDetour] = useState(false)
   const shouldRenderOnboarding = onboarding !== null && shouldShowOnboarding(onboarding)
   const onboardingSettingsDetourActive =
@@ -756,18 +752,8 @@ function App(): React.JSX.Element {
   }, [actions, contextualToursAutoEligible, onboarding, onboardingLoaded, persistedUIReady])
 
   useEffect(() => {
-    if (!persistedUIReady) {
-      return
-    }
-    // Why: shell CLI registration was gutted — treat as always done so feature
-    // tips never block on PATH /usr/local/bin/orca.
-    setFeatureTipCliInstalled(true)
-  }, [persistedUIReady])
-
-  useEffect(() => {
     const featureTipsDecision = getFeatureTipsAppOpenDecision({
       activeModal,
-      cliInstalled: featureTipCliInstalled,
       featureTipsSeenIds,
       featureInteractions,
       onboarding,
@@ -788,9 +774,7 @@ function App(): React.JSX.Element {
     }
 
     featureTipsPromptedThisSessionRef.current = true
-    if (featureTipsDecision.tipId === 'orca-cli') {
-      trackOrcaCliFeatureTipShown('app_open')
-    } else if (featureTipsDecision.tipId === 'cmd-j-palette') {
+    if (featureTipsDecision.tipId === 'cmd-j-palette') {
       trackCmdJPaletteFeatureTipShown('app_open')
     }
     // Why: mark seen on show so a quit/crash before dismiss doesn't reappear it next launch.
@@ -799,7 +783,6 @@ function App(): React.JSX.Element {
   }, [
     activeModal,
     actions,
-    featureTipCliInstalled,
     featureInteractions,
     featureTipsSeenIds,
     onboarding,

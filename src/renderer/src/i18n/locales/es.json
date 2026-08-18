@@ -10817,33 +10817,6 @@
           "3f9586c043": "Haz el recorrido",
           "60c5576353": "Salir del recorrido"
         },
-        "RepoStep": {
-          "e8fdb36338": "Escaneo de repositorios. Haga clic para detener.",
-          "b7c4da0504": "¿SSH? Configura hosts en Configuración",
-          "c33b190ca3": "Solo rutas del host",
-          "7b679207e4": "Espacio de trabajo",
-          "24c7c8696c": "Clonar en ruta del host",
-          "7932e95f68": "Clonar",
-          "955134915e": "git@github.com:org/repo.git",
-          "288d8444b7": "Pegue una URL HTTPS o SSH.",
-          "132425a3e3": "Clonar un repositorio",
-          "6558d50c69": "¿Quieres importar muchos repositorios a la vez? Seleccione la carpeta principal.",
-          "831524961f": "Elija cualquier directorio local, repositorio git o no.",
-          "f4e9c8dcf8": "Buscar una carpeta",
-          "e8214aa632": "Abrir como carpeta",
-          "3863747c56": "Agregar proyecto Git",
-          "2ebbc26343": "/home/user/project",
-          "466108ab89": "Introduce una ruta que exista en el host seleccionado.",
-          "8cab104e3c": "Abrir un proyecto en este host",
-          "2d20200346": "Importar repositorios",
-          "27ca610db1": "Atrás",
-          "cecd6593fa": "Carpeta escaneada:",
-          "c7af322fc3": "Dejar de escanear",
-          "c3d9d44ca2": "Detener escaneo",
-          "cf23006ba7": "Host seleccionado",
-          "7ec3f48820": "/home/user",
-          "2e6438dd34": "{{value0}}Se encontraron {{value1}} {{value2}} en esta carpeta."
-        },
         "ThemeStep": {
           "a4b254779d": "Tecla de opción de macOS",
           "6c51398942": "Ratón",
@@ -11620,19 +11593,6 @@
           }
         },
         "tips": {
-          "CliFeatureTipVisual": {
-            "badb4fc342": ">",
-            "22e62f3bab": "Sesión de Claude Code iniciada"
-          },
-          "CliSkillSetupTerminal": {
-            "1953e90447": "Presiona Enter para instalar el skill de orquestación de la CLI de Muster para tus agentes.",
-            "43b60ec5c3": "Terminal de instalación de CLI de Muster y skill de orquestación",
-            "84e9576dac": "Configuración de skill",
-            "5c3aee22c0": "Copiar comando",
-            "5eca672aac": "Copiar comando de instalación de skill",
-            "6ff813fc1d": "No se pudo copiar el comando de skill.",
-            "b8ad063571": "Comando de instalación de skill copiado."
-          },
           "CmdJPaletteTipDialog": {
             "c0bb9f869b": "Configuración → Atajos",
             "8241897205": "Puedes reasignar el atajo en cualquier momento en"
@@ -11641,14 +11601,6 @@
             "eb04abece8": "Quizás más tarde"
           },
           "FeatureTipsModal": {
-            "c169298e4d": "Hecho",
-            "3c6c478462": "X termina, envíale la tarea de revisión”.",
-            "298301b7a0": "worktree",
-            "864e2db28f": "“Cuando el agente en",
-            "7fc6f02099": "y crear PR para cada uno”.",
-            "27c567a89c": "worktrees",
-            "55846c7f95": "“Divide este PR en dos",
-            "4795ac2d4a": "Prueba a pedir:",
             "53905bd076": "Vista previa de desarrollo: abriendo la terminal de configuración de skills.",
             "1da82af45b": "Muster CLI necesita atención",
             "ce13a742d0": "`orca` registrado en PATH.",
