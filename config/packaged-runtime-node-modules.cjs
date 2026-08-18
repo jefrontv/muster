@@ -16,6 +16,8 @@ const requireFromProject = createRequire(join(projectDir, 'package.json'))
 const PACKAGED_RUNTIME_PACKAGE_ROOTS = [
   '@electron-toolkit/utils',
   '@linear/sdk',
+  // chat connector's in-process MCP server (chat-connector-server.ts). Pure JS.
+  '@modelcontextprotocol/sdk',
   '@parcel/watcher',
   'electron-updater',
   'i18next',
