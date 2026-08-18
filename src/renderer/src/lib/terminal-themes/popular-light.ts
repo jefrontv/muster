@@ -1,6 +1,31 @@
 import type { TerminalThemeMap } from './types'
 
 export const POPULAR_LIGHT_TERMINAL_THEMES: TerminalThemeMap = {
+  // Claude.ai's light palette: ivory ground, olive-brown text, terracotta accent.
+  'Claude Light': {
+    background: '#faf9f5',
+    foreground: '#3d3929',
+    cursor: '#c96442',
+    cursorAccent: '#faf9f5',
+    selectionBackground: '#e8e1d3',
+    selectionForeground: '#262624',
+    black: '#3d3929',
+    red: '#b0523e',
+    green: '#5c7a48',
+    yellow: '#9c7a2e',
+    blue: '#4e6fa3',
+    magenta: '#8a5e93',
+    cyan: '#3e7a72',
+    white: '#6e6b5e',
+    brightBlack: '#57544a',
+    brightRed: '#c96442',
+    brightGreen: '#4c6b39',
+    brightYellow: '#8a6a20',
+    brightBlue: '#3d5e93',
+    brightMagenta: '#7a4e84',
+    brightCyan: '#2e6b63',
+    brightWhite: '#262624'
+  },
   'Solarized Light': {
     background: '#fdf6e3',
     foreground: '#657b83',

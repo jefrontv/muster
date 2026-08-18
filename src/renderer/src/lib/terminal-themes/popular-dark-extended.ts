@@ -1,6 +1,31 @@
 import type { TerminalThemeMap } from './types'
 
 export const POPULAR_DARK_EXTENDED_TERMINAL_THEMES: TerminalThemeMap = {
+  // Claude.ai's dark palette: warm charcoal ground, ivory text, terracotta accent.
+  'Claude Dark': {
+    background: '#262624',
+    foreground: '#eeece2',
+    cursor: '#d97757',
+    cursorAccent: '#262624',
+    selectionBackground: '#4a453d',
+    selectionForeground: '#faf9f5',
+    black: '#1f1e1d',
+    red: '#d06a57',
+    green: '#7d9b6a',
+    yellow: '#c7a15a',
+    blue: '#7a99c2',
+    magenta: '#b085b8',
+    cyan: '#7fada6',
+    white: '#c2c0b6',
+    brightBlack: '#6e6c64',
+    brightRed: '#e58a76',
+    brightGreen: '#97b584',
+    brightYellow: '#ddba77',
+    brightBlue: '#96b4db',
+    brightMagenta: '#c9a3d0',
+    brightCyan: '#9ac6bf',
+    brightWhite: '#faf9f5'
+  },
   'Material Dark': {
     background: '#263238',
     foreground: '#eeffff',
