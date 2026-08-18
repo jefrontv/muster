@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
+import { attachmentsNotInlinedInBody } from '@/components/activecollab-inline-attachment-ids'
 import CommentMarkdown, { type ActiveCollabHtmlOptions } from '@/components/sidebar/CommentMarkdown'
 import { translate } from '@/i18n/i18n'
 import type { ActiveCollabComment } from '../../../shared/activecollab-types'
@@ -85,7 +86,9 @@ function ActiveCollabCommentCard({
           activeCollabHtml={activeCollabHtml}
           className="text-[13px] leading-relaxed"
         />
-        <ActiveCollabAttachmentGrid attachments={comment.attachments} />
+        <ActiveCollabAttachmentGrid
+          attachments={attachmentsNotInlinedInBody(comment.attachments, comment.bodyHtml)}
+        />
       </div>
     </article>
   )

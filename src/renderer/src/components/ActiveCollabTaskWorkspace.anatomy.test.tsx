@@ -60,7 +60,9 @@ vi.mock('@/store', () => ({
       listActiveCollabProjectMembers: mocks.listProjectMembers,
       // Opening a task clears its unread badge entry; harmless here, but the hook calls it on every
       // mount so the stand-in has to answer or the whole pane throws during render.
-      markActiveCollabTaskRead: async () => {}
+      markActiveCollabTaskRead: async () => {},
+      // "Discuss in chat" resolves the project's bound chat workspace on render.
+      chatWorkspaces: []
     })
 }))
 
@@ -293,7 +295,7 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     await mount()
 
     const terms = Array.from(container.querySelectorAll('dt')).map((dt) => dt.textContent)
-    expect(terms).toEqual(['Assignee', 'Created by', 'Due date', 'Labels'])
+    expect(terms).toEqual(['Assignee', 'Created by', 'Due date', 'Labels', 'Clients'])
     expect(assigneeText()).toBe('Jake Varrese')
     // Already anchored to the local calendar day upstream — shown as-is, under its own label.
     const dueLabel = new Date(2026, 6, 27).toLocaleDateString(undefined, {

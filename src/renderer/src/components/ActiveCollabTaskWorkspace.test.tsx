@@ -85,7 +85,9 @@ vi.mock('@/store', () => ({
       listActiveCollabProjectMembers: mocks.listProjectMembers,
       // Opening a task clears its unread badge entry; harmless here, but the hook calls it on
       // every mount so the store stand-in has to answer.
-      markActiveCollabTaskRead: mocks.markTaskRead
+      markActiveCollabTaskRead: mocks.markTaskRead,
+      // "Discuss in chat" resolves the project's bound chat workspace on render.
+      chatWorkspaces: []
     })
 }))
 

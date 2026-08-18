@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 
 import { ActiveCollabAttachmentGrid } from '@/components/activecollab-attachment-grid'
+import { attachmentsNotInlinedInBody } from '@/components/activecollab-inline-attachment-ids'
 import { describeActiveCollabFailure } from '@/components/activecollab-failure-message'
 import CommentMarkdown, { type ActiveCollabHtmlOptions } from '@/components/sidebar/CommentMarkdown'
 import { Button } from '@/components/ui/button'
@@ -153,7 +154,7 @@ export function ActiveCollabTaskWorkspace({
               )}
             </p>
           )}
-          <ActiveCollabAttachmentGrid attachments={attachments} />
+          <ActiveCollabAttachmentGrid attachments={attachmentsNotInlinedInBody(attachments, body)} />
         </section>
 
         <ActiveCollabCommentThread
