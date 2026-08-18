@@ -299,6 +299,14 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     expect(container.querySelector('header h2')?.className).toContain('line-through')
   })
 
+  it('opens the task in the external browser from the header', async () => {
+    await mount()
+    await click(buttonByLabel('Open in browser'))
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://projects.efront.com.au/projects/3790/tasks/509323'
+    )
+  })
+
   it('groups assignee, due date and labels as named fields', async () => {
     await mount()
 
