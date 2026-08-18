@@ -75,6 +75,21 @@ export default function ChatModePage(): React.JSX.Element {
         }, 6_000)
       )
     }
+    // A reload loses the queued questions but not the blocked CLI waiting on
+    // them, so re-read what main is still holding before listening for new ones.
+    void window.api.chatThreadStream
+      .pendingPermissions()
+      .then((requests) => {
+        const store = useAppStore.getState()
+        for (const request of requests) {
+          store.addChatThreadPermissionRequest(request.threadId, {
+            requestId: request.requestId,
+            toolName: request.toolName,
+            input: request.input
+          })
+        }
+      })
+      .catch(() => undefined)
     const unsubscribe = window.api.chatThreadStream.onEvent((event) => {
       const store = useAppStore.getState()
       switch (event.kind) {

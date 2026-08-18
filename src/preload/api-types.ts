@@ -929,6 +929,11 @@ export type ChatThreadStreamApi = {
   /** Interrupt the in-flight turn over the stream's control protocol. */
   interrupt: (threadId: string) => Promise<boolean>
   stop: (threadId: string) => Promise<void>
+  /** can_use_tool questions main is still holding, for a renderer that reloaded
+   *  while one was open. */
+  pendingPermissions: () => Promise<
+    { threadId: string; requestId: string; toolName: string; input: unknown }[]
+  >
   onEvent: (callback: (event: ChatThreadStreamEvent) => void) => () => void
 }
 

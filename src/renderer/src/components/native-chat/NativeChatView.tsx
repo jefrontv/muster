@@ -159,6 +159,12 @@ function NativeChatResolvedView({
   const hookWorkingEpoch = useAppStore(
     (s) => s.agentStatusByPaneKey[paneKey]?.stateStartedAt ?? null
   )
+  // The agent is parked on a permission prompt or question, so nothing advances
+  // until the user answers it.
+  const awaitingUser = useAppStore((s) => {
+    const state = s.agentStatusByPaneKey[paneKey]?.state
+    return state === 'waiting' || state === 'blocked'
+  })
   const canSend = useNativeChatCanSend(targetPtyId)
   // Reuse the verified composer send path for interactive cards and composer
   // stop (Stop sends ESC, the agent-TUI interrupt key).
@@ -358,6 +364,7 @@ function NativeChatResolvedView({
     isConversation,
     working: liveWorking,
     awaitingSend,
+    awaitingUser,
     interrupted: workingInterrupted
   })
 

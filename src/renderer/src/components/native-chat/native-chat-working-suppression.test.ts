@@ -36,6 +36,33 @@ describe('native chat working suppression', () => {
     ).toBe(true)
   })
 
+  it('stops claiming work while the agent is parked on a permission prompt', () => {
+    // A send made while the CLI is blocked queues behind the prompt, so its
+    // optimistic echo never clears; the spinner used to run forever and hide
+    // the prompt that would release it.
+    expect(
+      shouldShowNativeChatWorking({
+        isConversation: true,
+        working: false,
+        awaitingSend: true,
+        awaitingUser: true,
+        interrupted: false
+      })
+    ).toBe(false)
+  })
+
+  it('still shows real work even while a prompt is open', () => {
+    expect(
+      shouldShowNativeChatWorking({
+        isConversation: true,
+        working: true,
+        awaitingSend: true,
+        awaitingUser: true,
+        interrupted: false
+      })
+    ).toBe(true)
+  })
+
   it('keeps an awaiting send hidden after an interrupt', () => {
     expect(
       shouldShowNativeChatWorking({

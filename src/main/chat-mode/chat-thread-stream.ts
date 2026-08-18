@@ -16,6 +16,7 @@ import {
   removeChatThreadMcpConfigFile
 } from './chat-thread-stream-mcp-config'
 import { buildChatStreamUserContent, readChatStreamImages } from './chat-thread-stream-user-content'
+import { buildPermissionControlResponse } from './chat-thread-permission-response'
 
 const STDERR_TAIL_LIMIT = 4_096
 const STOP_KILL_GRACE_MS = 1_500
@@ -60,10 +61,11 @@ type StreamEntry = {
    *  intentional stop/relaunch never races the renderer's session bookkeeping. */
   stopping: boolean
   killTimer: ReturnType<typeof setTimeout> | null
-  /** can_use_tool requests awaiting a renderer verdict, id → original input.
-   *  The input is kept so an allow without updatedInput echoes it back; entries
-   *  are denied on stop so the CLI never hangs on an unanswerable question. */
-  pendingPermissionRequests: Map<string, unknown>
+  /** can_use_tool requests awaiting a renderer verdict, by request id. The input
+   *  is kept so an allow without updatedInput echoes it back; the tool name so a
+   *  reloaded renderer can rebuild the prompt. Entries are denied on stop so the
+   *  CLI never hangs on an unanswerable question. */
+  pendingPermissionRequests: Map<string, { toolName: string; input: unknown }>
   /** Outgoing control_request id counter (interrupts) — unique per child. */
   controlRequestCounter: number
   /** Revokes the muster MCP token + deletes the config file; runs once. */
@@ -165,7 +167,10 @@ export function startChatThreadStream(
     // Book-keep pending can_use_tool requests so stop can deny what's open and
     // an allow verdict can echo the original input back.
     if (event.kind === 'permission-request') {
-      entry.pendingPermissionRequests.set(event.requestId, event.input)
+      entry.pendingPermissionRequests.set(event.requestId, {
+        toolName: event.toolName,
+        input: event.input
+      })
     } else if (event.kind === 'permission-cancel') {
       entry.pendingPermissionRequests.delete(event.requestId)
     }
@@ -247,26 +252,6 @@ export async function sendChatThreadStreamMessage(
   })
 }
 
-/** Verdict payload the CLI accepts for a can_use_tool control_request. */
-function buildPermissionControlResponse(args: {
-  requestId: string
-  behavior: 'allow' | 'deny'
-  message?: string
-  updatedInput?: unknown
-}): unknown {
-  return {
-    type: 'control_response',
-    response: {
-      subtype: 'success',
-      request_id: args.requestId,
-      response:
-        args.behavior === 'allow'
-          ? { behavior: 'allow', updatedInput: args.updatedInput ?? {} }
-          : { behavior: 'deny', message: args.message ?? 'The user declined this tool use.' }
-    }
-  }
-}
-
 export function respondChatThreadPermission(args: {
   threadId: string
   requestId: string
@@ -280,7 +265,7 @@ export function respondChatThreadPermission(args: {
   }
   // A stale request_id (turn already interrupted) is written anyway; the CLI
   // tolerates unknown ids silently (verified against 2.1.224).
-  const originalInput = entry.pendingPermissionRequests.get(args.requestId)
+  const originalInput = entry.pendingPermissionRequests.get(args.requestId)?.input
   entry.pendingPermissionRequests.delete(args.requestId)
   return writeStdinLine(
     entry,
@@ -302,6 +287,27 @@ export function interruptChatThreadStream(threadId: string): boolean {
     request_id: `req_${entry.controlRequestCounter}`,
     request: { subtype: 'interrupt' }
   })
+}
+
+/** Every can_use_tool question still awaiting a verdict, across live threads.
+ *  A renderer that reloaded mid-question has no record of it, and the CLI blocks
+ *  until someone answers — so the renderer re-reads them on mount. */
+export function listPendingChatThreadPermissionRequests(): {
+  threadId: string
+  requestId: string
+  toolName: string
+  input: unknown
+}[] {
+  const pending: { threadId: string; requestId: string; toolName: string; input: unknown }[] = []
+  for (const [threadId, entry] of registry) {
+    if (entry.stopping) {
+      continue
+    }
+    for (const [requestId, request] of entry.pendingPermissionRequests) {
+      pending.push({ threadId, requestId, toolName: request.toolName, input: request.input })
+    }
+  }
+  return pending
 }
 
 export function stopChatThreadStream(threadId: string): void {

@@ -887,6 +887,7 @@ const api = {
     respondPermission: (args) => ipcRenderer.invoke('chatThreadStream:respondPermission', args),
     interrupt: (threadId) => ipcRenderer.invoke('chatThreadStream:interrupt', threadId),
     stop: (threadId) => ipcRenderer.invoke('chatThreadStream:stop', threadId),
+    pendingPermissions: () => ipcRenderer.invoke('chatThreadStream:pendingPermissions'),
     onEvent: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

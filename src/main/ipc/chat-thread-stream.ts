@@ -10,6 +10,7 @@ import type { Store } from '../persistence'
 import { chatConnectorMcpForStream } from './chat-connector'
 import {
   interruptChatThreadStream,
+  listPendingChatThreadPermissionRequests,
   respondChatThreadPermission,
   sendChatThreadStreamMessage,
   startChatThreadStream,
@@ -21,7 +22,8 @@ const CHANNELS = [
   'chatThreadStream:send',
   'chatThreadStream:respondPermission',
   'chatThreadStream:interrupt',
-  'chatThreadStream:stop'
+  'chatThreadStream:stop',
+  'chatThreadStream:pendingPermissions'
 ] as const
 
 function asString(value: unknown, field: string): string {
@@ -139,6 +141,13 @@ export function registerChatThreadStreamHandlers(store: Store): void {
     'chatThreadStream:interrupt',
     async (_event, threadId: unknown): Promise<boolean> =>
       interruptChatThreadStream(asString(threadId, 'threadId'))
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:pendingPermissions',
+    async (): Promise<
+      { threadId: string; requestId: string; toolName: string; input: unknown }[]
+    > => listPendingChatThreadPermissionRequests()
   )
 
   ipcMain.handle('chatThreadStream:stop', async (_event, threadId: unknown): Promise<void> => {
