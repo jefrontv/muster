@@ -52,7 +52,15 @@ function fakeDeps(): ChatConnectorToolDeps {
     confirm: async () => false,
     stopThreadStream: () => undefined,
     broadcastChange: () => undefined,
-    directoryExists: () => false
+    directoryExists: () => false,
+    createWorkspace: ({ name, directories }) => ({
+      id: 'w-new',
+      name,
+      directories,
+      createdAt: 1,
+      updatedAt: 1
+    }),
+    moveThread: () => null
   }
 }
 

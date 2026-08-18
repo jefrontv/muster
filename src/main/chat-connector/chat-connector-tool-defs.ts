@@ -11,7 +11,10 @@ export const CHAT_CONNECTOR_TOOL_NAMES = [
   'set_default_model',
   'rename_thread',
   'archive_threads',
-  'delete_threads'
+  'delete_threads',
+  'list_workspaces',
+  'move_chat_to_workspace',
+  'create_workspace_from_chat'
 ] as const
 
 export type ChatConnectorToolName = (typeof CHAT_CONNECTOR_TOOL_NAMES)[number]
@@ -105,6 +108,52 @@ export function chatConnectorToolDefs(): Tool[] {
           archived: { type: 'boolean', description: 'Defaults to true (archive).' }
         },
         required: ['threadIds']
+      }
+    },
+    {
+      name: 'list_workspaces',
+      description:
+        'List every chat workspace in the app with id, name, working folders, and thread count, plus how many ungrouped chats exist. Use this to find the workspace a chat should move into.',
+      inputSchema: { type: 'object', properties: {} }
+    },
+    {
+      name: 'move_chat_to_workspace',
+      description:
+        'Move a chat into an existing workspace, identified by workspaceId or workspaceName. Pass workspaceId: null to move it back out to the ungrouped Chats list. Defaults to moving the current chat.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          workspaceId: {
+            type: ['string', 'null'],
+            description: 'Target workspace id, or null to ungroup the chat.'
+          },
+          workspaceName: {
+            type: 'string',
+            description: 'Target workspace name; used when workspaceId is not given.'
+          },
+          threadId: { type: 'string', description: 'Chat to move; defaults to this chat.' }
+        }
+      }
+    },
+    {
+      name: 'create_workspace_from_chat',
+      description:
+        'Create a new chat workspace and move the current chat into it — for turning an ungrouped chat into a project. Folders default to the current workspace\'s, or none for an ungrouped chat.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Name for the new workspace.' },
+          directories: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Absolute working folders; first is the primary cwd.'
+          },
+          moveChat: {
+            type: 'boolean',
+            description: 'Defaults to true. False creates the workspace without moving this chat.'
+          }
+        },
+        required: ['name']
       }
     },
     {

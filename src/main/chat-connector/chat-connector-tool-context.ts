@@ -24,6 +24,9 @@ export type ChatConnectorToolDeps = {
     patch: Partial<Pick<ChatThread, 'title' | 'archived'>>
   ) => ChatThread | null
   deleteThread: (id: string) => boolean
+  createWorkspace: (args: { name: string; directories: string[] }) => ChatWorkspace
+  /** null target moves the thread to the ungrouped Chats section. */
+  moveThread: (id: string, workspaceId: string | null) => ChatThread | null
   /** Resolved default chat model from settings; null = the CLI's own default. */
   getDefaultModel: () => string | null
   setDefaultModel: (modelId: string) => void

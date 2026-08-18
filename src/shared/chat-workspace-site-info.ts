@@ -197,7 +197,7 @@ export function buildChatWorkspaceAgentBrief(workspace: ChatWorkspace): string {
 
   lines.push(
     '',
-    'This session has "muster" MCP tools scoped to this workspace. Use them when the user asks to view or change workspace settings: rename the workspace, edit notes, URLs, or client emails, change the color or working folders, switch the default chat model, or rename, archive, or clean up chats.'
+    'This session has "muster" MCP tools scoped to this workspace. Use them when the user asks to view or change workspace settings: rename the workspace, edit notes, URLs, or client emails, change the color or working folders, switch the default chat model, or rename, archive, or clean up chats. They can also move this chat into another workspace, or turn it into a new workspace of its own.'
   )
 
   return lines.join('\n')

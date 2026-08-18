@@ -44,6 +44,8 @@ function buildChatConnectorToolDeps(store: Store): ChatConnectorToolDeps {
     updateWorkspace: (id, patch) => chatStore().updateWorkspace(id, patch),
     updateThread: (id, patch) => chatStore().updateThread(id, patch),
     deleteThread: (id) => chatStore().deleteThread(id),
+    createWorkspace: (args) => chatStore().createWorkspace(args),
+    moveThread: (id, workspaceId) => chatStore().moveThread(id, workspaceId),
     getDefaultModel: () => {
       const model = resolveNativeChatSessionOptionDefaults(
         store.getSettings().nativeChatSessionOptions,

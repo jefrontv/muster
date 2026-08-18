@@ -97,7 +97,29 @@ function createHarness(args?: {
     broadcastChange: () => {
       broadcastCount += 1
     },
-    directoryExists: (path) => existing.has(path)
+    directoryExists: (path) => existing.has(path),
+    createWorkspace: ({ name, directories }) => {
+      const created: ChatWorkspace = {
+        id: `w${state.workspaces.length + 1}`,
+        name,
+        directories,
+        createdAt: 1,
+        updatedAt: 1
+      }
+      state.workspaces.push(created)
+      return created
+    },
+    moveThread: (id, workspaceId) => {
+      const target = state.threads.find((t) => t.id === id)
+      if (!target) {
+        return null
+      }
+      if (workspaceId !== null && !state.workspaces.some((w) => w.id === workspaceId)) {
+        return null
+      }
+      target.workspaceId = workspaceId
+      return target
+    }
   }
   return { deps, state, deleted, stopped, broadcasts: () => broadcastCount, setModel: () => modelWritten }
 }
@@ -346,5 +368,111 @@ describe('chat-connector confirm bridge', () => {
       clearChatConnectorConfirmsForTests()
       vi.useRealTimers()
     }
+  })
+})
+
+describe('workspace membership tools', () => {
+  it('lists every workspace with counts and flags the caller\'s own', async () => {
+    const harness = createHarness({
+      workspaces: [workspace(), workspace({ id: 'w2', name: 'Acme', directories: [] })],
+      threads: [thread(), thread({ id: 't2', workspaceId: null }), thread({ id: 't3', workspaceId: 'w2' })]
+    })
+    const result = await call(harness, 'list_workspaces')
+    const payload = JSON.parse(result.content[0]!.text)
+    expect(payload.standaloneChatCount).toBe(1)
+    expect(payload.workspaces).toEqual([
+      expect.objectContaining({ id: 'w1', threadCount: 1, isCurrentWorkspace: true }),
+      expect.objectContaining({ id: 'w2', name: 'Acme', threadCount: 1 })
+    ])
+  })
+
+  it('moves an ungrouped chat into a workspace named by the user', async () => {
+    const harness = createHarness({
+      workspaces: [workspace({ id: 'w2', name: 'Acme' })],
+      threads: [thread({ workspaceId: null, title: 'Quoting new work' })]
+    })
+    const result = await call(harness, 'move_chat_to_workspace', { workspaceName: 'acme' })
+    expect(result.isError).toBeUndefined()
+    expect(harness.state.threads[0]!.workspaceId).toBe('w2')
+    expect(harness.broadcasts()).toBe(1)
+    // The caveat has to survive: the running session keeps its original brief.
+    expect(result.content[0]!.text).toContain('relaunched')
+  })
+
+  it('ungroups a chat when the target is explicitly null', async () => {
+    const harness = createHarness()
+    const result = await call(harness, 'move_chat_to_workspace', { workspaceId: null })
+    expect(result.isError).toBeUndefined()
+    expect(harness.state.threads[0]!.workspaceId).toBeNull()
+  })
+
+  it('refuses an ambiguous name instead of guessing a workspace', async () => {
+    const harness = createHarness({
+      workspaces: [workspace({ id: 'w1', name: 'Acme' }), workspace({ id: 'w2', name: 'acme' })],
+      threads: [thread({ workspaceId: null })]
+    })
+    const result = await call(harness, 'move_chat_to_workspace', { workspaceName: 'Acme' })
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('More than one workspace')
+    expect(harness.state.threads[0]!.workspaceId).toBeNull()
+  })
+
+  it('reports an unknown target and leaves the chat where it is', async () => {
+    const harness = createHarness({ threads: [thread({ workspaceId: null })] })
+    const result = await call(harness, 'move_chat_to_workspace', { workspaceName: 'Nope' })
+    expect(result.isError).toBe(true)
+    expect(harness.state.threads[0]!.workspaceId).toBeNull()
+    expect(harness.broadcasts()).toBe(0)
+  })
+
+  it('treats a move to the current workspace as a no-op', async () => {
+    const harness = createHarness()
+    const result = await call(harness, 'move_chat_to_workspace', { workspaceId: 'w1' })
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0]!.text).toContain('already in')
+    expect(harness.broadcasts()).toBe(0)
+  })
+
+  it('promotes an ungrouped chat into a brand new workspace', async () => {
+    const harness = createHarness({ threads: [thread({ workspaceId: null })] })
+    const result = await call(harness, 'create_workspace_from_chat', { name: 'Roads Australia' })
+    expect(result.isError).toBeUndefined()
+    const created = harness.state.workspaces.find((w) => w.name === 'Roads Australia')
+    expect(created).toBeDefined()
+    expect(harness.state.threads[0]!.workspaceId).toBe(created!.id)
+  })
+
+  it('inherits the current workspace folders when none are given', async () => {
+    const harness = createHarness()
+    await call(harness, 'create_workspace_from_chat', { name: 'Split out' })
+    const created = harness.state.workspaces.find((w) => w.name === 'Split out')
+    expect(created?.directories).toEqual(['/sites/client'])
+  })
+
+  it('rejects folders that do not exist rather than creating a broken workspace', async () => {
+    const harness = createHarness({ threads: [thread({ workspaceId: null })] })
+    const result = await call(harness, 'create_workspace_from_chat', {
+      name: 'Bad',
+      directories: ['/nope']
+    })
+    expect(result.isError).toBe(true)
+    expect(harness.state.workspaces.some((w) => w.name === 'Bad')).toBe(false)
+  })
+
+  it('can create a workspace without moving the chat into it', async () => {
+    const harness = createHarness()
+    const result = await call(harness, 'create_workspace_from_chat', {
+      name: 'Later',
+      moveChat: false
+    })
+    expect(result.isError).toBeUndefined()
+    expect(harness.state.threads[0]!.workspaceId).toBe('w1')
+    expect(harness.state.workspaces.some((w) => w.name === 'Later')).toBe(true)
+  })
+
+  it('requires a name', async () => {
+    const harness = createHarness()
+    const result = await call(harness, 'create_workspace_from_chat', { name: '  ' })
+    expect(result.isError).toBe(true)
   })
 })
