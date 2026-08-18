@@ -177,9 +177,9 @@
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e5e5e5;
   --sidebar-ring: #a1a1a1;
-  --terminal-pane-title-on-dark-fg: rgb(255 255 255 / 0.52);
-  --terminal-pane-title-on-dark-input-fg: rgb(255 255 255 / 0.7);
-  --terminal-pane-title-on-dark-placeholder: rgb(255 255 255 / 0.38);
+  --terminal-pane-title-on-dark-fg: rgb(255 255 255 / 0.6);
+  --terminal-pane-title-on-dark-input-fg: rgb(255 255 255 / 0.78);
+  --terminal-pane-title-on-dark-placeholder: rgb(255 255 255 / 0.45);
   --terminal-pane-title-on-dark-button-fg: rgb(255 255 255);
   --terminal-pane-title-on-dark-button-hover-fg: rgb(255 255 255);
   --terminal-pane-title-on-dark-input-bg: rgb(255 255 255 / 0.04);
@@ -231,7 +231,8 @@
   --secondary: #262626;
   --secondary-foreground: #fafafa;
   --muted: #262626;
-  --muted-foreground: #a1a1a1;
+  /* #a1a1a1 sat under AA on raised dark surfaces (cards, muted fills). */
+  --muted-foreground: #b3b3b3;
   --accent: #404040;
   --accent-foreground: #fafafa;
   --destructive: #ff6568;
@@ -267,9 +268,9 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgb(255 255 255 / 0.07);
   --sidebar-ring: #525252;
-  --terminal-pane-title-on-dark-fg: rgb(255 255 255 / 0.52);
-  --terminal-pane-title-on-dark-input-fg: rgb(255 255 255 / 0.7);
-  --terminal-pane-title-on-dark-placeholder: rgb(255 255 255 / 0.38);
+  --terminal-pane-title-on-dark-fg: rgb(255 255 255 / 0.6);
+  --terminal-pane-title-on-dark-input-fg: rgb(255 255 255 / 0.78);
+  --terminal-pane-title-on-dark-placeholder: rgb(255 255 255 / 0.45);
   --terminal-pane-title-on-dark-button-fg: rgb(255 255 255);
   --terminal-pane-title-on-dark-button-hover-fg: rgb(255 255 255);
   --terminal-pane-title-on-dark-input-bg: rgb(255 255 255 / 0.04);

@@ -62,7 +62,9 @@ function buildSurfaceVariables(args: {
   const ring = `color-mix(in srgb, ${foreground} 44%, ${background})`
   const card = `color-mix(in srgb, ${foreground} 4%, ${background})`
   const muted = `color-mix(in srgb, ${foreground} 7%, ${background})`
-  const mutedForeground = `color-mix(in srgb, ${foreground} 62%, ${background})`
+  // 72%: at 62% a dim terminal foreground mixed toward the background dropped
+  // secondary text below AA contrast on dark themes (thread titles, placeholders).
+  const mutedForeground = `color-mix(in srgb, ${foreground} 72%, ${background})`
   const vars: LeftSidebarStyleVariables = {
     '--worktree-sidebar': background,
     '--worktree-sidebar-foreground': foreground,
