@@ -112,7 +112,11 @@ function readPackage(packageName, fromDir = projectDir) {
   return {
     name: packageJson.name ?? packageName,
     packageDir,
-    dependencies: Object.keys(packageJson.dependencies ?? {})
+    dependencies: Object.keys(packageJson.dependencies ?? {}),
+    // Peers matter too: @hono/node-server (via @modelcontextprotocol/sdk) declares
+    // hono only as a peerDependency; skipping peers shipped a build that crashed
+    // on launch with "Cannot find module 'hono/ws'" (v1.5.30).
+    peerDependencies: Object.keys(packageJson.peerDependencies ?? {})
   }
 }
 
@@ -131,6 +135,15 @@ function collectPackagedRuntimePackages(electronPlatformName = process.platform)
 
     for (const dependencyName of packageInfo.dependencies) {
       visit(dependencyName, packageInfo.packageDir)
+    }
+    // Optional peers may legitimately be absent (e.g. ws's bufferutil): skip
+    // quietly; a peer that IS installed must ship or the require crashes at runtime.
+    for (const peerName of packageInfo.peerDependencies) {
+      try {
+        visit(peerName, packageInfo.packageDir)
+      } catch {
+        // Not installed for this build; nothing to copy.
+      }
     }
   }
 
