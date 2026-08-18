@@ -105,6 +105,14 @@ export default function ChatModePage(): React.JSX.Element {
             store.setChatThreadContextWindow(event.threadId, event.contextWindow)
           }
           const now = Date.now()
+          // The stream's own result record is the authoritative end of the turn.
+          // Hooks normally close the pane out, but a dropped Stop hook (or a
+          // turn the CLI ended while a card was still open) leaves the pane
+          // stuck on "Working" with nothing to correct it.
+          const settlingPaneKey = store.chatThreadSessions[event.threadId]?.paneKey
+          if (settlingPaneKey) {
+            store.settleAgentStatusWorking(settlingPaneKey, now)
+          }
           // A completion the user is watching (thread active, window focused)
           // is read on arrival — it must not light the sidebar's unread "Done".
           const watched = store.activeChatThreadId === event.threadId && document.hasFocus()

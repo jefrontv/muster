@@ -168,6 +168,12 @@ export type AgentStatusSlice = {
     }
   ) => void
 
+  /** Close out a 'working' entry whose transport knows the turn already ended.
+   *  Hooks are the normal authority; this is the stream's terminal backstop for
+   *  a Stop hook that never arrived, which otherwise strands the pane on
+   *  "Working" forever. No-op unless the pane is currently working. */
+  settleAgentStatusWorking: (paneKey: string, at: number) => void
+
   /** Record resume identity without creating a visible turn-status row. */
   recordAgentProviderSession: (
     paneKey: string,
@@ -2102,6 +2108,45 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           sortEpoch: s.sortEpoch + 1
         }
       })
+    },
+
+    settleAgentStatusWorking: (paneKey, at) => {
+      const existing = get().agentStatusByPaneKey[paneKey]
+      if (!existing || existing.state !== 'working') {
+        return
+      }
+      set((s) => {
+        const entry = s.agentStatusByPaneKey[paneKey]
+        // Re-check inside set: a hook arriving in the same tick is newer truth.
+        if (!entry || entry.state !== 'working') {
+          return s
+        }
+        let history: AgentStateHistoryEntry[] = [
+          ...(entry.stateHistory ?? []),
+          { state: entry.state, prompt: entry.prompt, startedAt: entry.stateStartedAt }
+        ]
+        if (history.length > AGENT_STATE_HISTORY_MAX) {
+          history = history.slice(history.length - AGENT_STATE_HISTORY_MAX)
+        }
+        // A finished turn has no live tool or pending question; leaving them set
+        // would keep a stale interactive card eligible to re-latch.
+        const { interactivePrompt: _prompt, toolName: _tool, ...rest } = entry
+        return {
+          agentStatusByPaneKey: {
+            ...s.agentStatusByPaneKey,
+            [paneKey]: {
+              ...rest,
+              state: 'done',
+              updatedAt: at,
+              stateStartedAt: at,
+              stateHistory: history
+            }
+          },
+          agentStatusEpoch: s.agentStatusEpoch + 1,
+          sortEpoch: s.sortEpoch + 1
+        }
+      })
+      queueMicrotask(() => freshness.schedule())
     },
 
     removeAgentStatus: (paneKey) => {
