@@ -180,4 +180,21 @@ describe('sanitizeRepoIcon', () => {
       githubAvatarIcon({ owner: 'acme', repo: 'widgets', host: 'github.com@evil.example' })
     ).toMatchObject({ src: 'https://github.com/acme.png?size=64' })
   })
+
+  it('keeps a normalized icon tint and drops one it cannot trust', () => {
+    const base = {
+      type: 'image',
+      src: `data:image/png;base64,${PNG_1X1_BASE64}`,
+      source: 'favicon'
+    }
+    expect(sanitizeRepoIcon({ ...base, tint: '#EF4444' })).toMatchObject({ tint: '#ef4444' })
+    // Shorthand hex is expanded like every other stored colour.
+    expect(sanitizeRepoIcon({ ...base, tint: '#f00' })).toMatchObject({ tint: '#ff0000' })
+    // A tint is decoration, so junk drops the field instead of the whole icon.
+    expect(sanitizeRepoIcon({ ...base, tint: 'red' })).not.toHaveProperty('tint')
+    expect(sanitizeRepoIcon({ ...base, tint: 'javascript:alert(1)' })).toMatchObject({
+      type: 'image'
+    })
+    expect(sanitizeRepoIcon(base)).not.toHaveProperty('tint')
+  })
 })

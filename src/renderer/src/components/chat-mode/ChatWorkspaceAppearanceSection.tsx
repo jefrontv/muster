@@ -47,6 +47,7 @@ export function ChatWorkspaceAppearanceSection({
         hideAvatarTab
         selectedLucideName={icon?.type === 'lucide' ? icon.name : null}
         selectedEmoji={icon?.type === 'emoji' ? icon.emoji : ''}
+        currentIcon={icon}
         loadingGitHub={false}
         defaultFaviconDomain={defaultFaviconDomain ?? ''}
         onSetIcon={onIconChange}

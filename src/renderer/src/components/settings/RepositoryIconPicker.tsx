@@ -231,6 +231,7 @@ export function RepositoryIconPicker({
         initialTab={initialTab}
         selectedLucideName={selectedLucideName}
         selectedEmoji={selectedEmoji}
+        currentIcon={repo.repoIcon}
         loadingGitHub={loadingGitHub}
         defaultFaviconDomain={defaultFaviconDomain}
         onSetIcon={setIcon}

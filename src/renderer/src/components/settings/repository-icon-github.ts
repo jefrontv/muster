@@ -89,7 +89,7 @@ function sameRepoIcon(a: RepoIcon | null | undefined, b: RepoIcon | null | undef
     return false
   }
   if (a.type === 'image' && b.type === 'image') {
-    return a.src === b.src && a.source === b.source && a.label === b.label
+    return a.src === b.src && a.source === b.source && a.label === b.label && a.tint === b.tint
   }
   if (a.type === 'emoji' && b.type === 'emoji') {
     return a.emoji === b.emoji

@@ -136,6 +136,13 @@ export function getRepoLucideIcon(name: string | null | undefined): LucideIcon {
   return getRepoLucideIconOptions().find((option) => option.name === name)?.icon ?? Folder
 }
 
+/** Paints `tint` through the image's alpha channel. Exported for the picker's
+ *  own previews so tinted swatches match the rendered icon exactly. */
+export function maskedIconStyle(src: string, tint: string): React.CSSProperties {
+  const mask = `url("${src.replaceAll('"', '%22')}") center / contain no-repeat`
+  return { backgroundColor: tint, mask, WebkitMask: mask }
+}
+
 export function RepoIconGlyph({
   repoIcon,
   className,
@@ -150,12 +157,22 @@ export function RepoIconGlyph({
   if (repoIcon?.type === 'image') {
     return (
       <span className={cn('inline-flex items-center justify-center overflow-hidden', className)}>
-        <img
-          src={repoIcon.src}
-          alt=""
-          className={cn('size-full object-contain', iconClassName)}
-          draggable={false}
-        />
+        {repoIcon.tint ? (
+          // Masking (not filtering) flattens the artwork to one colour while
+          // keeping its shape, so a multi-coloured favicon reads as a glyph.
+          <span
+            aria-hidden="true"
+            className={cn('size-full', iconClassName)}
+            style={maskedIconStyle(repoIcon.src, repoIcon.tint)}
+          />
+        ) : (
+          <img
+            src={repoIcon.src}
+            alt=""
+            className={cn('size-full object-contain', iconClassName)}
+            draggable={false}
+          />
+        )}
       </span>
     )
   }

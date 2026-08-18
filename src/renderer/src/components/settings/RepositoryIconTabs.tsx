@@ -8,6 +8,7 @@ import { Input } from '../ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import { getRepoLucideIconOptions } from '../repo/repo-icon'
+import { RepositoryIconTintSection } from './RepositoryIconTintSection'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 
@@ -19,6 +20,8 @@ type RepositoryIconTabsProps = {
   hideAvatarTab?: boolean
   selectedLucideName: string | null
   selectedEmoji: string
+  /** The icon as it stands, so an image icon can offer its recolour row. */
+  currentIcon?: RepoIcon | null
   loadingGitHub: boolean
   /** Live domain of the Site matching this project; empty when no Site matches. */
   defaultFaviconDomain: string
@@ -34,6 +37,7 @@ export function RepositoryIconTabs({
   hideAvatarTab,
   selectedLucideName,
   selectedEmoji,
+  currentIcon,
   loadingGitHub,
   defaultFaviconDomain,
   onSetIcon,
@@ -306,13 +310,26 @@ export function RepositoryIconTabs({
                   type: 'image',
                   src: faviconPreview,
                   source: 'favicon',
-                  label: faviconDomain.trim()
+                  label: faviconDomain.trim(),
+                  // Swapping the artwork keeps the recolour the user already picked.
+                  ...(currentIcon?.type === 'image' && currentIcon.tint
+                    ? { tint: currentIcon.tint }
+                    : {})
                 })
               }
             >
               {translate('auto.components.settings.RepositoryIconPicker.favicon_apply', 'Apply')}
             </Button>
           </div>
+        ) : null}
+        {currentIcon?.type === 'image' ? (
+          <RepositoryIconTintSection
+            tint={currentIcon.tint ?? null}
+            onTintChange={(tint) => {
+              const { tint: _dropped, ...rest } = currentIcon
+              onSetIcon(tint ? { ...rest, tint } : rest)
+            }}
+          />
         ) : null}
         <p className="text-xs text-muted-foreground">
           {translate(

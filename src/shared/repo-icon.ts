@@ -1,11 +1,20 @@
 import { validateRasterImageDataUri } from './image-data-uri'
+import { normalizeRepoBadgeColor } from './repo-badge-color'
 
 export type RepoIconImageSource = 'upload' | 'file' | 'favicon' | 'github'
 
 export type RepoIcon =
   | { type: 'lucide'; name: string }
   | { type: 'emoji'; emoji: string }
-  | { type: 'image'; src: string; source: RepoIconImageSource; label?: string }
+  | {
+      type: 'image'
+      src: string
+      source: RepoIconImageSource
+      label?: string
+      /** Flat colour the image is recoloured to, keeping its alpha. Absent = the
+       *  image's own colours. */
+      tint?: string
+    }
 
 export const MAX_REPO_ICON_UPLOAD_BYTES = 256 * 1024
 export const MAX_REPO_ICON_DATA_URL_LENGTH = 400 * 1024
@@ -137,11 +146,13 @@ export function sanitizeRepoIcon(value: unknown): RepoIcon | null | undefined {
       return undefined
     }
     const label = typeof candidate.label === 'string' ? candidate.label.trim().slice(0, 80) : ''
+    const tint = normalizeRepoBadgeColor(candidate.tint)
     return {
       type: 'image',
       src,
       source: source as RepoIconImageSource,
-      ...(label ? { label } : {})
+      ...(label ? { label } : {}),
+      ...(tint ? { tint } : {})
     }
   }
 
