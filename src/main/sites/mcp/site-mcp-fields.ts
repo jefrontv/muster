@@ -45,6 +45,13 @@ export const SITE_MCP_FIELDS: readonly SiteMcpField[] = [
     kind: 'string'
   },
   {
+    key: 'ssh_port',
+    target: 'environment',
+    property: 'sshPort',
+    description: 'SSH port (blank uses 22)',
+    kind: 'string'
+  },
+  {
     key: 'username',
     target: 'environment',
     property: 'username',

@@ -43,10 +43,19 @@ export const SITE_LOCAL_STACKS: readonly SiteLocalStack[] = [
 
 export const DEFAULT_SITE_ENVIRONMENT_NAME = 'main'
 export const DEFAULT_SITE_REMOTE_ROOT_PATH = 'public_html'
+export const DEFAULT_SITE_SSH_PORT = 22
+
+/** Parses a stored `sshPort` string; anything unusable falls back to the SSH default. */
+export function resolveSiteSshPort(sshPort: string | undefined): number {
+  const parsed = Number.parseInt((sshPort ?? '').trim(), 10)
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : DEFAULT_SITE_SSH_PORT
+}
 
 /** One remote target (production, staging, …). Toggles are per-environment, as in ocsites. */
 export type SiteEnvironment = {
   hostname: string
+  /** Empty means the SSH default; kept as text so the field round-trips what the user typed. */
+  sshPort: string
   username: string
   /** Remote WordPress root, relative to the SSH user's home. */
   rootPath: string
@@ -168,6 +177,7 @@ export type OcsitesImportApplyResult = {
 export function createEmptySiteEnvironment(): SiteEnvironment {
   return {
     hostname: '',
+    sshPort: '',
     username: '',
     rootPath: DEFAULT_SITE_REMOTE_ROOT_PATH,
     liveDomain: '',

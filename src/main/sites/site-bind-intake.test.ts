@@ -215,6 +215,7 @@ describe('confirm', () => {
           environments: {
             staging: {
               hostname: 'old.example.com',
+              sshPort: '',
               username: 'old',
               rootPath: 'old_root',
               liveDomain: 'old.com',

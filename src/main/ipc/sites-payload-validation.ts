@@ -49,6 +49,7 @@ const SITE_STRING_FIELDS = {
 
 const ENVIRONMENT_STRING_FIELDS = {
   hostname: MAX_NAME_LENGTH,
+  sshPort: MAX_NAME_LENGTH,
   username: MAX_NAME_LENGTH,
   rootPath: MAX_PATH_LENGTH,
   liveDomain: MAX_NAME_LENGTH,

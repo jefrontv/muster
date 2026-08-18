@@ -122,6 +122,8 @@ function convertEnvironment(raw: Record<string, unknown>): SiteEnvironment {
   return {
     ...createEmptySiteEnvironment(),
     hostname: asString(raw.hostname),
+    // ocsites presets may store the port as a number; keep the app's text shape.
+    sshPort: typeof raw.ssh_port === 'number' ? String(raw.ssh_port) : asString(raw.ssh_port),
     username: asString(raw.username),
     rootPath: asString(raw.root_path) || DEFAULT_SITE_REMOTE_ROOT_PATH,
     liveDomain,

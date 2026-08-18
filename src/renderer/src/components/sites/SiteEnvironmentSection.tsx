@@ -97,13 +97,30 @@ export function SiteEnvironmentSection({
       <div className="grid gap-3 sm:grid-cols-2">
         {getTextFields().map((field) => (
           <Fragment key={field.key}>
-            <div className="space-y-1">
-              <Label className="text-xs">{field.label}</Label>
-              <Input
-                value={environment[field.key]}
-                placeholder={field.placeholder}
-                onChange={(event) => onPatch({ [field.key]: event.target.value })}
-              />
+            {/* Port rides in the host's cell rather than the field list: a row of its own would
+                push every later field one slot and split user from its password. */}
+            <div className={field.key === 'hostname' ? 'flex gap-2' : 'space-y-1'}>
+              <div className="min-w-0 flex-1 space-y-1">
+                <Label className="text-xs">{field.label}</Label>
+                <Input
+                  value={environment[field.key]}
+                  placeholder={field.placeholder}
+                  onChange={(event) => onPatch({ [field.key]: event.target.value })}
+                />
+              </div>
+              {field.key === 'hostname' ? (
+                <div className="w-20 shrink-0 space-y-1">
+                  <Label className="text-xs">
+                    {translate('auto.components.sites.SiteEnvironmentSection.sshPort', 'SSH port')}
+                  </Label>
+                  <Input
+                    value={environment.sshPort ?? ''}
+                    placeholder="22"
+                    inputMode="numeric"
+                    onChange={(event) => onPatch({ sshPort: event.target.value })}
+                  />
+                </div>
+              ) : null}
             </div>
             {/* The password belongs beside the user it authenticates, not in a block of its own. */}
             {field.key === 'username' ? (

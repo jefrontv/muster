@@ -37,6 +37,7 @@ function makeSummary(overrides: Partial<SiteSummary> = {}): SiteSummary {
       environments: {
         production: {
           hostname: 'dedicated-11.example.com',
+          sshPort: '',
           username: 'acme',
           rootPath: 'public_html',
           liveDomain: 'acme.com',

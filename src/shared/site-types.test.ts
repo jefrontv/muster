@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createEmptySiteEnvironment,
   resolveSiteEnvironment,
+  resolveSiteSshPort,
   type Site,
   type SiteEnvironment
 } from './site-types'
@@ -16,6 +17,24 @@ function site(
   }
   return { environments, activeEnvironment }
 }
+
+describe('resolveSiteSshPort', () => {
+  it('uses the SSH default when unset or unusable', () => {
+    expect(resolveSiteSshPort('')).toBe(22)
+    expect(resolveSiteSshPort(undefined)).toBe(22)
+    expect(resolveSiteSshPort('  ')).toBe(22)
+    expect(resolveSiteSshPort('http')).toBe(22)
+    // Out of range on both ends, so a typo cannot dial port 0 or overflow.
+    expect(resolveSiteSshPort('0')).toBe(22)
+    expect(resolveSiteSshPort('70000')).toBe(22)
+  })
+
+  it('takes a configured port, trimmed', () => {
+    expect(resolveSiteSshPort('2222')).toBe(2222)
+    expect(resolveSiteSshPort(' 2200 ')).toBe(2200)
+    expect(resolveSiteSshPort('65535')).toBe(65535)
+  })
+})
 
 describe('resolveSiteEnvironment', () => {
   it('prefers an exact branch match, the only case that needs no confirmation', () => {

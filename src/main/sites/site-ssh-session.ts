@@ -6,6 +6,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type { ClientChannel, SFTPWrapper } from 'ssh2'
+import { resolveSiteSshPort } from '../../shared/site-types'
 import type { SshTarget } from '../../shared/ssh-types'
 import { fastGetViaSftp } from '../providers/ssh-filesystem-provider-sftp'
 import { SshConnection } from '../ssh/ssh-connection'
@@ -108,7 +109,7 @@ function buildSiteSshTarget(config: SiteRunConfig): SshTarget {
     id: `site-run:${config.site.id}:${config.environmentName}:${randomUUID()}`,
     label: hostname,
     host: hostname,
-    port: 22,
+    port: resolveSiteSshPort(config.environment.sshPort),
     username,
     // Why 'none' when a password is stored: ssh2 offers every key the user's agent holds BEFORE
     // falling back to the password, and a server's MaxAuthTries (commonly 6) then disconnects
