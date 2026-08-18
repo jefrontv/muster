@@ -170,7 +170,10 @@ export function TaskPageActiveCollabPanel({
           // Width is applied by the resize hook (imperative during a drag); the class list
           // keeps only the bounds so a stale persisted value can never outgrow the page.
           style={{ width: `${paneWidth}px` }}
-          className="relative flex min-h-0 max-h-full min-w-[320px] max-w-[900px] shrink-0 flex-col overflow-hidden border-l border-border/60 bg-background duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none"
+          // transition-none: `duration-200` (for the entrance animation) also sets
+          // transition-duration, and CSS transitions default to `all` — so the drag
+          // width was being eased 200ms behind the pointer.
+          className="relative flex min-h-0 max-h-full min-w-[320px] max-w-[900px] shrink-0 flex-col overflow-hidden border-l border-border/60 bg-background transition-none duration-200 animate-in fade-in slide-in-from-right-4 motion-reduce:animate-none"
         >
           {/* Drag target on the shared seam; 4px because a 1px edge is too hard to grab. */}
           <div
