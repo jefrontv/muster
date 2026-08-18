@@ -82,6 +82,19 @@ describe('RepositoryIconTabs icon recolour', () => {
     expect(onSetIcon.mock.calls[0]?.[0]).not.toHaveProperty('tint')
   })
 
+  it('leads the colours with white, the useful pick for a dark favicon', () => {
+    const onSetIcon = vi.fn()
+    render(FAVICON, onSetIcon)
+
+    const firstColour = [
+      ...container.querySelectorAll<HTMLButtonElement>('button[aria-pressed]')
+    ].find((button) => button.getAttribute('aria-label')?.startsWith('Recolor'))
+    expect(firstColour?.getAttribute('aria-label')).toBe('Recolor the icon #ffffff')
+
+    act(() => firstColour?.click())
+    expect(onSetIcon).toHaveBeenCalledWith({ ...FAVICON, tint: '#ffffff' })
+  })
+
   it('marks None as the selection for an untinted icon', () => {
     render(FAVICON, vi.fn())
     expect(swatch('Keep the original icon colors').getAttribute('aria-pressed')).toBe('true')

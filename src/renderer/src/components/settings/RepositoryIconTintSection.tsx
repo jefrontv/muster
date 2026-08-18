@@ -9,8 +9,14 @@ import { ColorPicker } from '../ui/color-picker'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 
+// Why: the shared palette leads with neutral grey, which reads as "off" next to
+// the None swatch. White is the useful first pick for recolouring dark favicons,
+// so this row swaps it in rather than moving REPO_COLORS out from under the
+// badge/lucide colour pickers that key their default off index 0.
+const ICON_TINT_COLORS = ['#ffffff', ...REPO_COLORS.slice(1)] as const
+
 const SWATCH_BASE =
-  'size-7 rounded-[4px] outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/50'
+  'size-7 rounded-[4px] border border-border/60 outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
 function swatchRing(selected: boolean): string {
   return selected
@@ -26,7 +32,7 @@ export function RepositoryIconTintSection({
   onTintChange: (tint: string | null) => void
 }): React.JSX.Element {
   const selected = normalizeRepoBadgeColor(tint)
-  const isPreset = REPO_COLORS.some((color) => color === selected)
+  const isPreset = ICON_TINT_COLORS.some((color) => color === selected)
 
   return (
     <div className="space-y-2">
@@ -50,7 +56,7 @@ export function RepositoryIconTintSection({
         >
           <Ban className="size-3.5" />
         </button>
-        {REPO_COLORS.map((color) => (
+        {ICON_TINT_COLORS.map((color) => (
           <button
             key={color}
             type="button"
@@ -66,7 +72,7 @@ export function RepositoryIconTintSection({
           />
         ))}
         <ColorPicker
-          value={selected ?? REPO_COLORS[0]}
+          value={selected ?? ICON_TINT_COLORS[0]}
           onChange={onTintChange}
           label={translate(
             'auto.components.settings.RepositoryIconTintSection.custom',

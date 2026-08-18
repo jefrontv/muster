@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const storeState = vi.hoisted(() => ({
   settings: { chatAutoGenerateTitle: undefined as boolean | undefined },
-  chatThreads: [] as { id: string; title: string; autoTitle?: string; titleGenerated?: boolean; workspaceId: string | null }[],
+  chatThreads: [] as {
+    id: string
+    title: string
+    autoTitle?: string
+    titleGenerated?: boolean
+    workspaceId: string | null
+  }[],
   chatWorkspaces: [] as { id: string; directories: string[] }[],
   chatThreadSessions: {} as Record<string, { paneKey: string }>,
   agentStatusByPaneKey: {} as Record<string, { prompt: string }>,

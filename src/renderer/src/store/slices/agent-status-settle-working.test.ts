@@ -39,7 +39,10 @@ describe('settleAgentStatusWorking', () => {
     // A finished turn has no live tool; a lingering prompt could re-latch a card.
     expect(entry?.toolName).toBeUndefined()
     expect(entry?.interactivePrompt).toBeUndefined()
-    expect(entry?.stateHistory?.at(-1)).toMatchObject({ state: 'working', prompt: 'audit the site' })
+    expect(entry?.stateHistory?.at(-1)).toMatchObject({
+      state: 'working',
+      prompt: 'audit the site'
+    })
   })
 
   it('leaves a pane that is not working alone', () => {

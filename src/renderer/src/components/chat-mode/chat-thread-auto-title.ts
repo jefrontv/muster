@@ -13,11 +13,11 @@ export function resetChatThreadAutoTitleAttemptsForTests(): void {
 }
 
 /** True while nothing but Muster has ever set this thread's title. */
-export function chatThreadTitleIsAutomatic(thread: {
-  title: string
-  autoTitle?: string
-}): boolean {
-  return thread.title === 'New chat' || (thread.autoTitle !== undefined && thread.title === thread.autoTitle)
+export function chatThreadTitleIsAutomatic(thread: { title: string; autoTitle?: string }): boolean {
+  return (
+    thread.title === 'New chat' ||
+    (thread.autoTitle !== undefined && thread.title === thread.autoTitle)
+  )
 }
 
 export async function generateChatThreadTitleAfterFirstTurn(threadId: string): Promise<void> {
