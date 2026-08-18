@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import {
-  FEATURE_WALL_SETUP_STEPS,
+  getFeatureWallSetupSteps,
   getFirstIncompleteFeatureWallSetupStepId,
+  type FeatureWallSetupMode,
   type FeatureWallSetupStepId
 } from '../../../../shared/feature-wall-setup-steps'
 import type { FeatureWallSetupProgress } from '../feature-wall/feature-wall-setup-progress'
@@ -16,18 +17,20 @@ export type SettingsSetupGuideProgress = {
 
 export function getSettingsSetupGuideProgress(progress: {
   ready: boolean
+  mode?: FeatureWallSetupMode
   stepDone: Partial<Record<FeatureWallSetupStepId, boolean>>
 }): SettingsSetupGuideProgress {
-  const doneCount = FEATURE_WALL_SETUP_STEPS.filter((step) => progress.stepDone[step.id]).length
+  const steps = getFeatureWallSetupSteps(progress.mode)
+  const doneCount = steps.filter((step) => progress.stepDone[step.id]).length
   const firstIncompleteStepId =
-    doneCount === FEATURE_WALL_SETUP_STEPS.length
+    doneCount === steps.length
       ? null
-      : getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)
+      : getFirstIncompleteFeatureWallSetupStepId(progress.stepDone, progress.mode)
 
   return {
     ready: progress.ready,
     doneCount,
-    total: FEATURE_WALL_SETUP_STEPS.length,
+    total: steps.length,
     firstIncompleteStepId
   }
 }

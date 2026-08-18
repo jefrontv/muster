@@ -47,6 +47,7 @@ vi.mock('../setup-guide/SetupGuideProgressRing', () => ({
 function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): FeatureWallSetupProgress {
   return {
     ready: true,
+    mode: 'code',
     stepDone: {
       'default-agent': false,
       'add-two-repos': false,
@@ -54,7 +55,9 @@ function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): Featur
       'two-worktrees': false,
       browser: false,
       'task-sources': false,
-      'setup-script': false
+      'setup-script': false,
+      'create-first-workspace': false,
+      'start-first-thread': false
     },
     coreDoneCount: 0,
     coreTotal: 8,
@@ -73,7 +76,9 @@ function makeAllDoneProgress(
       'two-worktrees': true,
       browser: true,
       'task-sources': true,
-      'setup-script': true
+      'setup-script': true,
+      'create-first-workspace': true,
+      'start-first-thread': true
     },
     coreDoneCount: 8,
     coreTotal: 8,

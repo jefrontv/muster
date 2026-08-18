@@ -27,11 +27,11 @@ export default function SetupGuideModal(): JSX.Element | null {
   const closeModal = useAppStore((s) => s.closeModal)
   const setSetupGuideSidebarDismissed = useAppStore((s) => s.setSetupGuideSidebarDismissed)
   const isOpen = modalData !== null
-  const setupSteps = useMemo(() => getFeatureWallSetupSteps(), [])
   const [userSelectedStep, setUserSelectedStep] = useState(false)
   const progress = useSetupGuideProgress(isOpen)
+  const setupSteps = useMemo(() => getFeatureWallSetupSteps(progress.mode), [progress.mode])
   const [activeStepId, setActiveStepId] = useState<FeatureWallSetupStepId>(() =>
-    getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)
+    getFirstIncompleteFeatureWallSetupStepId(progress.stepDone, progress.mode)
   )
   const requestedStepId = modalData?.setupStepId ?? null
   const telemetrySource = modalData?.telemetrySource ?? 'unknown'
@@ -60,8 +60,8 @@ export default function SetupGuideModal(): JSX.Element | null {
     if (!isOpen || userSelectedStep || requestedStepId !== null) {
       return
     }
-    setActiveStepId(getFirstIncompleteFeatureWallSetupStepId(progress.stepDone))
-  }, [isOpen, progress.stepDone, requestedStepId, userSelectedStep])
+    setActiveStepId(getFirstIncompleteFeatureWallSetupStepId(progress.stepDone, progress.mode))
+  }, [isOpen, progress.mode, progress.stepDone, requestedStepId, userSelectedStep])
 
   useEffect(() => {
     if (
@@ -73,11 +73,14 @@ export default function SetupGuideModal(): JSX.Element | null {
     ) {
       return
     }
-    const nextUnfinishedCoreStepId = getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)
+    const nextUnfinishedCoreStepId = getFirstIncompleteFeatureWallSetupStepId(
+      progress.stepDone,
+      progress.mode
+    )
     if (nextUnfinishedCoreStepId !== activeStep.id) {
       setActiveStepId(nextUnfinishedCoreStepId)
     }
-  }, [activeStep, isOpen, progress.stepDone, requestedStepId, userSelectedStep])
+  }, [activeStep, isOpen, progress.mode, progress.stepDone, requestedStepId, userSelectedStep])
 
   const handleSelectStep = (id: FeatureWallSetupStepId): void => {
     setUserSelectedStep(true)

@@ -136,7 +136,82 @@ describe('getFeatureWallSetupProgress', () => {
     )
 
     expect(progress.coreDoneCount).toBe(7)
-    expect(Object.values(progress.stepDone).every(Boolean)).toBe(true)
+    expect(getFeatureWallSetupSteps('code').every((step) => progress.stepDone[step.id])).toBe(true)
+  })
+
+  it('defaults to the code checklist when no mode is given', () => {
+    const progress = getFeatureWallSetupProgress(makeInput())
+
+    expect(progress.mode).toBe('code')
+    expect(progress.coreTotal).toBe(getFeatureWallSetupSteps('code').length)
+  })
+
+  it('counts the chat checklist when in chat mode', () => {
+    const progress = getFeatureWallSetupProgress(
+      makeInput({
+        mode: 'chat',
+        hasConnectedTaskSource: true,
+        chatWorkspaceCount: 1,
+        chatThreadCount: 0
+      })
+    )
+
+    expect(progress.mode).toBe('chat')
+    expect(progress.coreTotal).toBe(5)
+    expect(progress.stepDone['task-sources']).toBe(true)
+    expect(progress.stepDone['create-first-workspace']).toBe(true)
+    expect(progress.stepDone['start-first-thread']).toBe(false)
+    expect(progress.coreDoneCount).toBe(2)
+  })
+
+  it('ignores code-only steps when counting chat progress', () => {
+    const progress = getFeatureWallSetupProgress(
+      makeInput({
+        mode: 'chat',
+        // Code-only signals complete, chat signals absent.
+        hasSetupScript: true,
+        gitRepoCount: 2
+      })
+    )
+
+    expect(progress.coreDoneCount).toBe(0)
+  })
+
+  it('completes the chat checklist from chat signals plus shared steps', () => {
+    const progress = getFeatureWallSetupProgress(
+      makeInput({
+        mode: 'chat',
+        settings: {
+          defaultTuiAgent: 'claude',
+          notifications: { enabled: true, agentTaskComplete: true }
+        } as never,
+        hasConnectedTaskSource: true,
+        chatWorkspaceCount: 2,
+        chatThreadCount: 3
+      })
+    )
+
+    expect(progress.coreDoneCount).toBe(progress.coreTotal)
+  })
+
+  it('keeps the chat checklist definition order', () => {
+    expect(getFeatureWallSetupSteps('chat').map((step) => step.id)).toEqual([
+      'task-sources',
+      'create-first-workspace',
+      'start-first-thread',
+      'notifications',
+      'default-agent'
+    ])
+  })
+
+  it('auto-selects the first incomplete chat step in chat mode', () => {
+    const progress = getFeatureWallSetupProgress(
+      makeInput({ mode: 'chat', hasConnectedTaskSource: true })
+    )
+
+    expect(getFirstIncompleteFeatureWallSetupStepId(progress.stepDone, 'chat')).toBe(
+      'create-first-workspace'
+    )
   })
 
   it('does not mark the step complete from the main checkout alone', () => {

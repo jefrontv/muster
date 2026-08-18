@@ -217,6 +217,58 @@ export function SetupScriptAction(): React.JSX.Element {
   )
 }
 
+export function ChatWorkspaceCreateAction(props: { done: boolean }): React.JSX.Element | null {
+  const openChatPage = useAppStore((s) => s.openChatPage)
+  const closeModal = useAppStore((s) => s.closeModal)
+  if (props.done) {
+    return null
+  }
+  return (
+    <Button
+      type="button"
+      size="sm"
+      className="w-fit gap-2"
+      onClick={() => {
+        // Why: workspace creation lives in Chat view, so switch there first.
+        closeModal()
+        openChatPage()
+        useAppStore.getState().setChatWorkspaceCreateOpen(true)
+      }}
+    >
+      <Plus className="size-3.5" />
+      {translate(
+        'auto.components.feature.wall.FeatureWallSetupWorkflowActions.newChatWorkspace',
+        'New workspace'
+      )}
+    </Button>
+  )
+}
+
+export function ChatThreadStartAction(props: { done: boolean }): React.JSX.Element | null {
+  const openChatPage = useAppStore((s) => s.openChatPage)
+  const closeModal = useAppStore((s) => s.closeModal)
+  if (props.done) {
+    return null
+  }
+  return (
+    <Button
+      type="button"
+      size="sm"
+      className="w-fit gap-2"
+      onClick={() => {
+        closeModal()
+        openChatPage()
+      }}
+    >
+      <ArrowUpRight className="size-3.5" />
+      {translate(
+        'auto.components.feature.wall.FeatureWallSetupWorkflowActions.openChat',
+        'Open Chat'
+      )}
+    </Button>
+  )
+}
+
 export function useSetupTargetWorktree(): Worktree | null {
   const allWorktrees = useAllWorktrees()
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)

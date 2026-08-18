@@ -11384,6 +11384,8 @@
             "open_integrations_settings": "Open Integrations settings"
           },
           "FeatureWallSetupWorkflowActions": {
+            "newChatWorkspace": "New workspace",
+            "openChat": "Open Chat",
             "486c2f4d8d": "Add a git project first, then configure the setup script for that repository.",
             "00078a6134": "View in settings",
             "14327073cc": "Save",

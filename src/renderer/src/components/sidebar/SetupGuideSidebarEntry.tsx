@@ -73,7 +73,7 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
     return null
   }
   const firstUnfinishedSetupStepId: FeatureWallSetupStepId =
-    getFirstIncompleteFeatureWallSetupStepId(renderedProgress.stepDone)
+    getFirstIncompleteFeatureWallSetupStepId(renderedProgress.stepDone, renderedProgress.mode)
 
   return (
     <ContextMenu>

@@ -25,6 +25,7 @@ function makePreBrowserDoneStepState(): Partial<Record<FeatureWallSetupStepId, b
 function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): FeatureWallSetupProgress {
   return {
     ready: true,
+    mode: 'code',
     stepDone: {
       'default-agent': false,
       'add-two-repos': false,
@@ -32,7 +33,9 @@ function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): Featur
       'two-worktrees': false,
       browser: false,
       'task-sources': false,
-      'setup-script': false
+      'setup-script': false,
+      'create-first-workspace': false,
+      'start-first-thread': false
     },
     coreDoneCount: 0,
     coreTotal: FEATURE_WALL_SETUP_STEPS.length,

@@ -110,6 +110,7 @@ function createProgress(
   ) as Record<FeatureWallSetupStepId, boolean>
   return {
     ready: true,
+    mode: 'code',
     stepDone,
     coreDoneCount: FEATURE_WALL_SETUP_STEP_IDS.filter((stepId) => stepDone[stepId]).length,
     coreTotal: FEATURE_WALL_SETUP_STEP_IDS.length

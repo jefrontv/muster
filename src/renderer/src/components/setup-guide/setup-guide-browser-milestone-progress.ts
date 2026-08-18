@@ -2,6 +2,8 @@ import { useEffect, useMemo } from 'react'
 import { useAppStore } from '@/store'
 import {
   FEATURE_WALL_SETUP_STEPS,
+  FEATURE_WALL_SETUP_STEP_IDS,
+  getFeatureWallSetupSteps,
   type FeatureWallSetupStepId
 } from '../../../../shared/feature-wall-setup-steps'
 import type { FeatureWallSetupProgress } from '../feature-wall/feature-wall-setup-progress'
@@ -68,14 +70,16 @@ export function getSetupGuideBrowserMilestoneAwareProgress(
     return progress
   }
   const stepDone = Object.fromEntries(
-    FEATURE_WALL_SETUP_STEPS.map((step) => [step.id, true])
+    FEATURE_WALL_SETUP_STEP_IDS.map((stepId) => [stepId, true])
   ) as Record<FeatureWallSetupStepId, boolean>
   // Why: profiles that finished or dismissed the pre-browser checklist keep
-  // that prior checklist contract after the browser milestone is introduced.
+  // that prior checklist contract after the browser milestone is introduced —
+  // in every mode, so a later chat switch does not resurface the guide.
+  const activeTotal = getFeatureWallSetupSteps(progress.mode).length
   return {
     ...progress,
     stepDone,
-    coreDoneCount: FEATURE_WALL_SETUP_STEPS.length,
-    coreTotal: FEATURE_WALL_SETUP_STEPS.length
+    coreDoneCount: activeTotal,
+    coreTotal: activeTotal
   }
 }

@@ -35,6 +35,12 @@ export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureW
   const settings = useAppStore((s) => s.settings)
   const featureInteractions = useAppStore((s) => s.featureInteractions)
   const worktreesByRepo = useAppStore((s) => s.worktreesByRepo)
+  // Why: chat view swaps the checklist to the chat set; activeView is the
+  // persisted default-view signal onboarding writes via openChatPage().
+  const setupMode = useAppStore((s) => (s.activeView === 'chat' ? 'chat' : 'code'))
+  const chatWorkspaceCount = useAppStore((s) => s.chatWorkspaces.length)
+  const chatThreadCount = useAppStore((s) => s.chatThreads.length)
+  const chatModeHydrated = useAppStore((s) => s.chatModeHydrated)
   const activeCollabStatus = useAppStore((s) => s.activeCollabStatus)
   const activeCollabStatusChecked = useAppStore((s) => s.activeCollabStatusChecked)
   const activeCollabStatusContextKey = useAppStore((s) => s.activeCollabStatusContextKey)
@@ -145,24 +151,31 @@ export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureW
     setupScriptProbe,
     setupScriptProbeSignature
   )
-  const ready = getSetupGuideProgressReady({
-    refreshEnabled: shouldRefreshCoreState,
-    settingsLoaded: settings !== null,
-    taskSourceStatusChecked: !taskSourceStatus.checking,
-    orchestrationSkillDiscoveryLoading: detectedOrchestrationSkillLoading,
-    setupScriptProbeReady: currentSetupScriptProbe.ready
-  })
+  const ready =
+    getSetupGuideProgressReady({
+      refreshEnabled: shouldRefreshCoreState,
+      settingsLoaded: settings !== null,
+      taskSourceStatusChecked: !taskSourceStatus.checking,
+      orchestrationSkillDiscoveryLoading: detectedOrchestrationSkillLoading,
+      setupScriptProbeReady: currentSetupScriptProbe.ready
+    }) &&
+    // Why: chat counts read the hydrated chat store; before hydration they
+    // would report 0 and flash the chat checklist as unstarted.
+    (setupMode !== 'chat' || chatModeHydrated)
 
   const rawProgress = useMemo(
     () =>
       getFeatureWallSetupProgress({
         ready,
+        mode: setupMode,
         settings,
         featureInteractions,
         hasConnectedTaskSource,
         gitRepoCount,
         worktreesByRepo,
-        hasSetupScript: currentSetupScriptProbe.hasSetupScript
+        hasSetupScript: currentSetupScriptProbe.hasSetupScript,
+        chatWorkspaceCount,
+        chatThreadCount
       }),
     [
       ready,
@@ -171,6 +184,9 @@ export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureW
       gitRepoCount,
       hasConnectedTaskSource,
       currentSetupScriptProbe.hasSetupScript,
+      setupMode,
+      chatWorkspaceCount,
+      chatThreadCount,
       settings,
       worktreesByRepo
     ]
