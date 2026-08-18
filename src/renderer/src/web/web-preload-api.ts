@@ -1470,6 +1470,7 @@ function createReposApi(): NonNullable<Partial<PreloadApi>['repos']> {
       return getDefaultCreateProjectParent(result.resolvedPath)
     },
     onCloneProgress: () => noopUnsubscribe,
+    onCloneLog: () => noopUnsubscribe,
     getGitUsername: () => Promise.resolve(''),
     // Why: favicon fetch needs the desktop main process; the web client has no
     // CORS-free transport, so degrade to a visible error instead of crashing.
