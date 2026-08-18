@@ -1,5 +1,5 @@
 import React from 'react'
-import { Check, LoaderCircle, MessageSquarePlus, Play, X } from 'lucide-react'
+import { Check, ExternalLink, LoaderCircle, MessageSquarePlus, Play, X } from 'lucide-react'
 
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -62,6 +62,13 @@ export function ActiveCollabTaskHeader({
         'Discuss in workspace'
       )
     : translate('auto.components.activecollab.task_workspace.discuss', 'Discuss in chat')
+  const instanceUrl = useAppStore((s) => s.activeCollabStatus.connection?.instanceUrl ?? null)
+  const browserUrl =
+    instanceUrl && task.urlPath ? `${instanceUrl.replace(/\/+$/, '')}${task.urlPath}` : null
+  const openInBrowserLabel = translate(
+    'auto.components.activecollab.task_workspace.open_in_browser',
+    'Open in browser'
+  )
   const canStartWork = binding.kind === 'ready' || binding.kind === 'needs-repo'
   // Hidden, not disabled: a permanently greyed button with no way to enable it is worse than no
   // button at all while the binding UI is off.
@@ -199,6 +206,22 @@ export function ActiveCollabTaskHeader({
             </TooltipTrigger>
             <TooltipContent side="bottom">{discussLabel}</TooltipContent>
           </Tooltip>
+          {browserUrl ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="-mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                  aria-label={openInBrowserLabel}
+                  onClick={() => void window.api.shell.openUrl(browserUrl)}
+                >
+                  <ExternalLink className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{openInBrowserLabel}</TooltipContent>
+            </Tooltip>
+          ) : null}
           {onClose ? (
             <Tooltip>
               <TooltipTrigger asChild>

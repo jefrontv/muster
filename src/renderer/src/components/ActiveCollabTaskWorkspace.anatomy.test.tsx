@@ -126,13 +126,21 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve }
 }
 
+const openUrlMock = vi.fn()
+
 let container: HTMLDivElement
 let root: Root
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
-  // The composer subscribes to the preload drop router the moment it mounts.
-  window.api = { ui: { onFileDrop: () => () => {} } } as never
+  // The composer subscribes to the preload drop router the moment it mounts;
+  // the header's open-in-browser button calls shell.openUrl.
+  window.api = {
+    ui: { onFileDrop: () => () => {} },
+    shell: { openUrl: openUrlMock }
+  } as never
+  openUrlMock.mockReset()
+  openUrlMock.mockResolvedValue(undefined)
   for (const mock of Object.values(mocks)) {
     mock.mockReset()
   }
@@ -305,6 +313,15 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     })
     expect(buttonByLabel('Due date').textContent).toContain(dueLabel)
     expect(buttonWith('Edit labels')).toBeTruthy()
+  })
+
+  it('opens the task permalink in the external browser', async () => {
+    await mount()
+
+    await click(buttonByLabel('Open in browser'))
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://projects.efront.com.au/projects/3790/tasks/509323'
+    )
   })
 
   it('titles the description and discussion bands', async () => {
