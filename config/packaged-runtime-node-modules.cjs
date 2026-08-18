@@ -96,8 +96,18 @@ function resolvePackageJsonPath(packageName, fromDir = projectDir) {
     let dir = dirname(entryPath)
     while (dir !== dirname(dir)) {
       const packageJsonPath = join(dir, 'package.json')
+      // Only a NAMED package.json marks the package root. Packages like hono ship
+      // internal boundary files (dist/cjs/package.json = {"type":"commonjs"});
+      // accepting one shipped a flattened dist/cjs copy as the whole package —
+      // no exports map, so require('hono/ws') crashed the packaged app (v1.5.32).
       if (existsSync(packageJsonPath)) {
-        return packageJsonPath
+        try {
+          if (JSON.parse(readFileSync(packageJsonPath, 'utf8')).name) {
+            return packageJsonPath
+          }
+        } catch {
+          // Unreadable boundary file; keep walking up.
+        }
       }
       dir = dirname(dir)
     }
