@@ -48,6 +48,8 @@ export type FeatureInteractionId =
   | 'usage-tracking'
   | 'voice-dictation'
   | 'workspace-cleanup'
+  | 'chat-mode'
+  | 'sites'
 
 export type FeatureInteractionDefinition = {
   id: FeatureInteractionId
@@ -148,7 +150,9 @@ export const FEATURE_INTERACTIONS = [
   {
     id: 'workspace-cleanup',
     interaction: 'workspace disk space scan, review, or cleanup action used'
-  }
+  },
+  { id: 'chat-mode', interaction: 'Chat view opened' },
+  { id: 'sites', interaction: 'Sites page opened' }
 ] as const satisfies readonly FeatureInteractionDefinition[]
 
 export const FEATURE_INTERACTION_IDS = FEATURE_INTERACTIONS.map((feature) => feature.id) as [

@@ -7,7 +7,9 @@ export const FEATURE_EDUCATION_CONTEXTUAL_TOUR_IDS = [
   'tasks',
   'automations',
   'floating-workspace',
-  'workspace-creation'
+  'workspace-creation',
+  'chat-mode',
+  'sites'
 ] as const satisfies readonly ContextualTourId[]
 
 export const FEATURE_EDUCATION_SOURCES = [

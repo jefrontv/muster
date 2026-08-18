@@ -13,7 +13,9 @@ const TOUR_SOURCES = {
   tasks: 'tasks_open',
   automations: 'automations_open',
   'floating-workspace': 'floating_workspace_visible',
-  'workspace-creation': 'workspace_creation_visible'
+  'workspace-creation': 'workspace_creation_visible',
+  'chat-mode': 'chat_mode_visible',
+  sites: 'sites_open'
 } satisfies Record<ContextualTourId, string>
 
 export type UseContextualTourOptions = {

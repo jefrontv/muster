@@ -176,7 +176,10 @@ export function ChatModeDraftHero({
           </span>
         </h1>
       </div>
-      <div className="relative w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40">
+      <div
+        className="relative w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40"
+        data-contextual-tour-target="chat-thread-composer"
+      >
         {pickerOpen ? (
           <NativeChatPickerMenu
             autocomplete={autocomplete}

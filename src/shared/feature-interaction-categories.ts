@@ -68,7 +68,9 @@ export const FEATURE_INTERACTION_CATEGORY_BY_ID = {
   'tab-splits': 'terminal',
   'usage-tracking': 'settings',
   'voice-dictation': 'voice',
-  'workspace-cleanup': 'workspace'
+  'workspace-cleanup': 'workspace',
+  'chat-mode': 'workspace',
+  sites: 'resource_management'
 } as const satisfies Record<FeatureInteractionId, FeatureInteractionCategory>
 
 export function getFeatureInteractionCategory(
