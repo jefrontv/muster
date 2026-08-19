@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest'
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   ActiveCollabMcpAgentId,
@@ -97,7 +97,7 @@ describe('OnboardingActiveCollabMcpInstall', () => {
     render(<OnboardingActiveCollabMcpInstall />)
 
     expect(await screen.findByRole('button', { name: 'Run Setup' })).toBeInTheDocument()
-    expect(screen.getByText('Not installed')).toBeInTheDocument()
+    expect(screen.getByText('Setup needed')).toBeInTheDocument()
     expect(installMock).not.toHaveBeenCalled()
   })
 
@@ -111,32 +111,85 @@ describe('OnboardingActiveCollabMcpInstall', () => {
     )
   })
 
-  it('wires Claude once the binary is already present', async () => {
-    statusMock.mockResolvedValue({
-      ok: true,
-      value: mcpStatus({ binary: installedBinary })
-    })
+  it('lists every agent instead of silently wiring only Claude', async () => {
+    statusMock.mockResolvedValue({ ok: true, value: mcpStatus({ binary: installedBinary }) })
 
     render(<OnboardingActiveCollabMcpInstall />)
 
+    // One row per agent, each with its own action — nothing is written for the
+    // user behind their back.
+    for (const id of ['claude-code', 'codex', 'cursor'] as ActiveCollabMcpAgentId[]) {
+      expect(await screen.findByText(`${id} agent`)).toBeInTheDocument()
+    }
+    expect(installMock).not.toHaveBeenCalled()
+  })
+
+  it('installs only the agent whose button was pressed', async () => {
+    statusMock.mockResolvedValue({ ok: true, value: mcpStatus({ binary: installedBinary }) })
+
+    render(<OnboardingActiveCollabMcpInstall />)
+
+    const codexRow = (await screen.findByText('codex agent')).closest('[data-agent-id="codex"]')
+    expect(codexRow).not.toBeNull()
+    fireEvent.click(within(codexRow as HTMLElement).getByRole('button'))
+
     await waitFor(() => {
-      expect(installMock).toHaveBeenCalledWith({ agentIds: ['claude-code'] })
+      expect(installMock).toHaveBeenCalledWith({ agentIds: ['codex'] })
     })
   })
 
-  it('does not rewrite Claude when it is already configured', async () => {
+  it('does not claim Ready while an installed agent is still unconfigured', async () => {
+    // The old behaviour: Claude wired, so the step said Ready — while a Codex or
+    // Cursor user had nothing.
     statusMock.mockResolvedValue({
       ok: true,
       value: mcpStatus({
         binary: installedBinary,
-        agents: [agent('claude-code', { configured: true, current: true })]
+        agents: [
+          agent('claude-code', { configured: true, current: true }),
+          agent('codex'),
+          agent('cursor')
+        ]
+      })
+    })
+
+    render(<OnboardingActiveCollabMcpInstall />)
+
+    expect(await screen.findByText('Setup needed')).toBeInTheDocument()
+    expect(screen.queryByText('Ready')).not.toBeInTheDocument()
+  })
+
+  it('ignores agents the user does not have installed', async () => {
+    statusMock.mockResolvedValue({
+      ok: true,
+      value: mcpStatus({
+        binary: installedBinary,
+        agents: [
+          agent('claude-code', { configured: true, current: true }),
+          agent('codex', { present: false }),
+          agent('cursor', { present: false })
+        ]
       })
     })
 
     render(<OnboardingActiveCollabMcpInstall />)
 
     expect(await screen.findByText('Ready')).toBeInTheDocument()
-    expect(installMock).not.toHaveBeenCalled()
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('withholds Ready until the credentials file is seeded', async () => {
+    // Without it the server starts and cannot authenticate.
+    statusMock.mockResolvedValue({
+      ok: true,
+      value: mcpStatus({
+        binary: installedBinary,
+        credentialsSeeded: false,
+        agents: [agent('claude-code', { configured: true, current: true })]
+      })
+    })
+
+    render(<OnboardingActiveCollabMcpInstall />)
+
+    expect(await screen.findByText('Setup needed')).toBeInTheDocument()
   })
 })
