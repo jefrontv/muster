@@ -69,14 +69,19 @@ export async function launchChatThreadSession(args: {
 
   // Why: the session is invisible, so the trust menu would stall it with no way to answer.
   const preflight = TUI_AGENT_CONFIG[agent].preflightTrust
-  if (preflight && workspace && window.api.agentTrust?.markTrusted) {
-    for (const directory of workspace.directories) {
-      try {
-        await window.api.agentTrust.markTrusted({ preset: preflight, workspacePath: directory })
-      } catch {
-        // Best-effort; launch continues and the composer can still answer prompts.
-      }
-    }
+  const markTrusted = window.api.agentTrust?.markTrusted
+  if (preflight && workspace && markTrusted) {
+    // In parallel: these are independent config writes, and running them in
+    // series put one IPC round trip per directory in front of every launch.
+    await Promise.all(
+      workspace.directories.map(async (directory) => {
+        try {
+          await markTrusted({ preset: preflight, workspacePath: directory })
+        } catch {
+          // Best-effort; launch continues and the composer can still answer prompts.
+        }
+      })
+    )
   }
 
   const cmdOverrides = store.settings?.agentCmdOverrides ?? {}
