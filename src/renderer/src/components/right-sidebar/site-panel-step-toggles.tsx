@@ -85,7 +85,7 @@ export function SiteStepToggles({
         {heading}
       </legend>
       {toggles.map((toggle) => (
-        <label key={toggle.key} className="flex items-center gap-2 text-xs">
+        <label key={toggle.key} className="flex w-fit cursor-pointer items-center gap-2 text-xs">
           <Checkbox
             checked={
               pending[toggle.key] ?? Boolean(environment[toggle.key as keyof SiteEnvironment])

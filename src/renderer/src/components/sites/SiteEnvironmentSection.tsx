@@ -145,7 +145,10 @@ export function SiteEnvironmentSection({
             {translate('auto.components.sites.SiteEnvironmentSection.importSteps', 'Import steps')}
           </legend>
           {SITE_IMPORT_TOGGLES.map((toggle) => (
-            <label key={toggle.key} className="flex items-center gap-2 text-sm">
+            <label
+              key={toggle.key}
+              className="flex w-fit cursor-pointer items-center gap-2 text-sm"
+            >
               <Checkbox
                 checked={environment[toggle.key]}
                 onCheckedChange={(checked) => onPatch({ [toggle.key]: checked === true })}
@@ -160,7 +163,10 @@ export function SiteEnvironmentSection({
             {translate('auto.components.sites.SiteEnvironmentSection.deploySteps', 'Deploy steps')}
           </legend>
           {SITE_DEPLOY_TOGGLES.map((toggle) => (
-            <label key={toggle.key} className="flex items-center gap-2 text-sm">
+            <label
+              key={toggle.key}
+              className="flex w-fit cursor-pointer items-center gap-2 text-sm"
+            >
               <Checkbox
                 checked={environment[toggle.key]}
                 onCheckedChange={(checked) => onPatch({ [toggle.key]: checked === true })}
