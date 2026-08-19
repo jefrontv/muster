@@ -23,6 +23,7 @@ import {
 import logo from '../../../resources/logo.svg'
 import { SYNC_FIT_PANES_EVENT, TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
 import { syncZoomCSSVar } from '@/lib/ui-zoom'
+import { installChatThreadStreamEvents } from '@/lib/chat-thread-stream-events'
 import {
   applyMatchTerminalAppChrome,
   resolveLeftSidebarStyleVariables
@@ -613,6 +614,11 @@ function App(): React.JSX.Element {
     },
     [floatingTerminalOpen, rememberFloatingTerminalReturnFocus, restoreFloatingTerminalReturnFocus]
   )
+
+  // Chat-mode stream events, installed for the app's lifetime. ChatModePage is
+  // unmounted whenever Chat is not the visible view, so owning the subscription
+  // there silently dropped permission requests and stalled running turns.
+  useEffect(() => installChatThreadStreamEvents(), [])
 
   useEffect(() => {
     const toggleFloatingTerminal = (): void => {

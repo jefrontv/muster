@@ -2,11 +2,10 @@
 // sidebar beside the active thread's conversation. Owns chat-store hydration.
 
 import type React from 'react'
-import { lazy, Suspense, useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
 import { ChatConnectorConfirmDialog } from './ChatConnectorConfirmDialog'
-import { generateChatThreadTitleAfterFirstTurn } from './chat-thread-auto-title'
 import { ChatModeDraftHero } from './ChatModeDraftHero'
 import { ChatModeSidebar } from './ChatModeSidebar'
 import { ChatThreadView } from './ChatThreadView'
@@ -49,135 +48,6 @@ export default function ChatModePage(): React.JSX.Element {
       }),
     []
   )
-
-  // One window-wide stream-event subscription: threads keep receiving deltas
-  // and lifecycle updates while another thread (or the Tasks page) is focused.
-  // Safety timers bound how long a sealed preview can outlive its turn if the
-  // transcript never catches up (interrupt, decode gap).
-  const sealClearTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
-  useEffect(() => {
-    const timers = sealClearTimersRef.current
-    const cancelSealClear = (threadId: string): void => {
-      const timer = timers.get(threadId)
-      if (timer) {
-        clearTimeout(timer)
-        timers.delete(threadId)
-      }
-    }
-    const scheduleSealClear = (threadId: string): void => {
-      cancelSealClear(threadId)
-      timers.set(
-        threadId,
-        setTimeout(() => {
-          timers.delete(threadId)
-          useAppStore.getState().clearChatThreadStreamingText(threadId)
-        }, 6_000)
-      )
-    }
-    // A reload loses the queued questions but not the blocked CLI waiting on
-    // them, so re-read what main is still holding before listening for new ones.
-    void window.api.chatThreadStream
-      .pendingPermissions()
-      .then((requests) => {
-        const store = useAppStore.getState()
-        for (const request of requests) {
-          store.addChatThreadPermissionRequest(request.threadId, {
-            requestId: request.requestId,
-            toolName: request.toolName,
-            input: request.input
-          })
-        }
-      })
-      .catch(() => undefined)
-    const unsubscribe = window.api.chatThreadStream.onEvent((event) => {
-      const store = useAppStore.getState()
-      switch (event.kind) {
-        case 'init': {
-          const thread = store.chatThreads.find((t) => t.id === event.threadId)
-          if (thread && thread.claudeSessionId !== event.sessionId) {
-            void store.updateChatThread(event.threadId, {
-              claudeSessionId: event.sessionId,
-              lastActivityAt: Date.now()
-            })
-          }
-          break
-        }
-        case 'delta':
-          cancelSealClear(event.threadId)
-          store.appendChatThreadStreamingText(event.threadId, event.text)
-          break
-        // Sealing (not clearing) keeps the preview until the transcript renders
-        // the finished message — an eager clear flashes an empty gap first.
-        case 'message-final':
-          store.sealChatThreadStreamingText(event.threadId)
-          scheduleSealClear(event.threadId)
-          void store.updateChatThread(event.threadId, { lastActivityAt: Date.now() })
-          break
-        case 'turn-complete': {
-          store.sealChatThreadStreamingText(event.threadId)
-          scheduleSealClear(event.threadId)
-          if (event.contextWindow !== undefined) {
-            store.setChatThreadContextWindow(event.threadId, event.contextWindow)
-          }
-          const now = Date.now()
-          // The stream's own result record is the authoritative end of the turn.
-          // Hooks normally close the pane out, but a dropped Stop hook (or a
-          // turn the CLI ended while a card was still open) leaves the pane
-          // stuck on "Working" with nothing to correct it.
-          const settlingPaneKey = store.chatThreadSessions[event.threadId]?.paneKey
-          if (settlingPaneKey) {
-            store.settleAgentStatusWorking(settlingPaneKey, now)
-          }
-          void generateChatThreadTitleAfterFirstTurn(event.threadId)
-          // A completion the user is watching (thread active, window focused)
-          // is read on arrival — it must not light the sidebar's unread "Done".
-          const watched = store.activeChatThreadId === event.threadId && document.hasFocus()
-          void store.updateChatThread(event.threadId, {
-            lastActivityAt: now,
-            lastCompletedAt: now,
-            ...(event.contextWindow !== undefined ? { contextWindow: event.contextWindow } : {}),
-            ...(watched ? { lastVisitedAt: now } : {})
-          })
-          break
-        }
-        case 'permission-request':
-          // The full-access / session-allow verdict lives in the store action, so
-          // this path and the reload replay cannot drift apart.
-          store.addChatThreadPermissionRequest(event.threadId, {
-            requestId: event.requestId,
-            toolName: event.toolName,
-            input: event.input
-          })
-          break
-        case 'permission-cancel':
-          store.removeChatThreadPermissionRequest(event.threadId, event.requestId)
-          break
-        case 'exit': {
-          // Only unexpected deaths arrive here (intentional stops are silent);
-          // dropping the session record flips ChatThreadView to its resume state.
-          const session = store.chatThreadSessions[event.threadId]
-          if (session) {
-            store.clearAgentLaunchConfig(session.paneKey)
-          }
-          cancelSealClear(event.threadId)
-          store.clearChatThreadStreamingText(event.threadId)
-          store.clearChatThreadPermissionRequests(event.threadId)
-          // Session-scoped "always allow" and full-access verdicts die with the session.
-          store.clearChatThreadSessionAllowedTools(event.threadId)
-          store.setChatThreadFullAccess(event.threadId, false)
-          store.setChatThreadSession(event.threadId, null)
-          break
-        }
-      }
-    })
-    return () => {
-      unsubscribe()
-      for (const timer of timers.values()) {
-        clearTimeout(timer)
-      }
-      timers.clear()
-    }
-  }, [])
 
   // Visiting = the thread is active in a focused window. Stamped on activation
   // and on window refocus so a completion read in place clears its unread mark.
