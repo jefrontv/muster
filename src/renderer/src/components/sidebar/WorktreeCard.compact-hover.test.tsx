@@ -247,7 +247,7 @@ describe('WorktreeCard compact hover details', () => {
     expect(markup).toContain('aria-label="1 live port"')
   }, 30_000)
 
-  it('shows hidden task, notes, and port details from the compact worktree card hover', async () => {
+  it('shows hidden task and notes on card hover, but not ports when the ports property is off', async () => {
     settings = { compactWorktreeCards: true, experimentalNewWorktreeCardStyle: true }
     worktreeCardProperties = ['status']
     const worktree = makeWorktree({
@@ -293,8 +293,10 @@ describe('WorktreeCard compact hover details', () => {
     expect(markup).toContain('Issue #123')
     expect(markup).toContain('Linear ENG-123')
     expect(markup).toContain('Reviewer handoff note')
-    expect(markup).toContain('Live Ports')
-    expect(markup).toContain('58941')
+    // Ports live behind the plug now, and the plug is gated on the ports card
+    // property — turning it off means no plug and no port list anywhere.
+    expect(markup).not.toContain('Live Ports')
+    expect(markup).not.toContain('aria-label="1 live port"')
     expect(markup).not.toContain('data-worktree-card-meta-row=""')
   }, 30_000)
 

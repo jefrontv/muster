@@ -47,7 +47,11 @@ import {
   WorktreeCardMetaBadges,
   type WorktreeCardIssueDisplay
 } from './WorktreeCardMeta'
-import { WorktreeCardPortsDetails, WorktreeCardPortsTrigger } from './WorktreeCardPorts'
+import {
+  WorktreeCardPorts,
+  WorktreeCardPortsDetails,
+  WorktreeCardPortsTrigger
+} from './WorktreeCardPorts'
 import { writeWorkspaceDragData } from './workspace-status'
 import {
   getWorktreeCardPrDisplay,
@@ -1238,16 +1242,17 @@ const WorktreeCard = React.memo(function WorktreeCard({
       ? trimmedVisibleCardTitle
       : undefined
   // Why: identity alone is not worth a hover panel — it just repeated the visible row title (#hover-noise).
+  // Ports are excluded on purpose: they belong to the plug's own hover, not to
+  // anywhere-on-the-card hover, which put a tall port list over the sidebar.
   const hasHoverDetails =
     newCardStyle &&
-    (hasWorktreeCardDetails({
+    hasWorktreeCardDetails({
       issue: hoverIssue,
       linearIssue: hoverLinearIssue,
       review: hoverReview,
       comment: hoverComment,
       automationProvenance: metaAutomationProvenance
-    }) ||
-      workspacePorts.length > 0)
+    })
   // Why: the parent row owns metadata hover; don't stack the title's truncation tooltip on the details popover.
   const titleWrapper = newCardStyle
     ? hasHoverDetails
@@ -1308,7 +1313,12 @@ const WorktreeCard = React.memo(function WorktreeCard({
   const detailsAndPortsContent =
     hasDetails || hasPorts ? (
       <div className="flex shrink-0 items-center gap-1">
-        {hasPorts && <WorktreeCardPortsTrigger ports={workspacePorts} />}
+        {hasPorts &&
+          (newCardStyle ? (
+            <WorktreeCardPorts ports={workspacePorts} />
+          ) : (
+            <WorktreeCardPortsTrigger ports={workspacePorts} />
+          ))}
         {hasDetails && (
           <WorktreeCardMetaBadges
             issue={metaIssue}
@@ -1826,9 +1836,6 @@ const WorktreeCard = React.memo(function WorktreeCard({
         branchName={hoverBranchName}
         workspaceTitle={hoverWorkspaceTitle}
         workspaceTitleRenameDisabled={isDeleting || affiliateListMode}
-        detailsAfter={
-          workspacePorts.length > 0 ? <WorktreeCardPortsDetails ports={workspacePorts} /> : null
-        }
         openDelay={100}
         hoverControl={detailsHoverControl}
         onRenameWorkspaceTitle={affiliateListMode ? undefined : handleRenameTitle}
