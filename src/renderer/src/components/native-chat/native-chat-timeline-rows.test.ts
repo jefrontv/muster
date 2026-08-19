@@ -161,3 +161,74 @@ describe('buildNativeChatTimelineRows', () => {
     expect(rows.some((row) => row.kind === 'turn-fold')).toBe(true)
   })
 })
+
+describe('buildNativeChatTimelineRows — turn plan', () => {
+  const todo = (steps: unknown): NativeChatBlock => ({
+    type: 'tool-call',
+    name: 'TodoWrite',
+    input: { todos: steps }
+  })
+  const STEPS = [
+    { content: 'Read the file', status: 'completed' },
+    { content: 'Add the parser', status: 'in_progress' }
+  ]
+
+  it('anchors the plan under the prompt of a running turn', () => {
+    const rows = buildNativeChatTimelineRows({
+      messages: [
+        msg('u1', 'user', [text('go')]),
+        msg('a1', 'assistant', [todo(STEPS)]),
+        msg('a2', 'assistant', [text('working')])
+      ],
+      isWorking: true,
+      expandedTurnIds: none,
+      expandedLiveToolTurnIds: none
+    })
+    expect(rows[0]).toMatchObject({ kind: 'message', message: { id: 'u1' } })
+    expect(rows[1]).toMatchObject({ kind: 'turn-plan', turnId: expect.any(String) })
+  })
+
+  it('keeps the plan visible after the turn folds', () => {
+    // The fold hides the turn's middle; the plan is the only record of what the
+    // agent set out to do, so it has to outlive it.
+    const rows = buildNativeChatTimelineRows({
+      messages: [
+        msg('u1', 'user', [text('go')], 1_000),
+        msg('a1', 'assistant', [todo(STEPS)], 2_000),
+        msg('a2', 'assistant', [text('done')], 3_000),
+        msg('u2', 'user', [text('next')], 4_000)
+      ],
+      isWorking: false,
+      expandedTurnIds: none,
+      expandedLiveToolTurnIds: none
+    })
+    const plans = rows.filter((row) => row.kind === 'turn-plan')
+    expect(plans).toHaveLength(1)
+    // The TodoWrite message itself is folded away, but the plan row is not.
+    expect(rows.some((row) => row.kind === 'message' && row.message.id === 'a1')).toBe(false)
+  })
+
+  it('emits no plan row for a turn without one', () => {
+    const rows = buildNativeChatTimelineRows({
+      messages: [msg('u1', 'user', [text('go')]), msg('a1', 'assistant', [text('hi')])],
+      isWorking: true,
+      expandedTurnIds: none,
+      expandedLiveToolTurnIds: none
+    })
+    expect(rows.some((row) => row.kind === 'turn-plan')).toBe(false)
+  })
+
+  it('marks the plan expanded when the user opened it', () => {
+    const messages = [msg('u1', 'user', [text('go')]), msg('a1', 'assistant', [todo(STEPS)])]
+    const rows = buildNativeChatTimelineRows({
+      messages,
+      isWorking: true,
+      expandedTurnIds: none,
+      expandedLiveToolTurnIds: none,
+      expandedPlanTurnIds: new Set(['u1'])
+    })
+    const plan = rows.find((row) => row.kind === 'turn-plan')
+    expect(plan).toMatchObject({ expanded: true })
+  })
+})
+

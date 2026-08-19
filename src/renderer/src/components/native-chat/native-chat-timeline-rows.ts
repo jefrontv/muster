@@ -13,6 +13,7 @@ import {
   groupNativeChatTurns,
   type NativeChatTurn
 } from './native-chat-turn-folds'
+import { deriveNativeChatTurnPlan, type NativeChatTurnPlan } from './native-chat-turn-plan'
 
 /** Within the running turn, only the most recent tool-run row stays visible. */
 export const NATIVE_CHAT_MAX_VISIBLE_LIVE_TOOL_RUNS = 1
@@ -33,6 +34,13 @@ export type NativeChatTimelineRow =
       expanded: boolean
     }
   | { kind: 'live-tool-toggle'; turnId: string; hiddenCount: number; expanded: boolean }
+  | {
+      kind: 'turn-plan'
+      turnId: string
+      plan: NativeChatTurnPlan
+      /** Plan rows survive the fold, so settled turns keep their checklist. */
+      expanded: boolean
+    }
 
 function hasToolBlocks(message: NativeChatMessage): boolean {
   return message.blocks.some((block) => isToolCallBlock(block) || isToolResultBlock(block))
@@ -65,9 +73,11 @@ export function deriveNativeChatLiveToolCollapse(
 function pushRunningTurnRows(
   rows: NativeChatTimelineRow[],
   turn: NativeChatTurn,
-  expanded: boolean
+  expanded: boolean,
+  planExpanded: boolean
 ): void {
   const collapse = deriveNativeChatLiveToolCollapse(turn.messages)
+  const plan = deriveNativeChatTurnPlan(turn.messages)
   for (const message of turn.messages) {
     if (collapse && message.id === collapse.latestToolMessageId) {
       rows.push({
@@ -82,6 +92,10 @@ function pushRunningTurnRows(
       message,
       suppressTools: !expanded && collapse !== null && collapse.hiddenToolMessageIds.has(message.id)
     })
+    // Directly under the prompt, so progress reads before the work does.
+    if (plan !== null && message === turn.userMessage) {
+      rows.push({ kind: 'turn-plan', turnId: turn.id, plan, expanded: planExpanded })
+    }
   }
 }
 
@@ -92,18 +106,29 @@ export function buildNativeChatTimelineRows(input: {
   expandedTurnIds: ReadonlySet<string>
   /** Running turns whose earlier tool runs the user revealed. */
   expandedLiveToolTurnIds: ReadonlySet<string>
+  /** Turns whose plan checklist the user opened out. */
+  expandedPlanTurnIds?: ReadonlySet<string>
 }): NativeChatTimelineRow[] {
   const turns = groupNativeChatTurns(input.messages)
   const folds = deriveNativeChatTurnFolds({ messages: input.messages, isWorking: input.isWorking })
+  const expandedPlans = input.expandedPlanTurnIds ?? new Set<string>()
 
   const rows: NativeChatTimelineRow[] = []
   for (const turn of turns) {
     const fold = folds.get(turn.id)
     if (!fold) {
-      pushRunningTurnRows(rows, turn, input.expandedLiveToolTurnIds.has(turn.id))
+      pushRunningTurnRows(
+        rows,
+        turn,
+        input.expandedLiveToolTurnIds.has(turn.id),
+        expandedPlans.has(turn.id)
+      )
       continue
     }
     const expanded = input.expandedTurnIds.has(turn.id)
+    // Why the plan survives the fold: it is the turn's outcome checklist, and
+    // folding it away leaves a settled turn with no record of what was done.
+    const plan = deriveNativeChatTurnPlan(turn.messages)
     for (const message of turn.messages) {
       if (fold.droppedMessageIds.has(message.id)) {
         continue
@@ -121,6 +146,14 @@ export function buildNativeChatTimelineRows(input: {
           interrupted: fold.interrupted,
           expanded
         })
+        if (plan !== null) {
+          rows.push({
+            kind: 'turn-plan',
+            turnId: turn.id,
+            plan,
+            expanded: expandedPlans.has(turn.id)
+          })
+        }
       }
     }
   }

@@ -28,10 +28,13 @@ function WorkingElapsed({ since }: { since: number }): React.JSX.Element {
  *  live elapsed. Shown while the agent works and no streaming bubble has
  *  replaced it. */
 export function NativeChatWorkingRow({
-  workingSince
+  workingSince,
+  activeStepLabel = null
 }: {
   /** Epoch ms when the working state began, or null when unknown. */
   workingSince: number | null
+  /** The plan step the agent says it is on, when it published one. */
+  activeStepLabel?: string | null
 }): React.JSX.Element {
   return (
     <div
@@ -56,6 +59,10 @@ export function NativeChatWorkingRow({
           {translate('components.native-chat.status.working', 'Working…')}
         </span>
       )}
+      {activeStepLabel !== null ? (
+        // Truncates rather than wraps: the elapsed timer must stay put.
+        <span className="min-w-0 truncate text-muted-foreground/80">· {activeStepLabel}</span>
+      ) : null}
     </div>
   )
 }

@@ -12,6 +12,8 @@ import { useNativeChatScrollAnchoring } from './use-native-chat-scroll-anchoring
 import { NATIVE_CHAT_SCROLL_CONTAINER_ATTR } from './use-native-chat-toggle-scroll-compensation'
 import { NativeChatMessageRow } from './NativeChatMessageRow'
 import { NativeChatTurnFoldRow, NativeChatLiveToolToggleRow } from './NativeChatTurnFoldRow'
+import { NativeChatTurnPlanRow } from './NativeChatTurnPlanRow'
+import { nativeChatPlanActiveLabel } from './native-chat-turn-plan'
 import { NativeChatWorkingRow } from './NativeChatWorkingRow'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
 
@@ -67,6 +69,7 @@ export function NativeChatMessageList({
 
   // Settled turns the user re-opened / running turns with tool overflow shown.
   const [expandedTurnIds, setExpandedTurnIds] = useState<ReadonlySet<string>>(new Set())
+  const [expandedPlanTurnIds, setExpandedPlanTurnIds] = useState<ReadonlySet<string>>(new Set())
   const [expandedLiveToolTurnIds, setExpandedLiveToolTurnIds] = useState<ReadonlySet<string>>(
     new Set()
   )
@@ -76,10 +79,25 @@ export function NativeChatMessageList({
         messages,
         isWorking,
         expandedTurnIds,
-        expandedLiveToolTurnIds
+        expandedLiveToolTurnIds,
+        expandedPlanTurnIds
       }),
-    [messages, isWorking, expandedTurnIds, expandedLiveToolTurnIds]
+    [messages, isWorking, expandedTurnIds, expandedLiveToolTurnIds, expandedPlanTurnIds]
   )
+
+  // The running turn is the last one, so its plan row is the last plan row.
+  const workingStepLabel = useMemo(() => {
+    if (!isWorking) {
+      return null
+    }
+    for (let index = rows.length - 1; index >= 0; index -= 1) {
+      const row = rows[index]
+      if (row.kind === 'turn-plan') {
+        return nativeChatPlanActiveLabel(row.plan)
+      }
+    }
+    return null
+  }, [rows, isWorking])
 
   // An interrupt that lands while this list is mounted leaves its turn
   // expanded (the user just stopped it — hiding the evidence reads as loss);
@@ -263,6 +281,13 @@ export function NativeChatMessageList({
                 expanded={row.expanded}
                 onToggle={() => setExpandedTurnIds((prev) => toggled(prev, row.turnId))}
               />
+            ) : row.kind === 'turn-plan' ? (
+              <NativeChatTurnPlanRow
+                key={`turn-plan:${row.turnId}`}
+                plan={row.plan}
+                expanded={row.expanded}
+                onToggle={() => setExpandedPlanTurnIds((prev) => toggled(prev, row.turnId))}
+              />
             ) : (
               <NativeChatLiveToolToggleRow
                 key={`live-tools:${row.turnId}`}
@@ -272,7 +297,12 @@ export function NativeChatMessageList({
               />
             )
           )}
-          {showWorkingRow ? <NativeChatWorkingRow workingSince={workingSince} /> : null}
+          {showWorkingRow ? (
+            <NativeChatWorkingRow
+              workingSince={workingSince}
+              activeStepLabel={workingStepLabel}
+            />
+          ) : null}
           {/* Reserved end space while a new turn is anchored; height is written
               imperatively by the anchoring hook. */}
           <div ref={spacerRef} aria-hidden className="w-full shrink-0" />
