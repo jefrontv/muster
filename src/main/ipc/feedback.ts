@@ -1,16 +1,22 @@
 import os from 'node:os'
 import { app, ipcMain } from 'electron'
+import { postFeedbackToEndpoint } from '../github/feedback-endpoint'
 import {
   createFeedbackIssue,
   feedbackIssueTitle,
   type FeedbackIssueKind
 } from '../github/feedback-issue'
 
-// Feedback and crash reports are filed as issues on the Muster repo through the
-// user's own `gh` auth. They used to POST to upstream Orca's endpoint, which
-// sent this fork's reports — GitHub logins, emails, diagnostic bundles — to a
-// third party. Submission still runs in the main process: it shells out to gh,
-// which the renderer cannot do.
+// Feedback and crash reports are filed as issues on the Muster repo, preferring
+// the user's own `gh` auth so the issue is authored by a real account. When gh
+// is missing, signed out or refused, the report is relayed to the Muster site
+// instead, which files it under a bot — otherwise anyone without gh set up
+// could not report at all.
+//
+// They used to POST to upstream Orca's endpoint, which sent this fork's reports
+// — GitHub logins, emails, diagnostic bundles — to a third party. Both lanes
+// now stay within infrastructure this fork controls. Submission runs in the
+// main process either way: it shells out to gh, which the renderer cannot do.
 
 export type FeedbackSubmissionType = 'feedback' | 'crash'
 
@@ -131,6 +137,8 @@ export async function submitFeedback(
 ): Promise<FeedbackSubmitResult> {
   const body = buildSubmitBody(args)
   const kind: FeedbackIssueKind = body.submissionType === 'crash' ? 'crash' : 'feedback'
+
+  let ghError: string
   try {
     const result = await createFeedbackIssue({
       kind,
@@ -140,12 +148,24 @@ export async function submitFeedback(
     if (result.ok) {
       return { ok: true, issueUrl: result.url }
     }
-    // Why status null: there is no HTTP round trip to report a code for — the
-    // failure is gh being absent, unauthenticated, or refused by the repo.
-    return { ok: false, status: null, error: result.error }
+    ghError = result.error
   } catch (error) {
-    return { ok: false, status: null, error: messageFromError(error) }
+    ghError = messageFromError(error)
   }
+
+  // gh is absent, unauthenticated, or refused by the repo. The site endpoint
+  // carries its own credential, so the report still lands — as a bot-authored
+  // issue with the reporter's claimed identity marked unverified.
+  const relayed = await postFeedbackToEndpoint(body)
+  if (relayed.ok) {
+    return { ok: true, issueUrl: relayed.url }
+  }
+
+  // Surface the endpoint's failure rather than gh's: gh not working is the
+  // expected case for most users, so its error is noise next to the lane that
+  // was supposed to cover them.
+  console.error(`Feedback: gh could not file the issue (${ghError})`)
+  return { ok: false, status: relayed.status, error: relayed.error }
 }
 
 export function registerFeedbackHandlers(): void {

@@ -6,6 +6,10 @@
 // emails, and diagnostic bundles — went to a third party this fork does not
 // control. Filing through gh keeps the data between the user and the repo, and
 // ships no credentials inside the app.
+//
+// When gh is unavailable, ipc/feedback.ts relays to the Muster site instead
+// (see github/feedback-endpoint.ts). That endpoint is this fork's own
+// infrastructure, so the third-party concern above still does not apply.
 
 import { acquire, ghExecFileAsync, extractExecError, release } from './gh-utils'
 

@@ -137,3 +137,6 @@ tools/benchmarks/results/terminal-pipeline-*.json
 
 # Real-git integration tests stage fixtures here; never commit them
 .pr-*-real-git-*/
+
+# Feedback endpoint credentials; the example file is the only one that belongs in git
+muster-feedback-secrets.php

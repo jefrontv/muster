@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 type FeedbackIssueModule = typeof FeedbackIssue
 
-const { createIssueMock, handlers } = vi.hoisted(() => ({
+const { createIssueMock, postEndpointMock, handlers } = vi.hoisted(() => ({
   createIssueMock: vi.fn(),
+  postEndpointMock: vi.fn(),
   handlers: new Map<string, (_event: unknown, args?: unknown) => unknown>()
 }))
 
@@ -22,6 +23,8 @@ vi.mock('../github/feedback-issue', async (importOriginal) => {
   return { ...actual, createFeedbackIssue: createIssueMock }
 })
 
+vi.mock('../github/feedback-endpoint', () => ({ postFeedbackToEndpoint: postEndpointMock }))
+
 import { registerFeedbackHandlers, submitFeedback } from './feedback'
 import type * as FeedbackIssue from '../github/feedback-issue'
 
@@ -30,9 +33,18 @@ function filedIssue(callIndex = 0): { kind: string; title: string; body: string 
   return createIssueMock.mock.calls[callIndex]?.[0]
 }
 
+/** The raw fields the submission relayed to the site endpoint. */
+function relayedPayload(callIndex = 0): Record<string, unknown> {
+  return postEndpointMock.mock.calls[callIndex]?.[0]
+}
+
 beforeEach(() => {
   createIssueMock.mockReset()
   createIssueMock.mockResolvedValue({ ok: true, url: 'https://github.com/jefrontv/muster/issues/7' })
+  postEndpointMock.mockReset()
+  postEndpointMock.mockResolvedValue({ ok: false, status: 502, error: 'endpoint unavailable' })
+  // The gh failure is logged on every fallback; keep it out of the test output.
+  vi.spyOn(console, 'error').mockImplementation(() => {})
   handlers.clear()
 })
 
@@ -115,18 +127,57 @@ describe('submitFeedback', () => {
     expect(filedIssue().body).not.toContain('<details>')
   })
 
-  it('reports a gh failure without an http status to invent', async () => {
-    createIssueMock.mockResolvedValue({ ok: false, error: 'gh: not authenticated' })
-    await expect(
-      submitFeedback({ feedback: 'note', githubLogin: null, githubEmail: null })
-    ).resolves.toEqual({ ok: false, status: null, error: 'gh: not authenticated' })
+  it('leaves the site endpoint alone when gh files the issue', async () => {
+    await submitFeedback({ feedback: 'note', githubLogin: null, githubEmail: null })
+    expect(postEndpointMock).not.toHaveBeenCalled()
   })
 
-  it('surfaces a thrown error instead of rejecting the caller', async () => {
+  it('relays to the site endpoint when gh is not authenticated', async () => {
+    createIssueMock.mockResolvedValue({ ok: false, error: 'gh: not authenticated' })
+    postEndpointMock.mockResolvedValue({
+      ok: true,
+      url: 'https://github.com/jefrontv/muster/issues/9'
+    })
+    await expect(
+      submitFeedback({ feedback: 'Sidebar drag is janky', githubLogin: 'jake', githubEmail: null })
+    ).resolves.toEqual({ ok: true, issueUrl: 'https://github.com/jefrontv/muster/issues/9' })
+    // Raw fields, not markdown: the endpoint builds the issue body itself.
+    expect(relayedPayload()).toMatchObject({
+      feedback: 'Sidebar drag is janky',
+      submissionType: 'feedback',
+      githubLogin: 'jake',
+      appVersion: '1.2.3-test'
+    })
+  })
+
+  it('relays when gh is missing entirely', async () => {
     createIssueMock.mockRejectedValue(new Error('spawn gh ENOENT'))
+    postEndpointMock.mockResolvedValue({
+      ok: true,
+      url: 'https://github.com/jefrontv/muster/issues/10'
+    })
     await expect(
       submitFeedback({ feedback: 'note', githubLogin: null, githubEmail: null })
-    ).resolves.toEqual({ ok: false, status: null, error: 'spawn gh ENOENT' })
+    ).resolves.toEqual({ ok: true, issueUrl: 'https://github.com/jefrontv/muster/issues/10' })
+  })
+
+  it('keeps the reporter out of the relayed payload when they opted out', async () => {
+    createIssueMock.mockResolvedValue({ ok: false, error: 'gh: not authenticated' })
+    await submitFeedback({
+      feedback: 'note',
+      submitAnonymously: true,
+      githubLogin: 'jake',
+      githubEmail: 'jake@example.com'
+    })
+    expect(relayedPayload()).toMatchObject({ githubLogin: null, githubEmail: null })
+  })
+
+  it('reports the endpoint failure once both lanes are exhausted', async () => {
+    createIssueMock.mockResolvedValue({ ok: false, error: 'gh: not authenticated' })
+    postEndpointMock.mockResolvedValue({ ok: false, status: 429, error: 'Too many reports' })
+    await expect(
+      submitFeedback({ feedback: 'note', githubLogin: null, githubEmail: null })
+    ).resolves.toEqual({ ok: false, status: 429, error: 'Too many reports' })
   })
 })
 
