@@ -21,6 +21,7 @@ import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-optio
 import { useAppStore } from '@/store'
 import NativeChatView, { type NativeChatTransport } from '@/components/native-chat/NativeChatView'
 import { seedTaskAttachmentsForTab } from '@/components/native-chat/use-native-chat-task-attachments'
+import { ChatThreadErrorBanner } from './ChatThreadErrorBanner'
 import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
 import type { NativeChatPermissionBehavior } from '@/components/native-chat/native-chat-view-types'
 
@@ -37,6 +38,7 @@ export function ChatThreadView({
   const session = useAppStore((s) => s.chatThreadSessions[thread.id])
   const setChatThreadSession = useAppStore((s) => s.setChatThreadSession)
   const updateChatThread = useAppStore((s) => s.updateChatThread)
+  const lastError = useAppStore((s) => s.chatThreadLastError[thread.id] ?? null)
   const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.text ?? null)
   const streamingSealed = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.sealed === true)
   const contextWindowTokens = useAppStore(
@@ -273,6 +275,7 @@ export function ChatThreadView({
             taskId={thread.activeCollabTask.taskId}
           />
         ) : null}
+        <ChatThreadErrorBanner threadId={thread.id} message={lastError} />
         <NativeChatView
           terminalTabId={session.tabId}
           paneKey={session.paneKey}

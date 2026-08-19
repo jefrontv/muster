@@ -14,6 +14,9 @@ import { generateChatThreadTitleAfterFirstTurn } from '../components/chat-mode/c
  *  never catches up (interrupt, decode gap). */
 const SEAL_CLEAR_MS = 6_000
 
+/** The CLI reports some failures with no message at all. */
+const FALLBACK_TURN_ERROR = 'The agent stopped with an error.'
+
 export function installChatThreadStreamEvents(): () => void {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -67,6 +70,9 @@ export function installChatThreadStreamEvents(): () => void {
       }
       case 'delta':
         cancelSealClear(event.threadId)
+        // First token of a new turn retires the previous turn's failure, so a
+        // stale banner cannot hang over a run that is going fine.
+        store.setChatThreadLastError(event.threadId, null)
         store.appendChatThreadStreamingText(event.threadId, event.text)
         break
       // Sealing (not clearing) keeps the preview until the transcript renders
@@ -92,12 +98,20 @@ export function installChatThreadStreamEvents(): () => void {
           store.settleAgentStatusWorking(settlingPaneKey, now)
         }
         void generateChatThreadTitleAfterFirstTurn(event.threadId)
+        // Main decodes the failure but nothing used to read it, so a failed
+        // turn looked exactly like a successful one.
+        store.setChatThreadLastError(
+          event.threadId,
+          event.isError ? (event.errorMessage ?? FALLBACK_TURN_ERROR) : null
+        )
         // A completion the user is watching (thread active, window focused) is
         // read on arrival — it must not light the sidebar's unread "Done".
         const watched = store.activeChatThreadId === event.threadId && document.hasFocus()
         void store.updateChatThread(event.threadId, {
           lastActivityAt: now,
-          lastCompletedAt: now,
+          // Why gated: lastCompletedAt is what turns the sidebar's "Done" pill
+          // green, and a turn that failed is not done.
+          ...(event.isError ? {} : { lastCompletedAt: now }),
           ...(event.contextWindow !== undefined ? { contextWindow: event.contextWindow } : {}),
           ...(watched ? { lastVisitedAt: now } : {})
         })

@@ -41,6 +41,8 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   /** Current model's context window per thread, reported by the CLI's result
    *  records — drives the composer's context meter max. */
   chatThreadContextWindow: Record<string, number>
+  /** Last failed turn's message, per thread. Cleared when the thread runs again. */
+  chatThreadLastError: Record<string, string>
   /** Draft-first landing: the hero's text, sent once the thread's session is up. */
   chatThreadFirstMessage: Record<string, string>
   /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
@@ -81,6 +83,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   deleteChatThreadsInScope: (workspaceId: string | null) => Promise<void>
   setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
   setChatThreadContextWindow: (threadId: string, contextWindow: number) => void
+  setChatThreadLastError: (threadId: string, message: string | null) => void
   setChatThreadFirstMessage: (threadId: string, text: string) => void
   clearChatThreadFirstMessage: (threadId: string) => void
   appendChatThreadStreamingText: (threadId: string, text: string) => void
@@ -102,6 +105,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   chatThreadSessions: {},
   chatThreadStreamingText: {},
   chatThreadContextWindow: {},
+  chatThreadLastError: {},
   chatThreadFirstMessage: {},
   chatTasksOpen: false,
   chatWorkspaceCreateOpen: false,
@@ -209,6 +213,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
       const { [id]: _droppedAllowed, ...remainingAllowed } = s.chatThreadSessionAllowedTools
       const { [id]: _droppedFirst, ...remainingFirstMessages } = s.chatThreadFirstMessage
       const { [id]: _droppedWindow, ...remainingWindows } = s.chatThreadContextWindow
+      const { [id]: _droppedError, ...remainingErrors } = s.chatThreadLastError
       const { [id]: _droppedAccess, ...remainingAccess } = s.chatThreadFullAccess
       return {
         chatThreads: s.chatThreads.filter((t) => t.id !== id),
@@ -218,6 +223,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
         chatThreadSessionAllowedTools: remainingAllowed,
         chatThreadFirstMessage: remainingFirstMessages,
         chatThreadContextWindow: remainingWindows,
+        chatThreadLastError: remainingErrors,
         chatThreadFullAccess: remainingAccess,
         activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
       }
@@ -238,6 +244,15 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
     set((s) => ({
       chatThreadContextWindow: { ...s.chatThreadContextWindow, [threadId]: contextWindow }
     })),
+
+  setChatThreadLastError: (threadId, message) =>
+    set((s) => {
+      if (message === null) {
+        const { [threadId]: _dropped, ...remaining } = s.chatThreadLastError
+        return { chatThreadLastError: remaining }
+      }
+      return { chatThreadLastError: { ...s.chatThreadLastError, [threadId]: message } }
+    }),
 
   setChatThreadSession: (threadId, session) =>
     set((s) => {

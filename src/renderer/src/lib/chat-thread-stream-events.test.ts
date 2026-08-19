@@ -17,6 +17,7 @@ const storeState = vi.hoisted(() => ({
   appendChatThreadStreamingText: vi.fn(),
   sealChatThreadStreamingText: vi.fn(),
   setChatThreadContextWindow: vi.fn(),
+  setChatThreadLastError: vi.fn(),
   settleAgentStatusWorking: vi.fn(),
   updateChatThread: vi.fn(async () => undefined)
 }))
@@ -104,6 +105,70 @@ describe('installChatThreadStreamEvents', () => {
     listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
 
     expect(storeState.settleAgentStatusWorking).toHaveBeenCalledWith('chat:t1', expect.any(Number))
+    stop()
+  })
+
+  it('records the failure when a turn errors', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({
+      kind: 'turn-complete',
+      threadId: 't1',
+      isError: true,
+      errorMessage: 'Claude hit a rate limit'
+    })
+
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', 'Claude hit a rate limit')
+    stop()
+  })
+
+  it('falls back to generic copy when the CLI reports no message', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: true })
+
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', expect.stringContaining('error'))
+    stop()
+  })
+
+  it('clears the previous failure once a turn succeeds', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
+
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', null)
+    stop()
+  })
+
+  it('clears the failure on the next turn\'s first token', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'delta', threadId: 't1', text: 'hi' })
+
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', null)
+    stop()
+  })
+
+  it('does not mark a failed turn as completed', () => {
+    // lastCompletedAt is what turns the sidebar pill green; a failed turn that
+    // sets it reads as a clean finish.
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: true, errorMessage: 'boom' })
+
+    const update = storeState.updateChatThread.mock.calls.at(-1)?.[1] as Record<string, unknown>
+    expect(update).not.toHaveProperty('lastCompletedAt')
+    expect(update).toHaveProperty('lastActivityAt')
+    stop()
+  })
+
+  it('still marks a successful turn as completed', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
+
+    const update = storeState.updateChatThread.mock.calls.at(-1)?.[1] as Record<string, unknown>
+    expect(update).toHaveProperty('lastCompletedAt')
     stop()
   })
 })
