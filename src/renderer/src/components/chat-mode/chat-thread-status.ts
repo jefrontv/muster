@@ -42,6 +42,25 @@ export function hasUnseenCompletion(thread: {
   return thread.lastCompletedAt > thread.lastVisitedAt
 }
 
+/**
+ * Stamp that makes a thread read as unread again.
+ *
+ * Why not just clear lastVisitedAt: an absent stamp means never-visited, which
+ * counts as READ (see above), so clearing it would mark the thread read — the
+ * exact opposite. Sitting one tick behind the completion is what reads as unread.
+ */
+export function unreadVisitStamp(lastCompletedAt: number): number {
+  return lastCompletedAt - 1
+}
+
+/** Nothing has completed, so there is no completion to leave unread. */
+export function canMarkChatThreadUnread(thread: {
+  lastCompletedAt?: number
+  lastVisitedAt?: number
+}): boolean {
+  return thread.lastCompletedAt !== undefined && !hasUnseenCompletion(thread)
+}
+
 /** Monotonic visit stamp: a completion recorded ahead of the local clock must
  *  still read as seen after a visit. */
 export function nextVisitStamp(now: number, lastCompletedAt: number | undefined): number {

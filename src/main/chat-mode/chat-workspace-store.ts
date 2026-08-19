@@ -195,6 +195,7 @@ export class ChatWorkspaceStore {
         | 'sortOrder'
         | 'activeCollabTask'
         | 'archived'
+        | 'pinned'
       >
     >
   ): ChatThread | null {

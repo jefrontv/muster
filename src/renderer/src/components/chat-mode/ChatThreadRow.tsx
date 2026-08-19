@@ -1,7 +1,11 @@
 // One thread row in the chat sidebar: title, T3-style status label cluster, and
-// the row menu (rename/delete). Rename edits inline so the list keeps its place.
+// the row menu. Rename edits inline so the list keeps its place.
+//
+// Archive hides the thread from the main list; the sidebar's Archived section
+// is what brings it back. Adding the one without the other would make archive a
+// one-way trip.
 
-import { CircleCheck, MoreHorizontal, ShieldQuestion } from 'lucide-react'
+import { CircleCheck, MoreHorizontal, Pin, PinOff, ShieldQuestion } from 'lucide-react'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -23,10 +27,17 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { formatNativeChatWorkingElapsed } from '../native-chat/native-chat-duration-format'
 import {
+  canMarkChatThreadUnread,
   hasUnseenCompletion,
+  nextVisitStamp,
   resolveChatThreadStatus,
+  unreadVisitStamp,
   type ChatThreadStatus
 } from './chat-thread-status'
+import { regenerateChatThreadTitle } from './chat-thread-auto-title'
+import {
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu'
 
 /** Self-ticking elapsed (setInterval → textContent), NOT React state: a state
  *  tick would re-commit every working row each second (T3/NativeChatWorkingRow). */
@@ -129,10 +140,12 @@ export function ChatThreadRow({
     (s) =>
       s.settings?.nativeChatPermissionMode === 'full' || s.chatThreadFullAccess[thread.id] === true
   )
+  const unread = hasUnseenCompletion(thread)
+  const canMarkUnread = canMarkChatThreadUnread(thread)
   const status = resolveChatThreadStatus({
     agentState: agentStatus?.state,
     hasPendingApproval,
-    hasUnseenCompletion: hasUnseenCompletion(thread),
+    hasUnseenCompletion: unread,
     hasFullAccess
   })
   const [renaming, setRenaming] = useState(false)
@@ -232,6 +245,50 @@ export function ChatThreadRow({
             }}
           >
             {translate('auto.components.chat.sidebar.renameThread', 'Rename')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => void updateChatThread(thread.id, { pinned: thread.pinned !== true })}
+          >
+            {thread.pinned === true ? (
+              <PinOff className="size-3.5" />
+            ) : (
+              <Pin className="size-3.5" />
+            )}
+            {thread.pinned === true
+              ? translate('auto.components.chat.sidebar.unpinThread', 'Unpin')
+              : translate('auto.components.chat.sidebar.pinThread', 'Pin to top')}
+          </DropdownMenuItem>
+          {unread ? (
+            <DropdownMenuItem
+              onSelect={() =>
+                void updateChatThread(thread.id, {
+                  lastVisitedAt: nextVisitStamp(Date.now(), thread.lastCompletedAt)
+                })
+              }
+            >
+              {translate('auto.components.chat.sidebar.markRead', 'Mark as read')}
+            </DropdownMenuItem>
+          ) : canMarkUnread ? (
+            <DropdownMenuItem
+              onSelect={() =>
+                void updateChatThread(thread.id, {
+                  lastVisitedAt: unreadVisitStamp(thread.lastCompletedAt as number)
+                })
+              }
+            >
+              {translate('auto.components.chat.sidebar.markUnread', 'Mark as unread')}
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem onSelect={() => void regenerateChatThreadTitle(thread.id)}>
+            {translate('auto.components.chat.sidebar.regenerateTitle', 'Regenerate title')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={() => void updateChatThread(thread.id, { archived: thread.archived !== true })}
+          >
+            {thread.archived === true
+              ? translate('auto.components.chat.sidebar.unarchiveThread', 'Unarchive')
+              : translate('auto.components.chat.sidebar.archiveThread', 'Archive')}
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onSelect={() => void deleteChatThread(thread.id)}>
             {translate('auto.components.chat.sidebar.deleteThread', 'Delete chat')}

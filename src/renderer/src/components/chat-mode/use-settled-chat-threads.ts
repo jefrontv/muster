@@ -16,7 +16,9 @@ export function useSettledThreadIds(): Set<string> {
       const now = Date.now()
       return s.chatThreads
         .filter((t) => {
-          if (t.archived === true) {
+          // Pin wins over auto-settle: a pinned thread is one the user said to
+          // keep in front of them, however long it stays quiet.
+          if (t.archived === true || t.pinned === true) {
             return false
           }
           const session = s.chatThreadSessions[t.id]

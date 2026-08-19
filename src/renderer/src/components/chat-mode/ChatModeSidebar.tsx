@@ -23,6 +23,7 @@ import { useAppStore } from '@/store'
 import { useSettledThreadIds } from './use-settled-chat-threads'
 import { ChatModeToggle } from './ChatModeToggle'
 import {
+  ArchivedSection,
   SettledSection,
   StandaloneChatsSection,
   WorkspaceSection
@@ -162,6 +163,7 @@ export function ChatModeSidebar(): React.JSX.Element {
           <StandaloneChatsSection query={query} settledIds={settledIds} />
         ) : null}
         <SettledSection query={query} settledIds={settledIds} />
+        <ArchivedSection query={query} />
       </div>
       <div className="flex items-center gap-1 border-t border-border p-2">
         <div className="flex-1" />

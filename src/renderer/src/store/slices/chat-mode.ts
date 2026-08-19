@@ -75,6 +75,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
         | 'sortOrder'
         | 'activeCollabTask'
         | 'archived'
+        | 'pinned'
       >
     >
   ) => Promise<void>

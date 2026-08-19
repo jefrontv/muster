@@ -80,6 +80,10 @@ export type ChatThread = {
   sortOrder?: number
   /** Linked ActiveCollab task; drives the thread header strip + row badge. */
   activeCollabTask?: { projectId: number; taskId: number } | null
+  /** Sticks the thread to the top of its section and keeps it out of the
+   *  settled shelf, however long it stays quiet. */
+  pinned?: boolean
+  /** Hidden from the main list; reachable from the sidebar's Archived section. */
   archived?: boolean
 }
 

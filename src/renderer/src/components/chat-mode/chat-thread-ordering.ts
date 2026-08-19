@@ -12,8 +12,13 @@ export function chatThreadSortKey(thread: Pick<ChatThread, 'sortOrder' | 'create
   return thread.sortOrder ?? -thread.createdAt
 }
 
+/** Pinned rows form their own block at the top; within each block the manual
+ *  sort key still decides, so a drag inside a block behaves exactly as before. */
 export function sortChatThreads(threads: ChatThread[]): ChatThread[] {
-  return [...threads].sort((a, b) => chatThreadSortKey(a) - chatThreadSortKey(b))
+  return [...threads].sort((a, b) => {
+    const pinDelta = Number(b.pinned === true) - Number(a.pinned === true)
+    return pinDelta !== 0 ? pinDelta : chatThreadSortKey(a) - chatThreadSortKey(b)
+  })
 }
 
 /** The `sortOrder` the dragged thread needs to land before/after `targetId`

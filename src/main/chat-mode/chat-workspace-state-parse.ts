@@ -98,7 +98,8 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
     ...(normalizeActiveCollabTask(raw.activeCollabTask)
       ? { activeCollabTask: normalizeActiveCollabTask(raw.activeCollabTask) }
       : {}),
-    ...(raw.archived === true ? { archived: true } : {})
+    ...(raw.archived === true ? { archived: true } : {}),
+    ...(raw.pinned === true ? { pinned: true } : {})
   }
 }
 

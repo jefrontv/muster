@@ -96,6 +96,51 @@ export function SettledSection({
   )
 }
 
+/**
+ * The way back out of Archive.
+ *
+ * Without this the archive action is one-way: the thread vanishes from every
+ * list and the only recovery is deleting it. Hidden entirely when nothing is
+ * archived, so it costs nothing for people who never use it.
+ */
+export function ArchivedSection({ query }: { query: string }): React.JSX.Element | null {
+  const threads = useAppStore((s) => s.chatThreads)
+  const [expanded, setExpanded] = useState(false)
+  const archived = threads
+    .filter((t) => t.archived === true && (!query || matchesQuery(t.title, query)))
+    .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+  if (archived.length === 0) {
+    return null
+  }
+  return (
+    <section className="space-y-0.5">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        className="group flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left hover:bg-muted/60"
+        onClick={() => setExpanded((open) => !open)}
+      >
+        <ChevronRight
+          className={cn(
+            'size-3 shrink-0 text-muted-foreground transition-transform',
+            expanded && 'rotate-90'
+          )}
+        />
+        <span className={CHAT_SIDEBAR_REGION_LABEL}>
+          {translate('auto.components.chat.sidebar.archived', 'Archived')} · {archived.length}
+        </span>
+      </button>
+      {expanded ? (
+        <ul className="space-y-px">
+          {archived.map((thread) => (
+            <ChatThreadRow key={thread.id} thread={thread} />
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  )
+}
+
 export function StandaloneChatsSection({
   query,
   settledIds

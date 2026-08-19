@@ -160,6 +160,7 @@ export function registerChatModeHandlers(): void {
         sortOrder?: unknown
         activeCollabTask?: unknown
         archived?: unknown
+        pinned?: unknown
       }
     ): Promise<ChatThread | null> =>
       chatStore().updateThread(asString(id, 'id'), {
@@ -190,7 +191,8 @@ export function registerChatModeHandlers(): void {
         ...('activeCollabTask' in (patch ?? {})
           ? { activeCollabTask: asActiveCollabTask(patch.activeCollabTask) }
           : {}),
-        ...(typeof patch?.archived === 'boolean' ? { archived: patch.archived } : {})
+        ...(typeof patch?.archived === 'boolean' ? { archived: patch.archived } : {}),
+        ...(typeof patch?.pinned === 'boolean' ? { pinned: patch.pinned } : {})
       })
   )
 

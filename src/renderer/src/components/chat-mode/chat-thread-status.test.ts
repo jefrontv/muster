@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   CHAT_THREAD_SETTLED_AFTER_MS,
+  canMarkChatThreadUnread,
   hasUnseenCompletion,
+  unreadVisitStamp,
   isChatThreadSettled,
   nextVisitStamp,
   resolveChatThreadStatus
@@ -137,3 +139,30 @@ describe('isChatThreadSettled', () => {
     }
   })
 })
+
+describe('marking a thread unread', () => {
+  it('leaves the thread reading as unread', () => {
+    const thread = { lastCompletedAt: 5_000, lastVisitedAt: 6_000 }
+    expect(hasUnseenCompletion(thread)).toBe(false)
+    const marked = { ...thread, lastVisitedAt: unreadVisitStamp(thread.lastCompletedAt) }
+    expect(hasUnseenCompletion(marked)).toBe(true)
+  })
+
+  it('round-trips back to read', () => {
+    const marked = { lastCompletedAt: 5_000, lastVisitedAt: unreadVisitStamp(5_000) }
+    const read = { ...marked, lastVisitedAt: nextVisitStamp(1_000, marked.lastCompletedAt) }
+    expect(hasUnseenCompletion(read)).toBe(false)
+  })
+
+  it('is unavailable when nothing has completed', () => {
+    // Never-visited counts as read, so clearing the stamp would be a no-op —
+    // there has to be a completion to leave unseen.
+    expect(canMarkChatThreadUnread({})).toBe(false)
+    expect(canMarkChatThreadUnread({ lastCompletedAt: 5_000 })).toBe(true)
+  })
+
+  it('is unavailable when the thread is already unread', () => {
+    expect(canMarkChatThreadUnread({ lastCompletedAt: 5_000, lastVisitedAt: 1_000 })).toBe(false)
+  })
+})
+

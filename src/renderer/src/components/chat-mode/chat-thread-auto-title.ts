@@ -72,3 +72,49 @@ export async function generateChatThreadTitleAfterFirstTurn(threadId: string): P
     titleGenerated: true
   })
 }
+
+/**
+ * Re-title a thread on explicit request.
+ *
+ * Deliberately skips every guard the automatic path respects — the once-only
+ * latch, `titleGenerated`, and the manual-rename opt-out. The user asked for
+ * this one, so their earlier rename is not a reason to refuse.
+ */
+export async function regenerateChatThreadTitle(threadId: string): Promise<boolean> {
+  const store = useAppStore.getState()
+  const thread = store.chatThreads.find((t) => t.id === threadId)
+  if (!thread) {
+    return false
+  }
+  const session = store.chatThreadSessions[threadId]
+  const firstPrompt = (
+    (session ? store.agentStatusByPaneKey[session.paneKey]?.prompt : undefined) ||
+    thread.autoTitle ||
+    thread.title ||
+    ''
+  ).trim()
+  if (!firstPrompt) {
+    return false
+  }
+  const cwd =
+    thread.workspaceId === null
+      ? undefined
+      : store.chatWorkspaces.find((w) => w.id === thread.workspaceId)?.directories[0]
+  const result = await window.api.chatThreadTitle
+    .generate({
+      firstPrompt,
+      ...(cwd ? { cwd } : {})
+    })
+    .catch(() => ({ ok: false as const, error: 'chat title generation failed' }))
+  if (!result.ok) {
+    return false
+  }
+  // Let the automatic path run again later rather than latching this thread out.
+  attempted.delete(threadId)
+  await useAppStore.getState().updateChatThread(threadId, {
+    title: result.title,
+    autoTitle: result.title,
+    titleGenerated: true
+  })
+  return true
+}

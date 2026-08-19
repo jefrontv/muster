@@ -61,3 +61,29 @@ describe('computeDropSortOrder', () => {
     expect(order).toBe((chatThreadSortKey(rows[0]!) + chatThreadSortKey(rows[2]!)) / 2)
   })
 })
+
+describe('sortChatThreads — pinned', () => {
+  function pinnedThread(id: string, createdAt: number): ChatThread {
+    return { ...thread(id, createdAt), pinned: true }
+  }
+
+  it('lifts pinned threads above everything else', () => {
+    const rows = sortChatThreads([
+      thread('newest', 3_000),
+      pinnedThread('pinned-old', 1_000),
+      thread('older', 2_000)
+    ])
+    expect(rows.map((t) => t.id)).toEqual(['pinned-old', 'newest', 'older'])
+  })
+
+  it('keeps the manual key deciding within each block', () => {
+    const rows = sortChatThreads([
+      pinnedThread('pin-b', 1_000),
+      pinnedThread('pin-a', 2_000),
+      thread('plain', 3_000)
+    ])
+    // Both pinned, so -createdAt still orders them newest-first.
+    expect(rows.map((t) => t.id)).toEqual(['pin-a', 'pin-b', 'plain'])
+  })
+})
+

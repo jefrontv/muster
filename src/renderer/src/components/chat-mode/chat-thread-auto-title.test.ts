@@ -23,6 +23,7 @@ vi.mock('../../store', () => ({
 import {
   chatThreadTitleIsAutomatic,
   generateChatThreadTitleAfterFirstTurn,
+  regenerateChatThreadTitle,
   resetChatThreadAutoTitleAttemptsForTests
 } from './chat-thread-auto-title'
 
@@ -133,3 +134,40 @@ describe('generateChatThreadTitleAfterFirstTurn', () => {
     expect(storeState.updateChatThread).not.toHaveBeenCalled()
   })
 })
+
+describe('regenerateChatThreadTitle', () => {
+  it('renames a thread the user had renamed by hand', async () => {
+    // The automatic path refuses this case on purpose; an explicit request is
+    // the user overriding their own earlier rename.
+    storeState.chatThreads = [
+      { id: 't1', title: 'My own name', autoTitle: 'old auto', workspaceId: null }
+    ]
+
+    await expect(regenerateChatThreadTitle('t1')).resolves.toBe(true)
+    expect(storeState.updateChatThread).toHaveBeenCalledWith('t1', {
+      title: 'Staging 500 triage',
+      autoTitle: 'Staging 500 triage',
+      titleGenerated: true
+    })
+  })
+
+  it('runs again on a thread that already generated once', async () => {
+    storeState.chatThreads = [
+      { id: 't1', title: 'Old title', autoTitle: 'Old title', titleGenerated: true, workspaceId: null }
+    ]
+
+    await expect(regenerateChatThreadTitle('t1')).resolves.toBe(true)
+  })
+
+  it('reports failure instead of throwing when generation fails', async () => {
+    generate.mockResolvedValueOnce({ ok: false } as never)
+
+    await expect(regenerateChatThreadTitle('t1')).resolves.toBe(false)
+    expect(storeState.updateChatThread).not.toHaveBeenCalled()
+  })
+
+  it('does nothing for a thread that no longer exists', async () => {
+    await expect(regenerateChatThreadTitle('gone')).resolves.toBe(false)
+  })
+})
+

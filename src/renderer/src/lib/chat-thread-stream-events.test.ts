@@ -19,7 +19,7 @@ const storeState = vi.hoisted(() => ({
   setChatThreadContextWindow: vi.fn(),
   setChatThreadLastError: vi.fn(),
   settleAgentStatusWorking: vi.fn(),
-  updateChatThread: vi.fn(async () => undefined)
+  updateChatThread: vi.fn(async (_id: string, _updates: Record<string, unknown>) => undefined)
 }))
 
 vi.mock('../store', () => ({ useAppStore: { getState: () => storeState } }))
@@ -156,7 +156,7 @@ describe('installChatThreadStreamEvents', () => {
 
     listener?.({ kind: 'turn-complete', threadId: 't1', isError: true, errorMessage: 'boom' })
 
-    const update = storeState.updateChatThread.mock.calls.at(-1)?.[1] as Record<string, unknown>
+    const update = storeState.updateChatThread.mock.calls.at(-1)?.[1]
     expect(update).not.toHaveProperty('lastCompletedAt')
     expect(update).toHaveProperty('lastActivityAt')
     stop()
@@ -167,7 +167,7 @@ describe('installChatThreadStreamEvents', () => {
 
     listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
 
-    const update = storeState.updateChatThread.mock.calls.at(-1)?.[1] as Record<string, unknown>
+    const update = storeState.updateChatThread.mock.calls.at(-1)?.[1]
     expect(update).toHaveProperty('lastCompletedAt')
     stop()
   })
