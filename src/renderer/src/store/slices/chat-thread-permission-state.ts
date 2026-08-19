@@ -3,6 +3,7 @@
 // Composed into ChatModeSlice; lifetimes match the thread's live session.
 
 import type { StateCreator } from 'zustand'
+import { isAskUserQuestionTool } from '../../../../shared/agent-question-answered-intent'
 import type { AppState } from '../types'
 
 /** A pending can_use_tool question from the stream, awaiting Approve/Decline. */
@@ -22,6 +23,9 @@ export type ChatThreadPermissionSlice = {
   /** Full-access (auto-approve every tool) per thread. Runtime-only; dies with
    *  the session like the allowed-tools list. */
   chatThreadFullAccess: Record<string, boolean>
+  /** Request ids already answered this session, so a replay cannot resurrect a
+   *  card nothing would remove. Runtime-only; cleared with the session. */
+  chatThreadAnsweredPermissions: Record<string, string[]>
   addChatThreadPermissionRequest: (threadId: string, request: ChatThreadPermissionRequest) => void
   removeChatThreadPermissionRequest: (threadId: string, requestId: string) => void
   clearChatThreadPermissionRequests: (threadId: string) => void
@@ -46,12 +50,32 @@ export const createChatThreadPermissionSlice: StateCreator<
   chatThreadPermissionRequests: {},
   chatThreadSessionAllowedTools: {},
   chatThreadFullAccess: {},
+  chatThreadAnsweredPermissions: {},
 
-  addChatThreadPermissionRequest: (threadId, request) =>
+  addChatThreadPermissionRequest: (threadId, request) => {
+    // The auto-approve verdict lives here, not at the call sites: the queue has
+    // more than one producer (live stream events and the reload replay), and a
+    // producer that forgets the check shows an approval card under full access.
+    const state = get()
+    if (
+      !isAskUserQuestionTool(request.toolName) &&
+      (state.settings?.nativeChatPermissionMode === 'full' ||
+        state.chatThreadFullAccess[threadId] === true ||
+        state.chatThreadSessionAllowedTools[threadId]?.includes(request.toolName) === true)
+    ) {
+      state.respondChatThreadPermission(threadId, request.requestId, 'allow')
+      return
+    }
     set((s) => {
       const queue = s.chatThreadPermissionRequests[threadId] ?? []
       // Why: a replayed record must not duplicate an already-queued question.
       if (queue.some((r) => r.requestId === request.requestId)) {
+        return {}
+      }
+      // Why: the replay re-reads what main still holds, which can include a
+      // request the live listener answered while the read was in flight. Nothing
+      // would ever remove that card, so drop it here.
+      if (s.chatThreadAnsweredPermissions[threadId]?.includes(request.requestId) === true) {
         return {}
       }
       return {
@@ -60,7 +84,8 @@ export const createChatThreadPermissionSlice: StateCreator<
           [threadId]: [...queue, request]
         }
       }
-    }),
+    })
+  },
 
   removeChatThreadPermissionRequest: (threadId, requestId) =>
     set((s) => {
@@ -80,17 +105,33 @@ export const createChatThreadPermissionSlice: StateCreator<
 
   clearChatThreadPermissionRequests: (threadId) =>
     set((s) => {
+      const { [threadId]: _answered, ...answeredRest } = s.chatThreadAnsweredPermissions
+      const answeredUpdate =
+        threadId in s.chatThreadAnsweredPermissions
+          ? { chatThreadAnsweredPermissions: answeredRest }
+          : {}
       if (!(threadId in s.chatThreadPermissionRequests)) {
-        return {}
+        return answeredUpdate
       }
       const { [threadId]: _dropped, ...remaining } = s.chatThreadPermissionRequests
-      return { chatThreadPermissionRequests: remaining }
+      return { chatThreadPermissionRequests: remaining, ...answeredUpdate }
     }),
 
   respondChatThreadPermission: (threadId, requestId, behavior, message) => {
     // Optimistic removal: the composer moves on immediately; main writes the
     // verdict and the CLI tolerates a stale id if the turn was interrupted.
     get().removeChatThreadPermissionRequest(threadId, requestId)
+    set((s) => {
+      const answered = s.chatThreadAnsweredPermissions[threadId] ?? []
+      return answered.includes(requestId)
+        ? {}
+        : {
+            chatThreadAnsweredPermissions: {
+              ...s.chatThreadAnsweredPermissions,
+              [threadId]: [...answered, requestId]
+            }
+          }
+    })
     void window.api.chatThreadStream
       .respondPermission({
         threadId,

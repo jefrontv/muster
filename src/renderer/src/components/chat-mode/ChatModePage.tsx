@@ -3,7 +3,6 @@
 
 import type React from 'react'
 import { lazy, Suspense, useEffect, useRef } from 'react'
-import { isAskUserQuestionTool } from '../../../../shared/agent-question-answered-intent'
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
 import { ChatConnectorConfirmDialog } from './ChatConnectorConfirmDialog'
@@ -142,17 +141,8 @@ export default function ChatModePage(): React.JSX.Element {
           break
         }
         case 'permission-request':
-          // AskUserQuestion has no TTY on this transport — auto-allow makes it
-          // return "user did not answer". Queue it so the question card can run.
-          if (
-            !isAskUserQuestionTool(event.toolName) &&
-            (store.settings?.nativeChatPermissionMode === 'full' ||
-              store.chatThreadFullAccess[event.threadId] === true ||
-              store.chatThreadSessionAllowedTools[event.threadId]?.includes(event.toolName))
-          ) {
-            store.respondChatThreadPermission(event.threadId, event.requestId, 'allow')
-            break
-          }
+          // The full-access / session-allow verdict lives in the store action, so
+          // this path and the reload replay cannot drift apart.
           store.addChatThreadPermissionRequest(event.threadId, {
             requestId: event.requestId,
             toolName: event.toolName,

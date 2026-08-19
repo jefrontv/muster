@@ -159,12 +159,15 @@ function NativeChatResolvedView({
   const hookWorkingEpoch = useAppStore(
     (s) => s.agentStatusByPaneKey[paneKey]?.stateStartedAt ?? null
   )
-  // The agent is parked on a permission prompt or question, so nothing advances
-  // until the user answers it.
-  const awaitingUser = useAppStore((s) => {
-    const state = s.agentStatusByPaneKey[paneKey]?.state
-    return state === 'waiting' || state === 'blocked'
-  })
+  // Parked on the user only when there is really something to answer: a queued
+  // permission request, or a live interactive prompt from the hook. A bare
+  // 'waiting' state can linger after a card was answered, and treating that as
+  // parked would hide the spinner while the agent is still working.
+  const hookInteractivePrompt = useAppStore(
+    (s) => s.agentStatusByPaneKey[paneKey]?.interactivePrompt ?? null
+  )
+  const awaitingUser =
+    (transport?.permissionRequests?.length ?? 0) > 0 || hookInteractivePrompt !== null
   const canSend = useNativeChatCanSend(targetPtyId)
   // Reuse the verified composer send path for interactive cards and composer
   // stop (Stop sends ESC, the agent-TUI interrupt key).

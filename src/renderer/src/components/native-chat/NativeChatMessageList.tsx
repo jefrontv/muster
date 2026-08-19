@@ -126,18 +126,22 @@ export function NativeChatMessageList({
     loadEarlier()
   }, [loadEarlier])
 
+  // The transcript shows the whole conversation: keep pulling older pages until
+  // the history is exhausted, rather than making the user ask for each one. The
+  // paging itself stays — it is what keeps a huge transcript off the first paint.
+  useEffect(() => {
+    if (hasMore && !loadingEarlier) {
+      loadEarlierAnchored()
+    }
+  }, [hasMore, loadingEarlier, loadEarlierAnchored])
+
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) {
       return
     }
     onAnchoringScroll()
-    // Near the top — page in older history, anchoring the current position so the
-    // prepend doesn't yank the view.
-    if (el.scrollTop < 80 && hasMore && !loadingEarlier) {
-      loadEarlierAnchored()
-    }
-  }, [onAnchoringScroll, hasMore, loadingEarlier, loadEarlierAnchored])
+  }, [onAnchoringScroll])
 
   // Align a single message's top to the top of the scroll viewport.
   const scrollMessageToTop = useCallback(
@@ -234,18 +238,9 @@ export function NativeChatMessageList({
           // fights the three-mode scroll model.
           style={{ zoom: fontScale, overflowAnchor: 'none' }}
         >
-          {hasMore ? (
-            <div className="flex justify-center py-1">
-              <button
-                type="button"
-                onClick={loadEarlierAnchored}
-                disabled={loadingEarlier}
-                className="rounded-md px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-              >
-                {loadingEarlier
-                  ? translate('components.native-chat.loadingEarlier', 'Loading…')
-                  : translate('components.native-chat.loadEarlier', 'Load earlier messages')}
-              </button>
+          {hasMore && loadingEarlier ? (
+            <div className="flex justify-center py-1 text-xs text-muted-foreground">
+              {translate('components.native-chat.loadingEarlier', 'Loading…')}
             </div>
           ) : null}
           {rows.map((row) =>

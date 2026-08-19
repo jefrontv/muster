@@ -75,6 +75,45 @@ describe('chat-mode permission request state', () => {
     })
   })
 
+  // Regression: full access must gate every producer of the queue, not just the
+  // live stream event. The pending-permission replay (ChatModePage mount) adds
+  // requests straight in, so an approval card appears with full access on.
+  it('auto-allows instead of queueing while the thread has full access', () => {
+    const store = makeStore()
+    store.getState().setChatThreadFullAccess('t1', true)
+    store.getState().addChatThreadPermissionRequest('t1', request('r1'))
+    expect(store.getState().chatThreadPermissionRequests.t1).toBeUndefined()
+    expect(respondPermission).toHaveBeenCalledWith({
+      threadId: 't1',
+      requestId: 'r1',
+      behavior: 'allow'
+    })
+  })
+
+  it('auto-allows a session-allowed tool instead of queueing it again', () => {
+    const store = makeStore()
+    store.getState().allowChatThreadToolForSession('t1', 'Bash')
+    store.getState().addChatThreadPermissionRequest('t1', request('r1'))
+    expect(store.getState().chatThreadPermissionRequests.t1).toBeUndefined()
+    expect(respondPermission).toHaveBeenCalledWith({
+      threadId: 't1',
+      requestId: 'r1',
+      behavior: 'allow'
+    })
+  })
+
+  it('still queues AskUserQuestion under full access (no TTY to answer it)', () => {
+    const store = makeStore()
+    store.getState().setChatThreadFullAccess('t1', true)
+    store.getState().addChatThreadPermissionRequest('t1', {
+      requestId: 'r1',
+      toolName: 'AskUserQuestion',
+      input: { questions: [] }
+    })
+    expect(store.getState().chatThreadPermissionRequests.t1).toHaveLength(1)
+    expect(respondPermission).not.toHaveBeenCalled()
+  })
+
   it('records session-allowed tools per thread without duplicates', () => {
     const store = makeStore()
     store.getState().allowChatThreadToolForSession('t1', 'Bash')
