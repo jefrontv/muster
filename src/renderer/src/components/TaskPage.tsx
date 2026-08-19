@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { documentHasOpenDialog, resolveTaskPageEscapeTarget } from './task-page-escape-target'
 import { useAppStore } from '@/store'
 import { useAllWorktrees, useRepoMap } from '@/store/selectors'
 import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
@@ -7090,6 +7091,11 @@ export default function TaskPage(): React.JSX.Element {
 
   const githubTasksBusy = tasksLoading || tasksRefreshing || tasksFiltering
 
+  // Escape layering: the open task lives in the store, so the page can close it
+  // without reaching into the ActiveCollab panel.
+  const escapeTaskView = useAppStore((s) => s.activeCollabTaskPageView ?? null)
+  const setEscapeTaskSelection = useAppStore((s) => s.setActiveCollabTaskPageSelection)
+
   useEffect(() => {
     // Why: when a modal is open, let it own Esc dismissal.
     if (
@@ -7125,7 +7131,21 @@ export default function TaskPage(): React.JSX.Element {
         return
       }
 
+      // Escape peels one layer: attachment/dialog, then the open task, then the
+      // page. This listener captures, so a dialog would never see Escape at all
+      // if the page always claimed it.
+      const target2 = resolveTaskPageEscapeTarget({
+        hasOpenDialog: documentHasOpenDialog(document),
+        hasOpenTask: escapeTaskView?.selected != null
+      })
+      if (target2 === 'dialog') {
+        return
+      }
       event.preventDefault()
+      if (target2 === 'open-task' && escapeTaskView) {
+        setEscapeTaskSelection(escapeTaskView.scope, null)
+        return
+      }
       closeTaskPage()
     }
 
@@ -7135,10 +7155,12 @@ export default function TaskPage(): React.JSX.Element {
     activeModal,
     closeTaskPage,
     dialogWorkItem,
+    escapeTaskView,
     newIssueOpen,
     newLinearIssueOpen,
     newJiraIssueOpen,
-    selectedLinearIssue
+    selectedLinearIssue,
+    setEscapeTaskSelection
   ])
 
   useEffect(() => {
