@@ -8,6 +8,7 @@ import {
   resolveModeAfterGesture,
   resolveModeAfterScroll,
   resolveModeAfterTurnSettled,
+  resolveRetainedSpacerPx,
   resolveRevealDelta,
   resolveToggleCompensation,
   shouldShowJumpToLatest
@@ -152,5 +153,42 @@ describe('contentOverflows', () => {
   it('is false when content fits the viewport', () => {
     expect(contentOverflows(underflowing)).toBe(false)
     expect(contentOverflows(atEnd)).toBe(true)
+  })
+})
+
+describe('resolveRetainedSpacerPx', () => {
+  it('keeps the shortfall so a short reply does not snap to the bottom', () => {
+    // Viewport 800, reader parked at 1000, but real content ends at 1200 —
+    // 600px of the reserve is still holding the view up.
+    expect(
+      resolveRetainedSpacerPx({ scrollTop: 1000, viewportHeight: 800, contentBottom: 1200 })
+    ).toBe(600)
+  })
+
+  it('keeps nothing once real content reaches past the viewport bottom', () => {
+    expect(
+      resolveRetainedSpacerPx({ scrollTop: 1000, viewportHeight: 800, contentBottom: 5000 })
+    ).toBe(0)
+  })
+
+  it('never goes negative when content overshoots exactly', () => {
+    expect(
+      resolveRetainedSpacerPx({ scrollTop: 0, viewportHeight: 800, contentBottom: 800 })
+    ).toBe(0)
+  })
+
+  it('leaves the scroll position still valid, where dropping the reserve did not', () => {
+    // The bounce: with the reserve gone the content is shorter than the reader's
+    // scrollTop, so the browser clamps — and the timeline snaps to the bottom.
+    const scrollTop = 1000
+    const viewportHeight = 800
+    const contentBottom = 1200
+
+    const dropped = Math.max(0, contentBottom - viewportHeight)
+    expect(scrollTop - dropped).toBe(600)
+
+    const retained = resolveRetainedSpacerPx({ scrollTop, viewportHeight, contentBottom })
+    const maxScrollTop = contentBottom + retained - viewportHeight
+    expect(maxScrollTop).toBe(scrollTop)
   })
 })

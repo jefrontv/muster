@@ -149,6 +149,24 @@ export function resolveRevealDelta(input: {
   return raw > NATIVE_CHAT_MIN_REVEAL_DELTA_PX ? raw : 0
 }
 
+/**
+ * Spacer to keep once a turn stops reserving space, so the viewport does not
+ * move at all. Zero when real content already reaches past the viewport bottom;
+ * otherwise exactly the shortfall.
+ *
+ * Why keep any: dropping the whole reserve collapsed the content by up to a
+ * viewport, and the browser's scrollTop clamp read as the timeline bouncing to
+ * the bottom the instant a short reply landed.
+ */
+export function resolveRetainedSpacerPx(input: {
+  scrollTop: number
+  viewportHeight: number
+  /** Real content bottom in scroll coordinates (scrollHeight minus spacer). */
+  contentBottom: number
+}): number {
+  return Math.max(0, Math.round(input.scrollTop + input.viewportHeight - input.contentBottom))
+}
+
 /** ScrollTop correction that keeps a toggled element visually still after its
  *  expand/collapse re-layout; zero when the shift is sub-pixel noise. */
 export function resolveToggleCompensation(previousTop: number, currentTop: number): number {

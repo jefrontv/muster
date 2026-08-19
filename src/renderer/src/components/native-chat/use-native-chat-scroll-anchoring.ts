@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNativeChatJumpToLatest } from './use-native-chat-jump-to-latest'
 import {
   NATIVE_CHAT_ANCHOR_TOP_OFFSET_PX,
-  NATIVE_CHAT_JUMP_SHOW_DEBOUNCE_MS,
   resolveAnchorSpacerPx,
   resolveModeAfterGesture,
   resolveModeAfterScroll,
   resolveModeAfterTurnSettled,
+  resolveRetainedSpacerPx,
   resolveRevealDelta,
-  shouldShowJumpToLatest,
   type NativeChatScrollGesture,
   type NativeChatScrollMode,
   type ScrollGeometry
@@ -53,9 +53,6 @@ export function useNativeChatScrollAnchoring(input: {
   const { scrollRef, contentRef, spacerRef, isWorking } = input
   const [mode, setModeState] = useState<NativeChatScrollMode>('following-end')
   const modeRef = useRef<NativeChatScrollMode>('following-end')
-  const [showJumpToLatest, setShowJumpToLatest] = useState(false)
-  const jumpShownRef = useRef(false)
-  const jumpTimerRef = useRef<number | null>(null)
   // True from the anchoring smooth scroll until it settles; reveal scrolls
   // must not fire mid-animation (an instant += would kill the smoothness).
   const anchorScrollPendingRef = useRef(false)
@@ -71,42 +68,16 @@ export function useNativeChatScrollAnchoring(input: {
     [spacerRef]
   )
 
-  const hideJump = useCallback(() => {
-    if (jumpTimerRef.current !== null) {
-      window.clearTimeout(jumpTimerRef.current)
-      jumpTimerRef.current = null
-    }
-    if (jumpShownRef.current) {
-      jumpShownRef.current = false
-      setShowJumpToLatest(false)
-    }
-  }, [])
-
-  // 150ms show debounce, instant hide: a transient pass through the away-band
-  // (e.g. layout shuffle) must not flash the pill.
-  const updateJump = useCallback(
-    (geometry: ScrollGeometry) => {
-      if (!shouldShowJumpToLatest(modeRef.current, geometry)) {
-        hideJump()
-        return
-      }
-      if (jumpShownRef.current || jumpTimerRef.current !== null) {
-        return
-      }
-      jumpTimerRef.current = window.setTimeout(() => {
-        jumpTimerRef.current = null
-        const el = scrollRef.current
-        if (el && shouldShowJumpToLatest(modeRef.current, geometryOf(el))) {
-          jumpShownRef.current = true
-          setShowJumpToLatest(true)
-        }
-      }, NATIVE_CHAT_JUMP_SHOW_DEBOUNCE_MS)
-    },
-    [hideJump, scrollRef]
-  )
+  const { showJumpToLatest, updateJump, hideJump } = useNativeChatJumpToLatest({
+    getMode: useCallback(() => modeRef.current, []),
+    readGeometry: useCallback(() => {
+      const el = scrollRef.current
+      return el ? geometryOf(el) : null
+    }, [scrollRef])
+  })
 
   const applyMode = useCallback(
-    (next: NativeChatScrollMode) => {
+    (next: NativeChatScrollMode, options?: { keepSpacer?: boolean }) => {
       if (next === modeRef.current) {
         return
       }
@@ -116,7 +87,10 @@ export function useNativeChatScrollAnchoring(input: {
       if (leavingAnchor) {
         anchorScrollPendingRef.current = false
         anchorSettleCleanupRef.current?.()
-        setSpacerHeight(0)
+        // keepSpacer: the caller already sized the reserve for the handoff.
+        if (options?.keepSpacer !== true) {
+          setSpacerHeight(0)
+        }
       }
     },
     [setSpacerHeight]
@@ -295,7 +269,7 @@ export function useNativeChatScrollAnchoring(input: {
   }, [findAnchorEl, hideJump, scrollRef, spacerRef, updateAnchorSpacer, updateJump])
 
   // The turn settling ends anchoring: hand off to follow at the live edge,
-  // otherwise leave the reader where they are.
+  // otherwise leave the reader where they are — without moving the viewport.
   useEffect(() => {
     if (isWorking) {
       return
@@ -305,8 +279,23 @@ export function useNativeChatScrollAnchoring(input: {
       return
     }
     anchorMessageIdRef.current = null
-    applyMode(resolveModeAfterTurnSettled(modeRef.current, geometryOf(el)))
-  }, [applyMode, isWorking, scrollRef])
+    if (modeRef.current === 'anchoring-new-turn') {
+      // Trim the reserve to the minimum that holds position instead of dropping
+      // it: releasing it whole collapsed the content by up to a viewport and the
+      // resulting scrollTop clamp read as the timeline bouncing to the bottom.
+      const spacer = spacerRef.current?.getBoundingClientRect().height ?? 0
+      setSpacerHeight(
+        resolveRetainedSpacerPx({
+          scrollTop: el.scrollTop,
+          viewportHeight: el.clientHeight,
+          contentBottom: el.scrollHeight - spacer
+        })
+      )
+    }
+    // Measured after the trim so the handoff sees the geometry the reader will
+    // actually be left with.
+    applyMode(resolveModeAfterTurnSettled(modeRef.current, geometryOf(el)), { keepSpacer: true })
+  }, [applyMode, isWorking, scrollRef, setSpacerHeight, spacerRef])
 
   // In-place content growth (a streaming message extending itself) never
   // changes the row count, so observe sizes to keep the active mode asserted.
@@ -325,9 +314,6 @@ export function useNativeChatScrollAnchoring(input: {
 
   useEffect(() => {
     return () => {
-      if (jumpTimerRef.current !== null) {
-        window.clearTimeout(jumpTimerRef.current)
-      }
       anchorSettleCleanupRef.current?.()
     }
   }, [])
