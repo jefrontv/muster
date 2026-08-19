@@ -5,6 +5,7 @@ import type React from 'react'
 import { lazy, Suspense, useEffect } from 'react'
 import { useAppStore } from '@/store'
 import { nextVisitStamp } from './chat-thread-status'
+import { pruneNativeChatPersistedDrafts } from '../native-chat/native-chat-draft-cache'
 import { ChatConnectorConfirmDialog } from './ChatConnectorConfirmDialog'
 import { ChatModeDraftHero } from './ChatModeDraftHero'
 import { ChatModeSidebar } from './ChatModeSidebar'
@@ -28,6 +29,17 @@ export default function ChatModePage(): React.JSX.Element {
       void hydrateChatMode()
     }
   }, [hydrated, hydrateChatMode])
+
+  // Once the real thread list is known, drop persisted drafts belonging to
+  // threads that no longer exist — nothing can ever match those keys again.
+  useEffect(() => {
+    if (hydrated) {
+      pruneNativeChatPersistedDrafts(threads.map((thread) => thread.id))
+    }
+    // Deliberately keyed on hydration alone: re-running per thread-list change
+    // would prune on every rename or activity tick for no benefit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated])
 
   // Muster MCP tools mutate the chat store in main; re-pull and drop runtime
   // session records for threads the tools deleted (their exit is suppressed).
