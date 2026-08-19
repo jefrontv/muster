@@ -272,6 +272,70 @@ describe('startChatThreadStream', () => {
     child.emit('close', 0)
   })
 
+  it('skips the login shell once the captured environment is available', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    let seenArgs: string[] = []
+    let seenEnv: NodeJS.ProcessEnv = {}
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      {
+        spawn: (_cmd, args, options) => {
+          seenArgs = args
+          seenEnv = options.env
+          return child
+        },
+        hookEnv: () => ({}),
+        loginShellEnv: () => ({ PATH: '/nvm/bin:/usr/bin', FPATH: '/fns' })
+      }
+    )
+    // -c, not -lc: the profile's contribution is already in the env below.
+    expect(seenArgs[0]).toBe('-c')
+    expect(seenEnv.PATH).toBe('/nvm/bin:/usr/bin')
+    expect(seenEnv.FPATH).toBe('/fns')
+    child.emit('close', 0)
+  })
+
+  it('still pays for a login shell while the capture is unavailable', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    let seenArgs: string[] = []
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      {
+        spawn: (_cmd, args) => {
+          seenArgs = args
+          return child
+        },
+        hookEnv: () => ({}),
+        // Null = not captured yet, or capture failed. Correctness over speed:
+        // a child launched without the profile PATH may not find its CLI.
+        loginShellEnv: () => null
+      }
+    )
+    expect(seenArgs[0]).toBe('-lc')
+    child.emit('close', 0)
+  })
+
+  it('lets explicit pane env win over the captured profile', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    let seenEnv: NodeJS.ProcessEnv = {}
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', env: { FPATH: '/explicit' }, sender },
+      {
+        spawn: (_cmd, _args, options) => {
+          seenEnv = options.env
+          return child
+        },
+        hookEnv: () => ({}),
+        loginShellEnv: () => ({ FPATH: '/fns' })
+      }
+    )
+    expect(seenEnv.FPATH).toBe('/explicit')
+    child.emit('close', 0)
+  })
+
   it('writes user turns as NDJSON to stdin and refuses missing threads', async () => {
     const child = createFakeChild()
     const { sender } = createSender()

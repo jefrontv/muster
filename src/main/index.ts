@@ -119,6 +119,7 @@ import { extractSiteBindUrl } from './sites/site-bind-url'
 import { handleSiteBindUrl } from './ipc/site-bind'
 import { isSiteMcpInvocation, runSiteMcpEntry } from './sites/mcp/site-mcp-entry'
 import { hydrateShellPath, mergePathSegments } from './startup/hydrate-shell-path'
+import { primeLoginShellEnvironment } from './startup/login-shell-environment'
 import {
   acquireSingleInstanceLock,
   logSingleInstanceLockBypass,
@@ -488,6 +489,12 @@ if (app.isPackaged && process.platform !== 'win32') {
       mergePathSegments(result.segments)
     }
   })
+}
+// Dev too: chat sessions spawn through a login shell in both builds, and this
+// is what lets them stop doing that. Fire-and-forget — launches fall back to a
+// real login shell until it lands.
+if (process.platform !== 'win32') {
+  void primeLoginShellEnvironment()
 }
 configureDevUserDataPath(is.dev)
 configureOrcaUserDataPathEnv()

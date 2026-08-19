@@ -5,6 +5,7 @@
 
 import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process'
 import { homedir } from 'node:os'
+import { loginShellEnvironmentDelta } from '../startup/login-shell-environment'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder, resultModelWindows } from './chat-thread-stream-decode'
@@ -53,6 +54,8 @@ export type ChatThreadStreamDeps = {
     register: (threadId: string) => { url: string; token: string } | null
     revoke: (threadId: string, token: string) => void
   }
+  /** What a login shell would contribute; null means spawn one instead. */
+  loginShellEnv?: () => Record<string, string> | null
 }
 
 type StreamEntry = {
@@ -124,14 +127,18 @@ export function startChatThreadStream(
   for (const key of INHERITED_HOOK_ENV_KEYS) {
     delete mergedEnv[key]
   }
-  Object.assign(mergedEnv, env ?? {}, deps.hookEnv?.() ?? {})
+  // Sourcing the user's profile costs 0.3-1.8s and produces the same result
+  // every time, so a captured copy replaces the login shell once it is ready.
+  // Null means not captured (yet, or at all) — fall back to paying for it.
+  const loginEnv = (deps.loginShellEnv ?? loginShellEnvironmentDelta)()
+  Object.assign(mergedEnv, loginEnv ?? {}, env ?? {}, deps.hookEnv?.() ?? {})
 
   // Same default-shell resolution the local PTY provider uses for POSIX spawns.
   const shellPath = env?.SHELL || process.env.SHELL || '/bin/zsh'
   const spawnFn = deps.spawn ?? defaultSpawn
   let child: ChildProcess
   try {
-    child = spawnFn(shellPath, ['-lc', command], {
+    child = spawnFn(shellPath, [loginEnv ? '-c' : '-lc', command], {
       // Standalone chats have no workspace dir; home beats inheriting the
       // Electron process cwd (repo dir in dev, filesystem root when packaged).
       cwd: cwd ?? homedir(),
