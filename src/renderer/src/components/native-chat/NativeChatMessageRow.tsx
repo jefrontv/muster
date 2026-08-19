@@ -127,7 +127,8 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   onLinkClick,
   allowFileUriLinks = false,
   deliveryFailed = false,
-  suppressTools = false
+  suppressTools = false,
+  toolsLive = false
 }: {
   message: NativeChatMessage
   expandSignal: boolean
@@ -138,6 +139,8 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   deliveryFailed?: boolean
   /** Live tool-call collapse: hide this row's tool run, keep its prose. */
   suppressTools?: boolean
+  /** This row's tool run belongs to the turn in flight, so unanswered calls spin. */
+  toolsLive?: boolean
 }): React.JSX.Element | null {
   const rowRef = useRef<HTMLDivElement | null>(null)
   // Rendered-markup source for the copy button's text/html clipboard flavor.
@@ -315,7 +318,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         />
       ) : null}
       {tools.length > 0 && !suppressTools ? (
-        <NativeChatToolRun blocks={tools} expandSignal={expandSignal} />
+        <NativeChatToolRun blocks={tools} expandSignal={expandSignal} live={toolsLive} />
       ) : null}
     </div>
   )

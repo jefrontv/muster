@@ -67,6 +67,9 @@ export function NativeChatMessageList({
   )
   const showWorkingRow =
     isWorking && !messages.some((message) => message.id === NATIVE_CHAT_STREAMING_ID)
+  // Only the newest message can hold a call the agent is still waiting on; an
+  // unanswered call further back was interrupted, not left running.
+  const liveMessageId = messages.at(-1)?.id ?? null
 
   // Settled turns the user re-opened / running turns with tool overflow shown.
   const [expandedTurnIds, setExpandedTurnIds] = useState<ReadonlySet<string>>(new Set())
@@ -284,6 +287,7 @@ export function NativeChatMessageList({
                 onLinkClick={onLinkClick}
                 allowFileUriLinks={allowFileUriLinks}
                 deliveryFailed={failedDeliveryMessageIds?.has(row.message.id) === true}
+                toolsLive={isWorking && row.message.id === liveMessageId}
               />
             ) : row.kind === 'turn-fold' ? (
               <NativeChatTurnFoldRow

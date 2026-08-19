@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronRight, CircleCheck, MessageSquareText, Wrench } from 'lucide-react'
+import { ChevronRight, CircleCheck, MessageSquareText } from 'lucide-react'
 import {
   activeCollabToolEvent,
   type ActiveCollabToolEvent
@@ -24,6 +24,8 @@ import {
   toolRunNameCounts
 } from './native-chat-tool-summary'
 import { NativeChatDiffView } from './NativeChatDiffView'
+import { NativeChatToolStatusIcon } from './NativeChatToolStatusIcon'
+import { pairToolBlocks } from '../../../../shared/native-chat-tool-fold'
 
 const MAX_TOOL_RESULT_CHARS = 4000
 
@@ -198,7 +200,7 @@ function ToolCallDeck({
   calls,
   onToggle
 }: {
-  calls: { name: string; preview: string }[]
+  calls: { name: string; preview: string; running: boolean }[]
   onToggle: () => void
 }): React.JSX.Element {
   const last = calls.length - 1
@@ -236,7 +238,7 @@ function ToolCallDeck({
           >
             {depth === 0 ? (
               <>
-                <Wrench className="size-3 shrink-0 text-muted-foreground" />
+                <NativeChatToolStatusIcon status={call.running ? 'running' : 'settled'} />
                 <span className="shrink-0 text-xs font-medium text-foreground/90">
                   {call.name}
                 </span>
@@ -271,11 +273,15 @@ function ToolCallDeck({
  *  toolbar toggle drive every run at once while still allowing per-run override. */
 export function NativeChatToolRun({
   blocks,
-  expandSignal
+  expandSignal,
+  live = false
 }: {
   blocks: NativeChatBlock[]
   /** Toolbar-driven desired open state. Each change re-syncs this run's state. */
   expandSignal: boolean
+  /** This run belongs to the turn currently in flight, so a result-less call is
+   *  still out. In a settled turn the same gap means interrupted, not running. */
+  live?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(expandSignal)
   // Re-sync when the global toolbar toggle flips.
@@ -293,10 +299,16 @@ export function NativeChatToolRun({
   // Result-only runs keep the pill (their body is only reachable through it);
   // a run that is purely AC events needs no wrench at all.
   const callCount = countToolCalls(plainBlocks) || (events.length > 0 ? 0 : plainBlocks.length)
-  const deckCalls = plainBlocks.filter(isToolCallBlock).map((block) => ({
-    name: describeToolCall(block.name, block.input),
-    preview: humanToolCallPreview(block.input)
-  }))
+  // Pairing is FIFO by ordinal (transcript blocks carry no tool ids), so a pair
+  // without a result is a call the agent has not heard back from yet.
+  const deckCalls = pairToolBlocks(plainBlocks)
+    .filter((pair) => pair.call !== undefined)
+    .map((pair) => ({
+      name: describeToolCall(pair.call!.name, pair.call!.input),
+      preview: humanToolCallPreview(pair.call!.input),
+      running: live && pair.result === undefined
+    }))
+  const anyRunning = deckCalls.some((call) => call.running)
   const nameCounts = toolRunNameCounts(plainBlocks)
   const countLabel = translate(
     callCount === 1 ? 'components.native-chat.tool.countOne' : 'components.native-chat.tool.countN',
@@ -338,7 +350,7 @@ export function NativeChatToolRun({
             open ? 'bg-muted/70' : 'bg-muted/40 hover:bg-muted/70'
           )}
         >
-          <Wrench className="size-3 shrink-0 text-muted-foreground" />
+          <NativeChatToolStatusIcon status={anyRunning ? 'running' : 'settled'} />
           <span className="shrink-0 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground/80">
             {countLabel}
           </span>
