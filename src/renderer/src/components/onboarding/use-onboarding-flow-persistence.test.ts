@@ -8,11 +8,15 @@ vi.mock('@/lib/telemetry', () => ({
   track: trackMock
 }))
 
+import { renderHook } from '@testing-library/react'
 import {
   buildCompletedOnboardingNotificationSettings,
   buildOnboardingDismissedPayload,
-  trackOnboardingDismissed
+  trackOnboardingDismissed,
+  usePersistCurrentStep
 } from './use-onboarding-flow-persistence'
+import { getDefaultOnboardingState } from '../../../../shared/constants'
+import { STEPS } from './use-onboarding-flow-types'
 
 describe('onboarding flow persistence', () => {
   beforeEach(() => {
@@ -86,4 +90,44 @@ describe('onboarding flow persistence', () => {
       activeCollabStyle: 'detailed'
     })
   })
+
+  // Why: a step id this hook does not handle returns { ok: false }, which makes
+  // next() refuse to advance with no error on screen — Continue just dies.
+  // site_mcp shipped that way once already.
+  it.each(STEPS.map((step) => step.id))(
+    'persists the %s step so Continue can advance',
+    async (stepId) => {
+      const onboarding = getDefaultOnboardingState()
+      const onOnboardingChange = vi.fn()
+      // Only the fields this hook actually reads; getDefaultSettings() needs
+      // environment the renderer test has no business standing up.
+      const settings = {
+        agentDefaultArgs: {},
+        agentDefaultEnv: {},
+        notifications: {},
+        theme: 'dark'
+      } as unknown as Parameters<typeof usePersistCurrentStep>[0]['settings']
+      Object.assign(window, {
+        api: { onboarding: { update: vi.fn().mockResolvedValue(onboarding) } }
+      })
+
+      const { result } = renderHook(() =>
+        usePersistCurrentStep({
+          currentStepId: stepId,
+          selectedAgent: 'claude',
+          yoloPermissions: false,
+          theme: 'dark',
+          defaultView: 'code',
+          settings,
+          updateSettings: vi.fn(),
+          onboardingChecklist: onboarding.checklist,
+          onOnboardingChange,
+          setError: vi.fn()
+        })
+      )
+
+      await expect(result.current()).resolves.toEqual({ ok: true })
+      expect(onOnboardingChange).toHaveBeenCalled()
+    }
+  )
 })

@@ -34,7 +34,7 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 4
+        lastCompletedStep: 6
       },
       onOnboardingChange: vi.fn()
     })
@@ -52,8 +52,9 @@ describe('OnboardingFlow', () => {
     // Why welcome: pre-default_view progress restarts on the new first step.
     [3, 'data-onboarding-welcome="true"'],
     [4, 'data-onboarding-welcome="true"'],
-    [5, 'Set up notifications'],
-    [9, 'Set up notifications']
+    // Finishing integrations in the old flow means site_mcp is what comes next.
+    [5, 'Let agents work on your sites'],
+    [9, 'Let agents work on your sites']
   ])(
     'resumes unversioned seven-step onboarding progress %i at the matching current page',
     (legacyStep, title) => {
@@ -74,9 +75,9 @@ describe('OnboardingFlow', () => {
 
   it.each([
     [3, 'data-onboarding-welcome="true"'],
-    [4, 'Set up notifications'],
-    [5, 'Set up notifications'],
-    [9, 'Set up notifications']
+    [4, 'Let agents work on your sites'],
+    [5, 'Let agents work on your sites'],
+    [9, 'Let agents work on your sites']
   ])(
     'resumes versioned five-step onboarding progress %i at the matching current page',
     (legacyStep, title) => {
@@ -96,7 +97,8 @@ describe('OnboardingFlow', () => {
   )
 
   it.each([
-    [3, 'Set up notifications'],
+    // Finishing v3 integrations lands on site_mcp; later progress clears it.
+    [3, 'Let agents work on your sites'],
     [4, 'Set up notifications'],
     [9, 'Set up notifications']
   ])(
@@ -116,19 +118,19 @@ describe('OnboardingFlow', () => {
     }
   )
 
-  it('shows the Windows terminal defaults page for Windows users after integrations', () => {
+  it('shows the Windows terminal defaults page for Windows users after site tools', () => {
     vi.stubGlobal('navigator', { userAgent: 'Windows' })
 
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 4
+        lastCompletedStep: 5
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set Windows terminal defaults')
-    expect(html).toContain('5 of 6')
+    expect(html).toContain('6 of 7')
   })
 
   it('drops the skipped integrations step from the stepper on Windows', () => {
@@ -147,18 +149,52 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 3
+        lastCompletedStep: 5
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set Windows terminal defaults')
     // Why: integrations is skipped (gh already installed), so it is not a
-    // stepper dot at all — the five real steps are agent, theme, default view,
-    // Windows terminal, notifications, and Windows terminal is the fourth of five.
-    expect(html).toContain('4 of 5')
+    // stepper dot at all — the six real steps are default view, agent, theme,
+    // site tools, Windows terminal, notifications, and Windows terminal is
+    // the fifth of six.
+    expect(html).toContain('5 of 6')
     expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Integrations')
+  })
+
+  it('offers the site tools step to Code mode users after integrations', () => {
+    useAppStore.setState({ activeView: 'terminal' })
+
+    const html = renderOnboardingFlow({
+      onboarding: {
+        ...getDefaultOnboardingState(),
+        lastCompletedStep: 4
+      },
+      onOnboardingChange: vi.fn()
+    })
+
+    expect(html).toContain('Let agents work on your sites')
+    expect(html).toContain('5 of 6')
+  })
+
+  it('skips the site tools step entirely for Chat mode users', () => {
+    // Deploys, imports and database queries are Code-mode work; a Chat user has
+    // nothing to point them at, so the step is not even a stepper dot.
+    useAppStore.setState({ activeView: 'chat' })
+
+    const html = renderOnboardingFlow({
+      onboarding: {
+        ...getDefaultOnboardingState(),
+        lastCompletedStep: 4
+      },
+      onOnboardingChange: vi.fn()
+    })
+
+    expect(html).not.toContain('Let agents work on your sites')
+    expect(html).not.toContain('muster-sites')
+    expect(html).toContain('Set up notifications')
   })
 
   it('skips GitHub task setup when the GitHub CLI is already detected', () => {
@@ -176,7 +212,7 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 3
+        lastCompletedStep: 5
       },
       onOnboardingChange: vi.fn()
     })
@@ -188,8 +224,8 @@ describe('OnboardingFlow', () => {
     expect(html).not.toContain('Connect your task sources')
     expect(html).not.toContain('Point Muster at some code')
     // Why: with both integrations (gh installed) and Windows terminal (Mac)
-    // skipped, the stepper shows only the four real steps — no dead dots.
-    expect(html).toContain('4 of 4')
+    // skipped, the stepper shows only the five real steps — no dead dots.
+    expect(html).toContain('5 of 5')
     expect(html).not.toContain('Integrations')
   })
 

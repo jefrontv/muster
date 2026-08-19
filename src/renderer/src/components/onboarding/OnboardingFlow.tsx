@@ -8,6 +8,7 @@ import { AgentStep } from './AgentStep'
 import { ThemeStep } from './ThemeStep'
 import { NotificationStep } from './NotificationStep'
 import { IntegrationsStep } from './IntegrationsStep'
+import { OnboardingSiteMcpStep } from './onboarding-site-mcp-step'
 import { WindowsTerminalStep } from './WindowsTerminalStep'
 import { OnboardingDefaultViewStep } from './onboarding-default-view-step'
 import { OnboardingWelcome } from './onboarding-welcome'
@@ -16,105 +17,10 @@ import { onboardingFinishCtaLabel } from './onboarding-finish-cta'
 import { remapOpenOnboardingLastCompletedStep, useOnboardingFlow } from './use-onboarding-flow'
 import { OnboardingSkipConfirmationDialog } from './OnboardingSkipConfirmationDialog'
 import { OnboardingFooter } from './OnboardingFooter'
+import { stepCopy, stepTooltipLabels } from './onboarding-step-copy'
 import { shouldRequestOnboardingSkipConfirmation } from './onboarding-dismiss-target'
 import logo from '../../../../../resources/logo.svg'
 import { translate } from '@/i18n/i18n'
-
-const stepCopy = {
-  agent: {
-    get title() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.198b148b3c',
-        'Pick your default agent'
-      )
-    },
-    get subtitle() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.322fc50a18',
-        "Muster works with every CLI agent. Choose the one you'll reach for most. Switch any time."
-      )
-    }
-  },
-  theme: {
-    get title() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.f396db9f20',
-        'Make it feel like home'
-      )
-    },
-    get subtitle() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.04ae28d8ca',
-        'Pick the look you want to stare at for hours.'
-      )
-    }
-  },
-  default_view: {
-    get title() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.defaultViewTitle',
-        'How do you want to start?'
-      )
-    },
-    get subtitle() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.defaultViewSubtitle',
-        'Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.'
-      )
-    }
-  },
-  notifications: {
-    get title() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.b054332836',
-        'Set up notifications'
-      )
-    },
-    get subtitle() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.ff92d15436',
-        'Muster will notify you when agents are done or need help.'
-      )
-    }
-  },
-  integrations: {
-    get title() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.integrationsTitle',
-        'Connect your sources'
-      )
-    },
-    get subtitle() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.integrationsSubtitle',
-        'Link GitHub, Bitbucket, and ActiveCollab to:'
-      )
-    }
-  },
-  windows_terminal: {
-    get title() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.windowsTerminalTitle',
-        'Set Windows terminal defaults'
-      )
-    },
-    get subtitle() {
-      return translate(
-        'auto.components.onboarding.OnboardingFlow.windowsTerminalSubtitle',
-        'Choose the default shell for new panes, and how right-click behaves.'
-      )
-    }
-  }
-} as const
-
-const stepTooltipLabels = {
-  agent: 'Default Agent',
-  theme: 'Appearance',
-  default_view: 'Default View',
-  windows_terminal: 'Windows Terminal',
-  notifications: 'Notifications',
-  integrations: 'Integrations'
-} as const
 
 type OnboardingFlowProps = {
   onboarding: OnboardingState
@@ -376,6 +282,7 @@ export default function OnboardingFlow({
                     />
                   )}
                   {currentStep.id === 'integrations' && <IntegrationsStep />}
+                  {currentStep.id === 'site_mcp' && <OnboardingSiteMcpStep />}
                   {currentStep.id === 'windows_terminal' && (
                     <WindowsTerminalStep
                       settings={flow.settings}

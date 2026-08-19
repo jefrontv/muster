@@ -52,8 +52,15 @@ function shouldSkipWindowsTerminalStep(isWindows: boolean): boolean {
   return !isWindows
 }
 
+// Site tools drive deploys, imports and database queries — all Code-mode work.
+// A Chat-mode user has no use for them, so the step never appears.
+function shouldSkipSiteMcpStep(defaultView: OnboardingDefaultView): boolean {
+  return defaultView !== 'code'
+}
+
 type OnboardingStepSkipOptions = {
   skipIntegrations: boolean
+  skipSiteMcp: boolean
   skipWindowsTerminal: boolean
 }
 
@@ -61,6 +68,7 @@ function isSkippedStepIndex(index: number, options: OnboardingStepSkipOptions): 
   const step = STEPS[index]
   return (
     (options.skipIntegrations && step?.id === 'integrations') ||
+    (options.skipSiteMcp && step?.id === 'site_mcp') ||
     (options.skipWindowsTerminal && step?.id === 'windows_terminal')
   )
 }
@@ -202,14 +210,20 @@ export function useOnboardingFlow(
   useAppStore((s) => s.activeCollabStatus.configured)
   const activeCollabConfigured = useAppStore.getState().activeCollabStatus.configured
 
+  // Declared ahead of the skip options because the site_mcp step is gated on it.
+  const [defaultView, setDefaultView] = useState<OnboardingDefaultView>(() =>
+    resolveOnboardingDefaultView(useAppStore.getState().activeView)
+  )
+
   const skipIntegrations = shouldSkipIntegrationsStep(
     effectivePreflightStatus,
     activeCollabConfigured
   )
+  const skipSiteMcp = shouldSkipSiteMcpStep(defaultView)
   const skipWindowsTerminal = shouldSkipWindowsTerminalStep(isWindowsUserAgent())
   const skipOptions = useMemo(
-    () => ({ skipIntegrations, skipWindowsTerminal }),
-    [skipIntegrations, skipWindowsTerminal]
+    () => ({ skipIntegrations, skipSiteMcp, skipWindowsTerminal }),
+    [skipIntegrations, skipSiteMcp, skipWindowsTerminal]
   )
   const remappedLastCompletedStep = remapOpenOnboardingLastCompletedStep(onboarding)
   const initialStep = resolveStepIndex(
@@ -231,9 +245,6 @@ export function useOnboardingFlow(
   )
   // Why: hydrate theme from saved settings so users who already chose one see it preselected.
   const [theme, setTheme] = useState<GlobalSettings['theme']>(settings?.theme ?? 'dark')
-  const [defaultView, setDefaultView] = useState<OnboardingDefaultView>(() =>
-    resolveOnboardingDefaultView(useAppStore.getState().activeView)
-  )
   const [busyLabel, setBusyLabel] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 

@@ -21,16 +21,36 @@ export function remapOnboardingLastCompletedStep(
     return current.finalStep
   }
 
-  // v6 moved default_view from step 3 to step 1; steps 4-6 kept their numbers.
-  // Progress that never reached default_view restarts on it (step 1 = index 0).
+  // v7 inserted site_mcp directly after integrations, so windows_terminal and
+  // notifications each moved one slot later. Someone who had just finished
+  // integrations resumes ON the new step rather than past it — that is the
+  // whole point of adding it.
+  if (snapshot.flowVersion === 6) {
+    return lastCompletedStep >= 5
+      ? Math.min(lastCompletedStep + 1, current.finalStep)
+      : lastCompletedStep
+  }
+
+  // v6 moved default_view from step 3 to step 1; v5 steps 4-6 kept their
+  // numbers, so only the v7 insertion shifts anything here. Progress that never
+  // reached default_view restarts on it (step 1 = index 0).
   if (snapshot.flowVersion === 5) {
-    return lastCompletedStep >= 3 ? lastCompletedStep : 0
+    if (lastCompletedStep < 3) {
+      return 0
+    }
+    return lastCompletedStep >= 5
+      ? Math.min(lastCompletedStep + 1, current.finalStep)
+      : lastCompletedStep
   }
 
   const v4 = remapLegacyProgressToV4(snapshot.flowVersion, lastCompletedStep)
-  // Why: v5 inserted default_view after v4 step 3, so integrations-or-later
-  // shifts forward one slot; earlier progress predates default_view entirely.
-  if (v4 >= 3) {
+  // Why two shifts: v5 inserted default_view ahead of v4's integrations, and v7
+  // inserted site_mcp behind it. Finishing integrations lands on the new
+  // site_mcp step (one shift); anything later clears both (two).
+  if (v4 >= 4) {
+    return Math.min(v4 + 2, current.finalStep)
+  }
+  if (v4 === 3) {
     return Math.min(v4 + 1, current.finalStep)
   }
   return 0

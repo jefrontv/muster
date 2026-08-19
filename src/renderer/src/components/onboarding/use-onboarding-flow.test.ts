@@ -94,11 +94,11 @@ describe('remapOpenOnboardingLastCompletedStep', () => {
     const base = { ...getDefaultOnboardingState(), flowVersion: 3 }
 
     expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 3 })).toBe(4)
-    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 })).toBe(5)
-    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 9 })).toBe(5)
+    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 4 })).toBe(6)
+    expect(remapOpenOnboardingLastCompletedStep({ ...base, lastCompletedStep: 9 })).toBe(6)
   })
 
-  it('keeps current six-step progress intact', () => {
+  it('keeps current progress intact', () => {
     expect(
       remapOpenOnboardingLastCompletedStep({
         ...getDefaultOnboardingState(),
@@ -115,6 +115,6 @@ describe('remapOpenOnboardingLastCompletedStep', () => {
         outcome: 'completed',
         lastCompletedStep: 7
       })
-    ).toBe(6)
+    ).toBe(7)
   })
 })

@@ -234,7 +234,8 @@ export function usePersistCurrentStep({
       if (
         currentStepId === 'default_view' ||
         currentStepId === 'windows_terminal' ||
-        currentStepId === 'integrations'
+        currentStepId === 'integrations' ||
+        currentStepId === 'site_mcp'
       ) {
         // Why: these pages persist their own preference on selection. Continue
         // only marks the page complete for resume/telemetry state.
@@ -245,6 +246,11 @@ export function usePersistCurrentStep({
         onOnboardingChange(await persistStep(stepNumber))
         return { ok: true }
       }
+      // Why never: a step id that reaches here persists nothing, so next()
+      // refuses to advance and Continue looks broken with no error shown.
+      // Adding a step without wiring it up should fail the build, not the UI.
+      const unhandledStepId: never = currentStepId
+      void unhandledStepId
       return { ok: false }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

@@ -4053,7 +4053,7 @@
         },
         "SidebarFeedbackDialog": {
           "8bf619e4cf": "Cancel",
-          "8de03e23c5": "Submit with your typed feedback only, or connect `gh` to include GitHub identity.",
+          "8de03e23c5": "Not signed in to `gh`. Your report still sends, filed by the Muster bot without a GitHub identity.",
           "d20439c560": "Checking GitHub identity…",
           "5b120b9634": "Submit anonymously",
           "c9e5ea0791": "GitHub:",
@@ -4062,7 +4062,7 @@
           "26108d3699": "Join Discord",
           "d245c4ef6c": "GitHub issues",
           "9b33530b3d": "Other ways to reach us",
-          "a828fa4aee": "Share what's working, what's broken, or what Muster should do next.",
+          "a828fa4aee": "Share what's working, what's broken, or what Muster should do next. It's filed as an issue on the Muster repo.",
           "0eb643f07f": "Send Feedback",
           "60b721e857": "Failed to submit feedback. Please try again.",
           "7a46c228b8": "Thanks for the feedback.",
@@ -10730,6 +10730,16 @@
         }
       },
       "onboarding": {
+        "SiteMcpStep": {
+          "title": "Site tools for your agents",
+          "status_ready": "Installed",
+          "status_setup": "Setup needed",
+          "description": "Muster ships an MCP server that lets your agents run deploys and imports, query databases, and read site config. Install it into the harnesses you use. You can change this later in Settings.",
+          "checking": "Checking your harnesses\u2026",
+          "retry": "Try again",
+          "no_harnesses": "No coding harnesses found yet. Install one and Muster can register the server from Settings later.",
+          "project_note": "Project-level installs happen on their own: Muster keeps a muster-sites entry in each site project\u2019s .mcp.json."
+        },
         "AgentStep": {
           "e6a369bd04": "Popular agents",
           "d7b3ef168b": "Detected on your system",

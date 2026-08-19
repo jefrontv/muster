@@ -1233,8 +1233,8 @@ describe('Store', () => {
 
   it.each([
     [3, 4],
-    [4, 5],
-    [9, 5]
+    [4, 6],
+    [9, 6]
   ])(
     'migrates versioned four-step onboarding progress %i around the inserted Windows step',
     async (legacyStep, expectedStep) => {
@@ -1261,8 +1261,8 @@ describe('Store', () => {
   it.each([
     [2, 0],
     [3, 4],
-    [4, 5],
-    [5, 6]
+    [4, 6],
+    [5, 7]
   ])(
     'migrates versioned five-step v4 onboarding progress %i around the inserted default-view page',
     async (legacyStep, expectedStep) => {
@@ -1286,7 +1286,7 @@ describe('Store', () => {
     }
   )
 
-  it('keeps current onboarding progress marked as the six-step flow', async () => {
+  it('keeps current onboarding progress marked as the current flow', async () => {
     writeDataFile({
       onboarding: {
         flowVersion: ONBOARDING_FLOW_VERSION,
