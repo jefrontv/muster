@@ -232,3 +232,62 @@ describe('buildNativeChatTimelineRows — turn plan', () => {
   })
 })
 
+describe('buildNativeChatTimelineRows — changed files', () => {
+  const edit = (path: string, oldText: string, newText: string): NativeChatBlock => ({
+    type: 'tool-call',
+    name: 'Edit',
+    input: { file_path: path, old_string: oldText, new_string: newText }
+  })
+
+  function settledTurnWithEdit(expandedChangedFileTurnIds?: ReadonlySet<string>) {
+    return buildNativeChatTimelineRows({
+      messages: [
+        msg('u1', 'user', [text('fix it')], 1_000),
+        msg('a1', 'assistant', [edit('src/a.ts', 'x', 'y')], 2_000),
+        msg('a2', 'assistant', [text('done')], 3_000),
+        msg('u2', 'user', [text('next')], 4_000),
+        msg('a3', 'assistant', [text('ok')], 5_000)
+      ],
+      isWorking: false,
+      expandedTurnIds: none,
+      expandedLiveToolTurnIds: none,
+      ...(expandedChangedFileTurnIds ? { expandedChangedFileTurnIds } : {})
+    })
+  }
+
+  it('summarises the turn even though the fold hid the edit', () => {
+    const rows = settledTurnWithEdit()
+    const card = rows.find((row) => row.kind === 'turn-changed-files')
+    expect(card).toBeDefined()
+    expect(rows.some((row) => row.kind === 'message' && row.message.id === 'a1')).toBe(false)
+  })
+
+  it('leaves an older turn collapsed', () => {
+    // The edit is in the first of two turns, so it is not the latest.
+    const card = settledTurnWithEdit().find((row) => row.kind === 'turn-changed-files')
+    expect(card).toMatchObject({ expanded: false })
+  })
+
+  it('lets the user toggle a card away from its default', () => {
+    // Regression: an OR here made an auto-expanded card impossible to collapse.
+    const card = settledTurnWithEdit(new Set(['u1'])).find(
+      (row) => row.kind === 'turn-changed-files'
+    )
+    expect(card).toMatchObject({ expanded: true })
+  })
+
+  it('emits nothing for a turn that changed no files', () => {
+    const rows = buildNativeChatTimelineRows({
+      messages: [
+        msg('u1', 'user', [text('hi')], 1_000),
+        msg('a1', 'assistant', [text('hello')], 2_000),
+        msg('u2', 'user', [text('next')], 3_000)
+      ],
+      isWorking: false,
+      expandedTurnIds: none,
+      expandedLiveToolTurnIds: none
+    })
+    expect(rows.some((row) => row.kind === 'turn-changed-files')).toBe(false)
+  })
+})
+

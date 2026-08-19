@@ -14,6 +14,11 @@ import {
   type NativeChatTurn
 } from './native-chat-turn-folds'
 import { deriveNativeChatTurnPlan, type NativeChatTurnPlan } from './native-chat-turn-plan'
+import {
+  deriveNativeChatTurnChangedFiles,
+  shouldAutoExpandChangedFiles,
+  type NativeChatTurnChangedFiles
+} from './native-chat-turn-changed-files'
 
 /** Within the running turn, only the most recent tool-run row stays visible. */
 export const NATIVE_CHAT_MAX_VISIBLE_LIVE_TOOL_RUNS = 1
@@ -34,6 +39,12 @@ export type NativeChatTimelineRow =
       expanded: boolean
     }
   | { kind: 'live-tool-toggle'; turnId: string; hiddenCount: number; expanded: boolean }
+  | {
+      kind: 'turn-changed-files'
+      turnId: string
+      changed: NativeChatTurnChangedFiles
+      expanded: boolean
+    }
   | {
       kind: 'turn-plan'
       turnId: string
@@ -108,10 +119,13 @@ export function buildNativeChatTimelineRows(input: {
   expandedLiveToolTurnIds: ReadonlySet<string>
   /** Turns whose plan checklist the user opened out. */
   expandedPlanTurnIds?: ReadonlySet<string>
+  /** Turns whose changed-files card the user opened out. */
+  expandedChangedFileTurnIds?: ReadonlySet<string>
 }): NativeChatTimelineRow[] {
   const turns = groupNativeChatTurns(input.messages)
   const folds = deriveNativeChatTurnFolds({ messages: input.messages, isWorking: input.isWorking })
   const expandedPlans = input.expandedPlanTurnIds ?? new Set<string>()
+  const expandedChangedFiles = input.expandedChangedFileTurnIds ?? new Set<string>()
 
   const rows: NativeChatTimelineRow[] = []
   for (const turn of turns) {
@@ -129,6 +143,7 @@ export function buildNativeChatTimelineRows(input: {
     // Why the plan survives the fold: it is the turn's outcome checklist, and
     // folding it away leaves a settled turn with no record of what was done.
     const plan = deriveNativeChatTurnPlan(turn.messages)
+    const changed = deriveNativeChatTurnChangedFiles(turn.messages)
     for (const message of turn.messages) {
       if (fold.droppedMessageIds.has(message.id)) {
         continue
@@ -137,6 +152,21 @@ export function buildNativeChatTimelineRows(input: {
         continue
       }
       rows.push({ kind: 'message', message, suppressTools: false })
+      // After the turn's last message, so it reads as the outcome of the work
+      // rather than an interruption partway through it.
+      if (changed !== null && message === turn.messages.at(-1)) {
+        rows.push({
+          kind: 'turn-changed-files',
+          turnId: turn.id,
+          changed,
+          // XOR, not OR: the set records that the user toggled this card, so a
+          // click flips whichever default the auto rule chose. An OR would make
+          // an auto-expanded card impossible to collapse.
+          expanded:
+            shouldAutoExpandChangedFiles({ changed, isLatestTurn: turn === turns.at(-1) }) !==
+            expandedChangedFiles.has(turn.id)
+        })
+      }
       // The fold row anchors right under the turn's user message.
       if (message === turn.userMessage) {
         rows.push({

@@ -54,6 +54,43 @@ export function diffFromToolCall(
   return truncated ? [...combined.slice(0, maxLines - 1), DIFF_TRUNCATED_LINE] : combined
 }
 
+/** Add/delete line counts for one edit call. */
+export type NativeChatChangedLineCounts = { additions: number; deletions: number }
+
+function countLines(value: unknown): number {
+  if (typeof value !== 'string' || value === '') {
+    return 0
+  }
+  // Trailing newline is a terminator, not an extra line.
+  const normalized = value.endsWith('\n') ? value.slice(0, -1) : value
+  return normalized.split('\n').length
+}
+
+/**
+ * Counts for a turn summary, as opposed to `diffFromToolCall`, which exists to
+ * render and therefore clips at MAX_DIFF_CHARS / maxLines. A summary that
+ * inherited that clipping would under-report a large edit.
+ *
+ * `Write` on a new file carries no old text, so it counts as additions only.
+ */
+export function changedLineCountsFromToolCall(
+  name: string,
+  input: unknown
+): NativeChatChangedLineCounts | null {
+  if (!EDIT_TOOL_NAMES.has(name) || typeof input !== 'object' || input === null) {
+    return null
+  }
+  const value = input as Record<string, unknown>
+  const deletions = countLines(value.old_string ?? value.oldString ?? value.old)
+  const additions = countLines(
+    value.new_string ?? value.newString ?? value.new ?? value.content ?? value.file_text
+  )
+  if (additions === 0 && deletions === 0) {
+    return null
+  }
+  return { additions, deletions }
+}
+
 export function diffFromText(
   text: string,
   maxLines = DEFAULT_MAX_DIFF_LINES

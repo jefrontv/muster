@@ -12,6 +12,7 @@ import { useNativeChatScrollAnchoring } from './use-native-chat-scroll-anchoring
 import { NATIVE_CHAT_SCROLL_CONTAINER_ATTR } from './use-native-chat-toggle-scroll-compensation'
 import { NativeChatMessageRow } from './NativeChatMessageRow'
 import { NativeChatTurnFoldRow, NativeChatLiveToolToggleRow } from './NativeChatTurnFoldRow'
+import { NativeChatChangedFilesRow } from './NativeChatChangedFilesRow'
 import { NativeChatTurnPlanRow } from './NativeChatTurnPlanRow'
 import { nativeChatPlanActiveLabel } from './native-chat-turn-plan'
 import { NativeChatWorkingRow } from './NativeChatWorkingRow'
@@ -70,6 +71,9 @@ export function NativeChatMessageList({
   // Settled turns the user re-opened / running turns with tool overflow shown.
   const [expandedTurnIds, setExpandedTurnIds] = useState<ReadonlySet<string>>(new Set())
   const [expandedPlanTurnIds, setExpandedPlanTurnIds] = useState<ReadonlySet<string>>(new Set())
+  const [expandedChangedFileTurnIds, setExpandedChangedFileTurnIds] = useState<
+    ReadonlySet<string>
+  >(new Set())
   const [expandedLiveToolTurnIds, setExpandedLiveToolTurnIds] = useState<ReadonlySet<string>>(
     new Set()
   )
@@ -80,9 +84,17 @@ export function NativeChatMessageList({
         isWorking,
         expandedTurnIds,
         expandedLiveToolTurnIds,
-        expandedPlanTurnIds
+        expandedPlanTurnIds,
+        expandedChangedFileTurnIds
       }),
-    [messages, isWorking, expandedTurnIds, expandedLiveToolTurnIds, expandedPlanTurnIds]
+    [
+      messages,
+      isWorking,
+      expandedTurnIds,
+      expandedLiveToolTurnIds,
+      expandedPlanTurnIds,
+      expandedChangedFileTurnIds
+    ]
   )
 
   // The running turn is the last one, so its plan row is the last plan row.
@@ -280,6 +292,15 @@ export function NativeChatMessageList({
                 interrupted={row.interrupted}
                 expanded={row.expanded}
                 onToggle={() => setExpandedTurnIds((prev) => toggled(prev, row.turnId))}
+              />
+            ) : row.kind === 'turn-changed-files' ? (
+              <NativeChatChangedFilesRow
+                key={`changed-files:${row.turnId}`}
+                changed={row.changed}
+                expanded={row.expanded}
+                onToggle={() =>
+                  setExpandedChangedFileTurnIds((prev) => toggled(prev, row.turnId))
+                }
               />
             ) : row.kind === 'turn-plan' ? (
               <NativeChatTurnPlanRow
