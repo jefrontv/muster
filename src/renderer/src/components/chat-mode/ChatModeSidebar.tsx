@@ -8,6 +8,7 @@ import type React from 'react'
 import { useState } from 'react'
 import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { translate } from '@/i18n/i18n'
+import { CHAT_SIDEBAR_REGION_LABEL } from './chat-sidebar-hierarchy'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -121,7 +122,7 @@ export function ChatModeSidebar(): React.JSX.Element {
           />
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-sleek p-3">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto scrollbar-sleek p-3">
         {/* With workspaces set up, they are the primary navigation — quick
             standalone chats move below them. Without any, chats lead. */}
         {workspaces.length === 0 ? (
@@ -131,7 +132,7 @@ export function ChatModeSidebar(): React.JSX.Element {
           className="flex items-center justify-between px-1"
           data-contextual-tour-target="chat-workspaces"
         >
-          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className={CHAT_SIDEBAR_REGION_LABEL}>
             {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
           </h2>
           <Button

@@ -20,6 +20,11 @@ import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import {
+  CHAT_SIDEBAR_GROUP_LABEL,
+  CHAT_SIDEBAR_GROUP_ROWS,
+  CHAT_SIDEBAR_REGION_LABEL
+} from './chat-sidebar-hierarchy'
 import { CHAT_SETTLED_SHELF_MAX_ROWS } from './chat-thread-status'
 import { sortChatThreads } from './chat-thread-ordering'
 import { ChatClearAllDialog } from './ChatClearAllDialog'
@@ -76,7 +81,7 @@ export function SettledSection({
             expanded && 'rotate-90'
           )}
         />
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className={CHAT_SIDEBAR_REGION_LABEL}>
           {translate('auto.components.chat.sidebar.settled', 'Settled')} · {settled.length}
         </span>
       </button>
@@ -114,7 +119,7 @@ export function StandaloneChatsSection({
   return (
     <section className="space-y-0.5">
       <div className="group flex items-center gap-1.5 px-1">
-        <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <h3 className={cn('min-w-0 flex-1 truncate', CHAT_SIDEBAR_REGION_LABEL)}>
           {translate('auto.components.chat.sidebar.chats', 'Chats')}
         </h3>
         {standaloneCount > 0 ? (
@@ -203,16 +208,14 @@ export function WorkspaceSection({
   const linkedProjects = chatWorkspaceProjects(workspace)
 
   return (
-    <section className="space-y-0.5">
+    <section className="space-y-1">
       <div className="group flex items-center gap-1.5 px-1">
         <RepoIconGlyph
           repoIcon={workspace.icon}
           className="size-4 shrink-0"
           color={normalizeRepoBadgeColor(workspace.color) ?? undefined}
         />
-        <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {workspace.name}
-        </h3>
+        <h3 className={CHAT_SIDEBAR_GROUP_LABEL}>{workspace.name}</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -258,21 +261,23 @@ export function WorkspaceSection({
           <MessageSquarePlus className="size-3.5" />
         </Button>
       </div>
-      {rows.length === 0 ? (
-        <button
-          type="button"
-          className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60"
-          onClick={() => void createChatThread(workspace.id)}
-        >
-          {translate('auto.components.chat.sidebar.startFirstChat', 'Start a chat…')}
-        </button>
-      ) : (
-        // Same cap as standalone chats: one busy workspace must not push the
-        // rest of the sidebar out of view.
-        <ChatSidebarFadeScroller>
-          <ChatThreadDragList threads={rows} />
-        </ChatSidebarFadeScroller>
-      )}
+      <div className={CHAT_SIDEBAR_GROUP_ROWS}>
+        {rows.length === 0 ? (
+          <button
+            type="button"
+            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60"
+            onClick={() => void createChatThread(workspace.id)}
+          >
+            {translate('auto.components.chat.sidebar.startFirstChat', 'Start a chat…')}
+          </button>
+        ) : (
+          // Same cap as standalone chats: one busy workspace must not push the
+          // rest of the sidebar out of view.
+          <ChatSidebarFadeScroller>
+            <ChatThreadDragList threads={rows} />
+          </ChatSidebarFadeScroller>
+        )}
+      </div>
       <ChatClearAllDialog
         open={confirmingClear}
         count={workspaceThreadCount}

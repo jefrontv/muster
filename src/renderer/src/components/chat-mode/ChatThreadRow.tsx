@@ -192,7 +192,7 @@ export function ChatThreadRow({
       <button
         type="button"
         className={cn(
-          'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-2 pr-2 text-left text-sm transition-[padding]',
+          'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-2 pr-2 text-left text-[13px] transition-[padding]',
           'group-hover/thread:pr-8',
           thread.id === activeChatThreadId
             ? 'bg-accent text-accent-foreground'
