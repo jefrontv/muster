@@ -21,6 +21,10 @@ import { useSidebarResize } from '@/hooks/useSidebarResize'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { useSettledThreadIds } from './use-settled-chat-threads'
+import {
+  ChatThreadContentMatchProvider,
+  useChatThreadContentSearch
+} from './use-chat-thread-content-search'
 import { ChatModeToggle } from './ChatModeToggle'
 import {
   ArchivedSection,
@@ -53,6 +57,7 @@ export function ChatModeSidebar(): React.JSX.Element {
   const [rawQuery, setRawQuery] = useState('')
   const query = rawQuery.trim().toLowerCase()
   const settledIds = useSettledThreadIds()
+  const contentMatches = useChatThreadContentSearch(query)
   const assignedTasks = useAssignedActiveCollabTasks()
   const now = Date.now()
   const overdueCount = (assignedTasks ?? []).filter((t) => isOverdue(t, now)).length
@@ -123,48 +128,50 @@ export function ChatModeSidebar(): React.JSX.Element {
           />
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto scrollbar-sleek p-3">
-        {/* With workspaces set up, they are the primary navigation — quick
-            standalone chats move below them. Without any, chats lead. */}
-        {workspaces.length === 0 ? (
-          <StandaloneChatsSection query={query} settledIds={settledIds} />
-        ) : null}
-        <div
-          className="flex items-center justify-between px-1"
-          data-contextual-tour-target="chat-workspaces"
-        >
-          <h2 className={CHAT_SIDEBAR_REGION_LABEL}>
-            {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={translate('auto.components.chat.sidebar.newWorkspace', 'New workspace')}
-            onClick={() => {
-              useAppStore.getState().setChatWorkspaceCreateOpen(true)
-            }}
+      <ChatThreadContentMatchProvider matches={contentMatches}>
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto scrollbar-sleek p-3">
+          {/* With workspaces set up, they are the primary navigation — quick
+              standalone chats move below them. Without any, chats lead. */}
+          {workspaces.length === 0 ? (
+            <StandaloneChatsSection query={query} settledIds={settledIds} />
+          ) : null}
+          <div
+            className="flex items-center justify-between px-1"
+            data-contextual-tour-target="chat-workspaces"
           >
-            <Plus className="size-3.5" />
-          </Button>
+            <h2 className={CHAT_SIDEBAR_REGION_LABEL}>
+              {translate('auto.components.chat.sidebar.workspaces', 'Workspaces')}
+            </h2>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={translate('auto.components.chat.sidebar.newWorkspace', 'New workspace')}
+              onClick={() => {
+                useAppStore.getState().setChatWorkspaceCreateOpen(true)
+              }}
+            >
+              <Plus className="size-3.5" />
+            </Button>
+          </div>
+          {workspaces.map((workspace) => (
+            <WorkspaceSection
+              key={workspace.id}
+              workspace={workspace}
+              query={query}
+              settledIds={settledIds}
+              onEdit={(target) => {
+                setEditing(target)
+                setDialogOpen(true)
+              }}
+            />
+          ))}
+          {workspaces.length > 0 ? (
+            <StandaloneChatsSection query={query} settledIds={settledIds} />
+          ) : null}
+          <SettledSection query={query} settledIds={settledIds} />
+          <ArchivedSection query={query} />
         </div>
-        {workspaces.map((workspace) => (
-          <WorkspaceSection
-            key={workspace.id}
-            workspace={workspace}
-            query={query}
-            settledIds={settledIds}
-            onEdit={(target) => {
-              setEditing(target)
-              setDialogOpen(true)
-            }}
-          />
-        ))}
-        {workspaces.length > 0 ? (
-          <StandaloneChatsSection query={query} settledIds={settledIds} />
-        ) : null}
-        <SettledSection query={query} settledIds={settledIds} />
-        <ArchivedSection query={query} />
-      </div>
+      </ChatThreadContentMatchProvider>
       <div className="flex items-center gap-1 border-t border-border p-2">
         <div className="flex-1" />
         <Button

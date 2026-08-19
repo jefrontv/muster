@@ -39,6 +39,10 @@ import type {
 } from '../shared/chat-mode-types'
 import type { ChatConnectorConfirmRequest } from '../shared/chat-connector-types'
 import type {
+  ChatThreadSearchRequest,
+  ChatThreadSearchResponse
+} from '../shared/chat-thread-search-types'
+import type {
   ChatThreadPermissionResponseArgs,
   ChatThreadStreamEvent,
   ChatThreadStreamStartArgs,
@@ -906,6 +910,8 @@ export type ChatModeApi = {
     >
   ) => Promise<ChatThread | null>
   deleteThread: (id: string) => Promise<boolean>
+  /** Searches message text inside threads, unlike the sidebar's title-only filter. */
+  searchThreadContent: (args: ChatThreadSearchRequest) => Promise<ChatThreadSearchResponse>
   /** First name for the hero greeting (git identity, then OS account); null hides it. */
   getGreetingName: () => Promise<string | null>
   /** Fires when main mutated the chat store outside this window's IPC (muster MCP tools). */

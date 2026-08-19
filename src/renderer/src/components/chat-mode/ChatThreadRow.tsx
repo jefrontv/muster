@@ -35,6 +35,7 @@ import {
   type ChatThreadStatus
 } from './chat-thread-status'
 import { regenerateChatThreadTitle } from './chat-thread-auto-title'
+import { useChatThreadContentMatch } from './use-chat-thread-content-search'
 import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
@@ -150,6 +151,7 @@ export function ChatThreadRow({
   })
   const [renaming, setRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(thread.title)
+  const contentMatch = useChatThreadContentMatch(thread.id)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -219,10 +221,17 @@ export function ChatThreadRow({
         {thread.activeCollabTask ? (
           <ActiveCollabIcon className="size-3 shrink-0 text-muted-foreground/60" />
         ) : null}
-        <span className="min-w-0 flex-1 truncate">
-          {isChatWorkspaceBriefTitle(thread.title)
-            ? deriveChatThreadTitle(thread.title)
-            : thread.title}
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate">
+            {isChatWorkspaceBriefTitle(thread.title)
+              ? deriveChatThreadTitle(thread.title)
+              : thread.title}
+          </span>
+          {contentMatch ? (
+            <span className="truncate text-[11px] font-normal text-muted-foreground/70">
+              {contentMatch.snippet}
+            </span>
+          ) : null}
         </span>
         <ThreadStatusLabel status={status} workingSince={agentStatus?.stateStartedAt} />
       </button>

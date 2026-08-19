@@ -31,15 +31,29 @@ import { ChatClearAllDialog } from './ChatClearAllDialog'
 import { ChatSidebarFadeScroller } from './ChatSidebarFadeScroller'
 import { ChatThreadDragList } from './ChatThreadDragList'
 import { ChatThreadRow } from './ChatThreadRow'
+import {
+  useChatThreadContentMatches,
+  type ChatThreadContentMatches
+} from './use-chat-thread-content-search'
 
 function matchesQuery(value: string, query: string): boolean {
   return value.toLowerCase().includes(query)
 }
 
+/** A thread survives the filter on its title or on text inside its conversation. */
+function threadMatches(
+  thread: ChatThread,
+  query: string,
+  contentMatches: ChatThreadContentMatches
+): boolean {
+  return !query || matchesQuery(thread.title, query) || contentMatches.has(thread.id)
+}
+
 function visibleThreads(
   threads: ChatThread[],
   query: string,
-  settledIds: Set<string>
+  settledIds: Set<string>,
+  contentMatches: ChatThreadContentMatches
 ): ChatThread[] {
   // Order is static while agents work (T3 pattern) — a list that reorders on
   // every activity tick steals the row out from under the pointer. New chats
@@ -47,7 +61,7 @@ function visibleThreads(
   const sorted = sortChatThreads(
     threads.filter((t) => t.archived !== true && !settledIds.has(t.id))
   )
-  return query ? sorted.filter((t) => matchesQuery(t.title, query)) : sorted
+  return query ? sorted.filter((t) => threadMatches(t, query, contentMatches)) : sorted
 }
 
 export function SettledSection({
@@ -58,9 +72,10 @@ export function SettledSection({
   settledIds: Set<string>
 }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
+  const contentMatches = useChatThreadContentMatches()
   const [expanded, setExpanded] = useState(false)
   const settled = threads
-    .filter((t) => settledIds.has(t.id) && (!query || matchesQuery(t.title, query)))
+    .filter((t) => settledIds.has(t.id) && threadMatches(t, query, contentMatches))
     .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
   // Count reflects everything settled; the expanded list caps (no paging yet).
   const rows = settled.slice(0, CHAT_SETTLED_SHELF_MAX_ROWS)
@@ -105,9 +120,10 @@ export function SettledSection({
  */
 export function ArchivedSection({ query }: { query: string }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
+  const contentMatches = useChatThreadContentMatches()
   const [expanded, setExpanded] = useState(false)
   const archived = threads
-    .filter((t) => t.archived === true && (!query || matchesQuery(t.title, query)))
+    .filter((t) => t.archived === true && threadMatches(t, query, contentMatches))
     .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
   if (archived.length === 0) {
     return null
@@ -149,6 +165,7 @@ export function StandaloneChatsSection({
   settledIds: Set<string>
 }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
+  const contentMatches = useChatThreadContentMatches()
   const createChatThread = useAppStore((s) => s.createChatThread)
   const deleteChatThreadsInScope = useAppStore((s) => s.deleteChatThreadsInScope)
   const [confirmingClear, setConfirmingClear] = useState(false)
@@ -156,7 +173,8 @@ export function StandaloneChatsSection({
   const rows = visibleThreads(
     threads.filter((t) => t.workspaceId === null),
     query,
-    settledIds
+    settledIds,
+    contentMatches
   )
   if (query && rows.length === 0) {
     return null
@@ -235,6 +253,7 @@ export function WorkspaceSection({
   onEdit: (workspace: ChatWorkspace) => void
 }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
+  const contentMatches = useChatThreadContentMatches()
   const createChatThread = useAppStore((s) => s.createChatThread)
   const deleteChatWorkspace = useAppStore((s) => s.deleteChatWorkspace)
   const deleteChatThreadsInScope = useAppStore((s) => s.deleteChatThreadsInScope)
@@ -245,7 +264,8 @@ export function WorkspaceSection({
   const rows = visibleThreads(
     threads.filter((t) => t.workspaceId === workspace.id),
     workspaceMatches ? '' : query,
-    settledIds
+    settledIds,
+    contentMatches
   )
   if (query && !workspaceMatches && rows.length === 0) {
     return null

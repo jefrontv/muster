@@ -2,8 +2,19 @@
 // state edits on a small JSON sidecar; session launching stays in the renderer
 // (it composes the existing pty:spawn + agent-hooks machinery).
 
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
+import { join } from 'node:path'
 import { getChatGreetingName } from '../chat-mode/chat-greeting-name'
+import {
+  initChatThreadSearchIndex,
+  pruneChatThreadSearchIndex,
+  searchChatThreads,
+  type ChatSearchIndexTarget
+} from '../chat-mode/chat-thread-search-index'
+import { normalizeSearchQuery } from '../chat-mode/chat-thread-search-snippet'
+import { readNativeChatTranscript } from '../native-chat/transcript-reader'
+import type { ChatThreadSearchResponse } from '../../shared/chat-thread-search-types'
+import type { NativeChatMessage } from '../../shared/native-chat-types'
 import type { ChatModeState, ChatThread, ChatWorkspace } from '../../shared/chat-mode-types'
 import {
   normalizeChatWorkspaceEmails,
@@ -22,7 +33,8 @@ const CHANNELS = [
   'chatMode:deleteWorkspace',
   'chatMode:createThread',
   'chatMode:updateThread',
-  'chatMode:deleteThread'
+  'chatMode:deleteThread',
+  'chatMode:searchThreadContent'
 ] as const
 
 function asActiveCollabTask(value: unknown): { projectId: number; taskId: number } | null {
@@ -55,7 +67,28 @@ function asDirectories(value: unknown): string[] {
   return value as string[]
 }
 
+/** Threads worth reading: a thread with no transcript on disk has no text yet. */
+function searchTargets(threadIds: readonly string[] | null): ChatSearchIndexTarget[] {
+  const wanted = threadIds === null ? null : new Set(threadIds)
+  const targets: ChatSearchIndexTarget[] = []
+  for (const thread of chatStore().getState().threads) {
+    if (thread.transcriptPath === null || (wanted !== null && !wanted.has(thread.id))) {
+      continue
+    }
+    targets.push({ threadId: thread.id, transcriptPath: thread.transcriptPath })
+  }
+  return targets
+}
+
+async function readThreadMessages(transcriptPath: string): Promise<NativeChatMessage[]> {
+  // sessionId is unused once filePath is given, but the reader still takes one.
+  const result = await readNativeChatTranscript('claude', '', { filePath: transcriptPath })
+  return 'messages' in result ? result.messages : []
+}
+
 export function registerChatModeHandlers(): void {
+  initChatThreadSearchIndex({ filePath: join(app.getPath('userData'), 'chat-search-index.json') })
+
   for (const channel of CHANNELS) {
     ipcMain.removeHandler(channel)
   }
@@ -199,6 +232,27 @@ export function registerChatModeHandlers(): void {
   ipcMain.handle(
     'chatMode:deleteThread',
     async (_event, id: unknown): Promise<boolean> => chatStore().deleteThread(asString(id, 'id'))
+  )
+
+  ipcMain.handle(
+    'chatMode:searchThreadContent',
+    async (
+      _event,
+      args: { query?: unknown; threadIds?: unknown }
+    ): Promise<ChatThreadSearchResponse> => {
+      const query = typeof args?.query === 'string' ? normalizeSearchQuery(args.query) : null
+      if (query === null) {
+        return { matches: [], truncated: false }
+      }
+      const threadIds =
+        Array.isArray(args?.threadIds) && args.threadIds.every((id) => typeof id === 'string')
+          ? (args.threadIds as string[])
+          : null
+      // Prune against every live thread, not the filtered subset: a threadIds
+      // filter narrows this search, it does not mean the rest are gone.
+      pruneChatThreadSearchIndex(chatStore().getState().threads.map((thread) => thread.id))
+      return searchChatThreads(searchTargets(threadIds), query, readThreadMessages)
+    }
   )
 
   ipcMain.handle(
