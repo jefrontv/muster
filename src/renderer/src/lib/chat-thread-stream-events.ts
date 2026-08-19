@@ -9,6 +9,10 @@
 
 import { useAppStore } from '../store'
 import { generateChatThreadTitleAfterFirstTurn } from '../components/chat-mode/chat-thread-auto-title'
+import {
+  scheduleChatCompletionNotification,
+  shouldNotifyChatTurnComplete
+} from '../components/chat-mode/chat-thread-completion-notification'
 
 /** How long a sealed streaming preview may outlive its turn when the transcript
  *  never catches up (interrupt, decode gap). */
@@ -16,6 +20,14 @@ const SEAL_CLEAR_MS = 6_000
 
 /** The CLI reports some failures with no message at all. */
 const FALLBACK_TURN_ERROR = 'The agent stopped with an error.'
+
+/** Pending completion banners, so a new turn can retract one before it fires. */
+const pendingCompletionNotifications = new Map<string, () => void>()
+
+function cancelPendingCompletionNotification(threadId: string): void {
+  pendingCompletionNotifications.get(threadId)?.()
+  pendingCompletionNotifications.delete(threadId)
+}
 
 export function installChatThreadStreamEvents(): () => void {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -73,6 +85,7 @@ export function installChatThreadStreamEvents(): () => void {
         // First token of a new turn retires the previous turn's failure, so a
         // stale banner cannot hang over a run that is going fine.
         store.setChatThreadLastError(event.threadId, null)
+        cancelPendingCompletionNotification(event.threadId)
         store.appendChatThreadStreamingText(event.threadId, event.text)
         break
       // Sealing (not clearing) keeps the preview until the transcript renders
@@ -107,6 +120,41 @@ export function installChatThreadStreamEvents(): () => void {
         // A completion the user is watching (thread active, window focused) is
         // read on arrival — it must not light the sidebar's unread "Done".
         const watched = store.activeChatThreadId === event.threadId && document.hasFocus()
+        cancelPendingCompletionNotification(event.threadId)
+        if (
+          shouldNotifyChatTurnComplete({ isError: event.isError, watched, settings: store.settings })
+        ) {
+          const notifyPaneKey = store.chatThreadSessions[event.threadId]?.paneKey
+          const thread = store.chatThreads.find((t) => t.id === event.threadId)
+          if (notifyPaneKey) {
+            pendingCompletionNotifications.set(
+              event.threadId,
+              scheduleChatCompletionNotification(
+                {
+                  threadId: event.threadId,
+                  paneKey: notifyPaneKey,
+                  title: thread?.title ?? 'Chat'
+                },
+                {
+                  readAgentStatus: () =>
+                    useAppStore.getState().agentStatusByPaneKey[notifyPaneKey],
+                  setTimer: (callback, ms) => window.setTimeout(callback, ms),
+                  dispatch: ({ paneKey, title, dedupeKey }) => {
+                    pendingCompletionNotifications.delete(event.threadId)
+                    void window.api.notifications
+                      .dispatch({
+                        source: 'agent-task-complete',
+                        paneKey,
+                        terminalTitle: title,
+                        dedupeKey
+                      })
+                      .catch(() => undefined)
+                  }
+                }
+              )
+            )
+          }
+        }
         void store.updateChatThread(event.threadId, {
           lastActivityAt: now,
           // Why gated: lastCompletedAt is what turns the sidebar's "Done" pill

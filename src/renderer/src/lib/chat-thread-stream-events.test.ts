@@ -37,7 +37,11 @@ beforeEach(() => {
   vi.clearAllMocks()
   listener = null
   vi.stubGlobal('window', {
+    // The completion-notification path schedules a deferred confirmation.
+    setTimeout: vi.fn(() => 1),
+    clearTimeout: vi.fn(),
     api: {
+      notifications: { dispatch: vi.fn(async () => ({ delivered: true })) },
       chatThreadStream: {
         pendingPermissions,
         onEvent: (cb: (event: Record<string, unknown>) => void) => {
@@ -169,6 +173,40 @@ describe('installChatThreadStreamEvents', () => {
 
     const update = storeState.updateChatThread.mock.calls.at(-1)?.[1]
     expect(update).toHaveProperty('lastCompletedAt')
+    stop()
+  })
+
+  it('schedules a completion banner for a background thread', () => {
+    storeState.chatThreadSessions = { t1: { paneKey: 'chat:t1' } }
+    storeState.activeChatThreadId = null
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
+
+    expect(window.setTimeout).toHaveBeenCalled()
+    stop()
+  })
+
+  it('does not schedule one for a failed turn', () => {
+    storeState.chatThreadSessions = { t1: { paneKey: 'chat:t1' } }
+    storeState.activeChatThreadId = null
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: true, errorMessage: 'boom' })
+
+    expect(window.setTimeout).not.toHaveBeenCalled()
+    stop()
+  })
+
+  it('does not schedule one for the thread the user is watching', () => {
+    storeState.chatThreadSessions = { t1: { paneKey: 'chat:t1' } }
+    storeState.activeChatThreadId = 't1'
+    vi.stubGlobal('document', { hasFocus: () => true })
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
+
+    expect(window.setTimeout).not.toHaveBeenCalled()
     stop()
   })
 })
