@@ -57,7 +57,12 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   createChatWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
   updateChatWorkspace: (id: string, patch: ChatWorkspacePatch) => Promise<void>
   deleteChatWorkspace: (id: string) => Promise<void>
-  createChatThread: (workspaceId: string | null, title?: string) => Promise<ChatThread | null>
+  createChatThread: (
+    workspaceId: string | null,
+    title?: string,
+    /** activate: false creates the thread without selecting it (draft pre-warm). */
+    options?: { activate?: boolean }
+  ) => Promise<ChatThread | null>
   updateChatThread: (
     id: string,
     patch: Partial<
@@ -177,16 +182,21 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
     }))
   },
 
-  createChatThread: async (workspaceId, title) => {
+  createChatThread: async (workspaceId, title, options) => {
     const thread = await window.api.chatMode.createThread({
       workspaceId,
       ...(title ? { title } : {})
     })
     if (thread) {
+      const activate = options?.activate !== false
       set((s) => ({
         chatThreads: [...s.chatThreads, thread],
-        activeChatThreadId: thread.id,
-        ...(thread.workspaceId !== null ? { activeChatWorkspaceId: thread.workspaceId } : {})
+        ...(activate
+          ? {
+              activeChatThreadId: thread.id,
+              ...(thread.workspaceId !== null ? { activeChatWorkspaceId: thread.workspaceId } : {})
+            }
+          : {})
       }))
     }
     return thread

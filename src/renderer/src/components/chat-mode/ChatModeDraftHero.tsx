@@ -22,6 +22,7 @@ import { NativeChatPickerMenu } from '../native-chat/NativeChatAutocompleteMenus
 import { useNativeChatPickerState } from '../native-chat/use-native-chat-picker-state'
 import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
 import { ChatModeHeroTaskShortcuts } from './ChatModeHeroTaskShortcuts'
+import { useChatDraftPrewarm } from './use-chat-draft-prewarm'
 
 /** Radio value for the standalone (no-workspace) chat option. */
 const STANDALONE = ''
@@ -63,6 +64,7 @@ export function ChatModeDraftHero({
   const activeChatWorkspaceId = useAppStore((s) => s.activeChatWorkspaceId)
   const createChatThread = useAppStore((s) => s.createChatThread)
   const setChatThreadFirstMessage = useAppStore((s) => s.setChatThreadFirstMessage)
+  const setActiveChatThread = useAppStore((s) => s.setActiveChatThread)
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
     () => activeChatWorkspaceId ?? workspaces[0]?.id ?? null
   )
@@ -72,6 +74,8 @@ export function ChatModeDraftHero({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [caret, setCaret] = useState(0)
   const [activeSuggestion, setActiveSuggestion] = useState(0)
+  // Boots the agent while the draft is still being typed; submit adopts it.
+  const prewarm = useChatDraftPrewarm({ draft: text, workspaceId: selectedWorkspaceId })
 
   // Same slash-command/skill picker as the thread composer. New threads always
   // launch Claude, and the draft has no pane yet, so skills scan the home roots.
@@ -115,11 +119,18 @@ export function ChatModeDraftHero({
     }
     setSubmitting(true)
     try {
-      const thread = await createChatThread(selectedWorkspace?.id ?? null)
-      if (thread) {
-        // Delivered (and echoed) by ChatThreadView once the session launches.
-        setChatThreadFirstMessage(thread.id, prompt)
+      // The pre-warmed thread already has a session running; falling back keeps
+      // a failed or not-yet-ready warm-up from blocking the send.
+      const warmed = prewarm.claim()
+      const thread = warmed ?? (await createChatThread(selectedWorkspace?.id ?? null))
+      if (!thread) {
+        return
       }
+      if (warmed) {
+        setActiveChatThread(warmed.id)
+      }
+      // Delivered (and echoed) by ChatThreadView once the session launches.
+      setChatThreadFirstMessage(thread.id, prompt)
     } finally {
       setSubmitting(false)
     }
