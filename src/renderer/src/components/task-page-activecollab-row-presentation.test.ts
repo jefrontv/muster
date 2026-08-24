@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   activeCollabDueStatus,
-  activeCollabLabelChipStyle
+  activeCollabLabelChipStyle,
+  activeCollabSubtaskProgress
 } from './task-page-activecollab-row-presentation'
 
 /** WCAG 2.x contrast ratio, written out here so the chip's promise is measured, not assumed. */
@@ -110,5 +111,27 @@ describe('activeCollabLabelChipStyle', () => {
       }
     }
     expect(worst).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+describe('activeCollabSubtaskProgress', () => {
+  it('reads done over total', () => {
+    expect(activeCollabSubtaskProgress(1, 3)).toBe('2/3')
+    expect(activeCollabSubtaskProgress(0, 3)).toBe('3/3')
+    expect(activeCollabSubtaskProgress(3, 3)).toBe('0/3')
+  })
+
+  it('says nothing when the task has no subtasks to report on', () => {
+    expect(activeCollabSubtaskProgress(null, null)).toBeNull()
+    expect(activeCollabSubtaskProgress(0, 0)).toBeNull()
+    expect(activeCollabSubtaskProgress(2, null)).toBeNull()
+  })
+
+  it('never claims progress it cannot see, and never claims more than the total', () => {
+    // An absent open count is the instance omitting the field, not the task being finished.
+    expect(activeCollabSubtaskProgress(null, 4)).toBe('0/4')
+    // Counts that disagree cannot print a negative or an over-count.
+    expect(activeCollabSubtaskProgress(9, 4)).toBe('0/4')
+    expect(activeCollabSubtaskProgress(-2, 4)).toBe('4/4')
   })
 })

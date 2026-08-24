@@ -26,17 +26,18 @@ function byProjectName(a: ActiveCollabTaskGroup, b: ActiveCollabTaskGroup): numb
 }
 
 /**
- * Within a project: due date ascending, undated last, then task id descending.
+ * Within a project: the task's own numbering, newest first — `#63, #62, #61, #60`.
  *
- * Deadline first because that is the axis the user triages on; undated tasks carry no deadline to
- * miss, so they sink below every dated one rather than sorting as "the epoch". Newest-first breaks
- * the remaining ties so a task added today surfaces above its same-day siblings.
+ * This is ActiveCollab's own reading order for a project, and it is what the list showed before a
+ * due-date sort was imposed on it. Due dates still matter, but they are a FILTER axis here, not the
+ * spine: re-ordering by deadline scattered a project's tasks and made a familiar list unrecognisable.
+ *
+ * Falls through to the id so the comparator stays TOTAL — task numbers are unique within a project,
+ * but a group is only ever built from one project, so the fallback is belt and braces against a
+ * malformed row carrying a duplicate number.
  */
-function byDueDateThenNewest(a: ActiveCollabTask, b: ActiveCollabTask): number {
-  const dueA = a.dueOn ?? Number.POSITIVE_INFINITY
-  const dueB = b.dueOn ?? Number.POSITIVE_INFINITY
-  // Guarded before the subtraction: two undated tasks would otherwise compare Infinity - Infinity.
-  return dueA === dueB ? b.id - a.id : dueA - dueB
+function byTaskNumberDescending(a: ActiveCollabTask, b: ActiveCollabTask): number {
+  return b.taskNumber === a.taskNumber ? b.id - a.id : b.taskNumber - a.taskNumber
 }
 
 export function groupActiveCollabTasksByProject(
@@ -58,7 +59,7 @@ export function groupActiveCollabTasksByProject(
 
   const sorted = [...groups.values()]
   for (const group of sorted) {
-    group.tasks.sort(byDueDateThenNewest)
+    group.tasks.sort(byTaskNumberDescending)
   }
   return sorted.sort(byProjectName)
 }
@@ -92,12 +93,16 @@ export function groupActiveCollabTasksByTaskList(
     }
   }
   for (const bucket of byListId.values()) {
-    bucket.sort(byDueDateThenNewest)
+    bucket.sort(byTaskNumberDescending)
   }
 
   const groups: ActiveCollabTaskListGroup[] = []
   for (const list of taskLists) {
-    groups.push({ taskListId: list.id, taskListName: list.name, tasks: byListId.get(list.id) ?? [] })
+    groups.push({
+      taskListId: list.id,
+      taskListName: list.name,
+      tasks: byListId.get(list.id) ?? []
+    })
     byListId.delete(list.id)
   }
   const unnamed = [...byListId.entries()]

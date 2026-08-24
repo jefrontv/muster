@@ -30,6 +30,13 @@ function makeRuntime(): OrcaRuntimeService {
     activeCollabCompleteTask: vi.fn(),
     activeCollabReopenTask: vi.fn(),
     activeCollabPostComment: vi.fn(),
+    activeCollabCreateSubtask: vi.fn(),
+    activeCollabUpdateSubtask: vi.fn(),
+    activeCollabCompleteSubtask: vi.fn(),
+    activeCollabReopenSubtask: vi.fn(),
+    activeCollabUpdateComment: vi.fn(),
+    activeCollabDeleteComment: vi.fn(),
+    activeCollabSetTaskSubscription: vi.fn(),
     activeCollabListLabels: vi.fn(),
     activeCollabListUsers: vi.fn(),
     activeCollabListProjectMembers: vi.fn()
@@ -118,6 +125,66 @@ describe('activecollab RPC methods', () => {
     expect(runtime.activeCollabPostComment).toHaveBeenCalledWith({
       taskId: 509323,
       bodyHtml: '<p>Shipped</p>'
+    })
+  })
+
+  it('routes the subtask, comment and subscription writes', async () => {
+    const runtime = makeRuntime()
+    const dispatcher = new RpcDispatcher({ runtime, methods: ACTIVECOLLAB_METHODS })
+
+    await dispatcher.dispatch(
+      makeRequest('activecollab.createSubtask', {
+        projectId: 3790,
+        taskId: 509323,
+        name: 'Draft the copy',
+        assigneeId: 42
+      })
+    )
+    await dispatcher.dispatch(
+      makeRequest('activecollab.updateSubtask', {
+        projectId: 3790,
+        taskId: 509323,
+        subtaskId: 88,
+        update: { dueOn: null }
+      })
+    )
+    await dispatcher.dispatch(makeRequest('activecollab.completeSubtask', { subtaskId: 88 }))
+    await dispatcher.dispatch(makeRequest('activecollab.reopenSubtask', { subtaskId: 88 }))
+    await dispatcher.dispatch(
+      makeRequest('activecollab.updateComment', { commentId: 88, bodyHtml: '<p>Revised</p>' })
+    )
+    await dispatcher.dispatch(makeRequest('activecollab.deleteComment', { commentId: 88 }))
+    await dispatcher.dispatch(
+      makeRequest('activecollab.setTaskSubscription', {
+        taskId: 509323,
+        userId: 407,
+        subscribed: true
+      })
+    )
+
+    expect(runtime.activeCollabCreateSubtask).toHaveBeenCalledWith({
+      projectId: 3790,
+      taskId: 509323,
+      name: 'Draft the copy',
+      assigneeId: 42
+    })
+    expect(runtime.activeCollabUpdateSubtask).toHaveBeenCalledWith({
+      projectId: 3790,
+      taskId: 509323,
+      subtaskId: 88,
+      update: { dueOn: null }
+    })
+    expect(runtime.activeCollabCompleteSubtask).toHaveBeenCalledWith({ subtaskId: 88 })
+    expect(runtime.activeCollabReopenSubtask).toHaveBeenCalledWith({ subtaskId: 88 })
+    expect(runtime.activeCollabUpdateComment).toHaveBeenCalledWith({
+      commentId: 88,
+      bodyHtml: '<p>Revised</p>'
+    })
+    expect(runtime.activeCollabDeleteComment).toHaveBeenCalledWith({ commentId: 88 })
+    expect(runtime.activeCollabSetTaskSubscription).toHaveBeenCalledWith({
+      taskId: 509323,
+      userId: 407,
+      subscribed: true
     })
   })
 

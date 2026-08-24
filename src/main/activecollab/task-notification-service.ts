@@ -10,7 +10,11 @@
 // ipc/activecollab.ts, which starts this service, so importing it back would be a cycle.
 
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
-import type { ActiveCollabTaskPage } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabObjectUpdate,
+  ActiveCollabTaskPage,
+  ActiveCollabUpdates
+} from '../../shared/activecollab-types'
 import type {
   GlobalSettings,
   NotificationDispatchRequest,
@@ -30,8 +34,10 @@ import {
 import { createAcTaskPoller, type AcTaskPoller } from './task-notification-poller'
 import {
   acCurrentTaskSnapshotKey,
+  acLoadMentionSeen,
   acLoadTaskSnapshot,
   acLoadTaskUnread,
+  acSaveMentionSeen,
   acSaveTaskSnapshot,
   acSaveTaskUnread
 } from './task-snapshot-store'
@@ -129,6 +135,30 @@ export function acChangeNotification(
   }
 }
 
+/**
+ * One mention as a dispatch request. Its own builder rather than a fifth branch of
+ * {@link acChangeNotification}: a mention is not an `AcTaskChange` — it never came from the diff —
+ * and the stream gives a narrower row than a task page does.
+ */
+export function acMentionNotification(
+  update: ActiveCollabObjectUpdate
+): NotificationDispatchRequest {
+  // Per task, and stamped: two mentions on one task minutes apart are two events, and a bare
+  // per-task key would let the burst cooldown swallow the second.
+  const key = `activecollab:${update.taskId}:mention:${update.lastUpdateOn ?? 0}`
+  return {
+    source: 'activecollab-mention',
+    dedupeKey: key,
+    notificationId: key,
+    activeCollab: {
+      taskId: update.taskId,
+      projectId: update.projectId,
+      taskName: update.name,
+      projectName: update.projectName
+    }
+  }
+}
+
 let acPoller: AcTaskPoller | null = null
 let acSettingsSubscription: (() => void) | null = null
 
@@ -139,6 +169,8 @@ let acSettingsSubscription: (() => void) | null = null
 export function startAcTaskNotifications(args: {
   store: Store
   fetchPage: (page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>
+  /** The notifications stream, for the mention pass. Absent leaves mentions switched off. */
+  fetchUpdates?: () => Promise<ActiveCollabResult<ActiveCollabUpdates>>
 }): void {
   stopAcTaskNotifications()
   const { store, fetchPage } = args
@@ -176,6 +208,17 @@ export function startAcTaskNotifications(args: {
         notificationId: `activecollab:summary:${kind}`,
         activeCollabSummary: { count }
       }).catch(() => undefined)
+    },
+    fetchMentions: args.fetchUpdates,
+    loadMentionSeen: acLoadMentionSeen,
+    saveMentionSeen: acSaveMentionSeen,
+    mentionsEnabled: () => {
+      const notifications = store.getSettings().notifications
+      // The master switch wins, exactly as it does for the four diff kinds.
+      return notifications.enabled && notifications.activeCollabMention
+    },
+    emitMention: (update) => {
+      void dispatchMainProcessNotification(acMentionNotification(update)).catch(() => undefined)
     },
     schedule: (delayMs, run) => {
       const timer = setTimeout(run, delayMs)

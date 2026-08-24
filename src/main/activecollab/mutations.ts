@@ -65,7 +65,7 @@ function assigneeNameOf(row: Row): string | null {
  * a closed object type, so a change to the shared contract breaks both copies at compile time
  * instead of letting the two drift apart silently.
  */
-function normaliseTask(value: unknown): ActiveCollabTask | null {
+export function normaliseTask(value: unknown): ActiveCollabTask | null {
   if (!acIsRecord(value)) {
     return null
   }
@@ -74,6 +74,7 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     return null
   }
   const projectId = asNumber(value.project_id) ?? 0
+  const estimate = asNumber(value.estimate)
   return {
     id,
     projectId,
@@ -93,6 +94,13 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     assigneeName: assigneeNameOf(value),
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,
+    // `0` means "no estimate", not a zero-hour estimate — same sentinel rule as the ids.
+    isImportant: value.is_important === true,
+    estimate: estimate !== null && estimate > 0 ? estimate : null,
+    jobTypeId: acNullableId(value.job_type_id),
+    // 0 is a real count; null means this instance's rows omit the subtask counts entirely.
+    openSubtaskCount: asNumber(value.open_subtasks),
+    totalSubtaskCount: asNumber(value.total_subtasks),
     urlPath: asText(value.url_path) || `/projects/${projectId}/tasks/${id}`,
     taskListId: acNullableId(value.task_list_id),
     isHiddenFromClients: value.is_hidden_from_clients === true
@@ -150,6 +158,9 @@ function updatePayload(update: ActiveCollabTaskUpdate): Row {
   }
   if (update.isHiddenFromClients !== undefined) {
     payload.is_hidden_from_clients = update.isHiddenFromClients
+  }
+  if (update.isImportant !== undefined) {
+    payload.is_important = update.isImportant
   }
   return payload
 }
@@ -245,6 +256,44 @@ export async function postComment(args: {
         : { body: args.bodyHtml, attach_uploaded_files: [...codes] }
   })
   return normaliseComment(unwrapSingle(response.data))
+}
+
+/** Edits one comment's body. Project-scopeless, like postComment; only the comment id is needed. */
+export async function updateComment(args: {
+  http: AcHttpClient
+  commentId: number
+  bodyHtml: string
+}): Promise<ActiveCollabComment | null> {
+  const response = await args.http.request<unknown>(`comments/${args.commentId}`, {
+    method: 'PUT',
+    body: { body: args.bodyHtml }
+  })
+  return normaliseComment(unwrapSingle(response.data))
+}
+
+/** Deletes one comment. No body: the route itself is the instruction. */
+export async function deleteComment(args: {
+  http: AcHttpClient
+  commentId: number
+}): Promise<null> {
+  await args.http.request<unknown>(`comments/${args.commentId}`, { method: 'DELETE' })
+  return null
+}
+
+/**
+ * Subscribes or unsubscribes one user to a task. POST adds a watcher, DELETE removes one; the
+ * route carries the whole instruction so nothing is echoed back.
+ */
+export async function setTaskSubscription(args: {
+  http: AcHttpClient
+  taskId: number
+  userId: number
+  subscribed: boolean
+}): Promise<null> {
+  await args.http.request<unknown>(`subscribers/task/${args.taskId}/users/${args.userId}`, {
+    method: args.subscribed ? 'POST' : 'DELETE'
+  })
+  return null
 }
 
 /**

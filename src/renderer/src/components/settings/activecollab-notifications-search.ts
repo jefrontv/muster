@@ -114,6 +114,27 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     },
     {
       title: translate(
+        'auto.components.settings.notifications.search.activeCollabMention',
+        'Mentioned You'
+      ),
+      description: translate(
+        'auto.components.settings.notifications.search.activeCollabMentionDescription',
+        'Notify when somebody @-mentions you on any ActiveCollab task you can see.'
+      ),
+      keywords: [
+        ...sharedKeywords(),
+        ...translateSearchKeyword(
+          'auto.components.settings.notifications.search.activeCollabMentionKeyword',
+          'mention'
+        ),
+        ...translateSearchKeyword(
+          'auto.components.settings.notifications.search.activeCollabAtKeyword',
+          'at'
+        )
+      ]
+    },
+    {
+      title: translate(
         'auto.components.settings.notifications.search.activeCollabSound',
         'ActiveCollab Sound'
       ),

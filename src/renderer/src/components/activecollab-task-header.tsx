@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Check, ExternalLink, LoaderCircle, MessageSquarePlus, Play, X } from 'lucide-react'
 
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
@@ -25,11 +25,94 @@ type ActiveCollabTaskHeaderProps = {
   /** Any write in flight; the toggle locks with the rest of the pane. */
   disabled: boolean
   completing: boolean
+  renaming: boolean
   onCompletedChange: (completed: boolean) => void
+  /** The trimmed, actually-changed name; the title filters no-ops before calling. */
+  onNameChange: (name: string) => void
   /** Present when the project name should open the project drill-in view. */
   onOpenProject?: (id: number, name: string) => void
   /** Collapse the detail pane back to the list. */
   onClose?: () => void
+}
+
+/**
+ * The title, and the only way to rename a task from this pane. It reads as a heading until it is
+ * clicked, because an input box on a surface you mostly READ makes the name look like a form field
+ * and the task look unsaved. Mounted per task id so a draft cannot follow the selection.
+ */
+function ActiveCollabTaskTitle({
+  task,
+  disabled,
+  renaming,
+  onNameChange
+}: {
+  task: ActiveCollabTask
+  disabled: boolean
+  renaming: boolean
+  onNameChange: (name: string) => void
+}): React.JSX.Element {
+  const [draft, setDraft] = useState<string | null>(null)
+
+  // Enter and blur both commit; unchanged or emptied text writes nothing, so a stray click out of
+  // the field cannot rename a task to itself. Committing unmounts the field, so the two paths can
+  // never both fire for one edit.
+  const commit = (): void => {
+    const next = draft?.trim() ?? ''
+    setDraft(null)
+    if (next !== '' && next !== task.name) {
+      onNameChange(next)
+    }
+  }
+
+  if (draft !== null) {
+    return (
+      <input
+        // Focus follows the click: the field replaced the heading the pointer just hit.
+        autoFocus
+        value={draft}
+        disabled={disabled}
+        aria-label={translate(
+          'auto.components.activecollab.task_workspace.rename_task',
+          'Rename task'
+        )}
+        className="w-full rounded-sm border border-ring bg-transparent px-1 py-0.5 text-[17px] font-semibold leading-snug text-foreground outline-none"
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            commit()
+            return
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            setDraft(null)
+          }
+        }}
+      />
+    )
+  }
+
+  return (
+    <h2
+      className={cn(
+        'flex items-center gap-2 text-[17px] font-semibold leading-snug',
+        task.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+      )}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setDraft(task.name)}
+        className="-mx-1 min-w-0 rounded-sm px-1 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none"
+      >
+        {task.name}
+      </button>
+      {renaming ? (
+        <LoaderCircle className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+      ) : null}
+    </h2>
+  )
 }
 
 /**
@@ -43,7 +126,9 @@ export function ActiveCollabTaskHeader({
   task,
   disabled,
   completing,
+  renaming,
   onCompletedChange,
+  onNameChange,
   onOpenProject,
   onClose
 }: ActiveCollabTaskHeaderProps): React.JSX.Element {
@@ -116,14 +201,14 @@ export function ActiveCollabTaskHeader({
           </Tooltip>
 
           <div className="min-w-0 flex-1">
-            <h2
-              className={cn(
-                'text-[17px] font-semibold leading-snug',
-                task.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
-              )}
-            >
-              {task.name}
-            </h2>
+            <ActiveCollabTaskTitle
+              // Keyed per task so a rename draft never follows the selection to the next task.
+              key={task.id}
+              task={task}
+              disabled={disabled}
+              renaming={renaming}
+              onNameChange={onNameChange}
+            />
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
               <span className="flex min-w-0 items-center gap-1.5">
                 <ActiveCollabIcon className="size-3 shrink-0" />
@@ -157,12 +242,21 @@ export function ActiveCollabTaskHeader({
               {created ? (
                 <>
                   <span aria-hidden="true" className={DOT} />
+                  {/* Author folded in here rather than given a metadata row of its own: it is
+                      reference, it was already sitting next to the creation date, and the row it
+                      cost was the most expensive thing in a pane people mostly read. */}
                   <time dateTime={created.iso} className="shrink-0">
-                    {translate(
-                      'auto.components.activecollab.task_workspace.created_on',
-                      'Created {{value0}}',
-                      { value0: created.label }
-                    )}
+                    {task.createdByName === null
+                      ? translate(
+                          'auto.components.activecollab.task_workspace.created_on',
+                          'Created {{value0}}',
+                          { value0: created.label }
+                        )
+                      : translate(
+                          'auto.components.activecollab.task_workspace.created_on_by',
+                          'Created {{value0}} by {{value1}}',
+                          { value0: created.label, value1: task.createdByName }
+                        )}
                   </time>
                 </>
               ) : null}

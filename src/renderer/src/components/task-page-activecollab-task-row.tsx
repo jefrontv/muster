@@ -4,7 +4,7 @@
 // Hierarchy: the task name is the single primary line; labels and the due date are secondary and
 // live in their own regions of the row rather than running together with it.
 import React from 'react'
-import { Play } from 'lucide-react'
+import { Flag, ListChecks, MessageSquare, Play } from 'lucide-react'
 
 import { useActiveCollabStartWork } from './use-activecollab-start-work'
 import { ACTIVECOLLAB_SITE_BINDING_UI_ENABLED } from '@/lib/activecollab-site-binding-visibility'
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import {
   activeCollabDueStatus,
   activeCollabLabelChipStyle,
+  activeCollabSubtaskProgress,
   type ActiveCollabDueStatus
 } from './task-page-activecollab-row-presentation'
 import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
@@ -69,6 +70,24 @@ function taskRowAccessibleName(
       value1: task.projectName
     })
   ]
+  if (task.isImportant) {
+    parts.push(translate('auto.components.activecollab.task_list.row_important', 'high priority'))
+  }
+  const subtasks = activeCollabSubtaskProgress(task.openSubtaskCount, task.totalSubtaskCount)
+  if (subtasks) {
+    parts.push(
+      translate('auto.components.activecollab.task_list.row_subtasks', 'subtasks {{value0}}', {
+        value0: subtasks
+      })
+    )
+  }
+  if (task.commentCount > 0) {
+    parts.push(
+      translate('auto.components.activecollab.task_list.row_comments', 'comments {{value0}}', {
+        value0: task.commentCount
+      })
+    )
+  }
   if (due && status) {
     parts.push(dueAccessibleFragment(due.label, status))
   }
@@ -176,6 +195,9 @@ export function ActiveCollabTaskRow({
   const hiddenLabels = task.labels.slice(ROW_LABEL_LIMIT)
   const hiddenLabelCount = hiddenLabels.length
   const hiddenLabelNames = hiddenLabels.map((label) => label.name).join(', ')
+  const subtaskProgress = activeCollabSubtaskProgress(task.openSubtaskCount, task.totalSubtaskCount)
+  // Gated as a group: an empty marker span would still spend the cluster's gap on both sides.
+  const hasMarkers = task.isImportant || subtaskProgress !== null || task.commentCount > 0
 
   return (
     // `group` drives the hover reveal; flex rather than an overlay so the action never covers the
@@ -223,6 +245,28 @@ export function ActiveCollabTaskRow({
           ) : null}
         </span>
         <span className="flex shrink-0 items-center gap-2.5">
+          {/* Markers, not chips: each is a flag or a NUMBER the row already spells out in its
+              aria-label, so they stay at caption weight, group tightly, and disappear entirely
+              when there is nothing to report. */}
+          {hasMarkers ? (
+            <span className="flex shrink-0 items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
+              {task.isImportant ? (
+                <Flag aria-hidden="true" className="size-3 fill-current text-destructive" />
+              ) : null}
+              {subtaskProgress ? (
+                <span aria-hidden="true" className="flex items-center gap-1">
+                  <ListChecks className="size-3" />
+                  {subtaskProgress}
+                </span>
+              ) : null}
+              {task.commentCount > 0 ? (
+                <span aria-hidden="true" className="flex items-center gap-1">
+                  <MessageSquare className="size-3" />
+                  {task.commentCount}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
           {showAssignee && task.assigneeId !== null ? (
             <Tooltip>
               <TooltipTrigger asChild>

@@ -2403,6 +2403,8 @@ export type NotificationSettings = {
   activeCollabDue: boolean
   /** Task details edited with no comment delta — a comment already explains its own bump. */
   activeCollabUpdated: boolean
+  /** Somebody @-mentioned you, on any task you can see — not only one assigned to you. */
+  activeCollabMention: boolean
   suppressWhenFocused: boolean
   customSoundId: NotificationSoundId
   customSoundPath: string | null
@@ -3123,6 +3125,9 @@ export type NotificationEventSource =
   | 'activecollab-comments'
   | 'activecollab-due'
   | 'activecollab-updated'
+  /** Somebody @-mentioned you. Sourced from the notifications stream, not the assigned-task diff:
+   *  a mention leaves no trace in that data, and can land on a task you are not assigned. */
+  | 'activecollab-mention'
   /** The stored ActiveCollab token was rejected and polling stopped; gated only by the master
    *  notifications switch — an integration-health alert, not a task banner. */
   | 'activecollab-auth'

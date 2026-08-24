@@ -30,6 +30,7 @@ function createNotificationSettings(
     activeCollabComments: false,
     activeCollabDue: false,
     activeCollabUpdated: false,
+    activeCollabMention: false,
     suppressWhenFocused: true,
     activeCollabSoundId: 'global',
     activeCollabSoundPath: null,

@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 
 import { describe, expect, it } from 'vitest'
-import { documentHasOpenDialog, resolveTaskPageEscapeTarget } from './task-page-escape-target'
+import {
+  documentHasOpenDialog,
+  resolveTaskPageEscapeTarget,
+  shouldTaskPageEscapeBlurTextEntry
+} from './task-page-escape-target'
 
 describe('resolveTaskPageEscapeTarget', () => {
   it('lets an open dialog keep Escape for itself', () => {
@@ -19,6 +23,31 @@ describe('resolveTaskPageEscapeTarget', () => {
 
   it('leaves the page only once nothing is open on top of it', () => {
     expect(resolveTaskPageEscapeTarget({ hasOpenDialog: false, hasOpenTask: false })).toBe('page')
+  })
+})
+
+describe('shouldTaskPageEscapeBlurTextEntry', () => {
+  it('blurs a focused field when nothing is layered over the page', () => {
+    expect(shouldTaskPageEscapeBlurTextEntry({ hasOpenDialog: false, isTextEntry: true })).toBe(
+      true
+    )
+  })
+
+  it('stands down inside a dialog, even with focus in its own input', () => {
+    // The regression this exists for: a command palette autofocuses its input, so blurring first
+    // consumed the keypress and left the palette undismissable.
+    expect(shouldTaskPageEscapeBlurTextEntry({ hasOpenDialog: true, isTextEntry: true })).toBe(
+      false
+    )
+  })
+
+  it('never claims Escape when focus is not in a field', () => {
+    expect(shouldTaskPageEscapeBlurTextEntry({ hasOpenDialog: false, isTextEntry: false })).toBe(
+      false
+    )
+    expect(shouldTaskPageEscapeBlurTextEntry({ hasOpenDialog: true, isTextEntry: false })).toBe(
+      false
+    )
   })
 })
 

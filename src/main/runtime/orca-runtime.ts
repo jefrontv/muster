@@ -702,9 +702,12 @@ import {
   updateIssue as updateJiraIssue
 } from '../jira/issues'
 import {
+  acCompleteSubtask,
   acCompleteTask,
   acConnect,
+  acCreateSubtask,
   acCreateTask,
+  acDeleteComment,
   acDisconnect,
   acGetAttachmentImage,
   acGetTaskDetail,
@@ -712,9 +715,14 @@ import {
   acListLabels,
   acListProjects,
   acListProjectTasks,
+  acListUpdates,
   acPostComment,
+  acReopenSubtask,
   acReopenTask,
+  acSetTaskSubscription,
   acStatus,
+  acUpdateComment,
+  acUpdateSubtask,
   acUpdateTask
 } from '../ipc/activecollab'
 import { acListProjectMembers, acListUsers } from '../ipc/activecollab-people'
@@ -728,10 +736,12 @@ import type {
   ActiveCollabConnectionStatus,
   ActiveCollabLabel,
   ActiveCollabProject,
+  ActiveCollabSubtask,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
   ActiveCollabProjectTasks,
   ActiveCollabTaskPage,
+  ActiveCollabUpdates,
   ActiveCollabUser
 } from '../../shared/activecollab-types'
 import {
@@ -30465,6 +30475,44 @@ export class OrcaRuntimeService {
     return acPostComment(args)
   }
 
+  activeCollabCreateSubtask(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabSubtask | null>> {
+    return acCreateSubtask(args)
+  }
+
+  activeCollabUpdateSubtask(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabSubtask | null>> {
+    return acUpdateSubtask(args)
+  }
+
+  activeCollabCompleteSubtask(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabSubtask | null>> {
+    return acCompleteSubtask(args)
+  }
+
+  activeCollabReopenSubtask(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabSubtask | null>> {
+    return acReopenSubtask(args)
+  }
+
+  activeCollabUpdateComment(
+    args: unknown
+  ): Promise<ActiveCollabResult<ActiveCollabComment | null>> {
+    return acUpdateComment(args)
+  }
+
+  activeCollabDeleteComment(args: unknown): Promise<ActiveCollabResult<null>> {
+    return acDeleteComment(args)
+  }
+
+  activeCollabSetTaskSubscription(args: unknown): Promise<ActiveCollabResult<null>> {
+    return acSetTaskSubscription(args)
+  }
+
   activeCollabListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>> {
     return acListLabels()
   }
@@ -30475,6 +30523,10 @@ export class OrcaRuntimeService {
 
   activeCollabListProjectMembers(args: unknown): Promise<ActiveCollabResult<ActiveCollabUser[]>> {
     return acListProjectMembers(args)
+  }
+
+  activeCollabListUpdates(args?: unknown): Promise<ActiveCollabResult<ActiveCollabUpdates>> {
+    return acListUpdates(args)
   }
 
   // ── Browser automation ──

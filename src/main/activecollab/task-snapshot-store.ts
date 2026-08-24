@@ -13,10 +13,10 @@
 // A plain JSON file rather than the settings store: this is a per-account cache of ids, counts and
 // buckets that nothing else reads, and it is rewritten on every poll.
 //
-// The unread counts share that one file, and therefore that one key, so a reconnect as another
-// account cannot inherit a badge any more than it can inherit a snapshot. Each field has its own
-// writer — a snapshot write carries the counts forward, a counts write carries the snapshot
-// forward — because a save that took both would silently truncate whichever one its caller forgot.
+// The unread counts and the mention seen-marker share that one file, and therefore that one key, so
+// a reconnect as another account cannot inherit a badge or a mention history any more than it can
+// inherit a snapshot. Each field has its own writer — every writer carries the other two forward —
+// because a save that took only its own field would silently truncate the ones its caller forgot.
 
 import { readFileSync, rmSync } from 'node:fs'
 import path from 'node:path'
@@ -29,6 +29,7 @@ import {
   type AcTaskSnapshot,
   type AcTaskSnapshotEntry
 } from './task-change-detector'
+import type { AcMentionSeen } from './mention-detector'
 import { acIsDueBucket } from './task-due-bucket'
 import { acReadTaskUnreadCounts, type AcTaskUnread } from './task-unread'
 
@@ -71,7 +72,9 @@ function acReadEntry(value: unknown): AcTaskSnapshotEntry | null {
 }
 
 /** The file's own fields, or null when it is absent, unreadable, or another account's. */
-function acReadSnapshotFile(key: string): { tasks?: unknown; unread?: unknown } | null {
+function acReadSnapshotFile(
+  key: string
+): { tasks?: unknown; unread?: unknown; mentions?: unknown } | null {
   let parsed: unknown
   try {
     parsed = JSON.parse(readFileSync(acSnapshotPath(), 'utf8'))
@@ -81,7 +84,7 @@ function acReadSnapshotFile(key: string): { tasks?: unknown; unread?: unknown } 
   if (typeof parsed !== 'object' || parsed === null) {
     return null
   }
-  const file = parsed as { key?: unknown; tasks?: unknown; unread?: unknown }
+  const file = parsed as { key?: unknown; tasks?: unknown; unread?: unknown; mentions?: unknown }
   return file.key === key ? file : null
 }
 
@@ -124,17 +127,55 @@ export function acLoadTaskUnread(key: string): AcTaskUnread {
   return unread
 }
 
-/** Never throws: a file that could not be written costs one silent poll, not a crash. */
-function acWriteSnapshotFile(key: string, tasks: AcTaskSnapshot, unread: AcTaskUnread): void {
+/**
+ * The mention seen-marker for `key`, or null when there is none — which the mention detector
+ * treats as a first run and therefore announces nothing. Same posture as the task snapshot: a
+ * foreign, truncated or absent file all read as null.
+ */
+export function acLoadMentionSeen(key: string): AcMentionSeen | null {
+  const file = acReadSnapshotFile(key)
+  if (file === null || typeof file.mentions !== 'object' || file.mentions === null) {
+    return null
+  }
+  const seen: AcMentionSeen = {}
+  for (const [id, value] of Object.entries(file.mentions as Record<string, unknown>)) {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      seen[id] = value
+    }
+  }
+  return seen
+}
+
+/**
+ * Never throws: a file that could not be written costs one silent poll, not a crash.
+ *
+ * `tasks` is omitted rather than written empty when there is no snapshot — writing `tasks: {}`
+ * would turn the next poll's silent first run into "you had no tasks", which announces the user's
+ * entire workload.
+ */
+function acWriteSnapshotFile(
+  key: string,
+  tasks: AcTaskSnapshot | null,
+  unread: AcTaskUnread,
+  mentions: AcMentionSeen | null
+): void {
   try {
-    writeFileAtomically(acSnapshotPath(), JSON.stringify({ key, tasks, unread }))
+    writeFileAtomically(
+      acSnapshotPath(),
+      JSON.stringify({
+        key,
+        ...(tasks === null ? {} : { tasks }),
+        unread,
+        ...(mentions === null ? {} : { mentions })
+      })
+    )
   } catch {
     // Nothing actionable — the next poll rewrites it, or reads null and seeds again silently.
   }
 }
 
 export function acSaveTaskSnapshot(key: string, snapshot: AcTaskSnapshot): void {
-  acWriteSnapshotFile(key, snapshot, acLoadTaskUnread(key))
+  acWriteSnapshotFile(key, snapshot, acLoadTaskUnread(key), acLoadMentionSeen(key))
 }
 
 /**
@@ -145,8 +186,18 @@ export function acSaveTaskSnapshot(key: string, snapshot: AcTaskSnapshot): void 
 export function acSaveTaskUnread(key: string, unread: AcTaskUnread): void {
   const snapshot = acLoadTaskSnapshot(key)
   if (snapshot !== null) {
-    acWriteSnapshotFile(key, snapshot, unread)
+    acWriteSnapshotFile(key, snapshot, unread, acLoadMentionSeen(key))
   }
+}
+
+/**
+ * Unlike the counts, this does NOT require an existing snapshot: mentions come from the
+ * notifications stream, not the task diff, so their history has to survive a first poll that has
+ * no snapshot yet. The snapshot key is simply omitted when absent, which keeps the task diff's
+ * first-run rule intact.
+ */
+export function acSaveMentionSeen(key: string, mentions: AcMentionSeen): void {
+  acWriteSnapshotFile(key, acLoadTaskSnapshot(key), acLoadTaskUnread(key), mentions)
 }
 
 /** Called on disconnect: the tasks of a credential the user just removed are not ours to keep. */

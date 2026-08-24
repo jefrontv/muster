@@ -20,6 +20,21 @@ export function resolveTaskPageEscapeTarget(args: {
   return args.hasOpenTask ? 'open-task' : 'page'
 }
 
+/**
+ * Whether Escape should merely blur a focused text field instead of dismissing something.
+ *
+ * The order matters and is the whole point of naming it: an open dialog owns Escape OUTRIGHT, even
+ * when focus sits in one of its own inputs. A command palette autofocuses its input, so blurring
+ * first spent the user's keypress and left the palette on screen — which is exactly how an
+ * undismissable search overlay shipped.
+ */
+export function shouldTaskPageEscapeBlurTextEntry(args: {
+  hasOpenDialog: boolean
+  isTextEntry: boolean
+}): boolean {
+  return !args.hasOpenDialog && args.isTextEntry
+}
+
 /** True while a Radix dialog is mounted and open. Queried from the DOM rather
  *  than tracked per-modal: the page cannot enumerate every dialog its subtree
  *  might render, and a hand-maintained list is what let the lightbox slip. */

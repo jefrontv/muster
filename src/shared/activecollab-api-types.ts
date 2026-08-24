@@ -11,11 +11,14 @@ import type {
   ActiveCollabConnectionStatus,
   ActiveCollabLabel,
   ActiveCollabProject,
+  ActiveCollabSubtask,
+  ActiveCollabSubtaskUpdate,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
   ActiveCollabProjectTasks,
   ActiveCollabTaskPage,
   ActiveCollabTaskUpdate,
+  ActiveCollabUpdates,
   ActiveCollabUser
 } from './activecollab-types'
 
@@ -209,6 +212,41 @@ export type ActiveCollabApi = {
     bodyHtml: string
     attachmentCodes?: string[]
   }) => Promise<ActiveCollabResult<ActiveCollabComment | null>>
+  /**
+   * Subtask writes. `createSubtask`'s optional `assigneeId`/`dueOn` follow the same
+   * omitted-vs-null contract as a task edit; a null echo means the write landed and the instance
+   * said nothing usable — refetch, not failure. Completion/reopen are project-scopeless upstream.
+   */
+  createSubtask: (args: {
+    projectId: number
+    taskId: number
+    name: string
+    assigneeId?: number | null
+    dueOn?: number | null
+  }) => Promise<ActiveCollabResult<ActiveCollabSubtask | null>>
+  updateSubtask: (args: {
+    projectId: number
+    taskId: number
+    subtaskId: number
+    update: ActiveCollabSubtaskUpdate
+  }) => Promise<ActiveCollabResult<ActiveCollabSubtask | null>>
+  completeSubtask: (args: {
+    subtaskId: number
+  }) => Promise<ActiveCollabResult<ActiveCollabSubtask | null>>
+  reopenSubtask: (args: {
+    subtaskId: number
+  }) => Promise<ActiveCollabResult<ActiveCollabSubtask | null>>
+  updateComment: (args: {
+    commentId: number
+    bodyHtml: string
+  }) => Promise<ActiveCollabResult<ActiveCollabComment | null>>
+  deleteComment: (args: { commentId: number }) => Promise<ActiveCollabResult<null>>
+  /** POST subscribes, DELETE unsubscribes — the `subscribed` flag picks the route. */
+  setTaskSubscription: (args: {
+    taskId: number
+    userId: number
+    subscribed: boolean
+  }) => Promise<ActiveCollabResult<null>>
   /** The label vocabulary a `updateTask` label edit chooses from. */
   listLabels: () => Promise<ActiveCollabResult<ActiveCollabLabel[]>>
   /**
@@ -227,6 +265,12 @@ export type ActiveCollabApi = {
   listProjectMembers: (args: {
     projectId: number
   }) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+  /**
+   * Recently-updated tasks — ActiveCollab's own "My Updates" bell — newest first. Time-sensitive,
+   * so the renderer never caches it. A self-hosted install can 500 here when its optional extras
+   * are absent, which is why the renderer latches that refusal rather than retrying it.
+   */
+  listUpdates: (args?: { page?: number }) => Promise<ActiveCollabResult<ActiveCollabUpdates>>
   /**
    * How much the connected user has not read yet, for the sidebar badge.
    *

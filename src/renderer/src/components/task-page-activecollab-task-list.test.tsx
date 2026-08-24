@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 
 import type { CacheEntry } from '@/store/slices/github'
 import type { ActiveCollabTaskPageRows } from '@/store/slices/activecollab-task-patch'
+import type { ActiveCollabTaskPageView } from '@/store/slices/activecollab-task-page-view'
 import type {
   ActiveCollabFailure,
   ActiveCollabResult,
@@ -42,6 +43,10 @@ const mocks = vi.hoisted(() => {
     settings: { activeRuntimeEnvironmentId: null as string | null },
     // The sidebar's shared collapse set. Membership means collapsed, absence means expanded.
     collapsedGroups: new Set<string>() as ReadonlySet<string>,
+    // This file covers project grouping, row content, paging and project collapse — all
+    // project-mode concerns — so the view is pinned there. My Work's date buckets (the production
+    // default) and its filters live in task-page-activecollab-my-work.test.tsx.
+    view: null as ActiveCollabTaskPageView | null,
     /** Everything the real ui slice would have handed to `window.api.ui.set`, in order. */
     persistedCollapsedGroups: [] as string[][],
     subscribeCollapsedGroups: (listener: () => void) => {
@@ -84,7 +89,8 @@ vi.mock('@/store', () => ({
       activeCollabTaskPageCache: mocks.cache,
       settings: mocks.settings,
       collapsedGroups,
-      toggleCollapsedGroup: mocks.toggleCollapsedGroup
+      toggleCollapsedGroup: mocks.toggleCollapsedGroup,
+      activeCollabTaskPageView: mocks.view
     })
   }
 }))
@@ -142,6 +148,11 @@ function taskFixture(overrides: Partial<ActiveCollabTask> = {}): ActiveCollabTas
     urlPath: '/projects/3790/tasks/501',
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }
@@ -226,6 +237,12 @@ beforeEach(() => {
   mocks.settings = { activeRuntimeEnvironmentId: null }
   mocks.collapsedGroups = new Set<string>()
   mocks.persistedCollapsedGroups = []
+  mocks.view = {
+    scope: getProviderRuntimeContextKey(mocks.settings),
+    selected: null,
+    openProject: null,
+    filter: { text: '', labelNames: [], projectIds: [] }
+  }
   mocks.toggleCollapsedGroup.mockClear()
 })
 
@@ -546,11 +563,9 @@ describe('ActiveCollabTaskList activation', () => {
     // ACTIVECOLLAB_SITE_BINDING_UI_ENABLED; re-enabling it adds one tab stop per heading here.
     const [firstHeading, secondHeading] = screen.getAllByRole('button', { name: 'Muster UI' })
 
-    // Header project search sits before the groups. Then heading → drill-in → row.
-    await user.tab()
-    expect(screen.getByRole('button', { name: 'Search projects' })).toHaveFocus()
-    await user.tab()
-    expect(firstHeading).toHaveFocus()
+    // Entered at the first heading rather than tabbed into from the top: the header and filter bar
+    // own every stop above it, and those are covered in task-page-activecollab-my-work.test.tsx.
+    act(() => firstHeading.focus())
     await user.tab()
     await user.tab()
     expect(rowButtons()[0]).toHaveFocus()

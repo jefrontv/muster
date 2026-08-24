@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
-import type { ActiveCollabConnectionStatus } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabConnectionStatus,
+  ActiveCollabTaskUpdate
+} from '../../shared/activecollab-types'
 import type * as ActiveCollabHttp from '../activecollab/http'
 
 const {
@@ -108,6 +111,14 @@ const CHANNELS = [
   'activecollab:listLabels',
   'activecollab:listUsers',
   'activecollab:listProjectMembers',
+  'activecollab:listUpdates',
+  'activecollab:createSubtask',
+  'activecollab:updateSubtask',
+  'activecollab:completeSubtask',
+  'activecollab:reopenSubtask',
+  'activecollab:updateComment',
+  'activecollab:deleteComment',
+  'activecollab:setTaskSubscription',
   // Unread is credential-free: the counts are a file this machine's poller maintains, so these
   // two are deliberately absent from CREDENTIALLED_CHANNELS below.
   'activecollab:unread',
@@ -139,7 +150,24 @@ const CREDENTIALLED_CHANNELS: { channel: string; args: unknown }[] = [
   { channel: 'activecollab:postComment', args: { taskId: 509323, bodyHtml: '<p>Hi</p>' } },
   { channel: 'activecollab:listLabels', args: undefined },
   { channel: 'activecollab:listUsers', args: undefined },
-  { channel: 'activecollab:listProjectMembers', args: { projectId: 5937 } }
+  { channel: 'activecollab:listProjectMembers', args: { projectId: 5937 } },
+  { channel: 'activecollab:listUpdates', args: undefined },
+  {
+    channel: 'activecollab:createSubtask',
+    args: { projectId: 3790, taskId: 509323, name: 'Draft the brief' }
+  },
+  {
+    channel: 'activecollab:updateSubtask',
+    args: { projectId: 3790, taskId: 509323, subtaskId: 771, update: { name: 'Renamed' } }
+  },
+  { channel: 'activecollab:completeSubtask', args: { subtaskId: 771 } },
+  { channel: 'activecollab:reopenSubtask', args: { subtaskId: 771 } },
+  { channel: 'activecollab:updateComment', args: { commentId: 8821, bodyHtml: '<p>Edited</p>' } },
+  { channel: 'activecollab:deleteComment', args: { commentId: 8821 } },
+  {
+    channel: 'activecollab:setTaskSubscription',
+    args: { taskId: 509323, userId: 42, subscribed: true }
+  }
 ]
 
 const CREDENTIAL = {
@@ -399,6 +427,46 @@ describe('write payloads', () => {
       update: { labelNames: ['Deferred', 'Blocked'] }
     })
     expect(lastRequest().options?.body).toEqual({ labels: ['Deferred', 'Blocked'] })
+  })
+
+  /**
+   * A field on `ActiveCollabTaskUpdate` that the validator forgets is silently dropped, which
+   * empties the update and surfaces as "invalid request" — the shipped bug this guards. Driven off
+   * the type's own keys so the NEXT forgotten field fails here instead of in the UI.
+   */
+  it('forwards every writable update field, so none is silently dropped', async () => {
+    const update: Required<ActiveCollabTaskUpdate> = {
+      name: 'Renamed',
+      bodyHtml: '<p>Body</p>',
+      assigneeId: 77,
+      startOn: null,
+      dueOn: null,
+      labelNames: ['Deferred'],
+      isHiddenFromClients: true,
+      isImportant: true
+    }
+
+    await invoke('activecollab:updateTask', { projectId: 3790, taskId: 509323, update })
+
+    expect(lastRequest().options?.body).toEqual({
+      name: 'Renamed',
+      body: '<p>Body</p>',
+      assignee_id: 77,
+      start_on: null,
+      due_on: null,
+      labels: ['Deferred'],
+      is_hidden_from_clients: true,
+      is_important: true
+    })
+  })
+
+  it('sends is_important alone when only the priority flag changes', async () => {
+    await invoke('activecollab:updateTask', {
+      projectId: 3790,
+      taskId: 509323,
+      update: { isImportant: true }
+    })
+    expect(lastRequest().options?.body).toEqual({ is_important: true })
   })
 
   it('drops unknown keys instead of forwarding untrusted JSON into the PUT', async () => {

@@ -33,6 +33,11 @@ function task(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveColl
     urlPath: `/tasks/${overrides.id}`,
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }
@@ -73,7 +78,7 @@ describe('groupActiveCollabTasksByProject grouping', () => {
     ])
 
     expect(groups).toHaveLength(1)
-    expect(idsByProject(groups)).toEqual([['Muster', [2, 1, 3]]])
+    expect(idsByProject(groups)).toEqual([['Muster', [3, 2, 1]]])
   })
 
   it('answers an empty read with no groups at all', () => {
@@ -111,33 +116,45 @@ describe('groupActiveCollabTasksByProject ordering', () => {
     expect(groups.map((group) => group.projectId)).toEqual([4, 17, 30])
   })
 
-  it('sorts due dates ascending inside a project', () => {
+  it('sorts by the task number descending inside a project, not by the due date', () => {
+    // Deliberately inverted against the numbering: due-date order would be 2, 3, 1.
     const groups = groupActiveCollabTasksByProject([
-      task({ id: 1, dueOn: APRIL_01 }),
-      task({ id: 2, dueOn: MARCH_14 }),
-      task({ id: 3, dueOn: MARCH_15 })
+      task({ id: 1, taskNumber: 63, dueOn: APRIL_01 }),
+      task({ id: 2, taskNumber: 12, dueOn: MARCH_14 }),
+      task({ id: 3, taskNumber: 31, dueOn: MARCH_15 })
     ])
 
-    expect(groups[0]?.tasks.map((entry) => entry.id)).toEqual([2, 3, 1])
+    expect(groups[0]?.tasks.map((entry) => entry.id)).toEqual([1, 3, 2])
   })
 
-  it('sinks undated tasks below every dated one', () => {
+  it('keeps an undated task in its numbered place rather than sinking it', () => {
     const groups = groupActiveCollabTasksByProject([
-      task({ id: 1 }),
-      task({ id: 2, dueOn: APRIL_01 }),
-      task({ id: 3 }),
-      task({ id: 4, dueOn: MARCH_14 })
+      task({ id: 1, taskNumber: 40 }),
+      task({ id: 2, taskNumber: 30, dueOn: APRIL_01 }),
+      task({ id: 3, taskNumber: 20 }),
+      task({ id: 4, taskNumber: 10, dueOn: MARCH_14 })
     ])
 
-    // Undated last, and newest-first among themselves.
-    expect(groups[0]?.tasks.map((entry) => entry.id)).toEqual([4, 2, 3, 1])
+    // The old sort put both undated tasks last; a deadline no longer moves a row at all.
+    expect(groups[0]?.tasks.map((entry) => entry.id)).toEqual([1, 2, 3, 4])
   })
 
-  it('breaks a same-due-date tie on the newest task id', () => {
+  it('follows the number rather than the id when the two disagree', () => {
+    // Ids ascend as the numbers descend, so an id-based sort would reverse this.
     const groups = groupActiveCollabTasksByProject([
-      task({ id: 5, dueOn: MARCH_14 }),
-      task({ id: 90, dueOn: MARCH_14 }),
-      task({ id: 41, dueOn: MARCH_14 })
+      task({ id: 5, taskNumber: 3 }),
+      task({ id: 90, taskNumber: 1 }),
+      task({ id: 41, taskNumber: 2 })
+    ])
+
+    expect(groups[0]?.tasks.map((entry) => entry.id)).toEqual([5, 41, 90])
+  })
+
+  it('breaks a duplicate task number on the newest id, so the order is total', () => {
+    const groups = groupActiveCollabTasksByProject([
+      task({ id: 5, taskNumber: 12 }),
+      task({ id: 90, taskNumber: 12 }),
+      task({ id: 41, taskNumber: 12 })
     ])
 
     expect(groups[0]?.tasks.map((entry) => entry.id)).toEqual([90, 41, 5])

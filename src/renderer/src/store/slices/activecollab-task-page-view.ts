@@ -10,6 +10,10 @@
 
 import type { StateCreator } from 'zustand'
 import type { ActiveCollabTaskRef } from '../../../../shared/activecollab-api-types'
+import {
+  EMPTY_ACTIVECOLLAB_MY_WORK_FILTER,
+  type ActiveCollabMyWorkFilter
+} from '../../components/task-page-activecollab-my-work-filter'
 import type { AppState } from '../types'
 
 export type ActiveCollabTaskPageView = {
@@ -17,6 +21,7 @@ export type ActiveCollabTaskPageView = {
   scope: string
   selected: ActiveCollabTaskRef | null
   openProject: { id: number; name: string } | null
+  filter: ActiveCollabMyWorkFilter
 }
 
 export type ActiveCollabTaskPageViewState = {
@@ -31,6 +36,25 @@ export type ActiveCollabTaskPageViewActions = {
     scope: string,
     openProject: { id: number; name: string } | null
   ) => void
+  /** Sets the My Work filter, keeping the rest of the view when the scope matches. */
+  setActiveCollabTaskPageFilter: (scope: string, filter: ActiveCollabMyWorkFilter) => void
+}
+
+/**
+ * Every member preserved across a matching scope, defaulted on a fresh or foreign one. One write
+ * changes exactly one member; the rest are carried or reset through this.
+ */
+function viewBase(
+  scope: string,
+  current: ActiveCollabTaskPageView | null
+): ActiveCollabTaskPageView {
+  const matches = current?.scope === scope
+  return {
+    scope,
+    selected: matches ? current.selected : null,
+    openProject: matches ? current.openProject : null,
+    filter: matches ? current.filter : EMPTY_ACTIVECOLLAB_MY_WORK_FILTER
+  }
 }
 
 export const createActiveCollabTaskPageViewSlice: StateCreator<
@@ -43,23 +67,22 @@ export const createActiveCollabTaskPageViewSlice: StateCreator<
   setActiveCollabTaskPageSelection: (scope, selected) =>
     set((state) => ({
       activeCollabTaskPageView: {
-        scope,
-        selected,
-        openProject:
-          state.activeCollabTaskPageView?.scope === scope
-            ? state.activeCollabTaskPageView.openProject
-            : null
+        ...viewBase(scope, state.activeCollabTaskPageView),
+        selected
       }
     })),
   setActiveCollabTaskPageProject: (scope, openProject) =>
     set((state) => ({
       activeCollabTaskPageView: {
-        scope,
-        openProject,
-        selected:
-          state.activeCollabTaskPageView?.scope === scope
-            ? state.activeCollabTaskPageView.selected
-            : null
+        ...viewBase(scope, state.activeCollabTaskPageView),
+        openProject
+      }
+    })),
+  setActiveCollabTaskPageFilter: (scope, filter) =>
+    set((state) => ({
+      activeCollabTaskPageView: {
+        ...viewBase(scope, state.activeCollabTaskPageView),
+        filter
       }
     }))
 })

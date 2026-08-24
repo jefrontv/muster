@@ -14,7 +14,11 @@
 // the ipc layer builds a fresh client per call precisely so a reconnect can swap credentials
 // mid-flight, and a shared map would happily serve one account's project names to the next.
 
-import type { ActiveCollabTask, ActiveCollabUser } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabSubtask,
+  ActiveCollabTask,
+  ActiveCollabUser
+} from '../../shared/activecollab-types'
 import type { AcHttpClient } from './http'
 import { listProjects } from './tasks'
 import { listUsers } from './users'
@@ -195,6 +199,26 @@ export async function acResolveTaskNames(
     }
     if (task.createdByName === null && task.createdById !== null) {
       task.createdByName = directory.users.get(task.createdById)?.name ?? null
+    }
+  }
+}
+
+/**
+ * Fill in the assignee names the wire omitted on subtask rows, in place — the subtask twin of
+ * {@link acResolveTaskNames}. Same never-rejects, never-invents contract: a name the ROW carried
+ * wins, and an id the directory cannot resolve keeps its null.
+ */
+export async function acResolveSubtaskNames(
+  pending: Promise<AcNameDirectory>,
+  subtasks: readonly (ActiveCollabSubtask | null)[]
+): Promise<void> {
+  const directory = await pending
+  for (const subtask of subtasks) {
+    if (subtask === null) {
+      continue
+    }
+    if (subtask.assigneeName === null && subtask.assigneeId !== null) {
+      subtask.assigneeName = directory.users.get(subtask.assigneeId)?.name ?? null
     }
   }
 }

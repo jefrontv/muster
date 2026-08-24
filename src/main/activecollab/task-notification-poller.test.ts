@@ -5,10 +5,17 @@ import {
   MAX_ACTIVECOLLAB_POLL_INTERVAL_MS,
   MIN_ACTIVECOLLAB_POLL_INTERVAL_MS
 } from '../../shared/activecollab-poll-interval'
-import type { ActiveCollabTask, ActiveCollabTaskPage } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabObjectUpdate,
+  ActiveCollabTask,
+  ActiveCollabTaskPage,
+  ActiveCollabUpdates
+} from '../../shared/activecollab-types'
+import type { AcMentionSeen } from './mention-detector'
 import type { AcTaskChange, AcTaskChangeKind, AcTaskSnapshot } from './task-change-detector'
 import type { AcTaskUnread } from './task-unread'
 import {
+  AC_POLL_BANNER_CAP,
   AC_POLL_MAX_BACKOFF_MS,
   AC_POLL_MAX_PAGES,
   AC_POLL_START_DELAY_MS,
@@ -42,6 +49,11 @@ function acTask(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveCo
     urlPath: `/projects/3790/tasks/${overrides.id}`,
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }
@@ -669,5 +681,159 @@ describe('what reaches the user', () => {
     await running.poll()
 
     expect(emitted).toEqual([])
+  })
+})
+
+describe('the mention pass', () => {
+  function mentionUpdate(
+    overrides: Partial<ActiveCollabObjectUpdate> = {}
+  ): ActiveCollabObjectUpdate {
+    return {
+      taskId: 42,
+      projectId: 3790,
+      projectName: 'Muster',
+      taskNumber: 7,
+      name: 'Fix the header',
+      lastUpdateOn: NOW,
+      kinds: [{ kind: 'mention', count: 1 }],
+      isSubscribed: true,
+      ...overrides
+    }
+  }
+
+  function mentionPoller(args: {
+    fetchMentions: () => Promise<ActiveCollabResult<ActiveCollabUpdates>>
+    enabled?: boolean
+    seen?: AcMentionSeen | null
+    saved: AcMentionSeen[]
+    mentions: ActiveCollabObjectUpdate[]
+  }): AcTaskPoller {
+    return createAcTaskPoller({
+      now: () => NOW,
+      intervalMs: () => undefined,
+      snapshotKey: () => KEY,
+      shouldPoll: () => true,
+      notifyKinds: () => new Set<AcTaskChangeKind>(),
+      fetchPage,
+      loadSnapshot: () => stored,
+      saveSnapshot,
+      loadUnread: () => storedUnread,
+      saveUnread,
+      emit: (change) => emitted.push(change),
+      onUnread: () => undefined,
+      schedule: (delayMs, run) => {
+        pending = { delayMs, run }
+        return () => undefined
+      },
+      fetchMentions: args.fetchMentions,
+      loadMentionSeen: () => args.seen ?? null,
+      saveMentionSeen: (_key, seen) => args.saved.push(seen),
+      emitMention: (update) => args.mentions.push(update),
+      mentionsEnabled: () => args.enabled !== false
+    })
+  }
+
+  const updates = (rows: ActiveCollabObjectUpdate[]): ActiveCollabResult<ActiveCollabUpdates> => ({
+    ok: true,
+    value: { updates: rows, totalUnread: rows.length, hasMore: false }
+  })
+
+  beforeEach(() => {
+    stored = {}
+    fetchPage.mockResolvedValue(page([]))
+  })
+
+  it('emits a mention once, and not again for the same stamp', async () => {
+    const saved: AcMentionSeen[] = []
+    const mentions: ActiveCollabObjectUpdate[] = []
+    // Seeded (not null), so this is not a first run and the mention is genuinely new.
+    const running = mentionPoller({
+      fetchMentions: async () => updates([mentionUpdate()]),
+      seen: {},
+      saved,
+      mentions
+    })
+
+    await running.poll()
+    expect(mentions.map((row) => row.taskId)).toEqual([42])
+
+    // Second poll, same stream payload: the marker is what stops a 60-second notification loop.
+    const secondSaved: AcMentionSeen[] = []
+    const secondMentions: ActiveCollabObjectUpdate[] = []
+    await mentionPoller({
+      fetchMentions: async () => updates([mentionUpdate()]),
+      seen: saved.at(-1) ?? {},
+      saved: secondSaved,
+      mentions: secondMentions
+    }).poll()
+
+    expect(secondMentions).toEqual([])
+  })
+
+  it('seeds silently on the very first run', async () => {
+    const saved: AcMentionSeen[] = []
+    const mentions: ActiveCollabObjectUpdate[] = []
+
+    await mentionPoller({
+      fetchMentions: async () => updates([mentionUpdate()]),
+      seen: null,
+      saved,
+      mentions
+    }).poll()
+
+    expect(mentions).toEqual([])
+    expect(saved.at(-1)).toEqual({ '42': NOW })
+  })
+
+  it('leaves the marker untouched when the stream read fails', async () => {
+    const saved: AcMentionSeen[] = []
+    const mentions: ActiveCollabObjectUpdate[] = []
+
+    await mentionPoller({
+      fetchMentions: async () => ({
+        ok: false,
+        kind: 'api',
+        error: 'Internal Server Error',
+        status: 500
+      }),
+      seen: {},
+      saved,
+      mentions
+    }).poll()
+
+    // Never act on a failed read: the same rule the task diff lives by.
+    expect(saved).toEqual([])
+    expect(mentions).toEqual([])
+  })
+
+  it('reads nothing at all while the banner is switched off', async () => {
+    const saved: AcMentionSeen[] = []
+    const mentions: ActiveCollabObjectUpdate[] = []
+    const fetchMentions = vi.fn(async () => updates([mentionUpdate()]))
+
+    await mentionPoller({ fetchMentions, enabled: false, seen: {}, saved, mentions }).poll()
+
+    // A mention has no unread counterpart to keep warm, so a disabled banner buys nothing.
+    expect(fetchMentions).not.toHaveBeenCalled()
+    expect(mentions).toEqual([])
+  })
+
+  it('caps a backlog rather than firing a banner per mention', async () => {
+    const saved: AcMentionSeen[] = []
+    const mentions: ActiveCollabObjectUpdate[] = []
+    const rows = Array.from({ length: AC_POLL_BANNER_CAP + 4 }, (_, index) =>
+      mentionUpdate({ taskId: 100 + index })
+    )
+
+    await mentionPoller({
+      fetchMentions: async () => updates(rows),
+      seen: {},
+      saved,
+      mentions
+    }).poll()
+
+    expect(mentions).toHaveLength(AC_POLL_BANNER_CAP)
+    // Every one still advanced the marker, so the uncapped remainder cannot resurface as new.
+    expect(Object.keys(saved.at(-1) ?? {})).toHaveLength(rows.length)
   })
 })

@@ -74,11 +74,37 @@ export type ActiveCollabTask = {
   createdByName: string | null
   labels: ActiveCollabLabel[]
   commentCount: number
+  /** ActiveCollab's single priority flag; there is no priority ladder. */
+  isImportant: boolean
+  /** Estimated hours (the API's own unit). Null when the instance disables estimates or none set. */
+  estimate: number | null
+  /** Job type the estimate is priced under; null when unset (`0` sentinel absorbed at the codec). */
+  jobTypeId: number | null
+  /** Subtask progress as the LIST rows carry it. Null when this instance omits the counts. */
+  openSubtaskCount: number | null
+  totalSubtaskCount: number | null
   /** Relative, e.g. `/projects/3790/tasks/509323`. Join with instanceUrl for a permalink. */
   urlPath: string
   taskListId: number | null
   /** ActiveCollab's per-object client visibility; hidden tasks never appear to client-role users. */
   isHiddenFromClients: boolean
+}
+
+/**
+ * A checklist item under one task. Subtasks arrive INLINE on the task-detail response; there is
+ * no cross-project subtask read. Completion routes are project-scopeless like a task's.
+ */
+export type ActiveCollabSubtask = {
+  id: number
+  taskId: number
+  name: string
+  isCompleted: boolean
+  assigneeId: number | null
+  /** Filled by the name-directory join when the wire omits it, like a task's assigneeName. */
+  assigneeName: string | null
+  /** Epoch ms, re-anchored to the local calendar day like a task's dueOn. Null when unset. */
+  dueOn: number | null
+  createdOn: number | null
 }
 
 /**
@@ -111,6 +137,12 @@ export type ActiveCollabTaskDetail = {
   comments: ActiveCollabComment[]
   /** The task's own attachments; a comment carries its own list. */
   attachments: ActiveCollabAttachment[]
+  /** In the task's own order. Empty when the instance sends none. */
+  subtasks: ActiveCollabSubtask[]
+  /** Watchers. User ids only; the renderer joins names off the roster it already holds. */
+  subscriberIds: number[]
+  /** Hours logged against the task, same unit as `estimate`. Null when the instance omits it. */
+  trackedTime: number | null
 }
 
 export type ActiveCollabTaskPage = {
@@ -137,6 +169,39 @@ export type ActiveCollabProjectTasks = {
   taskLists: ActiveCollabTaskList[]
 }
 
+/**
+ * The category an object-update row collapsed onto. `other` deliberately absorbs any key the
+ * instance sends that this build predates, so a future ActiveCollab update kind still reads as
+ * activity instead of being dropped.
+ */
+export type ActiveCollabUpdateKind = 'comment' | 'mention' | 'created' | 'reassigned' | 'other'
+
+/**
+ * One recently-updated task from `notifications/object-updates`. Only `Task` rows survive: the
+ * panel can open tasks and nothing else, so a Note or Discussion row is dropped at the codec.
+ */
+export type ActiveCollabObjectUpdate = {
+  taskId: number
+  projectId: number
+  /** Joined from `related.Project`; empty string when the sidecar omitted it. */
+  projectName: string
+  taskNumber: number | null
+  name: string
+  /** Epoch ms, from `last_update_on`. Null when absent. */
+  lastUpdateOn: number | null
+  /** Collapsed from the wire's keyed-object-or-empty-array `updates`. */
+  kinds: { kind: ActiveCollabUpdateKind; count: number }[]
+  isSubscribed: boolean
+}
+
+/** Recently-updated tasks, newest first. Never cached: the list is time-sensitive. */
+export type ActiveCollabUpdates = {
+  updates: ActiveCollabObjectUpdate[]
+  /** Null when the instance sent `-1` — "not computed", which is NOT zero. */
+  totalUnread: number | null
+  hasMore: boolean
+}
+
 /** Every collection endpoint is capped here by the server; a `limit` parameter is ignored. */
 export const ACTIVECOLLAB_PAGE_SIZE = 100
 
@@ -153,4 +218,12 @@ export type ActiveCollabTaskUpdate = {
    */
   labelNames?: string[]
   isHiddenFromClients?: boolean
+  isImportant?: boolean
+}
+
+/** Field-level subtask edits, same omitted-vs-null contract as {@link ActiveCollabTaskUpdate}. */
+export type ActiveCollabSubtaskUpdate = {
+  name?: string
+  assigneeId?: number | null
+  dueOn?: number | null
 }

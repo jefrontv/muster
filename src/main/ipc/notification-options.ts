@@ -133,6 +133,9 @@ function describeActiveCollabSummary(source: NotificationEventSource, count: num
   if (source === 'activecollab-updated') {
     return `${count} tasks updated`
   }
+  if (source === 'activecollab-mention') {
+    return `You were mentioned on ${count} tasks`
+  }
   return `${count} tasks assigned to you`
 }
 
@@ -147,6 +150,9 @@ function describeActiveCollabChange(args: NotificationDispatchRequest): string {
   }
   if (args.source === 'activecollab-updated') {
     return 'Task updated'
+  }
+  if (args.source === 'activecollab-mention') {
+    return 'Mentioned you'
   }
   return 'Assigned to you'
 }

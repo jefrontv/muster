@@ -5,13 +5,19 @@ import { useCallback, useRef, useState } from 'react'
 
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
-import type { ActiveCollabComment, ActiveCollabTask } from '../../../shared/activecollab-types'
+import type {
+  ActiveCollabComment,
+  ActiveCollabSubtask,
+  ActiveCollabSubtaskUpdate,
+  ActiveCollabTask
+} from '../../../shared/activecollab-types'
 import type { ActiveCollabSchedule } from './activecollab-task-schedule'
 import type {
   ActiveCollabFailure,
   ActiveCollabResult
 } from '../../../shared/activecollab-api-types'
 import { toggleActiveCollabLabelName } from './activecollab-task-label-set'
+import { useActiveCollabTaskDetailWrites } from './activecollab-task-detail-writes'
 
 export type ActiveCollabTaskWriteField =
   | 'completion'
@@ -20,6 +26,12 @@ export type ActiveCollabTaskWriteField =
   | 'assignee'
   | 'visibility'
   | 'comment'
+  | 'title'
+  | 'description'
+  | 'importance'
+  | 'subtask'
+  | 'watchers'
+  | 'commentEdit'
 
 export type ActiveCollabTaskWrites = {
   /** Non-null while a write is in flight; the pane disables every control off this. */
@@ -52,6 +64,19 @@ export type ActiveCollabTaskWrites = {
    * which is the only thing that can say so.
    */
   addComment: (bodyHtml: string, attachmentCodes: string[]) => Promise<boolean>
+  setTitle: (name: string) => Promise<boolean>
+  setDescription: (bodyHtml: string) => Promise<boolean>
+  setImportant: (isImportant: boolean) => Promise<boolean>
+  addSubtask: (args: {
+    name: string
+    assigneeId?: number | null
+    dueOn?: number | null
+  }) => Promise<boolean>
+  editSubtask: (subtaskId: number, update: ActiveCollabSubtaskUpdate) => Promise<boolean>
+  setSubtaskCompleted: (subtaskId: number, isCompleted: boolean) => Promise<boolean>
+  editComment: (commentId: number, bodyHtml: string) => Promise<boolean>
+  removeComment: (commentId: number) => Promise<boolean>
+  setSubscribed: (userId: number, subscribed: boolean) => Promise<boolean>
 }
 
 export type ActiveCollabTaskWriteTarget = {
@@ -59,13 +84,27 @@ export type ActiveCollabTaskWriteTarget = {
   taskId: number | null
   onTask: (task: ActiveCollabTask) => void
   onComment: (comment: ActiveCollabComment) => void
+  onSubtask: (subtask: ActiveCollabSubtask) => void
+  onCommentReplaced: (comment: ActiveCollabComment) => void
+  onCommentDropped: (commentId: number) => void
+  onSubscription: (userId: number, subscribed: boolean) => void
   reload: () => Promise<void>
 }
 
 export function useActiveCollabTaskWrites(
   target: ActiveCollabTaskWriteTarget
 ): ActiveCollabTaskWrites {
-  const { projectId, taskId, onTask, onComment, reload } = target
+  const {
+    projectId,
+    taskId,
+    onTask,
+    onComment,
+    onSubtask,
+    onCommentReplaced,
+    onCommentDropped,
+    onSubscription,
+    reload
+  } = target
   const updateTask = useAppStore((s) => s.updateActiveCollabTask)
   const fetchTaskDetail = useAppStore((s) => s.fetchActiveCollabTaskDetail)
   const completeTask = useAppStore((s) => s.completeActiveCollabTask)
@@ -113,6 +152,41 @@ export function useActiveCollabTaskWrites(
       }
     },
     [mountedRef, projectId, reload, taskId]
+  )
+
+  // Void-write sibling of `runWrite` for actions whose success payload is `null` BY DESIGN
+  // (delete comment, subscription toggle). Routing them through `runWrite` would misread the null
+  // as "no echo" and refetch the whole task on every watch toggle.
+  const runVoidWrite = useCallback(
+    async (
+      field: ActiveCollabTaskWriteField,
+      call: (ids: { projectId: number; taskId: number }) => Promise<ActiveCollabResult<null>>,
+      apply: () => void
+    ): Promise<boolean> => {
+      if (projectId === null || taskId === null || pendingRef.current !== null) {
+        return false
+      }
+      pendingRef.current = field
+      setPending(field)
+      setFailure(null)
+      try {
+        const result = await call({ projectId, taskId })
+        if (!result.ok) {
+          if (mountedRef.current) {
+            setFailure(result)
+          }
+          return false
+        }
+        apply()
+        return true
+      } finally {
+        pendingRef.current = null
+        if (mountedRef.current) {
+          setPending(null)
+        }
+      }
+    },
+    [mountedRef, projectId, taskId]
   )
 
   const setCompleted = useCallback(
@@ -188,6 +262,32 @@ export function useActiveCollabTaskWrites(
     [onComment, postComment, runWrite]
   )
 
+  const setTitle = useCallback(
+    (name: string) => runWrite('title', (ids) => updateTask({ ...ids, update: { name } }), onTask),
+    [onTask, runWrite, updateTask]
+  )
+
+  const setDescription = useCallback(
+    (bodyHtml: string) =>
+      runWrite('description', (ids) => updateTask({ ...ids, update: { bodyHtml } }), onTask),
+    [onTask, runWrite, updateTask]
+  )
+
+  const setImportant = useCallback(
+    (isImportant: boolean) =>
+      runWrite('importance', (ids) => updateTask({ ...ids, update: { isImportant } }), onTask),
+    [onTask, runWrite, updateTask]
+  )
+
+  const detailWrites = useActiveCollabTaskDetailWrites({
+    runWrite,
+    runVoidWrite,
+    onSubtask,
+    onCommentReplaced,
+    onCommentDropped,
+    onSubscription
+  })
+
   return {
     pending,
     failure,
@@ -196,6 +296,10 @@ export function useActiveCollabTaskWrites(
     setSchedule,
     setAssigneeId,
     setHiddenFromClients,
-    addComment
+    addComment,
+    setTitle,
+    setDescription,
+    setImportant,
+    ...detailWrites
   }
 }

@@ -3,7 +3,8 @@ import { acIsRecord, acMimeEssence } from './codecs'
 import { acMultipartBody, type AcMultipartPart } from './multipart'
 
 export type AcRequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT'
+  /** DELETE is never retried — the replay gate below is GET-only, which a delete must stay out of. */
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   query?: Record<string, string | number | undefined>
   body?: unknown
   form?: Record<string, string>

@@ -139,6 +139,7 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
       activeCollabComments: false,
       activeCollabDue: false,
       activeCollabUpdated: false,
+      activeCollabMention: false,
       suppressWhenFocused: true,
       customSoundId: 'system',
       customSoundPath: null,

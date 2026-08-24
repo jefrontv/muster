@@ -8,7 +8,8 @@ import type {
   ActiveCollabConnectionStatus,
   ActiveCollabTask,
   ActiveCollabTaskDetail,
-  ActiveCollabTaskPage
+  ActiveCollabTaskPage,
+  ActiveCollabUpdates
 } from '../../../../shared/activecollab-types'
 import type { ActiveCollabResult } from '../../../../shared/activecollab-api-types'
 import {
@@ -34,6 +35,7 @@ const postComment = vi.fn()
 const listLabels = vi.fn()
 const listUsers = vi.fn()
 const listProjectMembers = vi.fn()
+const listUpdates = vi.fn()
 
 vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabStatus: (...args: unknown[]) => status(...args),
@@ -48,7 +50,8 @@ vi.mock('@/runtime/runtime-activecollab-client', () => ({
   activeCollabPostComment: (...args: unknown[]) => postComment(...args),
   activeCollabListLabels: (...args: unknown[]) => listLabels(...args),
   activeCollabListUsers: (...args: unknown[]) => listUsers(...args),
-  activeCollabListProjectMembers: (...args: unknown[]) => listProjectMembers(...args)
+  activeCollabListProjectMembers: (...args: unknown[]) => listProjectMembers(...args),
+  activeCollabListUpdates: (...args: unknown[]) => listUpdates(...args)
 }))
 
 function createTestStore() {
@@ -83,6 +86,11 @@ function task(id: number, overrides: Partial<ActiveCollabTask> = {}): ActiveColl
     urlPath: `/projects/12/tasks/${id}`,
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }
@@ -131,9 +139,12 @@ function pageEntry(tasks: ActiveCollabTask[]): CacheEntry<ActiveCollabTaskPageRo
 }
 
 function detailEntry(
-  detail: Omit<ActiveCollabTaskDetail, 'attachments'>
+  detail: Omit<ActiveCollabTaskDetail, 'attachments' | 'subtasks' | 'subscriberIds' | 'trackedTime'>
 ): CacheEntry<ActiveCollabTaskDetail> {
-  return { data: { attachments: [], ...detail }, fetchedAt: Date.now() }
+  return {
+    data: { attachments: [], subtasks: [], subscriberIds: [], trackedTime: null, ...detail },
+    fetchedAt: Date.now()
+  }
 }
 
 const implicitPageKey = (): string => `${getProviderRuntimeContextKey(null)}::tasks::assigned::1`
@@ -347,14 +358,28 @@ describe('createActiveCollabSlice cache eviction', () => {
     const base = Date.now() - 1_000
     for (let index = 0; index < MAX_CACHE_ENTRIES; index += 1) {
       seeded[`seed::detail::${index}`] = {
-        data: { task: task(1_000 + index), comments: [], attachments: [] },
+        data: {
+          task: task(1_000 + index),
+          comments: [],
+          attachments: [],
+          subtasks: [],
+          subscriberIds: [],
+          trackedTime: null
+        },
         fetchedAt: base + index
       }
     }
     store.setState({ activeCollabTaskDetailCache: seeded })
     getTaskDetail.mockResolvedValue({
       ok: true,
-      value: { task: task(1), comments: [], attachments: [] }
+      value: {
+        task: task(1),
+        comments: [],
+        attachments: [],
+        subtasks: [],
+        subscriberIds: [],
+        trackedTime: null
+      }
     })
 
     await store.getState().fetchActiveCollabTaskDetail({ projectId: 12, taskId: 1 })
@@ -372,14 +397,28 @@ describe('createActiveCollabSlice cache eviction', () => {
     store.setState({
       activeCollabTaskDetailCache: {
         'seed::detail::old': {
-          data: { task: task(999), comments: [], attachments: [] },
+          data: {
+            task: task(999),
+            comments: [],
+            attachments: [],
+            subtasks: [],
+            subscriberIds: [],
+            trackedTime: null
+          },
           fetchedAt: expired
         }
       }
     })
     getTaskDetail.mockResolvedValue({
       ok: true,
-      value: { task: task(1), comments: [], attachments: [] }
+      value: {
+        task: task(1),
+        comments: [],
+        attachments: [],
+        subtasks: [],
+        subscriberIds: [],
+        trackedTime: null
+      }
     })
 
     await store.getState().fetchActiveCollabTaskDetail({ projectId: 12, taskId: 1 })
@@ -603,6 +642,73 @@ describe('createActiveCollabSlice failures', () => {
 
     expect(status).not.toHaveBeenCalled()
     expect(store.getState().activeCollabLastError).toBe('Instance exploded')
+  })
+})
+
+describe('createActiveCollabSlice updates availability', () => {
+  const apiFailure = (): ActiveCollabResult<ActiveCollabUpdates> => ({
+    ok: false,
+    kind: 'api',
+    error: 'Internal Server Error',
+    status: 500
+  })
+
+  const empty = (): ActiveCollabResult<ActiveCollabUpdates> => ({
+    ok: true,
+    value: { updates: [], totalUnread: null, hasMore: false }
+  })
+
+  it('latches updates unsupported on an api refusal (the 6.x notifications 500)', async () => {
+    const store = createTestStore()
+    listUpdates.mockResolvedValue(apiFailure())
+
+    await store.getState().listActiveCollabUpdates()
+
+    expect(store.getState().activeCollabUpdatesUnsupported).toBe(true)
+  })
+
+  it('does not latch on a network or auth failure', async () => {
+    const store = createTestStore()
+    listUpdates.mockResolvedValueOnce({
+      ok: false,
+      kind: 'network',
+      error: 'ECONNRESET',
+      status: null
+    })
+    listUpdates.mockResolvedValueOnce({
+      ok: false,
+      kind: 'auth',
+      error: 'Token rejected',
+      status: 401
+    })
+
+    await store.getState().listActiveCollabUpdates()
+    await store.getState().listActiveCollabUpdates()
+
+    expect(store.getState().activeCollabUpdatesUnsupported).toBe(false)
+  })
+
+  it('clears the latch on a later success', async () => {
+    const store = createTestStore()
+    listUpdates.mockResolvedValueOnce(apiFailure())
+    await store.getState().listActiveCollabUpdates()
+    expect(store.getState().activeCollabUpdatesUnsupported).toBe(true)
+
+    listUpdates.mockResolvedValueOnce(empty())
+    await store.getState().listActiveCollabUpdates()
+
+    expect(store.getState().activeCollabUpdatesUnsupported).toBe(false)
+  })
+
+  it('clears the latch on demand for a retry', async () => {
+    const store = createTestStore()
+    listUpdates.mockResolvedValue(apiFailure())
+    await store.getState().listActiveCollabUpdates()
+    expect(store.getState().activeCollabUpdatesUnsupported).toBe(true)
+
+    store.getState().clearActiveCollabUpdatesUnsupported()
+
+    expect(store.getState().activeCollabUpdatesUnsupported).toBe(false)
   })
 })
 

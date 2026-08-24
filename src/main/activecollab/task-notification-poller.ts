@@ -39,7 +39,13 @@ import {
   clampActiveCollabPollIntervalMs,
   MIN_ACTIVECOLLAB_POLL_INTERVAL_MS
 } from '../../shared/activecollab-poll-interval'
-import type { ActiveCollabTask, ActiveCollabTaskPage } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabObjectUpdate,
+  ActiveCollabTask,
+  ActiveCollabTaskPage,
+  ActiveCollabUpdates
+} from '../../shared/activecollab-types'
+import { acDiffMentions, type AcMentionSeen } from './mention-detector'
 import {
   acDiffTaskSnapshot,
   type AcTaskChange,
@@ -93,6 +99,16 @@ export type AcTaskPollerDeps = {
    * AC_POLL_BANNER_CAP. Absent = no cap (tests mostly); production always provides it.
    */
   emitSummary?: (kind: AcTaskChangeKind, count: number) => void
+  /**
+   * The mention pass, all-or-nothing: absent means the feature is off, and the poller then behaves
+   * exactly as it did before it existed. `mentionsEnabled` is the banner toggle — read here rather
+   * than folded into `notifyKinds`, because a mention is not one of the diff's kinds.
+   */
+  fetchMentions?: () => Promise<ActiveCollabResult<ActiveCollabUpdates>>
+  loadMentionSeen?: (key: string) => AcMentionSeen | null
+  saveMentionSeen?: (key: string, seen: AcMentionSeen) => void
+  emitMention?: (update: ActiveCollabObjectUpdate) => void
+  mentionsEnabled?: () => boolean
 }
 
 export type AcTaskPoller = {
@@ -203,6 +219,48 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
     cancelTimer = deps.schedule(delayMs, tick)
   }
 
+  /**
+   * The mention pass. Deliberately NOT part of the diff above: the assigned-task page carries no
+   * mention data, so mentions come from the notifications stream instead (see mention-detector.ts).
+   *
+   * Read only while the banner is wanted. Unlike the four diff kinds, a mention has no unread
+   * counterpart to keep warm — `acMergeTaskUnread` prunes against the assigned-task fetch, so a
+   * mention on somebody else's task could never be cleared by reading it — which makes a read for a
+   * switched-off banner a request that buys nothing.
+   *
+   * Its failures are its own: a refused stream read leaves the marker untouched and never touches
+   * the diff's backoff, because the task poll above already succeeded.
+   */
+  const pollMentions = async (key: string): Promise<void> => {
+    const { fetchMentions, loadMentionSeen, saveMentionSeen, emitMention, mentionsEnabled } = deps
+    if (
+      !fetchMentions ||
+      !loadMentionSeen ||
+      !saveMentionSeen ||
+      !emitMention ||
+      mentionsEnabled?.() !== true
+    ) {
+      return
+    }
+    const result = await fetchMentions()
+    if (!result.ok) {
+      // Never act on a failed read: the same rule the task diff lives by.
+      return
+    }
+    const { mentions, seen } = acDiffMentions({
+      previous: loadMentionSeen(key),
+      updates: result.value.updates
+    })
+    // Marker first, and for EVERY mention found: a banner we chose not to show must not be
+    // rediscovered as new on the next poll.
+    saveMentionSeen(key, seen)
+    // Bounded like the diff's banners. A backlog surfacing at once is capped rather than summarised
+    // because a mention summary would say nothing useful — "3 mentions" names no task to open.
+    for (const mention of mentions.slice(0, AC_POLL_BANNER_CAP)) {
+      emitMention(mention)
+    }
+  }
+
   const poll = async (): Promise<void> => {
     if (inFlight) {
       return
@@ -264,6 +322,8 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
           deps.emitSummary(kind, count)
         }
       }
+
+      await pollMentions(key)
     } finally {
       inFlight = false
     }

@@ -143,6 +143,7 @@ export function getDefaultNotificationSettings(): NotificationSettings {
     activeCollabComments: false,
     activeCollabDue: false,
     activeCollabUpdated: false,
+    activeCollabMention: false,
     suppressWhenFocused: true,
     customSoundId: 'system',
     customSoundPath: null,

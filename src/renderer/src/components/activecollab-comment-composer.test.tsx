@@ -156,11 +156,15 @@ afterEach(() => {
   container.remove()
 })
 
-async function mount({
-  projectId = PROJECT_ID as number | null,
-  disabled = false,
-  busy = false
-} = {}): Promise<void> {
+async function render({
+  projectId,
+  disabled,
+  busy
+}: {
+  projectId: number | null
+  disabled: boolean
+  busy: boolean
+}): Promise<void> {
   await act(async () => {
     root.render(
       // The link bubble is built from `RichMarkdownLinkBubble`, whose actions are tooltipped; the
@@ -179,6 +183,52 @@ async function mount({
       </TooltipProvider>
     )
   })
+}
+
+/** The collapsed prompt, or null once the composer is open. */
+function promptButton(): HTMLButtonElement | null {
+  return (
+    Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'Write a comment...'
+    ) ?? null
+  )
+}
+
+/** Tolerant of an already-open composer, so a re-`mount` in one test does not have to care. */
+async function openComposer(): Promise<void> {
+  const prompt = promptButton()
+  if (prompt === null) {
+    return
+  }
+  await act(async () => {
+    prompt.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  })
+}
+
+/**
+ * Opens the composer by default: the collapsed prompt is the resting state, but almost every test
+ * here is about the open editor. A disabled mount opens FIRST and takes the disabled props after,
+ * because the prompt is disabled while a write is in flight — you cannot start a comment mid-write,
+ * which is the behaviour, not an obstacle to work around.
+ */
+async function mount({
+  projectId = PROJECT_ID as number | null,
+  disabled = false,
+  busy = false,
+  expanded = true
+} = {}): Promise<void> {
+  await render({
+    projectId,
+    disabled: expanded ? false : disabled,
+    busy: expanded ? false : busy
+  })
+  if (!expanded) {
+    return
+  }
+  await openComposer()
+  if (disabled || busy) {
+    await render({ projectId, disabled, busy })
+  }
 }
 
 function editor(): Editor {
@@ -232,6 +282,16 @@ function submitButton(): HTMLButtonElement {
   )
   if (button === undefined) {
     throw new Error('comment button missing')
+  }
+  return button
+}
+
+function cancelButton(): HTMLButtonElement {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === 'Cancel'
+  )
+  if (button === undefined) {
+    throw new Error('cancel button missing')
   }
   return button
 }
@@ -568,6 +628,57 @@ describe('ActiveCollabCommentComposer formatting', () => {
   })
 })
 
+describe('ActiveCollabCommentComposer collapsed state', () => {
+  it('rests as a one-line prompt and builds no editor until it is opened', async () => {
+    await mount({ expanded: false })
+
+    expect(promptButton()).not.toBeNull()
+    // The point of the collapse: a pane nobody is replying on pays for no editor at all.
+    expect(holder.editor).toBeNull()
+    expect(container.querySelector('.activecollab-comment-editor')).toBeNull()
+  })
+
+  it('expands into the composer, with the caret already in the field', async () => {
+    await mount({ expanded: false })
+    await openComposer()
+
+    expect(promptButton()).toBeNull()
+    expect(container.querySelector('.activecollab-comment-editor')).not.toBeNull()
+    expect(editor().isFocused).toBe(true)
+  })
+
+  it('collapses on Cancel and discards the draft', async () => {
+    await mount()
+    await type('half a thought')
+
+    await act(async () => {
+      cancelButton().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(promptButton()).not.toBeNull()
+    expect(posted).toEqual([])
+
+    await openComposer()
+    expect(editor().getText()).toBe('')
+  })
+
+  it('stays open when the post is refused, so the words are still there to retry', async () => {
+    postLands = false
+    await mount()
+    await type('this will not land')
+    await post()
+
+    expect(promptButton()).toBeNull()
+    expect(editor().getText()).toBe('this will not land')
+  })
+
+  it('refuses to open while a write is in flight', async () => {
+    await mount({ expanded: false, disabled: true })
+
+    expect(promptButton()?.disabled).toBe(true)
+  })
+})
+
 describe('ActiveCollabCommentComposer posting', () => {
   it('posts the picked mention as a new_mention span the server recognises', async () => {
     await mount()
@@ -612,12 +723,17 @@ describe('ActiveCollabCommentComposer posting', () => {
     expect(posted[0].match(/new_mention/g)).toHaveLength(1)
   })
 
-  it('clears the draft with its mentions, so the next comment does not inherit them', async () => {
+  it('collapses on a landed post, and reopening inherits nothing from the sent draft', async () => {
     await mount()
     await type('Ping @ada')
     await press('Enter')
     await post()
 
+    // A landed post closes the composer, so the draft is not merely cleared — the editor holding
+    // it is gone. The mention cannot survive into the next comment because nothing survives.
+    expect(promptButton()).not.toBeNull()
+
+    await openComposer()
     expect(editor().getText()).toBe('')
     expect(submitButton().disabled).toBe(true)
 

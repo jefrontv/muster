@@ -99,7 +99,12 @@ const TASK: ActiveCollabTask = {
   commentCount: 1,
   urlPath: '/projects/3790/tasks/509323',
   taskListId: null,
-  isHiddenFromClients: false
+  isHiddenFromClients: false,
+  isImportant: false,
+  estimate: null,
+  jobTypeId: null,
+  openSubtaskCount: null,
+  totalSubtaskCount: null
 }
 
 const COMMENT: ActiveCollabComment = {
@@ -112,7 +117,14 @@ const COMMENT: ActiveCollabComment = {
   attachments: []
 }
 
-const DETAIL: ActiveCollabTaskDetail = { task: TASK, comments: [COMMENT], attachments: [] }
+const DETAIL: ActiveCollabTaskDetail = {
+  task: TASK,
+  comments: [COMMENT],
+  attachments: [],
+  subtasks: [],
+  subscriberIds: [],
+  trackedTime: null
+}
 
 function detailFor(patch: Partial<ActiveCollabTask>): DetailResult {
   return { ok: true, value: { ...DETAIL, task: { ...TASK, ...patch } } }
@@ -307,11 +319,15 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     )
   })
 
-  it('groups assignee, due date and labels as named fields', async () => {
+  it('groups the task fields under names, paired so the pane spends four rows not seven', async () => {
     await mount()
 
     const terms = Array.from(container.querySelectorAll('dt')).map((dt) => dt.textContent)
-    expect(terms).toEqual(['Assignee', 'Created by', 'Due date', 'Labels', 'Clients'])
+    // Read in pairs: (Assignee, Due date), (Watchers, Priority), (Clients, —), then Labels across
+    // both columns because its chips wrap. No Estimate: this task carries neither an estimate nor
+    // tracked time, and an empty effort row would cost a line to say nothing. No "Created by"
+    // either — the author reads as part of the creation date on the header's identity line.
+    expect(terms).toEqual(['Assignee', 'Due date', 'Watchers', 'Priority', 'Clients', 'Labels'])
     expect(assigneeText()).toBe('Jake Varrese')
     // Already anchored to the local calendar day upstream — shown as-is, under its own label.
     const dueLabel = new Date(2026, 6, 27).toLocaleDateString(undefined, {

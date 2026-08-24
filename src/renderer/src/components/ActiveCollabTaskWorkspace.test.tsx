@@ -131,7 +131,12 @@ const TASK: ActiveCollabTask = {
   commentCount: 1,
   urlPath: '/projects/3790/tasks/509323',
   taskListId: null,
-  isHiddenFromClients: false
+  isHiddenFromClients: false,
+  isImportant: false,
+  estimate: null,
+  jobTypeId: null,
+  openSubtaskCount: null,
+  totalSubtaskCount: null
 }
 
 const COMMENT: ActiveCollabComment = {
@@ -144,7 +149,14 @@ const COMMENT: ActiveCollabComment = {
   attachments: []
 }
 
-const DETAIL: ActiveCollabTaskDetail = { task: TASK, comments: [COMMENT], attachments: [] }
+const DETAIL: ActiveCollabTaskDetail = {
+  task: TASK,
+  comments: [COMMENT],
+  attachments: [],
+  subtasks: [],
+  subscriberIds: [],
+  trackedTime: null
+}
 
 const IMAGE_DATA_URL = 'data:image/png;base64,iVBORw0KGgo='
 
@@ -258,6 +270,19 @@ async function click(element: HTMLElement): Promise<void> {
   await act(async () => {
     element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   })
+}
+
+/**
+ * The composer rests collapsed, so the editor does not exist until the prompt is clicked. Tests
+ * that type a comment open it first; tolerant of an already-open composer.
+ */
+async function openComposer(): Promise<void> {
+  const prompt = Array.from(container.querySelectorAll('button')).find(
+    (candidate) => candidate.textContent?.trim() === 'Write a comment...'
+  )
+  if (prompt !== undefined) {
+    await click(prompt)
+  }
 }
 
 /** Types into the comment composer, which is a TipTap editor rather than a textarea. */
@@ -506,7 +531,12 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     expect(buttonByLabel('Due date').disabled).toBe(true)
     expect(buttonWith('Edit labels').disabled).toBe(true)
     expect(buttonByLabel('Assignee').disabled).toBe(true)
-    expect(composer.editor?.isEditable).toBe(false)
+    // Collapsed, the reply surface locks as the prompt itself: there is no editor to disable.
+    expect(
+      Array.from(container.querySelectorAll('button')).find(
+        (candidate) => candidate.textContent?.trim() === 'Write a comment...'
+      )?.disabled
+    ).toBe(true)
 
     await act(async () => {
       pending.resolve({ ok: true, value: { ...TASK, isCompleted: true } })
@@ -529,7 +559,7 @@ describe('ActiveCollabTaskWorkspace comments', () => {
     }
     mocks.postComment.mockResolvedValue({ ok: true, value: posted })
     await mount()
-
+    await openComposer()
     typeComment(['Ping <b>Ada</b>', 'second line'])
     await click(buttonWith('Comment'))
 
@@ -543,7 +573,7 @@ describe('ActiveCollabTaskWorkspace comments', () => {
   it('refetches when a posted comment echoes no row', async () => {
     mocks.postComment.mockResolvedValue({ ok: true, value: null })
     await mount()
-
+    await openComposer()
     typeComment(['Shipped'])
     await click(buttonWith('Comment'))
 
@@ -574,7 +604,10 @@ describe('ActiveCollabTaskWorkspace provider HTML', () => {
       value: {
         task: { ...TASK, bodyHtml: hostile },
         comments: [{ ...COMMENT, bodyHtml: hostile }],
-        attachments: []
+        attachments: [],
+        subtasks: [],
+        subscriberIds: [],
+        trackedTime: null
       }
     })
     await mount()
@@ -638,7 +671,10 @@ describe('ActiveCollabTaskWorkspace provider HTML', () => {
             '<p><img src="https://cdn.example.com/logo.png" alt="third party"></p>'
         },
         comments: [],
-        attachments: []
+        attachments: [],
+        subtasks: [],
+        subscriberIds: [],
+        trackedTime: null
       }
     })
 

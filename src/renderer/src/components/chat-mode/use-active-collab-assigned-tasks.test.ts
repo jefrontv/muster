@@ -4,11 +4,7 @@
 
 import { describe, expect, it } from 'vitest'
 import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
-import {
-  isDueToday,
-  isOverdue,
-  urgentActiveCollabTasks
-} from './use-active-collab-assigned-tasks'
+import { isDueToday, isOverdue, urgentActiveCollabTasks } from './use-active-collab-assigned-tasks'
 
 const NOON = new Date(2026, 7, 14, 12, 0, 0).getTime()
 
@@ -33,6 +29,11 @@ function task(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveColl
     urlPath: `/projects/3790/tasks/${overrides.id}`,
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }

@@ -1,6 +1,14 @@
 import type { GlobalSettings } from '../../../../shared/types'
 import { Label } from '../ui/label'
-import { CalendarClock, ClipboardList, MessageSquare, PencilLine, Timer, UserPlus } from 'lucide-react'
+import {
+  AtSign,
+  CalendarClock,
+  ClipboardList,
+  MessageSquare,
+  PencilLine,
+  Timer,
+  UserPlus
+} from 'lucide-react'
 import { clampActiveCollabPollIntervalMs } from '../../../../shared/activecollab-poll-interval'
 import { NotificationSettingToggle } from './NotificationSettingToggle'
 import { ActiveCollabNotificationDelivery } from './ActiveCollabNotificationDelivery'
@@ -128,6 +136,25 @@ export function ActiveCollabNotificationSection({
           onToggle={() =>
             void onUpdateNotificationSettings({
               activeCollabUpdated: !notificationSettings.activeCollabUpdated
+            })
+          }
+        />
+
+        <NotificationSettingToggle
+          icon={<AtSign className="size-4" />}
+          label={translate(
+            'auto.components.settings.ActiveCollabNotificationSection.mention',
+            'Mentioned You'
+          )}
+          description={translate(
+            'auto.components.settings.ActiveCollabNotificationSection.mentionDescription',
+            'Somebody @-mentions you, on any task you can see — not only ones assigned to you. Read from ActiveCollab’s own notification stream, so it costs one extra request per poll while switched on.'
+          )}
+          checked={notificationSettings.activeCollabMention}
+          disabled={!notificationsEnabled}
+          onToggle={() =>
+            void onUpdateNotificationSettings({
+              activeCollabMention: !notificationSettings.activeCollabMention
             })
           }
         />

@@ -18,18 +18,10 @@
 // next poll does not tell the user about their own edit — see ../activecollab/task-snapshot-store.ts.
 
 import { ipcMain, powerMonitor } from 'electron'
-import type {
-  ActiveCollabAttachmentImage,
-  ActiveCollabResult
-} from '../../shared/activecollab-api-types'
+import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
 import type {
   ActiveCollabConnection,
-  ActiveCollabConnectionStatus,
-  ActiveCollabLabel,
-  ActiveCollabProject,
-  ActiveCollabTaskDetail,
-  ActiveCollabProjectTasks,
-  ActiveCollabTaskPage
+  ActiveCollabConnectionStatus
 } from '../../shared/activecollab-types'
 import { connectActiveCollab } from '../activecollab/auth'
 import { shareActiveCollabLoginWithMcp } from '../activecollab/mcp-install'
@@ -37,16 +29,8 @@ import {
   clearActiveCollabCredential,
   getActiveCollabConnectionStatus
 } from '../activecollab/credential-store'
-import { acResolveTaskNames, resetAcNameDirectoryCache } from '../activecollab/name-directory'
+import { resetAcNameDirectoryCache } from '../activecollab/name-directory'
 import { resetAcProjectMembersCache } from '../activecollab/project-members'
-import { getAttachmentImage } from '../activecollab/attachment-image'
-import { listLabels } from '../activecollab/mutations'
-import {
-  getTaskDetail,
-  listAssignedTasks,
-  listProjects,
-  listProjectTasks
-} from '../activecollab/tasks'
 import {
   pollAcTaskNotificationsAfterResume,
   refreshAcTaskNotifications,
@@ -60,24 +44,53 @@ import {
   MAX_EMAIL,
   MAX_SECRET,
   MAX_URL,
-  pageNumber,
-  positiveId,
-  record,
-  taskRef
+  record
 } from './activecollab-argument-validation'
-import { acClient, guard, toFailure } from './activecollab-operation-context'
+import { guard, toFailure } from './activecollab-operation-context'
 export {
+  acGetAttachmentImage,
+  acGetTaskDetail,
+  acListAssignedTasks,
+  acListLabels,
+  acListProjects,
+  acListProjectTasks,
+  acListUpdates
+} from './activecollab-read-operations'
+import {
+  acGetAttachmentImage,
+  acGetTaskDetail,
+  acListAssignedTasks,
+  acListLabels,
+  acListProjects,
+  acListProjectTasks,
+  acListUpdates
+} from './activecollab-read-operations'
+export {
+  acCompleteSubtask,
   acCompleteTask,
+  acCreateSubtask,
   acCreateTask,
+  acDeleteComment,
   acPostComment,
+  acReopenSubtask,
   acReopenTask,
+  acSetTaskSubscription,
+  acUpdateComment,
+  acUpdateSubtask,
   acUpdateTask
 } from './activecollab-task-write-operations'
 import {
+  acCompleteSubtask,
   acCompleteTask,
+  acCreateSubtask,
   acCreateTask,
+  acDeleteComment,
   acPostComment,
+  acReopenSubtask,
   acReopenTask,
+  acSetTaskSubscription,
+  acUpdateComment,
+  acUpdateSubtask,
   acUpdateTask
 } from './activecollab-task-write-operations'
 import { acListProjectMembers, acListUsers } from './activecollab-people'
@@ -108,9 +121,17 @@ const ACTIVECOLLAB_CHANNELS = [
   'activecollab:completeTask',
   'activecollab:reopenTask',
   'activecollab:postComment',
+  'activecollab:createSubtask',
+  'activecollab:updateSubtask',
+  'activecollab:completeSubtask',
+  'activecollab:reopenSubtask',
+  'activecollab:updateComment',
+  'activecollab:deleteComment',
+  'activecollab:setTaskSubscription',
   'activecollab:listLabels',
   'activecollab:listUsers',
   'activecollab:listProjectMembers',
+  'activecollab:listUpdates',
   'activecollab:unread',
   'activecollab:markTaskRead'
 ] as const
@@ -173,64 +194,6 @@ export function acDisconnect(): Promise<ActiveCollabResult<ActiveCollabConnectio
   })
 }
 
-export function acListAssignedTasks(
-  args?: unknown
-): Promise<ActiveCollabResult<ActiveCollabTaskPage>> {
-  return guard(async () => {
-    const page = pageNumber(record(args).page)
-    const { http, userId, names } = acClient()
-    // Started before the task read, not after: on a cold cache the two round trips overlap.
-    const directory = names()
-    const result = await listAssignedTasks({ http, userId, page })
-    await acResolveTaskNames(directory, result.tasks)
-    return result
-  })
-}
-
-export function acListProjects(): Promise<ActiveCollabResult<ActiveCollabProject[]>> {
-  return guard(async () => listProjects({ http: acClient().http }))
-}
-
-export function acListProjectTasks(
-  args: unknown
-): Promise<ActiveCollabResult<ActiveCollabProjectTasks>> {
-  return guard(async () => {
-    const projectId = positiveId(record(args).projectId, 'projectId')
-    const { http, names } = acClient()
-    // Started before the task read, not after: on a cold cache the two round trips overlap.
-    const directory = names()
-    const result = await listProjectTasks({ http, projectId })
-    await acResolveTaskNames(directory, result.tasks)
-    return result
-  })
-}
-
-export function acGetTaskDetail(
-  args: unknown
-): Promise<ActiveCollabResult<ActiveCollabTaskDetail>> {
-  return guard(async () => {
-    const { projectId, taskId } = taskRef(args)
-    const { http, names } = acClient()
-    const directory = names()
-    const detail = await getTaskDetail({ http, projectId, taskId })
-    await acResolveTaskNames(directory, [detail.task])
-    return detail
-  })
-}
-
-export function acGetAttachmentImage(
-  args: unknown
-): Promise<ActiveCollabResult<ActiveCollabAttachmentImage>> {
-  return guard(async () => {
-    const attachmentId = positiveId(record(args).attachmentId, 'attachmentId')
-    return getAttachmentImage({ http: acClient().http, attachmentId })
-  })
-}
-
-export function acListLabels(): Promise<ActiveCollabResult<ActiveCollabLabel[]>> {
-  return guard(async () => listLabels({ http: acClient().http }))
-}
-
 export function registerActiveCollabHandlers(store: Store): void {
   for (const channel of ACTIVECOLLAB_CHANNELS) {
     ipcMain.removeHandler(channel)
@@ -270,17 +233,45 @@ export function registerActiveCollabHandlers(store: Store): void {
   ipcMain.handle('activecollab:completeTask', async (_event, args: unknown) => acCompleteTask(args))
   ipcMain.handle('activecollab:reopenTask', async (_event, args: unknown) => acReopenTask(args))
   ipcMain.handle('activecollab:postComment', async (_event, args: unknown) => acPostComment(args))
+  ipcMain.handle('activecollab:createSubtask', async (_event, args: unknown) =>
+    acCreateSubtask(args)
+  )
+  ipcMain.handle('activecollab:updateSubtask', async (_event, args: unknown) =>
+    acUpdateSubtask(args)
+  )
+  ipcMain.handle('activecollab:completeSubtask', async (_event, args: unknown) =>
+    acCompleteSubtask(args)
+  )
+  ipcMain.handle('activecollab:reopenSubtask', async (_event, args: unknown) =>
+    acReopenSubtask(args)
+  )
+  ipcMain.handle('activecollab:updateComment', async (_event, args: unknown) =>
+    acUpdateComment(args)
+  )
+  ipcMain.handle('activecollab:deleteComment', async (_event, args: unknown) =>
+    acDeleteComment(args)
+  )
+  ipcMain.handle('activecollab:setTaskSubscription', async (_event, args: unknown) =>
+    acSetTaskSubscription(args)
+  )
   ipcMain.handle('activecollab:listLabels', async () => acListLabels())
   ipcMain.handle('activecollab:listUsers', async () => acListUsers())
   ipcMain.handle('activecollab:listProjectMembers', async (_event, args: unknown) =>
     acListProjectMembers(args)
   )
+  ipcMain.handle('activecollab:listUpdates', async (_event, args?: unknown) => acListUpdates(args))
   ipcMain.handle('activecollab:unread', async () => acTaskUnread())
   ipcMain.handle('activecollab:markTaskRead', async (_event, args: unknown) => acMarkTaskRead(args))
 
   // Polls only while connected and something can surface the result; the service's refresh() decides
   // that, so registering is cheap for the vast majority who never connect ActiveCollab.
-  startAcTaskNotifications({ store, fetchPage: (page) => acListAssignedTasks({ page }) })
+  startAcTaskNotifications({
+    store,
+    fetchPage: (page) => acListAssignedTasks({ page }),
+    // Page one is enough: the stream is newest-first, and a mention older than 30 pending updates
+    // is not news worth a banner.
+    fetchUpdates: () => acListUpdates({ page: 1 })
+  })
   // Wake catch-up: after sleep the pending poll timer may be most of an interval away, so
   // overnight changes would otherwise surface minutes late (same pattern as agent-awake-service).
   powerMonitor.on('resume', pollAcTaskNotificationsAfterResume)

@@ -1,27 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+// My Work: every open task assigned to the connected user, grouped by deadline or by project, with
+// the filter bar, global search and quick-create the surface is planned from.
+//
+// Why no site selector: one token addresses one instance, so the slice answers with the whole
+// assignment set and paging is the only axis. The read lifecycle lives in useActiveCollabMyWorkLoad;
+// this file owns the surfaces and how the view slice narrows them.
+
+import React, { useCallback, useMemo, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 
 import { ActiveCollabConnectDialog } from '@/components/activecollab-connect-dialog'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { Button } from '@/components/ui/button'
-import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import { getActiveCollabReadScope } from '@/store/slices/activecollab-cache'
-import { selectActiveCollabAssignedTasks } from './task-page-activecollab-cache-selectors'
-import {
-  deriveActiveCollabTaskListState,
-  type ActiveCollabTaskListError
-} from './task-page-activecollab-load-state'
+import type { ActiveCollabTaskListError } from './task-page-activecollab-load-state'
 import { activeCollabGroupCollapseKey } from './task-page-activecollab-group-collapse'
-import { ActiveCollabProjectSearchControl } from './task-page-activecollab-project-search'
+import { ActiveCollabMyWorkCreateDialog } from './task-page-activecollab-my-work-create'
+import { ActiveCollabMyWorkFilterBar } from './task-page-activecollab-my-work-filter-bar'
+import {
+  EMPTY_ACTIVECOLLAB_MY_WORK_FILTER,
+  filterActiveCollabTasks,
+  isActiveCollabMyWorkFilterActive
+} from './task-page-activecollab-my-work-filter'
+import { ActiveCollabMyWorkHeader } from './task-page-activecollab-my-work-header'
+import { ActiveCollabMyWorkRows } from './task-page-activecollab-my-work-rows'
 import { ActiveCollabProjectView } from './task-page-activecollab-project-view'
-import { ActiveCollabTaskGroupSection } from './task-page-activecollab-task-group-section'
-import { groupActiveCollabTasksByProject } from './task-page-activecollab-task-grouping'
-import type {
-  ActiveCollabFailure,
-  ActiveCollabTaskRef
-} from '../../../shared/activecollab-api-types'
+import { useActiveCollabMyWorkLoad } from './use-activecollab-my-work-load'
+import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 
 type ActiveCollabTaskListProps = {
@@ -32,22 +37,6 @@ type ActiveCollabTaskListProps = {
   openProject?: { id: number; name: string } | null
   onOpenProject?: (id: number, name: string) => void
   onCloseProject?: () => void
-}
-
-type ActiveCollabTaskListLoad = {
-  /** The read scope these fields describe; a mismatch means they belong to a scope left behind. */
-  prefix: string
-  requestedPages: number
-  loading: boolean
-  failure: ActiveCollabFailure | null
-}
-
-/** No real scope is empty, so the first render always derives the loading surface. */
-const INITIAL_LOAD: ActiveCollabTaskListLoad = {
-  prefix: '',
-  requestedPages: 1,
-  loading: true,
-  failure: null
 }
 
 function ActiveCollabListError({
@@ -76,8 +65,6 @@ function ActiveCollabListError({
   )
 }
 
-// Why: one token addresses one instance, so this list has no site selector — the slice answers
-// with every open task assigned to the connected user, and paging is the only axis.
 export function ActiveCollabTaskList({
   onSelect,
   selectedTaskId = null,
@@ -86,130 +73,36 @@ export function ActiveCollabTaskList({
   onOpenProject,
   onCloseProject
 }: ActiveCollabTaskListProps): React.JSX.Element {
-  const listAssignedTasks = useAppStore((s) => s.listActiveCollabAssignedTasks)
-  const taskPageCache = useAppStore((s) => s.activeCollabTaskPageCache)
-  const settings = useAppStore((s) => s.settings)
   // Collapse rides the sidebar's shared `collapsedGroups` set rather than a second store: the ui
   // slice already writes it through `window.api.ui.set`, so it survives navigation and restart.
   const collapsedGroups = useAppStore((s) => s.collapsedGroups)
   const toggleCollapsedGroup = useAppStore((s) => s.toggleCollapsedGroup)
-  const mountedRef = useMountedRef()
+  // Group axis and filter live beside the open task in the view slice, so a trip to another surface
+  // and back returns to the same narrowed list rather than the whole assignment pile.
+  const view = useAppStore((s) => s.activeCollabTaskPageView)
+  const setFilter = useAppStore((s) => s.setActiveCollabTaskPageFilter)
 
-  // Paging, freshness, and the last fault are all per-scope, so they travel together stamped with
-  // the scope that produced them. A read resolving after the runtime environment changed is then
-  // dropped instead of writing another instance's error over the current one.
-  const [load, setLoad] = useState<ActiveCollabTaskListLoad>(INITIAL_LOAD)
   const [connectOpen, setConnectOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
-  // A string, so an unstable `sourceContext` object identity cannot restart the load.
-  const cachePrefix = useMemo(
-    () => getActiveCollabReadScope(settings, sourceContext).cachePrefix,
-    [settings, sourceContext]
-  )
-  const sourceContextRef = useRef(sourceContext)
-  useEffect(() => {
-    sourceContextRef.current = sourceContext
-  }, [sourceContext])
+  const { cachePrefix, rows, state, loading, canLoadMore, errorBanner, retry, loadNextPage } =
+    useActiveCollabMyWorkLoad(sourceContext)
 
-  const loadPage = useCallback(
-    async (page: number, force = false): Promise<void> => {
-      setLoad((previous) =>
-        previous.prefix === cachePrefix
-          ? { ...previous, loading: true }
-          : { prefix: cachePrefix, requestedPages: 1, loading: true, failure: null }
-      )
-      const result = await listAssignedTasks(
-        { page },
-        { sourceContext: sourceContextRef.current, force }
-      )
-      if (!mountedRef.current) {
-        return
-      }
-      setLoad((previous) =>
-        previous.prefix !== cachePrefix
-          ? previous
-          : {
-              prefix: cachePrefix,
-              requestedPages: result.ok
-                ? Math.max(previous.requestedPages, page)
-                : previous.requestedPages,
-              loading: false,
-              failure: result.ok ? null : result
-            }
-      )
-    },
-    [cachePrefix, listAssignedTasks, mountedRef]
-  )
+  const viewScoped = view?.scope === cachePrefix
+  const filter = viewScoped ? view.filter : EMPTY_ACTIVECOLLAB_MY_WORK_FILTER
+  const visible = useMemo(() => filterActiveCollabTasks(rows.tasks, filter), [filter, rows.tasks])
 
-  useEffect(() => {
-    void loadPage(1)
-  }, [loadPage])
-
-  // The main-process poller (Settings → Notifications cadence, default one minute) already detects
-  // assignment and status changes; its unread broadcast doubles as the freshness signal here, so a
-  // newly assigned task lands in an OPEN list at poll cadence instead of waiting for a remount.
-  // Only a RISING total refetches: mark-read broadcasts (total falls, fired by merely opening a
-  // task) were forcing a page-1 network read on top of the detail read that caused them. Debounced,
-  // because a burst of broadcasts must not become a burst of refetches.
-  // Optional chaining: web/runtime stand-ins and unit suites mount this list without the bridge.
-  const lastUnreadTotalRef = useRef(0)
-  useEffect(() => {
-    let timer: number | null = null
-    const unsubscribe = window.api?.activecollab?.onUnreadChanged?.((unread) => {
-      const previous = lastUnreadTotalRef.current
-      lastUnreadTotalRef.current = unread.total
-      if (unread.total <= previous) {
-        return
-      }
-      if (timer !== null) {
-        window.clearTimeout(timer)
-      }
-      timer = window.setTimeout(() => {
-        timer = null
-        void loadPage(1, true)
-      }, 400)
-    })
-    return () => {
-      if (timer !== null) {
-        window.clearTimeout(timer)
-      }
-      unsubscribe?.()
-    }
-  }, [loadPage])
-
-  // Derived rather than reset from an effect: until the reload lands, a changed scope must not
-  // show the previous instance's paging or error.
-  const scoped = load.prefix === cachePrefix
-  const requestedPages = scoped ? load.requestedPages : 1
-
-  const rows = useMemo(
-    () => selectActiveCollabAssignedTasks(taskPageCache, cachePrefix, requestedPages),
-    [cachePrefix, requestedPages, taskPageCache]
-  )
-  const loading = scoped ? load.loading : true
-  const state = deriveActiveCollabTaskListState({
-    tasks: rows.tasks,
-    hasMore: rows.hasMore,
-    loading,
-    failure: scoped ? load.failure : null
-  })
-
-  // One clock reading feeds every row, so a render that straddles midnight cannot label two tasks
-  // due the same day differently.
+  // One clock reading feeds every row and every bucket boundary, so a render that straddles
+  // midnight cannot file two tasks due the same day under different deadlines.
   const now = Date.now()
-  const groups = useMemo(() => groupActiveCollabTasksByProject(rows.tasks), [rows.tasks])
-  const retry = useCallback(() => void loadPage(1, true), [loadPage])
-  const openConnect = useCallback(() => setConnectOpen(true), [])
   const toggleGroupCollapsed = useCallback(
     (projectId: number) => toggleCollapsedGroup(activeCollabGroupCollapseKey(projectId)),
     [toggleCollapsedGroup]
   )
-  const errorBanner = state.kind === 'failed' || state.kind === 'ready' ? state.error : null
-  // Why the footer outlives the `ready` state: `listAssignedTasks` filters completed tasks
-  // client-side, so a server page can arrive with every row already dropped while later pages still
-  // hold open work. Gating paging on a non-empty list would strand the user on "nothing here" with
-  // those pages never requested.
-  const canLoadMore = rows.hasMore && (state.kind === 'ready' || state.kind === 'empty')
+  const clearFilter = useCallback(
+    () => setFilter(cachePrefix, EMPTY_ACTIVECOLLAB_MY_WORK_FILTER),
+    [cachePrefix, setFilter]
+  )
 
   // The drill-in replaces the assigned list while set; backing out restores the list with its
   // paging and scroll state intact because this component never unmounts around it.
@@ -233,28 +126,35 @@ export function ActiveCollabTaskList({
         onOpenChange={setConnectOpen}
         onConnected={retry}
       />
+      {createOpen ? (
+        <ActiveCollabMyWorkCreateDialog
+          onClose={() => setCreateOpen(false)}
+          onCreated={retry}
+          sourceContext={sourceContext}
+        />
+      ) : null}
 
-      {/* Same band as the project view's header, so the two list surfaces read as siblings. */}
-      <div className="flex h-[41px] items-center gap-2 border-b border-border/50 px-3 py-2">
-        <span className="min-w-0 truncate text-sm font-semibold">
-          {translate('auto.components.activecollab.task_list.my_work', 'My Work')}
-        </span>
-        {state.kind === 'ready' || state.kind === 'empty' ? (
-          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
-            {rows.tasks.length}
-          </span>
-        ) : null}
-        {onOpenProject ? (
-          <div className="ml-auto shrink-0">
-            <ActiveCollabProjectSearchControl
-              onSelect={(project) => onOpenProject(project.id, project.name)}
-            />
-          </div>
-        ) : null}
-      </div>
+      <ActiveCollabMyWorkHeader
+        count={state.kind === 'ready' || state.kind === 'empty' ? visible.length : null}
+        onOpenCreate={() => setCreateOpen(true)}
+        onOpenProject={onOpenProject}
+        onSelect={onSelect}
+      />
+
+      {state.kind === 'ready' ? (
+        <ActiveCollabMyWorkFilterBar
+          filter={filter}
+          onChange={(next) => setFilter(cachePrefix, next)}
+          tasks={rows.tasks}
+        />
+      ) : null}
 
       {errorBanner ? (
-        <ActiveCollabListError error={errorBanner} onConnect={openConnect} onRetry={retry} />
+        <ActiveCollabListError
+          error={errorBanner}
+          onConnect={() => setConnectOpen(true)}
+          onRetry={retry}
+        />
       ) : null}
 
       {state.kind === 'loading' ? (
@@ -283,28 +183,44 @@ export function ActiveCollabTaskList({
         </div>
       ) : null}
 
-      {state.kind === 'ready' ? (
-        <div
-          role="group"
-          aria-label={translate(
+      {/* A filter hiding everything is a state the user CAUSED, so it names the cause and offers
+          the way out. Reusing "No tasks assigned" here told them the opposite of the truth. */}
+      {state.kind === 'ready' && visible.length === 0 ? (
+        <div className="px-4 py-10 text-center">
+          <p className="text-sm font-medium text-foreground">
+            {translate(
+              'auto.components.activecollab.my_work.filtered_empty_title',
+              'No tasks match this filter'
+            )}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {translate(
+              'auto.components.activecollab.my_work.filtered_empty_body',
+              '{{value0}} tasks are assigned to you, and none of them match what you narrowed to.',
+              { value0: rows.tasks.length }
+            )}
+          </p>
+          <Button size="sm" variant="outline" className="mt-3" onClick={clearFilter}>
+            {translate('auto.components.activecollab.my_work.filter_clear', 'Clear filters')}
+          </Button>
+        </div>
+      ) : null}
+
+      {state.kind === 'ready' && visible.length > 0 ? (
+        <ActiveCollabMyWorkRows
+          collapsedGroups={collapsedGroups}
+          label={translate(
             'auto.components.activecollab.task_list.list_label',
             'ActiveCollab tasks assigned to you'
           )}
-          className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto"
-        >
-          {groups.map((group) => (
-            <ActiveCollabTaskGroupSection
-              key={group.projectId}
-              collapsed={collapsedGroups.has(activeCollabGroupCollapseKey(group.projectId))}
-              group={group}
-              now={now}
-              onSelect={onSelect}
-              onToggleCollapsed={toggleGroupCollapsed}
-              onOpenProject={onOpenProject}
-              selectedTaskId={selectedTaskId}
-            />
-          ))}
-        </div>
+          now={now}
+          onClearFilter={isActiveCollabMyWorkFilterActive(filter) ? clearFilter : undefined}
+          onOpenProject={onOpenProject}
+          onSelect={onSelect}
+          onToggleGroupCollapsed={toggleGroupCollapsed}
+          selectedTaskId={selectedTaskId}
+          tasks={visible}
+        />
       ) : null}
 
       {canLoadMore ? (
@@ -314,7 +230,7 @@ export function ActiveCollabTaskList({
             size="sm"
             className="w-full"
             disabled={loading}
-            onClick={() => void loadPage(rows.loadedPages + 1)}
+            onClick={loadNextPage}
           >
             {loading ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
             {translate('auto.components.activecollab.task_list.load_more', 'Load more tasks')}

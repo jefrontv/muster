@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import type {
   ActiveCollabComment,
+  ActiveCollabSubtask,
   ActiveCollabTask,
   ActiveCollabTaskDetail
 } from '../../../shared/activecollab-types'
@@ -34,6 +35,11 @@ export type ActiveCollabTaskDetailHandle = ActiveCollabTaskDetailState & {
   reload: () => Promise<void>
   replaceTask: (task: ActiveCollabTask) => void
   appendComment: (comment: ActiveCollabComment) => void
+  /** Upsert by id: replace in place when present, append when new. */
+  applySubtask: (subtask: ActiveCollabSubtask) => void
+  replaceComment: (comment: ActiveCollabComment) => void
+  dropComment: (commentId: number) => void
+  applySubscription: (userId: number, subscribed: boolean) => void
 }
 
 const IDLE: ActiveCollabTaskDetailState = { status: 'idle', detail: null, failure: null }
@@ -143,7 +149,62 @@ export function useActiveCollabTaskDetail(
     })
   }, [])
 
+  const applySubtask = useCallback((subtask: ActiveCollabSubtask): void => {
+    setState((prev) => {
+      if (!prev.detail) {
+        return prev
+      }
+      const index = prev.detail.subtasks.findIndex((row) => row.id === subtask.id)
+      const subtasks =
+        index === -1
+          ? [...prev.detail.subtasks, subtask]
+          : prev.detail.subtasks.map((row, i) => (i === index ? subtask : row))
+      return { status: 'loaded', detail: { ...prev.detail, subtasks }, failure: null }
+    })
+  }, [])
+
+  const replaceComment = useCallback((comment: ActiveCollabComment): void => {
+    setState((prev) => {
+      if (!prev.detail || !prev.detail.comments.some((row) => row.id === comment.id)) {
+        return prev
+      }
+      const comments = prev.detail.comments.map((row) => (row.id === comment.id ? comment : row))
+      return { status: 'loaded', detail: { ...prev.detail, comments }, failure: null }
+    })
+  }, [])
+
+  const dropComment = useCallback((commentId: number): void => {
+    setState((prev) => {
+      if (!prev.detail || !prev.detail.comments.some((row) => row.id === commentId)) {
+        return prev
+      }
+      const comments = prev.detail.comments.filter((row) => row.id !== commentId)
+      return { status: 'loaded', detail: { ...prev.detail, comments }, failure: null }
+    })
+  }, [])
+
+  const applySubscription = useCallback((userId: number, subscribed: boolean): void => {
+    setState((prev) => {
+      if (!prev.detail || prev.detail.subscriberIds.includes(userId) === subscribed) {
+        return prev
+      }
+      const subscriberIds = subscribed
+        ? [...prev.detail.subscriberIds, userId]
+        : prev.detail.subscriberIds.filter((id) => id !== userId)
+      return { status: 'loaded', detail: { ...prev.detail, subscriberIds }, failure: null }
+    })
+  }, [])
+
   const reload = useCallback(() => read(true), [read])
 
-  return { ...state, reload, replaceTask, appendComment }
+  return {
+    ...state,
+    reload,
+    replaceTask,
+    appendComment,
+    applySubtask,
+    replaceComment,
+    dropComment,
+    applySubscription
+  }
 }

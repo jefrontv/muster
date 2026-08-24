@@ -25,6 +25,7 @@ import type { ActiveCollabTaskRef } from '../../../shared/activecollab-api-types
 export function ActiveCollabTaskGroupSection({
   collapsed,
   group,
+  headingSticky = true,
   now,
   onSelect,
   onToggleCollapsed,
@@ -33,6 +34,9 @@ export function ActiveCollabTaskGroupSection({
 }: {
   collapsed: boolean
   group: ActiveCollabTaskGroup
+  /** Off inside a due bucket: the bucket band already owns the pinned row at the top of the scroll
+   *  container, and a second sticky heading at the same offset would sit behind it, unreadable. */
+  headingSticky?: boolean
   now: number
   onSelect: (ref: ActiveCollabTaskRef) => void
   onToggleCollapsed: (projectId: number) => void
@@ -54,7 +58,10 @@ export function ActiveCollabTaskGroupSection({
     <section>
       <h3
         id={headingId}
-        className="sticky top-0 z-10 border-y border-border/60 bg-muted/80 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground backdrop-blur-sm"
+        className={cn(
+          'border-y border-border/60 bg-muted/80 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground backdrop-blur-sm',
+          headingSticky && 'sticky top-0 z-10'
+        )}
       >
         {/* The bind control is a sibling of the toggle, not a child: nesting a button inside the
             row-wide toggle is invalid markup and unreachable by keyboard. `w-full` moves to this

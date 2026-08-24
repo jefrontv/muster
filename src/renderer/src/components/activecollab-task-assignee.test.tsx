@@ -34,7 +34,8 @@ const mocks = vi.hoisted(() => ({
   completeTask: vi.fn(),
   reopenTask: vi.fn(),
   postComment: vi.fn(),
-  getAttachmentImage: vi.fn()
+  getAttachmentImage: vi.fn(),
+  markTaskRead: vi.fn(async () => {})
 }))
 
 vi.mock('@/store', () => ({
@@ -58,7 +59,11 @@ vi.mock('@/store', () => ({
       updateActiveCollabTask: mocks.updateTask,
       completeActiveCollabTask: mocks.completeTask,
       reopenActiveCollabTask: mocks.reopenTask,
-      postActiveCollabComment: mocks.postComment
+      postActiveCollabComment: mocks.postComment,
+      // Opening a task clears its unread badge entry, and the header resolves the project's bound
+      // chat workspace on render: both are read on every mount, so the stand-in has to answer.
+      markActiveCollabTaskRead: mocks.markTaskRead,
+      chatWorkspaces: []
     })
 }))
 
@@ -116,10 +121,22 @@ const TASK: ActiveCollabTask = {
   commentCount: 0,
   urlPath: '/projects/3790/tasks/509323',
   taskListId: null,
-  isHiddenFromClients: false
+  isHiddenFromClients: false,
+  isImportant: false,
+  estimate: null,
+  jobTypeId: null,
+  openSubtaskCount: null,
+  totalSubtaskCount: null
 }
 
-const DETAIL: ActiveCollabTaskDetail = { task: TASK, comments: [], attachments: [] }
+const DETAIL: ActiveCollabTaskDetail = {
+  task: TASK,
+  comments: [],
+  attachments: [],
+  subtasks: [],
+  subscriberIds: [],
+  trackedTime: null
+}
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve!: (value: T) => void

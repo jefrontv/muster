@@ -264,7 +264,8 @@ const NOTIFICATION_TOGGLE_BY_SOURCE: Partial<
   'activecollab-assigned': 'activeCollabAssigned',
   'activecollab-comments': 'activeCollabComments',
   'activecollab-due': 'activeCollabDue',
-  'activecollab-updated': 'activeCollabUpdated'
+  'activecollab-updated': 'activeCollabUpdated',
+  'activecollab-mention': 'activeCollabMention'
 }
 
 // Why: the ActiveCollab poller runs in main, so the gates below have to be reachable without a

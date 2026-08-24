@@ -17,7 +17,8 @@ import {
   type ActiveCollabTask,
   type ActiveCollabTaskDetail,
   type ActiveCollabTaskList,
-  type ActiveCollabTaskPage
+  type ActiveCollabTaskPage,
+  type ActiveCollabSubtask
 } from '../../shared/activecollab-types'
 import { acEpochToLocalDay } from '../../shared/activecollab-dates'
 import { acAttachments, acCollection, acIsRecord, acLabels, acNullableId } from './codecs'
@@ -61,6 +62,7 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     return null
   }
   const projectId = asNumber(value.project_id) ?? 0
+  const estimate = asNumber(value.estimate)
   return {
     id,
     projectId,
@@ -81,10 +83,50 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     createdByName: asText(value.created_by_name) || null,
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,
+    // `0` means "no estimate", not a zero-hour estimate — same sentinel rule as the ids.
+    isImportant: value.is_important === true,
+    estimate: estimate !== null && estimate > 0 ? estimate : null,
+    jobTypeId: acNullableId(value.job_type_id),
+    // 0 is a real count; null means this instance's rows omit the subtask counts entirely.
+    openSubtaskCount: asNumber(value.open_subtasks),
+    totalSubtaskCount: asNumber(value.total_subtasks),
     urlPath: asText(value.url_path) || `/projects/${projectId}/tasks/${id}`,
     taskListId: acNullableId(value.task_list_id),
     isHiddenFromClients: value.is_hidden_from_clients === true
   }
+}
+
+/** Older builds spell a subtask's text `body`; v5+ spells it `name`. Both are the same field. */
+export function normaliseSubtask(value: unknown): ActiveCollabSubtask | null {
+  if (!acIsRecord(value)) {
+    return null
+  }
+  const id = asNumber(value.id)
+  const taskId = asNumber(value.task_id)
+  if (id === null || taskId === null) {
+    return null
+  }
+  return {
+    id,
+    taskId,
+    name: asText(value.name) || asText(value.body),
+    isCompleted: value.is_completed === true || epochMs(value.completed_on) !== null,
+    assigneeId: acNullableId(value.assignee_id),
+    assigneeName: assigneeNameOf(value),
+    dueOn: acEpochToLocalDay(asNumber(value.due_on)),
+    createdOn: epochMs(value.created_on)
+  }
+}
+
+export function normaliseSubtasks(payload: unknown): ActiveCollabSubtask[] {
+  const subtasks: ActiveCollabSubtask[] = []
+  for (const entry of acCollection(payload, 'subtasks')) {
+    const subtask = normaliseSubtask(entry)
+    if (subtask !== null) {
+      subtasks.push(subtask)
+    }
+  }
+  return subtasks
 }
 
 function normaliseComment(value: unknown): ActiveCollabComment | null {
@@ -299,9 +341,20 @@ export async function getTaskDetail(args: {
     throw new Error(`ActiveCollab task ${args.taskId} was not found in project ${args.projectId}.`)
   }
   const inline = normaliseComments(payload)
+  // Subtasks and tracked time ride the detail envelope like attachments: sidecar first, row second.
+  const sidecar: Record<string, unknown> = acIsRecord(payload) ? payload : {}
+  const rowRecord: Record<string, unknown> = acIsRecord(row) ? row : {}
+  const subtasks = normaliseSubtasks(sidecar.subtasks !== undefined ? sidecar : rowRecord)
+  const subscribers = rowRecord.subscribers ?? sidecar.subscribers
+  const trackedTime = asNumber(rowRecord.tracked_time) ?? asNumber(sidecar.tracked_time)
   return {
     task,
     comments: inline.length > 0 ? inline : await readFallbackComments(args.http, taskPath),
-    attachments: taskAttachments(payload, row)
+    attachments: taskAttachments(payload, row),
+    subtasks,
+    subscriberIds: Array.isArray(subscribers)
+      ? subscribers.filter((entry): entry is number => acNullableId(entry) !== null)
+      : [],
+    trackedTime: trackedTime !== null && trackedTime > 0 ? trackedTime : null
   }
 }

@@ -56,6 +56,11 @@ function acTask(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveCo
     urlPath: `/projects/3790/tasks/${overrides.id}`,
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }

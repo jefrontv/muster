@@ -42,6 +42,8 @@ vi.mock('electron', () => ({
   app: { getPath: () => '/tmp/downloads' },
   dialog: { showSaveDialog: vi.fn() },
   shell: { showItemInFolder: vi.fn() },
+  // registerActiveCollabHandlers subscribes to 'resume' to re-poll after system wake.
+  powerMonitor: { on: vi.fn(), off: vi.fn() },
   BrowserWindow: { fromWebContents: () => null }
 }))
 
@@ -78,7 +80,8 @@ vi.mock('../activecollab/task-snapshot-store', () => ({
 
 vi.mock('../activecollab/task-notification-service', () => ({
   startAcTaskNotifications: startNotificationsMock,
-  refreshAcTaskNotifications: refreshNotificationsMock
+  refreshAcTaskNotifications: refreshNotificationsMock,
+  pollAcTaskNotificationsAfterResume: vi.fn()
 }))
 
 // Not a courtesy stub: the real one resolves the REAL home directory, so `acConnect` below would

@@ -1,5 +1,6 @@
-// The two presentation decisions an assigned-task row has to derive from raw ActiveCollab values:
-// how urgent a due date is, and what a label's instance-defined hex is safe to paint.
+// The presentation decisions an assigned-task row has to derive from raw ActiveCollab values: how
+// urgent a due date is, what a label's instance-defined hex is safe to paint, and how a subtask
+// count reads as progress.
 
 export type ActiveCollabDueStatus = 'overdue' | 'today' | 'upcoming'
 
@@ -17,6 +18,23 @@ export function activeCollabDueStatus(dueOn: number, now: number): ActiveCollabD
     return 'overdue'
   }
   return dueDay === todayDay ? 'today' : 'upcoming'
+}
+
+/**
+ * `done/total`, or null when the task has no subtasks to report on.
+ *
+ * An absent OPEN count with a real total is read as nothing done, never as everything done: the row
+ * would otherwise claim completed work the instance never said was completed.
+ */
+export function activeCollabSubtaskProgress(
+  openSubtaskCount: number | null,
+  totalSubtaskCount: number | null
+): string | null {
+  if (totalSubtaskCount === null || totalSubtaskCount <= 0) {
+    return null
+  }
+  const open = Math.min(Math.max(openSubtaskCount ?? totalSubtaskCount, 0), totalSubtaskCount)
+  return `${totalSubtaskCount - open}/${totalSubtaskCount}`
 }
 
 export type ActiveCollabLabelChipStyle = {

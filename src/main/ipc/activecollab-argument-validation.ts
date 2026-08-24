@@ -5,7 +5,10 @@
 // omitted, because ActiveCollab reads absent as "leave alone" and an explicit null as "clear".
 
 import type { ActiveCollabTaskRef } from '../../shared/activecollab-api-types'
-import type { ActiveCollabTaskUpdate } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabSubtaskUpdate,
+  ActiveCollabTaskUpdate
+} from '../../shared/activecollab-types'
 import { acIsRecord } from '../activecollab/codecs'
 
 // ActiveCollab's own columns are far shorter than any of these. The bounds exist so a hostile or
@@ -133,6 +136,41 @@ export function taskUpdate(value: unknown): ActiveCollabTaskUpdate {
       throw new InvalidRequestError('update.isHiddenFromClients must be a boolean.')
     }
     update.isHiddenFromClients = input.isHiddenFromClients
+  }
+  if (input.isImportant !== undefined) {
+    if (typeof input.isImportant !== 'boolean') {
+      throw new InvalidRequestError('update.isImportant must be a boolean.')
+    }
+    update.isImportant = input.isImportant
+  }
+  if (Object.keys(update).length === 0) {
+    throw new InvalidRequestError('update requires at least one field.')
+  }
+  return update
+}
+
+/**
+ * The subtask twin of {@link taskUpdate}: rebuilt key by key, same omitted-vs-null contract.
+ * `name`/`assigneeId`/`dueOn` are the whole field set a subtask edit can touch.
+ */
+export function subtaskUpdate(value: unknown): ActiveCollabSubtaskUpdate {
+  const input = record(value)
+  const update: ActiveCollabSubtaskUpdate = {}
+  if (input.name !== undefined) {
+    update.name = boundedText(input.name, 'update.name', MAX_NAME)
+  }
+  if (input.assigneeId !== undefined) {
+    update.assigneeId =
+      input.assigneeId === null ? null : positiveId(input.assigneeId, 'update.assigneeId')
+  }
+  if (input.dueOn !== undefined) {
+    if (
+      input.dueOn !== null &&
+      (typeof input.dueOn !== 'number' || !Number.isFinite(input.dueOn))
+    ) {
+      throw new InvalidRequestError('update.dueOn must be epoch milliseconds or null.')
+    }
+    update.dueOn = input.dueOn
   }
   if (Object.keys(update).length === 0) {
     throw new InvalidRequestError('update requires at least one field.')

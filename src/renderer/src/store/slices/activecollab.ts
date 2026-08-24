@@ -80,6 +80,12 @@ export type ActiveCollabConnectionState = {
    * not just when one succeeds, so a stale verdict cannot outlive the credential it judged.
    */
   activeCollabLastFailureKind: ActiveCollabFailureKind | null
+  /**
+   * The instance answered an object-updates read with an `api` refusal — a self-hosted install can
+   * 500 here when its optional extras are absent. Latched so the panel stops hammering a known-500;
+   * cleared on retry, on a later success, and on connect/disconnect.
+   */
+  activeCollabUpdatesUnsupported: boolean
 }
 
 export type ActiveCollabSlice = ActiveCollabConnectionState &
@@ -105,6 +111,7 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
   activeCollabConnecting: false,
   activeCollabLastError: null,
   activeCollabLastFailureKind: null,
+  activeCollabUpdatesUnsupported: false,
   ...EMPTY_CACHES,
   ...EMPTY_IMAGES,
   ...createActiveCollabReadActions(set, get),
@@ -187,7 +194,8 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
       activeCollabStatusContextKey: contextKey,
       activeCollabConnecting: false,
       activeCollabLastError: null,
-      activeCollabLastFailureKind: null
+      activeCollabLastFailureKind: null,
+      activeCollabUpdatesUnsupported: false
     })
     return result
   },
@@ -213,7 +221,8 @@ export const createActiveCollabSlice: StateCreator<AppState, [], [], ActiveColla
       activeCollabStatusContextKey: contextKey,
       activeCollabConnecting: false,
       activeCollabLastError: result.ok ? null : result.error,
-      activeCollabLastFailureKind: result.ok ? null : result.kind
+      activeCollabLastFailureKind: result.ok ? null : result.kind,
+      activeCollabUpdatesUnsupported: false
     })
     return result
   }

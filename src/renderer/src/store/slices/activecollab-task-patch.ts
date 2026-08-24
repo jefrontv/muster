@@ -3,7 +3,6 @@
 // threading it through would blank the list the user is looking at.
 import type { CacheEntry } from './github'
 import type {
-  ActiveCollabComment,
   ActiveCollabLabel,
   ActiveCollabProject,
   ActiveCollabTask,
@@ -30,19 +29,19 @@ export type ActiveCollabCacheState = {
 }
 
 /** Only these two hold task rows; projects, labels and people are vocabulary, not per-task state. */
-type TaskCaches = Pick<
+export type TaskCaches = Pick<
   ActiveCollabCacheState,
   'activeCollabTaskPageCache' | 'activeCollabTaskDetailCache'
 >
 
-type TaskCacheEdit = {
+export type TaskCacheEdit = {
   detail?: (detail: ActiveCollabTaskDetail) => ActiveCollabTaskDetail
   detailFetchedAt?: number
   row?: (task: ActiveCollabTask) => ActiveCollabTask
   rowFetchedAt?: number
 }
 
-function editTaskCaches(
+export function editTaskCaches(
   state: TaskCaches,
   taskId: number,
   cachePrefix: string | null,
@@ -118,23 +117,4 @@ export function staleActiveCollabTaskInCaches(
   cachePrefix: string | null
 ): Partial<TaskCaches> {
   return editTaskCaches(state, taskId, cachePrefix, { detailFetchedAt: 0, rowFetchedAt: 0 })
-}
-
-/** Keeps the thread and its badge in step so a posted comment shows before the next detail read. */
-export function appendActiveCollabCommentInCaches(
-  state: TaskCaches,
-  taskId: number,
-  comment: ActiveCollabComment,
-  cachePrefix: string | null
-): Partial<TaskCaches> {
-  return editTaskCaches(state, taskId, cachePrefix, {
-    detail: (detail) => ({
-      ...detail,
-      task: { ...detail.task, commentCount: detail.task.commentCount + 1 },
-      comments: [...detail.comments, comment]
-    }),
-    // Stale, not dropped: the instance may render the body differently than we echoed it.
-    detailFetchedAt: 0,
-    row: (task) => ({ ...task, commentCount: task.commentCount + 1 })
-  })
 }

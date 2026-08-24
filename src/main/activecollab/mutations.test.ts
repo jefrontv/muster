@@ -3,9 +3,12 @@ import { ActiveCollabApiError, type AcHttpClient, type AcRequestOptions } from '
 import {
   completeTask,
   createTask,
+  deleteComment,
   listLabels,
   postComment,
   reopenTask,
+  setTaskSubscription,
+  updateComment,
   updateTask
 } from './mutations'
 
@@ -482,5 +485,68 @@ describe('createTask', () => {
     expect(Object.keys(http.calls[1]?.options?.body as object)).not.toContain(
       'attach_uploaded_files'
     )
+  })
+})
+
+describe('updateComment / deleteComment', () => {
+  it('PUTs the edited body to the project-scopeless comment route', async () => {
+    const http = stubHttp({
+      'comments/88': {
+        data: { single: { id: 88, body: '<p>Revised</p>', body_plain_text: 'Revised' } }
+      }
+    })
+
+    const comment = await updateComment({
+      http: http.client,
+      commentId: 88,
+      bodyHtml: '<p>Revised</p>'
+    })
+
+    expect(http.calls).toEqual([
+      { path: 'comments/88', options: { method: 'PUT', body: { body: '<p>Revised</p>' } } }
+    ])
+    expect(comment?.id).toBe(88)
+    expect(comment?.bodyHtml).toBe('<p>Revised</p>')
+  })
+
+  it('answers null when the edit echo carries nothing usable', async () => {
+    const http = stubHttp({ 'comments/88': { data: {} } })
+
+    await expect(
+      updateComment({ http: http.client, commentId: 88, bodyHtml: 'x' })
+    ).resolves.toBeNull()
+  })
+
+  it('DELETEs with no body and answers null', async () => {
+    const http = stubHttp({ 'comments/88': { data: {} } })
+
+    await expect(deleteComment({ http: http.client, commentId: 88 })).resolves.toBeNull()
+    expect(http.calls).toEqual([{ path: 'comments/88', options: { method: 'DELETE' } }])
+  })
+
+  it('propagates an auth failure from delete rather than swallowing it', async () => {
+    const http = stubHttp({
+      'comments/88': new ActiveCollabApiError('Token expired', 401, true)
+    })
+    await expect(deleteComment({ http: http.client, commentId: 88 })).rejects.toBeInstanceOf(
+      ActiveCollabApiError
+    )
+  })
+})
+
+describe('setTaskSubscription', () => {
+  it('POSTs to subscribe and DELETEs to unsubscribe', async () => {
+    const http = stubHttp({
+      'subscribers/task/509323/users/407': { data: {} }
+    })
+
+    await setTaskSubscription({ http: http.client, taskId: 509323, userId: 407, subscribed: true })
+    await setTaskSubscription({ http: http.client, taskId: 509323, userId: 407, subscribed: false })
+
+    expect(http.calls[0]).toEqual({
+      path: 'subscribers/task/509323/users/407',
+      options: { method: 'POST' }
+    })
+    expect(http.calls[1]?.options?.method).toBe('DELETE')
   })
 })

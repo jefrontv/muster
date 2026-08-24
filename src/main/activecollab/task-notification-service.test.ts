@@ -5,18 +5,30 @@ import type { GlobalSettings, NotificationSettings } from '../../shared/types'
 import { getDefaultNotificationSettings } from '../../shared/constants'
 import type { Store } from '../persistence'
 
-const { dispatchMock, keyMock, loadMock, saveMock, loadUnreadMock, saveUnreadMock, broadcastMock } =
-  vi.hoisted(() => ({
-    dispatchMock: vi.fn(async () => ({ delivered: true })),
-    keyMock: vi.fn<() => string | null>(),
-    loadMock: vi.fn(),
-    saveMock: vi.fn(),
-    // Unread accrues on every poll regardless of the banner toggles, so the service now reads and
-    // writes it alongside the snapshot and broadcasts the result to the renderer.
-    loadUnreadMock: vi.fn(() => ({})),
-    saveUnreadMock: vi.fn(),
-    broadcastMock: vi.fn()
-  }))
+const {
+  dispatchMock,
+  keyMock,
+  loadMock,
+  saveMock,
+  loadUnreadMock,
+  saveUnreadMock,
+  broadcastMock,
+  loadMentionMock,
+  saveMentionMock
+} = vi.hoisted(() => ({
+  dispatchMock: vi.fn(async () => ({ delivered: true })),
+  keyMock: vi.fn<() => string | null>(),
+  loadMock: vi.fn(),
+  saveMock: vi.fn(),
+  // Unread accrues on every poll regardless of the banner toggles, so the service now reads and
+  // writes it alongside the snapshot and broadcasts the result to the renderer.
+  loadUnreadMock: vi.fn(() => ({})),
+  saveUnreadMock: vi.fn(),
+  broadcastMock: vi.fn(),
+  // Mentions come from the notifications stream, not the diff, and carry their own marker.
+  loadMentionMock: vi.fn(() => null),
+  saveMentionMock: vi.fn()
+}))
 
 // The dispatch path itself is proved in ipc/notifications.test.ts; stubbed here so this file does
 // not drag in the tray, the sound assets and a BrowserWindow.
@@ -29,7 +41,9 @@ vi.mock('./task-snapshot-store', () => ({
   acLoadTaskSnapshot: loadMock,
   acSaveTaskSnapshot: saveMock,
   acLoadTaskUnread: loadUnreadMock,
-  acSaveTaskUnread: saveUnreadMock
+  acSaveTaskUnread: saveUnreadMock,
+  acLoadMentionSeen: loadMentionMock,
+  acSaveMentionSeen: saveMentionMock
 }))
 
 import { DEFAULT_ACTIVECOLLAB_POLL_INTERVAL_MS } from '../../shared/activecollab-poll-interval'
@@ -70,6 +84,11 @@ function acTask(overrides: Partial<ActiveCollabTask> & { id: number }): ActiveCo
     urlPath: `/projects/3790/tasks/${overrides.id}`,
     taskListId: null,
     isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null,
     ...overrides
   }
 }

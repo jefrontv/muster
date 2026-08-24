@@ -37,7 +37,11 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { documentHasOpenDialog, resolveTaskPageEscapeTarget } from './task-page-escape-target'
+import {
+  documentHasOpenDialog,
+  resolveTaskPageEscapeTarget,
+  shouldTaskPageEscapeBlurTextEntry
+} from './task-page-escape-target'
 import { useAppStore } from '@/store'
 import { useAllWorktrees, useRepoMap } from '@/store/selectors'
 import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
@@ -7119,12 +7123,19 @@ export default function TaskPage(): React.JSX.Element {
         return
       }
 
-      // Why: Esc first blurs a focused input so it doesn't accidentally close the whole page; only closes once focus is outside an input.
+      // Why: Esc first blurs a focused input so it doesn't accidentally close the whole page; only
+      // closes once focus is outside an input. The dialog exception is the load-bearing half — see
+      // shouldTaskPageEscapeBlurTextEntry.
+      const hasOpenDialog = documentHasOpenDialog(document)
       if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        target.isContentEditable
+        shouldTaskPageEscapeBlurTextEntry({
+          hasOpenDialog,
+          isTextEntry:
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement ||
+            target instanceof HTMLSelectElement ||
+            target.isContentEditable
+        })
       ) {
         event.preventDefault()
         target.blur()
@@ -7135,7 +7146,7 @@ export default function TaskPage(): React.JSX.Element {
       // page. This listener captures, so a dialog would never see Escape at all
       // if the page always claimed it.
       const target2 = resolveTaskPageEscapeTarget({
-        hasOpenDialog: documentHasOpenDialog(document),
+        hasOpenDialog,
         hasOpenTask: escapeTaskView?.selected != null
       })
       if (target2 === 'dialog') {

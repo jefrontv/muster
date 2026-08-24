@@ -3,12 +3,17 @@
 // exactly the tools a comment is. Split as hook + frame: the hook owns the ProseMirror wiring,
 // the frame owns the bordered box, and each host keeps its own submit lifecycle around them.
 
-import React, { useEffect, useMemo, useRef } from 'react'
-import { EditorContent, useEditor, type Editor } from '@tiptap/react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
+import { LoaderCircle } from 'lucide-react'
 
 import { RichMarkdownLinkBubble } from '@/components/editor/RichMarkdownLinkBubble'
+import { Button } from '@/components/ui/button'
+import { translate } from '@/i18n/i18n'
+import { hasBoundedCommentBodyText } from '@/lib/comment-body-submit-state'
 import { cn } from '@/lib/utils'
 import { ActiveCollabCommentAttachmentStrip } from './activecollab-comment-attachment-strip'
+import { activeCollabCommentBodyHtml } from './activecollab-comment-body-html'
 import { createActiveCollabCommentExtensions } from './activecollab-comment-editor-schema'
 import { ActiveCollabMentionMenu } from './activecollab-comment-mention-menu'
 import { ActiveCollabCommentToolbar } from './activecollab-comment-toolbar'
@@ -98,6 +103,9 @@ export function useActiveCollabRichBody({
  * The bordered box: toolbar, editor, mention menu, link bubble, staged attachments, and the host's
  * footer all inside one frame so the control reads as one thing. The DROP TARGET is NOT applied
  * here — the host spreads `attachments.dropTargetProps` on whichever ancestor should accept drops.
+ *
+ * A null `attachments` is an editor that cannot stage files at all — editing an existing body
+ * writes HTML only — so the strip is absent rather than present and quietly discarded.
  */
 export function ActiveCollabRichBodyFrame({
   body,
@@ -107,7 +115,7 @@ export function ActiveCollabRichBodyFrame({
   footer
 }: {
   body: ActiveCollabRichBody
-  attachments: ActiveCollabCommentAttachments
+  attachments: ActiveCollabCommentAttachments | null
   disabled: boolean
   dragging: boolean
   footer: React.ReactNode
@@ -115,6 +123,9 @@ export function ActiveCollabRichBodyFrame({
   const { editor, rootRef, menu, link, menuOpen } = body
   return (
     <div
+      // Named like the ui primitives: one stable hook for styling and for scoping a query to THIS
+      // editor, of which a task pane can have two open at once.
+      data-slot="activecollab-rich-body"
       ref={rootRef}
       className={cn(
         'relative rounded-md border border-input bg-transparent transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
@@ -151,14 +162,107 @@ export function ActiveCollabRichBodyFrame({
           onCopy={link.onCopy}
         />
       )}
-      <ActiveCollabCommentAttachmentStrip
-        files={attachments.files}
-        busy={attachments.busy}
-        error={attachments.error}
-        disabled={disabled}
-        onRemove={attachments.remove}
-      />
+      {attachments ? (
+        <ActiveCollabCommentAttachmentStrip
+          files={attachments.files}
+          busy={attachments.busy}
+          error={attachments.error}
+          disabled={disabled}
+          onRemove={attachments.remove}
+        />
+      ) : null}
       {footer}
     </div>
+  )
+}
+
+/**
+ * Editing a body that ALREADY EXISTS — a task description, a posted comment — with the same editor
+ * they were written in. Mounted only while editing, so reading a task pays for no ProseMirror
+ * instance; committed through Save rather than a send button, and closed only once the write lands.
+ *
+ * No attachments: the edit routes carry HTML alone, so a staged file would upload and attach to
+ * nothing.
+ */
+export function ActiveCollabRichBodyEditor({
+  projectId,
+  bodyHtml,
+  disabled,
+  busy,
+  ariaLabel,
+  placeholder,
+  onSave,
+  onClose
+}: {
+  projectId: number | null
+  /** Seeds the editor. Only a CHANGE re-seeds, so typing is never overwritten by a rerender. */
+  bodyHtml: string
+  disabled: boolean
+  busy: boolean
+  ariaLabel: string
+  placeholder: string
+  /** Resolves TRUE only when the edit LANDED; the editor closes on that and nothing else. */
+  onSave: (bodyHtml: string) => Promise<boolean>
+  onClose: () => void
+}): React.JSX.Element {
+  const body = useActiveCollabRichBody({ projectId, disabled, placeholder, ariaLabel })
+  const { editor } = body
+  const seededRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (editor === null || seededRef.current === bodyHtml) {
+      return
+    }
+    seededRef.current = bodyHtml
+    editor.commands.setContent(bodyHtml, { contentType: 'html' })
+    editor.commands.focus('end')
+  }, [bodyHtml, editor])
+
+  const hasText =
+    useEditorState({
+      editor,
+      selector: ({ editor: current }) =>
+        current === null ? false : hasBoundedCommentBodyText(current.getText())
+    }) ?? false
+
+  const save = useCallback(() => {
+    if (editor === null || disabled) {
+      return
+    }
+    const next = activeCollabCommentBodyHtml(editor.state.doc)
+    if (next === '') {
+      return
+    }
+    void (async () => {
+      if (await onSave(next)) {
+        onClose()
+      }
+    })()
+  }, [disabled, editor, onClose, onSave])
+
+  return (
+    <ActiveCollabRichBodyFrame
+      body={body}
+      attachments={null}
+      disabled={disabled}
+      dragging={false}
+      footer={
+        <div className="flex items-center justify-end gap-2 border-t border-border px-1.5 py-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+          >
+            {translate('auto.components.activecollab.task_workspace.cancel_edit', 'Cancel')}
+          </Button>
+          <Button size="sm" onClick={save} disabled={disabled || !hasText} className="gap-2">
+            {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
+            {translate('auto.components.activecollab.task_workspace.save_edit', 'Save')}
+          </Button>
+        </div>
+      }
+    />
   )
 }

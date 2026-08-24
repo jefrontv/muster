@@ -6,7 +6,7 @@
 // exactly the same rules rather than two drifting copies.
 
 import { z } from 'zod'
-import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
+import type { ActiveCollabSubtask, ActiveCollabTask } from '../../../../shared/activecollab-types'
 import { acFoldLocalTaskWrite } from '../../../activecollab/task-snapshot-store'
 import { defineMethod, type RpcMethod } from '../core'
 import {
@@ -26,7 +26,12 @@ import {
  */
 function foldRemoteWriteLocally(
   result: unknown,
-  args: { taskId: number; task?: ActiveCollabTask | null; postedComments?: number; dueOn?: number | null }
+  args: {
+    taskId: number
+    task?: ActiveCollabTask | null
+    postedComments?: number
+    dueOn?: number | null
+  }
 ): void {
   const tagged = result as { ok?: boolean }
   if (tagged?.ok !== true) {
@@ -55,6 +60,13 @@ const ProjectTasks = z.object({
   projectId: requiredNumber('Project id is required')
 })
 
+// Shape only: bounds, clamping and the credential lookup happen in the shared acListUpdates op.
+const ListUpdates = z
+  .object({
+    page: OptionalFiniteNumber
+  })
+  .optional()
+
 const TaskRef = z.object({
   projectId: requiredNumber('Project id is required'),
   taskId: requiredNumber('Task id is required')
@@ -81,7 +93,8 @@ const TaskFields = z.object({
   dueOn: z.union([z.number(), z.null()]).optional(),
   // Full replacement set — the API overwrites a task's labels rather than merging.
   labelNames: z.array(z.string()).optional(),
-  isHiddenFromClients: z.boolean().optional()
+  isHiddenFromClients: z.boolean().optional(),
+  isImportant: z.boolean().optional()
 })
 
 const TaskCreate = z.object({
@@ -108,6 +121,45 @@ const Comment = z.object({
   attachmentCodes: z.array(z.string()).optional()
 })
 
+const SubtaskId = z.object({
+  subtaskId: requiredNumber('Subtask id is required')
+})
+
+const SubtaskFields = z.object({
+  name: OptionalString,
+  assigneeId: z.union([z.number(), z.null()]).optional(),
+  dueOn: z.union([z.number(), z.null()]).optional()
+})
+
+const SubtaskCreate = z.object({
+  projectId: requiredNumber('Project id is required'),
+  taskId: requiredNumber('Task id is required'),
+  name: requiredString('Subtask name is required'),
+  assigneeId: z.union([z.number(), z.null()]).optional(),
+  dueOn: z.union([z.number(), z.null()]).optional()
+})
+
+const SubtaskUpdate = z.object({
+  projectId: requiredNumber('Project id is required'),
+  taskId: requiredNumber('Task id is required'),
+  subtaskId: requiredNumber('Subtask id is required'),
+  update: SubtaskFields
+})
+
+const CommentUpdate = z.object({
+  commentId: requiredNumber('Comment id is required'),
+  bodyHtml: requiredString('Comment body is required')
+})
+
+const CommentId = z.object({
+  commentId: requiredNumber('Comment id is required')
+})
+
+const Subscription = z.object({
+  taskId: requiredNumber('Task id is required'),
+  userId: requiredNumber('User id is required'),
+  subscribed: z.boolean()
+})
 export const ACTIVECOLLAB_METHODS: RpcMethod[] = [
   defineMethod({
     name: 'activecollab.status',
@@ -128,6 +180,11 @@ export const ACTIVECOLLAB_METHODS: RpcMethod[] = [
     name: 'activecollab.listAssignedTasks',
     params: AssignedTasks,
     handler: async (params, { runtime }) => runtime.activeCollabListAssignedTasks(params)
+  }),
+  defineMethod({
+    name: 'activecollab.listUpdates',
+    params: ListUpdates,
+    handler: async (params, { runtime }) => runtime.activeCollabListUpdates(params)
   }),
   defineMethod({
     name: 'activecollab.listProjects',
@@ -207,6 +264,66 @@ export const ACTIVECOLLAB_METHODS: RpcMethod[] = [
       foldRemoteWriteLocally(result, { taskId: params.taskId, postedComments: 1 })
       return result
     }
+  }),
+  defineMethod({
+    name: 'activecollab.createSubtask',
+    params: SubtaskCreate,
+    handler: async (params, { runtime }) => {
+      const result = await runtime.activeCollabCreateSubtask(params)
+      // Echoes a subtask, never the task row; mark the task's `updated_on` unknown to suppress
+      // the next poll's "updated" event.
+      foldRemoteWriteLocally(result, { taskId: params.taskId, task: null })
+      return result
+    }
+  }),
+  defineMethod({
+    name: 'activecollab.updateSubtask',
+    params: SubtaskUpdate,
+    handler: async (params, { runtime }) => {
+      const result = await runtime.activeCollabUpdateSubtask(params)
+      foldRemoteWriteLocally(result, { taskId: params.taskId, task: null })
+      return result
+    }
+  }),
+  defineMethod({
+    name: 'activecollab.completeSubtask',
+    params: SubtaskId,
+    handler: async (params, { runtime }) => {
+      const result = await runtime.activeCollabCompleteSubtask(params)
+      // Project-scopeless: the task id arrives on the echoed subtask, not the call's own args.
+      const echoed = (result as { value?: ActiveCollabSubtask | null }).value ?? undefined
+      if (echoed) {
+        foldRemoteWriteLocally(result, { taskId: echoed.taskId, task: null })
+      }
+      return result
+    }
+  }),
+  defineMethod({
+    name: 'activecollab.reopenSubtask',
+    params: SubtaskId,
+    handler: async (params, { runtime }) => {
+      const result = await runtime.activeCollabReopenSubtask(params)
+      const echoed = (result as { value?: ActiveCollabSubtask | null }).value ?? undefined
+      if (echoed) {
+        foldRemoteWriteLocally(result, { taskId: echoed.taskId, task: null })
+      }
+      return result
+    }
+  }),
+  defineMethod({
+    name: 'activecollab.updateComment',
+    params: CommentUpdate,
+    handler: async (params, { runtime }) => runtime.activeCollabUpdateComment(params)
+  }),
+  defineMethod({
+    name: 'activecollab.deleteComment',
+    params: CommentId,
+    handler: async (params, { runtime }) => runtime.activeCollabDeleteComment(params)
+  }),
+  defineMethod({
+    name: 'activecollab.setTaskSubscription',
+    params: Subscription,
+    handler: async (params, { runtime }) => runtime.activeCollabSetTaskSubscription(params)
   }),
   defineMethod({
     name: 'activecollab.listLabels',

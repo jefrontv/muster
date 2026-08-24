@@ -5,6 +5,7 @@ import type { CacheEntry } from './github'
 import type {
   ActiveCollabLabel,
   ActiveCollabProject,
+  ActiveCollabUpdates,
   ActiveCollabTaskDetail,
   ActiveCollabUser
 } from '../../../../shared/activecollab-types'
@@ -18,7 +19,8 @@ import {
   activeCollabListLabels,
   activeCollabListProjectMembers,
   activeCollabListProjects,
-  activeCollabListUsers
+  activeCollabListUsers,
+  activeCollabListUpdates
 } from '@/runtime/runtime-activecollab-client'
 import {
   canWriteActiveCollabReadResult,
@@ -65,6 +67,16 @@ export type ActiveCollabReadActions = {
     projectId: number,
     options?: ActiveCollabReadOptions
   ) => Promise<ActiveCollabResult<ActiveCollabUser[]>>
+  /**
+   * Recently-updated tasks — ActiveCollab's own "My Updates" bell. Time-sensitive, so never
+   * cached: returned straight to the caller.
+   */
+  listActiveCollabUpdates: (
+    args?: { page?: number },
+    options?: ActiveCollabReadOptions
+  ) => Promise<ActiveCollabResult<ActiveCollabUpdates>>
+  /** Drops the latched "updates are unavailable here" verdict so the panel can retry once. */
+  clearActiveCollabUpdatesUnsupported: () => void
 }
 
 type InflightMap<T> = Map<string, ActiveCollabInflightRead<ActiveCollabResult<T>>>
@@ -247,6 +259,20 @@ export function createActiveCollabReadActions(
         writeCache: (cache) => ({ activeCollabProjectMemberCache: cache }),
         fetch: () => activeCollabListProjectMembers({ projectId }, scope.settings)
       })
-    }
+    },
+    listActiveCollabUpdates: async (args, options) => {
+      const scope = getActiveCollabReadScope(get().settings, options?.sourceContext)
+      const result = await activeCollabListUpdates(args, scope.settings)
+      // A missing updates endpoint surfaces as an instance-side `api` refusal (HTTP 500), not the
+      // transient `network`/`auth` kinds: only latch that one, mirroring the search latch.
+      if (result.ok) {
+        set({ activeCollabUpdatesUnsupported: false })
+      } else if (result.kind === 'api') {
+        set({ activeCollabUpdatesUnsupported: true })
+      }
+      return result
+    },
+
+    clearActiveCollabUpdatesUnsupported: () => set({ activeCollabUpdatesUnsupported: false })
   }
 }

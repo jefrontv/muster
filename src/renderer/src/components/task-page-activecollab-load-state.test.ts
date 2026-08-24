@@ -32,7 +32,12 @@ function task(id: number): ActiveCollabTask {
     commentCount: 0,
     urlPath: `/projects/7/tasks/${id}`,
     taskListId: null,
-    isHiddenFromClients: false
+    isHiddenFromClients: false,
+    isImportant: false,
+    estimate: null,
+    jobTypeId: null,
+    openSubtaskCount: null,
+    totalSubtaskCount: null
   }
 }
 
