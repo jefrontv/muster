@@ -6,6 +6,8 @@ import {
   checkMysqlBinaryHealth,
   FALLBACK_MYSQL_DIRECTORIES,
   findMysqlBinary,
+  homebrewMysqlDirectories,
+  localWpMysqlDirectories,
   mysqlSearchDirectories,
   redactPassword,
   renderMysqlOptionFile,
@@ -77,18 +79,104 @@ describe('findMysqlBinary', () => {
 })
 
 describe('mysqlSearchDirectories', () => {
+  // Discovery reads the real filesystem, so it is stubbed out here: these assertions are about
+  // ordering, and must not pass or fail on whether this machine happens to have Homebrew.
+  const none = (): string[] => []
+
   it('searches PATH before the known macOS install locations', () => {
-    const directories = mysqlSearchDirectories(['/first', '/second'].join(delimiter))
+    const directories = mysqlSearchDirectories(['/first', '/second'].join(delimiter), none)
     expect(directories).toEqual(['/first', '/second', ...FALLBACK_MYSQL_DIRECTORIES])
   })
 
   it('drops empty PATH entries', () => {
-    const directories = mysqlSearchDirectories(`${delimiter}/only${delimiter}`)
+    const directories = mysqlSearchDirectories(`${delimiter}/only${delimiter}`, none)
     expect(directories).toEqual(['/only', ...FALLBACK_MYSQL_DIRECTORIES])
   })
 
   it('still offers the fallbacks when PATH is unset', () => {
-    expect(mysqlSearchDirectories('')).toEqual(FALLBACK_MYSQL_DIRECTORIES)
+    expect(mysqlSearchDirectories('', none)).toEqual(FALLBACK_MYSQL_DIRECTORIES)
+  })
+
+  it('appends discovered installs last so a deliberate PATH entry still wins', () => {
+    const directories = mysqlSearchDirectories('/mine', () => ['/discovered/bin'])
+    expect(directories).toEqual(['/mine', ...FALLBACK_MYSQL_DIRECTORIES, '/discovered/bin'])
+  })
+})
+
+describe('homebrewMysqlDirectories', () => {
+  it('finds a keg-only client that brew never symlinks onto PATH', () => {
+    // The reported failure: mysql-client@8.0 installed and exported in ~/.zshrc, yet the import
+    // still said the binary was missing because nothing looked inside the keg.
+    const directories = homebrewMysqlDirectories((dir) =>
+      dir === '/opt/homebrew/opt' ? ['mysql-client@8.0', 'node', 'php'] : []
+    )
+    expect(directories).toEqual(['/opt/homebrew/opt/mysql-client@8.0/bin'])
+  })
+
+  it("prefers brew's unversioned symlinks, then the highest version", () => {
+    const directories = homebrewMysqlDirectories((dir) =>
+      dir === '/opt/homebrew/opt'
+        ? ['mysql@8.4', 'mysql-client@8.0', 'mysql', 'mysql@8.10', 'mysql-client']
+        : []
+    )
+    expect(directories).toEqual([
+      '/opt/homebrew/opt/mysql/bin',
+      '/opt/homebrew/opt/mysql-client/bin',
+      // Numeric compare: 8.10 is a later release than 8.4, not an earlier one.
+      '/opt/homebrew/opt/mysql@8.10/bin',
+      '/opt/homebrew/opt/mysql@8.4/bin',
+      '/opt/homebrew/opt/mysql-client@8.0/bin'
+    ])
+  })
+
+  it('covers the Intel prefix as well as Apple Silicon', () => {
+    const directories = homebrewMysqlDirectories((dir) =>
+      dir === '/usr/local/opt' ? ['mysql'] : []
+    )
+    expect(directories).toEqual(['/usr/local/opt/mysql/bin'])
+  })
+
+  it('ignores formulas that merely start with a similar word', () => {
+    const directories = homebrewMysqlDirectories(() => ['mysqltuner', 'mysql'])
+    // `mysqltuner` is not a client; only exact, @-versioned, or -suffixed names qualify.
+    expect(directories.every((entry) => !entry.includes('mysqltuner'))).toBe(true)
+  })
+
+  it('answers nothing when Homebrew is absent', () => {
+    expect(homebrewMysqlDirectories(() => [])).toEqual([])
+  })
+})
+
+describe('localWpMysqlDirectories', () => {
+  const services = join('/home/u', 'Library', 'Application Support', 'Local', 'lightning-services')
+
+  it('finds the client LocalWP bundles, newest version first', () => {
+    const directories = localWpMysqlDirectories('/home/u', (dir) => {
+      if (dir === services) {
+        return ['mysql-8.0.35+4', 'mysql-8.4.0', 'php-8.2.29+2']
+      }
+      return dir.endsWith('bin') ? ['darwin-arm64'] : []
+    })
+    expect(directories).toEqual([
+      join(services, 'mysql-8.4.0', 'bin', 'darwin-arm64', 'bin'),
+      join(services, 'mysql-8.0.35+4', 'bin', 'darwin-arm64', 'bin')
+    ])
+  })
+
+  it('reads the platform segment rather than deriving it', () => {
+    // LocalWP has shipped plain `darwin` as well as `darwin-arm64`; guessing strands one of them.
+    const directories = localWpMysqlDirectories('/home/u', (dir) =>
+      dir === services ? ['mysql-8.4.0'] : dir.endsWith('bin') ? ['darwin'] : []
+    )
+    expect(directories).toEqual([join(services, 'mysql-8.4.0', 'bin', 'darwin', 'bin')])
+  })
+
+  it('answers nothing without a home directory to look under', () => {
+    expect(localWpMysqlDirectories('', () => ['mysql-8.4.0'])).toEqual([])
+  })
+
+  it('answers nothing when LocalWP is not installed', () => {
+    expect(localWpMysqlDirectories('/home/u', () => [])).toEqual([])
   })
 })
 
@@ -108,7 +196,7 @@ describe('resolveMysqlBinary', () => {
     expect(thrown).toBeInstanceOf(SiteRunStepError)
     expect((thrown as SiteRunStepError).step).toBe('mysql-binary')
     expect((thrown as Error).message).toBe(
-      'Could not find the mysql binary. Install MySQL (`brew install mysql`) or add its bin directory to PATH.'
+      'Could not find the mysql binary. Install the MySQL client (`brew install mysql-client`) or add its bin directory to PATH.'
     )
   })
 
