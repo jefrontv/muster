@@ -105,6 +105,31 @@ export function TerminalCursorAppearanceSection({
 
         <SearchableSetting
           title={translate(
+            'auto.components.settings.TerminalAppearanceSection.cursorThemeColor',
+            'Cursor Color From Theme'
+          )}
+          description={translate(
+            'auto.components.settings.TerminalAppearanceSection.cursorThemeColorDescription',
+            'Let the selected terminal theme set the cursor color. Off uses the theme text color instead, so switching themes leaves the cursor alone.'
+          )}
+          keywords={['terminal', 'cursor', 'color', 'colour', 'theme', 'override']}
+        >
+          <SettingsSwitchRow
+            label={translate(
+              'auto.components.settings.TerminalAppearanceSection.cursorThemeColor',
+              'Cursor Color From Theme'
+            )}
+            checked={settings.terminalCursorUseThemeColor !== false}
+            onChange={() =>
+              updateSettings({
+                terminalCursorUseThemeColor: settings.terminalCursorUseThemeColor === false
+              })
+            }
+          />
+        </SearchableSetting>
+
+        <SearchableSetting
+          title={translate(
             'auto.components.settings.TerminalAppearanceSection.b9f1804422',
             'Cursor Opacity'
           )}

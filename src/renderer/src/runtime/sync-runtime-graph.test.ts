@@ -1505,6 +1505,39 @@ describe('buildMobileSessionTabSnapshots', () => {
     ])
   })
 
+  it('opts the mobile cursor out of the theme colour alongside the desktop pane', () => {
+    const leafId = '11111111-1111-4111-8111-111111111111'
+    const state = makeState({
+      settings: {
+        ...getDefaultSettings('/tmp'),
+        theme: 'light',
+        terminalUseSeparateLightTheme: true,
+        terminalColorOverrides: { background: '#f8f8f8', foreground: '#101010', cursor: '#202020' },
+        terminalCursorUseThemeColor: false
+      },
+      tabBarOrderByWorktree: { 'wt-1': ['term-1'] },
+      tabsByWorktree: {
+        'wt-1': [{ id: 'term-1', title: 'Terminal', customTitle: null, ptyId: 'pty-1' }]
+      } as unknown as AppState['tabsByWorktree'],
+      terminalLayoutsByTabId: {
+        'term-1': {
+          root: { type: 'leaf', leafId },
+          activeLeafId: leafId,
+          expandedLeafId: null,
+          ptyIdsByLeafId: { [leafId]: 'pty-1' }
+        }
+      } as AppState['terminalLayoutsByTabId']
+    })
+
+    const snapshot = buildMobileSessionTabSnapshots(state)[0]?.tabs[0]
+    // The explicit cursor override still wins, exactly as it does in composeActiveTerminalTheme —
+    // this path spreads overrides last too, so the two clients cannot disagree.
+    expect(snapshot).toMatchObject({
+      type: 'terminal',
+      terminalTheme: { theme: { cursor: '#202020', cursorAccent: '#f8f8f8' } }
+    })
+  })
+
   it('uses the explicit system appearance for mobile terminal theme snapshots', () => {
     const leafId = '11111111-1111-4111-8111-111111111111'
     const state = makeState({

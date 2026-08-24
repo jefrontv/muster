@@ -104,7 +104,8 @@ export function TerminalSettingsPreview({
       appearance,
       settings.terminalColorOverrides,
       settings.terminalBackgroundOpacity,
-      settings.terminalCursorOpacity
+      settings.terminalCursorOpacity,
+      settings.terminalCursorUseThemeColor
     ]
   )
 

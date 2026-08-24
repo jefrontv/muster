@@ -2772,6 +2772,18 @@ export type GlobalSettings = {
   terminalMouseHideWhileTyping?: boolean
   terminalWordSeparator?: string
   terminalCursorOpacity?: number
+  /**
+   * Whether the chosen terminal theme gets to set the cursor colour. Absent means yes, so an
+   * existing install keeps the colours it already renders.
+   *
+   * Off falls back to reverse video against the colours actually on screen — cursor takes the
+   * terminal's text colour, cursor text its background, both read AFTER `terminalColorOverrides`
+   * apply. An explicitly overridden cursor still wins.
+   *
+   * Not simply dropping the keys: xterm's ThemeService resolves an absent `theme.cursor` to a
+   * hardcoded `#ffffff` and `cursorAccent` to `#000000`, an invisible cursor on any light theme.
+   */
+  terminalCursorUseThemeColor?: boolean
   terminalQuickCommands?: TerminalQuickCommand[]
   windowBackgroundBlur?: boolean
   /** Windows-only: close (X) hides to tray instead of quitting; the tray icon is always present regardless. */

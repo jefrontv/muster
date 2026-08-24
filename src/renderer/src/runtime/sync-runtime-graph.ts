@@ -9,7 +9,11 @@ import { getEagerPtyBufferHandle } from '@/components/terminal-pane/pty-dispatch
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
 import { resolveLeafIdForManager } from '@/lib/pane-manager/pane-key-resolution'
-import { getSystemPrefersDark, resolveEffectiveTerminalAppearance } from '@/lib/terminal-theme'
+import {
+  getSystemPrefersDark,
+  resolveEffectiveTerminalAppearance,
+  resolveTerminalCursorThemeColors
+} from '@/lib/terminal-theme'
 import { sanitizeTerminalLayoutPaneTitles } from '@/lib/terminal-pane-title-sanitization'
 import type { AppState } from '@/store/types'
 import type {
@@ -1239,8 +1243,13 @@ function resolveMobileTerminalTheme(
     return undefined
   }
   const appearance = resolveEffectiveTerminalAppearance(settings, systemPrefersDark)
-  const resolvedTheme = appearance.theme
+  const overridden = appearance.theme
     ? { ...appearance.theme, ...settings.terminalColorOverrides }
+    : undefined
+  // Same order as composeActiveTerminalTheme: overrides first, then the cursor opt-out measured
+  // against them, so the mobile client renders the cursor the desktop pane does.
+  const resolvedTheme = overridden
+    ? { ...overridden, ...resolveTerminalCursorThemeColors(overridden, settings) }
     : undefined
   if (!resolvedTheme) {
     return undefined

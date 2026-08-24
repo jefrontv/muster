@@ -66,6 +66,7 @@ const OPTIONAL_EXPORTABLE_KEYS: readonly (keyof GlobalSettings)[] = [
   'terminalBackgroundOpacity',
   'terminalColorOverrides',
   'terminalCursorOpacity',
+  'terminalCursorUseThemeColor',
   'terminalPaddingX',
   'terminalPaddingY',
   'terminalWordSeparator',

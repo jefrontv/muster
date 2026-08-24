@@ -13,6 +13,7 @@ export const SETTING_LABELS: Partial<Record<keyof GlobalSettings, string>> = {
   terminalCursorStyle: 'Cursor Style',
   terminalCursorBlink: 'Cursor Blink',
   terminalCursorOpacity: 'Cursor Opacity',
+  terminalCursorUseThemeColor: 'Cursor Color From Theme',
   terminalMouseHideWhileTyping: 'Mouse Hide While Typing',
   terminalWordSeparator: 'Word Separator',
   primarySelectionMiddleClickPaste: 'Middle-click Paste from Selection',

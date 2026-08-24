@@ -6,7 +6,8 @@ import { resolveTerminalLigaturesEnabled } from '../../../../shared/terminal-lig
 import {
   getBuiltinTheme,
   resolvePaneStyleOptions,
-  resolveEffectiveTerminalAppearance
+  resolveEffectiveTerminalAppearance,
+  resolveTerminalCursorThemeColors
 } from '@/lib/terminal-theme'
 import { buildFontFamily } from './layout-serialization'
 import { guardParserHandler } from './terminal-parser-handler-guard'
@@ -100,7 +101,10 @@ export function composeActiveTerminalTheme(
   baseTheme: ITheme | null,
   settings: Pick<
     GlobalSettings,
-    'terminalColorOverrides' | 'terminalBackgroundOpacity' | 'terminalCursorOpacity'
+    | 'terminalColorOverrides'
+    | 'terminalBackgroundOpacity'
+    | 'terminalCursorOpacity'
+    | 'terminalCursorUseThemeColor'
   >
 ): ITheme | null {
   if (!baseTheme) {
@@ -119,6 +123,9 @@ export function composeActiveTerminalTheme(
   if (settings.terminalColorOverrides) {
     theme = { ...theme, ...settings.terminalColorOverrides }
   }
+  // After the overrides, so reverse video is measured against the colors actually on screen. The
+  // helper leaves an explicitly overridden cursor alone: override > opt-out > theme.
+  theme = { ...theme, ...resolveTerminalCursorThemeColors(theme, settings) }
   // Why: convert the hex background to rgba so xterm honors the opacity when allowTransparency is set.
   if (settings.terminalBackgroundOpacity !== undefined && theme.background) {
     theme = {

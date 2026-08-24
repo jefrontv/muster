@@ -153,6 +153,42 @@ export function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
+/**
+ * The cursor colours to lay over an already-resolved theme, honouring `terminalCursorUseThemeColor`.
+ *
+ * Empty while the theme is allowed to set them, so the caller spreads nothing and the theme's own
+ * values stand. Opted out, it returns reverse video — cursor takes the terminal's text colour,
+ * cursor text its background.
+ *
+ * Pass the theme AFTER `terminalColorOverrides` have been merged: reverse video has to be measured
+ * against the colours actually on screen, so a user who overrode the foreground gets a cursor that
+ * matches their text rather than the theme's. An explicitly overridden `cursor`/`cursorAccent` is
+ * left alone, which keeps the precedence override > opt-out > theme.
+ *
+ * Why not just delete the keys: xterm's ThemeService resolves an absent `theme.cursor` to a
+ * hardcoded `#ffffff` and `cursorAccent` to `#000000`, so dropping them yields an invisible cursor
+ * on any light theme. The fallbacks here are those same defaults, so a theme missing foreground or
+ * background still lands where xterm would have painted.
+ *
+ * Shared because the desktop panes and the mobile runtime graph compose their themes separately;
+ * one rule in two places would drift, and a cursor that differs between the two is a bug report.
+ */
+export function resolveTerminalCursorThemeColors(
+  resolvedTheme: Pick<ITheme, 'foreground' | 'background'> | null | undefined,
+  settings: Pick<GlobalSettings, 'terminalCursorUseThemeColor' | 'terminalColorOverrides'>
+): Pick<ITheme, 'cursor' | 'cursorAccent'> {
+  if (settings.terminalCursorUseThemeColor !== false) {
+    return {}
+  }
+  const overrides = settings.terminalColorOverrides
+  return {
+    ...(overrides?.cursor === undefined ? { cursor: resolvedTheme?.foreground ?? '#ffffff' } : {}),
+    ...(overrides?.cursorAccent === undefined
+      ? { cursorAccent: resolvedTheme?.background ?? '#000000' }
+      : {})
+  }
+}
+
 export function resolvePaneStyleOptions(
   settings: Pick<
     GlobalSettings,

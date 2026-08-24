@@ -82,3 +82,82 @@ describe('composeActiveTerminalTheme', () => {
     expect(composeActiveTerminalTheme(null, settingsWith({}))).toBeNull()
   })
 })
+
+describe('composeActiveTerminalTheme cursor color from theme', () => {
+  function settingsWith(partial: Partial<GlobalSettings>): GlobalSettings {
+    return { ...partial } as GlobalSettings
+  }
+
+  const THEMED = { background: '#101010', foreground: '#fafafa', cursor: '#528bff' }
+
+  it('keeps the theme cursor while the setting is absent, so an upgrade changes nothing', () => {
+    const result = composeActiveTerminalTheme(THEMED, settingsWith({}))
+    expect(result!.cursor).toBe('#528bff')
+    expect(result!.cursorAccent).toBeUndefined()
+  })
+
+  it('keeps the theme cursor while the setting is explicitly on', () => {
+    const result = composeActiveTerminalTheme(
+      THEMED,
+      settingsWith({ terminalCursorUseThemeColor: true })
+    )
+    expect(result!.cursor).toBe('#528bff')
+  })
+
+  it('falls back to reverse video when opted out', () => {
+    const result = composeActiveTerminalTheme(
+      THEMED,
+      settingsWith({ terminalCursorUseThemeColor: false })
+    )
+    // The theme's accent-blue cursor is gone; text colour on background is what a terminal does.
+    expect(result!.cursor).toBe('#fafafa')
+    expect(result!.cursorAccent).toBe('#101010')
+  })
+
+  it('never emits an undefined cursor, which xterm would paint white on a light theme', () => {
+    // A base theme carrying neither foreground nor background is the trap: dropping the keys would
+    // hand xterm its hardcoded #ffffff.
+    const result = composeActiveTerminalTheme(
+      { cursor: '#528bff' },
+      settingsWith({ terminalCursorUseThemeColor: false })
+    )
+    expect(result!.cursor).toBe('#ffffff')
+    expect(result!.cursorAccent).toBe('#000000')
+  })
+
+  it('lets an explicit cursor override win over the opt-out', () => {
+    const result = composeActiveTerminalTheme(
+      THEMED,
+      settingsWith({
+        terminalCursorUseThemeColor: false,
+        terminalColorOverrides: { cursor: '#ff00ff' }
+      })
+    )
+    // Precedence is override > opt-out > theme: turning the theme's cursor off must not silently
+    // discard a colour the user typed in the advanced overrides.
+    expect(result!.cursor).toBe('#ff00ff')
+    expect(result!.cursorAccent).toBe('#101010')
+  })
+
+  it('measures reverse video against an overridden foreground, not the theme underneath', () => {
+    const result = composeActiveTerminalTheme(
+      THEMED,
+      settingsWith({
+        terminalCursorUseThemeColor: false,
+        terminalColorOverrides: { foreground: '#00ff00', background: '#000033' }
+      })
+    )
+    // The point of the opt-out is that the cursor matches the text on screen. Reading the base
+    // theme here would give '#fafafa' against green text.
+    expect(result!.cursor).toBe('#00ff00')
+    expect(result!.cursorAccent).toBe('#000033')
+  })
+
+  it('still applies cursor opacity to the fallback colour', () => {
+    const result = composeActiveTerminalTheme(
+      THEMED,
+      settingsWith({ terminalCursorUseThemeColor: false, terminalCursorOpacity: 0.3 })
+    )
+    expect(result!.cursor).toBe('rgba(250, 250, 250, 0.3)')
+  })
+})

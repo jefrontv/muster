@@ -286,7 +286,12 @@ function humanFields(diff: Partial<GlobalSettings>): string[] {
     },
     {
       label: translate('auto.components.onboarding.ThemeStep.ab2a583a97', 'Cursor'),
-      keys: ['terminalCursorStyle', 'terminalCursorBlink', 'terminalCursorOpacity']
+      keys: [
+        'terminalCursorStyle',
+        'terminalCursorBlink',
+        'terminalCursorOpacity',
+        'terminalCursorUseThemeColor'
+      ]
     },
     {
       label: translate('auto.components.onboarding.ThemeStep.c021e9dddd', 'Theme palette'),

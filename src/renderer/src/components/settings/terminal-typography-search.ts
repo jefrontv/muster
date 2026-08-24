@@ -159,6 +159,23 @@ export const getTerminalCursorSearchEntries = createLocalizedCatalog(() => [
     ]
   },
   {
+    title: translate(
+      'auto.components.settings.terminal.search.cursorThemeColor',
+      'Cursor Color From Theme'
+    ),
+    description: translate(
+      'auto.components.settings.terminal.search.cursorThemeColorDescription',
+      'Let the selected terminal theme set the cursor color.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.terminal.search.f66a7cf715', 'terminal'),
+      ...translateSearchKeyword('auto.components.settings.terminal.search.6eaf7ee0e4', 'cursor'),
+      ...translateSearchKeyword('auto.components.settings.terminal.search.cursorColor', 'color'),
+      ...translateSearchKeyword('auto.components.settings.terminal.search.cursorColour', 'colour'),
+      ...translateSearchKeyword('auto.components.settings.terminal.search.cursorTheme', 'theme')
+    ]
+  },
+  {
     title: translate('auto.components.settings.terminal.search.7f1e356a54', 'Cursor Opacity'),
     description: translate(
       'auto.components.settings.terminal.search.d4f7d1ce5c',
