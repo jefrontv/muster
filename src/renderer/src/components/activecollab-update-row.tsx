@@ -39,7 +39,11 @@ export function ActiveCollabUpdateRow({
   unread,
   update
 }: {
-  onPick: (update: ActiveCollabObjectUpdate) => void
+  /**
+   * `viaPointer` distinguishes a mouse click from Enter/Space on a focused row: a keyboard user
+   * still wants focus handed back when the panel closes, a mouse user does not (see the bell).
+   */
+  onPick: (update: ActiveCollabObjectUpdate, viaPointer: boolean) => void
   /**
    * Whether the user has yet to OPEN this task in Muster, from the same per-task model the task
    * rows and the sidebar badge draw from — deliberately not the row's own `kinds`.
@@ -74,7 +78,9 @@ export function ActiveCollabUpdateRow({
       <button
         type="button"
         aria-label={context ? `${update.name} — ${context}` : update.name}
-        onClick={() => onPick(update)}
+        // `detail` counts clicks: a real press reports 1+, the click a button synthesises from
+        // Enter or Space reports 0. It is the only signal available on the event itself.
+        onClick={(event) => onPick(update, event.detail > 0)}
         data-unread={unread ? 'true' : undefined}
         className="block w-full px-3 py-2 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
       >

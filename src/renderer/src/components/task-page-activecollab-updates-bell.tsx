@@ -124,8 +124,21 @@ export function ActiveCollabUpdatesBell({
     })
   }, [listUpdates])
 
+  /**
+   * Whether the closing panel should hand focus back to the bell.
+   *
+   * It normally must: Escape and outside-click leave a keyboard user with nowhere to stand
+   * otherwise. But a MOUSE pick navigates to a task, and the restore then lands on a control the
+   * user has left behind — and Radix Tooltip opens on focus unless a pointerdown landed on the
+   * trigger itself, which it did not, because the click that closed the panel landed on a row
+   * inside it. The result is the "My updates" tooltip hanging over the task you just opened until
+   * you happen to move the mouse.
+   */
+  const restoreFocusOnClose = useRef(true)
+
   const pick = useCallback(
-    (update: ActiveCollabObjectUpdate) => {
+    (update: ActiveCollabObjectUpdate, viaPointer: boolean) => {
+      restoreFocusOnClose.current = !viaPointer
       onSelect({ projectId: update.projectId, taskId: update.taskId })
       setOpen(false)
     },
@@ -177,7 +190,19 @@ export function ActiveCollabUpdatesBell({
       </Tooltip>
       {/* Radix names the content `role="dialog"`, so it needs its own name: the visible title is a
           span, not a heading, and an unnamed dialog announces as nothing. */}
-      <PopoverContent align="end" sideOffset={4} className="w-80 p-0" aria-label={title}>
+      <PopoverContent
+        align="end"
+        sideOffset={4}
+        className="w-80 p-0"
+        aria-label={title}
+        onCloseAutoFocus={(event) => {
+          if (!restoreFocusOnClose.current) {
+            event.preventDefault()
+          }
+          // Every other close — Escape, outside click, a keyboard pick — restores as normal.
+          restoreFocusOnClose.current = true
+        }}
+      >
         <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-2">
           <span className="text-[13px] font-semibold text-foreground">{title}</span>
           {/* Null is silent: reporting "no new updates" for a count the instance refused to compute

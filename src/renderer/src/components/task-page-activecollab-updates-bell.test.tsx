@@ -348,6 +348,45 @@ describe('ActiveCollabUpdatesBell row detail', () => {
   })
 })
 
+describe('ActiveCollabUpdatesBell focus after picking a row', () => {
+  // The bell is both the tooltip trigger and the popover trigger. Radix Tooltip opens on focus
+  // unless a pointerdown landed on the trigger itself — and the click that closes this panel lands
+  // on a row INSIDE it. So restoring focus after a mouse pick left "My updates" hanging over the
+  // task the user had just opened.
+  it('does not hand focus back to the bell after a mouse pick', async () => {
+    holder.listUpdates.mockResolvedValue(page([updateFixture({ taskId: 9, name: 'Ship it' })]))
+    const { user } = await openBell()
+
+    const row = await waitFor(() => within(panel()).getByRole('button', { name: /Ship it/ }))
+    const bell = screen.getByRole('button', { name: BELL_NAME })
+    await user.click(row)
+
+    expect(document.activeElement).not.toBe(bell)
+  })
+
+  it('still hands focus back when the row is opened from the keyboard', async () => {
+    // A keyboard user has nowhere to stand otherwise, and the tooltip that follows is describing
+    // the control they are actually focused on — correct, not the bug above.
+    holder.listUpdates.mockResolvedValue(page([updateFixture({ taskId: 9, name: 'Ship it' })]))
+    const { user } = await openBell()
+
+    const row = await waitFor(() => within(panel()).getByRole('button', { name: /Ship it/ }))
+    row.focus()
+    await user.keyboard('{Enter}')
+
+    const bell = screen.getByRole('button', { name: BELL_NAME })
+    await waitFor(() => expect(document.activeElement).toBe(bell))
+  })
+
+  it('opens the task either way', async () => {
+    holder.listUpdates.mockResolvedValue(page([updateFixture({ taskId: 9, name: 'Ship it' })]))
+    const { onSelect, user } = await openBell()
+
+    await user.click(await waitFor(() => within(panel()).getByRole('button', { name: /Ship it/ })))
+    expect(onSelect).toHaveBeenCalledWith({ projectId: 5937, taskId: 9 })
+  })
+})
+
 describe('ActiveCollabUpdatesBell read and unread', () => {
   /** The per-task model the sidebar badge and the task rows already draw from. */
   function seedUnread(byTask: Record<string, number>): void {
