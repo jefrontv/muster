@@ -527,10 +527,12 @@ describe('createMainWindow', () => {
     windowHandlers.get('show')?.[0]?.()
     expect(webContents.invalidate).toHaveBeenCalledTimes(1)
 
-    // Why: the delayed second repaint must also stay setSize-free on Tahoe.
+    // Why: the 250ms second paint guarded a pre-26 black-surface failure; on Tahoe every repaint
+    // is a user-visible DPR bounce, so the reveal pays for exactly one.
     vi.advanceTimersByTime(300)
-    expect(webContents.invalidate).toHaveBeenCalledTimes(2)
+    expect(webContents.invalidate).toHaveBeenCalledTimes(1)
     expect(browserWindowInstance.setSize).not.toHaveBeenCalled()
+    expect(webContents.enableDeviceEmulation).toHaveBeenCalledTimes(1)
 
     // Why (STA-2383): invalidate repaints but never reflows, so Tahoe still has to recompute the
     // dvh root — via the emulated viewport, which leaves the deadlock-prone frame untouched.

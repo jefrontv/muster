@@ -108,10 +108,13 @@ function installMacosVisibilityRepaint(window: BrowserWindow): void {
   let delayedRepaintTimer: ReturnType<typeof setTimeout> | null = null
   const repaintAfterVisibilityTransition = (): void => {
     forceRepaint(window)
-    if (delayedRepaintTimer) {
-      clearTimeout(delayedRepaintTimer)
+    clearTimeout(delayedRepaintTimer ?? undefined)
+    // Why: the 250ms second paint exists for late black-surface compositor recovery, a pre-macOS-26
+    // failure mode. On 26+ a repaint is a DPR emulation bounce the user can SEE, so a doubled one
+    // reads as stutter on every reveal — and the black-surface door it guarded is closed there.
+    if (isMacosTahoeOrNewer()) {
+      return
     }
-    // Why: macOS may restore compositor layers after the show/restore event; a second paint catches late black-surface recovery.
     delayedRepaintTimer = setTimeout(() => {
       delayedRepaintTimer = null
       forceRepaint(window)

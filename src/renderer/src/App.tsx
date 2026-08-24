@@ -1428,15 +1428,27 @@ function App(): React.JSX.Element {
   }, [actions])
 
   // Why (STA-2383): macOS throttles the backgrounded window; on occlusion-uncover only `focus`
-  // fires (invalidate-only), so the app-shell's dvh height stays stale and the bottom status bar
-  // is clipped off-screen until a manual resize. Relay the genuine hidden→visible reveal so main
-  // runs the same full repaint (size jiggle) that show/restore/resume get, recomputing the layout.
+  // fires (invalidate-only), so the app-shell's dvh height can stay stale and the bottom status
+  // bar is clipped off-screen until a manual resize. Relay the genuine hidden→visible reveal so
+  // main runs the full repaint (DPR reflow / size jiggle) that show/restore/resume get.
+  //
+  // Gated on ACTUAL staleness: the repaint is user-visible (a DPR bounce on macOS 26, a 1px window
+  // jiggle before it), and most reveals — every ordinary Cmd+Tab — come back with the layout
+  // intact. Measuring #root against the window height costs one layout read; relaying only on a
+  // mismatch makes the healthy path free of the flash entirely.
   useEffect(() => {
     if (!isMac || isPairedWebClientWindow()) {
       return
     }
     const handler = (): void => {
       if (document.visibilityState !== 'visible') {
+        return
+      }
+      const root = document.getElementById('root')
+      if (
+        root !== null &&
+        Math.abs(root.getBoundingClientRect().height - window.innerHeight) <= 1
+      ) {
         return
       }
       window.api?.ui?.notifyWindowRevealed?.()
