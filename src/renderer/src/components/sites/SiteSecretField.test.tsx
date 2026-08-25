@@ -62,6 +62,17 @@ describe('SiteSecretField', () => {
     expect(input.type).toBe('password')
   })
 
+  it('shows a stored secret as a filled masked field, not an empty box', async () => {
+    // Why: an empty box beside a stored secret read as "nothing saved here"; the sentinel makes it
+    // read like every other saved password field. The dots are a stand-in — the renderer never
+    // holds the real value.
+    const stored = await render(true, vi.fn())
+    expect(stored.value).toBe('••••••••')
+
+    const unset = await render(false, vi.fn())
+    expect(unset.value).toBe('')
+  })
+
   it('saves an edited value on blur and empties the box', async () => {
     const onSetSecret = vi.fn()
     const input = await render(false, onSetSecret)
@@ -73,14 +84,27 @@ describe('SiteSecretField', () => {
     expect(input.value).toBe('')
   })
 
+  it('replaces the sentinel with what the user types, never sending the dots', async () => {
+    // Why: the select-all-on-focus can be defeated (arrow key, then type); a value typed around
+    // the sentinel must strip it — the dots were never the secret.
+    const onSetSecret = vi.fn()
+    const input = await render(true, onSetSecret)
+
+    await type(input, '••••••••hunter2')
+    await blur(input)
+
+    expect(onSetSecret).toHaveBeenCalledWith('ssh', 'hunter2')
+  })
+
   it('leaves a stored secret alone when the field was never edited', async () => {
-    // Why: the box always renders empty beside a stored secret, so blurring past it must not clear it.
+    // Why: blurring past the sentinel must not clear or overwrite the stored value.
     const onSetSecret = vi.fn()
     const input = await render(true, onSetSecret)
 
     await blur(input)
 
     expect(onSetSecret).not.toHaveBeenCalled()
+    expect(input.value).toBe('••••••••')
   })
 
   it('clears the secret when an edited field is left empty', async () => {
