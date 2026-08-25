@@ -16,6 +16,14 @@ type WindowWakePtyBinding = IDisposable & {
   reassertPtySizeAfterWindowWake?: () => void
 }
 
+/**
+ * Hidden this long, the display may genuinely have slept, so the reveal earns the atlas-clearing
+ * heavy recovery. Shorter is ordinary occlusion (Cmd+Tab under another window) where the warm
+ * atlas is valid — macOS display sleep and screensavers idle in at a minute or more, so 30s
+ * cannot false-negative a real sleep, while every quick app switch stays wipe-free.
+ */
+export const DISPLAY_SLEEP_LIKELY_HIDDEN_MS = 30_000
+
 export function useTerminalWindowWakeRecovery({
   isVisible,
   managerRef,
@@ -37,6 +45,10 @@ export function useTerminalWindowWakeRecovery({
       cancelAnimationFrame(wakeRecoveryFrameId)
       wakeRecoveryFrameId = null
     }
+    // Null while visible; the occlusion tracker owns hidden→visible ordering, so a reveal with
+    // no recorded hide (first mount, wedged tracker) is treated as brief and keeps the warm atlas.
+    let hiddenAt: number | null =
+      typeof document !== 'undefined' && document.visibilityState === 'hidden' ? Date.now() : null
     const reassertPanePtySizes = (): void => {
       for (const binding of panePtyBindingsRef?.current.values() ?? []) {
         // Why: one settled read avoids duplicate SSH RPCs while still detecting a dropped resize.
@@ -100,9 +112,23 @@ export function useTerminalWindowWakeRecovery({
     // atlas: it only retries WebGL attach, refits, and repaints pane-scoped.
     const onFocus = (): void => recoverVisibleWake(false, 'focus')
     const onVisibilityChange = (): void => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        recoverVisibleWake(true, 'visibilitychange')
+      if (typeof document === 'undefined') {
+        return
       }
+      if (document.visibilityState !== 'visible') {
+        hiddenAt = Date.now()
+        return
+      }
+      // Why the duration gate: occlusion-uncover fires this on EVERY Cmd+Tab back to a covered
+      // window, and the atlas wipe it used to force re-rasterizes every glyph — the terminal
+      // visibly jitters on each return. The wipe only heals display-sleep corruption, and a
+      // display cannot have slept during a seconds-long occlusion; system sleep is already
+      // covered by `system-resumed` below, which always clears. Long-hidden reveals keep the
+      // wipe for the screensaver/display-off case the resume broadcast cannot see.
+      const hiddenLongEnoughForDisplaySleep =
+        hiddenAt !== null && Date.now() - hiddenAt >= DISPLAY_SLEEP_LIKELY_HIDDEN_MS
+      hiddenAt = null
+      recoverVisibleWake(hiddenLongEnoughForDisplaySleep, 'visibilitychange')
     }
     // Why: Linux has no window-occlusion tracking, so visibilitychange never
     // fires around system suspend; the main process broadcasts OS resume.

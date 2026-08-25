@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderHook } from '@testing-library/react'
+import { cleanup, renderHook } from '@testing-library/react'
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
 
 const { recoverVisibleTerminalWindowWakeMock } = vi.hoisted(() => ({
@@ -11,7 +11,10 @@ vi.mock('./terminal-visibility-resume', () => ({
   recoverVisibleTerminalWindowWake: recoverVisibleTerminalWindowWakeMock
 }))
 
-import { useTerminalWindowWakeRecovery } from './use-terminal-window-wake-recovery'
+import {
+  DISPLAY_SLEEP_LIKELY_HIDDEN_MS,
+  useTerminalWindowWakeRecovery
+} from './use-terminal-window-wake-recovery'
 import {
   getTerminalFreezeBreadcrumbs,
   resetTerminalFreezeBreadcrumbsForTesting
@@ -39,6 +42,9 @@ describe('useTerminalWindowWakeRecovery', () => {
   })
 
   afterEach(() => {
+    // Why: un-unmounted hooks keep their document listeners; a later test's dispatch would fan
+    // out to every previous instance and inflate the recovery call counts.
+    cleanup()
     vi.unstubAllGlobals()
     delete (window as unknown as { api?: unknown }).api
   })
@@ -76,6 +82,70 @@ describe('useTerminalWindowWakeRecovery', () => {
       manager,
       isActive: true,
       clearGlyphAtlases: true
+    })
+  })
+
+  function setVisibility(state: DocumentVisibilityState): void {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+  }
+
+  it('keeps the warm atlas on a brief occlusion reveal', () => {
+    // Why: occlusion-uncover fires visibilitychange on every Cmd+Tab back to a covered window;
+    // wiping the atlas there re-rasterizes every glyph and the terminal visibly jitters.
+    vi.useFakeTimers()
+    try {
+      renderWakeRecoveryHook()
+
+      setVisibility('hidden')
+      vi.advanceTimersByTime(5_000)
+      setVisibility('visible')
+
+      expect(recoverVisibleTerminalWindowWakeMock).toHaveBeenCalledTimes(1)
+      expect(recoverVisibleTerminalWindowWakeMock).toHaveBeenCalledWith({
+        manager,
+        isActive: true,
+        clearGlyphAtlases: false
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('clears the atlas when the window was hidden long enough for display sleep', () => {
+    // Why: a screensaver/display-off wake fires neither focus nor the resume broadcast; the
+    // long-hidden reveal is the only signal left, and a corrupted atlas must still heal there.
+    vi.useFakeTimers()
+    try {
+      renderWakeRecoveryHook()
+
+      setVisibility('hidden')
+      vi.advanceTimersByTime(DISPLAY_SLEEP_LIKELY_HIDDEN_MS)
+      setVisibility('visible')
+
+      expect(recoverVisibleTerminalWindowWakeMock).toHaveBeenCalledTimes(1)
+      expect(recoverVisibleTerminalWindowWakeMock).toHaveBeenCalledWith({
+        manager,
+        isActive: true,
+        clearGlyphAtlases: true
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('treats a reveal with no recorded hide as brief', () => {
+    // Why: a wedged occlusion tracker can report visible with no prior hidden; assuming display
+    // sleep there would re-arm the mid-stream garble race on a warm atlas.
+    renderWakeRecoveryHook()
+
+    setVisibility('visible')
+
+    expect(recoverVisibleTerminalWindowWakeMock).toHaveBeenCalledTimes(1)
+    expect(recoverVisibleTerminalWindowWakeMock).toHaveBeenCalledWith({
+      manager,
+      isActive: true,
+      clearGlyphAtlases: false
     })
   })
 

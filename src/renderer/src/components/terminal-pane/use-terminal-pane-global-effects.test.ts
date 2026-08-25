@@ -9,6 +9,7 @@ import {
 } from '@/lib/pane-manager/pane-manager-registry'
 import { useAppStore } from '@/store'
 import { useTerminalPaneGlobalEffects } from './use-terminal-pane-global-effects'
+import { DISPLAY_SLEEP_LIKELY_HIDDEN_MS } from './use-terminal-window-wake-recovery'
 import { TERMINAL_PASTE_DIRECT_MAX_BYTES } from './terminal-paste-coordinator'
 
 const mocks = vi.hoisted(() => ({
@@ -974,7 +975,7 @@ describe('useTerminalPaneGlobalEffects', () => {
     expect(manager.refreshAllPanes).toHaveBeenCalledTimes(1)
   })
 
-  it('clears WebGL texture atlases when the active visible terminal document becomes visible', () => {
+  it('clears WebGL texture atlases only when the reveal follows a display-sleep-length hide', () => {
     let visibilityState: DocumentVisibilityState = 'hidden'
     const documentListeners = new Map<string, EventListenerOrEventListenerObject>()
     vi.stubGlobal('document', {
@@ -1023,17 +1024,33 @@ describe('useTerminalPaneGlobalEffects', () => {
     if (typeof listener !== 'function') {
       throw new Error('expected visibilitychange listener')
     }
-    manager.resetWebglTextureAtlases.mockClear()
-    siblingManager.resetWebglTextureAtlases.mockClear()
-    listener(new Event('visibilitychange'))
-    expect(manager.resetWebglTextureAtlases).not.toHaveBeenCalled()
-    expect(siblingManager.resetWebglTextureAtlases).not.toHaveBeenCalled()
+    vi.useFakeTimers()
+    try {
+      manager.resetWebglTextureAtlases.mockClear()
+      siblingManager.resetWebglTextureAtlases.mockClear()
+      listener(new Event('visibilitychange'))
+      expect(manager.resetWebglTextureAtlases).not.toHaveBeenCalled()
+      expect(siblingManager.resetWebglTextureAtlases).not.toHaveBeenCalled()
 
-    visibilityState = 'visible'
-    listener(new Event('visibilitychange'))
+      // Why: a brief occlusion reveal (every Cmd+Tab back to a covered window) keeps the warm
+      // atlas — the wipe re-rasterizes every glyph and reads as terminal jitter on each return.
+      visibilityState = 'visible'
+      listener(new Event('visibilitychange'))
+      expect(manager.resetWebglTextureAtlases).not.toHaveBeenCalled()
+      expect(siblingManager.resetWebglTextureAtlases).not.toHaveBeenCalled()
 
-    expect(manager.resetWebglTextureAtlases).toHaveBeenCalledTimes(1)
-    expect(siblingManager.resetWebglTextureAtlases).toHaveBeenCalledTimes(1)
+      // Why: hidden past the display-sleep threshold, the atlas may be corrupt and must heal.
+      visibilityState = 'hidden'
+      listener(new Event('visibilitychange'))
+      vi.advanceTimersByTime(DISPLAY_SLEEP_LIKELY_HIDDEN_MS)
+      visibilityState = 'visible'
+      listener(new Event('visibilitychange'))
+
+      expect(manager.resetWebglTextureAtlases).toHaveBeenCalledTimes(1)
+      expect(siblingManager.resetWebglTextureAtlases).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('registers document visibility recovery for visible inactive terminals but not hidden ones', () => {
