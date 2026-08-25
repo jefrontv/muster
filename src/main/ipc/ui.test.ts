@@ -113,6 +113,51 @@ describe('UI IPC', () => {
     expect(guestSends.reduce((total, send) => total + send.mock.calls.length, 0)).toBe(0)
   })
 
+  it('never echoes a ui change back to the window that wrote it', () => {
+    // Why: a debounced ui.set echoing into its own writer re-hydrates pre-write state and rolls
+    // back anything that changed since — Open in Sites closed the sidebar and the echo reopened it.
+    const store = makeStore()
+    registerUIHandlers(store as never)
+
+    const writerSend = vi.fn()
+    const otherSend = vi.fn()
+    getAllWindowsMock.mockReturnValue([
+      { isDestroyed: () => false, webContents: { id: 17, send: writerSend } },
+      { isDestroyed: () => false, webContents: { id: 23, send: otherSend } }
+    ] as never)
+
+    const setHandler = handleMock.mock.calls.find(([channel]) => channel === 'ui:set')?.[1]
+    setHandler?.(makeUIEvent(), { rightSidebarOpen: false })
+    expect(store.updateUI).toHaveBeenCalledWith(
+      { rightSidebarOpen: false },
+      { originWebContentsId: 17 }
+    )
+
+    const onUIChanged = store.onUIChanged.mock.calls[0]?.[0] as
+      | ((ui: unknown, origin?: number) => void)
+      | undefined
+    onUIChanged?.({ rightSidebarOpen: true }, 17)
+    expect(writerSend).not.toHaveBeenCalled()
+    expect(otherSend).toHaveBeenCalledWith('ui:stateChanged', { rightSidebarOpen: true })
+  })
+
+  it('still broadcasts to every window when the change has no renderer origin', () => {
+    // Mobile writes UI over runtime RPC — no webContents — and the desktop must hear those.
+    const store = makeStore()
+    registerUIHandlers(store as never)
+
+    const send = vi.fn()
+    getAllWindowsMock.mockReturnValue([
+      { isDestroyed: () => false, webContents: { id: 17, send } }
+    ] as never)
+
+    const onUIChanged = store.onUIChanged.mock.calls[0]?.[0] as
+      | ((ui: unknown, origin?: number) => void)
+      | undefined
+    onUIChanged?.({ rightSidebarOpen: true }, undefined)
+    expect(send).toHaveBeenCalledWith('ui:stateChanged', { rightSidebarOpen: true })
+  })
+
   it('resolves only the BrowserWindow that owns the trusted renderer', () => {
     const renderer = { id: 17, isDestroyed: () => false }
     const mainWindow = { id: 'main' }

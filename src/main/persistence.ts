@@ -2667,7 +2667,9 @@ export class Store {
       originWebContentsId?: number
     ) => void
   >()
-  private uiChangeListeners = new Set<(ui: PersistedState['ui']) => void>()
+  private uiChangeListeners = new Set<
+    (ui: PersistedState['ui'], originWebContentsId?: number) => void
+  >()
 
   constructor(options: StoreOptions = {}) {
     // Why: profile switching yields multiple state paths; capture per Store so late async writes can't follow a global path.
@@ -5503,21 +5505,26 @@ export class Store {
     }
   }
 
-  // Why: UI view-state is written from both desktop and mobile (ui.set RPC), so notify to keep bi-directional sync (desktop hydrates UI only once).
-  onUIChanged(listener: (ui: PersistedState['ui']) => void): () => void {
+  // Why: UI view-state is written from both desktop and mobile (ui.set RPC), so notify to keep
+  // bi-directional sync. `originWebContentsId` identifies the renderer that wrote the change so
+  // the IPC broadcast can skip echoing it back — a debounced persist echoing into its own writer
+  // rolls back whatever changed in the store since (e.g. Open in Sites closing the right sidebar).
+  onUIChanged(
+    listener: (ui: PersistedState['ui'], originWebContentsId?: number) => void
+  ): () => void {
     this.uiChangeListeners.add(listener)
     return () => {
       this.uiChangeListeners.delete(listener)
     }
   }
 
-  private notifyUIChanged(): void {
+  private notifyUIChanged(originWebContentsId?: number): void {
     if (this.uiChangeListeners.size === 0) {
       return
     }
     const ui = this.getUI()
     for (const listener of this.uiChangeListeners) {
-      listener(ui)
+      listener(ui, originWebContentsId)
     }
   }
 
@@ -5722,13 +5729,16 @@ export class Store {
     }
   }
 
-  updateUI(updates: Partial<PersistedState['ui']>): void {
+  updateUI(
+    updates: Partial<PersistedState['ui']>,
+    options: { originWebContentsId?: number } = {}
+  ): void {
     const sanitizedUpdates = stripMainOwnedTelemetryMarkerFromUI(updates)
     const { activeView, ...durableUpdates } = sanitizedUpdates
     const activeViewChanged = this.activeViewPreference.set(activeView)
     if (Object.keys(durableUpdates).length === 0) {
       if (activeViewChanged) {
-        this.notifyUIChanged()
+        this.notifyUIChanged(options.originWebContentsId)
       }
       return
     }
@@ -5849,16 +5859,19 @@ export class Store {
     }
     if (persistedUIValuesEqual(previousUI, nextUI)) {
       if (activeViewChanged) {
-        this.notifyUIChanged()
+        this.notifyUIChanged(options.originWebContentsId)
       }
       return
     }
     this.state.ui = nextUI
     this.scheduleSave()
-    this.notifyUIChanged()
+    this.notifyUIChanged(options.originWebContentsId)
   }
 
-  recordFeatureInteraction(id: FeatureInteractionId): PersistedState['ui'] {
+  recordFeatureInteraction(
+    id: FeatureInteractionId,
+    options: { originWebContentsId?: number } = {}
+  ): PersistedState['ui'] {
     const featureInteractions = normalizeFeatureInteractions(this.state.ui?.featureInteractions)
     const telemetryBuckets = normalizeFeatureInteractionTelemetryBuckets(
       this.state.featureInteractionTelemetryBuckets
@@ -5874,15 +5887,21 @@ export class Store {
       (lastEmittedBucket === null ||
         compareFeatureInteractionUsageBuckets(nextBucket, lastEmittedBucket) > 0)
 
-    this.updateUI({
-      featureInteractions: {
-        ...featureInteractions,
-        [id]: {
-          firstInteractedAt: existing?.firstInteractedAt ?? Date.now(),
-          interactionCount: nextCount
+    this.updateUI(
+      {
+        featureInteractions: {
+          ...featureInteractions,
+          [id]: {
+            firstInteractedAt: existing?.firstInteractedAt ?? Date.now(),
+            interactionCount: nextCount
+          }
         }
-      }
-    })
+      },
+      // Why: this write rides alongside a user action (opening a page, pressing a button). Echoing
+      // it back to the acting window re-hydrates whatever ui state its debounced persist has not
+      // landed yet — the echo that kept re-opening the right sidebar after "Open in Sites".
+      options
+    )
     this.state.featureInteractionTelemetryBuckets = shouldEmit
       ? { ...telemetryBuckets, [id]: nextBucket }
       : telemetryBuckets

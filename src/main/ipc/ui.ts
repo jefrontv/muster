@@ -47,10 +47,14 @@ export function getTrustedUIRendererWindow(): BrowserWindow | null {
 export function registerUIHandlers(store: Store): void {
   // Why: UI view-state is shared between the desktop renderer and mobile (ui.set
   // RPC). Broadcast every change so the desktop re-hydrates when mobile (or
-  // another window) updates it — bi-directional sync, mirroring settings:changed.
-  store.onUIChanged((ui) => {
+  // another window) updates it — but never back to the window that WROTE it:
+  // a debounced ui.set echoing into its own writer re-hydrates pre-write state
+  // and rolls back anything that changed since (same exclusion as settings:changed).
+  store.onUIChanged((ui, originWebContentsId) => {
     for (const window of BrowserWindow.getAllWindows()) {
-      if (!window.isDestroyed()) {
+      const isOrigin =
+        originWebContentsId !== undefined && window.webContents.id === originWebContentsId
+      if (!window.isDestroyed() && !isOrigin) {
         window.webContents.send('ui:stateChanged', ui)
       }
     }
@@ -60,15 +64,15 @@ export function registerUIHandlers(store: Store): void {
     return store.getUI()
   })
 
-  ipcMain.handle('ui:set', (_event, args: Partial<PersistedUIState>) => {
-    store.updateUI(args)
+  ipcMain.handle('ui:set', (event, args: Partial<PersistedUIState>) => {
+    store.updateUI(args, { originWebContentsId: event.sender.id })
   })
 
-  ipcMain.handle('ui:recordFeatureInteraction', (_event, id: unknown) => {
+  ipcMain.handle('ui:recordFeatureInteraction', (event, id: unknown) => {
     if (!isFeatureInteractionId(id)) {
       throw new Error('invalid_feature_interaction_id')
     }
-    return store.recordFeatureInteraction(id)
+    return store.recordFeatureInteraction(id, { originWebContentsId: event.sender.id })
   })
 
   ipcMain.removeAllListeners('ui:performNativePaste')
