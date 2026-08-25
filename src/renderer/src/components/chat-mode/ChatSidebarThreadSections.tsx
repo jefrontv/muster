@@ -1,6 +1,11 @@
-// The chat sidebar's three thread groupings: standalone chats (height-capped,
+// The chat sidebar's thread groupings: standalone chats (height-capped,
 // fade-edge scrolled, with a delete-all menu), per-workspace sections (each with
-// its own clear-all), and the collapsed "Settled" shelf for long-quiet threads.
+// its own clear-all), and the collapsed Archived shelf.
+//
+// There is deliberately NO "settled" shelf. It pulled long-quiet threads out of
+// their workspace into one global group — after a restart everything was quiet
+// past the window, so workspace chats mass-migrated and the sidebar looked like
+// it had lost them. A thread lives where the user filed it, forever.
 
 import { ChevronRight, MessageSquarePlus, MoreHorizontal } from 'lucide-react'
 import type React from 'react'
@@ -25,7 +30,6 @@ import {
   CHAT_SIDEBAR_GROUP_ROWS,
   CHAT_SIDEBAR_REGION_LABEL
 } from './chat-sidebar-hierarchy'
-import { CHAT_SETTLED_SHELF_MAX_ROWS } from './chat-thread-status'
 import { sortChatThreads } from './chat-thread-ordering'
 import { ChatClearAllDialog } from './ChatClearAllDialog'
 import { ChatSidebarFadeScroller } from './ChatSidebarFadeScroller'
@@ -52,63 +56,13 @@ function threadMatches(
 function visibleThreads(
   threads: ChatThread[],
   query: string,
-  settledIds: Set<string>,
   contentMatches: ChatThreadContentMatches
 ): ChatThread[] {
   // Order is static while agents work (T3 pattern) — a list that reorders on
   // every activity tick steals the row out from under the pointer. New chats
   // land on top; drags persist an explicit position.
-  const sorted = sortChatThreads(
-    threads.filter((t) => t.archived !== true && !settledIds.has(t.id))
-  )
+  const sorted = sortChatThreads(threads.filter((t) => t.archived !== true))
   return query ? sorted.filter((t) => threadMatches(t, query, contentMatches)) : sorted
-}
-
-export function SettledSection({
-  query,
-  settledIds
-}: {
-  query: string
-  settledIds: Set<string>
-}): React.JSX.Element | null {
-  const threads = useAppStore((s) => s.chatThreads)
-  const contentMatches = useChatThreadContentMatches()
-  const [expanded, setExpanded] = useState(false)
-  const settled = threads
-    .filter((t) => settledIds.has(t.id) && threadMatches(t, query, contentMatches))
-    .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
-  // Count reflects everything settled; the expanded list caps (no paging yet).
-  const rows = settled.slice(0, CHAT_SETTLED_SHELF_MAX_ROWS)
-  if (rows.length === 0) {
-    return null
-  }
-  return (
-    <section className="space-y-0.5">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        className="group flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left hover:bg-muted/60"
-        onClick={() => setExpanded((open) => !open)}
-      >
-        <ChevronRight
-          className={cn(
-            'size-3 shrink-0 text-muted-foreground transition-transform',
-            expanded && 'rotate-90'
-          )}
-        />
-        <span className={CHAT_SIDEBAR_REGION_LABEL}>
-          {translate('auto.components.chat.sidebar.settled', 'Settled')} · {settled.length}
-        </span>
-      </button>
-      {expanded ? (
-        <ul className="space-y-px">
-          {rows.map((thread) => (
-            <ChatThreadRow key={thread.id} thread={thread} />
-          ))}
-        </ul>
-      ) : null}
-    </section>
-  )
 }
 
 /**
@@ -157,13 +111,7 @@ export function ArchivedSection({ query }: { query: string }): React.JSX.Element
   )
 }
 
-export function StandaloneChatsSection({
-  query,
-  settledIds
-}: {
-  query: string
-  settledIds: Set<string>
-}): React.JSX.Element | null {
+export function StandaloneChatsSection({ query }: { query: string }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
   const contentMatches = useChatThreadContentMatches()
   const createChatThread = useAppStore((s) => s.createChatThread)
@@ -173,7 +121,6 @@ export function StandaloneChatsSection({
   const rows = visibleThreads(
     threads.filter((t) => t.workspaceId === null),
     query,
-    settledIds,
     contentMatches
   )
   if (query && rows.length === 0) {
@@ -244,12 +191,10 @@ export function StandaloneChatsSection({
 export function WorkspaceSection({
   workspace,
   query,
-  settledIds,
   onEdit
 }: {
   workspace: ChatWorkspace
   query: string
-  settledIds: Set<string>
   onEdit: (workspace: ChatWorkspace) => void
 }): React.JSX.Element | null {
   const threads = useAppStore((s) => s.chatThreads)
@@ -264,7 +209,6 @@ export function WorkspaceSection({
   const rows = visibleThreads(
     threads.filter((t) => t.workspaceId === workspace.id),
     workspaceMatches ? '' : query,
-    settledIds,
     contentMatches
   )
   if (query && !workspaceMatches && rows.length === 0) {

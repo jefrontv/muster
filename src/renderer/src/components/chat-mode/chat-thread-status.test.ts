@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CHAT_THREAD_SETTLED_AFTER_MS,
   canMarkChatThreadUnread,
   hasUnseenCompletion,
   unreadVisitStamp,
-  isChatThreadSettled,
   nextVisitStamp,
   resolveChatThreadStatus
 } from './chat-thread-status'
@@ -109,37 +107,6 @@ describe('nextVisitStamp', () => {
   })
 })
 
-describe('isChatThreadSettled', () => {
-  const now = 10 * CHAT_THREAD_SETTLED_AFTER_MS
-
-  it('settles idle threads quiet past the window', () => {
-    expect(
-      isChatThreadSettled({
-        status: 'idle',
-        lastActivityAt: now - CHAT_THREAD_SETTLED_AFTER_MS - 1,
-        now
-      })
-    ).toBe(true)
-  })
-
-  it('keeps recent or exactly-at-boundary threads active', () => {
-    expect(
-      isChatThreadSettled({
-        status: 'idle',
-        lastActivityAt: now - CHAT_THREAD_SETTLED_AFTER_MS,
-        now
-      })
-    ).toBe(false)
-    expect(isChatThreadSettled({ status: 'idle', lastActivityAt: now - 1_000, now })).toBe(false)
-  })
-
-  it('never settles threads that need a human or are in motion', () => {
-    for (const status of ['approval', 'working', 'unread-done'] as const) {
-      expect(isChatThreadSettled({ status, lastActivityAt: 0, now })).toBe(false)
-    }
-  })
-})
-
 describe('marking a thread unread', () => {
   it('leaves the thread reading as unread', () => {
     const thread = { lastCompletedAt: 5_000, lastVisitedAt: 6_000 }
@@ -165,4 +132,3 @@ describe('marking a thread unread', () => {
     expect(canMarkChatThreadUnread({ lastCompletedAt: 5_000, lastVisitedAt: 1_000 })).toBe(false)
   })
 })
-

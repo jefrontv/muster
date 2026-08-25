@@ -64,11 +64,11 @@ export function ChatClearAllDialog({
             {workspaceName
               ? translate(
                   'auto.components.chat.sidebar.clearWorkspaceChatsDescription',
-                  'Every chat in this workspace is deleted, including settled ones. The workspace itself stays. This cannot be undone.'
+                  'Every chat in this workspace is deleted. The workspace itself stays. This cannot be undone.'
                 )
               : translate(
                   'auto.components.chat.sidebar.clearChatsDescription',
-                  'Every chat outside your workspaces is deleted, including settled ones. Workspace chats stay. This cannot be undone.'
+                  'Every chat outside your workspaces is deleted. Workspace chats stay. This cannot be undone.'
                 )}
           </DialogDescription>
         </DialogHeader>

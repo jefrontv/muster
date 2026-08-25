@@ -20,7 +20,6 @@ import { useContextualTour } from '@/components/contextual-tours/use-contextual-
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { useSettledThreadIds } from './use-settled-chat-threads'
 import {
   ChatThreadContentMatchProvider,
   useChatThreadContentSearch
@@ -28,7 +27,6 @@ import {
 import { ChatModeToggle } from './ChatModeToggle'
 import {
   ArchivedSection,
-  SettledSection,
   StandaloneChatsSection,
   WorkspaceSection
 } from './ChatSidebarThreadSections'
@@ -56,7 +54,6 @@ export function ChatModeSidebar(): React.JSX.Element {
   const [editing, setEditing] = useState<ChatWorkspace | undefined>(undefined)
   const [rawQuery, setRawQuery] = useState('')
   const query = rawQuery.trim().toLowerCase()
-  const settledIds = useSettledThreadIds()
   const contentMatches = useChatThreadContentSearch(query)
   const assignedTasks = useAssignedActiveCollabTasks()
   const now = Date.now()
@@ -132,9 +129,7 @@ export function ChatModeSidebar(): React.JSX.Element {
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto scrollbar-sleek p-3">
           {/* With workspaces set up, they are the primary navigation — quick
               standalone chats move below them. Without any, chats lead. */}
-          {workspaces.length === 0 ? (
-            <StandaloneChatsSection query={query} settledIds={settledIds} />
-          ) : null}
+          {workspaces.length === 0 ? <StandaloneChatsSection query={query} /> : null}
           <div
             className="flex items-center justify-between px-1"
             data-contextual-tour-target="chat-workspaces"
@@ -158,17 +153,13 @@ export function ChatModeSidebar(): React.JSX.Element {
               key={workspace.id}
               workspace={workspace}
               query={query}
-              settledIds={settledIds}
               onEdit={(target) => {
                 setEditing(target)
                 setDialogOpen(true)
               }}
             />
           ))}
-          {workspaces.length > 0 ? (
-            <StandaloneChatsSection query={query} settledIds={settledIds} />
-          ) : null}
-          <SettledSection query={query} settledIds={settledIds} />
+          {workspaces.length > 0 ? <StandaloneChatsSection query={query} /> : null}
           <ArchivedSection query={query} />
         </div>
       </ChatThreadContentMatchProvider>
