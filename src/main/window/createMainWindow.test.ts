@@ -324,7 +324,7 @@ describe('createMainWindow', () => {
     }
   })
 
-  it('keeps main-window background throttling enabled while repainting macOS visibility transitions', () => {
+  it('keeps macOS visibility transitions invalidate-only, never a frame nudge', () => {
     vi.useFakeTimers()
     const windowHandlers = new Map<string, ((...args: any[]) => void)[]>()
     let windowSize: [number, number] = [1200, 800]
@@ -378,28 +378,18 @@ describe('createMainWindow', () => {
     windowHandlers.get('restore')?.[0]?.()
 
     expect(webContents.invalidate).toHaveBeenCalledTimes(2)
-    // Why: the size nudge must never run inside the show/restore dispatch itself.
+
+    // Why: macOS fires `show` on EVERY app activation, so a frame nudge here resized terminals
+    // on every Cmd+Tab. The reflow now runs only through the renderer's measured reveal relay.
+    vi.advanceTimersByTime(300)
     expect(browserWindowInstance.setSize).not.toHaveBeenCalled()
-
-    vi.advanceTimersByTime(0)
-    expect(browserWindowInstance.setSize).toHaveBeenNthCalledWith(1, 1201, 800)
-    expect(browserWindowInstance.setSize).toHaveBeenCalledTimes(1)
-
-    vi.advanceTimersByTime(32)
-    expect(browserWindowInstance.setSize).toHaveBeenNthCalledWith(2, 1200, 800)
-
-    vi.advanceTimersByTime(217)
-    expect(webContents.invalidate).toHaveBeenCalledTimes(2)
-
-    vi.advanceTimersByTime(1)
+    // The delayed second invalidate still covers late black-surface compositor recovery.
     expect(webContents.invalidate).toHaveBeenCalledTimes(3)
 
-    // Why: focus covers occlusion-uncover with invalidate only — no setSize
-    // jiggle that would resize terminals on every window focus.
-    const setSizeCalls = browserWindowInstance.setSize.mock.calls.length
+    // Why: focus covers occlusion-uncover with invalidate only.
     windowHandlers.get('focus')?.[0]?.()
     expect(webContents.invalidate).toHaveBeenCalledTimes(4)
-    expect(browserWindowInstance.setSize).toHaveBeenCalledTimes(setSizeCalls)
+    expect(browserWindowInstance.setSize).not.toHaveBeenCalled()
   })
 
   it('runs a full repaint when the renderer relays a genuine window reveal (STA-2383)', () => {
@@ -481,7 +471,7 @@ describe('createMainWindow', () => {
     expect(ipcMain.removeListener).toHaveBeenCalledWith('ui:window-revealed', revealHandler)
   })
 
-  it('repaints without the size nudge on macOS 26+ where re-entrant frame updates can deadlock AppKit', () => {
+  it('reflows via device emulation, never the size nudge, on a measured macOS 26+ reveal', () => {
     vi.useFakeTimers()
     macosTahoeMock.value = true
     const windowHandlers = new Map<string, ((...args: any[]) => void)[]>()
@@ -524,13 +514,18 @@ describe('createMainWindow', () => {
 
     withPlatform('darwin', () => createMainWindow(null))
 
+    // Why: show/restore stay invalidate-only everywhere (macOS fires `show` on every activation);
+    // the reflow runs only when the renderer relays a measured-stale reveal.
     windowHandlers.get('show')?.[0]?.()
-    expect(webContents.invalidate).toHaveBeenCalledTimes(1)
-
-    // Why: the 250ms second paint guarded a pre-26 black-surface failure; on Tahoe every repaint
-    // is a user-visible DPR bounce, so the reveal pays for exactly one.
     vi.advanceTimersByTime(300)
-    expect(webContents.invalidate).toHaveBeenCalledTimes(1)
+    expect(webContents.enableDeviceEmulation).not.toHaveBeenCalled()
+
+    const revealHandler = vi
+      .mocked(ipcMain.on)
+      .mock.calls.find(([channel]) => channel === 'ui:window-revealed')?.[1]
+    revealHandler?.({ sender: webContents } as never)
+    vi.advanceTimersByTime(300)
+    expect(webContents.invalidate).toHaveBeenCalled()
     expect(browserWindowInstance.setSize).not.toHaveBeenCalled()
     expect(webContents.enableDeviceEmulation).toHaveBeenCalledTimes(1)
 
@@ -593,7 +588,10 @@ describe('createMainWindow', () => {
 
     withPlatform('darwin', () => createMainWindow(null))
 
-    windowHandlers.get('show')?.[0]?.()
+    const revealHandler = vi
+      .mocked(ipcMain.on)
+      .mock.calls.find(([channel]) => channel === 'ui:window-revealed')?.[1]
+    revealHandler?.({ sender: webContents } as never)
     vi.advanceTimersByTime(300)
 
     expect(webContents.enableDeviceEmulation).toHaveBeenCalled()

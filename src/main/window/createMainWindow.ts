@@ -106,18 +106,25 @@ function forceRepaint(window: BrowserWindow): void {
 
 function installMacosVisibilityRepaint(window: BrowserWindow): void {
   let delayedRepaintTimer: ReturnType<typeof setTimeout> | null = null
-  const repaintAfterVisibilityTransition = (): void => {
-    forceRepaint(window)
-    clearTimeout(delayedRepaintTimer ?? undefined)
-    // Why: the 250ms second paint exists for late black-surface compositor recovery, a pre-macOS-26
-    // failure mode. On 26+ a repaint is a DPR emulation bounce the user can SEE, so a doubled one
-    // reads as stutter on every reveal — and the black-surface door it guarded is closed there.
-    if (isMacosTahoeOrNewer()) {
-      return
+  const invalidateWindow = (): void => {
+    if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
+      window.webContents.invalidate()
     }
+  }
+  // Why invalidate-only: macOS fires `show` on EVERY app activation, not just un-minimize, so an
+  // unconditional reflow here bounced the DPR (or jiggled the frame) on every Cmd+Tab — measured
+  // as an 11px xterm box wobble the user reads as the terminal resizing. Invalidate covers the
+  // black-surface recovery these events exist for and paints nothing the eye can catch. The
+  // reflow that heals a genuinely stale dvh layout runs ONLY through the renderer relay below,
+  // which measures staleness before asking.
+  const repaintAfterVisibilityTransition = (): void => {
+    invalidateWindow()
+    clearTimeout(delayedRepaintTimer ?? undefined)
+    // Why: macOS may restore compositor layers after the show/restore event; a second invalidate
+    // catches late black-surface recovery.
     delayedRepaintTimer = setTimeout(() => {
       delayedRepaintTimer = null
-      forceRepaint(window)
+      invalidateWindow()
     }, 250)
   }
   const clearDelayedRepaint = (): void => {
@@ -127,10 +134,10 @@ function installMacosVisibilityRepaint(window: BrowserWindow): void {
     }
   }
 
-  // Why (STA-2383): occlusion-uncover fires no restore/show, so the renderer relays its genuine
-  // hidden→visible reveal instead. Unlike a bare focus (every Cmd+Tab, window never hidden), this
-  // only fires when the window was actually occluded/throttled — exactly when the stale dvh layout
-  // stranded the bottom status bar off-screen — so the full repaint's size jiggle is warranted.
+  // Why (STA-2383): the renderer relays a reveal only after MEASURING its dvh root against the
+  // window height, so this — the only reflow trigger — cannot fire on a healthy layout. The
+  // reflow is the visible part (DPR bounce on macOS 26, frame jiggle before it); the gate is what
+  // keeps it off every ordinary reveal.
   const onRendererRevealed = (event: Electron.IpcMainEvent): void => {
     if (window.isDestroyed() || window.webContents.isDestroyed()) {
       return
@@ -144,12 +151,7 @@ function installMacosVisibilityRepaint(window: BrowserWindow): void {
 
   window.on('restore', repaintAfterVisibilityTransition)
   window.on('show', repaintAfterVisibilityTransition)
-  // Why: occlusion-uncover fires no restore/show, only focus; invalidate only — the setSize jiggle would SIGWINCH every terminal on Cmd+Tab. The renderer-reveal relay above covers the stale-layout recovery that invalidate alone misses.
-  window.on('focus', () => {
-    if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
-      window.webContents.invalidate()
-    }
-  })
+  window.on('focus', invalidateWindow)
   window.on('closed', () => {
     clearDelayedRepaint()
     ipcMain.removeListener('ui:window-revealed', onRendererRevealed)

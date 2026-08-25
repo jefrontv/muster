@@ -1427,15 +1427,17 @@ function App(): React.JSX.Element {
     return () => document.removeEventListener('visibilitychange', handler)
   }, [actions])
 
-  // Why (STA-2383): macOS throttles the backgrounded window; on occlusion-uncover only `focus`
-  // fires (invalidate-only), so the app-shell's dvh height can stay stale and the bottom status
-  // bar is clipped off-screen until a manual resize. Relay the genuine hidden→visible reveal so
-  // main runs the full repaint (DPR reflow / size jiggle) that show/restore/resume get.
+  // Why (STA-2383): macOS throttles the backgrounded window, so the app-shell's dvh height can
+  // come back stale — bottom status bar clipped off-screen until a manual resize. This relay is
+  // the ONLY trigger for main's layout reflow (a DPR bounce on macOS 26, a 1px window jiggle
+  // before it), and that reflow is user-visible on terminals, so it is gated on ACTUAL staleness:
+  // #root measured against the window height, one layout read. Healthy reveals — every ordinary
+  // Cmd+Tab — relay nothing and flash nothing.
   //
-  // Gated on ACTUAL staleness: the repaint is user-visible (a DPR bounce on macOS 26, a 1px window
-  // jiggle before it), and most reveals — every ordinary Cmd+Tab — come back with the layout
-  // intact. Measuring #root against the window height costs one layout read; relaying only on a
-  // mismatch makes the healthy path free of the flash entirely.
+  // Both listeners matter: occlusion-uncover fires only visibilitychange; app activation and
+  // minimize-restore fire focus. Main's own show/restore handlers deliberately stay
+  // invalidate-only — macOS fires `show` on every activation, and an unconditional reflow there
+  // is exactly the every-Cmd+Tab wobble this gate exists to prevent.
   useEffect(() => {
     if (!isMac || isPairedWebClientWindow()) {
       return
@@ -1454,7 +1456,11 @@ function App(): React.JSX.Element {
       window.api?.ui?.notifyWindowRevealed?.()
     }
     document.addEventListener('visibilitychange', handler)
-    return () => document.removeEventListener('visibilitychange', handler)
+    window.addEventListener('focus', handler)
+    return () => {
+      document.removeEventListener('visibilitychange', handler)
+      window.removeEventListener('focus', handler)
+    }
   }, [])
 
   const hasTabBar = tabCount >= 2
