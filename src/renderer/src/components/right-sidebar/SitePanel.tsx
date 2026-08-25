@@ -92,9 +92,6 @@ export function SitePanelContent({
   runIdSeenRef.current = run?.id ?? runIdSeenRef.current
   useEffect(() => {
     const tick = async (): Promise<void> => {
-      if (document.visibilityState !== 'visible') {
-        return
-      }
       const result = await window.api.siteRuns.list({ siteId: site.id, limit: RECENT_RUNS_LIMIT })
       if (!result.ok) {
         return
@@ -132,8 +129,31 @@ export function SitePanelContent({
         onRunSettledRef.current()
       }
     }
-    const interval = window.setInterval(() => void tick(), 2_500)
-    return () => window.clearInterval(interval)
+    // The timer itself pauses while the document is hidden, rather than a visibility check inside
+    // the tick: a timer that fires forever keeps waking an otherwise-idle renderer even when every
+    // wakeup is a no-op. An immediate tick on reveal covers runs that settled while hidden.
+    let interval: number | null = null
+    const reconcile = (): void => {
+      if (document.visibilityState === 'visible') {
+        if (interval === null) {
+          interval = window.setInterval(() => void tick(), 2_500)
+          void tick()
+        }
+        return
+      }
+      if (interval !== null) {
+        window.clearInterval(interval)
+        interval = null
+      }
+    }
+    reconcile()
+    document.addEventListener('visibilitychange', reconcile)
+    return () => {
+      document.removeEventListener('visibilitychange', reconcile)
+      if (interval !== null) {
+        window.clearInterval(interval)
+      }
+    }
   }, [site.id])
 
   // One effect per transition: history refreshes whenever the streamed run changes state, and a
