@@ -8,25 +8,25 @@ import {
 
 describe('create project defaults', () => {
   it('builds the POSIX default project parent', () => {
-    expect(getDefaultCreateProjectParent('/Users/alice')).toBe('/Users/alice/orca/projects')
+    expect(getDefaultCreateProjectParent('/Users/alice')).toBe('/Users/alice/muster/projects')
   })
 
   it('builds the Windows default project parent', () => {
     expect(getDefaultCreateProjectParent('C:\\Users\\alice')).toBe(
-      'C:\\Users\\alice\\orca\\projects'
+      'C:\\Users\\alice\\muster\\projects'
     )
   })
 
   it('derives the runtime project default from a resolved server home', () => {
-    expect(getDefaultCreateProjectParent('/home/alice')).toBe('/home/alice/orca/projects')
+    expect(getDefaultCreateProjectParent('/home/alice')).toBe('/home/alice/muster/projects')
   })
 
   it('joins path previews without mixing separators', () => {
-    expect(joinCreateProjectPath('/home/alice/orca/projects', 'demo')).toBe(
-      '/home/alice/orca/projects/demo'
+    expect(joinCreateProjectPath('/home/alice/muster/projects', 'demo')).toBe(
+      '/home/alice/muster/projects/demo'
     )
-    expect(joinCreateProjectPath('C:\\Users\\alice\\orca\\projects', 'demo')).toBe(
-      'C:\\Users\\alice\\orca\\projects\\demo'
+    expect(joinCreateProjectPath('C:\\Users\\alice\\muster\\projects', 'demo')).toBe(
+      'C:\\Users\\alice\\muster\\projects\\demo'
     )
   })
 
@@ -36,16 +36,16 @@ describe('create project defaults', () => {
         step: 'create',
         createParent: '',
         activeRuntimeEnvironmentId: null,
-        defaultParent: '/Users/alice/orca/projects',
+        defaultParent: '/Users/alice/Documents/Sites',
         createStepAutoFilled: false
       })
-    ).toEqual({ parent: '/Users/alice/orca/projects' })
+    ).toEqual({ parent: '/Users/alice/Documents/Sites' })
     expect(
       getCreateProjectDefaultParentAutoFill({
         step: 'create',
         createParent: '/tmp/project',
         activeRuntimeEnvironmentId: null,
-        defaultParent: '/Users/alice/orca/projects',
+        defaultParent: '/Users/alice/Documents/Sites',
         createStepAutoFilled: false
       })
     ).toBeNull()
@@ -54,7 +54,7 @@ describe('create project defaults', () => {
         step: 'create',
         createParent: '',
         activeRuntimeEnvironmentId: null,
-        defaultParent: '/Users/alice/orca/projects',
+        defaultParent: '/Users/alice/Documents/Sites',
         createStepAutoFilled: true
       })
     ).toBeNull()
@@ -66,39 +66,37 @@ describe('create project defaults', () => {
         step: 'create',
         createParent: '',
         activeRuntimeEnvironmentId: 'env-1',
-        defaultParent: '/Users/alice/orca/projects',
+        defaultParent: '/Users/alice/Documents/Sites',
         createStepAutoFilled: false
       })
     ).toBeNull()
   })
 
-  it('uses a short local summary only for the local default parent', () => {
+  // Why: the summary used to print a hardcoded '~/orca/projects' whenever the parent matched the
+  // default. The default is now whichever site root the host reported, so a fixed string would name
+  // a folder the project would not land in.
+  it('shows the resolved parent path so the summary names the real destination', () => {
+    expect(formatCreateProjectParentSummary({ parent: '/Users/alice/Documents/Sites' })).toBe(
+      '/Users/alice/Documents/Sites'
+    )
+    expect(formatCreateProjectParentSummary({ parent: '/Users/alice/muster/projects' })).toBe(
+      '/Users/alice/muster/projects'
+    )
     expect(
       formatCreateProjectParentSummary({
-        parent: '/Users/alice/orca/projects',
-        defaultParent: '/Users/alice/orca/projects'
-      })
-    ).toBe('~/orca/projects')
-    expect(
-      formatCreateProjectParentSummary({
-        parent: '',
-        defaultParent: '',
-        runtimeEnvironmentId: 'env-1'
-      })
-    ).toBe('host folder not selected')
-    expect(
-      formatCreateProjectParentSummary({
-        parent: '/Users/alice/orca/projects',
-        defaultParent: '/Users/alice/orca/projects',
+        parent: '/Users/alice/Documents/Sites',
         isRemoteHost: true
       })
-    ).toBe('/Users/alice/orca/projects')
-    expect(
-      formatCreateProjectParentSummary({
-        parent: '',
-        defaultParent: '',
-        isRemoteHost: true
-      })
-    ).toBe('host folder not selected')
+    ).toBe('/Users/alice/Documents/Sites')
+  })
+
+  it('reports the missing-location label per host kind when nothing is resolved yet', () => {
+    expect(formatCreateProjectParentSummary({ parent: '  ' })).toBe('location not selected')
+    expect(formatCreateProjectParentSummary({ parent: '', runtimeEnvironmentId: 'env-1' })).toBe(
+      'host folder not selected'
+    )
+    expect(formatCreateProjectParentSummary({ parent: '', isRemoteHost: true })).toBe(
+      'host folder not selected'
+    )
   })
 })

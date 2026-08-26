@@ -48,7 +48,6 @@ type AddRepoDialogStepContentProps = {
   canCreateProject?: boolean
   manualCreateParentEntry?: boolean
   browseHostKind?: 'local' | 'ssh' | 'runtime'
-  createDefaultParent: string
   createGitAvailability: GitAvailability
   createRuntimeParentStatus: 'idle' | 'checking' | 'failed'
   createParentDefaultPending: boolean
@@ -117,7 +116,6 @@ export function AddRepoDialogStepContent({
   canCreateProject = true,
   manualCreateParentEntry = isRuntimeEnvironmentActive,
   browseHostKind = 'local',
-  createDefaultParent,
   createGitAvailability,
   createRuntimeParentStatus,
   createParentDefaultPending,
@@ -252,7 +250,6 @@ export function AddRepoDialogStepContent({
         createParent={createParent}
         createError={createError}
         isCreating={isCreating}
-        defaultParent={createDefaultParent}
         gitAvailability={createGitAvailability}
         runtimeParentStatus={createRuntimeParentStatus}
         parentDefaultPending={createParentDefaultPending}

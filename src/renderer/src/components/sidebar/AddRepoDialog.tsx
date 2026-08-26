@@ -133,7 +133,6 @@ const AddRepoDialog = React.memo(function AddRepoDialog({
   )
 
   const {
-    createDefaultParent,
     createGitAvailability,
     createRuntimeParentStatus,
     createParentDefaultPending,
@@ -348,7 +347,6 @@ const AddRepoDialog = React.memo(function AddRepoDialog({
         browseHostKind={
           selectedHostKind === 'ssh' || selectedHostKind === 'runtime' ? selectedHostKind : 'local'
         }
-        createDefaultParent={createDefaultParent}
         createGitAvailability={createGitAvailability}
         createRuntimeParentStatus={createRuntimeParentStatus}
         createParentDefaultPending={createParentDefaultPending}

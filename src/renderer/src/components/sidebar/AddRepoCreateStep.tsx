@@ -25,7 +25,6 @@ type CreateStepProps = {
   createParent: string
   createError: string | null
   isCreating: boolean
-  defaultParent?: string
   gitAvailability?: GitAvailability
   runtimeParentStatus?: 'idle' | 'checking' | 'failed'
   parentDefaultPending?: boolean
@@ -43,7 +42,6 @@ export function CreateStep({
   createParent,
   createError,
   isCreating,
-  defaultParent = '',
   gitAvailability = 'unknown',
   runtimeParentStatus = 'idle',
   parentDefaultPending = false,
@@ -83,7 +81,6 @@ export function CreateStep({
     () =>
       formatCreateProjectParentSummary({
         parent: createParent,
-        defaultParent,
         runtimeEnvironmentId,
         isRemoteHost,
         missingLocationLabel,
@@ -91,7 +88,6 @@ export function CreateStep({
       }),
     [
       createParent,
-      defaultParent,
       isRemoteHost,
       missingLocationLabel,
       missingServerLocationLabel,

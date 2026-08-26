@@ -55,7 +55,6 @@ function renderStepContent(overrides: Partial<StepContentProps>): string {
     createParent: '',
     createError: null,
     isCreating: false,
-    createDefaultParent: '',
     createGitAvailability: 'unknown',
     createRuntimeParentStatus: 'idle',
     createParentDefaultPending: false,

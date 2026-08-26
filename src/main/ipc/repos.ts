@@ -76,6 +76,7 @@ import {
   migrateAllLocalWpRepoPathsIfNeeded,
   resolveLocalProjectImportPath
 } from '../sites/localwp-repo-path'
+import { derivePrimarySiteRoot } from '../sites/site-roots-watcher'
 import { getSshGitProvider } from '../providers/ssh-git-dispatch'
 import { getSshGitCapabilityCache } from '../git/git-capability-state'
 import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
@@ -971,10 +972,6 @@ async function isGitAvailable(): Promise<boolean> {
   }
 }
 
-function getDefaultCreateProjectParent(): string {
-  return join(homedir(), 'orca', 'projects')
-}
-
 function markCloneAbortCleanupPending(metadata: ActiveCloneMetadata): void {
   if (metadata.resolvePendingAbortCleanup) {
     return
@@ -1344,7 +1341,14 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
   )
 
   ipcMain.handle('repos:isGitAvailable', () => isGitAvailable())
-  ipcMain.handle('repos:getDefaultCreateProjectParent', () => getDefaultCreateProjectParent())
+  // Why: the create dialog must point where this user's projects already live, so it follows the
+  // Sites folder list (first reachable root) rather than inventing a second home for projects.
+  // An empty primary root means nothing usable is configured — the dialog still needs something
+  // to prefill, and this suggestion is editable.
+  ipcMain.handle(
+    'repos:getDefaultCreateProjectParent',
+    () => derivePrimarySiteRoot(store) || join(homedir(), 'muster', 'projects')
+  )
 
   ipcMain.handle('projectGroups:list', () => store.getProjectGroups())
 
@@ -1778,7 +1782,8 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
       let createdDir = false
       let targetExists = false
       try {
-        // Why: the default parent (~/orca/projects) may not exist on a fresh install; create only the parent before probing the target.
+        // Why: the suggested default parent may not exist on a fresh install (nothing configured
+        // yet, so it is the home fallback); create only the parent before probing the target.
         await mkdir(parentPath, { recursive: true })
         await access(targetPath)
         targetExists = true

@@ -56,14 +56,12 @@ export function useCreateProjectDefaults({
   createParent: string
   setCreateParent: (value: string) => void
 }): {
-  createDefaultParent: string
   createGitAvailability: GitAvailability
   createRuntimeParentStatus: CreateRuntimeParentStatus
   createParentDefaultPending: boolean
   resetCreateDefaultState: () => void
   markCreateParentTouched: (value?: string) => void
 } {
-  const [createDefaultParent, setCreateDefaultParent] = useState('')
   const [createGitAvailability, setCreateGitAvailability] = useState<GitAvailability>('unknown')
   const [createRuntimeParentStatus, setCreateRuntimeParentStatus] =
     useState<CreateRuntimeParentStatus>('idle')
@@ -96,7 +94,6 @@ export function useCreateProjectDefaults({
     autoFilledCreateParentRef.current = null
     createParentProvenanceRef.current = null
     createParentTouchedRef.current = false
-    setCreateDefaultParent('')
     setCreateGitAvailability('unknown')
     setCreateRuntimeParentStatus('idle')
   }, [])
@@ -144,7 +141,6 @@ export function useCreateProjectDefaults({
       autoFilledCreateParentRef.current?.targetKey !== 'local' &&
       autoFilledCreateParentRef.current?.parent === createParent.trim()
     ) {
-      setCreateDefaultParent('')
       setCreateParent('')
       return
     }
@@ -154,7 +150,6 @@ export function useCreateProjectDefaults({
     ) {
       return
     }
-    setCreateDefaultParent('')
     void window.api.repos
       .getDefaultCreateProjectParent()
       .then((parent) => {
@@ -165,7 +160,6 @@ export function useCreateProjectDefaults({
         ) {
           return
         }
-        setCreateDefaultParent(parent)
         createStepAutoFilledRef.current = true
         autoFilledCreateParentRef.current = { parent, targetKey: 'local' }
         createParentProvenanceRef.current = { parent, targetKey: 'local' }
@@ -202,7 +196,6 @@ export function useCreateProjectDefaults({
       autoFilledCreateParentRef.current?.targetKey !== `runtime:${runtimeEnvironmentId}` &&
       autoFilledCreateParentRef.current?.parent === createParent.trim()
     ) {
-      setCreateDefaultParent('')
       setCreateRuntimeParentStatus('checking')
       setCreateParent('')
       return
@@ -214,8 +207,6 @@ export function useCreateProjectDefaults({
       setCreateRuntimeParentStatus('idle')
       return
     }
-    setCreateDefaultParent('')
-
     const gen = ++createParentDefaultGenRef.current
     setCreateRuntimeParentStatus('checking')
     void withTimeout(
@@ -233,7 +224,6 @@ export function useCreateProjectDefaults({
         createStepAutoFilledRef.current = true
         autoFilledCreateParentRef.current = { parent, targetKey: `runtime:${runtimeEnvironmentId}` }
         createParentProvenanceRef.current = { parent, targetKey: `runtime:${runtimeEnvironmentId}` }
-        setCreateDefaultParent(parent)
         setCreateParent(parent)
         setCreateRuntimeParentStatus('idle')
       })
@@ -294,7 +284,6 @@ export function useCreateProjectDefaults({
   }, [activeRuntimeEnvironmentId, activeCreateParentSshTargetId, step])
 
   return {
-    createDefaultParent,
     createGitAvailability,
     createRuntimeParentStatus,
     createParentDefaultPending: createParentPending,

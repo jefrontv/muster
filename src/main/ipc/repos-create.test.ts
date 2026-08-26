@@ -30,6 +30,8 @@ const {
   removeHandlerMock: vi.fn(),
   mockStore: {
     getRepos: vi.fn().mockReturnValue([]),
+    listSites: vi.fn().mockReturnValue([]),
+    getConfiguredSiteRoots: vi.fn().mockReturnValue([]),
     addRepo: vi.fn(),
     removeProject: vi.fn(),
     getRepo: vi.fn(),
@@ -110,7 +112,7 @@ describe('repos:create', () => {
     webContents: { send: vi.fn() }
   }
   const tmpPath = (...segments: string[]): string => join('/tmp', ...segments)
-  const defaultProjectParent = join('/Users/alice', 'orca', 'projects')
+  const defaultProjectParent = join('/Users/alice', 'muster', 'projects')
 
   const callCreate = (args: CreateArgs): Promise<CreateResult> => {
     const handler = handlers.get('repos:create')
@@ -135,6 +137,8 @@ describe('repos:create', () => {
     })
     removeHandlerMock.mockReset()
     mockStore.getRepos.mockReset().mockReturnValue([])
+    mockStore.listSites.mockReset().mockReturnValue([])
+    mockStore.getConfiguredSiteRoots.mockReset().mockReturnValue([])
     mockStore.addRepo.mockReset()
     mockWindow.webContents.send.mockReset()
     invalidateAuthorizedRootsCacheMock.mockReset()
@@ -155,7 +159,19 @@ describe('repos:create', () => {
     expect(handlers.has('repos:create')).toBe(true)
   })
 
-  it('registers the home-backed create-project default handler', async () => {
+  // Why: the create default used to be a hardcoded home folder, which sent new projects somewhere
+  // the user's existing projects are not. Both branches are pinned because the home fallback is
+  // only correct when the user has no reachable site root at all.
+  it('defaults the create parent to the first reachable configured site root', async () => {
+    mockStore.getConfiguredSiteRoots.mockReturnValue([
+      join(process.cwd(), 'ejected-volume'),
+      process.cwd()
+    ])
+
+    await expect(callDefaultCreateProjectParent()).resolves.toBe(process.cwd())
+  })
+
+  it('falls back to the home projects folder when no site root is reachable', async () => {
     expect(handlers.has('repos:getDefaultCreateProjectParent')).toBe(true)
     await expect(callDefaultCreateProjectParent()).resolves.toBe(defaultProjectParent)
   })

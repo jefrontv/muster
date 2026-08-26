@@ -30,12 +30,17 @@ export function joinCreateProjectPath(parentPath: string, childName: string): st
   return `${parent}${separator}${child}`
 }
 
+/**
+ * The default parent on a host whose site roots we cannot read (a runtime/SSH host): the app's own
+ * projects folder under that host's home. Locally the main process answers with the first reachable
+ * site root instead, so this shape is the last resort, not the usual case.
+ */
 export function getDefaultCreateProjectParent(homeDir: string): string {
   const trimmedHomeDir = trimTrailingSeparators(homeDir.trim())
   if (!trimmedHomeDir) {
     return ''
   }
-  return joinCreateProjectPath(joinCreateProjectPath(trimmedHomeDir, 'orca'), 'projects')
+  return joinCreateProjectPath(joinCreateProjectPath(trimmedHomeDir, 'muster'), 'projects')
 }
 
 export function getCreateProjectDefaultParentAutoFill({
@@ -64,16 +69,19 @@ export function getCreateProjectDefaultParentAutoFill({
   return { parent }
 }
 
+/**
+ * The location line in the create-project summary. Always the resolved path when there is one: the
+ * default is now whichever site root the host reported, so there is no fixed path to abbreviate and
+ * a prettified stand-in would name a folder the project would not land in.
+ */
 export function formatCreateProjectParentSummary({
   parent,
-  defaultParent,
   runtimeEnvironmentId,
   isRemoteHost,
   missingLocationLabel = 'location not selected',
   missingServerLocationLabel = 'host folder not selected'
 }: {
   parent: string
-  defaultParent: string
   runtimeEnvironmentId?: string | null
   isRemoteHost?: boolean
   missingLocationLabel?: string
@@ -82,9 +90,6 @@ export function formatCreateProjectParentSummary({
   const trimmedParent = parent.trim()
   if (!trimmedParent) {
     return runtimeEnvironmentId || isRemoteHost ? missingServerLocationLabel : missingLocationLabel
-  }
-  if (defaultParent && trimmedParent === defaultParent && !runtimeEnvironmentId && !isRemoteHost) {
-    return '~/orca/projects'
   }
   return trimmedParent
 }
