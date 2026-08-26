@@ -235,6 +235,7 @@ export function usePersistCurrentStep({
         currentStepId === 'default_view' ||
         currentStepId === 'windows_terminal' ||
         currentStepId === 'integrations' ||
+        currentStepId === 'site_sources' ||
         currentStepId === 'site_mcp'
       ) {
         // Why: these pages persist their own preference on selection. Continue

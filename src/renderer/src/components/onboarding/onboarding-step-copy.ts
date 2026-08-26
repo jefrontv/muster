@@ -24,6 +24,20 @@ export const stepCopy: Record<StepId, OnboardingStepCopy> = {
       )
     }
   },
+  site_sources: {
+    get title() {
+      return translate(
+        'auto.components.onboarding.OnboardingFlow.siteSourcesTitle',
+        'Point Muster at your sites'
+      )
+    },
+    get subtitle() {
+      return translate(
+        'auto.components.onboarding.OnboardingFlow.siteSourcesSubtitle',
+        'Pick the folders your sites live in. Muster watches them and can add new ones to the sidebar for you.'
+      )
+    }
+  },
   site_mcp: {
     get title() {
       return translate(
@@ -119,5 +133,6 @@ export const stepTooltipLabels: Record<StepId, string> = {
   windows_terminal: 'Windows Terminal',
   notifications: 'Notifications',
   integrations: 'Integrations',
+  site_sources: 'Site Folders',
   site_mcp: 'Site Tools'
 }

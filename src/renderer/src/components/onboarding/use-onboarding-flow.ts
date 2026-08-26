@@ -58,8 +58,15 @@ function shouldSkipSiteMcpStep(defaultView: OnboardingDefaultView): boolean {
   return defaultView !== 'code'
 }
 
+// Same reasoning, one step earlier: asking a Chat-mode user which folders hold
+// their sites is a question about a surface they will never open.
+function shouldSkipSiteSourcesStep(defaultView: OnboardingDefaultView): boolean {
+  return defaultView !== 'code'
+}
+
 type OnboardingStepSkipOptions = {
   skipIntegrations: boolean
+  skipSiteSources: boolean
   skipSiteMcp: boolean
   skipWindowsTerminal: boolean
 }
@@ -68,6 +75,7 @@ function isSkippedStepIndex(index: number, options: OnboardingStepSkipOptions): 
   const step = STEPS[index]
   return (
     (options.skipIntegrations && step?.id === 'integrations') ||
+    (options.skipSiteSources && step?.id === 'site_sources') ||
     (options.skipSiteMcp && step?.id === 'site_mcp') ||
     (options.skipWindowsTerminal && step?.id === 'windows_terminal')
   )
@@ -220,10 +228,11 @@ export function useOnboardingFlow(
     activeCollabConfigured
   )
   const skipSiteMcp = shouldSkipSiteMcpStep(defaultView)
+  const skipSiteSources = shouldSkipSiteSourcesStep(defaultView)
   const skipWindowsTerminal = shouldSkipWindowsTerminalStep(isWindowsUserAgent())
   const skipOptions = useMemo(
-    () => ({ skipIntegrations, skipSiteMcp, skipWindowsTerminal }),
-    [skipIntegrations, skipSiteMcp, skipWindowsTerminal]
+    () => ({ skipIntegrations, skipSiteSources, skipSiteMcp, skipWindowsTerminal }),
+    [skipIntegrations, skipSiteSources, skipSiteMcp, skipWindowsTerminal]
   )
   const remappedLastCompletedStep = remapOpenOnboardingLastCompletedStep(onboarding)
   const initialStep = resolveStepIndex(

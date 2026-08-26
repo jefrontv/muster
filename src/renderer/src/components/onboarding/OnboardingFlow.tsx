@@ -9,6 +9,7 @@ import { ThemeStep } from './ThemeStep'
 import { NotificationStep } from './NotificationStep'
 import { IntegrationsStep } from './IntegrationsStep'
 import { OnboardingSiteMcpStep } from './onboarding-site-mcp-step'
+import { OnboardingSiteSourcesStep } from './onboarding-site-sources-step'
 import { WindowsTerminalStep } from './WindowsTerminalStep'
 import { OnboardingDefaultViewStep } from './onboarding-default-view-step'
 import { OnboardingWelcome } from './onboarding-welcome'
@@ -42,7 +43,7 @@ export default function OnboardingFlow({
     currentStep.id === 'agent' && flow.defaultView === 'chat'
       ? translate(
           'auto.components.onboarding.OnboardingFlow.agentSubtitleChat',
-          "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time."
+          'Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.'
         )
       : copy.subtitle
   const [welcomeVisible, setWelcomeVisible] = useState(
@@ -282,6 +283,7 @@ export default function OnboardingFlow({
                     />
                   )}
                   {currentStep.id === 'integrations' && <IntegrationsStep />}
+                  {currentStep.id === 'site_sources' && <OnboardingSiteSourcesStep />}
                   {currentStep.id === 'site_mcp' && <OnboardingSiteMcpStep />}
                   {currentStep.id === 'windows_terminal' && (
                     <WindowsTerminalStep

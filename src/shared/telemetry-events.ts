@@ -670,6 +670,7 @@ const onboardingValueKindSchema = z.enum([
   'notifications',
   'agent_setup',
   'integrations',
+  'site_sources',
   'site_mcp',
   'windows_terminal',
   'tour',

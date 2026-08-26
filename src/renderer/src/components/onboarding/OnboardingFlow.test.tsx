@@ -52,9 +52,9 @@ describe('OnboardingFlow', () => {
     // Why welcome: pre-default_view progress restarts on the new first step.
     [3, 'data-onboarding-welcome="true"'],
     [4, 'data-onboarding-welcome="true"'],
-    // Finishing integrations in the old flow means site_mcp is what comes next.
-    [5, 'Let agents work on your sites'],
-    [9, 'Let agents work on your sites']
+    // Finishing integrations in the old flow means site_sources is what comes next.
+    [5, 'Point Muster at your sites'],
+    [9, 'Point Muster at your sites']
   ])(
     'resumes unversioned seven-step onboarding progress %i at the matching current page',
     (legacyStep, title) => {
@@ -75,9 +75,9 @@ describe('OnboardingFlow', () => {
 
   it.each([
     [3, 'data-onboarding-welcome="true"'],
-    [4, 'Let agents work on your sites'],
-    [5, 'Let agents work on your sites'],
-    [9, 'Let agents work on your sites']
+    [4, 'Point Muster at your sites'],
+    [5, 'Point Muster at your sites'],
+    [9, 'Point Muster at your sites']
   ])(
     'resumes versioned five-step onboarding progress %i at the matching current page',
     (legacyStep, title) => {
@@ -97,8 +97,8 @@ describe('OnboardingFlow', () => {
   )
 
   it.each([
-    // Finishing v3 integrations lands on site_mcp; later progress clears it.
-    [3, 'Let agents work on your sites'],
+    // Finishing v3 integrations lands on site_sources; later progress clears it.
+    [3, 'Point Muster at your sites'],
     [4, 'Set up notifications'],
     [9, 'Set up notifications']
   ])(
@@ -124,13 +124,13 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 5
+        lastCompletedStep: 6
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set Windows terminal defaults')
-    expect(html).toContain('6 of 7')
+    expect(html).toContain('7 of 8')
   })
 
   it('drops the skipped integrations step from the stepper on Windows', () => {
@@ -149,17 +149,17 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 5
+        lastCompletedStep: 6
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Set Windows terminal defaults')
     // Why: integrations is skipped (gh already installed), so it is not a
-    // stepper dot at all — the six real steps are default view, agent, theme,
-    // site tools, Windows terminal, notifications, and Windows terminal is
-    // the fifth of six.
-    expect(html).toContain('5 of 6')
+    // stepper dot at all — the seven real steps are default view, agent, theme,
+    // site folders, site tools, Windows terminal, notifications, and Windows
+    // terminal is the sixth of seven.
+    expect(html).toContain('6 of 7')
     expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Integrations')
   })
@@ -170,13 +170,13 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 4
+        lastCompletedStep: 5
       },
       onOnboardingChange: vi.fn()
     })
 
     expect(html).toContain('Let agents work on your sites')
-    expect(html).toContain('5 of 6')
+    expect(html).toContain('6 of 7')
   })
 
   it('skips the site tools step entirely for Chat mode users', () => {
@@ -197,6 +197,39 @@ describe('OnboardingFlow', () => {
     expect(html).toContain('Set up notifications')
   })
 
+  it('offers the site folders step to Code mode users after integrations', () => {
+    useAppStore.setState({ activeView: 'terminal' })
+
+    const html = renderOnboardingFlow({
+      onboarding: {
+        ...getDefaultOnboardingState(),
+        lastCompletedStep: 4
+      },
+      onOnboardingChange: vi.fn()
+    })
+
+    expect(html).toContain('Point Muster at your sites')
+    expect(html).toContain('Add new sites automatically')
+    expect(html).toContain('5 of 7')
+  })
+
+  it('skips the site folders step entirely for Chat mode users', () => {
+    // Asking which folders hold sites is meaningless to someone who will never
+    // open the Sites page, so it is not even a stepper dot.
+    useAppStore.setState({ activeView: 'chat' })
+
+    const html = renderOnboardingFlow({
+      onboarding: {
+        ...getDefaultOnboardingState(),
+        lastCompletedStep: 4
+      },
+      onOnboardingChange: vi.fn()
+    })
+
+    expect(html).not.toContain('Point Muster at your sites')
+    expect(html).not.toContain('Add new sites automatically')
+  })
+
   it('skips GitHub task setup when the GitHub CLI is already detected', () => {
     useAppStore.setState({
       preflightStatus: {
@@ -212,7 +245,7 @@ describe('OnboardingFlow', () => {
     const html = renderOnboardingFlow({
       onboarding: {
         ...getDefaultOnboardingState(),
-        lastCompletedStep: 5
+        lastCompletedStep: 7
       },
       onOnboardingChange: vi.fn()
     })
@@ -224,8 +257,8 @@ describe('OnboardingFlow', () => {
     expect(html).not.toContain('Connect your task sources')
     expect(html).not.toContain('Point Muster at some code')
     // Why: with both integrations (gh installed) and Windows terminal (Mac)
-    // skipped, the stepper shows only the five real steps — no dead dots.
-    expect(html).toContain('5 of 5')
+    // skipped, the stepper shows only the six real steps — no dead dots.
+    expect(html).toContain('6 of 6')
     expect(html).not.toContain('Integrations')
   })
 

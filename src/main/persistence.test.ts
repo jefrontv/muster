@@ -1233,8 +1233,8 @@ describe('Store', () => {
 
   it.each([
     [3, 4],
-    [4, 6],
-    [9, 6]
+    [4, 7],
+    [9, 7]
   ])(
     'migrates versioned four-step onboarding progress %i around the inserted Windows step',
     async (legacyStep, expectedStep) => {
@@ -1261,8 +1261,8 @@ describe('Store', () => {
   it.each([
     [2, 0],
     [3, 4],
-    [4, 6],
-    [5, 7]
+    [4, 7],
+    [5, 8]
   ])(
     'migrates versioned five-step v4 onboarding progress %i around the inserted default-view page',
     async (legacyStep, expectedStep) => {

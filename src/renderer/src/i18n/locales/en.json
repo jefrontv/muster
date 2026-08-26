@@ -10730,6 +10730,16 @@
         }
       },
       "onboarding": {
+        "SiteSourcesStep": {
+          "title": "Where your sites live",
+          "description": "Muster looks inside these folders for sites. You can change this later on the Sites page.",
+          "empty": "No folders yet. Choose the one that holds your sites.",
+          "remove": "Remove folder",
+          "derived_note": "Found from where your projects already sit. Add a folder to set your own.",
+          "add_folder": "Choose folder\u2026",
+          "auto_add": "Add new sites automatically",
+          "auto_add_hint": "New folders found here become sidebar projects on their own, with no setup."
+        },
         "SiteMcpStep": {
           "title": "Site tools for your agents",
           "status_ready": "Installed",
@@ -10814,6 +10824,8 @@
           "2c47f5465f": "Turn on Allow notifications for Muster in System Settings. This step updates automatically once enabled."
         },
         "OnboardingFlow": {
+          "siteSourcesTitle": "Point Muster at your sites",
+          "siteSourcesSubtitle": "Pick the folders your sites live in. Muster watches them and can add new ones to the sidebar for you.",
           "1b5e182e9f": "Welcome to Muster",
           "4db04f2f57": "of",
           "adaa0aa627": "Go to onboarding step {{value0}}: {{value1}}",
