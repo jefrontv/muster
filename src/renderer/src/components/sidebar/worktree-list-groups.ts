@@ -1006,6 +1006,12 @@ function sortProjectEntries(
   if (sortBy === 'smart') {
     return sortProjectEntriesBySmartWorktreeOrder(entries, orderedWorktrees)
   }
+  // Why: Name is an explicit user choice, like smart above — and sortBy already outranks
+  // projectOrderBy here. Falling through to manual rank made Sort → Name look broken for project
+  // headers: the worktrees inside each group reordered, the headers never moved (#28).
+  if (sortBy === 'name') {
+    return [...entries].sort((a, b) => a[1].label.localeCompare(b[1].label))
+  }
   if (projectOrderBy === 'recent') {
     return [...entries].sort((a, b) => {
       const byRecent = compareRecentRank(recentRankForEntry(a), recentRankForEntry(b))
@@ -1429,6 +1435,11 @@ export function buildRows(
   const sortRepoEntriesWithinGroup = (entries: OrderedGroupEntry[]): OrderedGroupEntry[] => {
     if (sortBy === 'smart') {
       return sortProjectEntriesBySmartWorktreeOrder(entries, naturalWorktrees)
+    }
+    // Same reason as sortProjectEntries: projects nested inside a Project Group must honour
+    // Sort → Name too, or the option works in one grouping mode and not the other.
+    if (sortBy === 'name') {
+      return [...entries].sort((left, right) => left[1].label.localeCompare(right[1].label))
     }
     if (projectOrderBy === 'recent') {
       return [...entries].sort((left, right) =>

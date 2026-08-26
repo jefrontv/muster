@@ -2112,6 +2112,47 @@ describe('buildRows project grouping order', () => {
     expect(headerKeys).toEqual(['repo:repo-c', 'repo:repo-a', 'repo:repo-b'])
   })
 
+  it('orders repo headers alphabetically under Sort → Name (#28)', () => {
+    // Manual project order is beta, alpha, gamma. Choosing Name must reorder the HEADERS, not
+    // just the worktrees inside them — the reported bug was headers frozen on manual rank.
+    const repoOrder = new Map([
+      [repoB.id, 0],
+      [repoA.id, 1],
+      [repoC.id, 2]
+    ])
+    const rows = buildRows(
+      'repo',
+      [wC, wA, wB],
+      map,
+      null,
+      new Set(),
+      repoOrder,
+      undefined,
+      'manual',
+      {},
+      new Map([
+        [wC.id, wC],
+        [wA.id, wA],
+        [wB.id, wB]
+      ]),
+      false,
+      undefined,
+      [],
+      new Set(),
+      new Map(),
+      new Map(),
+      [],
+      undefined,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      'name'
+    )
+    const headerKeys = rows.filter((r) => r.type === 'header').map((r) => r.key)
+    expect(headerKeys).toEqual(['repo:repo-a', 'repo:repo-b', 'repo:repo-c'])
+  })
+
   it("uses each repo's freshest visible child, not its first, in Recent mode", () => {
     // repo-a has a fresh child (200) and a stale one (50); its rank is the max.
     const rows = buildRows(
