@@ -36,11 +36,14 @@ export function AddToSidebarButton({
   )
 
   return (
-    // Negative gap + rounding overrides fuse the two halves into one control: a visible gap reads as
-    // two unrelated buttons, and a shared border reads as one with a menu.
+    // Both halves are outline, matching the other header actions: ghost had no border, so the
+    // control read as bare label text rather than something pressable. Squared inner corners plus a
+    // 1px overlap fuse them into one unit — a visible gap reads as two unrelated buttons, and
+    // butting two bordered halves together would draw a 2px seam. The overlap is used rather than
+    // border-r-0 because the variant's own `border` wins the stylesheet order and keeps the edge.
     <div className="flex shrink-0 items-stretch">
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         className="gap-1.5 rounded-r-none pr-2"
         disabled={busy}
@@ -52,10 +55,10 @@ export function AddToSidebarButton({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             aria-label={optionsLabel}
-            className="rounded-l-none border-l border-border/60 px-1.5"
+            className="-ml-px rounded-l-none px-1.5"
           >
             <ChevronDown className="size-3.5" />
           </Button>

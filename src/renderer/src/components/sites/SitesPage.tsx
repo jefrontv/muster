@@ -233,18 +233,21 @@ export default function SitesPage(): React.JSX.Element {
             })}
           </span>
         </div>
+        {/* New site leads: it is the action this page exists for. It keeps the filled variant so
+            there is still one clear primary; everything after it is outline, which is what makes
+            them legible — ghost rendered as bare text with no edge to press. */}
+        <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setCloneDialogOpen(true)}>
+          <GitBranchPlus className="size-3.5" />
+          {getSiteCloneSourceStrings().trigger}
+        </Button>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="shrink-0 gap-1.5"
           onClick={() => setRootsDialogOpen(true)}
         >
           <FolderCog className="size-3.5" />
           {translate('auto.components.sites.SitesPage.folders', 'Folders')}
-        </Button>
-        <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setCloneDialogOpen(true)}>
-          <GitBranchPlus className="size-3.5" />
-          {getSiteCloneSourceStrings().trigger}
         </Button>
         <AddToSidebarButton
           busy={importing}
