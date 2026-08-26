@@ -162,6 +162,15 @@ export type SiteRepoLinkResult = {
   skipped: { path: string; reason: string }[]
 }
 
+/**
+ * Outcome of putting everything on disk into the sidebar: candidates discovered under the
+ * configured roots become sites (`adopted`), then every site links to a project.
+ *
+ * `adopted` is separate from `added` because they answer different questions — how many folders
+ * Muster had never seen before, versus how many sidebar projects appeared.
+ */
+export type SiteSidebarSyncResult = SiteRepoLinkResult & { adopted: number }
+
 /** Outcome of importing the legacy ~/.config/ocsites configuration. */
 export type OcsitesImportApplyResult = {
   created: number

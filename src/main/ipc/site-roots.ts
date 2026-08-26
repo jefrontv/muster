@@ -24,6 +24,8 @@ import type {
 import type { SiteResult } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { discoverSiteCandidates } from '../sites/site-candidate-discovery'
+import { addDiscoveredSitesToSidebar } from '../sites/site-sidebar-sync'
+import { sendToTrustedUIRenderer } from './ui'
 import {
   addConfiguredSiteRoot,
   describeConfiguredSiteRoots,
@@ -51,10 +53,57 @@ const SITE_ROOTS_CHANNELS = [
 
 const EVENT_CHANNEL = 'siteRoots:changed'
 
+/** Pushed after an automatic adopt-and-link actually changed something, so the sidebar refetches. */
+const SIDEBAR_SYNC_CHANNEL = 'sites:sidebarSynced'
+
 const subscribers = new Set<WebContents>()
 
 let watcher: SiteRootsWatcherHandle | null = null
 let quitHookInstalled = false
+
+// Why debounced: creating a folder in Finder fires several watcher events in a burst, and each one
+// would otherwise start its own full scan. Why unref'd: this must never hold the app open.
+const AUTO_ADD_DEBOUNCE_MS = 2_000
+let autoAddTimer: ReturnType<typeof setTimeout> | null = null
+let autoAddInFlight = false
+
+/**
+ * Adopt-and-link every discovered folder, when the user has asked for that to happen on its own.
+ *
+ * Event-driven rather than polled: the roots watcher already reports folder changes, so a timer
+ * would re-scan on a schedule to learn what an fs event just said for free. A restart is covered by
+ * the one call at registration, and flipping the setting on is covered by the settings hook.
+ */
+async function runAutoAdd(store: Store): Promise<void> {
+  if (autoAddInFlight || store.getSettings().sitesAutoAddDiscovered !== true) {
+    return
+  }
+  autoAddInFlight = true
+  try {
+    const result = await addDiscoveredSitesToSidebar(store, { roots: watcher?.getRoots() })
+    // Silent when nothing moved: the common case is a re-scan that finds everything already
+    // present, and a push per watcher event would refetch the sidebar for no reason.
+    if (result.adopted > 0 || result.added > 0) {
+      sendToTrustedUIRenderer(SIDEBAR_SYNC_CHANNEL, result)
+    }
+  } catch {
+    // A scan that throws (permissions, unmounted volume) must not take the watcher down with it.
+  } finally {
+    autoAddInFlight = false
+  }
+}
+
+function scheduleAutoAdd(store: Store): void {
+  if (store.getSettings().sitesAutoAddDiscovered !== true) {
+    return
+  }
+  clearTimeout(autoAddTimer ?? undefined)
+  autoAddTimer = setTimeout(() => {
+    autoAddTimer = null
+    void runAutoAdd(store)
+  }, AUTO_ADD_DEBOUNCE_MS)
+  autoAddTimer.unref?.()
+}
 
 function broadcast(event: SiteRootsChangedEvent): void {
   for (const sender of subscribers) {
@@ -88,14 +137,26 @@ export function registerSiteRootsHandlers(store: Store): void {
   // Started here rather than at module load so the store is available, and replaced on a
   // re-register so the previous watcher's fs.watch handles and sweep timer do not outlive it.
   watcher?.stop()
-  const roots = startSiteRootsWatcher(store, { onChange: broadcast })
+  const roots = startSiteRootsWatcher(store, {
+    onChange: (event) => {
+      broadcast(event)
+      scheduleAutoAdd(store)
+    }
+  })
   watcher = roots
+
+  // Folders created while the app was closed produce no watcher event, so catch up once here.
+  // Flipping the toggle on is handled by the renderer running the same action directly — nothing
+  // here subscribes to settings, which keeps registration working against a partial store.
+  scheduleAutoAdd(store)
 
   if (!quitHookInstalled) {
     quitHookInstalled = true
     // Reads the module binding, not `roots`: a re-register must not leave the quit hook holding a
     // watcher that has already been stopped and replaced.
     app.once('will-quit', () => {
+      clearTimeout(autoAddTimer ?? undefined)
+      autoAddTimer = null
       watcher?.stop()
       watcher = null
     })

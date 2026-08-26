@@ -1296,6 +1296,18 @@ export function useIpcEvents(): void {
       })
     )
 
+    // Why here rather than on the Sites page: an automatic adopt-and-link can land while the user is
+    // anywhere, and the projects it creates belong in the sidebar immediately. Main only pushes when
+    // something actually changed, so this refetch is not on any idle path.
+    if (window.api.sites?.onSidebarSynced) {
+      unsubs.push(
+        window.api.sites.onSidebarSynced(() => {
+          void useAppStore.getState().fetchSites()
+          void useAppStore.getState().fetchRepos()
+        })
+      )
+    }
+
     if (window.api.keybindings) {
       unsubs.push(
         window.api.keybindings.onChanged((snapshot) => {

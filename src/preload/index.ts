@@ -827,6 +827,15 @@ const api = {
     removeEnvironment: (args) => ipcRenderer.invoke('sites:removeEnvironment', args),
     importFromOcsites: () => ipcRenderer.invoke('sites:importFromOcsites'),
     linkRepos: () => ipcRenderer.invoke('sites:linkRepos'),
+    addDiscoveredToSidebar: () => ipcRenderer.invoke('sites:addDiscoveredToSidebar'),
+    onSidebarSynced: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        result: Parameters<typeof callback>[0]
+      ) => callback(result)
+      ipcRenderer.on('sites:sidebarSynced', listener)
+      return () => ipcRenderer.removeListener('sites:sidebarSynced', listener)
+    },
     listBranches: (siteId) => ipcRenderer.invoke('sites:listBranches', siteId)
   } satisfies PreloadApi['sites'],
 

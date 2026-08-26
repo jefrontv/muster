@@ -1,10 +1,11 @@
 import { ipcMain } from 'electron'
-import type { SiteSecretKind, SiteSummary } from '../../shared/site-types'
+import type { SiteSecretKind, SiteSidebarSyncResult, SiteSummary } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { importOcsitesConfig } from '../sites/ocsites-config-import'
 import { applyOcsitesImport, type OcsitesImportApplyResult } from '../sites/ocsites-import-apply'
 import { deleteSiteSecrets, setSiteSecret } from '../sites/site-secret-store'
 import { linkSitesToRepos, type SiteRepoLinkResult } from '../sites/site-repo-link'
+import { addDiscoveredSitesToSidebar } from '../sites/site-sidebar-sync'
 import { listCheckoutBranches } from '../sites/site-branches'
 import { buildSiteSummaries, buildSiteSummary, resolveSiteCheckoutDir } from '../sites/site-summary'
 import { registerSiteEnvironmentHandlers } from './sites-environments'
@@ -29,6 +30,7 @@ const SITE_CHANNELS = [
   'sites:setSecret',
   'sites:importFromOcsites',
   'sites:linkRepos',
+  'sites:addDiscoveredToSidebar',
   'sites:listBranches'
 ] as const
 
@@ -204,6 +206,20 @@ export function registerSiteHandlers(store: Store): void {
       return failure(error)
     }
   })
+
+  // The button's action: adopt everything discovered under the roots, then link it all. Separate
+  // from `sites:linkRepos`, which stays link-only for callers that must not mint site records
+  // (the ocsites import already created exactly the ones it wants).
+  ipcMain.handle(
+    'sites:addDiscoveredToSidebar',
+    async (): Promise<SiteResult<SiteSidebarSyncResult>> => {
+      try {
+        return { ok: true, value: await addDiscoveredSitesToSidebar(store) }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
 
   registerSiteEnvironmentHandlers(store)
 }

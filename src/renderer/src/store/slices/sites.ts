@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand'
 import type {
   OcsitesImportApplyResult,
   SiteRepoLinkResult,
+  SiteSidebarSyncResult,
   Site,
   SiteEnvironment,
   SiteSecretKind,
@@ -58,6 +59,8 @@ export type SitesSlice = {
     (OcsitesImportApplyResult & { found: boolean; repos: SiteRepoLinkResult }) | { error: string }
   >
   linkSiteRepos: () => Promise<SiteRepoLinkResult | { error: string }>
+  /** Adopts every discovered folder and links the lot; also the refresh path for the auto-add push. */
+  addDiscoveredSitesToSidebar: () => Promise<SiteSidebarSyncResult | { error: string }>
 }
 
 /** Replaces one summary in place so the list does not reorder while the user is editing it. */
@@ -173,6 +176,18 @@ export const createSitesSlice: StateCreator<AppState, [], [], SitesSlice> = (set
         return { error: result.error }
       }
       await get().fetchSites()
+      await get().fetchRepos()
+      return result.value
+    },
+
+    addDiscoveredSitesToSidebar: async () => {
+      const result = await window.api.sites.addDiscoveredToSidebar()
+      if (!result.ok) {
+        set({ sitesError: result.error })
+        return { error: result.error }
+      }
+      await get().fetchSites()
+      // Newly adopted folders only reach the sidebar once the repo list refetches.
       await get().fetchRepos()
       return result.value
     }

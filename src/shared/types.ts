@@ -2696,6 +2696,14 @@ export type GlobalSettings = {
   /** One-shot migration guard for the default-on rollout. Existing profiles
    *  without the guard are flipped on once; later explicit opt-outs stick. */
   autoRenameBranchFromWorkDefaultedOn?: boolean
+  /**
+   * When enabled, every site folder discovered under the configured site roots is adopted and
+   * linked into the sidebar automatically, with no per-folder click.
+   *
+   * Off unless asked for: this creates Site records and sidebar projects on the user's behalf, and
+   * a root pointed at a large tree would fill the sidebar with things they never chose.
+   */
+  sitesAutoAddDiscovered?: boolean
   branchPrefix: BranchPrefixStrategy
   branchPrefixCustom: string
   enableGitHubAttribution: boolean

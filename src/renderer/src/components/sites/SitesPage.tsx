@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  DownloadCloud,
-  FolderCog,
-  FolderPlus,
-  GitBranchPlus,
-  Globe,
-  Search
-} from 'lucide-react'
+import { ArrowLeft, DownloadCloud, FolderCog, GitBranchPlus, Globe, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -16,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { filterSites, sitesOnDisk } from './site-filtering'
 import { AddSiteFromGitDialog } from './AddSiteFromGitDialog'
+import { AddToSidebarButton } from './AddToSidebarButton'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteDetailPanel } from './SiteDetailPanel'
@@ -35,7 +28,9 @@ export default function SitesPage(): React.JSX.Element {
   const selectSite = useAppStore((state) => state.selectSite)
   const setSiteQuery = useAppStore((state) => state.setSiteQuery)
   const importSitesFromOcsites = useAppStore((state) => state.importSitesFromOcsites)
-  const linkSiteRepos = useAppStore((state) => state.linkSiteRepos)
+  const addDiscoveredSitesToSidebar = useAppStore((state) => state.addDiscoveredSitesToSidebar)
+  const updateSettings = useAppStore((state) => state.updateSettings)
+  const autoAddDiscovered = useAppStore((state) => state.settings?.sitesAutoAddDiscovered === true)
   const [importing, setImporting] = useState(false)
 
   const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
@@ -127,12 +122,27 @@ export default function SitesPage(): React.JSX.Element {
     }
   }
 
-  const runLinkRepos = async (): Promise<void> => {
+  // Adopts every discovered folder and links the lot. Previously this only linked sites that
+  // already had records, so a discovered folder had to be clicked first — which is exactly the
+  // step the user should not need.
+  const runAddToSidebar = async (): Promise<void> => {
     setImporting(true)
     try {
-      const result = await linkSiteRepos()
+      const result = await addDiscoveredSitesToSidebar()
       if ('error' in result) {
         toast.error(result.error)
+        return
+      }
+      // Sites already bound to a live repo are skipped before counting, so a fully synced machine
+      // reports 0/0. Saying "0 added, 0 already present" there reads like a failure; say nothing
+      // needed doing instead.
+      if (result.adopted === 0 && result.added === 0 && result.linked === 0) {
+        toast.success(
+          translate(
+            'auto.components.sites.SitesPage.sidebarUpToDate',
+            'Already up to date — every site folder is in the sidebar.'
+          )
+        )
         return
       }
       toast.success(
@@ -144,6 +154,15 @@ export default function SitesPage(): React.JSX.Element {
       )
     } finally {
       setImporting(false)
+    }
+  }
+
+  // Turning it on runs one pass immediately: the watcher only fires on a folder CHANGE, so without
+  // this the setting would appear to do nothing until the next time something on disk moved.
+  const handleAutoAddChange = async (next: boolean): Promise<void> => {
+    await updateSettings({ sitesAutoAddDiscovered: next })
+    if (next) {
+      await runAddToSidebar()
     }
   }
 
@@ -227,16 +246,12 @@ export default function SitesPage(): React.JSX.Element {
           <GitBranchPlus className="size-3.5" />
           {getSiteCloneSourceStrings().trigger}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="shrink-0 gap-1.5"
-          disabled={importing}
-          onClick={() => void runLinkRepos()}
-        >
-          <FolderPlus className="size-3.5" />
-          {translate('auto.components.sites.SitesPage.addToSidebar', 'Add to sidebar')}
-        </Button>
+        <AddToSidebarButton
+          busy={importing}
+          autoAdd={autoAddDiscovered}
+          onAdd={() => void runAddToSidebar()}
+          onAutoAddChange={(next) => void handleAutoAddChange(next)}
+        />
         <Button
           variant="outline"
           size="sm"

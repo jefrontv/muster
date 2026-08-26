@@ -24,6 +24,7 @@ import type {
   SiteEnvironment,
   SiteLocalStack,
   SiteRepoLinkResult,
+  SiteSidebarSyncResult,
   SiteResult,
   SiteRunGroup,
   SiteSecretKind,
@@ -843,6 +844,13 @@ export type SitesApi = {
   >
   /** Binds on-disk sites to sidebar projects. Re-runnable when a volume comes back online. */
   linkRepos: () => Promise<SiteResult<SiteRepoLinkResult>>
+  /**
+   * Adopts every folder discovered under the configured roots, then links the lot — the whole of
+   * "Add to sidebar" in one call, so nothing has to be clicked per folder first.
+   */
+  addDiscoveredToSidebar: () => Promise<SiteResult<SiteSidebarSyncResult>>
+  /** Fires after an AUTOMATIC adopt-and-link changed something, so the sidebar can refetch. */
+  onSidebarSynced: (callback: (result: SiteSidebarSyncResult) => void) => () => void
   /** Local branch names of the site's checkout — suggestions only, [] when git is absent. */
   listBranches: (siteId: string) => Promise<SiteResult<string[]>>
 }

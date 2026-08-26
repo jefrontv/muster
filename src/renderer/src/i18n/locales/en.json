@@ -13458,7 +13458,11 @@
           "countOnDisk": "{{count}} on disk · {{hidden}} missing",
           "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.",
           "discoveredHeading": "Found on disk ({{count}})",
-          "folders": "Folders"
+          "folders": "Folders",
+          "addToSidebarOptions": "Add to sidebar options",
+          "autoAddDiscovered": "Add new sites automatically",
+          "autoAddDiscoveredHint": "New folders found under your site folders become sidebar projects on their own, with no setup.",
+          "sidebarUpToDate": "Already up to date — every site folder is in the sidebar."
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
