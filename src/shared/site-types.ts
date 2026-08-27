@@ -182,6 +182,14 @@ export type SitePipelineRun = {
   trigger: string | null
   createdOn: number | null
   durationSeconds: number | null
+  /**
+   * Which step the pipeline is on, and how far through. Populated only for the newest run while it
+   * is still in flight — resolving it costs a second API call, and it is a meaningless question
+   * about a pipeline that finished days ago.
+   */
+  currentStep: string | null
+  completedSteps: number | null
+  totalSteps: number | null
   /** The page a person wants, not the API resource. */
   url: string
 }

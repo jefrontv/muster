@@ -53,10 +53,42 @@ type RawPipeline = {
   duration_in_seconds?: number | null
 }
 
+type RawPipelineStep = {
+  name?: string | null
+  state?: { name?: string | null; result?: { name?: string | null } | null } | null
+}
+
 export type SitePipelinesDeps = {
   resolveRepoRef?: (repoPath: string) => Promise<BitbucketRepoRef | null>
   hasAuth?: () => boolean
   fetchPipelines?: (repo: BitbucketRepoRef) => Promise<readonly RawPipeline[]>
+  fetchSteps?: (repo: BitbucketRepoRef, pipelineUuid: string) => Promise<readonly RawPipelineStep[]>
+}
+
+/**
+ * The step a pipeline is actually on, plus how far through it is.
+ *
+ * Only ever computed for an in-flight run: steps cost a second API call per poll, and "which step
+ * is it on" is a question nobody asks about a pipeline that finished two days ago.
+ */
+export function deriveStepProgress(steps: readonly RawPipelineStep[]): {
+  currentStep: string | null
+  completedSteps: number
+  totalSteps: number
+} {
+  let completed = 0
+  let current: string | null = null
+  for (const step of steps) {
+    const state = step.state?.name?.trim().toUpperCase() ?? ''
+    if (state === 'COMPLETED') {
+      completed += 1
+      continue
+    }
+    // The first thing not yet finished is what the pipeline is working on. Bitbucket returns steps
+    // in execution order, so this does not need a timestamp comparison.
+    current ??= step.name?.trim() || null
+  }
+  return { currentStep: current, completedSteps: completed, totalSteps: steps.length }
 }
 
 /**
@@ -111,6 +143,10 @@ function toRun(raw: RawPipeline, repo: BitbucketRepoRef): SitePipelineRun | null
     trigger: raw.trigger?.name?.trim() || null,
     createdOn: epochMs(raw.created_on),
     durationSeconds: typeof raw.duration_in_seconds === 'number' ? raw.duration_in_seconds : null,
+    // Filled in afterwards, and only for a run still in flight.
+    currentStep: null,
+    completedSteps: null,
+    totalSteps: null,
     // Built rather than taken from `links.self`, which is an API URL keyed by repository UUID and
     // opens JSON, not the page a person wants.
     url: `https://bitbucket.org/${repo.workspace}/${repo.repoSlug}/pipelines/results/${buildNumber}`
@@ -127,6 +163,24 @@ async function fetchPipelinesFromApi(repo: BitbucketRepoRef): Promise<readonly R
   return data?.values ?? []
 }
 
+async function fetchStepsFromApi(
+  repo: BitbucketRepoRef,
+  pipelineUuid: string
+): Promise<readonly RawPipelineStep[]> {
+  const encoded = `${encodeURIComponent(repo.workspace)}/${encodeURIComponent(repo.repoSlug)}`
+  const data = await bitbucketRequestJson<{ values?: RawPipelineStep[] }>(
+    `/repositories/${encoded}/pipelines/${encodeURIComponent(pipelineUuid)}/steps`,
+    { searchParams: { pagelen: '50' } },
+    true
+  )
+  return data?.values ?? []
+}
+
+/** Runs still doing work, and so worth spending a second call on to name the current step. */
+function isInFlight(status: SitePipelineRun['status']): boolean {
+  return status === 'running' || status === 'pending' || status === 'paused'
+}
+
 /**
  * Recent pipeline runs for the checkout at `repoPath`.
  *
@@ -140,6 +194,7 @@ export async function getSitePipelines(
   const resolveRepoRef = deps.resolveRepoRef ?? ((path: string) => getBitbucketRepoRef(path))
   const hasAuth = deps.hasAuth ?? bitbucketHasAuth
   const fetchPipelines = deps.fetchPipelines ?? fetchPipelinesFromApi
+  const fetchSteps = deps.fetchSteps ?? fetchStepsFromApi
 
   const repo = await resolveRepoRef(repoPath)
   if (!repo) {
@@ -153,11 +208,26 @@ export async function getSitePipelines(
   try {
     const raw = await fetchPipelines(repo)
     const runs: SitePipelineRun[] = []
+    const pending: { run: SitePipelineRun; uuid: string }[] = []
     for (const entry of raw) {
       const run = toRun(entry, repo)
-      if (run) {
-        runs.push(run)
+      if (!run) {
+        continue
       }
+      const uuid = entry.uuid?.trim()
+      if (isInFlight(run.status) && uuid) {
+        pending.push({ run, uuid })
+      }
+      runs.push(run)
+    }
+    // The newest run still working, which is not necessarily the newest run: a stuck pipeline can
+    // sit IN_PROGRESS for months while later ones start and finish above it. Only one is enriched
+    // — steps cost an extra call per poll, and a finished run's step list adds nothing.
+    const inFlight = pending[0]
+    if (inFlight) {
+      // A failure here must not lose the run list — the row is still worth showing without it.
+      const steps = await fetchSteps(repo, inFlight.uuid).catch(() => [])
+      Object.assign(inFlight.run, deriveStepProgress(steps))
     }
     return { available: true, runs, workspace: repo.workspace, repoSlug: repo.repoSlug }
   } catch (error) {
