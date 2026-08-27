@@ -8,7 +8,7 @@ function getEstimatedRenderRowStarts(
   let offset = 0
   for (let index = 0; index < rows.length; index++) {
     starts[index] = offset
-    offset += estimateRenderRowSize(rows, index, firstHeaderIndex, null)
+    offset += estimateRenderRowSize(rows, index, firstHeaderIndex)
   }
   starts[rows.length] = offset
   return starts

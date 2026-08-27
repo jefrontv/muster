@@ -7,7 +7,6 @@ import {
   shouldAdjustWorktreeSidebarMeasuredRowScroll
 } from './WorktreeList'
 import {
-  extractWorktreeVirtualRowIndexes,
   estimateRenderRowSize,
   GROUP_HEADER_ROW_HEIGHT,
   getActiveStickyHeaderIndexForScroll
@@ -121,7 +120,7 @@ describe('shouldAdjustWorktreeSidebarMeasuredRowScroll', () => {
 })
 
 describe('getScrollTopToRevealBounds', () => {
-  it('treats the sticky header as occluding the viewport top', () => {
+  it('treats the top inset as occluding the viewport top', () => {
     const container = makeScrollContainer(100, 400)
 
     expect(
@@ -136,7 +135,7 @@ describe('getScrollTopToRevealBounds', () => {
     ).toBe(72)
   })
 
-  it('includes extra reveal clearance for the highlight ring', () => {
+  it('reserves only the reveal clearance now that no header pins', () => {
     const container = makeScrollContainer(100, 400)
 
     expect(
@@ -148,10 +147,10 @@ describe('getScrollTopToRevealBounds', () => {
         },
         WORKTREE_SIDEBAR_REVEAL_TOP_INSET
       )
-    ).toBe(66)
+    ).toBe(94)
   })
 
-  it('does not scroll when the bounds are below the sticky header', () => {
+  it('does not scroll when the bounds are below the top inset', () => {
     const container = makeScrollContainer(100, 400)
 
     expect(
@@ -166,7 +165,7 @@ describe('getScrollTopToRevealBounds', () => {
     ).toBeNull()
   })
 
-  it('keeps the viewport bottom independent of the sticky header inset', () => {
+  it('keeps the viewport bottom independent of the top inset', () => {
     const container = makeScrollContainer(100, 400)
 
     expect(
@@ -182,47 +181,17 @@ describe('getScrollTopToRevealBounds', () => {
   })
 })
 
-describe('extractWorktreeVirtualRowIndexes', () => {
-  it('extracts the active and previous sticky headers with the visible range', () => {
-    expect(
-      extractWorktreeVirtualRowIndexes({
-        range: { startIndex: 8, endIndex: 10, overscan: 1, count: 20 },
-        stickyHeaderIndexes: [0, 5, 9]
-      })
-    ).toEqual([0, 5, 7, 8, 9, 10, 11])
-  })
-
-  it('falls back to the default range when no sticky header is active', () => {
-    expect(
-      extractWorktreeVirtualRowIndexes({
-        range: { startIndex: 2, endIndex: 3, overscan: 1, count: 10 },
-        stickyHeaderIndexes: [5]
-      })
-    ).toEqual([1, 2, 3, 4])
-  })
-})
-
 describe('estimateRenderRowSize', () => {
-  it('keeps secondary group header size stable while it is the active sticky header', () => {
+  it('sizes a secondary group header without inter-group spacing', () => {
     const rows = [makeHeaderRow('first'), makeHeaderRow('second')]
-    const firstHeaderIndex = 0
-    const secondaryHeaderIndex = 1
-    const inactiveSize = estimateRenderRowSize(rows, secondaryHeaderIndex, firstHeaderIndex, null)
-    const activeSize = estimateRenderRowSize(
-      rows,
-      secondaryHeaderIndex,
-      firstHeaderIndex,
-      secondaryHeaderIndex
-    )
 
-    expect(inactiveSize).toBe(32)
-    expect(activeSize).toBe(32)
+    expect(estimateRenderRowSize(rows, 1, 0)).toBe(32)
   })
 
   it('estimates imported worktree line rows with a stable compact height', () => {
     const rows = [makeHeaderRow('repo:repo-1'), makeImportedCardRow()]
 
-    expect(estimateRenderRowSize(rows, 1, 0, null)).toBe(36)
+    expect(estimateRenderRowSize(rows, 1, 0)).toBe(36)
   })
 
   it('keeps the previous header active until the secondary header row reaches the top', () => {

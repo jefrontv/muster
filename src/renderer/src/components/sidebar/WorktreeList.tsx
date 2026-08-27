@@ -5,7 +5,6 @@ import {
   measureElement as measureVirtualElementSize,
   useVirtualizer
 } from '@tanstack/react-virtual'
-import type { Range } from '@tanstack/react-virtual'
 import {
   AlertTriangle,
   ChevronDown,
@@ -95,9 +94,6 @@ import {
 } from './worktree-list-groups'
 import {
   estimateRenderRowSize,
-  extractWorktreeVirtualRowIndexes,
-  getActiveStickyIndexesForScroll,
-  getStickyHeaderIndexes,
   getVirtualRowTransform,
   pruneStaleVirtualRowElementCache,
   shouldUseHeaderTopSpacing,
@@ -1817,12 +1813,6 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
   )
   const firstHeaderIndexRef = useRef(firstHeaderIndex)
   firstHeaderIndexRef.current = firstHeaderIndex
-  const stickyHeaderIndexes = useMemo(() => getStickyHeaderIndexes(renderRows), [renderRows])
-  const stickyHeaderIndexesRef = useRef(stickyHeaderIndexes)
-  stickyHeaderIndexesRef.current = stickyHeaderIndexes
-  const activeStickyHeaderIndexRef = useRef<number | null>(null)
-  const activeStickyHostIndexRef = useRef<number | null>(null)
-  const stickyRangeStartIndexRef = useRef(0)
   const sshConnectionStates = useAppStore((s) => s.sshConnectionStates)
   const {
     folderWorkspacePathStatuses,
@@ -1967,12 +1957,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
         // Why: a stale ResizeObserver row after remount would write a wrong height; return current size to no-op it.
         return (
           measured?.size ??
-          estimateRenderRowSize(
-            renderRowsRef.current,
-            index ?? -1,
-            firstHeaderIndexRef.current,
-            activeStickyHeaderIndexRef.current
-          )
+          estimateRenderRowSize(renderRowsRef.current, index ?? -1, firstHeaderIndexRef.current)
         )
       }
       const index = getVirtualRowIndex(element)
@@ -1981,12 +1966,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
         (renderRowsRef.current[index]?.type === 'header' ||
           renderRowsRef.current[index]?.type === 'host-header')
       ) {
-        return estimateRenderRowSize(
-          renderRowsRef.current,
-          index,
-          firstHeaderIndexRef.current,
-          activeStickyHeaderIndexRef.current
-        )
+        return estimateRenderRowSize(renderRowsRef.current, index, firstHeaderIndexRef.current)
       }
       return measureVirtualElementSize(element, entry, instance)
     },
@@ -2014,29 +1994,10 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
   const virtualizer = useVirtualizer({
     count: renderRows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: (index) =>
-      estimateRenderRowSize(
-        renderRows,
-        index,
-        firstHeaderIndex,
-        activeStickyHeaderIndexRef.current
-      ),
+    estimateSize: (index) => estimateRenderRowSize(renderRows, index, firstHeaderIndex),
     measureElement: measureCurrentVirtualRowElement,
-    // Why: TanStack memoizes rangeExtractor by identity; header indexes must be deps or sticky slots go stale.
-    rangeExtractor: useCallback(
-      (range: Range) => {
-        stickyRangeStartIndexRef.current = range.startIndex
-        return extractWorktreeVirtualRowIndexes({
-          range,
-          stickyHeaderIndexes,
-          rows: renderRowsRef.current
-        })
-      },
-      [stickyHeaderIndexes]
-    ),
     overscan: 10,
     gap: 6,
-    // Why: the sticky group header lives inside the virtual list, so scroll math needs the same top inset as the DOM reveal.
     scrollPaddingStart: WORKTREE_SIDEBAR_REVEAL_TOP_INSET,
     isScrollingResetDelay: USER_SCROLL_MEASUREMENT_ADJUSTMENT_SUPPRESS_MS,
     // Why: sync-flushing rich card renders in the scroll listener stalls wheel input; async + overscan keeps rows filled.
@@ -2383,16 +2344,6 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
   const activeRenderRowKeys = useMemo(() => new Set(renderRows.map(getRenderRowKey)), [renderRows])
   const totalSize = virtualizer.getTotalSize()
   const virtualItems = virtualizer.getVirtualItems()
-  const activeStickyIndexes = getActiveStickyIndexesForScroll({
-    rows: renderRows,
-    rangeStartIndex: stickyRangeStartIndexRef.current,
-    scrollOffset: virtualizer.scrollOffset ?? scrollOffsetRef.current,
-    stickyHeaderIndexes,
-    virtualItems
-  })
-  activeStickyHeaderIndexRef.current = activeStickyIndexes.groupIndex
-  activeStickyHostIndexRef.current = activeStickyIndexes.hostIndex
-
   const measureMountedRows = useCallback(() => {
     virtualizer.elementsCache.forEach((element) => {
       if (!isCurrentVirtualRowElement(element)) {
@@ -4071,8 +4022,6 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
             }
 
             if (row.type === 'host-header') {
-              // Why: the host card is the outer tier; it pins above group headers (z-30 vs z-20) and stays put as they hand off.
-              const isActiveStickyHost = activeStickyHostIndexRef.current === vItem.index
               const hasHeaderTopSpacing = shouldUseHeaderTopSpacing({
                 rows: renderRows,
                 index: vItem.index,
@@ -4084,22 +4033,10 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                   role="presentation"
                   data-worktree-virtual-row
                   data-worktree-virtual-row-key={String(vItem.key)}
-                  data-worktree-sticky-header=""
-                  data-worktree-sticky-header-active={isActiveStickyHost ? '' : undefined}
                   data-index={vItem.index}
                   ref={measureVirtualRowElement}
-                  className={cn(
-                    'left-0 right-0',
-                    hasHeaderTopSpacing && !isActiveStickyHost && 'pt-1',
-                    isActiveStickyHost
-                      ? 'sticky -top-px z-30 bg-worktree-sidebar'
-                      : 'absolute top-0'
-                  )}
-                  style={
-                    isActiveStickyHost
-                      ? undefined
-                      : { transform: getVirtualRowTransform(vItem.start) }
-                  }
+                  className={cn('absolute left-0 right-0 top-0', hasHeaderTopSpacing && 'pt-1')}
+                  style={{ transform: getVirtualRowTransform(vItem.start) }}
                 >
                   <HostSectionHeader
                     row={row}
@@ -4116,10 +4053,6 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
             }
 
             if (row.type === 'header') {
-              const isActiveStickyHeader = activeStickyHeaderIndexRef.current === vItem.index
-              // Why: when a host card is pinned, the group tier pins flush beneath it, not at the viewport top.
-              const stickyTopClass =
-                activeStickyHostIndexRef.current !== null ? 'top-[35px]' : '-top-px'
               const hasHeaderTopSpacing = shouldUseHeaderTopSpacing({
                 rows: renderRows,
                 index: vItem.index,
@@ -4221,23 +4154,10 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                   data-worktree-virtual-row
                   data-worktree-virtual-row-key={String(vItem.key)}
                   data-worktree-virtual-row-start={vItem.start}
-                  data-worktree-sticky-header=""
-                  data-worktree-sticky-header-active={isActiveStickyHeader ? '' : undefined}
                   data-index={vItem.index}
                   ref={measureVirtualRowElement}
-                  className={cn(
-                    'left-0 right-0',
-                    // Why: drop the inter-group spacer once the header pins so it sits flush at top (see getActiveStickyHeaderIndexForScroll).
-                    hasHeaderTopSpacing && !isActiveStickyHeader && 'pt-1',
-                    isActiveStickyHeader
-                      ? cn('sticky z-20 bg-worktree-sidebar', stickyTopClass)
-                      : 'absolute top-0'
-                  )}
-                  style={
-                    isActiveStickyHeader
-                      ? undefined
-                      : { transform: getVirtualRowTransform(vItem.start) }
-                  }
+                  className={cn('absolute left-0 right-0 top-0', hasHeaderTopSpacing && 'pt-1')}
+                  style={{ transform: getVirtualRowTransform(vItem.start) }}
                 >
                   <div
                     id={getWorktreeOptionId(row.key)}

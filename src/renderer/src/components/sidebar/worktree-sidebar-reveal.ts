@@ -1,8 +1,7 @@
-import { GROUP_HEADER_ROW_HEIGHT } from './worktree-list-virtual-rows'
-
-const WORKTREE_REVEAL_TOP_CLEARANCE = 6
-export const WORKTREE_SIDEBAR_REVEAL_TOP_INSET =
-  GROUP_HEADER_ROW_HEIGHT + WORKTREE_REVEAL_TOP_CLEARANCE
+// Why only clearance: headers used to pin to the top of the list, so a revealed row had to clear a
+// header's height or it landed underneath one. Nothing pins any more — the reveal just needs a few
+// pixels so the row isn't flush against the edge.
+export const WORKTREE_SIDEBAR_REVEAL_TOP_INSET = 6
 
 type SidebarRevealBounds = {
   start: number
