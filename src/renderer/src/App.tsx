@@ -23,6 +23,7 @@ import {
 import logo from '../../../resources/logo.svg'
 import { SYNC_FIT_PANES_EVENT, TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
 import { syncZoomCSSVar } from '@/lib/ui-zoom'
+import { DISPLAY_SLEEP_LIKELY_HIDDEN_MS as GITHUB_REFRESH_MIN_HIDDEN_MS } from '@/components/terminal-pane/use-terminal-window-wake-recovery'
 import { installChatThreadStreamEvents } from '@/lib/chat-thread-stream-events'
 import {
   applyMatchTerminalAppChrome,
@@ -1413,13 +1414,25 @@ function App(): React.JSX.Element {
     )
   }, [settings?.appFontFamily])
 
-  // Refresh GitHub data (PR/issue status) when window regains focus
+  // Refresh GitHub data (PR/issue status) when the window was genuinely away.
+  // Why the 30s gate: every hidden→visible transition used to replace six cache
+  // identities and rescan every worktree of every repo, so a two-second Cmd+Tab
+  // paid the full refocus cost on large profiles. Mirrors the terminal
+  // wake-recovery threshold for what counts as a real absence. The sidebar's
+  // own visibility revision still re-reports visible PR candidates on every
+  // return, so resuming PR refreshes does not depend on this firing early.
   useEffect(() => {
+    let hiddenAt: number | null = null
     const handler = (): void => {
       if (document.visibilityState === 'visible') {
-        actions.refreshAllGitHub()
-        actions.bumpGitHubPRVisibleRefreshGeneration()
+        const wasAway = hiddenAt !== null && Date.now() - hiddenAt >= GITHUB_REFRESH_MIN_HIDDEN_MS
+        hiddenAt = null
+        if (wasAway) {
+          actions.refreshAllGitHub()
+          actions.bumpGitHubPRVisibleRefreshGeneration()
+        }
       } else {
+        hiddenAt = Date.now()
         actions.reportVisibleGitHubPRRefreshCandidates([], Date.now())
       }
     }
