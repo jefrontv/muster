@@ -836,7 +836,8 @@ const api = {
       ipcRenderer.on('sites:sidebarSynced', listener)
       return () => ipcRenderer.removeListener('sites:sidebarSynced', listener)
     },
-    listBranches: (siteId) => ipcRenderer.invoke('sites:listBranches', siteId)
+    listBranches: (siteId) => ipcRenderer.invoke('sites:listBranches', siteId),
+    pipelines: (siteId) => ipcRenderer.invoke('sites:pipelines', siteId)
   } satisfies PreloadApi['sites'],
 
   siteRuns: {

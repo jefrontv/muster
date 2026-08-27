@@ -28,6 +28,8 @@ import { useSiteForActiveProject } from './use-site-for-active-project'
 import { SitePanelEnvironmentSection } from './site-panel-environment-section'
 import { SitePanelRunOutput } from './site-panel-run-output'
 import { SitePanelWpCliSection } from './site-panel-wp-cli'
+import { SitePanelPipelines } from './SitePanelPipelines'
+import { useSitePipelines } from './use-site-pipelines'
 
 /** The sidebar shows a tail, not the console: enough to see the run is alive and where it died. */
 const SIDEBAR_LOG_TAIL = 200
@@ -45,6 +47,7 @@ export function SitePanelContent({
 }): React.JSX.Element {
   const { site, branch, resolvedEnvironment } = summary
   const { run, lines, progress, starting, error, start, cancel } = useSiteRun(site.id)
+  const pipelines = useSitePipelines(site.id)
   const applySiteSummary = useAppStore((s) => s.applySiteSummary)
   // A step toggle already gets the fresh summary back from its own write; patching it in avoids
   // the full list refetch (one git spawn per configured site) that made the checkboxes feel stuck.
@@ -353,6 +356,7 @@ export function SitePanelContent({
         onCancel={() => void cancel()}
       />
 
+      <SitePanelPipelines result={pipelines} />
       {recentRuns.length > 0 ? (
         <SectionCard>
           <SectionHeading>

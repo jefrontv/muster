@@ -163,6 +163,46 @@ export type SiteRepoLinkResult = {
 }
 
 /**
+ * One Bitbucket Pipelines run for a site's repository.
+ *
+ * Read from the Pipelines API rather than commit build statuses: Pipelines does not write commit
+ * statuses (that endpoint is for external CI posting in), so a status-based view is empty even for
+ * repos that clearly ran a pipeline on the exact commit.
+ */
+export type SitePipelineRun = {
+  buildNumber: number
+  /**
+   * Bitbucket reports "is it finished" and "how did it end" separately; this is the pair already
+   * collapsed, because only the combination means anything to a reader.
+   */
+  status: 'running' | 'pending' | 'paused' | 'success' | 'failure' | 'stopped' | 'unknown'
+  refName: string | null
+  commitSha: string | null
+  /** What started it — PUSH, PULLREQUEST, SCHEDULE, MANUAL. */
+  trigger: string | null
+  createdOn: number | null
+  durationSeconds: number | null
+  /** The page a person wants, not the API resource. */
+  url: string
+}
+
+/**
+ * Why a site has no pipelines to show. `forbidden` and `not-found` are real rather than
+ * theoretical: the shipped OAuth consumer holds the `pipeline` scope but a self-built Muster may
+ * point at one that does not, and sites whose Bitbucket repo was renamed keep a stale remote URL.
+ * Both must degrade quietly instead of erroring every poll.
+ */
+export type SitePipelinesUnavailable =
+  | 'not-bitbucket'
+  | 'not-authenticated'
+  | 'forbidden'
+  | 'not-found'
+
+export type SitePipelinesResult =
+  | { available: true; runs: SitePipelineRun[]; workspace: string; repoSlug: string }
+  | { available: false; reason: SitePipelinesUnavailable }
+
+/**
  * Outcome of putting everything on disk into the sidebar: candidates discovered under the
  * configured roots become sites (`adopted`), then every site links to a project.
  *

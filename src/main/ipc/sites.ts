@@ -1,5 +1,10 @@
 import { ipcMain } from 'electron'
-import type { SiteSecretKind, SiteSidebarSyncResult, SiteSummary } from '../../shared/site-types'
+import type {
+  SitePipelinesResult,
+  SiteSecretKind,
+  SiteSidebarSyncResult,
+  SiteSummary
+} from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { importOcsitesConfig } from '../sites/ocsites-config-import'
 import { applyOcsitesImport, type OcsitesImportApplyResult } from '../sites/ocsites-import-apply'
@@ -7,6 +12,7 @@ import { deleteSiteSecrets, setSiteSecret } from '../sites/site-secret-store'
 import { linkSitesToRepos, type SiteRepoLinkResult } from '../sites/site-repo-link'
 import { addDiscoveredSitesToSidebar } from '../sites/site-sidebar-sync'
 import { listCheckoutBranches } from '../sites/site-branches'
+import { getSitePipelines } from '../bitbucket/site-pipelines'
 import { buildSiteSummaries, buildSiteSummary, resolveSiteCheckoutDir } from '../sites/site-summary'
 import { registerSiteEnvironmentHandlers } from './sites-environments'
 import {
@@ -31,7 +37,8 @@ const SITE_CHANNELS = [
   'sites:importFromOcsites',
   'sites:linkRepos',
   'sites:addDiscoveredToSidebar',
-  'sites:listBranches'
+  'sites:listBranches',
+  'sites:pipelines'
 ] as const
 
 export function registerSiteHandlers(store: Store): void {
@@ -69,6 +76,23 @@ export function registerSiteHandlers(store: Store): void {
         }
         const site = requireSite(store, siteId)
         return { ok: true, value: await listCheckoutBranches(resolveSiteCheckoutDir(site)) }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
+
+  // Bitbucket only, and deliberately non-fatal: a site on another host, a signed-out user, or a
+  // consumer without the pipeline scope answers with a reason so the panel can stay silent.
+  ipcMain.handle(
+    'sites:pipelines',
+    async (_event, siteId: unknown): Promise<SiteResult<SitePipelinesResult>> => {
+      try {
+        if (typeof siteId !== 'string') {
+          throw new TypeError('siteId must be a string')
+        }
+        const site = requireSite(store, siteId)
+        return { ok: true, value: await getSitePipelines(resolveSiteCheckoutDir(site)) }
       } catch (error) {
         return failure(error)
       }

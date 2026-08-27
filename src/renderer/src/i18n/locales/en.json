@@ -10643,6 +10643,15 @@
             }
           },
           "SitePanel": {
+            "pipelines": "Pipelines",
+            "pipelineRunning": "running",
+            "pipelineQueued": "queued",
+            "pipelinePaused": "paused",
+            "pipelinePassed": "passed",
+            "pipelineFailed": "failed",
+            "pipelineStopped": "stopped",
+            "pipelineUnknown": "unknown",
+            "pipelineOpen": "Open pipeline in Bitbucket",
             "confirmTitle": "Confirm target",
             "confirmBody": "Branch {{branch}} does not match an environment. This run would target {{environment}}. Continue?",
             "confirmRun": "Run anyway",

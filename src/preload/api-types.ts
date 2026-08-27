@@ -24,6 +24,7 @@ import type {
   SiteEnvironment,
   SiteLocalStack,
   SiteRepoLinkResult,
+  SitePipelinesResult,
   SiteSidebarSyncResult,
   SiteResult,
   SiteRunGroup,
@@ -853,6 +854,11 @@ export type SitesApi = {
   onSidebarSynced: (callback: (result: SiteSidebarSyncResult) => void) => () => void
   /** Local branch names of the site's checkout — suggestions only, [] when git is absent. */
   listBranches: (siteId: string) => Promise<SiteResult<string[]>>
+  /**
+   * Recent Bitbucket Pipelines runs for the site's repository. Answers `available: false` with a
+   * reason for non-Bitbucket remotes, signed-out users, and consumers lacking the pipeline scope.
+   */
+  pipelines: (siteId: string) => Promise<SiteResult<SitePipelinesResult>>
 }
 
 /** Import/deploy runs. Long-lived and cancellable; progress arrives on `onEvent`. */
