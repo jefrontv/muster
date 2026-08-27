@@ -711,6 +711,12 @@ function createWebPreloadApi(): Partial<PreloadApi> {
         return next
       }
     },
+    // Why none: the web build has no desktop updater, so there is never an
+    // update transition to announce.
+    whatsNew: {
+      get: () => Promise.resolve({ status: 'none' } as const),
+      dismiss: () => Promise.resolve()
+    },
     cache: {
       getGitHub: () =>
         Promise.resolve(

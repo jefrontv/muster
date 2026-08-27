@@ -81,6 +81,7 @@ import type {
   WorktreeHeadIdentity,
   WorktreeRemoteBranchConflictEvent
 } from '../shared/types'
+import type { WhatsNewGetResult } from '../shared/whats-new'
 import type { PtyModelRestoreNeededEvent } from '../shared/pty-model-restore-marker'
 import type { ActiveCollabUnread } from '../shared/activecollab-api-types'
 import type {
@@ -2374,6 +2375,11 @@ const api = {
         checklist?: Partial<OnboardingState['checklist']>
       }
     ): Promise<OnboardingState> => ipcRenderer.invoke('onboarding:update', updates)
+  },
+
+  whatsNew: {
+    get: (): Promise<WhatsNewGetResult> => ipcRenderer.invoke('whatsnew:get'),
+    dismiss: (): Promise<void> => ipcRenderer.invoke('whatsnew:dismiss')
   },
 
   dashboard: {

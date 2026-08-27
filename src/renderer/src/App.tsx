@@ -24,6 +24,8 @@ import logo from '../../../resources/logo.svg'
 import { SYNC_FIT_PANES_EVENT, TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
 import { syncZoomCSSVar } from '@/lib/ui-zoom'
 import { DISPLAY_SLEEP_LIKELY_HIDDEN_MS as GITHUB_REFRESH_MIN_HIDDEN_MS } from '@/components/terminal-pane/use-terminal-window-wake-recovery'
+import { WhatsNewModal } from '@/components/whats-new/whats-new-modal'
+import { useWhatsNew } from '@/components/whats-new/use-whats-new'
 import { installChatThreadStreamEvents } from '@/lib/chat-thread-stream-events'
 import {
   applyMatchTerminalAppChrome,
@@ -303,6 +305,14 @@ function WindowControls(): React.JSX.Element {
       </button>
     </div>
   )
+}
+
+// Mount-gated wrapper: the hook fires one IPC call per launch; main answers
+// 'none' unless this launch followed an update, so the modal cost on ordinary
+// launches is a single no-op round trip.
+function WhatsNewSurface(): React.JSX.Element | null {
+  const { payload, ready, dismiss } = useWhatsNew()
+  return <WhatsNewModal payload={payload} ready={ready} onDismiss={dismiss} />
 }
 
 const Landing = lazy(() => import('./components/Landing'))
@@ -2645,6 +2655,7 @@ function App(): React.JSX.Element {
                 </RecoverableRenderErrorBoundary>
               </Suspense>
             ) : null}
+            {!shouldRenderOnboarding && onboardingLoaded ? <WhatsNewSurface /> : null}
             {shouldMountDictationController ? (
               <Suspense fallback={null}>
                 <RecoverableRenderErrorBoundary

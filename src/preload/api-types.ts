@@ -8,6 +8,7 @@ import type {
   HostedReviewInfo,
   HostedReviewProvider
 } from '../shared/hosted-review'
+import type { WhatsNewGetResult } from '../shared/whats-new'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
   BrowserExtensionAddResult,
@@ -2659,6 +2660,10 @@ export type PreloadApi = {
         checklist?: Partial<OnboardingState['checklist']>
       }
     ) => Promise<OnboardingState>
+  }
+  whatsNew: {
+    get: () => Promise<WhatsNewGetResult>
+    dismiss: () => Promise<void>
   }
   dashboard: {
     openPopout: () => Promise<void>

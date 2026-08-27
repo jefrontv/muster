@@ -55,6 +55,7 @@ const {
   registerExportHandlersMock,
   registerCodexConfigSyncHandlersMock,
   registerOnboardingHandlersMock,
+  registerWhatsNewHandlersMock,
   registerDashboardPopoutHandlersMock,
   registerTerminalPreviewHandlersMock,
   registerSpeechHandlersMock,
@@ -118,6 +119,7 @@ const {
   registerExportHandlersMock: vi.fn(),
   registerCodexConfigSyncHandlersMock: vi.fn(),
   registerOnboardingHandlersMock: vi.fn(),
+  registerWhatsNewHandlersMock: vi.fn(),
   registerDashboardPopoutHandlersMock: vi.fn(),
   registerTerminalPreviewHandlersMock: vi.fn(),
   registerSpeechHandlersMock: vi.fn(),
@@ -161,9 +163,12 @@ vi.mock('./runtime-environment-transport-routing', () => ({
 vi.mock('./codex-config-sync', () => ({
   registerCodexConfigSyncHandlers: registerCodexConfigSyncHandlersMock
 }))
-
 vi.mock('./onboarding', () => ({
   registerOnboardingHandlers: registerOnboardingHandlersMock
+}))
+
+vi.mock('./whats-new', () => ({
+  registerWhatsNewHandlers: registerWhatsNewHandlersMock
 }))
 
 vi.mock('./dashboard-popout', () => ({
@@ -525,7 +530,8 @@ describe('registerCoreHandlers', () => {
     expect(registerStatsHandlersMock).toHaveBeenCalledWith(stats)
     expect(registerMemoryHandlersMock).toHaveBeenCalledWith(store)
     expect(registerNotebookHandlersMock).toHaveBeenCalledWith(store)
-    expect(registerNotificationHandlersMock).toHaveBeenCalledWith(store, runtime)
+    expect(registerOnboardingHandlersMock).toHaveBeenCalledWith(store)
+    expect(registerWhatsNewHandlersMock).toHaveBeenCalled()
     expect(registerDeveloperPermissionHandlersMock).toHaveBeenCalled()
     expect(registerDashboardPopoutHandlersMock).toHaveBeenCalledWith(store, undefined)
     expect(registerTerminalPreviewHandlersMock).toHaveBeenCalledWith(runtime)

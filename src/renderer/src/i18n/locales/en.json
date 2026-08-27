@@ -13403,6 +13403,13 @@
           "widthOption": "{{value0}} px"
         }
       },
+      "whats-new": {
+        "title": "What\u2019s new in Muster {{version}}",
+        "subtitle": "Here\u2019s what changed in this update.",
+        "notes_unavailable": "Release notes couldn\u2019t be loaded right now. You can read them on GitHub instead.",
+        "view_notes": "View full release notes",
+        "continue": "Continue"
+      },
       "sites": {
         "SiteDetailPanel": {
           "missingCheckout": "This folder is not on disk. Reconnect the drive or update the path.",
