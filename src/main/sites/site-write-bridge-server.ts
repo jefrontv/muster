@@ -12,7 +12,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { randomBytes } from 'node:crypto'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import type { Site } from '../../shared/site-types'
+import type { Site, SiteCustomStep } from '../../shared/site-types'
 
 /** Discovery file the MCP process reads; absent means "no GUI, write to disk". */
 export const SITE_WRITE_BRIDGE_FILE_NAME = 'site-write-bridge.json'
@@ -25,6 +25,8 @@ export type SiteWriteBridgeEndpoint = {
 
 export type SiteWriteBridgeStore = {
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
+  /** Absent on a store that predates the shared step library. */
+  setSiteStepLibrary?: (steps: readonly SiteCustomStep[]) => void
 }
 
 export function siteWriteBridgeFile(userDataPath: string): string {
@@ -71,21 +73,38 @@ export class SiteWriteBridgeServer {
     writeFileSync(this.endpointFile, JSON.stringify(endpoint), { encoding: 'utf-8', mode: 0o600 })
   }
 
-  private async handle(
-    req: IncomingMessage,
-    res: ServerResponse,
-    args: StartArgs
-  ): Promise<void> {
+  private async handle(req: IncomingMessage, res: ServerResponse, args: StartArgs): Promise<void> {
     const reply = (status: number, payload: unknown): void => {
       res.writeHead(status, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(payload))
     }
-    if (req.method !== 'POST' || req.url !== '/site/update') {
+    const isSiteUpdate = req.method === 'POST' && req.url === '/site/update'
+    const isLibraryUpdate = req.method === 'POST' && req.url === '/library/update'
+    if (!isSiteUpdate && !isLibraryUpdate) {
       reply(404, { error: 'not found' })
       return
     }
     if (req.headers['x-muster-site-bridge-token'] !== this.token) {
       reply(401, { error: 'unauthorized' })
+      return
+    }
+    if (isLibraryUpdate) {
+      try {
+        const body = await readJsonBody(req)
+        if (!Array.isArray(body.steps)) {
+          reply(400, { error: 'steps must be an array' })
+          return
+        }
+        const write = args.store.setSiteStepLibrary
+        if (!write) {
+          reply(404, { error: 'this build cannot write the step library' })
+          return
+        }
+        write(body.steps as SiteCustomStep[])
+        reply(200, { ok: true })
+      } catch (error) {
+        reply(500, { error: error instanceof Error ? error.message : String(error) })
+      }
       return
     }
     try {

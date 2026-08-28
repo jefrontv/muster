@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
+import { SiteStepLibrarySection } from './SiteStepLibrarySection'
 import { SiteSecretField } from './SiteSecretField'
 import { SiteLocalStackControl } from './SiteLocalStackControl'
 import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
@@ -108,7 +109,9 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
                   value={site[field.key]}
                   placeholder={field.placeholder}
                   onChange={(event) =>
-                    void updateSite(site.id, { [field.key]: event.target.value })
+                    void updateSite(site.id, {
+                      [field.key]: event.target.value
+                    })
                   }
                 />
               </div>
@@ -253,6 +256,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
       />
 
       <SiteRunOutput console={runConsole} />
+      <SiteStepLibrarySection summary={summary} />
       <SiteDbSnapshotsSection siteId={site.id} />
       <SiteRunHistory siteId={site.id} />
     </div>

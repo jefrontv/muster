@@ -5,6 +5,7 @@ import {
   resolveSiteEnvironment,
   type Site,
   type SiteEnvironment,
+  type SiteCustomStep,
   type SiteSecretPresence,
   type SiteSummary
 } from '../../../shared/site-types'
@@ -47,7 +48,10 @@ function siteRecord(overrides: Partial<Site> = {}): Site {
     activeEnvironment: 'main',
     environments: {
       main: environment({ exportDatabase: true, deployThemes: true }),
-      staging: environment({ hostname: 'staging.acme.example.com', exportFiles: true })
+      staging: environment({
+        hostname: 'staging.acme.example.com',
+        exportFiles: true
+      })
     },
     notes: '',
     searchReplaceTimeoutSeconds: 600,
@@ -105,11 +109,26 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
   const started: SiteMcpStartRunRequest[] = []
   const cancelled: string[] = []
   const secretMoves: string[] = []
+  let library: SiteCustomStep[] = [
+    {
+      id: 'library-1',
+      name: 'Purge Cloudflare',
+      group: 'deploy',
+      runsOn: 'local',
+      command: 'echo purge',
+      position: 'after',
+      order: 0,
+      enabled: false
+    }
+  ]
 
   const summarize = (site: Site): Promise<SiteSummary> => {
     const secrets: Record<string, SiteSecretPresence> = {}
     for (const name of Object.keys(site.environments)) {
-      secrets[name] = { ssh: sshEnvironments.includes(name), db: sshEnvironments.includes(name) }
+      secrets[name] = {
+        ssh: sshEnvironments.includes(name),
+        db: sshEnvironments.includes(name)
+      }
     }
     const resolvedEnvironment = resolveSiteEnvironment(site, branch)
     const active = resolvedEnvironment.environment
@@ -167,6 +186,10 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
         return next
       }
     },
+    getStepLibrary: () => library,
+    setStepLibrary: async (steps) => {
+      library = [...steps]
+    },
     summarize,
     summarizeAll: (list) => Promise.all(list.map((site) => summarize(site))),
     hasSshSecret: (_siteId, name) => sshEnvironments.includes(name),
@@ -213,7 +236,11 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
   }
 }
 
-type CallOutcome = { isError: boolean; payload: Record<string, unknown>; text: string }
+type CallOutcome = {
+  isError: boolean
+  payload: Record<string, unknown>
+  text: string
+}
 
 async function call(
   context: SiteMcpContext,
@@ -239,7 +266,9 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   get_deployment_config: {},
   list_deployment_toggles: {},
   set_deployment_toggles: { toggles: { export_database: false } },
-  set_deployment_fields: { fields: { hostname: 'new.example.com', notes: 'touched' } },
+  set_deployment_fields: {
+    fields: { hostname: 'new.example.com', notes: 'touched' }
+  },
   list_environments: {},
   create_environment: { name: 'qa', copy_from: 'main' },
   duplicate_environment: { source: 'main', new_name: 'qa2' },
@@ -265,7 +294,9 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   },
   update_custom_step: { step: 'step-1', name: 'Warm the cache again' },
   remove_custom_step: { step: 'step-1' },
-  copy_custom_step: { from_site: 'Acme', step: 'step-1' }
+  copy_custom_step: { from_site: 'Acme', step: 'step-1' },
+  promote_custom_step: { step: 'step-1' },
+  install_library_step: { library_step: 'library-1' }
 }
 
 describe('site MCP tool table', () => {
@@ -311,11 +342,17 @@ describe('read tools against a fake store', () => {
 
   it('resolves an omitted site from the working directory', async () => {
     const { payload } = await call(createFakeContext(), 'get_deployment_status', {})
-    expect(payload).toMatchObject({ ok: true, site: 'Acme', path: '/Sites/acme' })
+    expect(payload).toMatchObject({
+      ok: true,
+      site: 'Acme',
+      path: '/Sites/acme'
+    })
   })
 
   it('reports a missing site rather than throwing', async () => {
-    const outcome = await call(createFakeContext(), 'get_deployment_status', { site: 'nope' })
+    const outcome = await call(createFakeContext(), 'get_deployment_status', {
+      site: 'nope'
+    })
     expect(outcome.isError).toBe(true)
     expect(outcome.payload).toMatchObject({ ok: false })
     expect(String(outcome.payload.error)).toContain('nope')
@@ -323,8 +360,14 @@ describe('read tools against a fake store', () => {
 
   it('reports password presence as booleans only', async () => {
     const { payload } = await call(createFakeContext(), 'get_deployment_config', {})
-    expect(payload.passwords_set).toEqual({ password: true, db_password: true })
-    expect(payload.fields).toMatchObject({ hostname: 'acme.example.com', db_user: 'root' })
+    expect(payload.passwords_set).toEqual({
+      password: true,
+      db_password: true
+    })
+    expect(payload.fields).toMatchObject({
+      hostname: 'acme.example.com',
+      db_user: 'root'
+    })
     expect(payload.fields).not.toHaveProperty('password')
     expect(payload.fields).not.toHaveProperty('db_password')
   })
@@ -341,7 +384,9 @@ describe('password redaction', () => {
   })
 
   it('keeps secrets out of responses when the branch matches nothing', async () => {
-    const context = createFakeContext([siteRecord()], { branch: 'feature/login' })
+    const context = createFakeContext([siteRecord()], {
+      branch: 'feature/login'
+    })
     for (const [name, args] of Object.entries(TOOL_ARGUMENTS)) {
       const outcome = await call(context, name, args)
       expect(outcome.text, `${name} leaked a secret`).not.toContain(SSH_SECRET)
@@ -395,8 +440,14 @@ describe('the accidental-production guard', () => {
 
   it('starts the run when confirm overrides the unmatched branch', async () => {
     const context = createFakeContext([siteRecord()], unmatchedBranch)
-    const { payload } = await call(context, 'run_deploy_functions', { confirm: true })
-    expect(payload).toMatchObject({ ok: true, started: true, environment: 'main' })
+    const { payload } = await call(context, 'run_deploy_functions', {
+      confirm: true
+    })
+    expect(payload).toMatchObject({
+      ok: true,
+      started: true,
+      environment: 'main'
+    })
     expect(context.started).toEqual([
       {
         siteId: 'site-1',
@@ -410,8 +461,14 @@ describe('the accidental-production guard', () => {
 
   it('accepts an explicit env without confirm, because that is a deliberate choice', async () => {
     const context = createFakeContext([siteRecord()], unmatchedBranch)
-    const { payload } = await call(context, 'run_import_functions', { env: 'main' })
-    expect(payload).toMatchObject({ ok: true, started: true, environment: 'main' })
+    const { payload } = await call(context, 'run_import_functions', {
+      env: 'main'
+    })
+    expect(payload).toMatchObject({
+      ok: true,
+      started: true,
+      environment: 'main'
+    })
   })
 
   it('confirm cannot override a missing SSH credential', async () => {
@@ -419,8 +476,14 @@ describe('the accidental-production guard', () => {
       ...unmatchedBranch,
       sshEnvironments: []
     })
-    const { payload } = await call(context, 'run_deploy_functions', { confirm: true })
-    expect(payload).toMatchObject({ ok: false, blocked: true, needs_confirmation: false })
+    const { payload } = await call(context, 'run_deploy_functions', {
+      confirm: true
+    })
+    expect(payload).toMatchObject({
+      ok: false,
+      blocked: true,
+      needs_confirmation: false
+    })
     expect(payload.blocked_by).toContain('missing-ssh-credentials')
     expect(String(payload.message)).toContain('cannot be set over MCP')
     expect(context.started).toHaveLength(0)
@@ -428,7 +491,9 @@ describe('the accidental-production guard', () => {
 
   it('confirm cannot override a missing checkout', async () => {
     const context = createFakeContext([siteRecord()], { pathExists: false })
-    const { payload } = await call(context, 'run_import_functions', { confirm: true })
+    const { payload } = await call(context, 'run_import_functions', {
+      confirm: true
+    })
     expect(payload.blocked_by).toContain('missing-path')
     expect(context.started).toHaveLength(0)
   })
@@ -436,14 +501,18 @@ describe('the accidental-production guard', () => {
   it('confirm cannot override an empty step list', async () => {
     const site = siteRecord({ environments: { main: environment() } })
     const context = createFakeContext([site], { branch: 'main' })
-    const { payload } = await call(context, 'run_deploy_functions', { confirm: true })
+    const { payload } = await call(context, 'run_deploy_functions', {
+      confirm: true
+    })
     expect(payload.blocked_by).toEqual(['no-steps-selected'])
     expect(context.started).toHaveLength(0)
   })
 
   it('rejects an env that does not exist rather than falling back', async () => {
     const context = createFakeContext()
-    const outcome = await call(context, 'run_deploy_functions', { env: 'production' })
+    const outcome = await call(context, 'run_deploy_functions', {
+      env: 'production'
+    })
     expect(outcome.isError).toBe(true)
     expect(outcome.payload.available_environments).toEqual(['main', 'staging'])
     expect(context.started).toHaveLength(0)
@@ -451,7 +520,9 @@ describe('the accidental-production guard', () => {
 
   it("treats the string 'false' as a refusal, not as truthy confirmation", async () => {
     const context = createFakeContext([siteRecord()], unmatchedBranch)
-    const { payload } = await call(context, 'run_deploy_functions', { confirm: 'false' })
+    const { payload } = await call(context, 'run_deploy_functions', {
+      confirm: 'false'
+    })
     expect(payload.blocked).toBe(true)
     expect(context.started).toHaveLength(0)
   })
@@ -469,7 +540,9 @@ describe('config writes', () => {
 
   it('accepts the camelCase alias for the same toggle', async () => {
     const context = createFakeContext()
-    await call(context, 'set_deployment_toggles', { toggles: { clearServerCache: true } })
+    await call(context, 'set_deployment_toggles', {
+      toggles: { clearServerCache: true }
+    })
     expect(context.store.getSite('site-1')?.environments.main?.clearServerCache).toBe(true)
   })
 
@@ -522,7 +595,10 @@ describe('environment CRUD', () => {
 
   it('seeds a duplicate from its source, including the stored secrets', async () => {
     const context = createFakeContext()
-    await call(context, 'duplicate_environment', { source: 'main', new_name: 'qa' })
+    await call(context, 'duplicate_environment', {
+      source: 'main',
+      new_name: 'qa'
+    })
     const site = context.store.getSite('site-1')
     expect(site?.environments.qa?.hostname).toBe('acme.example.com')
     expect(context.secretMoves).toEqual(['copy:main->qa'])
@@ -530,15 +606,27 @@ describe('environment CRUD', () => {
 
   it('refuses to delete an environment without confirm and shows what would go', async () => {
     const context = createFakeContext()
-    const { payload } = await call(context, 'delete_environment', { name: 'staging' })
-    expect(payload).toMatchObject({ ok: false, blocked: true, needs_confirmation: true })
-    expect(payload.would_delete).toMatchObject({ name: 'staging', ssh_password_set: false })
+    const { payload } = await call(context, 'delete_environment', {
+      name: 'staging'
+    })
+    expect(payload).toMatchObject({
+      ok: false,
+      blocked: true,
+      needs_confirmation: true
+    })
+    expect(payload.would_delete).toMatchObject({
+      name: 'staging',
+      ssh_password_set: false
+    })
     expect(context.store.getSite('site-1')?.environments.staging).toBeDefined()
   })
 
   it('refuses to delete the last environment even with confirm', async () => {
     const context = createFakeContext([siteRecord({ environments: { main: environment() } })])
-    const outcome = await call(context, 'delete_environment', { name: 'main', confirm: true })
+    const outcome = await call(context, 'delete_environment', {
+      name: 'main',
+      confirm: true
+    })
     expect(outcome.isError).toBe(true)
     expect(String(outcome.payload.error)).toContain('only environment')
   })
@@ -557,25 +645,48 @@ describe('environment CRUD', () => {
 
 describe('jobs and run history', () => {
   it('locates a persisted run by id without being told its site', async () => {
-    const { payload } = await call(createFakeContext(), 'get_job_status', { job_id: RUN_ID })
-    expect(payload).toMatchObject({ ok: true, job_id: RUN_ID, status: 'succeeded', live: false })
+    const { payload } = await call(createFakeContext(), 'get_job_status', {
+      job_id: RUN_ID
+    })
+    expect(payload).toMatchObject({
+      ok: true,
+      job_id: RUN_ID,
+      status: 'succeeded',
+      live: false
+    })
     expect(payload.duration_seconds).toBe(4)
   })
 
   it('reports an unknown job instead of throwing', async () => {
-    const outcome = await call(createFakeContext(), 'get_job_status', { job_id: 'missing' })
-    expect(outcome.payload).toEqual({ ok: false, error: 'Job not found: missing' })
+    const outcome = await call(createFakeContext(), 'get_job_status', {
+      job_id: 'missing'
+    })
+    expect(outcome.payload).toEqual({
+      ok: false,
+      error: 'Job not found: missing'
+    })
   })
 
   it('refuses to cancel a run owned by another process', async () => {
     const context = createFakeContext([
-      siteRecord({ environments: { main: environment({ deployThemes: true }) } })
+      siteRecord({
+        environments: { main: environment({ deployThemes: true }) }
+      })
     ])
-    const foreign: SiteRun = { ...PERSISTED_RUN, status: 'running', endedAt: null }
+    const foreign: SiteRun = {
+      ...PERSISTED_RUN,
+      status: 'running',
+      endedAt: null
+    }
     const outcome = await call(
       {
         ...context,
-        readRunLog: () => ({ run: foreign, lines: [], truncatedEarlier: 0, firstErrorIndex: -1 })
+        readRunLog: () => ({
+          run: foreign,
+          lines: [],
+          truncatedEarlier: 0,
+          firstErrorIndex: -1
+        })
       },
       'cancel_job',
       { job_id: RUN_ID }

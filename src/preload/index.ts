@@ -733,7 +733,10 @@ const api = {
     ): (() => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
-        data: { repoId: string; renamed?: { oldWorktreeId: string; newWorktreeId: string } }
+        data: {
+          repoId: string
+          renamed?: { oldWorktreeId: string; newWorktreeId: string }
+        }
       ) => callback(data)
       ipcRenderer.on('worktrees:changed', listener)
       return () => ipcRenderer.removeListener('worktrees:changed', listener)
@@ -838,7 +841,12 @@ const api = {
       return () => ipcRenderer.removeListener('sites:sidebarSynced', listener)
     },
     listBranches: (siteId) => ipcRenderer.invoke('sites:listBranches', siteId),
-    pipelines: (siteId) => ipcRenderer.invoke('sites:pipelines', siteId)
+    pipelines: (siteId) => ipcRenderer.invoke('sites:pipelines', siteId),
+    stepLibrary: {
+      list: () => ipcRenderer.invoke('siteStepLibrary:list'),
+      set: (args) => ipcRenderer.invoke('siteStepLibrary:set', args),
+      install: (args) => ipcRenderer.invoke('siteStepLibrary:install', args)
+    }
   } satisfies PreloadApi['sites'],
 
   siteRuns: {
@@ -1055,7 +1063,11 @@ const api = {
       tabId?: string
       leafId?: string
       // Why: loose typing on purpose — renderer owns launch metadata, main owns whether the launch happened and validates (telemetry-plan.md §Agent launch semantics).
-      telemetry?: { agent_kind: AgentKind; launch_source: LaunchSource; request_kind: RequestKind }
+      telemetry?: {
+        agent_kind: AgentKind
+        launch_source: LaunchSource
+        request_kind: RequestKind
+      }
     }): Promise<{
       id: string
       launchConfig?: SleepingAgentLaunchConfig
@@ -1066,7 +1078,12 @@ const api = {
       isAlternateScreen?: boolean
       replay?: string
       sessionExpired?: boolean
-      coldRestore?: { scrollback: string; cwd: string; cols?: number; rows?: number }
+      coldRestore?: {
+        scrollback: string
+        cwd: string
+        cols?: number
+        rows?: number
+      }
       startupCwdFallback?: { kind: 'worktree'; cwd: string }
     }> => ipcRenderer.invoke('pty:spawn', opts),
 
@@ -1151,7 +1168,10 @@ const api = {
     },
 
     kill: (id: string, opts?: { keepHistory?: boolean }): Promise<void> =>
-      ipcRenderer.invoke('pty:kill', { id, keepHistory: opts?.keepHistory ?? false }),
+      ipcRenderer.invoke('pty:kill', {
+        id,
+        keepHistory: opts?.keepHistory ?? false
+      }),
 
     listSessions: (): Promise<{ id: string; cwd: string; title: string }[]> =>
       ipcRenderer.invoke('pty:listSessions'),
@@ -1217,8 +1237,10 @@ const api = {
       ipcRenderer.invoke('pty:getForegroundProcess', { id }),
     inspectProcess: (
       id: string
-    ): Promise<{ foregroundProcess: string | null; hasChildProcesses: boolean }> =>
-      ipcRenderer.invoke('pty:inspectProcess', { id }),
+    ): Promise<{
+      foregroundProcess: string | null
+      hasChildProcesses: boolean
+    }> => ipcRenderer.invoke('pty:inspectProcess', { id }),
     confirmForegroundProcess: (id: string): Promise<string | null> =>
       ipcRenderer.invoke('pty:confirmForegroundProcess', { id }),
 
@@ -1712,7 +1734,12 @@ const api = {
     ): (() => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
-        payload: { repoPath: string; repoId?: string; type: 'issue' | 'pr'; number: number }
+        payload: {
+          repoPath: string
+          repoId?: string
+          type: 'issue' | 'pr'
+          number: number
+        }
       ): void => callback(payload)
       ipcRenderer.on('gh:workItemMutated', listener)
       return () => ipcRenderer.removeListener('gh:workItemMutated', listener)
@@ -2248,7 +2275,11 @@ const api = {
       git: { installed: boolean }
       gh: { installed: boolean; authenticated: boolean }
       glab?: { installed: boolean; authenticated: boolean }
-      bitbucket?: { configured: boolean; authenticated: boolean; account: string | null }
+      bitbucket?: {
+        configured: boolean
+        authenticated: boolean
+        account: string | null
+      }
       azureDevOps?: {
         configured: boolean
         authenticated: boolean
@@ -2487,8 +2518,10 @@ const api = {
 
     pickImage: (): Promise<string | null> => ipcRenderer.invoke('shell:pickImage'),
 
-    pickRepoIconImage: (): Promise<{ dataUrl: string; fileName: string } | null> =>
-      ipcRenderer.invoke('shell:pickRepoIconImage'),
+    pickRepoIconImage: (): Promise<{
+      dataUrl: string
+      fileName: string
+    } | null> => ipcRenderer.invoke('shell:pickRepoIconImage'),
 
     pickAudio: (): Promise<string | null> => ipcRenderer.invoke('shell:pickAudio'),
 
@@ -2549,7 +2582,11 @@ const api = {
         _event: Electron.IpcRendererEvent,
         data: {
           browserPageId: string
-          loadError: { code: number; description: string; validatedUrl: string }
+          loadError: {
+            code: number
+            description: string
+            validatedUrl: string
+          }
         }
       ) => callback(data)
       ipcRenderer.on('browser:guest-load-failed', listener)
@@ -2889,8 +2926,10 @@ const api = {
       repoId: string
       worktreePath: string
       command: string
-    }): Promise<{ runnerScriptPath: string; envVars: Record<string, string> }> =>
-      ipcRenderer.invoke('hooks:createIssueCommandRunner', args),
+    }): Promise<{
+      runnerScriptPath: string
+      envVars: Record<string, string>
+    }> => ipcRenderer.invoke('hooks:createIssueCommandRunner', args),
 
     readIssueCommand: (args: {
       repoId: string
@@ -2920,7 +2959,11 @@ const api = {
     onProvisionEvent: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
-        event: { provisionId: string; stream: 'stdout' | 'stderr'; chunk: string }
+        event: {
+          provisionId: string
+          stream: 'stdout' | 'stderr'
+          chunk: string
+        }
       ): void => callback(event)
       ipcRenderer.on('ephemeralVm:provisionEvent', listener)
       return () => ipcRenderer.removeListener('ephemeralVm:provisionEvent', listener)
@@ -3006,8 +3049,12 @@ const api = {
       code: string
       preamble?: string
       connectionId?: string | null
-    }): Promise<{ stdout: string; stderr: string; exitCode: number | null; error?: string }> =>
-      ipcRenderer.invoke('notebook:runPythonCell', args)
+    }): Promise<{
+      stdout: string
+      stderr: string
+      exitCode: number | null
+      error?: string
+    }> => ipcRenderer.invoke('notebook:runPythonCell', args)
   },
 
   fs: {
@@ -3077,8 +3124,14 @@ const api = {
     listMarkdownDocuments: (args: {
       rootPath: string
       connectionId?: string
-    }): Promise<{ filePath: string; relativePath: string; basename: string; name: string }[]> =>
-      ipcRenderer.invoke('fs:listMarkdownDocuments', args),
+    }): Promise<
+      {
+        filePath: string
+        relativePath: string
+        basename: string
+        name: string
+      }[]
+    > => ipcRenderer.invoke('fs:listMarkdownDocuments', args),
     writeFile: (
       args: {
         filePath: string
@@ -3087,13 +3140,20 @@ const api = {
       } & SshMutationExpectation
     ): Promise<void> => ipcRenderer.invoke('fs:writeFile', args),
     createFile: (
-      args: { filePath: string; connectionId?: string } & SshMutationExpectation
+      args: {
+        filePath: string
+        connectionId?: string
+      } & SshMutationExpectation
     ): Promise<void> => ipcRenderer.invoke('fs:createFile', args),
     createDir: (
       args: { dirPath: string; connectionId?: string } & SshMutationExpectation
     ): Promise<void> => ipcRenderer.invoke('fs:createDir', args),
     rename: (
-      args: { oldPath: string; newPath: string; connectionId?: string } & SshMutationExpectation
+      args: {
+        oldPath: string
+        newPath: string
+        connectionId?: string
+      } & SshMutationExpectation
     ): Promise<void> => ipcRenderer.invoke('fs:rename', args),
     copy: (
       args: {
@@ -3308,7 +3368,12 @@ const api = {
     }): Promise<void> => ipcRenderer.invoke('git:rebaseFromBase', args),
     branchDiff: (args: {
       worktreePath: string
-      compare: { baseRef: string; baseOid: string; headOid: string; mergeBase: string }
+      compare: {
+        baseRef: string
+        baseOid: string
+        headOid: string
+        mergeBase: string
+      }
       filePath: string
       oldPath?: string
       connectionId?: string
@@ -4194,7 +4259,12 @@ const api = {
       limit?: number,
       transcriptPath?: string
     ): Promise<NativeChatReadSessionResult> =>
-      ipcRenderer.invoke('nativeChat:readSession', { agent, sessionId, limit, transcriptPath }),
+      ipcRenderer.invoke('nativeChat:readSession', {
+        agent,
+        sessionId,
+        limit,
+        transcriptPath
+      }),
     /** Start live tailing; onAppended fires with only newly-appended messages. Returns an unsubscribe fn that closes the watcher. */
     subscribe: (
       args: {
@@ -4215,15 +4285,25 @@ const api = {
       ipcRenderer.send('nativeChat:subscribe', args)
       return () => {
         ipcRenderer.removeListener('nativeChat:appended', listener)
-        ipcRenderer.send('nativeChat:unsubscribe', { subscriptionId: args.subscriptionId })
+        ipcRenderer.send('nativeChat:unsubscribe', {
+          subscriptionId: args.subscriptionId
+        })
       }
     },
     readContextUsage: (
       agent: AgentType,
       sessionId: string,
       transcriptPath?: string
-    ): Promise<{ usedTokens: number; model?: string | null; windowTokens?: number } | null> =>
-      ipcRenderer.invoke('nativeChat:readContextUsage', { agent, sessionId, transcriptPath }),
+    ): Promise<{
+      usedTokens: number
+      model?: string | null
+      windowTokens?: number
+    } | null> =>
+      ipcRenderer.invoke('nativeChat:readContextUsage', {
+        agent,
+        sessionId,
+        transcriptPath
+      }),
     learnedClaudeModels: (): Promise<
       Record<string, { contextWindow?: number; lastSeenAt: number }>
     > => ipcRenderer.invoke('nativeChat:learnedClaudeModels'),
@@ -4238,7 +4318,12 @@ const api = {
     call: (args: { method: string; params?: unknown }): Promise<RuntimeRpcResponse<unknown>> =>
       ipcRenderer.invoke('runtime:call', args),
     getTerminalFitOverrides: (): Promise<
-      { ptyId: string; mode: 'mobile-fit' | 'remote-desktop-fit'; cols: number; rows: number }[]
+      {
+        ptyId: string
+        mode: 'mobile-fit' | 'remote-desktop-fit'
+        cols: number
+        rows: number
+      }[]
     > => ipcRenderer.invoke('runtime:getTerminalFitOverrides'),
     getTerminalDrivers: (): Promise<
       {
@@ -4428,8 +4513,11 @@ const api = {
 
     testConnection: (args: {
       targetId: string
-    }): Promise<{ success: boolean; error?: string; state?: SshConnectionState }> =>
-      ipcRenderer.invoke('ssh:testConnection', args),
+    }): Promise<{
+      success: boolean
+      error?: string
+      state?: SshConnectionState
+    }> => ipcRenderer.invoke('ssh:testConnection', args),
 
     onStateChanged: (
       callback: (data: { targetId: string; state: SshConnectionState }) => void
@@ -4616,7 +4704,12 @@ const api = {
     > => ipcRenderer.invoke('mobile:getRuntimePairingUrl', args),
 
     listDevices: (): Promise<{
-      devices: { deviceId: string; name: string; pairedAt: number; lastSeenAt: number }[]
+      devices: {
+        deviceId: string
+        name: string
+        pairedAt: number
+        lastSeenAt: number
+      }[]
     }> => ipcRenderer.invoke('mobile:listDevices'),
 
     revokeDevice: (args: { deviceId: string }): Promise<{ revoked: boolean }> =>
@@ -4627,8 +4720,10 @@ const api = {
     revokeRuntimeAccess: (args: { deviceId: string }): Promise<{ revoked: boolean }> =>
       ipcRenderer.invoke('mobile:revokeRuntimeAccess', args),
 
-    isWebSocketReady: (): Promise<{ ready: boolean; endpoint: string | null }> =>
-      ipcRenderer.invoke('mobile:isWebSocketReady'),
+    isWebSocketReady: (): Promise<{
+      ready: boolean
+      endpoint: string | null
+    }> => ipcRenderer.invoke('mobile:isWebSocketReady'),
 
     getRelayStatus: (): Promise<{ status: MobileRelayStatus }> =>
       ipcRenderer.invoke('mobile:getRelayStatus'),
@@ -4787,7 +4882,10 @@ const api = {
 ipcRenderer.on(
   'notifications:playSound',
   (_event, payload: { source?: NotificationEventSource; volume?: number }) => {
-    void api.notifications.playSound({ source: payload?.source, volume: payload?.volume })
+    void api.notifications.playSound({
+      source: payload?.source,
+      volume: payload?.volume
+    })
   }
 )
 

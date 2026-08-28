@@ -3,7 +3,7 @@ import type { ExecutionHostId } from './execution-host'
 import type { RemovedSshTargetTombstone, SshRemotePtyLease, SshTarget } from './ssh-types'
 import type { Automation, AutomationExecutionTargetType, AutomationRun } from './automations-types'
 import type { WorkspaceSource } from './workspace-source'
-import type { Site } from './site-types'
+import type { Site, SiteCustomStep } from './site-types'
 import type { GitHubProjectSettings } from './github-project-types'
 import type {
   AgentStatusState,
@@ -3621,6 +3621,11 @@ export type PersistedState = {
    * Optional so an existing data file needs no migration.
    */
   siteRoots?: string[]
+  /**
+   * Reusable custom import/deploy steps, shared across sites. Installing one COPIES it onto the
+   * site, so editing the library never changes what an existing site runs.
+   */
+  siteStepLibrary?: SiteCustomStep[]
   /** Per paired device last tab selection by worktree; keeps mobile navigation across host restarts. */
   mobileClientTabSelectionsByDeviceId?: PersistedMobileClientTabSelections
   worktreeMeta: Record<string, WorktreeMeta>

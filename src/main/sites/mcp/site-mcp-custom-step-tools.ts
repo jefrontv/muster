@@ -18,6 +18,7 @@ import {
   findStep,
   listSteps,
   nextOrder,
+  readLibrary,
   readCommand,
   readGroup,
   readName,
@@ -31,7 +32,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'list_custom_steps',
     description:
-      "List a site's user-defined import/deploy steps, including the full command each one runs and whether it is enabled.",
+      "List a site's user-defined import/deploy steps and the shared step library, including the full command each one runs and whether it is enabled.",
     inputSchema: objectSchema({ ...SITE_PROPERTY }, []),
     async run(context, args: ToolArguments) {
       const site = resolveMcpSite(context, readString(args, 'site'))
@@ -40,7 +41,8 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         steps: listSteps(site).map((step) => describeStep(step)),
         // Run order, resolved — what the pipeline will actually do.
         import_order: selectCustomSteps(site, 'import').map((step) => step.name),
-        deploy_order: selectCustomSteps(site, 'deploy').map((step) => step.name)
+        deploy_order: selectCustomSteps(site, 'deploy').map((step) => step.name),
+        library: readLibrary(context).map((step) => describeStep(step))
       }
     }
   },
@@ -50,7 +52,10 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       "Create a repeatable import or deploy step for a site. The step appears as a checkbox in the site panel and runs as part of that group's pipeline. Placeholders {{sitePath}}, {{wpDir}}, {{remoteRoot}}, {{liveDomain}}, {{localDomain}}, {{environment}} are substituted (shell-quoted) at run time; secrets are never available to a command.",
     inputSchema: objectSchema(
       {
-        name: { type: 'string', description: 'Label shown next to the checkbox.' },
+        name: {
+          type: 'string',
+          description: 'Label shown next to the checkbox.'
+        },
         command: { type: 'string', description: 'Shell command to run.' },
         group: { type: 'string', description: "'import' or 'deploy'." },
         runs_on: {
@@ -62,8 +67,14 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
           description:
             "'before' or 'after' the built-in steps of the group (default 'after'). Use 'before' for things like enabling maintenance mode."
         },
-        description: { type: 'string', description: 'Optional note about what the step does.' },
-        enabled: { type: 'boolean', description: 'Whether it is ticked (default true).' },
+        description: {
+          type: 'string',
+          description: 'Optional note about what the step does.'
+        },
+        enabled: {
+          type: 'boolean',
+          description: 'Whether it is ticked (default true).'
+        },
         ...SITE_PROPERTY
       },
       ['name', 'command', 'group', 'runs_on']
@@ -89,7 +100,10 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         step.description = description
       }
       steps.push(step)
-      return { ...(await saveSteps(context, site, steps)), created: describeStep(step) }
+      return {
+        ...(await saveSteps(context, site, steps)),
+        created: describeStep(step)
+      }
     }
   },
   {
@@ -136,7 +150,10 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         next.order = raw.order
       }
       const steps = listSteps(site).map((step) => (step.id === existing.id ? next : step))
-      return { ...(await saveSteps(context, site, steps)), updated: describeStep(next) }
+      return {
+        ...(await saveSteps(context, site, steps)),
+        updated: describeStep(next)
+      }
     }
   },
   {
@@ -147,7 +164,10 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       const site = resolveMcpSite(context, readString(args, 'site'))
       const existing = findStep(site, readString(args, 'step'))
       const steps = listSteps(site).filter((step) => step.id !== existing.id)
-      return { ...(await saveSteps(context, site, steps)), removed: existing.id }
+      return {
+        ...(await saveSteps(context, site, steps)),
+        removed: existing.id
+      }
     }
   },
   {

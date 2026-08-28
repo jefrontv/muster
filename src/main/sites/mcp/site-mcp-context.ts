@@ -8,7 +8,7 @@
 // run guard needs (site-run-plan.ts), and it is all an agent is ever allowed to learn.
 
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
-import type { Site, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
+import type { Site, SiteCustomStep, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
 import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
 
 /** The subset of Store the tools touch. The real Store satisfies this structurally. */
@@ -19,6 +19,9 @@ export type SiteMcpStore = {
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
   /** Optional: lets a write land on a site this process only learned about from disk. */
   upsertSite?: (site: Site) => Site
+  /** Shared step library, if this store carries one. The context wraps these for tools. */
+  getSiteStepLibrary?: () => SiteCustomStep[]
+  setSiteStepLibrary?: (steps: readonly SiteCustomStep[]) => void
 }
 
 /** ocsites' get_git_status payload, snake_cased to keep existing agent prompts working. */
@@ -52,6 +55,14 @@ export type SiteMcpContext = {
    * the GUI's next whole-state save (and ignored by runs it starts).
    */
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Promise<Site | null>
+  /** Shared step library, read fresh. Absent on a transport that does not carry it. */
+  getStepLibrary?: () => SiteCustomStep[]
+  /**
+   * Writes the shared step library. Async for the same reason as updateSite: when the GUI is
+   * running the write goes through it, because a direct disk write here loses to the GUI's next
+   * whole-state save.
+   */
+  setStepLibrary?: (steps: readonly SiteCustomStep[]) => Promise<void>
   summarize: (site: Site) => Promise<SiteSummary>
   summarizeAll: (sites: Site[]) => Promise<SiteSummary[]>
   /** Presence only. A run is blocked on a missing credential; the value never leaves the host. */

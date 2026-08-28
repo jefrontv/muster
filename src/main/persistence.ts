@@ -74,7 +74,7 @@ import type {
   WorkspaceSessionPatch,
   WorkspaceSessionState
 } from '../shared/types'
-import type { Site } from '../shared/site-types'
+import type { Site, SiteCustomStep } from '../shared/site-types'
 import {
   deriveGlobalWindowsRuntimeDefaultFromLegacySettings,
   normalizeProjectRuntimePreference
@@ -4871,6 +4871,20 @@ export class Store {
 
   setConfiguredSiteRoots(roots: readonly string[]): void {
     this.state.siteRoots = normalizeConfiguredSiteRoots(roots)
+    this.scheduleSave()
+  }
+
+  /**
+   * Reusable custom steps, shared across sites. Kept beside `sites` rather than in GlobalSettings
+   * for the same reason as `siteRoots`: it is desktop-local operator config, and GlobalSettings is
+   * the surface that syncs to web/mobile where a remote client could clobber it.
+   */
+  getSiteStepLibrary(): SiteCustomStep[] {
+    return [...(this.state.siteStepLibrary ?? [])]
+  }
+
+  setSiteStepLibrary(steps: readonly SiteCustomStep[]): void {
+    this.state.siteStepLibrary = [...steps]
     this.scheduleSave()
   }
 

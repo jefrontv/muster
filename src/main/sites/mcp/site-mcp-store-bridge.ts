@@ -6,7 +6,7 @@
 // directly is correct. The bridge only matters while both processes are alive.
 
 import { readFileSync } from 'node:fs'
-import type { Site } from '../../../shared/site-types'
+import type { Site, SiteCustomStep } from '../../../shared/site-types'
 import type { SiteWriteBridgeEndpoint } from '../site-write-bridge-server'
 import type { SiteMcpStore } from './site-mcp-context'
 
@@ -69,7 +69,11 @@ async function postToBridge(
  */
 export async function updateSiteThroughBridge(
   base: SiteMcpStore,
-  args: { siteId: string; updates: Partial<Omit<Site, 'id'>>; bridgeFile: string },
+  args: {
+    siteId: string
+    updates: Partial<Omit<Site, 'id'>>
+    bridgeFile: string
+  },
   transport?: SiteWriteBridgeTransport
 ): Promise<Site | null> {
   const resolved: SiteWriteBridgeTransport = transport ?? {
@@ -78,11 +82,63 @@ export async function updateSiteThroughBridge(
   }
   const endpoint = resolved.readEndpoint()
   if (endpoint) {
-    const applied = await resolved.post(endpoint, { siteId: args.siteId, updates: args.updates })
+    const applied = await resolved.post(endpoint, {
+      siteId: args.siteId,
+      updates: args.updates
+    })
     if (applied) {
       return applied
     }
   }
   // No GUI, or the GUI refused//timed out: this process owns the file.
   return base.updateSite(args.siteId, args.updates)
+}
+
+/**
+ * Same hazard as a site write: while the GUI is up it owns whole-state saves, so a library write
+ * from this process would be silently reverted. Route it through the GUI when one is running.
+ */
+export async function setStepLibraryThroughBridge(
+  base: { setSiteStepLibrary: (steps: readonly SiteCustomStep[]) => void },
+  args: { steps: readonly SiteCustomStep[]; bridgeFile: string },
+  transport?: {
+    readEndpoint?: () => SiteWriteBridgeEndpoint | null
+    postLibrary?: (
+      endpoint: SiteWriteBridgeEndpoint,
+      steps: readonly SiteCustomStep[]
+    ) => Promise<boolean>
+  }
+): Promise<void> {
+  const readEndpoint = transport?.readEndpoint ?? (() => readEndpointFile(args.bridgeFile))
+  const post = transport?.postLibrary ?? postLibraryToBridge
+  const endpoint = readEndpoint()
+  if (endpoint && (await post(endpoint, args.steps))) {
+    return
+  }
+  // No GUI, or it refused/timed out: this process owns the file.
+  base.setSiteStepLibrary(args.steps)
+}
+
+async function postLibraryToBridge(
+  endpoint: SiteWriteBridgeEndpoint,
+  steps: readonly SiteCustomStep[]
+): Promise<boolean> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), BRIDGE_REQUEST_TIMEOUT_MS)
+  try {
+    const response = await fetch(`http://127.0.0.1:${endpoint.port}/library/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-muster-site-bridge-token': endpoint.token
+      },
+      body: JSON.stringify({ steps }),
+      signal: controller.signal
+    })
+    return response.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timeout)
+  }
 }

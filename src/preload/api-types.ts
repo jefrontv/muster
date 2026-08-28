@@ -22,6 +22,7 @@ import type {
 import type {
   OcsitesImportApplyResult,
   Site,
+  SiteCustomStep,
   SiteEnvironment,
   SiteLocalStack,
   SiteRepoLinkResult,
@@ -701,7 +702,11 @@ export type PreflightStatus = {
   gh: { installed: boolean; authenticated: boolean }
   /** Optional — older preload payloads predating GitLab support omit it; consumers gate on `glab?.installed`. */
   glab?: { installed: boolean; authenticated: boolean }
-  bitbucket?: { configured: boolean; authenticated: boolean; account: string | null }
+  bitbucket?: {
+    configured: boolean
+    authenticated: boolean
+    account: string | null
+  }
   azureDevOps?: {
     configured: boolean
     authenticated: boolean
@@ -767,7 +772,10 @@ export type PtyManagementSession = {
 
 export type PtyManagementApi = {
   // `degraded`: daemon is alive but can't spawn fresh PTYs, so new terminals run locally without daemon persistence.
-  listSessions: () => Promise<{ sessions: PtyManagementSession[]; degraded: boolean }>
+  listSessions: () => Promise<{
+    sessions: PtyManagementSession[]
+    degraded: boolean
+  }>
   killAll: () => Promise<{
     killedCount: number
     remainingCount: number
@@ -818,6 +826,16 @@ export type SitesApi = {
       >
     >
   }) => Promise<SiteResult<SiteSummary>>
+  /** The shared custom-step library, and installing one of its entries onto a site. */
+  stepLibrary: {
+    list: () => Promise<SiteResult<SiteCustomStep[]>>
+    set: (args: { steps: SiteCustomStep[] }) => Promise<SiteResult<SiteCustomStep[]>>
+    install: (args: {
+      siteId: string
+      libraryStepId: string
+      enabled?: boolean
+    }) => Promise<SiteResult<SiteSummary>>
+  }
   remove: (siteId: string) => Promise<SiteResult<null>>
   linkRepo: (args: { siteId: string; repoId: string | null }) => Promise<SiteResult<SiteSummary>>
   setSecret: (args: {
@@ -1301,7 +1319,11 @@ export type NativeChatApi = {
     agent: AgentType,
     sessionId: string,
     transcriptPath?: string
-  ) => Promise<{ usedTokens: number; model?: string | null; windowTokens?: number } | null>
+  ) => Promise<{
+    usedTokens: number
+    model?: string | null
+    windowTokens?: number
+  } | null>
   /** Learned Claude model ids (with CLI-reported context windows when seen) —
    *  the adaptive source behind picker families and meter window sizes. */
   learnedClaudeModels?: () => Promise<
@@ -1623,7 +1645,11 @@ export type PreloadApi = {
       targetBranch?: string
       isCrossRepository?: boolean
     }) => Promise<
-      | { baseBranch: string; compareBaseRef?: string; pushTarget?: GitPushTarget }
+      | {
+          baseBranch: string
+          compareBaseRef?: string
+          pushTarget?: GitPushTarget
+        }
       | { error: string }
     >
     remove: (args: {
@@ -1735,7 +1761,11 @@ export type PreloadApi = {
       tabId?: string
       leafId?: string
       // Why: main fires `agent_started` only on spawn success, so launch metadata rides this field (telemetry-plan.md §Agent launch semantics).
-      telemetry?: { agent_kind: AgentKind; launch_source: LaunchSource; request_kind: RequestKind }
+      telemetry?: {
+        agent_kind: AgentKind
+        launch_source: LaunchSource
+        request_kind: RequestKind
+      }
     }) => Promise<{
       id: string
       launchAgent?: TuiAgent
@@ -1747,7 +1777,12 @@ export type PreloadApi = {
       isAlternateScreen?: boolean
       replay?: string
       sessionExpired?: boolean
-      coldRestore?: { scrollback: string; cwd: string; cols?: number; rows?: number }
+      coldRestore?: {
+        scrollback: string
+        cwd: string
+        cols?: number
+        rows?: number
+      }
       startupCwdFallback?: { kind: 'worktree'; cwd: string }
     }>
     write: (id: string, data: string) => void
@@ -1789,9 +1824,10 @@ export type PreloadApi = {
     publishTerminalViewAttributes: (attributes: TerminalViewAttributes) => void
     hasChildProcesses: (id: string) => Promise<boolean>
     getForegroundProcess: (id: string) => Promise<string | null>
-    inspectProcess: (
-      id: string
-    ) => Promise<{ foregroundProcess: string | null; hasChildProcesses: boolean }>
+    inspectProcess: (id: string) => Promise<{
+      foregroundProcess: string | null
+      hasChildProcesses: boolean
+    }>
     confirmForegroundProcess: (id: string) => Promise<string | null>
     getCwd: (id: string) => Promise<string>
     getSize: (id: string) => Promise<{ cols: number; rows: number } | null>
@@ -2712,7 +2748,10 @@ export type PreloadApi = {
     pathExists: (path: string) => Promise<boolean>
     pickAttachment: () => Promise<string | null>
     pickImage: () => Promise<string | null>
-    pickRepoIconImage: () => Promise<{ dataUrl: string; fileName: string } | null>
+    pickRepoIconImage: () => Promise<{
+      dataUrl: string
+      fileName: string
+    } | null>
     pickAudio: () => Promise<string | null>
     pickDirectory: (args: { defaultPath?: string }) => Promise<string | null>
     copyFile: (args: { srcPath: string; destPath: string }) => Promise<void>
@@ -2870,7 +2909,12 @@ export type PreloadApi = {
       code: string
       preamble?: string
       connectionId?: string | null
-    }) => Promise<{ stdout: string; stderr: string; exitCode: number | null; error?: string }>
+    }) => Promise<{
+      stdout: string
+      stderr: string
+      exitCode: number | null
+      error?: string
+    }>
   }
   stats: StatsApi
   memory: MemoryApi
@@ -2927,16 +2971,27 @@ export type PreloadApi = {
       connectionId?: string
     }) => Promise<MarkdownDocument[]>
     writeFile: (
-      args: { filePath: string; content: string; connectionId?: string } & SshMutationExpectation
+      args: {
+        filePath: string
+        content: string
+        connectionId?: string
+      } & SshMutationExpectation
     ) => Promise<void>
     createFile: (
-      args: { filePath: string; connectionId?: string } & SshMutationExpectation
+      args: {
+        filePath: string
+        connectionId?: string
+      } & SshMutationExpectation
     ) => Promise<void>
     createDir: (
       args: { dirPath: string; connectionId?: string } & SshMutationExpectation
     ) => Promise<void>
     rename: (
-      args: { oldPath: string; newPath: string; connectionId?: string } & SshMutationExpectation
+      args: {
+        oldPath: string
+        newPath: string
+        connectionId?: string
+      } & SshMutationExpectation
     ) => Promise<void>
     copy: (
       args: {
@@ -3199,7 +3254,12 @@ export type PreloadApi = {
           agentLabel?: string
           branchChangedByPreparation?: boolean
         }
-      | { success: false; error: string; canceled?: boolean; branchChangedByPreparation?: boolean }
+      | {
+          success: false
+          error: string
+          canceled?: boolean
+          branchChangedByPreparation?: boolean
+        }
     >
     cancelGeneratePullRequestFields: (args: {
       worktreePath: string
@@ -3474,7 +3534,12 @@ export type PreloadApi = {
     getStatus: () => Promise<RuntimeStatus>
     call: (args: { method: string; params?: unknown }) => Promise<RuntimeRpcResponse<unknown>>
     getTerminalFitOverrides: () => Promise<
-      { ptyId: string; mode: 'mobile-fit' | 'remote-desktop-fit'; cols: number; rows: number }[]
+      {
+        ptyId: string
+        mode: 'mobile-fit' | 'remote-desktop-fit'
+        cols: number
+        rows: number
+      }[]
     >
     getTerminalDrivers: () => Promise<
       {
@@ -3581,9 +3646,11 @@ export type PreloadApi = {
     resetRelay: (args: { targetId: string }) => Promise<void>
     getState: (args: { targetId: string }) => Promise<SshConnectionState | null>
     needsPassphrasePrompt: (args: { targetId: string }) => Promise<boolean>
-    testConnection: (args: {
-      targetId: string
-    }) => Promise<{ success: boolean; error?: string; state?: SshConnectionState }>
+    testConnection: (args: { targetId: string }) => Promise<{
+      success: boolean
+      error?: string
+      state?: SshConnectionState
+    }>
     onStateChanged: (
       callback: (data: { targetId: string; state: SshConnectionState }) => void
     ) => () => void
@@ -3731,12 +3798,20 @@ export type PreloadApi = {
         }
     >
     listDevices: () => Promise<{
-      devices: { deviceId: string; name: string; pairedAt: number; lastSeenAt: number }[]
+      devices: {
+        deviceId: string
+        name: string
+        pairedAt: number
+        lastSeenAt: number
+      }[]
     }>
     revokeDevice: (args: { deviceId: string }) => Promise<{ revoked: boolean }>
     listRuntimeAccessGrants: () => Promise<{ grants: RuntimeAccessGrant[] }>
     revokeRuntimeAccess: (args: { deviceId: string }) => Promise<{ revoked: boolean }>
-    isWebSocketReady: () => Promise<{ ready: boolean; endpoint: string | null }>
+    isWebSocketReady: () => Promise<{
+      ready: boolean
+      endpoint: string | null
+    }>
     getRelayStatus: () => Promise<{ status: MobileRelayStatus }>
     onRelayStatusChanged: (callback: (status: MobileRelayStatus) => void) => () => void
     /** Consumes an auth-failure notification that arrived before the renderer listener mounted. */

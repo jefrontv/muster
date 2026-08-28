@@ -18,7 +18,7 @@ import { buildSiteSummaries, buildSiteSummary } from '../site-summary'
 import { createSiteSshSession } from '../site-ssh-session'
 import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
-import { updateSiteThroughBridge } from './site-mcp-store-bridge'
+import { setStepLibraryThroughBridge, updateSiteThroughBridge } from './site-mcp-store-bridge'
 
 export type SiteMcpEngineOptions = {
   store: SiteMcpStore
@@ -46,8 +46,32 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
     store,
     updateSite: (siteId, updates) =>
       options.bridgeFile
-        ? updateSiteThroughBridge(store, { siteId, updates, bridgeFile: options.bridgeFile })
+        ? updateSiteThroughBridge(store, {
+            siteId,
+            updates,
+            bridgeFile: options.bridgeFile
+          })
         : Promise.resolve(store.updateSite(siteId, updates)),
+    // Reads come from the store (the refreshing wrapper re-parses the file); writes take the same
+    // bridge-first path as a site write, for the same clobbering reason.
+    getStepLibrary: () => store.getSiteStepLibrary?.() ?? [],
+    setStepLibrary: async (steps) => {
+      const write = store.setSiteStepLibrary
+      if (!write) {
+        return
+      }
+      if (options.bridgeFile) {
+        await setStepLibraryThroughBridge(
+          { setSiteStepLibrary: write },
+          {
+            steps,
+            bridgeFile: options.bridgeFile
+          }
+        )
+        return
+      }
+      write(steps)
+    },
     summarize: buildSiteSummary,
     summarizeAll: buildSiteSummaries,
     hasSshSecret: (siteId, environment) => hasSiteSecret(siteId, environment, 'ssh'),

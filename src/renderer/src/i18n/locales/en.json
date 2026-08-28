@@ -13492,6 +13492,13 @@
           "autoAddDiscoveredHint": "New folders found under your site folders become sidebar projects on their own, with no setup.",
           "sidebarUpToDate": "Already up to date — every site folder is in the sidebar."
         },
+        "StepLibrary": {
+          "heading": "Custom steps",
+          "description": "Extra commands this site runs as part of an import or deploy. Ask your agent to create, edit, or copy them between sites.",
+          "libraryHeading": "Library",
+          "install": "Install",
+          "installed": "Added \u201c{{name}}\u201d to this site."
+        },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
           "confirmBody": "Branch {{branch}} does not match an environment. This run would target {{environment}}. Continue?",

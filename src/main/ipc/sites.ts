@@ -15,6 +15,7 @@ import { listCheckoutBranches } from '../sites/site-branches'
 import { getSitePipelines } from '../bitbucket/site-pipelines'
 import { buildSiteSummaries, buildSiteSummary, resolveSiteCheckoutDir } from '../sites/site-summary'
 import { registerSiteEnvironmentHandlers } from './sites-environments'
+import { registerSiteStepLibraryHandlers } from './site-step-library'
 import {
   isSiteEnvironmentName,
   isSitePatch,
@@ -59,7 +60,10 @@ export function registerSiteHandlers(store: Store): void {
       if (typeof siteId !== 'string') {
         throw new TypeError('siteId must be a string')
       }
-      return { ok: true, value: await buildSiteSummary(requireSite(store, siteId)) }
+      return {
+        ok: true,
+        value: await buildSiteSummary(requireSite(store, siteId))
+      }
     } catch (error) {
       return failure(error)
     }
@@ -75,7 +79,10 @@ export function registerSiteHandlers(store: Store): void {
           throw new TypeError('siteId must be a string')
         }
         const site = requireSite(store, siteId)
-        return { ok: true, value: await listCheckoutBranches(resolveSiteCheckoutDir(site)) }
+        return {
+          ok: true,
+          value: await listCheckoutBranches(resolveSiteCheckoutDir(site))
+        }
       } catch (error) {
         return failure(error)
       }
@@ -92,7 +99,10 @@ export function registerSiteHandlers(store: Store): void {
           throw new TypeError('siteId must be a string')
         }
         const site = requireSite(store, siteId)
-        return { ok: true, value: await getSitePipelines(resolveSiteCheckoutDir(site)) }
+        return {
+          ok: true,
+          value: await getSitePipelines(resolveSiteCheckoutDir(site))
+        }
       } catch (error) {
         return failure(error)
       }
@@ -103,7 +113,11 @@ export function registerSiteHandlers(store: Store): void {
     'sites:create',
     async (_event, args: unknown): Promise<SiteResult<SiteSummary>> => {
       try {
-        const input = args as { path?: unknown; displayName?: unknown; repoId?: unknown }
+        const input = args as {
+          path?: unknown
+          displayName?: unknown
+          repoId?: unknown
+        }
         if (!isSitePath(input.path)) {
           throw new TypeError('path must be a non-empty absolute path')
         }
@@ -246,4 +260,5 @@ export function registerSiteHandlers(store: Store): void {
   )
 
   registerSiteEnvironmentHandlers(store)
+  registerSiteStepLibraryHandlers(store)
 }

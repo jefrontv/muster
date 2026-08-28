@@ -131,6 +131,25 @@ export async function saveSteps(
   }
 }
 
+/**
+ * The shared library, via the context. A transport that does not carry it reads as empty and
+ * refuses writes rather than pretending the write landed.
+ */
+export function readLibrary(context: SiteMcpContext): SiteCustomStep[] {
+  return context.getStepLibrary?.() ?? []
+}
+
+export async function writeLibrary(
+  context: SiteMcpContext,
+  steps: readonly SiteCustomStep[]
+): Promise<void> {
+  const write = context.setStepLibrary
+  if (!write) {
+    throw new SiteMcpToolError('This Muster build cannot write the shared step library.')
+  }
+  await write(steps)
+}
+
 export function findStep(site: Site, id: string): SiteCustomStep {
   const step = listSteps(site).find((entry) => entry.id === id)
   if (!step) {

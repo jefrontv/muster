@@ -8,7 +8,7 @@
 // changed on that site since startup.
 
 import { readFileSync, statSync } from 'node:fs'
-import type { Site } from '../../../shared/site-types'
+import type { Site, SiteCustomStep } from '../../../shared/site-types'
 import type { SiteMcpStore } from './site-mcp-context'
 
 export type SiteStoreFileReader = {
@@ -67,6 +67,18 @@ export function createRefreshingSiteMcpStore(
 
   const freshSite = (siteId: string): Site | null =>
     readSitesFromDisk()?.find((site) => site.id === siteId) ?? null
+  const readLibraryFromDisk = (): SiteCustomStep[] | null => {
+    try {
+      const parsed = JSON.parse(reader.readFileSync(options.dataFile, 'utf-8')) as {
+        siteStepLibrary?: unknown
+      }
+      return Array.isArray(parsed.siteStepLibrary)
+        ? (parsed.siteStepLibrary as SiteCustomStep[])
+        : null
+    } catch {
+      return null
+    }
+  }
 
   return {
     listSites: () => {
@@ -91,6 +103,10 @@ export function createRefreshingSiteMcpStore(
       cachedStamp = ''
       return written ?? base.upsertSite?.({ ...current, ...updates, id: siteId }) ?? null
     },
-    ...(base.upsertSite ? { upsertSite: base.upsertSite } : {})
+    ...(base.upsertSite ? { upsertSite: base.upsertSite } : {}),
+    // Same staleness reason as sites: the GUI may have edited the library since this process
+    // booted, so read the file rather than the startup snapshot.
+    getSiteStepLibrary: () => readLibraryFromDisk() ?? base.getSiteStepLibrary?.() ?? [],
+    ...(base.setSiteStepLibrary ? { setSiteStepLibrary: base.setSiteStepLibrary } : {})
   }
 }
