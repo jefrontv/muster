@@ -14,7 +14,11 @@ import {
   type SiteSummary
 } from '../../../../shared/site-types'
 import { useAppStore } from '@/store'
-import { SiteCustomStepEditor, type CustomStepDraft } from './SiteCustomStepEditor'
+import {
+  SiteCustomStepEditor,
+  draftToStepFields,
+  type CustomStepDraft
+} from './SiteCustomStepEditor'
 
 function IconButton({
   label,
@@ -132,9 +136,7 @@ export function SiteCustomStepList({
                   onSubmit={() => {
                     void persist(
                       steps.map((entry) =>
-                        entry.id === step.id
-                          ? { ...entry, ...draft, name: draft.name.trim(), command: draft.command }
-                          : entry
+                        entry.id === step.id ? { ...entry, ...draftToStepFields(draft) } : entry
                       )
                     ).then((ok) => {
                       if (ok) {
@@ -201,6 +203,7 @@ export function SiteCustomStepList({
                       setDraft({
                         name: step.name,
                         command: step.command,
+                        scriptPath: step.scriptPath ?? '',
                         group: step.group,
                         runsOn: step.runsOn,
                         position: step.position

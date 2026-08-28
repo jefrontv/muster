@@ -48,8 +48,27 @@ export type SiteCustomStep = {
   group: SiteRunGroup
   /** Remote runs over the run's SSH session; local runs in the site checkout. */
   runsOn: 'remote' | 'local'
-  /** Shell string, run verbatim after placeholder substitution. */
+  /**
+   * Shell string, run verbatim after placeholder substitution. Empty when the step runs a script
+   * file instead; exactly one of `command` and `scriptPath` carries the work.
+   */
   command: string
+  /**
+   * Repo-relative path to a bash script inside the site checkout, e.g. `.muster/steps/purge.sh`.
+   *
+   * A file rather than an inline body because complex steps want version control, a real editor,
+   * and `bash .muster/steps/purge.sh` outside Muster. The script is transferred as data and never
+   * parsed by an intermediate shell, which is what removes the SSH quoting hazard a long one-liner
+   * has. Values arrive as MUSTER_* environment variables, never substituted into the script text.
+   */
+  scriptPath?: string
+  /**
+   * The script's contents, captured when a step is promoted to the library.
+   *
+   * A library entry cannot point at a file in someone else's checkout, so promoting embeds the
+   * script and installing writes it back out. Absent on ordinary site steps, which read the file.
+   */
+  scriptContents?: string
   /**
    * Where it sits relative to the built-in steps of the same group. `before` is what makes the
    * maintenance-mode pattern work: enable before the deploy, disable after it.
@@ -312,6 +331,66 @@ export const CUSTOM_STEP_PLACEHOLDERS = [
 ] as const
 
 export type CustomStepPlaceholderName = (typeof CUSTOM_STEP_PLACEHOLDERS)[number]['name']
+
+/**
+ * The environment variable a placeholder arrives as inside a script: `wpDir` -> `MUSTER_WP_DIR`.
+ *
+ * Scripts get values this way instead of `{{placeholder}}` substitution. Splicing text into code
+ * breaks on any script that legitimately contains braces (jq, awk, mustache templates) and puts
+ * the quoting burden in the wrong place — an env var is just a value the script reads.
+ */
+export function customStepEnvName(placeholder: CustomStepPlaceholderName): string {
+  return `MUSTER_${placeholder.replaceAll(/(?<=[a-z])(?=[A-Z])/g, '_').toUpperCase()}`
+}
+
+/** Longest a script path may be, matching the other bounded string fields on a site. */
+export const CUSTOM_STEP_SCRIPT_PATH_MAX = 512
+
+/**
+ * Whether a script path is safe to resolve against a checkout.
+ *
+ * The path is operator-supplied but reaches a shell, so it must stay inside the site: no absolute
+ * paths, no `..` traversal, no backslashes (a Windows-style separator would survive a POSIX
+ * `..` check and still escape), and no leading `~`. Callers still resolve and re-check the result.
+ */
+export function isSafeCustomStepScriptPath(value: unknown): value is string {
+  if (typeof value !== 'string') {
+    return false
+  }
+  const trimmed = value.trim()
+  if (trimmed.length === 0 || trimmed.length > CUSTOM_STEP_SCRIPT_PATH_MAX) {
+    return false
+  }
+  if (trimmed.startsWith('/') || trimmed.startsWith('~') || trimmed.includes('\\')) {
+    return false
+  }
+  // Drive letters would be absolute on Windows even without a leading separator.
+  if (/^[A-Za-z]:/.test(trimmed)) {
+    return false
+  }
+  return trimmed.split('/').every((segment) => segment !== '..' && segment !== '')
+}
+
+/** The work a step performs. Exactly one of the two fields is populated. */
+export type CustomStepSource =
+  | { kind: 'command'; command: string }
+  | { kind: 'script'; scriptPath: string }
+
+/**
+ * Narrows a step to what it actually runs, so every read site branches instead of guessing which
+ * field won. A script path always wins when present; `command` is what older records carry.
+ */
+export function customStepSource(
+  step: Pick<SiteCustomStep, 'command' | 'scriptPath'>
+): CustomStepSource | null {
+  if (step.scriptPath && step.scriptPath.trim().length > 0) {
+    return { kind: 'script', scriptPath: step.scriptPath.trim() }
+  }
+  if (step.command.trim().length > 0) {
+    return { kind: 'command', command: step.command }
+  }
+  return null
+}
 
 /**
  * Moves a step within its own (group, position) lane and renumbers that lane.

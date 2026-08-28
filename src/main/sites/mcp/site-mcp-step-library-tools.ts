@@ -6,6 +6,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type { SiteCustomStep } from '../../../shared/site-types'
+import { readScriptWithin, writeScriptWithin } from '../custom-step-script'
 import {
   readString,
   resolveMcpSite,
@@ -42,6 +43,17 @@ export const SITE_MCP_STEP_LIBRARY_TOOLS: readonly SiteMcpTool[] = [
         // A library entry is a template, not something that runs; enabling happens on install.
         enabled: false,
         origin: { kind: 'copied', fromSiteId: site.id }
+      }
+      // A library entry cannot point at a file in this site's checkout, so the script travels with
+      // it and install writes it back out.
+      if (entry.scriptPath) {
+        const contents = await readScriptWithin(site.path, entry.scriptPath)
+        if (contents === null) {
+          throw new SiteMcpToolError(
+            `Script '${entry.scriptPath}' was not found in ${site.displayName || site.path}, so there is nothing to promote.`
+          )
+        }
+        entry.scriptContents = contents
       }
       await writeLibrary(context, [...library, entry])
       return {
@@ -85,10 +97,31 @@ export const SITE_MCP_STEP_LIBRARY_TOOLS: readonly SiteMcpTool[] = [
         enabled: raw.enabled === undefined ? true : raw.enabled === true || raw.enabled === 'true',
         origin: { kind: 'library', libraryId: template.id }
       }
+      // The installed step reads the file like any other, so the embedded copy is written out and
+      // then dropped — carrying it on the site record would be a second source of truth.
+      let script: string | undefined
+      if (installed.scriptPath && installed.scriptContents !== undefined) {
+        const outcome = await writeScriptWithin(
+          site.path,
+          installed.scriptPath,
+          installed.scriptContents
+        )
+        if (outcome === 'unsafe') {
+          throw new SiteMcpToolError(`Library script path '${installed.scriptPath}' is not safe.`)
+        }
+        if (outcome === 'conflict') {
+          throw new SiteMcpToolError(
+            `'${installed.scriptPath}' already exists in ${site.displayName || site.path} with different contents. Move or delete it first — installing will not overwrite a script you may be using.`
+          )
+        }
+        script = outcome
+        delete installed.scriptContents
+      }
       steps.push(installed)
       return {
         ...(await saveSteps(context, site, steps)),
-        installed: describeStep(installed)
+        installed: describeStep(installed),
+        ...(script ? { script_file: `${installed.scriptPath} (${script})` } : {})
       }
     }
   }

@@ -4,6 +4,7 @@
 // Split from site-mcp-custom-step-tools.ts to keep both files inside the max-lines budget; the
 // tool definitions there read as a table, these are the mechanics behind them.
 
+import { isSafeCustomStepScriptPath } from '../../../shared/site-types'
 import type {
   Site,
   SiteCustomStep,
@@ -32,8 +33,53 @@ export function describeStep(step: SiteCustomStep): Record<string, unknown> {
     // Always surfaced: an agent (and the human reading its transcript) must be able to see exactly
     // what a step will execute.
     command: step.command,
+    script_path: step.scriptPath ?? null,
     origin: step.origin ?? null
   }
+}
+
+/**
+ * The `command` / `script_path` pair, enforcing exactly one.
+ *
+ * Returned as a partial step so create spreads it and update spreads only what changed. Setting
+ * one clears the other: a step that carried both would leave the runner to pick, and the caller
+ * would not know which won until it ran against production.
+ */
+export function readStepSource(
+  raw: Record<string, unknown>,
+  required: true
+): Pick<SiteCustomStep, 'command'> & { scriptPath?: string }
+export function readStepSource(
+  raw: Record<string, unknown>,
+  required: false
+): Partial<Pick<SiteCustomStep, 'command' | 'scriptPath'>>
+export function readStepSource(
+  raw: Record<string, unknown>,
+  required: boolean
+): Partial<Pick<SiteCustomStep, 'command' | 'scriptPath'>> {
+  const hasCommand = raw.command !== undefined
+  const hasScript = raw.script_path !== undefined
+  if (hasCommand && hasScript) {
+    throw new SiteMcpToolError(
+      "Give either 'command' or 'script_path', not both — a step runs one or the other."
+    )
+  }
+  if (!hasCommand && !hasScript) {
+    if (required) {
+      throw new SiteMcpToolError("Either 'command' or 'script_path' is required.")
+    }
+    return {}
+  }
+  if (hasScript) {
+    const value = raw.script_path
+    if (!isSafeCustomStepScriptPath(value)) {
+      throw new SiteMcpToolError(
+        "'script_path' must be a repo-relative path inside the checkout — no leading '/', no '..'."
+      )
+    }
+    return { scriptPath: value.trim(), command: '' }
+  }
+  return { command: readCommand(raw, true)!, scriptPath: undefined }
 }
 
 export function readGroup(

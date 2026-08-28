@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { translate } from '@/i18n/i18n'
+import { cn } from '@/lib/utils'
 import {
   CUSTOM_STEP_PLACEHOLDERS,
+  customStepEnvName,
   type SiteCustomStep,
   type SiteCustomStepPosition,
   type SiteRunGroup
@@ -18,10 +20,60 @@ import {
 export type CustomStepDraft = Pick<
   SiteCustomStep,
   'name' | 'command' | 'group' | 'runsOn' | 'position'
->
+> & { scriptPath: string }
 
 export function emptyCustomStepDraft(): CustomStepDraft {
-  return { name: '', command: '', group: 'deploy', runsOn: 'remote', position: 'after' }
+  return {
+    name: '',
+    command: '',
+    scriptPath: '',
+    group: 'deploy',
+    runsOn: 'remote',
+    position: 'after'
+  }
+}
+
+/**
+ * Which field carries the work. Derived from the draft rather than stored, so the two can never
+ * disagree — the same exactly-one rule main validates on the way in.
+ */
+export function draftMode(draft: CustomStepDraft): 'command' | 'script' {
+  return draft.scriptPath.trim().length > 0 ? 'script' : 'command'
+}
+
+/** A draft is submittable when it has a name and exactly one source of work. */
+export function isDraftComplete(draft: CustomStepDraft): boolean {
+  if (draft.name.trim().length === 0) {
+    return false
+  }
+  const hasCommand = draft.command.trim().length > 0
+  const hasScript = draft.scriptPath.trim().length > 0
+  return hasCommand !== hasScript
+}
+
+/**
+ * The persisted fields a draft becomes.
+ *
+ * The draft always carries both strings because the form needs somewhere to type; the record must
+ * carry exactly one. Switching mode therefore clears the other field explicitly rather than
+ * leaving a stale value that main's validator would reject as an unsafe empty path.
+ */
+export function draftToStepFields(draft: CustomStepDraft): Pick<
+  SiteCustomStep,
+  'name' | 'command' | 'group' | 'runsOn' | 'position'
+> & {
+  scriptPath?: string
+} {
+  const scriptPath = draft.scriptPath.trim()
+  return {
+    name: draft.name.trim(),
+    group: draft.group,
+    runsOn: draft.runsOn,
+    position: draft.position,
+    ...(scriptPath
+      ? { command: '', scriptPath }
+      : { command: draft.command, scriptPath: undefined })
+  }
 }
 
 function Select<T extends string>({
@@ -71,7 +123,8 @@ export function SiteCustomStepEditor({
   submitLabel: string
 }): React.JSX.Element {
   const [commandRef, setCommandRef] = useState<HTMLTextAreaElement | null>(null)
-  const canSubmit = draft.name.trim().length > 0 && draft.command.trim().length > 0
+  const mode = draftMode(draft)
+  const canSubmit = isDraftComplete(draft)
 
   // Inserting at the caret beats making the user retype a placeholder they can see listed.
   const insertPlaceholder = (name: string): void => {
@@ -134,32 +187,91 @@ export function SiteCustomStepEditor({
         />
       </div>
 
-      <div className="space-y-1">
-        <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {translate('auto.components.sites.StepEditor.command', 'Command')}
-        </Label>
-        <textarea
-          ref={setCommandRef}
-          className="min-h-16 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs"
-          value={draft.command}
-          spellCheck={false}
-          placeholder="wp cache flush"
-          onChange={(event) => onChange({ ...draft, command: event.target.value })}
-        />
-        <div className="flex flex-wrap gap-1">
-          {CUSTOM_STEP_PLACEHOLDERS.map((placeholder) => (
-            <button
-              key={placeholder.name}
-              type="button"
-              title={placeholder.description}
-              className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:bg-accent"
-              onClick={() => insertPlaceholder(placeholder.name)}
-            >
-              {`{{${placeholder.name}}}`}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-1">
+        {(['command', 'script'] as const).map((candidate) => (
+          <button
+            key={candidate}
+            type="button"
+            // Switching clears the other field, which is what keeps exactly one source of work.
+            onClick={() =>
+              onChange({
+                ...draft,
+                command: candidate === 'command' ? draft.command : '',
+                scriptPath: candidate === 'script' ? draft.scriptPath || '.muster/steps/' : ''
+              })
+            }
+            className={cn(
+              'rounded-md border px-2 py-0.5 text-[11px]',
+              mode === candidate
+                ? 'border-primary/60 bg-primary/10 text-foreground'
+                : 'border-border/60 text-muted-foreground hover:bg-accent'
+            )}
+          >
+            {candidate === 'command'
+              ? translate('auto.components.sites.StepEditor.modeCommand', 'Command')
+              : translate('auto.components.sites.StepEditor.modeScript', 'Script file')}
+          </button>
+        ))}
       </div>
+
+      {mode === 'script' ? (
+        <div className="space-y-1">
+          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {translate('auto.components.sites.StepEditor.scriptPath', 'Script path')}
+          </Label>
+          <Input
+            className="font-mono text-xs"
+            value={draft.scriptPath}
+            spellCheck={false}
+            placeholder=".muster/steps/purge.sh"
+            onChange={(event) => onChange({ ...draft, scriptPath: event.target.value })}
+          />
+          <p className="text-[10px] text-muted-foreground">
+            {translate(
+              'auto.components.sites.StepEditor.scriptHint',
+              'Bash file inside the checkout, run with these variables set:'
+            )}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {CUSTOM_STEP_PLACEHOLDERS.map((placeholder) => (
+              <span
+                key={placeholder.name}
+                title={placeholder.description}
+                className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+              >
+                ${customStepEnvName(placeholder.name)}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {translate('auto.components.sites.StepEditor.command', 'Command')}
+          </Label>
+          <textarea
+            ref={setCommandRef}
+            className="min-h-16 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs"
+            value={draft.command}
+            spellCheck={false}
+            placeholder="wp cache flush"
+            onChange={(event) => onChange({ ...draft, command: event.target.value })}
+          />
+          <div className="flex flex-wrap gap-1">
+            {CUSTOM_STEP_PLACEHOLDERS.map((placeholder) => (
+              <button
+                key={placeholder.name}
+                type="button"
+                title={placeholder.description}
+                className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:bg-accent"
+                onClick={() => insertPlaceholder(placeholder.name)}
+              >
+                {`{{${placeholder.name}}}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy}>

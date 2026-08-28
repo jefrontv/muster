@@ -190,12 +190,15 @@ export async function runDeployShellScript(
     cwd: string
     signal: AbortSignal
     timeoutMs?: number
+    /** Extra variables for the child. Custom-step scripts read their inputs this way. */
+    env?: Record<string, string>
     onOutput?: (chunk: string) => void
   }
 ): Promise<StreamCommandResult> {
   try {
     return await run(shell, ['-c', script], {
       cwd: options.cwd,
+      env: options.env ? { ...process.env, ...options.env } : undefined,
       signal: options.signal,
       timeoutMs: options.timeoutMs,
       onStdout: options.onOutput,

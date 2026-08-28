@@ -12,6 +12,7 @@ import type { SiteCustomStep, SiteSummary } from '../../../../shared/site-types'
 import { useAppStore } from '@/store'
 import {
   SiteCustomStepEditor,
+  draftToStepFields,
   emptyCustomStepDraft,
   type CustomStepDraft
 } from './SiteCustomStepEditor'
@@ -91,8 +92,7 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
     try {
       // Appended last in its own lane; reorder buttons move it from there.
       const step: SiteCustomStep = {
-        ...draft,
-        name: draft.name.trim(),
+        ...draftToStepFields(draft),
         id: crypto.randomUUID(),
         order: siteSteps.length,
         enabled: true

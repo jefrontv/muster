@@ -3,7 +3,7 @@
 // so a compromised renderer cannot push a multi-megabyte string into orca-data.json, and unknown
 // keys are rejected outright rather than merged into a persisted record.
 
-import { SITE_LOCAL_STACKS } from '../../shared/site-types'
+import { isSafeCustomStepScriptPath, SITE_LOCAL_STACKS } from '../../shared/site-types'
 import type { SiteCustomStep, SiteEnvironment, SiteLocalStack } from '../../shared/site-types'
 
 const MAX_PATH_LENGTH = 4_096
@@ -13,6 +13,8 @@ const MAX_TIMEOUT_SECONDS = 86_400
 const MAX_DB_PORT = 65_535
 const MAX_COMMAND_LENGTH = 8_192
 const MAX_CUSTOM_STEPS = 64
+/** Scripts are whole files, so they need far more room than a one-line command. */
+const MAX_SCRIPT_CONTENTS_LENGTH = 65_536
 const CUSTOM_STEP_KEYS = new Set([
   'id',
   'name',
@@ -20,6 +22,8 @@ const CUSTOM_STEP_KEYS = new Set([
   'group',
   'runsOn',
   'command',
+  'scriptPath',
+  'scriptContents',
   'position',
   'order',
   'enabled',
@@ -207,9 +211,23 @@ function isSiteCustomStep(value: unknown): value is SiteCustomStep {
   if (step.position !== 'before' && step.position !== 'after') {
     return false
   }
-  // A blank command would run an empty shell string and "succeed", which reads as a step that
-  // silently does nothing.
-  if (!isBoundedString(step.command, MAX_COMMAND_LENGTH) || step.command.trim().length === 0) {
+  if (!isBoundedString(step.command, MAX_COMMAND_LENGTH)) {
+    return false
+  }
+  if (step.scriptPath !== undefined && !isSafeCustomStepScriptPath(step.scriptPath)) {
+    return false
+  }
+  if (
+    step.scriptContents !== undefined &&
+    !isBoundedString(step.scriptContents, MAX_SCRIPT_CONTENTS_LENGTH)
+  ) {
+    return false
+  }
+  // Exactly one source of work. Neither would run an empty shell string and "succeed", reading as
+  // a step that silently does nothing; both would leave which one wins up to the runner.
+  const hasCommand = step.command.trim().length > 0
+  const hasScript = typeof step.scriptPath === 'string' && step.scriptPath.trim().length > 0
+  if (hasCommand === hasScript) {
     return false
   }
   if (typeof step.order !== 'number' || !Number.isInteger(step.order) || step.order < 0) {

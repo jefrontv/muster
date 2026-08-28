@@ -19,7 +19,7 @@ import {
   listSteps,
   nextOrder,
   readLibrary,
-  readCommand,
+  readStepSource,
   readGroup,
   readName,
   readPosition,
@@ -49,14 +49,22 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'create_custom_step',
     description:
-      "Create a repeatable import or deploy step for a site. The step appears as a checkbox in the site panel and runs as part of that group's pipeline. Placeholders {{sitePath}}, {{wpDir}}, {{remoteRoot}}, {{liveDomain}}, {{localDomain}}, {{environment}} are substituted (shell-quoted) at run time; secrets are never available to a command.",
+      "Create a repeatable import or deploy step for a site. The step appears as a checkbox in the site panel and runs as part of that group's pipeline. Give EITHER 'command' for a one-liner, where placeholders {{sitePath}}, {{wpDir}}, {{remoteRoot}}, {{liveDomain}}, {{localDomain}}, {{environment}} are substituted shell-quoted at run time, OR 'script_path' for anything complex. Secrets are never available to either.",
     inputSchema: objectSchema(
       {
         name: {
           type: 'string',
           description: 'Label shown next to the checkbox.'
         },
-        command: { type: 'string', description: 'Shell command to run.' },
+        command: {
+          type: 'string',
+          description: 'Shell command to run. Omit when giving script_path.'
+        },
+        script_path: {
+          type: 'string',
+          description:
+            "Repo-relative bash script inside the checkout, e.g. '.muster/steps/purge.sh'. Preferred for multi-line work: it is version-controlled, runs standalone, and crosses SSH as a file so quoting cannot break it. Values arrive as $MUSTER_SITE_PATH, $MUSTER_WP_DIR, $MUSTER_REMOTE_ROOT, $MUSTER_LIVE_DOMAIN, $MUSTER_LOCAL_DOMAIN and $MUSTER_ENVIRONMENT. Write the file yourself before creating the step."
+        },
         group: { type: 'string', description: "'import' or 'deploy'." },
         runs_on: {
           type: 'string',
@@ -77,7 +85,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         },
         ...SITE_PROPERTY
       },
-      ['name', 'command', 'group', 'runs_on']
+      ['name', 'group', 'runs_on']
     ),
     async run(context, args: ToolArguments) {
       const site = resolveMcpSite(context, readString(args, 'site'))
@@ -90,7 +98,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         name: readName(raw, true)!,
         group,
         runsOn: readRunsOn(raw),
-        command: readCommand(raw, true)!,
+        ...readStepSource(raw, true),
         position,
         order: nextOrder(steps, group, position),
         enabled: raw.enabled === undefined ? true : raw.enabled === true || raw.enabled === 'true'
@@ -114,7 +122,12 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       {
         ...STEP_ID_PROPERTY,
         name: { type: 'string' },
-        command: { type: 'string' },
+        command: { type: 'string', description: 'Switches the step to a one-liner.' },
+        script_path: {
+          type: 'string',
+          description:
+            "Switches the step to a repo-relative bash script, e.g. '.muster/steps/purge.sh'. Passing this clears 'command', and vice versa."
+        },
         group: { type: 'string' },
         runs_on: { type: 'string' },
         position: { type: 'string' },
@@ -130,11 +143,11 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       const raw = args as Record<string, unknown>
       const existing = findStep(site, readString(args, 'step'))
       const name = readName(raw, false)
-      const command = readCommand(raw, false)
+      const source = readStepSource(raw, false)
       const next: SiteCustomStep = {
         ...existing,
         ...(name === undefined ? {} : { name }),
-        ...(command === undefined ? {} : { command }),
+        ...source,
         group: readGroup(raw, 'group', existing.group),
         runsOn: readRunsOn(raw, existing.runsOn),
         position: readPosition(raw, existing.position),

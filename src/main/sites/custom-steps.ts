@@ -8,7 +8,9 @@
 // step does). Local steps reuse the same shell path the theme build already runs on, so cancellation
 // and output streaming behave identically.
 
+import { randomUUID } from 'node:crypto'
 import { streamCommand } from '../lib/stream-command'
+import { readScriptWithin, resolveScriptWithin } from './custom-step-script'
 import {
   quoteShellArgument,
   SiteRunStepError,
@@ -19,8 +21,11 @@ import {
 import { runDeployShellScript } from './theme-build'
 import {
   CUSTOM_STEP_PLACEHOLDERS,
+  customStepEnvName,
+  customStepSource,
   selectCustomSteps,
   type CustomStepPlaceholderName,
+  type CustomStepSource,
   type SiteCustomStep,
   type SiteCustomStepPosition,
   type SiteRunGroup
@@ -72,6 +77,59 @@ export function resolveCustomStepCommand(
   })
 }
 
+/**
+ * Values a script reads from its environment. Same source list as the placeholders, so a value the
+ * editor advertises is reachable from either style of step.
+ */
+export function buildCustomStepEnv(config: SiteRunConfig): Record<string, string> {
+  const placeholders = buildCustomStepPlaceholders(config)
+  return Object.fromEntries(
+    CUSTOM_STEP_PLACEHOLDERS.map((placeholder) => [
+      customStepEnvName(placeholder.name),
+      placeholders[placeholder.name] ?? ''
+    ])
+  )
+}
+
+/** Absolute path inside the checkout, or a step error naming why the path was refused. */
+export function resolveCustomStepScriptPath(
+  sitePath: string,
+  scriptPath: string,
+  stepLabel: string
+): string {
+  const absolute = resolveScriptWithin(sitePath, scriptPath)
+  if (!absolute) {
+    throw new SiteRunStepError(
+      stepLabel,
+      `Script path must stay inside the checkout: ${scriptPath} is absolute, escapes with .., or is empty.`
+    )
+  }
+  return absolute
+}
+
+async function readStepScript(
+  sitePath: string,
+  scriptPath: string,
+  stepLabel: string
+): Promise<string> {
+  resolveCustomStepScriptPath(sitePath, scriptPath, stepLabel)
+  const contents = await readScriptWithin(sitePath, scriptPath)
+  if (contents === null) {
+    throw new SiteRunStepError(
+      stepLabel,
+      `Script not found in the checkout: ${scriptPath}. Create it, or point the step at a file that exists.`
+    )
+  }
+  return contents
+}
+
+/** `NAME='value' NAME2='value2' ` — a prefix the remote shell applies to one command. */
+function remoteEnvPrefix(env: Record<string, string>): string {
+  return Object.entries(env)
+    .map(([name, value]) => `${name}=${quoteShellArgument(value)}`)
+    .join(' ')
+}
+
 async function runOneCustomStep(
   context: SiteRunContext,
   config: SiteRunConfig,
@@ -80,15 +138,17 @@ async function runOneCustomStep(
   dependencies: CustomStepDependencies
 ): Promise<void> {
   const stepLabel = `Custom step: ${step.name}`
-  const command = resolveCustomStepCommand(
-    step.command,
-    buildCustomStepPlaceholders(config),
-    step.name
-  )
+  const source = customStepSource(step)
+  if (!source) {
+    throw new SiteRunStepError(stepLabel, 'Step has neither a command nor a script path.')
+  }
+  const env = buildCustomStepEnv(config)
 
   context.throwIfCancelled()
   context.status(step.name)
-  context.log(`${stepLabel} (${step.runsOn})`)
+  context.log(
+    `${stepLabel} (${step.runsOn}${source.kind === 'script' ? `, ${source.scriptPath}` : ''})`
+  )
 
   if (step.runsOn === 'remote') {
     if (!session) {
@@ -97,6 +157,40 @@ async function runOneCustomStep(
         'This step runs on the server, but the run has no SSH session. Check the environment has a hostname, username and stored password.'
       )
     }
+    await runRemoteStep(context, config, step, source, session, env, stepLabel)
+    return
+  }
+
+  await runLocalStep(context, config, step, source, dependencies, env, stepLabel)
+}
+
+async function runRemoteStep(
+  context: SiteRunContext,
+  config: SiteRunConfig,
+  step: SiteCustomStep,
+  source: CustomStepSource,
+  session: SiteSshSession,
+  env: Record<string, string>,
+  stepLabel: string
+): Promise<void> {
+  // A script is uploaded and run by path, so its text is never parsed by an intermediate shell —
+  // that is what makes multi-line scripts with nested quotes safe over SSH.
+  let remotePath: string | null = null
+  let command: string
+  if (source.kind === 'script') {
+    const contents = await readStepScript(config.site.path, source.scriptPath, stepLabel)
+    remotePath = `/tmp/muster-step-${randomUUID()}.sh`
+    await session.writeSecureRemoteFile(remotePath, contents)
+    command = `${remoteEnvPrefix(env)} bash ${quoteShellArgument(remotePath)}`
+  } else {
+    command = resolveCustomStepCommand(
+      source.command,
+      buildCustomStepPlaceholders(config),
+      step.name
+    )
+  }
+
+  try {
     const result = await session.exec(command, {
       timeoutMs: 0,
       onStdout: (chunk) => context.log(chunk.trimEnd()),
@@ -108,17 +202,42 @@ async function runOneCustomStep(
         `Exited with code ${result.code}${result.stderr.trim() ? `: ${result.stderr.trim()}` : ''}`
       )
     }
-    return
+  } finally {
+    // Best-effort by contract, and it must run even when the step failed or the run was cancelled.
+    if (remotePath) {
+      await session.removeRemoteFile(remotePath)
+    }
   }
+}
+
+async function runLocalStep(
+  context: SiteRunContext,
+  config: SiteRunConfig,
+  step: SiteCustomStep,
+  source: CustomStepSource,
+  dependencies: CustomStepDependencies,
+  env: Record<string, string>,
+  stepLabel: string
+): Promise<void> {
+  const script =
+    source.kind === 'script'
+      ? // Passed TO bash rather than executed: the file needs no execute bit, so an agent can
+        // commit a step script without anyone remembering to chmod it. Same shape as the remote
+        // side, which runs the uploaded 0600 copy the same way.
+        `bash ${quoteShellArgument(
+          resolveCustomStepScriptPath(config.site.path, source.scriptPath, stepLabel)
+        )}`
+      : resolveCustomStepCommand(source.command, buildCustomStepPlaceholders(config), step.name)
 
   const result = await runDeployShellScript(
     dependencies.runCommand ?? streamCommand,
-    '/bin/sh',
-    command,
+    source.kind === 'script' ? '/bin/bash' : '/bin/sh',
+    script,
     {
       cwd: config.site.path,
       signal: context.signal,
       timeoutMs: 0,
+      env: source.kind === 'script' ? env : undefined,
       onOutput: (chunk) => context.log(chunk.trimEnd())
     }
   )

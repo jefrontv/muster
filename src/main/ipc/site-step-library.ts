@@ -9,6 +9,7 @@ import { ipcMain } from 'electron'
 import type { SiteCustomStep, SiteSummary } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { buildSiteSummary } from '../sites/site-summary'
+import { writeScriptWithin } from '../sites/custom-step-script'
 import { isSiteCustomStepArray } from './sites-payload-validation'
 import { failure, requireSite, type SiteResult } from './sites-result'
 
@@ -71,13 +72,32 @@ export function registerSiteStepLibraryHandlers(store: Store): void {
           throw new Error(`No library step with id '${input.libraryStepId}'`)
         }
         const steps = [...(site.customSteps ?? [])]
-        steps.push({
+        const installed: SiteCustomStep = {
           ...template,
           id: randomUUID(),
           order: nextOrder(steps, template),
           enabled: input.enabled === undefined ? true : input.enabled === true,
           origin: { kind: 'library', libraryId: template.id }
-        })
+        }
+        // Same contract as the MCP install: write the embedded script into the checkout, then drop
+        // it from the record so the step reads the file like any other. Never overwrite.
+        if (installed.scriptPath && installed.scriptContents !== undefined) {
+          const outcome = await writeScriptWithin(
+            site.path,
+            installed.scriptPath,
+            installed.scriptContents
+          )
+          if (outcome === 'unsafe') {
+            throw new Error(`Library script path '${installed.scriptPath}' is not safe.`)
+          }
+          if (outcome === 'conflict') {
+            throw new Error(
+              `'${installed.scriptPath}' already exists here with different contents. Move or delete it first — installing will not overwrite it.`
+            )
+          }
+          delete installed.scriptContents
+        }
+        steps.push(installed)
         const updated = store.updateSite(site.id, { customSteps: steps })
         return { ok: true, value: await buildSiteSummary(updated ?? site) }
       } catch (error) {

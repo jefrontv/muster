@@ -13515,7 +13515,11 @@
           "command": "Command",
           "group": "Runs during",
           "position": "Order",
-          "runsOn": "Runs on"
+          "runsOn": "Runs on",
+          "modeCommand": "Command",
+          "modeScript": "Script file",
+          "scriptPath": "Script path",
+          "scriptHint": "Bash file inside the checkout, run with these variables set:"
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
