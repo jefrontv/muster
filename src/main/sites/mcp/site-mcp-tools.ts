@@ -10,6 +10,7 @@
 import { SiteMcpToolError } from './site-mcp-arguments'
 import { SITE_MCP_CONFIG_TOOLS } from './site-mcp-config-tools'
 import type { SiteMcpContext, SiteMcpJsonSchema, SiteMcpTool } from './site-mcp-context'
+import { SITE_MCP_CUSTOM_STEP_TOOLS } from './site-mcp-custom-step-tools'
 import { SITE_MCP_DISCOVERY_TOOLS } from './site-mcp-discovery-tools'
 import { SITE_MCP_ENV_TOOLS } from './site-mcp-env-tools'
 import { SITE_MCP_JOB_TOOLS } from './site-mcp-job-tools'
@@ -21,6 +22,7 @@ export const SITE_MCP_SERVER_NAME = 'muster-sites'
 export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_DISCOVERY_TOOLS,
   ...SITE_MCP_CONFIG_TOOLS,
+  ...SITE_MCP_CUSTOM_STEP_TOOLS,
   ...SITE_MCP_ENV_TOOLS,
   ...SITE_MCP_RUN_TOOLS,
   ...SITE_MCP_SSH_TOOLS,

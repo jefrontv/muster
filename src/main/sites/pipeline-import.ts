@@ -13,6 +13,7 @@ import { extractZipArchive } from './local-archive-extract'
 import { importLocalDatabase } from './local-database-import'
 import { checkLocalMysqlConnection } from './local-mysql-connection'
 import type { Site } from '../../shared/site-types'
+import { customStepsNeedRemote, runCustomSteps } from './custom-steps'
 import {
   ensureLocalSiteRunning,
   startLocalStack,
@@ -93,6 +94,8 @@ export type SiteImportDependencies = {
   applyWpUploadRewrite: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   cleanUpLocalHtaccess: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   runWpSearchReplace: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
+  /** Overridden only by tests. */
+  runCustomSteps?: typeof runCustomSteps
 }
 
 export function createDefaultSiteImportDependencies(): SiteImportDependencies {
@@ -146,7 +149,8 @@ export async function runImportPipeline(
 
   // Only the server-pull steps need SSH. A local-only run — search-replace plus upload-rewrite
   // after a manual database import — must not demand a remote host be configured at all.
-  const needsRemote = exportDatabase || exportFiles
+  const customSteps = deps.runCustomSteps ?? runCustomSteps
+  const needsRemote = exportDatabase || exportFiles || customStepsNeedRemote(config, 'import')
   let session: SiteSshSession | null = null
   let layout: RemoteLayout | null = null
   try {
@@ -157,7 +161,13 @@ export async function runImportPipeline(
       // Resolves the real webroot (Bedrock serves from web/) and rejects a non-WordPress target.
       layout = await deps.resolveRemoteLayout(session, active.environment.rootPath)
       context.log(`Remote webroot ${layout.webroot}, content directory ${layout.contentDir}`)
+    }
 
+    // Why here: `before` means before every built-in step of the group, but after the session
+    // exists — a remote `before` step (maintenance mode on) needs it.
+    await customSteps(context, active, 'import', 'before', session)
+
+    if (session !== null && layout !== null) {
       if (exportDatabase) {
         context.throwIfCancelled()
         await importDatabase(context, active, session, deps)
@@ -178,6 +188,7 @@ export async function runImportPipeline(
       await deps.runWpSearchReplace(context, active)
     }
 
+    await customSteps(context, active, 'import', 'after', session)
     context.status('Operations completed successfully!')
   } finally {
     await removeTempArtifacts(active, layout, session)

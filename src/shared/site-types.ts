@@ -31,6 +31,43 @@ export type SiteToggleKey = SiteImportToggleKey | SiteDeployToggleKey
 
 export type SiteRunGroup = 'import' | 'deploy'
 
+/**
+ * A user-authored step, created by hand or by an agent through the muster-sites MCP.
+ *
+ * Why these are records and not more entries in the toggle tuples above: those keys are literal
+ * boolean properties on SiteEnvironment, destructured by name in both pipelines. A user-defined
+ * step cannot be a compile-time key, so it is data — a named command the generic runner executes.
+ *
+ * Scope is the SITE, not the environment: definitions and their enabled state travel together, so
+ * a step survives environment add/rename and copies to another site as one unit.
+ */
+export type SiteCustomStep = {
+  id: string
+  name: string
+  description?: string
+  group: SiteRunGroup
+  /** Remote runs over the run's SSH session; local runs in the site checkout. */
+  runsOn: 'remote' | 'local'
+  /** Shell string, run verbatim after placeholder substitution. */
+  command: string
+  /**
+   * Where it sits relative to the built-in steps of the same group. `before` is what makes the
+   * maintenance-mode pattern work: enable before the deploy, disable after it.
+   */
+  position: SiteCustomStepPosition
+  /** Sort order within (group, position). */
+  order: number
+  enabled: boolean
+  /** Where this step came from, retained across copy and library install. */
+  origin?: SiteCustomStepOrigin
+}
+
+export type SiteCustomStepPosition = 'before' | 'after'
+
+export type SiteCustomStepOrigin =
+  | { kind: 'copied'; fromSiteId: string }
+  | { kind: 'library'; libraryId: string }
+
 export type SiteLocalStack = 'plain' | 'mamp' | 'localwp' | 'agent-local'
 
 /** Every stack a site can be set to, for validation and pickers. */
@@ -103,6 +140,8 @@ export type Site = {
   notes: string
   /** Seconds; 0 disables the wp search-replace timeout. */
   searchReplaceTimeoutSeconds: number
+  /** User-authored steps. Absent on sites saved before the feature existed. */
+  customSteps?: SiteCustomStep[]
 }
 
 /** Which secrets exist for an environment. The values never cross IPC. */
@@ -254,6 +293,40 @@ export function createEmptySiteEnvironment(): SiteEnvironment {
 export function countSelectedToggles(environment: SiteEnvironment, group: SiteRunGroup): number {
   const toggles = group === 'import' ? SITE_IMPORT_TOGGLES : SITE_DEPLOY_TOGGLES
   return toggles.reduce((total, toggle) => (environment[toggle.key] ? total + 1 : total), 0)
+}
+
+/**
+ * Enabled custom steps for one group, in the order they run: `before` steps first, then `after`,
+ * each sorted by `order` and tie-broken by name so the sequence is stable across saves.
+ */
+export function selectCustomSteps(
+  site: Pick<Site, 'customSteps'>,
+  group: SiteRunGroup,
+  position?: SiteCustomStepPosition
+): SiteCustomStep[] {
+  const steps = (site.customSteps ?? []).filter(
+    (step) =>
+      step.enabled && step.group === group && (position === undefined || step.position === position)
+  )
+  const positionRank = (step: SiteCustomStep): number => (step.position === 'before' ? 0 : 1)
+  return steps.sort(
+    (left, right) =>
+      positionRank(left) - positionRank(right) ||
+      left.order - right.order ||
+      left.name.localeCompare(right.name)
+  )
+}
+
+/**
+ * Total steps a run would execute for a group. Custom steps count: a run with built-ins all off but
+ * a custom step ticked is a real run, not `no-steps-selected`.
+ */
+export function countSelectedSteps(
+  site: Pick<Site, 'customSteps'>,
+  environment: SiteEnvironment,
+  group: SiteRunGroup
+): number {
+  return countSelectedToggles(environment, group) + selectCustomSteps(site, group).length
 }
 
 /**

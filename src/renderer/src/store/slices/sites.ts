@@ -24,6 +24,7 @@ type SiteFieldPatch = Partial<
     | 'activeEnvironment'
     | 'notes'
     | 'searchReplaceTimeoutSeconds'
+    | 'customSteps'
   >
 >
 

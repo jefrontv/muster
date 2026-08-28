@@ -109,6 +109,7 @@ export function SitePanelEnvironmentSection({
           siteId={site.id}
           environmentName={targetName}
           environment={targetEnvironment}
+          customSteps={site.customSteps}
           onChanged={onStepsChanged}
           // Full width inside their columns so the two run buttons match rather than sizing to
           // their own labels.

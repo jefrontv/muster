@@ -14,6 +14,8 @@ import type {
   SiteRunContext,
   SiteSshSession
 } from './pipeline-contract'
+import { customStepsNeedRemote, runCustomSteps } from './custom-steps'
+import { selectCustomSteps } from '../../shared/site-types'
 import { clearRemoteServerCache, pullRemoteGitChanges } from './remote-maintenance'
 import { buildThemeDist, resolveThemeDeployPaths } from './theme-build'
 import type { ThemeBuildDependencies } from './theme-build'
@@ -47,13 +49,19 @@ export type SiteDeployDependencies = {
   uploadThemeDist?: typeof uploadThemeDist
   clearRemoteServerCache?: typeof clearRemoteServerCache
   pullRemoteGitChanges?: typeof pullRemoteGitChanges
+  runCustomSteps?: typeof runCustomSteps
   theme?: ThemeBuildDependencies & ThemeUploadDependencies
 }
 
-/** True when any selected deploy toggle needs the server; a run with none is a no-op. */
+/**
+ * True when the server is needed: any built-in toggle, or a remote custom step. A deploy of only
+ * local custom steps skips the SSH session entirely.
+ */
 export function deployNeedsRemote(config: SiteRunConfig): boolean {
   const { deployThemes, gitPullOnServer, clearServerCache } = config.environment
-  return deployThemes || gitPullOnServer || clearServerCache
+  return (
+    deployThemes || gitPullOnServer || clearServerCache || customStepsNeedRemote(config, 'deploy')
+  )
 }
 
 function assertRemoteConfigured(config: SiteRunConfig): void {
@@ -113,38 +121,63 @@ export async function runSiteDeploy(
   config: SiteRunConfig,
   dependencies: SiteDeployDependencies
 ): Promise<void> {
-  if (!deployNeedsRemote(config)) {
+  const customSteps = dependencies.runCustomSteps ?? runCustomSteps
+  const builtInsSelected =
+    config.environment.deployThemes ||
+    config.environment.gitPullOnServer ||
+    config.environment.clearServerCache
+  const hasCustomSteps = selectCustomSteps(config.site, 'deploy').length > 0
+  if (!builtInsSelected && !hasCustomSteps) {
     context.log('Nothing selected to deploy.')
     return
   }
-  assertRemoteConfigured(config)
+
+  // Why conditional: a deploy of only LOCAL custom steps has no reason to hold an SSH session, and
+  // demanding remote config for it would block a perfectly valid local-only run.
+  const needsRemote = builtInsSelected || customStepsNeedRemote(config, 'deploy')
+  if (needsRemote) {
+    assertRemoteConfigured(config)
+  }
   context.throwIfCancelled()
 
-  context.status('Connecting to server')
-  const session = await dependencies.createSiteSshSession(config, context.signal)
+  let session: SiteSshSession | null = null
+  if (needsRemote) {
+    context.status('Connecting to server')
+    session = await dependencies.createSiteSshSession(config, context.signal)
+  }
   try {
-    const layout = await dependencies.resolveRemoteLayout(session, config.environment.rootPath)
-    context.log(`Remote layout: webroot ${layout.webroot}, content directory ${layout.contentDir}`)
-
-    if (config.environment.deployThemes) {
-      context.throwIfCancelled()
-      await deployTheme(context, config, session, dependencies, layout)
-    }
-    if (config.environment.gitPullOnServer) {
-      context.throwIfCancelled()
-      await (dependencies.pullRemoteGitChanges ?? pullRemoteGitChanges)(context, config, session)
-    }
-    if (config.environment.clearServerCache) {
-      context.throwIfCancelled()
-      await (dependencies.clearRemoteServerCache ?? clearRemoteServerCache)(
-        context,
-        config,
-        session
+    if (session) {
+      const layout = await dependencies.resolveRemoteLayout(session, config.environment.rootPath)
+      context.log(
+        `Remote layout: webroot ${layout.webroot}, content directory ${layout.contentDir}`
       )
+
+      await customSteps(context, config, 'deploy', 'before', session)
+
+      if (config.environment.deployThemes) {
+        context.throwIfCancelled()
+        await deployTheme(context, config, session, dependencies, layout)
+      }
+      if (config.environment.gitPullOnServer) {
+        context.throwIfCancelled()
+        await (dependencies.pullRemoteGitChanges ?? pullRemoteGitChanges)(context, config, session)
+      }
+      if (config.environment.clearServerCache) {
+        context.throwIfCancelled()
+        await (dependencies.clearRemoteServerCache ?? clearRemoteServerCache)(
+          context,
+          config,
+          session
+        )
+      }
+    } else {
+      await customSteps(context, config, 'deploy', 'before', null)
     }
+
+    await customSteps(context, config, 'deploy', 'after', session)
     context.throwIfCancelled()
     context.status('Deploy complete')
   } finally {
-    await session.close()
+    await session?.close()
   }
 }

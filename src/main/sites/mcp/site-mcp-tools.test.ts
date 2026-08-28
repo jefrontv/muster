@@ -51,6 +51,20 @@ function siteRecord(overrides: Partial<Site> = {}): Site {
     },
     notes: '',
     searchReplaceTimeoutSeconds: 600,
+    customSteps: [
+      {
+        id: 'step-1',
+        name: 'Warm the cache',
+        group: 'deploy',
+        runsOn: 'remote',
+        command: 'curl -s https://acme.com > /dev/null',
+        position: 'after',
+        order: 0,
+        // Disabled on purpose: the run-plan tests assert step counts, and an enabled custom step
+        // would silently change every one of them.
+        enabled: false
+      }
+    ],
     ...overrides
   }
   return Object.assign(base, { password: SSH_SECRET, db_password: DB_SECRET })
@@ -241,7 +255,17 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   get_run_log: { run_id: RUN_ID },
   list_jobs: {},
   get_job_status: { job_id: RUN_ID },
-  cancel_job: { job_id: RUN_ID }
+  cancel_job: { job_id: RUN_ID },
+  list_custom_steps: {},
+  create_custom_step: {
+    name: 'Purge CDN',
+    command: 'echo purge',
+    group: 'deploy',
+    runs_on: 'local'
+  },
+  update_custom_step: { step: 'step-1', name: 'Warm the cache again' },
+  remove_custom_step: { step: 'step-1' },
+  copy_custom_step: { from_site: 'Acme', step: 'step-1' }
 }
 
 describe('site MCP tool table', () => {

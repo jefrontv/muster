@@ -8,6 +8,7 @@ import type { SiteRunBlockedReason } from '../../shared/site-run-types'
 import {
   countSelectedToggles,
   resolveSiteEnvironment,
+  selectCustomSteps,
   SITE_DEPLOY_TOGGLES,
   SITE_IMPORT_TOGGLES,
   type Site,
@@ -81,14 +82,27 @@ type PlanSteps = {
 
 export function buildSiteRunPlan(input: SiteRunPlanInput): SiteRunPlan {
   const toggles = input.group === 'import' ? SITE_IMPORT_TOGGLES : SITE_DEPLOY_TOGGLES
+  // Why custom steps join the plan: they are real work the run will do, so they must show in the
+  // preview and count toward `enabledStepCount` — otherwise a run of only custom steps is
+  // rejected as `no-steps-selected`.
+  const customSteps = selectCustomSteps(input.site, input.group)
   return buildPlan(input, (environment) => ({
-    steps: toggles.map((toggle) => ({
-      key: toggle.key,
-      label: toggle.label,
-      enabled: environment ? environment[toggle.key] : false,
-      remote: Object.hasOwn(REMOTE_STEPS, toggle.key)
-    })),
-    enabledStepCount: environment ? countSelectedToggles(environment, input.group) : 0
+    steps: [
+      ...toggles.map((toggle) => ({
+        key: toggle.key,
+        label: toggle.label,
+        enabled: environment ? environment[toggle.key] : false,
+        remote: Object.hasOwn(REMOTE_STEPS, toggle.key)
+      })),
+      ...customSteps.map((step) => ({
+        key: `custom:${step.id}`,
+        label: step.name,
+        enabled: true,
+        remote: step.runsOn === 'remote'
+      }))
+    ],
+    enabledStepCount:
+      (environment ? countSelectedToggles(environment, input.group) : 0) + customSteps.length
   }))
 }
 

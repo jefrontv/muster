@@ -814,6 +814,7 @@ export type SitesApi = {
         | 'activeEnvironment'
         | 'notes'
         | 'searchReplaceTimeoutSeconds'
+        | 'customSteps'
       >
     >
   }) => Promise<SiteResult<SiteSummary>>
