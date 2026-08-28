@@ -9,7 +9,12 @@
 // returned in listings — a step's behaviour is never hidden behind its name.
 
 import { randomUUID } from 'node:crypto'
-import { selectCustomSteps, type SiteCustomStep } from '../../../shared/site-types'
+import { join } from 'node:path'
+import {
+  CUSTOM_STEP_SCRIPT_DIR,
+  selectCustomSteps,
+  type SiteCustomStep
+} from '../../../shared/site-types'
 import { readString, resolveMcpSite, type ToolArguments } from './site-mcp-arguments'
 import type { SiteMcpTool } from './site-mcp-context'
 import { objectSchema, SITE_PROPERTY } from './site-mcp-schemas'
@@ -32,13 +37,17 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'list_custom_steps',
     description:
-      "List a site's user-defined import/deploy steps and the shared step library, including the full command each one runs and whether it is enabled.",
+      "List a site's user-defined import/deploy steps and the shared step library, including the full command each one runs, where its script file lives, and whether it is enabled.",
     inputSchema: objectSchema({ ...SITE_PROPERTY }, []),
     async run(context, args: ToolArguments) {
       const site = resolveMcpSite(context, readString(args, 'site'))
       return {
         ok: true,
-        steps: listSteps(site).map((step) => describeStep(step)),
+        site_path: site.path,
+        // Where to write a new script. Answering this here saves a round trip through list_sites,
+        // and an agent that has to guess the directory will guess wrong.
+        script_dir: join(site.path, CUSTOM_STEP_SCRIPT_DIR),
+        steps: listSteps(site).map((step) => describeStep(step, site)),
         // Run order, resolved — what the pipeline will actually do.
         import_order: selectCustomSteps(site, 'import').map((step) => step.name),
         deploy_order: selectCustomSteps(site, 'deploy').map((step) => step.name),
@@ -62,8 +71,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         },
         script_path: {
           type: 'string',
-          description:
-            "Repo-relative bash script inside the checkout, e.g. '.muster/steps/purge.sh'. Preferred for multi-line work: it is version-controlled, runs standalone, and crosses SSH as a file so quoting cannot break it. Values arrive as $MUSTER_SITE_PATH, $MUSTER_WP_DIR, $MUSTER_REMOTE_ROOT, $MUSTER_LIVE_DOMAIN, $MUSTER_LOCAL_DOMAIN and $MUSTER_ENVIRONMENT. Write the file yourself before creating the step."
+          description: `Repo-relative bash script inside the checkout, conventionally under '${CUSTOM_STEP_SCRIPT_DIR}/'. Preferred for multi-line work: it is version-controlled, runs standalone, and crosses SSH as a file so quoting cannot break it. Values arrive as $MUSTER_SITE_PATH, $MUSTER_WP_DIR, $MUSTER_REMOTE_ROOT, $MUSTER_LIVE_DOMAIN, $MUSTER_LOCAL_DOMAIN and $MUSTER_ENVIRONMENT — never substituted into the text, so braces are safe. Write the file first; call list_custom_steps for the absolute script_dir. No execute bit needed.`
         },
         group: { type: 'string', description: "'import' or 'deploy'." },
         runs_on: {
@@ -110,7 +118,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       steps.push(step)
       return {
         ...(await saveSteps(context, site, steps)),
-        created: describeStep(step)
+        created: describeStep(step, site)
       }
     }
   },
@@ -125,8 +133,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         command: { type: 'string', description: 'Switches the step to a one-liner.' },
         script_path: {
           type: 'string',
-          description:
-            "Switches the step to a repo-relative bash script, e.g. '.muster/steps/purge.sh'. Passing this clears 'command', and vice versa."
+          description: `Switches the step to a repo-relative bash script under '${CUSTOM_STEP_SCRIPT_DIR}/'. Passing this clears 'command', and vice versa.`
         },
         group: { type: 'string' },
         runs_on: { type: 'string' },
@@ -165,7 +172,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       const steps = listSteps(site).map((step) => (step.id === existing.id ? next : step))
       return {
         ...(await saveSteps(context, site, steps)),
-        updated: describeStep(next)
+        updated: describeStep(next, site)
       }
     }
   },
@@ -221,7 +228,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
       steps.push(copy)
       return {
         ...(await saveSteps(context, target, steps)),
-        copied: describeStep(copy),
+        copied: describeStep(copy, target),
         from_site: source.displayName || source.path
       }
     }

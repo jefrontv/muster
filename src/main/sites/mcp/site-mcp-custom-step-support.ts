@@ -4,6 +4,8 @@
 // Split from site-mcp-custom-step-tools.ts to keep both files inside the max-lines budget; the
 // tool definitions there read as a table, these are the mechanics behind them.
 
+import { existsSync } from 'node:fs'
+import { resolveScriptWithin } from '../custom-step-script'
 import { isSafeCustomStepScriptPath } from '../../../shared/site-types'
 import type {
   Site,
@@ -20,7 +22,14 @@ export function listSteps(site: Site): SiteCustomStep[] {
   return site.customSteps ?? []
 }
 
-export function describeStep(step: SiteCustomStep): Record<string, unknown> {
+/**
+ * One step as an agent sees it.
+ *
+ * Pass `site` whenever there is one: a script step then reports the absolute file it will run and
+ * whether that file is actually there. Without it an agent only learns a path is wrong when the
+ * step fails mid-deploy, which is the worst place to discover a typo.
+ */
+export function describeStep(step: SiteCustomStep, site?: Site): Record<string, unknown> {
   return {
     id: step.id,
     name: step.name,
@@ -34,7 +43,26 @@ export function describeStep(step: SiteCustomStep): Record<string, unknown> {
     // what a step will execute.
     command: step.command,
     script_path: step.scriptPath ?? null,
+    ...describeScriptLocation(step, site),
     origin: step.origin ?? null
+  }
+}
+
+/** Absolute location and existence of a step's script, when both a script and a site are known. */
+function describeScriptLocation(step: SiteCustomStep, site?: Site): Record<string, unknown> {
+  if (!step.scriptPath || !site) {
+    return {}
+  }
+  const absolute = resolveScriptWithin(site.path, step.scriptPath)
+  if (!absolute) {
+    return { script_file: null, script_exists: false }
+  }
+  const exists = existsSync(absolute)
+  return {
+    script_file: absolute,
+    script_exists: exists,
+    // Spelled out rather than implied: this is the one field that tells an agent what to do next.
+    ...(exists ? {} : { script_missing_create_file_at: absolute })
   }
 }
 
@@ -173,7 +201,7 @@ export async function saveSteps(
   }
   return {
     ok: true,
-    steps: listSteps(updated).map((step) => describeStep(step))
+    steps: listSteps(updated).map((step) => describeStep(step, updated))
   }
 }
 

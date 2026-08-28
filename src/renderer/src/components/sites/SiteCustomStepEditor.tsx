@@ -11,6 +11,7 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import {
   CUSTOM_STEP_PLACEHOLDERS,
+  CUSTOM_STEP_SCRIPT_DIR,
   customStepEnvName,
   type SiteCustomStep,
   type SiteCustomStepPosition,
@@ -197,7 +198,8 @@ export function SiteCustomStepEditor({
               onChange({
                 ...draft,
                 command: candidate === 'command' ? draft.command : '',
-                scriptPath: candidate === 'script' ? draft.scriptPath || '.muster/steps/' : ''
+                scriptPath:
+                  candidate === 'script' ? draft.scriptPath || `${CUSTOM_STEP_SCRIPT_DIR}/` : ''
               })
             }
             className={cn(
@@ -223,7 +225,7 @@ export function SiteCustomStepEditor({
             className="font-mono text-xs"
             value={draft.scriptPath}
             spellCheck={false}
-            placeholder=".muster/steps/purge.sh"
+            placeholder={`${CUSTOM_STEP_SCRIPT_DIR}/purge.sh`}
             onChange={(event) => onChange({ ...draft, scriptPath: event.target.value })}
           />
           <p className="text-[10px] text-muted-foreground">

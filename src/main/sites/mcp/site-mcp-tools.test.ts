@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { join } from 'node:path'
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import {
   createEmptySiteEnvironment,
+  CUSTOM_STEP_SCRIPT_DIR,
   resolveSiteEnvironment,
   type Site,
   type SiteEnvironment,
@@ -337,6 +339,28 @@ describe('read tools against a fake store', () => {
           environments: ['main', 'staging']
         }
       ]
+    })
+  })
+
+  it('tells an agent where to write a step script, and flags one that is not there', async () => {
+    const context = createFakeContext()
+    const { payload: listed } = await call(context, 'list_custom_steps')
+    // Answered here so an agent never has to guess the directory or call list_sites first.
+    expect(listed.script_dir).toBe(join('/Sites/acme', CUSTOM_STEP_SCRIPT_DIR))
+
+    const { payload: created } = await call(context, 'create_custom_step', {
+      name: 'Purge CDN',
+      script_path: `${CUSTOM_STEP_SCRIPT_DIR}/purge.sh`,
+      group: 'deploy',
+      runs_on: 'remote'
+    })
+
+    // The fixture site has no checkout on disk, which is exactly the mistake worth catching now
+    // rather than partway through a deploy.
+    expect(created.created).toMatchObject({
+      script_path: `${CUSTOM_STEP_SCRIPT_DIR}/purge.sh`,
+      script_exists: false,
+      script_missing_create_file_at: join('/Sites/acme', CUSTOM_STEP_SCRIPT_DIR, 'purge.sh')
     })
   })
 

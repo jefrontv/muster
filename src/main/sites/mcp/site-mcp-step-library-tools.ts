@@ -120,7 +120,7 @@ export const SITE_MCP_STEP_LIBRARY_TOOLS: readonly SiteMcpTool[] = [
       steps.push(installed)
       return {
         ...(await saveSteps(context, site, steps)),
-        installed: describeStep(installed),
+        installed: describeStep(installed, site),
         ...(script ? { script_file: `${installed.scriptPath} (${script})` } : {})
       }
     }

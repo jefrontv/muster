@@ -343,6 +343,15 @@ export function customStepEnvName(placeholder: CustomStepPlaceholderName): strin
   return `MUSTER_${placeholder.replaceAll(/(?<=[a-z])(?=[A-Z])/g, '_').toUpperCase()}`
 }
 
+/**
+ * Where step scripts live by convention, relative to the checkout.
+ *
+ * Named once so the MCP tool descriptions, the editor placeholder and the "create the file here"
+ * hint cannot drift apart — an agent told one directory and shown another would write the script
+ * somewhere the runner never looks.
+ */
+export const CUSTOM_STEP_SCRIPT_DIR = '.muster/steps'
+
 /** Longest a script path may be, matching the other bounded string fields on a site. */
 export const CUSTOM_STEP_SCRIPT_PATH_MAX = 512
 
