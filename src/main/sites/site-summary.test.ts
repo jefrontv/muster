@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createEmptySiteEnvironment, type Site } from '../../shared/site-types'
+import { createEmptySiteEnvironment, type Site, type SiteCustomStep } from '../../shared/site-types'
 
 vi.mock('./site-secret-store', () => ({
   getSiteSecretPresence: () => ({ ssh: false, db: false })
@@ -113,5 +113,61 @@ describe('buildSiteSummary branch detection', () => {
     const summary = await buildSiteSummary(site({ path: root }))
     expect(summary.pathExists).toBe(false)
     expect(summary.branch).toBeNull()
+  })
+})
+
+// Why: the Import/Deploy buttons gate on these counts. Omitting custom steps made a site whose
+// only enabled work was a custom step look like "nothing selected", so the run could not start.
+describe('buildSiteSummary selected counts', () => {
+  const customStep = (overrides: Partial<SiteCustomStep>): SiteCustomStep => ({
+    id: 'step-1',
+    name: 'Sync uploads',
+    group: 'import',
+    runsOn: 'local',
+    command: 'echo sync',
+    position: 'after',
+    order: 0,
+    enabled: true,
+    ...overrides
+  })
+
+  it('counts enabled custom steps alongside the built-in toggles', async () => {
+    const summary = await buildSiteSummary(
+      site({
+        path: '/tmp/does-not-exist-summary-counts',
+        environments: { main: { ...createEmptySiteEnvironment(), exportDatabase: true } },
+        activeEnvironment: 'main',
+        customSteps: [customStep({}), customStep({ id: 'step-2', group: 'deploy' })]
+      })
+    )
+
+    expect(summary.importSelectedCount).toBe(2)
+    expect(summary.deploySelectedCount).toBe(1)
+  })
+
+  it('counts a custom-steps-only site as having work to do', async () => {
+    const summary = await buildSiteSummary(
+      site({
+        path: '/tmp/does-not-exist-summary-only',
+        environments: { main: createEmptySiteEnvironment() },
+        activeEnvironment: 'main',
+        customSteps: [customStep({})]
+      })
+    )
+
+    expect(summary.importSelectedCount).toBe(1)
+  })
+
+  it('ignores a disabled custom step', async () => {
+    const summary = await buildSiteSummary(
+      site({
+        path: '/tmp/does-not-exist-summary-disabled',
+        environments: { main: createEmptySiteEnvironment() },
+        activeEnvironment: 'main',
+        customSteps: [customStep({ enabled: false })]
+      })
+    )
+
+    expect(summary.importSelectedCount).toBe(0)
   })
 })

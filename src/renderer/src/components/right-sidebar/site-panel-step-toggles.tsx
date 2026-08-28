@@ -106,9 +106,11 @@ export function SiteStepToggles({
     onChanged(result.value)
   }
   /**
-   * Panel order mirrors run order — `before` steps above the built-ins would be ideal, but keeping
-   * them in one list stays readable in a narrow sidebar column. Only `before` is marked: `after` is
-   * the default, so labelling every step "post" is noise that crowds the name it sits next to.
+   * Sorted so `before` steps lead, matching run order within the custom block.
+   *
+   * No position label: the column is narrow and the tag crowded the name, which is the part worth
+   * reading. Position is still visible on the Sites page, where each row carries the full
+   * group/position/target badge.
    */
   const orderedCustomSteps = (group: SiteRunGroup): SiteCustomStep[] =>
     customSteps
@@ -155,11 +157,6 @@ export function SiteStepToggles({
             onCheckedChange={(checked) => void setCustomStep(step.id, checked === true)}
           />
           <span className="truncate">{step.name}</span>
-          {step.position === 'before' ? (
-            <span className="shrink-0 text-[9px] uppercase tracking-wider text-muted-foreground/70">
-              pre
-            </span>
-          ) : null}
         </label>
       ))}
       {/* mt-auto pins both buttons to the same baseline even though the columns hold a different

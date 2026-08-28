@@ -6,7 +6,7 @@
 
 import { existsSync } from 'node:fs'
 import {
-  countSelectedToggles,
+  countSelectedSteps,
   resolveSiteEnvironment,
   type Site,
   type SiteSecretPresence,
@@ -64,8 +64,10 @@ export async function buildSiteSummary(site: Site): Promise<SiteSummary> {
     branch,
     resolvedEnvironment,
     secrets,
-    importSelectedCount: environment ? countSelectedToggles(environment, 'import') : 0,
-    deploySelectedCount: environment ? countSelectedToggles(environment, 'deploy') : 0
+    // Custom steps are real work the run will do, so they count toward "is anything selected?" —
+    // the UI gates the Import/Deploy buttons on these, and a custom-steps-only run is legitimate.
+    importSelectedCount: environment ? countSelectedSteps(site, environment, 'import') : 0,
+    deploySelectedCount: environment ? countSelectedSteps(site, environment, 'deploy') : 0
   }
 }
 

@@ -350,9 +350,9 @@ describe('SitePanelContent', () => {
     expect(onRunSettled).not.toHaveBeenCalled()
   })
 
-  // Why: `after` is the default position, so a "post" tag on every custom step is pure noise in a
-  // column this narrow — it crowds the name, which is the part worth reading.
-  it('marks a before step and says nothing about an after step', async () => {
+  // Why: the column is narrow, and a pre/post tag on every custom step crowded the name — the part
+  // worth reading. Position stays visible on the Sites page, which has room for the full badge.
+  it('lists custom steps with no position tag, before steps first', async () => {
     const summary = makeSummary()
     summary.site.customSteps = [
       {
@@ -382,11 +382,12 @@ describe('SitePanelContent', () => {
     expect(text).toContain('Maintenance on')
     expect(text).toContain('Sync uploads')
     expect(text.toLowerCase()).not.toContain('post')
-    // Exactly one marker element, and it belongs to the `before` step.
-    const markers = [...(container?.querySelectorAll('span') ?? [])].filter(
-      (span) => span.textContent?.trim() === 'pre'
+    const markers = [...(container?.querySelectorAll('span') ?? [])].filter((span) =>
+      ['pre', 'post'].includes(span.textContent?.trim().toLowerCase() ?? '')
     )
-    expect(markers).toHaveLength(1)
+    expect(markers).toEqual([])
+    // Run order still readable from the list itself: the `before` step leads.
+    expect(text.indexOf('Maintenance on')).toBeLessThan(text.indexOf('Sync uploads'))
   })
 
   it('surfaces a failed toggle write instead of refetching', async () => {
