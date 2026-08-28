@@ -1,16 +1,21 @@
-// The shared custom-step library, and the site's own steps.
+// A site's custom steps, plus the shared library it can install from.
 //
-// Authoring happens through the agent (the muster-sites MCP tools own create/update/copy/promote);
-// this surface is the human half: see what a site runs, and install a library entry onto it.
-// Install copies, so a later library edit never changes an already-installed step.
+// Steps are authored either here or by an agent through the muster-sites MCP tools; both write the
+// same records. Install copies, so a later library edit never changes an already-installed step.
 
 import { useCallback, useEffect, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import type { SiteCustomStep, SiteSummary } from '../../../../shared/site-types'
 import { useAppStore } from '@/store'
+import {
+  SiteCustomStepEditor,
+  emptyCustomStepDraft,
+  type CustomStepDraft
+} from './SiteCustomStepEditor'
+import { SiteCustomStepList } from './SiteCustomStepList'
 
 function StepRow({
   step,
@@ -37,13 +42,11 @@ function StepRow({
   )
 }
 
-export function SiteStepLibrarySection({
-  summary
-}: {
-  summary: SiteSummary
-}): React.JSX.Element | null {
+export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): React.JSX.Element {
   const [library, setLibrary] = useState<SiteCustomStep[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<CustomStepDraft | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const applySiteSummary = useAppStore((state) => state.applySiteSummary)
   const siteSteps = summary.site.customSteps ?? []
 
@@ -80,9 +83,33 @@ export function SiteStepLibrarySection({
     }
   }
 
-  // Nothing to show and nothing to offer: stay out of the way rather than render an empty shell.
-  if (siteSteps.length === 0 && library.length === 0) {
-    return null
+  const create = async (): Promise<void> => {
+    if (!draft) {
+      return
+    }
+    setBusyId('new')
+    try {
+      // Appended last in its own lane; reorder buttons move it from there.
+      const step: SiteCustomStep = {
+        ...draft,
+        name: draft.name.trim(),
+        id: crypto.randomUUID(),
+        order: siteSteps.length,
+        enabled: true
+      }
+      const result = await window.api.sites.update({
+        siteId: summary.site.id,
+        patch: { customSteps: [...siteSteps, step] }
+      })
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      applySiteSummary(result.value)
+      setDraft(null)
+    } finally {
+      setBusyId(null)
+    }
   }
 
   return (
@@ -94,18 +121,37 @@ export function SiteStepLibrarySection({
         <p className="text-xs text-muted-foreground">
           {translate(
             'auto.components.sites.StepLibrary.description',
-            'Extra commands this site runs as part of an import or deploy. Ask your agent to create, edit, or copy them between sites.'
+            'Extra commands this site runs as part of an import or deploy. Your agent can create and copy them too.'
           )}
         </p>
       </div>
 
-      {siteSteps.length > 0 ? (
-        <ul className="space-y-1.5">
-          {siteSteps.map((step) => (
-            <StepRow key={step.id} step={step} />
-          ))}
-        </ul>
-      ) : null}
+      {draft ? (
+        <SiteCustomStepEditor
+          draft={draft}
+          busy={busyId !== null}
+          onChange={setDraft}
+          onSubmit={() => void create()}
+          onCancel={() => setDraft(null)}
+          submitLabel={translate('auto.components.sites.StepEditor.add', 'Add step')}
+        />
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setDraft(emptyCustomStepDraft())}
+        >
+          <Plus className="size-3.5" />
+          {translate('auto.components.sites.StepEditor.add', 'Add step')}
+        </Button>
+      )}
+
+      <SiteCustomStepList
+        summary={summary}
+        editingId={editingId}
+        onEditingIdChange={setEditingId}
+      />
 
       {library.length > 0 ? (
         <div className="space-y-1.5">

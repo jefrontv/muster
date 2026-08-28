@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import {
   countSelectedSteps,
   createEmptySiteEnvironment,
+  moveCustomStep,
   selectCustomSteps,
   type Site,
   type SiteCustomStep
@@ -67,6 +68,46 @@ describe('selectCustomSteps', () => {
   it('excludes disabled steps and other groups', () => {
     const steps = [step({ id: 'off', enabled: false }), step({ id: 'import', group: 'import' })]
     expect(selectCustomSteps(site(steps), 'deploy')).toEqual([])
+  })
+})
+
+describe('moveCustomStep', () => {
+  const lane = [
+    step({ id: 'a', name: 'a', order: 0 }),
+    step({ id: 'b', name: 'b', order: 1 }),
+    step({ id: 'c', name: 'c', order: 2 })
+  ]
+
+  const idsInOrder = (steps: SiteCustomStep[]): string[] =>
+    [...steps].sort((left, right) => left.order - right.order).map((entry) => entry.id)
+
+  it('moves a step later and renumbers the lane', () => {
+    expect(idsInOrder(moveCustomStep(lane, 'a', 1))).toEqual(['b', 'a', 'c'])
+  })
+
+  it('moves a step earlier', () => {
+    expect(idsInOrder(moveCustomStep(lane, 'c', -1))).toEqual(['a', 'c', 'b'])
+  })
+
+  it('is a no-op at either end of the lane', () => {
+    expect(idsInOrder(moveCustomStep(lane, 'a', -1))).toEqual(['a', 'b', 'c'])
+    expect(idsInOrder(moveCustomStep(lane, 'c', 1))).toEqual(['a', 'b', 'c'])
+  })
+
+  it('only reorders within the same group and position', () => {
+    const mixed = [
+      step({ id: 'deploy-after', order: 0 }),
+      step({ id: 'deploy-before', position: 'before', order: 0 }),
+      step({ id: 'import-after', group: 'import', order: 0 })
+    ]
+    const moved = moveCustomStep(mixed, 'deploy-after', 1)
+
+    // Nothing to swap with in its own lane, so every step keeps its order.
+    expect(moved.map((entry) => entry.order)).toEqual([0, 0, 0])
+  })
+
+  it('returns the list unchanged for an unknown id', () => {
+    expect(moveCustomStep(lane, 'nope', 1)).toEqual(lane)
   })
 })
 

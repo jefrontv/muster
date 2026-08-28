@@ -18,7 +18,9 @@ import {
 } from './pipeline-contract'
 import { runDeployShellScript } from './theme-build'
 import {
+  CUSTOM_STEP_PLACEHOLDERS,
   selectCustomSteps,
+  type CustomStepPlaceholderName,
   type SiteCustomStep,
   type SiteCustomStepPosition,
   type SiteRunGroup
@@ -34,7 +36,7 @@ export type CustomStepDependencies = {
  * through substitution.
  */
 export function buildCustomStepPlaceholders(config: SiteRunConfig): Record<string, string> {
-  return {
+  const values: Record<CustomStepPlaceholderName, string> = {
     sitePath: config.site.path,
     wpDir: config.wpDir,
     remoteRoot: config.environment.rootPath,
@@ -42,6 +44,10 @@ export function buildCustomStepPlaceholders(config: SiteRunConfig): Record<strin
     localDomain: config.site.localDomain,
     environment: config.environmentName
   }
+  // Built from the shared list so a placeholder the editor advertises always resolves here.
+  return Object.fromEntries(
+    CUSTOM_STEP_PLACEHOLDERS.map((placeholder) => [placeholder.name, values[placeholder.name]])
+  )
 }
 
 /**

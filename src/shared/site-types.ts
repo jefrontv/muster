@@ -296,6 +296,57 @@ export function countSelectedToggles(environment: SiteEnvironment, group: SiteRu
 }
 
 /**
+ * Placeholders a custom step's command may reference. One list so the editor's hints and the
+ * runtime substitution cannot drift — main resolves values for exactly these keys.
+ *
+ * No secrets, deliberately: a command that needs a credential must fetch it itself, so a step
+ * definition can never carry one and nothing sensitive reaches the run log through substitution.
+ */
+export const CUSTOM_STEP_PLACEHOLDERS = [
+  { name: 'sitePath', description: 'Local checkout directory' },
+  { name: 'wpDir', description: 'WordPress root (checkout + local WP subpath)' },
+  { name: 'remoteRoot', description: 'Remote WordPress root for the environment' },
+  { name: 'liveDomain', description: "The environment's live domain" },
+  { name: 'localDomain', description: "The site's local domain" },
+  { name: 'environment', description: 'Resolved environment name' }
+] as const
+
+export type CustomStepPlaceholderName = (typeof CUSTOM_STEP_PLACEHOLDERS)[number]['name']
+
+/**
+ * Moves a step within its own (group, position) lane and renumbers that lane.
+ *
+ * Why lane-scoped: `order` only ever sorts against siblings that run in the same slot, so moving a
+ * deploy/after step past an import step would be meaningless. Returns the full array so the caller
+ * can persist it as one write.
+ */
+export function moveCustomStep(
+  steps: readonly SiteCustomStep[],
+  stepId: string,
+  delta: -1 | 1
+): SiteCustomStep[] {
+  const target = steps.find((step) => step.id === stepId)
+  if (!target) {
+    return [...steps]
+  }
+  const lane = steps
+    .filter((step) => step.group === target.group && step.position === target.position)
+    .sort((left, right) => left.order - right.order || left.name.localeCompare(right.name))
+  const from = lane.findIndex((step) => step.id === stepId)
+  const to = from + delta
+  if (to < 0 || to >= lane.length) {
+    return [...steps]
+  }
+  const reordered = [...lane]
+  const [moved] = reordered.splice(from, 1)
+  reordered.splice(to, 0, moved)
+  const orderById = new Map(reordered.map((step, index) => [step.id, index]))
+  return steps.map((step) =>
+    orderById.has(step.id) ? { ...step, order: orderById.get(step.id)! } : step
+  )
+}
+
+/**
  * Enabled custom steps for one group, in the order they run: `before` steps first, then `after`,
  * each sorted by `order` and tie-broken by name so the sequence is stable across saves.
  */
