@@ -830,6 +830,7 @@ export type SitesApi = {
   stepLibrary: {
     list: () => Promise<SiteResult<SiteCustomStep[]>>
     set: (args: { steps: SiteCustomStep[] }) => Promise<SiteResult<SiteCustomStep[]>>
+    promote: (args: { siteId: string; stepId: string }) => Promise<SiteResult<SiteCustomStep[]>>
     install: (args: {
       siteId: string
       libraryStepId: string

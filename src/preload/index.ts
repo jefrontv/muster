@@ -845,6 +845,7 @@ const api = {
     stepLibrary: {
       list: () => ipcRenderer.invoke('siteStepLibrary:list'),
       set: (args) => ipcRenderer.invoke('siteStepLibrary:set', args),
+      promote: (args) => ipcRenderer.invoke('siteStepLibrary:promote', args),
       install: (args) => ipcRenderer.invoke('siteStepLibrary:install', args)
     }
   } satisfies PreloadApi['sites'],

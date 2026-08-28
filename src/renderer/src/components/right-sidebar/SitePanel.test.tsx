@@ -350,6 +350,45 @@ describe('SitePanelContent', () => {
     expect(onRunSettled).not.toHaveBeenCalled()
   })
 
+  // Why: `after` is the default position, so a "post" tag on every custom step is pure noise in a
+  // column this narrow — it crowds the name, which is the part worth reading.
+  it('marks a before step and says nothing about an after step', async () => {
+    const summary = makeSummary()
+    summary.site.customSteps = [
+      {
+        id: 'pre-1',
+        name: 'Maintenance on',
+        group: 'import',
+        runsOn: 'remote',
+        command: 'wp maintenance-mode activate',
+        position: 'before',
+        order: 0,
+        enabled: true
+      },
+      {
+        id: 'post-1',
+        name: 'Sync uploads',
+        group: 'import',
+        runsOn: 'local',
+        command: 'echo sync',
+        position: 'after',
+        order: 0,
+        enabled: true
+      }
+    ]
+    await render(summary)
+
+    const text = container?.textContent ?? ''
+    expect(text).toContain('Maintenance on')
+    expect(text).toContain('Sync uploads')
+    expect(text.toLowerCase()).not.toContain('post')
+    // Exactly one marker element, and it belongs to the `before` step.
+    const markers = [...(container?.querySelectorAll('span') ?? [])].filter(
+      (span) => span.textContent?.trim() === 'pre'
+    )
+    expect(markers).toHaveLength(1)
+  })
+
   it('surfaces a failed toggle write instead of refetching', async () => {
     upsertEnvironmentMock.mockResolvedValue({ ok: false, error: 'site is gone' })
     await render(makeSummary())

@@ -13498,7 +13498,11 @@
           "libraryHeading": "Library",
           "install": "Install",
           "installed": "Added \u201c{{name}}\u201d to this site.",
-          "promoted": "Copied \u201c{{name}}\u201d to the library."
+          "promoted": "Copied \u201c{{name}}\u201d to the library.",
+          "installHint": "Copy this step onto the open site",
+          "remove": "Remove from library",
+          "removeHint": "Delete from the library. Sites that installed it keep their copy.",
+          "removed": "Removed \u201c{{name}}\u201d from the library."
         },
         "StepEditor": {
           "add": "Add step",
@@ -13516,6 +13520,7 @@
           "group": "Runs during",
           "position": "Order",
           "runsOn": "Runs on",
+          "nothingToRun": "Nothing to run",
           "modeCommand": "Command",
           "modeScript": "Script file",
           "scriptPath": "Script path",

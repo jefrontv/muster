@@ -6,6 +6,7 @@
 
 import type React from 'react'
 import { useEffect, useState } from 'react'
+import { customStepSource } from '../../../../shared/site-types'
 import type {
   SiteCustomStep,
   SiteEnvironment,
@@ -106,7 +107,8 @@ export function SiteStepToggles({
   }
   /**
    * Panel order mirrors run order — `before` steps above the built-ins would be ideal, but keeping
-   * them in one list with a pre/post marker stays readable in a narrow sidebar column.
+   * them in one list stays readable in a narrow sidebar column. Only `before` is marked: `after` is
+   * the default, so labelling every step "post" is noise that crowds the name it sits next to.
    */
   const orderedCustomSteps = (group: SiteRunGroup): SiteCustomStep[] =>
     customSteps
@@ -145,17 +147,19 @@ export function SiteStepToggles({
           key={step.id}
           className="flex w-fit cursor-pointer items-center gap-2 text-xs"
           // Why the command in the title: a step's name is user-authored, so the only honest way to
-          // know what it runs is to show the command itself.
-          title={`${step.command}${step.runsOn === 'local' ? ' (local)' : ' (server)'}`}
+          // know what it runs is to show what will execute — the script path, or the command.
+          title={`${customStepSource(step)?.kind === 'script' ? step.scriptPath : step.command}${step.runsOn === 'local' ? ' (local)' : ' (server)'}`}
         >
           <Checkbox
             checked={pending[`custom:${step.id}`] ?? step.enabled}
             onCheckedChange={(checked) => void setCustomStep(step.id, checked === true)}
           />
           <span className="truncate">{step.name}</span>
-          <span className="shrink-0 text-[9px] uppercase tracking-wider text-muted-foreground/70">
-            {step.position === 'before' ? 'pre' : 'post'}
-          </span>
+          {step.position === 'before' ? (
+            <span className="shrink-0 text-[9px] uppercase tracking-wider text-muted-foreground/70">
+              pre
+            </span>
+          ) : null}
         </label>
       ))}
       {/* mt-auto pins both buttons to the same baseline even though the columns hold a different

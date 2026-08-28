@@ -8,6 +8,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Site, SiteCustomStep, SiteSummary } from '../../../../shared/site-types'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { SiteCustomStepList } from './SiteCustomStepList'
 
 const storeMocks = vi.hoisted(() => ({ applySiteSummary: vi.fn() }))
@@ -19,8 +20,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 let root: Root | null = null
 let container: HTMLDivElement | null = null
 let updateMock: ReturnType<typeof vi.fn>
-let librarySetMock: ReturnType<typeof vi.fn>
-let libraryListMock: ReturnType<typeof vi.fn>
+let promoteMock: ReturnType<typeof vi.fn>
 
 function step(overrides: Partial<SiteCustomStep> = {}): SiteCustomStep {
   return {
@@ -41,10 +41,19 @@ function summary(steps: SiteCustomStep[]): SiteSummary {
   return { site } as unknown as SiteSummary
 }
 
+let libraryChanges: SiteCustomStep[][] = []
+
 async function render(steps: SiteCustomStep[]): Promise<void> {
   await act(async () => {
     root?.render(
-      <SiteCustomStepList summary={summary(steps)} editingId={null} onEditingIdChange={() => {}} />
+      <TooltipProvider>
+        <SiteCustomStepList
+          summary={summary(steps)}
+          editingId={null}
+          onEditingIdChange={() => {}}
+          onLibraryChanged={(library) => libraryChanges.push(library)}
+        />
+      </TooltipProvider>
     )
   })
 }
@@ -64,13 +73,6 @@ function lastPatch(): SiteCustomStep[] {
   return updateMock.mock.calls.at(-1)?.[0].patch.customSteps
 }
 
-/** The library array the component last asked main to save. Indexed, not optional-chained, so a
- *  missing call fails the assertion rather than throwing during destructuring. */
-function lastLibrarySteps(): SiteCustomStep[] {
-  const [args] = librarySetMock.mock.calls.slice(-1)
-  return (args[0] as { steps: SiteCustomStep[] }).steps
-}
-
 beforeEach(() => {
   container = document.createElement('div')
   document.body.append(container)
@@ -82,12 +84,11 @@ beforeEach(() => {
       value: summary(args.patch.customSteps)
     })
   )
-  libraryListMock = vi.fn(async () => ({ ok: true as const, value: [] as SiteCustomStep[] }))
-  librarySetMock = vi.fn(async () => ({ ok: true as const, value: [] as SiteCustomStep[] }))
+  promoteMock = vi.fn(async () => ({ ok: true as const, value: [{ id: 'library-new' }] }))
   ;(window as unknown as { api: unknown }).api = {
     sites: {
       update: updateMock,
-      stepLibrary: { list: libraryListMock, set: librarySetMock }
+      stepLibrary: { promote: promoteMock }
     }
   }
 })
@@ -95,6 +96,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root?.unmount())
   container?.remove()
+  libraryChanges = []
   vi.clearAllMocks()
 })
 
@@ -144,26 +146,23 @@ describe('SiteCustomStepList', () => {
     expect(lastPatch()).toEqual([expect.objectContaining({ id: 'a', enabled: false })])
   })
 
-  it('promoting copies to the library with a new id, disabled, and leaves the site alone', async () => {
+  it('delegates promotion to main and hands the refreshed library to the parent', async () => {
+    // Main owns this: embedding the step's script means reading the checkout, which the renderer
+    // cannot do. A renderer-side copy would silently produce a library entry with no script.
     await render([step({ id: 'a', name: 'Purge CDN' })])
     await click(iconButton('Copy to library'))
 
-    const [entry] = lastLibrarySteps()
-    expect(entry.name).toBe('Purge CDN')
-    expect(entry.id).not.toBe('a')
-    expect(entry.enabled).toBe(false)
-    expect(entry.origin).toEqual({ kind: 'library', libraryId: 'a' })
+    expect(promoteMock).toHaveBeenCalledWith({ siteId: 'site-1', stepId: 'a' })
+    expect(libraryChanges.at(-1)).toEqual([expect.objectContaining({ id: 'library-new' })])
     // A promote is a copy: the site's own steps are never rewritten.
     expect(updateMock).not.toHaveBeenCalled()
   })
 
-  it('appends to the library rather than replacing what is already there', async () => {
-    libraryListMock.mockResolvedValue({ ok: true, value: [step({ id: 'existing' })] })
+  it('leaves the library alone when the promote fails', async () => {
+    promoteMock.mockResolvedValue({ ok: false, error: 'script missing' })
     await render([step({ id: 'a' })])
     await click(iconButton('Copy to library'))
 
-    const steps = lastLibrarySteps()
-    expect(steps.map((entry) => entry.id)[0]).toBe('existing')
-    expect(steps).toHaveLength(2)
+    expect(libraryChanges).toHaveLength(0)
   })
 })

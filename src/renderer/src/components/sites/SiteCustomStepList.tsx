@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Library, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import {
   moveCustomStep,
@@ -19,6 +20,7 @@ import {
   draftToStepFields,
   type CustomStepDraft
 } from './SiteCustomStepEditor'
+import { SiteCustomStepSummary } from './SiteCustomStepSummary'
 
 function IconButton({
   label,
@@ -32,27 +34,38 @@ function IconButton({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
-    >
-      {children}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          // aria-label, not title: the tooltip is the visible hint, and a native title on top of it
+          // shows a second, slower, duplicate one.
+          aria-label={label}
+          disabled={disabled}
+          onClick={onClick}
+          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={4}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
 export function SiteCustomStepList({
   summary,
   editingId,
-  onEditingIdChange
+  onEditingIdChange,
+  onLibraryChanged
 }: {
   summary: SiteSummary
   editingId: string | null
   onEditingIdChange: (id: string | null) => void
+  /** Promotion happens on a row but the library is rendered by the parent, which must refresh. */
+  onLibraryChanged: (library: SiteCustomStep[]) => void
 }): React.JSX.Element | null {
   const [draft, setDraft] = useState<CustomStepDraft | null>(null)
   const [busy, setBusy] = useState(false)
@@ -80,29 +93,30 @@ export function SiteCustomStepList({
     }
   }
 
+  // Promotion runs in main: embedding a step's script means reading the checkout, which the
+  // renderer cannot do, and a library entry without its script is useless on any other site.
   const promote = async (step: SiteCustomStep): Promise<void> => {
-    const existing = await window.api.sites.stepLibrary.list()
-    if (!existing.ok) {
-      toast.error(existing.error)
-      return
-    }
-    // A library entry is a template: it never runs where it sits, so it is stored disabled.
-    const entry: SiteCustomStep = {
-      ...step,
-      id: crypto.randomUUID(),
-      enabled: false,
-      origin: { kind: 'library', libraryId: step.id }
-    }
-    const result = await window.api.sites.stepLibrary.set({ steps: [...existing.value, entry] })
-    if (!result.ok) {
-      toast.error(result.error)
-      return
-    }
-    toast.success(
-      translate('auto.components.sites.StepLibrary.promoted', 'Copied “{{name}}” to the library.', {
-        name: step.name
+    setBusy(true)
+    try {
+      const result = await window.api.sites.stepLibrary.promote({
+        siteId: summary.site.id,
+        stepId: step.id
       })
-    )
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      onLibraryChanged(result.value)
+      toast.success(
+        translate(
+          'auto.components.sites.StepLibrary.promoted',
+          'Copied “{{name}}” to the library.',
+          { name: step.name }
+        )
+      )
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (steps.length === 0) {
@@ -148,9 +162,8 @@ export function SiteCustomStepList({
                 />
               </div>
             ) : (
-              <div className="flex items-start gap-2 px-2.5 py-2">
+              <div className="flex items-center gap-2 px-2.5 py-2">
                 <Checkbox
-                  className="mt-0.5"
                   checked={step.enabled}
                   disabled={busy}
                   onCheckedChange={(checked) => {
@@ -161,19 +174,7 @@ export function SiteCustomStepList({
                     )
                   }}
                 />
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-xs font-medium">{step.name}</span>
-                    <span className="shrink-0 text-[9px] uppercase tracking-wider text-muted-foreground/70">
-                      {step.group} · {step.position === 'before' ? 'pre' : 'post'} ·{' '}
-                      {step.runsOn === 'local' ? 'local' : 'server'}
-                    </span>
-                  </div>
-                  {/* Always visible: a step's name is user-authored, so it is not evidence of what runs. */}
-                  <p className="truncate font-mono text-[10px] text-muted-foreground">
-                    {step.command}
-                  </p>
-                </div>
+                <SiteCustomStepSummary step={step} />
                 <div className="flex shrink-0 items-center">
                   <IconButton
                     label={translate('auto.components.sites.StepEditor.moveUp', 'Move earlier')}

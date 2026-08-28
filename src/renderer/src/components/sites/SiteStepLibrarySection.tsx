@@ -4,9 +4,10 @@
 // same records. Install copies, so a later library edit never changes an already-installed step.
 
 import { useCallback, useEffect, useState } from 'react'
-import { Download, Plus } from 'lucide-react'
+import { Download, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type { SiteCustomStep, SiteSummary } from '../../../../shared/site-types'
 import { useAppStore } from '@/store'
@@ -17,6 +18,7 @@ import {
   type CustomStepDraft
 } from './SiteCustomStepEditor'
 import { SiteCustomStepList } from './SiteCustomStepList'
+import { SiteCustomStepSummary } from './SiteCustomStepSummary'
 
 function StepRow({
   step,
@@ -26,19 +28,9 @@ function StepRow({
   action?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <li className="flex items-start justify-between gap-3 rounded-md border border-border/60 px-2.5 py-2">
-      <div className="min-w-0 space-y-0.5">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-xs font-medium">{step.name}</span>
-          <span className="shrink-0 text-[9px] uppercase tracking-wider text-muted-foreground/70">
-            {step.group} · {step.position === 'before' ? 'pre' : 'post'} ·{' '}
-            {step.runsOn === 'local' ? 'local' : 'server'}
-          </span>
-        </div>
-        {/* The command, always visible: a step's name is user-authored, so it is not evidence. */}
-        <p className="truncate font-mono text-[10px] text-muted-foreground">{step.command}</p>
-      </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+    <li className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-2.5 py-2">
+      <SiteCustomStepSummary step={step} />
+      {action ? <div className="flex shrink-0 items-center gap-1">{action}</div> : null}
     </li>
   )
 }
@@ -78,6 +70,30 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
         translate('auto.components.sites.StepLibrary.installed', 'Added “{{name}}” to this site.', {
           name: step.name
         })
+      )
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  // Deleting a template, not anything that runs: sites installed their own copies, so this cannot
+  // change what any of them do.
+  const removeFromLibrary = async (step: SiteCustomStep): Promise<void> => {
+    setBusyId(step.id)
+    try {
+      const remaining = library.filter((entry) => entry.id !== step.id)
+      const result = await window.api.sites.stepLibrary.set({ steps: remaining })
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      setLibrary(result.value)
+      toast.success(
+        translate(
+          'auto.components.sites.StepLibrary.removed',
+          'Removed “{{name}}” from the library.',
+          { name: step.name }
+        )
       )
     } finally {
       setBusyId(null)
@@ -151,6 +167,7 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
         summary={summary}
         editingId={editingId}
         onEditingIdChange={setEditingId}
+        onLibraryChanged={setLibrary}
       />
 
       {library.length > 0 ? (
@@ -164,16 +181,50 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
                 key={step.id}
                 step={step}
                 action={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    disabled={busyId !== null}
-                    onClick={() => void install(step)}
-                  >
-                    <Download className="size-3.5" />
-                    {translate('auto.components.sites.StepLibrary.install', 'Install')}
-                  </Button>
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          disabled={busyId !== null}
+                          onClick={() => void install(step)}
+                        >
+                          <Download className="size-3.5" />
+                          {translate('auto.components.sites.StepLibrary.install', 'Install')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={4}>
+                        {translate(
+                          'auto.components.sites.StepLibrary.installHint',
+                          'Copy this step onto the open site'
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={translate(
+                            'auto.components.sites.StepLibrary.remove',
+                            'Remove from library'
+                          )}
+                          disabled={busyId !== null}
+                          onClick={() => void removeFromLibrary(step)}
+                          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={4}>
+                        {translate(
+                          'auto.components.sites.StepLibrary.removeHint',
+                          'Delete from the library. Sites that installed it keep their copy.'
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
                 }
               />
             ))}
