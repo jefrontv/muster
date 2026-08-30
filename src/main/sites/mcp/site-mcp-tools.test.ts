@@ -299,7 +299,8 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   copy_custom_step: { from_site: 'Acme', step: 'step-1' },
   promote_custom_step: { step: 'step-1' },
   install_library_step: { library_step: 'library-1' },
-  remove_library_step: { library_step: 'library-1' }
+  remove_library_step: { library_step: 'library-1' },
+  get_site_pipelines: {}
 }
 
 describe('site MCP tool table', () => {

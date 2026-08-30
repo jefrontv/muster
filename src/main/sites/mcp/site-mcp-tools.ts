@@ -15,6 +15,7 @@ import { SITE_MCP_STEP_LIBRARY_TOOLS } from './site-mcp-step-library-tools'
 import { SITE_MCP_DISCOVERY_TOOLS } from './site-mcp-discovery-tools'
 import { SITE_MCP_ENV_TOOLS } from './site-mcp-env-tools'
 import { SITE_MCP_JOB_TOOLS } from './site-mcp-job-tools'
+import { SITE_MCP_PIPELINE_TOOLS } from './site-mcp-pipeline-tools'
 import { SITE_MCP_RUN_TOOLS } from './site-mcp-run-tools'
 import { SITE_MCP_SSH_TOOLS } from './site-mcp-ssh-tools'
 
@@ -28,7 +29,8 @@ export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_ENV_TOOLS,
   ...SITE_MCP_RUN_TOOLS,
   ...SITE_MCP_SSH_TOOLS,
-  ...SITE_MCP_JOB_TOOLS
+  ...SITE_MCP_JOB_TOOLS,
+  ...SITE_MCP_PIPELINE_TOOLS
 ]
 
 export type SiteMcpToolDescriptor = {
