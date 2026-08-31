@@ -54,9 +54,20 @@ describe('findSiteForProject', () => {
     expect(findSiteForProject([summary], '/Users/dev//Sites/acme')).toBe(summary)
   })
 
-  it('ignores the subpath variant when localWpRoot is empty', () => {
+  // Changed deliberately: sites imported into a LocalWP-shaped folder can have an empty
+  // localWpRoot while their checkout still sits at app/public, and requiring the record left the
+  // Site tab hidden for 17 of 293 sites on a real install (melbournejazz.com among them).
+  it('matches the app/public variant even when localWpRoot is empty', () => {
     const summary = makeSummary('/Users/dev/Sites/acme', '')
-    expect(findSiteForProject([summary], '/Users/dev/Sites/acme/app/public')).toBeNull()
+    expect(findSiteForProject([summary], '/Users/dev/Sites/acme/app/public')).toBe(summary)
+  })
+
+  // The reason the convention is a second pass: a site registered AT app/public owns that path, and
+  // must not lose it to the folder above just because that folder is also a site.
+  it('prefers a site recorded at the path over a parent matching by convention', () => {
+    const parent = makeSummary('/Users/dev/Sites/acme', '')
+    const nested = makeSummary('/Users/dev/Sites/acme/app/public', '')
+    expect(findSiteForProject([parent, nested], '/Users/dev/Sites/acme/app/public')).toBe(nested)
   })
 
   it('does not match unrelated projects or a missing path', () => {

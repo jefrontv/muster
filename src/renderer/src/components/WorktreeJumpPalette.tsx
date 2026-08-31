@@ -955,6 +955,19 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
       hasQuery && visibleProjectTargetItems.length > 0 && populatedSectionCount > 1
     const showMiddleHeader = hasQuery && visibleMiddleItems.length > 0 && populatedSectionCount > 1
 
+    if (visibleProjectTargetItems.length > 0) {
+      if (showProjectTargetHeader) {
+        entries.push({
+          id: '__header_projects_groups__',
+          type: 'section-header',
+          label: translate(
+            'auto.components.WorktreeJumpPalette.projectsGroupsHeader',
+            'Projects & Groups'
+          )
+        })
+      }
+      appendPaletteListEntries(entries, visibleProjectTargetItems)
+    }
     if (visibleWorkspaceItemCount > 0) {
       if (showWorktreeHeader) {
         entries.push({
@@ -981,21 +994,9 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
         })
       }
     }
-    if (visibleProjectTargetItems.length > 0) {
-      if (showProjectTargetHeader) {
-        entries.push({
-          id: '__header_projects_groups__',
-          type: 'section-header',
-          label: translate(
-            'auto.components.WorktreeJumpPalette.projectsGroupsHeader',
-            'Projects & Groups'
-          )
-        })
-      }
-      appendPaletteListEntries(entries, visibleProjectTargetItems)
-    }
     if (showCreateAction) {
-      // Why: project/group jump targets are navigation results — keep them after worktree matches, before the creation fallback.
+      // Why: projects and groups lead because they are the thing being searched for; worktrees are a
+      // drill-down within one. Creating stays last so it can never be the default action.
       entries.push({ id: CREATE_WORKTREE_ITEM_ID, type: 'create-worktree' })
     }
     if (visibleMiddleItems.length > 0) {
