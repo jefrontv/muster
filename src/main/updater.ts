@@ -25,6 +25,7 @@ import {
 } from './update-install-exit-watchdog'
 import { registerAutoUpdaterHandlers } from './updater-events'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
+import { createUpdaterFileLogger } from './updater-file-log'
 import { isAutoUpdateEnabled, RELEASE_LATEST_DOWNLOAD_URL } from './updater-release-feed-source'
 import {
   compareVersions,
@@ -1458,13 +1459,15 @@ export function setupAutoUpdater(
   // Why: MacUpdater ignores quitAndInstall arguments; the surviving CLI supervisor must be the only serve relaunch owner.
   autoUpdater.autoRunAppAfterInstall = updateInstallMode === 'interactive'
 
-  // Why: our only on-machine window into electron-updater; otherwise an unexpected update-not-available or failed fetch is invisible.
-  autoUpdater.logger = {
-    info: (m: unknown) => console.info('[autoUpdater]', m),
-    warn: (m: unknown) => console.warn('[autoUpdater]', m),
-    error: (m: unknown) => console.error('[autoUpdater]', m),
-    debug: (m: unknown) => console.debug('[autoUpdater]', m)
-  } as never
+  // Why: electron-updater derives the PREVIOUS version's asset URL by substituting versions into the
+  // new asset's URL, which assumes both live at the same base. Our feed is pinned to a concrete
+  // /releases/download/<tag>/, and GitHub keeps each release's assets under its own tag, so that
+  // derivation can only 404. The fallback is a full download, which is what we always end up doing.
+  autoUpdater.disableDifferentialDownload = true
+
+  // Why: console output is invisible on a user's machine, and a field report of a failed update left
+  // us inferring the cause from a cache directory. Mirror to a file so the next one is diagnosable.
+  autoUpdater.logger = createUpdaterFileLogger()
 
   // Security: never re-add a verifyUpdateCodeSignature override — a no-op disables electron-updater's built-in Authenticode check and accepts any installer.
 
@@ -1555,6 +1558,23 @@ export function setupAutoUpdater(
   }
 }
 
+/**
+ * Points the feed at the release that actually contains `version`'s assets.
+ *
+ * The generic provider joins the manifest's file names to the currently pinned base, so a base left
+ * on a different tag turns every download into a 404. Best effort: a provider that rejects the URL
+ * leaves the previous pin in place, which is no worse than not trying.
+ */
+function pinFeedToVersion(version: string): void {
+  try {
+    const url = getReleaseDownloadUrl(`v${version}`)
+    console.info(`[updater] download feed pinned to v${version} → ${url}`)
+    getAutoUpdater().setFeedURL({ provider: 'generic', url })
+  } catch (error) {
+    console.warn('[updater] could not pin download feed', error)
+  }
+}
+
 export function downloadUpdate(): void {
   if (downloadInFlight) {
     return
@@ -1575,6 +1595,14 @@ export function downloadUpdate(): void {
   }
   downloadInFlight = true
   beginMacUpdateDownload()
+  // Why: the manifest and the download base must come from the SAME release. A check can re-pin the
+  // feed after an update was resolved — `retryPrereleaseFallbackAfterMissingManifest` walks back to
+  // the previous tag when a new release's manifest is not up yet, and the next successful check pins
+  // forward again. electron-updater keeps the asset names from the resolved manifest but joins them
+  // to whatever base is pinned now, which produced a real 404 in the field:
+  // `/releases/download/v1.7.0/Muster-1.6.1-arm64-mac.zip`. Re-pinning to the pending version's own
+  // tag makes the pair self-consistent by construction.
+  pinFeedToVersion(version)
   // Why: setup can take seconds before progress emits; surface acceptance now so the action never looks inert.
   sendStatus({ state: 'downloading', percent: 0, version })
   getAutoUpdater()

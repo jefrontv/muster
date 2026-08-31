@@ -1170,6 +1170,52 @@ describe('updater', () => {
     )
   })
 
+  // Why: the field failure this prevents — a 404 on
+  // `/releases/download/v1.7.0/Muster-1.6.1-arm64-mac.zip`. The manifest and the download base have
+  // to come from the same release. A check can move the base after an update was resolved (the
+  // missing-manifest walk-back pins to the previous tag, the next good check pins forward), and the
+  // generic provider joins the resolved manifest's file names to whatever base is pinned now.
+  it('pins the download feed to the pending version, not whatever the last check pinned', async () => {
+    fetchNewerReleaseTagsMock.mockResolvedValue({ tags: ['v1.6.1'], state: 'ready' })
+    autoUpdaterMock.checkForUpdates.mockImplementation(() => {
+      autoUpdaterMock.emit('checking-for-update')
+      queueMicrotask(() => {
+        autoUpdaterMock.emit('update-available', { version: '1.6.1' })
+      })
+      return Promise.resolve(undefined)
+    })
+    autoUpdaterMock.downloadUpdate.mockResolvedValue(undefined)
+    const sendMock = vi.fn()
+    const mainWindow = { webContents: { send: sendMock } }
+
+    const { setupAutoUpdater, checkForUpdatesFromMenu, downloadUpdate } = await import('./updater')
+
+    setupAutoUpdater(mainWindow as never, { getLastUpdateCheckAt: () => Date.now() })
+    checkForUpdatesFromMenu()
+    await vi.waitFor(() => {
+      expect(sendMock).toHaveBeenCalledWith(
+        'updater:status',
+        expect.objectContaining({ state: 'available', version: '1.6.1' })
+      )
+    })
+
+    // A later check moves the base forward, exactly as a background check would.
+    autoUpdaterMock.setFeedURL({
+      provider: 'generic',
+      url: 'https://github.com/jefrontv/muster/releases/download/v1.7.0'
+    })
+    autoUpdaterMock.setFeedURL.mockClear()
+
+    downloadUpdate()
+
+    // The download must re-pin to the release that actually holds 1.6.1's assets.
+    expect(autoUpdaterMock.setFeedURL).toHaveBeenLastCalledWith({
+      provider: 'generic',
+      url: expect.stringContaining('/releases/download/v1.6.1')
+    })
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalledTimes(1)
+  })
+
   it('surfaces an accepted retry before electron-updater emits download progress', async () => {
     fetchNewerReleaseTagsMock.mockResolvedValue({ tags: ['v1.0.61'], state: 'ready' })
     autoUpdaterMock.checkForUpdates.mockImplementation(() => {
