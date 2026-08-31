@@ -13,6 +13,7 @@ import {
   type SiteSummary
 } from '../../shared/site-types'
 import { commandExecFileAsync } from '../git/runner'
+import { probeRepoHeadBranches } from './repo-head-branch-probe'
 import { getSiteSecretPresence } from './site-secret-store'
 import { resolveSiteWpDir } from './site-run-config'
 
@@ -33,6 +34,43 @@ export async function readSiteBranch(sitePath: string): Promise<string | null> {
 }
 
 /**
+ * Branches for many sites at once, read off disk instead of spawned.
+ *
+ * Why this exists: `buildSiteSummaries` fans out over every configured site, so one sidebar refresh
+ * used to spawn one `git rev-parse` per site — 208 concurrent children on this operator's machine.
+ * The branch is one file read away, and `probeRepoHeadBranches` already does that read with bounded
+ * concurrency and the `.git`-pointer handling worktrees need.
+ *
+ * Both candidate directories are probed because the two readers disagree on reach: `git rev-parse`
+ * walks up from its cwd, while the probe only looks at the directory it is given (and LocalWP's
+ * `app/public` beneath it). A site recording a WordPress subpath while keeping `.git` at the top —
+ * Bedrock's `web/`, for instance — is only found via the site root. Sites the probe cannot see at
+ * all fall back to the subprocess, so no site loses its branch to this optimisation.
+ */
+export async function probeSiteBranches(sites: readonly Site[]): Promise<Map<string, string>> {
+  const checkoutDirs = new Map<string, string>()
+  const candidates = new Set<string>()
+  for (const site of sites) {
+    const checkoutDir = resolveSiteCheckoutDir(site)
+    checkoutDirs.set(site.id, checkoutDir)
+    candidates.add(checkoutDir)
+    candidates.add(site.path)
+  }
+
+  const found = await probeRepoHeadBranches([...candidates])
+  const branches = new Map<string, string>()
+  for (const site of sites) {
+    // The checkout directory wins: a nested WordPress repository describes the site, and a parent
+    // repository it happens to sit inside does not.
+    const branch = found[checkoutDirs.get(site.id) ?? site.path] ?? found[site.path]
+    if (branch !== undefined) {
+      branches.set(site.id, branch)
+    }
+  }
+  return branches
+}
+
+/**
  * Where this site's git checkout actually lives.
  *
  * A LocalWP setup moves the project into `app/public`, taking `.git` with it. Fall back to the site
@@ -43,12 +81,21 @@ export function resolveSiteCheckoutDir(site: Site): string {
   return wpDir !== site.path && existsSync(wpDir) ? wpDir : site.path
 }
 
-export async function buildSiteSummary(site: Site): Promise<SiteSummary> {
+export async function buildSiteSummary(
+  site: Site,
+  /**
+   * Branches already read off disk by `probeSiteBranches`. A site absent from the map was not
+   * visible to the probe, so it falls back to the subprocess rather than losing its branch.
+   */
+  probedBranches?: ReadonlyMap<string, string>
+): Promise<SiteSummary> {
   const pathExists = existsSync(site.path)
   // Why the WordPress root, not the site root: a LocalWP setup relocates the checkout into
   // `app/public`, so `.git` no longer sits at site.path — and `git rev-parse` only walks up. Reading
   // the site root there reports "no branch", which then silently retargets environment resolution.
-  const branch = pathExists ? await readSiteBranch(resolveSiteCheckoutDir(site)) : null
+  const branch = pathExists
+    ? (probedBranches?.get(site.id) ?? (await readSiteBranch(resolveSiteCheckoutDir(site))))
+    : null
   const resolvedEnvironment = resolveSiteEnvironment(site, branch)
 
   const secrets: Record<string, SiteSecretPresence> = {}
@@ -72,5 +119,7 @@ export async function buildSiteSummary(site: Site): Promise<SiteSummary> {
 }
 
 export async function buildSiteSummaries(sites: Site[]): Promise<SiteSummary[]> {
-  return Promise.all(sites.map((site) => buildSiteSummary(site)))
+  // One bounded disk sweep for every branch, so the fan-out below spawns nothing per site.
+  const probedBranches = await probeSiteBranches(sites)
+  return Promise.all(sites.map((site) => buildSiteSummary(site, probedBranches)))
 }
