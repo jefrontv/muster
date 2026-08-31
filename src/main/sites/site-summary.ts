@@ -5,6 +5,8 @@
 // rather than cached — a stale branch here would silently retarget a deploy.
 
 import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { localWpWordPressRoot } from '../../shared/localwp-paths'
 import {
   countSelectedSteps,
   resolveSiteEnvironment,
@@ -79,6 +81,28 @@ export async function probeSiteBranches(sites: readonly Site[]): Promise<Map<str
 export function resolveSiteCheckoutDir(site: Site): string {
   const wpDir = resolveSiteWpDir(site)
   return wpDir !== site.path && existsSync(wpDir) ? wpDir : site.path
+}
+
+/**
+ * The directory that actually holds this site's `.git`, for callers that need to run git there.
+ *
+ * `resolveSiteCheckoutDir` trusts the site's recorded WordPress subpath, which is not always set:
+ * an imported site can sit in a LocalWP-shaped folder — WordPress and `.git` under `app/public` —
+ * while `localWpRoot` is empty. Both the Sites panel and the pipelines MCP tool then handed git the
+ * site root, which is not a repository, and every Bitbucket lookup reported `not-bitbucket`.
+ *
+ * Probing `app/public` regardless of what was recorded is the same thing `project-git-dir-probe`
+ * already does for branch reads, which is why branches resolved for these sites while pipelines did
+ * not. Falls back to the recorded checkout so a site with no repository anywhere behaves as before.
+ */
+export function resolveSiteGitCheckoutDir(site: Site): string {
+  const recorded = resolveSiteCheckoutDir(site)
+  for (const candidate of new Set([recorded, localWpWordPressRoot(site.path), site.path])) {
+    if (existsSync(join(candidate, '.git'))) {
+      return candidate
+    }
+  }
+  return recorded
 }
 
 export async function buildSiteSummary(

@@ -9,7 +9,8 @@ vi.mock('./site-secret-store', () => ({
   getSiteSecretPresence: () => ({ ssh: false, db: false })
 }))
 
-const { buildSiteSummary, buildSiteSummaries } = await import('./site-summary')
+const { buildSiteSummary, buildSiteSummaries, resolveSiteGitCheckoutDir } =
+  await import('./site-summary')
 
 function site(overrides: Partial<Site>): Site {
   return {
@@ -225,6 +226,62 @@ describe('buildSiteSummaries branch parity', () => {
       const summaries = await buildSiteSummaries(records)
 
       expect(summaries.map((entry) => entry.branch)).toEqual(['one', 'two', 'three'])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})
+
+// Why: a real site (roads-australia) had WordPress and .git under app/public while localWpRoot was
+// empty, so resolveSiteCheckoutDir handed git the site root — not a repository — and every Bitbucket
+// pipeline lookup reported "not-bitbucket" on both the Sites panel and the MCP tool.
+describe('resolveSiteGitCheckoutDir', () => {
+  it('finds app/public even when no WordPress subpath was recorded', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'orca-gitdir-unrecorded-'))
+    try {
+      const wpRoot = join(root, 'app', 'public')
+      await mkdir(wpRoot, { recursive: true })
+      initRepoOnBranch(wpRoot, 'master')
+
+      expect(resolveSiteGitCheckoutDir(site({ path: root, localWpRoot: '' }))).toBe(wpRoot)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('prefers the recorded subpath when it holds the repository', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'orca-gitdir-recorded-'))
+    try {
+      const webRoot = join(root, 'web')
+      await mkdir(webRoot, { recursive: true })
+      initRepoOnBranch(webRoot, 'main')
+
+      expect(resolveSiteGitCheckoutDir(site({ path: root, localWpRoot: 'web' }))).toBe(webRoot)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('uses the site root for a plain checkout', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'orca-gitdir-plain-'))
+    try {
+      initRepoOnBranch(root, 'master')
+
+      expect(resolveSiteGitCheckoutDir(site({ path: root, localWpRoot: '' }))).toBe(root)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('falls back to the recorded checkout when there is no repository anywhere', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'orca-gitdir-none-'))
+    try {
+      await mkdir(join(root, 'web'), { recursive: true })
+
+      // No .git in any candidate, so behaviour is unchanged from before this resolver existed.
+      expect(resolveSiteGitCheckoutDir(site({ path: root, localWpRoot: 'web' }))).toBe(
+        join(root, 'web')
+      )
     } finally {
       await rm(root, { recursive: true, force: true })
     }

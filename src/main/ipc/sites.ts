@@ -13,7 +13,12 @@ import { linkSitesToRepos, type SiteRepoLinkResult } from '../sites/site-repo-li
 import { addDiscoveredSitesToSidebar } from '../sites/site-sidebar-sync'
 import { listCheckoutBranches } from '../sites/site-branches'
 import { getSitePipelines } from '../bitbucket/site-pipelines'
-import { buildSiteSummaries, buildSiteSummary, resolveSiteCheckoutDir } from '../sites/site-summary'
+import {
+  buildSiteSummaries,
+  buildSiteSummary,
+  resolveSiteCheckoutDir,
+  resolveSiteGitCheckoutDir
+} from '../sites/site-summary'
 import { registerSiteEnvironmentHandlers } from './sites-environments'
 import { registerSiteStepLibraryHandlers } from './site-step-library'
 import {
@@ -101,7 +106,7 @@ export function registerSiteHandlers(store: Store): void {
         const site = requireSite(store, siteId)
         return {
           ok: true,
-          value: await getSitePipelines(resolveSiteCheckoutDir(site))
+          value: await getSitePipelines(resolveSiteGitCheckoutDir(site))
         }
       } catch (error) {
         return failure(error)

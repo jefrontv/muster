@@ -1,6 +1,9 @@
 // The agent-facing contract for pipeline awareness: a clear "keep waiting" signal, the live domain
 // to check once waiting is over, and a reason instead of an error when there is nothing to read.
 
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createEmptySiteEnvironment } from '../../../shared/site-types'
 import type {
@@ -180,6 +183,34 @@ describe('get_site_pipelines', () => {
     expect(payload.ok).toBe(false)
     expect(String(payload.error)).toContain('503')
   })
+
+  // Why: the tool used to pass site.path. A site whose repository lives under app/public with no
+  // recorded WordPress subpath then reported not-bitbucket even though its remote was Bitbucket —
+  // the exact failure seen on roads-australia.
+  it('asks about the directory that holds .git, not the site root', async () => {
+    const checkout = mkdtempSync(join(tmpdir(), 'muster-pipe-site-'))
+    const wpRoot = join(checkout, 'app', 'public')
+    mkdirSync(join(wpRoot, '.git'), { recursive: true })
+    getSitePipelinesMock.mockResolvedValue(available([run()]))
+
+    const record = { ...site(), path: checkout, localWpRoot: '' }
+    const ctx = {
+      store: { listSites: () => [record], getSite: () => record, findSiteByPath: () => record },
+      cwd: checkout,
+      summarize: async () =>
+        ({
+          site: record,
+          branch: 'master',
+          resolvedEnvironment: { environment: 'production', reason: 'active-environment' }
+        }) as unknown as SiteSummary
+    } as unknown as SiteMcpContext
+
+    await call(ctx)
+
+    expect(getSitePipelinesMock).toHaveBeenLastCalledWith(wpRoot)
+    rmSync(checkout, { recursive: true, force: true })
+  })
+
   it('handles a repository with no runs yet', async () => {
     getSitePipelinesMock.mockResolvedValue(available([]))
 

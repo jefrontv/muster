@@ -5,6 +5,7 @@
 // can wait for the build and only then go and check the live site.
 
 import { getSitePipelines } from '../../bitbucket/site-pipelines'
+import { resolveSiteGitCheckoutDir } from '../site-summary'
 import type {
   SitePipelineRun,
   SitePipelinesResult,
@@ -75,7 +76,7 @@ export const SITE_MCP_PIPELINE_TOOLS: readonly SiteMcpTool[] = [
     inputSchema: objectSchema({ ...SITE_PROPERTY }, []),
     async run(context, args: ToolArguments) {
       const site = resolveMcpSite(context, readString(args, 'site'))
-      const result = await readPipelines(site.path)
+      const result = await readPipelines(resolveSiteGitCheckoutDir(site))
       if (!result.available) {
         return {
           ok: true,
