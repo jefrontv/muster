@@ -1,7 +1,13 @@
 /* eslint-disable max-lines -- Why: single privileged facade for guest registration, authorization, and lifecycle cleanup; keeps the browser security boundary in one file. */
 import { randomUUID } from 'node:crypto'
 
-import { shell, webContents } from 'electron'
+import { shell, webContents, type BrowserWindow } from 'electron'
+import {
+  closeDevToolsDock,
+  openDevToolsDock,
+  setDevToolsDockBounds,
+  type DevToolsDockBounds
+} from './devtools-dock'
 import { ORCA_BROWSER_BLANK_URL } from '../../shared/constants'
 import {
   normalizeBrowserNavigationUrl,
@@ -1428,13 +1434,10 @@ export class BrowserManager {
     this.cancelDownloadInternal(args.downloadId, 'Canceled.')
     return true
   }
-
-  // Why: guests are isolated from Orca's preload bridge, so main owns the devtools escape hatch after a tab→guest lookup.
-  //
-  // A guest's devtools cannot dock with `mode`: docking is relative to a window's own contents, and a
-  // <webview> guest isn't one, so every mode lands in a detached window. Rendering devtools INTO a
-  // WebContents the renderer positions is the only way to place them, hence the required host id.
-  async openDevTools(browserTabId: string, devToolsWebContentsId: number): Promise<boolean> {
+  // Why: guests are isolated from Orca's preload bridge, so main owns the devtools escape hatch
+  // after a tab→guest lookup. Placement lives in devtools-dock.ts; the rules that need the guest
+  // registry — the CDP handover below — live here.
+  openDevTools(browserTabId: string, window: BrowserWindow, bounds: DevToolsDockBounds): boolean {
     const webContentsId = this.webContentsIdByTabId.get(browserTabId)
     if (!webContentsId) {
       return false
@@ -1445,45 +1448,35 @@ export class BrowserManager {
       this.unregisterGuest(browserTabId)
       return false
     }
-    const host = webContents.fromId(devToolsWebContentsId)
-    if (!host || host.isDestroyed()) {
-      return false
-    }
-    // Why: a host can only back one devtools session, and re-pointing a live one throws. Closing
-    // first makes a re-open idempotent when the renderer's host was rebuilt but the guest's wasn't.
-    if (guest.isDevToolsOpened()) {
-      guest.closeDevTools()
-    }
     // Why before opening: the anti-detection injector holds this target via `webContents.debugger`,
     // and Electron hands a target to that OR to DevTools, never both. Leaving it attached is what
-    // produces a DevTools window whose panels render but stay completely empty.
+    // produces a DevTools whose panels render but whose inspector stays empty.
     const control = this.antiDetectionControlByGuestId.get(webContentsId)
     control?.suspend()
     // Why once(): covers the user closing DevTools from its own UI, where closeDevTools() below is
     // never called and the guest would otherwise lose anti-detection until its next rebuild.
     guest.once('devtools-closed', () => control?.resume())
-    guest.setDevToolsWebContents(host)
-    // Why no `mode`: passing one makes Electron dock DevTools natively to the window and render only
-    // a "DevTools is docked to right" placeholder in our host. The bare call is what actually paints
-    // the inspector into the WebContents we positioned. Verified both ways against the running app.
-    guest.openDevTools()
-    return true
+
+    const opened = openDevToolsDock({ browserPageId: browserTabId, guest, window, bounds })
+    if (!opened) {
+      control?.resume()
+    }
+    return opened
+  }
+
+  setDevToolsBounds(browserTabId: string, bounds: DevToolsDockBounds): boolean {
+    return setDevToolsDockBounds(browserTabId, bounds)
   }
 
   closeDevTools(browserTabId: string): boolean {
+    const closed = closeDevToolsDock(browserTabId)
     const webContentsId = this.webContentsIdByTabId.get(browserTabId)
-    if (!webContentsId) {
-      return false
+    if (webContentsId !== undefined) {
+      // Why also here: `devtools-closed` is the normal path, but resuming is idempotent and this
+      // guarantees the CDP target comes back even if the event does not fire.
+      this.antiDetectionControlByGuestId.get(webContentsId)?.resume()
     }
-    const guest = webContents.fromId(webContentsId)
-    if (!guest || guest.isDestroyed()) {
-      return false
-    }
-    guest.closeDevTools()
-    // Why also here: `devtools-closed` is the normal path, but resuming is idempotent and this
-    // guarantees the target comes back even if the event does not fire.
-    this.antiDetectionControlByGuestId.get(webContentsId)?.resume()
-    return true
+    return closed
   }
 
   // Why: emulate viewport via CDP; never detach the debugger here or per-guest overrides (addScriptToEvaluateOnNewDocument) are cleared.

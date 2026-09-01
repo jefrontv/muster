@@ -590,10 +590,14 @@ export type BrowserApi = {
     webContentsId: number
   }) => Promise<boolean>
   unregisterGuest: (args: { browserPageId: string }) => Promise<void>
+  /** Dock rect in window CSS pixels; the native devtools view mirrors it. */
   openDevTools: (args: {
     browserPageId: string
-    /** Hosts the devtools UI, so it renders inside the pane instead of a detached window. */
-    devToolsWebContentsId: number
+    bounds: { x: number; y: number; width: number; height: number }
+  }) => Promise<boolean>
+  setDevToolsBounds: (args: {
+    browserPageId: string
+    bounds: { x: number; y: number; width: number; height: number }
   }) => Promise<boolean>
   closeDevTools: (args: { browserPageId: string }) => Promise<boolean>
   setViewportOverride: (args: {

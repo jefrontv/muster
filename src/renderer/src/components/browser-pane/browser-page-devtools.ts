@@ -1,10 +1,9 @@
-// Devtools docked beside the page guest, inside that page's viewport container.
+// The pane-side half of docked devtools: reserve the space, report where it is.
 //
-// Why a second <webview>: a guest's devtools cannot dock via `openDevTools({ mode })` — docking is
-// relative to a window's own contents and a guest is not one, so every mode lands in a detached
-// window. Main instead renders devtools INTO a WebContents we own, which lets us size and place it.
-// That host is single-use (Electron binds it to one devtools session), so each open builds a fresh
-// one rather than reviving the last.
+// Why a placeholder instead of a host element: DevTools only binds to a native view (see
+// devtools-dock.ts in main), and a native view floats above all renderer content rather than
+// flowing in it. So the renderer owns geometry only — this module keeps an empty flex child in the
+// pane so the page guest shrinks correctly, then mirrors that child's rect to main.
 
 import { getBrowserPageViewportContainer } from './browser-page-viewport'
 
@@ -13,11 +12,12 @@ const MIN_DOCK_WIDTH_PX = 260
 // Why: the page must keep some width while dragging, or the divider can be pushed past the
 // container edge with no handle left to drag back.
 const MIN_PAGE_WIDTH_PX = 220
-const ATTACH_TIMEOUT_MS = 5_000
+
+type DockRect = { x: number; y: number; width: number; height: number }
 
 type DockedDevTools = {
   wrapper: HTMLDivElement
-  webview: Electron.WebviewTag
+  surface: HTMLDivElement
   release: () => void
 }
 
@@ -31,51 +31,42 @@ function clampDockWidth(requestedPx: number, containerWidthPx: number): number {
   return Math.min(Math.max(requestedPx, MIN_DOCK_WIDTH_PX), maxWidthPx)
 }
 
-/** Resolves once the guest is attached and can report its id, or null if it never attaches. */
-function whenWebviewAttached(webview: Electron.WebviewTag): Promise<number | null> {
-  const readId = (): number | null => {
-    try {
-      return webview.getWebContentsId()
-    } catch {
-      // Why: the id only exists post-attach, so this throw is the "not yet" signal, not a failure.
-      return null
+function readRect(surface: HTMLDivElement): DockRect {
+  const rect = surface.getBoundingClientRect()
+  // Why guard on visibility: a parked pane keeps the element mounted but collapsed, and an empty
+  // rect is how main knows to hide the native view rather than pin a sliver over the page.
+  if (rect.width <= 0 || rect.height <= 0 || surface.offsetParent === null) {
+    return { x: 0, y: 0, width: 0, height: 0 }
+  }
+  return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+}
+
+function sameRect(a: DockRect, b: DockRect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+}
+
+/**
+ * Mirrors the placeholder's rect to main for as long as the dock is open.
+ *
+ * Why a frame loop rather than ResizeObserver: the rect moves without resizing — toggling the
+ * sidebar, switching panes, scrolling a tab strip — and observers report size, not position. The
+ * loop only sends IPC when one of four numbers changes, so a still pane costs a comparison a frame.
+ */
+function trackRect(browserPageId: string, surface: HTMLDivElement): () => void {
+  let frame = 0
+  let last: DockRect | null = null
+
+  const tick = (): void => {
+    const next = readRect(surface)
+    if (last === null || !sameRect(last, next)) {
+      last = next
+      void window.api.browser.setDevToolsBounds({ browserPageId, bounds: next })
     }
+    frame = window.requestAnimationFrame(tick)
   }
 
-  const attachedId = readId()
-  if (attachedId !== null) {
-    return Promise.resolve(attachedId)
-  }
-
-  return new Promise((resolve) => {
-    const deadline = Date.now() + ATTACH_TIMEOUT_MS
-    let timer: number | null = null
-
-    // Why poll rather than read inside `did-attach`: the event fires marginally before the element
-    // will hand out an id, so reading it there still throws. Measured on Electron 43.
-    const poll = (): void => {
-      const id = readId()
-      if (id !== null) {
-        resolve(id)
-        return
-      }
-      if (Date.now() >= deadline) {
-        // Why: a guest that never attaches would leave the caller awaiting forever, holding an
-        // invisible host webview in the DOM.
-        resolve(null)
-        return
-      }
-      timer = window.setTimeout(poll, 50)
-    }
-
-    webview.addEventListener('did-attach', () => {
-      if (timer !== null) {
-        window.clearTimeout(timer)
-      }
-      poll()
-    })
-    poll()
-  })
+  frame = window.requestAnimationFrame(tick)
+  return () => window.cancelAnimationFrame(frame)
 }
 
 function createDivider(
@@ -103,8 +94,8 @@ function createDivider(
 
   const onPointerDown = (event: PointerEvent): void => {
     event.preventDefault()
-    // Why: capture on the divider so the drag survives the pointer crossing either <webview>, which
-    // swallows events into its own guest process and would strand the drag mid-resize.
+    // Why capture on the divider: the pointer crosses the page <webview> and the native devtools
+    // view mid-drag, and both swallow events into another process, stranding the resize.
     divider.setPointerCapture(event.pointerId)
     divider.addEventListener('pointermove', onPointerMove)
     divider.addEventListener('pointerup', endDrag)
@@ -123,11 +114,7 @@ export function isBrowserPageDevToolsDocked(browserPageId: string): boolean {
   return dockedByPageId.has(browserPageId)
 }
 
-export async function openBrowserPageDevTools(
-  browserPageId: string,
-  /** Must match the page guest's partition — see the setAttribute call below. */
-  webviewPartition: string
-): Promise<boolean> {
+export async function openBrowserPageDevTools(browserPageId: string): Promise<boolean> {
   if (dockedByPageId.has(browserPageId)) {
     return true
   }
@@ -138,45 +125,39 @@ export async function openBrowserPageDevTools(
 
   const wrapper = document.createElement('div')
   wrapper.dataset.browserPageDevtoolsId = browserPageId
-  wrapper.className = 'flex min-h-0 shrink-0 flex-row bg-background'
+  wrapper.className = 'flex min-h-0 shrink-0 flex-row'
   wrapper.style.width = `${clampDockWidth(dockWidthPx, container.getBoundingClientRect().width)}px`
 
   const divider = createDivider(wrapper, container)
 
-  const webview = document.createElement('webview') as Electron.WebviewTag
-  // Why: a <webview> with no partition never attaches here — it stays pending forever and never
-  // reports a WebContents id, so devtools would have nothing to render into. Verified against the
-  // running app: identical elements attach with this attribute and time out without it.
-  webview.setAttribute('partition', webviewPartition)
-  webview.style.display = 'flex'
-  webview.style.flex = '1'
-  webview.style.height = '100%'
-  webview.style.border = 'none'
+  // Why a visible background: the native view is not painted by the renderer, so without this the
+  // pane shows a hole through to whatever is behind it for the frame before the view is placed.
+  const surface = document.createElement('div')
+  surface.dataset.browserPageDevtoolsSurface = ''
+  surface.className = 'min-w-0 flex-1 bg-background'
 
-  wrapper.append(divider.element, webview)
+  wrapper.append(divider.element, surface)
   container.appendChild(wrapper)
-  // Why after append: the guest is created from the attached element, matching how the page guest
-  // is navigated once its container is in the DOM.
-  webview.src = 'about:blank'
 
-  const teardown = (): void => {
+  const opened = await window.api.browser.openDevTools({
+    browserPageId,
+    bounds: readRect(surface)
+  })
+  if (!opened) {
     divider.release()
     wrapper.remove()
-  }
-
-  const devToolsWebContentsId = await whenWebviewAttached(webview)
-  if (devToolsWebContentsId === null) {
-    teardown()
     return false
   }
 
-  const opened = await window.api.browser.openDevTools({ browserPageId, devToolsWebContentsId })
-  if (!opened) {
-    teardown()
-    return false
-  }
-
-  dockedByPageId.set(browserPageId, { wrapper, webview, release: divider.release })
+  const stopTracking = trackRect(browserPageId, surface)
+  dockedByPageId.set(browserPageId, {
+    wrapper,
+    surface,
+    release: () => {
+      stopTracking()
+      divider.release()
+    }
+  })
   return true
 }
 
@@ -186,22 +167,15 @@ export function closeBrowserPageDevTools(browserPageId: string): void {
     return
   }
   dockedByPageId.delete(browserPageId)
-  void window.api.browser.closeDevTools({ browserPageId })
-  // Why: removing a focused <webview> strands focus on a dead element and the pane stops taking keys.
-  if (document.activeElement === docked.webview) {
-    docked.webview.blur()
-  }
   docked.release()
   docked.wrapper.remove()
+  void window.api.browser.closeDevTools({ browserPageId })
 }
 
-export async function toggleBrowserPageDevTools(
-  browserPageId: string,
-  webviewPartition: string
-): Promise<boolean> {
+export async function toggleBrowserPageDevTools(browserPageId: string): Promise<boolean> {
   if (dockedByPageId.has(browserPageId)) {
     closeBrowserPageDevTools(browserPageId)
     return false
   }
-  return openBrowserPageDevTools(browserPageId, webviewPartition)
+  return openBrowserPageDevTools(browserPageId)
 }

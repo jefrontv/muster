@@ -2564,8 +2564,13 @@ const api = {
 
     openDevTools: (args: {
       browserPageId: string
-      devToolsWebContentsId: number
+      bounds: { x: number; y: number; width: number; height: number }
     }): Promise<boolean> => ipcRenderer.invoke('browser:openDevTools', args),
+
+    setDevToolsBounds: (args: {
+      browserPageId: string
+      bounds: { x: number; y: number; width: number; height: number }
+    }): Promise<boolean> => ipcRenderer.invoke('browser:setDevToolsBounds', args),
 
     closeDevTools: (args: { browserPageId: string }): Promise<boolean> =>
       ipcRenderer.invoke('browser:closeDevTools', args),

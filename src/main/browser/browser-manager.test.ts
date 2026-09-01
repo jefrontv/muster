@@ -14,7 +14,10 @@ const {
   guestSetWindowOpenHandlerMock,
   guestOpenDevToolsMock,
   webContentsFromIdMock,
-  screenGetCursorScreenPointMock
+  screenGetCursorScreenPointMock,
+  openDevToolsDockMock,
+  setDevToolsDockBoundsMock,
+  closeDevToolsDockMock
 } = vi.hoisted(() => ({
   appGetPathMock: vi.fn(() => '/downloads'),
   shellOpenExternalMock: vi.fn(),
@@ -27,7 +30,10 @@ const {
   guestOpenDevToolsMock: vi.fn(),
   webContentsFromIdMock: vi.fn(),
   screenGetCursorScreenPointMock: vi.fn(() => ({ x: 0, y: 0 })),
-  openPopupWithOriginBarMock: vi.fn()
+  openPopupWithOriginBarMock: vi.fn(),
+  openDevToolsDockMock: vi.fn(() => true),
+  setDevToolsDockBoundsMock: vi.fn(() => true),
+  closeDevToolsDockMock: vi.fn(() => true)
 }))
 
 vi.mock('electron', () => ({
@@ -52,6 +58,14 @@ vi.mock('electron', () => ({
 
 vi.mock('./popup-origin-bar-window', () => ({
   openPopupWithOriginBar: openPopupWithOriginBarMock
+}))
+
+// Why mock: placement is devtools-dock's contract (covered in its own suite). Here the subject is
+// the guest lookup and the CDP handover that has to happen before the dock is asked to open.
+vi.mock('./devtools-dock', () => ({
+  openDevToolsDock: openDevToolsDockMock,
+  setDevToolsDockBounds: setDevToolsDockBoundsMock,
+  closeDevToolsDock: closeDevToolsDockMock
 }))
 
 import { browserManager } from './browser-manager'
@@ -101,6 +115,12 @@ describe('browserManager', () => {
     guestSetBackgroundThrottlingMock.mockReset()
     guestSetWindowOpenHandlerMock.mockReset()
     guestOpenDevToolsMock.mockReset()
+    openDevToolsDockMock.mockReset()
+    openDevToolsDockMock.mockReturnValue(true)
+    setDevToolsDockBoundsMock.mockReset()
+    setDevToolsDockBoundsMock.mockReturnValue(true)
+    closeDevToolsDockMock.mockReset()
+    closeDevToolsDockMock.mockReturnValue(true)
     webContentsFromIdMock.mockReset()
     openPopupWithOriginBarMock.mockReset()
     browserManager.unregisterAll()
@@ -3026,44 +3046,44 @@ describe('browserManager', () => {
       })
     }
 
-    it('renders devtools into the host so they dock instead of detaching', async () => {
-      const guest = createGuest(901)
-      const host = { id: 902, isDestroyed: vi.fn(() => false) }
-      registerGuestForTab(guest, host)
+    const BOUNDS = { x: 12, y: 34, width: 480, height: 600 }
+    const WINDOW = { id: 1 } as never
 
-      const ok = await browserManager.openDevTools('tab-devtools', host.id)
+    it('opens the dock for a registered tab', () => {
+      const guest = createGuest(901)
+      registerGuestForTab(guest, null)
+
+      const ok = browserManager.openDevTools('tab-devtools', WINDOW, BOUNDS)
 
       expect(ok).toBe(true)
-      expect(guest.setDevToolsWebContents).toHaveBeenCalledWith(host)
-      // Why assert no argument: any `mode` makes Electron dock DevTools natively to the window and
-      // leaves our host showing a placeholder instead of the inspector.
-      expect(guestOpenDevToolsMock).toHaveBeenCalledWith()
+      expect(openDevToolsDockMock).toHaveBeenCalledWith(
+        expect.objectContaining({ browserPageId: 'tab-devtools', guest, bounds: BOUNDS })
+      )
     })
 
-    it('releases the CDP target, or the inspector renders empty', async () => {
+    it('releases the CDP target before opening, or the inspector renders empty', () => {
       const guest = createGuest(911)
-      const host = { id: 912, isDestroyed: vi.fn(() => false) }
-      registerGuestForTab(guest, host)
+      registerGuestForTab(guest, null)
       const dbg = guest.debugger as { detach: ReturnType<typeof vi.fn> }
 
-      await browserManager.openDevTools('tab-devtools', host.id)
+      browserManager.openDevTools('tab-devtools', WINDOW, BOUNDS)
+
       // Why: Electron gives a target to `webContents.debugger` OR DevTools. With the anti-detection
       // debugger still attached the front-end loads but binds no session — panels, no content.
       expect(dbg.detach).toHaveBeenCalledTimes(1)
       const detachOrder = dbg.detach.mock.invocationCallOrder[0] ?? 0
-      const openOrder = guestOpenDevToolsMock.mock.invocationCallOrder[0] ?? 0
+      const openOrder = openDevToolsDockMock.mock.invocationCallOrder[0] ?? 0
       expect(detachOrder).toBeLessThan(openOrder)
     })
 
     it('hands the target back when devtools close', () => {
       vi.useFakeTimers()
       const guest = createGuest(913)
-      const host = { id: 914, isDestroyed: vi.fn(() => false) }
-      registerGuestForTab(guest, host)
+      registerGuestForTab(guest, null)
       const dbg = guest.debugger as { attach: ReturnType<typeof vi.fn> }
       dbg.attach.mockClear()
 
-      void browserManager.openDevTools('tab-devtools', host.id)
+      browserManager.openDevTools('tab-devtools', WINDOW, BOUNDS)
       browserManager.closeDevTools('tab-devtools')
       // Why: the re-attach is debounced through the same path a proxy restart uses.
       vi.advanceTimersByTime(600)
@@ -3071,38 +3091,30 @@ describe('browserManager', () => {
       expect(dbg.attach).toHaveBeenCalled()
     })
 
-    it('closes a live session before repointing, because rebinding a host throws', async () => {
-      const guest = createGuest(903, { isDevToolsOpened: vi.fn(() => true) })
-      const host = { id: 904, isDestroyed: vi.fn(() => false) }
-      registerGuestForTab(guest, host)
-
-      await browserManager.openDevTools('tab-devtools', host.id)
-
-      expect(guest.closeDevTools).toHaveBeenCalledTimes(1)
-      expect(guest.setDevToolsWebContents).toHaveBeenCalledWith(host)
-    })
-
-    it('refuses a host that is gone rather than falling back to a detached window', async () => {
-      const guest = createGuest(905)
+    it('hands the target back when the dock refuses to open', () => {
+      vi.useFakeTimers()
+      const guest = createGuest(915)
       registerGuestForTab(guest, null)
+      const dbg = guest.debugger as { attach: ReturnType<typeof vi.fn> }
+      dbg.attach.mockClear()
+      openDevToolsDockMock.mockReturnValueOnce(false)
 
-      const ok = await browserManager.openDevTools('tab-devtools', 9999)
+      const ok = browserManager.openDevTools('tab-devtools', WINDOW, BOUNDS)
+      vi.advanceTimersByTime(600)
 
+      // Why: a failed open must not leave the guest permanently stripped of anti-detection.
       expect(ok).toBe(false)
-      expect(guestOpenDevToolsMock).not.toHaveBeenCalled()
-      expect(guest.setDevToolsWebContents).not.toHaveBeenCalled()
-    })
-
-    it('closes devtools for a registered tab', () => {
-      const guest = createGuest(907)
-      registerGuestForTab(guest, null)
-
-      expect(browserManager.closeDevTools('tab-devtools')).toBe(true)
-      expect(guest.closeDevTools).toHaveBeenCalledTimes(1)
+      expect(dbg.attach).toHaveBeenCalled()
     })
 
     it('reports failure for a tab with no guest', () => {
-      expect(browserManager.closeDevTools('tab-never-registered')).toBe(false)
+      expect(browserManager.openDevTools('tab-never-registered', WINDOW, BOUNDS)).toBe(false)
+      expect(openDevToolsDockMock).not.toHaveBeenCalled()
+    })
+
+    it('forwards bounds updates to the dock', () => {
+      browserManager.setDevToolsBounds('tab-devtools', BOUNDS)
+      expect(setDevToolsDockBoundsMock).toHaveBeenCalledWith('tab-devtools', BOUNDS)
     })
   })
 })

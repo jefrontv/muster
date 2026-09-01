@@ -5,6 +5,7 @@ import { browserCertificateTrustController, browserManager } from '../browser/br
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
 import { browserSessionRegistry } from '../browser/browser-session-registry'
 import { readExtensionManifest } from '../browser/browser-extension-loader'
+import type { DevToolsDockBounds } from '../browser/devtools-dock'
 import {
   openExtensionSettingsPage,
   type OpenExtensionPageResult
@@ -198,6 +199,7 @@ export function registerBrowserHandlers(): void {
   ipcMain.removeHandler('browser:unregisterGuest')
   ipcMain.removeHandler('browser:openDevTools')
   ipcMain.removeHandler('browser:closeDevTools')
+  ipcMain.removeHandler('browser:setDevToolsBounds')
   ipcMain.removeHandler('browser:setViewportOverride')
   ipcMain.removeHandler('browser:setAnnotationViewportBridge')
   ipcMain.removeHandler('browser:acceptDownload')
@@ -405,11 +407,27 @@ export function registerBrowserHandlers(): void {
 
   ipcMain.handle(
     'browser:openDevTools',
-    (event, args: { browserPageId: string; devToolsWebContentsId: number }) => {
+    (event, args: { browserPageId: string; bounds: DevToolsDockBounds }) => {
       if (!isTrustedBrowserRenderer(event.sender)) {
         return false
       }
-      return browserManager.openDevTools(args.browserPageId, args.devToolsWebContentsId)
+      // Why the sender's window: the dock is a native child view, so it has to be parented to the
+      // window the pane is actually in — not a global "main window" that may not be this one.
+      const window = BrowserWindow.fromWebContents(event.sender)
+      if (!window) {
+        return false
+      }
+      return browserManager.openDevTools(args.browserPageId, window, args.bounds)
+    }
+  )
+
+  ipcMain.handle(
+    'browser:setDevToolsBounds',
+    (event, args: { browserPageId: string; bounds: DevToolsDockBounds }) => {
+      if (!isTrustedBrowserRenderer(event.sender)) {
+        return false
+      }
+      return browserManager.setDevToolsBounds(args.browserPageId, args.bounds)
     }
   )
 

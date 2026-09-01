@@ -2934,8 +2934,6 @@ function BrowserPagePane({
     defaultSessionProfile?.partition ??
     fallbackBrowserPartition ??
     ORCA_BROWSER_PARTITION
-  const webviewPartitionRef = useRef(webviewPartition)
-  webviewPartitionRef.current = webviewPartition
   const [devToolsDocked, setDevToolsDocked] = useState(() =>
     isBrowserPageDevToolsDocked(browserTab.id)
   )
@@ -2945,9 +2943,7 @@ function BrowserPagePane({
     setDevToolsDocked(isBrowserPageDevToolsDocked(browserTab.id))
   }, [browserTab.id])
   const toggleDevTools = useCallback((): void => {
-    void toggleBrowserPageDevTools(browserTabIdRef.current, webviewPartitionRef.current).then(
-      setDevToolsDocked
-    )
+    void toggleBrowserPageDevTools(browserTabIdRef.current).then(setDevToolsDocked)
   }, [])
   const browserSessionImportState = useAppStore((s) => s.browserSessionImportState)
   const clearBrowserSessionImportState = useAppStore((s) => s.clearBrowserSessionImportState)
@@ -4913,9 +4909,7 @@ function BrowserPagePane({
                   onClick={() => {
                     // Why: Inspect must always end with devtools showing, so it opens rather than
                     // toggles — a second Inspect on an open dock should not close it.
-                    void openBrowserPageDevTools(browserTab.id, webviewPartition).then(
-                      setDevToolsDocked
-                    )
+                    void openBrowserPageDevTools(browserTab.id).then(setDevToolsDocked)
                     setContextMenu(null)
                   }}
                 >
