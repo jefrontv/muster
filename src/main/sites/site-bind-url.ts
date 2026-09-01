@@ -30,7 +30,10 @@ const FIELD_ALIASES = {
   username: ['username', 'user'],
   rootPath: ['root_path', 'root-path', 'root'],
   liveDomain: ['live-domain', 'live_domain', 'live-url', 'live_url', 'live'],
-  environment: ['branch', 'env', 'environment'],
+  // `env` leads so generated links say what they mean. `branch` still parses — links already in
+  // circulation use it, and it now also selects the git branch (see deriveCheckoutBranch).
+  environment: ['env', 'environment', 'branch'],
+  checkoutBranch: ['checkout', 'git_branch', 'git-branch'],
   deployCommand: ['deploy_command', 'deploy-command', 'build_command', 'build-command'],
   themeDistPath: [
     'theme_dist_path',
@@ -54,6 +57,7 @@ const FIELD_LIMITS: Record<BindUrlFieldKey, number> = {
   rootPath: MAX_PATH_FIELD_LENGTH,
   liveDomain: MAX_FIELD_LENGTH,
   environment: MAX_FIELD_LENGTH,
+  checkoutBranch: MAX_FIELD_LENGTH,
   deployCommand: MAX_PATH_FIELD_LENGTH,
   themeDistPath: MAX_PATH_FIELD_LENGTH,
   notes: MAX_NOTES_LENGTH
@@ -264,6 +268,9 @@ export function parseSiteBindUrl(url: unknown): SiteBindUrlParse {
     liveDomainProtocol: live.protocol,
     localDomain: deriveBindLocalDomain(raw.reponame, raw.liveDomain),
     environment: raw.environment,
+    // A link that names an environment names the branch too, unless it says otherwise. `branch=`
+    // is the alias people actually write, and reading it as environment-only cloned the default.
+    checkoutBranch: raw.checkoutBranch.length > 0 ? raw.checkoutBranch : raw.environment,
     deployCommand: raw.deployCommand,
     themeDistPath: raw.themeDistPath,
     notes: raw.notes

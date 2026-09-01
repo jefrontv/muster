@@ -20,8 +20,16 @@ export type SiteBindFields = {
   liveDomainProtocol: 'http' | 'https'
   /** Derived from reponame/liveDomain, e.g. acme.local — never taken from the link directly. */
   localDomain: string
-  /** Target environment name; the link's `branch`/`env` parameter. */
+  /** Target environment name; the link's `env`/`branch` parameter. */
   environment: string
+  /**
+   * Git branch to check out when cloning. Defaults to `environment`, because a link saying
+   * `branch=staging` means both "the staging environment" and "the staging branch" — reading it as
+   * only the former silently cloned the repository's default branch instead.
+   *
+   * Empty when the link named no environment, or when the branch does not exist on the remote.
+   */
+  checkoutBranch: string
   deployCommand: string
   themeDistPath: string
   notes: string

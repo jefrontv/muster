@@ -2,7 +2,7 @@
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { dialog, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { homedir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { z } from 'zod'
 import type { Store } from '../persistence'
 import type {
@@ -42,6 +42,9 @@ import { invalidateAuthorizedRootsCache } from './filesystem-auth'
 import type { ChildProcess } from 'node:child_process'
 import { access, mkdir, readdir, rm } from 'node:fs/promises'
 import { gitExecFileAsync, gitSpawn, nonInteractiveGitEnv } from '../git/runner'
+
+/** A ref probe is a metadata round trip; anything slower than this is a network problem, not an answer. */
+const REMOTE_BRANCH_PROBE_TIMEOUT_MS = 15_000
 import { isAbsolute, join, posix } from 'node:path'
 import {
   cleanupClaimedCloneTarget,
@@ -2213,9 +2216,33 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
     }
   })
 
+  /**
+   * Whether `branch` exists on the remote at `url`.
+   *
+   * Best effort by design: a probe that cannot answer — no network, no credentials, a URL git
+   * dislikes — reports false, so the clone proceeds on the default branch instead of failing. Being
+   * wrong here costs the caller the branch they asked for, never the checkout itself.
+   */
+  async function remoteBranchExists(url: string, branch: string): Promise<boolean> {
+    if (branch.length === 0) {
+      return false
+    }
+    try {
+      const { stdout } = await gitExecFileAsync(
+        // '--' is not accepted here; ls-remote takes the ref pattern positionally after the URL.
+        ['ls-remote', '--heads', url, `refs/heads/${branch}`],
+        // cwd only decides which git binary/host the runner picks; the probe itself is remote-only.
+        { cwd: tmpdir(), env: nonInteractiveGitEnv(), timeout: REMOTE_BRANCH_PROBE_TIMEOUT_MS }
+      )
+      return stdout.trim().length > 0
+    } catch {
+      return false
+    }
+  }
+
   ipcMain.handle(
     'repos:clone',
-    async (_event, args: { url: string; destination: string }): Promise<Repo> => {
+    async (_event, args: { url: string; destination: string; branch?: string }): Promise<Repo> => {
       // Why: derive the repo folder name from the URL's last segment, matching default git clone behavior.
       const clonePath = deriveValidatedClonePath(args)
       const clonePathKey = getClonePathComparisonKey(clonePath)
@@ -2241,6 +2268,14 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
         await mkdir(args.destination, { recursive: true })
         const claimedTarget = await claimCloneTarget(clonePath)
 
+        // Why probe instead of just passing --branch: `git clone --branch X` fails outright when X
+        // is absent, which would turn "the branch moved or was never pushed" into a failed setup.
+        // ls-remote is one cheap round trip and lets an unknown branch fall back to the default.
+        const requestedBranch = args.branch?.trim() ?? ''
+        const branchArgs = (await remoteBranchExists(args.url, requestedBranch))
+          ? ['--branch', requestedBranch]
+          : []
+
         // Why: spawn (not execFile) avoids the maxBuffer limit — clone progress on stderr can exceed Node's 1 MB default.
         // Why: --progress forces git to emit progress even when stderr isn't a TTY.
         const cloneMetadataRef: { current: ActiveCloneMetadata | null } = { current: null }
@@ -2249,7 +2284,7 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
           // Why: '--' isolates the URL so a malicious URL can't be read as git flags (command injection).
           let proc: ReturnType<typeof gitSpawn>
           try {
-            proc = gitSpawn(['clone', '--progress', '--', args.url, clonePath], {
+            proc = gitSpawn(['clone', '--progress', ...branchArgs, '--', args.url, clonePath], {
               cwd: args.destination,
               // Why: without this, an auth-needing clone pops Git Credential Manager's OAuth window on Windows, unclosable in a restricted env (issue #7652).
               env: nonInteractiveGitEnv(),

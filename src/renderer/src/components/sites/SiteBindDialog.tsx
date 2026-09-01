@@ -192,7 +192,9 @@ export function SiteBindDialog(): React.JSX.Element | null {
       // Orca's own clone: it streams progress and registers the Repo, so this flow never shells git.
       const repo = await window.api.repos.clone({
         url: pendingBind.suggestedCloneUrl || resolvedCloneUrl,
-        destination
+        destination,
+        // The link named a branch: check it out rather than landing on the repo default.
+        branch: pendingBind.fields.checkoutBranch
       })
       setSelectedPath(repo.path)
     } catch (cloneError) {
@@ -216,7 +218,8 @@ export function SiteBindDialog(): React.JSX.Element | null {
     try {
       const repo = await window.api.repos.clone({
         url: pendingBind.suggestedCloneUrl || resolvedCloneUrl,
-        destination: root
+        destination: root,
+        branch: pendingBind.fields.checkoutBranch
       })
       setSelectedPath(repo.path)
       await confirm(pendingBind, repo.path)

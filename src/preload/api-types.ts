@@ -1474,7 +1474,8 @@ export type PreloadApi = {
     pickFolder: () => Promise<string | null>
     pickFolders: () => Promise<string[]>
     pickDirectory: () => Promise<string | null>
-    clone: (args: { url: string; destination: string }) => Promise<Repo>
+    /** `branch` checks out that branch when the remote has it; otherwise the default is used. */
+    clone: (args: { url: string; destination: string; branch?: string }) => Promise<Repo>
     cloneRemote: (args: { connectionId: string; url: string; destination: string }) => Promise<Repo>
     createRemote: (args: {
       connectionId: string

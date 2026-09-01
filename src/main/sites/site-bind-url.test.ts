@@ -215,6 +215,34 @@ describe('bounded field guards', () => {
   })
 })
 
+// Why: `branch=staging` set up a staging ENVIRONMENT and then cloned the repository's default
+// branch, because nothing in the link ever reached the clone. A link naming a branch means both.
+describe('checkout branch', () => {
+  it('takes the branch from the environment parameter', () => {
+    const parsed = parseOk('muster://configure?hostname=h.example.com&username=u&branch=staging')
+    expect(parsed.fields.environment).toBe('staging')
+    expect(parsed.fields.checkoutBranch).toBe('staging')
+  })
+
+  it('accepts env= for the same thing', () => {
+    const parsed = parseOk('muster://configure?hostname=h.example.com&username=u&env=staging')
+    expect(parsed.fields.checkoutBranch).toBe('staging')
+  })
+
+  it('lets an explicit checkout override the environment name', () => {
+    const parsed = parseOk(
+      'muster://configure?hostname=h.example.com&username=u&env=staging&checkout=main'
+    )
+    expect(parsed.fields.environment).toBe('staging')
+    expect(parsed.fields.checkoutBranch).toBe('main')
+  })
+
+  it('is empty when the link names no environment', () => {
+    const parsed = parseOk('muster://configure?hostname=h.example.com&username=u')
+    expect(parsed.fields.checkoutBranch).toBe('')
+  })
+})
+
 describe('generateSiteBindUrl', () => {
   it('round-trips every field through parseSiteBindUrl', () => {
     const fields = {
@@ -226,6 +254,7 @@ describe('generateSiteBindUrl', () => {
       liveDomainProtocol: 'https' as const,
       localDomain: 'acme.local',
       environment: 'staging',
+      checkoutBranch: 'staging',
       deployCommand: 'npm ci && npm run build:prod',
       themeDistPath: 'wp-content/themes/<theme>/assets/dist',
       notes: 'client hand-off'
