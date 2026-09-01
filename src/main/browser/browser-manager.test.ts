@@ -2970,20 +2970,39 @@ describe('browserManager', () => {
     const createGuest = (
       id: number,
       overrides: Record<string, unknown> = {}
-    ): Record<string, unknown> => ({
-      id,
-      isDestroyed: vi.fn(() => false),
-      getType: vi.fn(() => 'webview'),
-      setBackgroundThrottling: guestSetBackgroundThrottlingMock,
-      setWindowOpenHandler: guestSetWindowOpenHandlerMock,
-      on: guestOnMock,
-      off: guestOffMock,
-      openDevTools: guestOpenDevToolsMock,
-      closeDevTools: vi.fn(),
-      isDevToolsOpened: vi.fn(() => false),
-      setDevToolsWebContents: vi.fn(),
-      ...overrides
-    })
+    ): Record<string, unknown> => {
+      // Why stateful: attach/detach are only meaningful against real attachment state — a constant
+      // isAttached() would let a broken handover pass, since re-attach is skipped when already on.
+      let attached = true
+      const debuggerStub = {
+        isAttached: vi.fn(() => attached),
+        attach: vi.fn(() => {
+          attached = true
+        }),
+        detach: vi.fn(() => {
+          attached = false
+        }),
+        sendCommand: vi.fn().mockResolvedValue(undefined),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+      return {
+        id,
+        isDestroyed: vi.fn(() => false),
+        getType: vi.fn(() => 'webview'),
+        setBackgroundThrottling: guestSetBackgroundThrottlingMock,
+        setWindowOpenHandler: guestSetWindowOpenHandlerMock,
+        on: guestOnMock,
+        off: guestOffMock,
+        once: vi.fn(),
+        openDevTools: guestOpenDevToolsMock,
+        closeDevTools: vi.fn(),
+        isDevToolsOpened: vi.fn(() => false),
+        setDevToolsWebContents: vi.fn(),
+        debugger: debuggerStub,
+        ...overrides
+      }
+    }
 
     const registerGuestForTab = (
       guest: Record<string, unknown>,
@@ -3016,8 +3035,40 @@ describe('browserManager', () => {
 
       expect(ok).toBe(true)
       expect(guest.setDevToolsWebContents).toHaveBeenCalledWith(host)
-      // Why: any `mode` here would reopen the detached window this feature exists to replace.
+      // Why assert no argument: any `mode` makes Electron dock DevTools natively to the window and
+      // leaves our host showing a placeholder instead of the inspector.
       expect(guestOpenDevToolsMock).toHaveBeenCalledWith()
+    })
+
+    it('releases the CDP target, or the inspector renders empty', async () => {
+      const guest = createGuest(911)
+      const host = { id: 912, isDestroyed: vi.fn(() => false) }
+      registerGuestForTab(guest, host)
+      const dbg = guest.debugger as { detach: ReturnType<typeof vi.fn> }
+
+      await browserManager.openDevTools('tab-devtools', host.id)
+      // Why: Electron gives a target to `webContents.debugger` OR DevTools. With the anti-detection
+      // debugger still attached the front-end loads but binds no session — panels, no content.
+      expect(dbg.detach).toHaveBeenCalledTimes(1)
+      const detachOrder = dbg.detach.mock.invocationCallOrder[0] ?? 0
+      const openOrder = guestOpenDevToolsMock.mock.invocationCallOrder[0] ?? 0
+      expect(detachOrder).toBeLessThan(openOrder)
+    })
+
+    it('hands the target back when devtools close', () => {
+      vi.useFakeTimers()
+      const guest = createGuest(913)
+      const host = { id: 914, isDestroyed: vi.fn(() => false) }
+      registerGuestForTab(guest, host)
+      const dbg = guest.debugger as { attach: ReturnType<typeof vi.fn> }
+      dbg.attach.mockClear()
+
+      void browserManager.openDevTools('tab-devtools', host.id)
+      browserManager.closeDevTools('tab-devtools')
+      // Why: the re-attach is debounced through the same path a proxy restart uses.
+      vi.advanceTimersByTime(600)
+
+      expect(dbg.attach).toHaveBeenCalled()
     })
 
     it('closes a live session before repointing, because rebinding a host throws', async () => {

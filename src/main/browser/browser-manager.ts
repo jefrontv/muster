@@ -229,6 +229,11 @@ export class BrowserManager {
   private readonly policyAttachedGuestIds = new Set<number>()
   private readonly offscreenGuestIds = new Set<number>()
   private readonly policyCleanupByGuestId = new Map<number, () => void>()
+  // Why: lets docked devtools take the CDP target from the anti-detection injector and give it back.
+  private readonly antiDetectionControlByGuestId = new Map<
+    number,
+    { suspend: () => void; resume: () => void }
+  >()
   private readonly clickedLinkFrameNameByGuestId = new Map<number, string>()
   private readonly loadErrorsByGuestId = new Map<number, BrowserLoadError>()
   // Why: did-start-navigation hides the overlay optimistically; stash the cleared error so did-fail-load(-3) can restore an aborted nav.
@@ -273,10 +278,11 @@ export class BrowserManager {
   // Why: addScriptToEvaluateOnNewDocument (CDP) is the only reliable pre-page-script hook per nav; executeJavaScript ran on the old page context.
   private injectAntiDetection(guest: Electron.WebContents): () => void {
     let disposed = false
+    let suspended = false
     let reattachTimer: ReturnType<typeof setTimeout> | null = null
 
     const attach = (): void => {
-      if (disposed || guest.isDestroyed()) {
+      if (disposed || suspended || guest.isDestroyed()) {
         return
       }
       try {
@@ -298,13 +304,44 @@ export class BrowserManager {
 
     // Why: proxy/bridge stop detaches the debugger and drops injections; re-attach (500ms delay to avoid racing a mid-restart) to keep overrides.
     const onDetach = (): void => {
-      if (!disposed && !guest.isDestroyed() && reattachTimer === null) {
+      if (!disposed && !suspended && !guest.isDestroyed() && reattachTimer === null) {
         reattachTimer = setTimeout(() => {
           reattachTimer = null
           attach()
         }, 500)
       }
     }
+
+    // Why: Electron gives a target to EITHER `webContents.debugger` or DevTools, never both — with
+    // the debugger attached, a DevTools front-end loads but binds no session and renders an empty
+    // inspector. Docking devtools therefore hands the target over, and the reattach above must stay
+    // out of the way until it is handed back, or it would steal the session 500ms later.
+    const suspend = (): void => {
+      suspended = true
+      if (reattachTimer !== null) {
+        clearTimeout(reattachTimer)
+        reattachTimer = null
+      }
+      try {
+        if (guest.debugger.isAttached()) {
+          guest.debugger.detach()
+        }
+      } catch {
+        /* best-effort — guest may be gone */
+      }
+    }
+
+    const resume = (): void => {
+      if (!suspended) {
+        return
+      }
+      suspended = false
+      // Why route through onDetach: it reuses the same debounced re-attach, so resuming cannot race
+      // DevTools tearing its own session down.
+      onDetach()
+    }
+
+    this.antiDetectionControlByGuestId.set(guest.id, { suspend, resume })
 
     try {
       attach()
@@ -315,6 +352,7 @@ export class BrowserManager {
 
     return () => {
       disposed = true
+      this.antiDetectionControlByGuestId.delete(guest.id)
       if (reattachTimer !== null) {
         clearTimeout(reattachTimer)
         reattachTimer = null
@@ -1416,7 +1454,18 @@ export class BrowserManager {
     if (guest.isDevToolsOpened()) {
       guest.closeDevTools()
     }
+    // Why before opening: the anti-detection injector holds this target via `webContents.debugger`,
+    // and Electron hands a target to that OR to DevTools, never both. Leaving it attached is what
+    // produces a DevTools window whose panels render but stay completely empty.
+    const control = this.antiDetectionControlByGuestId.get(webContentsId)
+    control?.suspend()
+    // Why once(): covers the user closing DevTools from its own UI, where closeDevTools() below is
+    // never called and the guest would otherwise lose anti-detection until its next rebuild.
+    guest.once('devtools-closed', () => control?.resume())
     guest.setDevToolsWebContents(host)
+    // Why no `mode`: passing one makes Electron dock DevTools natively to the window and render only
+    // a "DevTools is docked to right" placeholder in our host. The bare call is what actually paints
+    // the inspector into the WebContents we positioned. Verified both ways against the running app.
     guest.openDevTools()
     return true
   }
@@ -1431,6 +1480,9 @@ export class BrowserManager {
       return false
     }
     guest.closeDevTools()
+    // Why also here: `devtools-closed` is the normal path, but resuming is idempotent and this
+    // guarantees the target comes back even if the event does not fire.
+    this.antiDetectionControlByGuestId.get(webContentsId)?.resume()
     return true
   }
 
