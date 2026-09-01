@@ -296,7 +296,8 @@ describe('buildThemeDist', () => {
 
     expect(runner.calls).toHaveLength(1)
     expect(runner.calls[0]!.command).toBe('/bin/sh')
-    expect(runner.calls[0]!.args).toEqual(['-c', 'npm ci && npm run build'])
+    // node --version leads every build so the run log records which runtime it actually used.
+    expect(runner.calls[0]!.args).toEqual(['-c', 'node --version && npm ci && npm run build'])
     expect(runner.calls[0]!.options?.cwd).toBe(wpDir)
     expect(runner.calls[0]!.options?.timeoutMs).toBe(THEME_BUILD_TIMEOUT_MS)
     expect(stages).toEqual(['Building theme'])
@@ -349,7 +350,7 @@ describe('buildThemeDist', () => {
 
     await buildThemeDist(context, config, paths, { runCommand: runner.run })
 
-    expect(runner.calls[0]!.args[1]).toBe('npm install && npm run build:prod')
+    expect(runner.calls[0]!.args[1]).toBe('node --version && npm install && npm run build:prod')
     expect(logs).toContain('Theme deploy: node_modules missing — running npm install…')
   })
 
@@ -464,9 +465,10 @@ describe('buildThemeDist', () => {
 
     expect(runner.calls[0]!.command).toBe('/bin/bash')
     expect(runner.calls[0]!.args[1]).toBe(
-      `. '${nvmScriptPath}' && nvm use '20.11' && npm ci && npm run build`
+      `. '${nvmScriptPath}' && nvm use '20.11' && node --version && npm ci && npm run build`
     )
-    expect(logs).toContain('Theme deploy: using Node 20.11 via nvm')
+    // The log must name the file and the pinned version, so a wrong pin is obvious without the source.
+    expect(logs.join('\n')).toContain('pins Node 20.11; running nvm use 20.11')
   })
 
   it('skips nvm when the pinned version has no nvm.sh to source', async () => {
@@ -485,12 +487,13 @@ describe('buildThemeDist', () => {
     })
 
     expect(runner.calls[0]!.command).toBe('/bin/sh')
-    expect(runner.calls[0]!.args[1]).toBe('npm ci && npm run build')
-    expect(logs).not.toContain('Theme deploy: using Node 20 via nvm')
+    expect(runner.calls[0]!.args[1]).toBe('node --version && npm ci && npm run build')
+    // Silence used to hide this case; it now says why it fell back.
+    expect(logs.join('\n')).toContain('no nvm at')
   })
 
   it('skips nvm when package.json pins nothing, even with nvm installed', async () => {
-    const { context } = createRecordingContext()
+    const { context, logs } = createRecordingContext()
     const nvmScriptPath = path.join(wpDir, 'nvm.sh')
     await writeFile(nvmScriptPath, '# nvm')
     const config = createConfig(wpDir, { deployCommand: 'npm ci && npm run build' })
@@ -503,6 +506,10 @@ describe('buildThemeDist', () => {
     await buildThemeDist(context, config, paths, { runCommand: runner.run, nvmScriptPath })
 
     expect(runner.calls[0]!.command).toBe('/bin/sh')
+    // Why: an unpinned build used to log nothing about Node, so a build on the wrong runtime was
+    // indistinguishable from a correctly pinned one. It must name the file it found no pin in.
+    expect(logs.join('\n')).toContain('no engines.node in')
+    expect(logs.join('\n')).toContain(path.join(wpDir, 'package.json'))
   })
 
   it('quotes an nvm path containing a space', async () => {

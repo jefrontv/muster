@@ -234,11 +234,27 @@ export async function buildThemeDist(
     await rm(paths.localDistPath, { recursive: true, force: true })
   }
 
-  const nodeVersion = await resolvePinnedNodeVersion(buildDir)
+  // Why this much detail: a build that picked the wrong Node reported only "using Node X", so
+  // working out WHERE X came from meant reading the source. Naming the file and the raw range makes
+  // a wrong pin self-evident in the run log, and the silent cases say why they were silent.
+  const pinnedNodeVersion = await resolvePinnedNodeVersion(buildDir)
+  const packageJsonPath = path.join(buildDir, 'package.json')
   const nvmScriptPath = dependencies.nvmScriptPath ?? path.join(homedir(), '.nvm', 'nvm.sh')
-  const nvmVersion = nodeVersion !== null && (await pathExists(nvmScriptPath)) ? nodeVersion : null
-  if (nvmVersion !== null) {
-    context.log(`Theme deploy: using Node ${nvmVersion} via nvm`)
+  const nvmScriptExists = await pathExists(nvmScriptPath)
+  const nvmVersion = pinnedNodeVersion !== null && nvmScriptExists ? pinnedNodeVersion : null
+
+  if (pinnedNodeVersion === null) {
+    context.log(
+      `Theme deploy: no engines.node in ${packageJsonPath} — building with the default node on PATH`
+    )
+  } else if (!nvmScriptExists) {
+    context.log(
+      `Theme deploy: engines.node pins Node ${pinnedNodeVersion}, but no nvm at ${nvmScriptPath} — building with the default node on PATH`
+    )
+  } else {
+    context.log(
+      `Theme deploy: engines.node in ${packageJsonPath} pins Node ${pinnedNodeVersion}; running nvm use ${pinnedNodeVersion}`
+    )
   }
 
   const { command, installCommand } = await resolveThemeBuildCommand(
@@ -252,10 +268,14 @@ export async function buildThemeDist(
   context.status('Building theme')
   const output = createBuildOutputTail(context)
   // nvm.sh is a bash function library, so that path needs bash rather than sh.
+  //
+  // `node --version` runs either way: the pinned branch proves nvm honoured the version asked for,
+  // and the unpinned branch records which node the shell actually found. Without it a build that
+  // ran on the wrong runtime leaves no evidence of what it ran on.
   const script =
     nvmVersion === null
-      ? command
-      : `. ${quoteShellArgument(nvmScriptPath)} && nvm use ${quoteShellArgument(nvmVersion)} && ${command}`
+      ? `node --version && ${command}`
+      : `. ${quoteShellArgument(nvmScriptPath)} && nvm use ${quoteShellArgument(nvmVersion)} && node --version && ${command}`
   const result = await runDeployShellScript(
     dependencies.runCommand ?? streamCommand,
     nvmVersion === null ? '/bin/sh' : '/bin/bash',
