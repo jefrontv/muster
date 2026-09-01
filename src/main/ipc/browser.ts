@@ -197,6 +197,7 @@ export function registerBrowserHandlers(): void {
   ipcMain.removeHandler('browser:registerGuest')
   ipcMain.removeHandler('browser:unregisterGuest')
   ipcMain.removeHandler('browser:openDevTools')
+  ipcMain.removeHandler('browser:closeDevTools')
   ipcMain.removeHandler('browser:setViewportOverride')
   ipcMain.removeHandler('browser:setAnnotationViewportBridge')
   ipcMain.removeHandler('browser:acceptDownload')
@@ -402,11 +403,21 @@ export function registerBrowserHandlers(): void {
     return true
   })
 
-  ipcMain.handle('browser:openDevTools', (event, args: { browserPageId: string }) => {
+  ipcMain.handle(
+    'browser:openDevTools',
+    (event, args: { browserPageId: string; devToolsWebContentsId: number }) => {
+      if (!isTrustedBrowserRenderer(event.sender)) {
+        return false
+      }
+      return browserManager.openDevTools(args.browserPageId, args.devToolsWebContentsId)
+    }
+  )
+
+  ipcMain.handle('browser:closeDevTools', (event, args: { browserPageId: string }) => {
     if (!isTrustedBrowserRenderer(event.sender)) {
       return false
     }
-    return browserManager.openDevTools(args.browserPageId)
+    return browserManager.closeDevTools(args.browserPageId)
   })
 
   ipcMain.handle(

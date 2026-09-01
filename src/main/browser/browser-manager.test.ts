@@ -2965,4 +2965,93 @@ describe('browserManager', () => {
       )
     })
   })
+
+  describe('openDevTools', () => {
+    const createGuest = (
+      id: number,
+      overrides: Record<string, unknown> = {}
+    ): Record<string, unknown> => ({
+      id,
+      isDestroyed: vi.fn(() => false),
+      getType: vi.fn(() => 'webview'),
+      setBackgroundThrottling: guestSetBackgroundThrottlingMock,
+      setWindowOpenHandler: guestSetWindowOpenHandlerMock,
+      on: guestOnMock,
+      off: guestOffMock,
+      openDevTools: guestOpenDevToolsMock,
+      closeDevTools: vi.fn(),
+      isDevToolsOpened: vi.fn(() => false),
+      setDevToolsWebContents: vi.fn(),
+      ...overrides
+    })
+
+    const registerGuestForTab = (
+      guest: Record<string, unknown>,
+      host: Record<string, unknown> | null
+    ): void => {
+      webContentsFromIdMock.mockImplementation((id: number) => {
+        if (id === guest.id) {
+          return guest
+        }
+        if (host && id === host.id) {
+          return host
+        }
+        return null
+      })
+      // Why: registerGuest only trusts guests that passed attach-time policy install.
+      browserManager.attachGuestPolicies(guest as never)
+      browserManager.registerGuest({
+        browserPageId: 'tab-devtools',
+        webContentsId: guest.id as number,
+        rendererWebContentsId
+      })
+    }
+
+    it('renders devtools into the host so they dock instead of detaching', async () => {
+      const guest = createGuest(901)
+      const host = { id: 902, isDestroyed: vi.fn(() => false) }
+      registerGuestForTab(guest, host)
+
+      const ok = await browserManager.openDevTools('tab-devtools', host.id)
+
+      expect(ok).toBe(true)
+      expect(guest.setDevToolsWebContents).toHaveBeenCalledWith(host)
+      // Why: any `mode` here would reopen the detached window this feature exists to replace.
+      expect(guestOpenDevToolsMock).toHaveBeenCalledWith()
+    })
+
+    it('closes a live session before repointing, because rebinding a host throws', async () => {
+      const guest = createGuest(903, { isDevToolsOpened: vi.fn(() => true) })
+      const host = { id: 904, isDestroyed: vi.fn(() => false) }
+      registerGuestForTab(guest, host)
+
+      await browserManager.openDevTools('tab-devtools', host.id)
+
+      expect(guest.closeDevTools).toHaveBeenCalledTimes(1)
+      expect(guest.setDevToolsWebContents).toHaveBeenCalledWith(host)
+    })
+
+    it('refuses a host that is gone rather than falling back to a detached window', async () => {
+      const guest = createGuest(905)
+      registerGuestForTab(guest, null)
+
+      const ok = await browserManager.openDevTools('tab-devtools', 9999)
+
+      expect(ok).toBe(false)
+      expect(guestOpenDevToolsMock).not.toHaveBeenCalled()
+      expect(guest.setDevToolsWebContents).not.toHaveBeenCalled()
+    })
+
+    it('closes devtools for a registered tab', () => {
+      const guest = createGuest(907)
+      registerGuestForTab(guest, null)
+
+      expect(browserManager.closeDevTools('tab-devtools')).toBe(true)
+      expect(guest.closeDevTools).toHaveBeenCalledTimes(1)
+    })
+
+    it('reports failure for a tab with no guest', () => {
+      expect(browserManager.closeDevTools('tab-never-registered')).toBe(false)
+    })
+  })
 })

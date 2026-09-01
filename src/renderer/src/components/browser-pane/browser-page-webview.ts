@@ -65,3 +65,21 @@ export function ensureBrowserPageWebview({
 
   return { container: activeContainer, created, webview }
 }
+
+/**
+ * Caps the guest to an emulated CSS width and centres it in whatever pane space is left over.
+ *
+ * Why: CDP's metrics override changes what the PAGE believes its viewport is, but the guest element
+ * still spans the pane — so a 375px emulation renders hard against the left edge with the page's own
+ * background flooding the rest. Capping the element and letting auto margins absorb the slack centres
+ * the frame, and does so only when slack exists: with no room the guest just fills the pane. Margins
+ * are measured against the guest's siblings, so a docked devtools panel narrows the space the frame
+ * centres within instead of pushing it off-centre.
+ */
+export function applyBrowserPageEmulatedWidth(
+  webview: Electron.WebviewTag,
+  cssWidthPx: number | null
+): void {
+  webview.style.maxWidth = cssWidthPx === null ? '' : `${cssWidthPx}px`
+  webview.style.marginInline = cssWidthPx === null ? '' : 'auto'
+}

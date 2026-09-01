@@ -2562,8 +2562,13 @@ const api = {
     unregisterGuest: (args: { browserPageId: string }): Promise<void> =>
       ipcRenderer.invoke('browser:unregisterGuest', args),
 
-    openDevTools: (args: { browserPageId: string }): Promise<boolean> =>
-      ipcRenderer.invoke('browser:openDevTools', args),
+    openDevTools: (args: {
+      browserPageId: string
+      devToolsWebContentsId: number
+    }): Promise<boolean> => ipcRenderer.invoke('browser:openDevTools', args),
+
+    closeDevTools: (args: { browserPageId: string }): Promise<boolean> =>
+      ipcRenderer.invoke('browser:closeDevTools', args),
 
     setViewportOverride: (args: {
       browserPageId: string

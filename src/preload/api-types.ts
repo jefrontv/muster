@@ -590,7 +590,12 @@ export type BrowserApi = {
     webContentsId: number
   }) => Promise<boolean>
   unregisterGuest: (args: { browserPageId: string }) => Promise<void>
-  openDevTools: (args: { browserPageId: string }) => Promise<boolean>
+  openDevTools: (args: {
+    browserPageId: string
+    /** Hosts the devtools UI, so it renders inside the pane instead of a detached window. */
+    devToolsWebContentsId: number
+  }) => Promise<boolean>
+  closeDevTools: (args: { browserPageId: string }) => Promise<boolean>
   setViewportOverride: (args: {
     browserPageId: string
     override: BrowserViewportOverride | null

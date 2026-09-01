@@ -83,7 +83,12 @@ import {
   getBrowserViewportPreset
 } from '../../../../shared/browser-viewport-presets'
 import { rememberLiveBrowserUrl } from './browser-runtime'
-import { ensureBrowserPageWebview } from './browser-page-webview'
+import { applyBrowserPageEmulatedWidth, ensureBrowserPageWebview } from './browser-page-webview'
+import {
+  isBrowserPageDevToolsDocked,
+  openBrowserPageDevTools,
+  toggleBrowserPageDevTools
+} from './browser-page-devtools'
 import {
   destroyPersistentWebview,
   moveFocusToRendererBeforeWebviewDetach,
@@ -2929,6 +2934,21 @@ function BrowserPagePane({
     defaultSessionProfile?.partition ??
     fallbackBrowserPartition ??
     ORCA_BROWSER_PARTITION
+  const webviewPartitionRef = useRef(webviewPartition)
+  webviewPartitionRef.current = webviewPartition
+  const [devToolsDocked, setDevToolsDocked] = useState(() =>
+    isBrowserPageDevToolsDocked(browserTab.id)
+  )
+  // Why: the dock outlives this component (it hangs off the parked viewport, not the React tree),
+  // so remounting on a worktree switch must read the live state rather than assume closed.
+  useEffect(() => {
+    setDevToolsDocked(isBrowserPageDevToolsDocked(browserTab.id))
+  }, [browserTab.id])
+  const toggleDevTools = useCallback((): void => {
+    void toggleBrowserPageDevTools(browserTabIdRef.current, webviewPartitionRef.current).then(
+      setDevToolsDocked
+    )
+  }, [])
   const browserSessionImportState = useAppStore((s) => s.browserSessionImportState)
   const clearBrowserSessionImportState = useAppStore((s) => s.clearBrowserSessionImportState)
   const showBrowserZoomFeedback = useCallback((level: number): void => {
@@ -3751,6 +3771,8 @@ function BrowserPagePane({
         browserPageId: browserTab.id,
         override: preset ? browserViewportPresetToOverride(preset) : null
       })
+      // Why: the element cap is what actually centres the frame; CDP only changes what the page believes.
+      applyBrowserPageEmulatedWidth(webview, preset?.width ?? null)
     }
 
     const handleDidStartLoading = (): void => {
@@ -4621,6 +4643,17 @@ function BrowserPagePane({
     webview.style.display = showFailureOverlay ? 'none' : 'flex'
   }, [showFailureOverlay])
 
+  useEffect(() => {
+    const webview = webviewRef.current
+    if (!webview) {
+      return
+    }
+    // Why: picking a preset on an already-loaded page fires no dom-ready, so the frame would keep
+    // the previous width until the next navigation.
+    const preset = getBrowserViewportPreset(browserTab.viewportPresetId ?? null)
+    applyBrowserPageEmulatedWidth(webview, preset?.width ?? null)
+  }, [browserTab.viewportPresetId])
+
   const handleInternalFileDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (!event.dataTransfer.types.includes(WORKSPACE_FILE_PATH_MIME)) {
       return
@@ -4878,7 +4911,11 @@ function BrowserPagePane({
                   role="menuitem"
                   className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
                   onClick={() => {
-                    void window.api.browser.openDevTools({ browserPageId: browserTab.id })
+                    // Why: Inspect must always end with devtools showing, so it opens rather than
+                    // toggles — a second Inspect on an open dock should not close it.
+                    void openBrowserPageDevTools(browserTab.id, webviewPartition).then(
+                      setDevToolsDocked
+                    )
                     setContextMenu(null)
                   }}
                 >
@@ -5029,13 +5066,21 @@ function BrowserPagePane({
 
           <Button
             size="icon"
-            variant="ghost"
+            variant={devToolsDocked ? 'secondary' : 'ghost'}
             className="h-7 w-7"
-            onClick={() => void window.api.browser.openDevTools({ browserPageId: browserTab.id })}
-            title={translate(
-              'auto.components.browser.pane.BrowserPane.ec75d0c412',
-              'Open browser devtools'
-            )}
+            onClick={toggleDevTools}
+            aria-pressed={devToolsDocked}
+            title={
+              devToolsDocked
+                ? translate(
+                    'auto.components.browser.pane.BrowserPane.b41f0c7d92',
+                    'Close browser devtools'
+                  )
+                : translate(
+                    'auto.components.browser.pane.BrowserPane.ec75d0c412',
+                    'Open browser devtools'
+                  )
+            }
           >
             <SquareCode className="size-4" />
           </Button>

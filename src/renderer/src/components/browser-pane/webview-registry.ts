@@ -1,5 +1,6 @@
 import { clearLiveBrowserUrl } from './browser-runtime'
 import { removeBrowserPageViewport } from './browser-page-viewport'
+import { closeBrowserPageDevTools } from './browser-page-devtools'
 
 // Why: the webview registry is shared coordination state between BrowserPane
 // (React component) and store-layer cleanup helpers (shutdownWorktreeBrowsers,
@@ -189,6 +190,9 @@ export function moveFocusToRendererBeforeWebviewDetach(webview: Electron.Webview
 }
 
 export function destroyPersistentWebview(browserTabId: string): void {
+  // Why: devtools are bound to this guest's WebContents, so a teardown (close, or the partition/
+  // parent rebuild in ensureBrowserPageWebview) leaves the dock showing a dead session.
+  closeBrowserPageDevTools(browserTabId)
   const webview = webviewRegistry.get(browserTabId)
   if (!webview) {
     // Why: the viewport can outlive a missing webview entry; tear it down on

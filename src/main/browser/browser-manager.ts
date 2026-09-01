@@ -1392,7 +1392,11 @@ export class BrowserManager {
   }
 
   // Why: guests are isolated from Orca's preload bridge, so main owns the devtools escape hatch after a tab→guest lookup.
-  async openDevTools(browserTabId: string): Promise<boolean> {
+  //
+  // A guest's devtools cannot dock with `mode`: docking is relative to a window's own contents, and a
+  // <webview> guest isn't one, so every mode lands in a detached window. Rendering devtools INTO a
+  // WebContents the renderer positions is the only way to place them, hence the required host id.
+  async openDevTools(browserTabId: string, devToolsWebContentsId: number): Promise<boolean> {
     const webContentsId = this.webContentsIdByTabId.get(browserTabId)
     if (!webContentsId) {
       return false
@@ -1403,7 +1407,30 @@ export class BrowserManager {
       this.unregisterGuest(browserTabId)
       return false
     }
-    guest.openDevTools({ mode: 'detach' })
+    const host = webContents.fromId(devToolsWebContentsId)
+    if (!host || host.isDestroyed()) {
+      return false
+    }
+    // Why: a host can only back one devtools session, and re-pointing a live one throws. Closing
+    // first makes a re-open idempotent when the renderer's host was rebuilt but the guest's wasn't.
+    if (guest.isDevToolsOpened()) {
+      guest.closeDevTools()
+    }
+    guest.setDevToolsWebContents(host)
+    guest.openDevTools()
+    return true
+  }
+
+  closeDevTools(browserTabId: string): boolean {
+    const webContentsId = this.webContentsIdByTabId.get(browserTabId)
+    if (!webContentsId) {
+      return false
+    }
+    const guest = webContents.fromId(webContentsId)
+    if (!guest || guest.isDestroyed()) {
+      return false
+    }
+    guest.closeDevTools()
     return true
   }
 
