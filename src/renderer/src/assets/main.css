@@ -4,6 +4,7 @@
 @import 'katex/dist/katex.min.css';
 @import './rich-markdown-editor.css';
 @import './markdown-preview.css';
+@import './plan-annotation.css';
 @import './terminal.css';
 @import './mobile-page.css';
 

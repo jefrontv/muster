@@ -3,12 +3,16 @@
 // Self-mounted and IPC-driven, like ChatConnectorConfirmDialog: the generic activeModal switchboard
 // has no producers outside renderer-originated interaction, and an agent-initiated dialog needs to
 // appear without one. Reviews queue rather than collide, because two agents (or one, since
-// annotate_plan runs off the server's dispatch chain) can ask at the same time and a dropped
-// request is a review the user did for nothing.
+// annotate_plan runs off the server's dispatch chain) can ask at once, and a dropped request is a
+// review the user did for nothing.
+//
+// Annotation is inline: select a passage, comment on it where it sits, and the passage stays
+// highlighted for the rest of the review. Notes listed away from the text lose the thing they are
+// about the moment the document is longer than a screen.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
-import { Check, MessageSquarePlus, Send, ThumbsUp, Trash2, X } from 'lucide-react'
+import { Check, MessageSquare, Copy, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type {
@@ -16,39 +20,52 @@ import type {
   PlanAnnotationRequest,
   PlanAnnotationResult
 } from '../../../../shared/plan-annotation-types'
+import { PlanAnnotationComposer, type ComposerAnchor } from './PlanAnnotationComposer'
 import { PlanAnnotationDocument } from './PlanAnnotationDocument'
+import { PlanAnnotationNoteList } from './PlanAnnotationNoteList'
 import { clearDraft, draftKey, loadDraft, saveDraft } from './plan-annotation-drafts'
+import {
+  clearPlanHighlights,
+  findRangeForQuote,
+  paintPlanHighlights
+} from './plan-annotation-highlights'
 import {
   createNote,
   previewFeedback,
   readSelectionAnchor,
   sortNotes,
   toAnnotations,
-  type DraftNote,
-  type SelectionAnchor
+  type DraftNote
 } from './plan-annotation-notes'
 
 export function PlanAnnotationDialog(): React.JSX.Element | null {
   const [queue, setQueue] = useState<PlanAnnotationRequest[]>([])
   const [notes, setNotes] = useState<DraftNote[]>([])
-  const [anchor, setAnchor] = useState<SelectionAnchor | null>(null)
-  const [body, setBody] = useState('')
+  const [composer, setComposer] = useState<ComposerAnchor | null>(null)
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+
+  const scroller = useRef<HTMLDivElement | null>(null)
+  const document_ = useRef<HTMLDivElement | null>(null)
+  // Live Ranges cannot be serialized into a draft, so they are kept beside the notes and rebuilt
+  // from the quote when a draft is restored.
+  const rangesById = useRef(new Map<string, Range>())
+  const pendingRange = useRef<Range | null>(null)
 
   useEffect(
     () => window.api.planAnnotation.onRequest((request) => setQueue((q) => [...q, request])),
     []
   )
 
-  // Why: a review can be queued before this window existed (or before a reload finished), and
-  // without this the agent waits out the whole timeout for a modal nobody ever saw.
+  // Why: a review can be queued before this window existed, and without this the agent waits out
+  // the whole timeout for a modal nobody ever saw.
   useEffect(() => {
     void window.api.planAnnotation
       .listPending()
       .then((pending) =>
         setQueue((q) => [
           ...q,
-          ...pending.filter((p) => !q.some((e) => e.requestId === p.requestId))
+          ...pending.filter((p) => !q.some((entry) => entry.requestId === p.requestId))
         ])
       )
       .catch(() => undefined)
@@ -58,10 +75,12 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   const key = current ? draftKey(current) : null
 
   useEffect(() => {
+    rangesById.current.clear()
     setNotes(key ? loadDraft(key) : [])
-    setAnchor(null)
-    setBody('')
+    setComposer(null)
+    setActiveNoteId(null)
     setShowPreview(false)
+    return () => clearPlanHighlights()
   }, [key])
 
   useEffect(() => {
@@ -70,27 +89,75 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     }
   }, [key, notes])
 
-  const captureSelection = useCallback(() => {
-    const next = readSelectionAnchor(window.getSelection())
-    if (next) {
-      setAnchor(next)
+  // Rebuild any missing Range (restored draft) and repaint, after the document has rendered.
+  useEffect(() => {
+    const root = document_.current
+    if (!root) {
+      return
     }
+    for (const note of notes) {
+      if (note.kind === 'global' || rangesById.current.has(note.id)) {
+        continue
+      }
+      const range = findRangeForQuote(root, note.quote, note.startLine)
+      if (range) {
+        rangesById.current.set(note.id, range)
+      }
+    }
+    const ranges = notes
+      .map((note) => rangesById.current.get(note.id))
+      .filter((range): range is Range => range !== undefined)
+    paintPlanHighlights({
+      ranges,
+      activeRange: activeNoteId ? (rangesById.current.get(activeNoteId) ?? null) : null
+    })
+  }, [notes, activeNoteId, current?.content])
+
+  const openComposer = useCallback(() => {
+    const selection = window.getSelection()
+    const parsed = readSelectionAnchor(selection)
+    if (!parsed || !selection) {
+      return
+    }
+    const range = selection.getRangeAt(0)
+    pendingRange.current = range.cloneRange()
+    const rect = range.getBoundingClientRect()
+    setComposer({
+      quote: parsed.quote,
+      rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right }
+    })
   }, [])
 
-  const addNote = useCallback(
-    (kind: DraftNote['kind']) => {
-      const text = body.trim()
-      // A bare "looks good" or "delete" on a selection is meaningful with no prose; a comment is not.
-      if (kind === 'comment' && text.length === 0) {
+  const saveNote = useCallback(
+    (body: string) => {
+      const selectionAnchor = composer ? { quote: composer.quote, startLine: 0, endLine: 0 } : null
+      const resolved = readSelectionAnchorFromRange(pendingRange.current) ?? selectionAnchor
+      if (!resolved) {
         return
       }
-      setNotes((existing) => [...existing, createNote({ kind, body: text, anchor })])
-      setBody('')
-      setAnchor(null)
+      const note = createNote({ kind: 'comment', body, anchor: resolved })
+      if (pendingRange.current) {
+        rangesById.current.set(note.id, pendingRange.current)
+      }
+      setNotes((existing) => [...existing, note])
+      setComposer(null)
+      pendingRange.current = null
       window.getSelection()?.removeAllRanges()
     },
-    [anchor, body]
+    [composer]
   )
+
+  const removeNote = useCallback((id: string) => {
+    rangesById.current.delete(id)
+    setNotes((existing) => existing.filter((note) => note.id !== id))
+  }, [])
+
+  const addGlobal = useCallback(() => {
+    const body = window.prompt('Comment on the whole plan')
+    if (body && body.trim().length > 0) {
+      setNotes((existing) => [...existing, createNote({ kind: 'global', body, anchor: null })])
+    }
+  }, [])
 
   const settle = useCallback(
     (decision: PlanAnnotationDecision) => {
@@ -107,6 +174,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
       if (key) {
         clearDraft(key)
       }
+      clearPlanHighlights()
       setQueue((q) => q.slice(1))
     },
     [current, key, notes]
@@ -119,116 +187,71 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   }
 
   const waiting = queue.length - 1
+  const bounds = scroller.current?.getBoundingClientRect() ?? null
 
   return (
     <Dialog open onOpenChange={(next) => !next && settle('dismissed')}>
-      <DialogContent className="flex h-[85vh] max-w-6xl flex-col gap-0 p-0">
-        <DialogHeader className="border-b border-border/70 px-4 py-3">
-          <DialogTitle className="flex items-center gap-2 text-sm">
-            {current.title}
+      <DialogContent className="flex h-[88vh] w-[min(1200px,calc(100vw-4rem))] flex-col gap-0 p-0 sm:max-w-[1200px]">
+        <DialogHeader className="flex-row items-center gap-3 border-b border-border/70 px-4 py-2.5">
+          <DialogTitle className="flex min-w-0 items-center gap-2 text-sm">
+            <span className="truncate">{current.title}</span>
             {current.round > 1 ? (
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
+              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
                 round {current.round}
               </span>
             ) : null}
             {waiting > 0 ? (
-              <span className="text-[11px] font-normal text-muted-foreground">
+              <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
                 {waiting} more waiting
               </span>
             ) : null}
           </DialogTitle>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={addGlobal}>
+              <MessageSquare className="size-3.5" />
+              Global comment
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void navigator.clipboard.writeText(current.content)}
+            >
+              <Copy className="size-3.5" />
+              Copy plan
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1">
           <div
-            className="min-w-0 flex-1 overflow-y-auto px-4 py-3"
-            onMouseUp={captureSelection}
-            onKeyUp={captureSelection}
+            ref={scroller}
+            className="min-w-0 flex-1 overflow-y-auto px-10 py-6"
+            onMouseUp={openComposer}
           >
-            <PlanAnnotationDocument content={current.content} />
+            <PlanAnnotationDocument ref={document_} content={current.content} />
           </div>
 
-          <aside className="flex w-[340px] shrink-0 flex-col border-l border-border/70">
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-              {showPreview ? (
-                <pre className="text-[11px] whitespace-pre-wrap text-muted-foreground">
-                  {previewFeedback(notes)}
-                </pre>
-              ) : sorted.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Select text in the plan to comment on it, or add a general note below.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {sorted.map((note) => (
-                    <li key={note.id} className="rounded-md border border-border/70 p-2 text-xs">
-                      <div className="mb-1 flex items-center justify-between gap-2">
-                        <span className="font-medium">
-                          {note.kind === 'global' ? 'General' : `Line ${note.startLine}`}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={() => setNotes((e) => e.filter((n) => n.id !== note.id))}
-                          aria-label="Remove note"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </div>
-                      {note.quote ? (
-                        <p className="mb-1 border-l-2 border-border pl-2 text-muted-foreground">
-                          {note.quote.slice(0, 160)}
-                        </p>
-                      ) : null}
-                      <p>{note.body}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="space-y-2 border-t border-border/70 p-3">
-              {anchor ? (
-                <p className="truncate text-[11px] text-muted-foreground">
-                  On line {anchor.startLine}: “{anchor.quote.slice(0, 60)}”
-                </p>
-              ) : null}
-              <textarea
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                placeholder={anchor ? 'Comment on the selection…' : 'General note about the plan…'}
-                className="min-h-[64px] w-full resize-y rounded-md border border-input bg-transparent px-2 py-1.5 text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              />
-              <div className="flex flex-wrap gap-1">
-                <Button size="sm" variant="secondary" onClick={() => addNote('comment')}>
-                  <MessageSquarePlus className="size-3.5" />
-                  Comment
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!anchor}
-                  onClick={() => addNote('delete')}
-                >
-                  <Trash2 className="size-3.5" />
-                  Remove
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!anchor}
-                  onClick={() => addNote('looks_good')}
-                >
-                  <ThumbsUp className="size-3.5" />
-                  Looks good
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowPreview((shown) => !shown)}>
-                  {showPreview ? 'Notes' : 'Preview'}
-                </Button>
-              </div>
-            </div>
-          </aside>
+          <PlanAnnotationNoteList
+            notes={sorted}
+            previewText={showPreview ? previewFeedback(notes) : null}
+            activeNoteId={activeNoteId}
+            onTogglePreview={() => setShowPreview((shown) => !shown)}
+            onFocusNote={setActiveNoteId}
+            onRemoveNote={removeNote}
+          />
         </div>
+
+        {composer && bounds ? (
+          <PlanAnnotationComposer
+            anchor={composer}
+            bounds={bounds}
+            onCancel={() => {
+              setComposer(null)
+              pendingRange.current = null
+            }}
+            onSave={saveNote}
+          />
+        ) : null}
 
         <div className="flex items-center justify-end gap-2 border-t border-border/70 px-4 py-3">
           <Button variant="ghost" onClick={() => settle('dismissed')}>
@@ -249,4 +272,18 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
       </DialogContent>
     </Dialog>
   )
+}
+
+/** Re-reads the anchor off the stored Range, so the saved lines match the highlighted text. */
+function readSelectionAnchorFromRange(
+  range: Range | null
+): { quote: string; startLine: number; endLine: number } | null {
+  if (!range) {
+    return null
+  }
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+  const parsed = readSelectionAnchor(selection)
+  return parsed
 }
