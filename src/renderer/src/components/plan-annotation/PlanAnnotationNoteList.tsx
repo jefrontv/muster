@@ -38,7 +38,7 @@ export function PlanAnnotationNoteList({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto p-3">
         {previewText !== null ? (
           <pre className="text-[11px] whitespace-pre-wrap text-muted-foreground">{previewText}</pre>
         ) : notes.length === 0 ? (

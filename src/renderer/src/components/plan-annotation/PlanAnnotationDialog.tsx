@@ -145,13 +145,15 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     const selection = window.getSelection()
     const parsed = readSelectionAnchor(selection)
     const pane = scroller.current
-    if (!parsed || !selection || !pane) {
+    const shell = pane?.closest('[data-slot="dialog-content"]') ?? null
+    if (!parsed || !selection || !pane || !shell) {
       return
     }
     const range = selection.getRangeAt(0)
     pendingRange.current = range.cloneRange()
     const rect = range.getBoundingClientRect()
     const pageRect = pane.getBoundingClientRect()
+    const shellRect = shell.getBoundingClientRect()
     // Both rects are captured now rather than read during render: at render time the composer has
     // not been laid out yet, so a rect read then is stale and the box lands somewhere arbitrary.
     setComposer({
@@ -162,7 +164,8 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         bottom: pageRect.bottom,
         left: pageRect.left,
         right: pageRect.right
-      }
+      },
+      origin: { top: shellRect.top, left: shellRect.left }
     })
   }, [])
 
@@ -302,7 +305,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         <div className="flex min-h-0 flex-1">
           <div
             ref={scroller}
-            className="min-w-0 flex-1 overflow-y-auto"
+            className="scrollbar-sleek min-w-0 flex-1 overflow-y-auto"
             // Why gated on editing: a selection inside the textarea is a text cursor, not an
             // annotation, and popping a composer over the caret makes editing impossible.
             onMouseUp={editing ? undefined : openComposer}

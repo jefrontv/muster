@@ -5,7 +5,6 @@
 
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { MessageSquare, ThumbsUp, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
@@ -20,6 +19,16 @@ export type ComposerAnchor = {
   rect: { top: number; bottom: number; left: number; right: number }
   /** Viewport rect of the scroll container, so the box cannot escape the document pane. */
   bounds: { top: number; bottom: number; left: number; right: number }
+  /**
+   * Viewport origin of the positioned ancestor these coordinates are resolved against.
+   *
+   * Why not `position: fixed` and skip this: the dialog is translated (-50%,-50%), and a transform
+   * makes it the containing block for fixed descendants — so fixed coordinates land in the wrong
+   * place. Portalling out to <body> fixes the maths but escapes Radix's focus scope, which leaves
+   * the box visible and completely unclickable. Absolute-inside-the-dialog is the option that gets
+   * both right.
+   */
+  origin: { top: number; left: number }
 }
 
 /** Verbs a reviewer can attach to a passage. Freeform prose alone loses the reviewer's intent. */
@@ -66,14 +75,16 @@ export function PlanAnnotationComposer({
    */
   useLayoutEffect(() => {
     const height = box.current?.offsetHeight ?? 0
-    const { rect, bounds } = anchor
+    const { rect, bounds, origin } = anchor
     const centred = rect.left + (rect.right - rect.left) / 2 - WIDTH / 2
     const maxLeft = Math.max(bounds.left + EDGE, bounds.right - WIDTH - EDGE)
-    const left = Math.round(Math.min(Math.max(centred, bounds.left + EDGE), maxLeft))
+    const left = Math.min(Math.max(centred, bounds.left + EDGE), maxLeft)
     const below = rect.bottom + GAP
     const fitsBelow = below + height <= bounds.bottom - EDGE
-    const top = Math.round(fitsBelow ? below : Math.max(bounds.top + EDGE, rect.top - GAP - height))
-    setPlacement({ left, top })
+    const top = fitsBelow ? below : Math.max(bounds.top + EDGE, rect.top - GAP - height)
+    // All the clamping above is in viewport space; the box is absolute inside the dialog, so the
+    // last step is a translation into that box's coordinates.
+    setPlacement({ left: Math.round(left - origin.left), top: Math.round(top - origin.top) })
   }, [anchor, body, kind])
 
   const canSave = body.trim().length > 0 || KINDS.find((entry) => entry.kind === kind)?.standalone
@@ -87,10 +98,7 @@ export function PlanAnnotationComposer({
     }
   }
 
-  // Why a portal to body: DialogContent is translated (-50%,-50%), and a transform makes an
-  // element the containing block for position:fixed descendants. Rendered inside it, these
-  // viewport coordinates were resolved against the dialog instead — the box landed anywhere.
-  return createPortal(
+  return (
     <div
       ref={box}
       style={{
@@ -99,7 +107,7 @@ export function PlanAnnotationComposer({
         width: WIDTH,
         visibility: placement ? 'visible' : 'hidden'
       }}
-      className="fixed z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-xl"
+      className="absolute z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-xl"
       onMouseDown={(event) => event.stopPropagation()}
       onMouseUp={(event) => event.stopPropagation()}
     >
@@ -179,7 +187,6 @@ export function PlanAnnotationComposer({
           Save
         </Button>
       </div>
-    </div>,
-    document.body
+    </div>
   )
 }
