@@ -9,6 +9,7 @@ import { savePlanAttachment } from '../sites/plan-annotation-attachments'
 import {
   listPendingPlanAnnotations,
   respondPlanAnnotation,
+  setPlanAnnotationQueuedSender,
   setPlanAnnotationResolvedSender,
   setPlanAnnotationSender
 } from '../sites/plan-annotation-requests'
@@ -19,6 +20,7 @@ import type {
 
 export const PLAN_ANNOTATION_REQUEST_CHANNEL = 'planAnnotation:request'
 export const PLAN_ANNOTATION_RESOLVED_CHANNEL = 'planAnnotation:resolved'
+export const PLAN_ANNOTATION_QUEUED_CHANNEL = 'planAnnotation:queued'
 
 function broadcast(request: PlanAnnotationRequest): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -83,6 +85,13 @@ export function registerPlanAnnotationHandlers(): void {
   )
 
   setPlanAnnotationSender(broadcast)
+  setPlanAnnotationQueuedSender((count) => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) {
+        window.webContents.send(PLAN_ANNOTATION_QUEUED_CHANNEL, count)
+      }
+    }
+  })
   setPlanAnnotationResolvedSender((requestId) => {
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.isDestroyed()) {

@@ -905,6 +905,11 @@ const api = {
     respond: (args) => ipcRenderer.invoke('planAnnotation:respond', args),
     listPending: () => ipcRenderer.invoke('planAnnotation:listPending'),
     saveAttachment: (args) => ipcRenderer.invoke('planAnnotation:saveAttachment', args),
+    onQueued: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, count: number): void => callback(count)
+      ipcRenderer.on('planAnnotation:queued', listener)
+      return () => ipcRenderer.removeListener('planAnnotation:queued', listener)
+    },
     onResolved: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, requestId: string): void =>
         callback(requestId)

@@ -5,6 +5,7 @@ import {
   PLAN_ANNOTATION_TIMEOUT_MS,
   requestPlanAnnotation,
   respondPlanAnnotation,
+  setPlanAnnotationQueuedSender,
   setPlanAnnotationResolvedSender,
   setPlanAnnotationSender
 } from './plan-annotation-requests'
@@ -12,6 +13,7 @@ import type { PlanAnnotationRequest } from '../../shared/plan-annotation-types'
 
 const sent: PlanAnnotationRequest[] = []
 const resolved: string[] = []
+const depths: number[] = []
 
 function plan(title: string): Omit<PlanAnnotationRequest, 'requestId'> {
   return {
@@ -28,8 +30,10 @@ function plan(title: string): Omit<PlanAnnotationRequest, 'requestId'> {
 beforeEach(() => {
   sent.length = 0
   resolved.length = 0
+  depths.length = 0
   setPlanAnnotationSender((request) => sent.push(request))
   setPlanAnnotationResolvedSender((requestId) => resolved.push(requestId))
+  setPlanAnnotationQueuedSender((count) => depths.push(count))
 })
 
 afterEach(() => {
@@ -151,5 +155,35 @@ describe('settled announcements', () => {
 
     // Without this the window keeps a modal that looks live and answers nothing.
     expect(resolved).toEqual([id])
+  })
+})
+
+describe('queue depth', () => {
+  it('reports how many reviews are stacked behind the front one', async () => {
+    // Why this exists: only the front review is ever sent to a window, so a renderer counting the
+    // requests it received always saw one and could never tell the reviewer more was coming.
+    void requestPlanAnnotation(plan('first'))
+    expect(depths.at(-1)).toBe(0)
+
+    void requestPlanAnnotation(plan('second'))
+    void requestPlanAnnotation(plan('third'))
+    expect(depths.at(-1)).toBe(2)
+
+    // Only the front was ever pushed to the window, which is the behaviour that made the count
+    // necessary in the first place.
+    expect(sent.map((request) => request.title)).toEqual(['first'])
+
+    respondPlanAnnotation(sent[0]!.requestId, { decision: 'approved', annotations: [] })
+    await Promise.resolve()
+    expect(depths.at(-1)).toBe(1)
+    expect(sent.map((request) => request.title)).toEqual(['first', 'second'])
+  })
+
+  it('reports an empty queue once the last review settles', async () => {
+    void requestPlanAnnotation(plan('only'))
+    respondPlanAnnotation(sent[0]!.requestId, { decision: 'approved', annotations: [] })
+    await Promise.resolve()
+    expect(depths.at(-1)).toBe(0)
+    expect(listPendingPlanAnnotations()).toEqual([])
   })
 })

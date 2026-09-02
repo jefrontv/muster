@@ -15,6 +15,17 @@ export function usePlanReviewQueue(): {
 } {
   const [queue, setQueue] = useState<PlanAnnotationRequest[]>([])
 
+  /**
+   * Reviews stacked behind the front one, as reported by main.
+   *
+   * Why not `queue.length - 1`: main only ever sends the front review, because it owns the queue
+   * and each review's timer. This window therefore holds at most one, and counting its own list
+   * always said zero — the indicator could never fire while a backlog was building.
+   */
+  const [queued, setQueued] = useState(0)
+
+  useEffect(() => window.api.planAnnotation.onQueued((count) => setQueued(count)), [])
+
   useEffect(
     () => window.api.planAnnotation.onRequest((request) => setQueue((q) => [...q, request])),
     []
@@ -35,16 +46,18 @@ export function usePlanReviewQueue(): {
   useEffect(() => {
     void window.api.planAnnotation
       .listPending()
-      .then((pending) =>
+      .then((pending) => {
         setQueue((q) => [
           ...q,
           ...pending.filter((p) => !q.some((entry) => entry.requestId === p.requestId))
         ])
-      )
+        // Seeds the depth for a window that opened mid-backlog; main only pushes it on change.
+        setQueued(Math.max(0, pending.length - 1))
+      })
       .catch(() => undefined)
   }, [])
 
   const popCurrent = useCallback(() => setQueue((q) => q.slice(1)), [])
 
-  return { current: queue[0] ?? null, waiting: Math.max(0, queue.length - 1), popCurrent }
+  return { current: queue[0] ?? null, waiting: queued, popCurrent }
 }

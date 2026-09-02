@@ -32,6 +32,7 @@ const queue = new Map<string, PendingReview>()
 
 let sendRequest: ((request: PlanAnnotationRequest) => void) | null = null
 let sendResolved: ((requestId: string) => void) | null = null
+let sendQueued: ((count: number) => void) | null = null
 
 /** Production wiring broadcasts to every BrowserWindow; tests inject a spy. */
 export function setPlanAnnotationSender(
@@ -53,6 +54,26 @@ export function setPlanAnnotationResolvedSender(
   sendResolved = sender
 }
 
+/**
+ * Announces how many reviews are stacked behind the one on screen.
+ *
+ * Why a separate signal: only the front review is ever sent to a window, because main owns the
+ * queue and the per-review timers. That left the renderer counting a list it only ever had one
+ * entry of, so its "more waiting" indicator could never fire and a reviewer working through a
+ * backlog had no way to know more was coming.
+ */
+export function setPlanAnnotationQueuedSender(sender: ((count: number) => void) | null): void {
+  sendQueued = sender
+}
+
+function notifyQueued(): void {
+  try {
+    sendQueued?.(Math.max(0, queue.size - 1))
+  } catch {
+    // A destroyed window mid-broadcast must not stop a review arriving or settling.
+  }
+}
+
 function head(): PendingReview | null {
   for (const entry of queue.values()) {
     return entry
@@ -65,6 +86,7 @@ function settle(entry: PendingReview, result: PlanAnnotationResult): void {
     clearTimeout(entry.timer)
   }
   queue.delete(entry.request.requestId)
+  notifyQueued()
   entry.resolve(result)
   try {
     sendResolved?.(entry.request.requestId)
@@ -115,6 +137,8 @@ export function requestPlanAnnotation(
       timer: null
     })
     startFront()
+    // After startFront, so a review that went straight to the front reports a depth of zero.
+    notifyQueued()
   })
 }
 

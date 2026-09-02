@@ -978,6 +978,8 @@ export type PlanAnnotationApi = {
   /** Writes an attached image to disk and returns its absolute path for the agent. */
   saveAttachment: (args: { name: string; dataBase64: string }) => Promise<string>
   /** Fires when a review is settled anywhere, so a stale modal can drop it. */
+  /** How many reviews are stacked behind the one on screen. Main owns the queue, so it says. */
+  onQueued: (callback: (count: number) => void) => () => void
   onResolved: (callback: (requestId: string) => void) => () => void
   onRequest: (callback: (request: PlanAnnotationRequest) => void) => () => void
 }
