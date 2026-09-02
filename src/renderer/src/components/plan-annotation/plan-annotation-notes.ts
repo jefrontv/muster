@@ -10,14 +10,6 @@ export const LINE_END_ATTRIBUTE = 'data-plan-line-end'
 
 export type DraftNote = PlanAnnotation & { id: string }
 
-/**
- * Conventional-Comments style verbs a reviewer can stamp without writing prose.
- *
- * Why a fixed set: they exist so a reviewer can be precise in one click, and an open vocabulary
- * would just be freeform text with extra steps.
- */
-export const QUICK_LABELS = ['scope', 'test', 'risk', 'question', 'nit'] as const
-
 export type SelectionAnchor = {
   quote: string
   startLine: number
@@ -65,7 +57,7 @@ export function createNote(args: {
   kind: PlanAnnotationKind
   body: string
   anchor: SelectionAnchor | null
-  label?: string
+  attachments?: string[]
 }): DraftNote {
   const isGlobal = args.kind === 'global' || args.anchor === null
   return {
@@ -75,7 +67,7 @@ export function createNote(args: {
     startLine: isGlobal ? 0 : args.anchor!.startLine,
     endLine: isGlobal ? 0 : args.anchor!.endLine,
     body: args.body.trim(),
-    ...(args.label ? { label: args.label } : {})
+    ...(args.attachments && args.attachments.length > 0 ? { attachments: args.attachments } : {})
   }
 }
 
@@ -109,8 +101,10 @@ export function previewFeedback(notes: readonly DraftNote[]): string {
   }
   return sorted
     .map((note) => {
+      // Paths, so the agent can open the image rather than be handed its bytes.
+      const files = (note.attachments ?? []).map((path) => `\n  Attached: ${path}`).join('')
       if (note.kind === 'global') {
-        return `- **General:** ${note.body}`
+        return `- **General:** ${note.body}${files}`
       }
       const where =
         note.startLine === note.endLine
@@ -121,11 +115,9 @@ export function previewFeedback(notes: readonly DraftNote[]): string {
           ? `**Remove** (${where})`
           : note.kind === 'looks_good'
             ? `**Looks good** (${where})`
-            : note.kind === 'label'
-              ? `**${note.label ?? 'note'}** (${where})`
-              : `**Comment** (${where})`
+            : `**Comment** (${where})`
       const quoted = note.quote.length > 0 ? `\n  > ${note.quote.replace(/\n/g, '\n  > ')}` : ''
-      return `- ${head}${quoted}${note.body.length > 0 ? `\n  ${note.body}` : ''}`
+      return `- ${head}${quoted}${note.body.length > 0 ? `\n  ${note.body}` : ''}${files}`
     })
     .join('\n')
 }

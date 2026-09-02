@@ -51,8 +51,10 @@ function loadPlan(
 }
 
 function describeAnnotation(annotation: PlanAnnotation): string {
+  // Absolute paths: the agent opens the image itself, rather than being handed its bytes.
+  const files = (annotation.attachments ?? []).map((path) => `\n  Attached: ${path}`).join('')
   if (annotation.kind === 'global') {
-    return `- **General:** ${annotation.body}`
+    return `- **General:** ${annotation.body}${files}`
   }
   const where =
     annotation.startLine === annotation.endLine
@@ -63,14 +65,12 @@ function describeAnnotation(annotation: PlanAnnotation): string {
       ? `**Remove** (${where})`
       : annotation.kind === 'looks_good'
         ? `**Looks good** (${where})`
-        : annotation.kind === 'label'
-          ? `**${annotation.label ?? 'note'}** (${where})`
-          : `**Comment** (${where})`
+        : `**Comment** (${where})`
   // The quote is what actually locates the passage after the plan is rewritten; the line is a hint.
   const quote = annotation.quote.trim()
   const quoted = quote.length > 0 ? `\n  > ${quote.replace(/\n/g, '\n  > ')}` : ''
   const body = annotation.body.trim()
-  return `- ${head}${quoted}${body.length > 0 ? `\n  ${body}` : ''}`
+  return `- ${head}${quoted}${body.length > 0 ? `\n  ${body}` : ''}${files}`
 }
 
 /** Renders the result as the markdown the agent reads, so it never has to parse the JSON itself. */

@@ -27,10 +27,6 @@ const KIND_BADGE: Record<PlanAnnotationKind, { label: string; className: string 
     label: 'Looks good',
     className: 'bg-[color-mix(in_srgb,var(--plan-annotation-good)_28%,transparent)] text-foreground'
   },
-  label: {
-    label: 'Label',
-    className: 'bg-[color-mix(in_srgb,var(--plan-annotation-mark)_28%,transparent)] text-foreground'
-  },
   global: { label: 'Whole plan', className: 'bg-muted text-muted-foreground' }
 }
 
@@ -87,7 +83,7 @@ export function PlanAnnotationNoteList({
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}
                       >
-                        {note.kind === 'label' ? (note.label ?? badge.label) : badge.label}
+                        {badge.label}
                       </span>
                       {note.kind !== 'global' ? (
                         <span className="text-[10px] text-muted-foreground">

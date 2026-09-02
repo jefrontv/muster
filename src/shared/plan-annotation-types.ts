@@ -19,7 +19,6 @@ export type PlanAnnotationKind =
   | 'comment'
   | 'delete'
   | 'looks_good'
-  | 'label'
   /** Applies to the whole document; carries no quote or line range. */
   | 'global'
 
@@ -35,8 +34,13 @@ export type PlanAnnotation = {
   startLine: number
   endLine: number
   body: string
-  /** Only for `kind: 'label'`. */
-  label?: string
+  /**
+   * Absolute paths to images the reviewer attached.
+   *
+   * Paths rather than inline data: the agent can read a file, and a screenshot base64'd into a
+   * tool result would swamp its context for no gain.
+   */
+  attachments?: string[]
 }
 
 export type PlanAnnotationEdits = {

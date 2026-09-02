@@ -32,7 +32,6 @@ import { clearPlanHighlights } from './plan-annotation-highlights'
 import {
   createNote,
   previewFeedback,
-  QUICK_LABELS,
   readSelectionAnchor,
   sortNotes,
   toAnnotations,
@@ -185,11 +184,11 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   placeComposerRef.current = placeComposer
 
   const saveNote = useCallback(
-    (kind: PlanAnnotationKind, body: string, label?: string) => {
+    (kind: PlanAnnotationKind, body: string, attachments: string[]) => {
       if (editingNoteId) {
         applyNotes(
           notes.map((note) =>
-            note.id === editingNoteId ? { ...note, kind, body, ...(label ? { label } : {}) } : note
+            note.id === editingNoteId ? { ...note, kind, body, attachments } : note
           )
         )
       } else {
@@ -197,7 +196,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         if (!resolved) {
           return
         }
-        const note = createNote({ kind, body, anchor: resolved, label })
+        const note = createNote({ kind, body, anchor: resolved, attachments })
         if (pendingRange.current) {
           rangesById.current.set(note.id, pendingRange.current)
         }
@@ -267,6 +266,21 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
           lands on top of the header actions. Close lives in the footer with the other decisions. */}
       <DialogContent
         showCloseButton={false}
+        // Why intercept Escape: Radix would dismiss the whole review, which discards every note the
+        // reviewer wrote AND answers the waiting agent with 'no feedback'. Escape closes the thing
+        // on top; ending the review is deliberate, through the footer.
+        onEscapeKeyDown={(event) => {
+          event.preventDefault()
+          if (composer) {
+            setComposer(null)
+            setEditingNoteId(null)
+            pendingRange.current = null
+            return
+          }
+          if (globalOpen) {
+            setGlobalOpen(false)
+          }
+        }}
         className="flex h-[min(88vh,900px)] w-[min(1180px,calc(100vw-4rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1180px]"
       >
         <PlanAnnotationHeader
@@ -296,7 +310,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         <div className="flex min-h-0 flex-1">
           <div
             ref={scroller}
-            className="scrollbar-sleek min-w-0 flex-1 overflow-y-auto"
+            className="plan-annotation-canvas scrollbar-sleek min-w-0 flex-1 overflow-y-auto"
             // Why gated on editing: a selection inside the textarea is a text cursor, not an
             // annotation, and popping a composer over the caret makes editing impossible.
             onMouseUp={
@@ -309,7 +323,9 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
                     })
             }
           >
-            <div className={`mx-auto w-full px-10 py-8 ${VIEW_MODE_WIDTH[viewMode]}`}>
+            <div
+              className={`plan-annotation-sheet mx-auto my-6 w-full px-10 py-9 ${VIEW_MODE_WIDTH[viewMode]}`}
+            >
               {editing ? (
                 <textarea
                   value={editedContent ?? current.content}
@@ -349,8 +365,15 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
               setEditingNoteId(null)
               pendingRange.current = null
             }}
-            labels={QUICK_LABELS}
-            existing={editingNote ? { kind: editingNote.kind, body: editingNote.body } : null}
+            existing={
+              editingNote
+                ? {
+                    kind: editingNote.kind,
+                    body: editingNote.body,
+                    attachments: editingNote.attachments
+                  }
+                : null
+            }
             onDelete={() => {
               if (editingNoteId) {
                 removeNote(editingNoteId)

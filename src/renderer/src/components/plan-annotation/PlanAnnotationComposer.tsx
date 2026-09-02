@@ -5,7 +5,7 @@
 
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { MessageSquare, ThumbsUp, Trash2, X } from 'lucide-react'
+import { Image as ImageIcon, MessageSquare, ThumbsUp, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
 
@@ -46,22 +46,22 @@ const KINDS: {
 
 export function PlanAnnotationComposer({
   anchor,
-  labels,
   existing,
   onCancel,
   onDelete,
   onSave
 }: {
   anchor: ComposerAnchor
-  /** Quick labels the reviewer can stamp on a passage, e.g. "scope", "test". */
-  labels: readonly string[]
   /** Present when reopening a saved note, so the box edits rather than adds. */
-  existing: { kind: PlanAnnotationKind; body: string } | null
+  existing: { kind: PlanAnnotationKind; body: string; attachments?: string[] } | null
   onCancel: () => void
   onDelete: () => void
-  onSave: (kind: PlanAnnotationKind, body: string, label?: string) => void
+  onSave: (kind: PlanAnnotationKind, body: string, attachments: string[]) => void
 }): React.JSX.Element {
   const [body, setBody] = useState(existing?.body ?? '')
+  const [attachments, setAttachments] = useState<string[]>(existing?.attachments ?? [])
+  const [dragging, setDragging] = useState(false)
+  const fileInput = useRef<HTMLInputElement | null>(null)
   const [kind, setKind] = useState<PlanAnnotationKind>(
     existing && existing.kind !== 'global' ? existing.kind : 'comment'
   )
@@ -100,14 +100,39 @@ export function PlanAnnotationComposer({
     })
   }, [anchor, body, kind])
 
-  const canSave = body.trim().length > 0 || KINDS.find((entry) => entry.kind === kind)?.standalone
-  const save = (label?: string): void => {
-    if (label) {
-      onSave('label', body.trim(), label)
-      return
-    }
+  const canSave =
+    body.trim().length > 0 ||
+    attachments.length > 0 ||
+    KINDS.find((entry) => entry.kind === kind)?.standalone === true
+
+  const save = (): void => {
     if (canSave) {
-      onSave(kind, body.trim())
+      onSave(kind, body.trim(), attachments)
+    }
+  }
+
+  /**
+   * Writes each image to disk and keeps the path.
+   *
+   * Why paths: the agent can open a file, and base64 in a tool result would bury the actual
+   * feedback under a screenshot.
+   */
+  const attach = async (files: readonly File[]): Promise<void> => {
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        continue
+      }
+      try {
+        const buffer = await file.arrayBuffer()
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        const path = await window.api.planAnnotation.saveAttachment({
+          name: file.name,
+          dataBase64: base64
+        })
+        setAttachments((existingPaths) => [...existingPaths, path])
+      } catch {
+        // A rejected image must not take the note being written down with it.
+      }
     }
   }
 
@@ -123,9 +148,30 @@ export function PlanAnnotationComposer({
       // Why an explicit opaque background rather than inheriting the dialog's: the dialog is
       // translucent with a backdrop blur, and a panel floating over body text has to be readable
       // without the paragraph underneath bleeding through it.
-      className="absolute z-50 overflow-hidden rounded-xl border border-border bg-[var(--popover)] shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
+      className={`absolute z-50 overflow-hidden rounded-xl border bg-[var(--popover)] shadow-[0_16px_40px_rgba(0,0,0,0.45)] ${
+        dragging ? 'border-ring ring-2 ring-ring/40' : 'border-border'
+      }`}
       onMouseDown={(event) => event.stopPropagation()}
       onMouseUp={(event) => event.stopPropagation()}
+      onDragOver={(event) => {
+        event.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        event.preventDefault()
+        setDragging(false)
+        void attach([...event.dataTransfer.files])
+      }}
+      onPaste={(event) => {
+        // Why paste as well as drop: a screenshot goes to the clipboard, and making the reviewer
+        // save it to a file first is the step that stops people attaching evidence at all.
+        const files = [...event.clipboardData.files]
+        if (files.length > 0) {
+          event.preventDefault()
+          void attach(files)
+        }
+      }}
     >
       <div className="flex items-start gap-2 border-b border-border/60 bg-black/12 px-3 py-2 dark:bg-white/6">
         <p className="min-w-0 flex-1 text-[11.5px] leading-relaxed text-foreground/75">
@@ -180,23 +226,50 @@ export function PlanAnnotationComposer({
         className="mt-1 block max-h-56 min-h-[72px] w-full resize-none bg-transparent px-3 py-2 text-xs leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
       />
 
-      {labels.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-1 border-t border-border/60 px-3 py-1.5">
-          {labels.map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => save(label)}
-              className="rounded border border-border px-1.5 py-0.5 text-[10.5px] text-foreground/75 transition-colors hover:bg-accent hover:text-accent-foreground"
+      {attachments.length > 0 ? (
+        <ul className="flex flex-wrap gap-1 border-t border-border/60 px-3 py-1.5">
+          {attachments.map((path) => (
+            <li
+              key={path}
+              className="flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10.5px] text-foreground/75"
             >
-              {label}
-            </button>
+              <ImageIcon className="size-3" />
+              <span className="max-w-[180px] truncate">{path.split('/').pop()}</span>
+              <button
+                type="button"
+                aria-label="Remove attachment"
+                onClick={() => setAttachments((paths) => paths.filter((p) => p !== path))}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-2.5" />
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : null}
 
       <div className="flex items-center justify-between border-t border-border/60 px-3 py-2">
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(event) => {
+              void attach([...(event.target.files ?? [])])
+              event.target.value = ''
+            }}
+          />
+          <button
+            type="button"
+            aria-label="Attach image"
+            title="Attach image — or drop and paste"
+            onClick={() => fileInput.current?.click()}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ImageIcon className="size-3.5" />
+          </button>
           <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px] text-foreground/60">
             ⌘↵
           </kbd>

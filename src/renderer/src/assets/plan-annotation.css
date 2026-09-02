@@ -42,6 +42,33 @@
   --plan-annotation-good: oklch(0.75 0.19 150);
 }
 
+/* The plan sits as a sheet on a dot board: the pattern marks the surface as a review canvas rather
+   than another app panel, while the sheet's own solid background keeps body text off the pattern
+   so it stays readable.
+
+   Every colour is mixed from the theme's own tokens rather than picked by hand, so a custom or
+   light theme gets a canvas that still sits just off its background instead of a grey that only
+   suited the default dark palette. */
+.plan-annotation-canvas {
+  background-color: color-mix(in srgb, var(--muted) 35%, var(--background));
+  /* Dots read as a surface; lines read as a table someone forgot to fill in. */
+  background-image: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--muted-foreground) 26%, transparent) 1px,
+    transparent 1.2px
+  );
+  background-size: 22px 22px;
+}
+
+.plan-annotation-sheet {
+  /* --card, not --background: the sheet has to separate from a canvas that is now deliberately
+     close to the background. */
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
+}
+
 /* Plan document typography. Deliberately not the editor's prose styles: this is a read-and-mark
    surface, so it wants a wider measure and calmer rhythm than an editing pane. */
 .plan-annotation-document {

@@ -4,6 +4,8 @@
 // promise until a renderer answers, correlated by requestId.
 
 import { BrowserWindow, ipcMain } from 'electron'
+import { getCanonicalUserDataPath } from '../persistence'
+import { savePlanAttachment } from '../sites/plan-annotation-attachments'
 import {
   listPendingPlanAnnotations,
   respondPlanAnnotation,
@@ -48,6 +50,7 @@ function readResult(value: unknown): PlanAnnotationResult {
 export function registerPlanAnnotationHandlers(): void {
   ipcMain.removeHandler('planAnnotation:respond')
   ipcMain.removeHandler('planAnnotation:listPending')
+  ipcMain.removeHandler('planAnnotation:saveAttachment')
 
   ipcMain.handle(
     'planAnnotation:respond',
@@ -63,6 +66,20 @@ export function registerPlanAnnotationHandlers(): void {
   // the agent would wait out the full timeout for a modal that was never shown.
   ipcMain.handle('planAnnotation:listPending', (): PlanAnnotationRequest[] =>
     listPendingPlanAnnotations()
+  )
+
+  ipcMain.handle(
+    'planAnnotation:saveAttachment',
+    (_event, args: { name?: unknown; dataBase64?: unknown }): Promise<string> => {
+      if (typeof args?.name !== 'string' || typeof args.dataBase64 !== 'string') {
+        throw new Error('planAnnotation: attachment needs a name and base64 data')
+      }
+      return savePlanAttachment({
+        userDataPath: getCanonicalUserDataPath(),
+        name: args.name,
+        dataBase64: args.dataBase64
+      })
+    }
   )
 
   setPlanAnnotationSender(broadcast)
