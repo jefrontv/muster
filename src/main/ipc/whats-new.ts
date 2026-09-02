@@ -39,10 +39,16 @@ export function registerWhatsNewHandlers(
       }
       return { status: 'none' }
     }
-    const payload = await loadNotes(currentVersion)
+    const payload = await loadNotes(currentVersion, record.lastRunVersion ?? null)
     return {
       status: 'ready',
-      payload: payload ?? { version: currentVersion, notes: null, notesUrl: null }
+      payload: payload ?? {
+        version: currentVersion,
+        notes: null,
+        notesUrl: null,
+        missed: [],
+        missedOverflow: 0
+      }
     }
   })
 

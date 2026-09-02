@@ -12,12 +12,24 @@ export type WhatsNewResolution =
   /** Recorded version is older — this launch follows an update. */
   | { kind: 'update' }
 
-export type WhatsNewPayload = {
+export type ReleaseNotes = {
   version: string
   /** Release notes body in markdown, or null when they could not be fetched (offline). */
   notes: string | null
   /** Link to the full release page on GitHub. */
   notesUrl: string | null
+}
+
+export type WhatsNewPayload = ReleaseNotes & {
+  /**
+   * Releases the user skipped over, newest first, excluding the one they are now on.
+   *
+   * Why: someone updating from 1.6.0 to 1.9.0 never saw 1.7 or 1.8, and showing only the newest
+   * release's notes silently buries everything that landed in between.
+   */
+  missed: ReleaseNotes[]
+  /** Skipped releases beyond the display cap, so the modal can say so instead of lying. */
+  missedOverflow: number
 }
 
 export type WhatsNewGetResult = { status: 'none' } | { status: 'ready'; payload: WhatsNewPayload }
@@ -56,9 +68,34 @@ export function resolveWhatsNewTransition(
 }
 
 function parseVersionSegments(version: string): number[] | null {
-  const segments = version.split('.').map((segment) => Number.parseInt(segment, 10))
-  if (segments.length === 0 || segments.some((segment) => !Number.isFinite(segment))) {
+  // Why split on '-' first: `parseInt('0-rc', 10)` is 0, not NaN, so a prerelease tag used to parse
+  // as an extra segment and sort AFTER the release it precedes. Compare release cores only, and
+  // reject anything that is not purely digits rather than silently reading it as a number.
+  const core = version.split('-')[0] ?? ''
+  const parts = core.split('.')
+  if (parts.length === 0 || !parts.every((part) => /^\d+$/.test(part))) {
     return null
   }
-  return segments
+  return parts.map((part) => Number.parseInt(part, 10))
+}
+
+/**
+ * Numeric segment-wise comparison. Null for anything unparseable, so a caller can skip a tag
+ * rather than guess where a prerelease like `1.9.0-rc.1` belongs.
+ */
+export function compareVersions(a: string, b: string): number | null {
+  const left = parseVersionSegments(a)
+  const right = parseVersionSegments(b)
+  if (!left || !right) {
+    return null
+  }
+  const length = Math.max(left.length, right.length)
+  for (let index = 0; index < length; index += 1) {
+    const x = left[index] ?? 0
+    const y = right[index] ?? 0
+    if (x !== y) {
+      return x < y ? -1 : 1
+    }
+  }
+  return 0
 }
