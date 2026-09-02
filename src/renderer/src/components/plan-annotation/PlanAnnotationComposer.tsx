@@ -107,12 +107,15 @@ export function PlanAnnotationComposer({
         width: WIDTH,
         visibility: placement ? 'visible' : 'hidden'
       }}
-      className="absolute z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-xl"
+      // Why an explicit opaque background rather than inheriting the dialog's: the dialog is
+      // translucent with a backdrop blur, and a panel floating over body text has to be readable
+      // without the paragraph underneath bleeding through it.
+      className="absolute z-50 overflow-hidden rounded-xl border border-border bg-[var(--popover)] shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
       onMouseDown={(event) => event.stopPropagation()}
       onMouseUp={(event) => event.stopPropagation()}
     >
-      <div className="flex items-start gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
-        <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-muted-foreground">
+      <div className="flex items-start gap-2 border-b border-border/60 bg-black/12 px-3 py-2 dark:bg-white/6">
+        <p className="min-w-0 flex-1 text-[11.5px] leading-relaxed text-foreground/75">
           <span className="line-clamp-2">“{anchor.quote}”</span>
         </p>
         <button
@@ -135,7 +138,7 @@ export function PlanAnnotationComposer({
             className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
               kind === entry.kind
                 ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent/50'
+                : 'text-foreground/70 hover:bg-accent/60 hover:text-foreground'
             }`}
           >
             <entry.icon className="size-3" />
@@ -161,7 +164,7 @@ export function PlanAnnotationComposer({
         }}
         placeholder={kind === 'comment' ? 'Add a comment…' : 'Add a note (optional)…'}
         rows={3}
-        className="mt-1 block max-h-56 min-h-[72px] w-full resize-none bg-transparent px-3 py-2 text-xs leading-relaxed outline-none placeholder:text-muted-foreground/70"
+        className="mt-1 block max-h-56 min-h-[72px] w-full resize-none bg-transparent px-3 py-2 text-xs leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
       />
 
       {labels.length > 0 ? (
@@ -171,7 +174,7 @@ export function PlanAnnotationComposer({
               key={label}
               type="button"
               onClick={() => save(label)}
-              className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="rounded border border-border px-1.5 py-0.5 text-[10.5px] text-foreground/75 transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               {label}
             </button>
@@ -180,7 +183,7 @@ export function PlanAnnotationComposer({
       ) : null}
 
       <div className="flex items-center justify-between border-t border-border/60 px-3 py-2">
-        <kbd className="rounded border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px] text-foreground/60">
           ⌘↵
         </kbd>
         <Button size="sm" disabled={!canSave} onClick={() => save()}>
