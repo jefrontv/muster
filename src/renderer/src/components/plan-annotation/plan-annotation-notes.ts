@@ -10,6 +10,14 @@ export const LINE_END_ATTRIBUTE = 'data-plan-line-end'
 
 export type DraftNote = PlanAnnotation & { id: string }
 
+/**
+ * Conventional-Comments style verbs a reviewer can stamp without writing prose.
+ *
+ * Why a fixed set: they exist so a reviewer can be precise in one click, and an open vocabulary
+ * would just be freeform text with extra steps.
+ */
+export const QUICK_LABELS = ['scope', 'test', 'risk', 'question', 'nit'] as const
+
 export type SelectionAnchor = {
   quote: string
   startLine: number

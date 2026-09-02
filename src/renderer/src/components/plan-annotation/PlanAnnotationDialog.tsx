@@ -17,11 +17,19 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type {
   PlanAnnotationDecision,
+  PlanAnnotationKind,
   PlanAnnotationRequest,
   PlanAnnotationResult
 } from '../../../../shared/plan-annotation-types'
 import { PlanAnnotationComposer, type ComposerAnchor } from './PlanAnnotationComposer'
 import { PlanAnnotationDocument } from './PlanAnnotationDocument'
+import { PlanAnnotationGlobalNote } from './PlanAnnotationGlobalNote'
+import {
+  PlanAnnotationViewModes,
+  VIEW_MODE_WIDTH,
+  type PlanViewMode
+} from './PlanAnnotationViewModes'
+import { unifiedPlanDiff } from './plan-annotation-diff'
 import { PlanAnnotationNoteList } from './PlanAnnotationNoteList'
 import { clearDraft, draftKey, loadDraft, saveDraft } from './plan-annotation-drafts'
 import {
@@ -32,6 +40,7 @@ import {
 import {
   createNote,
   previewFeedback,
+  QUICK_LABELS,
   readSelectionAnchor,
   sortNotes,
   toAnnotations,
@@ -44,6 +53,10 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   const [composer, setComposer] = useState<ComposerAnchor | null>(null)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [globalOpen, setGlobalOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<PlanViewMode>('reading')
+  const [editing, setEditing] = useState(false)
+  const [editedContent, setEditedContent] = useState<string | null>(null)
 
   const scroller = useRef<HTMLDivElement | null>(null)
   const document_ = useRef<HTMLDivElement | null>(null)
@@ -80,14 +93,29 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     setComposer(null)
     setActiveNoteId(null)
     setShowPreview(false)
+    setGlobalOpen(false)
+    setEditing(false)
+    setEditedContent(null)
+    setViewMode('reading')
     return () => clearPlanHighlights()
   }, [key])
 
-  useEffect(() => {
-    if (key) {
-      saveDraft(key, notes)
-    }
-  }, [key, notes])
+  /**
+   * Writes the draft at the point of change rather than from an effect on `notes`.
+   *
+   * Why: an effect keyed on [key, notes] fires once with the NEW key and the OLD notes still in
+   * scope, so opening a review saved an empty list over its own draft and erased it. Persisting
+   * where the change happens has no such ordering hazard.
+   */
+  const applyNotes = useCallback(
+    (next: DraftNote[]) => {
+      setNotes(next)
+      if (key) {
+        saveDraft(key, next)
+      }
+    },
+    [key]
+  )
 
   // Rebuild any missing Range (restored draft) and repaint, after the document has rendered.
   useEffect(() => {
@@ -116,57 +144,76 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   const openComposer = useCallback(() => {
     const selection = window.getSelection()
     const parsed = readSelectionAnchor(selection)
-    if (!parsed || !selection) {
+    const pane = scroller.current
+    if (!parsed || !selection || !pane) {
       return
     }
     const range = selection.getRangeAt(0)
     pendingRange.current = range.cloneRange()
     const rect = range.getBoundingClientRect()
+    const pageRect = pane.getBoundingClientRect()
+    // Both rects are captured now rather than read during render: at render time the composer has
+    // not been laid out yet, so a rect read then is stale and the box lands somewhere arbitrary.
     setComposer({
       quote: parsed.quote,
-      rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right }
+      rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right },
+      bounds: {
+        top: pageRect.top,
+        bottom: pageRect.bottom,
+        left: pageRect.left,
+        right: pageRect.right
+      }
     })
   }, [])
 
   const saveNote = useCallback(
-    (body: string) => {
-      const selectionAnchor = composer ? { quote: composer.quote, startLine: 0, endLine: 0 } : null
-      const resolved = readSelectionAnchorFromRange(pendingRange.current) ?? selectionAnchor
+    (kind: PlanAnnotationKind, body: string) => {
+      const resolved = readSelectionAnchorFromRange(pendingRange.current)
       if (!resolved) {
         return
       }
-      const note = createNote({ kind: 'comment', body, anchor: resolved })
+      const note = createNote({ kind, body, anchor: resolved })
       if (pendingRange.current) {
         rangesById.current.set(note.id, pendingRange.current)
       }
-      setNotes((existing) => [...existing, note])
+      applyNotes([...notes, note])
       setComposer(null)
       pendingRange.current = null
       window.getSelection()?.removeAllRanges()
     },
-    [composer]
+    [applyNotes, notes]
   )
 
-  const removeNote = useCallback((id: string) => {
-    rangesById.current.delete(id)
-    setNotes((existing) => existing.filter((note) => note.id !== id))
-  }, [])
+  const removeNote = useCallback(
+    (id: string) => {
+      rangesById.current.delete(id)
+      applyNotes(notes.filter((note) => note.id !== id))
+    },
+    [applyNotes, notes]
+  )
 
-  const addGlobal = useCallback(() => {
-    const body = window.prompt('Comment on the whole plan')
-    if (body && body.trim().length > 0) {
-      setNotes((existing) => [...existing, createNote({ kind: 'global', body, anchor: null })])
-    }
-  }, [])
+  const addGlobal = useCallback(
+    (body: string) => {
+      applyNotes([...notes, createNote({ kind: 'global', body, anchor: null })])
+      setGlobalOpen(false)
+    },
+    [applyNotes, notes]
+  )
 
   const settle = useCallback(
     (decision: PlanAnnotationDecision) => {
       if (!current) {
         return
       }
+      // Why include the diff: a reviewer who rewrote a passage has already said what they mean
+      // more precisely than a comment could. Describing it again would be the worse channel.
+      const diff = editedContent === null ? '' : unifiedPlanDiff(current.content, editedContent)
       const result: PlanAnnotationResult = {
         decision,
-        annotations: decision === 'dismissed' ? [] : toAnnotations(notes)
+        annotations: decision === 'dismissed' ? [] : toAnnotations(notes),
+        ...(decision !== 'dismissed' && diff.length > 0
+          ? { edits: { unifiedDiff: diff, appliedToDisk: false } }
+          : {})
       }
       void window.api.planAnnotation
         .respond({ requestId: current.requestId, result })
@@ -177,7 +224,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
       clearPlanHighlights()
       setQueue((q) => q.slice(1))
     },
-    [current, key, notes]
+    [current, editedContent, key, notes]
   )
 
   const sorted = useMemo(() => sortNotes(notes), [notes])
@@ -187,13 +234,17 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   }
 
   const waiting = queue.length - 1
-  const bounds = scroller.current?.getBoundingClientRect() ?? null
 
   return (
     <Dialog open onOpenChange={(next) => !next && settle('dismissed')}>
-      <DialogContent className="flex h-[88vh] w-[min(1200px,calc(100vw-4rem))] flex-col gap-0 p-0 sm:max-w-[1200px]">
-        <DialogHeader className="flex-row items-center gap-3 border-b border-border/70 px-4 py-2.5">
-          <DialogTitle className="flex min-w-0 items-center gap-2 text-sm">
+      {/* Why showCloseButton={false}: the built-in × is absolutely positioned at top-right and
+          lands on top of the header actions. Close lives in the footer with the other decisions. */}
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-[min(88vh,900px)] w-[min(1180px,calc(100vw-4rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1180px]"
+      >
+        <DialogHeader className="flex-row items-center gap-3 border-b border-border/60 px-4 py-2.5">
+          <DialogTitle className="flex min-w-0 items-center gap-2 text-[13px] font-medium">
             <span className="truncate">{current.title}</span>
             {current.round > 1 ? (
               <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
@@ -206,15 +257,37 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
               </span>
             ) : null}
           </DialogTitle>
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <Button size="sm" variant="ghost" onClick={addGlobal}>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <PlanAnnotationViewModes
+              mode={viewMode}
+              editing={editing}
+              onModeChange={setViewMode}
+              onToggleEdit={() => {
+                setEditing((was) => {
+                  if (!was && editedContent === null) {
+                    setEditedContent(current.content)
+                  }
+                  return !was
+                })
+                setComposer(null)
+              }}
+            />
+            <span className="h-4 w-px bg-border" />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs"
+              disabled={editing}
+              onClick={() => setGlobalOpen((open) => !open)}
+            >
               <MessageSquare className="size-3.5" />
               Global comment
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => void navigator.clipboard.writeText(current.content)}
+              className="h-7 text-xs"
+              onClick={() => void navigator.clipboard.writeText(editedContent ?? current.content)}
             >
               <Copy className="size-3.5" />
               Copy plan
@@ -222,52 +295,84 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
           </div>
         </DialogHeader>
 
+        {globalOpen ? (
+          <PlanAnnotationGlobalNote onCancel={() => setGlobalOpen(false)} onSave={addGlobal} />
+        ) : null}
+
         <div className="flex min-h-0 flex-1">
           <div
             ref={scroller}
-            className="min-w-0 flex-1 overflow-y-auto px-10 py-6"
-            onMouseUp={openComposer}
+            className="min-w-0 flex-1 overflow-y-auto"
+            // Why gated on editing: a selection inside the textarea is a text cursor, not an
+            // annotation, and popping a composer over the caret makes editing impossible.
+            onMouseUp={editing ? undefined : openComposer}
           >
-            <PlanAnnotationDocument ref={document_} content={current.content} />
+            <div className={`mx-auto w-full px-10 py-8 ${VIEW_MODE_WIDTH[viewMode]}`}>
+              {editing ? (
+                <textarea
+                  value={editedContent ?? current.content}
+                  onChange={(event) => setEditedContent(event.target.value)}
+                  spellCheck={false}
+                  className="min-h-[60vh] w-full resize-none bg-transparent font-mono text-[12.5px] leading-relaxed outline-none"
+                />
+              ) : (
+                <PlanAnnotationDocument
+                  ref={document_}
+                  content={editedContent ?? current.content}
+                />
+              )}
+            </div>
           </div>
 
-          <PlanAnnotationNoteList
-            notes={sorted}
-            previewText={showPreview ? previewFeedback(notes) : null}
-            activeNoteId={activeNoteId}
-            onTogglePreview={() => setShowPreview((shown) => !shown)}
-            onFocusNote={setActiveNoteId}
-            onRemoveNote={removeNote}
-          />
+          {/* Why only when there are notes: an empty rail was the largest thing on screen for a
+              short plan, and it competed with the document for attention while saying nothing. */}
+          {sorted.length > 0 ? (
+            <PlanAnnotationNoteList
+              notes={sorted}
+              previewText={showPreview ? previewFeedback(notes) : null}
+              activeNoteId={activeNoteId}
+              onTogglePreview={() => setShowPreview((shown) => !shown)}
+              onFocusNote={setActiveNoteId}
+              onRemoveNote={removeNote}
+            />
+          ) : null}
         </div>
 
-        {composer && bounds ? (
+        {composer ? (
           <PlanAnnotationComposer
             anchor={composer}
-            bounds={bounds}
             onCancel={() => {
               setComposer(null)
               pendingRange.current = null
             }}
+            labels={QUICK_LABELS}
             onSave={saveNote}
           />
         ) : null}
 
-        <div className="flex items-center justify-end gap-2 border-t border-border/70 px-4 py-3">
-          <Button variant="ghost" onClick={() => settle('dismissed')}>
-            Close
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => settle(notes.length > 0 ? 'approved_with_notes' : 'approved')}
-          >
-            <Check className="size-4" />
-            {notes.length > 0 ? 'Approve with notes' : 'Approve'}
-          </Button>
-          <Button disabled={notes.length === 0} onClick={() => settle('annotated')}>
-            <Send className="size-4" />
-            Send feedback
-          </Button>
+        <div className="flex items-center gap-2 border-t border-border/60 px-4 py-2.5">
+          <p className="text-[11px] text-muted-foreground">
+            {notes.length === 0
+              ? 'Select any passage to comment on it'
+              : `${notes.length} ${notes.length === 1 ? 'note' : 'notes'} ready to send`}
+          </p>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => settle('dismissed')}>
+              Close
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => settle(notes.length > 0 ? 'approved_with_notes' : 'approved')}
+            >
+              <Check className="size-4" />
+              {notes.length > 0 ? 'Approve with notes' : 'Approve'}
+            </Button>
+            <Button size="sm" disabled={notes.length === 0} onClick={() => settle('annotated')}>
+              <Send className="size-4" />
+              Send feedback
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
