@@ -60,8 +60,7 @@ const TASK_SOURCES_STEP: FeatureWallSetupStep = {
   id: 'task-sources',
   name: 'Connect ActiveCollab',
   subtitle: 'Connect ActiveCollab',
-  description:
-    'Browse your ActiveCollab tasks and start work from them without leaving Muster.'
+  description: 'Browse your ActiveCollab tasks and start work from them without leaving Muster.'
 }
 
 const SETUP_SCRIPT_STEP: FeatureWallSetupStep = {

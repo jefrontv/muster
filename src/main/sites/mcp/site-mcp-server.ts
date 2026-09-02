@@ -8,6 +8,7 @@
 // Frames are handled strictly in arrival order via a promise chain. MCP permits out-of-order
 // responses, but serialising costs nothing here and makes both the log and the tests readable.
 
+import { rememberSiteMcpClient } from './site-mcp-client-identity'
 import type { SiteMcpContext } from './site-mcp-context'
 import {
   createLineReader,
@@ -77,6 +78,10 @@ async function handleRequest(
         typeof requested === 'string' && KNOWN_PROTOCOL_VERSIONS.includes(requested)
           ? requested
           : SITE_MCP_DEFAULT_PROTOCOL_VERSION
+      // Why remember the client: it is the only place the protocol names who is on the other end,
+      // and a review that says which agent asked for it is far easier to act on than an anonymous
+      // one. Purely informational — nothing is authorised on the strength of it.
+      rememberSiteMcpClient(params.clientInfo)
       return successResponse(id, {
         protocolVersion: negotiated,
         capabilities: { tools: { listChanged: false } },

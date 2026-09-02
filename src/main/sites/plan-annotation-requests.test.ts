@@ -18,6 +18,8 @@ function plan(title: string): Omit<PlanAnnotationRequest, 'requestId'> {
     planPath: `/plans/${title}.md`,
     title,
     content: `# ${title}`,
+    agent: 'claude-code',
+    project: 'acme',
     round: 1,
     previousContent: null
   }

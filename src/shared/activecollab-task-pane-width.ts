@@ -13,10 +13,7 @@ export function computeMaxActiveCollabTaskPaneWidth(containerWidth: number): num
   }
   return Math.min(
     ACTIVECOLLAB_TASK_PANE_MAX_WIDTH,
-    Math.max(
-      ACTIVECOLLAB_TASK_PANE_MIN_WIDTH,
-      containerWidth - ACTIVECOLLAB_TASK_LIST_MIN_WIDTH
-    )
+    Math.max(ACTIVECOLLAB_TASK_PANE_MIN_WIDTH, containerWidth - ACTIVECOLLAB_TASK_LIST_MIN_WIDTH)
   )
 }
 

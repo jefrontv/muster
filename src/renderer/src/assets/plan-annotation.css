@@ -61,12 +61,44 @@
 }
 
 .plan-annotation-sheet {
-  /* --card, not --background: the sheet has to separate from a canvas that is now deliberately
-     close to the background. */
-  background-color: var(--card);
+  /* Opaque for the same reason as the composer: --card carries alpha in these themes, and the dot
+     board showing through the plan text makes it harder to read. */
+  background-color: #ffffff;
+  background-image: linear-gradient(var(--card), var(--card));
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
+}
+
+/* An opaque surface for panels that float over the plan text.
+
+   Why a solid base under the theme colour: this app's themes give --popover and --card an alpha
+   channel (measured ~0.8), so painting with the token alone leaves the paragraph underneath
+   legible straight through the comment box. The flat colour below guarantees opacity and the theme
+   colour is layered over it, so a custom theme still tints the panel. */
+.plan-annotation-opaque {
+  background-color: #ffffff;
+  background-image: linear-gradient(var(--popover), var(--popover));
+}
+
+.dark .plan-annotation-opaque {
+  background-color: #0f0f0f;
+}
+
+/* The editing surface is the rendered document, so it inherits .plan-annotation-document wholesale
+   and only adds what an editable region needs. Any styling that lands here and not there is a
+   difference the reviewer will see the moment they press Edit. */
+.plan-annotation-editable .ProseMirror {
+  min-height: 60vh;
+  outline: none;
+}
+
+.plan-annotation-editable .ProseMirror:focus {
+  outline: none;
+}
+
+.dark .plan-annotation-sheet {
+  background-color: #0d0d0d;
 }
 
 /* Plan document typography. Deliberately not the editor's prose styles: this is a read-and-mark

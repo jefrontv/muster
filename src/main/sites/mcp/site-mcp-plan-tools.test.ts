@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearSiteMcpClientForTests, rememberSiteMcpClient } from './site-mcp-client-identity'
 import type { SiteMcpContext } from './site-mcp-context'
 import {
   clearPlanRoundsForTests,
@@ -23,8 +24,15 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-function context(annotatePlan: SiteMcpContext['annotatePlan']): SiteMcpContext {
-  return { cwd: dir, annotatePlan } as unknown as SiteMcpContext
+function context(
+  annotatePlan: SiteMcpContext['annotatePlan'],
+  sites: { path: string; displayName: string }[] = []
+): SiteMcpContext {
+  return {
+    cwd: dir,
+    annotatePlan,
+    store: { listSites: () => sites }
+  } as unknown as SiteMcpContext
 }
 
 const approved = vi.fn(() => Promise.resolve({ decision: 'approved' as const, annotations: [] }))
@@ -101,6 +109,50 @@ describe('annotate_plan', () => {
       { round: 1, previousContent: null },
       { round: 2, previousContent: 'first draft' }
     ])
+  })
+})
+
+describe('review provenance', () => {
+  async function capture(sites: { path: string; displayName: string }[] = []) {
+    const seen: { agent: string | null; project: string | null }[] = []
+    await tool.run(
+      context((request) => {
+        seen.push({ agent: request.agent, project: request.project })
+        return Promise.resolve({ decision: 'approved', annotations: [] })
+      }, sites),
+      { content: '# Plan' }
+    )
+    return seen[0]!
+  }
+
+  it('names the site that owns the working directory', async () => {
+    expect((await capture([{ path: dir, displayName: 'Acme' }])).project).toBe('Acme')
+  })
+
+  it('prefers the deepest match, so a worktree beats a shared parent prefix', async () => {
+    const seen = await capture([
+      { path: dir, displayName: 'Deep' },
+      { path: tmpdir(), displayName: 'Shallow' }
+    ])
+    expect(seen.project).toBe('Deep')
+  })
+
+  it('does not treat a sibling sharing a name prefix as the owning site', async () => {
+    // `${dir}-other` starts with `dir`; a bare startsWith would claim it.
+    expect((await capture([{ path: `${dir}-other`, displayName: 'Sibling' }])).project).not.toBe(
+      'Sibling'
+    )
+  })
+
+  it('falls back to the directory name for a checkout Muster does not manage', async () => {
+    expect((await capture()).project).toBe(basename(dir))
+  })
+
+  it('reports the agent the handshake named, and null when it named none', async () => {
+    clearSiteMcpClientForTests()
+    expect((await capture()).agent).toBeNull()
+    rememberSiteMcpClient({ name: 'claude-code' })
+    expect((await capture()).agent).toBe('claude-code')
   })
 })
 

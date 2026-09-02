@@ -148,7 +148,7 @@ export function PlanAnnotationComposer({
       // Why an explicit opaque background rather than inheriting the dialog's: the dialog is
       // translucent with a backdrop blur, and a panel floating over body text has to be readable
       // without the paragraph underneath bleeding through it.
-      className={`absolute z-50 overflow-hidden rounded-xl border bg-[var(--popover)] shadow-[0_16px_40px_rgba(0,0,0,0.45)] ${
+      className={`plan-annotation-opaque absolute z-50 overflow-hidden rounded-xl border shadow-[0_16px_40px_rgba(0,0,0,0.45)] ${
         dragging ? 'border-ring ring-2 ring-ring/40' : 'border-border'
       }`}
       onMouseDown={(event) => event.stopPropagation()}

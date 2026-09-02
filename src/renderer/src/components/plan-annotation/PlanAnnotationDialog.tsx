@@ -24,14 +24,14 @@ import { PlanAnnotationDocument } from './PlanAnnotationDocument'
 import { usePlanReviewQueue } from './use-plan-review-queue'
 import { usePlanAnnotationRanges } from './use-plan-annotation-ranges'
 import { PlanAnnotationGlobalNote } from './PlanAnnotationGlobalNote'
-import { VIEW_MODE_WIDTH, type PlanViewMode } from './PlanAnnotationViewModes'
+import { VIEW_MODE_SHELL, VIEW_MODE_WIDTH, type PlanViewMode } from './PlanAnnotationViewModes'
 import { unifiedPlanDiff } from './plan-annotation-diff'
+import { PlanAnnotationEditor } from './PlanAnnotationEditor'
 import { PlanAnnotationNoteList } from './PlanAnnotationNoteList'
 import { clearDraft, draftKey, loadDraft, saveDraft } from './plan-annotation-drafts'
 import { clearPlanHighlights } from './plan-annotation-highlights'
 import {
   createNote,
-  previewFeedback,
   readSelectionAnchor,
   sortNotes,
   toAnnotations,
@@ -44,11 +44,12 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
   const [composer, setComposer] = useState<ComposerAnchor | null>(null)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [showPreview, setShowPreview] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<PlanViewMode>('reading')
   const [editing, setEditing] = useState(false)
   const [editedContent, setEditedContent] = useState<string | null>(null)
+  // The plan as the rich editor serialises it, so normalisation is never reported as an edit.
+  const [editBaseline, setEditBaseline] = useState<string | null>(null)
 
   const scroller = useRef<HTMLDivElement | null>(null)
   const document_ = useRef<HTMLDivElement | null>(null)
@@ -72,10 +73,10 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     setComposer(null)
     setActiveNoteId(null)
     setEditingNoteId(null)
-    setShowPreview(false)
     setGlobalOpen(false)
     setEditing(false)
     setEditedContent(null)
+    setEditBaseline(null)
     setViewMode('reading')
     return () => clearPlanHighlights()
   }, [key])
@@ -233,7 +234,12 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
       }
       // Why include the diff: a reviewer who rewrote a passage has already said what they mean
       // more precisely than a comment could. Describing it again would be the worse channel.
-      const diff = editedContent === null ? '' : unifiedPlanDiff(current.content, editedContent)
+      //
+      // Against the editor's baseline, not the file: the rich editor re-serialises the whole
+      // document, so diffing the file would bury a one-word fix under markdown normalisation the
+      // reviewer never chose.
+      const before = editBaseline ?? current.content
+      const diff = editedContent === null ? '' : unifiedPlanDiff(before, editedContent)
       const result: PlanAnnotationResult = {
         decision,
         annotations: decision === 'dismissed' ? [] : toAnnotations(notes),
@@ -250,7 +256,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
       clearPlanHighlights()
       popCurrent()
     },
-    [current, editedContent, key, notes]
+    [current, editBaseline, editedContent, key, notes]
   )
 
   const sorted = useMemo(() => sortNotes(notes), [notes])
@@ -281,10 +287,12 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
             setGlobalOpen(false)
           }
         }}
-        className="flex h-[min(88vh,900px)] w-[min(1180px,calc(100vw-4rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1180px]"
+        className={`flex h-[min(88vh,900px)] flex-col gap-0 overflow-hidden p-0 ${VIEW_MODE_SHELL[viewMode]}`}
       >
         <PlanAnnotationHeader
           title={current.title}
+          agent={current.agent}
+          project={current.project}
           round={current.round}
           waiting={waiting}
           viewMode={viewMode}
@@ -310,7 +318,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         <div className="flex min-h-0 flex-1">
           <div
             ref={scroller}
-            className="plan-annotation-canvas scrollbar-sleek min-w-0 flex-1 overflow-y-auto"
+            className="plan-annotation-canvas scrollbar-sleek min-w-0 flex-1 overflow-y-auto px-6"
             // Why gated on editing: a selection inside the textarea is a text cursor, not an
             // annotation, and popping a composer over the caret makes editing impossible.
             onMouseUp={
@@ -327,11 +335,10 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
               className={`plan-annotation-sheet mx-auto my-6 w-full px-10 py-9 ${VIEW_MODE_WIDTH[viewMode]}`}
             >
               {editing ? (
-                <textarea
-                  value={editedContent ?? current.content}
-                  onChange={(event) => setEditedContent(event.target.value)}
-                  spellCheck={false}
-                  className="min-h-[60vh] w-full resize-none bg-transparent font-mono text-[12.5px] leading-relaxed outline-none"
+                <PlanAnnotationEditor
+                  content={editedContent ?? current.content}
+                  onReady={setEditBaseline}
+                  onChange={setEditedContent}
                 />
               ) : (
                 <PlanAnnotationDocument
@@ -347,9 +354,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
           {sorted.length > 0 ? (
             <PlanAnnotationNoteList
               notes={sorted}
-              previewText={showPreview ? previewFeedback(notes) : null}
               activeNoteId={activeNoteId}
-              onTogglePreview={() => setShowPreview((shown) => !shown)}
               onFocusNote={setActiveNoteId}
               onEditNote={editNote}
               onRemoveNote={removeNote}

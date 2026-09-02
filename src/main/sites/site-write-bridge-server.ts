@@ -120,6 +120,8 @@ export class SiteWriteBridgeServer {
           title: typeof body.title === 'string' ? body.title : 'Plan',
           content,
           round: typeof body.round === 'number' ? body.round : 1,
+          agent: typeof body.agent === 'string' ? body.agent : null,
+          project: typeof body.project === 'string' ? body.project : null,
           previousContent: typeof body.previousContent === 'string' ? body.previousContent : null
         })
         reply(200, result)

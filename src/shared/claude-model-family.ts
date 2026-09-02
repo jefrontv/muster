@@ -9,7 +9,9 @@ export type ClaudeModelFamily = { id: string; label: string }
  * → haiku, `anthropic.claude-3-sonnet…` (Bedrock) → sonnet. Null for anything
  * without a `claude-` marker (`<synthetic>`, other vendors' ids).
  */
-export function claudeModelFamilyFromId(modelId: string | null | undefined): ClaudeModelFamily | null {
+export function claudeModelFamilyFromId(
+  modelId: string | null | undefined
+): ClaudeModelFamily | null {
   const id = (modelId ?? '').toLowerCase()
   const tail = /(?:^|[^a-z])claude-([a-z0-9][a-z0-9-]*)/.exec(id)?.[1]
   if (!tail) {

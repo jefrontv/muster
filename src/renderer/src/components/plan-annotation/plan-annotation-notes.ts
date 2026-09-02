@@ -87,37 +87,3 @@ export function sortNotes(notes: readonly DraftNote[]): DraftNote[] {
 export function toAnnotations(notes: readonly DraftNote[]): PlanAnnotation[] {
   return sortNotes(notes).map(({ id: _id, ...annotation }) => annotation)
 }
-
-/**
- * The markdown the agent will receive.
- *
- * Why show this at all: the reviewer is writing input for a machine they cannot see, so being able
- * to read it back before committing is what makes the feedback trustworthy.
- */
-export function previewFeedback(notes: readonly DraftNote[]): string {
-  const sorted = sortNotes(notes)
-  if (sorted.length === 0) {
-    return 'No feedback.'
-  }
-  return sorted
-    .map((note) => {
-      // Paths, so the agent can open the image rather than be handed its bytes.
-      const files = (note.attachments ?? []).map((path) => `\n  Attached: ${path}`).join('')
-      if (note.kind === 'global') {
-        return `- **General:** ${note.body}${files}`
-      }
-      const where =
-        note.startLine === note.endLine
-          ? `line ${note.startLine}`
-          : `lines ${note.startLine}-${note.endLine}`
-      const head =
-        note.kind === 'delete'
-          ? `**Remove** (${where})`
-          : note.kind === 'looks_good'
-            ? `**Looks good** (${where})`
-            : `**Comment** (${where})`
-      const quoted = note.quote.length > 0 ? `\n  > ${note.quote.replace(/\n/g, '\n  > ')}` : ''
-      return `- ${head}${quoted}${note.body.length > 0 ? `\n  ${note.body}` : ''}${files}`
-    })
-    .join('\n')
-}

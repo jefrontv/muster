@@ -15,6 +15,20 @@ export const VIEW_MODE_WIDTH: Record<PlanViewMode, string> = {
   focus: 'max-w-[620px]'
 }
 
+/**
+ * Measure applied to the dialog itself.
+ *
+ * Why the shell moves and not just the column: lifting the column cap inside a shell that stays
+ * 1180px wide gives Wide nothing to expand into on a large display — the mode looked broken
+ * because it was capped a level up. Wide takes the window; the reading modes stay at a fixed
+ * measure, since a centred column in an enormous shell just strands the text.
+ */
+export const VIEW_MODE_SHELL: Record<PlanViewMode, string> = {
+  reading: 'w-[min(1180px,calc(100vw-4rem))] sm:max-w-[1180px]',
+  wide: 'w-[calc(100vw-3rem)] sm:max-w-[calc(100vw-3rem)]',
+  focus: 'w-[min(1180px,calc(100vw-4rem))] sm:max-w-[1180px]'
+}
+
 const MODES: { mode: PlanViewMode; label: string }[] = [
   { mode: 'reading', label: 'Reading' },
   { mode: 'wide', label: 'Wide' },

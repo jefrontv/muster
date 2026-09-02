@@ -8,8 +8,35 @@ import { readFileSync } from 'node:fs'
 import { basename, isAbsolute, resolve } from 'node:path'
 import type { PlanAnnotation, PlanAnnotationResult } from '../../../shared/plan-annotation-types'
 import { readString, SiteMcpToolError, type ToolArguments } from './site-mcp-arguments'
+import { siteMcpClientName } from './site-mcp-client-identity'
 import type { SiteMcpContext, SiteMcpTool } from './site-mcp-context'
 import { objectSchema } from './site-mcp-schemas'
+
+/**
+ * What the plan is about, for the review header.
+ *
+ * The deepest matching site wins, so a worktree nested under a site root resolves to that site
+ * rather than to a shorter path that happens to share a prefix. A checkout Muster does not manage
+ * is not an error here — the directory name is still more use to a reviewer than nothing.
+ */
+function describeProject(context: SiteMcpContext): string | null {
+  const cwd = context.cwd
+  let best: { path: string; name: string } | null = null
+  for (const site of context.store.listSites()) {
+    const root = site.path
+    if (root.length === 0) {
+      continue
+    }
+    const inside = cwd === root || cwd.startsWith(root.endsWith('/') ? root : `${root}/`)
+    if (!inside) {
+      continue
+    }
+    if (best === null || root.length > best.path.length) {
+      best = { path: root, name: site.displayName }
+    }
+  }
+  return best?.name ?? basename(cwd) ?? null
+}
 
 /** Refuses a file that is clearly not a plan before showing a person a wall of binary. */
 const MAX_PLAN_BYTES = 1_000_000
@@ -123,6 +150,8 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
         planPath,
         title,
         content,
+        agent: siteMcpClientName(),
+        project: describeProject(context),
         round,
         previousContent: prior?.content ?? null
       })

@@ -65,6 +65,10 @@ export type PlanAnnotationRequest = {
   planPath: string | null
   title: string
   content: string
+  /** The agent that asked for the review, from the MCP handshake. Null when it did not say. */
+  agent: string | null
+  /** The site or checkout the plan is about, so a review is not read out of context. */
+  project: string | null
   /** 1 on first review of this plan, incrementing while the agent revises it. */
   round: number
   /** Previous round's content, so the modal can show what changed. Null on round 1. */
