@@ -1,3 +1,4 @@
+import { SITE_MCP_TOOLS } from '../sites/mcp/site-mcp-tools'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -98,7 +99,10 @@ describe('siteMcp:status', () => {
     ])
     expect(status.command.command.length).toBeGreaterThan(0)
     expect(status.tools.map((tool) => tool.name)).toContain('run_deploy_functions')
-    expect(status.tools).toHaveLength(24)
+    // Why derive rather than hard-code: this counted 24 long after the table reached 34, so it
+    // failed on every unrelated run and told nobody anything. What matters is that status
+    // advertises the whole table, not a number someone has to remember to bump.
+    expect(status.tools).toHaveLength(SITE_MCP_TOOLS.length)
     expect(status.targets).toEqual([])
   })
 

@@ -901,6 +901,19 @@ const api = {
     }
   } satisfies PreloadApi['chatConnector'],
 
+  planAnnotation: {
+    respond: (args) => ipcRenderer.invoke('planAnnotation:respond', args),
+    listPending: () => ipcRenderer.invoke('planAnnotation:listPending'),
+    onRequest: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        request: Parameters<typeof callback>[0]
+      ): void => callback(request)
+      ipcRenderer.on('planAnnotation:request', listener)
+      return () => ipcRenderer.removeListener('planAnnotation:request', listener)
+    }
+  } satisfies PreloadApi['planAnnotation'],
+
   chatThreadStream: {
     start: (args) => ipcRenderer.invoke('chatThreadStream:start', args),
     send: (threadId, text, imagePaths) =>

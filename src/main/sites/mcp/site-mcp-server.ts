@@ -51,6 +51,15 @@ export type SiteMcpServer = {
   drain: () => Promise<void>
 }
 
+/** True only for a `tools/call` naming a tool that declared itself safe to run off the chain. */
+function isConcurrentToolCall(request: JsonRpcRequest): boolean {
+  if (request.method !== 'tools/call') {
+    return false
+  }
+  const name = (request.params ?? {}).name
+  return typeof name === 'string' && findSiteMcpTool(name)?.concurrent === true
+}
+
 async function handleRequest(
   context: SiteMcpContext,
   request: JsonRpcRequest,
@@ -122,6 +131,27 @@ export function createSiteMcpServer(options: SiteMcpServerOptions): SiteMcpServe
     tail = tail.then(work).catch(() => undefined)
   }
 
+  // Why detached: `enqueue` answers frames in arrival order, which is the right default — but a
+  // tool whose latency is a human holds the chain for as long as they take, stalling every later
+  // call behind it. Those tools run off-chain; ordering still holds for everything else.
+  const runFrame = async (request: JsonRpcRequest): Promise<void> => {
+    try {
+      respond(await handleRequest(options.context, request, version))
+    } catch (error) {
+      // Belt and braces: dispatchSiteMcpTool already converts tool failures into isError
+      // results, so reaching this means a protocol-level bug. Answer it rather than die.
+      if ('id' in request) {
+        respond(
+          errorResponse(
+            request.id ?? null,
+            JSON_RPC_INTERNAL_ERROR,
+            error instanceof Error ? error.message : String(error)
+          )
+        )
+      }
+    }
+  }
+
   const reader = createLineReader((line) => {
     const frame = parseJsonRpcFrame(line)
     if (!frame.ok) {
@@ -131,23 +161,11 @@ export function createSiteMcpServer(options: SiteMcpServerOptions): SiteMcpServe
       return
     }
     const { request } = frame
-    enqueue(async () => {
-      try {
-        respond(await handleRequest(options.context, request, version))
-      } catch (error) {
-        // Belt and braces: dispatchSiteMcpTool already converts tool failures into isError
-        // results, so reaching this means a protocol-level bug. Answer it rather than die.
-        if ('id' in request) {
-          respond(
-            errorResponse(
-              request.id ?? null,
-              JSON_RPC_INTERNAL_ERROR,
-              error instanceof Error ? error.message : String(error)
-            )
-          )
-        }
-      }
-    })
+    if (isConcurrentToolCall(request)) {
+      void runFrame(request)
+      return
+    }
+    enqueue(() => runFrame(request))
   })
 
   return {

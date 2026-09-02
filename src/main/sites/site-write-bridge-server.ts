@@ -13,6 +13,10 @@ import { randomBytes } from 'node:crypto'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Site, SiteCustomStep } from '../../shared/site-types'
+import type {
+  PlanAnnotationRequest,
+  PlanAnnotationResult
+} from '../../shared/plan-annotation-types'
 
 /** Discovery file the MCP process reads; absent means "no GUI, write to disk". */
 export const SITE_WRITE_BRIDGE_FILE_NAME = 'site-write-bridge.json'
@@ -38,6 +42,10 @@ type StartArgs = {
   userDataPath: string
   /** Called after a successful write so the renderer can re-read the site. */
   onSiteChanged?: (site: Site) => void
+  /** Parks the HTTP response until a person has reviewed the plan. Absent = feature off. */
+  onPlanAnnotationRequested?: (
+    request: Omit<PlanAnnotationRequest, 'requestId'>
+  ) => Promise<PlanAnnotationResult>
 }
 
 export class SiteWriteBridgeServer {
@@ -61,6 +69,9 @@ export class SiteWriteBridgeServer {
     })
     // Why unref: a bridge with no in-flight request must not hold the app open.
     this.server.unref()
+    // Why: Node defaults requestTimeout to 300s, which would guillotine a plan review mid-read.
+    // The deadline belongs to the review queue (PLAN_ANNOTATION_TIMEOUT_MS), where it is visible.
+    this.server.requestTimeout = 0
     const address = this.server.address()
     const port = typeof address === 'object' && address ? address.port : 0
     if (port <= 0) {
@@ -80,12 +91,41 @@ export class SiteWriteBridgeServer {
     }
     const isSiteUpdate = req.method === 'POST' && req.url === '/site/update'
     const isLibraryUpdate = req.method === 'POST' && req.url === '/library/update'
-    if (!isSiteUpdate && !isLibraryUpdate) {
+    const isPlanAnnotate = req.method === 'POST' && req.url === '/plan/annotate'
+    if (!isSiteUpdate && !isLibraryUpdate && !isPlanAnnotate) {
       reply(404, { error: 'not found' })
       return
     }
     if (req.headers['x-muster-site-bridge-token'] !== this.token) {
       reply(401, { error: 'unauthorized' })
+      return
+    }
+    if (isPlanAnnotate) {
+      try {
+        const body = await readJsonBody(req)
+        const content = typeof body.content === 'string' ? body.content : ''
+        if (content.length === 0) {
+          reply(400, { error: 'content is required' })
+          return
+        }
+        const ask = args.onPlanAnnotationRequested
+        if (!ask) {
+          reply(404, { error: 'this build cannot review plans' })
+          return
+        }
+        // Deliberately not replied to yet: this response is parked until a person decides, which
+        // is the whole point of the route. The queue owns the deadline.
+        const result = await ask({
+          planPath: typeof body.planPath === 'string' ? body.planPath : null,
+          title: typeof body.title === 'string' ? body.title : 'Plan',
+          content,
+          round: typeof body.round === 'number' ? body.round : 1,
+          previousContent: typeof body.previousContent === 'string' ? body.previousContent : null
+        })
+        reply(200, result)
+      } catch (error) {
+        reply(500, { error: error instanceof Error ? error.message : String(error) })
+      }
       return
     }
     if (isLibraryUpdate) {

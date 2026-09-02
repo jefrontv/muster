@@ -155,6 +155,8 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
 
   return {
     cwd: '/Sites/acme/wp-content/themes/acme',
+    // The census invokes every tool; a plan review resolves immediately so it never hangs a sweep.
+    annotatePlan: () => Promise.resolve({ decision: 'approved' as const, annotations: [] }),
     updateSite: async (siteId, updates) => {
       const index = records.findIndex((site) => site.id === siteId)
       const existing = records[index]
@@ -300,7 +302,9 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   promote_custom_step: { step: 'step-1' },
   install_library_step: { library_step: 'library-1' },
   remove_library_step: { library_step: 'library-1' },
-  get_site_pipelines: {}
+  get_site_pipelines: {},
+  // Muster-native, not an ocsites port — the census covers the whole table, not just the migration.
+  annotate_plan: { content: '# Plan\n\nDo the thing.' }
 }
 
 describe('site MCP tool table', () => {

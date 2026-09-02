@@ -53,6 +53,7 @@ function createContext(): SiteMcpContext {
   }
   return {
     cwd: '/Sites/acme',
+    annotatePlan: () => Promise.resolve({ decision: 'approved' as const, annotations: [] }),
     updateSite: async () => null,
     openSshSession: async () => ({
       exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
@@ -91,12 +92,13 @@ type Harness = {
   /** Feed bytes without waiting, so a frame can be split across calls. */
   push: (raw: string) => void
   frames: Record<string, unknown>[]
+  drain: () => Promise<void>
 }
 
-function createHarness(): Harness {
+function createHarness(contextOverrides: Partial<SiteMcpContext> = {}): Harness {
   const frames: Record<string, unknown>[] = []
   const server = createSiteMcpServer({
-    context: createContext(),
+    context: { ...createContext(), ...contextOverrides },
     write: (frame) => {
       expect(frame.endsWith('\n'), 'every frame must be newline-terminated').toBe(true)
       const parsed: unknown = JSON.parse(frame)
@@ -115,6 +117,7 @@ function createHarness(): Harness {
   }
   return {
     frames,
+    drain: () => server.drain(),
     sendRaw,
     push: (raw) => server.push(raw),
     send: (message) => sendRaw(`${JSON.stringify(message)}\n`)
@@ -123,6 +126,13 @@ function createHarness(): Harness {
 
 function request(id: number | string, method: string, params?: unknown): Record<string, unknown> {
   return { jsonrpc: '2.0', id, method, ...(params === undefined ? {} : { params }) }
+}
+
+/** Drains the promise ticks an off-chain response settles through. No wall clock involved. */
+async function flushMicrotasks(): Promise<void> {
+  for (let i = 0; i < 20; i += 1) {
+    await Promise.resolve()
+  }
 }
 
 describe('initialize', () => {
@@ -358,6 +368,42 @@ describe('stream framing', () => {
     expect(lines).toEqual(['{"a":1}'])
     reader.end()
     expect(lines).toEqual(['{"a":1}', '{"b":2}'])
+  })
+})
+
+describe('concurrent tools', () => {
+  it('answers other calls while a plan review is still open', async () => {
+    const gate: { release: (() => void) | null } = { release: null }
+    const harness = createHarness({
+      annotatePlan: () =>
+        new Promise((resolve) => {
+          gate.release = () => resolve({ decision: 'approved', annotations: [] })
+        })
+    })
+
+    harness.push(
+      `${JSON.stringify(
+        request(1, 'tools/call', { name: 'annotate_plan', arguments: { content: '# Plan' } })
+      )}\n`
+    )
+    const during = await harness.send(request(2, 'tools/call', { name: 'list_sites' }))
+
+    // Why this matters: the dispatch chain answers strictly in order, so without annotate_plan
+    // opting out, this call could not be answered until a person finished reading.
+    expect(during.map((frame) => frame.id)).toEqual([2])
+    gate.release?.()
+    // Why not drain(): this tool deliberately runs off the chain drain() awaits, so its response
+    // lands on its own promise. Flushing microtasks is deterministic; a sleep would guess.
+    await flushMicrotasks()
+    expect(harness.frames.map((frame) => frame.id)).toEqual([2, 1])
+  })
+
+  it('still answers ordinary tools in arrival order', async () => {
+    const harness = createHarness()
+    harness.push(`${JSON.stringify(request(1, 'tools/call', { name: 'list_sites' }))}\n`)
+    harness.push(`${JSON.stringify(request(2, 'tools/call', { name: 'workspace_overview' }))}\n`)
+    await harness.drain()
+    expect(harness.frames.map((frame) => frame.id)).toEqual([1, 2])
   })
 })
 

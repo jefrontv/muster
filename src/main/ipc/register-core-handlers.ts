@@ -47,6 +47,7 @@ import { registerSiteHandlers } from './sites'
 import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
 import { registerChatModeHandlers } from './chat-mode'
 import { registerChatConnectorHandlers } from './chat-connector'
+import { registerPlanAnnotationHandlers } from './plan-annotation'
 import { registerChatThreadStreamHandlers } from './chat-thread-stream'
 import { registerChatThreadTitleHandlers } from './chat-thread-title'
 import { registerSiteRunHandlers } from './site-runs'
@@ -241,6 +242,7 @@ export function registerCoreHandlers(
   registerSiteDbSnapshotHandlers(store)
   registerChatModeHandlers()
   registerChatConnectorHandlers()
+  registerPlanAnnotationHandlers()
   registerChatThreadStreamHandlers(store)
   registerChatThreadTitleHandlers({
     getSettings: () => store.getSettings(),

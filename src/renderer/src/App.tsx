@@ -329,6 +329,11 @@ const ChatModePage = lazy(() => import('./components/chat-mode/ChatModePage'))
 const SiteBindDialog = lazy(() =>
   import('./components/sites/SiteBindDialog').then((m) => ({ default: m.SiteBindDialog }))
 )
+const PlanAnnotationDialog = lazy(() =>
+  import('./components/plan-annotation/PlanAnnotationDialog').then((m) => ({
+    default: m.PlanAnnotationDialog
+  }))
+)
 const WorkspaceSpacePage = lazy(() => import('./components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('./components/mobile/MobilePage'))
 const QuickOpen = lazy(() => import('./components/QuickOpen'))
@@ -2697,6 +2702,8 @@ function App(): React.JSX.Element {
         </ConfirmationDialogProvider>
       </TooltipProvider>
       <SiteBindDialog />
+      {/* App-wide, not inside a view: an agent in any terminal can ask for a plan review. */}
+      <PlanAnnotationDialog />
       <Toaster closeButton toastOptions={{ className: 'font-sans text-sm' }} />
       <PinnedTabCloseDialog />
       {/* Why: Electron's drag-region hit-test is DOM-order-based (ignores z-index); render last so WindowControls stay clickable. */}

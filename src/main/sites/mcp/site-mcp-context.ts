@@ -10,6 +10,10 @@
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import type { Site, SiteCustomStep, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
 import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
+import type {
+  PlanAnnotationRequest,
+  PlanAnnotationResult
+} from '../../../shared/plan-annotation-types'
 
 /** The subset of Store the tools touch. The real Store satisfies this structurally. */
 export type SiteMcpStore = {
@@ -49,6 +53,8 @@ export type SiteMcpContext = {
   /** The agent's working directory — resolves an omitted `site` to the checkout it is editing. */
   cwd: string
   store: SiteMcpStore
+  /** Opens a plan for human review in the GUI. Rejects when no window is running. */
+  annotatePlan: SiteMcpAnnotatePlan
   /**
    * Applies a site write. Prefer this over `store.updateSite`: when the GUI is
    * running it owns the live state, and a direct disk write here is reverted by
@@ -98,9 +104,22 @@ export type SiteMcpJsonSchema = {
   additionalProperties: false
 }
 
+/** Opens a plan in the running GUI and resolves once a person has reviewed it. */
+export type SiteMcpAnnotatePlan = (
+  request: Omit<PlanAnnotationRequest, 'requestId'>
+) => Promise<PlanAnnotationResult>
+
 export type SiteMcpTool = {
   name: string
   description: string
   inputSchema: SiteMcpJsonSchema
+  /**
+   * Runs off the server's serialized dispatch chain.
+   *
+   * Why: calls are answered strictly in arrival order so a client never sees them interleave, but a
+   * tool that waits on a human holds that chain for as long as the human takes — stalling every
+   * later call, including read-only ones. Only set this for tools whose latency is a person.
+   */
+  concurrent?: boolean
   run: (context: SiteMcpContext, args: Record<string, unknown>) => Promise<unknown>
 }

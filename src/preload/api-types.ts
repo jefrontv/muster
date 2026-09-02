@@ -42,6 +42,7 @@ import type {
   ChatWorkspacePatch
 } from '../shared/chat-mode-types'
 import type { ChatConnectorConfirmRequest } from '../shared/chat-connector-types'
+import type { PlanAnnotationRequest, PlanAnnotationResult } from '../shared/plan-annotation-types'
 import type {
   ChatThreadSearchRequest,
   ChatThreadSearchResponse
@@ -968,6 +969,15 @@ export type ChatConnectorApi = {
   onConfirmRequest: (callback: (request: ChatConnectorConfirmRequest) => void) => () => void
 }
 
+/** Human review of an agent's plan, requested by the muster-sites MCP server. */
+export type PlanAnnotationApi = {
+  /** Settles the blocked tool call. Returns false when the review already timed out. */
+  respond: (args: { requestId: string; result: PlanAnnotationResult }) => Promise<boolean>
+  /** Reviews queued before this window existed, front first. */
+  listPending: () => Promise<PlanAnnotationRequest[]>
+  onRequest: (callback: (request: PlanAnnotationRequest) => void) => () => void
+}
+
 /** Chat mode's headless stream-json transport: one child process per thread.
  *  Assistant deltas and lifecycle arrive via onEvent; the transcript file stays
  *  the authoritative message source. */
@@ -1724,6 +1734,7 @@ export type PreloadApi = {
   siteDbSnapshots: SiteDbSnapshotsApi
   chatMode: ChatModeApi
   chatConnector: ChatConnectorApi
+  planAnnotation: PlanAnnotationApi
   chatThreadStream: ChatThreadStreamApi
   chatThreadTitle: ChatThreadTitleApi
   siteRoots: SiteRootsApi

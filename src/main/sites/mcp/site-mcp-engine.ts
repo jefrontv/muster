@@ -19,6 +19,10 @@ import { createSiteSshSession } from '../site-ssh-session'
 import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
 import { setStepLibraryThroughBridge, updateSiteThroughBridge } from './site-mcp-store-bridge'
+import {
+  PlanBridgeUnavailableError,
+  requestPlanAnnotationThroughBridge
+} from './site-mcp-plan-bridge'
 
 export type SiteMcpEngineOptions = {
   store: SiteMcpStore
@@ -52,6 +56,19 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
             bridgeFile: options.bridgeFile
           })
         : Promise.resolve(store.updateSite(siteId, updates)),
+    annotatePlan: (request) =>
+      requestPlanAnnotationThroughBridge({
+        // Why throw when absent rather than degrade: a plan review needs a person, and this process
+        // has no window. Failing here says so; falling back would silently return no feedback.
+        bridgeFile:
+          options.bridgeFile ??
+          (() => {
+            throw new PlanBridgeUnavailableError(
+              'No Muster window is running, so there is nobody to review the plan.'
+            )
+          })(),
+        request
+      }),
     // Reads come from the store (the refreshing wrapper re-parses the file); writes take the same
     // bridge-first path as a site write, for the same clobbering reason.
     getStepLibrary: () => store.getSiteStepLibrary?.() ?? [],
