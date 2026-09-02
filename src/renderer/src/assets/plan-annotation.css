@@ -1,7 +1,8 @@
 /* Inline annotation highlights for the plan review modal.
    Painted via the CSS Custom Highlight API (plan-annotation-highlights.ts), so these selectors and
-   the names in that file must agree. ::highlight() supports color/background only — no radius,
-   padding or border — which is why an annotated passage reads as a marker stripe, not a chip. */
+   the names in that file must agree. ::highlight() accepts only colour, background-color,
+   text-decoration and text-shadow — no radius, padding or border — so an annotated passage reads
+   as a marker stripe rather than a chip. */
 
 ::highlight(plan-annotation-note) {
   background-color: color-mix(in srgb, var(--plan-annotation-mark) 38%, transparent);
@@ -13,13 +14,32 @@
   color: inherit;
 }
 
+/* Why line-through as well as red: colour alone does not survive a colour-blind reader or a
+   screenshot in greyscale, and "delete this" is the one instruction that must not be misread. */
+::highlight(plan-annotation-remove) {
+  background-color: color-mix(in srgb, var(--plan-annotation-remove) 34%, transparent);
+  color: inherit;
+  text-decoration-line: line-through;
+  text-decoration-color: var(--plan-annotation-remove);
+  text-decoration-thickness: 2px;
+}
+
+::highlight(plan-annotation-good) {
+  background-color: color-mix(in srgb, var(--plan-annotation-good) 32%, transparent);
+  color: inherit;
+}
+
 :root {
   --plan-annotation-mark: oklch(0.85 0.16 95);
+  --plan-annotation-remove: oklch(0.63 0.21 25);
+  --plan-annotation-good: oklch(0.72 0.18 150);
 }
 
 .dark {
-  /* Brighter in dark mode: the same mix over a dark surface reads as mud otherwise. */
+  /* Brighter in dark mode: the same mixes over a dark surface read as mud otherwise. */
   --plan-annotation-mark: oklch(0.82 0.17 95);
+  --plan-annotation-remove: oklch(0.66 0.22 25);
+  --plan-annotation-good: oklch(0.75 0.19 150);
 }
 
 /* Plan document typography. Deliberately not the editor's prose styles: this is a read-and-mark

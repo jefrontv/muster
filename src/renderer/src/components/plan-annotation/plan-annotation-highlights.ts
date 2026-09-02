@@ -5,9 +5,20 @@
 // highlight registry styles Ranges without touching the tree — the same reason MarkdownPreview's
 // find-in-page uses it (see markdown-preview-search.ts).
 
-/** Must match the ::highlight() selectors in plan-annotation.css. */
-const NOTE_HIGHLIGHT = 'plan-annotation-note'
-const ACTIVE_NOTE_HIGHLIGHT = 'plan-annotation-note-active'
+/**
+ * One registry name per meaning. Must match the ::highlight() selectors in plan-annotation.css.
+ *
+ * Why split by kind rather than one colour for everything: a reviewer scanning the document should
+ * be able to tell "delete this" from "this is fine" without opening the note.
+ */
+const HIGHLIGHT_NAMES = {
+  note: 'plan-annotation-note',
+  remove: 'plan-annotation-remove',
+  good: 'plan-annotation-good',
+  active: 'plan-annotation-note-active'
+} as const
+
+export type HighlightTone = 'note' | 'remove' | 'good'
 
 type HighlightScope = {
   CSS?: { highlights?: Map<string, unknown> }
@@ -39,30 +50,36 @@ function registry(): {
 }
 
 export function paintPlanHighlights(args: {
-  ranges: readonly Range[]
+  /** Ranges grouped by the tone they should read as. */
+  byTone: Readonly<Record<HighlightTone, readonly Range[]>>
   activeRange: Range | null
 }): void {
   const api = registry()
   if (!api) {
     return
   }
-  const inactive = args.ranges.filter((range) => range !== args.activeRange)
-  if (inactive.length > 0) {
-    api.highlights.set(NOTE_HIGHLIGHT, api.create(inactive))
-  } else {
-    api.highlights.delete(NOTE_HIGHLIGHT)
+  for (const tone of ['note', 'remove', 'good'] as const) {
+    // The active range is painted by its own registry entry, so drop it here or the two overlap
+    // and the emphasis is lost.
+    const ranges = args.byTone[tone].filter((range) => range !== args.activeRange)
+    if (ranges.length > 0) {
+      api.highlights.set(HIGHLIGHT_NAMES[tone], api.create(ranges))
+    } else {
+      api.highlights.delete(HIGHLIGHT_NAMES[tone])
+    }
   }
   if (args.activeRange) {
-    api.highlights.set(ACTIVE_NOTE_HIGHLIGHT, api.create([args.activeRange]))
+    api.highlights.set(HIGHLIGHT_NAMES.active, api.create([args.activeRange]))
   } else {
-    api.highlights.delete(ACTIVE_NOTE_HIGHLIGHT)
+    api.highlights.delete(HIGHLIGHT_NAMES.active)
   }
 }
 
 export function clearPlanHighlights(): void {
   const api = registry()
-  api?.highlights.delete(NOTE_HIGHLIGHT)
-  api?.highlights.delete(ACTIVE_NOTE_HIGHLIGHT)
+  for (const name of Object.values(HIGHLIGHT_NAMES)) {
+    api?.highlights.delete(name)
+  }
 }
 
 /**

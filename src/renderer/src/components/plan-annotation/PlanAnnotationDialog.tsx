@@ -12,31 +12,23 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
-import { Check, MessageSquare, Copy, Send } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { PlanAnnotationFooter, PlanAnnotationHeader } from './PlanAnnotationChrome'
 import type {
   PlanAnnotationDecision,
   PlanAnnotationKind,
-  PlanAnnotationRequest,
   PlanAnnotationResult
 } from '../../../../shared/plan-annotation-types'
 import { PlanAnnotationComposer, type ComposerAnchor } from './PlanAnnotationComposer'
 import { PlanAnnotationDocument } from './PlanAnnotationDocument'
+import { usePlanReviewQueue } from './use-plan-review-queue'
+import { usePlanAnnotationRanges } from './use-plan-annotation-ranges'
 import { PlanAnnotationGlobalNote } from './PlanAnnotationGlobalNote'
-import {
-  PlanAnnotationViewModes,
-  VIEW_MODE_WIDTH,
-  type PlanViewMode
-} from './PlanAnnotationViewModes'
+import { VIEW_MODE_WIDTH, type PlanViewMode } from './PlanAnnotationViewModes'
 import { unifiedPlanDiff } from './plan-annotation-diff'
 import { PlanAnnotationNoteList } from './PlanAnnotationNoteList'
 import { clearDraft, draftKey, loadDraft, saveDraft } from './plan-annotation-drafts'
-import {
-  clearPlanHighlights,
-  findRangeForQuote,
-  paintPlanHighlights
-} from './plan-annotation-highlights'
+import { clearPlanHighlights } from './plan-annotation-highlights'
 import {
   createNote,
   previewFeedback,
@@ -48,10 +40,11 @@ import {
 } from './plan-annotation-notes'
 
 export function PlanAnnotationDialog(): React.JSX.Element | null {
-  const [queue, setQueue] = useState<PlanAnnotationRequest[]>([])
+  const { current, waiting, popCurrent } = usePlanReviewQueue()
   const [notes, setNotes] = useState<DraftNote[]>([])
   const [composer, setComposer] = useState<ComposerAnchor | null>(null)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<PlanViewMode>('reading')
@@ -60,31 +53,18 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
 
   const scroller = useRef<HTMLDivElement | null>(null)
   const document_ = useRef<HTMLDivElement | null>(null)
-  // Live Ranges cannot be serialized into a draft, so they are kept beside the notes and rebuilt
-  // from the quote when a draft is restored.
-  const rangesById = useRef(new Map<string, Range>())
+  const { rangesById, noteAtPoint } = usePlanAnnotationRanges({
+    notes,
+    activeNoteId,
+    documentRef: document_,
+    content: current?.content
+  })
   const pendingRange = useRef<Range | null>(null)
+  // Why refs: openComposer needs editNote and placeComposer, both of which are declared after it
+  // and depend on state it also touches. Refs break the cycle without reordering the whole file.
+  const editNoteRef = useRef<((id: string) => void) | null>(null)
+  const placeComposerRef = useRef<((range: Range, quote: string) => void) | null>(null)
 
-  useEffect(
-    () => window.api.planAnnotation.onRequest((request) => setQueue((q) => [...q, request])),
-    []
-  )
-
-  // Why: a review can be queued before this window existed, and without this the agent waits out
-  // the whole timeout for a modal nobody ever saw.
-  useEffect(() => {
-    void window.api.planAnnotation
-      .listPending()
-      .then((pending) =>
-        setQueue((q) => [
-          ...q,
-          ...pending.filter((p) => !q.some((entry) => entry.requestId === p.requestId))
-        ])
-      )
-      .catch(() => undefined)
-  }, [])
-
-  const current = queue[0] ?? null
   const key = current ? draftKey(current) : null
 
   useEffect(() => {
@@ -92,6 +72,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     setNotes(key ? loadDraft(key) : [])
     setComposer(null)
     setActiveNoteId(null)
+    setEditingNoteId(null)
     setShowPreview(false)
     setGlobalOpen(false)
     setEditing(false)
@@ -117,48 +98,50 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     [key]
   )
 
-  // Rebuild any missing Range (restored draft) and repaint, after the document has rendered.
-  useEffect(() => {
-    const root = document_.current
-    if (!root) {
-      return
-    }
-    for (const note of notes) {
-      if (note.kind === 'global' || rangesById.current.has(note.id)) {
-        continue
+  const openComposer = useCallback(
+    (event: { clientX: number; clientY: number }) => {
+      const selection = window.getSelection()
+      // A click with no selection, landing on an existing highlight, means "open that note" rather
+      // than "start a new one" — the same box serves both.
+      if (!selection || selection.isCollapsed) {
+        const hit = noteAtPoint(event.clientX, event.clientY)
+        if (hit) {
+          editNoteRef.current?.(hit)
+        }
+        return
       }
-      const range = findRangeForQuote(root, note.quote, note.startLine)
-      if (range) {
-        rangesById.current.set(note.id, range)
+      const parsed = readSelectionAnchor(selection)
+      const pane = scroller.current
+      const shell = pane?.closest('[data-slot="dialog-content"]') ?? null
+      if (!parsed || !pane || !shell) {
+        return
       }
-    }
-    const ranges = notes
-      .map((note) => rangesById.current.get(note.id))
-      .filter((range): range is Range => range !== undefined)
-    paintPlanHighlights({
-      ranges,
-      activeRange: activeNoteId ? (rangesById.current.get(activeNoteId) ?? null) : null
-    })
-  }, [notes, activeNoteId, current?.content])
+      const range = selection.getRangeAt(0)
+      pendingRange.current = range.cloneRange()
+      setEditingNoteId(null)
+      placeComposerRef.current?.(pendingRange.current, parsed.quote)
+    },
+    [noteAtPoint]
+  )
 
-  const openComposer = useCallback(() => {
-    const selection = window.getSelection()
-    const parsed = readSelectionAnchor(selection)
+  /** Places the composer over a range, whether that came from a selection or a saved note. */
+  const placeComposer = useCallback((range: Range, quote: string): void => {
     const pane = scroller.current
     const shell = pane?.closest('[data-slot="dialog-content"]') ?? null
-    if (!parsed || !selection || !pane || !shell) {
+    if (!pane || !shell) {
       return
     }
-    const range = selection.getRangeAt(0)
-    pendingRange.current = range.cloneRange()
     const rect = range.getBoundingClientRect()
     const pageRect = pane.getBoundingClientRect()
     const shellRect = shell.getBoundingClientRect()
-    // Both rects are captured now rather than read during render: at render time the composer has
-    // not been laid out yet, so a rect read then is stale and the box lands somewhere arbitrary.
     setComposer({
-      quote: parsed.quote,
-      rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right },
+      quote,
+      rect: {
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right
+      },
       bounds: {
         top: pageRect.top,
         bottom: pageRect.bottom,
@@ -169,22 +152,63 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
     })
   }, [])
 
-  const saveNote = useCallback(
-    (kind: PlanAnnotationKind, body: string) => {
-      const resolved = readSelectionAnchorFromRange(pendingRange.current)
-      if (!resolved) {
+  /**
+   * Reopens a saved note in the same box that created it.
+   *
+   * Scrolls first so the passage is on screen: placing the composer against an off-screen rect
+   * would pin it to the edge of the pane, nowhere near the text it belongs to.
+   */
+  const editNote = useCallback(
+    (id: string) => {
+      const note = notes.find((entry) => entry.id === id)
+      const range = rangesById.current.get(id)
+      if (!note || !range) {
         return
       }
-      const note = createNote({ kind, body, anchor: resolved })
-      if (pendingRange.current) {
-        rangesById.current.set(note.id, pendingRange.current)
+      pendingRange.current = range
+      setEditingNoteId(id)
+      setActiveNoteId(id)
+      // Instant, not smooth: the composer is positioned from the passage's rect, so the rect has
+      // to be final before it is read. Animating meant guessing when the scroll had settled — and
+      // the rAF that guess hung off never fires at all while the window is hidden.
+      const target =
+        range.startContainer instanceof Element
+          ? range.startContainer
+          : range.startContainer.parentElement
+      target?.scrollIntoView({ block: 'center' })
+      placeComposer(range, note.quote)
+    },
+    [notes, placeComposer]
+  )
+
+  editNoteRef.current = editNote
+  placeComposerRef.current = placeComposer
+
+  const saveNote = useCallback(
+    (kind: PlanAnnotationKind, body: string, label?: string) => {
+      if (editingNoteId) {
+        applyNotes(
+          notes.map((note) =>
+            note.id === editingNoteId ? { ...note, kind, body, ...(label ? { label } : {}) } : note
+          )
+        )
+      } else {
+        const resolved = readSelectionAnchorFromRange(pendingRange.current)
+        if (!resolved) {
+          return
+        }
+        const note = createNote({ kind, body, anchor: resolved, label })
+        if (pendingRange.current) {
+          rangesById.current.set(note.id, pendingRange.current)
+        }
+        applyNotes([...notes, note])
       }
-      applyNotes([...notes, note])
       setComposer(null)
+      setEditingNoteId(null)
       pendingRange.current = null
       window.getSelection()?.removeAllRanges()
     },
-    [applyNotes, notes]
+    [applyNotes, editingNoteId, notes]
   )
 
   const removeNote = useCallback(
@@ -225,18 +249,17 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         clearDraft(key)
       }
       clearPlanHighlights()
-      setQueue((q) => q.slice(1))
+      popCurrent()
     },
     [current, editedContent, key, notes]
   )
 
   const sorted = useMemo(() => sortNotes(notes), [notes])
+  const editingNote = editingNoteId ? (notes.find((n) => n.id === editingNoteId) ?? null) : null
 
   if (!current) {
     return null
   }
-
-  const waiting = queue.length - 1
 
   return (
     <Dialog open onOpenChange={(next) => !next && settle('dismissed')}>
@@ -246,57 +269,25 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
         showCloseButton={false}
         className="flex h-[min(88vh,900px)] w-[min(1180px,calc(100vw-4rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1180px]"
       >
-        <DialogHeader className="flex-row items-center gap-3 border-b border-border/60 px-4 py-2.5">
-          <DialogTitle className="flex min-w-0 items-center gap-2 text-[13px] font-medium">
-            <span className="truncate">{current.title}</span>
-            {current.round > 1 ? (
-              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
-                round {current.round}
-              </span>
-            ) : null}
-            {waiting > 0 ? (
-              <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
-                {waiting} more waiting
-              </span>
-            ) : null}
-          </DialogTitle>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <PlanAnnotationViewModes
-              mode={viewMode}
-              editing={editing}
-              onModeChange={setViewMode}
-              onToggleEdit={() => {
-                setEditing((was) => {
-                  if (!was && editedContent === null) {
-                    setEditedContent(current.content)
-                  }
-                  return !was
-                })
-                setComposer(null)
-              }}
-            />
-            <span className="h-4 w-px bg-border" />
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs"
-              disabled={editing}
-              onClick={() => setGlobalOpen((open) => !open)}
-            >
-              <MessageSquare className="size-3.5" />
-              Global comment
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs"
-              onClick={() => void navigator.clipboard.writeText(editedContent ?? current.content)}
-            >
-              <Copy className="size-3.5" />
-              Copy plan
-            </Button>
-          </div>
-        </DialogHeader>
+        <PlanAnnotationHeader
+          title={current.title}
+          round={current.round}
+          waiting={waiting}
+          viewMode={viewMode}
+          editing={editing}
+          onModeChange={setViewMode}
+          onToggleEdit={() => {
+            setEditing((was) => {
+              if (!was && editedContent === null) {
+                setEditedContent(current.content)
+              }
+              return !was
+            })
+            setComposer(null)
+          }}
+          onToggleGlobal={() => setGlobalOpen((open) => !open)}
+          onCopyPlan={() => void navigator.clipboard.writeText(editedContent ?? current.content)}
+        />
 
         {globalOpen ? (
           <PlanAnnotationGlobalNote onCancel={() => setGlobalOpen(false)} onSave={addGlobal} />
@@ -308,7 +299,15 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
             className="scrollbar-sleek min-w-0 flex-1 overflow-y-auto"
             // Why gated on editing: a selection inside the textarea is a text cursor, not an
             // annotation, and popping a composer over the caret makes editing impossible.
-            onMouseUp={editing ? undefined : openComposer}
+            onMouseUp={
+              editing
+                ? undefined
+                : (event) =>
+                    openComposer({
+                      clientX: event.clientX,
+                      clientY: event.clientY
+                    })
+            }
           >
             <div className={`mx-auto w-full px-10 py-8 ${VIEW_MODE_WIDTH[viewMode]}`}>
               {editing ? (
@@ -336,6 +335,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
               activeNoteId={activeNoteId}
               onTogglePreview={() => setShowPreview((shown) => !shown)}
               onFocusNote={setActiveNoteId}
+              onEditNote={editNote}
               onRemoveNote={removeNote}
             />
           ) : null}
@@ -346,37 +346,28 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
             anchor={composer}
             onCancel={() => {
               setComposer(null)
+              setEditingNoteId(null)
               pendingRange.current = null
             }}
             labels={QUICK_LABELS}
+            existing={editingNote ? { kind: editingNote.kind, body: editingNote.body } : null}
+            onDelete={() => {
+              if (editingNoteId) {
+                removeNote(editingNoteId)
+              }
+              setComposer(null)
+              setEditingNoteId(null)
+            }}
             onSave={saveNote}
           />
         ) : null}
 
-        <div className="flex items-center gap-2 border-t border-border/60 px-4 py-2.5">
-          <p className="text-[11px] text-muted-foreground">
-            {notes.length === 0
-              ? 'Select any passage to comment on it'
-              : `${notes.length} ${notes.length === 1 ? 'note' : 'notes'} ready to send`}
-          </p>
-          <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => settle('dismissed')}>
-              Close
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => settle(notes.length > 0 ? 'approved_with_notes' : 'approved')}
-            >
-              <Check className="size-4" />
-              {notes.length > 0 ? 'Approve with notes' : 'Approve'}
-            </Button>
-            <Button size="sm" disabled={notes.length === 0} onClick={() => settle('annotated')}>
-              <Send className="size-4" />
-              Send feedback
-            </Button>
-          </div>
-        </div>
+        <PlanAnnotationFooter
+          noteCount={notes.length}
+          onDismiss={() => settle('dismissed')}
+          onApprove={() => settle(notes.length > 0 ? 'approved_with_notes' : 'approved')}
+          onSend={() => settle('annotated')}
+        />
       </DialogContent>
     </Dialog>
   )

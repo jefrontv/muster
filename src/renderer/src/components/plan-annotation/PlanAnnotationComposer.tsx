@@ -47,20 +47,30 @@ const KINDS: {
 export function PlanAnnotationComposer({
   anchor,
   labels,
+  existing,
   onCancel,
+  onDelete,
   onSave
 }: {
   anchor: ComposerAnchor
   /** Quick labels the reviewer can stamp on a passage, e.g. "scope", "test". */
   labels: readonly string[]
+  /** Present when reopening a saved note, so the box edits rather than adds. */
+  existing: { kind: PlanAnnotationKind; body: string } | null
   onCancel: () => void
+  onDelete: () => void
   onSave: (kind: PlanAnnotationKind, body: string, label?: string) => void
 }): React.JSX.Element {
-  const [body, setBody] = useState('')
-  const [kind, setKind] = useState<PlanAnnotationKind>('comment')
+  const [body, setBody] = useState(existing?.body ?? '')
+  const [kind, setKind] = useState<PlanAnnotationKind>(
+    existing && existing.kind !== 'global' ? existing.kind : 'comment'
+  )
   const textarea = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
-  const [placement, setPlacement] = useState<{ left: number; top: number } | null>(null)
+  const [placement, setPlacement] = useState<{
+    left: number
+    top: number
+  } | null>(null)
 
   useEffect(() => {
     textarea.current?.focus()
@@ -84,7 +94,10 @@ export function PlanAnnotationComposer({
     const top = fitsBelow ? below : Math.max(bounds.top + EDGE, rect.top - GAP - height)
     // All the clamping above is in viewport space; the box is absolute inside the dialog, so the
     // last step is a translation into that box's coordinates.
-    setPlacement({ left: Math.round(left - origin.left), top: Math.round(top - origin.top) })
+    setPlacement({
+      left: Math.round(left - origin.left),
+      top: Math.round(top - origin.top)
+    })
   }, [anchor, body, kind])
 
   const canSave = body.trim().length > 0 || KINDS.find((entry) => entry.kind === kind)?.standalone
@@ -183,11 +196,22 @@ export function PlanAnnotationComposer({
       ) : null}
 
       <div className="flex items-center justify-between border-t border-border/60 px-3 py-2">
-        <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px] text-foreground/60">
-          ⌘↵
-        </kbd>
+        <div className="flex items-center gap-2">
+          <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px] text-foreground/60">
+            ⌘↵
+          </kbd>
+          {existing ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-[11px] text-muted-foreground transition-colors hover:text-destructive"
+            >
+              Delete note
+            </button>
+          ) : null}
+        </div>
         <Button size="sm" disabled={!canSave} onClick={() => save()}>
-          Save
+          {existing ? 'Update' : 'Save'}
         </Button>
       </div>
     </div>

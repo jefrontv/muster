@@ -14,7 +14,9 @@ import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import { LINE_END_ATTRIBUTE, LINE_START_ATTRIBUTE } from './plan-annotation-notes'
 
-type MarkdownNode = { position?: { start?: { line?: number }; end?: { line?: number } } }
+type MarkdownNode = {
+  position?: { start?: { line?: number }; end?: { line?: number } }
+}
 
 /**
  * Tags a block with its source range so a text selection resolves back to plan lines.

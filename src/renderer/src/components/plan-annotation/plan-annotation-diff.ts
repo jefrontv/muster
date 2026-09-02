@@ -20,7 +20,12 @@ function lcsLengths(before: readonly string[], after: readonly string[]): number
   return table
 }
 
-type Op = { sign: ' ' | '-' | '+'; text: string; beforeLine: number; afterLine: number }
+type Op = {
+  sign: ' ' | '-' | '+'
+  text: string
+  beforeLine: number
+  afterLine: number
+}
 
 function diffOps(before: readonly string[], after: readonly string[]): Op[] {
   const table = lcsLengths(before, after)
@@ -29,23 +34,48 @@ function diffOps(before: readonly string[], after: readonly string[]): Op[] {
   let j = 0
   while (i < before.length && j < after.length) {
     if (before[i] === after[j]) {
-      ops.push({ sign: ' ', text: before[i]!, beforeLine: i + 1, afterLine: j + 1 })
+      ops.push({
+        sign: ' ',
+        text: before[i]!,
+        beforeLine: i + 1,
+        afterLine: j + 1
+      })
       i += 1
       j += 1
     } else if (table[i + 1]![j]! >= table[i]![j + 1]!) {
-      ops.push({ sign: '-', text: before[i]!, beforeLine: i + 1, afterLine: j + 1 })
+      ops.push({
+        sign: '-',
+        text: before[i]!,
+        beforeLine: i + 1,
+        afterLine: j + 1
+      })
       i += 1
     } else {
-      ops.push({ sign: '+', text: after[j]!, beforeLine: i + 1, afterLine: j + 1 })
+      ops.push({
+        sign: '+',
+        text: after[j]!,
+        beforeLine: i + 1,
+        afterLine: j + 1
+      })
       j += 1
     }
   }
   while (i < before.length) {
-    ops.push({ sign: '-', text: before[i]!, beforeLine: i + 1, afterLine: j + 1 })
+    ops.push({
+      sign: '-',
+      text: before[i]!,
+      beforeLine: i + 1,
+      afterLine: j + 1
+    })
     i += 1
   }
   while (j < after.length) {
-    ops.push({ sign: '+', text: after[j]!, beforeLine: i + 1, afterLine: j + 1 })
+    ops.push({
+      sign: '+',
+      text: after[j]!,
+      beforeLine: i + 1,
+      afterLine: j + 1
+    })
     j += 1
   }
   return ops
