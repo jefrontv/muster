@@ -117,7 +117,7 @@ describe('SiteWriteBridgeServer', () => {
 })
 
 describe('plan review route', () => {
-  it('parks the response until a reviewer answers', async () => {
+  it('answers /plan/annotate at once with an id, and parks /plan/collect until a reviewer answers', async () => {
     const userDataPath = newUserData()
     const server = new SiteWriteBridgeServer()
     servers.push(server)
@@ -125,33 +125,46 @@ describe('plan review route', () => {
     await server.start({
       store: { updateSite: () => null },
       userDataPath,
-      onPlanAnnotationRequested: () =>
-        new Promise<PlanAnnotationResult>((resolve) => {
-          gate.answer = resolve
-        })
+      onPlanAnnotationRequested: () => ({ requestId: 'review-1' }),
+      onPlanAnnotationCollect: async () => {
+        const { promise, resolve } = Promise.withResolvers<PlanAnnotationResult>()
+        gate.answer = resolve
+        return { status: 'settled' as const, result: await promise }
+      }
     })
 
     const endpoint = readEndpoint(userDataPath)
-    let settled = false
-    const pending = fetch(`http://127.0.0.1:${endpoint.port}/plan/annotate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-muster-site-bridge-token': endpoint.token
-      },
-      body: JSON.stringify({ content: '# Plan', title: 'plan.md', round: 1 })
-    }).then(async (response) => {
-      settled = true
-      return (await response.json()) as PlanAnnotationResult
-    })
+    const call = async (path: string, body: unknown): Promise<Response> =>
+      fetch(`http://127.0.0.1:${endpoint.port}${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-muster-site-bridge-token': endpoint.token
+        },
+        body: JSON.stringify(body)
+      })
 
-    // Why: the whole point of the route is that it does NOT answer yet. A reply here would mean
-    // the agent got "no feedback" before the user had seen anything.
+    // Why this must not park: an MCP tool call cannot outlive its client's request timeout, so the
+    // open has to answer inside it. Everything slow happens on the collect below.
+    const opened = await call('/plan/annotate', { content: '# Plan', title: 'plan.md', round: 1 })
+    expect(await opened.json()).toEqual({ requestId: 'review-1' })
+
+    let settled = false
+    const pending = call('/plan/collect', { reviewId: 'review-1', waitMs: 5_000 }).then(
+      async (response) => {
+        settled = true
+        return (await response.json()) as { status: string; result: PlanAnnotationResult }
+      }
+    )
+
     await vi.waitFor(() => expect(gate.answer).not.toBeNull())
     expect(settled).toBe(false)
 
     gate.answer?.({ decision: 'annotated', annotations: [] })
-    await expect(pending).resolves.toMatchObject({ decision: 'annotated' })
+    await expect(pending).resolves.toMatchObject({
+      status: 'settled',
+      result: { decision: 'annotated' }
+    })
   })
 
   it('rejects a bad token before reaching the reviewer', async () => {
@@ -162,9 +175,9 @@ describe('plan review route', () => {
     await server.start({
       store: { updateSite: () => null },
       userDataPath,
-      onPlanAnnotationRequested: async () => {
+      onPlanAnnotationRequested: () => {
         asked()
-        return { decision: 'approved' as const, annotations: [] }
+        return { requestId: 'review-1' }
       }
     })
     const endpoint = readEndpoint(userDataPath)
@@ -184,7 +197,7 @@ describe('plan review route', () => {
     await server.start({
       store: { updateSite: () => null },
       userDataPath,
-      onPlanAnnotationRequested: async () => ({ decision: 'approved' as const, annotations: [] })
+      onPlanAnnotationRequested: () => ({ requestId: 'review-1' })
     })
     const endpoint = readEndpoint(userDataPath)
     const response = await fetch(`http://127.0.0.1:${endpoint.port}/plan/annotate`, {
@@ -194,6 +207,28 @@ describe('plan review route', () => {
         'x-muster-site-bridge-token': endpoint.token
       },
       body: JSON.stringify({ content: '' })
+    })
+    expect(response.status).toBe(400)
+  })
+
+  it('refuses a collect with no review id', async () => {
+    const userDataPath = newUserData()
+    const server = new SiteWriteBridgeServer()
+    servers.push(server)
+    await server.start({
+      store: { updateSite: () => null },
+      userDataPath,
+      onPlanAnnotationRequested: () => ({ requestId: 'review-1' }),
+      onPlanAnnotationCollect: async () => ({ status: 'unknown' as const })
+    })
+    const endpoint = readEndpoint(userDataPath)
+    const response = await fetch(`http://127.0.0.1:${endpoint.port}/plan/collect`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-muster-site-bridge-token': endpoint.token
+      },
+      body: JSON.stringify({})
     })
     expect(response.status).toBe(400)
   })

@@ -3,6 +3,7 @@ import { basename, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearSiteMcpClientForTests, rememberSiteMcpClient } from './site-mcp-client-identity'
+import type { PlanAnnotationResult } from '../../../shared/plan-annotation-types'
 import type { SiteMcpContext } from './site-mcp-context'
 import {
   clearPlanRoundsForTests,
@@ -35,7 +36,7 @@ function context(
   } as unknown as SiteMcpContext
 }
 
-const approved = vi.fn(() => Promise.resolve({ decision: 'approved' as const, annotations: [] }))
+const approved = vi.fn(() => Promise.resolve({ requestId: 'r1' }))
 
 describe('annotate_plan', () => {
   it('runs off the dispatch chain, because its latency is a person', () => {
@@ -51,7 +52,7 @@ describe('annotate_plan', () => {
     await tool.run(
       context((request) => {
         seen.push(request)
-        return Promise.resolve({ decision: 'approved', annotations: [] })
+        return Promise.resolve({ requestId: 'r1' })
       }),
       { path }
     )
@@ -97,7 +98,7 @@ describe('annotate_plan', () => {
     const seen: { round: number; previousContent: string | null }[] = []
     const capture = context((request) => {
       seen.push({ round: request.round, previousContent: request.previousContent })
-      return Promise.resolve({ decision: 'annotated' as const, annotations: [] })
+      return Promise.resolve({ requestId: 'r1' })
     })
 
     writeFileSync(path, 'first draft')
@@ -118,7 +119,7 @@ describe('review provenance', () => {
     await tool.run(
       context((request) => {
         seen.push({ agent: request.agent, project: request.project })
-        return Promise.resolve({ decision: 'approved', annotations: [] })
+        return Promise.resolve({ requestId: 'r1' })
       }, sites),
       { content: '# Plan' }
     )
@@ -181,5 +182,122 @@ describe('formatPlanFeedback', () => {
 
   it('says so plainly when an approval carried no notes', () => {
     expect(formatPlanFeedback({ decision: 'approved', annotations: [] })).toContain('no changes')
+  })
+})
+
+describe('collect_plan_review', () => {
+  const collectTool = SITE_MCP_PLAN_TOOLS.find((entry) => entry.name === 'collect_plan_review')!
+
+  function collectContext(
+    collectPlanReview: SiteMcpContext['collectPlanReview'],
+    progress?: SiteMcpContext['progress']
+  ): SiteMcpContext {
+    return {
+      cwd: dir,
+      collectPlanReview,
+      progress,
+      store: { listSites: () => [] }
+    } as unknown as SiteMcpContext
+  }
+
+  it('runs off the dispatch chain, because this is the call a person is inside of', () => {
+    expect(collectTool.concurrent).toBe(true)
+  })
+
+  it('reports pending without failing, so the agent knows to ask again', async () => {
+    const result = (await collectTool.run(
+      collectContext(() => Promise.resolve({ status: 'pending', openedMs: 42_000 })),
+      { review_id: 'r1' }
+    )) as { status: string; open_for_seconds: number }
+    expect(result.status).toBe('pending')
+    expect(result.open_for_seconds).toBe(42)
+  })
+
+  it('tells the agent to stop when the id is unknown', async () => {
+    const result = (await collectTool.run(
+      collectContext(() => Promise.resolve({ status: 'unknown' })),
+      { review_id: 'gone' }
+    )) as { status: string; message: string }
+    expect(result.status).toBe('unknown')
+    expect(result.message).toContain('do not keep polling')
+  })
+
+  it('defaults the wait under a 30s client ceiling when nobody is listening for progress', async () => {
+    const waits: number[] = []
+    await collectTool.run(
+      collectContext((args) => {
+        waits.push(args.waitMs)
+        return Promise.resolve({ status: 'pending', openedMs: 0 })
+      }),
+      { review_id: 'r1' }
+    )
+    // Why assert the number: a default above the common ceiling means the call is cancelled
+    // mid-review on most harnesses, which is the whole failure this transport exists to avoid.
+    expect(waits[0]).toBeLessThan(30_000)
+  })
+
+  it('waits far longer for a client that asked to be kept informed', async () => {
+    const waits: number[] = []
+    await collectTool.run(
+      collectContext(
+        (args) => {
+          waits.push(args.waitMs)
+          return Promise.resolve({ status: 'pending', openedMs: 0 })
+        },
+        () => {}
+      ),
+      { review_id: 'r1' }
+    )
+    expect(waits[0]).toBeGreaterThan(30_000)
+  })
+
+  it('emits keepalive progress while the person reads', async () => {
+    vi.useFakeTimers()
+    const sent: { message: string; progress: number }[] = []
+    const { promise, resolve } = Promise.withResolvers<{
+      status: 'settled'
+      result: PlanAnnotationResult
+    }>()
+    const running = collectTool.run(
+      collectContext(
+        () => promise,
+        (update) => sent.push(update)
+      ),
+      { review_id: 'r1' }
+    )
+
+    await vi.advanceTimersByTimeAsync(25_000)
+    // Why this matters: a client that hears nothing assumes a hung server and cancels the call.
+    expect(sent.length).toBeGreaterThanOrEqual(2)
+    expect(sent[0]!.progress).toBeLessThan(sent[1]!.progress)
+
+    resolve({ status: 'settled', result: { decision: 'approved', annotations: [] } })
+    await running
+
+    const before = sent.length
+    await vi.advanceTimersByTimeAsync(60_000)
+    // And it must stop once answered, or the interval outlives the call forever.
+    expect(sent).toHaveLength(before)
+    vi.useRealTimers()
+  })
+
+  it('formats the verdict for the agent once it lands', async () => {
+    const result = (await collectTool.run(
+      collectContext(() =>
+        Promise.resolve({
+          status: 'settled',
+          result: {
+            decision: 'approved_with_notes',
+            annotations: [
+              { kind: 'comment', quote: 'ship Friday', startLine: 4, endLine: 4, body: 'no' }
+            ]
+          }
+        })
+      ),
+      { review_id: 'r1' }
+    )) as { status: string; decision: string; feedback: string }
+    expect(result.status).toBe('settled')
+    expect(result.decision).toBe('approved_with_notes')
+    expect(result.feedback).toContain('> ship Friday')
   })
 })

@@ -20,8 +20,9 @@ import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
 import { setStepLibraryThroughBridge, updateSiteThroughBridge } from './site-mcp-store-bridge'
 import {
-  PlanBridgeUnavailableError,
-  requestPlanAnnotationThroughBridge
+  collectPlanAnnotationThroughBridge,
+  openPlanAnnotationThroughBridge,
+  PlanBridgeUnavailableError
 } from './site-mcp-plan-bridge'
 
 export type SiteMcpEngineOptions = {
@@ -34,6 +35,21 @@ export type SiteMcpEngineOptions = {
    * with no userData) means writes go straight to this process's store.
    */
   bridgeFile?: string
+}
+
+/**
+ * The bridge file, or a failure that explains itself.
+ *
+ * Why not degrade: both plan-review calls need the GUI. Opening a review without a window would
+ * report a review nobody can see, and collecting one would poll an id that was never issued.
+ */
+function requireBridgeFile(bridgeFile: string | undefined): string {
+  if (!bridgeFile) {
+    throw new PlanBridgeUnavailableError(
+      'No Muster window is running, so there is nobody to review the plan.'
+    )
+  }
+  return bridgeFile
 }
 
 export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpContext {
@@ -57,17 +73,17 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
           })
         : Promise.resolve(store.updateSite(siteId, updates)),
     annotatePlan: (request) =>
-      requestPlanAnnotationThroughBridge({
+      openPlanAnnotationThroughBridge({
         // Why throw when absent rather than degrade: a plan review needs a person, and this process
         // has no window. Failing here says so; falling back would silently return no feedback.
-        bridgeFile:
-          options.bridgeFile ??
-          (() => {
-            throw new PlanBridgeUnavailableError(
-              'No Muster window is running, so there is nobody to review the plan.'
-            )
-          })(),
+        bridgeFile: requireBridgeFile(options.bridgeFile),
         request
+      }),
+    collectPlanReview: (args) =>
+      collectPlanAnnotationThroughBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile),
+        reviewId: args.reviewId,
+        waitMs: args.waitMs
       }),
     // Reads come from the store (the refreshing wrapper re-parses the file); writes take the same
     // bridge-first path as a site write, for the same clobbering reason.

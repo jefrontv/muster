@@ -42,10 +42,19 @@ type StartArgs = {
   userDataPath: string
   /** Called after a successful write so the renderer can re-read the site. */
   onSiteChanged?: (site: Site) => void
-  /** Parks the HTTP response until a person has reviewed the plan. Absent = feature off. */
+  /** Opens a review and answers at once with its id. Absent = feature off. */
   onPlanAnnotationRequested?: (
     request: Omit<PlanAnnotationRequest, 'requestId'>
-  ) => Promise<PlanAnnotationResult>
+  ) => { requestId: string } | { error: 'no-window' }
+  /** Parks for at most waitMs, then reports the verdict or that it is still pending. */
+  onPlanAnnotationCollect?: (
+    reviewId: string,
+    waitMs: number
+  ) => Promise<
+    | { status: 'settled'; result: PlanAnnotationResult }
+    | { status: 'pending'; openedMs: number }
+    | { status: 'unknown' }
+  >
 }
 
 export class SiteWriteBridgeServer {
@@ -92,12 +101,35 @@ export class SiteWriteBridgeServer {
     const isSiteUpdate = req.method === 'POST' && req.url === '/site/update'
     const isLibraryUpdate = req.method === 'POST' && req.url === '/library/update'
     const isPlanAnnotate = req.method === 'POST' && req.url === '/plan/annotate'
-    if (!isSiteUpdate && !isLibraryUpdate && !isPlanAnnotate) {
+    const isPlanCollect = req.method === 'POST' && req.url === '/plan/collect'
+    if (!isSiteUpdate && !isLibraryUpdate && !isPlanAnnotate && !isPlanCollect) {
       reply(404, { error: 'not found' })
       return
     }
     if (req.headers['x-muster-site-bridge-token'] !== this.token) {
       reply(401, { error: 'unauthorized' })
+      return
+    }
+    if (isPlanCollect) {
+      try {
+        const body = await readJsonBody(req)
+        const collect = args.onPlanAnnotationCollect
+        if (!collect) {
+          reply(404, { error: 'this build cannot review plans' })
+          return
+        }
+        const reviewId = typeof body.reviewId === 'string' ? body.reviewId : ''
+        if (reviewId.length === 0) {
+          reply(400, { error: 'reviewId is required' })
+          return
+        }
+        // Parked for waitMs at most. The caller sizes that to its own client timeout, so the HTTP
+        // hop must never outlive what the MCP tool call above it can survive.
+        const waitMs = typeof body.waitMs === 'number' ? body.waitMs : 0
+        reply(200, await collect(reviewId, waitMs))
+      } catch (error) {
+        reply(500, { error: error instanceof Error ? error.message : String(error) })
+      }
       return
     }
     if (isPlanAnnotate) {
@@ -108,23 +140,25 @@ export class SiteWriteBridgeServer {
           reply(400, { error: 'content is required' })
           return
         }
-        const ask = args.onPlanAnnotationRequested
-        if (!ask) {
+        const open = args.onPlanAnnotationRequested
+        if (!open) {
           reply(404, { error: 'this build cannot review plans' })
           return
         }
-        // Deliberately not replied to yet: this response is parked until a person decides, which
-        // is the whole point of the route. The queue owns the deadline.
-        const result = await ask({
-          planPath: typeof body.planPath === 'string' ? body.planPath : null,
-          title: typeof body.title === 'string' ? body.title : 'Plan',
-          content,
-          round: typeof body.round === 'number' ? body.round : 1,
-          agent: typeof body.agent === 'string' ? body.agent : null,
-          project: typeof body.project === 'string' ? body.project : null,
-          previousContent: typeof body.previousContent === 'string' ? body.previousContent : null
-        })
-        reply(200, result)
+        // Answered immediately with an id. The verdict is collected on /plan/collect, because an
+        // MCP tool call cannot stay open for the minutes a person needs to read a plan.
+        reply(
+          200,
+          open({
+            planPath: typeof body.planPath === 'string' ? body.planPath : null,
+            title: typeof body.title === 'string' ? body.title : 'Plan',
+            content,
+            round: typeof body.round === 'number' ? body.round : 1,
+            agent: typeof body.agent === 'string' ? body.agent : null,
+            project: typeof body.project === 'string' ? body.project : null,
+            previousContent: typeof body.previousContent === 'string' ? body.previousContent : null
+          })
+        )
       } catch (error) {
         reply(500, { error: error instanceof Error ? error.message : String(error) })
       }

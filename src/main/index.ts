@@ -12,7 +12,7 @@ import {
   migrateMobilePairingDataToCanonicalUserDataPath
 } from './persistence'
 import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
-import { requestPlanAnnotation } from './sites/plan-annotation-requests'
+import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
 import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
 import { getOrcaCloudAuthConfig } from './orca-profiles/profile-cloud-auth-config'
@@ -831,7 +831,8 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
           await siteWriteBridgeServer.start({
             store,
             userDataPath: getCanonicalUserDataPath(),
-            onPlanAnnotationRequested: requestPlanAnnotation
+            onPlanAnnotationRequested: openPlanAnnotation,
+            onPlanAnnotationCollect: awaitPlanAnnotationResult
           })
         } catch (error) {
           console.error('[site-bridge] Failed to start local site write bridge:', error)

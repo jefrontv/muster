@@ -61,10 +61,25 @@ function isConcurrentToolCall(request: JsonRpcRequest): boolean {
   return typeof name === 'string' && findSiteMcpTool(name)?.concurrent === true
 }
 
+/**
+ * A progress token, when the client asked to be kept informed about this call.
+ *
+ * Per the spec it rides in `params._meta.progressToken` and may be a string or a number.
+ */
+function readProgressToken(params: Record<string, unknown>): string | number | null {
+  const meta = params._meta
+  if (!isPlainJsonObject(meta)) {
+    return null
+  }
+  const token = meta.progressToken
+  return typeof token === 'string' || typeof token === 'number' ? token : null
+}
+
 async function handleRequest(
   context: SiteMcpContext,
   request: JsonRpcRequest,
-  version: string
+  version: string,
+  notify: (notification: Record<string, unknown>) => void
 ): Promise<JsonRpcResponse | null> {
   const id: JsonRpcId = request.id ?? null
   // A notification carries no id and must never be answered, even to reject it.
@@ -109,7 +124,24 @@ async function handleRequest(
       if (!isPlainJsonObject(rawArguments)) {
         return errorResponse(id, JSON_RPC_INVALID_PARAMS, 'tools/call arguments must be an object.')
       }
-      return successResponse(id, await dispatchSiteMcpTool(context, tool, rawArguments))
+      // Why per-call rather than a field on the shared context: the progress token belongs to this
+      // one request. A tool that outlives a client's request timeout is cancelled with its work
+      // still running, and the spec's only in-band way to say "still going" is a progress
+      // notification — which clients MAY use to reset that clock. Absent token, absent emitter.
+      const progressToken = readProgressToken(params)
+      const callContext =
+        progressToken === null
+          ? context
+          : {
+              ...context,
+              progress: (update: { message: string; progress: number }) =>
+                notify({
+                  jsonrpc: '2.0',
+                  method: 'notifications/progress',
+                  params: { progressToken, message: update.message, progress: update.progress }
+                })
+            }
+      return successResponse(id, await dispatchSiteMcpTool(callContext, tool, rawArguments))
     }
     default:
       // Notifications we do not implement (notifications/initialized, notifications/cancelled)
@@ -130,6 +162,12 @@ export function createSiteMcpServer(options: SiteMcpServerOptions): SiteMcpServe
     }
   }
 
+  // Notifications are unsolicited frames: no id, never answered, and safe to write at any point
+  // while a request is still in flight.
+  const notify = (notification: Record<string, unknown>): void => {
+    options.write(encodeJsonRpcFrame(notification as never))
+  }
+
   // One frame's failure must never poison the queue: a rejected link would skip every `.then`
   // after it and the server would go silent while the client waits forever.
   const enqueue = (work: () => Promise<void> | void): void => {
@@ -141,7 +179,7 @@ export function createSiteMcpServer(options: SiteMcpServerOptions): SiteMcpServe
   // call behind it. Those tools run off-chain; ordering still holds for everything else.
   const runFrame = async (request: JsonRpcRequest): Promise<void> => {
     try {
-      respond(await handleRequest(options.context, request, version))
+      respond(await handleRequest(options.context, request, version, notify))
     } catch (error) {
       // Belt and braces: dispatchSiteMcpTool already converts tool failures into isError
       // results, so reaching this means a protocol-level bug. Answer it rather than die.

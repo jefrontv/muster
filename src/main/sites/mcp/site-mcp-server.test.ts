@@ -53,7 +53,8 @@ function createContext(): SiteMcpContext {
   }
   return {
     cwd: '/Sites/acme',
-    annotatePlan: () => Promise.resolve({ decision: 'approved' as const, annotations: [] }),
+    annotatePlan: () => Promise.resolve({ requestId: 'r1' }),
+    collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
     updateSite: async () => null,
     openSshSession: async () => ({
       exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
@@ -375,20 +376,28 @@ describe('concurrent tools', () => {
   it('answers other calls while a plan review is still open', async () => {
     const gate: { release: (() => void) | null } = { release: null }
     const harness = createHarness({
-      annotatePlan: () =>
-        new Promise((resolve) => {
-          gate.release = () => resolve({ decision: 'approved', annotations: [] })
-        })
+      collectPlanReview: () => {
+        const { promise, resolve } = Promise.withResolvers<{
+          status: 'settled'
+          result: { decision: 'approved'; annotations: [] }
+        }>()
+        gate.release = () =>
+          resolve({ status: 'settled', result: { decision: 'approved', annotations: [] } })
+        return promise
+      }
     })
 
     harness.push(
       `${JSON.stringify(
-        request(1, 'tools/call', { name: 'annotate_plan', arguments: { content: '# Plan' } })
+        request(1, 'tools/call', {
+          name: 'collect_plan_review',
+          arguments: { review_id: 'r1' }
+        })
       )}\n`
     )
     const during = await harness.send(request(2, 'tools/call', { name: 'list_sites' }))
 
-    // Why this matters: the dispatch chain answers strictly in order, so without annotate_plan
+    // Why this matters: the dispatch chain answers strictly in order, so without the collect
     // opting out, this call could not be answered until a person finished reading.
     expect(during.map((frame) => frame.id)).toEqual([2])
     gate.release?.()

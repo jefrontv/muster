@@ -10,10 +10,8 @@
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import type { Site, SiteCustomStep, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
 import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
-import type {
-  PlanAnnotationRequest,
-  PlanAnnotationResult
-} from '../../../shared/plan-annotation-types'
+import type { PlanAnnotationRequest } from '../../../shared/plan-annotation-types'
+import type { PlanReviewOutcome } from './site-mcp-plan-bridge'
 
 /** The subset of Store the tools touch. The real Store satisfies this structurally. */
 export type SiteMcpStore = {
@@ -55,6 +53,14 @@ export type SiteMcpContext = {
   store: SiteMcpStore
   /** Opens a plan for human review in the GUI. Rejects when no window is running. */
   annotatePlan: SiteMcpAnnotatePlan
+  /**
+   * Reports that a long call is still alive, when the client asked to be kept informed.
+   *
+   * Absent whenever the request carried no progress token, so a tool must treat it as optional
+   * rather than assume anyone is listening.
+   */
+  progress?: (update: { message: string; progress: number }) => void
+  collectPlanReview: SiteMcpCollectPlanReview
   /**
    * Applies a site write. Prefer this over `store.updateSite`: when the GUI is
    * running it owns the live state, and a direct disk write here is reverted by
@@ -104,10 +110,21 @@ export type SiteMcpJsonSchema = {
   additionalProperties: false
 }
 
-/** Opens a plan in the running GUI and resolves once a person has reviewed it. */
+/** Opens a plan in the running GUI and returns its review id without waiting for the person. */
 export type SiteMcpAnnotatePlan = (
   request: Omit<PlanAnnotationRequest, 'requestId'>
-) => Promise<PlanAnnotationResult>
+) => Promise<{ requestId: string }>
+
+/**
+ * Collects a verdict, parking for at most `waitMs`.
+ *
+ * Why the caller picks the wait: only it knows its client's request timeout, and a tool call that
+ * outlives that timeout is cancelled with the review still open.
+ */
+export type SiteMcpCollectPlanReview = (args: {
+  reviewId: string
+  waitMs: number
+}) => Promise<PlanReviewOutcome>
 
 export type SiteMcpTool = {
   name: string
