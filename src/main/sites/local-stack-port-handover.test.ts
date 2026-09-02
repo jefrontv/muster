@@ -88,7 +88,9 @@ describe('privileged port handover', () => {
   // The failure mode worth guarding: an older agent-local with no /yield route, or no daemon at
   // all, must not turn into "your LocalWP site will not start".
   it('starts the site anyway when the other stack refuses or throws', async () => {
-    install(stub('agent-local', { releasePrivilegedPorts: vi.fn().mockRejectedValue(new Error('404')) }))
+    install(
+      stub('agent-local', { releasePrivilegedPorts: vi.fn().mockRejectedValue(new Error('404')) })
+    )
     const localwp = stub('localwp')
     install(localwp)
 

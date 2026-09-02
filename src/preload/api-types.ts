@@ -975,6 +975,8 @@ export type PlanAnnotationApi = {
   respond: (args: { requestId: string; result: PlanAnnotationResult }) => Promise<boolean>
   /** Reviews queued before this window existed, front first. */
   listPending: () => Promise<PlanAnnotationRequest[]>
+  /** Fires when a review is settled anywhere, so a stale modal can drop it. */
+  onResolved: (callback: (requestId: string) => void) => () => void
   onRequest: (callback: (request: PlanAnnotationRequest) => void) => () => void
 }
 

@@ -40,7 +40,10 @@ function relayedPayload(callIndex = 0): Record<string, unknown> {
 
 beforeEach(() => {
   createIssueMock.mockReset()
-  createIssueMock.mockResolvedValue({ ok: true, url: 'https://github.com/jefrontv/muster/issues/7' })
+  createIssueMock.mockResolvedValue({
+    ok: true,
+    url: 'https://github.com/jefrontv/muster/issues/7'
+  })
   postEndpointMock.mockReset()
   postEndpointMock.mockResolvedValue({ ok: false, status: 502, error: 'endpoint unavailable' })
   // The gh failure is logged on every fallback; keep it out of the test output.

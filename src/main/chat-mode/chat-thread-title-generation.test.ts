@@ -36,7 +36,11 @@ describe('generateChatThreadTitle', () => {
     generateBranchNameFromContext.mockResolvedValue({ success: true, slug: 'staging-500-triage' })
 
     const result = await generateChatThreadTitle(
-      { firstPrompt: 'why is staging 500ing', assistantMessage: 'nginx upstream', cwd: '/Sites/acme' },
+      {
+        firstPrompt: 'why is staging 500ing',
+        assistantMessage: 'nginx upstream',
+        cwd: '/Sites/acme'
+      },
       deps
     )
 

@@ -18,13 +18,17 @@ type LocalStackProviderModule = {
   providerFor: typeof providerFor
 }
 
-const { detectSiteStack, resolveSiteSetupCloneTargets, getSiteSecretPresence, localStackProviders } =
-  vi.hoisted(() => ({
-    detectSiteStack: vi.fn(),
-    resolveSiteSetupCloneTargets: vi.fn(),
-    getSiteSecretPresence: vi.fn(),
-    localStackProviders: vi.fn()
-  }))
+const {
+  detectSiteStack,
+  resolveSiteSetupCloneTargets,
+  getSiteSecretPresence,
+  localStackProviders
+} = vi.hoisted(() => ({
+  detectSiteStack: vi.fn(),
+  resolveSiteSetupCloneTargets: vi.fn(),
+  getSiteSecretPresence: vi.fn(),
+  localStackProviders: vi.fn()
+}))
 
 vi.mock('./local-stack-detection', () => ({ detectSiteStack }))
 // Only `localStackProviders` is replaced, because the real one probes the machine: LocalWP's
@@ -317,7 +321,11 @@ describe('buildSiteSetupPlan', () => {
     expect(stageState(plan.stages, 'stack')).toBe('unavailable')
     // Naming the wrong stack here reads as a detection bug to anyone who knows their own setup.
     expect(stageReason(plan.stages, 'stack')).toBe('This project is already an Agent Local site.')
-    expect(plan.stack).toMatchObject({ supported: true, alreadyLocalWp: true, stack: 'agent-local' })
+    expect(plan.stack).toMatchObject({
+      supported: true,
+      alreadyLocalWp: true,
+      stack: 'agent-local'
+    })
   })
 
   it('reports the detected stack so the picker can open on it', async () => {

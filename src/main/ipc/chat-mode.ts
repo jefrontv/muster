@@ -250,7 +250,11 @@ export function registerChatModeHandlers(): void {
           : null
       // Prune against every live thread, not the filtered subset: a threadIds
       // filter narrows this search, it does not mean the rest are gone.
-      pruneChatThreadSearchIndex(chatStore().getState().threads.map((thread) => thread.id))
+      pruneChatThreadSearchIndex(
+        chatStore()
+          .getState()
+          .threads.map((thread) => thread.id)
+      )
       return searchChatThreads(searchTargets(threadIds), query, readThreadMessages)
     }
   )

@@ -259,12 +259,7 @@ describe('registerAppMenu', () => {
     // the system app menu. Without global Export, there is no File item left.
     expect(template.find((item) => item.label === 'File')).toBeUndefined()
     const helpLabels = getSubmenu(template, 'Help').map((item) => item.label)
-    expect(helpLabels).toEqual([
-      'Report Crash...',
-      undefined,
-      'Explore Muster',
-      'Setup guide'
-    ])
+    expect(helpLabels).toEqual(['Report Crash...', undefined, 'Explore Muster', 'Setup guide'])
   })
 
   it('routes Setup guide through its callback', () => {

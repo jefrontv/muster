@@ -90,7 +90,10 @@ describe('readTranscriptContextUsage', () => {
       ].join('\n'),
       'utf-8'
     )
-    await expect(readTranscriptContextUsage(filePath)).resolves.toEqual({ usedTokens: 50, model: null })
+    await expect(readTranscriptContextUsage(filePath)).resolves.toEqual({
+      usedTokens: 50,
+      model: null
+    })
   })
 
   it('returns null for a missing file', async () => {

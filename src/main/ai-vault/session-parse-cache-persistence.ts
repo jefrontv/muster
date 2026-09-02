@@ -126,9 +126,7 @@ async function sweepOrphanedTempFiles(filePath: string): Promise<void> {
   }
 }
 
-function parsePersistedFile(
-  parsed: unknown
-): [string, PersistedSessionParseCacheEntry][] | null {
+function parsePersistedFile(parsed: unknown): [string, PersistedSessionParseCacheEntry][] | null {
   if (typeof parsed !== 'object' || parsed === null) {
     return null
   }

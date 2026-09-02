@@ -904,6 +904,12 @@ const api = {
   planAnnotation: {
     respond: (args) => ipcRenderer.invoke('planAnnotation:respond', args),
     listPending: () => ipcRenderer.invoke('planAnnotation:listPending'),
+    onResolved: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, requestId: string): void =>
+        callback(requestId)
+      ipcRenderer.on('planAnnotation:resolved', listener)
+      return () => ipcRenderer.removeListener('planAnnotation:resolved', listener)
+    },
     onRequest: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

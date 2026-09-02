@@ -100,9 +100,13 @@ function requestListener(req: IncomingMessage, res: ServerResponse): void {
   const threadId = authenticateRequest(req)
   const deps = toolDeps
   if (threadId === null || !deps) {
-    res
-      .writeHead(401, { 'content-type': 'application/json' })
-      .end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized' }, id: null }))
+    res.writeHead(401, { 'content-type': 'application/json' }).end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        error: { code: -32001, message: 'Unauthorized' },
+        id: null
+      })
+    )
     return
   }
   if (req.method !== 'POST') {

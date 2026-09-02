@@ -135,10 +135,7 @@ export function primeLoginShellEnvironment(): Promise<void> {
   priming = (async () => {
     // -i as well as -l: .zshrc/.bashrc are interactive-only, and that is where
     // version managers usually put their PATH edits.
-    const [login, plain] = await Promise.all([
-      readEnv(shell, ['-ilc']),
-      readEnv(shell, ['-c'])
-    ])
+    const [login, plain] = await Promise.all([readEnv(shell, ['-ilc']), readEnv(shell, ['-c'])])
     if (login && plain) {
       delta = diffShellEnvironments(login, plain)
     }

@@ -38,7 +38,12 @@ export async function generateChatThreadTitle(
   }
   // Standalone chats have no workspace directory; the stream falls back to home
   // for the same reason, and generation only needs a valid cwd to spawn in.
-  const target = await resolveGenerationTarget(args.cwd ?? homedir(), resolved.params.agentId, null, deps)
+  const target = await resolveGenerationTarget(
+    args.cwd ?? homedir(),
+    resolved.params.agentId,
+    null,
+    deps
+  )
   if (!target) {
     return { ok: false, error: 'Could not prepare the chat-title generation environment.' }
   }

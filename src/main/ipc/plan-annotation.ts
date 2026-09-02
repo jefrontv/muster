@@ -7,6 +7,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import {
   listPendingPlanAnnotations,
   respondPlanAnnotation,
+  setPlanAnnotationResolvedSender,
   setPlanAnnotationSender
 } from '../sites/plan-annotation-requests'
 import type {
@@ -15,6 +16,7 @@ import type {
 } from '../../shared/plan-annotation-types'
 
 export const PLAN_ANNOTATION_REQUEST_CHANNEL = 'planAnnotation:request'
+export const PLAN_ANNOTATION_RESOLVED_CHANNEL = 'planAnnotation:resolved'
 
 function broadcast(request: PlanAnnotationRequest): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -64,4 +66,11 @@ export function registerPlanAnnotationHandlers(): void {
   )
 
   setPlanAnnotationSender(broadcast)
+  setPlanAnnotationResolvedSender((requestId) => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) {
+        window.webContents.send(PLAN_ANNOTATION_RESOLVED_CHANNEL, requestId)
+      }
+    }
+  })
 }

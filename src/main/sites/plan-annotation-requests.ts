@@ -31,12 +31,26 @@ type PendingReview = {
 const queue = new Map<string, PendingReview>()
 
 let sendRequest: ((request: PlanAnnotationRequest) => void) | null = null
+let sendResolved: ((requestId: string) => void) | null = null
 
 /** Production wiring broadcasts to every BrowserWindow; tests inject a spy. */
 export function setPlanAnnotationSender(
   sender: ((request: PlanAnnotationRequest) => void) | null
 ): void {
   sendRequest = sender
+}
+
+/**
+ * Announces that a review is no longer answerable.
+ *
+ * Why every window needs this: a review can settle without the window showing it being the one that
+ * answered — a timeout, or a second window submitting first. Without the announcement that window
+ * keeps a dead modal on screen, and answering it silently does nothing.
+ */
+export function setPlanAnnotationResolvedSender(
+  sender: ((requestId: string) => void) | null
+): void {
+  sendResolved = sender
 }
 
 function head(): PendingReview | null {
@@ -52,6 +66,11 @@ function settle(entry: PendingReview, result: PlanAnnotationResult): void {
   }
   queue.delete(entry.request.requestId)
   entry.resolve(result)
+  try {
+    sendResolved?.(entry.request.requestId)
+  } catch {
+    // A destroyed window mid-broadcast must not stop the review from resolving.
+  }
 }
 
 /**

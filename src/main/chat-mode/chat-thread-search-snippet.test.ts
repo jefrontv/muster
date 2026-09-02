@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildSearchSnippet, normalizeSearchQuery, normalizeSearchText } from './chat-thread-search-snippet'
+import {
+  buildSearchSnippet,
+  normalizeSearchQuery,
+  normalizeSearchText
+} from './chat-thread-search-snippet'
 
 describe('normalizeSearchText', () => {
   it('collapses newlines so a match across a line break reads as one line', () => {

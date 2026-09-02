@@ -20,6 +20,16 @@ export function usePlanReviewQueue(): {
     []
   )
 
+  // Why: a review can settle without this window answering it — a timeout, or another window
+  // submitting first. Left in the queue it shows a modal that looks live but answers nothing.
+  useEffect(
+    () =>
+      window.api.planAnnotation.onResolved((requestId) =>
+        setQueue((q) => q.filter((entry) => entry.requestId !== requestId))
+      ),
+    []
+  )
+
   // Why: a review can be queued before this window existed, and without this the agent waits out
   // the whole timeout for a modal nobody ever saw.
   useEffect(() => {

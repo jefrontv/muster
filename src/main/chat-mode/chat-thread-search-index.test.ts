@@ -215,7 +215,10 @@ describe('sidecar persistence', () => {
     const sidecar = join(dir, 'stale.json')
     await writeFile(
       sidecar,
-      JSON.stringify({ schemaVersion: 99, threads: { t1: { mtimeMs: 1, sizeBytes: 1, entries: [] } } })
+      JSON.stringify({
+        schemaVersion: 99,
+        threads: { t1: { mtimeMs: 1, sizeBytes: 1, entries: [] } }
+      })
     )
     const path = await transcript('g.jsonl')
     const read = vi.fn(async () => [message('user', 'deploy staging')])

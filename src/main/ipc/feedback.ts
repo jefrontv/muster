@@ -100,7 +100,9 @@ function buildEnvironmentSection(body: FeedbackSubmitBody): string {
     `- Platform: ${body.platform} ${body.osRelease} (${body.arch})`
   ]
   if (body.githubLogin) {
-    rows.push(`- Reported by: @${body.githubLogin}${body.githubEmail ? ` (${body.githubEmail})` : ''}`)
+    rows.push(
+      `- Reported by: @${body.githubLogin}${body.githubEmail ? ` (${body.githubEmail})` : ''}`
+    )
   }
   return rows.join('\n')
 }

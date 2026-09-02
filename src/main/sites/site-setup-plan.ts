@@ -110,7 +110,9 @@ async function installedStacks(): Promise<SiteLocalStack[]> {
   const answers = await Promise.all(
     localStackProviders()
       .filter((provider) => provider.id !== 'plain' && provider.id !== 'mamp')
-      .map(async (provider) => ((await provider.isAvailable().catch(() => false)) ? provider.id : null))
+      .map(async (provider) =>
+        (await provider.isAvailable().catch(() => false)) ? provider.id : null
+      )
   )
   return answers.filter((id): id is SiteLocalStack => id !== null)
 }

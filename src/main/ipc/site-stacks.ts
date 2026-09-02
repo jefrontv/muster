@@ -182,7 +182,10 @@ export function registerSiteStackHandlers(store: Store): void {
           const site = requireSite(store, requireId(readField(args, 'siteId')))
           return {
             ok: true,
-            value: planAgentLocalMigration(request, resolveAgentLocalDocroot(site.path, site.localWpRoot))
+            value: planAgentLocalMigration(
+              request,
+              resolveAgentLocalDocroot(site.path, site.localWpRoot)
+            )
           }
         }
         return { ok: true, value: await previewLocalWpMigration(request) }

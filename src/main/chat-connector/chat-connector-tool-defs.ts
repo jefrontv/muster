@@ -86,8 +86,7 @@ export function chatConnectorToolDefs(): Tool[] {
     },
     {
       name: 'rename_thread',
-      description:
-        'Rename a chat thread in this scope. Omit threadId to rename the current chat.',
+      description: 'Rename a chat thread in this scope. Omit threadId to rename the current chat.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -99,8 +98,7 @@ export function chatConnectorToolDefs(): Tool[] {
     },
     {
       name: 'archive_threads',
-      description:
-        'Archive (or unarchive with archived=false) chat threads in this scope by id.',
+      description: 'Archive (or unarchive with archived=false) chat threads in this scope by id.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -138,7 +136,7 @@ export function chatConnectorToolDefs(): Tool[] {
     {
       name: 'create_workspace_from_chat',
       description:
-        'Create a new chat workspace and move the current chat into it — for turning an ungrouped chat into a project. Folders default to the current workspace\'s, or none for an ungrouped chat.',
+        "Create a new chat workspace and move the current chat into it — for turning an ungrouped chat into a project. Folders default to the current workspace's, or none for an ungrouped chat.",
       inputSchema: {
         type: 'object',
         properties: {

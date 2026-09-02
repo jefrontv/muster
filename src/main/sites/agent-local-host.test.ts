@@ -80,9 +80,9 @@ describe('describeAgentLocalResponse', () => {
   })
 
   it('prefers the daemon error text when there is one', () => {
-    expect(describeAgentLocalResponse({ ok: false, status: 404, error: 'no site manages /tmp' })).toBe(
-      'no site manages /tmp'
-    )
+    expect(
+      describeAgentLocalResponse({ ok: false, status: 404, error: 'no site manages /tmp' })
+    ).toBe('no site manages /tmp')
   })
 })
 
@@ -175,10 +175,9 @@ describe('createAgentLocalHost', () => {
       return (call?.init.headers ?? {}) as Record<string, string>
     }
 
-    function stubFetch(response: {
-      status?: number
-      body?: string
-    }): { calls: { url: string; init: RequestInit }[] } {
+    function stubFetch(response: { status?: number; body?: string }): {
+      calls: { url: string; init: RequestInit }[]
+    } {
       const calls: { url: string; init: RequestInit }[] = []
       globalThis.fetch = (async (url: string, init: RequestInit) => {
         calls.push({ url, init })

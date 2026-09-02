@@ -71,9 +71,7 @@ function updateSettings(
   const changed: string[] = []
   if (args.name !== undefined) {
     const name =
-      typeof args.name === 'string'
-        ? args.name.trim().slice(0, MAX_CHAT_CONNECTOR_NAME_LENGTH)
-        : ''
+      typeof args.name === 'string' ? args.name.trim().slice(0, MAX_CHAT_CONNECTOR_NAME_LENGTH) : ''
     if (name === '') {
       return toolFail('name must be a non-empty string.')
     }

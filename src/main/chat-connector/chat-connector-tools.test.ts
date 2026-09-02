@@ -121,7 +121,14 @@ function createHarness(args?: {
       return target
     }
   }
-  return { deps, state, deleted, stopped, broadcasts: () => broadcastCount, setModel: () => modelWritten }
+  return {
+    deps,
+    state,
+    deleted,
+    stopped,
+    broadcasts: () => broadcastCount,
+    setModel: () => modelWritten
+  }
 }
 
 function call(
@@ -169,7 +176,11 @@ describe('callChatConnectorTool scoping', () => {
 
   it('lists only threads in the calling scope and marks the caller', async () => {
     const harness = createHarness({
-      threads: [thread(), thread({ id: 't2', title: 'Other' }), thread({ id: 't3', workspaceId: null })]
+      threads: [
+        thread(),
+        thread({ id: 't2', title: 'Other' }),
+        thread({ id: 't3', workspaceId: null })
+      ]
     })
     const rows = JSON.parse((await call(harness, 'list_threads')).content[0].text)
     expect(rows.map((r: { id: string }) => r.id)).toEqual(['t1', 't2'])
@@ -356,9 +367,9 @@ describe('chat-connector confirm bridge', () => {
     vi.useFakeTimers()
     try {
       setChatConnectorConfirmSender(null)
-      await expect(
-        requestChatConnectorConfirm({ threadId: 't1', summary: 's' })
-      ).resolves.toBe(false)
+      await expect(requestChatConnectorConfirm({ threadId: 't1', summary: 's' })).resolves.toBe(
+        false
+      )
       setChatConnectorConfirmSender(() => undefined)
       const pending = requestChatConnectorConfirm({ threadId: 't1', summary: 's' })
       vi.advanceTimersByTime(120_001)
@@ -372,10 +383,14 @@ describe('chat-connector confirm bridge', () => {
 })
 
 describe('workspace membership tools', () => {
-  it('lists every workspace with counts and flags the caller\'s own', async () => {
+  it("lists every workspace with counts and flags the caller's own", async () => {
     const harness = createHarness({
       workspaces: [workspace(), workspace({ id: 'w2', name: 'Acme', directories: [] })],
-      threads: [thread(), thread({ id: 't2', workspaceId: null }), thread({ id: 't3', workspaceId: 'w2' })]
+      threads: [
+        thread(),
+        thread({ id: 't2', workspaceId: null }),
+        thread({ id: 't3', workspaceId: 'w2' })
+      ]
     })
     const result = await call(harness, 'list_workspaces')
     const payload = JSON.parse(result.content[0]!.text)

@@ -5,11 +5,13 @@ import {
   PLAN_ANNOTATION_TIMEOUT_MS,
   requestPlanAnnotation,
   respondPlanAnnotation,
+  setPlanAnnotationResolvedSender,
   setPlanAnnotationSender
 } from './plan-annotation-requests'
 import type { PlanAnnotationRequest } from '../../shared/plan-annotation-types'
 
 const sent: PlanAnnotationRequest[] = []
+const resolved: string[] = []
 
 function plan(title: string): Omit<PlanAnnotationRequest, 'requestId'> {
   return {
@@ -23,12 +25,15 @@ function plan(title: string): Omit<PlanAnnotationRequest, 'requestId'> {
 
 beforeEach(() => {
   sent.length = 0
+  resolved.length = 0
   setPlanAnnotationSender((request) => sent.push(request))
+  setPlanAnnotationResolvedSender((requestId) => resolved.push(requestId))
 })
 
 afterEach(() => {
   clearPlanAnnotationsForTests()
   setPlanAnnotationSender(null)
+  setPlanAnnotationResolvedSender(null)
   vi.useRealTimers()
 })
 
@@ -120,5 +125,29 @@ describe('respondPlanAnnotation', () => {
     expect(respondPlanAnnotation('never-issued', { decision: 'approved', annotations: [] })).toBe(
       false
     )
+  })
+})
+
+describe('settled announcements', () => {
+  it('announces a review answered here, so other windows drop it', async () => {
+    const pending = requestPlanAnnotation(plan('answered'))
+    const id = sent[0]!.requestId
+
+    respondPlanAnnotation(id, { decision: 'approved', annotations: [] })
+    await pending
+
+    expect(resolved).toEqual([id])
+  })
+
+  it('announces a timeout, which no window would otherwise learn about', async () => {
+    vi.useFakeTimers()
+    const pending = requestPlanAnnotation(plan('forgotten'))
+    const id = sent[0]!.requestId
+
+    await vi.advanceTimersByTimeAsync(PLAN_ANNOTATION_TIMEOUT_MS + 1)
+    await pending
+
+    // Without this the window keeps a modal that looks live and answers nothing.
+    expect(resolved).toEqual([id])
   })
 })
