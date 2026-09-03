@@ -1579,8 +1579,14 @@ export class BrowserManager {
     try {
       if (override) {
         await dbg.sendCommand('Emulation.setDeviceMetricsOverride', {
-          width: override.width,
-          height: override.height,
+          // Why zero rather than the preset's pixels: zero disables that dimension's override, so
+          // the emulated viewport becomes exactly the guest surface. The renderer already frames
+          // the surface to the preset width and centres it, so sending the numbers again fought
+          // that — a fixed 667px-tall viewport inside a full-height pane left dead white space
+          // below the page, and under app zoom the CSS-sized element and the DIP-sized override
+          // disagreed, leaving a band down the right. One owner of the box, and they cannot drift.
+          width: 0,
+          height: 0,
           deviceScaleFactor: override.deviceScaleFactor,
           mobile: override.mobile
         })

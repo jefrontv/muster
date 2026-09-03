@@ -2856,9 +2856,11 @@ describe('browserManager', () => {
       })
       expect(ok).toBe(true)
 
+      // Zero means "use the surface": the renderer frames the guest to the preset width, so
+      // re-sending the numbers here is what produced dead space below and beside the page.
       expect(debuggerSendCommand).toHaveBeenCalledWith('Emulation.setDeviceMetricsOverride', {
-        width: 375,
-        height: 667,
+        width: 0,
+        height: 0,
         deviceScaleFactor: 2,
         mobile: true
       })
