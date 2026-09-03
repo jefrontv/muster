@@ -25,14 +25,12 @@ import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { readLastLocalStackChoice, rememberLocalStackChoice } from './last-local-stack-choice'
 import { getSiteSetupStrings } from './site-setup-strings'
+import { LOCALWP_ADMIN_EMAIL, LOCALWP_ADMIN_PASSWORD } from '../../../../shared/site-setup-defaults'
 
 /** Enough to hold a whole migration's chatter; the head is dropped so a runaway log cannot grow. */
 const MAX_LOG_LINES = 200
 /** Module scope so the default prop keeps referential equality across renders. */
 const NO_STACKS: SiteLocalStack[] = []
-/** Local requires a wp-admin account to build the install; it is local-only and never asked for. */
-const LOCALWP_ADMIN_EMAIL = 'hello@efront.com.au'
-const LOCALWP_ADMIN_PASSWORD = 'admin'
 
 type StackPhase = 'idle' | 'running' | 'done' | 'failed'
 

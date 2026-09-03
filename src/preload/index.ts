@@ -1008,6 +1008,11 @@ const api = {
         callback(pending)
       ipcRenderer.on('siteBind:request', listener)
       return () => ipcRenderer.removeListener('siteBind:request', listener)
+    },
+    onRejected: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, reason: string): void => callback(reason)
+      ipcRenderer.on('siteBind:rejected', listener)
+      return () => ipcRenderer.removeListener('siteBind:rejected', listener)
     }
   } satisfies PreloadApi['siteBind'],
 

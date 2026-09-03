@@ -9,12 +9,22 @@
 // only its key — so a malformed link cannot leak a credential into a log or a toast.
 
 import type { SiteBindFields } from '../../shared/site-bind-types'
+import { defaultLocalDomain, repoSlug as bitbucketRepoSlug } from '../../shared/site-local-domain'
 
 export const SITE_BIND_URL_SCHEME = 'muster'
+/**
+ * What a dev run claims instead of `muster`. A dev wrapper that claimed the real scheme outranked
+ * the installed app and kept the claim after it exited, so every dashboard link went to a bare
+ * Electron binary. A separate scheme lets links be tested against dev without touching that.
+ */
+export const SITE_BIND_DEV_URL_SCHEME = 'musterdev'
 export const SITE_BIND_URL_ACTION = 'configure'
 
-/** Only `muster`: `ocsites://` is owned by the separately installed ocsites app. */
-const ACCEPTED_SCHEMES: Record<string, true> = { [SITE_BIND_URL_SCHEME]: true }
+/** `muster` and `musterdev` only: `ocsites://` is owned by the separately installed ocsites app. */
+const ACCEPTED_SCHEMES: Record<string, true> = {
+  [SITE_BIND_URL_SCHEME]: true,
+  [SITE_BIND_DEV_URL_SCHEME]: true
+}
 
 const MAX_URL_LENGTH = 8_192
 const MAX_FIELD_LENGTH = 256
@@ -151,19 +161,6 @@ function splitLiveDomain(raw: string): { domain: string; protocol: 'http' | 'htt
   return { domain: domain.replace(/\/+$/, ''), protocol }
 }
 
-/**
- * ocsites' `default_local_domain` (deploy/utils.py:72): only the first label survives, so a
- * domain-shaped name such as `acme.com.au` yields `acme.local` rather than `acme.com.au.local`.
- */
-export function defaultLocalDomain(name: string): string {
-  let base = name.trim().toLowerCase()
-  if (base.endsWith('.local')) {
-    base = base.slice(0, -'.local'.length)
-  }
-  const [first] = base.split('.')
-  return `${first || 'site'}.local`
-}
-
 /** Repo name wins over the live domain, exactly as ocsites' `_local_domain_from_bind` did. */
 export function deriveBindLocalDomain(reponame: string, liveDomain: string): string {
   const slug = bitbucketRepoSlug(reponame)
@@ -172,16 +169,6 @@ export function deriveBindLocalDomain(reponame: string, liveDomain: string): str
   }
   const { domain } = splitLiveDomain(liveDomain)
   return domain.length > 0 ? defaultLocalDomain(domain) : ''
-}
-
-/** Last path segment of `workspace/slug`, minus any `.git` suffix. */
-export function bitbucketRepoSlug(reponame: string): string {
-  const last =
-    reponame
-      .trim()
-      .split('/')
-      .findLast((part) => part.length > 0) ?? ''
-  return last.toLowerCase().replace(/\.git$/, '')
 }
 
 /** Only workspace-qualified names can produce a clone URL; a bare slug has no workspace. */

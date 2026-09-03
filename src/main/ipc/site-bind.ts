@@ -50,6 +50,7 @@ const SITE_BIND_CHANNELS = [
 ] as const
 
 const REQUEST_EVENT_CHANNEL = 'siteBind:request'
+const REJECTED_EVENT_CHANNEL = 'siteBind:rejected'
 
 const MAX_GENERATE_FIELD_LENGTH = 4_096
 const MAX_WORKSPACE_LENGTH = 128
@@ -90,16 +91,22 @@ export function handleSiteBindUrl(url: string): { ok: boolean; error: string } {
   }
   const received = active.receive(url)
   if (!received.ok) {
+    // The reason names a key at most, never a value - see site-bind-url.ts - so it is safe to show.
+    broadcast(REJECTED_EVENT_CHANNEL, received.error)
     return { ok: false, error: received.error }
   }
+  broadcast(REQUEST_EVENT_CHANNEL, received.pending)
+  return { ok: true, error: '' }
+}
+
+function broadcast(channel: string, payload: unknown): void {
   for (const sender of subscribers) {
     if (sender.isDestroyed()) {
       subscribers.delete(sender)
       continue
     }
-    sender.send(REQUEST_EVENT_CHANNEL, received.pending)
+    sender.send(channel, payload)
   }
-  return { ok: true, error: '' }
 }
 
 function readGenerateFields(

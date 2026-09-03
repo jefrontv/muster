@@ -285,9 +285,10 @@ function prepareMacDevElectronApp() {
   setPlistValue(plistPath, 'CFBundleName', title)
   setPlistValue(plistPath, 'CFBundleDisplayName', title)
   setPlistValue(plistPath, 'CFBundleIdentifier', bundleId)
-  // Only `muster` is declared: claiming `ocsites` here would let a dev build outrank an installed
-  // OcsitesHandler.app, which src/main/sites/bind-url-scheme.ts deliberately avoids.
-  setDevBundleUrlSchemes(plistPath, ['muster'])
+  // `musterdev`, not `muster`: declaring the real scheme let this wrapper outrank the installed app
+  // and keep the claim after it exited. `ocsites` is never declared either - it belongs to the
+  // installed OcsitesHandler.app. Both match src/main/sites/bind-url-scheme.ts.
+  setDevBundleUrlSchemes(plistPath, ['musterdev'])
 
   // Why: the notification-status helper reads the app's real macOS
   // notification authorization (UNUserNotificationCenter has no Electron

@@ -108,6 +108,11 @@ export type SiteBindApi = {
   }) => Promise<SiteResult<{ applied: SiteBindApplied; summary: SiteSummary }>>
   generate: (fields: Partial<SiteBindFields> & { password?: string }) => Promise<SiteResult<string>>
   onRequest: (callback: (pending: PendingSiteBind) => void) => () => void
+  /**
+   * A link the parser refused. Carries the reason only, never the link: a bind URL can hold a
+   * plaintext password, and without this the app just activated with nothing on screen.
+   */
+  onRejected: (callback: (reason: string) => void) => () => void
 }
 
 export type SiteBitbucketApi = {

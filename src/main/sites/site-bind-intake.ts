@@ -19,7 +19,8 @@ import type {
   SiteBindFields
 } from '../../shared/site-bind-types'
 import { isSitePath } from '../ipc/sites-payload-validation'
-import { bitbucketCloneUrlForReponame, bitbucketRepoSlug, parseSiteBindUrl } from './site-bind-url'
+import { bitbucketCloneUrlForReponame, parseSiteBindUrl } from './site-bind-url'
+import { repoSlug as bitbucketRepoSlug } from '../../shared/site-local-domain'
 
 /** The slice of Store this module needs, so intake is testable without Electron or persistence. */
 export type SiteBindIntakeStore = {

@@ -13,7 +13,7 @@ vi.mock('electron', () => ({
 }))
 
 import { registerSiteBindUrlSchemes } from './bind-url-scheme'
-import { SITE_BIND_URL_SCHEME } from './site-bind-url'
+import { SITE_BIND_DEV_URL_SCHEME, SITE_BIND_URL_SCHEME } from './site-bind-url'
 
 function claimedSchemes(): string[] {
   return setAsDefaultProtocolClientMock.mock.calls.map((call) => call[0] as string)
@@ -41,19 +41,21 @@ describe('registerSiteBindUrlSchemes', () => {
     // takeover that runs on every launch, so claiming 'ocsites' would re-steal the scheme from the
     // user's ocsites install each time Muster starts, even after they reassigned it back.
     registerSiteBindUrlSchemes(false)
+    registerSiteBindUrlSchemes(true)
 
     expect(claimedSchemes()).not.toContain('ocsites')
   })
 
-  it('claims nothing from a dev run, on any platform', () => {
-    // A dev build runs from node_modules/electron, so claiming pointed every muster:// link the
-    // user clicked at a bare Electron binary instead of at their installed app.
+  it('claims musterdev, never muster, from a dev run', () => {
+    // A dev build runs from node_modules/electron, so claiming `muster` pointed every dashboard
+    // link the user clicked at a bare Electron binary instead of at their installed app.
     registerSiteBindUrlSchemes(true)
 
-    expect(claimedSchemes()).toEqual([])
+    expect(claimedSchemes()).toEqual([SITE_BIND_DEV_URL_SCHEME])
+    expect(claimedSchemes()).not.toContain(SITE_BIND_URL_SCHEME)
   })
 
-  it('hands the scheme back on a dev run, so ownership returns to the installed app', () => {
+  it('hands muster back on a dev run, so ownership returns to the installed app', () => {
     // The theft outlived the dev run: without releasing it, the OS kept routing links to the dev
     // binary long after it exited. The packaged build re-claims on its next launch.
     registerSiteBindUrlSchemes(true)

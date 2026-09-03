@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   bitbucketCloneUrlForReponame,
-  bitbucketRepoSlug,
-  defaultLocalDomain,
   deriveBindLocalDomain,
   extractSiteBindUrl,
   generateSiteBindUrl,
@@ -10,6 +8,7 @@ import {
   parseSiteBindUrl
 } from './site-bind-url'
 import type { SiteBindFields } from '../../shared/site-bind-types'
+import { defaultLocalDomain, repoSlug as bitbucketRepoSlug } from '../../shared/site-local-domain'
 
 const MINIMUM = 'hostname=dedicated-11.example.com&username=acme'
 
@@ -26,6 +25,13 @@ describe('parseSiteBindUrl scheme and action', () => {
     expect(parseOk(`muster://configure?${MINIMUM}`).fields.hostname).toBe(
       'dedicated-11.example.com'
     )
+  })
+
+  it('accepts musterdev://, the scheme a dev run claims, so links can be tested against dev', () => {
+    expect(parseOk(`musterdev://configure?${MINIMUM}`).fields.hostname).toBe(
+      'dedicated-11.example.com'
+    )
+    expect(isSiteBindUrl(`musterdev://configure?${MINIMUM}`)).toBe(true)
   })
 
   it('rejects ocsites:// and the ocsite typo so the installed ocsites app keeps its links', () => {
