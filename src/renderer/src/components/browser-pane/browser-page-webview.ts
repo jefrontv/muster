@@ -67,37 +67,65 @@ export function ensureBrowserPageWebview({
 }
 
 /**
- * Frames the guest as the device box: emulated proportions, centred, never larger than the pane.
+ * Free space in the guest's row, in CSS pixels.
  *
- * Why aspect-ratio rather than measured pixels: the pane's free space depends on its siblings — a
- * docked devtools panel narrows it — and on the window, so any number computed here would be stale
- * by the next resize. `max-width`/`max-height` with an aspect ratio lets flexbox solve the fit
- * every frame, and auto margins centre whatever is left over.
+ * Siblings that take part in layout — a docked devtools panel — are subtracted, so the frame
+ * centres in what is actually left rather than in the whole pane. Absolutely positioned overlays
+ * (the failure banner, the focus catcher) take no space and are skipped.
+ */
+function readAvailableBox(webview: Electron.WebviewTag): { width: number; height: number } {
+  const parent = webview.parentElement
+  if (!parent) {
+    return { width: 0, height: 0 }
+  }
+  let taken = 0
+  for (const sibling of parent.children) {
+    if (sibling === webview || !(sibling instanceof HTMLElement)) {
+      continue
+    }
+    const position = getComputedStyle(sibling).position
+    if (position === 'absolute' || position === 'fixed') {
+      continue
+    }
+    taken += sibling.offsetWidth
+  }
+  return {
+    width: Math.max(0, parent.clientWidth - taken),
+    height: Math.max(0, parent.clientHeight)
+  }
+}
+
+/**
+ * Frames the guest as the device box: real device proportions, scaled down to fit, centred.
  *
- * Height matters as much as width: capping only the width left every preset full-height, so an
- * iPhone frame was the shape of the pane rather than the shape of a phone.
+ * Why measured pixels rather than aspect-ratio and caps: a `<webview>` is a replaced element with a
+ * small intrinsic size, so `width: auto` collapses the box to roughly 300x150 instead of growing
+ * into the pane — a 1440x900 preset rendered as a thumbnail. Explicit numbers cannot be
+ * misinterpreted, and the caller re-runs this on resize.
+ *
+ * The scale is deliberately NOT sent to main: main reads the guest's real surface, so whatever box
+ * is set here is what it measures, and the two cannot drift.
  */
 export function applyBrowserPageEmulatedFrame(
   webview: Electron.WebviewTag,
   preset: { width: number; height: number } | null
 ): void {
   if (preset === null) {
-    webview.style.maxWidth = ''
-    webview.style.maxHeight = ''
-    webview.style.aspectRatio = ''
     webview.style.margin = ''
     webview.style.flex = '1'
     webview.style.width = '100%'
     webview.style.height = '100%'
     return
   }
-  // flex 0 auto: the box is sized by the ratio and the caps, not stretched to fill the pane.
-  webview.style.flex = '0 1 auto'
-  // Both must go to auto, or a definite width AND height makes the browser ignore aspect-ratio.
-  webview.style.width = 'auto'
-  webview.style.height = 'auto'
-  webview.style.aspectRatio = `${preset.width} / ${preset.height}`
-  webview.style.maxWidth = `${preset.width}px`
-  webview.style.maxHeight = `${preset.height}px`
+  const available = readAvailableBox(webview)
+  // Before layout has settled there is nothing to fit into; the resize observer runs this again.
+  if (available.width <= 0 || available.height <= 0) {
+    return
+  }
+  // Clamped at 1: a device smaller than the pane is shown life size, not blown up.
+  const scale = Math.min(1, available.width / preset.width, available.height / preset.height)
+  webview.style.flex = '0 0 auto'
+  webview.style.width = `${Math.round(preset.width * scale)}px`
+  webview.style.height = `${Math.round(preset.height * scale)}px`
   webview.style.margin = 'auto'
 }

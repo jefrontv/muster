@@ -4648,29 +4648,35 @@ function BrowserPagePane({
       return
     }
     // Why: picking a preset on an already-loaded page fires no dom-ready, so the frame would keep
-    // the previous width until the next navigation.
+    // the previous size until the next navigation.
     const preset = getBrowserViewportPreset(browserTab.viewportPresetId ?? null)
-    applyBrowserPageEmulatedFrame(
-      webview,
-      preset ? { width: preset.width, height: preset.height } : null
-    )
-    if (!preset) {
+    const box = preset ? { width: preset.width, height: preset.height } : null
+    applyBrowserPageEmulatedFrame(webview, box)
+    if (!preset || !box) {
       return
     }
-    // Why re-apply on resize: CSS solves the frame's fit every frame, but the render scale is
-    // computed in main from the surface at the moment the override is set. Leave it alone and a
-    // resized pane shows the page at the old scale — short of the frame, or spilling past it.
+    // Why observe the PARENT: the guest's own size is what this effect writes, so watching it would
+    // only ever report its own edits. The container is what actually changes when the window
+    // resizes or a devtools panel docks.
+    //
+    // Both halves have to re-run: the frame, because the fit is measured pixels, and the override,
+    // because main computes the render scale from the surface as it was when the override was set.
+    const container = webview.parentElement
+    if (!container) {
+      return
+    }
     let pending = 0
     const observer = new ResizeObserver(() => {
       window.clearTimeout(pending)
       pending = window.setTimeout(() => {
+        applyBrowserPageEmulatedFrame(webview, box)
         void window.api.browser.setViewportOverride({
           browserPageId: browserTab.id,
           override: browserViewportPresetToOverride(preset)
         })
       }, 120)
     })
-    observer.observe(webview)
+    observer.observe(container)
     return () => {
       window.clearTimeout(pending)
       observer.disconnect()
