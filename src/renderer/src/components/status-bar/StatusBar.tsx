@@ -66,6 +66,7 @@ import { getUsageProviderAccountsSectionId } from './usage-provider-settings-tar
 import { formatRateLimitWindowChipLabel } from '@/lib/window-label-formatter'
 import { useResetCountdownClock } from '@/hooks/useResetCountdownClock'
 import { markLiveCodexSessionsForRestart } from '@/lib/codex-session-restart'
+import { SiteSetupStatusSegment } from './SiteSetupStatusSegment'
 import { UpdateStatusSegment } from './UpdateStatusSegment'
 import { RemoteServerUpdateStatusSegment } from './RemoteServerUpdateStatusSegment'
 import { isStatusBarItemAvailable } from './status-bar-agent-gating'
@@ -2346,6 +2347,9 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
       <div className="flex items-center gap-3">
         <RemoteServerUpdateStatusSegment iconOnly={iconOnly} />
         <UpdateStatusSegment compact={compact} iconOnly={iconOnly} />
+        {/* Beside the update chip and, like it, never behind a status-bar toggle: this is the only
+            way back to a minimized setup. */}
+        <SiteSetupStatusSegment compact={compact} iconOnly={iconOnly} />
         <React.Suspense fallback={null}>
           {petEnabled ? <PetStatusSegment /> : null}
           {showResourceUsage ? (

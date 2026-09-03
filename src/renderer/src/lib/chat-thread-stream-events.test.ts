@@ -131,7 +131,10 @@ describe('installChatThreadStreamEvents', () => {
 
     listener?.({ kind: 'turn-complete', threadId: 't1', isError: true })
 
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', expect.stringContaining('error'))
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith(
+      't1',
+      expect.stringContaining('error')
+    )
     stop()
   })
 
@@ -144,7 +147,7 @@ describe('installChatThreadStreamEvents', () => {
     stop()
   })
 
-  it('clears the failure on the next turn\'s first token', () => {
+  it("clears the failure on the next turn's first token", () => {
     const stop = installChatThreadStreamEvents()
 
     listener?.({ kind: 'delta', threadId: 't1', text: 'hi' })

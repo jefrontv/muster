@@ -36,9 +36,7 @@ import {
 } from './chat-thread-status'
 import { regenerateChatThreadTitle } from './chat-thread-auto-title'
 import { useChatThreadContentMatch } from './use-chat-thread-content-search'
-import {
-  DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 
 /** Self-ticking elapsed (setInterval → textContent), NOT React state: a state
  *  tick would re-commit every working row each second (T3/NativeChatWorkingRow). */
@@ -293,7 +291,9 @@ export function ChatThreadRow({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={() => void updateChatThread(thread.id, { archived: thread.archived !== true })}
+            onSelect={() =>
+              void updateChatThread(thread.id, { archived: thread.archived !== true })
+            }
           >
             {thread.archived === true
               ? translate('auto.components.chat.sidebar.unarchiveThread', 'Unarchive')

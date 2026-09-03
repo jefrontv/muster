@@ -56,9 +56,7 @@ describe('NativeChatToolRun call progress', () => {
   })
 
   it('stops spinning once the result pairs with the call', () => {
-    render(
-      <NativeChatToolRun blocks={[call('Read', 0), result()]} expandSignal={false} live />
-    )
+    render(<NativeChatToolRun blocks={[call('Read', 0), result()]} expandSignal={false} live />)
     expect(screen.queryByLabelText('Running')).toBeNull()
   })
 
@@ -80,9 +78,7 @@ describe('NativeChatToolRun call progress', () => {
   })
 
   it('spins the expanded pill while any of its calls is out', () => {
-    render(
-      <NativeChatToolRun blocks={[call('Read', 0), call('Edit', 1)]} expandSignal live />
-    )
+    render(<NativeChatToolRun blocks={[call('Read', 0), call('Edit', 1)]} expandSignal live />)
     expect(screen.getByText('2 tool calls')).toBeInTheDocument()
     expect(screen.getByLabelText('Running')).toBeInTheDocument()
   })

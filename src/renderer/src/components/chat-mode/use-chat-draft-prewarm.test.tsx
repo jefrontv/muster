@@ -61,9 +61,12 @@ describe('useChatDraftPrewarm', () => {
   })
 
   it('warms only once no matter how much more is typed', async () => {
-    const { rerender } = renderHook(({ d }) => useChatDraftPrewarm({ draft: d, workspaceId: 'w1' }), {
-      initialProps: { d: 'f' }
-    })
+    const { rerender } = renderHook(
+      ({ d }) => useChatDraftPrewarm({ draft: d, workspaceId: 'w1' }),
+      {
+        initialProps: { d: 'f' }
+      }
+    )
     await flush()
     rerender({ d: 'fix' })
     rerender({ d: 'fix the nav' })

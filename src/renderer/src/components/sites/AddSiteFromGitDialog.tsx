@@ -37,6 +37,8 @@ import { Input } from '@/components/ui/input'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteCloneStep } from './SiteCloneStep'
 import { SiteSetupContinuation } from './SiteSetupContinuation'
+import { SiteSetupMinimizeButton } from './SiteSetupMinimizeButton'
+import { useMinimizedSiteSetup } from './use-minimized-site-setup'
 
 type AddSiteFromGitDialogProps = {
   open: boolean
@@ -95,6 +97,33 @@ export function AddSiteFromGitDialog({
   const [selected, setSelected] = useState<CloneSourceRepo | null>(null)
   const [cloneError, setCloneError] = useState('')
   const [createdSiteId, setCreatedSiteId] = useState('')
+
+  // One id for this dialog: only one New Site flow can be open at a time, and a bind link that
+  // arrives alongside it keys off its own request id.
+  const { minimized, minimize } = useMinimizedSiteSetup('new-site', {
+    // The trailing segment of `owner/name`, which is what the user calls the site.
+    label: selected?.fullName.split('/').at(-1) ?? 'new site',
+    stage:
+      step === 'cloning'
+        ? 'Cloning'
+        : setupBusy
+          ? 'Setting up'
+          : step === 'setup'
+            ? 'Needs a decision'
+            : step === 'confirm'
+              ? 'Confirm the repo'
+              : 'Choose a repo',
+    // Clone errors surface as `cloneError`, which is a thing only the user can act on.
+    phase:
+      step === 'cloning' && cloneError.length === 0
+        ? 'running'
+        : setupBusy
+          ? 'running'
+          : cloneError.length > 0
+            ? 'error'
+            : 'waiting',
+    percent: null
+  })
   useEffect(() => {
     if (open) {
       return
@@ -231,14 +260,20 @@ export function AddSiteFromGitDialog({
 
   return (
     <Dialog
-      open={open}
+      open={open && !minimized}
       onOpenChange={(next) => {
+        // Minimizing closes the dialog too, so it has to be excluded from every exit below — none
+        // of which it wants: not the abort, not the caller's close.
+        if (!next && minimized) {
+          return
+        }
         // A setup stage mid-run owns files and a live SSH connection; Escape must not end it.
         if (!next && setupBusy) {
           return
         }
         // The X button is the one deliberate exit left during a clone (outside/Escape are blocked);
-        // stop git so a site is not created after the dialog is gone.
+        // stop git so a site is not created after the dialog is gone. Minimize deliberately does
+        // NOT come through here — it is the opposite intention and must leave the clone running.
         if (!next && step === 'cloning') {
           void window.api.repos.cloneAbort()
         }
@@ -247,11 +282,12 @@ export function AddSiteFromGitDialog({
     >
       <DialogContent
         className="max-w-xl"
+        keepMounted
         onPointerDownOutside={guardDismiss}
         onInteractOutside={guardDismiss}
         onEscapeKeyDown={guardDismiss}
       >
-        <DialogHeader>
+        <DialogHeader className="pr-16">
           <DialogTitle>
             {step === 'confirm'
               ? strings.confirmTitle
@@ -274,6 +310,7 @@ export function AddSiteFromGitDialog({
             </DialogDescription>
           ) : null}
         </DialogHeader>
+        <SiteSetupMinimizeButton onMinimize={minimize} />
 
         {step === 'pick' && providers.length === 0 ? (
           <p className="text-sm text-muted-foreground">{strings.noProviders}</p>

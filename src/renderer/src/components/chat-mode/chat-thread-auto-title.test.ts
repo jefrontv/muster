@@ -153,7 +153,13 @@ describe('regenerateChatThreadTitle', () => {
 
   it('runs again on a thread that already generated once', async () => {
     storeState.chatThreads = [
-      { id: 't1', title: 'Old title', autoTitle: 'Old title', titleGenerated: true, workspaceId: null }
+      {
+        id: 't1',
+        title: 'Old title',
+        autoTitle: 'Old title',
+        titleGenerated: true,
+        workspaceId: null
+      }
     ]
 
     await expect(regenerateChatThreadTitle('t1')).resolves.toBe(true)
@@ -170,4 +176,3 @@ describe('regenerateChatThreadTitle', () => {
     await expect(regenerateChatThreadTitle('gone')).resolves.toBe(false)
   })
 })
-

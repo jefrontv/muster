@@ -7,7 +7,6 @@ import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { filterSites, sitesOnDisk } from './site-filtering'
-import { AddSiteFromGitDialog } from './AddSiteFromGitDialog'
 import { AddToSidebarButton } from './AddToSidebarButton'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
@@ -26,6 +25,7 @@ export default function SitesPage(): React.JSX.Element {
   const query = useAppStore((state) => state.siteQuery)
   const fetchSites = useAppStore((state) => state.fetchSites)
   const selectSite = useAppStore((state) => state.selectSite)
+  const setNewSiteDialogOpen = useAppStore((state) => state.setNewSiteDialogOpen)
   const setSiteQuery = useAppStore((state) => state.setSiteQuery)
   const importSitesFromOcsites = useAppStore((state) => state.importSitesFromOcsites)
   const addDiscoveredSitesToSidebar = useAppStore((state) => state.addDiscoveredSitesToSidebar)
@@ -36,9 +36,7 @@ export default function SitesPage(): React.JSX.Element {
   const [discovered, setDiscovered] = useState<DiscoveredSiteCandidate[]>([])
   const [roots, setRoots] = useState<string[]>([])
   // Where a new clone lands. Separate from `roots`, whose order is the scan order, not a ranking.
-  const [primaryRoot, setPrimaryRoot] = useState('')
   const [adopting, setAdopting] = useState('')
-  const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
   const [rootsDialogOpen, setRootsDialogOpen] = useState(false)
   useContextualTour('sites', true)
 
@@ -57,7 +55,6 @@ export default function SitesPage(): React.JSX.Element {
         // The same call already reports the roots, so the rows can shorten their paths without a
         // second round trip.
         setRoots(result.value.roots)
-        setPrimaryRoot(result.value.primaryRoot)
       }
     }
     void load()
@@ -236,7 +233,9 @@ export default function SitesPage(): React.JSX.Element {
         {/* New site leads: it is the action this page exists for. It keeps the filled variant so
             there is still one clear primary; everything after it is outline, which is what makes
             them legible — ghost rendered as bare text with no edge to press. */}
-        <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setCloneDialogOpen(true)}>
+        {/* The dialog itself lives at the App root so a minimized clone survives leaving this
+            page; this button only raises the flag. */}
+        <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setNewSiteDialogOpen(true)}>
           <GitBranchPlus className="size-3.5" />
           {getSiteCloneSourceStrings().trigger}
         </Button>
@@ -266,16 +265,6 @@ export default function SitesPage(): React.JSX.Element {
           {translate('auto.components.sites.SitesPage.import', 'Import from ocsites')}
         </Button>
       </header>
-
-      <AddSiteFromGitDialog
-        open={cloneDialogOpen}
-        destinationRoot={primaryRoot}
-        onOpenChange={setCloneDialogOpen}
-        onAdded={(siteId) => {
-          void fetchSites()
-          selectSite(siteId)
-        }}
-      />
 
       <SiteRootsDialog
         open={rootsDialogOpen}

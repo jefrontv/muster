@@ -365,5 +365,4 @@ describe('useIpcEvents browser tab close routing', () => {
       expect.objectContaining({ tabLabel: 'Docs', onConfirm: expect.any(Function) })
     )
   })
-
 })

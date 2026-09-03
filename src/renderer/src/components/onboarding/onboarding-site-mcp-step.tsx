@@ -23,14 +23,18 @@ export function OnboardingSiteMcpStep(): React.JSX.Element {
     const kind = siteMcpHarnessStateKind(harness)
     return kind === 'stale' || kind === 'unconfigured'
   })
-  const allReady = mcp.checked && mcp.loadError === null && harnesses.length > 0 && needSetup.length === 0
+  const allReady =
+    mcp.checked && mcp.loadError === null && harnesses.length > 0 && needSetup.length === 0
 
   return (
     <div className="space-y-5" data-testid="onboarding-site-mcp-step">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold leading-tight text-foreground">
-            {translate('auto.components.onboarding.SiteMcpStep.title', 'Site tools for your agents')}
+            {translate(
+              'auto.components.onboarding.SiteMcpStep.title',
+              'Site tools for your agents'
+            )}
           </h2>
           {mcp.checked && mcp.loadError === null ? (
             <IntegrationStatusPill tone={allReady ? 'connected' : 'attention'}>

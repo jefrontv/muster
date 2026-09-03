@@ -11,6 +11,7 @@ import type {
   CloneSourceProvider,
   CloneSourceRepo
 } from '../../../../shared/site-clone-source-types'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { AddSiteFromGitDialog } from './AddSiteFromGitDialog'
 
 // The setup step mounts a whole site-configuration surface; the pick step is what is under test.
@@ -75,12 +76,17 @@ function installApi(providers: CloneSourceProvider[], repos: ReposMock): void {
 async function render(): Promise<void> {
   await act(async () => {
     root?.render(
-      <AddSiteFromGitDialog
-        open
-        destinationRoot="/tmp/muster-fixture/Sites"
-        onOpenChange={() => {}}
-        onAdded={() => {}}
-      />
+      // The dialog now carries a minimize control with a tooltip, and Radix tooltips require this
+      // provider. The real app has one at its root, so rendering without it tested a tree that
+      // cannot exist.
+      <TooltipProvider>
+        <AddSiteFromGitDialog
+          open
+          destinationRoot="/tmp/muster-fixture/Sites"
+          onOpenChange={() => {}}
+          onAdded={() => {}}
+        />
+      </TooltipProvider>
     )
   })
 }

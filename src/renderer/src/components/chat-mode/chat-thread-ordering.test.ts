@@ -86,4 +86,3 @@ describe('sortChatThreads — pinned', () => {
     expect(rows.map((t) => t.id)).toEqual(['pin-a', 'pin-b', 'plain'])
   })
 })
-

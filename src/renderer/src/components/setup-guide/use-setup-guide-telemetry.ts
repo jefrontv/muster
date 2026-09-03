@@ -37,7 +37,10 @@ export function useSetupGuideOpenCloseTelemetry(args: {
   progress: FeatureWallSetupProgress
   activeStepId: FeatureWallSetupStepId | null
 }): void {
-  const setupSteps = useMemo(() => getFeatureWallSetupSteps(args.progress.mode), [args.progress.mode])
+  const setupSteps = useMemo(
+    () => getFeatureWallSetupSteps(args.progress.mode),
+    [args.progress.mode]
+  )
   const sessionRef = useRef<SetupGuideTelemetrySession | null>(null)
   const snapshotRef = useRef<SetupGuideTelemetrySnapshot>({
     completedCount: 0,

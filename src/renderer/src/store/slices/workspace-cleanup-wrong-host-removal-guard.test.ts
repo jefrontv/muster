@@ -165,8 +165,7 @@ function seedScan(candidates: readonly WorkspaceCleanupCandidate[]): void {
   } satisfies WorkspaceCleanupScanResult)
 }
 
-beforeEach(() => {
-})
+beforeEach(() => {})
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -297,7 +296,6 @@ describe('STA-4343 minimal guard: cleanup refuses a removal it cannot attribute 
       { worktreeId: WORKTREE_ID, displayName: 'shared-workspace', message: HOST_UNRESOLVED_MESSAGE }
     ])
   })
-
 })
 
 describe('STA-4343 minimal guard: ordinary single-host cleanup still deletes', () => {

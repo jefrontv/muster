@@ -30,7 +30,6 @@ describe('xterm container height', () => {
     )
   })
 
-
   it('never reserves a strip for the hover link tooltip', () => {
     // Why: the tooltip is hover-only and absolutely positioned, so reserving
     // layout space for it costs every pane a permanent bottom gap and a PTY row.

@@ -81,7 +81,10 @@ describe('chat-thread draft persistence', () => {
     flush()
     // Simulates a renderer reload: memory gone, storage intact.
     clearNativeChatDraftCacheForTests()
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ [THREAD_SCOPE]: 'survives a reload' }))
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ [THREAD_SCOPE]: 'survives a reload' })
+    )
 
     expect(readNativeChatDraftCache(THREAD_SCOPE)).toBe('survives a reload')
   })
@@ -136,4 +139,3 @@ describe('chat-thread draft persistence', () => {
     expect(readNativeChatDraftCache(THREAD_SCOPE)).toBe('')
   })
 })
-

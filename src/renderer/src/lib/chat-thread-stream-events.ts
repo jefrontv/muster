@@ -122,7 +122,11 @@ export function installChatThreadStreamEvents(): () => void {
         const watched = store.activeChatThreadId === event.threadId && document.hasFocus()
         cancelPendingCompletionNotification(event.threadId)
         if (
-          shouldNotifyChatTurnComplete({ isError: event.isError, watched, settings: store.settings })
+          shouldNotifyChatTurnComplete({
+            isError: event.isError,
+            watched,
+            settings: store.settings
+          })
         ) {
           const notifyPaneKey = store.chatThreadSessions[event.threadId]?.paneKey
           const thread = store.chatThreads.find((t) => t.id === event.threadId)
@@ -136,8 +140,7 @@ export function installChatThreadStreamEvents(): () => void {
                   title: thread?.title ?? 'Chat'
                 },
                 {
-                  readAgentStatus: () =>
-                    useAppStore.getState().agentStatusByPaneKey[notifyPaneKey],
+                  readAgentStatus: () => useAppStore.getState().agentStatusByPaneKey[notifyPaneKey],
                   setTimer: (callback, ms) => window.setTimeout(callback, ms),
                   dispatch: ({ paneKey, title, dedupeKey }) => {
                     pendingCompletionNotifications.delete(event.threadId)

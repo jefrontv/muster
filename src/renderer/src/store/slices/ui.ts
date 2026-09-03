@@ -1,5 +1,10 @@
 /* eslint-disable max-lines */
 import type { StateCreator } from 'zustand'
+import {
+  applyMinimizedFlowPatch,
+  removeMinimizedFlow,
+  type MinimizedSiteSetupFlow
+} from '../../../../shared/site-setup-minimize'
 import type { AppState } from '../types'
 import { normalizeRightSidebarRoute } from '../right-sidebar-route'
 import {
@@ -901,6 +906,26 @@ export type UISlice = {
   // Why: ephemeral, renderer-only — never persisted; resets each session and on every phase transition (see setUpdateStatus).
   updateCardCollapsed: boolean
   setUpdateCardCollapsed: (collapsed: boolean) => void
+  /**
+   * Site setups pushed to the status bar, keyed by flow id.
+   *
+   * Renderer-only and never persisted: the dialog holding the real state dies with the window, so
+   * a chip restored after a restart would point at a flow that no longer exists.
+   *
+   * A record rather than one slot because a `muster://` link can arrive while a New Site clone is
+   * already minimized, and a single slot would silently drop the first flow's chip.
+   */
+  /**
+   * Whether the New Site flow is open. Store-owned because the dialog is hosted at the App root:
+   * it has to outlive the Sites page the button lives on, or minimizing it and navigating away
+   * would destroy the clone it was meant to keep running.
+   */
+  newSiteDialogOpen: boolean
+  setNewSiteDialogOpen: (open: boolean) => void
+  minimizedSiteSetupFlows: Record<string, MinimizedSiteSetupFlow>
+  minimizeSiteSetupFlow: (flow: MinimizedSiteSetupFlow) => void
+  updateMinimizedSiteSetupFlow: (id: string, patch: Partial<MinimizedSiteSetupFlow>) => void
+  clearSiteSetupFlow: (id: string) => void
   updateReassuranceSeen: boolean
   markUpdateReassuranceSeen: () => void
   isFullScreen: boolean
@@ -2533,6 +2558,21 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     }),
   updateCardCollapsed: false,
   setUpdateCardCollapsed: (collapsed) => set({ updateCardCollapsed: collapsed }),
+  newSiteDialogOpen: false,
+  setNewSiteDialogOpen: (open) => set({ newSiteDialogOpen: open }),
+  minimizedSiteSetupFlows: {},
+  minimizeSiteSetupFlow: (flow) =>
+    set((s) => ({ minimizedSiteSetupFlows: { ...s.minimizedSiteSetupFlows, [flow.id]: flow } })),
+  // Both delegate to the shared transforms, which return the SAME object when nothing changes —
+  // zustand then skips the update, so a long clone reporting every frame costs no re-render.
+  updateMinimizedSiteSetupFlow: (id, patch) =>
+    set((s) => ({
+      minimizedSiteSetupFlows: applyMinimizedFlowPatch(s.minimizedSiteSetupFlows, id, patch)
+    })),
+  clearSiteSetupFlow: (id) =>
+    set((s) => ({
+      minimizedSiteSetupFlows: removeMinimizedFlow(s.minimizedSiteSetupFlows, id)
+    })),
   updateReassuranceSeen: false,
   markUpdateReassuranceSeen: () => {
     void window.api.ui.set({ updateReassuranceSeen: true }).catch(console.error)

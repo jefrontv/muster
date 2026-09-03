@@ -92,7 +92,9 @@ export function NativeChatChangedFilesRow({
           {changed.files.map((file) => (
             <li key={file.path} className="flex items-center gap-2 text-xs">
               <span
-                className={cn('min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground')}
+                className={cn(
+                  'min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground'
+                )}
                 title={file.path}
               >
                 {file.path}

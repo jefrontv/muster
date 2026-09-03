@@ -74,9 +74,9 @@ export function NativeChatMessageList({
   // Settled turns the user re-opened / running turns with tool overflow shown.
   const [expandedTurnIds, setExpandedTurnIds] = useState<ReadonlySet<string>>(new Set())
   const [expandedPlanTurnIds, setExpandedPlanTurnIds] = useState<ReadonlySet<string>>(new Set())
-  const [expandedChangedFileTurnIds, setExpandedChangedFileTurnIds] = useState<
-    ReadonlySet<string>
-  >(new Set())
+  const [expandedChangedFileTurnIds, setExpandedChangedFileTurnIds] = useState<ReadonlySet<string>>(
+    new Set()
+  )
   const [expandedLiveToolTurnIds, setExpandedLiveToolTurnIds] = useState<ReadonlySet<string>>(
     new Set()
   )
@@ -302,9 +302,7 @@ export function NativeChatMessageList({
                 key={`changed-files:${row.turnId}`}
                 changed={row.changed}
                 expanded={row.expanded}
-                onToggle={() =>
-                  setExpandedChangedFileTurnIds((prev) => toggled(prev, row.turnId))
-                }
+                onToggle={() => setExpandedChangedFileTurnIds((prev) => toggled(prev, row.turnId))}
               />
             ) : row.kind === 'turn-plan' ? (
               <NativeChatTurnPlanRow
@@ -323,10 +321,7 @@ export function NativeChatMessageList({
             )
           )}
           {showWorkingRow ? (
-            <NativeChatWorkingRow
-              workingSince={workingSince}
-              activeStepLabel={workingStepLabel}
-            />
+            <NativeChatWorkingRow workingSince={workingSince} activeStepLabel={workingStepLabel} />
           ) : null}
           {/* Reserved end space while a new turn is anchored; height is written
               imperatively by the anchoring hook. */}

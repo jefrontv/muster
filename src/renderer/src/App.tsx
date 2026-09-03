@@ -326,6 +326,9 @@ const Settings = lazy(() => import('./components/settings/Settings'))
 const SkillsPage = lazy(() => import('./components/skills/SkillsPage'))
 const SitesPage = lazy(() => import('./components/sites/SitesPage'))
 const ChatModePage = lazy(() => import('./components/chat-mode/ChatModePage'))
+const SiteSetupHost = lazy(() =>
+  import('./components/sites/SiteSetupHost').then((m) => ({ default: m.SiteSetupHost }))
+)
 const SiteBindDialog = lazy(() =>
   import('./components/sites/SiteBindDialog').then((m) => ({ default: m.SiteBindDialog }))
 )
@@ -2700,10 +2703,15 @@ function App(): React.JSX.Element {
             </Suspense>
           </LinkRoutingPreferenceDialogProvider>
         </ConfirmationDialogProvider>
+        {/* Inside TooltipProvider, not after it: these dialogs carry tooltips (the minimize
+            control), and a Radix tooltip outside its provider throws and takes the shell down. */}
+        <SiteBindDialog />
+        {/* App-wide so a minimized clone or import survives leaving the Sites page — that is the
+            whole point of being able to minimize it. */}
+        <SiteSetupHost />
+        {/* App-wide, not inside a view: an agent in any terminal can ask for a plan review. */}
+        <PlanAnnotationDialog />
       </TooltipProvider>
-      <SiteBindDialog />
-      {/* App-wide, not inside a view: an agent in any terminal can ask for a plan review. */}
-      <PlanAnnotationDialog />
       <Toaster closeButton toastOptions={{ className: 'font-sans text-sm' }} />
       <PinnedTabCloseDialog />
       {/* Why: Electron's drag-region hit-test is DOM-order-based (ignores z-index); render last so WindowControls stay clickable. */}

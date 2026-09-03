@@ -180,7 +180,10 @@ function ActiveCollabEventChip({ event }: { event: ActiveCollabToolEvent }): Rea
       type="button"
       onClick={open}
       title={translate('auto.components.native-chat.taskChip.unknown', 'Open in Tasks')}
-      className={cn(className, 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
+      className={cn(
+        className,
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+      )}
     >
       {body}
     </button>
@@ -239,9 +242,7 @@ function ToolCallDeck({
             {depth === 0 ? (
               <>
                 <NativeChatToolStatusIcon status={call.running ? 'running' : 'settled'} />
-                <span className="shrink-0 text-xs font-medium text-foreground/90">
-                  {call.name}
-                </span>
+                <span className="shrink-0 text-xs font-medium text-foreground/90">{call.name}</span>
                 {call.preview ? (
                   <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
                     {call.preview}

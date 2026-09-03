@@ -1247,7 +1247,10 @@ function Settings(): React.JSX.Element {
 
                 <SettingsSection
                   id="setup-guide"
-                  title={translate('auto.components.settings.Settings.setupGuideTitle', 'Setup guide')}
+                  title={translate(
+                    'auto.components.settings.Settings.setupGuideTitle',
+                    'Setup guide'
+                  )}
                   description={translate(
                     'auto.components.settings.Settings.setupGuideDescription',
                     'Finish the setup that makes Muster useful for your day-to-day work.'

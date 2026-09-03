@@ -48,16 +48,35 @@ function DialogContent({
   children,
   overlayClassName,
   showCloseButton = true,
+  keepMounted = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   overlayClassName?: string
   showCloseButton?: boolean
+  /**
+   * Keeps the dialog's subtree alive while it is closed, hidden rather than destroyed.
+   *
+   * Why: a dialog hosting long-running work — a clone, an import — holds that work's state, its
+   * timers, and its IPC subscriptions in the component tree. Closing normally throws all of it
+   * away, so "hide this and let me keep working" is only possible if the tree survives. Radix
+   * needs forceMount on BOTH the portal and the content; either alone still unmounts.
+   *
+   * The overlay is deliberately NOT force-mounted: a hidden dialog must not keep a click-blocking
+   * sheet over the app, which is the whole point of hiding it.
+   */
+  keepMounted?: boolean
 }) {
   return (
-    <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay className={overlayClassName} />
+    <DialogPortal data-slot="dialog-portal" forceMount={keepMounted ? true : undefined}>
+      {/* Why hide it explicitly rather than rely on Radix unmounting it: inside a force-mounted
+          portal the overlay's exit presence does not run, so it stayed painted — a full-screen
+          dimming sheet over the app the dialog had just got out of the way of. */}
+      <DialogOverlay
+        className={cn(keepMounted && 'data-[state=closed]:hidden', overlayClassName)}
+      />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        forceMount={keepMounted ? true : undefined}
         // Why: bg-background in dark mode is the same color as the canvas, and
         // border-border/50 is ~3.5% white over that canvas — both invisible.
         // A translucent surface, solid 14% border, dual shadow, and 2xl backdrop
@@ -65,6 +84,9 @@ function DialogContent({
         // clearly in both light and dark mode.
         className={cn(
           'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-black/14 bg-background/96 p-6 text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl duration-200 outline-none dark:border-white/14 dark:bg-[rgba(23,23,23,0.96)] dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg',
+          // display:none, not just transparent: a force-mounted panel left in the layer would keep
+          // swallowing clicks over the app it is meant to have got out of the way of.
+          keepMounted && 'data-[state=closed]:hidden',
           className
         )}
         {...props}

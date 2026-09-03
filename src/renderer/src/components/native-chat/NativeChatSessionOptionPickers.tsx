@@ -237,9 +237,7 @@ function NativeChatSessionOptionPickersInner({
 }: NativeChatSessionOptionPickersProps): React.JSX.Element | null {
   const [pendingId, setPendingId] = useState<string | null>(null)
   // Uncontrolled when no slot is supplied, so a caller that does not care keeps the old behaviour.
-  const menuProps = (
-    id: string
-  ): { open?: boolean; onOpenChange?: (open: boolean) => void } =>
+  const menuProps = (id: string): { open?: boolean; onOpenChange?: (open: boolean) => void } =>
     onOpenPickerChange
       ? { open: openPicker === id, onOpenChange: (open) => onOpenPickerChange(open ? id : null) }
       : {}

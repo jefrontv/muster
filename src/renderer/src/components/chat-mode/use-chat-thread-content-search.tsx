@@ -5,39 +5,33 @@
 // over IPC. Keeping them in a context means the row components pick up their own
 // excerpt instead of five call sites threading a map down as a prop.
 
-import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import type React from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import {
   CHAT_SEARCH_MIN_QUERY_LENGTH,
-  type ChatThreadSearchMatch,
-} from "../../../../shared/chat-thread-search-types"
+  type ChatThreadSearchMatch
+} from '../../../../shared/chat-thread-search-types'
 
 /** Long enough that typing a word is one search, short enough to feel live. */
 const SEARCH_DEBOUNCE_MS = 220
 
-export type ChatThreadContentMatches = ReadonlyMap<
-  string,
-  ChatThreadSearchMatch
->
+export type ChatThreadContentMatches = ReadonlyMap<string, ChatThreadSearchMatch>
 
 const EMPTY: ChatThreadContentMatches = new Map()
 
-const ChatThreadContentMatchContext =
-  createContext<ChatThreadContentMatches>(EMPTY)
+const ChatThreadContentMatchContext = createContext<ChatThreadContentMatches>(EMPTY)
 
 export function useChatThreadContentMatches(): ChatThreadContentMatches {
   return useContext(ChatThreadContentMatchContext)
 }
 
-export function useChatThreadContentMatch(
-  threadId: string,
-): ChatThreadSearchMatch | undefined {
+export function useChatThreadContentMatch(threadId: string): ChatThreadSearchMatch | undefined {
   return useContext(ChatThreadContentMatchContext).get(threadId)
 }
 
 export function ChatThreadContentMatchProvider({
   matches,
-  children,
+  children
 }: {
   matches: ChatThreadContentMatches
   children: React.ReactNode
@@ -49,9 +43,7 @@ export function ChatThreadContentMatchProvider({
   )
 }
 
-export function useChatThreadContentSearch(
-  query: string,
-): ChatThreadContentMatches {
+export function useChatThreadContentSearch(query: string): ChatThreadContentMatches {
   const [matches, setMatches] = useState<ChatThreadContentMatches>(EMPTY)
 
   useEffect(() => {
@@ -67,9 +59,7 @@ export function useChatThreadContentSearch(
           if (cancelled) {
             return
           }
-          setMatches(
-            new Map(response.matches.map((match) => [match.threadId, match])),
-          )
+          setMatches(new Map(response.matches.map((match) => [match.threadId, match])))
         })
         .catch(() => {
           // A failed search degrades to title-only matching, which is what the

@@ -2318,6 +2318,41 @@
   }
 }
 
+/* A dot that says "this needs you", for work parked in the status bar.
+
+   Why not reuse native-chat-status-pulse: that one means "the agent is still working", and is used
+   for exactly that. Overloading one class with two opposite meanings — busy, and blocked on you —
+   would make either impossible to change later. Same motion, its own name.
+
+   The stepped ramp is deliberate: it lets the compositor paint a handful of frames instead of one
+   per vsync, which keeps an always-present chip off the render hot path. */
+@keyframes attention-pulse {
+  0%,
+  40% {
+    opacity: 1;
+    animation-timing-function: steps(6);
+  }
+  50%,
+  90% {
+    opacity: 0.35;
+    animation-timing-function: steps(6);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-attention-pulse {
+  animation: attention-pulse 1.8s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-attention-pulse {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
 /* ── Feature wall: agents-orchestration animations ───────────────── */
 
 /* Why: drives the supported-agents marquee on page 1 of the agents tile.

@@ -290,4 +290,3 @@ describe('buildNativeChatTimelineRows — changed files', () => {
     expect(rows.some((row) => row.kind === 'turn-changed-files')).toBe(false)
   })
 })
-

@@ -3,10 +3,7 @@
 import '@testing-library/jest-dom/vitest'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, render, screen } from '@testing-library/react'
-import {
-  NativeChatToolStatusIcon,
-  TOOL_TICK_HOLD_MS
-} from './NativeChatToolStatusIcon'
+import { NativeChatToolStatusIcon, TOOL_TICK_HOLD_MS } from './NativeChatToolStatusIcon'
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => {

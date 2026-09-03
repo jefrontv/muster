@@ -172,9 +172,9 @@ describe('resolveRetainedSpacerPx', () => {
   })
 
   it('never goes negative when content overshoots exactly', () => {
-    expect(
-      resolveRetainedSpacerPx({ scrollTop: 0, viewportHeight: 800, contentBottom: 800 })
-    ).toBe(0)
+    expect(resolveRetainedSpacerPx({ scrollTop: 0, viewportHeight: 800, contentBottom: 800 })).toBe(
+      0
+    )
   })
 
   it('leaves the scroll position still valid, where dropping the reserve did not', () => {

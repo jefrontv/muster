@@ -31,6 +31,8 @@ import { appendCloneLogLine, SiteCloneLog } from './SiteCloneLog'
 import { buildSiteBindSetupProposal } from './site-bind-setup-proposal'
 import { SiteSetupContinuation } from './SiteSetupContinuation'
 import { getSiteSetupStrings } from './site-setup-strings'
+import { SiteSetupMinimizeButton } from './SiteSetupMinimizeButton'
+import { useMinimizedSiteSetup } from './use-minimized-site-setup'
 import { siteBindApi, usePendingSiteBind } from './use-pending-site-bind'
 
 /** Display order; `liveDomainProtocol` is folded into `liveDomain`, so it is not listed. */
@@ -97,6 +99,27 @@ export function SiteBindDialog(): React.JSX.Element | null {
   const [boundFields, setBoundFields] = useState<SiteBindFields | null>(null)
   /** A setup stage is mid-run; the dialog must not close out from under it. */
   const [setupBusy, setSetupBusy] = useState(false)
+
+  // One id per bind request, so a second link that arrives while this one is parked gets its own
+  // chip instead of overwriting it. Falls back to the bound site once the request is cleared.
+  const flowId = `bind:${pending?.requestId ?? boundSiteId}`
+  const flowLabel = boundFields?.reponame || pending?.fields.hostname || 'site'
+  const { minimized, minimize } = useMinimizedSiteSetup(flowId, {
+    label: flowLabel,
+    // Phase comes from what the dialog already tracks: anything mid-flight is a spinner, and
+    // everything else is a question the user has to answer before it can continue.
+    stage: cloning
+      ? 'Cloning'
+      : confirming
+        ? 'Binding'
+        : setupBusy
+          ? 'Setting up'
+          : boundSiteId.length > 0
+            ? 'Needs a decision'
+            : 'Confirm the link',
+    phase: cloning || confirming || setupBusy ? 'running' : error.length > 0 ? 'error' : 'waiting',
+    percent: cloning ? (cloneProgress?.percent ?? null) : null
+  })
 
   // A newer link replaces the old request outright, so the chosen folder must not carry over.
   // Only a candidate that is actually on disk may be preselected: a stale Site/Repo record whose
@@ -275,23 +298,27 @@ export function SiteBindDialog(): React.JSX.Element | null {
   if (boundSiteId.length > 0) {
     return (
       <Dialog
-        open
+        open={!minimized}
         onOpenChange={(open) => {
           // Escape and outside-clicks are the other ways out of the dialog; a stage mid-run has to
           // refuse them too, or the nav's disabled Done is a lock with the door left open.
-          if (!open && !setupBusy) {
+          //
+          // Minimizing is not this path: it closes the dialog through `minimized`, which leaves the
+          // subtree mounted and the work running rather than ending the flow.
+          if (!open && !minimized && !setupBusy) {
             finish()
           }
         }}
       >
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
+        <DialogContent className="max-w-xl" keepMounted>
+          <DialogHeader className="pr-16">
             <DialogTitle className="flex items-center gap-2">
               <Link2 className="size-4" />
               {setupStrings.title}
             </DialogTitle>
             <DialogDescription>{setupStrings.description}</DialogDescription>
           </DialogHeader>
+          <SiteSetupMinimizeButton onMinimize={minimize} />
 
           {/* No DialogFooter here: the setup pages own their own Back/Next/Done, so Done only
               appears on the last page instead of sitting next to the loading spinner. */}
@@ -322,21 +349,24 @@ export function SiteBindDialog(): React.JSX.Element | null {
 
   return (
     <Dialog
-      open
+      open={!minimized}
       onOpenChange={(open) => {
-        if (!open) {
+        // Minimizing also closes the dialog, so dismissing has to exclude it — otherwise sending a
+        // clone to the status bar would throw the whole bind request away.
+        if (!open && !minimized && !cloning) {
           dismiss()
         }
       }}
     >
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
+      <DialogContent className="max-w-xl" keepMounted>
+        <DialogHeader className="pr-16">
           <DialogTitle className="flex items-center gap-2">
             <Link2 className="size-4" />
             {strings.title}
           </DialogTitle>
           <DialogDescription>{strings.description}</DialogDescription>
         </DialogHeader>
+        <SiteSetupMinimizeButton onMinimize={minimize} />
 
         <div className="scrollbar-sleek max-h-[55vh] space-y-4 overflow-y-auto pr-1">
           <section className="space-y-2">
