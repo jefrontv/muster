@@ -67,19 +67,37 @@ export function ensureBrowserPageWebview({
 }
 
 /**
- * Caps the guest to an emulated CSS width and centres it in whatever pane space is left over.
+ * Frames the guest as the device box: emulated proportions, centred, never larger than the pane.
  *
- * Why: CDP's metrics override changes what the PAGE believes its viewport is, but the guest element
- * still spans the pane — so a 375px emulation renders hard against the left edge with the page's own
- * background flooding the rest. Capping the element and letting auto margins absorb the slack centres
- * the frame, and does so only when slack exists: with no room the guest just fills the pane. Margins
- * are measured against the guest's siblings, so a docked devtools panel narrows the space the frame
- * centres within instead of pushing it off-centre.
+ * Why aspect-ratio rather than measured pixels: the pane's free space depends on its siblings — a
+ * docked devtools panel narrows it — and on the window, so any number computed here would be stale
+ * by the next resize. `max-width`/`max-height` with an aspect ratio lets flexbox solve the fit
+ * every frame, and auto margins centre whatever is left over.
+ *
+ * Height matters as much as width: capping only the width left every preset full-height, so an
+ * iPhone frame was the shape of the pane rather than the shape of a phone.
  */
-export function applyBrowserPageEmulatedWidth(
+export function applyBrowserPageEmulatedFrame(
   webview: Electron.WebviewTag,
-  cssWidthPx: number | null
+  preset: { width: number; height: number } | null
 ): void {
-  webview.style.maxWidth = cssWidthPx === null ? '' : `${cssWidthPx}px`
-  webview.style.marginInline = cssWidthPx === null ? '' : 'auto'
+  if (preset === null) {
+    webview.style.maxWidth = ''
+    webview.style.maxHeight = ''
+    webview.style.aspectRatio = ''
+    webview.style.margin = ''
+    webview.style.flex = '1'
+    webview.style.width = '100%'
+    webview.style.height = '100%'
+    return
+  }
+  // flex 0 auto: the box is sized by the ratio and the caps, not stretched to fill the pane.
+  webview.style.flex = '0 1 auto'
+  // Both must go to auto, or a definite width AND height makes the browser ignore aspect-ratio.
+  webview.style.width = 'auto'
+  webview.style.height = 'auto'
+  webview.style.aspectRatio = `${preset.width} / ${preset.height}`
+  webview.style.maxWidth = `${preset.width}px`
+  webview.style.maxHeight = `${preset.height}px`
+  webview.style.margin = 'auto'
 }

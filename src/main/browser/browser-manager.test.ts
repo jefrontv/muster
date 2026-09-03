@@ -2800,7 +2800,12 @@ describe('browserManager', () => {
       debuggerIsAttached: ReturnType<typeof vi.fn>
       debuggerAttach: ReturnType<typeof vi.fn>
     } {
-      const debuggerSendCommand = vi.fn().mockResolvedValue(undefined)
+      // The fit scale is read from the guest's real surface, so the metrics probe has to answer.
+      const debuggerSendCommand = vi.fn(async (method: string) =>
+        method === 'Page.getLayoutMetrics'
+          ? { cssLayoutViewport: { clientWidth: 375, clientHeight: 500 } }
+          : undefined
+      )
       const debuggerIsAttached = vi.fn(() => true)
       const debuggerAttach = vi.fn()
       const guest = {
@@ -2856,13 +2861,16 @@ describe('browserManager', () => {
       })
       expect(ok).toBe(true)
 
-      // Zero means "use the surface": the renderer frames the guest to the preset width, so
-      // re-sending the numbers here is what produced dead space below and beside the page.
+      // The page keeps the real device viewport and the render is scaled to whatever surface the
+      // frame got. Surface 375x500 against a 375x667 device fits on width, so height decides:
+      // 500/667. Sending the surface size as the viewport instead is what made every preset
+      // full-height and cost the preview its device proportions.
       expect(debuggerSendCommand).toHaveBeenCalledWith('Emulation.setDeviceMetricsOverride', {
-        width: 0,
-        height: 0,
+        width: 375,
+        height: 667,
         deviceScaleFactor: 2,
-        mobile: true
+        mobile: true,
+        scale: 500 / 667
       })
       expect(debuggerSendCommand).toHaveBeenCalledWith('Emulation.setTouchEmulationEnabled', {
         enabled: true,
@@ -2881,6 +2889,65 @@ describe('browserManager', () => {
       })
     })
 
+    it('never blows a small device up past life size', async () => {
+      const { guest, debuggerSendCommand } = makeGuest(4344)
+      // A pane far larger than the device: the frame is centred at 1:1, not stretched to fill.
+      debuggerSendCommand.mockImplementation(async (method: string) =>
+        method === 'Page.getLayoutMetrics'
+          ? { cssLayoutViewport: { clientWidth: 2000, clientHeight: 1400 } }
+          : undefined
+      )
+      webContentsFromIdMock.mockReturnValue(guest)
+      browserManager.attachGuestPolicies(guest as never)
+      browserManager.registerGuest({
+        browserPageId: 'tab-small',
+        webContentsId: guest.id as number,
+        rendererWebContentsId
+      })
+
+      await browserManager.setViewportOverride('tab-small', {
+        width: 375,
+        height: 667,
+        deviceScaleFactor: 2,
+        mobile: true
+      })
+
+      expect(debuggerSendCommand).toHaveBeenCalledWith(
+        'Emulation.setDeviceMetricsOverride',
+        expect.objectContaining({ scale: 1 })
+      )
+    })
+
+    it('falls back to unscaled when the surface cannot be read', async () => {
+      const { guest, debuggerSendCommand } = makeGuest(4345)
+      // Why not fail the whole override: an unreadable surface should cost the fit, not the preview.
+      debuggerSendCommand.mockImplementation(async (method: string) => {
+        if (method === 'Page.getLayoutMetrics') {
+          throw new Error('detached')
+        }
+        return undefined
+      })
+      webContentsFromIdMock.mockReturnValue(guest)
+      browserManager.attachGuestPolicies(guest as never)
+      browserManager.registerGuest({
+        browserPageId: 'tab-nometrics',
+        webContentsId: guest.id as number,
+        rendererWebContentsId
+      })
+
+      const ok = await browserManager.setViewportOverride('tab-nometrics', {
+        width: 375,
+        height: 667,
+        deviceScaleFactor: 2,
+        mobile: true
+      })
+
+      expect(ok).toBe(true)
+      expect(debuggerSendCommand).toHaveBeenCalledWith(
+        'Emulation.setDeviceMetricsOverride',
+        expect.objectContaining({ width: 375, height: 667, scale: 1 })
+      )
+    })
     it('clears device metrics and disables touch for override=null', async () => {
       const { guest, debuggerSendCommand } = makeGuest(4343)
       webContentsFromIdMock.mockReturnValue(guest)

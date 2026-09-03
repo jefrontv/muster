@@ -142,6 +142,40 @@ function extractChromeMajor(ua: string): string {
   return match ? match[1] : '134'
 }
 
+/**
+ * How far the device viewport must be scaled to fit the guest's actual surface.
+ *
+ * The surface comes from `Page.getLayoutMetrics`, read while no dimension override is in force, so
+ * it reports the real pane box in DIPs — which already accounts for app zoom and for a docked
+ * devtools panel narrowing the pane. Clamped to 1: a device smaller than the pane is shown at life
+ * size rather than blown up.
+ *
+ * Falls back to 1 when the metrics read fails, which degrades to today's unscaled behaviour rather
+ * than collapsing the page to nothing.
+ */
+async function readSurfaceFitScale(
+  dbg: Electron.Debugger,
+  override: { width: number; height: number }
+): Promise<number> {
+  if (override.width <= 0 || override.height <= 0) {
+    return 1
+  }
+  try {
+    await dbg.sendCommand('Emulation.clearDeviceMetricsOverride', {})
+    const metrics = (await dbg.sendCommand('Page.getLayoutMetrics', {})) as {
+      cssLayoutViewport?: { clientWidth?: number; clientHeight?: number }
+    }
+    const surfaceWidth = metrics.cssLayoutViewport?.clientWidth ?? 0
+    const surfaceHeight = metrics.cssLayoutViewport?.clientHeight ?? 0
+    if (surfaceWidth <= 0 || surfaceHeight <= 0) {
+      return 1
+    }
+    return Math.min(1, surfaceWidth / override.width, surfaceHeight / override.height)
+  } catch {
+    return 1
+  }
+}
+
 export type BrowserGuestRegistration = {
   browserPageId?: string
   browserTabId?: string
@@ -1578,17 +1612,18 @@ export class BrowserManager {
     const dbg = guest.debugger
     try {
       if (override) {
+        // Why read the surface first: the renderer frames the guest to the device's proportions and
+        // shrinks it to fit the pane, so the surface is usually SMALLER than the device. Emulating
+        // the device box and scaling the render to the surface is what keeps a phone preset the
+        // shape of a phone — sending the surface size as the viewport instead made every preset
+        // full-height, and sending the device size unscaled left dead space around the page.
+        const scale = await readSurfaceFitScale(dbg, override)
         await dbg.sendCommand('Emulation.setDeviceMetricsOverride', {
-          // Why zero rather than the preset's pixels: zero disables that dimension's override, so
-          // the emulated viewport becomes exactly the guest surface. The renderer already frames
-          // the surface to the preset width and centres it, so sending the numbers again fought
-          // that — a fixed 667px-tall viewport inside a full-height pane left dead white space
-          // below the page, and under app zoom the CSS-sized element and the DIP-sized override
-          // disagreed, leaving a band down the right. One owner of the box, and they cannot drift.
-          width: 0,
-          height: 0,
+          width: override.width,
+          height: override.height,
           deviceScaleFactor: override.deviceScaleFactor,
-          mobile: override.mobile
+          mobile: override.mobile,
+          scale
         })
         await dbg.sendCommand('Emulation.setTouchEmulationEnabled', {
           enabled: override.mobile,

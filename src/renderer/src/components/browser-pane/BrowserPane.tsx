@@ -83,7 +83,7 @@ import {
   getBrowserViewportPreset
 } from '../../../../shared/browser-viewport-presets'
 import { rememberLiveBrowserUrl } from './browser-runtime'
-import { applyBrowserPageEmulatedWidth, ensureBrowserPageWebview } from './browser-page-webview'
+import { applyBrowserPageEmulatedFrame, ensureBrowserPageWebview } from './browser-page-webview'
 import {
   isBrowserPageDevToolsDocked,
   openBrowserPageDevTools,
@@ -3768,7 +3768,10 @@ function BrowserPagePane({
         override: preset ? browserViewportPresetToOverride(preset) : null
       })
       // Why: the element cap is what actually centres the frame; CDP only changes what the page believes.
-      applyBrowserPageEmulatedWidth(webview, preset?.width ?? null)
+      applyBrowserPageEmulatedFrame(
+        webview,
+        preset ? { width: preset.width, height: preset.height } : null
+      )
     }
 
     const handleDidStartLoading = (): void => {
@@ -4647,8 +4650,32 @@ function BrowserPagePane({
     // Why: picking a preset on an already-loaded page fires no dom-ready, so the frame would keep
     // the previous width until the next navigation.
     const preset = getBrowserViewportPreset(browserTab.viewportPresetId ?? null)
-    applyBrowserPageEmulatedWidth(webview, preset?.width ?? null)
-  }, [browserTab.viewportPresetId])
+    applyBrowserPageEmulatedFrame(
+      webview,
+      preset ? { width: preset.width, height: preset.height } : null
+    )
+    if (!preset) {
+      return
+    }
+    // Why re-apply on resize: CSS solves the frame's fit every frame, but the render scale is
+    // computed in main from the surface at the moment the override is set. Leave it alone and a
+    // resized pane shows the page at the old scale — short of the frame, or spilling past it.
+    let pending = 0
+    const observer = new ResizeObserver(() => {
+      window.clearTimeout(pending)
+      pending = window.setTimeout(() => {
+        void window.api.browser.setViewportOverride({
+          browserPageId: browserTab.id,
+          override: browserViewportPresetToOverride(preset)
+        })
+      }, 120)
+    })
+    observer.observe(webview)
+    return () => {
+      window.clearTimeout(pending)
+      observer.disconnect()
+    }
+  }, [browserTab.id, browserTab.viewportPresetId])
 
   const handleInternalFileDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (!event.dataTransfer.types.includes(WORKSPACE_FILE_PATH_MIME)) {
