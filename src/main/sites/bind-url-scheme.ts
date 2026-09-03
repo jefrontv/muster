@@ -3,27 +3,29 @@
 // lives in bind-url-intake.ts.
 
 import { app } from 'electron'
-import path from 'node:path'
 
 // The scheme constant lives in the pure parser beside the acceptance list it must agree with.
 import { SITE_BIND_URL_SCHEME } from './site-bind-url'
 
 /**
- * Claim `muster://` with the OS.
+ * Claim `muster://` with the OS — from a packaged build only.
  *
  * Why `ocsites://` is not claimed, advertised, or parsed: ocsites is a separate installed app that
  * owns that scheme. `setAsDefaultProtocolClient` is an active takeover that runs on every launch,
  * and listing the scheme in the packaged Info.plist lets macOS route legacy links here — either way
  * Muster would intercept links meant for OcsitesHandler.app. Legacy links stay with ocsites.
  *
- * In dev, Electron runs from `node_modules/electron` and the default registration would point the
- * OS at the Electron binary with no entry script, so the argv form is required.
+ * Why a dev run claims nothing and actively hands the scheme back: the same takeover applies to
+ * Muster's own scheme. A dev build runs from `node_modules/electron`, so claiming pointed the OS at
+ * a bare Electron binary — every `muster://` link the user clicked went to a dev instance that may
+ * not be running, instead of to their installed app, and it stayed that way after the dev run
+ * ended. Releasing the claim on every dev start puts ownership back where the user expects it,
+ * because the installed build re-claims it on its next launch.
  */
 export function registerSiteBindUrlSchemes(isDev: boolean): void {
-  if (isDev && process.platform === 'win32') {
-    app.setAsDefaultProtocolClient(SITE_BIND_URL_SCHEME, process.execPath, [
-      path.resolve(process.argv[1] ?? '')
-    ])
+  if (isDev) {
+    // Best-effort: an OS that never recorded this binary as the handler has nothing to remove.
+    app.removeAsDefaultProtocolClient?.(SITE_BIND_URL_SCHEME)
     return
   }
   app.setAsDefaultProtocolClient(SITE_BIND_URL_SCHEME)
