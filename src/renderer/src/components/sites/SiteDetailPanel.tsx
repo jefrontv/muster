@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
+import { SiteFinishSetupBanner } from './SiteFinishSetupBanner'
 import { SiteStepLibrarySection } from './SiteStepLibrarySection'
 import { SiteSecretField } from './SiteSecretField'
 import { SiteLocalStackControl } from './SiteLocalStackControl'
@@ -94,6 +95,8 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
           </p>
         ) : null}
       </header>
+
+      <SiteFinishSetupBanner summary={summary} />
 
       <section className="space-y-3" data-contextual-tour-target="sites-detail">
         <h3 className="text-xs font-medium text-muted-foreground">

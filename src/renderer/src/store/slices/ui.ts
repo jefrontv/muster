@@ -922,6 +922,9 @@ export type UISlice = {
    */
   newSiteDialogOpen: boolean
   setNewSiteDialogOpen: (open: boolean) => void
+  /** A site whose setup the user asked to finish; the host opens the setup dialog on it. */
+  finishSiteSetupRequest: { siteId: string; label: string } | null
+  setFinishSiteSetupRequest: (request: { siteId: string; label: string } | null) => void
   minimizedSiteSetupFlows: Record<string, MinimizedSiteSetupFlow>
   minimizeSiteSetupFlow: (flow: MinimizedSiteSetupFlow) => void
   updateMinimizedSiteSetupFlow: (id: string, patch: Partial<MinimizedSiteSetupFlow>) => void
@@ -2560,6 +2563,8 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   setUpdateCardCollapsed: (collapsed) => set({ updateCardCollapsed: collapsed }),
   newSiteDialogOpen: false,
   setNewSiteDialogOpen: (open) => set({ newSiteDialogOpen: open }),
+  finishSiteSetupRequest: null,
+  setFinishSiteSetupRequest: (request) => set({ finishSiteSetupRequest: request }),
   minimizedSiteSetupFlows: {},
   minimizeSiteSetupFlow: (flow) =>
     set((s) => ({ minimizedSiteSetupFlows: { ...s.minimizedSiteSetupFlows, [flow.id]: flow } })),
