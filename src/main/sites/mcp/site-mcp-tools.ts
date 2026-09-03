@@ -18,6 +18,7 @@ import { SITE_MCP_JOB_TOOLS } from './site-mcp-job-tools'
 import { SITE_MCP_PIPELINE_TOOLS } from './site-mcp-pipeline-tools'
 import { SITE_MCP_RUN_TOOLS } from './site-mcp-run-tools'
 import { SITE_MCP_SSH_TOOLS } from './site-mcp-ssh-tools'
+import { SITE_MCP_TRANSFER_TOOLS } from './site-mcp-transfer-tools'
 import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
 
 export const SITE_MCP_SERVER_NAME = 'muster-sites'
@@ -30,6 +31,7 @@ export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_ENV_TOOLS,
   ...SITE_MCP_RUN_TOOLS,
   ...SITE_MCP_SSH_TOOLS,
+  ...SITE_MCP_TRANSFER_TOOLS,
   ...SITE_MCP_JOB_TOOLS,
   ...SITE_MCP_PIPELINE_TOOLS,
   ...SITE_MCP_PLAN_TOOLS

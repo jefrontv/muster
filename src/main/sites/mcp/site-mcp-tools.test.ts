@@ -306,7 +306,10 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   get_site_pipelines: {},
   // Muster-native, not an ocsites port — the census covers the whole table, not just the migration.
   annotate_plan: { content: '# Plan\n\nDo the thing.' },
-  collect_plan_review: { review_id: 'r1' }
+  collect_plan_review: { review_id: 'r1' },
+  // Absolute paths on both sides: the census invokes every tool, and a relative path is refused.
+  upload_files: { files: [{ local: '/tmp/muster-census.txt', remote: '/tmp/muster-census.txt' }] },
+  download_files: { files: [{ local: '/tmp/muster-census.txt', remote: '/tmp/muster-census.txt' }] }
 }
 
 describe('site MCP tool table', () => {
