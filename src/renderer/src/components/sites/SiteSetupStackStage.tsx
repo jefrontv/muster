@@ -155,7 +155,9 @@ export function SiteSetupStackStage({
   // Zero installed stacks is not a pending choice, it is a machine with nothing to offer — blocking
   // the pager there would trap the user on a page with no control to satisfy it.
   useEffect(() => {
-    onChoicePendingChange?.(availableStacks !== null && availableStacks.length > 0 && stack === null)
+    onChoicePendingChange?.(
+      availableStacks !== null && availableStacks.length > 0 && stack === null
+    )
   }, [stack, availableStacks, onChoicePendingChange])
 
   useEffect(() => {

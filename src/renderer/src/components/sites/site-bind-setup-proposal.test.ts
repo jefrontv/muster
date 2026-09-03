@@ -33,8 +33,11 @@ describe('buildSiteBindSetupProposal', () => {
   it('falls back to the stale record folder when the link carried no clonable repo', () => {
     // Regression: a record whose checkout was deleted still names the folder the user expects.
     expect(
-      buildSiteBindSetupProposal({ primaryRoot: PRIMARY_ROOT, cloneUrl: '', candidates: [candidate()] })
-        .proposedPath
+      buildSiteBindSetupProposal({
+        primaryRoot: PRIMARY_ROOT,
+        cloneUrl: '',
+        candidates: [candidate()]
+      }).proposedPath
     ).toBe('/Users/dev/Documents/Sites/sulo')
   })
 

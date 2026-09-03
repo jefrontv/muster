@@ -34,9 +34,9 @@ const ALWAYS_OFFERED: SiteLocalStack[] = ['plain']
 /** Long enough that a local start shows nothing, short enough that an SSH one still reassures. */
 const SPINNER_DELAY_MS = 200
 
-type Pending = 'start' | 'stop' | 'setup' | ''
+type Pending = 'start' | 'stop' | 'setup' | 'rename' | ''
 
-type Detected = { stack: SiteLocalStack; domain: string }
+type Detected = { stack: SiteLocalStack; domain: string; running: boolean }
 
 export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): React.JSX.Element {
   const { site } = summary
@@ -67,7 +67,13 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     if (!answer.ok) {
       return null
     }
-    setDetected({ stack: answer.value.stack, domain: answer.value.domain })
+    setDetected({
+      stack: answer.value.stack,
+      domain: answer.value.domain,
+      // socketReady is "this site is up" for both stacks: a live LocalWP socket, and agent-local's
+      // own running flag. It is what decides whether Start or Stop is the offer.
+      running: answer.value.socketReady
+    })
     return answer.value.stack
   }, [site.id])
 
@@ -81,7 +87,11 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
     void (async () => {
       const answer = await window.api.siteStacks.detect(site.id)
       if (!cancelled && answer.ok) {
-        setDetected({ stack: answer.value.stack, domain: answer.value.domain })
+        setDetected({
+          stack: answer.value.stack,
+          domain: answer.value.domain,
+          running: answer.value.socketReady
+        })
       }
     })()
     return () => {
@@ -149,6 +159,14 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
   const folderName = site.path.split('/').findLast((segment) => segment.length > 0) ?? 'site'
   const suggestedDomain = site.localDomain.trim() || `${folderName}.test`
   const busy = pending !== ''
+  const running = detected?.running === true
+  // Only agent-local can move a site that is already registered; LocalWP has no equivalent.
+  const canRenameDomain = confirmed && site.localStack === 'agent-local'
+  // Blank means "leave it alone": the field shows the served domain as its placeholder, so an
+  // empty box is the untouched state rather than a request to clear the domain.
+  const renameTarget = domain.trim()
+  const domainChanged =
+    canRenameDomain && renameTarget.length > 0 && renameTarget !== (detected?.domain ?? '')
 
   return (
     <div className="space-y-2">
@@ -195,44 +213,85 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
           ))}
         </ToggleGroup>
 
+        {/* One control, not two. A running site cannot be started and a stopped one cannot be
+            stopped, so offering both left the user to work out which was live from somewhere else
+            on the panel. The button names the action that is actually available. */}
         {confirmed ? (
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={busy}
-              onClick={() =>
-                void run('start', async () => {
-                  const answer = await window.api.siteStacks.start(site.id)
-                  return answer.ok
-                    ? { ok: answer.value.ok, message: answer.value.message }
-                    : { ok: false, message: answer.error }
-                })
-              }
-            >
-              {spinning && pending === 'start' ? <Loader2 className="animate-spin" /> : <Play />}
-              {translate('auto.components.sites.SiteDetailPanel.stackStart', 'Start')}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={busy}
-              onClick={() =>
-                void run('stop', async () => {
-                  const answer = await window.api.siteStacks.stop(site.id)
-                  return answer.ok
-                    ? { ok: answer.value.ok, message: answer.value.message }
-                    : { ok: false, message: answer.error }
-                })
-              }
-            >
-              {spinning && pending === 'stop' ? <Loader2 className="animate-spin" /> : <Square />}
-              {translate('auto.components.sites.SiteDetailPanel.stackStop', 'Stop')}
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() =>
+              void run(running ? 'stop' : 'start', async () => {
+                const answer = running
+                  ? await window.api.siteStacks.stop(site.id)
+                  : await window.api.siteStacks.start(site.id)
+                // Re-detect before reporting: the button has to flip to the other action, and the
+                // only source of truth for whether it worked is the stack itself.
+                await refreshDetection()
+                return answer.ok
+                  ? { ok: answer.value.ok, message: answer.value.message }
+                  : { ok: false, message: answer.error }
+              })
+            }
+          >
+            {spinning && pending !== '' ? (
+              <Loader2 className="animate-spin" />
+            ) : running ? (
+              <Square />
+            ) : (
+              <Play />
+            )}
+            {running
+              ? translate('auto.components.sites.SiteDetailPanel.stackStop', 'Stop')
+              : translate('auto.components.sites.SiteDetailPanel.stackStart', 'Start')}
+          </Button>
         ) : null}
       </div>
 
+      {/* Renaming, not re-registering. Agent Local refuses to attach a folder it already serves, so
+          before this the only way to move a live site's domain was to delete it and set it up
+          again — and a domain typed here was silently ignored. */}
+      {canRenameDomain ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            className="h-8 w-52 font-mono text-xs"
+            value={domain}
+            // The served domain, so an empty field reads as "unchanged" rather than "cleared".
+            placeholder={detected?.domain || suggestedDomain}
+            disabled={busy}
+            aria-label={translate(
+              'auto.components.sites.SiteDetailPanel.stackDomainLabel',
+              'Local domain'
+            )}
+            onChange={(event) => setDomain(event.target.value)}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            // Nothing typed, or the same domain it already serves, is not a change to apply.
+            disabled={busy || !domainChanged}
+            onClick={() =>
+              void run('rename', async () => {
+                const answer = await window.api.siteStacks.setDomain({
+                  siteId: site.id,
+                  domain: renameTarget
+                })
+                await refreshDetection()
+                if (answer.ok && answer.value.ok) {
+                  // Cleared so the field falls back to showing the new served domain.
+                  setDomain('')
+                  return { ok: true, message: answer.value.message }
+                }
+                return { ok: false, message: answer.ok ? answer.value.message : answer.error }
+              })
+            }
+          >
+            {spinning && pending === 'rename' ? <Loader2 className="animate-spin" /> : null}
+            {translate('auto.components.sites.SiteDetailPanel.stackChangeDomain', 'Change domain')}
+          </Button>
+        </div>
+      ) : null}
       {needsSetup ? (
         <div className="space-y-1.5 rounded-md border border-border bg-card/50 p-2.5">
           <p className="text-xs text-muted-foreground">

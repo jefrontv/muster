@@ -22,7 +22,9 @@ export function siteStackAutodetectPatch(
   }
   const domain = detection.domain.trim()
   if (site.localStack === 'plain' && site.localDomain.trim() === '') {
-    return domain ? { localStack: detection.stack, localDomain: domain } : { localStack: detection.stack }
+    return domain
+      ? { localStack: detection.stack, localDomain: domain }
+      : { localStack: detection.stack }
   }
   if (site.localStack === detection.stack && domain && site.localDomain !== domain) {
     return { localDomain: domain }

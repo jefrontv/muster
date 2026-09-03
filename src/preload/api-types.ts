@@ -1023,6 +1023,11 @@ export type SiteStacksApi = {
   previewMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationPlan>>
   /** Destructive: show the preview and take an explicit confirmation before calling this. */
   runMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationResult>>
+  /** Moves an Agent Local site to a new local domain; hosts entry and certificate follow. */
+  setDomain: (args: {
+    siteId: string
+    domain: string
+  }) => Promise<SiteResult<LocalWpControlOutcome>>
   /**
    * Status lines from an in-flight `runMigration`, in order. Every subscriber sees every migration
    * this window started, so a consumer must filter on `siteId`.

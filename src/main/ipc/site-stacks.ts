@@ -18,6 +18,7 @@ import {
   resolveAgentLocalDocroot,
   runAgentLocalMigration
 } from '../sites/agent-local-migration'
+import { setAgentLocalSiteDomain } from '../sites/agent-local-site-control'
 import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
 import { startStackWithPortHandover } from '../sites/local-stack-port-handover'
 import { currentSocketIfRunning } from '../sites/localwp-detection'
@@ -145,6 +146,39 @@ export function registerSiteStackHandlers(store: Store): void {
             })
           )
         }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
+
+  // Only agent-local can move an existing site's domain; LocalWP has no equivalent, so this is not
+  // on the provider interface. A site on another stack is told so rather than silently doing nothing.
+  ipcMain.handle(
+    'siteStacks:setDomain',
+    async (
+      _event,
+      args: { siteId?: unknown; domain?: unknown }
+    ): Promise<SiteResult<LocalWpControlOutcome>> => {
+      try {
+        const site = requireSite(store, requireId(args?.siteId))
+        const domain = typeof args?.domain === 'string' ? args.domain.trim() : ''
+        if (domain.length === 0) {
+          throw new Error('A new domain is required.')
+        }
+        if (site.localStack !== 'agent-local') {
+          throw new Error('Only Agent Local sites can have their domain changed from Muster.')
+        }
+        const outcome = await setAgentLocalSiteDomain(
+          { path: site.path, localStack: site.localStack, localWpRoot: site.localWpRoot },
+          domain
+        )
+        // The record follows the stack, not the other way round: deploys and search-replace read
+        // localDomain, and leaving it on the old value would point them at a domain nothing serves.
+        if (outcome.ok) {
+          store.updateSite(site.id, { localDomain: domain })
+        }
+        return { ok: true, value: withoutStackSecrets(outcome) }
       } catch (error) {
         return failure(error)
       }

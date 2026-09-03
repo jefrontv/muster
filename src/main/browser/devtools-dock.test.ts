@@ -32,12 +32,14 @@ const { closeDevToolsDock, isDevToolsDockOpen, openDevToolsDock, setDevToolsDock
 
 const BOUNDS = { x: 100, y: 50, width: 480, height: 600 }
 
-function createWindow(): {
+function createWindow(zoomFactor = 1): {
   isDestroyed: ReturnType<typeof vi.fn>
+  webContents: { getZoomFactor: ReturnType<typeof vi.fn> }
   contentView: { addChildView: ReturnType<typeof vi.fn>; removeChildView: ReturnType<typeof vi.fn> }
 } {
   return {
     isDestroyed: vi.fn(() => false),
+    webContents: { getZoomFactor: vi.fn(() => zoomFactor) },
     contentView: { addChildView: vi.fn(), removeChildView: vi.fn() }
   }
 }
@@ -168,5 +170,64 @@ describe('closeDevToolsDock', () => {
 
   it('reports failure for a page with no dock', () => {
     expect(closeDevToolsDock('page-absent')).toBe(false)
+  })
+})
+
+describe('app zoom', () => {
+  it('converts the renderer CSS rect into DIPs, so a zoomed window still docks in its slot', () => {
+    // Why this is the bug: getBoundingClientRect reports CSS pixels and setBounds takes DIPs. At
+    // uiZoomLevel -1 (factor 1/1.2) the view was drawn at ~0.83x, floating over the page.
+    const factor = 1 / 1.2
+    openDevToolsDock({
+      browserPageId: 'page-1',
+      guest: createGuest() as never,
+      window: createWindow(factor) as never,
+      bounds: BOUNDS
+    })
+
+    const view = webContentsViewInstances.at(-1)!
+    expect(view.setBounds).toHaveBeenCalledWith({
+      x: Math.round(BOUNDS.x * factor),
+      y: Math.round(BOUNDS.y * factor),
+      width: Math.round(BOUNDS.width * factor),
+      height: Math.round(BOUNDS.height * factor)
+    })
+  })
+
+  it('passes the rect through untouched at zoom 1', () => {
+    openDevToolsDock({
+      browserPageId: 'page-1',
+      guest: createGuest() as never,
+      window: createWindow() as never,
+      bounds: BOUNDS
+    })
+    expect(webContentsViewInstances.at(-1)!.setBounds).toHaveBeenCalledWith(BOUNDS)
+  })
+
+  it('keeps a moved rect converted, since zoom outlives the first placement', () => {
+    const factor = 1.2
+    openDevToolsDock({
+      browserPageId: 'page-1',
+      guest: createGuest() as never,
+      window: createWindow(factor) as never,
+      bounds: BOUNDS
+    })
+    setDevToolsDockBounds('page-1', { x: 10, y: 20, width: 300, height: 400 })
+    expect(webContentsViewInstances.at(-1)!.setBounds).toHaveBeenLastCalledWith({
+      x: 12,
+      y: 24,
+      width: 360,
+      height: 480
+    })
+  })
+
+  it('treats a nonsense zoom factor as unzoomed rather than collapsing the view', () => {
+    openDevToolsDock({
+      browserPageId: 'page-1',
+      guest: createGuest() as never,
+      window: createWindow(0) as never,
+      bounds: BOUNDS
+    })
+    expect(webContentsViewInstances.at(-1)!.setBounds).toHaveBeenCalledWith(BOUNDS)
   })
 })

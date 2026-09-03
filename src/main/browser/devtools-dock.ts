@@ -36,8 +36,31 @@ function toIntegerBounds(bounds: DevToolsDockBounds): DevToolsDockBounds {
   }
 }
 
+/**
+ * CSS pixels from the renderer into the DIPs `setBounds` expects.
+ *
+ * Why this is not the identity: the renderer measures the dock placeholder with
+ * getBoundingClientRect, which reports CSS pixels, and those are only equal to DIPs while the
+ * window's zoom factor is 1. Muster has an app zoom (uiZoomLevel, factor 1.2^level), so at any
+ * other level the docked view was placed and sized by exactly that factor off — floating over the
+ * page instead of filling its slot.
+ */
+function cssToDip(window: BrowserWindow, bounds: DevToolsDockBounds): DevToolsDockBounds {
+  const factor = window.isDestroyed() ? 1 : window.webContents.getZoomFactor()
+  // A non-finite or zero factor would collapse the view; treat it as unzoomed.
+  if (!Number.isFinite(factor) || factor <= 0 || factor === 1) {
+    return bounds
+  }
+  return {
+    x: bounds.x * factor,
+    y: bounds.y * factor,
+    width: bounds.width * factor,
+    height: bounds.height * factor
+  }
+}
+
 function applyBounds(dock: DevToolsDock, bounds: DevToolsDockBounds): void {
-  const next = toIntegerBounds(bounds)
+  const next = toIntegerBounds(cssToDip(dock.window, bounds))
   // Why zero means hidden: a parked pane reports an empty rect, and a zero-sized native view still
   // paints a sliver and still swallows clicks.
   dock.view.setVisible(next.width > 0 && next.height > 0)

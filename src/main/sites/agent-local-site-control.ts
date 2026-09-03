@@ -164,6 +164,56 @@ export async function stopAgentLocalSite(
 }
 
 /**
+ * Renames an already-registered site's local domain. Hosts entry and certificate follow.
+ *
+ * Why this exists rather than re-running the migration: attach refuses a folder agent-local
+ * already serves, so a user who typed a new domain into setup had it silently ignored. This is the
+ * only route that moves an existing site, and it is a no-op the daemon rejects for an unmanaged
+ * folder — so "not managed" is reported, never guessed at by creating a second site.
+ */
+export async function setAgentLocalSiteDomain(
+  site: LocalStackSiteRef,
+  domain: string,
+  options: AgentLocalOptions = {}
+): Promise<LocalStackOutcome> {
+  const host = options.host ?? createAgentLocalHost()
+  if (!isAgentLocalSupported(host)) {
+    return localStackSkip('unsupported', AGENT_LOCAL_UNSUPPORTED_PLATFORM)
+  }
+  const wanted = domain.trim()
+  if (wanted.length === 0) {
+    return localStackSkip('not-managed', 'A new domain is required.')
+  }
+  const { match, response } = await resolveAgentLocalSite(site, { host })
+  if (!match) {
+    return response.ok || response.status === 404
+      ? localStackSkip('not-managed', AGENT_LOCAL_NOT_MANAGED)
+      : unavailableOutcome(response)
+  }
+  if (match.domain === wanted) {
+    // Already there. Reporting success keeps the caller's "make it so" intent idempotent.
+    return {
+      ok: true,
+      socketPath: '',
+      state: match.running ? 'running' : 'stopped',
+      message: `Agent Local site '${match.slug}' already serves ${wanted}`
+    }
+  }
+  const renamed = await requestWithDaemon(host, 'POST', `/sites/${match.slug}/domain`, {
+    domain: wanted
+  })
+  if (!renamed.ok) {
+    return unavailableOutcome(renamed)
+  }
+  return {
+    ok: true,
+    socketPath: '',
+    state: match.running ? 'running' : 'stopped',
+    message: `Agent Local site '${match.slug}' now serves ${wanted}`
+  }
+}
+
+/**
  * Live credentials, fetched rather than stored: agent-local hands them out on demand, so a copy in
  * Muster's secret store would only be a staleness bug waiting for the site to be re-provisioned.
  */
