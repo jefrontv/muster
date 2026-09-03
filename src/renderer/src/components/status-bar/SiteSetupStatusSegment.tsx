@@ -58,7 +58,15 @@ export function SiteSetupStatusSegment({
       <TooltipTrigger asChild>
         <button
           type="button"
-          onClick={() => restore(primary.id)}
+          // Deferred by a tick on purpose. The dialog lives outside this button's tree, so opening
+          // it synchronously means it mounts mid-click — and Radix's dismissable layer reads the
+          // rest of that same pointer sequence as an interaction OUTSIDE the dialog, closes it,
+          // and the close ends the flow. Restoring after the click has finished cannot be
+          // mistaken for dismissing it.
+          onClick={() => {
+            const id = primary.id
+            window.setTimeout(() => restore(id), 0)
+          }}
           className="inline-flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-accent/70"
           aria-label={tooltip}
         >

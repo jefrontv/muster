@@ -7,6 +7,7 @@ import {
   ensureAgentLocalSiteRunning,
   releaseAgentLocalPrivilegedPorts,
   resolveAgentLocalSite,
+  setAgentLocalSiteDomain,
   stopAgentLocalSite
 } from './agent-local-site-control'
 
@@ -484,5 +485,99 @@ describe('releaseAgentLocalPrivilegedPorts', () => {
 
     await expect(releaseAgentLocalPrivilegedPorts(60, { host: machine })).resolves.toBe(false)
     expect(machine.calls).toEqual([])
+  })
+})
+
+describe('setAgentLocalSiteDomain', () => {
+  it('renames an already-registered site by slug', async () => {
+    const machine = host({
+      ...listSites,
+      'POST /sites/sulo/domain': { ok: true, status: 200, data: 'ok' }
+    })
+
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      'sulo.al',
+      { host: machine }
+    )
+
+    expect(outcome.ok).toBe(true)
+    expect(machine.calls).toContain('POST /sites/sulo/domain')
+    expect(outcome.message).toContain('sulo.al')
+  })
+
+  it('reports the running state so a caller can keep its own view honest', async () => {
+    // sulo is stopped in the fixture; a rename must not claim it started.
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      'sulo.al',
+      {
+        host: host({ ...listSites, 'POST /sites/sulo/domain': { ok: true, status: 200, data: '' } })
+      }
+    )
+    expect(outcome.state).toBe('stopped')
+
+    const running = await setAgentLocalSiteDomain(
+      { path: '/Sites/orleton-om', localStack: 'agent-local' },
+      'orleton.al',
+      {
+        host: host({
+          ...listSites,
+          'POST /sites/orleton-om/domain': { ok: true, status: 200, data: '' }
+        })
+      }
+    )
+    expect(running.state).toBe('running')
+  })
+
+  it('is a no-op when the site already serves that domain', async () => {
+    // Why success rather than an error: the caller asked for a state that already holds, and
+    // failing would make a re-run of the setup step look broken.
+    const machine = host(listSites)
+
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      'sulo.test',
+      { host: machine }
+    )
+
+    expect(outcome.ok).toBe(true)
+    expect(machine.calls).not.toContain('POST /sites/sulo/domain')
+  })
+
+  it('refuses a folder agent-local does not serve, rather than creating a second site', async () => {
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/not-managed', localStack: 'agent-local' },
+      'whatever.al',
+      { host: host(listSites) }
+    )
+
+    expect(outcome.ok).toBe(false)
+    expect(outcome.message).toBe(AGENT_LOCAL_NOT_MANAGED)
+  })
+
+  it('requires a domain', async () => {
+    const machine = host(listSites)
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      '   ',
+      { host: machine }
+    )
+    expect(outcome.ok).toBe(false)
+    expect(machine.calls).not.toContain('POST /sites/sulo/domain')
+  })
+
+  it('surfaces a daemon refusal instead of reporting success', async () => {
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      'taken.al',
+      {
+        host: host({
+          ...listSites,
+          'POST /sites/sulo/domain': { ok: false, status: 409, data: 'domain in use' }
+        })
+      }
+    )
+    expect(outcome.ok).toBe(false)
   })
 })

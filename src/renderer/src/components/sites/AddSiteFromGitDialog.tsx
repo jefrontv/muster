@@ -250,12 +250,23 @@ export function AddSiteFromGitDialog({
   const busy = loading || (searchesRemotely && typedQuery !== debouncedQuery)
   const destinationPath =
     selected && destinationRoot.length > 0 ? `${destinationRoot}/${repoSlug(selected)}` : ''
-  // Outside click and Escape must not end an in-flight run; the X button is the deliberate exit
-  // (aborts the clone via onOpenChange below).
-  const guardDismiss = (event: { preventDefault: () => void }) => {
+  /**
+   * Escape while a stage is running must not end it; an outside click must never end this dialog
+   * at all.
+   *
+   * Why outside-click is now always refused rather than only while busy: this is a multi-step flow
+   * that can hold a clone, so losing it to a stray click on the app behind is a bad trade at any
+   * step. It also closed a real hole — restoring from the status-bar chip mounts the dialog
+   * mid-click, and Radix read the rest of that pointer sequence as an outside interaction and
+   * destroyed the flow the user had just asked to see. The X button and Escape remain the exits.
+   */
+  const guardEscape = (event: { preventDefault: () => void }) => {
     if (setupBusy || (step === 'cloning' && cloneError.length === 0)) {
       event.preventDefault()
     }
+  }
+  const refuseOutside = (event: { preventDefault: () => void }) => {
+    event.preventDefault()
   }
 
   return (
@@ -283,9 +294,9 @@ export function AddSiteFromGitDialog({
       <DialogContent
         className="max-w-xl"
         keepMounted
-        onPointerDownOutside={guardDismiss}
-        onInteractOutside={guardDismiss}
-        onEscapeKeyDown={guardDismiss}
+        onPointerDownOutside={refuseOutside}
+        onInteractOutside={refuseOutside}
+        onEscapeKeyDown={guardEscape}
       >
         <DialogHeader className="pr-16">
           <DialogTitle>
@@ -310,7 +321,6 @@ export function AddSiteFromGitDialog({
             </DialogDescription>
           ) : null}
         </DialogHeader>
-        <SiteSetupMinimizeButton onMinimize={minimize} />
 
         {step === 'pick' && providers.length === 0 ? (
           <p className="text-sm text-muted-foreground">{strings.noProviders}</p>
@@ -464,6 +474,10 @@ export function AddSiteFromGitDialog({
             </Button>
           ) : null}
         </DialogFooter>
+        {/* Last child on purpose: as the first tabbable element it took the dialog's initial
+            focus, and a Radix tooltip opens on focus — so the hint appeared unprompted every
+            time the dialog opened. It is absolutely positioned, so DOM order costs no layout. */}
+        <SiteSetupMinimizeButton onMinimize={minimize} />
       </DialogContent>
     </Dialog>
   )

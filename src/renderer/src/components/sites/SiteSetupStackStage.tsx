@@ -214,6 +214,37 @@ export function SiteSetupStackStage({
       setFailure(reason)
       setPhase('failed')
     }
+    // Already served by Agent Local, with a different domain typed in? Then attach is the wrong
+    // call: the daemon refuses a folder it already serves, so the new domain was silently dropped
+    // and the user was left looking at the old one. Renaming is the only thing that moves a live
+    // site, and it carries the hosts entry and certificate with it.
+    const wanted = domain.trim()
+    if (
+      stack === 'agent-local' &&
+      detectedStack === 'agent-local' &&
+      wanted.length > 0 &&
+      wanted !== suggestedDomain.trim()
+    ) {
+      try {
+        const renamed = await window.api.siteStacks.setDomain({ siteId, domain: wanted })
+        if (!renamed.ok) {
+          fail(renamed.error)
+          return
+        }
+        if (!renamed.value.ok) {
+          fail(renamed.value.message)
+          return
+        }
+        setLines((previous) => [...previous, renamed.value.message].slice(-MAX_LOG_LINES))
+        settledRef.current = true
+        rememberLocalStackChoice(stack)
+        setPhase('done')
+        onMigrated(wanted, stack)
+      } catch (error) {
+        fail(error instanceof Error ? error.message : String(error))
+      }
+      return
+    }
     try {
       // Preview again right before mutating: it is the call that reports a conflicting site, an
       // unusable domain, or a non-empty app/public, so it turns a mid-run failure into a message.

@@ -294,6 +294,13 @@ export function SiteBindDialog(): React.JSX.Element | null {
     setSelectedPath('')
   }
 
+  // An outside click must never end a bind flow: it can hold a clone, and restoring from the
+  // status-bar chip mounts this dialog mid-click, which Radix would otherwise read as an outside
+  // interaction and use to destroy the very flow the user asked to see.
+  const refuseOutside = (event: { preventDefault: () => void }): void => {
+    event.preventDefault()
+  }
+
   // Stage 3/4. `pending` is already cleared here, so this branch must not read it.
   if (boundSiteId.length > 0) {
     return (
@@ -310,7 +317,12 @@ export function SiteBindDialog(): React.JSX.Element | null {
           }
         }}
       >
-        <DialogContent className="max-w-xl" keepMounted>
+        <DialogContent
+          className="max-w-xl"
+          keepMounted
+          onPointerDownOutside={refuseOutside}
+          onInteractOutside={refuseOutside}
+        >
           <DialogHeader className="pr-16">
             <DialogTitle className="flex items-center gap-2">
               <Link2 className="size-4" />
@@ -318,7 +330,6 @@ export function SiteBindDialog(): React.JSX.Element | null {
             </DialogTitle>
             <DialogDescription>{setupStrings.description}</DialogDescription>
           </DialogHeader>
-          <SiteSetupMinimizeButton onMinimize={minimize} />
 
           {/* No DialogFooter here: the setup pages own their own Back/Next/Done, so Done only
               appears on the last page instead of sitting next to the loading spinner. */}
@@ -329,6 +340,10 @@ export function SiteBindDialog(): React.JSX.Element | null {
             onDone={finish}
             onBusyChange={setSetupBusy}
           />
+          {/* Last child on purpose: as the first tabbable element it took the dialog's initial
+              focus, and a Radix tooltip opens on focus — so the hint appeared unprompted every
+              time the dialog opened. It is absolutely positioned, so DOM order costs no layout. */}
+          <SiteSetupMinimizeButton onMinimize={minimize} />
         </DialogContent>
       </Dialog>
     )
@@ -358,7 +373,12 @@ export function SiteBindDialog(): React.JSX.Element | null {
         }
       }}
     >
-      <DialogContent className="max-w-xl" keepMounted>
+      <DialogContent
+        className="max-w-xl"
+        keepMounted
+        onPointerDownOutside={refuseOutside}
+        onInteractOutside={refuseOutside}
+      >
         <DialogHeader className="pr-16">
           <DialogTitle className="flex items-center gap-2">
             <Link2 className="size-4" />
@@ -366,7 +386,6 @@ export function SiteBindDialog(): React.JSX.Element | null {
           </DialogTitle>
           <DialogDescription>{strings.description}</DialogDescription>
         </DialogHeader>
-        <SiteSetupMinimizeButton onMinimize={minimize} />
 
         <div className="scrollbar-sleek max-h-[55vh] space-y-4 overflow-y-auto pr-1">
           <section className="space-y-2">
@@ -452,6 +471,10 @@ export function SiteBindDialog(): React.JSX.Element | null {
             </Button>
           )}
         </DialogFooter>
+        {/* Last child on purpose: as the first tabbable element it took the dialog's initial
+            focus, and a Radix tooltip opens on focus — so the hint appeared unprompted every
+            time the dialog opened. It is absolutely positioned, so DOM order costs no layout. */}
+        <SiteSetupMinimizeButton onMinimize={minimize} />
       </DialogContent>
     </Dialog>
   )

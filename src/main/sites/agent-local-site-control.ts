@@ -177,17 +177,27 @@ export async function setAgentLocalSiteDomain(
   options: AgentLocalOptions = {}
 ): Promise<LocalStackOutcome> {
   const host = options.host ?? createAgentLocalHost()
+  // Why a failure and not localStackSkip: a skip reports ok:true, which is right for `stop` —
+  // nothing to stop is benign. A rename is something the user explicitly asked for, so "there is
+  // nothing here to rename" has to reach the UI as a refusal, not a silent success that leaves the
+  // old domain in place.
+  const refuse = (message: string): LocalStackOutcome => ({
+    ok: false,
+    socketPath: '',
+    state: 'failed',
+    message
+  })
   if (!isAgentLocalSupported(host)) {
-    return localStackSkip('unsupported', AGENT_LOCAL_UNSUPPORTED_PLATFORM)
+    return refuse(AGENT_LOCAL_UNSUPPORTED_PLATFORM)
   }
   const wanted = domain.trim()
   if (wanted.length === 0) {
-    return localStackSkip('not-managed', 'A new domain is required.')
+    return refuse('A new domain is required.')
   }
   const { match, response } = await resolveAgentLocalSite(site, { host })
   if (!match) {
     return response.ok || response.status === 404
-      ? localStackSkip('not-managed', AGENT_LOCAL_NOT_MANAGED)
+      ? refuse(AGENT_LOCAL_NOT_MANAGED)
       : unavailableOutcome(response)
   }
   if (match.domain === wanted) {
