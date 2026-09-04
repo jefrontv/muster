@@ -240,8 +240,12 @@ describe('SiteSetupLinkTargetRows', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('flex')
-    expect(document.body.textContent).toContain('(existing checkout)')
+    const options = [...document.body.querySelectorAll<HTMLButtonElement>('[role=radio]')]
+    expect(options.length).toBeGreaterThanOrEqual(2)
+    expect(options[0]?.textContent).toContain('flex')
+    expect(options[0]?.textContent).toContain('Existing checkout')
+    // The path is shown abbreviated, not as the raw absolute string.
+    expect(options[0]?.textContent).toContain('~/Documents/Sites/flex')
   })
 
   it('emits a clone target when the clone option is selected', async () => {
@@ -261,9 +265,11 @@ describe('SiteSetupLinkTargetRows', () => {
       )
     })
 
-    const cloneRadio = document.body.querySelector<HTMLInputElement>('input[id$="-clone"]')
-    expect(cloneRadio).toBeTruthy()
-    act(() => cloneRadio?.click())
+    const cloneOption = [...document.body.querySelectorAll<HTMLButtonElement>('[role=radio]')].find(
+      (option) => /Clone efront_au\/flex/.test(option.textContent ?? '')
+    )
+    expect(cloneOption).toBeTruthy()
+    act(() => cloneOption?.click())
 
     expect(onChange).toHaveBeenCalledWith({ kind: 'clone', root: '/Users/j/Documents/Sites' })
     expect(value).toEqual({ kind: 'clone', root: '/Users/j/Documents/Sites' })

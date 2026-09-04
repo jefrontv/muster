@@ -5,18 +5,28 @@ import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getSiteBindStrings = createLocalizedCatalog(() => ({
-  title: translate('auto.components.sites.SiteBindDialog.title', 'Configure a site from a link'),
-  description: translate(
-    'auto.components.sites.SiteBindDialog.description',
-    'A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.'
-  ),
-  willStore: translate('auto.components.sites.SiteBindDialog.willStore', 'What will be stored'),
   chooseFolder: translate(
     'auto.components.sites.SiteBindDialog.chooseFolder',
     'Which local folder should this bind to?'
   ),
-  clone: translate('auto.components.sites.SiteBindDialog.clone', 'Clone into a folder…'),
-  cloning: translate('auto.components.sites.SiteBindDialog.cloning', 'Cloning…'),
+  folderTitle: translate('auto.components.sites.SiteBindDialog.folderTitle', 'Folder'),
+  credentialsTitle: translate(
+    'auto.components.sites.SiteBindDialog.credentialsTitle',
+    'Credentials'
+  ),
+  existingCheckout: translate(
+    'auto.components.sites.SiteBindDialog.existingCheckout',
+    'Existing checkout'
+  ),
+  cloneOption: translate('auto.components.sites.SiteBindDialog.cloneOption', 'Clone {{repo}}'),
+  chooseAnother: translate(
+    'auto.components.sites.SiteBindDialog.chooseAnother',
+    'Choose another folder…'
+  ),
+  allFields: translate(
+    'auto.components.sites.SiteBindDialog.allFields',
+    'All fields from the link ({{count}})'
+  ),
   noCandidates: translate(
     'auto.components.sites.SiteBindDialog.noCandidates',
     'No local checkout matches this repository yet.'
@@ -43,27 +53,6 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
   staleRecordsPlural: translate(
     'auto.components.sites.SiteBindDialog.staleRecordsPlural',
     '{{count}} earlier records point at folders that are gone.'
-  ),
-  setUpInRoot: translate(
-    'auto.components.sites.SiteBindDialog.setUpInRoot',
-    'Set up in {{folder}}'
-  ),
-  settingUp: translate('auto.components.sites.SiteBindDialog.settingUp', 'Setting up…'),
-  willCreateAt: translate(
-    'auto.components.sites.SiteBindDialog.willCreateAt',
-    'Muster will clone into {{path}} and configure it.'
-  ),
-  noRootConfigured: translate(
-    'auto.components.sites.SiteBindDialog.noRootConfigured',
-    'No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders.'
-  ),
-  confirm: translate('auto.components.sites.SiteBindDialog.confirm', 'Bind this site'),
-  confirming: translate('auto.components.sites.SiteBindDialog.confirming', 'Binding…'),
-  cancel: translate('auto.components.sites.SiteBindDialog.cancel', 'Cancel'),
-  boundToast: translate('auto.components.sites.SiteBindDialog.boundToast', 'Site configured'),
-  secretFailedToast: translate(
-    'auto.components.sites.SiteBindDialog.secretFailedToast',
-    'Site configured, but the password could not be stored'
   )
 }))
 

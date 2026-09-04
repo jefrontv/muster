@@ -13542,21 +13542,11 @@
           "cancel": "Cancel"
         },
         "SiteBindDialog": {
-          "title": "Configure a site from a link",
-          "description": "A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.",
-          "willStore": "What will be stored",
           "chooseFolder": "Which local folder should this bind to?",
-          "clone": "Clone into a folder…",
-          "cloning": "Cloning…",
           "noCandidates": "No local checkout matches this repository yet.",
           "passwordNotice": "The link carries an SSH password. It is stored in your OS keychain and never shown again.",
           "noPasswordNotice": "The link carries no password, so no credential will be stored.",
           "updatesExisting": "This folder already has a site record; confirming updates it.",
-          "confirm": "Bind this site",
-          "confirming": "Binding…",
-          "cancel": "Cancel",
-          "boundToast": "Site configured",
-          "secretFailedToast": "Site configured, but the password could not be stored",
           "reponame": "Repository",
           "hostname": "SSH host",
           "username": "SSH user",
@@ -13567,12 +13557,14 @@
           "deployCommand": "Build command",
           "themeDistPath": "Theme dist path",
           "notes": "Notes",
-          "setUpInRoot": "Set up in {{folder}}",
-          "settingUp": "Setting up…",
-          "willCreateAt": "Muster will clone into {{path}} and configure it.",
-          "noRootConfigured": "No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders.",
           "staleRecords": "{{count}} earlier record points at a folder that is gone.",
-          "staleRecordsPlural": "{{count}} earlier records point at folders that are gone."
+          "staleRecordsPlural": "{{count}} earlier records point at folders that are gone.",
+          "folderTitle": "Folder",
+          "credentialsTitle": "Credentials",
+          "existingCheckout": "Existing checkout",
+          "cloneOption": "Clone {{repo}}",
+          "chooseAnother": "Choose another folder…",
+          "allFields": "All fields from the link ({{count}})"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -13649,8 +13641,6 @@
           "runningImport": "Importing…",
           "cancel": "Cancel",
           "cannotCancel": "Can't be cancelled while running",
-          "logLabel": "Log",
-          "progressLabel": "{{done}} of {{total}}",
           "minimizeHint": "The dialog can be minimised; the work carries on.",
           "finishLater": "Finish later",
           "changeAndRetry": "Change and retry",
@@ -13660,7 +13650,13 @@
           "copied": "Copied",
           "close": "Close",
           "openSite": "Open {{domain}}",
-          "skippedPrefix": "{{title}} skipped"
+          "logToggle": "Log ({{count}})",
+          "waiting": "Waiting",
+          "notRun": "Not run",
+          "skipped": "Skipped",
+          "localAddress": "Local address",
+          "adminEmail": "Email",
+          "adminPassword": "Password"
         },
         "SiteDbSnapshots": {
           "created": "Snapshot saved.",
@@ -13728,7 +13724,11 @@
           "openIntegrationsSettings": "Open Settings → Integrations",
           "copyCommand": "Copy command",
           "copyCommandCopiedToast": "Copied",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "providerGroupLabel": "Repository host",
+          "destinationRootsHeading": "Your project folders",
+          "destinationNoRoots": "No project folders are configured yet. Add them in Sites → Folders.",
+          "destinationCustom": "Choose another folder…"
         },
         "SiteFinishSetupBanner": {
           "title": "Setup isn't finished",

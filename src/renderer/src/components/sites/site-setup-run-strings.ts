@@ -29,7 +29,6 @@ export type SiteSetupRunStrings = {
   copied: string
   close: string
   openSite: string
-  skippedPrefix: string
   skipped: string
   localAddress: string
   adminEmail: string
@@ -81,7 +80,6 @@ export const getSiteSetupRunStrings = createLocalizedCatalog<SiteSetupRunStrings
   copied: translate('auto.components.sites.SiteSetupRun.copied', 'Copied'),
   close: translate('auto.components.sites.SiteSetupRun.close', 'Close'),
   openSite: translate('auto.components.sites.SiteSetupRun.openSite', 'Open {{domain}}'),
-  skippedPrefix: translate('auto.components.sites.SiteSetupRun.skippedPrefix', '{{title}} skipped'),
   skipped: translate('auto.components.sites.SiteSetupRun.skipped', 'Skipped'),
   localAddress: translate('auto.components.sites.SiteSetupRun.localAddress', 'Local address'),
   adminEmail: translate('auto.components.sites.SiteSetupRun.adminEmail', 'Email'),
