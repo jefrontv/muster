@@ -85,11 +85,11 @@ const defaultTrustCli: NonNullable<AgentLocalCertOptions['runTrustCli']> = (doma
 /**
  * Trust a domain's certificate: the daemon first, then the CLI.
  *
- * The daemon's trust endpoint is deliberately non-interactive - it only succeeds once the one-time
- * `agent-local sudo` allowlist exists, because a daemon has no screen to put a password prompt on.
- * Muster does: it runs in the user's session, so `agent-local cert DOMAIN --trust` from here shows
- * the administrator dialog the CLI has always shown. Skipping that fallback is what turned "enter
- * your password" into a dead-end error for anyone who never ran `agent-local sudo`.
+ * The daemon's trust endpoint is deliberately non-interactive: from agent-local 0.23.4 it trusts
+ * silently through the scoped `agent-local sudo` allowlist, and before that grant exists it fails,
+ * because a daemon has no screen to put a password prompt on. Muster does: it runs in the user's
+ * session, so `agent-local cert DOMAIN --trust` from here shows the administrator dialog the CLI has
+ * always shown. Skipping that fallback is what turned "enter your password" into a dead-end error.
  */
 export async function agentLocalCertTrust(
   domain: string,
@@ -117,12 +117,14 @@ export async function agentLocalCertTrust(
   if (cli.code === 0 && after.trusted) {
     return { ok: true, message: `Trusted ${domain}.` }
   }
-  const cliReason = cli.stderr.trim() || cli.stdout.trim()
+  // The CLI (0.23.4+) already explains a cancelled prompt in plain words; only osascript's own
+  // failure line needs translating.
+  const cliReason = (cli.stderr.trim() || cli.stdout.trim()).split('\n').at(-1) ?? ''
   return {
     ok: false,
     message:
       cliReason.length > 0
-        ? cliReason.includes('authorization failed')
+        ? cliReason.startsWith('authorization failed')
           ? 'The password prompt was cancelled, so the certificate is not trusted.'
           : cliReason
         : daemonReason

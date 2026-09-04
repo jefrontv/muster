@@ -82,6 +82,21 @@ describe('agentLocalCertTrust', () => {
     )
   })
 
+  it('passes the CLI\u2019s own explanation through when it has one', async () => {
+    // agent-local 0.23.4 explains a cancelled prompt itself; rewriting it would drop the detail.
+    const cli = vi.fn(async () => ({
+      code: 1,
+      stdout: '',
+      stderr:
+        'error: the password prompt was cancelled or the keychain refused; flex.local.crt is still untrusted'
+    }))
+    const result = await agentLocalCertTrust(DOMAIN, {
+      host: host({ [TRUST]: NEEDS_SUDO, [STATUS]: untrusted }),
+      runTrustCli: cli
+    })
+    expect(result.message).toContain('flex.local.crt is still untrusted')
+  })
+
   it('does not claim success when the CLI exited 0 but the OS still reports untrusted', async () => {
     const cli = vi.fn(async () => ({ code: 0, stdout: '', stderr: '' }))
     const result = await agentLocalCertTrust(DOMAIN, {
