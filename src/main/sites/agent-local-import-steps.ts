@@ -239,11 +239,22 @@ export async function verifySiteViaAgentLocal(
     context.log(`⚠ Site check: ${detail}`)
     return
   }
-  if (probe.verdict === 'fatal' || probe.verdict === 'error') {
+  const logsErrors = probe.verdict === 'fatal' || probe.verdict === 'error'
+  if (logsErrors) {
     for (const entry of await readRecentSiteErrors({ slug, limit: 5, options })) {
       const where = entry.file.length > 0 ? ` (${entry.file}:${entry.line})` : ''
       context.log(`  ${entry.level}: ${entry.message}${where}`)
     }
+  }
+  // The daemon says `fatal` for any PHP fatal logged during the request, before it looks at what
+  // the page did. A homepage that rendered with a fatal in a late callback (an old plugin on a new
+  // PHP, seen live with WP Rocket 3.4 on 8.4) is a site with a bug, not a failed import.
+  const homeRendered = probe.home !== null && probe.home.status === 200 && probe.home.bodyBytes > 0
+  if (logsErrors && homeRendered) {
+    context.log(
+      `⚠ Site check: the homepage renders, but PHP logged an error while serving it - ${probe.reason}`
+    )
+    return
   }
   throw new SiteRunStepError(VERDICT_STEP, `The site does not work after the import - ${detail}`)
 }

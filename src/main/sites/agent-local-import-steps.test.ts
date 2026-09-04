@@ -267,9 +267,28 @@ describe('verifySiteViaAgentLocal', () => {
     )
   })
 
-  it('lists recent PHP errors before failing on a fatal', async () => {
+  it('passes, with a warning, when the homepage rendered despite a logged fatal', async () => {
+    // WP Rocket 3.4 on PHP 8.4 throws in a late minify callback after the page is already out.
     const h = host({
-      'POST /sites/acme/probe': ok({ verdict: 'fatal', reason: 'PHP Fatal error: Uncaught Error' }),
+      'POST /sites/acme/probe': ok({
+        verdict: 'fatal',
+        reason: 'PHP Fatal error: implode(): Argument #1 must be of type string',
+        requests: { '/': { status: 200, body_bytes: 93818 } }
+      }),
+      'GET /sites/acme/errors?since=5m&limit=5': ok({ entries: [] })
+    })
+    const ctx = context()
+    await verifySiteViaAgentLocal(ctx, 'acme', { host: h })
+    expect(ctx.logs.at(-1)).toContain('the homepage renders, but PHP logged an error')
+  })
+
+  it('lists recent PHP errors before failing on a fatal that stopped the page', async () => {
+    const h = host({
+      'POST /sites/acme/probe': ok({
+        verdict: 'fatal',
+        reason: 'PHP Fatal error: Uncaught Error',
+        requests: { '/': { status: 500, body_bytes: 0 } }
+      }),
       'GET /sites/acme/errors?since=5m&limit=5': ok({
         entries: [
           {

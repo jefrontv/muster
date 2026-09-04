@@ -21,6 +21,7 @@ import { snapshotSiteDatabase } from './site-db-snapshot'
 import { createSiteSshSession } from './site-ssh-session'
 import { readLocalWpConfigDbName, readRemoteDbCredentials } from './wp-config-reader'
 import { runWpSearchReplace } from './wp-search-replace'
+import { cleanUpStaleDropIns } from './wp-stale-drop-ins'
 import { applyWpUploadRewrite, cleanUpLocalHtaccess } from './wp-upload-rewrite'
 
 export function createDefaultSiteImportDependencies(): SiteImportDependencies {
@@ -49,6 +50,7 @@ export function createDefaultSiteImportDependencies(): SiteImportDependencies {
     pullRemoteFileArchives,
     extractZipArchive,
     applyWpUploadRewrite,
+    cleanUpStaleDropIns,
     cleanUpLocalHtaccess,
     runWpSearchReplace,
     decideAgentLocalRoutes,

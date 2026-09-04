@@ -216,7 +216,12 @@ export type AgentLocalProbeVerdict =
   | 'error'
   | 'asset_404'
 
-export type AgentLocalProbe = { verdict: AgentLocalProbeVerdict | string; reason: string }
+export type AgentLocalProbe = {
+  verdict: AgentLocalProbeVerdict | string
+  reason: string
+  /** What "/" itself did; null when the probe did not report it. */
+  home: { status: number; bodyBytes: number } | null
+}
 
 /** Ask the running site whether it actually works: one word plus the reason. */
 export async function probeSiteViaDaemon(args: {
@@ -236,7 +241,14 @@ export async function probeSiteViaDaemon(args: {
     fail(response)
   }
   const data = asRecord(response.data)
-  return { verdict: readString(data, 'verdict') || 'error', reason: readString(data, 'reason') }
+  const home = asRecord(asRecord(data?.requests)?.['/'])
+  return {
+    verdict: readString(data, 'verdict') || 'error',
+    reason: readString(data, 'reason'),
+    home: home
+      ? { status: readNumber(home, 'status'), bodyBytes: readNumber(home, 'body_bytes') }
+      : null
+  }
 }
 
 export type AgentLocalErrorEntry = { level: string; message: string; file: string; line: number }

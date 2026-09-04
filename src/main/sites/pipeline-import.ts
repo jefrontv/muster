@@ -72,6 +72,8 @@ export type SiteImportDependencies = {
     targetDirectory: string
   ) => Promise<void>
   applyWpUploadRewrite: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
+  /** Sets aside caching drop-ins that point at production paths; runs right after wp-content lands. */
+  cleanUpStaleDropIns: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   cleanUpLocalHtaccess: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   runWpSearchReplace: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   /**
@@ -281,6 +283,8 @@ async function importFiles(
     path.join(config.wpDir, archives.contentDirectoryName)
   )
   await rm(archives.contentArchivePath, { force: true })
+  // Before anything boots WordPress: a production advanced-cache.php serves an empty homepage here.
+  await deps.cleanUpStaleDropIns(context, config)
 }
 
 /**

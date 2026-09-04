@@ -132,6 +132,7 @@ type Harness = {
     snapshotLocalDatabase: ReturnType<typeof vi.fn>
     extractZipArchive: ReturnType<typeof vi.fn>
     applyWpUploadRewrite: ReturnType<typeof vi.fn>
+    cleanUpStaleDropIns: ReturnType<typeof vi.fn>
     cleanUpLocalHtaccess: ReturnType<typeof vi.fn>
     runWpSearchReplace: ReturnType<typeof vi.fn>
     decideAgentLocalRoutes: ReturnType<typeof vi.fn>
@@ -164,6 +165,7 @@ function createHarness(overrides: Partial<SiteImportDependencies> = {}): Harness
       order.push('extractZipArchive')
     }),
     applyWpUploadRewrite: record('applyWpUploadRewrite', undefined),
+    cleanUpStaleDropIns: record('cleanUpStaleDropIns', undefined),
     cleanUpLocalHtaccess: record('cleanUpLocalHtaccess', undefined),
     runWpSearchReplace: record('runWpSearchReplace', undefined),
     // Off by default: the existing tests describe the LocalWP path.
@@ -312,7 +314,8 @@ describe('runImportPipeline', () => {
       'resolveRemoteLayout',
       'pullRemoteFileArchives',
       'extractZipArchive',
-      'extractZipArchive'
+      'extractZipArchive',
+      'cleanUpStaleDropIns'
     ])
     expect(calls.extractZipArchive).toHaveBeenNthCalledWith(
       1,
