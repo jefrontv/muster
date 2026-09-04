@@ -46,7 +46,7 @@ function host(
       calls.push(route)
       return routes[route] ?? { ok: false, status: 404, error: 'not found' }
     },
-    spawnDaemon: async () => undefined,
+    spawnDaemon: async () => ({ kind: 'started' as const }),
     sleep: async () => undefined,
     ...overrides
   } as AgentLocalHost
@@ -471,6 +471,7 @@ describe('releaseAgentLocalPrivilegedPorts', () => {
         request: async () => ({ ok: false, status: 0, error: 'agent-local daemon is not running' }),
         spawnDaemon: async () => {
           spawned += 1
+          return { kind: 'started' as const }
         }
       }
     )

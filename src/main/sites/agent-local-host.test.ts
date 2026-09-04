@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   AGENT_LOCAL_DAEMON_DOWN,
+  AGENT_LOCAL_DAEMON_UNREACHABLE,
+  AGENT_LOCAL_NOT_INSTALLED,
   agentLocalTokenPath,
   createAgentLocalHost,
   describeAgentLocalResponse,
@@ -8,12 +10,14 @@ import {
   redactAgentLocalValue,
   requestWithDaemon,
   type AgentLocalHost,
-  type AgentLocalResponse
+  type AgentLocalResponse,
+  type AgentLocalSpawnOutcome
 } from './agent-local-host'
 
 function fakeHost(
   responses: AgentLocalResponse[],
-  overrides: Partial<AgentLocalHost> = {}
+  overrides: Partial<AgentLocalHost> = {},
+  spawnOutcome: AgentLocalSpawnOutcome = { kind: 'started' }
 ): AgentLocalHost & { calls: string[]; spawns: number } {
   const calls: string[] = []
   let spawns = 0
@@ -28,6 +32,7 @@ function fakeHost(
     },
     spawnDaemon: async () => {
       spawns += 1
+      return spawnOutcome
     },
     sleep: async () => undefined,
     ...overrides
@@ -116,19 +121,36 @@ describe('requestWithDaemon', () => {
     ])
   })
 
-  it('reports the original failure when the daemon never comes up', async () => {
+  it('says the daemon did not come back when restart ran and the API stayed silent', async () => {
+    // Not the original "not running": that was true before the restart and reads as "start it",
+    // which is exactly what was just tried.
     const host = fakeHost(
       Array.from({ length: 200 }, () => ({
         ok: false,
         status: 0,
         error: AGENT_LOCAL_DAEMON_DOWN
-      }))
+      })),
+      {},
+      { kind: 'failed', detail: 'launchctl: Bootstrap failed' }
     )
 
     const result = await requestWithDaemon(host, 'GET', '/sites')
 
-    expect(result.error).toBe(AGENT_LOCAL_DAEMON_DOWN)
+    expect(result.error).toBe(`${AGENT_LOCAL_DAEMON_UNREACHABLE} (launchctl: Bootstrap failed)`)
     expect(host.spawns).toBe(1)
+  })
+
+  it('says Agent Local is not installed when the binary is missing, without polling for it', async () => {
+    const host = fakeHost(
+      Array.from({ length: 5 }, () => ({ ok: false, status: 0, error: AGENT_LOCAL_DAEMON_DOWN })),
+      {},
+      { kind: 'not-installed' }
+    )
+
+    const result = await requestWithDaemon(host, 'GET', '/sites')
+
+    expect(result.error).toBe(AGENT_LOCAL_NOT_INSTALLED)
+    expect(host.calls).toEqual(['GET /sites'])
   })
 
   it('does not spawn for a real API failure — a 404 is an answer, not a dead socket', async () => {

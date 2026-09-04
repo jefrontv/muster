@@ -25,6 +25,13 @@ export const AGENT_LOCAL_READ_TIMEOUT_MS = 5_000
 export const AGENT_LOCAL_START_TIMEOUT_MS = 60_000
 /** How long to wait for a daemon we just spawned to answer /status. */
 export const AGENT_LOCAL_DAEMON_WAIT_MS = 10_000
+/** restart-daemon waits for the API itself, so this only guards against a hung launchctl. */
+export const AGENT_LOCAL_RESTART_TIMEOUT_MS = 60_000
+
+export type AgentLocalSpawnOutcome =
+  | { kind: 'started' }
+  | { kind: 'not-installed' }
+  | { kind: 'failed'; detail: string }
 const DAEMON_POLL_INTERVAL_MS = 250
 
 export type AgentLocalResponse = {
@@ -47,8 +54,11 @@ export type AgentLocalHost = {
     body?: unknown,
     options?: AgentLocalRequestOptions
   ) => Promise<AgentLocalResponse>
-  /** Detached `agent-local daemon --background`; resolves once spawned, not once ready. */
-  spawnDaemon: () => Promise<void>
+  /**
+   * Bring the daemon up under launchd via `agent-local restart-daemon`, which waits for the API
+   * itself. `not-installed` is the binary missing from PATH; `failed` is anything else it said.
+   */
+  spawnDaemon: () => Promise<AgentLocalSpawnOutcome>
   sleep: (ms: number) => Promise<void>
 }
 
@@ -101,6 +111,11 @@ function isConnectionRefusal(error: unknown): boolean {
 }
 
 export const AGENT_LOCAL_DAEMON_DOWN = 'agent-local daemon is not running'
+/** The binary is not on PATH: nothing Muster can restart. */
+export const AGENT_LOCAL_NOT_INSTALLED = 'Agent Local is not installed.'
+/** restart-daemon ran and the API still did not answer: a crash or a broken launchd job. */
+export const AGENT_LOCAL_DAEMON_UNREACHABLE =
+  'Agent Local did not come back after a restart. Run `agent-local doctor` in a terminal.'
 
 function safeParseJson(body: string): unknown {
   try {
@@ -187,11 +202,28 @@ export function createAgentLocalHost(overrides: Partial<AgentLocalHost> = {}): A
     request: (method, apiPath, body, options) =>
       requestAgentLocal(host, method, apiPath, body, options),
     spawnDaemon: async () => {
-      // Bounded rather than detached-and-forgotten: the command returns as soon as the daemon
-      // forks, and a hang here would otherwise stall every caller behind it.
-      await streamCommand('agent-local', ['daemon', '--background'], { timeoutMs: 10_000 }).catch(
-        () => undefined
-      )
+      // `restart-daemon`, not `daemon --background`: the latter forked a daemon OUTSIDE launchd,
+      // which inherits Muster's folder grants (static files 403) and can never hand itself over on
+      // update. restart-daemon kickstarts the launchd job, loading it first if needed, and returns
+      // once the API answers - so the wait here is the command's own.
+      try {
+        const result = await streamCommand('agent-local', ['restart-daemon'], {
+          timeoutMs: AGENT_LOCAL_RESTART_TIMEOUT_MS
+        })
+        if (result.code === 0) {
+          return { kind: 'started' }
+        }
+        return {
+          kind: 'failed',
+          detail: (result.stderr.trim() || result.stdout.trim()).split('\n').at(-1) ?? ''
+        }
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (code === 'ENOENT') {
+          return { kind: 'not-installed' }
+        }
+        return { kind: 'failed', detail: error instanceof Error ? error.message : String(error) }
+      }
     },
     sleep: delay,
     ...overrides
@@ -218,7 +250,10 @@ export async function requestWithDaemon(
   if (first.error !== AGENT_LOCAL_DAEMON_DOWN) {
     return first
   }
-  await host.spawnDaemon()
+  const spawned = await host.spawnDaemon()
+  if (spawned.kind === 'not-installed') {
+    return { ok: false, status: 0, error: AGENT_LOCAL_NOT_INSTALLED }
+  }
   const deadline = AGENT_LOCAL_DAEMON_WAIT_MS / DAEMON_POLL_INTERVAL_MS
   for (let attempt = 0; attempt < deadline; attempt += 1) {
     await host.sleep(DAEMON_POLL_INTERVAL_MS)
@@ -227,9 +262,17 @@ export async function requestWithDaemon(
       return host.request(method, apiPath, body, options)
     }
   }
-  return first
+  // Not the original "not running": that was true before the restart and reads as "start it".
+  const detail =
+    spawned.kind === 'failed' && spawned.detail.length > 0 ? ` (${spawned.detail})` : ''
+  return { ok: false, status: 0, error: `${AGENT_LOCAL_DAEMON_UNREACHABLE}${detail}` }
 }
 
+/** True for every "the daemon is not there" answer, whatever the reason. */
 export function isAgentLocalDaemonDown(response: AgentLocalResponse): boolean {
-  return response.error === AGENT_LOCAL_DAEMON_DOWN
+  return (
+    response.error === AGENT_LOCAL_DAEMON_DOWN ||
+    response.error === AGENT_LOCAL_NOT_INSTALLED ||
+    (response.error?.startsWith(AGENT_LOCAL_DAEMON_UNREACHABLE) ?? false)
+  )
 }

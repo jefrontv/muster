@@ -36,7 +36,7 @@ function host(
       }
       return queue.length > 1 ? (queue.shift() as AgentLocalResponse) : queue[0]!
     },
-    spawnDaemon: async () => undefined,
+    spawnDaemon: async () => ({ kind: 'started' as const }),
     sleep: async () => undefined
   } as AgentLocalHost
   return Object.assign(created, { calls })

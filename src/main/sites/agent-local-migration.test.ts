@@ -41,7 +41,7 @@ function host(response: AgentLocalResponse, platform = 'darwin'): AgentLocalHost
     homeDir: '/home/test',
     readToken: async () => 'token',
     request: async () => response,
-    spawnDaemon: async () => undefined,
+    spawnDaemon: async () => ({ kind: 'started' as const }),
     sleep: async () => undefined
   }
 }
@@ -123,7 +123,7 @@ describe('runAgentLocalMigration', () => {
         sent.push(body)
         return importResponse
       },
-      spawnDaemon: async () => undefined,
+      spawnDaemon: async () => ({ kind: 'started' as const }),
       sleep: async () => undefined
     }
 
@@ -148,7 +148,7 @@ describe('runAgentLocalMigration', () => {
         calls.push({ path: apiPath, body })
         return importResponse
       },
-      spawnDaemon: async () => undefined,
+      spawnDaemon: async () => ({ kind: 'started' as const }),
       sleep: async () => undefined
     }
     const bare = checkout(false)
@@ -171,7 +171,7 @@ describe('runAgentLocalMigration', () => {
         calls.push({ path: apiPath })
         return importResponse
       },
-      spawnDaemon: async () => undefined,
+      spawnDaemon: async () => ({ kind: 'started' as const }),
       sleep: async () => undefined
     }
 
@@ -190,7 +190,7 @@ describe('runAgentLocalMigration', () => {
         sent.push(body)
         return importResponse
       },
-      spawnDaemon: async () => undefined,
+      spawnDaemon: async () => ({ kind: 'started' as const }),
       sleep: async () => undefined
     }
 
@@ -218,7 +218,7 @@ describe('runAgentLocalMigration', () => {
             }
           : importResponse
       },
-      spawnDaemon: async () => undefined,
+      spawnDaemon: async () => ({ kind: 'started' as const }),
       sleep: async () => undefined
     }
 
@@ -274,7 +274,7 @@ describe('runAgentLocalMigration', () => {
             }
             return { ok: false, status: 404, error: 'not found' }
           },
-          spawnDaemon: async () => undefined,
+          spawnDaemon: async () => ({ kind: 'started' as const }),
           sleep: async () => undefined
         }
       }
@@ -295,7 +295,7 @@ describe('runAgentLocalMigration', () => {
         calls.push(apiPath)
         return { ok: false, status: 409, error: "domain 'acme.test' is already in use" }
       },
-      spawnDaemon: async () => undefined,
+      spawnDaemon: async () => ({ kind: 'started' as const }),
       sleep: async () => undefined
     }
 
