@@ -17,8 +17,9 @@ export type SiteSetupRunStrings = {
   runningImport: string
   cancel: string
   cannotCancel: string
-  logLabel: string
-  progressLabel: string
+  logToggle: string
+  waiting: string
+  notRun: string
   minimizeHint: string
   finishLater: string
   changeAndRetry: string
@@ -55,11 +56,9 @@ export const getSiteSetupRunStrings = createLocalizedCatalog<SiteSetupRunStrings
     'auto.components.sites.SiteSetupRun.cannotCancel',
     "Can't be cancelled while running"
   ),
-  logLabel: translate('auto.components.sites.SiteSetupRun.logLabel', 'Log'),
-  progressLabel: translate(
-    'auto.components.sites.SiteSetupRun.progressLabel',
-    '{{done}} of {{total}}'
-  ),
+  logToggle: translate('auto.components.sites.SiteSetupRun.logToggle', 'Log ({{count}})'),
+  waiting: translate('auto.components.sites.SiteSetupRun.waiting', 'Waiting'),
+  notRun: translate('auto.components.sites.SiteSetupRun.notRun', 'Not run'),
   minimizeHint: translate(
     'auto.components.sites.SiteSetupRun.minimizeHint',
     'The dialog can be minimised; the work carries on.'

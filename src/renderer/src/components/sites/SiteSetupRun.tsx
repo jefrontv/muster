@@ -3,10 +3,9 @@
 // there is no third layout to design.
 
 import type React from 'react'
-import { Check, Circle, Loader2, Minus, X } from 'lucide-react'
+import { Check, ChevronRight, Circle, Loader2, Minus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Progress } from '@/components/ui/progress'
 import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
 import { SiteCloneLog } from './SiteCloneLog'
 import type { SetupRunPhase, SetupRunStep, SetupRunStepId } from './site-setup-choices'
@@ -63,12 +62,6 @@ export function SiteSetupRun({
     import: strings.runningImport
   }
 
-  const considered = VISIBLE_STEP_IDS.map((id) => stepById[id]).filter(
-    (step): step is SetupRunStep => step !== undefined
-  )
-  const settledStates: readonly SetupRunStep['state'][] = ['done', 'skipped', 'failed']
-  const settledCount = considered.filter((step) => settledStates.includes(step.state)).length
-
   return (
     <div className="space-y-3" aria-label={siteLabel}>
       <SiteSetupRowList>
@@ -86,10 +79,18 @@ export function SiteSetupRun({
           }
           const registerDetail =
             id === 'clone' && registerStep?.state === 'failed' ? registerStep.detail : null
-          const summary =
+          const phaseText =
             step.state === 'running' && step.detail.length === 0
               ? runningLabels[id]
               : (registerDetail ?? step.detail)
+          const summary =
+            step.state === 'pending'
+              ? strings.waiting
+              : step.state === 'not-run'
+                ? strings.notRun
+                : step.state === 'running' && step.percent !== null
+                  ? `${phaseText} · ${Math.round(step.percent)}%`
+                  : phaseText
           const showCancel = step.state === 'running' && step.cancellable
           const showCannotCancel = step.state === 'running' && !step.cancellable
           return (
@@ -109,7 +110,7 @@ export function SiteSetupRun({
               }
             >
               {step.percent !== null ? (
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-[width] duration-200"
                     style={{ width: `${Math.min(100, Math.max(0, step.percent))}%` }}
@@ -117,17 +118,19 @@ export function SiteSetupRun({
                 </div>
               ) : null}
               {step.log.length > 0 ? (
-                <Collapsible>
+                // A failed step opens its log unasked: the log is the explanation.
+                <Collapsible defaultOpen={step.state === 'failed'} className="group/log">
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
                       size="xs"
-                      className="h-auto px-0 text-xs text-muted-foreground"
+                      className="-ml-1.5 h-6 gap-1 px-1.5 text-xs text-muted-foreground"
                     >
-                      {strings.logLabel}
+                      <ChevronRight className="size-3 transition-transform group-data-[state=open]/log:rotate-90" />
+                      {strings.logToggle.replace('{{count}}', String(step.log.length))}
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent>
+                  <CollapsibleContent className="pt-1.5">
                     <SiteCloneLog lines={step.log} />
                   </CollapsibleContent>
                 </Collapsible>
@@ -136,15 +139,6 @@ export function SiteSetupRun({
           )
         })}
       </SiteSetupRowList>
-
-      <div className="flex items-center gap-3">
-        <Progress value={(settledCount / considered.length) * 100} className="flex-1" />
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {strings.progressLabel
-            .replace('{{done}}', String(settledCount))
-            .replace('{{total}}', String(considered.length))}
-        </span>
-      </div>
 
       {phase === 'running' ? (
         <p className="text-xs text-muted-foreground">{strings.minimizeHint}</p>
