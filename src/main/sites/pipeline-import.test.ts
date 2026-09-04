@@ -56,7 +56,10 @@ afterEach(() => {
   rmSync(wpDir, { recursive: true, force: true })
 })
 
-function createConfig(environmentOverrides: Partial<SiteEnvironment> = {}): SiteRunConfig {
+function createConfig(
+  environmentOverrides: Partial<SiteEnvironment> = {},
+  siteOverrides: Partial<Site> = {}
+): SiteRunConfig {
   const environment: SiteEnvironment = {
     ...createEmptySiteEnvironment(),
     hostname: 'srv.example.com',
@@ -80,7 +83,8 @@ function createConfig(environmentOverrides: Partial<SiteEnvironment> = {}): Site
     activeEnvironment: 'main',
     environments: { main: environment },
     notes: '',
-    searchReplaceTimeoutSeconds: 0
+    searchReplaceTimeoutSeconds: 0,
+    ...siteOverrides
   }
   return {
     site,
@@ -130,6 +134,10 @@ type Harness = {
     applyWpUploadRewrite: ReturnType<typeof vi.fn>
     cleanUpLocalHtaccess: ReturnType<typeof vi.fn>
     runWpSearchReplace: ReturnType<typeof vi.fn>
+    decideAgentLocalRoutes: ReturnType<typeof vi.fn>
+    importDatabaseViaAgentLocal: ReturnType<typeof vi.fn>
+    rewriteDomainViaAgentLocal: ReturnType<typeof vi.fn>
+    verifySiteViaAgentLocal: ReturnType<typeof vi.fn>
   }
 }
 
@@ -157,7 +165,15 @@ function createHarness(overrides: Partial<SiteImportDependencies> = {}): Harness
     }),
     applyWpUploadRewrite: record('applyWpUploadRewrite', undefined),
     cleanUpLocalHtaccess: record('cleanUpLocalHtaccess', undefined),
-    runWpSearchReplace: record('runWpSearchReplace', undefined)
+    runWpSearchReplace: record('runWpSearchReplace', undefined),
+    // Off by default: the existing tests describe the LocalWP path.
+    decideAgentLocalRoutes: record('decideAgentLocalRoutes', {
+      slug: null,
+      reason: 'the site is served by localwp, not Agent Local'
+    }),
+    importDatabaseViaAgentLocal: record('importDatabaseViaAgentLocal', undefined),
+    rewriteDomainViaAgentLocal: record('rewriteDomainViaAgentLocal', undefined),
+    verifySiteViaAgentLocal: record('verifySiteViaAgentLocal', undefined)
   }
 
   const deps: SiteImportDependencies = {
@@ -207,6 +223,7 @@ describe('runImportPipeline', () => {
     expect(calls.checkLocalMysqlConnection).not.toHaveBeenCalled()
     expect(order).toEqual([
       'ensureLocalSiteRunning',
+      'decideAgentLocalRoutes',
       'applyWpUploadRewrite',
       'cleanUpLocalHtaccess',
       'runWpSearchReplace'
@@ -240,6 +257,7 @@ describe('runImportPipeline', () => {
     )
     expect(order).toEqual([
       'ensureLocalSiteRunning',
+      'decideAgentLocalRoutes',
       'checkLocalMysqlConnection',
       'createSiteSshSession',
       'resolveRemoteLayout',
@@ -538,5 +556,82 @@ describe('runImportPipeline', () => {
       'public_html/web/base.zip',
       'public_html/web/app/app.zip'
     ])
+  })
+  describe('the agent-local branch', () => {
+    it('loads the dump, rewrites the domain and checks the site through the daemon, skipping the local mysql client', async () => {
+      const harness = createHarness({
+        decideAgentLocalRoutes: vi.fn(async () => {
+          harness.order.push('decideAgentLocalRoutes')
+          return { slug: 'acme' }
+        })
+      })
+      const { context } = createTestContext()
+
+      await runImportPipeline(
+        context,
+        createConfig(
+          { exportDatabase: true, wpSearchReplace: true },
+          { localStack: 'agent-local' }
+        ),
+        harness.deps
+      )
+
+      expect(harness.calls.importDatabaseViaAgentLocal).toHaveBeenCalledWith(
+        expect.anything(),
+        'acme',
+        path.join(wpDir, 'db_backup.sql.gz')
+      )
+      expect(harness.calls.rewriteDomainViaAgentLocal).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        'acme'
+      )
+      expect(harness.calls.verifySiteViaAgentLocal).toHaveBeenCalledWith(expect.anything(), 'acme')
+      // Nothing that needs a mysql or wp binary ran.
+      expect(harness.calls.checkLocalMysqlConnection).not.toHaveBeenCalled()
+      expect(harness.calls.snapshotLocalDatabase).not.toHaveBeenCalled()
+      expect(harness.calls.importLocalDatabase).not.toHaveBeenCalled()
+      expect(harness.calls.runWpSearchReplace).not.toHaveBeenCalled()
+      // The verdict comes after the custom steps and before the run declares success.
+      const verdictAt = harness.order.indexOf('verifySiteViaAgentLocal')
+      expect(verdictAt).toBeGreaterThan(harness.order.indexOf('rewriteDomainViaAgentLocal'))
+    })
+
+    it('falls back to the local tools and says why when the daemon route is refused', async () => {
+      const harness = createHarness({
+        decideAgentLocalRoutes: vi.fn(async () => ({
+          slug: null,
+          reason: 'Agent Local 0.26.0 is older than 0.27.0'
+        }))
+      })
+      const { context, logs } = createTestContext()
+
+      await runImportPipeline(
+        context,
+        createConfig(
+          { exportDatabase: true, wpSearchReplace: true },
+          { localStack: 'agent-local' }
+        ),
+        harness.deps
+      )
+
+      expect(harness.calls.importLocalDatabase).toHaveBeenCalled()
+      expect(harness.calls.runWpSearchReplace).toHaveBeenCalled()
+      expect(harness.calls.importDatabaseViaAgentLocal).not.toHaveBeenCalled()
+      expect(harness.calls.verifySiteViaAgentLocal).not.toHaveBeenCalled()
+      expect(logs.join('\n')).toContain(
+        "Using Muster's own database tools: Agent Local 0.26.0 is older than 0.27.0."
+      )
+    })
+
+    it('never mentions the daemon for a LocalWP site', async () => {
+      const harness = createHarness()
+      const { context, logs } = createTestContext()
+
+      await runImportPipeline(context, createConfig(), harness.deps)
+
+      expect(logs.join('\n')).not.toContain('Agent Local')
+      expect(harness.calls.verifySiteViaAgentLocal).not.toHaveBeenCalled()
+    })
   })
 })

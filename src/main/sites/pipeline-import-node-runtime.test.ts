@@ -14,7 +14,7 @@ vi.mock('electron', () => ({ app: undefined, safeStorage: undefined, ipcMain: un
 const snapshotSiteDatabase = vi.fn(async (_options: { baseDir: string }) => ({ ok: true }))
 vi.mock('./site-db-snapshot', () => ({ snapshotSiteDatabase }))
 
-const { createDefaultSiteImportDependencies } = await import('./pipeline-import')
+const { createDefaultSiteImportDependencies } = await import('./pipeline-import-defaults')
 
 describe('createDefaultSiteImportDependencies under plain node', () => {
   it('snapshots into a resolvable userData directory instead of throwing on app.getPath', async () => {

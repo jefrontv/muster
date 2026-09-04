@@ -7,18 +7,9 @@
 
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
-import { getCanonicalUserDataPath } from '../persistence'
-import { snapshotSiteDatabase } from './site-db-snapshot'
-import { extractZipArchive } from './local-archive-extract'
-import { importLocalDatabase } from './local-database-import'
-import { checkLocalMysqlConnection } from './local-mysql-connection'
 import type { Site } from '../../shared/site-types'
 import { customStepsNeedRemote, runCustomSteps } from './custom-steps'
-import {
-  ensureLocalSiteRunning,
-  startLocalStack,
-  type LocalStackRunningOutcome
-} from './pipeline-local-stack-start'
+import { startLocalStack, type LocalStackRunningOutcome } from './pipeline-local-stack-start'
 import {
   type RemoteLayout,
   type SiteRunConfig,
@@ -26,26 +17,15 @@ import {
   SiteRunStepError,
   type SiteSshSession
 } from './pipeline-contract'
-import {
-  dumpAndDownloadRemoteDatabase,
-  LOCAL_DUMP_FILENAME,
-  type RemoteDatabaseDump
-} from './remote-database-dump'
+import { LOCAL_DUMP_FILENAME, type RemoteDatabaseDump } from './remote-database-dump'
 import {
   BASE_ARCHIVE_NAME,
   type PulledSiteArchives,
-  pullRemoteFileArchives,
   SITE_TEMP_ARCHIVE_NAMES
 } from './remote-file-archive'
-import { resolveRemoteLayout } from './remote-wordpress-layout'
-import { createSiteSshSession } from './site-ssh-session'
-import {
-  type MysqlCredentials,
-  readLocalWpConfigDbName,
-  readRemoteDbCredentials
-} from './wp-config-reader'
-import { runWpSearchReplace } from './wp-search-replace'
-import { applyWpUploadRewrite, cleanUpLocalHtaccess } from './wp-upload-rewrite'
+import type { MysqlCredentials } from './wp-config-reader'
+import type { AgentLocalRoutes } from './agent-local-import-steps'
+import { createDefaultSiteImportDependencies } from './pipeline-import-defaults'
 
 const VALIDATE_STEP = 'validate-remote'
 
@@ -94,39 +74,24 @@ export type SiteImportDependencies = {
   applyWpUploadRewrite: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   cleanUpLocalHtaccess: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   runWpSearchReplace: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
+  /**
+   * The agent-local branch: decided once per run, then the daemon loads the dump, rewrites the
+   * domain and checks the site. `slug: null` keeps every step on the code above.
+   */
+  decideAgentLocalRoutes: (config: SiteRunConfig) => Promise<AgentLocalRoutes>
+  importDatabaseViaAgentLocal: (
+    context: SiteRunContext,
+    slug: string,
+    dumpPath: string
+  ) => Promise<void>
+  rewriteDomainViaAgentLocal: (
+    context: SiteRunContext,
+    config: SiteRunConfig,
+    slug: string
+  ) => Promise<void>
+  verifySiteViaAgentLocal: (context: SiteRunContext, slug: string) => Promise<void>
   /** Overridden only by tests. */
   runCustomSteps?: typeof runCustomSteps
-}
-
-export function createDefaultSiteImportDependencies(): SiteImportDependencies {
-  return {
-    ensureLocalSiteRunning,
-    checkLocalMysqlConnection,
-    createSiteSshSession,
-    resolveRemoteLayout,
-    readRemoteDbCredentials,
-    dumpAndDownloadRemoteDatabase,
-    readLocalWpConfigDbName,
-    importLocalDatabase,
-    snapshotLocalDatabase: (context, config) =>
-      snapshotSiteDatabase({
-        // Why not app.getPath: the muster-sites MCP server runs this pipeline under
-        // ELECTRON_RUN_AS_NODE, where `app` is undefined — the snapshot step died with
-        // "Cannot read properties of undefined (reading 'getPath')" right before the import
-        // overwrote the local database. The canonical path resolves in both runtimes and keeps
-        // MCP snapshots in the directory the GUI's snapshot list reads.
-        baseDir: getCanonicalUserDataPath(),
-        config,
-        reason: 'pre-import',
-        onStatus: (message) => context.log(message),
-        signal: context.signal
-      }),
-    pullRemoteFileArchives,
-    extractZipArchive,
-    applyWpUploadRewrite,
-    cleanUpLocalHtaccess,
-    runWpSearchReplace
-  }
 }
 
 export async function runImportPipeline(
@@ -138,11 +103,19 @@ export async function runImportPipeline(
   // Rebuilt rather than mutated when LocalWP hands back a fresher socket than the stored one.
   let active = config
 
+  // Which code path the database steps take. Decided once the stack is up so the daemon can answer,
+  // and logged when it says no, so a LocalWP-style run on an agent-local site is never a mystery.
+  let routes: AgentLocalRoutes = { slug: null, reason: 'no database step in this run' }
   if (exportDatabase || wpSearchReplace || wpUploadRewrite) {
     active = await startLocalStack(context, active, deps.ensureLocalSiteRunning)
+    routes = await deps.decideAgentLocalRoutes(active)
+    if (routes.slug === null && active.site.localStack === 'agent-local') {
+      context.log(`Using Muster's own database tools: ${routes.reason}.`)
+    }
   }
-  if (exportDatabase) {
-    // Fail before any SSH work rather than after a multi-GB download.
+  if (exportDatabase && routes.slug === null) {
+    // Fail before any SSH work rather than after a multi-GB download. The daemon route needs no
+    // local client, so it has nothing to check here.
     context.status('Checking local MySQL connectivity…')
     await deps.checkLocalMysqlConnection(active)
   }
@@ -170,7 +143,7 @@ export async function runImportPipeline(
     if (session !== null && layout !== null) {
       if (exportDatabase) {
         context.throwIfCancelled()
-        await importDatabase(context, active, session, deps)
+        await importDatabase(context, active, session, deps, routes.slug)
       }
       if (exportFiles) {
         context.throwIfCancelled()
@@ -185,10 +158,17 @@ export async function runImportPipeline(
     }
     if (wpSearchReplace) {
       context.throwIfCancelled()
-      await deps.runWpSearchReplace(context, active)
+      await (routes.slug !== null
+        ? deps.rewriteDomainViaAgentLocal(context, active, routes.slug)
+        : deps.runWpSearchReplace(context, active))
     }
 
     await customSteps(context, active, 'import', 'after', session)
+    // The verdict the run used to skip: only the daemon can ask the site, so only its branch does.
+    if (routes.slug !== null && (exportDatabase || wpSearchReplace)) {
+      context.throwIfCancelled()
+      await deps.verifySiteViaAgentLocal(context, routes.slug)
+    }
     context.status('Operations completed successfully!')
   } finally {
     await removeTempArtifacts(active, layout, session)
@@ -226,11 +206,19 @@ async function importDatabase(
   context: SiteRunContext,
   config: SiteRunConfig,
   session: SiteSshSession,
-  deps: SiteImportDependencies
+  deps: SiteImportDependencies,
+  agentLocalSlug: string | null
 ): Promise<void> {
   context.status('Extracting database credentials…')
   const credentials = await deps.readRemoteDbCredentials(session, config.environment.rootPath)
   const dump = await deps.dumpAndDownloadRemoteDatabase(context, config, session, credentials)
+
+  // The daemon owns naming, snapshotting and loading for its own sites; nothing below applies.
+  if (agentLocalSlug !== null) {
+    context.throwIfCancelled()
+    await deps.importDatabaseViaAgentLocal(context, agentLocalSlug, dump.localDumpPath)
+    return
+  }
 
   // Where the local database name comes from, in order of authority:
   //
