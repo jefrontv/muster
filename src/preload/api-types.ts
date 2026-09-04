@@ -55,6 +55,7 @@ import type {
 } from '../shared/chat-thread-stream-types'
 import type { SiteWpCliResult } from '../shared/site-wp-cli-actions'
 import type {
+  AgentLocalDaemonStatus,
   LocalWpControlOutcome,
   LocalWpMigrationPlan,
   LocalWpMigrationProgressEvent,
@@ -1020,6 +1021,7 @@ export type SiteStacksApi = {
   stop: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
   /** The managed stacks installed and answering on this machine, for offering a choice. */
   available: () => Promise<SiteResult<SiteLocalStack[]>>
+  agentLocalStatus: () => Promise<SiteResult<AgentLocalDaemonStatus>>
   previewMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationPlan>>
   /** Destructive: show the preview and take an explicit confirmation before calling this. */
   runMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationResult>>

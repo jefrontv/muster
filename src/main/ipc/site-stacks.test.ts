@@ -154,11 +154,13 @@ describe('registerSiteStackHandlers', () => {
     const { store } = storeStub()
     registerSiteStackHandlers(store)
     expect([...handlers.keys()].sort()).toEqual([
+      'siteStacks:agentLocalStatus',
       'siteStacks:available',
       'siteStacks:detect',
       'siteStacks:previewMigration',
       'siteStacks:resolveSocket',
       'siteStacks:runMigration',
+      'siteStacks:setDomain',
       'siteStacks:start',
       'siteStacks:stop'
     ])

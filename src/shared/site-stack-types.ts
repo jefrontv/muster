@@ -80,3 +80,14 @@ export type LocalWpMigrationResult = {
  * its lines rendered into this one's log.
  */
 export type LocalWpMigrationProgressEvent = { siteId: string; message: string }
+
+/** What the running agent-local daemon reports about itself; empty strings when it is not up. */
+export type AgentLocalDaemonStatus = {
+  version: string
+  /** The binary on disk, which can be newer than the running daemon until it hands over. */
+  installed: string
+  updateAvailable: boolean
+  latest: string
+  /** Whether the import pipeline may use the daemon's own routes (needs 0.27.0+). */
+  importRoutes: boolean
+}

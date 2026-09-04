@@ -5,6 +5,7 @@
 // arrived in 0.27.0. Read the version once per run (`readAgentLocalVersion`) and branch on it
 // rather than probing for 404s mid-import.
 
+import type { AgentLocalDaemonStatus } from '../../shared/site-stack-types'
 import {
   AGENT_LOCAL_READ_TIMEOUT_MS,
   createAgentLocalHost,
@@ -267,4 +268,25 @@ export async function readRecentSiteErrors(args: {
       file: readString(entry, 'file'),
       line: readNumber(entry, 'line')
     }))
+}
+
+/**
+ * The daemon's version and update state shaped for the stack panel. A daemon that is not up
+ * answers with empty strings rather than an error: the panel shows nothing, not a failure.
+ */
+export async function readAgentLocalDaemonStatus(
+  options: AgentLocalImportApiOptions = {}
+): Promise<AgentLocalDaemonStatus> {
+  try {
+    const status = await readAgentLocalStatus(options)
+    return {
+      version: status.version,
+      installed: status.installed,
+      updateAvailable: status.update.available,
+      latest: status.update.latest,
+      importRoutes: agentLocalVersionAtLeast(status.version, AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION)
+    }
+  } catch {
+    return { version: '', installed: '', updateAvailable: false, latest: '', importRoutes: false }
+  }
 }

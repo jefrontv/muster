@@ -8,6 +8,8 @@
 // than an error, so the renderer can render a disabled state instead of an alert.
 
 import path from 'node:path'
+import { readAgentLocalDaemonStatus } from '../sites/agent-local-import-api'
+import type { AgentLocalDaemonStatus } from '../../shared/site-stack-types'
 import { ipcMain } from 'electron'
 import { createEmptySiteEnvironment } from '../../shared/site-types'
 import type { SiteLocalStack } from '../../shared/site-types'
@@ -52,8 +54,10 @@ const SITE_STACK_CHANNELS = [
   'siteStacks:detect',
   'siteStacks:start',
   'siteStacks:stop',
+  'siteStacks:setDomain',
   'siteStacks:resolveSocket',
   'siteStacks:available',
+  'siteStacks:agentLocalStatus',
   'siteStacks:previewMigration',
   'siteStacks:runMigration'
 ] as const
@@ -183,6 +187,15 @@ export function registerSiteStackHandlers(store: Store): void {
         return failure(error)
       }
     }
+  )
+
+  // Version and update state of the agent-local daemon, for the stack panel.
+  ipcMain.handle(
+    'siteStacks:agentLocalStatus',
+    async (): Promise<SiteResult<AgentLocalDaemonStatus>> => ({
+      ok: true,
+      value: await readAgentLocalDaemonStatus()
+    })
   )
 
   // Which stacks this machine can actually run. The renderer offers only these, so a user without

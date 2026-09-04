@@ -12,6 +12,7 @@ import { CircleAlert, Loader2, Play, Square } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteLocalStack, SiteSummary } from '../../../../shared/site-types'
+import type { AgentLocalDaemonStatus } from '../../../../shared/site-stack-types'
 import { siteStackAutodetectPatch } from './site-stack-autodetect'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -43,6 +44,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
   const { site } = summary
   const updateSite = useAppStore((state) => state.updateSite)
   const [available, setAvailable] = useState<SiteLocalStack[] | null>(null)
+  const [daemon, setDaemon] = useState<AgentLocalDaemonStatus | null>(null)
   const [detected, setDetected] = useState<Detected | null>(null)
   const [pending, setPending] = useState<Pending>('')
   const [spinning, setSpinning] = useState(false)
@@ -62,6 +64,25 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
       cancelled = true
     }
   }, [])
+
+  // Only for agent-local sites: the version gates the daemon-side import, and an update the
+  // daemon knows about is worth one quiet line here rather than a surprise mid-import.
+  useEffect(() => {
+    if (site.localStack !== 'agent-local') {
+      setDaemon(null)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const answer = await window.api.siteStacks.agentLocalStatus?.()
+      if (!cancelled && answer?.ok) {
+        setDaemon(answer.value)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [site.localStack])
 
   const refreshDetection = useCallback(async (): Promise<SiteLocalStack | null> => {
     const answer = await window.api.siteStacks.detect(site.id)
@@ -217,6 +238,27 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+
+        {daemon && daemon.version.length > 0 ? (
+          <span className="text-[11px] text-muted-foreground">
+            {translate(
+              'auto.components.sites.SiteDetailPanel.agentLocalVersion',
+              'Agent Local {{version}}'
+            ).replace('{{version}}', daemon.version)}
+            {daemon.updateAvailable && daemon.latest.length > 0
+              ? ` · ${translate(
+                  'auto.components.sites.SiteDetailPanel.agentLocalUpdate',
+                  '{{latest}} available'
+                ).replace('{{latest}}', daemon.latest)}`
+              : ''}
+            {!daemon.importRoutes
+              ? ` · ${translate(
+                  'auto.components.sites.SiteDetailPanel.agentLocalOldForImport',
+                  'imports use Muster\u2019s own tools until 0.27.0'
+                )}`
+              : ''}
+          </span>
+        ) : null}
 
         {/* One control, not two. A running site cannot be started and a stopped one cannot be
             stopped, so offering both left the user to work out which was live from somewhere else

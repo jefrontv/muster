@@ -13443,7 +13443,10 @@
           "stackDetected": "{{stack}} reports it manages this folder.",
           "stackUseDetected": "Switch to it",
           "dbPassword": "Local DB password",
-          "removeEnvironmentAction": "Remove"
+          "removeEnvironmentAction": "Remove",
+          "agentLocalVersion": "Agent Local {{version}}",
+          "agentLocalUpdate": "{{latest}} available",
+          "agentLocalOldForImport": "imports use Muster’s own tools until 0.27.0"
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
