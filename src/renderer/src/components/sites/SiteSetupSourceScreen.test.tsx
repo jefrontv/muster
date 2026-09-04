@@ -257,7 +257,7 @@ describe('SiteSetupLinkTargetRows', () => {
       root?.render(
         <SiteSetupLinkTargetRows
           pending={pending}
-          primaryRoot="/Users/j/Documents/Sites"
+          primaryRoot="/Users/j/Work"
           cloneUrl="git@bitbucket.org:efront_au/flex.git"
           value={null}
           onChange={onChange}
@@ -271,7 +271,24 @@ describe('SiteSetupLinkTargetRows', () => {
     expect(cloneOption).toBeTruthy()
     act(() => cloneOption?.click())
 
-    expect(onChange).toHaveBeenCalledWith({ kind: 'clone', root: '/Users/j/Documents/Sites' })
-    expect(value).toEqual({ kind: 'clone', root: '/Users/j/Documents/Sites' })
+    expect(onChange).toHaveBeenCalledWith({ kind: 'clone', root: '/Users/j/Work' })
+    expect(value).toEqual({ kind: 'clone', root: '/Users/j/Work' })
+  })
+  it('does not offer a clone into a folder that is already an existing checkout', async () => {
+    // The candidate lives at exactly primaryRoot/<slug>: cloning there would hit a non-empty folder.
+    await act(async () => {
+      root?.render(
+        <SiteSetupLinkTargetRows
+          pending={pending}
+          primaryRoot="/Users/j/Documents/Sites"
+          cloneUrl="git@bitbucket.org:efront_au/flex.git"
+          value={null}
+          onChange={() => {}}
+        />
+      )
+    })
+    const options = [...document.body.querySelectorAll<HTMLButtonElement>('[role=radio]')]
+    expect(options.some((option) => (option.textContent ?? '').startsWith('Clone '))).toBe(false)
+    expect(options).toHaveLength(2)
   })
 })

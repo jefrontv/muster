@@ -139,7 +139,13 @@ export function SiteSetupLinkTargetRows({
   const candidates = pending.candidates.filter((candidate) => candidate.exists)
   const staleCount = pending.candidates.length - candidates.length
   const cloneTarget = `${primaryRoot}/${repoSlug(pending.fields.reponame)}`
-  const canCloneIntoRoot = cloneUrl.length > 0 && primaryRoot.length > 0
+  const normalise = (folder: string): string => folder.replace(/[\\/]+$/, '').toLowerCase()
+  // A clone into a folder that is already a checkout would fail on a non-empty directory - and the
+  // checkout itself is already on offer above, so the option would only duplicate it.
+  const cloneTargetTaken = candidates.some(
+    (candidate) => normalise(candidate.path) === normalise(cloneTarget)
+  )
+  const canCloneIntoRoot = cloneUrl.length > 0 && primaryRoot.length > 0 && !cloneTargetTaken
   const hasKnownTarget = candidates.length > 0 || canCloneIntoRoot
   const customSelected =
     value?.kind === 'existing' && !candidates.some((candidate) => candidate.path === value.path)
