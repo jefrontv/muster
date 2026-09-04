@@ -5,7 +5,7 @@
 // step, and the destination field that used to surprise the user with a native picker only after
 // they had already committed to a repo (friction 9 in the plan).
 
-import { AlertTriangle, Loader2, Lock, Pencil } from 'lucide-react'
+import { AlertTriangle, Check, FolderOpen, Loader2, Lock } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -17,6 +17,8 @@ import type {
 import { defaultCloneSourceProvider } from '../../../../shared/site-clone-source-types'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
@@ -77,6 +79,21 @@ export function SiteSetupSourceScreen({
   /** Set on a row click while there is no destination yet, and cleared as soon as one is chosen. */
   const [folderError, setFolderError] = useState(false)
   const destinationButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [destinationOpen, setDestinationOpen] = useState(false)
+  /** The user's configured project folders, offered before the native picker. */
+  const [roots, setRoots] = useState<string[]>([])
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const result = await window.api.siteRoots?.list()
+      if (!cancelled && result?.ok) {
+        setRoots(result.value)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let disposed = false
@@ -147,20 +164,27 @@ export function SiteSetupSourceScreen({
     }
   }, [active, remoteQuery])
 
-  const pickDestination = useCallback(async () => {
+  const chooseDestination = useCallback(
+    (path: string) => {
+      setFolderError(false)
+      setDestinationOpen(false)
+      onDestinationChange(path)
+    },
+    [onDestinationChange]
+  )
+
+  const pickCustomDestination = useCallback(async () => {
     const path = await window.api.shell.pickDirectory({ defaultPath: destinationRoot || undefined })
-    if (!path) {
-      return
+    if (path) {
+      chooseDestination(path)
     }
-    setFolderError(false)
-    onDestinationChange(path)
-  }, [destinationRoot, onDestinationChange])
+  }, [destinationRoot, chooseDestination])
 
   const handleRowClick = useCallback(
     (repo: CloneSourceRepo) => {
       if (destinationRoot.length === 0) {
         setFolderError(true)
-        destinationButtonRef.current?.focus()
+        setDestinationOpen(true)
         return
       }
       onPick(repo)
@@ -198,52 +222,101 @@ export function SiteSetupSourceScreen({
         <p className="text-sm text-muted-foreground">{strings.noProviders}</p>
       ) : (
         <div className="flex items-start justify-between gap-3">
-          <div className="flex gap-1.5">
-            {providers.map((provider) => (
-              <Button
-                key={provider.id}
-                size="sm"
-                variant={provider.id === active ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setActive(provider.id)
-                  // Cleared in the same update as the switch: a term typed for one host is not a
-                  // query for another, and carrying it over would spend a request proving it.
-                  setQuery('')
-                  setDebouncedQuery('')
-                }}
-              >
-                {provider.label}
-              </Button>
-            ))}
-          </div>
-
-          <div
-            aria-invalid={folderError}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5',
-              folderError && 'animate-pulse ring-1 ring-destructive'
-            )}
+          {/* A joined group, not loose buttons: the two are one choice, and the group reads as tabs. */}
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={active ?? undefined}
+            aria-label={sourceStrings.providerGroupLabel}
+            onValueChange={(next) => {
+              if (!next) {
+                return
+              }
+              setActive(next as CloneSourceProviderId)
+              // Cleared in the same update as the switch: a term typed for one host is not a
+              // query for another, and carrying it over would spend a request proving it.
+              setQuery('')
+              setDebouncedQuery('')
+            }}
           >
-            <span className="text-xs text-muted-foreground">{sourceStrings.destinationLabel}</span>
-            {destinationRoot.length > 0 ? (
-              <span className="max-w-48 truncate font-mono text-xs">{destinationRoot}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {sourceStrings.destinationPlaceholder}
-              </span>
-            )}
-            <Button
-              ref={destinationButtonRef}
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="size-6"
-              aria-label={sourceStrings.destinationEditLabel}
-              onClick={() => void pickDestination()}
-            >
-              <Pencil className="size-3.5" />
-            </Button>
-          </div>
+            {providers.map((provider) => (
+              <ToggleGroupItem key={provider.id} value={provider.id} className="text-xs">
+                {provider.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+
+          <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                ref={destinationButtonRef}
+                type="button"
+                size="sm"
+                variant="outline"
+                aria-invalid={folderError}
+                aria-label={sourceStrings.destinationEditLabel}
+                className={cn(
+                  'max-w-72 shrink-0 gap-1.5 font-normal',
+                  folderError && 'animate-pulse ring-1 ring-destructive'
+                )}
+              >
+                <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {sourceStrings.destinationLabel}
+                </span>
+                {destinationRoot.length > 0 ? (
+                  <span className="truncate font-mono text-xs">{destinationRoot}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {sourceStrings.destinationPlaceholder}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-1">
+              <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                {sourceStrings.destinationRootsHeading}
+              </p>
+              {roots.length === 0 ? (
+                <p className="px-2 pb-1.5 text-xs text-muted-foreground">
+                  {sourceStrings.destinationNoRoots}
+                </p>
+              ) : (
+                <ul className="max-h-56 overflow-y-auto scrollbar-sleek">
+                  {roots.map((rootPath) => {
+                    const selected = rootPath === destinationRoot
+                    return (
+                      <li key={rootPath}>
+                        <button
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => chooseDestination(rootPath)}
+                          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-accent"
+                        >
+                          <Check
+                            className={cn('size-3.5 shrink-0', !selected && 'opacity-0')}
+                            aria-hidden
+                          />
+                          <span className="truncate font-mono text-xs">{rootPath}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+              <div className="mt-1 border-t border-border pt-1">
+                <button
+                  type="button"
+                  onClick={() => void pickCustomDestination()}
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent"
+                >
+                  <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  {sourceStrings.destinationCustom}
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 

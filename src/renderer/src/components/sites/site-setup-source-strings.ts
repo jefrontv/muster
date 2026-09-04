@@ -15,6 +15,22 @@ export const getSiteSetupSourceStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupSourceScreen.destinationPlaceholder',
     'Choose a folder'
   ),
+  providerGroupLabel: translate(
+    'auto.components.sites.SiteSetupSourceScreen.providerGroupLabel',
+    'Repository host'
+  ),
+  destinationRootsHeading: translate(
+    'auto.components.sites.SiteSetupSourceScreen.destinationRootsHeading',
+    'Your project folders'
+  ),
+  destinationNoRoots: translate(
+    'auto.components.sites.SiteSetupSourceScreen.destinationNoRoots',
+    'No project folders are configured yet. Add them in Sites → Folders.'
+  ),
+  destinationCustom: translate(
+    'auto.components.sites.SiteSetupSourceScreen.destinationCustom',
+    'Choose another folder…'
+  ),
   destinationEditLabel: translate(
     'auto.components.sites.SiteSetupSourceScreen.destinationEditLabel',
     'Change the destination folder'
