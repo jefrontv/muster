@@ -562,7 +562,7 @@ describe('runImportPipeline', () => {
       const harness = createHarness({
         decideAgentLocalRoutes: vi.fn(async () => {
           harness.order.push('decideAgentLocalRoutes')
-          return { slug: 'acme' }
+          return { slug: 'acme', domain: 'acme.local' }
         })
       })
       const { context } = createTestContext()
@@ -578,13 +578,14 @@ describe('runImportPipeline', () => {
 
       expect(harness.calls.importDatabaseViaAgentLocal).toHaveBeenCalledWith(
         expect.anything(),
-        'acme',
+        expect.anything(),
+        { slug: 'acme', domain: 'acme.local' },
         path.join(wpDir, 'db_backup.sql.gz')
       )
       expect(harness.calls.rewriteDomainViaAgentLocal).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        'acme'
+        { slug: 'acme', domain: 'acme.local' }
       )
       expect(harness.calls.verifySiteViaAgentLocal).toHaveBeenCalledWith(expect.anything(), 'acme')
       // Nothing that needs a mysql or wp binary ran.

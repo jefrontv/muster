@@ -94,6 +94,7 @@ function config(localStack: Site['localStack'] = 'agent-local'): SiteRunConfig {
 }
 
 const ok = (data: unknown): AgentLocalResponse => ({ ok: true, status: 200, data })
+const ACME = { slug: 'acme', domain: 'acme.local' }
 const status = (version: string): AgentLocalResponse =>
   ok({ version, installed: version, update: {} })
 
@@ -119,7 +120,7 @@ describe('decideAgentLocalRoutes', () => {
     const h = host({ 'GET /status': status('0.26.0') })
     const decided = await decideAgentLocalRoutes(config(), {
       host: h,
-      resolveSite: async () => ({ slug: 'acme' })
+      resolveSite: async () => ({ slug: 'acme', domain: 'acme.local' })
     })
     expect(decided).toEqual({
       slug: null,
@@ -131,9 +132,9 @@ describe('decideAgentLocalRoutes', () => {
     const h = host({ 'GET /status': status('0.27.0') })
     const decided = await decideAgentLocalRoutes(config(), {
       host: h,
-      resolveSite: async () => ({ slug: 'acme' })
+      resolveSite: async () => ({ slug: 'acme', domain: 'acme.local' })
     })
-    expect(decided).toEqual({ slug: 'acme' })
+    expect(decided).toEqual({ slug: 'acme', domain: 'acme.local' })
   })
 })
 
@@ -161,8 +162,9 @@ describe('importDatabaseViaAgentLocal', () => {
       ]
     })
     const ctx = context()
-    await importDatabaseViaAgentLocal(ctx, 'acme', '/tmp/dump.sql.gz', { host: h })
-    expect(h.bodies[0]).toEqual({ path: '/tmp/dump.sql.gz', keep_urls: false })
+    await importDatabaseViaAgentLocal(ctx, config(), ACME, '/tmp/dump.sql.gz', { host: h })
+    const importCall = h.calls.indexOf('POST /sites/acme/db/import?async=1')
+    expect(h.bodies[importCall]).toEqual({ path: '/tmp/dump.sql.gz', keep_urls: false })
     expect(ctx.logs).toEqual([
       'database: loading dump.sql.gz',
       'saved snap-1, imported dump.sql.gz into al_acme (62 tables), urls acme.com.au → acme.local'
@@ -185,7 +187,7 @@ describe('importDatabaseViaAgentLocal', () => {
       })
     })
     await expect(
-      importDatabaseViaAgentLocal(context(), 'acme', '/tmp/dump.sql.gz', { host: h })
+      importDatabaseViaAgentLocal(context(), config(), ACME, '/tmp/dump.sql.gz', { host: h })
     ).rejects.toMatchObject({ name: 'SiteRunStepError', message: 'snapshot failed: disk full' })
   })
 })
@@ -193,6 +195,7 @@ describe('importDatabaseViaAgentLocal', () => {
 describe('rewriteDomainViaAgentLocal', () => {
   it('applies (never dry-runs) and reports pins when the daemon repointed wp-config', async () => {
     const h = host({
+      'GET /certs/acme.local': ok({ exists: true, trusted: true }),
       'POST /sites/acme/db/search-replace': ok({
         needle: 'acme.com.au',
         replacement: 'acme.local',
@@ -206,12 +209,34 @@ describe('rewriteDomainViaAgentLocal', () => {
       })
     })
     const ctx = context()
-    await rewriteDomainViaAgentLocal(ctx, config(), 'acme', { host: h })
-    expect(h.bodies[0]).toEqual({ old: 'acme.com.au', new: 'acme.local', dry_run: false })
+    await rewriteDomainViaAgentLocal(ctx, config(), ACME, { host: h })
+    const replaceCall = h.calls.indexOf('POST /sites/acme/db/search-replace')
+    expect(h.bodies[replaceCall]).toEqual({ old: 'acme.com.au', new: 'acme.local', dry_run: false })
     expect(ctx.logs).toEqual([
       'Replaced 16 reference(s) to acme.com.au across 2 column(s).',
       'wp-config.php URL constants repointed to acme.local.'
     ])
+  })
+})
+
+describe('rewriteDomainViaAgentLocal with a drifted record', () => {
+  it('rewrites to the domain the daemon serves, not the one Muster stored, and says so', async () => {
+    // Seen live on pact: the record said pact.local, agent-local served pact.al, and every rewrite
+    // went to a host nothing answered on.
+    const h = host({
+      'GET /certs/pact.al': ok({ exists: false, trusted: false }),
+      'POST /sites/pact/db/search-replace': ok({ hits: [], total: 0, config_pins_rewritten: false })
+    })
+    const ctx = context()
+    await rewriteDomainViaAgentLocal(
+      ctx,
+      config(),
+      { slug: 'pact', domain: 'pact.al' },
+      { host: h }
+    )
+    const replaceCall = h.calls.indexOf('POST /sites/pact/db/search-replace')
+    expect(h.bodies[replaceCall]).toEqual({ old: 'acme.com.au', new: 'pact.al', dry_run: false })
+    expect(ctx.logs[0]).toContain('Agent Local serves this site on pact.al, not acme.local')
   })
 })
 

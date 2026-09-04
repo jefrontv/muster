@@ -45,8 +45,7 @@ export async function runWpSearchReplace(
   }
 
   context.status('Running WP Search and Replace…')
-  await writeLocalWpConfig(context, config)
-  await updatePackageJsonDevDomain(context, config)
+  await prepareLocalWpConfig(context, config)
 
   context.throwIfCancelled()
   const abspath = await resolveWpCliPath(config.wpDir)
@@ -246,7 +245,26 @@ export function localWpConfigDbHost(config: SiteRunConfig): string {
 
 const MYSQL_DEFAULT_PORT = 3306
 
-async function writeLocalWpConfig(context: SiteRunContext, config: SiteRunConfig): Promise<void> {
+/**
+ * Point the checkout at the local stack before anything boots WordPress: the DB constants in
+ * wp-config.php (a production config arrives in base.zip), the theme's URL override, and the
+ * theme's dev-server domain. Shared by the system-`wp` path and the agent-local path - a daemon
+ * running WP-CLI against production credentials fails exactly like the local one would.
+ */
+export async function prepareLocalWpConfig(
+  context: SiteRunContext,
+  config: SiteRunConfig,
+  options: { scheme?: 'http' | 'https' } = {}
+): Promise<void> {
+  await writeLocalWpConfig(context, config, options.scheme ?? 'http')
+  await updatePackageJsonDevDomain(context, config)
+}
+
+async function writeLocalWpConfig(
+  context: SiteRunContext,
+  config: SiteRunConfig,
+  scheme: 'http' | 'https'
+): Promise<void> {
   const wpConfigPath = path.join(config.wpDir, 'wp-config.php')
   let contents: string
   try {
@@ -274,8 +292,10 @@ async function writeLocalWpConfig(context: SiteRunContext, config: SiteRunConfig
     updates.push('DB_PASSWORD')
   }
   if (config.site.localDomain) {
-    // An efront-theme constant; sites without it are unaffected because nothing matches.
-    const localUrl = `http://${config.site.localDomain}`
+    // An efront-theme constant; sites without it are unaffected because nothing matches. The
+    // scheme follows how the site is actually served: an http:// override next to https:// rows
+    // sent every asset through a redirect.
+    const localUrl = `${scheme}://${config.site.localDomain}`
     next = replaceWpDefine(next, 'EFRONT_URL_OVERRIDE', localUrl)
     updates.push(`EFRONT_URL_OVERRIDE to ${localUrl}`)
   }

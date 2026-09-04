@@ -20,8 +20,10 @@ import {
   searchReplaceViaDaemon,
   type AgentLocalImportApiOptions
 } from './agent-local-import-api'
+import { agentLocalCertStatus } from './agent-local-cert'
 import { resolveAgentLocalSite } from './agent-local-site-resolve'
 import { SiteRunStepError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
+import { prepareLocalWpConfig } from './wp-search-replace'
 
 const VERDICT_STEP = 'Checking the site'
 
@@ -39,21 +41,23 @@ const FAILING_VERDICTS = new Set([
  * Whether this run may use the daemon routes, decided once at the top of the run. `reason` is
  * logged when the answer is no so the fallback is never silent.
  */
-export type AgentLocalRoutes = { slug: string } | { slug: null; reason: string }
+export type AgentLocalRoutes =
+  /** `domain` is what the daemon serves the site on; the rewrite targets it, not the record. */
+  { slug: string; domain: string } | { slug: null; reason: string }
 
 export type AgentLocalImportStepOptions = AgentLocalImportApiOptions & {
   /** Injectable for tests; defaults to the real resolver. */
   resolveSite?: (
     site: Pick<Site, 'path' | 'localStack' | 'localWpRoot'>
-  ) => Promise<{ slug: string } | null>
+  ) => Promise<{ slug: string; domain: string } | null>
 }
 
 async function defaultResolveSite(
   site: Pick<Site, 'path' | 'localStack' | 'localWpRoot'>,
   options: AgentLocalImportApiOptions
-): Promise<{ slug: string } | null> {
+): Promise<{ slug: string; domain: string } | null> {
   const { match } = await resolveAgentLocalSite(site, options)
-  return match ? { slug: match.slug } : null
+  return match ? { slug: match.slug, domain: match.domain } : null
 }
 
 export async function decideAgentLocalRoutes(
@@ -87,7 +91,30 @@ export async function decideAgentLocalRoutes(
   if (!resolved) {
     return { slug: null, reason: 'Agent Local does not list this folder as one of its sites' }
   }
-  return { slug: resolved.slug }
+  return { slug: resolved.slug, domain: resolved.domain || config.site.localDomain }
+}
+
+/**
+ * The stack is authoritative for the domain it serves. A record that drifted (pact.local stored,
+ * pact.al served) sent every rewrite to a host nothing answers on, and the probe then reported
+ * the site redirecting "off-site" to Muster's own idea of it.
+ */
+function servingConfig(config: SiteRunConfig, domain: string): SiteRunConfig {
+  return domain.length > 0 && domain !== config.site.localDomain
+    ? { ...config, site: { ...config.site, localDomain: domain } }
+    : config
+}
+
+/** https when the site's certificate is trusted, else http: an http override beside https rows redirects every asset. */
+async function servedScheme(
+  config: SiteRunConfig,
+  options: AgentLocalImportApiOptions
+): Promise<'http' | 'https'> {
+  if (!config.site.localDomain) {
+    return 'http'
+  }
+  const cert = await agentLocalCertStatus(config.site.localDomain, options).catch(() => null)
+  return cert?.exists && cert.trusted ? 'https' : 'http'
 }
 
 /**
@@ -98,11 +125,18 @@ export async function decideAgentLocalRoutes(
  */
 export async function importDatabaseViaAgentLocal(
   context: SiteRunContext,
-  slug: string,
+  runConfig: SiteRunConfig,
+  routes: { slug: string; domain: string },
   dumpPath: string,
   options: AgentLocalImportApiOptions = {}
 ): Promise<void> {
+  const { slug } = routes
+  const config = servingConfig(runConfig, routes.domain)
   context.status('Loading database through Agent Local…')
+  // The daemon's own URL rewrite boots WP-CLI against wp-config.php as it is right now - which,
+  // before "Pull server files" has run this time, is whatever the last run left: possibly the
+  // production config. Point it at the local stack first; prepared again after files land.
+  await prepareLocalWpConfig(context, config, { scheme: await servedScheme(config, options) })
   try {
     const summary = await importDatabaseViaDaemon({
       slug,
@@ -128,17 +162,28 @@ export async function importDatabaseViaAgentLocal(
  */
 export async function rewriteDomainViaAgentLocal(
   context: SiteRunContext,
-  config: SiteRunConfig,
-  slug: string,
+  runConfig: SiteRunConfig,
+  routes: { slug: string; domain: string },
   options: AgentLocalImportApiOptions = {}
 ): Promise<void> {
+  const { slug } = routes
+  const config = servingConfig(runConfig, routes.domain)
   const localDomain = config.site.localDomain
   const liveDomain = config.environment.liveDomain
   if (!localDomain || !liveDomain) {
     context.status('Skipping WP Search and Replace: Local or Live domain not specified')
     return
   }
+  if (localDomain !== runConfig.site.localDomain) {
+    context.log(
+      `Agent Local serves this site on ${localDomain}, not ${runConfig.site.localDomain || '(none)'}; rewriting to ${localDomain}.`
+    )
+  }
   context.status('Rewriting domain through Agent Local…')
+  // Production wp-config.php arrived in base.zip since the load: its DB constants must point at the
+  // local stack before the daemon boots WP-CLI, or the rewrite fails on "Error establishing a
+  // database connection" (seen live).
+  await prepareLocalWpConfig(context, config, { scheme: await servedScheme(config, options) })
   try {
     const report = await searchReplaceViaDaemon({
       slug,

@@ -81,13 +81,14 @@ export type SiteImportDependencies = {
   decideAgentLocalRoutes: (config: SiteRunConfig) => Promise<AgentLocalRoutes>
   importDatabaseViaAgentLocal: (
     context: SiteRunContext,
-    slug: string,
+    config: SiteRunConfig,
+    routes: { slug: string; domain: string },
     dumpPath: string
   ) => Promise<void>
   rewriteDomainViaAgentLocal: (
     context: SiteRunContext,
     config: SiteRunConfig,
-    slug: string
+    routes: { slug: string; domain: string }
   ) => Promise<void>
   verifySiteViaAgentLocal: (context: SiteRunContext, slug: string) => Promise<void>
   /** Overridden only by tests. */
@@ -143,7 +144,7 @@ export async function runImportPipeline(
     if (session !== null && layout !== null) {
       if (exportDatabase) {
         context.throwIfCancelled()
-        await importDatabase(context, active, session, deps, routes.slug)
+        await importDatabase(context, active, session, deps, routes.slug !== null ? routes : null)
       }
       if (exportFiles) {
         context.throwIfCancelled()
@@ -159,7 +160,7 @@ export async function runImportPipeline(
     if (wpSearchReplace) {
       context.throwIfCancelled()
       await (routes.slug !== null
-        ? deps.rewriteDomainViaAgentLocal(context, active, routes.slug)
+        ? deps.rewriteDomainViaAgentLocal(context, active, routes)
         : deps.runWpSearchReplace(context, active))
     }
 
@@ -207,16 +208,16 @@ async function importDatabase(
   config: SiteRunConfig,
   session: SiteSshSession,
   deps: SiteImportDependencies,
-  agentLocalSlug: string | null
+  agentLocal: { slug: string; domain: string } | null
 ): Promise<void> {
   context.status('Extracting database credentials…')
   const credentials = await deps.readRemoteDbCredentials(session, config.environment.rootPath)
   const dump = await deps.dumpAndDownloadRemoteDatabase(context, config, session, credentials)
 
   // The daemon owns naming, snapshotting and loading for its own sites; nothing below applies.
-  if (agentLocalSlug !== null) {
+  if (agentLocal !== null) {
     context.throwIfCancelled()
-    await deps.importDatabaseViaAgentLocal(context, agentLocalSlug, dump.localDumpPath)
+    await deps.importDatabaseViaAgentLocal(context, config, agentLocal, dump.localDumpPath)
     return
   }
 
