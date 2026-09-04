@@ -9,6 +9,7 @@ import { AlertTriangle, Check, FolderOpen, Loader2, Lock } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { abbreviateHome, describeFolder } from '../../../../shared/folder-display'
 import type {
   CloneSourceProvider,
   CloneSourceProviderId,
@@ -266,7 +267,9 @@ export function SiteSetupSourceScreen({
                   {sourceStrings.destinationLabel}
                 </span>
                 {destinationRoot.length > 0 ? (
-                  <span className="truncate font-mono text-xs">{destinationRoot}</span>
+                  <span className="truncate font-mono text-xs">
+                    {abbreviateHome(destinationRoot)}
+                  </span>
                 ) : (
                   <span className="text-xs text-muted-foreground">
                     {sourceStrings.destinationPlaceholder}
@@ -286,11 +289,13 @@ export function SiteSetupSourceScreen({
                 <ul className="max-h-56 overflow-y-auto scrollbar-sleek">
                   {roots.map((rootPath) => {
                     const selected = rootPath === destinationRoot
+                    const folder = describeFolder(rootPath)
                     return (
                       <li key={rootPath}>
                         <button
                           type="button"
                           aria-pressed={selected}
+                          title={rootPath}
                           onClick={() => chooseDestination(rootPath)}
                           className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-accent"
                         >
@@ -298,7 +303,14 @@ export function SiteSetupSourceScreen({
                             className={cn('size-3.5 shrink-0', !selected && 'opacity-0')}
                             aria-hidden
                           />
-                          <span className="truncate font-mono text-xs">{rootPath}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-xs">{folder.name}</span>
+                            {folder.parent ? (
+                              <span className="block truncate font-mono text-[11px] text-muted-foreground">
+                                {folder.parent}
+                              </span>
+                            ) : null}
+                          </span>
                         </button>
                       </li>
                     )
