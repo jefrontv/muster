@@ -119,7 +119,7 @@ export function SiteSetupRun({
               ) : null}
               {step.log.length > 0 ? (
                 // A failed step opens its log unasked: the log is the explanation.
-                <Collapsible defaultOpen={step.state === 'failed'} className="group/log">
+                <Collapsible defaultOpen={step.state === 'failed'} className="group/log pt-0.5">
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"

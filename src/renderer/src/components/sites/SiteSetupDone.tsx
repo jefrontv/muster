@@ -32,8 +32,10 @@ const STEP_TITLE_KEYS: Record<(typeof VISIBLE_STEP_IDS)[number], keyof SiteSetup
   import: 'stepImport'
 }
 
+// Through main, not navigator.clipboard: the renderer's clipboard write needs a focused document
+// and a permission grant Electron does not give it, so it silently did nothing here.
 async function copyValue(value: string, copiedLabel: string): Promise<void> {
-  await navigator.clipboard.writeText(value)
+  await window.api.ui.writeClipboardText(value)
   toast.success(copiedLabel)
 }
 

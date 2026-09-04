@@ -68,7 +68,7 @@ export function SiteSetupRow({
         {control}
       </div>
       {!unavailable && children ? (
-        <div className="col-start-2 col-span-2 pt-2">{children}</div>
+        <div className="col-start-2 col-span-2 space-y-2 pt-2">{children}</div>
       ) : null}
     </div>
   )
