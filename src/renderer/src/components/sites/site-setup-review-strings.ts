@@ -64,6 +64,5 @@ export const getSiteSetupReviewStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupReview.importNoEnvironment',
     'No environment is configured for this site yet.'
   ),
-  importFrom: translate('auto.components.sites.SiteSetupReview.importFrom', 'From {{environment}}'),
-  importAnyway: translate('auto.components.sites.SiteSetupReview.importAnyway', 'Import anyway')
+  importFrom: translate('auto.components.sites.SiteSetupReview.importFrom', 'From {{environment}}')
 }))

@@ -16,10 +16,6 @@ export const getSiteSetupRunnerStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupRunner.importUnavailable',
     'The import cannot run for this site yet'
   ),
-  importMismatchDeclined: translate(
-    'auto.components.sites.SiteSetupRunner.importMismatchDeclined',
-    'The checked-out branch does not match the environment'
-  ),
   localWp: translate('auto.components.sites.SiteSetupRunner.localWp', 'LocalWP'),
   agentLocal: translate('auto.components.sites.SiteSetupRunner.agentLocal', 'Agent Local'),
   alreadyServing: translate(

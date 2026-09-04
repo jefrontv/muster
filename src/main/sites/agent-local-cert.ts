@@ -17,8 +17,8 @@ import {
   type AgentLocalResponse
 } from './agent-local-host'
 
-/** Long enough for the user to read the password dialog and type; osascript itself has no timeout. */
-const AGENT_LOCAL_TRUST_PROMPT_TIMEOUT_MS = 120_000
+/** The user has to notice the dialog and type a password; five minutes before giving up on them. */
+const AGENT_LOCAL_TRUST_PROMPT_TIMEOUT_MS = 5 * 60_000
 
 type AgentLocalCertOptions = {
   host?: AgentLocalHost

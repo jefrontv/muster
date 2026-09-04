@@ -14,7 +14,6 @@ import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
 import { SITE_IMPORT_TOGGLES, type SiteLocalStack } from '../../../../shared/site-types'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
 import type { SetupRunStepId, SiteSetupChoices, SiteSetupSource } from './site-setup-choices'
 import { getSiteSetupReviewStrings } from './site-setup-review-strings'
 import { getSiteToggleLabels } from './site-toggle-labels'
@@ -89,9 +88,13 @@ export function SiteSetupReview({
       : !plan && choices.import.environment === ''
         ? strings.importNoEnvironment
         : null
-  const importRequiresConfirm = source.kind !== 'link' && plan?.import.confirmable === true
-  const importCheckboxDisabled =
-    stepState('import') === 'locked' || (importRequiresConfirm && !choices.import.confirmMismatch)
+  // A branch that does not match the environment is worth saying, not blocking on: the run is
+  // started with the environment named, which is what overrides the branch check.
+  const importBranchNote =
+    source.kind !== 'link' && plan?.import.confirmable === true
+      ? plan.import.blockedBy.map((reason) => IMPORT_BLOCKED_REASON[reason]).join(' ')
+      : ''
+  const importCheckboxDisabled = stepState('import') === 'locked'
 
   // A bare clone carries no server configuration, so there is nothing an import could pull from.
   const importApplies = source.kind !== 'repo'
@@ -229,24 +232,8 @@ export function SiteSetupReview({
               </label>
             ))}
           </div>
-          {importRequiresConfirm ? (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">
-                {plan?.import.blockedBy.map((reason) => IMPORT_BLOCKED_REASON[reason]).join(' ')}
-              </p>
-              <Label className="flex items-center gap-1.5 text-xs font-normal">
-                <Checkbox
-                  checked={choices.import.confirmMismatch}
-                  onCheckedChange={(checked) =>
-                    onChange({
-                      ...choices,
-                      import: { ...choices.import, confirmMismatch: checked === true }
-                    })
-                  }
-                />
-                {strings.importAnyway}
-              </Label>
-            </div>
+          {importBranchNote.length > 0 ? (
+            <p className="text-xs text-muted-foreground">{importBranchNote}</p>
           ) : null}
         </SiteSetupRow>
       )}

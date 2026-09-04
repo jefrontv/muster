@@ -27,8 +27,7 @@ function choices(overrides: Partial<SiteSetupChoices> = {}): SiteSetupChoices {
     import: {
       enabled: true,
       environment: 'main',
-      toggles: allImportToggles(),
-      confirmMismatch: false
+      toggles: allImportToggles()
     },
     ...overrides
   }
@@ -224,8 +223,7 @@ describe('createSiteSetupRunner', () => {
         import: {
           enabled: false,
           environment: 'main',
-          toggles: allImportToggles(),
-          confirmMismatch: false
+          toggles: allImportToggles()
         }
       })
     )

@@ -13678,7 +13678,6 @@
           "declined": "Not selected",
           "httpsNeedsServe": "Needs a local stack to serve the site",
           "importUnavailable": "The import cannot run for this site yet",
-          "importMismatchDeclined": "The checked-out branch does not match the environment",
           "localWp": "LocalWP",
           "agentLocal": "Agent Local",
           "alreadyServing": "Already served by {{stack}} at {{domain}}",
@@ -13713,8 +13712,7 @@
           "httpsAlreadyTrusted": "Certificate for {{domain}} is already trusted",
           "importTitle": "Import from production",
           "importNoEnvironment": "No environment is configured for this site yet.",
-          "importFrom": "From {{environment}}",
-          "importAnyway": "Import anyway"
+          "importFrom": "From {{environment}}"
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",

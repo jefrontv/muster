@@ -36,8 +36,7 @@ function choices(overrides: Partial<SiteSetupChoices> = {}): SiteSetupChoices {
     import: {
       enabled: true,
       environment: 'production',
-      toggles: allImportToggles(),
-      confirmMismatch: false
+      toggles: allImportToggles()
     },
     ...overrides
   }
@@ -169,12 +168,10 @@ describe('SiteSetupReview', () => {
     expect(document.body.textContent).not.toContain('HTTPS')
   })
 
-  it('disables the Import checkbox until Import anyway is ticked when confirmable', async () => {
-    let latest = choices()
-    const onChange = (next: SiteSetupChoices): void => {
-      latest = next
-    }
-    const view = (c: SiteSetupChoices): React.ReactElement => (
+  it('notes a branch/environment mismatch without gating the Import checkbox', async () => {
+    // The run starts with the environment named, which is the override the planner asks for; a
+    // second confirmation here only got in the way.
+    await render(
       <SiteSetupReview
         source={SITE_SOURCE}
         plan={plan({
@@ -188,28 +185,15 @@ describe('SiteSetupReview', () => {
         })}
         availableStacks={['localwp']}
         cert={null}
-        choices={c}
-        onChange={onChange}
+        choices={choices()}
+        onChange={() => {}}
       />
     )
-    await render(view(latest))
-
     const importCheckbox =
       document.body.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]')[2]
-    const confirmCheckbox = Array.from(
-      document.body.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]')
-    ).at(-1) as HTMLButtonElement
-    expect(importCheckbox.disabled).toBe(true)
-
-    await act(async () => {
-      confirmCheckbox.click()
-    })
-    expect(latest.import.confirmMismatch).toBe(true)
-
-    await render(view(latest))
-    const refreshedImportCheckbox =
-      document.body.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]')[2]
-    expect(refreshedImportCheckbox.disabled).toBe(false)
+    expect(importCheckbox?.disabled).toBe(false)
+    expect(document.body.textContent).toContain('no matching environment')
+    expect(document.body.textContent).not.toContain('Import anyway')
   })
 
   it('renders Serve as locked when lockedSteps includes serve', async () => {

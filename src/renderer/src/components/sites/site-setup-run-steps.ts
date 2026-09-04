@@ -166,9 +166,9 @@ export async function reconcile(ctx: StepContext): Promise<void> {
   if (!choices.import.enabled) {
     ctx.skip('import', strings.declined)
   } else if (!plan.import.ready && !plan.import.confirmable) {
+    // `confirmable` (branch/environment mismatch) does not skip: the run is started with the
+    // environment named, which is the override the planner is asking for.
     ctx.skip('import', findSetupStage(plan, 'import')?.reason || strings.importUnavailable)
-  } else if (plan.import.confirmable && !choices.import.confirmMismatch) {
-    ctx.skip('import', strings.importMismatchDeclined)
   }
 }
 

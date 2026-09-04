@@ -37,8 +37,6 @@ export type SiteSetupChoices = {
     enabled: boolean
     environment: string
     toggles: Record<SiteImportToggleKey, boolean>
-    /** The run planner reported a branch/environment mismatch and the user chose to import anyway. */
-    confirmMismatch: boolean
   }
 }
 
@@ -106,8 +104,7 @@ export function defaultSetupChoices(args: {
     import: {
       enabled: importAvailable,
       environment: args.environment,
-      toggles: allImportToggles(),
-      confirmMismatch: false
+      toggles: allImportToggles()
     }
   }
 }
