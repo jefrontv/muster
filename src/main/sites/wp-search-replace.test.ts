@@ -302,8 +302,7 @@ describe('runWpSearchReplace', () => {
       '--all-tables',
       '--precise',
       '--report-changed-only',
-      '--skip-columns=guid',
-      '--skip-columns=user_email',
+      '--skip-columns=guid,user_email',
       '--skip-plugins',
       '--skip-themes',
       '--skip-packages',
@@ -313,6 +312,14 @@ describe('runWpSearchReplace', () => {
     expect(wpCall().options?.env?.WP_CLI_PHP_ARGS).toBe(
       '-d error_reporting=E_ERROR -d display_errors=0'
     )
+  })
+
+  it('passes skip-columns exactly once, since WP-CLI keeps only the last repeated assoc arg', async () => {
+    // Two flags looked equivalent and silently rewrote guid on every import (verified live).
+    const { context } = createTestContext()
+    await runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
+    const skips = wpCall().args.filter((arg) => arg.startsWith('--skip-columns='))
+    expect(skips).toEqual(['--skip-columns=guid,user_email'])
   })
 
   // The live failure: a theme repo imported without "Pull server files" has wp-content but no core,

@@ -76,9 +76,9 @@ export async function runWpSearchReplace(
     '--precise',
     '--report-changed-only',
     // guid must never be rewritten (it is a permanent identifier, not a URL) and rewriting
-    // user_email would corrupt accounts at a matching domain.
-    '--skip-columns=guid',
-    '--skip-columns=user_email',
+    // user_email would corrupt accounts at a matching domain. ONE flag: WP-CLI keeps only the last
+    // value of a repeated assoc arg, so two flags skipped user_email and rewrote every guid.
+    '--skip-columns=guid,user_email',
     // Why skipped: the rewrite only touches database rows, but WP-CLI boots the whole site to get
     // there — so one broken plugin (a double-registered NitroPack, a theme fatal) took down a step
     // that never needed either. Mu-plugins still load; WP-CLI has no flag for those.
