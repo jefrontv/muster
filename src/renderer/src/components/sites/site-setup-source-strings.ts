@@ -7,11 +7,6 @@ import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getSiteSetupSourceStrings = createLocalizedCatalog(() => ({
-  title: translate('auto.components.sites.SiteSetupSourceScreen.title', 'New site'),
-  description: translate(
-    'auto.components.sites.SiteSetupSourceScreen.description',
-    'Pick a repository. Nothing is cloned until you review.'
-  ),
   destinationLabel: translate(
     'auto.components.sites.SiteSetupSourceScreen.destinationLabel',
     'Clone into'

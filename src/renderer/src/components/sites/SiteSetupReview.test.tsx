@@ -21,6 +21,8 @@ const REPO: CloneSourceRepo = {
   isPrivate: false
 }
 
+const SITE_SOURCE: SiteSetupSource = { kind: 'site', siteId: 'site-1' }
+
 const REPO_SOURCE: SiteSetupSource = {
   kind: 'repo',
   repo: REPO,
@@ -174,7 +176,7 @@ describe('SiteSetupReview', () => {
     }
     const view = (c: SiteSetupChoices): React.ReactElement => (
       <SiteSetupReview
-        source={REPO_SOURCE}
+        source={SITE_SOURCE}
         plan={plan({
           import: {
             ready: false,
@@ -230,7 +232,7 @@ describe('SiteSetupReview', () => {
     let latest = choices()
     await render(
       <SiteSetupReview
-        source={REPO_SOURCE}
+        source={SITE_SOURCE}
         plan={null}
         availableStacks={['localwp']}
         cert={null}
@@ -252,5 +254,18 @@ describe('SiteSetupReview', () => {
     expect(latest.import.toggles.exportDatabase).toBe(true)
     expect(latest.import.toggles.wpUploadRewrite).toBe(true)
     expect(latest.import.toggles.wpSearchReplace).toBe(true)
+  })
+  it('shows no Import row for a bare clone, which carries no server configuration', async () => {
+    await render(
+      <SiteSetupReview
+        source={REPO_SOURCE}
+        plan={null}
+        availableStacks={['localwp']}
+        cert={null}
+        choices={choices()}
+        onChange={() => {}}
+      />
+    )
+    expect(document.body.textContent).not.toContain('Import from production')
   })
 })

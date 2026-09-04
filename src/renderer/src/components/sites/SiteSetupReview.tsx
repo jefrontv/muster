@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import type { SetupRunStepId, SiteSetupChoices, SiteSetupSource } from './site-setup-choices'
 import { getSiteSetupReviewStrings } from './site-setup-review-strings'
 import { getSiteToggleLabels } from './site-toggle-labels'
-import { SiteSetupRow } from './SiteSetupRow'
+import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
 import { SiteSetupServePopover } from './SiteSetupServePopover'
 
 /** Written for the user, straight from the run planner's `blockedBy` (site-setup-plan.ts). */
@@ -89,8 +89,11 @@ export function SiteSetupReview({
   const importCheckboxDisabled =
     stepState('import') === 'locked' || (importRequiresConfirm && !choices.import.confirmMismatch)
 
+  // A bare clone carries no server configuration, so there is nothing an import could pull from.
+  const importApplies = source.kind !== 'repo'
+
   return (
-    <div className="space-y-2.5">
+    <SiteSetupRowList>
       {sourceRows ??
         (source.kind === 'repo' ? (
           <SiteSetupRow
@@ -115,14 +118,7 @@ export function SiteSetupReview({
           summary={serveSummary}
           state={stepState('serve')}
           control={
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                checked={choices.serve.enabled}
-                disabled={stepState('serve') === 'locked'}
-                onCheckedChange={(checked) =>
-                  onChange({ ...choices, serve: { ...choices.serve, enabled: checked === true } })
-                }
-              />
+            <>
               <SiteSetupServePopover
                 stacks={availableStacks}
                 value={{ stack: choices.serve.stack, domain: choices.serve.domain }}
@@ -135,7 +131,14 @@ export function SiteSetupReview({
                   })
                 }
               />
-            </div>
+              <Checkbox
+                checked={choices.serve.enabled}
+                disabled={stepState('serve') === 'locked'}
+                onCheckedChange={(checked) =>
+                  onChange({ ...choices, serve: { ...choices.serve, enabled: checked === true } })
+                }
+              />
+            </>
           }
         />
       )}
@@ -165,7 +168,7 @@ export function SiteSetupReview({
           />
         ))}
 
-      {importBlockedReason ? (
+      {!importApplies ? null : importBlockedReason ? (
         <SiteSetupRow
           icon={<Download className="size-4" />}
           title={strings.importTitle}
@@ -177,7 +180,7 @@ export function SiteSetupReview({
         <SiteSetupRow
           icon={<Download className="size-4" />}
           title={strings.importTitle}
-          summary={choices.import.environment}
+          summary={strings.importFrom.replace('{{environment}}', choices.import.environment)}
           state={stepState('import')}
           control={
             <Checkbox
@@ -192,9 +195,12 @@ export function SiteSetupReview({
             />
           }
         >
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
             {SITE_IMPORT_TOGGLES.map((toggle) => (
-              <label key={toggle.key} className="flex items-center gap-1.5 text-xs">
+              <label
+                key={toggle.key}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground"
+              >
                 <Checkbox
                   checked={choices.import.toggles[toggle.key]}
                   disabled={!choices.import.enabled || stepState('import') === 'locked'}
@@ -233,7 +239,7 @@ export function SiteSetupReview({
           ) : null}
         </SiteSetupRow>
       )}
-    </div>
+    </SiteSetupRowList>
   )
 }
 

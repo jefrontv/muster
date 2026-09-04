@@ -7,7 +7,7 @@ import { Check, Circle, Loader2, Minus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Progress } from '@/components/ui/progress'
-import { SiteSetupRow } from './SiteSetupRow'
+import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
 import { SiteCloneLog } from './SiteCloneLog'
 import type { SetupRunPhase, SetupRunStep, SetupRunStepId } from './site-setup-choices'
 import { SETUP_RUN_STEP_ORDER } from './site-setup-choices'
@@ -71,7 +71,7 @@ export function SiteSetupRun({
 
   return (
     <div className="space-y-3" aria-label={siteLabel}>
-      <div className="divide-y divide-border">
+      <SiteSetupRowList>
         {registerStep && registerStep.state === 'failed' ? (
           <SiteSetupRow
             icon={STEP_ICONS[registerStep.state]}
@@ -135,7 +135,7 @@ export function SiteSetupRun({
             </SiteSetupRow>
           )
         })}
-      </div>
+      </SiteSetupRowList>
 
       <div className="flex items-center gap-3">
         <Progress value={(settledCount / considered.length) * 100} className="flex-1" />

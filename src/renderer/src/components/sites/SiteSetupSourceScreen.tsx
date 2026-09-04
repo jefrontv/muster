@@ -194,8 +194,6 @@ export function SiteSetupSourceScreen({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{sourceStrings.description}</p>
-
       {providers.length === 0 ? (
         <p className="text-sm text-muted-foreground">{strings.noProviders}</p>
       ) : (

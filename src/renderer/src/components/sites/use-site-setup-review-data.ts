@@ -144,9 +144,10 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
         : repo
           ? defaultLocalDomain(repoSlug(repo.fullName))
           : '')
+    // A bare clone has no server configuration; only a link or an existing site names one.
     const environment =
       plan?.import.environment ||
-      (request.kind === 'link' ? request.pending.fields.environment || 'main' : 'main')
+      (request.kind === 'link' ? request.pending.fields.environment || 'main' : '')
     setChoices(
       defaultSetupChoices({
         plan,
