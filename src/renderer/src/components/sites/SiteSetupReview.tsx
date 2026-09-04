@@ -8,6 +8,7 @@
 
 import { Download, Lock, Server } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { repoSlug } from '../../../../shared/site-local-domain'
 import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
@@ -18,7 +19,7 @@ import type { SetupRunStepId, SiteSetupChoices, SiteSetupSource } from './site-s
 import { getSiteSetupReviewStrings } from './site-setup-review-strings'
 import { getSiteToggleLabels } from './site-toggle-labels'
 import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
-import { SiteSetupServePopover } from './SiteSetupServePopover'
+import { SiteSetupServeEditToggle, SiteSetupServeEditor } from './SiteSetupServeEditor'
 
 /** Written for the user, straight from the run planner's `blockedBy` (site-setup-plan.ts). */
 const IMPORT_BLOCKED_REASON: Record<string, string> = {
@@ -55,6 +56,7 @@ export function SiteSetupReview({
 }): React.JSX.Element {
   const strings = getSiteSetupReviewStrings()
   const toggleLabels = getSiteToggleLabels()
+  const [serveEditing, setServeEditing] = useState(false)
 
   const stepState = (id: SetupRunStepId): 'available' | 'locked' =>
     lockedSteps.includes(id) ? 'locked' : 'available'
@@ -121,17 +123,10 @@ export function SiteSetupReview({
           state={stepState('serve')}
           control={
             <>
-              <SiteSetupServePopover
-                stacks={availableStacks}
-                value={{ stack: choices.serve.stack, domain: choices.serve.domain }}
-                ruledOut={serveRuledOut}
-                disabled={stepState('serve') === 'locked'}
-                onChange={(next) =>
-                  onChange({
-                    ...choices,
-                    serve: { ...choices.serve, stack: next.stack, domain: next.domain }
-                  })
-                }
+              <SiteSetupServeEditToggle
+                expanded={serveEditing}
+                onToggle={() => setServeEditing((open) => !open)}
+                disabled={stepState('serve') === 'locked' || !choices.serve.enabled}
               />
               <Checkbox
                 checked={choices.serve.enabled}
@@ -142,7 +137,21 @@ export function SiteSetupReview({
               />
             </>
           }
-        />
+        >
+          {serveEditing && choices.serve.enabled ? (
+            <SiteSetupServeEditor
+              stacks={availableStacks}
+              value={{ stack: choices.serve.stack, domain: choices.serve.domain }}
+              ruledOut={serveRuledOut}
+              onChange={(next) =>
+                onChange({
+                  ...choices,
+                  serve: { ...choices.serve, stack: next.stack, domain: next.domain }
+                })
+              }
+            />
+          ) : null}
+        </SiteSetupRow>
       )}
 
       {choices.serve.enabled &&

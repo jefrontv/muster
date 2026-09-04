@@ -1,7 +1,4 @@
-// Copy for the Review screen of the redesigned setup dialog (SiteSetupReview, SiteSetupRow
-// content, SiteSetupServePopover). Separate catalog from site-setup-strings, which is the paged
-// SiteSetupContinuation this screen replaces — that component is still mounted from the old
-// entry points until they are cut over, so its strings and this screen's must not collide.
+// Copy for the Review screen of the setup dialog (SiteSetupReview, its rows, SiteSetupServeEditor).
 //
 // Every line here is written for a plan that has not run yet: "will clone", "Create", "Trust" —
 // never a past-tense result verb (STYLEGUIDE "UI copy must not overclaim"). The one exception is

@@ -268,4 +268,36 @@ describe('SiteSetupReview', () => {
     )
     expect(document.body.textContent).not.toContain('Import from production')
   })
+  it('expands the serve editor in place from the pencil and edits the domain through onChange', async () => {
+    const changes: SiteSetupChoices[] = []
+    await render(
+      <SiteSetupReview
+        source={REPO_SOURCE}
+        plan={null}
+        availableStacks={['localwp', 'agent-local']}
+        cert={null}
+        choices={choices()}
+        onChange={(next) => changes.push(next)}
+      />
+    )
+    expect(document.getElementById('site-setup-serve-editor')).toBeNull()
+    const pencil = document.querySelector<HTMLButtonElement>('button[aria-expanded]')
+    await act(async () => {
+      pencil?.click()
+    })
+    expect(pencil?.getAttribute('aria-expanded')).toBe('true')
+    const editor = document.getElementById('site-setup-serve-editor')
+    expect(editor).not.toBeNull()
+    // Inline, not floating: the editor is inside the same row as the pencil.
+    expect(pencil?.parentElement?.parentElement?.contains(editor)).toBe(true)
+    const input = editor?.querySelector<HTMLInputElement>('input')
+    await act(async () => {
+      if (input) {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+        setter?.call(input, 'flex.test')
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+      }
+    })
+    expect(changes.at(-1)?.serve.domain).toBe('flex.test')
+  })
 })
