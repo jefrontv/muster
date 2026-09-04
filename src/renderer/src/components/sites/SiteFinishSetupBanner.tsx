@@ -32,8 +32,9 @@ export function SiteFinishSetupBanner({
       if (cancelled || !plan?.ok) {
         return
       }
-      const stack = plan.value.stages.find((stage) => stage.id === 'stack')
-      if (stack && (stack.state === 'active' || stack.state === 'blocked')) {
+      // Readiness, not the stage word: the planner reports 'pending' for a folder nothing serves.
+      const { stack } = plan.value
+      if (stack.supported && stack.stack === 'plain' && stack.alternatives.length > 0) {
         setReason('no-stack')
         return
       }

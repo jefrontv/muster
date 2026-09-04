@@ -154,7 +154,8 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
         domain,
         stack: pickDefaultStack(availableStacks, plan?.stack.stack ?? null),
         certSupported: true,
-        environment
+        environment,
+        importFromSource: request.kind === 'link'
       })
     )
   }, [seedKey, availableStacks, plan, planSiteId, repo, request])

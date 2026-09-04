@@ -88,11 +88,14 @@ export function defaultSetupChoices(args: {
   stack: SiteLocalStack | null
   certSupported: boolean
   environment: string
+  /** True when the source itself brings server details (a link), so the plan's import readiness is about the wrong state. */
+  importFromSource?: boolean
 }): SiteSetupChoices {
   const stackAvailable = args.plan ? args.plan.stack.supported : true
-  const importAvailable = args.plan
-    ? args.plan.import.ready || args.plan.import.confirmable
-    : args.environment.length > 0
+  const importAvailable =
+    args.plan && !args.importFromSource
+      ? args.plan.import.ready || args.plan.import.confirmable
+      : args.environment.length > 0
   return {
     serve: {
       enabled: stackAvailable && args.stack !== null,

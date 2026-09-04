@@ -79,13 +79,15 @@ export function SiteSetupReview({
     ? strings.httpsAlreadyTrusted.replace('{{domain}}', serveDomain)
     : strings.httpsTrust.replace('{{domain}}', serveDomain)
 
+  // A link carries the server details the pre-bind record lacks, so its plan's import readiness
+  // describes the wrong state; the runner re-plans after the bind is written.
   const importBlockedReason =
-    plan && !plan.import.ready && !plan.import.confirmable
+    source.kind !== 'link' && plan && !plan.import.ready && !plan.import.confirmable
       ? (plan.import.blockedBy.map((reason) => IMPORT_BLOCKED_REASON[reason]).find(Boolean) ?? null)
       : !plan && choices.import.environment === ''
         ? strings.importNoEnvironment
         : null
-  const importRequiresConfirm = plan?.import.confirmable === true
+  const importRequiresConfirm = source.kind !== 'link' && plan?.import.confirmable === true
   const importCheckboxDisabled =
     stepState('import') === 'locked' || (importRequiresConfirm && !choices.import.confirmMismatch)
 

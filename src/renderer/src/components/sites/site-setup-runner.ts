@@ -94,6 +94,10 @@ function stepsFor(source: SiteSetupSource): SetupRunStep[] {
     if (id === 'register') {
       return source.kind !== 'site'
     }
+    // A bare clone carries no server configuration, so there is nothing an import could pull from.
+    if (id === 'import') {
+      return source.kind !== 'repo'
+    }
     return true
   }).map((id) => ({ id, state: 'pending', detail: '', log: [], percent: null, cancellable: false }))
 }

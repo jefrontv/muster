@@ -36,7 +36,8 @@ const SPINNER_DELAY_MS = 200
 
 type Pending = 'start' | 'stop' | 'setup' | 'rename' | ''
 
-type Detected = { stack: SiteLocalStack; domain: string; running: boolean }
+/** `siteId` is which folder the answer is about: a stale answer must never be applied to the next site. */
+type Detected = { siteId: string; stack: SiteLocalStack; domain: string; running: boolean }
 
 export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): React.JSX.Element {
   const { site } = summary
@@ -68,6 +69,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
       return null
     }
     setDetected({
+      siteId: site.id,
       stack: answer.value.stack,
       domain: answer.value.domain,
       // socketReady is "this site is up" for both stacks: a live LocalWP socket, and agent-local's
@@ -88,6 +90,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
       const answer = await window.api.siteStacks.detect(site.id)
       if (!cancelled && answer.ok) {
         setDetected({
+          siteId: site.id,
           stack: answer.value.stack,
           domain: answer.value.domain,
           running: answer.value.socketReady
@@ -105,7 +108,9 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
   // and the store refresh from writing the same patch twice.
   const appliedAutodetectRef = useRef('')
   useEffect(() => {
-    if (!detected) {
+    // The reset to null lands a render later than the site switch, so in this flush `detected` can
+    // still be the previous site's answer: applying it wrote one site's stack and domain onto another.
+    if (!detected || detected.siteId !== site.id) {
       return
     }
     const patch = siteStackAutodetectPatch(

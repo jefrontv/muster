@@ -154,28 +154,19 @@ describe('createSiteSetupRunner', () => {
     calls = []
   })
 
-  it('runs clone, register, plan, serve, https, import in order and finishes done', async () => {
-    const events = { emit: (_event: unknown) => {} }
-    const api = fakeApi({ calls, runEvents: events })
+  it('runs clone, register, plan, serve, https in order for a repo and finishes done', async () => {
+    const api = fakeApi({ calls })
     const runner = createSiteSetupRunner(api)
-    const running = runner.start(REPO_SOURCE, choices())
-    // Let the sequence reach the import, then settle its run.
-    for (let i = 0; i < 20 && !calls.includes('siteRuns.start'); i += 1) {
-      await flush()
-    }
-    events.emit({ type: 'log', runId: 'run-1', line: { text: 'pulling db' } })
-    events.emit({ type: 'status', runId: 'run-1', status: 'succeeded' })
-    await running
+    await runner.start(REPO_SOURCE, choices())
 
+    // No import step at all: a bare clone has no server configuration to pull from.
     expect(calls).toEqual([
       'clone /Sites',
       'sites.create',
       'plan',
       'previewMigration',
       'runMigration',
-      'cert.status',
-      'upsertEnvironment',
-      'siteRuns.start'
+      'cert.status'
     ])
     const snapshot = runner.snapshot()
     expect(snapshot.phase).toBe('done')
@@ -186,10 +177,8 @@ describe('createSiteSetupRunner', () => {
       'clone:done',
       'register:done',
       'serve:done',
-      'https:done',
-      'import:done'
+      'https:done'
     ])
-    expect(snapshot.steps.find((step) => step.id === 'import')?.log).toEqual(['pulling db'])
   })
 
   it('records a stage the fresh plan rules out as skipped, without attempting it', async () => {
@@ -206,10 +195,7 @@ describe('createSiteSetupRunner', () => {
       detail: 'LocalWP only runs on macOS.'
     })
     expect(steps.find((step) => step.id === 'https')?.state).toBe('skipped')
-    expect(steps.find((step) => step.id === 'import')).toMatchObject({
-      state: 'skipped',
-      detail: 'no-ssh-password'
-    })
+    expect(steps.some((step) => step.id === 'import')).toBe(false)
     expect(calls).not.toContain('runMigration')
     expect(calls).not.toContain('siteRuns.start')
     expect(runner.snapshot().phase).toBe('done')
@@ -227,7 +213,7 @@ describe('createSiteSetupRunner', () => {
       detail: 'Domain flex.local is already taken'
     })
     expect(steps.find((step) => step.id === 'https')?.state).toBe('not-run')
-    expect(steps.find((step) => step.id === 'import')?.state).toBe('not-run')
+    expect(steps.some((step) => step.id === 'import')).toBe(false)
     expect(runner.completedSteps()).toEqual(['clone', 'register'])
 
     // The user turns Serve off and retries: no second clone, no second create.
@@ -275,17 +261,22 @@ describe('createSiteSetupRunner', () => {
     expect(runner.snapshot().phase).toBe('failed')
   })
 
-  it('cancels a running import through siteRuns.cancel with its run id', async () => {
+  it('imports for an existing site, streams its log, and cancels through siteRuns.cancel with its run id', async () => {
     const events = { emit: (_event: unknown) => {} }
     const api = fakeApi({ calls, runEvents: events })
     const runner = createSiteSetupRunner(api)
-    const running = runner.start(REPO_SOURCE, choices())
+    const running = runner.start({ kind: 'site', siteId: 'site-1' }, choices())
     for (let i = 0; i < 20 && !calls.includes('siteRuns.start'); i += 1) {
       await flush()
     }
     await flush()
+    events.emit({ type: 'log', runId: 'run-1', line: { text: 'pulling db' } })
     runner.cancelCurrent()
     expect(calls).toContain('siteRuns.cancel run-1')
+    expect(calls.slice(0, 2)).toEqual(['plan', 'previewMigration'])
+    expect(runner.snapshot().steps.find((step) => step.id === 'import')?.log).toEqual([
+      'pulling db'
+    ])
     events.emit({ type: 'status', runId: 'run-1', status: 'cancelled' })
     await running
     expect(runner.snapshot().steps.find((step) => step.id === 'import')).toMatchObject({
