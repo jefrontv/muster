@@ -1,6 +1,5 @@
-// Copy for the bind dialog. Split out of SiteBindDialog.tsx so the component stays readable and so
-// the module-scope table can be wrapped in createLocalizedCatalog — a bare module-scope translate()
-// would be captured at import time and never refresh after a language change.
+// Copy for the link (muster://) rows of the setup dialog and the field labels the link's summary
+// table uses. A catalog rather than a bare module-scope object so it refreshes on language change.
 
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
@@ -65,10 +64,6 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
   secretFailedToast: translate(
     'auto.components.sites.SiteBindDialog.secretFailedToast',
     'Site configured, but the password could not be stored'
-  ),
-  cloneFailedToast: translate(
-    'auto.components.sites.SiteBindDialog.cloneFailedToast',
-    'Clone failed'
   )
 }))
 
