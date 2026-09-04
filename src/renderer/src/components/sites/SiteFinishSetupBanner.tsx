@@ -19,6 +19,9 @@ export function SiteFinishSetupBanner({
 }): React.JSX.Element | null {
   const { site } = summary
   const openFinish = useAppStore((s) => s.setFinishSiteSetupRequest)
+  // Re-probe when a setup dialog closes: it is what changes the answer, and the record it wrote
+  // to may not have changed in a way the deps below can see (a trusted cert is OS state).
+  const setupOpenFor = useAppStore((s) => s.finishSiteSetupRequest?.siteId ?? '')
   const [reason, setReason] = useState<Reason | null>(null)
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export function SiteFinishSetupBanner({
     return () => {
       cancelled = true
     }
-  }, [site.id, site.localDomain, site.localStack, summary.pathExists])
+  }, [site.id, site.localDomain, site.localStack, summary.pathExists, setupOpenFor])
 
   if (!reason) {
     return null

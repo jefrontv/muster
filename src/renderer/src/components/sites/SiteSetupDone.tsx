@@ -1,7 +1,8 @@
-// Screen 4 from the redesign plan. The dialog renders the "<site> is ready" heading; this is the
-// body: the settled step list, the one-time wp-admin credentials when LocalWP created them, and
-// the Close / Open footer.
+// The dialog renders the "<site> is ready" heading; this is the body. It reads like the run screen
+// it follows - the same rows, now settled - with the one thing the user wants next up top: the
+// local address. Credentials appear only when this run created the LocalWP install they belong to.
 
+import { Check, Copy, Globe, Minus } from 'lucide-react'
 import type React from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,7 @@ import { LOCALWP_ADMIN_EMAIL, LOCALWP_ADMIN_PASSWORD } from '../../../../shared/
 import type { SetupRunStep, SetupRunStepId } from './site-setup-choices'
 import { SETUP_RUN_STEP_ORDER } from './site-setup-choices'
 import { getSiteSetupRunStrings, type SiteSetupRunStrings } from './site-setup-run-strings'
+import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
 
 export type SiteSetupDoneProps = {
   steps: SetupRunStep[]
@@ -35,6 +37,21 @@ async function copyValue(value: string, copiedLabel: string): Promise<void> {
   toast.success(copiedLabel)
 }
 
+function CopyButton({ value, label }: { value: string; label: string }): React.JSX.Element {
+  const strings = getSiteSetupRunStrings()
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      aria-label={`${strings.copy} ${label}`}
+      onClick={() => void copyValue(value, strings.copied)}
+    >
+      <Copy />
+    </Button>
+  )
+}
+
 export function SiteSetupDone({
   steps,
   siteLabel,
@@ -48,59 +65,75 @@ export function SiteSetupDone({
   for (const step of steps) {
     stepById[step.id] = step
   }
+  const httpsDone = stepById.https?.state === 'done'
+  const url = domain.length > 0 ? `${httpsDone ? 'https' : 'http'}://${domain}` : ''
 
   return (
     <div className="space-y-4" aria-label={siteLabel}>
-      <ul className="space-y-1 text-sm">
+      {url.length > 0 ? (
+        <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-2.5">
+          <Globe className="size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">{strings.localAddress}</p>
+            <p className="truncate font-mono text-sm">{url}</p>
+          </div>
+          <CopyButton value={url} label={strings.localAddress} />
+        </div>
+      ) : null}
+
+      <SiteSetupRowList>
         {VISIBLE_STEP_IDS.map((id) => {
           const step = stepById[id]
-          if (!step || step.state === 'not-run') {
+          if (!step || step.state === 'not-run' || step.state === 'pending') {
             return null
           }
           const title = strings[STEP_TITLE_KEYS[id]]
-          if (step.state === 'skipped') {
-            return (
-              <li key={id} className="text-muted-foreground">
-                – {strings.skippedPrefix.replace('{{title}}', title)}
-                {step.detail.length > 0 ? `: ${step.detail}` : ''}
-              </li>
-            )
-          }
-          return <li key={id}>✓ {step.detail.length > 0 ? step.detail : title}</li>
+          const skipped = step.state === 'skipped'
+          return (
+            <SiteSetupRow
+              key={id}
+              icon={
+                skipped ? (
+                  <Minus className="size-4 text-muted-foreground" />
+                ) : (
+                  <Check className="size-4 text-green-600 dark:text-green-500" />
+                )
+              }
+              title={title}
+              summary={
+                skipped
+                  ? step.detail.length > 0
+                    ? `${strings.skipped} · ${step.detail}`
+                    : strings.skipped
+                  : step.detail
+              }
+              state={skipped ? 'locked' : 'available'}
+            />
+          )
         })}
-      </ul>
+      </SiteSetupRowList>
 
       {showAdminCredentials ? (
-        <div className="space-y-1.5 rounded-md border border-border bg-muted/40 p-3">
-          <div className="flex items-center gap-2 text-xs font-medium">
-            {strings.adminAccountLabel}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs">{LOCALWP_ADMIN_EMAIL}</span>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => void copyValue(LOCALWP_ADMIN_EMAIL, strings.copied)}
-            >
-              {strings.copy}
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs">{LOCALWP_ADMIN_PASSWORD}</span>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => void copyValue(LOCALWP_ADMIN_PASSWORD, strings.copied)}
-            >
-              {strings.copy}
-            </Button>
-          </div>
+        <div className="space-y-2 rounded-md border border-border px-3 py-2.5">
+          <p className="text-xs font-medium">{strings.adminAccountLabel}</p>
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-xs">
+            <dt className="text-muted-foreground">{strings.adminEmail}</dt>
+            <dd className="truncate font-mono">{LOCALWP_ADMIN_EMAIL}</dd>
+            <dd>
+              <CopyButton value={LOCALWP_ADMIN_EMAIL} label={strings.adminEmail} />
+            </dd>
+            <dt className="text-muted-foreground">{strings.adminPassword}</dt>
+            <dd className="truncate font-mono">{LOCALWP_ADMIN_PASSWORD}</dd>
+            <dd>
+              <CopyButton value={LOCALWP_ADMIN_PASSWORD} label={strings.adminPassword} />
+            </dd>
+          </dl>
           <p className="text-[11px] text-muted-foreground">{strings.adminAccountNotice}</p>
         </div>
       ) : null}
 
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="outline" onClick={onClose}>
           {strings.close}
         </Button>
         {onOpenSite !== null ? (
