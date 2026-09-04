@@ -6,8 +6,9 @@
 // the outer one read a blocked migration as success, which is why each is checked here.
 
 import { LOCALWP_ADMIN_EMAIL, LOCALWP_ADMIN_PASSWORD } from '../../../../shared/site-setup-defaults'
-import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
+import { findSetupStage, type SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
 import { repoSlug } from '../../../../shared/site-local-domain'
+import { SITE_IMPORT_TOGGLES } from '../../../../shared/site-types'
 import { rememberLocalStackChoice } from './last-local-stack-choice'
 import type {
   SetupRunStep,
@@ -116,6 +117,24 @@ export async function runRegister(ctx: StepContext): Promise<void> {
 /** One plan read after the site exists; rules out what the review could only guess at. */
 export async function reconcile(ctx: StepContext): Promise<void> {
   const { source, choices } = ctx
+  // The planner reads import readiness off the environment record, so the toggles the user picked
+  // have to be on it before the plan is asked - otherwise it answers "no steps selected".
+  const hasImportStep = ctx.state().steps.some((step) => step.id === 'import')
+  if (hasImportStep && choices.import.enabled && choices.import.environment.length > 0) {
+    const saved = await ctx.api.sites.upsertEnvironment({
+      siteId: ctx.state().siteId,
+      name: choices.import.environment,
+      patch: Object.fromEntries(
+        SITE_IMPORT_TOGGLES.map((toggle) => [
+          toggle.key,
+          choices.import.toggles[toggle.key] ?? true
+        ])
+      )
+    })
+    if (!saved.ok) {
+      throw new StepFailure(saved.error)
+    }
+  }
   const reponame =
     source.kind === 'link'
       ? source.pending.fields.reponame
@@ -147,7 +166,7 @@ export async function reconcile(ctx: StepContext): Promise<void> {
   if (!choices.import.enabled) {
     ctx.skip('import', strings.declined)
   } else if (!plan.import.ready && !plan.import.confirmable) {
-    ctx.skip('import', plan.import.blockedBy[0] ?? strings.importUnavailable)
+    ctx.skip('import', findSetupStage(plan, 'import')?.reason || strings.importUnavailable)
   } else if (plan.import.confirmable && !choices.import.confirmMismatch) {
     ctx.skip('import', strings.importMismatchDeclined)
   }

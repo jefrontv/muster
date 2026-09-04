@@ -6,6 +6,7 @@
 // 'unavailable' greys the row and swaps the summary for `reason`; 'locked' greys only the control.
 
 import type React from 'react'
+import { Children } from 'react'
 import { cn } from '@/lib/utils'
 
 export type SiteSetupRowProps = {
@@ -67,7 +68,8 @@ export function SiteSetupRow({
       >
         {control}
       </div>
-      {!unavailable && children ? (
+      {/* Callers pass conditional children; an all-null slot must not leave its padding behind. */}
+      {!unavailable && Children.toArray(children).length > 0 ? (
         <div className="col-start-2 col-span-2 space-y-2 pt-2">{children}</div>
       ) : null}
     </div>

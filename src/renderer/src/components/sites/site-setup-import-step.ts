@@ -1,7 +1,6 @@
 // The import step of a site setup: persist the chosen toggles, start the run, and follow its
 // events to a terminal status. Split from site-setup-run-steps.ts for size; same StepContext.
 
-import { SITE_IMPORT_TOGGLES } from '../../../../shared/site-types'
 import { StepFailure, type StepContext } from './site-setup-run-steps'
 import { getSiteSetupRunnerStrings } from './site-setup-runner-strings'
 
@@ -12,17 +11,6 @@ export async function runImport(ctx: StepContext): Promise<void> {
   const strings = getSiteSetupRunnerStrings()
   const environment = ctx.plan?.import.environment || choices.import.environment
   ctx.patchStep('import', { state: 'running' })
-  // The planner decides what may run from the environment's toggles, so they are written first.
-  const saved = await ctx.api.sites.upsertEnvironment({
-    siteId: ctx.state().siteId,
-    name: environment,
-    patch: Object.fromEntries(
-      SITE_IMPORT_TOGGLES.map((toggle) => [toggle.key, choices.import.toggles[toggle.key] ?? true])
-    )
-  })
-  if (!saved.ok) {
-    throw new StepFailure(saved.error)
-  }
 
   let runId = ''
   const buffered = new Map<string, string[]>()

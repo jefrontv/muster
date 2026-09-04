@@ -273,7 +273,8 @@ describe('createSiteSetupRunner', () => {
     events.emit({ type: 'log', runId: 'run-1', line: { text: 'pulling db' } })
     runner.cancelCurrent()
     expect(calls).toContain('siteRuns.cancel run-1')
-    expect(calls.slice(0, 2)).toEqual(['plan', 'previewMigration'])
+    // Toggles land on the environment before the plan is read, or it would report no steps.
+    expect(calls.slice(0, 3)).toEqual(['upsertEnvironment', 'plan', 'previewMigration'])
     expect(runner.snapshot().steps.find((step) => step.id === 'import')?.log).toEqual([
       'pulling db'
     ])
