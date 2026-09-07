@@ -13762,6 +13762,16 @@
           "stageImport": "Importing",
           "stageDone": "Ready",
           "stageFailed": "Needs attention"
+        },
+        "SiteEditableField": {
+          "edit": "Edit {{field}}",
+          "save": "Save {{field}}",
+          "cancel": "Cancel editing {{field}}",
+          "suggestions": "{{field}} used by other sites",
+          "editTip": "Edit",
+          "saveTip": "Save",
+          "cancelTip": "Discard changes",
+          "enterKey": "Enter"
         }
       },
       "activecollab": {

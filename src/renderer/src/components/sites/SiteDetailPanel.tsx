@@ -6,10 +6,10 @@ import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
+import { SiteEditableField } from './SiteEditableField'
+import { collectSiteSuggestions } from './site-field-suggestions'
 import { SiteEnvironmentSection } from './SiteEnvironmentSection'
 import { SiteFinishSetupBanner } from './SiteFinishSetupBanner'
 import { SiteStepLibrarySection } from './SiteStepLibrarySection'
@@ -23,21 +23,26 @@ type SiteDetailPanelProps = {
   summary: SiteSummary
 }
 
+// `suggestAcrossSites` marks the fields a shop tends to keep identical everywhere; the local
+// domain is per-site identity, so offering another site's domain there would only invite a clash.
 const getLocalFields = createLocalizedCatalog(() => [
   {
     key: 'localDomain' as const,
     label: translate('auto.components.sites.SiteDetailPanel.localDomain', 'Local domain'),
-    placeholder: translate('auto.components.sites.SiteDetailPanel.localDomainHint', 'site.local')
+    placeholder: translate('auto.components.sites.SiteDetailPanel.localDomainHint', 'site.local'),
+    suggestAcrossSites: false
   },
   {
     key: 'localWpRoot' as const,
     label: translate('auto.components.sites.SiteDetailPanel.localWpRoot', 'WordPress subpath'),
-    placeholder: translate('auto.components.sites.SiteDetailPanel.localWpRootHint', 'app/public')
+    placeholder: translate('auto.components.sites.SiteDetailPanel.localWpRootHint', 'app/public'),
+    suggestAcrossSites: true
   },
   {
     key: 'dbUser' as const,
     label: translate('auto.components.sites.SiteDetailPanel.dbUser', 'Local DB user'),
-    placeholder: translate('auto.components.sites.SiteDetailPanel.dbUserHint', 'root')
+    placeholder: translate('auto.components.sites.SiteDetailPanel.dbUserHint', 'root'),
+    suggestAcrossSites: true
   },
   {
     key: 'dbSocket' as const,
@@ -45,12 +50,15 @@ const getLocalFields = createLocalizedCatalog(() => [
     placeholder: translate(
       'auto.components.sites.SiteDetailPanel.dbSocketHint',
       '/…/mysql/mysqld.sock'
-    )
+    ),
+    suggestAcrossSites: true
   }
 ])
 
 export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.Element {
   const updateSite = useAppStore((state) => state.updateSite)
+  // Every configured site, so a field can offer what its siblings already use.
+  const sites = useAppStore((state) => state.sites)
   const setSiteSecret = useAppStore((state) => state.setSiteSecret)
   const upsertSiteEnvironment = useAppStore((state) => state.upsertSiteEnvironment)
   const removeSiteEnvironment = useAppStore((state) => state.removeSiteEnvironment)
@@ -106,18 +114,17 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         <div className="grid gap-3 sm:grid-cols-2">
           {getLocalFields().map((field) => (
             <Fragment key={field.key}>
-              <div className="space-y-1">
-                <Label className="text-xs">{field.label}</Label>
-                <Input
-                  value={site[field.key]}
-                  placeholder={field.placeholder}
-                  onChange={(event) =>
-                    void updateSite(site.id, {
-                      [field.key]: event.target.value
-                    })
-                  }
-                />
-              </div>
+              <SiteEditableField
+                label={field.label}
+                value={site[field.key]}
+                placeholder={field.placeholder}
+                suggestions={
+                  field.suggestAcrossSites
+                    ? collectSiteSuggestions(sites, field.key, site.id)
+                    : undefined
+                }
+                onCommit={(next) => void updateSite(site.id, { [field.key]: next })}
+              />
               {/* The db secret is keyed per environment (an ocsites carry-over) but authenticates
                   the LOCAL database — see site-run-config.ts — so it belongs beside the local user
                   rather than in a password block under the remote settings. */}
@@ -227,6 +234,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         {viewedEnvironment ? (
           <SiteEnvironmentSection
             summary={summary}
+            allSummaries={sites}
             environmentName={viewedName}
             environment={viewedEnvironment}
             onPatch={patchEnvironment}

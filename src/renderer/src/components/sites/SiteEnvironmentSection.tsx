@@ -11,12 +11,17 @@ import { getSiteToggleLabels } from './site-toggle-labels'
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { SiteEditableField } from './SiteEditableField'
+import {
+  collectSiteEnvironmentSuggestions,
+  type SiteEnvironmentSuggestionField
+} from './site-field-suggestions'
 import { SiteSecretField } from './SiteSecretField'
 
 type SiteEnvironmentSectionProps = {
   summary: SiteSummary
+  /** Every site, so a field can offer the values its siblings already use. */
+  allSummaries: readonly SiteSummary[]
   environmentName: string
   environment: SiteEnvironment
   onPatch: (patch: Partial<SiteEnvironment>) => void
@@ -82,6 +87,7 @@ const getTextFields = createLocalizedCatalog(() => [
 
 export function SiteEnvironmentSection({
   summary,
+  allSummaries,
   environmentName,
   environment,
   onPatch,
@@ -99,27 +105,31 @@ export function SiteEnvironmentSection({
           <Fragment key={field.key}>
             {/* Port rides in the host's cell rather than the field list: a row of its own would
                 push every later field one slot and split user from its password. */}
-            <div className={field.key === 'hostname' ? 'flex gap-2' : 'space-y-1'}>
-              <div className="min-w-0 flex-1 space-y-1">
-                <Label className="text-xs">{field.label}</Label>
-                <Input
-                  value={environment[field.key]}
-                  placeholder={field.placeholder}
-                  onChange={(event) => onPatch({ [field.key]: event.target.value })}
-                />
-              </div>
+            <div className={field.key === 'hostname' ? 'flex gap-2' : undefined}>
+              <SiteEditableField
+                className={field.key === 'hostname' ? 'min-w-0 flex-1' : undefined}
+                label={field.label}
+                value={environment[field.key]}
+                placeholder={field.placeholder}
+                suggestions={collectSiteEnvironmentSuggestions(
+                  allSummaries,
+                  field.key satisfies SiteEnvironmentSuggestionField,
+                  summary.site.id
+                )}
+                onCommit={(next) => onPatch({ [field.key]: next })}
+              />
               {field.key === 'hostname' ? (
-                <div className="w-20 shrink-0 space-y-1">
-                  <Label className="text-xs">
-                    {translate('auto.components.sites.SiteEnvironmentSection.sshPort', 'SSH port')}
-                  </Label>
-                  <Input
-                    value={environment.sshPort ?? ''}
-                    placeholder="22"
-                    inputMode="numeric"
-                    onChange={(event) => onPatch({ sshPort: event.target.value })}
-                  />
-                </div>
+                <SiteEditableField
+                  className="w-24 shrink-0"
+                  label={translate(
+                    'auto.components.sites.SiteEnvironmentSection.sshPort',
+                    'SSH port'
+                  )}
+                  value={environment.sshPort ?? ''}
+                  placeholder="22"
+                  inputMode="numeric"
+                  onCommit={(next) => onPatch({ sshPort: next })}
+                />
               ) : null}
             </div>
             {/* The password belongs beside the user it authenticates, not in a block of its own. */}

@@ -27,6 +27,7 @@ vi.mock('./SiteDbSnapshotsSection', () => ({ SiteDbSnapshotsSection: () => null 
 vi.mock('./SiteLocalStackControl', () => ({ SiteLocalStackControl: () => null }))
 
 const storeMocks = vi.hoisted(() => ({
+  sites: [],
   updateSite: vi.fn().mockResolvedValue(null),
   setSiteSecret: vi.fn().mockResolvedValue(null),
   upsertSiteEnvironment: vi.fn().mockResolvedValue(null),
@@ -179,9 +180,11 @@ describe('SiteDetailPanel environment chips', () => {
     await render(summary())
     await click(chip('dev'))
 
-    const input = [...document.body.querySelectorAll<HTMLInputElement>('input')].find(
-      (candidate) => candidate.value === 'dev.example.com'
+    // Fields are locked until asked: unlock, type, then commit.
+    await click(
+      document.body.querySelector<HTMLButtonElement>('button[aria-label="Edit SSH host"]')
     )
+    const input = document.body.querySelector<HTMLInputElement>('input:not([readonly])')
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
         input,
@@ -189,7 +192,11 @@ describe('SiteDetailPanel environment chips', () => {
       )
       input?.dispatchEvent(new Event('input', { bubbles: true }))
     })
+    expect(storeMocks.upsertSiteEnvironment).not.toHaveBeenCalled()
 
+    await click(
+      document.body.querySelector<HTMLButtonElement>('button[aria-label="Save SSH host"]')
+    )
     expect(storeMocks.upsertSiteEnvironment).toHaveBeenCalledWith('site-1', 'dev', {
       hostname: 'dev2.example.com'
     })
