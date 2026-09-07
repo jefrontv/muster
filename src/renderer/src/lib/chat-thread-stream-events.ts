@@ -7,6 +7,8 @@
 // "Working" with nothing to answer. Installed once from the app root instead,
 // threads keep streaming whatever the user is looking at.
 
+import { toast } from 'sonner'
+import { translate } from '../i18n/i18n'
 import { useAppStore } from '../store'
 import { generateChatThreadTitleAfterFirstTurn } from '../components/chat-mode/chat-thread-auto-title'
 import {
@@ -180,6 +182,20 @@ export function installChatThreadStreamEvents(): () => void {
       case 'permission-cancel':
         store.removeChatThreadPermissionRequest(event.threadId, event.requestId)
         break
+      case 'attachments-skipped': {
+        // Main dropped these before the turn went out; the turn itself still
+        // sent, so this is a warning, not a failed-turn banner.
+        const names = event.paths.map((path) => path.split(/[\\/]/).pop() ?? path)
+        toast.warning(
+          translate(
+            'lib.chat.thread.attachmentsSkipped',
+            '{{value0}} attachment(s) were not sent (unsupported type or over 4 MB).',
+            { value0: names.length }
+          ),
+          { description: names.join(', ') }
+        )
+        break
+      }
       case 'exit': {
         // Only unexpected deaths arrive here (intentional stops are silent);
         // dropping the session record flips ChatThreadView to its resume state.
@@ -187,6 +203,9 @@ export function installChatThreadStreamEvents(): () => void {
         if (session) {
           store.clearAgentLaunchConfig(session.paneKey)
         }
+        // The stderr tail is the only account of why the CLI died; the ended
+        // view reads it from the same slot the turn-failure banner uses.
+        store.setChatThreadLastError(event.threadId, event.error ?? null)
         cancelSealClear(event.threadId)
         store.clearChatThreadStreamingText(event.threadId)
         store.clearChatThreadPermissionRequests(event.threadId)

@@ -4,33 +4,29 @@
 // transport only streams deltas and lifecycle.
 
 import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process'
-import { homedir } from 'node:os'
-import { loginShellEnvironmentDelta } from '../startup/login-shell-environment'
+import { buildChatThreadStreamSpawnPlan } from './chat-thread-stream-spawn-plan'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder, resultModelWindows } from './chat-thread-stream-decode'
 import { recordClaudeModelSighting } from './claude-model-registry'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
-import { commandWithAppendedSystemPromptFile } from './chat-thread-stream-system-prompt'
+import {
+  commandWithAppendedSystemPromptFile,
+  removeChatThreadSystemPromptFile
+} from './chat-thread-stream-system-prompt'
 import {
   commandWithMcpConfigFile,
   removeChatThreadMcpConfigFile
 } from './chat-thread-stream-mcp-config'
-import { buildChatStreamUserContent, readChatStreamImages } from './chat-thread-stream-user-content'
+import {
+  buildChatStreamUserContent,
+  readChatStreamImages,
+  type ChatStreamImageRead
+} from './chat-thread-stream-user-content'
 import { buildPermissionControlResponse } from './chat-thread-permission-response'
 
 const STDERR_TAIL_LIMIT = 4_096
 const STOP_KILL_GRACE_MS = 1_500
-
-// Stale inherited hook coordinates would route this child's hook POSTs to a
-// dead receiver; strip them before injecting the live server's env.
-const INHERITED_HOOK_ENV_KEYS = [
-  'ORCA_AGENT_HOOK_PORT',
-  'ORCA_AGENT_HOOK_TOKEN',
-  'ORCA_AGENT_HOOK_ENV',
-  'ORCA_AGENT_HOOK_VERSION',
-  'ORCA_AGENT_HOOK_ENDPOINT'
-] as const
 
 export type ChatThreadStreamSender = {
   send: (channel: string, payload: ChatThreadStreamEvent) => void
@@ -71,8 +67,10 @@ type StreamEntry = {
   pendingPermissionRequests: Map<string, { toolName: string; input: unknown }>
   /** Outgoing control_request id counter (interrupts) — unique per child. */
   controlRequestCounter: number
-  /** Revokes the muster MCP token + deletes the config file; runs once. */
-  mcpCleanup: (() => void) | null
+  /** Revokes the muster MCP token and deletes the per-thread tmp files; runs once. */
+  cleanup: (() => void) | null
+  /** Renderer-facing event sink for this child (coalesced, pending-permission aware). */
+  emit: (event: ChatThreadStreamEvent) => void
 }
 
 const registry = new Map<string, StreamEntry>()
@@ -115,37 +113,27 @@ export function startChatThreadStream(
   const command = mcpRegistration
     ? commandWithMcpConfigFile(baseCommand, mcpRegistration, threadId)
     : baseCommand
-  const mcpCleanup =
-    mcp && mcpRegistration
-      ? (): void => {
-          mcp.revoke(threadId, mcpRegistration.token)
-          removeChatThreadMcpConfigFile(threadId)
-        }
-      : null
-
-  const mergedEnv: NodeJS.ProcessEnv = { ...process.env }
-  for (const key of INHERITED_HOOK_ENV_KEYS) {
-    delete mergedEnv[key]
+  const cleanup = (): void => {
+    if (mcp && mcpRegistration) {
+      mcp.revoke(threadId, mcpRegistration.token)
+      removeChatThreadMcpConfigFile(threadId)
+    }
+    removeChatThreadSystemPromptFile(threadId)
   }
-  // Sourcing the user's profile costs 0.3-1.8s and produces the same result
-  // every time, so a captured copy replaces the login shell once it is ready.
-  // Null means not captured (yet, or at all) — fall back to paying for it.
-  const loginEnv = (deps.loginShellEnv ?? loginShellEnvironmentDelta)()
-  Object.assign(mergedEnv, loginEnv ?? {}, env ?? {}, deps.hookEnv?.() ?? {})
 
-  // Same default-shell resolution the local PTY provider uses for POSIX spawns.
-  const shellPath = env?.SHELL || process.env.SHELL || '/bin/zsh'
+  const plan = buildChatThreadStreamSpawnPlan({
+    command,
+    ...(cwd ? { cwd } : {}),
+    ...(env ? { env } : {}),
+    ...(deps.hookEnv ? { hookEnv: deps.hookEnv } : {}),
+    ...(deps.loginShellEnv ? { loginShellEnv: deps.loginShellEnv } : {})
+  })
   const spawnFn = deps.spawn ?? defaultSpawn
   let child: ChildProcess
   try {
-    child = spawnFn(shellPath, [loginEnv ? '-c' : '-lc', command], {
-      // Standalone chats have no workspace dir; home beats inheriting the
-      // Electron process cwd (repo dir in dev, filesystem root when packaged).
-      cwd: cwd ?? homedir(),
-      env: mergedEnv
-    })
+    child = spawnFn(plan.shellPath, plan.args, plan.options)
   } catch (error) {
-    mcpCleanup?.()
+    cleanup()
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 
@@ -155,7 +143,8 @@ export function startChatThreadStream(
     killTimer: null,
     pendingPermissionRequests: new Map(),
     controlRequestCounter: 0,
-    mcpCleanup
+    cleanup,
+    emit: () => undefined
   }
   registry.set(threadId, entry)
 
@@ -170,7 +159,7 @@ export function startChatThreadStream(
     }
   }
   const emitter = createCoalescingStreamEmitter(threadId, send)
-  const emit = (event: ChatThreadStreamEvent): void => {
+  entry.emit = (event: ChatThreadStreamEvent): void => {
     // Book-keep pending can_use_tool requests so stop can deny what's open and
     // an allow verdict can echo the original input back.
     if (event.kind === 'permission-request') {
@@ -183,6 +172,7 @@ export function startChatThreadStream(
     }
     emitter.emit(event)
   }
+  const emit = entry.emit
   const decoder = createChatThreadStreamDecoder(threadId, emit, (record) => {
     // Learn every model the CLI reports so new models adapt without a release.
     for (const entry of resultModelWindows(record)) {
@@ -203,8 +193,8 @@ export function startChatThreadStream(
   child.on('close', (code) => {
     decoder.flush()
     emitter.dispose()
-    entry.mcpCleanup?.()
-    entry.mcpCleanup = null
+    entry.cleanup?.()
+    entry.cleanup = null
     if (entry.killTimer) {
       clearTimeout(entry.killTimer)
       entry.killTimer = null
@@ -241,13 +231,16 @@ export async function sendChatThreadStreamMessage(
   if (!registry.has(threadId)) {
     return false
   }
-  const { images } = imagePaths?.length
+  const { images, skipped }: ChatStreamImageRead = imagePaths?.length
     ? await readChatStreamImages(imagePaths)
-    : { images: [] as Awaited<ReturnType<typeof readChatStreamImages>>['images'] }
+    : { images: [], skipped: [] }
   // Re-check: the child can die during the file reads.
   const entry = registry.get(threadId)
   if (!entry) {
     return false
+  }
+  if (skipped.length > 0) {
+    entry.emit({ threadId, kind: 'attachments-skipped', paths: skipped })
   }
   const content = buildChatStreamUserContent(text, images)
   if (content.length === 0) {
@@ -336,8 +329,8 @@ export function stopChatThreadStream(threadId: string): void {
   }
   entry.pendingPermissionRequests.clear()
   entry.stopping = true
-  entry.mcpCleanup?.()
-  entry.mcpCleanup = null
+  entry.cleanup?.()
+  entry.cleanup = null
   registry.delete(threadId)
   try {
     entry.child.stdin?.end()

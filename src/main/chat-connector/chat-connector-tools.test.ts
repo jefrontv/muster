@@ -282,6 +282,18 @@ describe('thread tools', () => {
     expect(result.isError).toBe(true)
   })
 
+  it('refuses to move threads outside the scope', async () => {
+    const harness = createHarness({
+      threads: [thread(), thread({ id: 'other', workspaceId: null })]
+    })
+    const result = await call(harness, 'move_chat_to_workspace', {
+      threadId: 'other',
+      workspaceId: 'w1'
+    })
+    expect(result.isError).toBe(true)
+    expect(harness.state.threads[1].workspaceId).toBeNull()
+  })
+
   it('archives and unarchives in-scope threads', async () => {
     const harness = createHarness({ threads: [thread(), thread({ id: 't2' })] })
     await call(harness, 'archive_threads', { threadIds: ['t2'] })

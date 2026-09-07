@@ -116,6 +116,51 @@ describe('useChatDraftPrewarm', () => {
     expect(createChatThread).toHaveBeenLastCalledWith('w2', undefined, { activate: false })
   })
 
+  it('switching workspace mid-create discards the late thread and warms the new one', async () => {
+    const create = Promise.withResolvers<unknown>()
+    createChatThread.mockImplementationOnce(() => create.promise)
+    const { rerender, result } = renderHook(
+      ({ w }) => useChatDraftPrewarm({ draft: 'hello', workspaceId: w }),
+      { initialProps: { w: 'w1' as string | null } }
+    )
+    await flush()
+    expect(createChatThread).toHaveBeenCalledTimes(1)
+
+    state.chatWorkspaces.push({ id: 'w2', name: 'Other', directories: ['/tmp/other'] })
+    createChatThread.mockResolvedValue({ id: 't2', workspaceId: 'w2' })
+    rerender({ w: 'w2' })
+    await flush()
+    await act(async () => create.resolve(thread))
+
+    // w1's thread arrived after the switch: gone, never launched, never claimable.
+    expect(deleteChatThread).toHaveBeenCalledWith('t1')
+    expect(launchChatThreadSession).not.toHaveBeenCalledWith(expect.objectContaining({ thread }))
+    // And the switch did not leave w2 cold.
+    expect(createChatThread).toHaveBeenLastCalledWith('w2', undefined, { activate: false })
+    expect(result.current.claim()?.id).toBe('t2')
+  })
+
+  it('unmount mid-launch stops the orphaned session', async () => {
+    const launch = Promise.withResolvers<unknown>()
+    launchChatThreadSession.mockImplementationOnce(() => launch.promise)
+    const { unmount } = renderHook(() => useChatDraftPrewarm({ draft: 'hello', workspaceId: 'w1' }))
+    await flush()
+    expect(launchChatThreadSession).toHaveBeenCalledTimes(1)
+
+    unmount()
+    await act(async () => launch.resolve({ tabId: 'a', leafId: 'b', paneKey: 'a:b' }))
+
+    // The session is recorded first so deleteChatThread knows to stop its stream.
+    expect(setChatThreadSession).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ paneKey: 'a:b' })
+    )
+    expect(deleteChatThread).toHaveBeenCalledWith('t1')
+    expect(setChatThreadSession.mock.invocationCallOrder[0]).toBeLessThan(
+      deleteChatThread.mock.invocationCallOrder[0]
+    )
+  })
+
   it('cleans up after a launch that throws', async () => {
     launchChatThreadSession.mockRejectedValue(new Error('no claude'))
     const { result } = renderHook(() => useChatDraftPrewarm({ draft: 'hello', workspaceId: 'w1' }))

@@ -1,6 +1,9 @@
-import { readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { commandWithAppendedSystemPromptFile } from './chat-thread-stream-system-prompt'
+import {
+  commandWithAppendedSystemPromptFile,
+  removeChatThreadSystemPromptFile
+} from './chat-thread-stream-system-prompt'
 
 describe('commandWithAppendedSystemPromptFile', () => {
   it('writes the brief and appends the file flag', () => {
@@ -18,5 +21,14 @@ describe('commandWithAppendedSystemPromptFile', () => {
     } finally {
       rmSync(file, { force: true })
     }
+  })
+
+  it('remove deletes the brief and is idempotent', () => {
+    const command = commandWithAppendedSystemPromptFile('claude -p', 'brief', 't-brief-remove')
+    const file = /--append-system-prompt-file '([^']+)'/.exec(command)![1]!
+    expect(existsSync(file)).toBe(true)
+    removeChatThreadSystemPromptFile('t-brief-remove')
+    removeChatThreadSystemPromptFile('t-brief-remove')
+    expect(existsSync(file)).toBe(false)
   })
 })

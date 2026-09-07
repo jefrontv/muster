@@ -10,7 +10,7 @@
 // mid-sentence; submit adopts it. Abandoning the draft discards it, since an
 // unsent warm thread is an empty row in the sidebar and a live child process.
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
@@ -31,6 +31,10 @@ export function useChatDraftPrewarm(input: {
   const threadRef = useRef<ChatThread | null>(null)
   const startingRef = useRef(false)
   const claimedRef = useRef(false)
+  const mountedRef = useRef(true)
+  // Bumped when a warm-up finishes for a workspace the user already left, so
+  // the effect runs again and warms the current one.
+  const [rearmTick, setRearmTick] = useState(0)
 
   const discard = useCallback(() => {
     const thread = threadRef.current
@@ -72,34 +76,58 @@ export function useChatDraftPrewarm(input: {
       return
     }
     startingRef.current = true
+    const launchedFor = workspaceId
+    // Both awaits below can outlive a workspace switch or an unmount; a thread
+    // that lands afterwards belongs to nobody and must go, session included.
+    const stale = (): boolean => !mountedRef.current || warmedWorkspaceRef.current !== launchedFor
     void (async () => {
+      let thread: ChatThread | null = null
+      let discardedStale = false
       try {
         // activate: false keeps the hero mounted — the point is to warm the
         // agent without yanking the composer out from under the typist.
-        const thread = await store.createChatThread(workspaceId, undefined, { activate: false })
+        thread = await store.createChatThread(workspaceId, undefined, { activate: false })
         if (!thread) {
           return
         }
-        threadRef.current = thread
+        if (stale()) {
+          discardedStale = true
+          void useAppStore.getState().deleteChatThread(thread.id)
+          return
+        }
         const result = await launchChatThreadSession({ thread, workspace: workspace ?? null })
         if (result) {
+          // Recorded even when stale: deleteChatThread only stops streams it knows about.
           useAppStore.getState().setChatThreadSession(thread.id, result)
         }
+        if (stale()) {
+          discardedStale = true
+          void useAppStore.getState().deleteChatThread(thread.id)
+          return
+        }
+        threadRef.current = thread
       } catch {
         // A failed warm-up costs nothing: submit falls back to creating the
         // thread the old way and the user sees the original timing.
-        const failed = threadRef.current
-        threadRef.current = null
-        if (failed) {
-          void useAppStore.getState().deleteChatThread(failed.id)
+        if (thread) {
+          void useAppStore.getState().deleteChatThread(thread.id)
         }
       } finally {
         startingRef.current = false
+        if (discardedStale && mountedRef.current) {
+          setRearmTick((tick) => tick + 1)
+        }
       }
     })()
-  }, [wanted, workspaceId, discard])
+  }, [wanted, workspaceId, discard, rearmTick])
 
-  useEffect(() => discard, [discard])
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      discard()
+    }
+  }, [discard])
 
   return { claim, discard }
 }

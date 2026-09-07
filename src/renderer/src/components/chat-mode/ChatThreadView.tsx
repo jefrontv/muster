@@ -69,6 +69,8 @@ export function ChatThreadView({
     }
     launchingRef.current = true
     setError(null)
+    // A retry starts clean; the previous death's stderr must not outlive it.
+    useAppStore.getState().setChatThreadLastError(thread.id, null)
     const launchedForThreadId = thread.id
     void launchChatThreadSession({ thread, workspace })
       .then((result) => {
@@ -313,7 +315,9 @@ export function ChatThreadView({
               ? translate('auto.components.chat.thread.failed', 'The session could not start')
               : translate('auto.components.chat.thread.ended', 'This session ended')}
           </p>
-          {error ? <p className="max-w-md text-xs text-destructive">{error}</p> : null}
+          {(error ?? lastError) ? (
+            <p className="max-w-md break-words text-xs text-destructive">{error ?? lastError}</p>
+          ) : null}
           <Button
             size="sm"
             variant="outline"

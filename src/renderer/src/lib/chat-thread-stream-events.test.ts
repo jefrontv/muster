@@ -22,6 +22,13 @@ const storeState = vi.hoisted(() => ({
   updateChatThread: vi.fn(async (_id: string, _updates: Record<string, unknown>) => undefined)
 }))
 
+const toastWarning = vi.hoisted(() => vi.fn())
+
+vi.mock('sonner', () => ({ toast: { warning: toastWarning } }))
+vi.mock('../i18n/i18n', () => ({
+  translate: (_key: string, fallback: string, options?: Record<string, unknown>) =>
+    fallback.replace('{{value0}}', String(options?.value0))
+}))
 vi.mock('../store', () => ({ useAppStore: { getState: () => storeState } }))
 vi.mock('../components/chat-mode/chat-thread-auto-title', () => ({
   generateChatThreadTitleAfterFirstTurn: vi.fn(async () => undefined)
@@ -123,6 +130,34 @@ describe('installChatThreadStreamEvents', () => {
     })
 
     expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', 'Claude hit a rate limit')
+    stop()
+  })
+
+  it('keeps the stderr tail when the stream dies unexpectedly', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'exit', threadId: 't1', code: 1, error: 'fatal: bad --model' })
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', 'fatal: bad --model')
+
+    listener?.({ kind: 'exit', threadId: 't2', code: 0 })
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t2', null)
+    stop()
+  })
+
+  it('warns about attachments main dropped from a send', () => {
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({
+      kind: 'attachments-skipped',
+      threadId: 't1',
+      paths: ['/tmp/drops/notes.txt', '/tmp/drops/huge.png']
+    })
+
+    expect(toastWarning).toHaveBeenCalledWith(
+      '2 attachment(s) were not sent (unsupported type or over 4 MB).',
+      { description: 'notes.txt, huge.png' }
+    )
+    expect(storeState.setChatThreadLastError).not.toHaveBeenCalled()
     stop()
   })
 

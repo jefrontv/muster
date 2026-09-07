@@ -23,6 +23,8 @@ export type ChatThreadStreamEvent =
     }
   /** The CLI voided a pending can_use_tool request (turn interrupted). */
   | { threadId: string; kind: 'permission-cancel'; requestId: string }
+  /** Attachments dropped from a send (unsupported type, over the size cap, unreadable). */
+  | { threadId: string; kind: 'attachments-skipped'; paths: string[] }
   | { threadId: string; kind: 'exit'; code: number | null; error?: string }
 
 export type ChatThreadPermissionResponseArgs = {

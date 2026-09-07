@@ -74,7 +74,8 @@ export function moveChatToWorkspace(
   const { deps } = ctx
   const state = deps.getChatState()
   const threadId = typeof args.threadId === 'string' ? args.threadId : ctx.thread.id
-  const thread = state.threads.find((t) => t.id === threadId)
+  // Scope-limited like rename_thread: another workspace's chats are not the caller's to move.
+  const thread = ctx.scopedThreads.find((t) => t.id === threadId)
   if (!thread) {
     return toolFail(`No chat with id "${threadId}".`)
   }

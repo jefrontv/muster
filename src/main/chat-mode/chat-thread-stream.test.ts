@@ -1,5 +1,7 @@
 import { EventEmitter } from 'node:events'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 import type { ChildProcess } from 'node:child_process'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -351,6 +353,64 @@ describe('startChatThreadStream', () => {
     })
     await expect(sendChatThreadStreamMessage('missing', 'hello')).resolves.toBe(false)
     child.emit('close', 0)
+  })
+
+  it('reports dropped attachments before writing the turn', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'chat-stream-attach-'))
+    const png = join(dir, 'shot.png')
+    const notes = join(dir, 'notes.txt')
+    writeFileSync(png, Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+    writeFileSync(notes, 'not an image')
+    const child = createFakeChild()
+    const { sent, sender } = createSender()
+    startChatThreadStream(
+      { threadId: 't1', command: 'claude -p', sender },
+      { spawn: () => child, hookEnv: () => ({}) }
+    )
+    try {
+      await expect(sendChatThreadStreamMessage('t1', 'look', [png, notes])).resolves.toBe(true)
+      expect(sent).toEqual([{ threadId: 't1', kind: 'attachments-skipped', paths: [notes] }])
+      const written = JSON.parse((child.stdin.read() as Buffer).toString().trim())
+      expect(written.message.content.map((block: { type: string }) => block.type)).toEqual([
+        'image',
+        'text'
+      ])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+      child.emit('close', 0)
+    }
+  })
+
+  it('removes the workspace brief file on stop and on an unexpected close', () => {
+    const briefFor = (command: string): string | undefined =>
+      /--append-system-prompt-file '([^']+)'/.exec(command)?.[1]
+    const stopped = createFakeChild()
+    const crashed = createFakeChild()
+    const { sender } = createSender()
+    const commands: string[] = []
+    const spawn = (child: FakeChild) => (command: string, args: string[]) => {
+      commands.push(args[1] ?? command)
+      return child
+    }
+
+    startChatThreadStream(
+      { threadId: 't-brief-stop', command: 'claude -p', appendSystemPrompt: 'Brief A', sender },
+      { spawn: spawn(stopped), hookEnv: () => ({}) }
+    )
+    const stoppedFile = briefFor(commands[0]!)
+    expect(readFileSync(stoppedFile!, 'utf8')).toBe('Brief A')
+    stopChatThreadStream('t-brief-stop')
+    expect(existsSync(stoppedFile!)).toBe(false)
+    stopped.emit('close', 0)
+
+    startChatThreadStream(
+      { threadId: 't-brief-crash', command: 'claude -p', appendSystemPrompt: 'Brief B', sender },
+      { spawn: spawn(crashed), hookEnv: () => ({}) }
+    )
+    const crashedFile = briefFor(commands[1]!)
+    expect(existsSync(crashedFile!)).toBe(true)
+    crashed.emit('close', 1)
+    expect(existsSync(crashedFile!)).toBe(false)
   })
 
   it('suppresses the exit event for an intentional stop and is idempotent', async () => {

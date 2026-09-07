@@ -39,13 +39,17 @@ export function buildChatStreamUserContent(
   ]
 }
 
+export type ChatStreamImageRead = {
+  images: { mediaType: string; dataBase64: string }[]
+  /** Paths dropped: unsupported extension, over the size cap, or unreadable. */
+  skipped: string[]
+}
+
 /** Read attachment paths into base64 image payloads. Unsupported extensions,
  *  oversized files, and read failures are skipped (reported back by path) so
  *  one bad file never blocks the send. */
-export async function readChatStreamImages(
-  paths: readonly string[]
-): Promise<{ images: { mediaType: string; dataBase64: string }[]; skipped: string[] }> {
-  const images: { mediaType: string; dataBase64: string }[] = []
+export async function readChatStreamImages(paths: readonly string[]): Promise<ChatStreamImageRead> {
+  const images: ChatStreamImageRead['images'] = []
   const skipped: string[] = []
   for (const path of paths) {
     const mediaType = chatStreamImageMediaType(path)
