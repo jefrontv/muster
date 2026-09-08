@@ -8,6 +8,7 @@ import type { PendingSiteBind } from '../../../../shared/site-bind-types'
 import type { CloneSourceRepo } from '../../../../shared/site-clone-source-types'
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
 import {
+  DEFAULT_SITE_ENVIRONMENT_NAME,
   SITE_IMPORT_TOGGLES,
   type SiteImportToggleKey,
   type SiteLocalStack
@@ -73,6 +74,32 @@ export function allImportToggles(): Record<SiteImportToggleKey, boolean> {
     SiteImportToggleKey,
     boolean
   >
+}
+
+/**
+ * Which environment the whole setup is about.
+ *
+ * A link's `environment=` is an instruction, and `siteBind.confirm` writes the link's server
+ * details to exactly that name. The plan describes the record as it stood *before* the link was
+ * applied, so preferring it pointed the review — and therefore the toggle write and the import
+ * run — at a different environment than the one the credentials landed in, which is how a run
+ * ended up using the previous host and inventing a blank `main` alongside it.
+ */
+export function resolveSetupEnvironment(args: {
+  /** The link's `environment=`; empty when this is not a link or the link omitted it. */
+  linkEnvironment: string
+  /** What the pre-link plan resolved; empty when no site record exists yet. */
+  planEnvironment: string
+  /** A link always targets some environment, so it falls back to the default name. */
+  isLink: boolean
+}): string {
+  if (args.linkEnvironment.length > 0) {
+    return args.linkEnvironment
+  }
+  if (args.planEnvironment.length > 0) {
+    return args.planEnvironment
+  }
+  return args.isLink ? DEFAULT_SITE_ENVIRONMENT_NAME : ''
 }
 
 /**

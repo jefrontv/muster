@@ -12,7 +12,11 @@ import { defaultLocalDomain, repoSlug } from '../../../../shared/site-local-doma
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
 import type { SiteLocalStack } from '../../../../shared/site-types'
 import { readLastLocalStackChoice } from './last-local-stack-choice'
-import { defaultSetupChoices, type SiteSetupChoices } from './site-setup-choices'
+import {
+  defaultSetupChoices,
+  resolveSetupEnvironment,
+  type SiteSetupChoices
+} from './site-setup-choices'
 import type { SiteSetupRequest } from './SiteSetupDialog'
 import type { SiteSetupLinkTarget } from './SiteSetupLinkTargetRows'
 
@@ -145,9 +149,11 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
           ? defaultLocalDomain(repoSlug(repo.fullName))
           : '')
     // A bare clone has no server configuration; only a link or an existing site names one.
-    const environment =
-      plan?.import.environment ||
-      (request.kind === 'link' ? request.pending.fields.environment || 'main' : '')
+    const environment = resolveSetupEnvironment({
+      linkEnvironment: request.kind === 'link' ? request.pending.fields.environment : '',
+      planEnvironment: plan?.import.environment ?? '',
+      isLink: request.kind === 'link'
+    })
     setChoices(
       defaultSetupChoices({
         plan,
