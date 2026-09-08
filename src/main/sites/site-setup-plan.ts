@@ -50,6 +50,12 @@ export type SiteSetupPlanInput = {
   reponame: string
   /** Checked-out branch, or null when unknown — null resolves as an unmatched branch. */
   branch: string | null
+  /**
+   * The environment the caller will actually run against, when it already knows. Without it the
+   * import readiness is answered for whatever branch/active-environment resolution picks, which
+   * is a different environment from the one a link names — so the answer described the wrong one.
+   */
+  environment?: string | null
 }
 
 export async function buildSiteSetupPlan(
@@ -70,7 +76,12 @@ export async function buildSiteSetupPlan(
 
   const pathExists = existsSync(site.path)
   const stack = buildStackReadiness(site, detection, installed)
-  const importReadiness = buildImportReadiness(site, input.branch, pathExists)
+  const importReadiness = buildImportReadiness(
+    site,
+    input.branch,
+    pathExists,
+    input.environment ?? null
+  )
 
   return {
     siteId: site.id,
@@ -158,12 +169,18 @@ function buildStackReadiness(
 function buildImportReadiness(
   site: Site,
   branch: string | null,
-  pathExists: boolean
+  pathExists: boolean,
+  requestedEnvironment: string | null
 ): SiteSetupImportReadiness {
   const plan = buildSiteRunPlan({
     site,
     group: 'import',
     branch,
+    // A named environment is the caller's own target, so answer for that one rather than letting
+    // branch resolution pick a different environment's record.
+    ...(requestedEnvironment && site.environments[requestedEnvironment]
+      ? { requestedEnvironment }
+      : {}),
     hasSshSecret: (environment) => getSiteSecretPresence(site.id, environment).ssh,
     pathExists
   })

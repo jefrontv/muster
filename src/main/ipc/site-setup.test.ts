@@ -84,7 +84,8 @@ describe('registerSiteSetupHandlers', () => {
     expect(buildSiteSetupPlan).toHaveBeenCalledWith(store, {
       siteId: 'site-1',
       reponame: '',
-      branch: null
+      branch: null,
+      environment: null
     })
   })
 
@@ -93,7 +94,8 @@ describe('registerSiteSetupHandlers', () => {
     expect(buildSiteSetupPlan).toHaveBeenCalledWith(store, {
       siteId: 'site-1',
       reponame: 'acme',
-      branch: null
+      branch: null,
+      environment: null
     })
   })
 

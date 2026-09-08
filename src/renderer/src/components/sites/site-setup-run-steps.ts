@@ -144,7 +144,10 @@ export async function reconcile(ctx: StepContext): Promise<void> {
   const result = await ctx.api.siteSetup.plan({
     siteId: ctx.state().siteId,
     reponame,
-    branch: null
+    branch: null,
+    // Answer for the environment the review named, not whatever resolution picks: with no branch
+    // it lands on the site's active/default environment, which is a different record.
+    environment: choices.import.environment || null
   })
   if (!result.ok) {
     throw new StepFailure(result.error)

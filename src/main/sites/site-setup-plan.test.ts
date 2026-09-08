@@ -436,4 +436,45 @@ describe('buildSiteSetupPlan', () => {
     expect(resolveSiteSetupCloneTargets).toHaveBeenCalledWith('efront_au/acme')
     expect(plan.clone.targets).toHaveLength(1)
   })
+
+  it('answers import readiness for the named environment instead of the resolved one', async () => {
+    // Why: with no branch, resolution lands on activeEnvironment ("main"). A muster:// link that
+    // names "master" would then get an answer about main's record, and the setup run wrote the
+    // user's toggles to master - two different environments for one decision.
+    const record = site({
+      activeEnvironment: 'main',
+      environments: {
+        main: environment({ wpSearchReplace: false }),
+        master: environment({ wpSearchReplace: true })
+      }
+    })
+
+    const resolved = await buildSiteSetupPlan(storeStub(record), {
+      siteId: SITE_ID,
+      reponame: '',
+      branch: null
+    })
+    expect(resolved.import.environment).toBe('main')
+    expect(resolved.import.enabledStepCount).toBe(0)
+
+    const named = await buildSiteSetupPlan(storeStub(record), {
+      siteId: SITE_ID,
+      reponame: '',
+      branch: null,
+      environment: 'master'
+    })
+    expect(named.import.environment).toBe('master')
+    expect(named.import.enabledStepCount).toBe(1)
+  })
+
+  it('ignores a named environment the site does not have', async () => {
+    const named = await buildSiteSetupPlan(storeStub(), {
+      siteId: SITE_ID,
+      reponame: '',
+      branch: null,
+      environment: 'staging'
+    })
+
+    expect(named.import.environment).toBe('main')
+  })
 })

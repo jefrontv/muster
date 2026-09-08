@@ -15,6 +15,11 @@ export type SiteSetupApi = {
     reponame?: string
     /** Omit or pass null when the checked-out branch is unknown. */
     branch?: string | null
+    /**
+     * The environment the caller intends to run against. Omit to let branch/active-environment
+     * resolution pick one; naming it keeps import readiness about the same record the run uses.
+     */
+    environment?: string | null
   }) => Promise<SiteResult<SiteSetupPlan>>
   /** The clone stage on its own, so configuring the connector can be retried without a re-probe. */
   cloneTargets: (args: { reponame: string }) => Promise<SiteResult<SiteSetupCloneResolution>>

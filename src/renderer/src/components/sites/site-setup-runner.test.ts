@@ -323,4 +323,48 @@ describe('createSiteSetupRunner', () => {
       'import'
     ])
   })
+
+  it('runs the import against the environment the review named, not the branch-resolved one', async () => {
+    // Why: the toggles the user picked are written to the reviewed environment, while the fresh
+    // plan resolves an environment from the git branch. When those differ, targeting the plan's
+    // meant the run read some other environment's stored toggles - the review was ignored.
+    const branchResolved = plan()
+    branchResolved.import = { ...branchResolved.import, environment: 'main' }
+    const events = { emit: (_event: unknown) => {} }
+    const api = fakeApi({ calls, plan: branchResolved, runEvents: events })
+    const runner = createSiteSetupRunner(api)
+    const running = runner.start(
+      { kind: 'site', siteId: 'site-1' },
+      choices({
+        serve: { enabled: false, stack: 'localwp', domain: '' },
+        https: false,
+        import: {
+          enabled: true,
+          environment: 'master',
+          toggles: { ...allImportToggles(), exportFiles: false, wpSearchReplace: false }
+        }
+      })
+    )
+    for (let i = 0; i < 20 && !calls.includes('siteRuns.start'); i += 1) {
+      await flush()
+    }
+
+    expect(api.sites.upsertEnvironment).toHaveBeenCalledWith({
+      siteId: 'site-1',
+      name: 'master',
+      patch: {
+        exportDatabase: true,
+        exportFiles: false,
+        wpUploadRewrite: true,
+        wpSearchReplace: false
+      }
+    })
+    // The run must target the same environment those toggles landed on.
+    expect(api.siteRuns.start).toHaveBeenCalledWith(
+      expect.objectContaining({ siteId: 'site-1', group: 'import', environment: 'master' })
+    )
+
+    events.emit({ type: 'status', runId: 'run-1', status: 'succeeded' })
+    await running.catch(() => {})
+  })
 })

@@ -9,7 +9,10 @@ const MAX_LOG_LINES = 200
 export async function runImport(ctx: StepContext): Promise<void> {
   const { choices } = ctx
   const strings = getSiteSetupRunnerStrings()
-  const environment = ctx.plan?.import.environment || choices.import.environment
+  // The review is the consent point and its environment is where `reconcile` wrote the chosen
+  // toggles, so it wins. The plan's is only a fallback: it resolves from the git branch, and
+  // preferring it ran the import against a different environment's stored toggles (#site-setup).
+  const environment = choices.import.environment || ctx.plan?.import.environment || ''
   ctx.patchStep('import', { state: 'running' })
 
   let runId = ''

@@ -29,8 +29,14 @@ export function registerSiteSetupHandlers(store: Store): void {
     'siteSetup:plan',
     async (_event, args: unknown): Promise<SiteResult<SiteSetupPlan>> => {
       try {
-        const input = (args ?? {}) as { siteId?: unknown; reponame?: unknown; branch?: unknown }
+        const input = (args ?? {}) as {
+          siteId?: unknown
+          reponame?: unknown
+          branch?: unknown
+          environment?: unknown
+        }
         const branch = readOptionalField(input.branch, 'branch')
+        const environment = readOptionalField(input.environment, 'environment')
         return {
           ok: true,
           value: await buildSiteSetupPlan(store, {
@@ -38,7 +44,8 @@ export function registerSiteSetupHandlers(store: Store): void {
             reponame: readOptionalField(input.reponame, 'reponame'),
             // Absent and empty both mean "no branch known", which environment resolution reads as
             // an unmatched branch — an empty string would instead match no environment by name.
-            branch: branch || null
+            branch: branch || null,
+            environment: environment || null
           })
         }
       } catch (error) {
