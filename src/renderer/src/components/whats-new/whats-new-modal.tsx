@@ -130,6 +130,15 @@ export function WhatsNewModal({
                   { count: payload.missedOverflow }
                 )}
               </p>
+            ) : payload.missedUnknown ? (
+              // Why say it: an empty `missed` used to read as "you skipped nothing", so an update
+              // that jumped a version looked complete whenever the history request failed.
+              <p className="mt-5 border-t border-border/60 pt-4 text-[12px] text-muted-foreground">
+                {translate(
+                  'auto.components.whats-new.history_unavailable',
+                  'Notes for any releases you skipped could not be loaded. See GitHub for the full history.'
+                )}
+              </p>
             ) : null}
           </div>
         ) : (

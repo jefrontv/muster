@@ -47,7 +47,9 @@ export function registerWhatsNewHandlers(
         notes: null,
         notesUrl: null,
         missed: [],
-        missedOverflow: 0
+        missedOverflow: 0,
+        // Nothing at all was readable, so the skipped-release history is unknown too.
+        missedUnknown: true
       }
     }
   })

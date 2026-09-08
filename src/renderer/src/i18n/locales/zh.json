@@ -13774,6 +13774,9 @@
             "revealShortcut": "Shortcut"
           }
         }
+      },
+      "whats-new": {
+        "history_unavailable": "Notes for any releases you skipped could not be loaded. See GitHub for the full history."
       }
     },
     "i18n": {

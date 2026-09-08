@@ -30,6 +30,12 @@ export type WhatsNewPayload = ReleaseNotes & {
   missed: ReleaseNotes[]
   /** Skipped releases beyond the display cap, so the modal can say so instead of lying. */
   missedOverflow: number
+  /**
+   * True when the release history could not be read, so `missed` being empty means "unknown"
+   * rather than "nothing was skipped". Without this an update that jumped a version looked
+   * complete whenever the history request failed.
+   */
+  missedUnknown?: boolean
 }
 
 export type WhatsNewGetResult = { status: 'none' } | { status: 'ready'; payload: WhatsNewPayload }

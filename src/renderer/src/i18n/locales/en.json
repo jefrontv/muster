@@ -13408,7 +13408,8 @@
         "subtitle": "Here’s what changed in this update.",
         "notes_unavailable": "Release notes couldn’t be loaded right now. You can read them on GitHub instead.",
         "view_notes": "View full release notes",
-        "continue": "Continue"
+        "continue": "Continue",
+        "history_unavailable": "Notes for any releases you skipped could not be loaded. See GitHub for the full history."
       },
       "sites": {
         "SiteDetailPanel": {

@@ -9,7 +9,9 @@
 import { RELEASE_GITHUB_OWNER, RELEASE_GITHUB_REPO } from './updater-release-feed-source'
 import { compareVersions, type ReleaseNotes, type WhatsNewPayload } from '../shared/whats-new'
 
-const NOTES_FETCH_TIMEOUT_MS = 5000
+// 5s was too tight for the request this makes at launch, alongside everything else the app is
+// fetching: a miss silently degraded the modal to the current release only.
+const NOTES_FETCH_TIMEOUT_MS = 10_000
 
 /**
  * How many skipped releases the modal will show.
@@ -18,6 +20,13 @@ const NOTES_FETCH_TIMEOUT_MS = 5000
  * scroll. Anything beyond this is counted and pointed at the releases page instead.
  */
 const MAX_MISSED_RELEASES = 8
+
+/**
+ * Releases to ask for. The endpoint has no field selection, so each row carries its whole body —
+ * `per_page=100` fetched over a megabyte to use at most nine rows of it. Enough headroom for the
+ * cap plus the prereleases interleaved between stable tags.
+ */
+const RELEASES_PER_PAGE = 24
 
 export type ReleaseNotesLoader = (
   version: string,
@@ -35,9 +44,16 @@ export function createGitHubReleaseNotesLoader(
     if (cached !== undefined) {
       return cached
     }
+    const ranged = await fetchReleaseRange(fetchImpl, version, sinceVersion)
+    // The single-tag fallback knows nothing about what came before, so it must not present an
+    // empty `missed` as "you skipped nothing" when an update actually jumped a version.
     const payload =
-      (await fetchReleaseRange(fetchImpl, version, sinceVersion)) ??
-      (await fetchSingleRelease(fetchImpl, version))
+      ranged ??
+      (await fetchSingleRelease(
+        fetchImpl,
+        version,
+        sinceVersion !== null && sinceVersion !== version
+      ))
     cache.set(key, payload)
     return payload
   }
@@ -73,7 +89,7 @@ async function fetchReleaseRange(
   version: string,
   sinceVersion: string | null
 ): Promise<WhatsNewPayload | null> {
-  const url = `https://api.github.com/repos/${RELEASE_GITHUB_OWNER}/${RELEASE_GITHUB_REPO}/releases?per_page=100`
+  const url = `https://api.github.com/repos/${RELEASE_GITHUB_OWNER}/${RELEASE_GITHUB_REPO}/releases?per_page=${RELEASES_PER_PAGE}`
   let rows: unknown
   try {
     const response = await fetchImpl(url, {
@@ -132,7 +148,9 @@ async function fetchReleaseRange(
 
 async function fetchSingleRelease(
   fetchImpl: typeof fetch,
-  version: string
+  version: string,
+  /** True when the caller knows an earlier version ran, so a missing history is worth saying. */
+  missedUnknown: boolean
 ): Promise<WhatsNewPayload | null> {
   const tag = `v${version}`
   const url = `https://api.github.com/repos/${RELEASE_GITHUB_OWNER}/${RELEASE_GITHUB_REPO}/releases/tags/${tag}`
@@ -150,7 +168,7 @@ async function fetchSingleRelease(
     if (notes === null && notesUrl === null) {
       return null
     }
-    return { version, notes, notesUrl, missed: [], missedOverflow: 0 }
+    return { version, notes, notesUrl, missed: [], missedOverflow: 0, missedUnknown }
   } catch {
     // Offline / rate-limited / repo unreachable: the modal still shows with a
     // link out rather than blocking on the network.

@@ -108,6 +108,31 @@ describe('release notes loader', () => {
     expect(payload).toMatchObject({ version: '1.9.0', notes: 'notes for 1.9.0', missed: [] })
   })
 
+  it('says the skipped history is unknown when it fell back over a multi-version jump', async () => {
+    // Why: an empty `missed` from the fallback is "could not read", not "nothing was skipped".
+    // Reporting them the same made a real update from 1.7.0 to 1.9.0 look like it had no gap.
+    const load = createGitHubReleaseNotesLoader(
+      stubFetch([release('1.9.0'), release('1.8.0')], false)
+    )
+    expect(await load('1.9.0', '1.7.0')).toMatchObject({ missed: [], missedUnknown: true })
+  })
+
+  it('claims no unknown history when the list itself answered', async () => {
+    const load = createGitHubReleaseNotesLoader(
+      stubFetch([release('1.9.0'), release('1.8.0'), release('1.7.0')])
+    )
+    const payload = await load('1.9.0', '1.7.0')
+    expect(payload?.missed.map((entry) => entry.version)).toEqual(['1.8.0'])
+    expect(payload?.missedUnknown).toBeUndefined()
+  })
+
+  it('does not claim unknown history on a fresh install, which skipped nothing', async () => {
+    const load = createGitHubReleaseNotesLoader(
+      stubFetch([release('1.9.0'), release('1.8.0')], false)
+    )
+    expect(await load('1.9.0', null)).toMatchObject({ missedUnknown: false })
+  })
+
   it('returns null when the running build has no published release', async () => {
     const load = createGitHubReleaseNotesLoader(stubFetch([release('1.8.0')]))
     expect(await load('1.99.0-local', '1.8.0')).toBeNull()
