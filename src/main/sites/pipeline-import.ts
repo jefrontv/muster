@@ -143,14 +143,17 @@ export async function runImportPipeline(
     // exists — a remote `before` step (maintenance mode on) needs it.
     await customSteps(context, active, 'import', 'before', session)
 
+    // Files first: the agent-local daemon boots WP-CLI during the database load (keep_urls
+    // rewrite), which needs core already extracted. Loading the DB first on a coreless
+    // checkout failed the whole run before files ever ran (fc-living).
     if (session !== null && layout !== null) {
-      if (exportDatabase) {
-        context.throwIfCancelled()
-        await importDatabase(context, active, session, deps, routes.slug !== null ? routes : null)
-      }
       if (exportFiles) {
         context.throwIfCancelled()
         await importFiles(context, active, session, layout, deps)
+      }
+      if (exportDatabase) {
+        context.throwIfCancelled()
+        await importDatabase(context, active, session, deps, routes.slug !== null ? routes : null)
       }
     }
 

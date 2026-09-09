@@ -376,10 +376,16 @@ describe('runImportPipeline', () => {
 
   it('aborts between stages without running the later ones', async () => {
     const { context, cancel } = createTestContext()
+    // Files run before the database, so cancelling mid-files must skip the DB load and rewrites.
     const { deps, order } = createHarness({
-      importLocalDatabase: vi.fn(async () => {
-        order.push('importLocalDatabase')
+      pullRemoteFileArchives: vi.fn(async () => {
+        order.push('pullRemoteFileArchives')
         cancel()
+        return {
+          baseArchivePath: path.join(wpDir, 'base.zip'),
+          contentArchivePath: path.join(wpDir, 'wp-content.zip'),
+          contentDirectoryName: 'wp-content'
+        }
       })
     })
 
@@ -396,10 +402,27 @@ describe('runImportPipeline', () => {
       )
     ).rejects.toThrow(SiteRunCancelledError)
 
-    expect(order).toContain('importLocalDatabase')
-    expect(order).not.toContain('pullRemoteFileArchives')
+    expect(order).toContain('pullRemoteFileArchives')
+    expect(order).not.toContain('importLocalDatabase')
     expect(order).not.toContain('applyWpUploadRewrite')
     expect(order).not.toContain('runWpSearchReplace')
+  })
+
+  it('pulls files before loading the database, so core exists for the daemon rewrite', async () => {
+    // fc-living: the daemon boots WP-CLI during the DB load, which needs extracted core.
+    const { context } = createTestContext()
+    const { deps, order } = createHarness()
+
+    await runImportPipeline(
+      context,
+      createConfig({ exportDatabase: true, exportFiles: true }),
+      deps
+    )
+
+    expect(order.indexOf('pullRemoteFileArchives')).toBeLessThan(
+      order.indexOf('dumpAndDownloadRemoteDatabase')
+    )
+    expect(order.indexOf('extractZipArchive')).toBeLessThan(order.indexOf('importLocalDatabase'))
   })
 
   it('refuses a remote step with no hostname, before opening a connection', async () => {
