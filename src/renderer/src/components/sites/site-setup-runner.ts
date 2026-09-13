@@ -46,6 +46,12 @@ export type SiteSetupRunnerSnapshot = {
   path: string
   /** True when Serve built a fresh LocalWP install, so the done screen shows the admin account. */
   createdLocalWp: boolean
+  /**
+   * True once an import this run ran replaced the site's database. Reads as "the LocalWP house
+   * account is gone", which is what retires the done screen's credentials card — an import that
+   * only pulled files leaves that account sitting in an untouched database.
+   */
+  databaseReplaced: boolean
   /** The domain Serve settled on; '' when it did not run. */
   domain: string
   /** Why the bind's password could not be stored; '' otherwise. A warning, not a failure. */
@@ -70,7 +76,8 @@ const IDLE: SiteSetupRunnerSnapshot = {
   path: '',
   createdLocalWp: false,
   domain: '',
-  secretError: ''
+  secretError: '',
+  databaseReplaced: false
 }
 
 const STEP_RUNNERS: Record<SetupRunStepId, (ctx: StepContext) => Promise<void>> = {

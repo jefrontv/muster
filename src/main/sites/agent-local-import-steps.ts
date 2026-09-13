@@ -9,6 +9,7 @@
 // pipeline shape, not stack shape.
 
 import type { Site } from '../../shared/site-types'
+import { AGENT_LOCAL_DATABASE_LOAD_STAGE } from '../../shared/site-run-types'
 import {
   AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION,
   AgentLocalImportError,
@@ -132,7 +133,7 @@ export async function importDatabaseViaAgentLocal(
 ): Promise<void> {
   const { slug } = routes
   const config = servingConfig(runConfig, routes.domain)
-  context.status('Loading database through Agent Local…')
+  context.status(AGENT_LOCAL_DATABASE_LOAD_STAGE)
   // The daemon's own URL rewrite boots WP-CLI against wp-config.php as it is right now - which,
   // before "Pull server files" has run this time, is whatever the last run left: possibly the
   // production config. Point it at the local stack first; prepared again after files land.

@@ -73,3 +73,17 @@ export type SiteRunBlockedReason =
   | 'unmatched-branch'
   | 'missing-ssh-credentials'
   | 'missing-path'
+
+/**
+ * The stage each import route emits the moment the local database starts being replaced: localwp's
+ * `mysql` load and agent-local's daemon load. The *moment* is the marker, not the outcome — the
+ * setup wizard flips `databaseReplaced` here, so a run that dies (or is cancelled) mid-load still
+ * retires the wp-admin credentials card instead of advertising an account the load just destroyed.
+ * Shared so a rename on the emitting side cannot silently un-gate the card.
+ */
+export const DATABASE_IMPORT_STAGE = 'Importing database'
+export const AGENT_LOCAL_DATABASE_LOAD_STAGE = 'Loading database through Agent Local…'
+export const DATABASE_REPLACEMENT_STAGES: Record<string, true> = {
+  [DATABASE_IMPORT_STAGE]: true,
+  [AGENT_LOCAL_DATABASE_LOAD_STAGE]: true
+}

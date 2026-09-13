@@ -1,6 +1,7 @@
 // The import step of a site setup: persist the chosen toggles, start the run, and follow its
 // events to a terminal status. Split from site-setup-run-steps.ts for size; same StepContext.
 
+import { DATABASE_REPLACEMENT_STAGES } from '../../../../shared/site-run-types'
 import { StepFailure, type StepContext } from './site-setup-run-steps'
 import { getSiteSetupRunnerStrings } from './site-setup-runner-strings'
 
@@ -16,6 +17,7 @@ export async function runImport(ctx: StepContext): Promise<void> {
   ctx.patchStep('import', { state: 'running' })
 
   let runId = ''
+  let replacedDatabase = false
   const buffered = new Map<string, string[]>()
   await new Promise<void>((resolve, reject) => {
     const settle = (error: StepFailure | null): void => {
@@ -41,6 +43,15 @@ export async function runImport(ctx: StepContext): Promise<void> {
         return
       }
       if (event.type === 'progress') {
+        // The run's stage text is the only authoritative "the database is being replaced" signal
+        // that reaches the renderer. Keyed on the load starting, not the run succeeding: a run that
+        // dies or is cancelled mid-load leaves the account in an unknown state, and the card must
+        // already be retired by then. A run that fails before the load leaves the account intact,
+        // so the card stays — which is why the toggle alone cannot decide this.
+        if (!replacedDatabase && Object.hasOwn(DATABASE_REPLACEMENT_STAGES, event.stage)) {
+          replacedDatabase = true
+          ctx.patch({ databaseReplaced: true })
+        }
         ctx.patchStep('import', { percent: event.percent, detail: event.stage })
         return
       }

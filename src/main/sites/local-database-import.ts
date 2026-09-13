@@ -8,6 +8,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { DATABASE_IMPORT_STAGE } from '../../shared/site-run-types'
 import { streamCommand } from '../lib/stream-command'
 import { redactPassword, renderMysqlOptionFile, resolveMysqlBinary } from './mysql-binary'
 import {
@@ -89,7 +90,7 @@ export async function importLocalDatabase(
     await createDatabase(context, paths)
 
     context.throwIfCancelled()
-    context.status('Importing database')
+    context.status(DATABASE_IMPORT_STAGE)
     // bash, not sh: pipefail is not POSIX and Debian's dash aborts the whole command on it.
     const result = await streamCommand(
       '/bin/bash',

@@ -1,6 +1,7 @@
 // The dialog renders the "<site> is ready" heading; this is the body. It reads like the run screen
 // it follows - the same rows, now settled - with the one thing the user wants next up top: the
-// local address. Credentials appear only when this run created the LocalWP install they belong to.
+// local address. Credentials appear only when this run created the LocalWP install they belong to
+// and did not replace its database with an import.
 
 import { Check, Copy, Globe, Minus } from 'lucide-react'
 import type React from 'react'
@@ -18,7 +19,9 @@ export type SiteSetupDoneProps = {
   /** '' when Serve did not run. */
   domain: string
   /** True only when Serve created a LocalWP install. */
-  showAdminCredentials: boolean
+  createdLocalWp: boolean
+  /** True when an import this run ran replaced the database that LocalWP account lives in. */
+  databaseReplaced: boolean
   onClose: () => void
   onOpenSite: (() => void) | null
 }
@@ -58,7 +61,8 @@ export function SiteSetupDone({
   steps,
   siteLabel,
   domain,
-  showAdminCredentials,
+  createdLocalWp,
+  databaseReplaced,
   onClose,
   onOpenSite
 }: SiteSetupDoneProps): React.JSX.Element {
@@ -69,6 +73,11 @@ export function SiteSetupDone({
   }
   const httpsDone = stepById.https?.state === 'done'
   const url = domain.length > 0 ? `${httpsDone ? 'https' : 'http'}://${domain}` : ''
+  // The house account is LocalWP's work during Serve, and it lives in the database. An import that
+  // pulled the server's database replaced it, so the account those credentials name is gone -
+  // showing them then sends the user to a login that cannot work. A files-only import leaves the
+  // database alone, so the card stays: it is the only surface naming that account.
+  const showAdminCredentials = createdLocalWp && !databaseReplaced
 
   return (
     <div className="space-y-4" aria-label={siteLabel}>

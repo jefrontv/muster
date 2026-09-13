@@ -319,7 +319,8 @@ export function SiteSetupDialog({
             steps={snapshot.steps}
             siteLabel={label}
             domain={snapshot.domain}
-            showAdminCredentials={snapshot.createdLocalWp}
+            createdLocalWp={snapshot.createdLocalWp}
+            databaseReplaced={snapshot.databaseReplaced}
             onClose={() => onClose('finished')}
             onOpenSite={null}
           />

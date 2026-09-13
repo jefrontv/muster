@@ -93,6 +93,36 @@ describe('SiteSetupRun', () => {
     expect(onCancelCurrent).toHaveBeenCalledTimes(1)
   })
 
+  it('offers Cancel on the HTTPS row while it is waiting on LocalWP', async () => {
+    const onCancelCurrent = vi.fn()
+    await renderRun({
+      phase: 'running',
+      onCancelCurrent,
+      steps: [
+        step({ id: 'clone', state: 'done', detail: 'Cloned' }),
+        step({ id: 'register', state: 'done' }),
+        step({ id: 'serve', state: 'done', detail: 'Serving at https://flex.local' }),
+        step({
+          id: 'https',
+          state: 'running',
+          cancellable: true,
+          detail: 'Waiting for LocalWP to finish setting up flex.local…'
+        }),
+        step({ id: 'import', state: 'pending' })
+      ]
+    })
+
+    expect(container?.textContent).toContain('Waiting for LocalWP to finish setting up flex.local…')
+    const cancelButtons = Array.from(container?.querySelectorAll('button') ?? []).filter(
+      (button) => button.textContent === 'Cancel'
+    )
+    expect(cancelButtons).toHaveLength(1)
+    await act(async () => {
+      cancelButtons[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(onCancelCurrent).toHaveBeenCalledTimes(1)
+  })
+
   it('shows "cannot cancel" for a running, non-cancellable step and renders no Cancel button', async () => {
     await renderRun({
       phase: 'running',
@@ -149,33 +179,112 @@ describe('SiteSetupRun', () => {
 })
 
 describe('SiteSetupDone', () => {
-  it('renders admin credentials when showAdminCredentials is true and no Open button when onOpenSite is null', async () => {
+  async function renderDone(props: {
+    steps: SetupRunStep[]
+    createdLocalWp: boolean
+    databaseReplaced: boolean
+  }): Promise<void> {
     await act(async () => {
       root?.render(
         <TooltipProvider>
           <SiteSetupDone
-            steps={[
-              step({ id: 'clone', state: 'done', detail: 'Cloned into ~/Sites/flex' }),
-              step({ id: 'register', state: 'done' }),
-              step({ id: 'serve', state: 'done', detail: 'Serving at https://flex.local' }),
-              step({ id: 'https', state: 'skipped', detail: 'not supported here' }),
-              step({ id: 'import', state: 'not-run' })
-            ]}
+            steps={props.steps}
             siteLabel="flex"
             domain="flex.local"
-            showAdminCredentials
+            createdLocalWp={props.createdLocalWp}
+            databaseReplaced={props.databaseReplaced}
             onClose={() => {}}
             onOpenSite={null}
           />
         </TooltipProvider>
       )
     })
+  }
+
+  it('renders admin credentials when the run created a LocalWP install and did not replace its database', async () => {
+    await renderDone({
+      createdLocalWp: true,
+      databaseReplaced: false,
+      steps: [
+        step({ id: 'clone', state: 'done', detail: 'Cloned into ~/Sites/flex' }),
+        step({ id: 'register', state: 'done' }),
+        step({ id: 'serve', state: 'done', detail: 'Serving at https://flex.local' }),
+        step({ id: 'https', state: 'skipped', detail: 'not supported here' }),
+        step({ id: 'import', state: 'not-run' })
+      ]
+    })
 
     expect(container?.textContent).toContain('hello@efront.com.au')
-    expect(container?.textContent).toContain('admin')
+    expect(container?.textContent).toContain('Local-only account created by LocalWP.')
 
     const buttons = Array.from(container?.querySelectorAll('button') ?? [])
     const openButton = buttons.find((button) => button.textContent?.startsWith('Open '))
     expect(openButton).toBeUndefined()
+  })
+
+  // What retires the card is the database being replaced, not the import row completing: a
+  // files-only import (database toggle off) runs the same step to `done` and leaves the LocalWP
+  // house account in an untouched database, and the card is the only surface naming it. So the
+  // import row's state and the database fact vary independently here.
+  it.each([
+    {
+      label: 'import finished with the database replaced',
+      importState: 'done',
+      replaced: true,
+      shown: false
+    },
+    { label: 'import finished files-only', importState: 'done', replaced: false, shown: true },
+    { label: 'import skipped', importState: 'skipped', replaced: false, shown: true },
+    { label: 'import never reached', importState: 'not-run', replaced: false, shown: true }
+  ])('$label → credentials shown: $shown', async ({ importState, replaced, shown }) => {
+    await renderDone({
+      createdLocalWp: true,
+      databaseReplaced: replaced,
+      steps: [
+        step({ id: 'register', state: 'done' }),
+        step({ id: 'serve', state: 'done', detail: 'Serving at https://flex.local' }),
+        step({ id: 'https', state: 'done' }),
+        step({
+          id: 'import',
+          state: importState as SetupRunStep['state'],
+          detail: importState === 'done' ? 'Imported.' : ''
+        })
+      ]
+    })
+
+    const credentialsShown = container?.textContent?.includes('hello@efront.com.au') ?? false
+    expect(credentialsShown).toBe(shown)
+    expect(container?.textContent).toContain('flex.local')
+  })
+
+  // A bare clone has no import row at all (site-setup-runner's stepsFor), so the gate must not
+  // depend on one being present.
+  it('shows the credentials when the run has no import step at all', async () => {
+    await renderDone({
+      createdLocalWp: true,
+      databaseReplaced: false,
+      steps: [
+        step({ id: 'register', state: 'done' }),
+        step({ id: 'serve', state: 'done', detail: 'Serving at https://flex.local' }),
+        step({ id: 'https', state: 'done' })
+      ]
+    })
+
+    expect(container?.textContent).toContain('hello@efront.com.au')
+  })
+
+  it('never shows the credentials for a site this run did not create', async () => {
+    await renderDone({
+      createdLocalWp: false,
+      databaseReplaced: false,
+      steps: [
+        step({ id: 'register', state: 'done' }),
+        step({ id: 'serve', state: 'done', detail: 'Serving at https://flex.local' }),
+        step({ id: 'https', state: 'done' }),
+        step({ id: 'import', state: 'not-run' })
+      ]
+    })
+
+    expect(container?.textContent).not.toContain('hello@efront.com.au')
   })
 })

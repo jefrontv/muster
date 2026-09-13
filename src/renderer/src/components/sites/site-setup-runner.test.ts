@@ -124,7 +124,8 @@ function fakeApi(options: {
         return ok({ supported: true, exists: false, trusted: true, reason: '', certPath: '' })
       }),
       trust: vi.fn(),
-      ensure: vi.fn()
+      ensure: vi.fn(),
+      cancelEnsure: vi.fn()
     },
     siteRuns: {
       onEvent: vi.fn((listener: (event: unknown) => void) => {
@@ -178,6 +179,97 @@ describe('createSiteSetupRunner', () => {
       'serve:done',
       'https:done'
     ])
+  })
+
+  it('goes through ensure, never trust, when the certificate file already exists', async () => {
+    // The reported regression: a retry finds polar-frontiers.local.crt on disk from an earlier
+    // attempt. Trusting that file directly skipped the ownership check entirely and went green for
+    // a folder Local may not own. `ensure` is the only path that asks Local first.
+    const api = fakeApi({ calls })
+    ;(api.localwpCert.status as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push('cert.status')
+        return {
+          ok: true,
+          value: {
+            supported: true,
+            exists: true,
+            trusted: false,
+            reason: 'not trusted yet',
+            certPath: '/certs/flex.local.crt'
+          }
+        }
+      }
+    )
+    ;(api.localwpCert.ensure as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push('cert.ensure')
+        return { ok: true, value: { ok: true, message: 'trusted' } }
+      }
+    )
+    // After ensure, the re-read must report trusted or the step fails.
+    ;(api.localwpCert.status as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push('cert.status')
+        return {
+          ok: true,
+          value: {
+            supported: true,
+            exists: true,
+            trusted: calls.includes('cert.ensure'),
+            reason: '',
+            certPath: '/certs/flex.local.crt'
+          }
+        }
+      }
+    )
+
+    const runner = createSiteSetupRunner(api)
+    await runner.start(REPO_SOURCE, choices())
+
+    expect(calls).toContain('cert.ensure')
+    expect(api.localwpCert.trust).not.toHaveBeenCalled()
+    expect(runner.snapshot().steps.find((step) => step.id === 'https')?.state).toBe('done')
+  })
+
+  it('fails the https row, never green, when ensure reports the site is not LocalWP', async () => {
+    const api = fakeApi({ calls })
+    ;(api.localwpCert.status as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push('cert.status')
+        return {
+          ok: true,
+          value: {
+            supported: true,
+            exists: true,
+            trusted: false,
+            reason: 'not trusted yet',
+            certPath: '/certs/flex.local.crt'
+          }
+        }
+      }
+    )
+    ;(api.localwpCert.ensure as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push('cert.ensure')
+        return {
+          ok: true,
+          value: {
+            ok: false,
+            message: 'LocalWP never reported flex.local as one of its sites.'
+          }
+        }
+      }
+    )
+
+    const runner = createSiteSetupRunner(api)
+    await runner.start(REPO_SOURCE, choices())
+
+    const https = runner.snapshot().steps.find((step) => step.id === 'https')
+    expect(https).toMatchObject({ state: 'failed' })
+    expect(https?.detail).toContain('never reported flex.local')
+    expect(api.localwpCert.trust).not.toHaveBeenCalled()
+    expect(runner.snapshot().phase).toBe('failed')
   })
 
   it('records a stage the fresh plan rules out as skipped, without attempting it', async () => {
@@ -282,6 +374,72 @@ describe('createSiteSetupRunner', () => {
       state: 'failed',
       detail: 'Cancelled'
     })
+  })
+
+  it('offers Cancel on the HTTPS row while it waits, and aborts the ensure through its token', async () => {
+    // The waits inside `ensure` can take eleven minutes and none of them is interruptible from the
+    // UI without this: the token the row cancels has to be the one the ensure call is keyed on.
+    const api = fakeApi({ calls })
+    ;(api.localwpCert.status as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push('cert.status')
+        return {
+          ok: true,
+          value: {
+            supported: true,
+            exists: true,
+            trusted: false,
+            reason: 'not trusted yet',
+            certPath: '/certs/flex.local.crt'
+          }
+        }
+      }
+    )
+    const pending = Promise.withResolvers<{
+      ok: true
+      value: { ok: false; message: string }
+    }>()
+    let startedToken = ''
+    ;(api.localwpCert.ensure as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async (args: { requestToken?: string }) => {
+        calls.push('cert.ensure')
+        startedToken = args.requestToken ?? ''
+        return pending.promise
+      }
+    )
+    ;(api.localwpCert.cancelEnsure as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async (args: { requestToken: string }) => {
+        calls.push(`cert.cancelEnsure ${args.requestToken}`)
+        pending.resolve({
+          ok: true,
+          value: {
+            ok: false,
+            message: 'Cancelled while waiting for LocalWP to register the site.'
+          }
+        })
+      }
+    )
+
+    const runner = createSiteSetupRunner(api)
+    const running = runner.start(REPO_SOURCE, choices())
+    for (let i = 0; i < 20 && !calls.includes('cert.ensure'); i += 1) {
+      await flush()
+    }
+
+    expect(runner.snapshot().steps.find((step) => step.id === 'https')).toMatchObject({
+      state: 'running',
+      cancellable: true
+    })
+    runner.cancelCurrent()
+    await running
+
+    expect(startedToken).not.toBe('')
+    expect(calls).toContain(`cert.cancelEnsure ${startedToken}`)
+    const https = runner.snapshot().steps.find((step) => step.id === 'https')
+    expect(https).toMatchObject({ state: 'failed', cancellable: false })
+    // A cancellation is named, not reported as an unexplained failure or a timeout.
+    expect(https?.detail).toBe('Cancelled while waiting for LocalWP to register the site.')
+    expect(runner.snapshot().phase).toBe('failed')
   })
 
   it('binds through siteBind.confirm for a link source with an existing checkout, and never clones', async () => {
