@@ -7,13 +7,17 @@ function foldLabel(durationMs: number | null, interrupted: boolean): string {
   const duration = durationMs !== null ? formatNativeChatDuration(durationMs) : null
   if (interrupted) {
     return duration
-      ? translate('components.native-chat.turnFold.stoppedAfter', `You stopped after ${duration}`, {
-          duration
-        })
+      ? translate(
+          'components.native-chat.turnFold.stoppedAfter',
+          'You stopped after {{duration}}',
+          {
+            duration
+          }
+        )
       : translate('components.native-chat.turnFold.stopped', 'You stopped this response')
   }
   return duration
-    ? translate('components.native-chat.turnFold.workedFor', `Worked for ${duration}`, {
+    ? translate('components.native-chat.turnFold.workedFor', 'Worked for {{duration}}', {
         duration
       })
     : translate('components.native-chat.turnFold.worked', 'Worked')
@@ -69,11 +73,9 @@ export function NativeChatLiveToolToggleRow({
   const Chevron = expanded ? ChevronDown : ChevronRight
   const label = expanded
     ? translate('components.native-chat.liveTools.showFewer', 'Show fewer tool calls')
-    : translate(
-        'components.native-chat.liveTools.showPrevious',
-        `+${hiddenCount} previous tool calls`,
-        { count: hiddenCount }
-      )
+    : translate('components.native-chat.liveTools.showPrevious', '+{{count}} previous tool calls', {
+        count: hiddenCount
+      })
   return (
     <div ref={elementRef}>
       <button

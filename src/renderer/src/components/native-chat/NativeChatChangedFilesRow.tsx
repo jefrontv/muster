@@ -67,7 +67,7 @@ export function NativeChatChangedFilesRow({
         <span className="shrink-0 font-medium text-foreground">
           {count === 1
             ? translate('components.native-chat.changedFiles.one', '1 file changed')
-            : translate('components.native-chat.changedFiles.many', `${count} files changed`, {
+            : translate('components.native-chat.changedFiles.many', '{{count}} files changed', {
                 count
               })}
         </span>

@@ -63,7 +63,8 @@
     "openWorktreePalette": "打开工作树面板",
     "window": "窗口",
     "help": "帮助",
-    "paste": "粘贴"
+    "paste": "粘贴",
+    "gettingStarted": "Setup guide"
   },
   "tray": {
     "openOrca": "打开 Muster",
@@ -222,7 +223,9 @@
         "workspace": {
           "cleanup": {
             "9d6e531da6": "工作区不再存在。",
-            "changedSinceConfirmation": "工作区在确认后发生了更改。请刷新并在删除前重新检查。"
+            "changedSinceConfirmation": "工作区在确认后发生了更改。请刷新并在删除前重新检查。",
+            "hostUnresolved": "Muster cannot tell which host owns this workspace. Refresh projects and review it again.",
+            "hostCollision": "Error: this workspace exists on multiple hosts at the same path"
           }
         },
         "worktrees": {
@@ -721,7 +724,10 @@
         "linearTitle": "Linear",
         "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
         "agentCapabilitiesTitle": "Agent Capabilities",
-        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
+        "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+        "setupGuideTitle": "Setup guide",
+        "setupGuideDescription": "Finish the setup guide for core Muster workflows.",
+        "setupGuideSearchDescription": "Open the setup guide for setup and milestone steps."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "粘贴内容过大。"
@@ -1252,7 +1258,11 @@
       "NewWorkspaceComposerModal": {
         "createWorktree": "创建工作树",
         "createWorkspace": "创建工作区",
-        "fa90f739a5": "创建工作区之前选择项目、工作区名称和智能体。"
+        "fa90f739a5": "创建工作区之前选择项目、工作区名称和智能体。",
+        "openNoCheckout": "This project has no checkout to open yet — create a worktree instead.",
+        "openTitle": "Open workspace",
+        "openTab": "Open",
+        "worktreeTab": "New worktree"
       },
       "PullRequestPage": {
         "2560588245": "请求评审人失败",
@@ -3957,7 +3967,8 @@
           "23989bb663": "显示活动工作区"
         },
         "SetupGuideSidebarEntry": {
-          "b0a7bfc34c": "从侧边栏隐藏"
+          "b0a7bfc34c": "从侧边栏隐藏",
+          "setupGuide": "Setup guide"
         },
         "SetupScriptPromptCard": {
           "ff1e819a11": "添加设置脚本",
@@ -4072,8 +4083,10 @@
           "4e8f5710d3": "无法重新启动 Muster。",
           "5161eef55d": "正在重启 Muster…",
           "d396773ef0": "检查中",
-          "b7e4d2a19c": "入门引导",
-          "c4f8e1b72a": "X"
+          "c4f8e1b72a": "X",
+          "setupGuide": "Setup guide",
+          "exploreMuster": "Explore Muster",
+          "replayOnboarding": "Replay Onboarding"
         },
         "SidebarToolbar": {
           "19e32d0e5f": "打开文件夹选择器以添加项目",
@@ -4875,7 +4888,9 @@
         "guide": {
           "SetupGuideModal": {
             "28cf59fcb4": "这将从侧边栏隐藏清单",
-            "f3b5ffb2a6": "从侧边栏隐藏清单"
+            "f3b5ffb2a6": "从侧边栏隐藏清单",
+            "setupGuideTitle": "Setup guide",
+            "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work."
           },
           "SetupGuideProgressRing": {
             "dac3a4724a": "{{value1}} 设置步骤中的 {{value0}} 已完成"
@@ -5165,7 +5180,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "也在原来的列表中显示已固定的工作树",
             "description": "已固定的工作树会保留在 Pinned 中，同时也显示在全部、项目、状态和 PR 中。"
-          }
+          },
+          "terminalZoom": "Terminal Zoom",
+          "terminalZoomDesc": "Default zoom for terminal panes; applies to new panes and Cmd+0 reset.",
+          "terminalZoomHint": "inside a terminal pane zooms that pane only."
         },
         "AutoRenameBranchFromWorkSetting": {
           "1626524572": "Nautilus",
@@ -5407,6 +5425,12 @@
             "modeAriaLabel": "Agent Dashboard open mode",
             "modeInWindow": "In-window",
             "modePopout": "Pop-out"
+          },
+          "chatMode": {
+            "title": "Chat mode",
+            "description": "A dedicated Chat surface with simple workspaces and chat threads, beside the Code view.",
+            "copy": "Adds a Chat/Code switch at the top of the sidebar. Chat workspaces are just a name plus folders, with chat threads inside — no branches or worktrees.",
+            "toggleLabel": "Toggle Chat mode"
           }
         },
         "FloatingWorkspacePane": {
@@ -5840,7 +5864,9 @@
           "76e02467b8": "更改自定义文件",
           "d3756cf5bc": "已禁用",
           "siteRunComplete": "Site Import / Deploy",
-          "siteRunCompleteDescription": "A WordPress import or deploy finishes, fails, or is cancelled."
+          "siteRunCompleteDescription": "A WordPress import or deploy finishes, fails, or is cancelled.",
+          "siteRunSlackWebhook": "Slack webhook for site runs",
+          "siteRunSlackWebhookDescription": "Posts every import/deploy result to this Slack incoming webhook. Leave empty to disable."
         },
         "OpenAiTranscriptionKeyDialog": {
           "fa83512e48": "保存密钥",
@@ -6404,7 +6430,9 @@
           "linearTitle": "Linear",
           "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
           "agentCapabilitiesTitle": "Agent Capabilities",
-          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents."
+          "agentCapabilitiesDescription": "Choose which built-in tools and skills Muster hands to your agents.",
+          "setupGuideTitle": "Setup guide",
+          "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work."
         },
         "SettingsFormControls": {
           "42a4d15a30": "没有匹配的字体。",
@@ -6432,7 +6460,9 @@
           "dbceaa8840": "搜索设置",
           "60f8a673a7": "返回应用",
           "df38d612b7": "尚未添加项目。",
-          "3e483e256b": "没有匹配的项目设置。"
+          "3e483e256b": "没有匹配的项目设置。",
+          "setupGuideAria": "Setup guide, {{value0}} of {{value1}} done. Show setup guide.",
+          "setupGuide": "Setup guide"
         },
         "ShortcutFilterRail": {
           "28b63545bf": "状态",
@@ -6687,7 +6717,9 @@
           "e90afcc44f": "关",
           "16c471ee03": "开",
           "typographyAdvanced": "排版",
-          "dimUnfocusedPanes": "调暗未聚焦的窗格。"
+          "dimUnfocusedPanes": "调暗未聚焦的窗格。",
+          "cursorThemeColor": "Cursor Color From Theme",
+          "cursorThemeColorDescription": "Let the selected terminal theme set the cursor color. Off uses the theme text color instead, so switching themes leaves the cursor alone."
         },
         "TerminalFontSizeSetting": {
           "9b5252c85a": "像素",
@@ -7251,7 +7283,9 @@
             "d6c0a9e2f4": "grok",
             "c5b9f8d1e3": "xai",
             "usagePercentageDisplayTitle": "用量百分比",
-            "usagePercentageDisplayDescription": "选择以已用或剩余百分比显示提供商限额。"
+            "usagePercentageDisplayDescription": "选择以已用或剩余百分比显示提供商限额。",
+            "terminalZoom": "Terminal Zoom",
+            "terminalZoomDesc": "Default zoom for terminal panes."
           }
         },
         "auto": {
@@ -7494,6 +7528,10 @@
             "agentDashboard": {
               "title": "Agent Dashboard",
               "description": "Kanban board for monitoring agents across worktrees, in-window or as a pop-out."
+            },
+            "chatMode": {
+              "title": "Chat mode",
+              "description": "A dedicated Chat surface with simple workspaces and chat threads, beside the Code view."
             }
           }
         },
@@ -7914,7 +7952,9 @@
             "activeCollabSound": "ActiveCollab Sound",
             "activeCollabSoundDescription": "Give ActiveCollab alerts their own sound, or let them use the global notification sound.",
             "activeCollabStyle": "Banner Wording",
-            "activeCollabStyleDescription": "Choose whether ActiveCollab banners lead with the change and name the project, or lead with the task name."
+            "activeCollabStyleDescription": "Choose whether ActiveCollab banners lead with the change and name the project, or lead with the task name.",
+            "activeCollabMention": "Mentioned You",
+            "activeCollabMentionDescription": "Notify when somebody @-mentions you on any ActiveCollab task you can see."
           }
         },
         "orchestration": {
@@ -8408,7 +8448,9 @@
               "title": "主题模式",
               "keyword_target": "目标",
               "keyword_editing": "编辑"
-            }
+            },
+            "cursorThemeColor": "Cursor Color From Theme",
+            "cursorThemeColorDescription": "Let the selected terminal theme set the cursor color."
           },
           "windows": {
             "search": {
@@ -8508,7 +8550,9 @@
         },
         "agent-generated-tab-title-copy": {
           "19ad21615a": "自动生成标签页标题",
-          "b036c7a409": "根据第一个已知智能体提示词生成简短稳定的标签页名称。手动重命名始终优先。"
+          "b036c7a409": "根据第一个已知智能体提示词生成简短稳定的标签页名称。手动重命名始终优先。",
+          "chat-title": "Auto-name chats",
+          "chat-description": "Name a chat thread from its first exchange instead of the raw opening message. Uses the Source Control AI agent, and manual renames always win."
         },
         "keep": {
           "local": {
@@ -9110,7 +9154,17 @@
           "scopeUser": "Confirms the token works and shows the connected account.",
           "scopeRepository": "Resolves the repository and reads commit build statuses.",
           "scopePullRequest": "Reads pull requests for the current branch.",
-          "scopesTitle": "Select these permissions when creating the token"
+          "scopesTitle": "Select these permissions when creating the token",
+          "oauthMissing": "This build has no Bitbucket OAuth consumer. Add ORCA_BITBUCKET_OAUTH_CLIENT_ID and ORCA_BITBUCKET_OAUTH_CLIENT_SECRET, then restart.",
+          "oauthWaiting": "Finish signing in in your browser. This window waits for Bitbucket to send you back.",
+          "oauthWaitingButton": "Waiting…",
+          "oauthDescription": "Sign in with your Bitbucket account to read pull requests and build statuses.",
+          "fromEnv": "Credentials come from environment variables, so this form cannot change them.",
+          "oauthConnectedAs": "Connected as {{account}}.",
+          "oauthConnected": "Bitbucket is connected on this machine.",
+          "oauthReady": "Muster will open Bitbucket in your browser. Approve access, then come back here.",
+          "reconnect": "Reconnect",
+          "connect": "Continue in Bitbucket"
         },
         "activecollab": {
           "integration": {
@@ -9171,7 +9225,8 @@
             "setup_close": "Close",
             "setup_terminal_label": "ActiveCollab MCP setup terminal",
             "setup_tab_title": "ActiveCollab MCP setup",
-            "setup_running": "Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits."
+            "setup_running": "Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits.",
+            "run_setup_install": "Opens a terminal with pipx install. Press Enter to run it."
           }
         },
         "ActiveCollabNotificationSection": {
@@ -9186,7 +9241,11 @@
           "updated": "Task Details Edited",
           "updatedDescription": "An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed.",
           "soundLabel": "ActiveCollab Sound",
-          "styleLabel": "Banner Wording"
+          "styleLabel": "Banner Wording",
+          "mention": "Mentioned You",
+          "mentionDescription": "Somebody @-mentions you, on any task you can see — not only ones assigned to you. Read from ActiveCollab’s own notification stream, so it costs one extra request per poll while switched on.",
+          "pollInterval": "Check Every",
+          "pollIntervalDescription": "How often Muster asks ActiveCollab for changes. Shorter is fresher; longer is lighter on a shared server."
         },
         "NotificationSoundPicker": {
           "inherit": "Use Global Sound"
@@ -9330,6 +9389,15 @@
           "command_label": "Each entry spawns this build directly:",
           "workspace_note": "Project-level installs are automatic: Muster keeps a muster-sites entry in each site project’s .mcp.json on its own.",
           "install_ok": "Wrote the \"muster-sites\" entry to {{value0}}."
+        },
+        "RepositoryIconTintSection": {
+          "label": "Icon color",
+          "none": "Keep the original icon colors",
+          "swatch": "Recolor the icon {{value0}}",
+          "custom": "Custom icon color"
+        },
+        "TerminalZoomControl": {
+          "reset": "Reset"
         }
       },
       "right": {
@@ -10635,7 +10703,27 @@
             "recentRuns": "Recent runs",
             "noSite": "The active project is not linked to a site.",
             "importStepsHeading": "Import steps",
-            "deployStepsHeading": "Deploy steps"
+            "deployStepsHeading": "Deploy steps",
+            "pipelines": "Pipelines",
+            "pipelineRunning": "running",
+            "pipelineQueued": "queued",
+            "pipelinePaused": "paused",
+            "pipelinePassed": "passed",
+            "pipelineFailed": "failed",
+            "pipelineStopped": "stopped",
+            "pipelineUnknown": "unknown",
+            "pipelineOpen": "Open pipeline in Bitbucket",
+            "externalRun": "running (started by an agent)",
+            "externalRunBare": "running (started by an agent)"
+          },
+          "SitePanelWpCli": {
+            "confirmTitle": "Confirm target",
+            "confirmBody": "The branch does not match an environment. Run anyway?",
+            "confirmRun": "Run anyway",
+            "heading": "WP-CLI",
+            "writeBody": "Runs `{{command}}` on {{environment}}.",
+            "run": "Run",
+            "truncated": "truncated"
           }
         }
       },
@@ -10703,7 +10791,8 @@
           "hideAgents": "隐藏智能体",
           "showMoreAgents": "显示另外 {{value0}} 个智能体→",
           "yoloPermissionsLabel": "Yolo / 危险地跳过权限检查",
-          "yoloPermissionsInfo": "智能体权限信息"
+          "yoloPermissionsInfo": "智能体权限信息",
+          "yoloPermissionsTooltip": "Agents run commands without asking each time. Faster, but they can change or delete files unprompted. Leave off if you're unsure."
         },
         "FeatureSetupChecklist": {
           "77f74946f5": "智能体可互相通信、领取任务并协调交接。",
@@ -10741,7 +10830,33 @@
           "d6e5dba05a": "登录",
           "0b4a7d23ab": "登录",
           "a74c6d6b18": "未安装",
-          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations."
+          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations.",
+          "ocsitesImported": "Imported {{created}} new and updated {{updated}} sites.",
+          "ocsitesTitle": "ocsites",
+          "ocsitesDone": "Imported",
+          "ocsitesDetected": "Configuration found",
+          "ocsitesDescription": "Bring your existing ocsites sites, environments, and passwords into Muster.",
+          "ocsitesImporting": "Importing…",
+          "ocsitesImport": "Import",
+          "activecollabMcp": "Agent access",
+          "activecollabMcpReady": "Ready",
+          "activecollabMcpSetup": "Setup needed",
+          "activecollabMcpReadyHelp": "Your agents can read and edit tasks with this login. Restart any that are already running.",
+          "activecollabMcpMissingHelp": "Install the server so your agents can read and edit tasks with this login. Needs pipx.",
+          "activecollabMcpAgentsHelp": "Add it to each agent you use. You can change this later in Settings.",
+          "activecollabMcpTerminalHelp": "Press Enter to install activecollab-mcp with pipx. Re-check after it finishes.",
+          "activecollab": "ActiveCollab",
+          "activecollabNotConnected": "Not connected",
+          "activecollabAccount": "{{account}} · Assigned tasks, comments, and notifications.",
+          "activecollabDescription": "Assigned tasks, comments, and notifications from your ActiveCollab workspace.",
+          "activecollabConnect": "Connect",
+          "bitbucketRestart": "Restart the Muster dev app to load Bitbucket OAuth.",
+          "bitbucketAccount": "{{account}} · Pull requests and build statuses.",
+          "bitbucketDescription": "Pull requests and build statuses via your Bitbucket account.",
+          "bitbucket": "Bitbucket",
+          "bitbucketNotConnected": "Not connected",
+          "bitbucketCancel": "Cancel",
+          "bitbucketConnect": "Connect"
         },
         "NotificationStep": {
           "3bede04483": "发送测试通知",
@@ -10788,11 +10903,18 @@
           "defaultViewTitle": "How do you want to start?",
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
-          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:"
+          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:",
+          "siteSourcesTitle": "Point Muster at your sites",
+          "siteSourcesSubtitle": "Pick the folders your sites live in. Muster watches them and can add new ones to the sidebar for you.",
+          "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
+          "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.",
+          "siteMcpTitle": "Let agents work on your sites",
+          "siteMcpSubtitle": "Install the muster-sites server into your harnesses so agents can deploy, import, and query databases."
         },
         "welcome": {
           "eyebrow": "Welcome to",
-          "start": "Get started"
+          "start": "Get started",
+          "tagline": "Run AI agents on your projects, chat through work, and manage client sites — in one place."
         },
         "defaultView": {
           "chat": "Chat Mode",
@@ -10805,13 +10927,15 @@
         "OnboardingFooter": {
           "ba58547306": "返回",
           "111d3f8d92": "跳至项目设置",
-          "done": "完成"
+          "done": "完成",
+          "skipToWorkspaceSetup": "Skip to workspace setup"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "启动终端..."
         },
         "OnboardingSkipConfirmationDialog": {
-          "e4726b2d50": "跳过入门引导？"
+          "e4726b2d50": "跳过入门引导？",
+          "skipDescription": "You can set all of this up later in Settings, but this screen won't come back."
         },
         "OnboardingTourStep": {
           "3f9586c043": "开始导览",
@@ -10846,7 +10970,8 @@
             "flow": {
               "dce4bdce5b": "无法打开 SSH 设置",
               "fd74e7558e": "克隆失败",
-              "52acfbef51": "无法保存进度"
+              "52acfbef51": "无法保存进度",
+              "finishing": "Finishing..."
             }
           }
         },
@@ -10889,6 +11014,26 @@
               }
             }
           }
+        },
+        "SiteSourcesStep": {
+          "title": "Where your sites live",
+          "description": "Muster looks inside these folders for sites. You can change this later on the Sites page.",
+          "empty": "No folders yet. Choose the one that holds your sites.",
+          "remove": "Remove folder",
+          "derived_note": "Found from where your projects already sit. Add a folder to set your own.",
+          "add_folder": "Choose folder…",
+          "auto_add": "Add new sites automatically",
+          "auto_add_hint": "New folders found here become sidebar projects on their own, with no setup."
+        },
+        "SiteMcpStep": {
+          "title": "Site tools for your agents",
+          "status_ready": "Installed",
+          "status_setup": "Setup needed",
+          "description": "Muster ships an MCP server that lets your agents run deploys and imports, query databases, and read site config. Install it into the harnesses you use. You can change this later in Settings.",
+          "checking": "Checking your harnesses…",
+          "retry": "Try again",
+          "no_harnesses": "No coding harnesses found yet. Install one and Muster can register the server from Settings later.",
+          "project_note": "Project-level installs happen on their own: Muster keeps a muster-sites entry in each site project’s .mcp.json."
         }
       },
       "new": {
@@ -10948,6 +11093,15 @@
             "search": "搜索项目...",
             "empty": "没有匹配搜索的项目。",
             "addProject": "Add a new project"
+          },
+          "open": {
+            "project": "Project",
+            "opens": "Opens",
+            "noBranch": "current state",
+            "noCheckout": "This project has no checkout to open yet — create a worktree instead.",
+            "hint": "Opens the existing checkout on its current branch — nothing new is created.",
+            "agent": "Agent",
+            "submit": "Open workspace"
           }
         }
       },
@@ -11351,7 +11505,9 @@
             "a7463915b6": "无法保存设置脚本",
             "6299297dac": "设置脚本已保存",
             "f0bbf7da77": "尝试一下",
-            "522cce9e33": "添加项目"
+            "522cce9e33": "添加项目",
+            "newChatWorkspace": "New workspace",
+            "openChat": "Open Chat"
           },
           "FeatureWallTourPanel": {
             "af7d622f6f": "可选"
@@ -11598,7 +11754,8 @@
             "8241897205": "随时重新绑定快捷方式"
           },
           "FeatureTipActions": {
-            "eb04abece8": "也许稍后"
+            "eb04abece8": "也许稍后",
+            "working": "Working..."
           },
           "FeatureTipsModal": {
             "53905bd076": "开发预览：打开技能设置终端。",
@@ -12527,7 +12684,8 @@
             "6e776f9ef9": "下载失败",
             "756bfc25c9": "打开",
             "09a9489aa5": "显示",
-            "2a4c4b8e1f": "复制"
+            "2a4c4b8e1f": "复制",
+            "b41f0c7d92": "Close browser devtools"
           },
           "BrowserToolbarMenu": {
             "429ef481f9": "取消",
@@ -13346,17 +13504,28 @@
           "dbUserHint": "root",
           "dbSocket": "Local DB socket",
           "dbSocketHint": "/…/mysql/mysqld.sock",
-          "editingDivergence": "Editing {{environment}} — runs target {{target}}."
+          "editingDivergence": "Editing {{environment}} — runs target {{target}}.",
+          "localStack": "Local stack",
+          "stackConfirmed": "Ready",
+          "localStackHint": "Which stack serves this site and owns its local database.",
+          "stackStop": "Stop",
+          "stackStart": "Start",
+          "stackDomainLabel": "Local domain",
+          "stackChangeDomain": "Change domain",
+          "stackSetupHint": "{{stack}} does not serve this folder yet. Registering it keeps the files where they are.",
+          "stackSettingUp": "Setting up…",
+          "stackAdopt": "Set up with {{stack}}",
+          "stackDetected": "{{stack}} reports it manages this folder.",
+          "stackUseDetected": "Switch to it",
+          "dbPassword": "Local DB password",
+          "removeEnvironmentAction": "Remove",
+          "agentLocalVersion": "Agent Local {{version}}",
+          "agentLocalUpdate": "{{latest}} available",
+          "agentLocalOldForImport": "imports use Muster’s own tools until 0.27.0"
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
-          "dbPassword": "Database password",
-          "secretSet": "Stored",
-          "secretUnset": "Not set",
-          "secretReplace": "Enter a new value to replace",
           "secretEnter": "Enter value",
-          "secretSave": "Save",
-          "secretClear": "Clear",
           "importSteps": "Import steps",
           "deploySteps": "Deploy steps",
           "hostname": "SSH host",
@@ -13377,10 +13546,10 @@
           "rootPathHint": "public_html",
           "liveDomainHint": "example.com",
           "deployCommandHint": "npm ci && npm run build:prod",
-          "themeDistPathHint": "wp-content/themes/<theme>/dist"
+          "themeDistPathHint": "wp-content/themes/<theme>/dist",
+          "sshPort": "SSH port"
         },
         "SiteRow": {
-          "missingPath": "Checkout folder is missing",
           "noEnvironment": "No environment",
           "environmentCount": "{{count}} envs"
         },
@@ -13400,7 +13569,6 @@
           "linkedProjects": "{{added}} added, {{linked}} already present.",
           "projectsAdded": "{{count}} projects added to the sidebar.",
           "addToSidebar": "Add to sidebar",
-          "countOnDisk": "{{count}} on disk · {{hidden}} missing",
           "allMissing": "All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.",
           "discoveredHeading": "Found on disk ({{count}})",
           "folders": "Folders",
@@ -13418,22 +13586,11 @@
           "cancel": "Cancel"
         },
         "SiteBindDialog": {
-          "title": "Configure a site from a link",
-          "description": "A muster:// link wants to write this deployment configuration. Nothing is saved until you confirm.",
-          "willStore": "What will be stored",
           "chooseFolder": "Which local folder should this bind to?",
-          "clone": "Clone into a folder…",
-          "cloning": "Cloning…",
           "noCandidates": "No local checkout matches this repository yet.",
           "passwordNotice": "The link carries an SSH password. It is stored in your OS keychain and never shown again.",
           "noPasswordNotice": "The link carries no password, so no credential will be stored.",
           "updatesExisting": "This folder already has a site record; confirming updates it.",
-          "confirm": "Bind this site",
-          "confirming": "Binding…",
-          "cancel": "Cancel",
-          "boundToast": "Site configured",
-          "secretFailedToast": "Site configured, but the password could not be stored",
-          "cloneFailedToast": "Clone failed",
           "reponame": "Repository",
           "hostname": "SSH host",
           "username": "SSH user",
@@ -13444,11 +13601,14 @@
           "deployCommand": "Build command",
           "themeDistPath": "Theme dist path",
           "notes": "Notes",
-          "missingFolder": "Its folder is gone, so this record cannot be bound. Choose or clone a folder to set it up fresh.",
-          "setUpInRoot": "Set up in {{folder}}",
-          "settingUp": "Setting up…",
-          "willCreateAt": "Muster will clone into {{path}} and configure it.",
-          "noRootConfigured": "No projects folder is configured yet. Choose a folder below, or set your default folders in Sites → Folders."
+          "staleRecords": "{{count}} earlier record points at a folder that is gone.",
+          "staleRecordsPlural": "{{count}} earlier records point at folders that are gone.",
+          "folderTitle": "Folder",
+          "credentialsTitle": "Credentials",
+          "existingCheckout": "Existing checkout",
+          "cloneOption": "Clone {{repo}}",
+          "chooseAnother": "Choose another folder…",
+          "allFields": "All fields from the link ({{count}})"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -13471,59 +13631,11 @@
           "noWorkspace": "Open a workspace first — run logs open as an editor tab.",
           "notAuthorized": "Could not open the run log."
         },
-        "SiteSetupContinuation": {
-          "title": "Finish setting up",
-          "description": "The site is saved. These optional steps get it running locally.",
-          "loading": "Checking what this site needs…",
-          "stackHeading": "Local WordPress",
-          "stackBody": "Register this folder with LocalWP so it can be served and given a database.",
-          "stackAction": "Set up LocalWP",
-          "stackPreviewing": "Checking…",
-          "stackRunning": "Setting up…",
-          "stackConfirm": "Run setup",
-          "stackDone": "LocalWP site ready.",
-          "stackDomainLabel": "Local domain",
-          "importHeading": "Import from the server",
-          "importBody": "Pull the remote database and files down to this checkout.",
-          "importAction": "Run import now",
-          "importStarting": "Starting…",
-          "importStarted": "Import started — progress is on the site page.",
-          "importSteps": "{{count}} steps enabled",
-          "overrideAction": "Run anyway",
-          "skip": "Skip",
-          "done": "Done",
-          "unavailable": "Not available",
-          "certHeading": "HTTPS certificate",
-          "certAction": "Trust certificate",
-          "certTrusting": "Trusting…",
-          "certTrusted": "Trusted — the local site loads over https without a warning.",
-          "stackOsPasswordHint": "LocalWP may ask for your macOS password — check the Local app.",
-          "stackLogLabel": "Setup progress",
-          "stackFailed": "LocalWP setup did not finish.",
-          "stackRetry": "Try again",
-          "stackCreateBody": "No WordPress here yet. Register the folder with LocalWP, then pull the site down with the import step.",
-          "stackCreateAction": "Create LocalWP site",
-          "stackMoves": "{{count}} project entries move into app/public",
-          "stackDeletes": "{{count}} existing entries under app/public are deleted first",
-          "importChooseSteps": "Choose steps",
-          "importStepsLegend": "Import steps for {{environment}}",
-          "importNoSteps": "Nothing is enabled yet. Pick what to pull down — each one is off until you choose it.",
-          "importBranchWarning": "The checked-out branch does not match an environment — confirm the target before importing.",
-          "importRunning": "Importing from the server…",
-          "importSucceeded": "Import complete.",
-          "importFailed": "Import failed.",
-          "importCancelled": "Import cancelled.",
-          "importBlocked": "Import was blocked before it started.",
-          "importProgress": "{{stage}} · {{percent}}%",
-          "importLogLabel": "Import log"
-        },
         "DiscoveredSiteRow": {
           "notConfigured": "Not configured"
         },
         "CloneSource": {
           "trigger": "New site",
-          "title": "New site from a repository",
-          "description": "Pick a repository from a connected git host. Muster clones it and adds it as a site.",
           "search": "Search repositories",
           "loading": "Loading repositories…",
           "empty": "No repositories match.",
@@ -13533,23 +13645,8 @@
           "truncated": "Showing the most recent repositories. Search to reach any repository on the host, not only these.",
           "truncatedLocal": "Showing the most recent repositories. This host cannot search, so the box only filters these.",
           "chooseFolder": "Clone into…",
-          "cloning": "Cloning…",
-          "adding": "Adding site…",
           "cancel": "Cancel",
-          "privateLabel": "Private",
-          "clonedToast": "Site added",
-          "failedToast": "Could not add the site",
-          "destinationPrefix": "Clones into",
-          "confirmTitle": "Clone this repository?",
-          "confirmInto": "Clones into",
-          "confirmNext": "Afterwards you can set it up as a LocalWP site, trust its HTTPS certificate, and pull the server content down.",
-          "confirmAction": "Clone repository",
-          "back": "Back",
-          "cloningTitle": "Cloning",
-          "cloneStarting": "Starting clone…",
-          "cloneRegistering": "Registering the site…",
-          "setupTitle": "Finish setting up",
-          "done": "Done"
+          "back": "Back"
         },
         "SiteRootsDialog": {
           "title": "Site folders",
@@ -13585,6 +13682,171 @@
           "saveTip": "Save",
           "cancelTip": "Discard changes",
           "enterKey": "Enter"
+        },
+        "StepLibrary": {
+          "heading": "Custom steps",
+          "description": "Extra commands this site runs as part of an import or deploy. Your agent can create and copy them too.",
+          "libraryHeading": "Library",
+          "install": "Install",
+          "installed": "Added “{{name}}” to this site.",
+          "promoted": "Copied “{{name}}” to the library.",
+          "installHint": "Copy this step onto the open site",
+          "remove": "Remove from library",
+          "removeHint": "Delete from the library. Sites that installed it keep their copy.",
+          "removed": "Removed “{{name}}” from the library."
+        },
+        "StepEditor": {
+          "add": "Add step",
+          "save": "Save",
+          "cancel": "Cancel",
+          "edit": "Edit",
+          "remove": "Remove",
+          "removed": "Removed “{{name}}”.",
+          "promote": "Copy to library",
+          "moveUp": "Move earlier",
+          "moveDown": "Move later",
+          "name": "Name",
+          "namePlaceholder": "Clear cache",
+          "command": "Command",
+          "group": "Runs during",
+          "position": "Order",
+          "runsOn": "Runs on",
+          "nothingToRun": "Nothing to run",
+          "modeCommand": "Command",
+          "modeScript": "Script file",
+          "scriptPath": "Script path",
+          "scriptHint": "Bash file inside the checkout, run with these variables set:"
+        },
+        "SiteSetupRun": {
+          "stepClone": "Clone",
+          "stepServe": "Serve locally",
+          "stepHttps": "HTTPS",
+          "stepImport": "Import from production",
+          "stepRegister": "Register site",
+          "runningClone": "Cloning…",
+          "runningServe": "Creating local site…",
+          "runningHttps": "Trusting certificate… (macOS may ask for your password)",
+          "runningImport": "Importing…",
+          "cancel": "Cancel",
+          "cannotCancel": "Can't be cancelled while running",
+          "minimizeHint": "The dialog can be minimised; the work carries on.",
+          "finishLater": "Finish later",
+          "changeAndRetry": "Change and retry",
+          "adminAccountLabel": "wp-admin",
+          "adminAccountNotice": "Local-only account created by LocalWP.",
+          "copy": "Copy",
+          "copied": "Copied",
+          "close": "Close",
+          "openSite": "Open {{domain}}",
+          "logToggle": "Log ({{count}})",
+          "waiting": "Waiting",
+          "notRun": "Not run",
+          "skipped": "Skipped",
+          "localAddress": "Local address",
+          "adminEmail": "Email",
+          "adminPassword": "Password"
+        },
+        "SiteDbSnapshots": {
+          "created": "Snapshot saved.",
+          "restoreTitle": "Restore database",
+          "restoreBody": "Replaces the local database '{{db}}' with the snapshot from {{when}}. Changes made since are lost.",
+          "restoreConfirm": "Restore",
+          "restored": "Database restored.",
+          "heading": "Database snapshots",
+          "snapshotNow": "Snapshot now",
+          "empty": "No snapshots yet. One is taken automatically before every database import.",
+          "preImport": "pre-import",
+          "manual": "manual",
+          "restore": "Restore",
+          "delete": "Delete"
+        },
+        "SiteSetupRunner": {
+          "clonedInto": "Cloned into {{path}}",
+          "registered": "Site saved",
+          "declined": "Not selected",
+          "httpsNeedsServe": "Needs a local stack to serve the site",
+          "importUnavailable": "The import cannot run for this site yet",
+          "localWp": "LocalWP",
+          "agentLocal": "Agent Local",
+          "alreadyServing": "Already served by {{stack}} at {{domain}}",
+          "serving": "Serving with {{stack}} at {{domain}}",
+          "trusted": "Certificate for {{domain}} trusted",
+          "certNotTrusted": "The certificate is still not trusted",
+          "imported": "Imported from {{environment}}",
+          "importFailed": "The import failed",
+          "cancelled": "Cancelled"
+        },
+        "SiteSetupHost": {
+          "linkRejected": "Link not accepted"
+        },
+        "SiteSetupMinimizeButton": {
+          "minimize": "Minimize — keep this running in the status bar"
+        },
+        "SiteSetupReview": {
+          "cloneTitle": "Clone",
+          "serveTitle": "Serve locally",
+          "serveCreateLocalWp": "Create a LocalWP site at {{domain}}",
+          "serveAlreadyLocalWp": "Already a LocalWP site at {{domain}}",
+          "serveAgentLocal": "Serve with Agent Local at {{domain}}",
+          "serveNoStack": "No local stack is installed.",
+          "serveEditLabel": "Change how this site is served",
+          "serveStackLabel": "Local stack",
+          "serveStackLocalWp": "LocalWP",
+          "serveStackAgentLocal": "Agent Local",
+          "serveDomainLabel": "Domain",
+          "serveAgentLocalNeedsWordPress": "Agent Local needs a WordPress install in the folder; this repo has none yet.",
+          "httpsTitle": "HTTPS",
+          "httpsTrust": "Trust the certificate for {{domain}}",
+          "httpsAlreadyTrusted": "Certificate for {{domain}} is already trusted",
+          "importTitle": "Import from production",
+          "importNoEnvironment": "No environment is configured for this site yet.",
+          "importFrom": "From {{environment}}"
+        },
+        "SiteSetupSourceScreen": {
+          "destinationLabel": "Clone into",
+          "destinationPlaceholder": "Choose a folder",
+          "destinationEditLabel": "Change the destination folder",
+          "chooseFolderFirst": "Choose a folder first.",
+          "openIntegrationsSettings": "Open Settings → Integrations",
+          "copyCommand": "Copy command",
+          "copyCommandCopiedToast": "Copied",
+          "cancel": "Cancel",
+          "providerGroupLabel": "Repository host",
+          "destinationRootsHeading": "Your project folders",
+          "destinationNoRoots": "No project folders are configured yet. Add them in Sites → Folders.",
+          "destinationCustom": "Choose another folder…"
+        },
+        "SiteFinishSetupBanner": {
+          "title": "Setup isn't finished",
+          "noStack": "Nothing is serving this folder locally.",
+          "noCert": "The HTTPS certificate for {{domain}} is not trusted yet.",
+          "action": "Finish setup"
+        },
+        "SiteSetupDialog": {
+          "sourceTitle": "New site",
+          "sourceDescription": "Pick a repository. Nothing is cloned until you review.",
+          "reviewTitle": "Set up {{label}}",
+          "reviewRepoDescription": "From {{repo}} · Nothing is written until you continue.",
+          "reviewLinkDescription": "A muster:// link wants to configure this site. Nothing is saved until you continue.",
+          "reviewSiteDescription": "Finish what is not set up yet.",
+          "runningTitle": "Setting up {{label}}",
+          "doneTitle": "{{label}} is ready",
+          "finishedWithProblemsTitle": "{{label}} needs attention",
+          "back": "Back",
+          "cancel": "Cancel",
+          "setUp": "Set up site",
+          "retry": "Retry",
+          "chooseTarget": "Choose a folder to continue.",
+          "loading": "Checking this machine…",
+          "secretFailedToast": "Site saved, but the password could not be stored",
+          "stageConfirm": "Needs a decision",
+          "stageClone": "Cloning",
+          "stageRegister": "Saving site",
+          "stageServe": "Creating local site",
+          "stageHttps": "Trusting certificate",
+          "stageImport": "Importing",
+          "stageDone": "Ready",
+          "stageFailed": "Needs attention"
         }
       },
       "activecollab": {
@@ -13603,7 +13865,8 @@
             "password_label": "Password",
             "cancel": "Cancel",
             "exchanging": "Exchanging…",
-            "connect": "Connect"
+            "connect": "Connect",
+            "mcp_shared": "This login is also written for the ActiveCollab MCP, so agents do not need a second sign-in."
           }
         },
         "failure": {
@@ -13611,7 +13874,8 @@
           "not_configured": "ActiveCollab is not connected yet. Exchange your instance URL, email, and password for a token to continue.",
           "invalid_request": "ActiveCollab rejected the request. Check that the instance URL points at your ActiveCollab root.",
           "api": "ActiveCollab returned an error that reconnecting will not fix: {{value0}}",
-          "unknown": "Could not reach ActiveCollab: {{value0}}"
+          "unknown": "Could not reach ActiveCollab: {{value0}}",
+          "network": "Could not reach ActiveCollab. Check your internet connection and try again."
         },
         "task_workspace": {
           "retry": "Retry",
@@ -13656,7 +13920,41 @@
           "start_work": "Start workspace",
           "close_date_picker": "Close",
           "clear_dates": "Clear",
-          "save_dates": "Save"
+          "save_dates": "Save",
+          "edit_description": "Edit description",
+          "add_description": "Add a description",
+          "comment_prompt": "Write a comment...",
+          "comment_cancel": "Cancel",
+          "cancel_edit": "Cancel",
+          "save_edit": "Save",
+          "edit_comment": "Edit comment",
+          "delete_comment": "Delete comment",
+          "delete_comment_confirm": "This removes the comment from ActiveCollab for everyone. It cannot be undone.",
+          "cancel_delete": "Cancel",
+          "delete": "Delete",
+          "clients": "Clients",
+          "hidden_from_clients": "Hidden from clients",
+          "rename_task": "Rename task",
+          "discuss_workspace": "Discuss in workspace",
+          "discuss": "Discuss in chat",
+          "open_in_browser": "Open in browser",
+          "open_project": "View all tasks in {{project}}",
+          "created_on_by": "Created {{value0}} by {{value1}}",
+          "close": "Close task details",
+          "hours": "{{value0}}h",
+          "watchers": "Watchers",
+          "priority": "Priority",
+          "important": "High",
+          "not_important": "Normal",
+          "estimate": "Estimate",
+          "estimate_hint": "Tracked time and estimate, in hours",
+          "rename_subtask": "Rename subtask",
+          "assigned": "Assigned",
+          "add_subtask": "Add a subtask",
+          "subtasks": "Subtasks",
+          "unwatch": "Stop watching",
+          "watch": "Watch this task",
+          "no_watchers": "Nobody"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -13675,7 +13973,15 @@
           "due_today": "Today",
           "empty_scoped_title": "No tasks in {{value0}}",
           "empty_scoped_more": "None of the tasks loaded so far belong to {{value0}}. Load more to keep looking.",
-          "empty_scoped_body": "Nothing open is assigned to you in {{value0}} right now."
+          "empty_scoped_body": "Nothing open is assigned to you in {{value0}} right now.",
+          "my_work": "My Work",
+          "search_projects": "Search projects",
+          "close_project_search": "Close search",
+          "open_project": "View all tasks in {{project}}",
+          "open_project_tooltip": "View all project tasks",
+          "row_important": "high priority",
+          "row_subtasks": "subtasks {{value0}}",
+          "row_comments": "comments {{value0}}"
         },
         "attachments": {
           "retry": "Retry",
@@ -13739,12 +14045,68 @@
           "unbind": "Unlink {{value0}}"
         },
         "task_row": {
-          "start_work": "Start a workspace for this task"
+          "start_work": "Start a workspace for this task",
+          "assignee_unresolved": "Assigned"
         },
         "start_work": {
           "unbound": "Link {{value0}} to a site first — use the link button on the project heading.",
           "open_failed": "Could not open {{value0}} as a repository.",
           "still_no_repo": "{{value0}} is not a git repository, so it cannot hold a workspace."
+        },
+        "create_task": {
+          "description_placeholder": "Add a description…",
+          "description": "Description",
+          "orphaned_upload": "The files uploaded but the task was not created, so nothing was attached. Your draft is still here — try again.",
+          "title": "New task",
+          "name": "Name",
+          "name_placeholder": "What needs doing?",
+          "list": "Task list",
+          "no_list": "No list (project default)",
+          "cancel": "Cancel",
+          "submit": "Create task"
+        },
+        "project_view": {
+          "unnamed_list": "Task list {{id}}",
+          "no_list": "Other tasks",
+          "add_task": "Add task",
+          "back": "Back to your assigned tasks",
+          "empty_title": "No open tasks",
+          "empty_body": "Everything in this project is completed.",
+          "list_label": "Tasks in {{project}}",
+          "refreshing": "Refreshing…"
+        },
+        "my_work": {
+          "update_mention": "mentioned you",
+          "update_comment_one": "1 new comment",
+          "update_comment_many": "{{value0}} new comments",
+          "update_created": "new task",
+          "update_reassigned": "reassigned",
+          "update_unread": "Unread",
+          "facet_selected": "{{value0}}, {{value1}} selected",
+          "create_project_placeholder": "Search projects for the new task…",
+          "create_title": "New task",
+          "create_description": "Choose the project the new task belongs to.",
+          "create_pick_again": "Choose another project",
+          "create_loading_lists": "Loading task lists…",
+          "filter_text": "Filter by name or task number",
+          "filter_labels": "Labels",
+          "no_projects": "No projects match.",
+          "filter_projects": "Projects",
+          "filter_projects_placeholder": "Filter projects",
+          "filter_clear": "Clear filters",
+          "create_task": "New task",
+          "filtered_empty_title": "No tasks match this filter",
+          "filtered_empty_body": "{{value0}} tasks are assigned to you, and none of them match what you narrowed to."
+        },
+        "updates": {
+          "bell_unread": "My updates, {{value0}} unread",
+          "bell": "My updates",
+          "title": "My Updates",
+          "none_unread": "No new updates",
+          "unsupported": "This ActiveCollab won't serve its notification stream, so recent updates aren't available here. Open a task to see its own comments and changes.",
+          "retry": "Try again",
+          "empty": "You're all caught up.",
+          "view_all": "View all my updates"
         }
       },
       "TaskPageActiveCollabPanel": {
@@ -13776,7 +14138,183 @@
         }
       },
       "whats-new": {
-        "history_unavailable": "Notes for any releases you skipped could not be loaded. See GitHub for the full history."
+        "history_unavailable": "Notes for any releases you skipped could not be loaded. See GitHub for the full history.",
+        "title": "What’s new in Muster {{version}}",
+        "subtitle": "Here’s what changed in this update.",
+        "notes_unavailable": "Release notes couldn’t be loaded right now. You can read them on GitHub instead.",
+        "view_notes": "View full release notes",
+        "continue": "Continue",
+        "earlier_version": "Muster {{version}}",
+        "section_unavailable": "Notes for this release couldn’t be loaded.",
+        "more_releases": "…and {{count}} earlier releases. See GitHub for the full history."
+      },
+      "chat": {
+        "workspaceDialog": {
+          "acProjectLoading": "Loading projects…",
+          "acProjectEmpty": "No matching projects.",
+          "editTitle": "Edit workspace",
+          "createTitle": "New workspace",
+          "description": "Name the workspace and add site details. Folders are optional.",
+          "nameLabel": "Name",
+          "namePlaceholder": "e.g. Client site",
+          "notesLabel": "About",
+          "notesHint": "Optional context new chats in this workspace will see — stack, clients, gotchas.",
+          "notesPlaceholder": "e.g. WordPress site. Staging is on LocalWP.",
+          "dirsLabel": "Folders",
+          "dirsHint": "Optional. The first folder is the working directory. Extra folders are added to the session.",
+          "primary": "primary",
+          "removeDir": "Remove folder",
+          "noDirs": "No folders. Chats start in your home folder until you add one.",
+          "addDir": "Add folder",
+          "appearance": "Appearance",
+          "cancel": "Cancel",
+          "save": "Save",
+          "create": "Create workspace",
+          "emailsLabel": "Client emails",
+          "emailsHint": "Contacts for this client. The first address is the primary contact.",
+          "emailPlaceholder": "name@client.com",
+          "removeEmail": "Remove email",
+          "noEmails": "No client emails yet. Add the main contact first.",
+          "addEmail": "Add email",
+          "acProjects": "ActiveCollab projects",
+          "acProjectHint": "The first project is the default for task pickers and new chats.",
+          "acProjectRemove": "Remove project",
+          "noAcProjects": "No projects yet. Add the main ActiveCollab project first.",
+          "addAcProject": "Add project",
+          "acProjectSearch": "Search projects…",
+          "urlsLabel": "Websites",
+          "urlsHint": "First URL is the primary site and sets the workspace icon. Drag to reorder.",
+          "reorderUrl": "Reorder website",
+          "urlPlaceholder": "https://example.com",
+          "removeUrl": "Remove website",
+          "noUrls": "No websites yet. Add the live site first, then staging or docs.",
+          "addUrl": "Add website"
+        },
+        "sidebar": {
+          "clearWorkspaceChatsTitle": "Delete all chats in {{value0}}?",
+          "clearChatsTitle": "Delete all chats?",
+          "clearWorkspaceChatsDescription": "Every chat in this workspace is deleted. The workspace itself stays. This cannot be undone.",
+          "clearChatsDescription": "Every chat outside your workspaces is deleted. Workspace chats stay. This cannot be undone.",
+          "clearChatsCountOne": "1 chat",
+          "clearChatsCount": "{{value0}} chats",
+          "clearChatsCancel": "Cancel",
+          "clearChatsConfirm": "Delete all",
+          "tasks": "Tasks",
+          "tasksDue": "Tasks due today or overdue",
+          "searchPlaceholder": "Search…",
+          "searchLabel": "Search chats and workspaces",
+          "workspaces": "Workspaces",
+          "newWorkspace": "New workspace",
+          "settings": "Settings",
+          "archived": "Archived",
+          "chats": "Chats",
+          "chatsMenu": "Chats menu",
+          "deleteAllChats": "Delete all chats",
+          "newStandaloneChat": "New chat",
+          "startQuickChat": "Start a quick chat…",
+          "workspaceMenu": "Workspace menu",
+          "editWorkspace": "Edit workspace",
+          "clearWorkspaceChats": "Delete all chats",
+          "deleteWorkspace": "Delete workspace",
+          "newThread": "New chat",
+          "startFirstChat": "Start a chat…",
+          "statusApproval": "Approval",
+          "statusWorking": "Working",
+          "statusDone": "Done",
+          "threadMenu": "Chat menu",
+          "renameThread": "Rename",
+          "unpinThread": "Unpin",
+          "pinThread": "Pin to top",
+          "markRead": "Mark as read",
+          "markUnread": "Mark as unread",
+          "regenerateTitle": "Regenerate title",
+          "unarchiveThread": "Unarchive",
+          "archiveThread": "Archive",
+          "deleteThread": "Delete chat"
+        },
+        "connector": {
+          "confirmTitle": "Delete chats?",
+          "confirmDescriptionNamed": "Claude in \"{{value0}}\" is asking to delete chats. This cannot be undone.",
+          "confirmDescription": "Claude is asking to delete chats. This cannot be undone.",
+          "confirmCancel": "Cancel",
+          "confirmDelete": "Delete"
+        },
+        "hero": {
+          "greeting": "Hey, {{value0}}",
+          "headlinePrefix": "What should we work on in",
+          "noWorkspace": "a new chat",
+          "standalone": "No workspace",
+          "newWorkspace": "New workspace…",
+          "placeholder": "Ask anything…",
+          "modelPicker": "Model",
+          "effortPicker": "Effort",
+          "send": "Start the chat",
+          "taskOverdue": "Overdue",
+          "taskDueToday": "Due today"
+        },
+        "mode": {
+          "toggleLabel": "App mode",
+          "chat": "Chat",
+          "code": "Code"
+        },
+        "taskStrip": {
+          "reopen": "Reopen task",
+          "complete": "Complete task",
+          "openInTasks": "Open in Tasks"
+        },
+        "thread": {
+          "noLaunchPlan": "Could not build a launch command for this agent.",
+          "starting": "Starting Claude…",
+          "failed": "The session could not start",
+          "ended": "This session ended",
+          "resume": "Resume chat",
+          "retry": "Try again"
+        }
+      },
+      "native-chat": {
+        "approval": {
+          "wants": "wants to run",
+          "cancelTurn": "Cancel turn",
+          "decline": "Decline",
+          "approve": "Approve",
+          "moreOptions": "More approval options",
+          "alwaysAllowTool": "Always allow {{value0}} this session",
+          "fullAccess": "Full access this session",
+          "fullAccessHint": "Approves every tool without asking"
+        },
+        "composer": {
+          "setUpDictation": "Set up voice dictation in Settings",
+          "accessLevel": "Tool access level",
+          "fullAccess": "Full access",
+          "askFirst": "Ask first",
+          "askFirstItem": "Ask first",
+          "askFirstHint": "Every tool needs your approval",
+          "fullAccessItem": "Full access",
+          "fullAccessItemHint": "Runs every tool without asking — remembered for all chats"
+        },
+        "contextWindow": {
+          "used": "Context window usage",
+          "tokens": "tokens"
+        },
+        "stash": {
+          "label": "Stashed prompts",
+          "stashCurrent": "Stash current prompt",
+          "emptyHint": "Nothing stashed yet. Stash a typed prompt to park it for later, then restore it from here.",
+          "delete": "Delete stashed prompt"
+        },
+        "taskChip": {
+          "unknown": "Open in Tasks",
+          "fallback": "Task"
+        },
+        "taskPicker": {
+          "label": "Reference an ActiveCollab task",
+          "search": "Search your open tasks…",
+          "loading": "Loading tasks…",
+          "empty": "No matching open tasks."
+        }
+      },
+      "status-bar": {
+        "siteSetupRestore": "Reopen {{flow}}"
       }
     },
     "i18n": {
@@ -13872,10 +14410,13 @@
       },
       "tool": {
         "running": "正在运行…",
-        "result": "结果"
+        "result": "结果",
+        "expandRun": "Show tool calls"
       },
       "status": {
-        "responding": "智能体正在回复"
+        "responding": "智能体正在回复",
+        "workingFor": "Working for",
+        "working": "Working…"
       },
       "jumpToLatest": "跳到最新消息",
       "toggle": {
@@ -13924,7 +14465,35 @@
         "allow": "允许",
         "deny": "拒绝"
       },
-      "launchPromptNotDelivered": "未送达 — 请检查终端"
+      "launchPromptNotDelivered": "未送达 — 请检查终端",
+      "changedFiles": {
+        "one": "1 file changed",
+        "many": "{{count}} files changed"
+      },
+      "userMessage": {
+        "showLess": "Show less",
+        "showFull": "Show full message"
+      },
+      "turnFold": {
+        "stoppedAfter": "You stopped after {{duration}}",
+        "stopped": "You stopped this response",
+        "workedFor": "Worked for {{duration}}",
+        "worked": "Worked"
+      },
+      "liveTools": {
+        "showFewer": "Show fewer tool calls",
+        "showPrevious": "+{{count}} previous tool calls"
+      },
+      "turnPlan": {
+        "done": "Plan complete"
+      },
+      "codeBlock": {
+        "unwrap": "Disable line wrap",
+        "wrap": "Wrap lines",
+        "copied": "Copied",
+        "copy": "Copy code",
+        "actions": "Code block actions"
+      }
     },
     "tab": {
       "bar": {
@@ -13970,6 +14539,12 @@
       "sent": "已将会话上下文发送到新的 {{agent}} 会话。",
       "deliveryFailed": "新的 {{agent}} 会话已启动，但无法发送上下文。",
       "launchFailed": "无法启动新的 {{agent}} 会话。"
+    },
+    "chat-mode": {
+      "turnError": {
+        "title": "That didn't finish",
+        "dismiss": "Dismiss"
+      }
     }
   },
   "dashboardPopout": {
@@ -14033,6 +14608,13 @@
       "certificateChallengeChanged": "The certificate request changed. Retry the page and review the new warning.",
       "certificateChallengeUnavailable": "This certificate request is no longer available. Retry the page to request a new one.",
       "certificateProceedFailed": "Muster could not approve this certificate request. Retry the page and try again."
+    }
+  },
+  "lib": {
+    "chat": {
+      "thread": {
+        "attachmentsSkipped": "{{value0}} attachment(s) were not sent (unsupported type or over 4 MB)."
+      }
     }
   }
 }

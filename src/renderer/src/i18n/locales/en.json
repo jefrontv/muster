@@ -246,7 +246,9 @@
         "workspace": {
           "cleanup": {
             "9d6e531da6": "Workspace no longer exists.",
-            "changedSinceConfirmation": "Workspace changed after confirmation. Refresh to review it before removing."
+            "changedSinceConfirmation": "Workspace changed after confirmation. Refresh to review it before removing.",
+            "hostUnresolved": "Muster cannot tell which host owns this workspace. Refresh projects and review it again.",
+            "hostCollision": "Error: this workspace exists on multiple hosts at the same path"
           }
         },
         "worktrees": {
@@ -1279,7 +1281,11 @@
       "NewWorkspaceComposerModal": {
         "createWorktree": "Create worktree",
         "createWorkspace": "Create workspace",
-        "fa90f739a5": "Choose the project, workspace name, and agent before creating the workspace."
+        "fa90f739a5": "Choose the project, workspace name, and agent before creating the workspace.",
+        "openNoCheckout": "This project has no checkout to open yet — create a worktree instead.",
+        "openTitle": "Open workspace",
+        "openTab": "Open",
+        "worktreeTab": "New worktree"
       },
       "PullRequestPage": {
         "2560588245": "Failed to request reviewer",
@@ -5212,7 +5218,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "Also show pinned worktrees in their original lists",
             "description": "Pinned worktrees stay in Pinned and also appear in All, Project, Status, and PR."
-          }
+          },
+          "terminalZoom": "Terminal Zoom",
+          "terminalZoomDesc": "Default zoom for terminal panes; applies to new panes and Cmd+0 reset.",
+          "terminalZoomHint": "inside a terminal pane zooms that pane only."
         },
         "AutoRenameBranchFromWorkSetting": {
           "1626524572": "Nautilus",
@@ -5454,6 +5463,12 @@
             "modeAriaLabel": "Agent Dashboard open mode",
             "modeInWindow": "In-window",
             "modePopout": "Pop-out"
+          },
+          "chatMode": {
+            "title": "Chat mode",
+            "description": "A dedicated Chat surface with simple workspaces and chat threads, beside the Code view.",
+            "copy": "Adds a Chat/Code switch at the top of the sidebar. Chat workspaces are just a name plus folders, with chat threads inside — no branches or worktrees.",
+            "toggleLabel": "Toggle Chat mode"
           }
         },
         "FloatingWorkspacePane": {
@@ -5924,7 +5939,9 @@
           "76e02467b8": "Change Custom File",
           "d3756cf5bc": "disabled",
           "siteRunComplete": "Site Import / Deploy",
-          "siteRunCompleteDescription": "A WordPress import or deploy finishes, fails, or is cancelled."
+          "siteRunCompleteDescription": "A WordPress import or deploy finishes, fails, or is cancelled.",
+          "siteRunSlackWebhook": "Slack webhook for site runs",
+          "siteRunSlackWebhookDescription": "Posts every import/deploy result to this Slack incoming webhook. Leave empty to disable."
         },
         "OpenAiTranscriptionKeyDialog": {
           "fa83512e48": "Save Key",
@@ -6775,7 +6792,9 @@
           "e90afcc44f": "off",
           "16c471ee03": "on",
           "typographyAdvanced": "Typography",
-          "dimUnfocusedPanes": "Dim unfocused panes."
+          "dimUnfocusedPanes": "Dim unfocused panes.",
+          "cursorThemeColor": "Cursor Color From Theme",
+          "cursorThemeColorDescription": "Let the selected terminal theme set the cursor color. Off uses the theme text color instead, so switching themes leaves the cursor alone."
         },
         "TerminalFontSizeSetting": {
           "9b5252c85a": "px",
@@ -7339,7 +7358,9 @@
             "d6c0a9e2f4": "grok",
             "c5b9f8d1e3": "xai",
             "usagePercentageDisplayTitle": "Usage percentages",
-            "usagePercentageDisplayDescription": "Choose whether provider limits show the percentage used or remaining."
+            "usagePercentageDisplayDescription": "Choose whether provider limits show the percentage used or remaining.",
+            "terminalZoom": "Terminal Zoom",
+            "terminalZoomDesc": "Default zoom for terminal panes."
           }
         },
         "auto": {
@@ -7582,6 +7603,10 @@
             "agentDashboard": {
               "title": "Agent Dashboard",
               "description": "Kanban board for monitoring agents across worktrees, in-window or as a pop-out."
+            },
+            "chatMode": {
+              "title": "Chat mode",
+              "description": "A dedicated Chat surface with simple workspaces and chat threads, beside the Code view."
             }
           }
         },
@@ -8002,7 +8027,9 @@
             "activeCollabSound": "ActiveCollab Sound",
             "activeCollabSoundDescription": "Give ActiveCollab alerts their own sound, or let them use the global notification sound.",
             "activeCollabStyle": "Banner Wording",
-            "activeCollabStyleDescription": "Choose whether ActiveCollab banners lead with the change and name the project, or lead with the task name."
+            "activeCollabStyleDescription": "Choose whether ActiveCollab banners lead with the change and name the project, or lead with the task name.",
+            "activeCollabMention": "Mentioned You",
+            "activeCollabMentionDescription": "Notify when somebody @-mentions you on any ActiveCollab task you can see."
           }
         },
         "orchestration": {
@@ -8496,7 +8523,9 @@
               "title": "Theme Mode",
               "keyword_target": "target",
               "keyword_editing": "editing"
-            }
+            },
+            "cursorThemeColor": "Cursor Color From Theme",
+            "cursorThemeColorDescription": "Let the selected terminal theme set the cursor color."
           },
           "windows": {
             "search": {
@@ -8604,7 +8633,9 @@
         },
         "agent-generated-tab-title-copy": {
           "19ad21615a": "Auto-generate tab titles",
-          "b036c7a409": "Derive short stable tab names from the first known agent prompt. Manual renames always win."
+          "b036c7a409": "Derive short stable tab names from the first known agent prompt. Manual renames always win.",
+          "chat-title": "Auto-name chats",
+          "chat-description": "Name a chat thread from its first exchange instead of the raw opening message. Uses the Source Control AI agent, and manual renames always win."
         },
         "cli": {
           "source": {
@@ -9146,7 +9177,17 @@
           "scopeUser": "Confirms the token works and shows the connected account.",
           "scopeRepository": "Resolves the repository and reads commit build statuses.",
           "scopePullRequest": "Reads pull requests for the current branch.",
-          "scopesTitle": "Select these permissions when creating the token"
+          "scopesTitle": "Select these permissions when creating the token",
+          "oauthMissing": "This build has no Bitbucket OAuth consumer. Add ORCA_BITBUCKET_OAUTH_CLIENT_ID and ORCA_BITBUCKET_OAUTH_CLIENT_SECRET, then restart.",
+          "oauthWaiting": "Finish signing in in your browser. This window waits for Bitbucket to send you back.",
+          "oauthWaitingButton": "Waiting…",
+          "oauthDescription": "Sign in with your Bitbucket account to read pull requests and build statuses.",
+          "fromEnv": "Credentials come from environment variables, so this form cannot change them.",
+          "oauthConnectedAs": "Connected as {{account}}.",
+          "oauthConnected": "Bitbucket is connected on this machine.",
+          "oauthReady": "Muster will open Bitbucket in your browser. Approve access, then come back here.",
+          "reconnect": "Reconnect",
+          "connect": "Continue in Bitbucket"
         },
         "activecollab": {
           "integration": {
@@ -9207,7 +9248,8 @@
             "setup_close": "Close",
             "setup_terminal_label": "ActiveCollab MCP setup terminal",
             "setup_tab_title": "ActiveCollab MCP setup",
-            "setup_running": "Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits."
+            "setup_running": "Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits.",
+            "run_setup_install": "Opens a terminal with pipx install. Press Enter to run it."
           }
         },
         "ActiveCollabNotificationSection": {
@@ -9222,7 +9264,11 @@
           "updated": "Task Details Edited",
           "updatedDescription": "An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed.",
           "soundLabel": "ActiveCollab Sound",
-          "styleLabel": "Banner Wording"
+          "styleLabel": "Banner Wording",
+          "mention": "Mentioned You",
+          "mentionDescription": "Somebody @-mentions you, on any task you can see — not only ones assigned to you. Read from ActiveCollab’s own notification stream, so it costs one extra request per poll while switched on.",
+          "pollInterval": "Check Every",
+          "pollIntervalDescription": "How often Muster asks ActiveCollab for changes. Shorter is fresher; longer is lighter on a shared server."
         },
         "NotificationSoundPicker": {
           "inherit": "Use Global Sound"
@@ -9366,6 +9412,15 @@
           "command_label": "Each entry spawns this build directly:",
           "workspace_note": "Project-level installs are automatic: Muster keeps a muster-sites entry in each site project’s .mcp.json on its own.",
           "install_ok": "Wrote the \"muster-sites\" entry to {{value0}}."
+        },
+        "RepositoryIconTintSection": {
+          "label": "Icon color",
+          "none": "Keep the original icon colors",
+          "swatch": "Recolor the icon {{value0}}",
+          "custom": "Custom icon color"
+        },
+        "TerminalZoomControl": {
+          "reset": "Reset"
         }
       },
       "right": {
@@ -10680,7 +10735,18 @@
             "recentRuns": "Recent runs",
             "noSite": "The active project is not linked to a site.",
             "importStepsHeading": "Import steps",
-            "deployStepsHeading": "Deploy steps"
+            "deployStepsHeading": "Deploy steps",
+            "externalRun": "running (started by an agent)",
+            "externalRunBare": "running (started by an agent)"
+          },
+          "SitePanelWpCli": {
+            "confirmTitle": "Confirm target",
+            "confirmBody": "The branch does not match an environment. Run anyway?",
+            "confirmRun": "Run anyway",
+            "heading": "WP-CLI",
+            "writeBody": "Runs `{{command}}` on {{environment}}.",
+            "run": "Run",
+            "truncated": "truncated"
           }
         }
       },
@@ -10807,7 +10873,33 @@
           "d6e5dba05a": "Sign in",
           "0b4a7d23ab": "Signing in",
           "a74c6d6b18": "not-installed",
-          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations."
+          "more_task_sources_settings": "GitLab, Bitbucket, Azure DevOps, Gitea, and ActiveCollab live in Settings > Integrations.",
+          "ocsitesImported": "Imported {{created}} new and updated {{updated}} sites.",
+          "ocsitesTitle": "ocsites",
+          "ocsitesDone": "Imported",
+          "ocsitesDetected": "Configuration found",
+          "ocsitesDescription": "Bring your existing ocsites sites, environments, and passwords into Muster.",
+          "ocsitesImporting": "Importing…",
+          "ocsitesImport": "Import",
+          "activecollabMcp": "Agent access",
+          "activecollabMcpReady": "Ready",
+          "activecollabMcpSetup": "Setup needed",
+          "activecollabMcpReadyHelp": "Your agents can read and edit tasks with this login. Restart any that are already running.",
+          "activecollabMcpMissingHelp": "Install the server so your agents can read and edit tasks with this login. Needs pipx.",
+          "activecollabMcpAgentsHelp": "Add it to each agent you use. You can change this later in Settings.",
+          "activecollabMcpTerminalHelp": "Press Enter to install activecollab-mcp with pipx. Re-check after it finishes.",
+          "activecollab": "ActiveCollab",
+          "activecollabNotConnected": "Not connected",
+          "activecollabAccount": "{{account}} · Assigned tasks, comments, and notifications.",
+          "activecollabDescription": "Assigned tasks, comments, and notifications from your ActiveCollab workspace.",
+          "activecollabConnect": "Connect",
+          "bitbucketRestart": "Restart the Muster dev app to load Bitbucket OAuth.",
+          "bitbucketAccount": "{{account}} · Pull requests and build statuses.",
+          "bitbucketDescription": "Pull requests and build statuses via your Bitbucket account.",
+          "bitbucket": "Bitbucket",
+          "bitbucketNotConnected": "Not connected",
+          "bitbucketCancel": "Cancel",
+          "bitbucketConnect": "Connect"
         },
         "NotificationStep": {
           "3bede04483": "Send Test Notification",
@@ -10858,7 +10950,9 @@
           "integrationsTitle": "Connect your sources",
           "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:",
           "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
-          "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time."
+          "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.",
+          "siteMcpTitle": "Let agents work on your sites",
+          "siteMcpSubtitle": "Install the muster-sites server into your harnesses so agents can deploy, import, and query databases."
         },
         "welcome": {
           "eyebrow": "Welcome to",
@@ -10919,7 +11013,8 @@
             "flow": {
               "dce4bdce5b": "Could not open SSH settings",
               "fd74e7558e": "Clone failed",
-              "52acfbef51": "Could not save progress"
+              "52acfbef51": "Could not save progress",
+              "finishing": "Finishing..."
             }
           }
         },
@@ -11021,6 +11116,15 @@
             "search": "Search projects...",
             "empty": "No projects match your search.",
             "addProject": "Add a new project"
+          },
+          "open": {
+            "project": "Project",
+            "opens": "Opens",
+            "noBranch": "current state",
+            "noCheckout": "This project has no checkout to open yet — create a worktree instead.",
+            "hint": "Opens the existing checkout on its current branch — nothing new is created.",
+            "agent": "Agent",
+            "submit": "Open workspace"
           }
         }
       },
@@ -12603,7 +12707,8 @@
             "6e776f9ef9": "Download failed",
             "756bfc25c9": "Open",
             "09a9489aa5": "Show",
-            "2a4c4b8e1f": "Copy"
+            "2a4c4b8e1f": "Copy",
+            "b41f0c7d92": "Close browser devtools"
           },
           "BrowserToolbarMenu": {
             "429ef481f9": "Cancel",
@@ -13409,7 +13514,10 @@
         "notes_unavailable": "Release notes couldn’t be loaded right now. You can read them on GitHub instead.",
         "view_notes": "View full release notes",
         "continue": "Continue",
-        "history_unavailable": "Notes for any releases you skipped could not be loaded. See GitHub for the full history."
+        "history_unavailable": "Notes for any releases you skipped could not be loaded. See GitHub for the full history.",
+        "earlier_version": "Muster {{version}}",
+        "section_unavailable": "Notes for this release couldn’t be loaded.",
+        "more_releases": "…and {{count}} earlier releases. See GitHub for the full history."
       },
       "sites": {
         "SiteDetailPanel": {
@@ -13791,7 +13899,8 @@
             "password_label": "Password",
             "cancel": "Cancel",
             "exchanging": "Exchanging…",
-            "connect": "Connect"
+            "connect": "Connect",
+            "mcp_shared": "This login is also written for the ActiveCollab MCP, so agents do not need a second sign-in."
           }
         },
         "failure": {
@@ -13799,7 +13908,8 @@
           "not_configured": "ActiveCollab is not connected yet. Exchange your instance URL, email, and password for a token to continue.",
           "invalid_request": "ActiveCollab rejected the request. Check that the instance URL points at your ActiveCollab root.",
           "api": "ActiveCollab returned an error that reconnecting will not fix: {{value0}}",
-          "unknown": "Could not reach ActiveCollab: {{value0}}"
+          "unknown": "Could not reach ActiveCollab: {{value0}}",
+          "network": "Could not reach ActiveCollab. Check your internet connection and try again."
         },
         "task_workspace": {
           "retry": "Retry",
@@ -13844,7 +13954,41 @@
           "start_work": "Start workspace",
           "close_date_picker": "Close",
           "clear_dates": "Clear",
-          "save_dates": "Save"
+          "save_dates": "Save",
+          "edit_description": "Edit description",
+          "add_description": "Add a description",
+          "comment_prompt": "Write a comment...",
+          "comment_cancel": "Cancel",
+          "cancel_edit": "Cancel",
+          "save_edit": "Save",
+          "edit_comment": "Edit comment",
+          "delete_comment": "Delete comment",
+          "delete_comment_confirm": "This removes the comment from ActiveCollab for everyone. It cannot be undone.",
+          "cancel_delete": "Cancel",
+          "delete": "Delete",
+          "clients": "Clients",
+          "hidden_from_clients": "Hidden from clients",
+          "rename_task": "Rename task",
+          "discuss_workspace": "Discuss in workspace",
+          "discuss": "Discuss in chat",
+          "open_in_browser": "Open in browser",
+          "open_project": "View all tasks in {{project}}",
+          "created_on_by": "Created {{value0}} by {{value1}}",
+          "close": "Close task details",
+          "hours": "{{value0}}h",
+          "watchers": "Watchers",
+          "priority": "Priority",
+          "important": "High",
+          "not_important": "Normal",
+          "estimate": "Estimate",
+          "estimate_hint": "Tracked time and estimate, in hours",
+          "rename_subtask": "Rename subtask",
+          "assigned": "Assigned",
+          "add_subtask": "Add a subtask",
+          "subtasks": "Subtasks",
+          "unwatch": "Stop watching",
+          "watch": "Watch this task",
+          "no_watchers": "Nobody"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -13863,7 +14007,15 @@
           "due_today": "Today",
           "empty_scoped_title": "No tasks in {{value0}}",
           "empty_scoped_more": "None of the tasks loaded so far belong to {{value0}}. Load more to keep looking.",
-          "empty_scoped_body": "Nothing open is assigned to you in {{value0}} right now."
+          "empty_scoped_body": "Nothing open is assigned to you in {{value0}} right now.",
+          "my_work": "My Work",
+          "search_projects": "Search projects",
+          "close_project_search": "Close search",
+          "open_project": "View all tasks in {{project}}",
+          "open_project_tooltip": "View all project tasks",
+          "row_important": "high priority",
+          "row_subtasks": "subtasks {{value0}}",
+          "row_comments": "comments {{value0}}"
         },
         "attachments": {
           "retry": "Retry",
@@ -13927,12 +14079,68 @@
           "unbind": "Unlink {{value0}}"
         },
         "task_row": {
-          "start_work": "Start a workspace for this task"
+          "start_work": "Start a workspace for this task",
+          "assignee_unresolved": "Assigned"
         },
         "start_work": {
           "unbound": "Link {{value0}} to a site first — use the link button on the project heading.",
           "open_failed": "Could not open {{value0}} as a repository.",
           "still_no_repo": "{{value0}} is not a git repository, so it cannot hold a workspace."
+        },
+        "create_task": {
+          "description_placeholder": "Add a description…",
+          "description": "Description",
+          "orphaned_upload": "The files uploaded but the task was not created, so nothing was attached. Your draft is still here — try again.",
+          "title": "New task",
+          "name": "Name",
+          "name_placeholder": "What needs doing?",
+          "list": "Task list",
+          "no_list": "No list (project default)",
+          "cancel": "Cancel",
+          "submit": "Create task"
+        },
+        "project_view": {
+          "unnamed_list": "Task list {{id}}",
+          "no_list": "Other tasks",
+          "add_task": "Add task",
+          "back": "Back to your assigned tasks",
+          "empty_title": "No open tasks",
+          "empty_body": "Everything in this project is completed.",
+          "list_label": "Tasks in {{project}}",
+          "refreshing": "Refreshing…"
+        },
+        "my_work": {
+          "update_mention": "mentioned you",
+          "update_comment_one": "1 new comment",
+          "update_comment_many": "{{value0}} new comments",
+          "update_created": "new task",
+          "update_reassigned": "reassigned",
+          "update_unread": "Unread",
+          "facet_selected": "{{value0}}, {{value1}} selected",
+          "create_project_placeholder": "Search projects for the new task…",
+          "create_title": "New task",
+          "create_description": "Choose the project the new task belongs to.",
+          "create_pick_again": "Choose another project",
+          "create_loading_lists": "Loading task lists…",
+          "filter_text": "Filter by name or task number",
+          "filter_labels": "Labels",
+          "no_projects": "No projects match.",
+          "filter_projects": "Projects",
+          "filter_projects_placeholder": "Filter projects",
+          "filter_clear": "Clear filters",
+          "create_task": "New task",
+          "filtered_empty_title": "No tasks match this filter",
+          "filtered_empty_body": "{{value0}} tasks are assigned to you, and none of them match what you narrowed to."
+        },
+        "updates": {
+          "bell_unread": "My updates, {{value0}} unread",
+          "bell": "My updates",
+          "title": "My Updates",
+          "none_unread": "No new updates",
+          "unsupported": "This ActiveCollab won't serve its notification stream, so recent updates aren't available here. Open a task to see its own comments and changes.",
+          "retry": "Try again",
+          "empty": "You're all caught up.",
+          "view_all": "View all my updates"
         }
       },
       "TaskPageActiveCollabPanel": {
@@ -13962,6 +14170,174 @@
             "revealShortcut": "Shortcut"
           }
         }
+      },
+      "chat": {
+        "workspaceDialog": {
+          "acProjectLoading": "Loading projects…",
+          "acProjectEmpty": "No matching projects.",
+          "editTitle": "Edit workspace",
+          "createTitle": "New workspace",
+          "description": "Name the workspace and add site details. Folders are optional.",
+          "nameLabel": "Name",
+          "namePlaceholder": "e.g. Client site",
+          "notesLabel": "About",
+          "notesHint": "Optional context new chats in this workspace will see — stack, clients, gotchas.",
+          "notesPlaceholder": "e.g. WordPress site. Staging is on LocalWP.",
+          "dirsLabel": "Folders",
+          "dirsHint": "Optional. The first folder is the working directory. Extra folders are added to the session.",
+          "primary": "primary",
+          "removeDir": "Remove folder",
+          "noDirs": "No folders. Chats start in your home folder until you add one.",
+          "addDir": "Add folder",
+          "appearance": "Appearance",
+          "cancel": "Cancel",
+          "save": "Save",
+          "create": "Create workspace",
+          "emailsLabel": "Client emails",
+          "emailsHint": "Contacts for this client. The first address is the primary contact.",
+          "emailPlaceholder": "name@client.com",
+          "removeEmail": "Remove email",
+          "noEmails": "No client emails yet. Add the main contact first.",
+          "addEmail": "Add email",
+          "acProjects": "ActiveCollab projects",
+          "acProjectHint": "The first project is the default for task pickers and new chats.",
+          "acProjectRemove": "Remove project",
+          "noAcProjects": "No projects yet. Add the main ActiveCollab project first.",
+          "addAcProject": "Add project",
+          "acProjectSearch": "Search projects…",
+          "urlsLabel": "Websites",
+          "urlsHint": "First URL is the primary site and sets the workspace icon. Drag to reorder.",
+          "reorderUrl": "Reorder website",
+          "urlPlaceholder": "https://example.com",
+          "removeUrl": "Remove website",
+          "noUrls": "No websites yet. Add the live site first, then staging or docs.",
+          "addUrl": "Add website"
+        },
+        "sidebar": {
+          "clearWorkspaceChatsTitle": "Delete all chats in {{value0}}?",
+          "clearChatsTitle": "Delete all chats?",
+          "clearWorkspaceChatsDescription": "Every chat in this workspace is deleted. The workspace itself stays. This cannot be undone.",
+          "clearChatsDescription": "Every chat outside your workspaces is deleted. Workspace chats stay. This cannot be undone.",
+          "clearChatsCountOne": "1 chat",
+          "clearChatsCount": "{{value0}} chats",
+          "clearChatsCancel": "Cancel",
+          "clearChatsConfirm": "Delete all",
+          "tasks": "Tasks",
+          "tasksDue": "Tasks due today or overdue",
+          "searchPlaceholder": "Search…",
+          "searchLabel": "Search chats and workspaces",
+          "workspaces": "Workspaces",
+          "newWorkspace": "New workspace",
+          "settings": "Settings",
+          "archived": "Archived",
+          "chats": "Chats",
+          "chatsMenu": "Chats menu",
+          "deleteAllChats": "Delete all chats",
+          "newStandaloneChat": "New chat",
+          "startQuickChat": "Start a quick chat…",
+          "workspaceMenu": "Workspace menu",
+          "editWorkspace": "Edit workspace",
+          "clearWorkspaceChats": "Delete all chats",
+          "deleteWorkspace": "Delete workspace",
+          "newThread": "New chat",
+          "startFirstChat": "Start a chat…",
+          "statusApproval": "Approval",
+          "statusWorking": "Working",
+          "statusDone": "Done",
+          "threadMenu": "Chat menu",
+          "renameThread": "Rename",
+          "unpinThread": "Unpin",
+          "pinThread": "Pin to top",
+          "markRead": "Mark as read",
+          "markUnread": "Mark as unread",
+          "regenerateTitle": "Regenerate title",
+          "unarchiveThread": "Unarchive",
+          "archiveThread": "Archive",
+          "deleteThread": "Delete chat"
+        },
+        "connector": {
+          "confirmTitle": "Delete chats?",
+          "confirmDescriptionNamed": "Claude in \"{{value0}}\" is asking to delete chats. This cannot be undone.",
+          "confirmDescription": "Claude is asking to delete chats. This cannot be undone.",
+          "confirmCancel": "Cancel",
+          "confirmDelete": "Delete"
+        },
+        "hero": {
+          "greeting": "Hey, {{value0}}",
+          "headlinePrefix": "What should we work on in",
+          "noWorkspace": "a new chat",
+          "standalone": "No workspace",
+          "newWorkspace": "New workspace…",
+          "placeholder": "Ask anything…",
+          "modelPicker": "Model",
+          "effortPicker": "Effort",
+          "send": "Start the chat",
+          "taskOverdue": "Overdue",
+          "taskDueToday": "Due today"
+        },
+        "mode": {
+          "toggleLabel": "App mode",
+          "chat": "Chat",
+          "code": "Code"
+        },
+        "taskStrip": {
+          "reopen": "Reopen task",
+          "complete": "Complete task",
+          "openInTasks": "Open in Tasks"
+        },
+        "thread": {
+          "noLaunchPlan": "Could not build a launch command for this agent.",
+          "starting": "Starting Claude…",
+          "failed": "The session could not start",
+          "ended": "This session ended",
+          "resume": "Resume chat",
+          "retry": "Try again"
+        }
+      },
+      "native-chat": {
+        "approval": {
+          "wants": "wants to run",
+          "cancelTurn": "Cancel turn",
+          "decline": "Decline",
+          "approve": "Approve",
+          "moreOptions": "More approval options",
+          "alwaysAllowTool": "Always allow {{value0}} this session",
+          "fullAccess": "Full access this session",
+          "fullAccessHint": "Approves every tool without asking"
+        },
+        "composer": {
+          "setUpDictation": "Set up voice dictation in Settings",
+          "accessLevel": "Tool access level",
+          "fullAccess": "Full access",
+          "askFirst": "Ask first",
+          "askFirstItem": "Ask first",
+          "askFirstHint": "Every tool needs your approval",
+          "fullAccessItem": "Full access",
+          "fullAccessItemHint": "Runs every tool without asking — remembered for all chats"
+        },
+        "contextWindow": {
+          "used": "Context window usage",
+          "tokens": "tokens"
+        },
+        "stash": {
+          "label": "Stashed prompts",
+          "stashCurrent": "Stash current prompt",
+          "emptyHint": "Nothing stashed yet. Stash a typed prompt to park it for later, then restore it from here.",
+          "delete": "Delete stashed prompt"
+        },
+        "taskChip": {
+          "unknown": "Open in Tasks",
+          "fallback": "Task"
+        },
+        "taskPicker": {
+          "label": "Reference an ActiveCollab task",
+          "search": "Search your open tasks…",
+          "loading": "Loading tasks…",
+          "empty": "No matching open tasks."
+        }
+      },
+      "status-bar": {
+        "siteSetupRestore": "Reopen {{flow}}"
       }
     },
     "i18n": {
@@ -14057,10 +14433,13 @@
       },
       "tool": {
         "running": "Running…",
-        "result": "Result"
+        "result": "Result",
+        "expandRun": "Show tool calls"
       },
       "status": {
-        "responding": "Agent is responding"
+        "responding": "Agent is responding",
+        "workingFor": "Working for",
+        "working": "Working…"
       },
       "jumpToLatest": "Jump to latest",
       "toggle": {
@@ -14109,7 +14488,35 @@
         "allow": "Allow",
         "deny": "Deny"
       },
-      "launchPromptNotDelivered": "Not delivered — check the terminal"
+      "launchPromptNotDelivered": "Not delivered — check the terminal",
+      "changedFiles": {
+        "one": "1 file changed",
+        "many": "{{count}} files changed"
+      },
+      "userMessage": {
+        "showLess": "Show less",
+        "showFull": "Show full message"
+      },
+      "turnFold": {
+        "stoppedAfter": "You stopped after {{duration}}",
+        "stopped": "You stopped this response",
+        "workedFor": "Worked for {{duration}}",
+        "worked": "Worked"
+      },
+      "liveTools": {
+        "showFewer": "Show fewer tool calls",
+        "showPrevious": "+{{count}} previous tool calls"
+      },
+      "turnPlan": {
+        "done": "Plan complete"
+      },
+      "codeBlock": {
+        "unwrap": "Disable line wrap",
+        "wrap": "Wrap lines",
+        "copied": "Copied",
+        "copy": "Copy code",
+        "actions": "Code block actions"
+      }
     },
     "tab": {
       "bar": {
@@ -14155,6 +14562,12 @@
       "sent": "Session context sent to {{agent}} in a new session.",
       "deliveryFailed": "The new {{agent}} session started, but its context could not be sent.",
       "launchFailed": "Could not start a new {{agent}} session."
+    },
+    "chat-mode": {
+      "turnError": {
+        "title": "That didn't finish",
+        "dismiss": "Dismiss"
+      }
     }
   },
   "dashboardPopout": {
@@ -14195,6 +14608,13 @@
   "dashboard": {
     "sidebar": {
       "label": "Agent Dashboard"
+    }
+  },
+  "lib": {
+    "chat": {
+      "thread": {
+        "attachmentsSkipped": "{{value0}} attachment(s) were not sent (unsupported type or over 4 MB)."
+      }
     }
   }
 }
