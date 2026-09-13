@@ -10,7 +10,7 @@ import {
   runLocalWpMigration,
   type LocalWpMigrationDependencies
 } from './localwp-migration'
-import type { LocalWpMigrationRequest } from './localwp-migration-plan'
+import { LOCALWP_SITE_READY, type LocalWpMigrationRequest } from './localwp-migration-plan'
 
 const HOME = '/Users/tester'
 const SUPPORT = path.join(HOME, 'Library', 'Application Support', 'Local')
@@ -364,9 +364,12 @@ describe('runLocalWpMigration in create mode', () => {
     const streamed: string[] = []
     const { dependencies } = harness(tree, { onStatus: (message) => streamed.push(message) })
     const result = await runLocalWpMigration(request(), dependencies)
-    expect(result.message).toBe('LocalWP site ready.')
+    // The line says what is true here — files relocated, Local still starting its router — so it
+    // cannot be read as "Local is done" by the HTTPS step that follows.
+    expect(result.message).toBe(LOCALWP_SITE_READY)
+    expect(result.message).toContain('still finishing')
     expect(streamed).toEqual(result.log)
-    expect(streamed.at(-1)).toBe('LocalWP site ready.')
+    expect(streamed.at(-1)).toBe(LOCALWP_SITE_READY)
     const wait = streamed.indexOf('Waiting for LocalWP to complete setup…')
     const ready = streamed.indexOf('Socket ready.')
     expect(wait).toBeGreaterThanOrEqual(0)
@@ -571,7 +574,7 @@ describe('create mode on a real filesystem', () => {
     expect(result.plan.mode).toBe('create')
     expect(result.socketPath).toBe(SOCKET)
     expect(result.localWpRoot).toBe('app/public')
-    expect(result.message).toBe('LocalWP site ready.')
+    expect(result.message).toBe(LOCALWP_SITE_READY)
     // app/ is Local's, so it stays at the root; everything else moved inside app/public.
     expect((await readdir(root)).sort()).toEqual(['app'])
     expect((await readdir(appPublic)).sort()).toEqual(['.git', 'composer.json', 'web'])

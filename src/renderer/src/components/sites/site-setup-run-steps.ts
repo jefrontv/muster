@@ -6,9 +6,10 @@
 // the outer one read a blocked migration as success, which is why each is checked here.
 
 import { LOCALWP_ADMIN_EMAIL, LOCALWP_ADMIN_PASSWORD } from '../../../../shared/site-setup-defaults'
+import type { LocalWpCertTrustResult } from '../../../../shared/localwp-cert-types'
 import { findSetupStage, type SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
 import { repoSlug } from '../../../../shared/site-local-domain'
-import { SITE_IMPORT_TOGGLES } from '../../../../shared/site-types'
+import { SITE_IMPORT_TOGGLES, type SiteResult } from '../../../../shared/site-types'
 import { rememberLocalStackChoice } from './last-local-stack-choice'
 import type {
   SetupRunStep,
@@ -20,6 +21,9 @@ import type { SiteSetupRunnerApi, SiteSetupRunnerSnapshot } from './site-setup-r
 import { getSiteSetupRunnerStrings } from './site-setup-runner-strings'
 
 export class StepFailure extends Error {}
+
+/** Monotonic per window: the token only has to be unique among this window's in-flight ensures. */
+let nextCertRequestToken = 0
 
 export type StepContext = {
   api: SiteSetupRunnerApi
@@ -260,7 +264,11 @@ export async function runHttps(ctx: StepContext): Promise<void> {
   const stack = choices.serve.stack
   const domain = ctx.state().domain
   const done = (): void =>
-    ctx.patchStep('https', { state: 'done', detail: strings.trusted.replace('{{domain}}', domain) })
+    ctx.patchStep('https', {
+      state: 'done',
+      cancellable: false,
+      detail: strings.trusted.replace('{{domain}}', domain)
+    })
   ctx.patchStep('https', { state: 'running' })
   const status = await ctx.api.localwpCert.status({ domain, stack })
   if (!status.ok) {
@@ -274,9 +282,35 @@ export async function runHttps(ctx: StepContext): Promise<void> {
     done()
     return
   }
-  const result = status.value.exists
-    ? await ctx.api.localwpCert.trust({ domain, stack })
-    : await ctx.api.localwpCert.ensure({ domain, siteId: ctx.state().siteId, stack })
+  // The ensure path waits on Local's own password prompt, which can take minutes. Without this the
+  // row sits on the static running label and then fails, which reads as "it jumped the gun".
+  const offProgress = ctx.api.siteStacks.onMigrationProgress((event) => {
+    if (event.siteId === ctx.state().siteId) {
+      ctx.patchStep('https', { detail: event.message })
+      ctx.appendLog('https', event.message)
+    }
+  })
+  let result: SiteResult<LocalWpCertTrustResult>
+  try {
+    // The waits inside `ensure` run for minutes and nothing in the UI interrupts them without
+    // this: the row offers Cancel while it is in flight, and this is what that button calls.
+    const requestToken = `cert-ensure-${Date.now()}-${++nextCertRequestToken}`
+    ctx.patchStep('https', { cancellable: true })
+    ctx.setCancel(() => void ctx.api.localwpCert.cancelEnsure({ requestToken }))
+    // Always `ensure`, never `trust`, even when the certificate already exists. A `.crt` on disk is
+    // not evidence Local owns this folder — it survives a site Local has since removed, and it is
+    // what a retry finds — so the ownership check inside `ensure` has to run before any trust.
+    // `ensure` skips poke/wait when the certificate is there, so the healthy path stays fast.
+    result = await ctx.api.localwpCert.ensure({
+      domain,
+      siteId: ctx.state().siteId,
+      stack,
+      requestToken
+    })
+  } finally {
+    ctx.setCancel(null)
+    offProgress()
+  }
   if (!result.ok) {
     throw new StepFailure(result.error)
   }

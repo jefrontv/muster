@@ -46,5 +46,12 @@ export type LocalWpCertApi = {
     domain: string
     siteId: string
     stack?: SiteLocalStack
+    /**
+     * Asks for cancellation: `cancelEnsure` aborts this request's signal, ending the ownership and
+     * certificate waits. Absent means the request cannot be cancelled.
+     */
+    requestToken?: string
   }) => Promise<SiteResult<LocalWpCertTrustResult>>
+  /** Aborts an in-flight `ensure` by its token; a request that already settled is simply gone. */
+  cancelEnsure: (args: { requestToken: string }) => Promise<void>
 }

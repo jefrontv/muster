@@ -159,6 +159,15 @@ export function siteIdFromSocketPath(socketPath: string): string | null {
   return segments[runIndex + 1] ?? null
 }
 
+/**
+ * Local's site registry, keyed by site id.
+ *
+ * A missing, unreadable, or half-written `sites.json` parses to null and is reported here as an
+ * empty registry — which is indistinguishable from "Local has not registered anything yet". That
+ * is deliberate (there is no second signal to cross-check against) but it means a corrupt file
+ * makes every lookup answer "not registered": callers that poll on that answer burn their budget
+ * before concluding anything, and the wizard's wait is bounded for exactly that reason.
+ */
 export async function readLocalWpSites(
   host: LocalWpHost
 ): Promise<Record<string, Record<string, unknown>>> {

@@ -58,7 +58,7 @@ describe('agentLocalCertTrust', () => {
 
   it('falls back to the interactive CLI when the daemon needs a password prompt it cannot show', async () => {
     // The status read after the CLI ran is what decides success: the OS, not the CLI's word.
-    const cli = vi.fn(async () => ({ code: 0, stdout: 'trusted', stderr: '' }))
+    const cli = vi.fn(async () => ({ code: 0, stdout: 'trusted', stderr: '', timedOut: false }))
     const h = host({ [TRUST]: NEEDS_SUDO, [STATUS]: trusted })
     const result = await agentLocalCertTrust(DOMAIN, { host: h, runTrustCli: cli })
     expect(cli).toHaveBeenCalledWith(DOMAIN)
@@ -70,7 +70,8 @@ describe('agentLocalCertTrust', () => {
     const cli = vi.fn(async () => ({
       code: 1,
       stdout: '',
-      stderr: 'authorization failed: exit status 1 User canceled. (-128)'
+      stderr: 'authorization failed: exit status 1 User canceled. (-128)',
+      timedOut: false
     }))
     const result = await agentLocalCertTrust(DOMAIN, {
       host: host({ [TRUST]: NEEDS_SUDO, [STATUS]: untrusted }),
@@ -88,7 +89,8 @@ describe('agentLocalCertTrust', () => {
       code: 1,
       stdout: '',
       stderr:
-        'error: the password prompt was cancelled or the keychain refused; flex.local.crt is still untrusted'
+        'error: the password prompt was cancelled or the keychain refused; flex.local.crt is still untrusted',
+      timedOut: false
     }))
     const result = await agentLocalCertTrust(DOMAIN, {
       host: host({ [TRUST]: NEEDS_SUDO, [STATUS]: untrusted }),
@@ -97,8 +99,23 @@ describe('agentLocalCertTrust', () => {
     expect(result.message).toContain('flex.local.crt is still untrusted')
   })
 
+  it('names the password dialog when the interactive CLI is killed still waiting for it', async () => {
+    const cli = vi.fn(async () => ({ code: -1, stdout: '', stderr: '', timedOut: true }))
+    const result = await agentLocalCertTrust(DOMAIN, {
+      host: host({ [TRUST]: NEEDS_SUDO, [STATUS]: untrusted }),
+      runTrustCli: cli
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.message).toContain('macOS was still waiting for your password')
+    expect(result.message).toContain(DOMAIN)
+    // The control on the run screen, not the dead-end `agent-local sudo` hint the daemon sent.
+    expect(result.message).toContain('Change and retry')
+    expect(result.message).not.toContain('agent-local sudo')
+  })
+
   it('does not claim success when the CLI exited 0 but the OS still reports untrusted', async () => {
-    const cli = vi.fn(async () => ({ code: 0, stdout: '', stderr: '' }))
+    const cli = vi.fn(async () => ({ code: 0, stdout: '', stderr: '', timedOut: false }))
     const result = await agentLocalCertTrust(DOMAIN, {
       host: host({ [TRUST]: NEEDS_SUDO, [STATUS]: untrusted }),
       runTrustCli: cli

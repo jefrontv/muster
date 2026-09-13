@@ -75,8 +75,17 @@ export type LocalStackProvider = {
   /**
    * Start the stack if needed, mint the cert when Local has not written one, then trust it.
    * Optional: stacks that issue a cert inside `certTrust` (agent-local) can omit this.
+   *
+   * `onStatus` is how a multi-minute wait reports itself. LocalWP's router waits on an admin prompt
+   * the user has to answer, so without this the wizard's HTTPS row sits silent and then fails.
    */
-  certEnsure?: (domain: string, site: LocalStackSiteRef) => Promise<LocalWpCertTrustResult>
+  certEnsure?: (
+    domain: string,
+    site: LocalStackSiteRef,
+    onStatus?: (message: string) => void,
+    /** Ends the ownership and certificate waits when the caller's Cancel aborts it. */
+    signal?: AbortSignal
+  ) => Promise<LocalWpCertTrustResult>
   /**
    * Stand off :80/:443 for `seconds` so another stack can bind them. Optional, because only a stack
    * that takes the privileged ports has anything to give up — LocalWP binds them itself and has no
@@ -116,7 +125,8 @@ const localWpProvider: LocalStackProvider = {
   },
   certStatus: getLocalWpCertStatus,
   certTrust: trustLocalWpCert,
-  certEnsure: (domain, site) => ensureLocalWpHttpsCert(domain, site.path)
+  certEnsure: (domain, site, onStatus, signal) =>
+    ensureLocalWpHttpsCert(domain, site.path, { onStatus, ...(signal ? { signal } : {}) })
 }
 
 /**

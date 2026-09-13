@@ -22,8 +22,16 @@ const AGENT_LOCAL_TRUST_PROMPT_TIMEOUT_MS = 5 * 60_000
 
 type AgentLocalCertOptions = {
   host?: AgentLocalHost
-  /** The interactive CLI, injectable for tests. Defaults to `agent-local cert DOMAIN --trust`. */
-  runTrustCli?: (domain: string) => Promise<{ code: number; stderr: string; stdout: string }>
+  /**
+   * The interactive CLI, injectable for tests. Defaults to `agent-local cert DOMAIN --trust`.
+   * `timedOut` mirrors `streamCommand`: a deadline kill, not an answer from the command.
+   */
+  runTrustCli?: (domain: string) => Promise<{
+    code: number
+    stderr: string
+    stdout: string
+    timedOut: boolean
+  }>
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -110,12 +118,24 @@ export async function agentLocalCertTrust(
   const cli = await (options.runTrustCli ?? defaultTrustCli)(domain).catch((error: unknown) => ({
     code: -1,
     stdout: '',
-    stderr: error instanceof Error ? error.message : String(error)
+    stderr: error instanceof Error ? error.message : String(error),
+    timedOut: false
   }))
   // The CLI's own exit code says whether the prompt was answered; the OS says whether it took.
   const after = await agentLocalCertStatus(domain, { host })
   if (cli.code === 0 && after.trusted) {
     return { ok: true, message: `Trusted ${domain}.` }
+  }
+  // A deadline is not a refusal. streamCommand kills the child when the prompt budget runs out, and
+  // falling through here would report the daemon's "needs root" hint — a failure that never
+  // happened — instead of the dialog the user was still typing at.
+  if (cli.timedOut) {
+    return {
+      ok: false,
+      message:
+        `macOS was still waiting for your password, so ${domain} is not trusted yet. ` +
+        'Choose "Change and retry" when you are ready.'
+    }
   }
   // The CLI (0.23.4+) already explains a cancelled prompt in plain words; only osascript's own
   // failure line needs translating.

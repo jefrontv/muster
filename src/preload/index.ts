@@ -1025,7 +1025,8 @@ const api = {
   localwpCert: {
     status: (args) => ipcRenderer.invoke('localwpCert:status', args),
     trust: (args) => ipcRenderer.invoke('localwpCert:trust', args),
-    ensure: (args) => ipcRenderer.invoke('localwpCert:ensure', args)
+    ensure: (args) => ipcRenderer.invoke('localwpCert:ensure', args),
+    cancelEnsure: (args) => ipcRenderer.invoke('localwpCert:cancelEnsure', args)
   } satisfies PreloadApi['localwpCert'],
 
   siteBitbucket: {

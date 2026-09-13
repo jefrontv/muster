@@ -15,6 +15,8 @@ const SITE_ID = 'aBcD1234'
 const SITE_PATH = '/Sites/acme'
 const SOCKET = path.join(SUPPORT, 'run', SITE_ID, 'mysql', 'mysqld.sock')
 const WP_CONFIG = path.join(SITE_PATH, 'app', 'public', 'wp-config.php')
+/** Local creates this directory itself, and a relocated project's files land inside it. */
+const APP_PUBLIC = path.join(SITE_PATH, 'app', 'public')
 const CLI = '/opt/homebrew/bin/local-cli'
 
 type FakeWorld = {
@@ -100,23 +102,115 @@ describe('ensureSiteRunning', () => {
     expect(spawned).toEqual([])
   })
 
-  it('skips a checkout that is not a LocalWP site', async () => {
-    const { host, spawned } = harness({})
+  it('skips a folder with no LocalWP footprint at all, accurately and without waiting', async () => {
+    const { host, spawned, sleeps } = harness({})
+    const outcome = await ensureSiteRunning(SITE_PATH, { host })
+    expect(outcome.ok).toBe(true)
+    expect(outcome.state).toBe('not-managed')
+    // The accurate, immediate answer — not prompt advice for a folder Local has never seen.
+    expect(outcome.message).toBe('Not a LocalWP site')
+    expect(outcome.message).not.toContain('password prompt')
+    expect(sleeps).toEqual([])
+    expect(spawned).toEqual([])
+  })
+
+  it('waits out a LocalWP layout Local does not list yet, then names the prompt', async () => {
+    const { host, sleeps } = harness({ existing: [WP_CONFIG] })
+    const outcome = await ensureSiteRunning(SITE_PATH, { host, registrationTimeoutMs: 25 })
+    expect(sleeps.length).toBeGreaterThan(0)
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toContain('LocalWP never reported this folder')
+    expect(outcome.message).toContain('password prompt')
+  })
+
+  it('answers a LocalWP-shaped folder instantly and accurately when the caller did not wait', async () => {
+    // The default is no wait: siteStacks:start/stop and the import pipeline render no "Change and
+    // retry" control, so prompt advice would be an instruction they cannot follow.
+    const { host, sleeps } = harness({ existing: [WP_CONFIG] })
+    const outcome = await ensureSiteRunning(SITE_PATH, { host })
+    expect(sleeps).toEqual([])
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toBe('Not registered in the Local app')
+    expect(outcome.message).not.toContain('password prompt')
+    expect(outcome.message).not.toContain('Change and retry')
+  })
+
+  it('waits for Local to list a site it has not registered yet, then proceeds', async () => {
+    // The reported regression: the wizard's own create leaves app/public full and no wp-config.php,
+    // and Local has not written the registry entry yet. Ticks 1 and 2 answer null; the 3rd registers.
+    const reads: number[] = []
+    const base = harness({ existing: [APP_PUBLIC, SOCKET], readySockets: [SOCKET] })
+    let registryReads = 0
+    const host: LocalWpHost = {
+      ...base.host,
+      readTextFile: async (filePath) => {
+        if (filePath !== path.join(SUPPORT, 'sites.json')) {
+          return null
+        }
+        registryReads += 1
+        reads.push(registryReads)
+        return registryReads >= 3 ? JSON.stringify({ [SITE_ID]: { path: SITE_PATH } }) : '{}'
+      }
+    }
+    const statuses: string[] = []
+    const outcome = await ensureSiteRunning(SITE_PATH, {
+      host,
+      registrationTimeoutMs: 60_000,
+      onStatus: (message) => statuses.push(message)
+    })
+    expect(reads.length).toBeGreaterThanOrEqual(3)
+    expect(outcome.state).toBe('running')
+    expect(outcome.socketPath).toBe(SOCKET)
+    expect(statuses.some((line) => line.includes('Waiting for LocalWP to finish setting up'))).toBe(
+      true
+    )
+    expect(statuses.some((line) => line.includes('answer it'))).toBe(true)
+  })
+
+  it('never refuses while the registry is still filling in — it spends the wait first', async () => {
+    const { host, sleeps } = harness({ existing: [APP_PUBLIC] })
+    const outcome = await ensureSiteRunning(SITE_PATH, { host, registrationTimeoutMs: 25 })
+    expect(sleeps.length).toBeGreaterThan(0)
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toContain('LocalWP never reported this folder')
+  })
+
+  it('names the domain in the exhausted message when the caller knows it', async () => {
+    const { host } = harness({ existing: [APP_PUBLIC] })
+    const outcome = await ensureSiteRunning(SITE_PATH, {
+      host,
+      domain: 'polar-frontiers.local',
+      registrationTimeoutMs: 20
+    })
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toContain('LocalWP never reported polar-frontiers.local')
+    expect(outcome.message).toContain('press "Change and retry"')
+  })
+
+  it('accepts a registered site that has no wp-config.php — the create-mode end state', async () => {
+    const { host, spawned } = harness({
+      registered: true,
+      existing: [APP_PUBLIC, SOCKET],
+      readySockets: [SOCKET]
+    })
     const outcome = await ensureSiteRunning(SITE_PATH, { host })
     expect(outcome).toEqual({
       ok: true,
-      socketPath: '',
-      state: 'not-managed',
-      message: 'Not a LocalWP site'
+      socketPath: SOCKET,
+      state: 'running',
+      message: 'LocalWP site already running'
     })
     expect(spawned).toEqual([])
   })
 
-  it('skips a LocalWP layout that Local does not know about', async () => {
-    const { host } = harness({ existing: [WP_CONFIG] })
-    const outcome = await ensureSiteRunning(SITE_PATH, { host })
-    expect(outcome.state).toBe('not-managed')
-    expect(outcome.message).toBe('Not registered in the Local app')
+  it('stops polling for the registry when the signal is aborted', async () => {
+    const { host } = harness({ existing: [APP_PUBLIC] })
+    const controller = new AbortController()
+    controller.abort()
+    const outcome = await ensureSiteRunning(SITE_PATH, { host, signal: controller.signal })
+    expect(outcome.ok).toBe(false)
+    expect(outcome.state).toBe('failed')
+    expect(outcome.message).toContain('Cancelled while waiting for LocalWP')
   })
 
   it('launches the Local app, starts the site, and returns the resolved socket', async () => {
@@ -245,6 +339,48 @@ describe('waitForSocket', () => {
 })
 
 describe('stopSite', () => {
+  it('stops a registered site that has no wp-config.php yet', async () => {
+    // Same create-mode shape as the ensure case: registered, app/public populated, no core.
+    const { host, spawned } = harness({
+      registered: true,
+      existing: [APP_PUBLIC],
+      readySockets: []
+    })
+    const outcome = await stopSite(SITE_PATH, { host })
+    expect(outcome.state).toBe('stopped')
+    expect(outcome.message).toBe('Already stopped')
+    expect(spawned).toEqual([])
+  })
+
+  it('spends the registry wait before refusing, and names the prompt', async () => {
+    const { host, sleeps } = harness({ existing: [APP_PUBLIC] })
+    const outcome = await stopSite(SITE_PATH, { host, registrationTimeoutMs: 25 })
+    expect(sleeps.length).toBeGreaterThan(0)
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toContain('LocalWP never reported this folder')
+    expect(outcome.message).toContain('password prompt')
+  })
+
+  it('answers a LocalWP-shaped folder instantly and accurately when the caller did not wait', async () => {
+    // Same distinction the ensure path draws: no wait was spent, so no prompt advice.
+    const { host, sleeps } = harness({ existing: [WP_CONFIG] })
+    const outcome = await stopSite(SITE_PATH, { host })
+    expect(sleeps).toEqual([])
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toBe('Not registered in the Local app')
+    expect(outcome.message).not.toContain('Change and retry')
+  })
+
+  it('answers a folder Local never touched accurately, with no prompt advice', async () => {
+    const { host, sleeps, spawned } = harness({})
+    const outcome = await stopSite(SITE_PATH, { host })
+    expect(outcome.state).toBe('not-managed')
+    expect(outcome.message).toBe('Not a LocalWP site')
+    expect(outcome.message).not.toContain('password prompt')
+    expect(sleeps).toEqual([])
+    expect(spawned).toEqual([])
+  })
+
   it('reports already-stopped without invoking local-cli', async () => {
     const { host, spawned } = harness({ registered: true, existing: [WP_CONFIG], readySockets: [] })
     const outcome = await stopSite(SITE_PATH, { host })

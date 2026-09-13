@@ -16,11 +16,14 @@ import { providerFor } from '../sites/local-stack-provider'
 // Side-effect import: the agent-local provider registers itself with the registry on load.
 import '../sites/agent-local-site-control'
 import { failure, requireSite, type SiteResult } from './sites-result'
+import { createSenderScopedRequestCancellations } from './sender-scoped-request-cancellation'
+import { createMigrationProgressForwarder } from './site-stack-progress'
 
 const LOCALWP_CERT_CHANNELS = [
   'localwpCert:status',
   'localwpCert:trust',
-  'localwpCert:ensure'
+  'localwpCert:ensure',
+  'localwpCert:cancelEnsure'
 ] as const
 
 /** The DNS limit on a fully qualified name; LocalWP domains are far shorter. */
@@ -33,6 +36,11 @@ export function registerLocalWpCertHandlers(store?: Store): void {
   for (const channel of LOCALWP_CERT_CHANNELS) {
     ipcMain.removeHandler(channel)
   }
+
+  // Token-keyed like fs:listFiles: the ensure wait can sit on Local's own password prompt for
+  // minutes, so the wizard's Cancel has to abort it from outside the awaiting call. Scoped to the
+  // issuing webContents, so a second window's token can never cancel this one's request.
+  const certEnsureCancellations = createSenderScopedRequestCancellations()
 
   ipcMain.handle(
     'localwpCert:status',
@@ -62,9 +70,19 @@ export function registerLocalWpCertHandlers(store?: Store): void {
 
   ipcMain.handle(
     'localwpCert:ensure',
-    async (_event, args: unknown): Promise<SiteResult<LocalWpCertTrustResult>> => {
+    async (event, args: unknown): Promise<SiteResult<LocalWpCertTrustResult>> => {
+      const input = (args ?? {}) as {
+        domain?: unknown
+        stack?: unknown
+        siteId?: unknown
+        requestToken?: unknown
+      }
+      const requestToken =
+        typeof input.requestToken === 'string' && input.requestToken.length > 0
+          ? input.requestToken
+          : undefined
+      const controller = certEnsureCancellations.begin(event, requestToken)
       try {
-        const input = (args ?? {}) as { domain?: unknown; stack?: unknown; siteId?: unknown }
         const domain = requireDomain(input.domain)
         if (typeof input.siteId !== 'string' || input.siteId.length === 0) {
           throw new TypeError('siteId must be a non-empty string')
@@ -74,19 +92,38 @@ export function registerLocalWpCertHandlers(store?: Store): void {
         }
         const site = requireSite(store, input.siteId)
         const provider = providerFor(readStack(input.stack))
+        // The wait below can block on Local's own password prompt for minutes. Report through the
+        // channel the migration already streams on, so the wizard's HTTPS row says what it is
+        // waiting for instead of sitting silent and then going red. Same siteId scoping, so a second
+        // window's run never renders into this one.
+        const onStatus = createMigrationProgressForwarder(event.sender, site.id)
         const value = provider.certEnsure
-          ? await provider.certEnsure(domain, {
-              path: site.path,
-              localStack: site.localStack,
-              localWpRoot: site.localWpRoot
-            })
+          ? await provider.certEnsure(
+              domain,
+              {
+                path: site.path,
+                localStack: site.localStack,
+                localWpRoot: site.localWpRoot
+              },
+              onStatus,
+              controller?.signal
+            )
           : await provider.certTrust(domain)
         return { ok: true, value }
       } catch (error) {
         return failure(error)
+      } finally {
+        certEnsureCancellations.finish(event, requestToken, controller)
       }
     }
   )
+
+  ipcMain.handle('localwpCert:cancelEnsure', (event, args: unknown): void => {
+    const input = (args ?? {}) as { requestToken?: unknown }
+    if (typeof input.requestToken === 'string' && input.requestToken.length > 0) {
+      certEnsureCancellations.cancel(event, input.requestToken)
+    }
+  })
 }
 
 /**

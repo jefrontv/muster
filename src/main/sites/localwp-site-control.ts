@@ -33,6 +33,17 @@ const APP_LAUNCH_SETTLE_MS = 3_000
 const STATUS_THROTTLE_MS = 5_000
 const CLI_ERROR_DETAIL_LIMIT = 200
 
+/**
+ * How long to wait for Local to list a folder in its registry — **off by default**.
+ *
+ * Most callers must not wait: `siteStacks:start`/`stop` and the import pipeline answered instantly
+ * before this existed and pass no domain or signal, and a stale record would otherwise stall them
+ * for a minute to produce the same answer. Only the wizard's cert path, which runs seconds after
+ * Local was told to create or register the site, opts in (registrationTimeoutMs).
+ */
+const DEFAULT_REGISTRATION_WAIT_MS = 0
+const REGISTRATION_POLL_INTERVAL_MS = 1_000
+
 export type LocalWpControlState = 'unsupported' | 'not-managed' | 'running' | 'stopped' | 'failed'
 
 export type LocalWpControlOptions = {
@@ -41,6 +52,12 @@ export type LocalWpControlOptions = {
   signal?: AbortSignal
   cliTimeoutMs?: number
   socketTimeoutMs?: number
+  /**
+   * The domain Local serves this site on, when the caller knows it. Only used to name the site in
+   * prose — a folder path reads as noise to the user this is written for.
+   */
+  domain?: string
+  registrationTimeoutMs?: number
 }
 
 /**
@@ -84,6 +101,140 @@ function waitingMessage(registered: boolean, socketExists: boolean, remainingMs:
   return `Waiting for LocalWP to finish… (${Math.max(0, Math.round(remainingMs / 1000))}s remaining)`
 }
 
+function registrationWaitingMessage(domain: string): string {
+  const site = domain.length > 0 ? domain : 'this site'
+  return (
+    `Waiting for LocalWP to finish setting up ${site}… ` +
+    `If Local is asking for your password, answer it.`
+  )
+}
+
+/**
+ * A folder with nothing Local-shaped in it. Accurate and immediate: Local never touched this, so
+ * there is no password prompt to answer and no retry worth pressing.
+ */
+const NOT_LOCALWP_SITE = 'Not a LocalWP site'
+
+/**
+ * A Local-shaped folder Local does not list. Two situations share that shape: a caller that *waited*
+ * for Local to register it, and one that only looked once. The prompt advice belongs to the first —
+ * a caller that never waited renders no "Change and retry" control, and Local's password prompt was
+ * never why it asked.
+ */
+function notListedMessage(args: { waited: boolean; domain: string }): string {
+  if (!args.waited) {
+    return 'Not registered in the Local app'
+  }
+  const site = args.domain.length > 0 ? args.domain : 'this folder'
+  return (
+    `LocalWP never reported ${site} as one of its sites. ` +
+    `If the Local app is showing a password prompt, answer it, ` +
+    `then press "Change and retry".`
+  )
+}
+
+/** Polls the registry until Local lists this folder, until `budgetMs` is spent, or on abort. */
+async function awaitRegisteredSiteId(
+  host: LocalWpHost,
+  sitePath: string,
+  options: LocalWpControlOptions,
+  budgetMs: number
+): Promise<string | null> {
+  const deadline = Date.now() + budgetMs
+  let lastStatusAt = 0
+  for (;;) {
+    const siteId = await findLocalWpSiteId(host, sitePath)
+    if (siteId !== null || options.signal?.aborted === true || Date.now() >= deadline) {
+      return siteId
+    }
+    const now = Date.now()
+    if (options.onStatus && now - lastStatusAt > STATUS_THROTTLE_MS) {
+      lastStatusAt = now
+      options.onStatus(registrationWaitingMessage(options.domain ?? ''))
+    }
+    await host.sleep(REGISTRATION_POLL_INTERVAL_MS)
+  }
+}
+
+/**
+ * Whether Local is responsible for this folder, and — when it is not — which of the two very
+ * different reasons applies. Collapsing them is what told users to answer a password prompt for a
+ * folder Local had never seen.
+ */
+type LocalWpOwnership =
+  | { kind: 'registered'; siteId: string }
+  /** Nothing Local-shaped here: Local could not own it, and no wait was spent finding that out. */
+  | { kind: 'not-local' }
+  /**
+   * Local-shaped and not listed. `waited` records which of the two that was: a caller that spent a
+   * registration budget, or one that looked once because it never asked for a wait.
+   */
+  | { kind: 'not-listed'; waited: boolean }
+  | { kind: 'cancelled' }
+
+/**
+ * The pre-check both control functions share: is Local responsible for this folder?
+ *
+ * Local's registry is the authority; a `wp-config.php` under app/public only says WordPress was
+ * installed there. Asking once and reading null as "not LocalWP" is what turned a site Local had
+ * just *created* — which has no core yet, because create mode never installs one — into an instant,
+ * wrong failure. So a folder Local has not listed yet reads as "still waiting" until its budget
+ * runs out, and only for a caller that asked for one (see DEFAULT_REGISTRATION_WAIT_MS).
+ */
+async function resolveLocalWpOwnership(
+  host: LocalWpHost,
+  sitePath: string,
+  options: LocalWpControlOptions
+): Promise<LocalWpOwnership> {
+  const listed = await findLocalWpSiteId(host, sitePath)
+  if (listed !== null) {
+    return { kind: 'registered', siteId: listed }
+  }
+  const shaped =
+    (await hasLocalWpLayout(host, sitePath)) ||
+    (await host.pathExists(localWpWordPressRoot(sitePath)))
+  if (!shaped) {
+    return { kind: 'not-local' }
+  }
+  const budgetMs = options.registrationTimeoutMs ?? DEFAULT_REGISTRATION_WAIT_MS
+  const siteId = await awaitRegisteredSiteId(host, sitePath, options, budgetMs)
+  if (siteId !== null) {
+    return { kind: 'registered', siteId }
+  }
+  if (options.signal?.aborted === true) {
+    return { kind: 'cancelled' }
+  }
+  return { kind: 'not-listed', waited: budgetMs > 0 }
+}
+
+/** The layout marker: does this folder hold a WordPress install under app/public? */
+async function hasLocalWpLayout(host: LocalWpHost, sitePath: string): Promise<boolean> {
+  return host.pathExists(path.join(localWpWordPressRoot(sitePath), 'wp-config.php'))
+}
+
+/**
+ * The outcome `ensureSiteRunning` and `stopSite` both return for every ownership result but
+ * `registered`. One place decides it, so the two surfaces cannot drift into telling the user
+ * different things about the same folder.
+ */
+function ownershipRefusal(
+  ownership: Exclude<LocalWpOwnership, { kind: 'registered' }>,
+  domain: string
+): LocalWpControlOutcome {
+  if (ownership.kind === 'cancelled') {
+    return {
+      ok: false,
+      socketPath: '',
+      state: 'failed',
+      message: 'Cancelled while waiting for LocalWP to register the site.'
+    }
+  }
+  if (ownership.kind === 'not-local') {
+    return skip('not-managed', NOT_LOCALWP_SITE)
+  }
+  return skip('not-managed', notListedMessage({ waited: ownership.waited, domain }))
+}
+
 /**
  * Brings the LocalWP site at sitePath up if it is stopped.
  *
@@ -99,8 +250,9 @@ export async function ensureSiteRunning(
   if (!isLocalWpSupported(host)) {
     return skip('unsupported', LOCALWP_UNSUPPORTED_PLATFORM)
   }
-  if (!(await host.pathExists(path.join(localWpWordPressRoot(sitePath), 'wp-config.php')))) {
-    return skip('not-managed', 'Not a LocalWP site')
+  const ownership = await resolveLocalWpOwnership(host, sitePath, options)
+  if (ownership.kind !== 'registered') {
+    return ownershipRefusal(ownership, options.domain ?? '')
   }
   const existing = await currentSocketIfRunning(host, sitePath)
   if (existing) {
@@ -111,11 +263,7 @@ export async function ensureSiteRunning(
       state: 'running'
     }
   }
-  const siteId = await findLocalWpSiteId(host, sitePath)
-  if (!siteId) {
-    // LocalWP layout but unregistered — let the normal flow report the connection failure.
-    return skip('not-managed', 'Not registered in the Local app')
-  }
+  const siteId = ownership.siteId
   // Local's per-site services only start while the app itself is running.
   if (!(await isLocalWpAppRunning(host))) {
     options.onStatus?.('Local app is not running — launching it…')
@@ -182,13 +330,11 @@ export async function stopSite(
   if (!isLocalWpSupported(host)) {
     return skip('unsupported', LOCALWP_UNSUPPORTED_PLATFORM)
   }
-  if (!(await host.pathExists(path.join(localWpWordPressRoot(sitePath), 'wp-config.php')))) {
-    return skip('not-managed', 'Not a LocalWP site')
+  const ownership = await resolveLocalWpOwnership(host, sitePath, options)
+  if (ownership.kind !== 'registered') {
+    return ownershipRefusal(ownership, options.domain ?? '')
   }
-  const siteId = await findLocalWpSiteId(host, sitePath)
-  if (!siteId) {
-    return skip('not-managed', 'Not registered in the Local app')
-  }
+  const siteId = ownership.siteId
   if ((await currentSocketIfRunning(host, sitePath)) === null) {
     return skip('stopped', 'Already stopped')
   }

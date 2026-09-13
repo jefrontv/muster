@@ -68,6 +68,7 @@ beforeEach(() => {
 describe('registerLocalWpCertHandlers', () => {
   it('removes every channel before registering it, so a re-register cannot double-bind', () => {
     expect([...handlers.keys()].sort()).toEqual([
+      'localwpCert:cancelEnsure',
       'localwpCert:ensure',
       'localwpCert:status',
       'localwpCert:trust'
@@ -88,7 +89,89 @@ describe('registerLocalWpCertHandlers', () => {
       ok: true,
       value: { ok: true, message: 'ensured' }
     })
-    expect(ensureLocalWpHttpsCert).toHaveBeenCalledWith('ebes.local', '/Sites/ebes')
+    // Third argument is the progress sink: the ensure wait can block on Local's password prompt for
+    // minutes, so the wizard's HTTPS row has to be able to say so. Without a token there is no
+    // signal in the options, and the request cannot be cancelled.
+    expect(ensureLocalWpHttpsCert).toHaveBeenCalledWith('ebes.local', '/Sites/ebes', {
+      onStatus: expect.any(Function)
+    })
+  })
+
+  it('aborts the in-flight ensure when the renderer cancels its token', async () => {
+    const pending = Promise.withResolvers<{ ok: boolean; message: string }>()
+    ensureLocalWpHttpsCert.mockReturnValue(pending.promise)
+    const event = { sender: { id: 7, isDestroyed: () => false, send: () => {} } }
+    const cancelled = {
+      ok: false,
+      message: 'Cancelled while waiting for LocalWP to register the site.'
+    }
+
+    const call = handlers.get('localwpCert:ensure')?.(event, {
+      domain: 'ebes.local',
+      siteId: 'site-1',
+      requestToken: 'token-1'
+    })
+    const signal = vi.mocked(ensureLocalWpHttpsCert).mock.calls.at(-1)?.[2]?.signal
+    expect(signal?.aborted).toBe(false)
+
+    handlers.get('localwpCert:cancelEnsure')?.(event, { requestToken: 'token-1' })
+    expect(signal?.aborted).toBe(true)
+
+    // The cancelled outcome the provider produced is what reaches the wizard, not a bridge error.
+    pending.resolve(cancelled)
+    await expect(call).resolves.toEqual({ ok: true, value: cancelled })
+  })
+
+  it("does not let one window's token cancel another window's ensure", async () => {
+    const pending = Promise.withResolvers<{ ok: boolean; message: string }>()
+    ensureLocalWpHttpsCert.mockReturnValue(pending.promise)
+    const first = { sender: { id: 1, isDestroyed: () => false, send: () => {} } }
+    const second = { sender: { id: 2, isDestroyed: () => false, send: () => {} } }
+
+    const call = handlers.get('localwpCert:ensure')?.(first, {
+      domain: 'ebes.local',
+      siteId: 'site-1',
+      requestToken: 'shared-token'
+    })
+    const signal = vi.mocked(ensureLocalWpHttpsCert).mock.calls.at(-1)?.[2]?.signal
+
+    handlers.get('localwpCert:cancelEnsure')?.(second, { requestToken: 'shared-token' })
+    expect(signal?.aborted).toBe(false)
+
+    handlers.get('localwpCert:cancelEnsure')?.(first, { requestToken: 'shared-token' })
+    expect(signal?.aborted).toBe(true)
+
+    pending.resolve({ ok: true, message: 'trusted' })
+    await call
+  })
+
+  it('streams the wait over the migration progress channel, scoped to the site', async () => {
+    const sent: { siteId: string; message: string }[] = []
+    registerLocalWpCertHandlers({
+      getSite: () => ({
+        id: 'site-1',
+        path: '/Sites/ebes',
+        localStack: 'localwp',
+        localWpRoot: ''
+      })
+    } as never)
+    const handler = handlers.get('localwpCert:ensure')
+    expect(handler).toBeDefined()
+    await handler?.(
+      {
+        sender: {
+          isDestroyed: () => false,
+          send: (_channel: string, event: never) => sent.push(event)
+        }
+      },
+      { domain: 'ebes.local', siteId: 'site-1' }
+    )
+    const options = vi.mocked(ensureLocalWpHttpsCert).mock.calls.at(-1)?.[2]
+    options?.onStatus?.('Waiting for LocalWP to finish setting up ebes.local…')
+
+    expect(sent).toEqual([
+      { siteId: 'site-1', message: 'Waiting for LocalWP to finish setting up ebes.local…' }
+    ])
   })
 
   it('wraps the trust outcome the same way', async () => {

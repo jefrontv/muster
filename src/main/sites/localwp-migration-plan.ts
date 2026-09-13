@@ -33,8 +33,13 @@ export type { LocalWpMigrationPlan, LocalWpSetupMode }
 
 export const LOCALWP_ROOT = 'app/public'
 
-/** ocsites' terminal line for the create path (tui_deploy:2630). */
-export const LOCALWP_SITE_READY = 'LocalWP site ready.'
+/**
+ * What the create path reports once the files are in place — deliberately not "ready": the socket
+ * is up but Local's router is still starting, and on a machine where Local is asking for its own
+ * admin password it has not started at all yet. The old wording ("LocalWP site ready.") is the line
+ * the user read as "Local is done" immediately before the HTTPS step failed on the router's cert.
+ */
+export const LOCALWP_SITE_READY = 'Files are in app/public — LocalWP is still finishing its setup.'
 
 export type LocalWpMigrationRequest = {
   sitePath: string
