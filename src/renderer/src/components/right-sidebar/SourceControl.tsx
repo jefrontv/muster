@@ -536,17 +536,12 @@ const SOURCE_CONTROL_TREE_DIRECTORY_PADDING_PX = 8
 const SOURCE_CONTROL_TREE_FILE_PADDING_PX = 20
 const CAPPED_STATUS_RETRY_TIMEOUT_MS = 15_000
 const EMPTY_GIT_HISTORY_STATE: GitHistoryPanelState = { status: 'idle' }
-const DEFAULT_COLLAPSED_SECTIONS = ['history'] as const
 const SUBMODULE_WORKTREE_ONLY_LABEL = 'Stage inside submodule'
 const SUBMODULE_WORKTREE_ONLY_TOOLTIP =
   'The parent repo (including Stage All) cannot stage file changes inside a submodule'
 const SUBMODULE_LOADING_LABEL = 'Loading submodule changes…'
 const SUBMODULE_EMPTY_LABEL = 'No changes in submodule'
 const SUBMODULE_ERROR_LABEL = 'Failed to load submodule changes'
-
-function createDefaultCollapsedSections(): Set<string> {
-  return new Set(DEFAULT_COLLAPSED_SECTIONS)
-}
 
 function useCopyFeedbackState<T>(resetValue: T): [T, (value: T) => void] {
   const [value, setValue] = useState(resetValue)
@@ -1038,9 +1033,9 @@ function SourceControlInner(): React.JSX.Element {
   ])
 
   const [filterExpanded, setFilterExpanded] = useState(false)
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-    createDefaultCollapsedSections
-  )
+  // Why: nothing starts collapsed, Commits included. Its git read is gated on the section being
+  // expanded, so collapsing it is what stops the reads.
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => new Set())
   const persistedSourceControlViewMode = normalizeSourceControlViewMode(
     settings?.sourceControlViewMode
   )
@@ -2028,7 +2023,7 @@ function SourceControlInner(): React.JSX.Element {
   // Why: reset worktree-specific state manually instead of key-remounting on switch (which caused a Windows IPC storm).
   useEffect(() => {
     setFilterExpanded(false)
-    setCollapsedSections(createDefaultCollapsedSections())
+    setCollapsedSections(new Set())
     setCollapsedTreeDirs(new Set())
     setBaseRefDialogOpen(false)
     setPendingDiscard(null)
@@ -4979,7 +4974,8 @@ function SourceControlInner(): React.JSX.Element {
   }, [activeWorktreeId, clearGitBranchCompare, compareBaseRef, isFolder, remoteStatus])
 
   useEffect(() => {
-    // Why: history shells out to git; defer first load until the user expands Commits so source control stays cheap for large/remote repos.
+    // Why: history shells out to git, so this is what stops the reads once Commits is collapsed.
+    // It starts expanded, so the first load rides on opening the tab.
     if (!isBranchVisible || !isGitHistoryExpanded || !isGitHistoryVisible) {
       return
     }
