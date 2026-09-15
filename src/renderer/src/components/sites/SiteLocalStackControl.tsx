@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useAvailableSiteStacks } from '@/lib/use-available-site-stacks'
 
 const STACK_LABELS: Record<SiteLocalStack, string> = {
   plain: 'None',
@@ -43,7 +44,8 @@ type Detected = { siteId: string; stack: SiteLocalStack; domain: string; running
 export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): React.JSX.Element {
   const { site } = summary
   const updateSite = useAppStore((state) => state.updateSite)
-  const [available, setAvailable] = useState<SiteLocalStack[] | null>(null)
+  // Re-probed while the panel is open, so a stack installed after Muster started appears here too.
+  const available = useAvailableSiteStacks()
   const [daemon, setDaemon] = useState<AgentLocalDaemonStatus | null>(null)
   const [detected, setDetected] = useState<Detected | null>(null)
   const [pending, setPending] = useState<Pending>('')
@@ -51,19 +53,6 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
   const [status, setStatus] = useState('')
   const [failure, setFailure] = useState('')
   const [domain, setDomain] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const answer = await window.api.siteStacks.available()
-      if (!cancelled && answer.ok) {
-        setAvailable(answer.value)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   // Only for agent-local sites: the version gates the daemon-side import, and an update the
   // daemon knows about is worth one quiet line here rather than a surprise mid-import.

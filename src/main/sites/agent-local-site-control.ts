@@ -14,6 +14,7 @@
 //    the site path over `GET /sites`. See resolveAgentLocalSite for the ordering.
 
 import type { LocalWpStackDetection } from '../../shared/site-stack-types'
+import { isCommandOnPath } from '../ipc/preflight-command-exec'
 import { agentLocalCertStatus, agentLocalCertTrust } from './agent-local-cert'
 import {
   AGENT_LOCAL_DATABASE_PORT,
@@ -327,14 +328,23 @@ export async function releaseAgentLocalPrivilegedPorts(
 
 export const agentLocalProvider: LocalStackProvider = {
   id: 'agent-local',
+  /**
+   * Installing is what makes the option available; bringing the daemon up is not this probe's job.
+   *
+   * Why no daemon call: `requestWithDaemon` spawns the daemon when it is down, and that spawn is a
+   * `restart-daemon` allowed to take a minute. This probe gates a UI affordance and the renderer
+   * re-runs it on a timer, so starting a service from here would turn a question into a retry loop.
+   * Starting stays where the user asked for it — `ensureRunning`, on Start.
+   *
+   * Either half is proof enough: the token file exists once agent-local has run, and a binary on
+   * PATH covers a fresh install that has never been started.
+   */
   isAvailable: async () => {
     const host = createAgentLocalHost()
     if (!isAgentLocalSupported(host)) {
       return false
     }
-    // Binary present AND answering: a token file alone proves only that it once ran.
-    const status = await requestWithDaemon(host, 'GET', '/status')
-    return status.ok
+    return (await host.readToken()) !== null || (await isCommandOnPath('agent-local'))
   },
   detect: (sitePath) => detectAgentLocalStack(sitePath),
   ensureRunning: (site, onStatus) => ensureAgentLocalSiteRunning(site, onStatus),

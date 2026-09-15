@@ -19,6 +19,7 @@ import {
 } from './site-setup-choices'
 import type { SiteSetupRequest } from './SiteSetupDialog'
 import type { SiteSetupLinkTarget } from './SiteSetupLinkTargetRows'
+import { useAvailableSiteStacks } from '@/lib/use-available-site-stacks'
 
 /** The stack already serving the folder first, then what the user picked last time, then anything installed. */
 function pickDefaultStack(
@@ -40,7 +41,9 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
   const [linkTarget, setLinkTarget] = useState<SiteSetupLinkTarget | null>(null)
   const [linkCloneUrl, setLinkCloneUrl] = useState('')
   const [plan, setPlan] = useState<SiteSetupPlan | null>(null)
-  const [availableStacks, setAvailableStacks] = useState<SiteLocalStack[] | null>(null)
+  // Re-probed while the review is open: a stack installed mid-review has to appear without the
+  // user closing and reopening the dialog.
+  const availableStacks = useAvailableSiteStacks()
   const [cert, setCert] = useState<LocalWpCertStatus | null>(null)
   const [choices, setChoices] = useState<SiteSetupChoices | null>(null)
 
@@ -55,17 +58,13 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const [root, stacks] = await Promise.all([
-        window.api.siteRoots.primary(),
-        window.api.siteStacks.available()
-      ])
+      const root = await window.api.siteRoots.primary()
       if (cancelled) {
         return
       }
       if (root.ok) {
         setDestinationRoot(root.value)
       }
-      setAvailableStacks(stacks.ok ? stacks.value : [])
     })()
     return () => {
       cancelled = true
