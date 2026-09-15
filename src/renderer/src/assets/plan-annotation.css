@@ -101,110 +101,22 @@
   background-color: #0d0d0d;
 }
 
-/* Plan document typography. Deliberately not the editor's prose styles: this is a read-and-mark
-   surface, so it wants a wider measure and calmer rhythm than an editing pane. */
+/* The plan document carries the markdown preview's own `.markdown-body` class, so every element —
+   headings, code, tables, lists, links — renders exactly as the same markdown does in the editor's
+   preview pane, in both themes. See markdown-preview.css.
+
+   Only what `.markdown-body` leaves to its scrolling parent lands here: the preview sizes its text
+   on `.markdown-preview`, and this document has no such wrapper. */
 .plan-annotation-document {
-  font-size: 0.9375rem;
+  /* 14px is MarkdownPreview's default editor size — computeEditorFontSize(14, 0). */
+  font-size: 14px;
   line-height: 1.7;
 }
 
-.plan-annotation-document > * + * {
-  margin-top: 1em;
-}
-
-.plan-annotation-document h1,
-.plan-annotation-document h2,
-.plan-annotation-document h3,
-.plan-annotation-document h4 {
-  font-weight: 600;
-  line-height: 1.3;
-  margin-top: 1.8em;
-}
-
-.plan-annotation-document h1 {
-  font-size: 1.6rem;
-}
-
-.plan-annotation-document h2 {
-  font-size: 1.25rem;
-  margin-top: 2em;
-}
-
-.plan-annotation-document h3 {
-  font-size: 1.05rem;
-}
-
-.plan-annotation-document :not(pre) > code {
-  background-color: var(--muted);
-  border-radius: 0.25rem;
-  font-size: 0.85em;
-  padding: 0.1em 0.35em;
-}
-
-.plan-annotation-document pre {
-  background-color: color-mix(in srgb, var(--muted) 60%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  padding: 0.85rem 1rem;
-}
-
-.plan-annotation-document pre code {
-  font-size: 0.82rem;
-  line-height: 1.6;
-}
-
+/* Reading and focus modes cap the sheet's measure, so a wide table scrolls itself instead of
+   forcing the column wider than the reviewer asked for. */
 .plan-annotation-document table {
-  border-collapse: collapse;
   display: block;
   overflow-x: auto;
   width: 100%;
-}
-
-.plan-annotation-document th,
-.plan-annotation-document td {
-  border-bottom: 1px solid var(--border);
-  padding: 0.55rem 0.75rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-.plan-annotation-document th {
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.plan-annotation-document blockquote {
-  border-left: 2px solid var(--border);
-  color: var(--muted-foreground);
-  padding-left: 0.9rem;
-}
-
-.plan-annotation-document ul,
-.plan-annotation-document ol {
-  padding-left: 1.4rem;
-}
-
-.plan-annotation-document ul {
-  list-style: disc;
-}
-
-.plan-annotation-document ol {
-  list-style: decimal;
-}
-
-.plan-annotation-document li + li {
-  margin-top: 0.35em;
-}
-
-.plan-annotation-document a {
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.plan-annotation-document hr {
-  border-color: var(--border);
-  margin: 2em 0;
 }

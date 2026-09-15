@@ -71,7 +71,7 @@ export const PlanAnnotationDocument = forwardRef<HTMLDivElement, { content: stri
     }, [])
 
     return (
-      <div ref={ref} className="plan-annotation-document">
+      <div ref={ref} className="markdown-body plan-annotation-document">
         <Markdown
           remarkPlugins={[remarkGfm]}
           // Sanitise after raw: plans are agent-authored, so inline HTML renders but cannot bring

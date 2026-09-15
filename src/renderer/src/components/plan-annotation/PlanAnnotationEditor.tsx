@@ -58,6 +58,9 @@ export function PlanAnnotationEditor({
   )
 
   return (
-    <EditorContent editor={editor} className="plan-annotation-document plan-annotation-editable" />
+    <EditorContent
+      editor={editor}
+      className="markdown-body plan-annotation-document plan-annotation-editable"
+    />
   )
 }

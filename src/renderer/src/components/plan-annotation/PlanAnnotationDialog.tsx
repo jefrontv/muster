@@ -13,6 +13,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { resolveDocumentTheme } from '@/lib/document-theme'
+import { useAppStore } from '@/store'
 import { PlanAnnotationFooter, PlanAnnotationHeader } from './PlanAnnotationChrome'
 import type {
   PlanAnnotationDecision,
@@ -40,6 +42,10 @@ import {
 
 export function PlanAnnotationDialog(): React.JSX.Element | null {
   const { current, waiting, popCurrent } = usePlanReviewQueue()
+  // Why the theme class: the document renders with the markdown preview's `.markdown-body` styles,
+  // and their colours (code, blockquote, table) key on `.markdown-dark` / `.markdown-light`.
+  const settings = useAppStore((s) => s.settings)
+  const isDark = resolveDocumentTheme(settings?.theme ?? 'system')
   const [notes, setNotes] = useState<DraftNote[]>([])
   const [composer, setComposer] = useState<ComposerAnchor | null>(null)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
@@ -332,7 +338,7 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
             }
           >
             <div
-              className={`plan-annotation-sheet mx-auto my-6 w-full px-10 py-9 ${VIEW_MODE_WIDTH[viewMode]}`}
+              className={`plan-annotation-sheet mx-auto my-6 w-full px-10 py-9 ${VIEW_MODE_WIDTH[viewMode]} ${isDark ? 'markdown-dark' : 'markdown-light'}`}
             >
               {editing ? (
                 <PlanAnnotationEditor
