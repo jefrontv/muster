@@ -5,7 +5,13 @@
 #   https://github.com/jefrontv/muster/releases/latest/download/latest-mac.yml
 #   https://github.com/jefrontv/muster/releases/download/vX.Y.Z/...
 #
-# Trigger: push a version tag (v1.2.3 or v1.2.3-rc.1) or run manually.
+# Trigger: push a package.json version bump to muster, or run manually. The
+# workflow creates the vX.Y.Z tag itself when it publishes the release.
+# Why a branch trigger and not a tag: GitHub Actions caches are only shared
+# within one ref (or with the default branch). A run per tag ref never sees the
+# pnpm store cached by the previous release, so every release re-downloaded all
+# deps. Runs on refs/heads/muster share one cache. It also means upstream orca
+# tags synced into this repo can never start a build here.
 # Signing/notarization: set MAC_CERTS + Apple notary secrets for production
 # builds; without them the workflow still publishes an ad-hoc arm64 package
 # suitable for private/team installs.
@@ -14,36 +20,47 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - muster
+    paths:
+      - package.json
   workflow_dispatch:
     inputs:
       ref:
         description: Git ref to build (branch, tag, or SHA). Defaults to the default branch.
         required: false
         type: string
+      force:
+        description: Rebuild even if this version's tag already exists (the stale release is replaced; the tag stays).
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 jobs:
-  # Muster-line tags only: this repo also receives upstream orca tags via
-  # branch syncs, and building those poisons the update feed with upstream
-  # binaries (see src/main/updater-release-feed-source.ts).
-  guard:
+  # Decide whether this commit is a release: package.json's version with no
+  # matching tag yet. Runs on a cheap runner so a non-release package.json edit
+  # never spins up the mac builder.
+  resolve:
     runs-on: ubuntu-latest
     outputs:
-      muster: ${{ steps.check.outputs.muster }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
-          fetch-depth: 0
+          fetch-depth: 1
+
       # Why: a committed `node_modules` symlink (easy to miss — .gitignore's
       # `node_modules/` pattern never matched it) makes every install die with
       # ENOTDIR after checkout recreates it. Fail loud instead of mid-release.
@@ -54,32 +71,97 @@ jobs:
             exit 1
           fi
 
-      - name: Verify tag is on muster
-        id: check
+      - name: Resolve release version
+        id: version
+        shell: bash
+        env:
+          FORCE: ${{ inputs.force || 'false' }}
         run: |
-          git fetch origin muster --quiet
-          if git merge-base --is-ancestor "$(git rev-parse HEAD)" origin/muster; then
-            echo "muster=true" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          SHA="$(git rev-parse HEAD)"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1 && [[ "$FORCE" != "true" ]]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${TAG} already exists - nothing to release."
           else
-            echo "muster=false" >> "$GITHUB_OUTPUT"
-            echo "Ref is not on muster - skipping release build."
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "Releasing ${TAG} from ${SHA}"
           fi
 
+  # Why a separate job: tsc took 40s of the mac runner's critical path. Running
+  # it here in parallel costs no wall time, and `publish` below refuses to
+  # undraft the release unless it passes. Commits land on muster without PRs,
+  # so this is the only typecheck gate a release gets.
+  typecheck:
+    needs: resolve
+    if: needs.resolve.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 1
+
+      - name: Install native build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3 zlib1g-dev
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Pin pnpm store
+        run: pnpm config set store-dir "$RUNNER_TEMP/pnpm-store" --global
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      # Why: pnpm's bundled node-gyp ships gyp_main.py without execute
+      # permission, which breaks node-pty's postinstall on Linux runners.
+      # Same pin as pr.yml.
+      - name: Use external node-gyp to avoid pnpm's bundled copy
+        run: |
+          npm install -g node-gyp@11.5.0
+          echo "npm_config_node_gyp=$(npm root -g)/node-gyp/bin/node-gyp.js" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        # Why: pnpm's frozen headless fast path can fail on fresh Ubuntu runners
+        # while creating the root node_modules (see pr.yml).
+        run: |
+          pnpm install --no-frozen-lockfile --prefer-frozen-lockfile=false
+          git diff --exit-code package.json pnpm-lock.yaml
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
   release-mac:
-    needs: guard
-    if: needs.guard.outputs.muster == 'true'
+    needs: resolve
+    if: needs.resolve.outputs.publish == 'true'
     runs-on: macos-latest
     timeout-minutes: 90
     env:
       NODE_OPTIONS: --max-old-space-size=8192
       # electron-builder GitHub publisher
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Why arm64-only: team fleet is Apple Silicon; the x64 slice doubled
+      # package+sign time. The config's per-target arch list overrides
+      # electron-builder's CLI arch flags, so this env is the only switch.
+      MUSTER_MAC_ARCHS: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || github.ref }}
-          fetch-depth: 0
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 1
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -87,8 +169,8 @@ jobs:
           run_install: false
 
       # Why: PNPM_HOME points at setup-pnpm's .bin, so `pnpm store path` resolves
-      # to a throwaway dir there and setup-node's cache never hits — every release
-      # re-downloads all deps. Pin the store somewhere cacheable first.
+      # to a throwaway dir there and setup-node's cache never hits. Pin the
+      # store somewhere cacheable first.
       - name: Pin pnpm store
         run: pnpm config set store-dir "$RUNNER_TEMP/pnpm-store" --global
 
@@ -101,53 +183,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Resolve release version
-        id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
-            TAG="${GITHUB_REF_NAME}"
-          else
-            # workflow_dispatch on a branch: use package.json version
-            TAG="v$(node -p "require('./package.json').version")"
-          fi
-          VERSION="${TAG#v}"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Building release ${TAG} (${VERSION})"
-
-      - name: Align package.json version with tag
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          node -e "
-            const fs = require('fs')
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'))
-            pkg.version = process.env.VERSION
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')
-          "
-
       # Why: publish config uses releaseType 'release', and electron-builder only adopts
       # DRAFT releases — a leftover published release from a failed run makes every retry
       # die with 422 already_exists. Drop the release (tag survives) so re-runs are clean.
       - name: Clear stale release for tag
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
+          TAG: ${{ needs.resolve.outputs.tag }}
         run: gh release delete "$TAG" --yes --repo "${{ github.repository }}" || true
 
       # Why: electron-builder's parallel upload tasks race to CREATE the release
       # (it only adopts existing DRAFT releases) — one wins, the rest die with
-      # 422 already_exists mid-publish. Pre-creating the draft removes the race;
-      # the "Ensure release is not draft" step below publishes it at the end.
+      # 422 already_exists mid-publish. Pre-creating the draft removes the race.
+      # --target pins the commit the tag is created on when `publish` undrafts it.
       - name: Pre-create draft release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
-        run: gh release create "$TAG" --draft --title "$TAG" --notes "" --repo "${{ github.repository }}" || true
+          TAG: ${{ needs.resolve.outputs.tag }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: gh release create "$TAG" --draft --title "$TAG" --notes "" --target "$SHA" --repo "${{ github.repository }}" || true
 
+      # Typecheck runs in the parallel `typecheck` job, so this is build:desktop
+      # minus `pnpm run typecheck`.
       - name: Build desktop + native mac helpers
         env:
           # Baked into the main bundle by electron-vite's define block; without
@@ -156,14 +211,18 @@ jobs:
           ORCA_BITBUCKET_OAUTH_CLIENT_ID: ${{ secrets.ORCA_BITBUCKET_OAUTH_CLIENT_ID }}
           ORCA_BITBUCKET_OAUTH_CLIENT_SECRET: ${{ secrets.ORCA_BITBUCKET_OAUTH_CLIENT_SECRET }}
         run: |
-          pnpm run build:desktop
-          pnpm run build:notification-status-macos
+          set -euo pipefail
+          pnpm run build:relay
+          pnpm run build:cli
+          pnpm run build:electron-vite
+          pnpm run build:web
+          # --single-arch builds the helper for the host arch (arm64), matching MUSTER_MAC_ARCHS.
+          pnpm run build:notification-status-macos -- --single-arch
           pnpm run ensure:electron-runtime
 
       - name: Package and publish macOS arm64
-        # Why arm64-only: team fleet is Apple Silicon; dual-arch doubles CI time.
-        # electron-builder --publish always creates/updates the GitHub Release and
-        # uploads latest-mac.yml + zip/dmg so the in-app updater can find them.
+        # electron-builder --publish always uploads latest-mac.yml + zip/dmg to the
+        # draft release created above so the in-app updater can find them.
         env:
           # Optional signing — these stay under MAC_* names so an unset secret never
           # reaches electron-builder as an empty CSC_LINK (it resolves "" to the repo
@@ -206,13 +265,17 @@ jobs:
           pnpm exec electron-builder \
             --config config/electron-builder.config.cjs \
             --mac \
-            --arm64 \
             --publish always
 
-      - name: Ensure release is not draft
-        if: success()
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          # electron-builder may leave a draft depending on config; undraft so /latest works.
-          gh release edit "$TAG" --draft=false --repo "${{ github.repository }}" || true
+  # Undrafting is what makes /releases/latest move and creates the git tag, so
+  # it waits for both the artifacts and the typecheck. A failed typecheck leaves
+  # the draft in place for inspection and the feed untouched.
+  publish:
+    needs: [resolve, release-mac, typecheck]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ needs.resolve.outputs.tag }}
+    steps:
+      - name: Publish release
+        run: gh release edit "$TAG" --draft=false --repo "${{ github.repository }}"

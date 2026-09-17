@@ -21,6 +21,9 @@ const isMacRelease = process.env.ORCA_MAC_RELEASE === '1'
 // install still needs `xattr -cr /Applications/Muster.app` on each machine.
 const isMacSignedWithoutNotarization = process.env.MUSTER_MAC_SIGNED_NO_NOTARIZE === '1'
 const isLinuxArm64Release = process.env.ORCA_LINUX_ARM64_RELEASE === '1'
+// Why: an explicit per-target `arch` here beats electron-builder's CLI arch flags, so `--arm64`
+// alone still packages and signs x64. CI sets MUSTER_MAC_ARCHS=arm64 to build one slice.
+const macTargetArchs = readMacTargetArchs(process.env.MUSTER_MAC_ARCHS)
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
   to: 'onboarding/feature-wall'
@@ -210,7 +213,9 @@ module.exports = {
       'electron'
     )
     if (!existsSync(stubSource)) {
-      throw new Error(`[site-mcp] electron stub missing at ${stubSource}; run the main build first.`)
+      throw new Error(
+        `[site-mcp] electron stub missing at ${stubSource}; run the main build first.`
+      )
     }
     mkdirSync(dirname(stubTarget), { recursive: true })
     cpSync(stubSource, stubTarget, { recursive: true })
@@ -347,11 +352,11 @@ module.exports = {
     target: [
       {
         target: 'dmg',
-        arch: ['x64', 'arm64']
+        arch: macTargetArchs
       },
       {
         target: 'zip',
-        arch: ['x64', 'arm64']
+        arch: macTargetArchs
       }
     ]
   },
@@ -523,3 +528,18 @@ function findInstalledMacSigningIdentity(keychainFile) {
   } catch {}
   return null
 }
+
+function readMacTargetArchs(rawValue) {
+  const archs = (rawValue ?? '')
+    .split(',')
+    .map((arch) => arch.trim())
+    .filter(Boolean)
+  for (const arch of archs) {
+    if (arch !== 'x64' && arch !== 'arm64') {
+      throw new Error(`MUSTER_MAC_ARCHS: unsupported mac arch '${arch}' (use x64, arm64)`)
+    }
+  }
+  return archs.length > 0 ? archs : ['x64', 'arm64']
+}
+
+module.exports.readMacTargetArchs = readMacTargetArchs

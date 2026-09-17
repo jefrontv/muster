@@ -78,14 +78,15 @@ More detail: [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## Releases
 
-Tag a version to publish:
+Bump the version in `package.json` and push it to `muster`:
 
 ```bash
-git tag v1.4.157
-git push origin v1.4.157
+npm version 1.14.10 --no-git-tag-version
+git commit -am "chore: bump version to 1.14.10"
+git push origin muster
 ```
 
-That triggers [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds macOS arm64 and uploads electron-builder artifacts (`latest-mac.yml`, zip/dmg) so the in-app updater can find them.
+That triggers [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds macOS arm64, uploads electron-builder artifacts (`latest-mac.yml`, zip/dmg) to a draft release, and publishes it once typecheck passes. Publishing creates the `v1.14.10` tag; do not push the tag yourself.
 
 Optional repo secrets for signed/notarized mac builds: `MAC_CERTS`, `MAC_CERTS_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`.
 

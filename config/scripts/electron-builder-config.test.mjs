@@ -40,6 +40,17 @@ describe('electron-builder config', () => {
     )
   })
 
+  it('packages both mac arches unless MUSTER_MAC_ARCHS narrows the list', () => {
+    const { readMacTargetArchs } = electronBuilderConfig
+    expect(readMacTargetArchs(undefined)).toEqual(['x64', 'arm64'])
+    expect(readMacTargetArchs('arm64')).toEqual(['arm64'])
+    expect(readMacTargetArchs(' x64 , arm64 ')).toEqual(['x64', 'arm64'])
+    expect(() => readMacTargetArchs('universal')).toThrow(/unsupported mac arch/)
+    for (const target of electronBuilderConfig.mac.target) {
+      expect(target.arch).toEqual(readMacTargetArchs(process.env.MUSTER_MAC_ARCHS))
+    }
+  })
+
   it('keeps runtime resources available through extraResources', () => {
     for (const platform of ['mac', 'linux', 'win']) {
       expect(electronBuilderConfig[platform].extraResources).toContainEqual({

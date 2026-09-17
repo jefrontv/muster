@@ -21,6 +21,7 @@ export default defineConfig({
   build: {
     outDir: resolve('out/web'),
     emptyOutDir: true,
+    reportCompressedSize: false,
     rollupOptions: {
       input: resolve('src/renderer/web-index.html')
     }
