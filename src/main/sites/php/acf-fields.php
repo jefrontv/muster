@@ -65,15 +65,34 @@ function muster_acf_set_by_trace( $root, $trace, $value ) {
 	return $root;
 }
 
+/**
+ * Compares two values already put through muster_acf_normalise().
+ * Absent, null and '' are the same state in ACF storage, so they compare equal.
+ */
 function muster_acf_same( $left, $right ) {
-	$encode = function_exists( 'wp_json_encode' ) ? 'wp_json_encode' : 'json_encode';
-	if ( $encode( $left ) === $encode( $right ) ) {
+	if ( is_array( $left ) && is_array( $right ) ) {
+		$keys = array_unique( array_merge( array_keys( $left ), array_keys( $right ) ) );
+		foreach ( $keys as $key ) {
+			$a = array_key_exists( $key, $left ) ? $left[ $key ] : null;
+			$b = array_key_exists( $key, $right ) ? $right[ $key ] : null;
+			if ( ! muster_acf_same( $a, $b ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+	if ( is_array( $left ) || is_array( $right ) ) {
+		$array = is_array( $left ) ? $left : $right;
+		$other = is_array( $left ) ? $right : $left;
+		return count( $array ) === 0 && ( $other === null || $other === '' );
+	}
+	if ( ( $left === null || $left === '' ) && ( $right === null || $right === '' ) ) {
 		return true;
 	}
 	if ( is_scalar( $left ) && is_scalar( $right ) ) {
 		return (string) $left === (string) $right;
 	}
-	return false;
+	return $left === $right;
 }
 
 function muster_acf_get_by_trace( $root, $trace ) {
@@ -105,13 +124,72 @@ function muster_acf_is_value_type( $type ) {
 	return ! in_array( $type, array( 'tab', 'accordion', 'message' ), true );
 }
 
-function muster_acf_field_is_block( $field ) {
-	$location = isset( $field['location'] ) && is_array( $field['location'] ) ? $field['location'] : array();
-	foreach ( $location as $group ) {
-		if ( ! is_array( $group ) ) {
+/** ACF's own predicates are prefix checks; mirror them so the walker still works without WordPress. */
+function muster_acf_is_field_key( $id ) {
+	if ( function_exists( 'acf_is_field_key' ) ) {
+		return (bool) acf_is_field_key( $id );
+	}
+	return is_string( $id ) && strpos( $id, 'field_' ) === 0;
+}
+
+function muster_acf_is_group_key( $id ) {
+	if ( function_exists( 'acf_is_field_group_key' ) ) {
+		return (bool) acf_is_field_group_key( $id );
+	}
+	return is_string( $id ) && strpos( $id, 'group_' ) === 0;
+}
+
+/**
+ * Returns the parent FIELD array when $parent points at one, false when it points at a group.
+ * Local fields carry a key, DB fields a post ID; a group post ID resolves to false in ACF.
+ */
+function muster_acf_parent_field( $parent ) {
+	if ( ! function_exists( 'acf_get_field' ) ) {
+		return false;
+	}
+	if ( $parent === null || $parent === '' || $parent === 0 || $parent === '0' ) {
+		return false;
+	}
+	if ( muster_acf_is_group_key( $parent ) ) {
+		return false;
+	}
+	if ( ! muster_acf_is_field_key( $parent ) && ! is_numeric( $parent ) ) {
+		return false;
+	}
+	$field = acf_get_field( $parent );
+	return is_array( $field ) ? $field : false;
+}
+
+/** Walks up `parent` to the owning field group; `location` rules live there, never on a field. */
+function muster_acf_owning_group( $field ) {
+	if ( ! function_exists( 'acf_get_field_group' ) || ! is_array( $field ) ) {
+		return false;
+	}
+	$cursor = $field;
+	for ( $depth = 0; $depth < 10; $depth++ ) {
+		$parent = isset( $cursor['parent'] ) ? $cursor['parent'] : 0;
+		if ( $parent === null || $parent === '' || $parent === 0 || $parent === '0' ) {
+			return false;
+		}
+		$parent_field = muster_acf_parent_field( $parent );
+		if ( is_array( $parent_field ) ) {
+			$cursor = $parent_field;
 			continue;
 		}
-		foreach ( $group as $rule ) {
+		$group = acf_get_field_group( $parent );
+		return is_array( $group ) ? $group : false;
+	}
+	return false;
+}
+
+function muster_acf_field_is_block( $field ) {
+	$group    = muster_acf_owning_group( $field );
+	$location = is_array( $group ) && isset( $group['location'] ) && is_array( $group['location'] ) ? $group['location'] : array();
+	foreach ( $location as $rule_group ) {
+		if ( ! is_array( $rule_group ) ) {
+			continue;
+		}
+		foreach ( $rule_group as $rule ) {
 			if ( is_array( $rule ) && isset( $rule['param'] ) && $rule['param'] === 'block' ) {
 				return true;
 			}
@@ -188,6 +266,78 @@ function muster_acf_value_slot( $row, $sub ) {
 	);
 }
 
+/**
+ * Canonical shape for comparison. Rows arrive keyed by name from the agent and by key from ACF,
+ * and ACF re-reads scalars as strings, so both sides are rebuilt key-keyed with string leaves.
+ */
+function muster_acf_normalise( $field, $value ) {
+	$type = is_array( $field ) && isset( $field['type'] ) ? $field['type'] : '';
+	if ( $type === 'repeater' || $type === 'flexible_content' ) {
+		if ( ! is_array( $value ) ) {
+			return muster_acf_normalise_plain( $value );
+		}
+		$rows = array();
+		foreach ( $value as $row ) {
+			$rows[] = muster_acf_normalise_row( $field, $row );
+		}
+		return $rows;
+	}
+	if ( $type === 'group' ) {
+		return is_array( $value ) ? muster_acf_normalise_row( $field, $value ) : muster_acf_normalise_plain( $value );
+	}
+	return muster_acf_normalise_plain( $value );
+}
+
+/** A path ending in a row index addresses one row of $field, not the field's whole value. */
+function muster_acf_normalise_at( $field, $is_row, $value ) {
+	return $is_row ? muster_acf_normalise_row( $field, $value ) : muster_acf_normalise( $field, $value );
+}
+
+function muster_acf_normalise_row( $parent, $row ) {
+	if ( ! is_array( $row ) ) {
+		return muster_acf_normalise_plain( $row );
+	}
+	$type   = isset( $parent['type'] ) ? $parent['type'] : '';
+	$layout = isset( $row['acf_fc_layout'] ) && is_string( $row['acf_fc_layout'] ) ? $row['acf_fc_layout'] : null;
+	$out    = array();
+	if ( $type === 'flexible_content' ) {
+		$out['acf_fc_layout'] = $layout;
+	}
+	foreach ( muster_acf_layout_subfields( $parent, $layout ) as $sub ) {
+		$slot = muster_acf_value_slot( $row, $sub );
+		if ( ! $slot['found'] ) {
+			continue;
+		}
+		$key = ! empty( $sub['key'] ) ? $sub['key'] : ( isset( $sub['name'] ) ? $sub['name'] : '' );
+		if ( $key === '' ) {
+			continue;
+		}
+		$out[ $key ] = muster_acf_normalise( $sub, $slot['value'] );
+	}
+	return $out;
+}
+
+function muster_acf_normalise_plain( $value ) {
+	if ( is_array( $value ) ) {
+		$out = array();
+		foreach ( $value as $key => $item ) {
+			$out[ $key ] = muster_acf_normalise_plain( $item );
+		}
+		return $out;
+	}
+	if ( is_object( $value ) ) {
+		$id = muster_acf_object_id( $value );
+		return $id === null ? $value : (string) $id;
+	}
+	if ( $value === null ) {
+		return null;
+	}
+	if ( is_bool( $value ) ) {
+		return $value ? '1' : '0';
+	}
+	return is_scalar( $value ) ? (string) $value : $value;
+}
+
 function muster_acf_load_root_value( $field, $post_id ) {
 	if ( ! function_exists( 'get_field' ) || ! is_array( $field ) ) {
 		return null;
@@ -203,12 +353,7 @@ function muster_acf_load_root_value( $field, $post_id ) {
 			if ( is_array( $raw ) ) {
 				return $raw;
 			}
-			if ( is_numeric( $raw ) && (int) $raw > 0 ) {
-				$formatted = get_field( $field[ $prop ], $post_id, true );
-				if ( is_array( $formatted ) ) {
-					return $formatted;
-				}
-			}
+			// A bare row count means no sub-fields are registered; formatted values must never reach old/new.
 			continue;
 		}
 		if ( $raw !== false && $raw !== null ) {
@@ -222,16 +367,12 @@ function muster_acf_write_root( $field, $value, $post_id ) {
 	if ( ! function_exists( 'update_field' ) || ! is_array( $field ) ) {
 		return false;
 	}
-	foreach ( array( 'name', 'key' ) as $prop ) {
-		if ( empty( $field[ $prop ] ) ) {
-			continue;
-		}
-		$ok = update_field( $field[ $prop ], $value, $post_id );
-		if ( $ok !== false ) {
-			return true;
-		}
+	// Key form so ACF writes the _field_* reference row. One call only: `acf/update_value` must not fire twice.
+	$selector = ! empty( $field['key'] ) ? $field['key'] : ( isset( $field['name'] ) ? $field['name'] : '' );
+	if ( $selector === '' ) {
+		return false;
 	}
-	return false;
+	return update_field( $selector, $value, $post_id );
 }
 
 function muster_acf_subfield_names( $parent, $layout_name = null ) {
@@ -336,10 +477,26 @@ function muster_acf_object_id( $value ) {
 	return null;
 }
 
+function muster_acf_coerce_row( $parent, $value, &$warnings, $path ) {
+	$type = isset( $parent['type'] ) ? $parent['type'] : '';
+	if ( ! is_array( $value ) ) {
+		return array( null, "{$path}: a {$type} row expects an object; rewrite the whole field to add or remove rows." );
+	}
+	if ( $type === 'flexible_content' && empty( $value['acf_fc_layout'] ) ) {
+		return array( null, "{$path}: a flexible row needs acf_fc_layout." );
+	}
+	return array( $value, null );
+}
+
 function muster_acf_coerce( $field, $value, &$warnings, $path ) {
 	$type = isset( $field['type'] ) ? $field['type'] : '';
 	if ( ! muster_acf_is_value_type( $type ) ) {
 		return array( null, "{$path}: '{$type}' is not a value field." );
+	}
+	// ACF deletes the cell on a null; it is the only way to clear an image or a link.
+	if ( $value === null ) {
+		$warnings[] = "{$path}: null clears the value";
+		return array( null, null );
 	}
 	$multiple = ! empty( $field['multiple'] );
 	switch ( $type ) {
@@ -470,6 +627,7 @@ function muster_acf_walk( $root_field, $root_value, $segments, $mode ) {
 	$cursor_field  = $root_field;
 	$cursor_value  = $root_value;
 	$layout        = null;
+	$leaf_is_row   = false;
 	$trace         = array();
 	$field_info    = array(
 		'name'          => isset( $root_field['name'] ) ? $root_field['name'] : '',
@@ -497,6 +655,7 @@ function muster_acf_walk( $root_field, $root_value, $segments, $mode ) {
 				);
 			}
 			$trace[]      = $seg['index'];
+			$leaf_is_row  = true;
 			$cursor_value = $cursor_value[ $seg['index'] ];
 			$layout       = is_array( $cursor_value ) && isset( $cursor_value['acf_fc_layout'] ) ? $cursor_value['acf_fc_layout'] : null;
 			$field_info['parent_layout'] = $layout;
@@ -514,6 +673,7 @@ function muster_acf_walk( $root_field, $root_value, $segments, $mode ) {
 			return array( 'error' => "'{$seg['name']}' is not a value field." );
 		}
 		$cursor_field = $sub;
+		$leaf_is_row  = false;
 		$slot         = muster_acf_value_slot( is_array( $cursor_value ) ? $cursor_value : array(), $sub );
 		$trace[]      = $slot['slot'];
 		$cursor_value = $slot['found'] ? $slot['value'] : null;
@@ -527,6 +687,8 @@ function muster_acf_walk( $root_field, $root_value, $segments, $mode ) {
 	}
 	return array(
 		'field' => $field_info,
+		'leaf_field' => $cursor_field,
+		'leaf_is_row' => $leaf_is_row,
 		'value' => $cursor_value,
 		'trace' => $trace,
 		'exists' => true,
@@ -602,6 +764,22 @@ function muster_acf_run( $payload ) {
 			);
 			continue;
 		}
+		// acf_get_field() resolves sub-field names too; addressing one as a root writes a stray top-level meta row.
+		$owner = muster_acf_parent_field( isset( $root_field['parent'] ) ? $root_field['parent'] : 0 );
+		if ( is_array( $owner ) ) {
+			$owner_name = isset( $owner['name'] ) ? $owner['name'] : '';
+			$owner_type = isset( $owner['type'] ) ? $owner['type'] : '';
+			$dotted     = in_array( $owner_type, array( 'repeater', 'flexible_content' ), true )
+				? "{$owner_name}.<row>.{$root_name}"
+				: "{$owner_name}.{$root_name}";
+			$path_errors = true;
+			$results[]   = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => "'{$root_name}' is a sub-field of '{$owner_name}'; address it as {$dotted}",
+			);
+			continue;
+		}
 		if ( ! muster_acf_is_value_type( isset( $root_field['type'] ) ? $root_field['type'] : '' ) ) {
 			$path_errors = true;
 			$results[]   = array(
@@ -639,25 +817,12 @@ function muster_acf_run( $payload ) {
 			$results[]    = $row;
 			continue;
 		}
-		$new_raw = isset( $item['value'] ) ? $item['value'] : null;
-		$leaf    = $walk['field'];
-		// Coerce against the leaf field definition; fall back to the root when the path is the root.
-		$leaf_field = $root_field;
-		if ( count( $walk['trace'] ) > 0 ) {
-			// Re-resolve the leaf field from the walk info key.
-			$leaf_field = array(
-				'type'     => $leaf['type'],
-				'name'     => $leaf['name'],
-				'key'      => $leaf['key'],
-				'multiple' => false,
-			);
-			// Prefer the actual field array when we can still find it.
-			$found = acf_get_field( $leaf['key'] ? $leaf['key'] : $leaf['name'] );
-			if ( is_array( $found ) ) {
-				$leaf_field = $found;
-			}
-		}
-		list( $coerced, $err ) = muster_acf_coerce( $leaf_field, $new_raw, $warnings, $path );
+		$new_raw     = isset( $item['value'] ) ? $item['value'] : null;
+		$leaf_field  = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		$leaf_is_row = ! empty( $walk['leaf_is_row'] );
+		list( $coerced, $err ) = $leaf_is_row
+			? muster_acf_coerce_row( $leaf_field, $new_raw, $warnings, $path )
+			: muster_acf_coerce( $leaf_field, $new_raw, $warnings, $path );
 		if ( $err ) {
 			$path_errors = true;
 			$row['error'] = $err;
@@ -666,15 +831,18 @@ function muster_acf_run( $payload ) {
 			$results[]    = $row;
 			continue;
 		}
-		$old_json = function_exists( 'wp_json_encode' ) ? wp_json_encode( $walk['value'] ) : json_encode( $walk['value'] );
-		$new_json = function_exists( 'wp_json_encode' ) ? wp_json_encode( $coerced ) : json_encode( $coerced );
 		$row['old']     = $walk['value'];
 		$row['new']     = $coerced;
-		$row['changed'] = $old_json !== $new_json;
+		$row['changed'] = ! muster_acf_same(
+			muster_acf_normalise_at( $leaf_field, $leaf_is_row, $walk['value'] ),
+			muster_acf_normalise_at( $leaf_field, $leaf_is_row, $coerced )
+		);
 		$row['applied'] = false;
 		$row['warnings'] = array();
 		$row['trace']    = $walk['trace'];
 		$row['root_key'] = $root_key;
+		$row['leaf_field'] = $leaf_field;
+		$row['leaf_is_row'] = $leaf_is_row;
 		$results[]       = $row;
 	}
 
@@ -683,6 +851,7 @@ function muster_acf_run( $payload ) {
 			if ( isset( $row['applied'] ) ) {
 				$row['applied'] = false;
 			}
+			unset( $row['trace'], $row['root_key'], $row['leaf_field'], $row['leaf_is_row'] );
 		}
 		unset( $row );
 		return muster_acf_envelope(
@@ -703,15 +872,16 @@ function muster_acf_run( $payload ) {
 				continue;
 			}
 			$key = $row['root_key'];
-			if ( ! isset( $pending[ $key ] ) ) {
+			if ( ! array_key_exists( $key, $pending ) ) {
 				$pending[ $key ] = $roots[ $key ]['value'];
 			}
 			$pending[ $key ] = muster_acf_set_by_trace( $pending[ $key ], $row['trace'], $row['new'] );
 		}
-		$written = array();
 		foreach ( $pending as $key => $value ) {
-			$written[ $key ] = muster_acf_write_root( $roots[ $key ]['field'], $value, $post_id );
+			// Return value is discarded: a sub-cell write leaves the root row count unchanged, which reads as false.
+			muster_acf_write_root( $roots[ $key ]['field'], $value, $post_id );
 		}
+		$fresh_roots = array();
 		$any_applied = false;
 		foreach ( $results as &$row ) {
 			if ( ! isset( $row['root_key'] ) ) {
@@ -719,16 +889,23 @@ function muster_acf_run( $payload ) {
 			}
 			$key    = $row['root_key'];
 			$wanted = $row['new'];
-			$fresh  = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
-			$got    = muster_acf_get_by_trace( $fresh, $row['trace'] );
+			$leaf   = $row['leaf_field'];
+			$is_row = ! empty( $row['leaf_is_row'] );
+			if ( ! array_key_exists( $key, $fresh_roots ) ) {
+				$fresh_roots[ $key ] = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
+			}
+			$got = muster_acf_get_by_trace( $fresh_roots[ $key ], $row['trace'] );
 			if ( $got['ok'] ) {
 				$row['new'] = $got['value'];
 			}
-			$row['applied'] = ! empty( $written[ $key ] ) && $got['ok'] && muster_acf_same( $got['value'], $wanted );
+			$row['applied'] = muster_acf_same(
+				muster_acf_normalise_at( $leaf, $is_row, $got['ok'] ? $got['value'] : null ),
+				muster_acf_normalise_at( $leaf, $is_row, $wanted )
+			);
 			if ( $row['applied'] ) {
 				$any_applied = true;
 			}
-			unset( $row['trace'], $row['root_key'] );
+			unset( $row['trace'], $row['root_key'], $row['leaf_field'], $row['leaf_is_row'] );
 		}
 		unset( $row );
 		if ( $any_applied ) {
@@ -745,7 +922,7 @@ function muster_acf_run( $payload ) {
 	}
 
 	foreach ( $results as &$row ) {
-		unset( $row['trace'], $row['root_key'] );
+		unset( $row['trace'], $row['root_key'], $row['leaf_field'], $row['leaf_is_row'] );
 	}
 	unset( $row );
 

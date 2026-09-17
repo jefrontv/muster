@@ -4,6 +4,7 @@ import {
   type Site,
   type SiteEnvironment
 } from '../../../shared/site-types'
+import { streamCommand } from '../../lib/stream-command'
 import type { SiteMcpContext } from './site-mcp-context'
 import { dispatchSiteMcpTool, findSiteMcpTool } from './site-mcp-tools'
 
@@ -183,5 +184,25 @@ describe('get_wp_fields', () => {
       'feature/x'
     )
     expect(payload).toMatchObject({ blocked: true, blocked_by: ['unmatched-branch'] })
+  })
+
+  it('explains a local WP root that wp cannot boot', async () => {
+    vi.mocked(streamCommand).mockResolvedValueOnce({
+      code: 1,
+      stdout: '',
+      stderr:
+        'Error: This does not seem to be a WordPress installation.\nPass --path=`path/to/wordpress` or run `wp core download`.',
+      timedOut: false,
+      truncated: false,
+      stoppedEarly: false
+    })
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'local',
+      target: { kind: 'option' },
+      fields: ['hero_title']
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("location='remote'")
+    expect(payload.exit_code).toBe(1)
   })
 })

@@ -6,7 +6,9 @@ import {
   ACF_FIELDS_PHP,
   ACF_MAX_PATHS,
   buildAcfPayload,
+  explainAcfRunnerFailure,
   parseAcfPath,
+  parseAcfRunnerOutcome,
   parseAcfRunnerStdout,
   parseAcfTarget,
   readAcfGetPaths,
@@ -39,6 +41,17 @@ describe('parseAcfTarget', () => {
   it('rejects an unknown kind', () => {
     expect(() => parseAcfTarget({ kind: 'widget' })).toThrow(/target.kind/)
   })
+
+  it.each([
+    ['post', '0'],
+    ['post', 0],
+    ['term', '0'],
+    ['term', 0],
+    ['user', '0'],
+    ['user', 0]
+  ])('rejects %s id %j', (kind, id) => {
+    expect(() => parseAcfTarget({ kind, id })).toThrow(/positive integer/)
+  })
 })
 
 describe('payload caps', () => {
@@ -62,6 +75,90 @@ describe('parseAcfRunnerStdout', () => {
 
   it('throws when stdout has no JSON object', () => {
     expect(() => parseAcfRunnerStdout('Fatal error')).toThrow(/did not return JSON/)
+  })
+})
+
+describe('explainAcfRunnerFailure', () => {
+  const NOT_WORDPRESS =
+    'Error: This does not seem to be a WordPress installation.\nPass --path=`path/to/wordpress` or run `wp core download`.'
+  const failed = { exitCode: 1, stdout: '', stderr: '', wpRoot: '/Sites/acme' }
+
+  it('tells the agent a theme-only checkout cannot boot WordPress locally', () => {
+    const error = explainAcfRunnerFailure({
+      ...failed,
+      location: 'local',
+      stderr: NOT_WORDPRESS
+    })
+    expect(error).toBeInstanceOf(SiteMcpToolError)
+    expect(error.message).toContain('/Sites/acme')
+    expect(error.message).toContain('bootable')
+    expect(error.message).toContain('localWpRoot')
+    expect(error.message).toContain("location='remote'")
+  })
+
+  it('names the resolved webroot on remote', () => {
+    const error = explainAcfRunnerFailure({
+      ...failed,
+      location: 'remote',
+      wpRoot: '/home/deploy/public_html/web',
+      stderr: NOT_WORDPRESS
+    })
+    expect(error.message).toContain('/home/deploy/public_html/web')
+    expect(error.message).toMatch(/did not find WordPress/)
+  })
+
+  // The DB error names wp-config.php too, so this also pins the match order.
+  it('reports a database failure as a database failure', () => {
+    const error = explainAcfRunnerFailure({
+      ...failed,
+      location: 'local',
+      stderr:
+        'Error: Error establishing a database connection. This either means that the username and password information in your wp-config.php file is incorrect.'
+    })
+    expect(error.message).toMatch(/database/i)
+    expect(error.message).not.toMatch(/bootable/)
+  })
+
+  it('falls back to the exit code and keeps the stderr tail', () => {
+    const error = explainAcfRunnerFailure({
+      ...failed,
+      exitCode: 255,
+      location: 'local',
+      stderr: 'PHP Fatal error: Allowed memory size exhausted',
+      command: 'wp --no-color eval-file /tmp/muster-eval-1.php'
+    })
+    expect(error.message).toBe('WP-CLI exited 255 before the ACF runner produced JSON.')
+    expect(error.details).toMatchObject({
+      exit_code: 255,
+      command: 'wp --no-color eval-file /tmp/muster-eval-1.php'
+    })
+    expect(String(error.details.stderr)).toContain('memory size exhausted')
+  })
+})
+
+describe('parseAcfRunnerOutcome', () => {
+  it('returns the envelope when a non-zero exit still printed JSON', () => {
+    expect(
+      parseAcfRunnerOutcome({
+        exitCode: 1,
+        stdout: '{"ok":false,"error":"unknown field hero_titel"}',
+        stderr: 'Error: This does not seem to be a WordPress installation.',
+        location: 'local',
+        wpRoot: '/Sites/acme'
+      })
+    ).toEqual({ ok: false, error: 'unknown field hero_titel' })
+  })
+
+  it('throws the explained failure when stdout is empty', () => {
+    expect(() =>
+      parseAcfRunnerOutcome({
+        exitCode: 1,
+        stdout: '',
+        stderr: 'Error: This does not seem to be a WordPress installation.',
+        location: 'local',
+        wpRoot: '/Sites/acme'
+      })
+    ).toThrow(/bootable WordPress install/)
   })
 })
 

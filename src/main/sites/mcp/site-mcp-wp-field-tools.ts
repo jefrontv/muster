@@ -6,7 +6,7 @@
 import {
   ACF_FIELDS_PHP,
   buildAcfPayload,
-  parseAcfRunnerStdout,
+  parseAcfRunnerOutcome,
   readAcfGetPaths,
   readAcfTarget,
   readAcfWrites
@@ -105,7 +105,15 @@ function fieldResult(transport: Record<string, unknown>): Record<string, unknown
   if (transport.blocked === true) {
     return transport
   }
-  const parsed = parseAcfRunnerStdout(typeof transport.stdout === 'string' ? transport.stdout : '')
+  // Transport stderr carries the reason wp itself failed; without it the agent only sees empty stdout.
+  const parsed = parseAcfRunnerOutcome({
+    exitCode: typeof transport.exit_code === 'number' ? transport.exit_code : 0,
+    stdout: typeof transport.stdout === 'string' ? transport.stdout : '',
+    stderr: typeof transport.stderr === 'string' ? transport.stderr : '',
+    location: transport.location === 'remote' ? 'remote' : 'local',
+    wpRoot: typeof transport.wp_root === 'string' ? transport.wp_root : '',
+    ...(typeof transport.command === 'string' ? { command: transport.command } : {})
+  })
   return {
     ...parsed,
     ok: parsed.ok !== false && transport.exit_code === 0,

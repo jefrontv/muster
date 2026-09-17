@@ -76,7 +76,10 @@ export function parseAcfTarget(raw: Record<string, unknown>): AcfTarget {
     return { kind, id }
   }
   if (typeof id === 'string' && /^[0-9]+$/.test(id)) {
-    return { kind, id: Number.parseInt(id, 10) }
+    const parsed = Number.parseInt(id, 10)
+    if (parsed > 0) {
+      return { kind, id: parsed }
+    }
   }
   throw new SiteMcpToolError(`'target.id' for kind '${kind}' must be a positive integer.`)
 }
@@ -150,24 +153,92 @@ export function buildAcfPayload(input: {
   return json
 }
 
-export function parseAcfRunnerStdout(stdout: string): Record<string, unknown> {
+function outputTail(value: string): string {
+  return value.trim().slice(-2000)
+}
+
+function extractJsonObject(stdout: string): string | null {
   const trimmed = stdout.trim()
   const start = trimmed.indexOf('{')
   const end = trimmed.lastIndexOf('}')
-  if (start < 0 || end <= start) {
+  return start < 0 || end <= start ? null : trimmed.slice(start, end + 1)
+}
+
+export function parseAcfRunnerStdout(stdout: string): Record<string, unknown> {
+  const json = extractJsonObject(stdout)
+  if (json === null) {
     throw new SiteMcpToolError('ACF runner did not return JSON.', {
-      stdout: trimmed.slice(-2000)
+      stdout: outputTail(stdout)
     })
   }
   try {
-    const parsed: unknown = JSON.parse(trimmed.slice(start, end + 1))
+    const parsed: unknown = JSON.parse(json)
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       throw new Error('not an object')
     }
     return parsed as Record<string, unknown>
   } catch {
     throw new SiteMcpToolError('ACF runner returned invalid JSON.', {
-      stdout: trimmed.slice(-2000)
+      stdout: outputTail(stdout)
     })
   }
+}
+
+export type AcfRunnerOutcome = {
+  exitCode: number
+  stdout: string
+  stderr: string
+  location: 'local' | 'remote'
+  wpRoot: string
+  command?: string
+}
+
+// Tested before NO_WORDPRESS: WP-CLI's database error also names wp-config.php.
+const DB_FAILURE =
+  /error establishing a database connection|can't connect to (?:the )?(?:local )?mysql|access denied for user|unknown database|mysqli/i
+const NO_WORDPRESS =
+  /this does not seem to be a wordpress installation|wp-config\.php\W*(?:file )?(?:is empty|not found|is missing)|(?:strange|missing|no) wp-config\.php/i
+
+export function explainAcfRunnerFailure(outcome: AcfRunnerOutcome): SiteMcpToolError {
+  const details: Record<string, unknown> = {
+    exit_code: outcome.exitCode,
+    location: outcome.location,
+    wp_root: outcome.wpRoot,
+    stderr: outputTail(outcome.stderr),
+    stdout: outputTail(outcome.stdout),
+    ...(outcome.command ? { command: outcome.command } : {})
+  }
+  if (DB_FAILURE.test(outcome.stderr)) {
+    return new SiteMcpToolError(
+      `WordPress at ${outcome.wpRoot} could not connect to its database, so the ACF runner never ran.`,
+      details
+    )
+  }
+  if (NO_WORDPRESS.test(outcome.stderr)) {
+    if (outcome.location === 'local') {
+      return new SiteMcpToolError(
+        `This site's local WordPress root (${outcome.wpRoot}) is not a bootable WordPress install (path + localWpRoot). Use location='remote' or point localWpRoot at the WordPress directory.`,
+        details
+      )
+    }
+    return new SiteMcpToolError(
+      `WP-CLI did not find WordPress at the resolved webroot ${outcome.wpRoot} on the remote host.`,
+      details
+    )
+  }
+  if (outcome.exitCode === 0) {
+    return new SiteMcpToolError('ACF runner did not return JSON.', details)
+  }
+  return new SiteMcpToolError(
+    `WP-CLI exited ${outcome.exitCode} before the ACF runner produced JSON.`,
+    details
+  )
+}
+
+// A non-zero exit that still printed JSON is the runner's own ok:false envelope, not a transport failure.
+export function parseAcfRunnerOutcome(outcome: AcfRunnerOutcome): Record<string, unknown> {
+  if (extractJsonObject(outcome.stdout) === null) {
+    throw explainAcfRunnerFailure(outcome)
+  }
+  return parseAcfRunnerStdout(outcome.stdout)
 }

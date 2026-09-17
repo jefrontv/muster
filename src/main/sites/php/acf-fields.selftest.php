@@ -110,5 +110,405 @@ $mutated = muster_acf_set_by_trace( $unformatted, $walk['trace'], 'NEW' );
 muster_acf_assert( $mutated[9]['field_name_key'] === 'NEW', 'apply writes the field-key slot' );
 muster_acf_assert( $mutated[8]['field_name_key'] === 'row8', 'sibling rows stay put' );
 
+// ---------------------------------------------------------------------------
+// Stubbed WordPress + ACF. Declared after the ACF-absent assertions above so
+// muster_acf_run() sees a bare PHP process first, then a live-looking one.
+// ---------------------------------------------------------------------------
+
+$MUSTER_GROUPS = array(
+	'group_opts'  => array( 'location' => array( array( array( 'param' => 'options_page', 'operator' => '==', 'value' => 'theme-options' ) ) ) ),
+	'group_block' => array( 'location' => array( array( array( 'param' => 'block', 'operator' => '==', 'value' => 'acf/hero' ) ) ) ),
+	'55'          => array( 'location' => array( array( array( 'param' => 'post_type', 'operator' => '==', 'value' => 'page' ) ) ) ),
+	'77'          => array( 'location' => array( array( array( 'param' => 'block', 'operator' => '==', 'value' => 'acf/cta' ) ) ) ),
+);
+
+$MUSTER_FIELDS = array(
+	array( 'key' => 'field_bc', 'name' => 'band_count', 'type' => 'number', 'parent' => 'group_opts' ),
+	array( 'key' => 'field_hi', 'name' => 'hero_image', 'type' => 'image', 'parent' => 'group_opts' ),
+	array(
+		'key'        => 'field_st',
+		'name'       => 'spacing_templates',
+		'type'       => 'repeater',
+		'parent'     => 'group_opts',
+		'sub_fields' => array(
+			array( 'key' => 'field_st_name', 'name' => 'name', 'type' => 'text', 'parent' => 'field_st' ),
+			array( 'key' => 'field_st_bp', 'name' => 'bp', 'type' => 'number', 'parent' => 'field_st' ),
+		),
+	),
+	array(
+		'key'        => 'field_hero',
+		'name'       => 'hero',
+		'type'       => 'group',
+		'parent'     => 'group_opts',
+		'sub_fields' => array(
+			array( 'key' => 'field_hero_title', 'name' => 'title', 'type' => 'text', 'parent' => 'field_hero' ),
+		),
+	),
+	array(
+		'key'     => 'field_mod',
+		'name'    => 'modules',
+		'type'    => 'flexible_content',
+		'parent'  => 'group_opts',
+		'layouts' => array(
+			array(
+				'name'       => 'hero',
+				'sub_fields' => array(
+					array( 'key' => 'field_mod_heading', 'name' => 'heading', 'type' => 'text', 'parent' => 'field_mod' ),
+				),
+			),
+		),
+	),
+	// Rows type with no sub-fields registered: the unformatted read is a bare count.
+	array( 'key' => 'field_cl', 'name' => 'countless', 'type' => 'repeater', 'parent' => 'group_opts' ),
+	// Its sub-field key is unresolvable standalone, so only the walk still knows `multiple`.
+	array(
+		'key'        => 'field_or',
+		'name'       => 'orphan_rep',
+		'type'       => 'repeater',
+		'parent'     => 'group_opts',
+		'sub_fields' => array(
+			array( 'key' => 'field_or_refs', 'name' => 'refs', 'type' => 'post_object', 'multiple' => 1, 'parent' => 'field_or' ),
+		),
+	),
+	array( 'key' => 'field_bh', 'name' => 'block_heading', 'type' => 'text', 'parent' => 'group_block' ),
+	// DB-stored fields carry numeric parents: 77 is a block group post, 88 is a repeater field post.
+	array( 'key' => 'field_dbb', 'name' => 'db_block', 'type' => 'text', 'parent' => 77 ),
+	array(
+		'key'        => 'field_dbr',
+		'name'       => 'db_rep',
+		'type'       => 'repeater',
+		'parent'     => 55,
+		'ID'         => 88,
+		'sub_fields' => array(
+			array( 'key' => 'field_dbs', 'name' => 'db_sub', 'type' => 'text', 'parent' => 88 ),
+		),
+	),
+);
+
+$MUSTER_FIELD_IDS       = array( 88 => 'field_dbr' );
+$MUSTER_DB              = array();
+$MUSTER_UPDATE_CALLS    = array();
+$MUSTER_FORMATTED_READS = 0;
+
+function muster_acf_test_reset() {
+	global $MUSTER_DB, $MUSTER_UPDATE_CALLS;
+	$MUSTER_DB           = array(
+		'options_band_count'        => '60',
+		'options_hero_image'        => '42',
+		'options_countless'         => '3',
+		'options_spacing_templates' => array(
+			array( 'field_st_name' => 'Band 40', 'field_st_bp' => '40' ),
+			array( 'field_st_name' => 'Band 60', 'field_st_bp' => '60' ),
+		),
+		'options_modules'           => array(
+			array( 'acf_fc_layout' => 'hero', 'field_mod_heading' => 'Welcome' ),
+		),
+		'options_hero'              => array( 'field_hero_title' => 'Old title' ),
+		'options_orphan_rep'        => array( array( 'field_or_refs' => array( '3' ) ) ),
+	);
+	$MUSTER_UPDATE_CALLS = array();
+}
+
+function muster_acf_test_match( $field, $id ) {
+	if ( ( isset( $field['name'] ) && $field['name'] === $id ) || ( isset( $field['key'] ) && $field['key'] === $id ) ) {
+		return $field;
+	}
+	$subs = isset( $field['sub_fields'] ) ? $field['sub_fields'] : array();
+	foreach ( isset( $field['layouts'] ) ? $field['layouts'] : array() as $layout ) {
+		foreach ( isset( $layout['sub_fields'] ) ? $layout['sub_fields'] : array() as $sub ) {
+			$subs[] = $sub;
+		}
+	}
+	foreach ( $subs as $sub ) {
+		$hit = muster_acf_test_match( $sub, $id );
+		if ( $hit ) {
+			return $hit;
+		}
+	}
+	return false;
+}
+
+/** Mirrors ACF: rows are stored keyed by sub-field key, meta scalars come back as strings. */
+function muster_acf_test_store_rows( $parent, $rows ) {
+	$out = array();
+	foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+		if ( ! is_array( $row ) ) {
+			$out[] = $row;
+			continue;
+		}
+		$layout = isset( $row['acf_fc_layout'] ) ? $row['acf_fc_layout'] : null;
+		$stored = array();
+		if ( isset( $parent['type'] ) && $parent['type'] === 'flexible_content' ) {
+			$stored['acf_fc_layout'] = $layout;
+		}
+		foreach ( muster_acf_layout_subfields( $parent, $layout ) as $sub ) {
+			$slot = muster_acf_value_slot( $row, $sub );
+			if ( ! $slot['found'] ) {
+				continue;
+			}
+			$stored[ $sub['key'] ] = is_scalar( $slot['value'] ) ? (string) $slot['value'] : $slot['value'];
+		}
+		$out[] = $stored;
+	}
+	return $out;
+}
+
+if ( ! function_exists( 'acf_get_field' ) ) {
+	function acf_get_field( $id ) {
+		global $MUSTER_FIELDS, $MUSTER_FIELD_IDS;
+		if ( is_numeric( $id ) ) {
+			// A field-group post ID resolves to false in ACF, same as here.
+			if ( ! isset( $MUSTER_FIELD_IDS[ (int) $id ] ) ) {
+				return false;
+			}
+			$id = $MUSTER_FIELD_IDS[ (int) $id ];
+		}
+		// ACF cannot always resolve a sub-field key on its own; the walk is the only source for these.
+		if ( $id === 'field_or_refs' || $id === 'refs' ) {
+			return false;
+		}
+		foreach ( $MUSTER_FIELDS as $field ) {
+			$hit = muster_acf_test_match( $field, $id );
+			if ( $hit ) {
+				return $hit;
+			}
+		}
+		return false;
+	}
+}
+
+if ( ! function_exists( 'acf_get_field_group' ) ) {
+	function acf_get_field_group( $id ) {
+		global $MUSTER_GROUPS;
+		$key = (string) $id;
+		return isset( $MUSTER_GROUPS[ $key ] ) ? $MUSTER_GROUPS[ $key ] : false;
+	}
+}
+
+if ( ! function_exists( 'acf_is_field_key' ) ) {
+	function acf_is_field_key( $id ) {
+		return is_string( $id ) && strpos( $id, 'field_' ) === 0;
+	}
+}
+
+if ( ! function_exists( 'acf_is_field_group_key' ) ) {
+	function acf_is_field_group_key( $id ) {
+		return is_string( $id ) && strpos( $id, 'group_' ) === 0;
+	}
+}
+
+if ( ! function_exists( 'get_field' ) ) {
+	function get_field( $selector, $post_id, $format ) {
+		global $MUSTER_DB, $MUSTER_FORMATTED_READS;
+		$field = acf_get_field( $selector );
+		if ( ! $field ) {
+			return null;
+		}
+		$key = 'options_' . $field['name'];
+		$raw = array_key_exists( $key, $MUSTER_DB ) ? $MUSTER_DB[ $key ] : null;
+		if ( ! $format ) {
+			return $raw;
+		}
+		$MUSTER_FORMATTED_READS++;
+		// Formatted rows are name-keyed and carry objects; they must never reach old/new.
+		return is_numeric( $raw )
+			? array( array( 'x' => array( 'ID' => 9, 'url' => 'https://selftest.test/a.jpg' ) ) )
+			: $raw;
+	}
+}
+
+if ( ! function_exists( 'update_field' ) ) {
+	function update_field( $selector, $value, $post_id ) {
+		global $MUSTER_DB, $MUSTER_UPDATE_CALLS;
+		$MUSTER_UPDATE_CALLS[] = $selector;
+		$field = acf_get_field( $selector );
+		if ( ! $field ) {
+			return false;
+		}
+		$key  = 'options_' . $field['name'];
+		$old  = array_key_exists( $key, $MUSTER_DB ) ? $MUSTER_DB[ $key ] : null;
+		$type = isset( $field['type'] ) ? $field['type'] : '';
+		if ( $type === 'repeater' || $type === 'flexible_content' ) {
+			$value = muster_acf_test_store_rows( $field, $value );
+		} elseif ( is_scalar( $value ) ) {
+			$value = (string) $value;
+		}
+		$MUSTER_DB[ $key ] = $value;
+		// WP returns false when the stored root is unchanged; for a repeater that root is the row count.
+		$old_scalar = is_array( $old ) ? count( $old ) : $old;
+		$new_scalar = is_array( $value ) ? count( $value ) : $value;
+		return (string) $old_scalar !== (string) $new_scalar;
+	}
+}
+
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( $name ) {
+		return 'https://selftest.test';
+	}
+}
+
+if ( ! function_exists( 'acf_get_setting' ) ) {
+	function acf_get_setting( $name ) {
+		return '6.4.2';
+	}
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	function wp_json_encode( $value ) {
+		return json_encode( $value );
+	}
+}
+
+if ( ! function_exists( 'get_post' ) ) {
+	function get_post( $id ) {
+		return false;
+	}
+}
+
+function muster_acf_test_run( $mode, $fields ) {
+	return muster_acf_run(
+		array(
+			'mode'   => $mode,
+			'target' => array( 'kind' => 'option' ),
+			'fields' => $fields,
+		)
+	);
+}
+
+function muster_acf_test_has_warning( $warnings, $needle ) {
+	foreach ( (array) $warnings as $warning ) {
+		if ( strpos( $warning, $needle ) !== false ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// --- 1. A sub-cell write returns false from update_field but did land. -------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'spacing_templates.1.name', 'value' => 'Band 80' ) ) );
+$row = $run['results'][0];
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][1]['field_st_name'] === 'Band 80', 'sub-cell reached the DB' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_name'] === 'Band 40', 'sibling row untouched' );
+muster_acf_assert( $row['applied'] === true, 'applied comes from the re-read, not update_field' );
+muster_acf_assert( $run['apply'] === true, 'envelope apply is true' );
+muster_acf_assert( $row['changed'] === true, 'a real change is reported as changed' );
+muster_acf_assert( $row['new'] === 'Band 80', 'new is the re-read value' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 1, 'update_field called once per root' );
+muster_acf_assert( $MUSTER_UPDATE_CALLS[0] === 'field_st', 'update_field called with the field key' );
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], 'stale' ), 'stale cache warning present' );
+foreach ( array( 'trace', 'root_key', 'leaf_field', 'leaf_is_row' ) as $internal ) {
+	muster_acf_assert( ! array_key_exists( $internal, $row ), "internal key '{$internal}' stays out of the envelope" );
+}
+
+// --- 2. Whole row sent name-keyed, stored key-keyed. -------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'spacing_templates.0', 'value' => array( 'name' => 'Band 10', 'bp' => 10 ) ) ) );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_name'] === 'Band 10', 'name-keyed row stored under the key' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_bp'] === '10', 'number stored as a string' );
+muster_acf_assert( $run['results'][0]['applied'] === true, 'name-keyed row compares equal to the key-keyed re-read' );
+
+// --- 3. Whole repeater rewrite. ---------------------------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run(
+	'apply',
+	array(
+		array(
+			'path'  => 'spacing_templates',
+			'value' => array(
+				array( 'name' => 'Only', 'bp' => 5 ),
+			),
+		),
+	)
+);
+muster_acf_assert( count( $MUSTER_DB['options_spacing_templates'] ) === 1, 'whole repeater rewrite drops the second row' );
+muster_acf_assert( $run['results'][0]['applied'] === true, 'whole repeater rewrite reports applied' );
+
+// --- 4. Preview compares stored strings against sent numbers. ---------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'band_count', 'value' => 60 ) ) );
+muster_acf_assert( $run['results'][0]['changed'] === false, '60 against stored "60" is unchanged' );
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'band_count', 'value' => 61 ) ) );
+muster_acf_assert( $run['results'][0]['changed'] === true, '61 against stored "60" is changed' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0, 'preview writes nothing' );
+
+// --- 5. Block-located roots are refused, local key and numeric parent alike. -
+foreach ( array( 'block_heading', 'db_block' ) as $blocked ) {
+	$run = muster_acf_test_run( 'preview', array( array( 'path' => $blocked, 'value' => 'x' ) ) );
+	$row = $run['results'][0];
+	muster_acf_assert( isset( $row['error'] ) && strpos( $row['error'], 'block' ) !== false, "{$blocked} is refused as a block field" );
+	muster_acf_assert( $row['exists'] === false, "{$blocked} does not report exists" );
+	muster_acf_assert( ! isset( $row['applied'] ), "{$blocked} is never applied" );
+}
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'band_count', 'value' => 1 ) ) );
+muster_acf_assert( ! isset( $run['results'][0]['error'] ), 'a non-block group is not refused' );
+
+// --- 6. A sub-field name is not a root. -------------------------------------
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'bp', 'value' => 5 ) ) );
+muster_acf_assert(
+	$run['results'][0]['error'] === "'bp' is a sub-field of 'spacing_templates'; address it as spacing_templates.<row>.bp",
+	'repeater sub-field names the dotted row path'
+);
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'title', 'value' => 'x' ) ) );
+muster_acf_assert(
+	$run['results'][0]['error'] === "'title' is a sub-field of 'hero'; address it as hero.title",
+	'group sub-field omits the row index'
+);
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'db_sub', 'value' => 'x' ) ) );
+muster_acf_assert(
+	$run['results'][0]['error'] === "'db_sub' is a sub-field of 'db_rep'; address it as db_rep.<row>.db_sub",
+	'numeric parent resolves to the parent field'
+);
+
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'bp', 'value' => 5 ) ) );
+muster_acf_assert( $run['apply_skipped'] === true, 'a sub-field root skips the whole apply' );
+muster_acf_assert( $run['apply'] === false, 'apply is false when skipped' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0, 'nothing is written when a path fails' );
+muster_acf_assert( ! array_key_exists( 'options_bp', $MUSTER_DB ), 'no stray top-level meta row' );
+
+// --- 7. null clears a value field. ------------------------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'hero_image', 'value' => null ) ) );
+$row = $run['results'][0];
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], 'hero_image: null clears the value' ), 'null warns' );
+muster_acf_assert( $row['old'] === '42', 'old is the stored attachment ID' );
+muster_acf_assert( $MUSTER_DB['options_hero_image'] === null, 'null reached the DB' );
+muster_acf_assert( $row['applied'] === true, 'a cleared field counts as applied' );
+muster_acf_assert( $row['changed'] === true, 'clearing a set field is a change' );
+
+// --- 8. Flexible content rows. ----------------------------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'modules.0.heading', 'value' => 'Hello' ) ) );
+muster_acf_assert( $MUSTER_DB['options_modules'][0]['field_mod_heading'] === 'Hello', 'flex sub-field written by key' );
+muster_acf_assert( $run['results'][0]['applied'] === true, 'flex sub-field applied' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'modules.0', 'value' => array( 'acf_fc_layout' => 'hero', 'heading' => 'Row' ) ) ) );
+muster_acf_assert( $MUSTER_DB['options_modules'][0]['field_mod_heading'] === 'Row', 'whole flex row written' );
+muster_acf_assert( $run['results'][0]['applied'] === true, 'whole flex row applied' );
+
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'modules.0', 'value' => array( 'heading' => 'Row' ) ) ) );
+muster_acf_assert(
+	isset( $run['results'][0]['error'] ) && strpos( $run['results'][0]['error'], 'acf_fc_layout' ) !== false,
+	'a flex row without acf_fc_layout is refused'
+);
+
+// --- 9. A rows root with no sub-fields never falls back to formatted values. -
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'get', array( 'countless.0.x' ) );
+$row = $run['results'][0];
+muster_acf_assert( isset( $row['error'] ) && strpos( $row['error'], 'count=0' ) !== false, 'a bare row count reads as an empty array' );
+
+// --- 10. The leaf field comes from the walk, so `multiple` survives. --------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'orphan_rep.0.refs', 'value' => array( 7, 8 ) ) ) );
+$row = $run['results'][0];
+muster_acf_assert( ! isset( $row['error'] ), 'a multiple post_object sub-field accepts an array of IDs' );
+muster_acf_assert( $MUSTER_DB['options_orphan_rep'][0]['field_or_refs'] === array( 7, 8 ), 'both IDs written' );
+muster_acf_assert( $row['applied'] === true, 'multiple post_object applied' );
+
+muster_acf_assert( $MUSTER_FORMATTED_READS === 0, 'never reads formatted values' );
+
 fwrite( STDOUT, "ok\n" );
 exit( 0 );
