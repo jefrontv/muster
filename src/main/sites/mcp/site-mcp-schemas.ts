@@ -29,6 +29,15 @@ export const ENV_PROPERTY = {
   }
 } as const
 
+export const LOCATION_PROPERTY = {
+  location: {
+    type: 'string',
+    enum: ['local', 'remote'],
+    description:
+      "Required. 'local' is this site's WordPress root (path + localWpRoot). 'remote' is an environment host. env=local is an environment name, not the checkout."
+  }
+} as const
+
 export const CONFIRM_PROPERTY = {
   confirm: {
     type: 'boolean',

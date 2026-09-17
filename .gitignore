@@ -14,6 +14,7 @@ src/**/*.d.ts
 !src/renderer/src/env.d.ts
 !src/renderer/src/mermaid.d.ts
 !src/types/build-constants.d.ts
+!src/types/raw-modules.d.ts
 
 # Dependencies
 # No trailing slash: a `node_modules` symlink is a file, and committing one breaks

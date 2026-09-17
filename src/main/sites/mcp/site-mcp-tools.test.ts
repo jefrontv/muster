@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { join } from 'node:path'
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import {
@@ -13,6 +13,18 @@ import {
 } from '../../../shared/site-types'
 import type { SiteMcpContext, SiteMcpStartRunRequest } from './site-mcp-context'
 import { dispatchSiteMcpTool, findSiteMcpTool, SITE_MCP_TOOLS } from './site-mcp-tools'
+
+vi.mock('../../lib/stream-command', () => ({
+  streamCommand: vi.fn(async () => ({
+    code: 0,
+    stdout:
+      '{"ok":true,"home":"https://acme.local","acf_version":"6.3.0","warnings":[],"results":[]}',
+    stderr: '',
+    timedOut: false,
+    truncated: false,
+    stoppedEarly: false
+  }))
+}))
 
 // Sentinels. Nothing a tool returns may ever contain these, no matter which tool or which branch.
 const SSH_SECRET = 'ssh-pw-SENTINEL-must-never-leak'
@@ -169,7 +181,23 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
       return next
     },
     openSshSession: async () => ({
-      exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),
+      exec: async (command: string) => {
+        if (command.includes('bedrock-root')) {
+          return { code: 0, stdout: 'standard\n', stderr: '' }
+        }
+        if (command.includes('wp-config.php') && command.includes('echo yes')) {
+          return { code: 0, stdout: 'yes\n', stderr: '' }
+        }
+        if (command.includes('eval-file')) {
+          return {
+            code: 0,
+            stdout:
+              '{"ok":true,"home":"https://acme.com","acf_version":"6.3.0","warnings":[],"results":[]}',
+            stderr: ''
+          }
+        }
+        return { code: 0, stdout: 'remote-ok', stderr: '' }
+      },
       download: async () => undefined,
       upload: async () => undefined,
       writeSecureRemoteFile: async () => undefined,
@@ -285,6 +313,21 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   run_import_functions: { env: 'main' },
   run_deploy_functions: { env: 'main' },
   run_ssh_command: { command: 'true', env: 'main' },
+  run_wp_cli: { args: ['core', 'version'] },
+  run_remote_wp_cli: { args: ['core', 'version'], env: 'main' },
+  get_wp_fields: {
+    location: 'remote',
+    env: 'main',
+    target: { kind: 'option' },
+    fields: ['hero_title']
+  },
+  update_wp_fields: {
+    location: 'remote',
+    env: 'main',
+    target: { kind: 'option' },
+    fields: [{ path: 'hero_title', value: 'Hello' }]
+  },
+  wp_eval_file: { location: 'remote', env: 'main', php: '<?php echo "ok";' },
   list_recent_runs: {},
   get_run_log: { run_id: RUN_ID },
   list_jobs: {},

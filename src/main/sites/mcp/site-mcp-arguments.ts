@@ -92,6 +92,72 @@ export function readRecord(args: ToolArguments, key: string): Record<string, unk
   return record
 }
 
+export const MAX_LONG_STRING_LENGTH = 65_536
+export const MAX_STRING_ARRAY_ITEMS = 40
+export const MAX_STRING_ARRAY_ITEM_LENGTH = 512
+
+export function readLocation(args: ToolArguments): 'local' | 'remote' {
+  const value = readString(args, 'location')
+  if (value !== 'local' && value !== 'remote') {
+    throw new SiteMcpToolError(`'location' must be 'local' or 'remote'.`)
+  }
+  return value
+}
+
+export function readLongString(
+  args: ToolArguments,
+  key: string,
+  max = MAX_LONG_STRING_LENGTH
+): string {
+  const value = args[key]
+  if (value === undefined || value === null) {
+    return ''
+  }
+  if (typeof value !== 'string') {
+    throw new SiteMcpToolError(`'${key}' must be a string.`)
+  }
+  if (value.length > max) {
+    throw new SiteMcpToolError(`'${key}' exceeds ${max} characters.`)
+  }
+  return value
+}
+
+export function readStringArray(
+  args: ToolArguments,
+  key: string,
+  maxItems = MAX_STRING_ARRAY_ITEMS,
+  maxItemLength = MAX_STRING_ARRAY_ITEM_LENGTH
+): string[] {
+  const value = args[key]
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new SiteMcpToolError(`'${key}' must be a non-empty array of strings.`)
+  }
+  if (value.length > maxItems) {
+    throw new SiteMcpToolError(`'${key}' may list at most ${maxItems} entries.`)
+  }
+  return value.map((entry, index) => {
+    if (typeof entry !== 'string' || entry.length === 0) {
+      throw new SiteMcpToolError(`'${key}[${index}]' must be a non-empty string.`)
+    }
+    if (entry.length > maxItemLength) {
+      throw new SiteMcpToolError(`'${key}[${index}]' exceeds ${maxItemLength} characters.`)
+    }
+    return entry
+  })
+}
+
+export function readOptionalStringArray(
+  args: ToolArguments,
+  key: string,
+  maxItems = MAX_STRING_ARRAY_ITEMS,
+  maxItemLength = MAX_STRING_ARRAY_ITEM_LENGTH
+): string[] {
+  if (args[key] === undefined || args[key] === null) {
+    return []
+  }
+  return readStringArray(args, key, maxItems, maxItemLength)
+}
+
 export function readRunGroup(args: ToolArguments, key: string): 'import' | 'deploy' {
   const value = readString(args, key, 'import')
   if (value !== 'import' && value !== 'deploy') {

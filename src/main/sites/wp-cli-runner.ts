@@ -68,6 +68,21 @@ const DANGEROUS_ARGUMENT = /[;`$<>|&]|\$\(|\)\$|\$\{/
 /** Flags that would repoint WP-CLI at another install or load caller-chosen PHP. */
 const FORBIDDEN_FLAG_PREFIXES: readonly string[] = ['--path=', '--url=', '--require=']
 
+/** Null when the argument is safe to forward. Shared by eval-file extra args. */
+export function wpCliArgLooksDangerous(argument: string): string | null {
+  if (DANGEROUS_ARGUMENT.test(argument)) {
+    return `Argument contains shell metacharacters: ${argument}`
+  }
+  const forbidden = FORBIDDEN_FLAG_PREFIXES.find((prefix) => argument.startsWith(prefix))
+  if (forbidden) {
+    return `Refusing a caller-supplied ${forbidden} flag.`
+  }
+  if (argument.startsWith('--debug')) {
+    return 'Refusing --debug flags.'
+  }
+  return null
+}
+
 export function checkWpCliSafety(
   args: readonly string[],
   allowWrites: boolean
@@ -85,15 +100,9 @@ export function checkWpCliSafety(
     if (typeof argument !== 'string') {
       return { allowed: false, reason: 'Every WP-CLI argument must be a string.' }
     }
-    if (DANGEROUS_ARGUMENT.test(argument)) {
-      return { allowed: false, reason: `Argument contains shell metacharacters: ${argument}` }
-    }
-    const forbidden = FORBIDDEN_FLAG_PREFIXES.find((prefix) => argument.startsWith(prefix))
-    if (forbidden) {
-      return { allowed: false, reason: `Refusing a caller-supplied ${forbidden} flag.` }
-    }
-    if (argument.startsWith('--debug')) {
-      return { allowed: false, reason: 'Refusing --debug flags.' }
+    const unsafe = wpCliArgLooksDangerous(argument)
+    if (unsafe) {
+      return { allowed: false, reason: unsafe }
     }
   }
 
@@ -101,7 +110,9 @@ export function checkWpCliSafety(
   if (WP_HARD_BANNED.includes(verb)) {
     return {
       allowed: false,
-      reason: `\`wp ${verb}\` is never allowed: it executes arbitrary code on the target.`
+      reason:
+        `\`wp ${verb}\` is never allowed: it executes arbitrary code on the target. ` +
+        'Use update_wp_fields for ACF values or wp_eval_file for a one-shot PHP file.'
     }
   }
 
