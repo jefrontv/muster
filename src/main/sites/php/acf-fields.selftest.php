@@ -48,5 +48,67 @@ $run = muster_acf_run( array( 'mode' => 'get', 'target' => array( 'kind' => 'opt
 muster_acf_assert( $run['ok'] === false, 'ACF absent is a hard error' );
 muster_acf_assert( strpos( $run['error'], 'ACF is not active' ) !== false, 'ACF absent message' );
 
+$key_row = array( 'field_name_key' => 'Band 40', 'field_bp' => 60 );
+$sub     = array(
+	'name' => 'name',
+	'key'  => 'field_name_key',
+	'type' => 'text',
+);
+$slot    = muster_acf_value_slot( $key_row, $sub );
+muster_acf_assert( $slot['found'] === true && $slot['value'] === 'Band 40', 'unformatted row is keyed by field key' );
+muster_acf_assert( $slot['slot'] === 'field_name_key', 'trace slot is the field key' );
+
+$name_row = array( 'name' => 'Band 40' );
+$named    = muster_acf_value_slot( $name_row, $sub );
+muster_acf_assert( $named['found'] === true && $named['slot'] === 'name', 'formatted row is keyed by name' );
+
+$repeater_field = array(
+	'name'       => 'spacing_templates',
+	'key'        => 'field_root',
+	'type'       => 'repeater',
+	'sub_fields' => array(
+		array(
+			'name' => 'name',
+			'key'  => 'field_name_key',
+			'type' => 'text',
+		),
+	),
+);
+$unformatted    = array(
+	array( 'field_name_key' => 'row0' ),
+	array( 'field_name_key' => 'row1' ),
+	array( 'field_name_key' => 'row2' ),
+	array( 'field_name_key' => 'row3' ),
+	array( 'field_name_key' => 'row4' ),
+	array( 'field_name_key' => 'row5' ),
+	array( 'field_name_key' => 'row6' ),
+	array( 'field_name_key' => 'row7' ),
+	array( 'field_name_key' => 'row8' ),
+	array( 'field_name_key' => 'Band 40' ),
+);
+$segments       = array(
+	array(
+		'kind' => 'field',
+		'name' => 'spacing_templates',
+	),
+	array(
+		'kind'  => 'index',
+		'index' => 9,
+		'name'  => '9',
+	),
+	array(
+		'kind' => 'field',
+		'name' => 'name',
+	),
+);
+$walk           = muster_acf_walk( $repeater_field, $unformatted, $segments, 'get' );
+muster_acf_assert( ! isset( $walk['error'] ), 'key-keyed walk has no error' );
+muster_acf_assert( $walk['value'] === 'Band 40', 'nested unformatted read is not null' );
+muster_acf_assert( $walk['trace'] === array( 9, 'field_name_key' ), 'trace uses field key' );
+
+$mutated = muster_acf_set_by_trace( $unformatted, $walk['trace'], 'NEW' );
+muster_acf_assert( $mutated[9]['field_name_key'] === 'NEW', 'apply writes the field-key slot' );
+muster_acf_assert( $mutated[8]['field_name_key'] === 'row8', 'sibling rows stay put' );
+
 fwrite( STDOUT, "ok\n" );
 exit( 0 );

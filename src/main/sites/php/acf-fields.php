@@ -65,6 +65,17 @@ function muster_acf_set_by_trace( $root, $trace, $value ) {
 	return $root;
 }
 
+function muster_acf_same( $left, $right ) {
+	$encode = function_exists( 'wp_json_encode' ) ? 'wp_json_encode' : 'json_encode';
+	if ( $encode( $left ) === $encode( $right ) ) {
+		return true;
+	}
+	if ( is_scalar( $left ) && is_scalar( $right ) ) {
+		return (string) $left === (string) $right;
+	}
+	return false;
+}
+
 function muster_acf_get_by_trace( $root, $trace ) {
 	$cur = $root;
 	foreach ( $trace as $key ) {
@@ -109,7 +120,7 @@ function muster_acf_field_is_block( $field ) {
 	return false;
 }
 
-function muster_acf_find_subfield( $parent, $name, $layout_name = null ) {
+function muster_acf_layout_subfields( $parent, $layout_name = null ) {
 	$subs = isset( $parent['sub_fields'] ) && is_array( $parent['sub_fields'] ) ? $parent['sub_fields'] : array();
 	if ( isset( $parent['type'] ) && $parent['type'] === 'flexible_content' && is_string( $layout_name ) && $layout_name !== '' ) {
 		$subs    = array();
@@ -121,10 +132,25 @@ function muster_acf_find_subfield( $parent, $name, $layout_name = null ) {
 			}
 		}
 	}
+	$out = array();
 	foreach ( $subs as $sub ) {
 		if ( ! is_array( $sub ) ) {
 			continue;
 		}
+		$out[] = $sub;
+		if ( isset( $sub['type'] ) && $sub['type'] === 'clone' && isset( $sub['sub_fields'] ) && is_array( $sub['sub_fields'] ) ) {
+			foreach ( $sub['sub_fields'] as $cloned ) {
+				if ( is_array( $cloned ) ) {
+					$out[] = $cloned;
+				}
+			}
+		}
+	}
+	return $out;
+}
+
+function muster_acf_find_subfield( $parent, $name, $layout_name = null ) {
+	foreach ( muster_acf_layout_subfields( $parent, $layout_name ) as $sub ) {
 		if ( ( isset( $sub['name'] ) && $sub['name'] === $name ) || ( isset( $sub['key'] ) && $sub['key'] === $name ) ) {
 			return $sub;
 		}
@@ -132,21 +158,86 @@ function muster_acf_find_subfield( $parent, $name, $layout_name = null ) {
 	return null;
 }
 
-function muster_acf_subfield_names( $parent, $layout_name = null ) {
-	$subs = isset( $parent['sub_fields'] ) && is_array( $parent['sub_fields'] ) ? $parent['sub_fields'] : array();
-	if ( isset( $parent['type'] ) && $parent['type'] === 'flexible_content' && is_string( $layout_name ) && $layout_name !== '' ) {
-		$subs    = array();
-		$layouts = isset( $parent['layouts'] ) && is_array( $parent['layouts'] ) ? $parent['layouts'] : array();
-		foreach ( $layouts as $layout ) {
-			if ( isset( $layout['name'] ) && $layout['name'] === $layout_name ) {
-				$subs = isset( $layout['sub_fields'] ) && is_array( $layout['sub_fields'] ) ? $layout['sub_fields'] : array();
-				break;
+/**
+ * Unformatted repeater/flex rows are keyed by field KEY. Formatted rows use the field name.
+ * Prefer the slot that actually exists so reads and writes hit the same cell.
+ */
+function muster_acf_value_slot( $row, $sub ) {
+	$fallback = isset( $sub['name'] ) ? $sub['name'] : '';
+	if ( ! is_array( $row ) || ! is_array( $sub ) ) {
+		return array(
+			'found' => false,
+			'value' => null,
+			'slot'  => $fallback,
+		);
+	}
+	foreach ( array( 'key', 'name' ) as $prop ) {
+		if ( empty( $sub[ $prop ] ) || ! array_key_exists( $sub[ $prop ], $row ) ) {
+			continue;
+		}
+		return array(
+			'found' => true,
+			'value' => $row[ $sub[ $prop ] ],
+			'slot'  => $sub[ $prop ],
+		);
+	}
+	return array(
+		'found' => false,
+		'value' => null,
+		'slot'  => $fallback,
+	);
+}
+
+function muster_acf_load_root_value( $field, $post_id ) {
+	if ( ! function_exists( 'get_field' ) || ! is_array( $field ) ) {
+		return null;
+	}
+	$type    = isset( $field['type'] ) ? $field['type'] : '';
+	$is_rows = in_array( $type, array( 'repeater', 'flexible_content', 'group' ), true );
+	foreach ( array( 'name', 'key' ) as $prop ) {
+		if ( empty( $field[ $prop ] ) ) {
+			continue;
+		}
+		$raw = get_field( $field[ $prop ], $post_id, false );
+		if ( $is_rows ) {
+			if ( is_array( $raw ) ) {
+				return $raw;
 			}
+			if ( is_numeric( $raw ) && (int) $raw > 0 ) {
+				$formatted = get_field( $field[ $prop ], $post_id, true );
+				if ( is_array( $formatted ) ) {
+					return $formatted;
+				}
+			}
+			continue;
+		}
+		if ( $raw !== false && $raw !== null ) {
+			return $raw;
 		}
 	}
+	return $is_rows ? array() : null;
+}
+
+function muster_acf_write_root( $field, $value, $post_id ) {
+	if ( ! function_exists( 'update_field' ) || ! is_array( $field ) ) {
+		return false;
+	}
+	foreach ( array( 'name', 'key' ) as $prop ) {
+		if ( empty( $field[ $prop ] ) ) {
+			continue;
+		}
+		$ok = update_field( $field[ $prop ], $value, $post_id );
+		if ( $ok !== false ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function muster_acf_subfield_names( $parent, $layout_name = null ) {
 	$names = array();
-	foreach ( $subs as $sub ) {
-		if ( is_array( $sub ) && isset( $sub['name'] ) ) {
+	foreach ( muster_acf_layout_subfields( $parent, $layout_name ) as $sub ) {
+		if ( isset( $sub['name'] ) ) {
 			$names[] = $sub['name'];
 		}
 	}
@@ -423,16 +514,12 @@ function muster_acf_walk( $root_field, $root_value, $segments, $mode ) {
 			return array( 'error' => "'{$seg['name']}' is not a value field." );
 		}
 		$cursor_field = $sub;
-		$key          = isset( $sub['name'] ) ? $sub['name'] : $seg['name'];
-		$trace[]      = $key;
-		if ( is_array( $cursor_value ) && array_key_exists( $key, $cursor_value ) ) {
-			$cursor_value = $cursor_value[ $key ];
-		} else {
-			$cursor_value = null;
-		}
-		$layout = null;
-		$field_info = array(
-			'name'          => $key,
+		$slot         = muster_acf_value_slot( is_array( $cursor_value ) ? $cursor_value : array(), $sub );
+		$trace[]      = $slot['slot'];
+		$cursor_value = $slot['found'] ? $slot['value'] : null;
+		$layout       = null;
+		$field_info   = array(
+			'name'          => isset( $sub['name'] ) ? $sub['name'] : $seg['name'],
 			'key'           => isset( $sub['key'] ) ? $sub['key'] : '',
 			'type'          => isset( $sub['type'] ) ? $sub['type'] : '',
 			'parent_layout' => $field_info['parent_layout'],
@@ -526,13 +613,9 @@ function muster_acf_run( $payload ) {
 		}
 		$root_key = $root_field['key'];
 		if ( ! array_key_exists( $root_key, $roots ) ) {
-			$value = function_exists( 'get_field' ) ? get_field( $root_key, $post_id, false ) : null;
-			if ( $value === false ) {
-				$value = null;
-			}
 			$roots[ $root_key ] = array(
 				'field' => $root_field,
-				'value' => $value,
+				'value' => muster_acf_load_root_value( $root_field, $post_id ),
 			);
 		}
 		$walk = muster_acf_walk( $root_field, $roots[ $root_key ]['value'], $segments, $mode );
@@ -627,29 +710,36 @@ function muster_acf_run( $payload ) {
 		}
 		$written = array();
 		foreach ( $pending as $key => $value ) {
-			$ok = update_field( $key, $value, $post_id );
-			$written[ $key ] = (bool) $ok;
+			$written[ $key ] = muster_acf_write_root( $roots[ $key ]['field'], $value, $post_id );
 		}
+		$any_applied = false;
 		foreach ( $results as &$row ) {
 			if ( ! isset( $row['root_key'] ) ) {
 				continue;
 			}
-			$row['applied'] = ! empty( $written[ $row['root_key'] ] );
-			$fresh          = get_field( $row['root_key'], $post_id, false );
-			$got            = muster_acf_get_by_trace( $fresh, $row['trace'] );
+			$key    = $row['root_key'];
+			$wanted = $row['new'];
+			$fresh  = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
+			$got    = muster_acf_get_by_trace( $fresh, $row['trace'] );
 			if ( $got['ok'] ) {
 				$row['new'] = $got['value'];
+			}
+			$row['applied'] = ! empty( $written[ $key ] ) && $got['ok'] && muster_acf_same( $got['value'], $wanted );
+			if ( $row['applied'] ) {
+				$any_applied = true;
 			}
 			unset( $row['trace'], $row['root_key'] );
 		}
 		unset( $row );
-		$warnings[] = 'Object caches and page-cache plugins may still serve stale HTML.';
+		if ( $any_applied ) {
+			$warnings[] = 'Object caches and page-cache plugins may still serve stale HTML.';
+		}
 		return muster_acf_envelope(
 			true,
 			array(
 				'warnings' => $warnings,
 				'results'  => $results,
-				'apply'    => true,
+				'apply'    => $any_applied,
 			)
 		);
 	}
