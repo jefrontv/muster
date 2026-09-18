@@ -105,6 +105,62 @@ function muster_acf_same( $left, $right ) {
 	return $left === $right;
 }
 
+function muster_acf_is_list( $value ) {
+	$expected = 0;
+	foreach ( $value as $key => $unused ) {
+		if ( $key !== $expected ) {
+			return false;
+		}
+		$expected++;
+	}
+	return true;
+}
+
+/**
+ * A one-way compare of two normalised values: every key the caller set must match, extras are ignored.
+ * Lists still have to be the same length, so a row count never passes by being a prefix.
+ */
+function muster_acf_value_subset( $want, $stored ) {
+	if ( ! is_array( $want ) || ! is_array( $stored ) ) {
+		return muster_acf_same( $want, $stored );
+	}
+	if ( muster_acf_is_list( $want ) || muster_acf_is_list( $stored ) ) {
+		if ( count( $want ) !== count( $stored ) ) {
+			return false;
+		}
+		foreach ( $want as $index => $item ) {
+			if ( ! array_key_exists( $index, $stored ) || ! muster_acf_value_subset( $item, $stored[ $index ] ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+	foreach ( $want as $key => $item ) {
+		if ( ! muster_acf_value_subset( $item, array_key_exists( $key, $stored ) ? $stored[ $key ] : null ) ) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * Verifies a write: a new row carries only the sub-fields the caller set and ACF fills the rest
+ * with their defaults, so `want` has to be contained in what came back, not equal to it.
+ */
+function muster_acf_rows_match( $field, $want, $stored ) {
+	return muster_acf_value_subset(
+		muster_acf_normalise( $field, $want ),
+		muster_acf_normalise( $field, $stored )
+	);
+}
+
+function muster_acf_rows_match_at( $field, $is_row, $want, $stored ) {
+	return muster_acf_value_subset(
+		muster_acf_normalise_at( $field, $is_row, $want ),
+		muster_acf_normalise_at( $field, $is_row, $stored )
+	);
+}
+
 function muster_acf_get_by_trace( $root, $trace ) {
 	$cur = $root;
 	foreach ( $trace as $key ) {
@@ -223,18 +279,27 @@ function muster_acf_layout_subfields( $parent, $layout_name = null ) {
 			}
 		}
 	}
+	return muster_acf_expand_clones( $subs, array(), 0 );
+}
+
+/** Clones nest: a settings clone holding a colours clone holding the radio. Flatten the whole chain. */
+function muster_acf_expand_clones( $subs, $seen, $depth ) {
 	$out = array();
 	foreach ( $subs as $sub ) {
 		if ( ! is_array( $sub ) ) {
 			continue;
 		}
 		$out[] = $sub;
-		if ( isset( $sub['type'] ) && $sub['type'] === 'clone' && isset( $sub['sub_fields'] ) && is_array( $sub['sub_fields'] ) ) {
-			foreach ( $sub['sub_fields'] as $cloned ) {
-				if ( is_array( $cloned ) ) {
-					$out[] = $cloned;
-				}
-			}
+		if ( ! isset( $sub['type'] ) || $sub['type'] !== 'clone' || ! isset( $sub['sub_fields'] ) || ! is_array( $sub['sub_fields'] ) ) {
+			continue;
+		}
+		$key = isset( $sub['key'] ) ? (string) $sub['key'] : '';
+		if ( $depth >= 5 || ( $key !== '' && isset( $seen[ $key ] ) ) ) {
+			continue;
+		}
+		$seen[ $key ] = true;
+		foreach ( muster_acf_expand_clones( $sub['sub_fields'], $seen, $depth + 1 ) as $child ) {
+			$out[] = $child;
 		}
 	}
 	return $out;
@@ -953,6 +1018,27 @@ function muster_acf_option_groups( $post_id ) {
 	return $out;
 }
 
+/** Labels are editor-facing HTML on this theme, colour swatches included; describe only needs the words. */
+function muster_acf_short_label( $text ) {
+	if ( ! is_string( $text ) ) {
+		return $text;
+	}
+	$clean = function_exists( 'wp_strip_all_tags' ) ? wp_strip_all_tags( $text ) : strip_tags( $text );
+	$clean = trim( preg_replace( '/\s+/', ' ', $clean ) );
+	if ( preg_match( '/^.{0,77}/us', $clean, $match ) ) {
+		return $match[0] === $clean ? $clean : $match[0] . '...';
+	}
+	return strlen( $clean ) <= 80 ? $clean : substr( $clean, 0, 77 ) . '...';
+}
+
+function muster_acf_short_choices( $choices ) {
+	$out = array();
+	foreach ( $choices as $key => $label ) {
+		$out[ $key ] = muster_acf_short_label( $label );
+	}
+	return $out;
+}
+
 function muster_acf_describe_subfields( $subs ) {
 	$out  = array();
 	$seen = array();
@@ -966,13 +1052,13 @@ function muster_acf_describe_subfields( $subs ) {
 		$entry         = array(
 			'name'  => $name,
 			'type'  => $type,
-			'label' => isset( $sub['label'] ) ? $sub['label'] : '',
+			'label' => muster_acf_short_label( isset( $sub['label'] ) ? $sub['label'] : '' ),
 		);
 		$choices = isset( $sub['choices'] ) && is_array( $sub['choices'] ) ? $sub['choices'] : array();
 		if ( count( $choices ) > 50 ) {
 			$entry['choices_count'] = count( $choices );
 		} elseif ( count( $choices ) > 0 ) {
-			$entry['choices'] = $choices;
+			$entry['choices'] = muster_acf_short_choices( $choices );
 		}
 		if ( ! empty( $sub['required'] ) ) {
 			$entry['required'] = true;
@@ -1003,7 +1089,7 @@ function muster_acf_describe_field( $field, $value, $path, $is_row, $layout_filt
 			'name'  => isset( $field['name'] ) ? $field['name'] : '',
 			'key'   => isset( $field['key'] ) ? $field['key'] : '',
 			'type'  => $type,
-			'label' => isset( $field['label'] ) ? $field['label'] : '',
+			'label' => muster_acf_short_label( isset( $field['label'] ) ? $field['label'] : '' ),
 		),
 	);
 	if ( $is_row ) {
@@ -1014,29 +1100,45 @@ function muster_acf_describe_field( $field, $value, $path, $is_row, $layout_filt
 		return $entry;
 	}
 	if ( $type === 'flexible_content' ) {
-		$rows                 = is_array( $value ) ? $value : array();
+		$rows      = is_array( $value ) ? $value : array();
+		$filtering = is_string( $layout_filter ) && $layout_filter !== '';
+		$names     = muster_acf_layout_names( $field );
+		if ( $filtering && ! in_array( $layout_filter, $names, true ) ) {
+			return array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => "unknown layout '{$layout_filter}' on '{$entry['field']['name']}'. Layouts: " . implode( ', ', $names ),
+			);
+		}
 		$entry['rows']        = count( $rows );
 		$entry['layouts']     = array();
 		$entry['row_layouts'] = array();
 		foreach ( muster_acf_field_layouts( $field ) as $layout ) {
+			// A filter narrows what is described, not just what is annotated; 25 layouts of clones is the size problem.
+			if ( $filtering && $layout['name'] !== $layout_filter ) {
+				continue;
+			}
 			$entry['layouts'][] = array(
 				'name'       => $layout['name'],
-				'label'      => isset( $layout['label'] ) ? $layout['label'] : '',
+				'label'      => muster_acf_short_label( isset( $layout['label'] ) ? $layout['label'] : '' ),
 				'sub_fields' => muster_acf_describe_subfields( muster_acf_layout_subfields( $field, $layout['name'] ) ),
 			);
 		}
 		$indexes = array();
 		foreach ( $rows as $index => $row ) {
 			$name = is_array( $row ) && isset( $row['acf_fc_layout'] ) ? $row['acf_fc_layout'] : null;
+			if ( $filtering && $name !== $layout_filter ) {
+				continue;
+			}
 			$entry['row_layouts'][] = array(
 				'index'  => $index,
 				'layout' => $name,
 			);
-			if ( is_string( $layout_filter ) && $layout_filter !== '' && $name === $layout_filter ) {
+			if ( $filtering ) {
 				$indexes[] = $index;
 			}
 		}
-		if ( is_string( $layout_filter ) && $layout_filter !== '' ) {
+		if ( $filtering ) {
 			$entry['where'] = array(
 				'layout'  => $layout_filter,
 				'indexes' => $indexes,
@@ -1246,12 +1348,16 @@ function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments 
 			);
 			continue;
 		}
-		$leaf      = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		$leaf = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		// Every match repeats the same field; name, label and parent are describe's job, not 2000 copies.
 		$matches[] = array(
 			'index_path' => $item['index_path'],
 			'path'       => muster_acf_path_string( $item['segments'] ),
 			'value'      => muster_acf_present_at( $leaf, ! empty( $walk['leaf_is_row'] ), $walk['value'] ),
-			'field'      => $walk['field'],
+			'field'      => array(
+				'key'  => isset( $walk['field']['key'] ) ? $walk['field']['key'] : '',
+				'type' => isset( $walk['field']['type'] ) ? $walk['field']['type'] : '',
+			),
 		);
 	}
 	$row = array(
@@ -1304,6 +1410,15 @@ function muster_acf_row_layouts( $container, $rows ) {
 		);
 	}
 	return $out;
+}
+
+/** A row op reports only the row it landed on; the whole list is describe's job, or modules.*.acf_fc_layout. */
+function muster_acf_touched_layouts( $container, $rows, $index ) {
+	if ( $index === null ) {
+		return array();
+	}
+	$all = muster_acf_row_layouts( $container, $rows );
+	return isset( $all[ $index ] ) ? array( $all[ $index ] ) : array();
 }
 
 function muster_acf_layout_names( $container ) {
@@ -1397,8 +1512,9 @@ function muster_acf_row_op( $container, $rows, $item, &$warnings, $path ) {
 		}
 		array_splice( $rows, $index, 0, array( $row ) );
 		return array(
-			'rows'   => $rows,
-			'revert' => array(
+			'rows'    => $rows,
+			'touched' => $index,
+			'revert'  => array(
 				'op'    => 'delete',
 				'path'  => $path,
 				'index' => $index,
@@ -1424,8 +1540,9 @@ function muster_acf_row_op( $container, $rows, $item, &$warnings, $path ) {
 			$revert['layout'] = $was;
 		}
 		return array(
-			'rows'   => $rows,
-			'revert' => $revert,
+			'rows'    => $rows,
+			'touched' => null,
+			'revert'  => $revert,
 		);
 	}
 
@@ -1440,8 +1557,9 @@ function muster_acf_row_op( $container, $rows, $item, &$warnings, $path ) {
 		array_splice( $rows, $index, 1 );
 		array_splice( $rows, $to, 0, array( $moved ) );
 		return array(
-			'rows'   => $rows,
-			'revert' => array(
+			'rows'    => $rows,
+			'touched' => $to,
+			'revert'  => array(
 				'op'    => 'move',
 				'path'  => $path,
 				'index' => $to,
@@ -1457,8 +1575,9 @@ function muster_acf_row_op( $container, $rows, $item, &$warnings, $path ) {
 	$copy = $rows[ $index ];
 	array_splice( $rows, $to, 0, array( $copy ) );
 	return array(
-		'rows'   => $rows,
-		'revert' => array(
+		'rows'    => $rows,
+		'touched' => $to,
+		'revert'  => array(
 			'op'    => 'delete',
 			'path'  => $path,
 			'index' => $to,
@@ -1468,7 +1587,7 @@ function muster_acf_row_op( $container, $rows, $item, &$warnings, $path ) {
 
 /**
  * Row ops run after every leaf write on the same root, each against the result of the one before it,
- * so an op's index always reads the array as it stands at that point.
+ * so an op's index and its own counts always read the array as it stands at that point.
  */
 function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warnings, &$path_errors ) {
 	$out = array();
@@ -1563,7 +1682,7 @@ function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warning
 			'path'         => $path,
 			'before_count' => count( $before ),
 			'after_count'  => count( $result['rows'] ),
-			'row_layouts'  => muster_acf_row_layouts( $container, $result['rows'] ),
+			'row_layouts'  => muster_acf_touched_layouts( $container, $result['rows'], $result['touched'] ),
 			'applied'      => false,
 			'trace'        => $walk['trace'],
 			'root_key'     => $root_key,
@@ -1828,9 +1947,13 @@ function muster_acf_run( $payload ) {
 		$new_raw     = isset( $item['value'] ) ? $item['value'] : null;
 		$leaf_field  = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
 		$leaf_is_row = ! empty( $walk['leaf_is_row'] );
+		// Collected per path first: a warning about one value is unreadable in a batch-wide list.
+		$row_warnings = array();
 		list( $coerced, $err ) = $leaf_is_row
-			? muster_acf_coerce_row( $leaf_field, $new_raw, $warnings, $path )
-			: muster_acf_coerce( $leaf_field, $new_raw, $warnings, $path );
+			? muster_acf_coerce_row( $leaf_field, $new_raw, $row_warnings, $path )
+			: muster_acf_coerce( $leaf_field, $new_raw, $row_warnings, $path );
+		$warnings = array_merge( $warnings, $row_warnings );
+		$row['warnings'] = $row_warnings;
 		if ( $err ) {
 			$path_errors        = true;
 			$row['error']       = $err;
@@ -1850,7 +1973,6 @@ function muster_acf_run( $payload ) {
 			muster_acf_normalise_at( $leaf_field, $leaf_is_row, $coerced )
 		);
 		$row['applied'] = false;
-		$row['warnings'] = array();
 		$row['trace']    = $walk['trace'];
 		$row['root_key'] = $root_key;
 		$row['leaf_field'] = $leaf_field;
@@ -1909,7 +2031,12 @@ function muster_acf_run( $payload ) {
 			muster_acf_write_root( $roots[ $key ]['field'], $value, $post_id );
 		}
 		$fresh_roots = array();
-		$any_applied = false;
+		// One verification per root: the value we asked for against the value that came back.
+		$root_applied = array();
+		foreach ( $pending as $key => $value ) {
+			$fresh_roots[ $key ]  = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
+			$root_applied[ $key ] = muster_acf_rows_match( $roots[ $key ]['field'], $value, $fresh_roots[ $key ] );
+		}
 		foreach ( $results as $i => $row ) {
 			if ( ! isset( $row['root_key'] ) ) {
 				$results[ $i ] = muster_acf_finalise_row( $row );
@@ -1919,42 +2046,24 @@ function muster_acf_run( $payload ) {
 			$wanted = $row['new'];
 			$leaf   = $row['leaf_field'];
 			$is_row = ! empty( $row['leaf_is_row'] );
-			if ( ! array_key_exists( $key, $fresh_roots ) ) {
-				$fresh_roots[ $key ] = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
-			}
-			$got = muster_acf_get_by_trace( $fresh_roots[ $key ], $row['trace'] );
+			$got    = muster_acf_get_by_trace( $fresh_roots[ $key ], $row['trace'] );
 			if ( $got['ok'] ) {
 				$row['new'] = $got['value'];
 			}
-			$row['applied'] = muster_acf_same(
-				muster_acf_normalise_at( $leaf, $is_row, $got['ok'] ? $got['value'] : null ),
-				muster_acf_normalise_at( $leaf, $is_row, $wanted )
-			);
-			if ( $row['applied'] ) {
-				$any_applied = true;
+			$row['applied'] = $got['ok'] && muster_acf_rows_match_at( $leaf, $is_row, $wanted, $got['value'] );
+			if ( ! $row['applied'] ) {
+				$warnings[] = "write issued but the re-read did not match: {$row['path']}";
 			}
 			$results[ $i ] = muster_acf_finalise_row( $row );
 		}
-		// after_count and row_layouts come from the re-read, so several ops on one root all report its final state.
+		// Counts stay per op; only the verification is per root, because storage holds one end state.
 		foreach ( $row_results as $i => $op_row ) {
 			if ( ! isset( $op_row['root_key'] ) ) {
 				continue;
 			}
-			$key = $op_row['root_key'];
-			if ( ! array_key_exists( $key, $fresh_roots ) ) {
-				$fresh_roots[ $key ] = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
-			}
-			$got    = muster_acf_get_by_trace( $fresh_roots[ $key ], $op_row['trace'] );
-			$want   = muster_acf_get_by_trace( $pending[ $key ], $op_row['trace'] );
-			$stored = $got['ok'] && is_array( $got['value'] ) ? array_values( $got['value'] ) : array();
-			$op_row['after_count'] = count( $stored );
-			$op_row['row_layouts'] = muster_acf_row_layouts( $op_row['container'], $stored );
-			$op_row['applied']     = $got['ok'] && muster_acf_same(
-				muster_acf_normalise( $op_row['container'], $want['ok'] ? $want['value'] : null ),
-				muster_acf_normalise( $op_row['container'], $stored )
-			);
-			if ( $op_row['applied'] ) {
-				$any_applied = true;
+			$op_row['applied'] = ! empty( $root_applied[ $op_row['root_key'] ] );
+			if ( ! $op_row['applied'] ) {
+				$warnings[] = "write issued but the re-read did not match: {$op_row['path']}";
 			}
 			$row_results[ $i ] = $op_row;
 		}
@@ -1967,7 +2076,9 @@ function muster_acf_run( $payload ) {
 		foreach ( $row_results as $i => $op_row ) {
 			$row_results[ $i ] = muster_acf_finalise_op( $op_row );
 		}
-		if ( $any_applied ) {
+		// apply says writes were issued, never whether they verified; that is each row's own `applied`.
+		$wrote = count( $pending ) > 0;
+		if ( $wrote ) {
 			$warnings[] = 'Object caches and page-cache plugins may still serve stale HTML.';
 		}
 		return muster_acf_envelope(
@@ -1976,7 +2087,7 @@ function muster_acf_run( $payload ) {
 				'warnings' => $warnings,
 				'results'  => $results,
 				'rows'     => $row_results,
-				'apply'    => $any_applied,
+				'apply'    => $wrote,
 				'revert'   => $revert,
 			)
 		);

@@ -17,7 +17,7 @@ $bad = muster_acf_parse_path( '9.name' );
 muster_acf_assert( isset( $bad['error'] ), 'index cannot be root' );
 
 $rows = array();
-for ( $i = 0; $i < 10; $i++ ) {
+for ( $i = 0; $i < 20; $i++ ) {
 	$rows[] = array( 'name' => 'n' . $i );
 }
 $out = muster_acf_set_by_trace( $rows, array( 9, 'name' ), 'NEW' );
@@ -187,12 +187,21 @@ $MUSTER_FIELDS = array(
 					array( 'key' => 'field_av_msg', 'name' => '', 'type' => 'message', 'parent' => 'field_av' ),
 					array( 'key' => 'field_av_sid', 'name' => 'section_id', 'type' => 'text', 'parent' => 'field_av' ),
 					array(
-						'key'     => 'field_av_clone_field_bg',
-						'name'    => 'module_bg_colour',
-						'type'    => 'radio',
-						'choices' => array( 'white' => 'White', 'navy' => 'Navy' ),
-						'parent'  => 'field_av',
+						'key'           => 'field_av_clone_field_bg',
+						'name'          => 'module_bg_colour',
+						'type'          => 'radio',
+						'choices'       => array( 'white' => 'White', 'navy' => 'Navy' ),
+						'default_value' => 'white',
+						'parent'        => 'field_av',
 					),
+				),
+			),
+			array(
+				'key'        => 'layout_quote',
+				'name'       => 'quote',
+				'label'      => 'Quote',
+				'sub_fields' => array(
+					array( 'key' => 'field_av_quote', 'name' => 'quote_text', 'type' => 'text', 'parent' => 'field_av' ),
 				),
 			),
 			array(
@@ -200,6 +209,30 @@ $MUSTER_FIELDS = array(
 				'name'       => 'media',
 				'label'      => 'Media',
 				'sub_fields' => array(
+					// Two clone levels deep, the way the theme nests its shared settings.
+					array(
+						'key'        => 'field_av_clone_outer',
+						'name'       => 'settings',
+						'type'       => 'clone',
+						'parent'     => 'field_av',
+						'sub_fields' => array(
+							array(
+								'key'        => 'field_av_clone_inner',
+								'name'       => 'colours',
+								'type'       => 'clone',
+								'parent'     => 'field_av_clone_outer',
+								'sub_fields' => array(
+									array(
+										'key'     => 'field_av_deep_bg',
+										'name'    => 'deep_bg_colour',
+										'type'    => 'radio',
+										'choices' => array( 'white' => 'White', 'navy' => 'Navy' ),
+										'parent'  => 'field_av_clone_inner',
+									),
+								),
+							),
+						),
+					),
 					array(
 						'key'        => 'field_av_slides',
 						'name'       => 'slides',
@@ -246,9 +279,11 @@ $MUSTER_FIELD_IDS       = array( 88 => 'field_dbr' );
 $MUSTER_DB              = array();
 $MUSTER_UPDATE_CALLS    = array();
 $MUSTER_FORMATTED_READS = 0;
+$MUSTER_REJECT_WRITES   = array();
 
 function muster_acf_test_reset() {
-	global $MUSTER_DB, $MUSTER_UPDATE_CALLS;
+	global $MUSTER_DB, $MUSTER_UPDATE_CALLS, $MUSTER_REJECT_WRITES;
+	$MUSTER_REJECT_WRITES = array();
 	$MUSTER_DB           = array(
 		'options_band_count'        => '60',
 		'options_hero_image'        => '42',
@@ -313,8 +348,14 @@ function muster_acf_test_store_rows( $parent, $rows ) {
 			$stored['acf_fc_layout'] = $layout;
 		}
 		foreach ( muster_acf_layout_subfields( $parent, $layout ) as $sub ) {
+			$type = isset( $sub['type'] ) ? $sub['type'] : '';
 			$slot = muster_acf_value_slot( $row, $sub );
 			if ( ! $slot['found'] ) {
+				// ACF's re-read carries every scalar sub-field of the layout, filled with its default.
+				if ( ! empty( $sub['key'] ) && muster_acf_is_value_type( $type )
+					&& ! in_array( $type, array( 'repeater', 'flexible_content', 'group', 'clone' ), true ) ) {
+					$stored[ $sub['key'] ] = isset( $sub['default_value'] ) ? (string) $sub['default_value'] : '';
+				}
 				continue;
 			}
 			$stored[ $sub['key'] ] = is_scalar( $slot['value'] ) ? (string) $slot['value'] : $slot['value'];
@@ -390,10 +431,14 @@ if ( ! function_exists( 'get_field' ) ) {
 
 if ( ! function_exists( 'update_field' ) ) {
 	function update_field( $selector, $value, $post_id ) {
-		global $MUSTER_DB, $MUSTER_UPDATE_CALLS;
+		global $MUSTER_DB, $MUSTER_UPDATE_CALLS, $MUSTER_REJECT_WRITES;
 		$MUSTER_UPDATE_CALLS[] = $selector;
 		$field = acf_get_field( $selector );
 		if ( ! $field ) {
+			return false;
+		}
+		// Stands in for a filter or a save that silently drops the value.
+		if ( in_array( $selector, $MUSTER_REJECT_WRITES, true ) ) {
 			return false;
 		}
 		$key  = 'options_' . $field['name'];
@@ -856,6 +901,21 @@ $row = $run['results'][0];
 muster_acf_assert( isset( $row['error'] ) && $row['new'] === 'not-a-row', 'a rejected value is echoed unchanged' );
 muster_acf_assert( $row['old']['body'] === '<h4>MEDIA</h4>', 'a rejected row still presents old' );
 
+// --- 17b. A choice warning reaches the path it came from. ------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.1.deep_bg_colour', 'value' => 'not-a-choice' ) ) );
+$row = $run['results'][0];
+muster_acf_assert( ! isset( $row['error'] ), 'a radio two clone levels deep resolves' );
+muster_acf_assert(
+	muster_acf_test_has_warning( $run['warnings'], "'not-a-choice' is not a registered choice. Valid: white, navy" ),
+	'a deep clone still carries its choices'
+);
+muster_acf_assert(
+	muster_acf_test_has_warning( $row['warnings'], "'not-a-choice' is not a registered choice" ),
+	'the warning lands on the result row too'
+);
+muster_acf_assert( $run['results'][0]['field']['name'] === 'deep_bg_colour', 'the deep field resolves by name' );
+
 // --- 18. Describe without paths lists the groups that apply to the target. ---
 muster_acf_test_reset();
 $run = muster_acf_test_describe();
@@ -867,7 +927,7 @@ $flex = muster_acf_test_entry( $run, 'av_modules' );
 muster_acf_assert( $flex['field'] === array( 'name' => 'av_modules', 'key' => 'field_av', 'type' => 'flexible_content', 'label' => '' ), 'describe names the field' );
 muster_acf_assert( $flex['rows'] === 2, 'describe counts flex rows' );
 muster_acf_assert( $flex['row_layouts'] === array( array( 'index' => 0, 'layout' => 'text' ), array( 'index' => 1, 'layout' => 'media' ) ), 'describe indexes every row layout' );
-muster_acf_assert( count( $flex['layouts'] ) === 2 && $flex['layouts'][0]['name'] === 'text' && $flex['layouts'][0]['label'] === 'Text', 'describe lists layouts' );
+muster_acf_assert( count( $flex['layouts'] ) === 3 && $flex['layouts'][0]['name'] === 'text' && $flex['layouts'][0]['label'] === 'Text', 'describe lists layouts' );
 muster_acf_assert(
 	muster_acf_test_names( $flex['layouts'][0]['sub_fields'] ) === array( 'body', 'section_id', 'module_bg_colour' ),
 	'layout sub-fields skip tab/message/empty'
@@ -884,8 +944,21 @@ muster_acf_assert( ! isset( $scalar['rows'] ) && ! isset( $scalar['sub_fields'] 
 
 $run = muster_acf_test_describe( array(), 'media' );
 muster_acf_assert( muster_acf_test_entry( $run, 'av_modules' )['where'] === array( 'layout' => 'media', 'indexes' => array( 1 ) ), 'layout_filter answers which rows use it' );
-$run = muster_acf_test_describe( array(), 'nothing' );
-muster_acf_assert( muster_acf_test_entry( $run, 'av_modules' )['where']['indexes'] === array(), 'an unused layout filters to nothing' );
+$filtered = muster_acf_test_entry( muster_acf_test_describe( array(), 'media' ), 'av_modules' );
+muster_acf_assert( count( $filtered['layouts'] ) === 1 && $filtered['layouts'][0]['name'] === 'media', 'layout_filter narrows the layouts described' );
+muster_acf_assert( $filtered['row_layouts'] === array( array( 'index' => 1, 'layout' => 'media' ) ), 'layout_filter narrows row_layouts to its own rows' );
+muster_acf_assert( $filtered['rows'] === 2, 'the row count still counts the whole field' );
+
+$unused = muster_acf_test_entry( muster_acf_test_describe( array(), 'quote' ), 'av_modules' );
+muster_acf_assert( $unused['row_layouts'] === array() && $unused['where']['indexes'] === array(), 'a registered but unused layout narrows to nothing' );
+muster_acf_assert( count( $unused['layouts'] ) === 1, 'and still describes that layout' );
+
+$missing = muster_acf_test_entry( muster_acf_test_describe( array(), 'nothing' ), 'av_modules' );
+muster_acf_assert( $missing['exists'] === false, 'an unknown layout name does not describe' );
+muster_acf_assert(
+	$missing['error'] === "unknown layout 'nothing' on 'av_modules'. Layouts: text, quote, media",
+	'an unknown layout names the real ones'
+);
 
 $run = muster_acf_test_describe( array(), null, array( 'kind' => 'post', 'id' => 672 ) );
 muster_acf_assert( muster_acf_test_entry( $run, 'db_rep' ) !== null, 'a post target describes its own groups' );
@@ -914,16 +987,24 @@ for ( $i = 0; $i < 51; $i++ ) {
 $described = muster_acf_describe_subfields( array( array( 'name' => 'big', 'type' => 'select', 'choices' => $long ) ) );
 muster_acf_assert( $described[0]['choices_count'] === 51 && ! isset( $described[0]['choices'] ), 'over 50 choices become a count' );
 
+// Shaped like the real page: a handful of flexible fields, each layout carrying cloned selects.
+$choices = array();
+for ( $i = 0; $i < 20; $i++ ) {
+	$choices[ 'opt' . $i ] = '<span class="swatch" style="background:#abcdef"></span> Option ' . $i;
+}
+$subs = array();
+for ( $i = 0; $i < 40; $i++ ) {
+	$subs[] = array( 'name' => 'sub' . $i, 'type' => 'select', 'label' => str_repeat( 'Label ', 20 ), 'choices' => $choices );
+}
 $bulky = array();
-for ( $i = 0; $i < 400; $i++ ) {
+for ( $i = 0; $i < 20; $i++ ) {
 	$bulky[] = array(
-		'path'       => 'f' . $i,
-		'field'      => array( 'name' => 'f' . $i, 'key' => 'k', 'type' => 'repeater', 'label' => '' ),
-		'sub_fields' => muster_acf_describe_subfields(
-			array( array( 'name' => 'one', 'type' => 'select', 'label' => str_repeat( 'x', 700 ), 'choices' => array( 'a' => str_repeat( 'y', 200 ) ) ) )
-		),
+		'path'    => 'flex' . $i,
+		'field'   => array( 'name' => 'flex' . $i, 'key' => 'k', 'type' => 'flexible_content', 'label' => '' ),
+		'layouts' => array( array( 'name' => 'one', 'label' => '', 'sub_fields' => muster_acf_describe_subfields( $subs ) ) ),
 	);
 }
+muster_acf_assert( strlen( json_encode( $bulky ) ) > 262144, 'the fixture is over the cap before truncation' );
 list( $shrunk, $shrunk_warnings, $was_truncated ) = muster_acf_describe_truncate( $bulky, array() );
 muster_acf_assert( $was_truncated === true, 'an oversized describe truncates' );
 muster_acf_assert( muster_acf_test_has_warning( $shrunk_warnings, 'describe truncated' ), 'truncation says so in warnings' );
@@ -939,8 +1020,8 @@ muster_acf_assert( $row['matches'][0]['index_path'] === array( 0 ), 'the match c
 muster_acf_assert( $row['matches'][0]['path'] === 'av_modules.0.section_id', 'the match carries a concrete path' );
 muster_acf_assert( $row['matches'][0]['value'] === '', 'the match carries the value' );
 muster_acf_assert(
-	$row['matches'][0]['field'] === array( 'name' => 'section_id', 'key' => 'field_av_sid', 'type' => 'text', 'parent_layout' => 'text' ),
-	'the match field matches a normal leaf result'
+	$row['matches'][0]['field'] === array( 'key' => 'field_av_sid', 'type' => 'text' ),
+	'a match carries the key and type only'
 );
 muster_acf_assert( $row['skipped'] === array( array( 'index_path' => array( 1 ), 'layout' => 'media' ) ), 'a layout without the field is skipped, not an error' );
 muster_acf_assert( ! isset( $row['truncated'] ), 'a small pattern is not truncated' );
@@ -951,7 +1032,7 @@ muster_acf_assert( $row['matches'][0]['value'] === 'text' && $row['matches'][1][
 
 $row = muster_acf_test_run( 'get', array( 'av_modules.*' ) )['results'][0];
 muster_acf_assert( $row['count'] === 2 && $row['matches'][0]['value']['body'] === '<h4>MEDIA</h4>', 'a trailing star presents whole rows' );
-muster_acf_assert( $row['matches'][1]['field']['layout'] === 'media', 'a row match keeps the row field shape' );
+muster_acf_assert( $row['matches'][1]['field'] === array( 'key' => 'field_av', 'type' => 'flexible_content' ), 'a row match names the container field' );
 
 $row = muster_acf_test_run( 'get', array( 'av_modules.*.slides.*.video_settings.controls_settings' ) )['results'][0];
 muster_acf_assert( $row['count'] === 1, 'nested stars expand together' );
@@ -962,7 +1043,7 @@ muster_acf_assert( $row['skipped'] === array( array( 'index_path' => array( 0 ),
 
 $row = muster_acf_test_run( 'get', array( 'spacing_templates.*.name' ) )['results'][0];
 muster_acf_assert( $row['count'] === 2 && $row['skipped'] === array(), 'a repeater star matches every row' );
-muster_acf_assert( $row['matches'][1]['value'] === 'Band 60' && $row['matches'][1]['field']['parent_layout'] === null, 'repeater matches have no parent layout' );
+muster_acf_assert( $row['matches'][1]['value'] === 'Band 60' && $row['matches'][1]['field']['key'] === 'field_st_name', 'repeater matches carry the sub-field key' );
 
 // --- 22. Where a star is not legal, and what it costs to write one. ----------
 $row = muster_acf_test_run( 'get', array( 'hero.*' ) )['results'][0];
@@ -1011,10 +1092,7 @@ $run = muster_acf_test_rows( 'preview', $append );
 $op  = $run['rows'][0];
 muster_acf_assert( $op['op'] === 'append' && $op['path'] === 'av_modules', 'the op echoes itself' );
 muster_acf_assert( $op['before_count'] === 2 && $op['after_count'] === 3, 'append counts the rows either side' );
-muster_acf_assert(
-	$op['row_layouts'] === array( array( 'index' => 0, 'layout' => 'text' ), array( 'index' => 1, 'layout' => 'media' ), array( 'index' => 2, 'layout' => 'text' ) ),
-	'append reports the resulting layouts'
-);
+muster_acf_assert( $op['row_layouts'] === array( array( 'index' => 2, 'layout' => 'text' ) ), 'append reports only the row it landed on' );
 muster_acf_assert( $op['applied'] === false && count( $MUSTER_UPDATE_CALLS ) === 0, 'preview writes no rows' );
 muster_acf_assert( $run['revert']['rows'] === array( array( 'op' => 'delete', 'path' => 'av_modules', 'index' => 2 ) ), 'append reverts to a delete' );
 foreach ( array( 'trace', 'root_key', 'container', 'revert' ) as $internal ) {
@@ -1027,7 +1105,7 @@ muster_acf_assert( $op['applied'] === true && $run['apply'] === true, 'append ap
 muster_acf_assert( $op['after_count'] === 3 && count( $MUSTER_DB['options_av_modules'] ) === 3, 'the new row reached the DB' );
 muster_acf_assert( $MUSTER_DB['options_av_modules'][2]['field_av_body'] === 'New body', 'append wrote its values by key' );
 muster_acf_assert( $MUSTER_DB['options_av_modules'][2]['acf_fc_layout'] === 'text', 'append set the layout' );
-muster_acf_assert( ! array_key_exists( 'field_av_clone_field_bg', $MUSTER_DB['options_av_modules'][2] ), 'omitted sub-fields stay unset' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][2]['field_av_clone_field_bg'] === 'white', 'ACF fills the sub-fields the op omitted with their defaults' );
 muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 1, 'one update_field per root' );
 $done = muster_acf_test_rows( 'apply', $run['revert']['rows'] );
 muster_acf_assert( $done['rows'][0]['applied'] === true && count( $MUSTER_DB['options_av_modules'] ) === 2, 'the append revert removes the row' );
@@ -1036,11 +1114,11 @@ muster_acf_assert( $done['rows'][0]['applied'] === true && count( $MUSTER_DB['op
 muster_acf_test_reset();
 $run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'av_modules' ) ) );
 muster_acf_assert( $run['ok'] === false && $run['apply_skipped'] === true, 'a flex append without a layout skips the batch' );
-muster_acf_assert( $run['rows'][0]['error'] === 'av_modules append: layout is required on a flexible field. Layouts: text, media', 'and says which layouts exist' );
+muster_acf_assert( $run['rows'][0]['error'] === 'av_modules append: layout is required on a flexible field. Layouts: text, quote, media', 'and says which layouts exist' );
 muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0, 'nothing written' );
 
 $run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'av_modules', 'layout' => 'nope' ) ) );
-muster_acf_assert( $run['rows'][0]['error'] === "av_modules append: unknown layout 'nope'. Layouts: text, media", 'an unknown layout is refused' );
+muster_acf_assert( $run['rows'][0]['error'] === "av_modules append: unknown layout 'nope'. Layouts: text, quote, media", 'an unknown layout is refused' );
 $run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'layout' => 'text' ) ) );
 muster_acf_assert( $run['rows'][0]['error'] === 'spacing_templates append: layout is not valid on a repeater.', 'a repeater takes no layout' );
 $run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'nope' => 1 ) ) ) );
@@ -1053,7 +1131,7 @@ muster_acf_test_reset();
 $run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Band 100', 'bp' => 100 ) ) ) );
 muster_acf_assert( $run['rows'][0]['applied'] === true, 'repeater append applies' );
 muster_acf_assert( $MUSTER_DB['options_spacing_templates'][2] === array( 'field_st_name' => 'Band 100', 'field_st_bp' => '100' ), 'repeater append stored both values' );
-muster_acf_assert( $run['rows'][0]['row_layouts'] === array( array( 'index' => 0, 'layout' => null ), array( 'index' => 1, 'layout' => null ), array( 'index' => 2, 'layout' => null ) ), 'repeater rows have null layouts' );
+muster_acf_assert( $run['rows'][0]['row_layouts'] === array( array( 'index' => 2, 'layout' => null ) ), 'a repeater row has a null layout' );
 
 muster_acf_test_reset();
 $run = muster_acf_test_rows( 'apply', array( array( 'op' => 'insert', 'path' => 'spacing_templates', 'index' => 0, 'values' => array( 'name' => 'First' ) ) ) );
@@ -1188,6 +1266,92 @@ $run = muster_acf_run(
 	)
 );
 muster_acf_assert( $run['ok'] === false && $run['error'] === 'row operations need preview or apply.', 'get refuses row ops' );
+
+// --- 32. apply says writes were issued; applied says they verified. ---------
+muster_acf_test_reset();
+$MUSTER_REJECT_WRITES = array( 'field_bc' );
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'band_count', 'value' => 7 ) ) );
+muster_acf_assert( $run['apply'] === true, 'apply is true because the write was issued' );
+muster_acf_assert( $run['results'][0]['applied'] === false, 'applied is false because the re-read did not match' );
+muster_acf_assert(
+	muster_acf_test_has_warning( $run['warnings'], 'write issued but the re-read did not match: band_count' ),
+	'a mismatch names the path'
+);
+muster_acf_assert( $run['revert']['fields'] === array(), 'an unverified write is left out of the revert' );
+
+muster_acf_test_reset();
+$MUSTER_REJECT_WRITES = array( 'field_av' );
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'av_modules', 'layout' => 'text' ) ) );
+muster_acf_assert( $run['apply'] === true && $run['rows'][0]['applied'] === false, 'an op that did not stick still reports the write' );
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], 'write issued but the re-read did not match: av_modules' ), 'the op mismatch names its path' );
+
+// --- 33. A new row is verified as a subset of what ACF stored. --------------
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'av_modules', 'layout' => 'text', 'values' => array( 'body' => 'ONE' ) ) ) );
+muster_acf_assert( $run['rows'][0]['applied'] === true, 'a row carrying one value verifies against a row ACF filled' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][2]['field_av_clone_field_bg'] === 'white', 'ACF filled the rest with defaults' );
+muster_acf_assert( count( $run['revert']['rows'] ) === 1, 'and the op reverts' );
+
+$container = array(
+	'type'       => 'repeater',
+	'sub_fields' => array( array( 'key' => 'field_a', 'name' => 'a', 'type' => 'text' ) ),
+);
+muster_acf_assert(
+	muster_acf_rows_match( $container, array( array( 'field_a' => 'x' ) ), array( array( 'field_a' => 'x', 'field_b' => 'filled' ) ) ),
+	'extra stored keys do not fail the match'
+);
+muster_acf_assert(
+	! muster_acf_rows_match( $container, array( array( 'field_a' => 'x' ) ), array( array( 'field_a' => 'y' ) ) ),
+	'a changed value still fails the match'
+);
+muster_acf_assert(
+	! muster_acf_rows_match( $container, array( array( 'field_a' => 'x' ) ), array( array( 'field_a' => 'x' ), array( 'field_a' => 'z' ) ) ),
+	'a different row count still fails the match'
+);
+
+// --- 34. Each op reports its own counts. -----------------------------------
+muster_acf_test_reset();
+$MUSTER_DB['options_spacing_templates'] = array(
+	array( 'field_st_name' => 'r0' ),
+	array( 'field_st_name' => 'r1' ),
+	array( 'field_st_name' => 'r2' ),
+	array( 'field_st_name' => 'r3' ),
+);
+$run = muster_acf_test_rows(
+	'apply',
+	array(
+		array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 0 ),
+		array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 0 ),
+		array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 0 ),
+		array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 0 ),
+	)
+);
+$counts = array();
+foreach ( $run['rows'] as $op_row ) {
+	$counts[] = $op_row['before_count'] . '->' . $op_row['after_count'];
+}
+muster_acf_assert( $counts === array( '4->3', '3->2', '2->1', '1->0' ), 'four deletes count down one at a time' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'] === array(), 'and the field ends empty' );
+muster_acf_assert( $run['rows'][0]['row_layouts'] === array(), 'a delete reports no touched row' );
+
+// --- 35. Describe strips label markup and caps the length. -----------------
+$described = muster_acf_describe_subfields(
+	array(
+		array(
+			'name'    => 'swatch',
+			'type'    => 'radio',
+			'label'   => '<span class="swatch" style="background:#fff"></span>  White ',
+			'choices' => array( 'white' => '<span class="swatch" style="background:#fff"></span> White' ),
+		),
+		array( 'name' => 'wordy', 'type' => 'text', 'label' => str_repeat( 'long ', 40 ) ),
+	)
+);
+muster_acf_assert( $described[0]['label'] === 'White', 'a label loses its markup' );
+muster_acf_assert( $described[0]['choices']['white'] === 'White', 'a choice label loses its markup' );
+muster_acf_assert( strlen( $described[1]['label'] ) === 80, 'a long label is cut to 80' );
+muster_acf_assert( substr( $described[1]['label'], -3 ) === '...', 'and says it was cut' );
+muster_acf_assert( muster_acf_short_label( 'é' . str_repeat( 'x', 100 ) ) !== false, 'a multibyte label survives the cut' );
+muster_acf_assert( json_encode( muster_acf_short_label( str_repeat( 'é', 100 ) ) ) !== false, 'and stays encodable' );
 
 muster_acf_test_reset();
 muster_acf_assert( $MUSTER_FORMATTED_READS === 0, 'never reads formatted values' );
