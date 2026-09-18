@@ -153,6 +153,14 @@ async function updateWpFields(
   return fieldResult(await runEval(context, args, 'Update ACF fields', ACF_FIELDS_PHP, sidecar))
 }
 
+// WP-CLI includes a tagless eval-file body as plain text and still exits 0, which reads as success.
+const PHP_OPEN_TAG = /^\s*(?:<\?php|<\?=)/
+
+function withPhpOpenTag(body: string): string {
+  const withoutBom = body.startsWith('\uFEFF') ? body.slice(1) : body
+  return PHP_OPEN_TAG.test(withoutBom) ? body : `<?php\n${withoutBom}`
+}
+
 async function wpEvalFile(
   context: SiteMcpContext,
   args: ToolArguments
@@ -161,8 +169,14 @@ async function wpEvalFile(
   if (php.trim().length === 0) {
     throw new SiteMcpToolError("'php' is empty.")
   }
+  const body = withPhpOpenTag(php)
+  if (Buffer.byteLength(body, 'utf8') > WP_EVAL_FILE_MAX_BYTES) {
+    throw new SiteMcpToolError(
+      `'php' is over the ${WP_EVAL_FILE_MAX_BYTES}-byte cap, measured after the '<?php' line Muster adds to a tagless body.`
+    )
+  }
   const extra = readOptionalStringArray(args, 'args', 20, 512)
-  const transport = await runEval(context, args, 'WP eval-file', php, undefined, extra)
+  const transport = await runEval(context, args, 'WP eval-file', body, undefined, extra)
   if (transport.blocked === true) {
     return transport
   }
@@ -186,7 +200,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_wp_fields',
     description:
-      "Read ACF field values on local or remote WordPress. Required location: 'local' (this site's WP root) or 'remote' (environment host; unmatched branch refuses unless env= or confirm=true). Paths are dotted and 0-based: modules.0 is the first flex row, spacing_templates.9.name matches options_spacing_templates_9_name. A missing field name is an error, not an empty option. Gutenberg ACF blocks are refused.",
+      "Read ACF field values on local or remote WordPress. Required location: 'local' (this site's WP root) or 'remote' (environment host; unmatched branch refuses unless env= or confirm=true). Paths are dotted and 0-based: modules.0 is the first flex row, spacing_templates.9.name matches options_spacing_templates_9_name. A missing field name is an error, not an empty option. A container path (flex row, repeater, group) returns its values keyed by sub-field name, and modules.N.acf_fc_layout reads that row's layout. Gutenberg ACF blocks are refused.",
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
@@ -207,7 +221,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'update_wp_fields',
     description:
-      "Preview or apply ACF field writes via update_field (never raw wp option update). Required location local|remote. Paths are 0-based. apply defaults to false (preview, returns old→new). apply=true writes; a typo'd field name is a hard error and nothing is written. After apply, page-cache plugins may still serve stale HTML. Gutenberg ACF blocks are refused.",
+      "Preview or apply ACF field writes via update_field (never raw wp option update). Required location local|remote. Paths are 0-based. apply defaults to false (preview, returns old→new). apply=true writes; a typo'd field name is a hard error and nothing is written. ok is false when nothing was applied because a path failed; a preview keeps ok true. Preview and apply both return revert: {target, fields: [{path, value}]}. Send revert.fields back as fields with apply=true to undo the write. After apply, page-cache plugins may still serve stale HTML. Gutenberg ACF blocks are refused.",
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
@@ -232,14 +246,14 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'wp_eval_file',
     description:
-      'Run a PHP file body with `wp eval-file` on local or remote WordPress, then delete the temp file. Required location. 64KB cap. Extra args are argv, not a shell string. Prefer update_wp_fields for ACF. Tell the user what the script does before confirm on a production-ish host. Always cleaned up.',
+      'Run a PHP file body with `wp eval-file` on local or remote WordPress, then delete the temp file. Required location. The opening `<?php` tag is optional: Muster prepends one when the body does not already start with `<?php` or `<?=`. 64KB cap, measured after that line is added. Extra args are argv, not a shell string. Prefer update_wp_fields for ACF. Tell the user what the script does before confirm on a production-ish host. Always cleaned up.',
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
         php: {
           type: 'string',
           description:
-            'PHP file body (not a path). Max 64KB. Always written to a temp file and deleted after.'
+            'PHP file body (not a path). The opening `<?php` tag is optional and prepended when missing. Max 64KB. Always written to a temp file and deleted after.'
         },
         args: {
           type: 'array',

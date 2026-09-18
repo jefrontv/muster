@@ -176,6 +176,79 @@ describe('update_wp_fields', () => {
   })
 })
 
+function cannedRun(stdout: string): void {
+  vi.mocked(streamCommand).mockResolvedValueOnce({
+    code: 0,
+    stdout,
+    stderr: '',
+    timedOut: false,
+    truncated: false,
+    stoppedEarly: false
+  })
+}
+
+describe('update_wp_fields envelope', () => {
+  it('reports ok false when the atomic guard skipped a requested apply', async () => {
+    cannedRun(
+      '{"ok":false,"home":"https://acme.local","acf_version":"6.8.10","apply":false,"apply_skipped":true,"warnings":["nothing was applied"],"results":[{"path":"hero_titel","error":"unknown field"}]}'
+    )
+    const { isError, payload } = await call('update_wp_fields', {
+      location: 'local',
+      target: { kind: 'option' },
+      fields: [{ path: 'hero_titel', value: 'Hi' }],
+      apply: true
+    })
+    expect(isError).toBe(false)
+    expect(payload).toMatchObject({ ok: false, apply: false, apply_skipped: true })
+  })
+
+  it('passes the revert payload through unchanged', async () => {
+    const revert = {
+      target: { kind: 'option' },
+      fields: [{ path: 'hero_title', value: 'Old' }]
+    }
+    cannedRun(
+      JSON.stringify({
+        ok: true,
+        home: 'https://acme.local',
+        acf_version: '6.8.10',
+        apply: true,
+        warnings: [],
+        results: [{ path: 'hero_title', old: 'Old', new: 'Hi', changed: true, applied: true }],
+        revert
+      })
+    )
+    const { isError, payload } = await call('update_wp_fields', {
+      location: 'local',
+      target: { kind: 'option' },
+      fields: [{ path: 'hero_title', value: 'Hi' }],
+      apply: true
+    })
+    expect(isError).toBe(false)
+    expect(payload.revert).toEqual(revert)
+  })
+})
+
+describe('wp_eval_file', () => {
+  async function evalBody(php: string): Promise<string> {
+    evalFiles.length = 0
+    const { isError } = await call('wp_eval_file', { location: 'remote', env: 'main', php })
+    expect(isError).toBe(false)
+    return evalFiles.find((file) => file.path.endsWith('.php'))?.contents ?? ''
+  }
+
+  it('prepends the open tag so a tagless body runs instead of echoing itself', async () => {
+    expect(await evalBody("echo 'hi';")).toBe("<?php\necho 'hi';")
+  })
+
+  it.each([['<?php echo 1;'], ['\uFEFF<?php echo 1;'], ['<?= 1 ?>'], ['  \n<?php echo 1;']])(
+    'leaves %j untouched',
+    async (php) => {
+      expect(await evalBody(php)).toBe(php)
+    }
+  )
+})
+
 describe('get_wp_fields', () => {
   it('blocks remote reads off an unmatched branch', async () => {
     const { payload } = await call(
