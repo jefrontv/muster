@@ -513,6 +513,17 @@ function muster_acf_test_describe( $fields = array(), $layout_filter = null, $ta
 	return muster_acf_run( $payload );
 }
 
+function muster_acf_test_rows( $mode, $rows, $fields = array() ) {
+	return muster_acf_run(
+		array(
+			'mode'   => $mode,
+			'target' => array( 'kind' => 'option' ),
+			'fields' => $fields,
+			'rows'   => $rows,
+		)
+	);
+}
+
 function muster_acf_test_entry( $run, $path ) {
 	foreach ( $run['results'] as $entry ) {
 		if ( isset( $entry['path'] ) && $entry['path'] === $path ) {
@@ -986,6 +997,199 @@ $row = muster_acf_test_run( 'get', array( 'spacing_templates.*.name' ) )['result
 muster_acf_assert( $row['count'] === 2000 && $row['truncated'] === true, 'a pattern stops at 2000 matches' );
 muster_acf_test_reset();
 
+// --- 24. Append: preview simulates, apply verifies through the re-read. ------
+muster_acf_test_reset();
+$append = array(
+	array(
+		'op'     => 'append',
+		'path'   => 'av_modules',
+		'layout' => 'text',
+		'values' => array( 'body' => 'New body', 'section_id' => 'new-id' ),
+	),
+);
+$run = muster_acf_test_rows( 'preview', $append );
+$op  = $run['rows'][0];
+muster_acf_assert( $op['op'] === 'append' && $op['path'] === 'av_modules', 'the op echoes itself' );
+muster_acf_assert( $op['before_count'] === 2 && $op['after_count'] === 3, 'append counts the rows either side' );
+muster_acf_assert(
+	$op['row_layouts'] === array( array( 'index' => 0, 'layout' => 'text' ), array( 'index' => 1, 'layout' => 'media' ), array( 'index' => 2, 'layout' => 'text' ) ),
+	'append reports the resulting layouts'
+);
+muster_acf_assert( $op['applied'] === false && count( $MUSTER_UPDATE_CALLS ) === 0, 'preview writes no rows' );
+muster_acf_assert( $run['revert']['rows'] === array( array( 'op' => 'delete', 'path' => 'av_modules', 'index' => 2 ) ), 'append reverts to a delete' );
+foreach ( array( 'trace', 'root_key', 'container', 'revert' ) as $internal ) {
+	muster_acf_assert( ! array_key_exists( $internal, $op ), "op internal '{$internal}' stays out of the envelope" );
+}
+
+$run = muster_acf_test_rows( 'apply', $append );
+$op  = $run['rows'][0];
+muster_acf_assert( $op['applied'] === true && $run['apply'] === true, 'append applies' );
+muster_acf_assert( $op['after_count'] === 3 && count( $MUSTER_DB['options_av_modules'] ) === 3, 'the new row reached the DB' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][2]['field_av_body'] === 'New body', 'append wrote its values by key' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][2]['acf_fc_layout'] === 'text', 'append set the layout' );
+muster_acf_assert( ! array_key_exists( 'field_av_clone_field_bg', $MUSTER_DB['options_av_modules'][2] ), 'omitted sub-fields stay unset' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 1, 'one update_field per root' );
+$done = muster_acf_test_rows( 'apply', $run['revert']['rows'] );
+muster_acf_assert( $done['rows'][0]['applied'] === true && count( $MUSTER_DB['options_av_modules'] ) === 2, 'the append revert removes the row' );
+
+// --- 25. Layout rules on append and insert. ---------------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'av_modules' ) ) );
+muster_acf_assert( $run['ok'] === false && $run['apply_skipped'] === true, 'a flex append without a layout skips the batch' );
+muster_acf_assert( $run['rows'][0]['error'] === 'av_modules append: layout is required on a flexible field. Layouts: text, media', 'and says which layouts exist' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0, 'nothing written' );
+
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'av_modules', 'layout' => 'nope' ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === "av_modules append: unknown layout 'nope'. Layouts: text, media", 'an unknown layout is refused' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'layout' => 'text' ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === 'spacing_templates append: layout is not valid on a repeater.', 'a repeater takes no layout' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'nope' => 1 ) ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === "spacing_templates append: unknown sub-field 'nope'. Available: name, bp", 'unknown values are refused' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'bp' => 'not-a-number' ) ) ) );
+muster_acf_assert( strpos( $run['rows'][0]['error'], 'expected a number' ) !== false, 'values go through the coercer' );
+
+// --- 26. Append, insert, delete, move and duplicate on a repeater. -----------
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Band 100', 'bp' => 100 ) ) ) );
+muster_acf_assert( $run['rows'][0]['applied'] === true, 'repeater append applies' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][2] === array( 'field_st_name' => 'Band 100', 'field_st_bp' => '100' ), 'repeater append stored both values' );
+muster_acf_assert( $run['rows'][0]['row_layouts'] === array( array( 'index' => 0, 'layout' => null ), array( 'index' => 1, 'layout' => null ), array( 'index' => 2, 'layout' => null ) ), 'repeater rows have null layouts' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'insert', 'path' => 'spacing_templates', 'index' => 0, 'values' => array( 'name' => 'First' ) ) ) );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_name'] === 'First', 'insert lands at the index' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][1]['field_st_name'] === 'Band 40', 'insert shifts the rest down' );
+muster_acf_assert( $run['revert']['rows'] === array( array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 0 ) ), 'insert reverts to a delete' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'move', 'path' => 'spacing_templates', 'index' => 0, 'to' => 1 ) ) );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_name'] === 'Band 60', 'move reorders the rows' );
+muster_acf_assert( $run['rows'][0]['before_count'] === 2 && $run['rows'][0]['after_count'] === 2, 'move keeps the count' );
+muster_acf_assert( $run['revert']['rows'] === array( array( 'op' => 'move', 'path' => 'spacing_templates', 'index' => 1, 'to' => 0 ) ), 'move reverts to the inverse move' );
+$done = muster_acf_test_rows( 'apply', $run['revert']['rows'] );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_name'] === 'Band 40', 'the move revert puts it back' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'duplicate', 'path' => 'spacing_templates', 'index' => 0 ) ) );
+muster_acf_assert( count( $MUSTER_DB['options_spacing_templates'] ) === 3, 'duplicate grows the array' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][1]['field_st_name'] === 'Band 40', 'duplicate lands after the source by default' );
+muster_acf_assert( $run['revert']['rows'] === array( array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 1 ) ), 'duplicate reverts to a delete' );
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'duplicate', 'path' => 'spacing_templates', 'index' => 0, 'to' => 2 ) ) );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][2]['field_st_name'] === 'Band 40', 'duplicate honours to' );
+
+// --- 27. Delete carries the removed row in its revert. ----------------------
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'delete', 'path' => 'av_modules', 'index' => 0 ) ) );
+muster_acf_assert( $run['rows'][0]['after_count'] === 1 && count( $MUSTER_DB['options_av_modules'] ) === 1, 'delete removes the row' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][0]['acf_fc_layout'] === 'media', 'the surviving row moved up' );
+$revert = $run['revert']['rows'];
+muster_acf_assert(
+	$revert === array(
+		array(
+			'op'     => 'insert',
+			'path'   => 'av_modules',
+			'index'  => 0,
+			'values' => array( 'body' => '<h4>MEDIA</h4>', 'section_id' => '', 'module_bg_colour' => 'white' ),
+			'layout' => 'text',
+		),
+	),
+	'delete reverts to an insert of the removed row, name-keyed'
+);
+$done = muster_acf_test_rows( 'apply', $revert );
+muster_acf_assert( $done['rows'][0]['applied'] === true, 'the delete revert applies' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][0]['field_av_body'] === '<h4>MEDIA</h4>', 'the removed row is back where it was' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][0]['field_av_clone_field_bg'] === 'white', 'the clone child came back too' );
+
+// --- 28. Ops reach a container nested inside a flex row. --------------------
+muster_acf_test_reset();
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'av_modules.1.slides' ) ) );
+$op  = $run['rows'][0];
+muster_acf_assert( $op['before_count'] === 1 && $op['after_count'] === 2, 'a nested repeater grows' );
+muster_acf_assert( count( $MUSTER_DB['options_av_modules'][1]['field_av_slides'] ) === 2, 'the nested row reached the DB' );
+muster_acf_assert( $op['applied'] === true, 'a nested op verifies through the re-read' );
+
+// --- 29. Ordering: leaf writes land first, then ops in list order. ----------
+muster_acf_test_reset();
+$run = muster_acf_test_rows(
+	'apply',
+	array(
+		array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Third' ) ),
+		array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 0 ),
+	),
+	array( array( 'path' => 'spacing_templates.0.name', 'value' => 'Renamed' ) )
+);
+muster_acf_assert( $run['apply'] === true, 'a mixed batch applies' );
+muster_acf_assert( count( $MUSTER_DB['options_spacing_templates'] ) === 2, 'append then delete nets out' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][0]['field_st_name'] === 'Band 60', 'the delete saw the appended array' );
+muster_acf_assert( $MUSTER_DB['options_spacing_templates'][1]['field_st_name'] === 'Third', 'the append survived' );
+muster_acf_assert( $run['results'][0]['applied'] === false, 'a leaf write the ops then deleted does not claim to have applied' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 1, 'fields and ops share one write per root' );
+muster_acf_assert( count( $run['revert']['rows'] ) === 2, 'both ops revert' );
+muster_acf_assert( $run['revert']['rows'][0]['op'] === 'insert', 'reverts come back in reverse order' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_rows(
+	'apply',
+	array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Solo' ) ) ),
+	array( array( 'path' => 'band_count', 'value' => 7 ) )
+);
+muster_acf_assert( count( $run['revert']['fields'] ) === 1 && count( $run['revert']['rows'] ) === 1, 'both halves revert when both applied' );
+muster_acf_assert(
+	muster_acf_test_has_warning( $run['warnings'], 'send revert.rows first' ),
+	'a mixed revert says which half to replay first'
+);
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 2, 'two roots take one write each' );
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 2 ) ) );
+muster_acf_assert( ! muster_acf_test_has_warning( $run['warnings'], 'send revert.rows first' ), 'a rows-only revert needs no ordering note' );
+
+// --- 30. One bad op stops the whole batch. ---------------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_rows(
+	'apply',
+	array(
+		array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Never' ) ),
+		array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 9 ),
+	),
+	array( array( 'path' => 'band_count', 'value' => 7 ) )
+);
+muster_acf_assert( $run['ok'] === false && $run['apply_skipped'] === true, 'an invalid op skips the batch' );
+muster_acf_assert( $run['rows'][1]['error'] === 'spacing_templates delete: index 9 out of range (count=3).', 'the range error counts the array as the ops left it' );
+muster_acf_assert( $run['rows'][0]['applied'] === false && $run['rows'][1]['applied'] === false, 'no op claims to have applied' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0 && $MUSTER_DB['options_band_count'] === '60', 'neither the op nor the field write landed' );
+muster_acf_assert( $run['revert']['rows'] === array() && $run['revert']['fields'] === array(), 'a skipped batch reverts nothing' );
+
+// --- 31. Paths an op cannot use. -------------------------------------------
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'append', 'path' => 'hero' ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === "row operations need a repeater or flexible_content path; 'hero' is a group.", 'a group takes no row ops' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'delete', 'path' => 'av_modules.0', 'index' => 0 ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === "row operations address the container, not a row; drop the row index from 'av_modules.0'.", 'a row path names the container instead' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'delete', 'path' => 'av_modules.*.slides', 'index' => 0 ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === 'wildcards are read-only', 'an op cannot use a pattern' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'nope', 'path' => 'spacing_templates' ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === "'nope' is not a row operation. Valid: append, insert, delete, move, duplicate.", 'unknown ops are named' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'move', 'path' => 'spacing_templates', 'index' => 0 ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === 'spacing_templates move: to is required.', 'move needs a destination' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'insert', 'path' => 'spacing_templates', 'values' => array() ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === 'spacing_templates insert: index is required.', 'insert needs an index' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'insert', 'path' => 'spacing_templates', 'index' => 3 ) ) );
+muster_acf_assert( $run['rows'][0]['error'] === 'spacing_templates insert: index 3 out of range (count=2).', 'insert stops one past the end' );
+$run = muster_acf_test_rows( 'preview', array( array( 'op' => 'insert', 'path' => 'spacing_templates', 'index' => 2, 'values' => array( 'name' => 'End' ) ) ) );
+muster_acf_assert( ! isset( $run['rows'][0]['error'] ) && $run['rows'][0]['after_count'] === 3, 'insert at the end is an append' );
+
+$run = muster_acf_test_run( 'get', array( 'band_count' ) );
+muster_acf_assert( ! isset( $run['rows'] ), 'get carries no rows key' );
+$run = muster_acf_run(
+	array(
+		'mode'   => 'get',
+		'target' => array( 'kind' => 'option' ),
+		'fields' => array(),
+		'rows'   => array( array( 'op' => 'append', 'path' => 'spacing_templates' ) ),
+	)
+);
+muster_acf_assert( $run['ok'] === false && $run['error'] === 'row operations need preview or apply.', 'get refuses row ops' );
+
+muster_acf_test_reset();
 muster_acf_assert( $MUSTER_FORMATTED_READS === 0, 'never reads formatted values' );
 
 fwrite( STDOUT, "ok\n" );

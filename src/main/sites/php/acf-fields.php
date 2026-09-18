@@ -1281,6 +1281,334 @@ function muster_acf_envelope( $ok, $extra = array() ) {
 	);
 }
 
+function muster_acf_int_or_null( $value ) {
+	if ( is_int( $value ) ) {
+		return $value;
+	}
+	if ( is_float( $value ) && (int) $value == $value ) {
+		return (int) $value;
+	}
+	if ( is_string( $value ) && preg_match( '/^[0-9]+$/', $value ) ) {
+		return (int) $value;
+	}
+	return null;
+}
+
+function muster_acf_row_layouts( $container, $rows ) {
+	$is_flex = isset( $container['type'] ) && $container['type'] === 'flexible_content';
+	$out     = array();
+	foreach ( array_values( is_array( $rows ) ? $rows : array() ) as $index => $row ) {
+		$out[] = array(
+			'index'  => $index,
+			'layout' => $is_flex && is_array( $row ) && isset( $row['acf_fc_layout'] ) ? $row['acf_fc_layout'] : null,
+		);
+	}
+	return $out;
+}
+
+function muster_acf_layout_names( $container ) {
+	$names = array();
+	foreach ( muster_acf_field_layouts( $container ) as $layout ) {
+		$names[] = $layout['name'];
+	}
+	return $names;
+}
+
+/** Builds one unformatted row: name-keyed input, key-keyed storage, unnamed sub-fields left unset. */
+function muster_acf_build_row( $container, $layout, $values, &$warnings, $label ) {
+	$row = array();
+	if ( isset( $container['type'] ) && $container['type'] === 'flexible_content' ) {
+		$row['acf_fc_layout'] = $layout;
+	}
+	if ( $values === null ) {
+		return array( $row, null );
+	}
+	if ( ! is_array( $values ) ) {
+		return array( null, "{$label}: values must be an object keyed by sub-field name." );
+	}
+	foreach ( $values as $name => $value ) {
+		if ( ! is_string( $name ) ) {
+			return array( null, "{$label}: values must be an object keyed by sub-field name." );
+		}
+		$sub = muster_acf_find_subfield( $container, $name, $layout );
+		if ( ! $sub ) {
+			$available = implode( ', ', muster_acf_subfield_names( $container, $layout ) );
+			return array( null, "{$label}: unknown sub-field '{$name}'. Available: {$available}" );
+		}
+		list( $coerced, $err ) = muster_acf_coerce( $sub, $value, $warnings, "{$label}.{$name}" );
+		if ( $err ) {
+			return array( null, $err );
+		}
+		$slot         = ! empty( $sub['key'] ) ? $sub['key'] : $name;
+		$row[ $slot ] = $coerced;
+	}
+	return array( $row, null );
+}
+
+/** Runs one op against the rows as they stand, returning the new array and the op that undoes it. */
+function muster_acf_row_op( $container, $rows, $item, &$warnings, $path ) {
+	$op      = isset( $item['op'] ) && is_string( $item['op'] ) ? $item['op'] : '';
+	$is_flex = isset( $container['type'] ) && $container['type'] === 'flexible_content';
+	$count   = count( $rows );
+	$label   = "{$path} {$op}";
+	$layout  = isset( $item['layout'] ) && is_string( $item['layout'] ) ? $item['layout'] : null;
+	$index   = array_key_exists( 'index', $item ) ? muster_acf_int_or_null( $item['index'] ) : null;
+	$to      = array_key_exists( 'to', $item ) ? muster_acf_int_or_null( $item['to'] ) : null;
+
+	if ( ! in_array( $op, array( 'append', 'insert', 'delete', 'move', 'duplicate' ), true ) ) {
+		return array( 'error' => "'{$op}' is not a row operation. Valid: append, insert, delete, move, duplicate." );
+	}
+	if ( in_array( $op, array( 'append', 'insert' ), true ) ) {
+		if ( $is_flex ) {
+			$names = muster_acf_layout_names( $container );
+			if ( $layout === null || $layout === '' ) {
+				return array( 'error' => "{$label}: layout is required on a flexible field. Layouts: " . implode( ', ', $names ) );
+			}
+			if ( ! in_array( $layout, $names, true ) ) {
+				return array( 'error' => "{$label}: unknown layout '{$layout}'. Layouts: " . implode( ', ', $names ) );
+			}
+		} elseif ( $layout !== null ) {
+			return array( 'error' => "{$label}: layout is not valid on a repeater." );
+		}
+	}
+	if ( in_array( $op, array( 'delete', 'move', 'duplicate' ), true ) ) {
+		if ( $index === null ) {
+			return array( 'error' => "{$label}: index is required." );
+		}
+		if ( $index < 0 || $index >= $count ) {
+			return array( 'error' => "{$label}: index {$index} out of range (count={$count})." );
+		}
+	}
+
+	if ( $op === 'append' || $op === 'insert' ) {
+		if ( $op === 'insert' ) {
+			if ( $index === null ) {
+				return array( 'error' => "{$label}: index is required." );
+			}
+			if ( $index < 0 || $index > $count ) {
+				return array( 'error' => "{$label}: index {$index} out of range (count={$count})." );
+			}
+		} else {
+			$index = $count;
+		}
+		list( $row, $err ) = muster_acf_build_row( $container, $layout, isset( $item['values'] ) ? $item['values'] : null, $warnings, $label );
+		if ( $err ) {
+			return array( 'error' => $err );
+		}
+		array_splice( $rows, $index, 0, array( $row ) );
+		return array(
+			'rows'   => $rows,
+			'revert' => array(
+				'op'    => 'delete',
+				'path'  => $path,
+				'index' => $index,
+			),
+		);
+	}
+
+	if ( $op === 'delete' ) {
+		$removed   = $rows[ $index ];
+		$presented = muster_acf_present_row( $container, $removed );
+		$was       = is_array( $presented ) && isset( $presented['acf_fc_layout'] ) ? $presented['acf_fc_layout'] : null;
+		if ( is_array( $presented ) ) {
+			unset( $presented['acf_fc_layout'] );
+		}
+		array_splice( $rows, $index, 1 );
+		$revert = array(
+			'op'     => 'insert',
+			'path'   => $path,
+			'index'  => $index,
+			'values' => $presented,
+		);
+		if ( $is_flex ) {
+			$revert['layout'] = $was;
+		}
+		return array(
+			'rows'   => $rows,
+			'revert' => $revert,
+		);
+	}
+
+	if ( $op === 'move' ) {
+		if ( $to === null ) {
+			return array( 'error' => "{$label}: to is required." );
+		}
+		if ( $to < 0 || $to >= $count ) {
+			return array( 'error' => "{$label}: to {$to} out of range (count={$count})." );
+		}
+		$moved = $rows[ $index ];
+		array_splice( $rows, $index, 1 );
+		array_splice( $rows, $to, 0, array( $moved ) );
+		return array(
+			'rows'   => $rows,
+			'revert' => array(
+				'op'    => 'move',
+				'path'  => $path,
+				'index' => $to,
+				'to'    => $index,
+			),
+		);
+	}
+
+	$to = $to === null ? $index + 1 : $to;
+	if ( $to < 0 || $to > $count ) {
+		return array( 'error' => "{$label}: to {$to} out of range (count={$count})." );
+	}
+	$copy = $rows[ $index ];
+	array_splice( $rows, $to, 0, array( $copy ) );
+	return array(
+		'rows'   => $rows,
+		'revert' => array(
+			'op'    => 'delete',
+			'path'  => $path,
+			'index' => $to,
+		),
+	);
+}
+
+/**
+ * Row ops run after every leaf write on the same root, each against the result of the one before it,
+ * so an op's index always reads the array as it stands at that point.
+ */
+function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warnings, &$path_errors ) {
+	$out = array();
+	foreach ( $items as $item ) {
+		$op   = is_array( $item ) && isset( $item['op'] ) && is_string( $item['op'] ) ? $item['op'] : '';
+		$path = is_array( $item ) && isset( $item['path'] ) && is_string( $item['path'] ) ? $item['path'] : '';
+		$fail = null;
+		if ( ! is_array( $item ) ) {
+			$fail = 'a row operation must be an object.';
+		}
+		$segments = array();
+		if ( $fail === null ) {
+			$parsed = muster_acf_parse_path( $path );
+			if ( isset( $parsed['error'] ) ) {
+				$fail = $parsed['error'];
+			} else {
+				$segments = $parsed['segments'];
+				if ( muster_acf_has_wildcard( $segments ) ) {
+					$fail = 'wildcards are read-only';
+				}
+			}
+		}
+		$root_field = null;
+		if ( $fail === null ) {
+			$root = muster_acf_resolve_root( $segments[0]['name'] );
+			if ( isset( $root['error'] ) ) {
+				$fail = $root['error'];
+			} else {
+				$root_field = $root['field'];
+			}
+		}
+		if ( $fail !== null ) {
+			$path_errors = true;
+			$out[]       = array(
+				'op'      => $op,
+				'path'    => $path,
+				'error'   => $fail,
+				'applied' => false,
+			);
+			continue;
+		}
+		$root_key = $root_field['key'];
+		if ( ! array_key_exists( $root_key, $roots ) ) {
+			$roots[ $root_key ] = array(
+				'field' => $root_field,
+				'value' => muster_acf_load_root_value( $root_field, $post_id ),
+			);
+		}
+		if ( ! array_key_exists( $root_key, $pending ) ) {
+			$pending[ $root_key ] = $roots[ $root_key ]['value'];
+		}
+		$walk = muster_acf_walk( $root_field, $pending[ $root_key ], $segments, 'get' );
+		if ( isset( $walk['error'] ) ) {
+			$path_errors = true;
+			$out[]       = array(
+				'op'      => $op,
+				'path'    => $path,
+				'error'   => $walk['error'],
+				'applied' => false,
+			);
+			continue;
+		}
+		$container = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		$type      = isset( $container['type'] ) ? $container['type'] : '';
+		if ( ! empty( $walk['leaf_is_row'] ) || ! in_array( $type, array( 'repeater', 'flexible_content' ), true ) ) {
+			$path_errors = true;
+			$out[]       = array(
+				'op'      => $op,
+				'path'    => $path,
+				'error'   => empty( $walk['leaf_is_row'] )
+					? "row operations need a repeater or flexible_content path; '{$path}' is a {$type}."
+					: "row operations address the container, not a row; drop the row index from '{$path}'.",
+				'applied' => false,
+			);
+			continue;
+		}
+		$before = is_array( $walk['value'] ) ? array_values( $walk['value'] ) : array();
+		$result = muster_acf_row_op( $container, $before, $item, $warnings, $path );
+		if ( isset( $result['error'] ) ) {
+			$path_errors = true;
+			$out[]       = array(
+				'op'      => $op,
+				'path'    => $path,
+				'error'   => $result['error'],
+				'applied' => false,
+			);
+			continue;
+		}
+		$pending[ $root_key ] = muster_acf_set_by_trace( $pending[ $root_key ], $walk['trace'], $result['rows'] );
+		$out[]                = array(
+			'op'           => $op,
+			'path'         => $path,
+			'before_count' => count( $before ),
+			'after_count'  => count( $result['rows'] ),
+			'row_layouts'  => muster_acf_row_layouts( $container, $result['rows'] ),
+			'applied'      => false,
+			'trace'        => $walk['trace'],
+			'root_key'     => $root_key,
+			'container'    => $container,
+			'revert'       => $result['revert'],
+		);
+	}
+	return $out;
+}
+
+function muster_acf_finalise_op( $op_row ) {
+	unset( $op_row['trace'], $op_row['root_key'], $op_row['container'], $op_row['revert'] );
+	return $op_row;
+}
+
+/**
+ * Field paths in a revert were walked before the ops moved any indexes, so the two lists
+ * replay as two calls, rows first. Say so whenever a caller has both to send.
+ */
+function muster_acf_revert_payload( $target, $fields, $rows, &$warnings ) {
+	if ( count( $fields ) > 0 && count( $rows ) > 0 ) {
+		$warnings[] = 'revert: send revert.rows first, then revert.fields; row operations move the indexes a field path uses.';
+	}
+	return array(
+		'target' => $target,
+		'fields' => $fields,
+		'rows'   => $rows,
+	);
+}
+
+/** Undo ops replay in list order, so they come back in the reverse of the order they were applied. */
+function muster_acf_revert_rows( $op_results, $require_applied ) {
+	$out = array();
+	foreach ( $op_results as $op_row ) {
+		if ( isset( $op_row['error'] ) || ! isset( $op_row['revert'] ) ) {
+			continue;
+		}
+		if ( $require_applied && empty( $op_row['applied'] ) ) {
+			continue;
+		}
+		$out[] = $op_row['revert'];
+	}
+	return array_reverse( $out );
+}
+
 /** The root-name guards, shared by every mode: unknown, block-located, a sub-field, or not a value field. */
 function muster_acf_resolve_root( $root_name ) {
 	$root_field = acf_get_field( $root_name );
@@ -1416,6 +1744,10 @@ function muster_acf_run( $payload ) {
 	if ( $mode === 'describe' ) {
 		return muster_acf_describe_run( $payload, $target, $post_id );
 	}
+	$row_ops = isset( $payload['rows'] ) && is_array( $payload['rows'] ) ? $payload['rows'] : array();
+	if ( count( $row_ops ) > 0 && $mode === 'get' ) {
+		return muster_acf_envelope( false, array( 'error' => 'row operations need preview or apply.' ) );
+	}
 	$results     = array();
 	$warnings    = array();
 	$roots       = array();
@@ -1526,6 +1858,22 @@ function muster_acf_run( $payload ) {
 		$results[]       = $row;
 	}
 
+	// Leaf writes land first, against the value their traces were walked on; row ops then reshape the result.
+	$pending = array();
+	foreach ( $results as $row ) {
+		if ( ! isset( $row['root_key'] ) ) {
+			continue;
+		}
+		$key = $row['root_key'];
+		if ( ! array_key_exists( $key, $pending ) ) {
+			$pending[ $key ] = $roots[ $key ]['value'];
+		}
+		$pending[ $key ] = muster_acf_set_by_trace( $pending[ $key ], $row['trace'], $row['new'] );
+	}
+	$row_results = count( $row_ops ) > 0
+		? muster_acf_run_row_ops( $row_ops, $post_id, $roots, $pending, $warnings, $path_errors )
+		: array();
+
 	if ( $apply && $path_errors ) {
 		foreach ( $results as $i => $row ) {
 			if ( isset( $row['applied'] ) ) {
@@ -1533,34 +1881,29 @@ function muster_acf_run( $payload ) {
 			}
 			$results[ $i ] = muster_acf_finalise_row( $row );
 		}
+		foreach ( $row_results as $i => $op_row ) {
+			$op_row['applied']  = false;
+			$row_results[ $i ] = muster_acf_finalise_op( $op_row );
+		}
 		// Nothing was written, so ok reports the outcome the caller asked for, not the walk.
 		return muster_acf_envelope(
 			false,
 			array(
 				'warnings'     => array_merge( $warnings, array( 'apply skipped because one or more paths failed to resolve.' ) ),
 				'results'      => $results,
+				'rows'         => $row_results,
 				'apply'        => false,
 				'apply_skipped' => true,
 				'revert'       => array(
 					'target' => $target,
 					'fields' => array(),
+					'rows'   => array(),
 				),
 			)
 		);
 	}
 
 	if ( $apply && ! $path_errors ) {
-		$pending = array();
-		foreach ( $results as $row ) {
-			if ( ! isset( $row['root_key'] ) ) {
-				continue;
-			}
-			$key = $row['root_key'];
-			if ( ! array_key_exists( $key, $pending ) ) {
-				$pending[ $key ] = $roots[ $key ]['value'];
-			}
-			$pending[ $key ] = muster_acf_set_by_trace( $pending[ $key ], $row['trace'], $row['new'] );
-		}
 		foreach ( $pending as $key => $value ) {
 			// Return value is discarded: a sub-cell write leaves the root row count unchanged, which reads as false.
 			muster_acf_write_root( $roots[ $key ]['field'], $value, $post_id );
@@ -1592,6 +1935,38 @@ function muster_acf_run( $payload ) {
 			}
 			$results[ $i ] = muster_acf_finalise_row( $row );
 		}
+		// after_count and row_layouts come from the re-read, so several ops on one root all report its final state.
+		foreach ( $row_results as $i => $op_row ) {
+			if ( ! isset( $op_row['root_key'] ) ) {
+				continue;
+			}
+			$key = $op_row['root_key'];
+			if ( ! array_key_exists( $key, $fresh_roots ) ) {
+				$fresh_roots[ $key ] = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
+			}
+			$got    = muster_acf_get_by_trace( $fresh_roots[ $key ], $op_row['trace'] );
+			$want   = muster_acf_get_by_trace( $pending[ $key ], $op_row['trace'] );
+			$stored = $got['ok'] && is_array( $got['value'] ) ? array_values( $got['value'] ) : array();
+			$op_row['after_count'] = count( $stored );
+			$op_row['row_layouts'] = muster_acf_row_layouts( $op_row['container'], $stored );
+			$op_row['applied']     = $got['ok'] && muster_acf_same(
+				muster_acf_normalise( $op_row['container'], $want['ok'] ? $want['value'] : null ),
+				muster_acf_normalise( $op_row['container'], $stored )
+			);
+			if ( $op_row['applied'] ) {
+				$any_applied = true;
+			}
+			$row_results[ $i ] = $op_row;
+		}
+		$revert = muster_acf_revert_payload(
+			$target,
+			muster_acf_revert_fields( $results, 'applied' ),
+			muster_acf_revert_rows( $row_results, true ),
+			$warnings
+		);
+		foreach ( $row_results as $i => $op_row ) {
+			$row_results[ $i ] = muster_acf_finalise_op( $op_row );
+		}
 		if ( $any_applied ) {
 			$warnings[] = 'Object caches and page-cache plugins may still serve stale HTML.';
 		}
@@ -1600,11 +1975,9 @@ function muster_acf_run( $payload ) {
 			array(
 				'warnings' => $warnings,
 				'results'  => $results,
+				'rows'     => $row_results,
 				'apply'    => $any_applied,
-				'revert'   => array(
-					'target' => $target,
-					'fields' => muster_acf_revert_fields( $results, 'applied' ),
-				),
+				'revert'   => $revert,
 			)
 		);
 	}
@@ -1619,10 +1992,17 @@ function muster_acf_run( $payload ) {
 		'apply'    => false,
 	);
 	if ( $mode !== 'get' ) {
-		$extra['revert'] = array(
-			'target' => $target,
-			'fields' => muster_acf_revert_fields( $results, 'changed' ),
+		$extra['revert'] = muster_acf_revert_payload(
+			$target,
+			muster_acf_revert_fields( $results, 'changed' ),
+			muster_acf_revert_rows( $row_results, false ),
+			$warnings
 		);
+		foreach ( $row_results as $i => $op_row ) {
+			$row_results[ $i ] = muster_acf_finalise_op( $op_row );
+		}
+		$extra['rows']     = $row_results;
+		$extra['warnings'] = $warnings;
 	}
 	return muster_acf_envelope( true, $extra );
 }
