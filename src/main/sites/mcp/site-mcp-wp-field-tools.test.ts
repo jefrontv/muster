@@ -241,12 +241,107 @@ describe('wp_eval_file', () => {
     expect(await evalBody("echo 'hi';")).toBe("<?php\necho 'hi';")
   })
 
-  it.each([['<?php echo 1;'], ['\uFEFF<?php echo 1;'], ['<?= 1 ?>'], ['  \n<?php echo 1;']])(
+  it.each([['<?php echo 1;'], ['<?= 1 ?>'], ['  \n<?php echo 1;']])(
     'leaves %j untouched',
     async (php) => {
       expect(await evalBody(php)).toBe(php)
     }
   )
+
+  it('drops a BOM ahead of the tag instead of echoing three stray bytes', async () => {
+    expect(await evalBody('\uFEFF<?php echo 1;')).toBe('<?php echo 1;')
+  })
+})
+
+describe('get_wp_fields describe mode', () => {
+  it('sends mode describe, the paths and layout_filter to the runner', async () => {
+    evalFiles.length = 0
+    const { isError } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'post', id: 672 },
+      fields: ['modules'],
+      describe: true,
+      layout_filter: 'media'
+    })
+    expect(isError).toBe(false)
+    const sidecar = evalFiles.find((file) => file.path.endsWith('.json'))
+    expect(JSON.parse(sidecar?.contents ?? '{}')).toMatchObject({
+      mode: 'describe',
+      layout_filter: 'media',
+      fields: [{ path: 'modules' }]
+    })
+  })
+
+  it('returns a describe envelope unchanged', async () => {
+    const results = [
+      {
+        path: 'modules',
+        field: { name: 'modules', key: 'field_a', type: 'flexible_content', label: 'Modules' },
+        rows: 3,
+        layouts: [
+          { name: 'media', label: 'Media', sub_fields: [{ name: 'section_id', type: 'text' }] }
+        ],
+        row_layouts: [
+          { index: 0, layout: 'media' },
+          { index: 1, layout: 'text' },
+          { index: 2, layout: 'media' }
+        ],
+        where: { layout: 'media', indexes: [0, 2] }
+      }
+    ]
+    cannedRun(
+      JSON.stringify({
+        ok: true,
+        home: 'https://acme.local',
+        acf_version: '6.8.10',
+        warnings: [],
+        results
+      })
+    )
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'local',
+      target: { kind: 'post', id: 672 },
+      describe: true
+    })
+    expect(isError).toBe(false)
+    expect(payload.results).toEqual(results)
+  })
+
+  it('describes the whole target when fields is omitted', async () => {
+    evalFiles.length = 0
+    const { isError } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' },
+      describe: true
+    })
+    expect(isError).toBe(false)
+    const sidecar = evalFiles.find((file) => file.path.endsWith('.json'))
+    expect(JSON.parse(sidecar?.contents ?? '{}')).toMatchObject({ mode: 'describe', fields: [] })
+  })
+
+  it('refuses layout_filter without describe', async () => {
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' },
+      fields: ['modules'],
+      layout_filter: 'media'
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain('describe')
+  })
+
+  it('still requires fields when describe is false', async () => {
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' }
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("'fields'")
+  })
 })
 
 describe('get_wp_fields', () => {

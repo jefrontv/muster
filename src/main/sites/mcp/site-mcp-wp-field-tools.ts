@@ -7,7 +7,7 @@ import {
   ACF_FIELDS_PHP,
   buildAcfPayload,
   parseAcfRunnerOutcome,
-  readAcfGetPaths,
+  readAcfGetRequest,
   readAcfTarget,
   readAcfWrites
 } from '../wp-acf-payload'
@@ -132,11 +132,7 @@ async function getWpFields(
   context: SiteMcpContext,
   args: ToolArguments
 ): Promise<Record<string, unknown>> {
-  const sidecar = buildAcfPayload({
-    mode: 'get',
-    target: readAcfTarget(args),
-    fields: readAcfGetPaths(args)
-  })
+  const sidecar = buildAcfPayload({ target: readAcfTarget(args), ...readAcfGetRequest(args) })
   return fieldResult(await runEval(context, args, 'Get ACF fields', ACF_FIELDS_PHP, sidecar))
 }
 
@@ -156,9 +152,10 @@ async function updateWpFields(
 // WP-CLI includes a tagless eval-file body as plain text and still exits 0, which reads as success.
 const PHP_OPEN_TAG = /^\s*(?:<\?php|<\?=)/
 
+// A BOM ahead of the tag would reach stdout as three stray bytes, so it goes in both branches.
 function withPhpOpenTag(body: string): string {
   const withoutBom = body.startsWith('\uFEFF') ? body.slice(1) : body
-  return PHP_OPEN_TAG.test(withoutBom) ? body : `<?php\n${withoutBom}`
+  return PHP_OPEN_TAG.test(withoutBom) ? withoutBom : `<?php\n${withoutBom}`
 }
 
 async function wpEvalFile(
@@ -200,7 +197,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_wp_fields',
     description:
-      "Read ACF field values on local or remote WordPress. Required location: 'local' (this site's WP root) or 'remote' (environment host; unmatched branch refuses unless env= or confirm=true). Paths are dotted and 0-based: modules.0 is the first flex row, spacing_templates.9.name matches options_spacing_templates_9_name. A missing field name is an error, not an empty option. A container path (flex row, repeater, group) returns its values keyed by sub-field name, and modules.N.acf_fc_layout reads that row's layout. Gutenberg ACF blocks are refused.",
+      "Read ACF field values on local or remote WordPress. Required location: 'local' (this site's WP root) or 'remote' (environment host; unmatched branch refuses unless env= or confirm=true). Paths are dotted and 0-based: modules.0 is the first flex row, spacing_templates.9.name matches options_spacing_templates_9_name. A missing field name is an error, not an empty option. A container path (flex row, repeater, group) returns its values keyed by sub-field name, and modules.N.acf_fc_layout reads that row's layout. A * segment reads every row at that position: modules.*.section_id returns one result for the pattern with count and matches: [{index_path, path, value, field}], plus skipped: [{index_path, layout}] for rows whose layout has no such sub-field. Each pattern counts as one of the 40 paths and is read-only. Set describe: true to see the shape of a target instead of its values. Gutenberg ACF blocks are refused.",
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
@@ -208,13 +205,24 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
         fields: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Dotted 0-based ACF paths, e.g. ["modules.6.bottom_spacing"].'
+          description:
+            'Dotted 0-based ACF paths, e.g. ["modules.6.bottom_spacing"] or ["modules.*.acf_fc_layout"]. Required unless describe is true, where it names the roots or containers to describe and takes no wildcards.'
+        },
+        describe: {
+          type: 'boolean',
+          description:
+            "Default false. true returns each path's shape instead of its value: field, rows for a repeater or flexible field, sub_fields for a repeater or group, layouts with their own sub_fields for a flexible field, and row_layouts giving every row's index and layout. Omit fields to describe every field on the target."
+        },
+        layout_filter: {
+          type: 'string',
+          description:
+            'Only with describe: true. One flexible-content layout name; each described flexible field then also returns where: {layout, indexes} listing the rows using it.'
         },
         ...SITE_PROPERTY,
         ...ENV_PROPERTY,
         ...CONFIRM_PROPERTY
       },
-      ['location', 'target', 'fields']
+      ['location', 'target']
     ),
     run: getWpFields
   },
@@ -229,7 +237,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
         fields: {
           type: 'array',
           description:
-            '[{path, value}, …]. value is JSON in ACF input format (image = ID, not the array get_field returns).'
+            '[{path, value}, …]. value is JSON in ACF input format (image = ID, not the array get_field returns). Wildcard paths are refused here; expand them with get_wp_fields first.'
         },
         apply: {
           type: 'boolean',

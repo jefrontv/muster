@@ -3,14 +3,22 @@
 // Paths are 0-based and match unformatted get_field() arrays / option-key integers.
 // The PHP walker is the authority at runtime; this module refuses junk before SSH.
 
-import { SiteMcpToolError, type ToolArguments } from './mcp/site-mcp-arguments'
+import {
+  readBoolean,
+  readString,
+  SiteMcpToolError,
+  type ToolArguments
+} from './mcp/site-mcp-arguments'
 import acfFieldsPhp from './php/acf-fields.php?raw'
 
 export const ACF_FIELDS_PHP = acfFieldsPhp
 export const ACF_MAX_PATHS = 40
 export const ACF_MAX_PAYLOAD_BYTES = 256 * 1024
 
-export type AcfPathSegment = { kind: 'field'; name: string } | { kind: 'index'; index: number }
+export type AcfPathSegment =
+  | { kind: 'field'; name: string }
+  | { kind: 'index'; index: number }
+  | { kind: 'wildcard' }
 
 export type AcfTargetKind = 'option' | 'post' | 'term' | 'user' | 'comment'
 
@@ -26,6 +34,7 @@ export type AcfFieldWrite = {
 
 const FIELD_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
 const INDEX_SEGMENT = /^[0-9]+$/
+export const WILDCARD_SEGMENT = '*'
 const TARGET_KINDS: readonly AcfTargetKind[] = ['option', 'post', 'term', 'user', 'comment']
 
 export function parseAcfPath(path: string): AcfPathSegment[] {
@@ -37,6 +46,12 @@ export function parseAcfPath(path: string): AcfPathSegment[] {
   }
   const parts = path.split('.')
   return parts.map((part, index) => {
+    if (part === WILDCARD_SEGMENT) {
+      if (index === 0) {
+        throw new SiteMcpToolError('path cannot start with a row index.')
+      }
+      return { kind: 'wildcard' }
+    }
     if (INDEX_SEGMENT.test(part)) {
       if (index === 0) {
         throw new SiteMcpToolError('path cannot start with a row index.')
@@ -128,24 +143,75 @@ export function readAcfWrites(args: ToolArguments): AcfFieldWrite[] {
     if (!('value' in row)) {
       throw new SiteMcpToolError(`'fields[${index}].value' is required.`)
     }
-    parseAcfPath(row.path)
+    if (hasWildcard(parseAcfPath(row.path))) {
+      throw new SiteMcpToolError(
+        `'fields[${index}].path' uses a wildcard; wildcards are read-only. Use get_wp_fields to expand them, or a row operation.`
+      )
+    }
     return { path: row.path, value: row.value }
   })
 }
 
+function hasWildcard(segments: readonly AcfPathSegment[]): boolean {
+  return segments.some((segment) => segment.kind === 'wildcard')
+}
+
+export type AcfGetRequest =
+  | { mode: 'get'; fields: string[] }
+  | { mode: 'describe'; fields: string[]; layoutFilter?: string }
+
+// describe answers "what is on this target"; its paths name containers, so a wildcard has nothing to expand.
+export function readAcfDescribePaths(args: ToolArguments): string[] {
+  const value = args.fields
+  if (value === undefined || value === null) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    throw new SiteMcpToolError("'fields' must be an array of paths.")
+  }
+  if (value.length > ACF_MAX_PATHS) {
+    throw new SiteMcpToolError(`'fields' may list at most ${ACF_MAX_PATHS} paths.`)
+  }
+  return value.map((entry, index) => {
+    if (typeof entry !== 'string' || entry.length === 0) {
+      throw new SiteMcpToolError(`'fields[${index}]' must be a non-empty path.`)
+    }
+    if (hasWildcard(parseAcfPath(entry))) {
+      throw new SiteMcpToolError(`'fields[${index}]' cannot use a wildcard with describe.`)
+    }
+    return entry
+  })
+}
+
+export function readAcfGetRequest(args: ToolArguments): AcfGetRequest {
+  const layoutFilter = readString(args, 'layout_filter')
+  if (!readBoolean(args, 'describe')) {
+    if (layoutFilter.length > 0) {
+      throw new SiteMcpToolError("'layout_filter' needs describe: true.")
+    }
+    return { mode: 'get', fields: readAcfGetPaths(args) }
+  }
+  const fields = readAcfDescribePaths(args)
+  return layoutFilter.length > 0
+    ? { mode: 'describe', fields, layoutFilter }
+    : { mode: 'describe', fields }
+}
+
 export function buildAcfPayload(input: {
-  mode: 'get' | 'preview' | 'apply'
+  mode: 'get' | 'describe' | 'preview' | 'apply'
   target: AcfTarget
   fields: (string | AcfFieldWrite)[]
+  layoutFilter?: string
 }): string {
-  const fields =
-    input.mode === 'get'
-      ? (input.fields as string[]).map((path) => ({ path }))
-      : (input.fields as AcfFieldWrite[])
+  const reading = input.mode === 'get' || input.mode === 'describe'
+  const fields = reading
+    ? (input.fields as string[]).map((path) => ({ path }))
+    : (input.fields as AcfFieldWrite[])
   const json = JSON.stringify({
     mode: input.mode,
     target: input.target,
-    fields
+    fields,
+    ...(input.layoutFilter ? { layout_filter: input.layoutFilter } : {})
   })
   if (Buffer.byteLength(json, 'utf8') > ACF_MAX_PAYLOAD_BYTES) {
     throw new SiteMcpToolError(`Field payload is over the ${ACF_MAX_PAYLOAD_BYTES}-byte cap.`)

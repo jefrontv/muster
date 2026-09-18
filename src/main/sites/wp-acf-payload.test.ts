@@ -11,7 +11,9 @@ import {
   parseAcfRunnerOutcome,
   parseAcfRunnerStdout,
   parseAcfTarget,
+  readAcfDescribePaths,
   readAcfGetPaths,
+  readAcfGetRequest,
   readAcfWrites
 } from './wp-acf-payload'
 
@@ -26,6 +28,67 @@ describe('parseAcfPath', () => {
 
   it.each(['', '.a', 'a.', 'a..b', '9.name'])('rejects %j', (path) => {
     expect(() => parseAcfPath(path)).toThrow(SiteMcpToolError)
+  })
+
+  it('reads * as a wildcard wherever an index is legal', () => {
+    expect(parseAcfPath('modules.*.slides.*.title')).toEqual([
+      { kind: 'field', name: 'modules' },
+      { kind: 'wildcard' },
+      { kind: 'field', name: 'slides' },
+      { kind: 'wildcard' },
+      { kind: 'field', name: 'title' }
+    ])
+  })
+
+  it('rejects a leading wildcard', () => {
+    expect(() => parseAcfPath('*.section_id')).toThrow(/row index/)
+  })
+})
+
+describe('wildcards are read-only', () => {
+  it('lets get_wp_fields ask for a pattern', () => {
+    expect(readAcfGetPaths({ fields: ['modules.*.section_id'] })).toEqual(['modules.*.section_id'])
+  })
+
+  it('counts a pattern as one of the 40 paths', () => {
+    const fields = Array.from({ length: ACF_MAX_PATHS }, () => 'modules.*.section_id')
+    expect(readAcfGetPaths({ fields })).toHaveLength(ACF_MAX_PATHS)
+    expect(() => readAcfGetPaths({ fields: [...fields, 'modules.*.title'] })).toThrow(/at most 40/)
+  })
+
+  it('refuses a write through a pattern', () => {
+    expect(() => readAcfWrites({ fields: [{ path: 'modules.*.section_id', value: 'x' }] })).toThrow(
+      /wildcards are read-only/
+    )
+  })
+
+  it('refuses a wildcard in a describe path', () => {
+    expect(() => readAcfDescribePaths({ fields: ['modules.*'] })).toThrow(/wildcard/)
+  })
+})
+
+describe('readAcfGetRequest', () => {
+  it('reads values when describe is absent', () => {
+    expect(readAcfGetRequest({ fields: ['hero_title'] })).toEqual({
+      mode: 'get',
+      fields: ['hero_title']
+    })
+  })
+
+  it('allows an omitted fields list in describe mode', () => {
+    expect(readAcfGetRequest({ describe: true })).toEqual({ mode: 'describe', fields: [] })
+  })
+
+  it('carries layout_filter through describe', () => {
+    expect(
+      readAcfGetRequest({ describe: 'true', fields: ['modules'], layout_filter: 'media' })
+    ).toEqual({ mode: 'describe', fields: ['modules'], layoutFilter: 'media' })
+  })
+
+  it('refuses layout_filter without describe', () => {
+    expect(() => readAcfGetRequest({ fields: ['modules'], layout_filter: 'media' })).toThrow(
+      /describe/
+    )
   })
 })
 
@@ -174,6 +237,27 @@ describe('buildAcfPayload', () => {
       target: { kind: 'option' },
       fields: [{ path: 'hero_title' }]
     })
+  })
+
+  it('serialises describe with layout_filter and omits it otherwise', () => {
+    expect(
+      JSON.parse(
+        buildAcfPayload({
+          mode: 'describe',
+          target: { kind: 'post', id: 672 },
+          fields: ['modules'],
+          layoutFilter: 'media'
+        })
+      )
+    ).toEqual({
+      mode: 'describe',
+      target: { kind: 'post', id: 672 },
+      fields: [{ path: 'modules' }],
+      layout_filter: 'media'
+    })
+    expect(
+      JSON.parse(buildAcfPayload({ mode: 'describe', target: { kind: 'option' }, fields: [] }))
+    ).toEqual({ mode: 'describe', target: { kind: 'option' }, fields: [] })
   })
 })
 
