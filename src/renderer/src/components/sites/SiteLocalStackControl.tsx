@@ -243,7 +243,7 @@ export function SiteLocalStackControl({ summary }: { summary: SiteSummary }): Re
             {!daemon.importRoutes
               ? ` · ${translate(
                   'auto.components.sites.SiteDetailPanel.agentLocalOldForImport',
-                  'imports use Muster\u2019s own tools until 0.27.0'
+                  'imports use Muster\u2019s own tools until 0.32.2'
                 )}`
               : ''}
           </span>

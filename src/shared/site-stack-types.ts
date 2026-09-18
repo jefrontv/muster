@@ -88,6 +88,6 @@ export type AgentLocalDaemonStatus = {
   installed: string
   updateAvailable: boolean
   latest: string
-  /** Whether the import pipeline may use the daemon's own routes (needs 0.27.0+). */
+  /** Whether the import pipeline may use the daemon's own routes (needs 0.32.2+). */
   importRoutes: boolean
 }

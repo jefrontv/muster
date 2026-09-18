@@ -13555,7 +13555,7 @@
           "removeEnvironmentAction": "Remove",
           "agentLocalVersion": "Agent Local {{version}}",
           "agentLocalUpdate": "{{latest}} available",
-          "agentLocalOldForImport": "imports use Muster’s own tools until 0.27.0"
+          "agentLocalOldForImport": "imports use Muster’s own tools until 0.32.2"
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
