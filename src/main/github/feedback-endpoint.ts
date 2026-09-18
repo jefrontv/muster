@@ -22,7 +22,8 @@ export type FeedbackEndpointPayload = {
   submissionType: 'feedback' | 'crash'
   githubLogin: string | null
   githubEmail: string | null
-  reporterName: string | null
+  /** Optional so older callers and the endpoint tests need not send it; absent means anonymous-by-name. */
+  reporterName?: string | null
   appVersion: string
   platform: string
   osRelease: string
