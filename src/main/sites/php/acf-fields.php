@@ -161,6 +161,50 @@ function muster_acf_rows_match_at( $field, $is_row, $want, $stored ) {
 	);
 }
 
+/**
+ * Canonical form for a digest: keys sorted, lists in order, scalars as strings, and anything
+ * ACF treats as empty removed, so absent, null and '' cannot produce different digests.
+ */
+function muster_acf_digest_canonical( $value ) {
+	if ( is_array( $value ) ) {
+		if ( muster_acf_is_list( $value ) ) {
+			$out = array();
+			foreach ( $value as $item ) {
+				$out[] = muster_acf_digest_canonical( $item );
+			}
+			return $out;
+		}
+		$out = array();
+		foreach ( $value as $key => $item ) {
+			$item = muster_acf_digest_canonical( $item );
+			if ( $item === '' || ( is_array( $item ) && count( $item ) === 0 ) ) {
+				continue;
+			}
+			$out[ (string) $key ] = $item;
+		}
+		ksort( $out, SORT_STRING );
+		return $out;
+	}
+	if ( $value === null || $value === false || $value === true ) {
+		return $value === true ? '1' : '';
+	}
+	return is_scalar( $value ) ? (string) $value : '';
+}
+
+function muster_acf_digest_hash( $canonical ) {
+	$json = json_encode( $canonical, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	return sha1( $json === false ? '' : $json );
+}
+
+/** The one digest both hosts compute, so a local and a remote value compare by their hashes. */
+function muster_acf_digest_at( $field, $is_row, $value ) {
+	return muster_acf_digest_hash( muster_acf_digest_canonical( muster_acf_normalise_at( $field, $is_row, $value ) ) );
+}
+
+function muster_acf_digest( $field, $value ) {
+	return muster_acf_digest_at( $field, false, $value );
+}
+
 function muster_acf_get_by_trace( $root, $trace ) {
 	$cur = $root;
 	foreach ( $trace as $key ) {
@@ -1374,6 +1418,69 @@ function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments 
 	return $row;
 }
 
+/**
+ * `return: values` drops what the caller can get from describe: the per-path field object,
+ * a wildcard match's repeated field, and an op's row_layouts. revert is never abbreviated.
+ */
+function muster_acf_project_results( $results, $return, $mode ) {
+	if ( $return !== 'values' ) {
+		return $results;
+	}
+	foreach ( $results as $i => $row ) {
+		$results[ $i ] = muster_acf_project_row( $row, $mode );
+	}
+	return $results;
+}
+
+function muster_acf_project_row( $row, $mode ) {
+	if ( isset( $row['error'] ) ) {
+		return $row;
+	}
+	if ( ! empty( $row['wildcard'] ) ) {
+		$matches = array();
+		$field   = null;
+		foreach ( $row['matches'] as $match ) {
+			if ( $field === null ) {
+				$field = $match['field'];
+			}
+			$slim = array(
+				'index_path' => $match['index_path'],
+				'value'      => $match['value'],
+			);
+			// Layouts and clone chains give one name different keys, so an odd match keeps its own.
+			if ( $match['field'] !== $field ) {
+				$slim['field'] = $match['field'];
+			}
+			$matches[] = $slim;
+		}
+		$row['field']   = $field === null ? array(
+			'key'  => '',
+			'type' => '',
+		) : $field;
+		$row['matches'] = $matches;
+		return $row;
+	}
+	if ( $mode === 'get' ) {
+		return array(
+			'path'  => $row['path'],
+			'value' => array_key_exists( 'value', $row ) ? $row['value'] : null,
+		);
+	}
+	unset( $row['field'] );
+	return $row;
+}
+
+function muster_acf_project_ops( $ops, $return ) {
+	if ( $return !== 'values' ) {
+		return $ops;
+	}
+	foreach ( $ops as $i => $op_row ) {
+		unset( $op_row['row_layouts'] );
+		$ops[ $i ] = $op_row;
+	}
+	return $ops;
+}
+
 function muster_acf_envelope( $ok, $extra = array() ) {
 	return array_merge(
 		array(
@@ -1626,6 +1733,7 @@ function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warning
 				'path'    => $path,
 				'error'   => $fail,
 				'applied' => false,
+				'warnings' => array(),
 			);
 			continue;
 		}
@@ -1647,6 +1755,7 @@ function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warning
 				'path'    => $path,
 				'error'   => $walk['error'],
 				'applied' => false,
+				'warnings' => array(),
 			);
 			continue;
 		}
@@ -1661,11 +1770,14 @@ function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warning
 					? "row operations need a repeater or flexible_content path; '{$path}' is a {$type}."
 					: "row operations address the container, not a row; drop the row index from '{$path}'.",
 				'applied' => false,
+				'warnings' => array(),
 			);
 			continue;
 		}
-		$before = is_array( $walk['value'] ) ? array_values( $walk['value'] ) : array();
-		$result = muster_acf_row_op( $container, $before, $item, $warnings, $path );
+		$before       = is_array( $walk['value'] ) ? array_values( $walk['value'] ) : array();
+		$op_warnings  = array();
+		$result       = muster_acf_row_op( $container, $before, $item, $op_warnings, $path );
+		$warnings     = array_merge( $warnings, $op_warnings );
 		if ( isset( $result['error'] ) ) {
 			$path_errors = true;
 			$out[]       = array(
@@ -1673,6 +1785,7 @@ function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warning
 				'path'    => $path,
 				'error'   => $result['error'],
 				'applied' => false,
+				'warnings' => array(),
 			);
 			continue;
 		}
@@ -1684,6 +1797,7 @@ function muster_acf_run_row_ops( $items, $post_id, &$roots, &$pending, &$warning
 			'after_count'  => count( $result['rows'] ),
 			'row_layouts'  => muster_acf_touched_layouts( $container, $result['rows'], $result['touched'] ),
 			'applied'      => false,
+			'warnings'     => $op_warnings,
 			'trace'        => $walk['trace'],
 			'root_key'     => $root_key,
 			'container'    => $container,
@@ -1753,6 +1867,306 @@ function muster_acf_resolve_root( $root_name ) {
 	return array( 'field' => $root_field );
 }
 
+/** Every usable root of a target, deduped by name: what checksum and snapshot both walk. */
+function muster_acf_target_roots( $target, $post_id ) {
+	$roots = array();
+	foreach ( muster_acf_describe_groups( $target, $post_id ) as $group ) {
+		$fields = function_exists( 'acf_get_fields' ) ? acf_get_fields( $group ) : array();
+		foreach ( is_array( $fields ) ? $fields : array() as $field ) {
+			$name = is_array( $field ) && isset( $field['name'] ) ? $field['name'] : '';
+			if ( $name === '' || isset( $roots[ $name ] ) || ! muster_acf_is_value_type( isset( $field['type'] ) ? $field['type'] : '' ) ) {
+				continue;
+			}
+			$roots[ $name ] = $field;
+		}
+	}
+	return $roots;
+}
+
+function muster_acf_checksum_run( $payload, $target, $post_id ) {
+	$items   = isset( $payload['fields'] ) && is_array( $payload['fields'] ) ? $payload['fields'] : array();
+	$results = array();
+	$extra   = array();
+
+	if ( count( $items ) === 0 ) {
+		$digests = array();
+		foreach ( muster_acf_target_roots( $target, $post_id ) as $name => $field ) {
+			$digest          = muster_acf_digest( $field, muster_acf_load_root_value( $field, $post_id ) );
+			$digests[ $name ] = $digest;
+			$results[]        = array(
+				'path'   => $name,
+				'digest' => $digest,
+			);
+		}
+		ksort( $digests, SORT_STRING );
+		$extra['target_digest'] = muster_acf_digest_hash( $digests );
+	}
+
+	foreach ( $items as $item ) {
+		$path   = is_array( $item ) && isset( $item['path'] ) ? $item['path'] : ( is_string( $item ) ? $item : '' );
+		$parsed = muster_acf_parse_path( $path );
+		if ( isset( $parsed['error'] ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => $parsed['error'],
+			);
+			continue;
+		}
+		$segments = $parsed['segments'];
+		if ( muster_acf_has_wildcard( $segments ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => 'wildcards are not valid in checksum.',
+			);
+			continue;
+		}
+		$root = muster_acf_resolve_root( $segments[0]['name'] );
+		if ( isset( $root['error'] ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => $root['error'],
+			);
+			continue;
+		}
+		$root_field = $root['field'];
+		$walk       = muster_acf_walk( $root_field, muster_acf_load_root_value( $root_field, $post_id ), $segments, 'get' );
+		if ( isset( $walk['error'] ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => isset( $walk['exists'] ) ? $walk['exists'] : false,
+				'error'  => $walk['error'],
+			);
+			continue;
+		}
+		$results[] = array(
+			'path'   => $path,
+			'digest' => muster_acf_digest_at(
+				is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field,
+				! empty( $walk['leaf_is_row'] ),
+				$walk['value']
+			),
+		);
+	}
+
+	return muster_acf_envelope(
+		true,
+		array_merge(
+			array(
+				'warnings' => array(),
+				'results'  => $results,
+				'apply'    => false,
+				'checksum' => true,
+			),
+			$extra
+		)
+	);
+}
+
+/** Row counts are the one number a restore preview can show without echoing the values back. */
+function muster_acf_root_row_count( $field, $value ) {
+	$type = isset( $field['type'] ) ? $field['type'] : '';
+	if ( ! in_array( $type, array( 'repeater', 'flexible_content' ), true ) ) {
+		return null;
+	}
+	return is_array( $value ) ? count( $value ) : 0;
+}
+
+/** Root defs for a snapshot: every usable root, or the named ones. A sub-path cannot be restored. */
+function muster_acf_snapshot_fields( $items, $target, $post_id ) {
+	if ( count( $items ) === 0 ) {
+		return array( 'fields' => muster_acf_target_roots( $target, $post_id ) );
+	}
+	$fields = array();
+	foreach ( $items as $item ) {
+		$path   = is_array( $item ) && isset( $item['path'] ) ? $item['path'] : ( is_string( $item ) ? $item : '' );
+		$parsed = muster_acf_parse_path( $path );
+		if ( isset( $parsed['error'] ) ) {
+			return array( 'error' => $parsed['error'] );
+		}
+		if ( count( $parsed['segments'] ) !== 1 || $parsed['segments'][0]['kind'] !== 'field' ) {
+			return array( 'error' => "snapshot takes root field names; '{$path}' is a sub-path." );
+		}
+		$root = muster_acf_resolve_root( $parsed['segments'][0]['name'] );
+		if ( isset( $root['error'] ) ) {
+			return array( 'error' => $root['error'] );
+		}
+		$fields[ $root['field']['name'] ] = $root['field'];
+	}
+	return array( 'fields' => $fields );
+}
+
+/**
+ * A whole target does not fit the output ceiling, so the values go to a file beside the payload
+ * and stdout carries only what the caller needs to find and verify it.
+ */
+function muster_acf_snapshot_run( $payload, $target, $post_id ) {
+	$items    = isset( $payload['fields'] ) && is_array( $payload['fields'] ) ? $payload['fields'] : array();
+	$resolved = muster_acf_snapshot_fields( $items, $target, $post_id );
+	if ( isset( $resolved['error'] ) ) {
+		return muster_acf_envelope( false, array( 'error' => $resolved['error'] ) );
+	}
+	$fields = $resolved['fields'];
+	if ( count( $fields ) === 0 ) {
+		return muster_acf_envelope( false, array( 'error' => 'no usable fields to snapshot on this target.' ) );
+	}
+	$roots   = array();
+	$digests = array();
+	foreach ( $fields as $name => $field ) {
+		$value             = muster_acf_load_root_value( $field, $post_id );
+		$roots[ $name ]    = $value;
+		$digests[ $name ]  = muster_acf_digest( $field, $value );
+	}
+	ksort( $digests, SORT_STRING );
+	$target_digest = muster_acf_digest_hash( $digests );
+	$payload_path  = muster_acf_payload_path();
+	if ( $payload_path === '' ) {
+		return muster_acf_envelope( false, array( 'error' => 'snapshot needs a payload file to write beside.' ) );
+	}
+	$output_file = $payload_path . '.out';
+	$json        = json_encode(
+		array(
+			'ok'            => true,
+			'target'        => $target,
+			'roots'         => $roots,
+			'digests'       => $digests,
+			'target_digest' => $target_digest,
+		),
+		JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+	);
+	if ( $json === false ) {
+		return muster_acf_envelope( false, array( 'error' => 'snapshot could not be encoded as JSON.' ) );
+	}
+	$bytes = @file_put_contents( $output_file, $json );
+	if ( $bytes === false ) {
+		return muster_acf_envelope( false, array( 'error' => "could not write the snapshot to {$output_file}." ) );
+	}
+	return muster_acf_envelope(
+		true,
+		array(
+			'warnings'      => array(),
+			'results'       => array(),
+			'apply'         => false,
+			'snapshot'      => true,
+			'output_file'   => $output_file,
+			'bytes'         => $bytes,
+			'digests'       => $digests,
+			'target_digest' => $target_digest,
+		)
+	);
+}
+
+/**
+ * Restore writes whole roots through update_field, which rebuilds the rows and drops any past the
+ * snapshot's count. Preview reports shape and digests only; the values never come back out.
+ */
+function muster_acf_restore_run( $payload, $target, $post_id ) {
+	$wanted_roots = isset( $payload['roots'] ) && is_array( $payload['roots'] ) ? $payload['roots'] : null;
+	if ( $wanted_roots === null ) {
+		return muster_acf_envelope( false, array( 'error' => 'restore needs roots: { <root name>: value }.' ) );
+	}
+	if ( count( $wanted_roots ) === 0 ) {
+		return muster_acf_envelope( false, array( 'error' => 'restore roots is empty.' ) );
+	}
+	$apply       = ! empty( $payload['apply'] );
+	$results     = array();
+	$plan        = array();
+	$warnings    = array();
+	$root_errors = false;
+	foreach ( $wanted_roots as $name => $value ) {
+		$name = (string) $name;
+		$root = muster_acf_resolve_root( $name );
+		if ( isset( $root['error'] ) ) {
+			$root_errors = true;
+			$results[]   = array(
+				'path'   => $name,
+				'exists' => false,
+				'error'  => $root['error'],
+			);
+			continue;
+		}
+		$field   = $root['field'];
+		$current = muster_acf_load_root_value( $field, $post_id );
+		$before  = muster_acf_digest( $field, $current );
+		$after   = muster_acf_digest( $field, $value );
+		$results[] = array(
+			'path'    => $name,
+			'exists'  => true,
+			'changed' => $before !== $after,
+			'rows'    => array(
+				'before' => muster_acf_root_row_count( $field, $current ),
+				'after'  => muster_acf_root_row_count( $field, $value ),
+			),
+			'digest'  => array(
+				'before' => $before,
+				'after'  => $after,
+			),
+			'applied' => false,
+		);
+		$plan[] = array(
+			'field'  => $field,
+			'value'  => $value,
+			'index'  => count( $results ) - 1,
+			'wanted' => $after,
+		);
+	}
+
+	if ( $root_errors ) {
+		// Same guard as every other write: a restore that cannot name every root writes none of them.
+		return muster_acf_envelope(
+			! $apply,
+			array(
+				'warnings'      => $apply ? array( 'restore skipped because one or more roots failed to resolve.' ) : array(),
+				'results'       => $results,
+				'apply'         => false,
+				'restore'       => true,
+				'apply_skipped' => $apply,
+			)
+		);
+	}
+
+	if ( ! $apply ) {
+		return muster_acf_envelope(
+			true,
+			array(
+				'warnings' => $warnings,
+				'results'  => $results,
+				'apply'    => false,
+				'restore'  => true,
+			)
+		);
+	}
+
+	foreach ( $plan as $step ) {
+		muster_acf_write_root( $step['field'], $step['value'], $post_id );
+	}
+	$digests = array();
+	foreach ( $plan as $step ) {
+		$fresh = muster_acf_load_root_value( $step['field'], $post_id );
+		$after = muster_acf_digest( $step['field'], $fresh );
+		$results[ $step['index'] ]['digest']['after'] = $after;
+		$results[ $step['index'] ]['applied']         = $after === $step['wanted'];
+		$digests[ $step['field']['name'] ]            = $after;
+		if ( $after !== $step['wanted'] ) {
+			$warnings[] = "write issued but the re-read did not match: {$step['field']['name']}";
+		}
+	}
+	ksort( $digests, SORT_STRING );
+	$warnings[] = 'Object caches and page-cache plugins may still serve stale HTML.';
+	return muster_acf_envelope(
+		true,
+		array(
+			'warnings' => $warnings,
+			'results'  => $results,
+			'apply'    => true,
+			'restore'  => true,
+			'digests'  => $digests,
+		)
+	);
+}
+
 function muster_acf_describe_run( $payload, $target, $post_id ) {
 	$layout_filter = isset( $payload['layout_filter'] ) && is_string( $payload['layout_filter'] ) ? $payload['layout_filter'] : null;
 	$items         = isset( $payload['fields'] ) && is_array( $payload['fields'] ) ? $payload['fields'] : array();
@@ -1760,21 +2174,14 @@ function muster_acf_describe_run( $payload, $target, $post_id ) {
 	$warnings      = array();
 
 	if ( count( $items ) === 0 ) {
-		foreach ( muster_acf_describe_groups( $target, $post_id ) as $group ) {
-			$fields = function_exists( 'acf_get_fields' ) ? acf_get_fields( $group ) : array();
-			foreach ( is_array( $fields ) ? $fields : array() as $field ) {
-				$name = is_array( $field ) && isset( $field['name'] ) ? $field['name'] : '';
-				if ( $name === '' || ! muster_acf_is_value_type( isset( $field['type'] ) ? $field['type'] : '' ) ) {
-					continue;
-				}
-				$results[] = muster_acf_describe_field(
-					$field,
-					muster_acf_load_root_value( $field, $post_id ),
-					$name,
-					false,
-					$layout_filter
-				);
-			}
+		foreach ( muster_acf_target_roots( $target, $post_id ) as $name => $field ) {
+			$results[] = muster_acf_describe_field(
+				$field,
+				muster_acf_load_root_value( $field, $post_id ),
+				$name,
+				false,
+				$layout_filter
+			);
 		}
 		if ( count( $results ) === 0 ) {
 			$warnings[] = 'no field groups match this target.';
@@ -1842,6 +2249,34 @@ function muster_acf_describe_run( $payload, $target, $post_id ) {
 	);
 }
 
+/** One run per target, in order. Writes stay atomic within a target, never across them. */
+function muster_acf_run_targets( $payload ) {
+	$targets = is_array( $payload['targets'] ) ? $payload['targets'] : null;
+	if ( $targets === null ) {
+		return muster_acf_envelope( false, array( 'error' => 'targets must be an array of targets.' ) );
+	}
+	if ( isset( $payload['target'] ) && $payload['target'] !== null && $payload['target'] !== array() ) {
+		return muster_acf_envelope( false, array( 'error' => 'target and targets cannot both be given.' ) );
+	}
+	if ( count( $targets ) === 0 ) {
+		return muster_acf_envelope( false, array( 'error' => 'targets is empty.' ) );
+	}
+	if ( count( $targets ) > 20 ) {
+		return muster_acf_envelope( false, array( 'error' => 'targets takes at most 20 entries; ' . count( $targets ) . ' given.' ) );
+	}
+	$out = array();
+	$ok  = true;
+	foreach ( $targets as $one ) {
+		$single = $payload;
+		unset( $single['targets'] );
+		$single['target'] = $one;
+		$envelope         = muster_acf_run( $single );
+		$ok               = $ok && ! empty( $envelope['ok'] );
+		$out[]            = array_merge( array( 'target' => $one ), $envelope );
+	}
+	return muster_acf_envelope( $ok, array( 'targets' => $out ) );
+}
+
 function muster_acf_run( $payload ) {
 	if ( ! function_exists( 'acf_get_field' ) ) {
 		return muster_acf_envelope(
@@ -1850,6 +2285,9 @@ function muster_acf_run( $payload ) {
 				'error' => 'ACF is not active on this WordPress.',
 			)
 		);
+	}
+	if ( isset( $payload['targets'] ) ) {
+		return muster_acf_run_targets( $payload );
 	}
 	$mode   = isset( $payload['mode'] ) ? $payload['mode'] : 'get';
 	$apply  = $mode === 'apply';
@@ -1863,6 +2301,16 @@ function muster_acf_run( $payload ) {
 	if ( $mode === 'describe' ) {
 		return muster_acf_describe_run( $payload, $target, $post_id );
 	}
+	if ( $mode === 'checksum' ) {
+		return muster_acf_checksum_run( $payload, $target, $post_id );
+	}
+	if ( $mode === 'snapshot' ) {
+		return muster_acf_snapshot_run( $payload, $target, $post_id );
+	}
+	if ( $mode === 'restore' ) {
+		return muster_acf_restore_run( $payload, $target, $post_id );
+	}
+	$return  = isset( $payload['return'] ) && $payload['return'] === 'values' ? 'values' : 'full';
 	$row_ops = isset( $payload['rows'] ) && is_array( $payload['rows'] ) ? $payload['rows'] : array();
 	if ( count( $row_ops ) > 0 && $mode === 'get' ) {
 		return muster_acf_envelope( false, array( 'error' => 'row operations need preview or apply.' ) );
@@ -2012,8 +2460,8 @@ function muster_acf_run( $payload ) {
 			false,
 			array(
 				'warnings'     => array_merge( $warnings, array( 'apply skipped because one or more paths failed to resolve.' ) ),
-				'results'      => $results,
-				'rows'         => $row_results,
+				'results'      => muster_acf_project_results( $results, $return, $mode ),
+				'rows'         => muster_acf_project_ops( $row_results, $return ),
 				'apply'        => false,
 				'apply_skipped' => true,
 				'revert'       => array(
@@ -2033,10 +2481,15 @@ function muster_acf_run( $payload ) {
 		$fresh_roots = array();
 		// One verification per root: the value we asked for against the value that came back.
 		$root_applied = array();
+		$digests      = array();
 		foreach ( $pending as $key => $value ) {
-			$fresh_roots[ $key ]  = muster_acf_load_root_value( $roots[ $key ]['field'], $post_id );
-			$root_applied[ $key ] = muster_acf_rows_match( $roots[ $key ]['field'], $value, $fresh_roots[ $key ] );
+			$root_field           = $roots[ $key ]['field'];
+			$fresh_roots[ $key ]  = muster_acf_load_root_value( $root_field, $post_id );
+			$root_applied[ $key ] = muster_acf_rows_match( $root_field, $value, $fresh_roots[ $key ] );
+			// The state an undo will be checked against later, digested the way checksum does it.
+			$digests[ isset( $root_field['name'] ) ? $root_field['name'] : $key ] = muster_acf_digest( $root_field, $fresh_roots[ $key ] );
 		}
+		ksort( $digests, SORT_STRING );
 		foreach ( $results as $i => $row ) {
 			if ( ! isset( $row['root_key'] ) ) {
 				$results[ $i ] = muster_acf_finalise_row( $row );
@@ -2052,7 +2505,9 @@ function muster_acf_run( $payload ) {
 			}
 			$row['applied'] = $got['ok'] && muster_acf_rows_match_at( $leaf, $is_row, $wanted, $got['value'] );
 			if ( ! $row['applied'] ) {
-				$warnings[] = "write issued but the re-read did not match: {$row['path']}";
+				$mismatch          = "write issued but the re-read did not match: {$row['path']}";
+				$warnings[]        = $mismatch;
+				$row['warnings'][] = $mismatch;
 			}
 			$results[ $i ] = muster_acf_finalise_row( $row );
 		}
@@ -2063,7 +2518,9 @@ function muster_acf_run( $payload ) {
 			}
 			$op_row['applied'] = ! empty( $root_applied[ $op_row['root_key'] ] );
 			if ( ! $op_row['applied'] ) {
-				$warnings[] = "write issued but the re-read did not match: {$op_row['path']}";
+				$mismatch              = "write issued but the re-read did not match: {$op_row['path']}";
+				$warnings[]            = $mismatch;
+				$op_row['warnings'][]  = $mismatch;
 			}
 			$row_results[ $i ] = $op_row;
 		}
@@ -2085,9 +2542,10 @@ function muster_acf_run( $payload ) {
 			true,
 			array(
 				'warnings' => $warnings,
-				'results'  => $results,
-				'rows'     => $row_results,
+				'results'  => muster_acf_project_results( $results, $return, $mode ),
+				'rows'     => muster_acf_project_ops( $row_results, $return ),
 				'apply'    => $wrote,
+				'digests'  => $digests,
 				'revert'   => $revert,
 			)
 		);
@@ -2099,7 +2557,7 @@ function muster_acf_run( $payload ) {
 
 	$extra = array(
 		'warnings' => $warnings,
-		'results'  => $results,
+		'results'  => muster_acf_project_results( $results, $return, $mode ),
 		'apply'    => false,
 	);
 	if ( $mode !== 'get' ) {
@@ -2112,7 +2570,7 @@ function muster_acf_run( $payload ) {
 		foreach ( $row_results as $i => $op_row ) {
 			$row_results[ $i ] = muster_acf_finalise_op( $op_row );
 		}
-		$extra['rows']     = $row_results;
+		$extra['rows']     = muster_acf_project_ops( $row_results, $return );
 		$extra['warnings'] = $warnings;
 	}
 	return muster_acf_envelope( true, $extra );

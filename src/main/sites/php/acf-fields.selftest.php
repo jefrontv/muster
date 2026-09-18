@@ -1353,6 +1353,342 @@ muster_acf_assert( substr( $described[1]['label'], -3 ) === '...', 'and says it 
 muster_acf_assert( muster_acf_short_label( 'é' . str_repeat( 'x', 100 ) ) !== false, 'a multibyte label survives the cut' );
 muster_acf_assert( json_encode( muster_acf_short_label( str_repeat( 'é', 100 ) ) ) !== false, 'and stays encodable' );
 
+// --- 36. return: values shapes the results, never the revert. ---------------
+muster_acf_test_reset();
+function muster_acf_test_return( $mode, $fields, $return, $rows = array() ) {
+	return muster_acf_run(
+		array(
+			'mode'   => $mode,
+			'target' => array( 'kind' => 'option' ),
+			'fields' => $fields,
+			'rows'   => $rows,
+			'return' => $return,
+		)
+	);
+}
+
+$full  = muster_acf_test_run( 'get', array( 'av_modules.0.body' ) );
+$again = muster_acf_test_return( 'get', array( 'av_modules.0.body' ), 'full' );
+muster_acf_assert( json_encode( $full ) === json_encode( $again ), 'return: full is byte-identical to no return at all' );
+
+$values = muster_acf_test_return( 'get', array( 'av_modules.0.body' ), 'values' );
+muster_acf_assert(
+	$values['results'][0] === array( 'path' => 'av_modules.0.body', 'value' => '<h4>MEDIA</h4>' ),
+	'a plain get path is path and value only'
+);
+
+$values = muster_acf_test_return( 'get', array( 'av_modules.*.section_id' ), 'values' );
+$row    = $values['results'][0];
+muster_acf_assert( $row['count'] === 1 && $row['wildcard'] === true, 'a pattern keeps count and wildcard' );
+muster_acf_assert( $row['skipped'] === array( array( 'index_path' => array( 1 ), 'layout' => 'media' ) ), 'and keeps skipped' );
+muster_acf_assert( $row['field'] === array( 'key' => 'field_av_sid', 'type' => 'text' ), 'the field moves up to the pattern' );
+muster_acf_assert( $row['matches'][0] === array( 'index_path' => array( 0 ), 'value' => '' ), 'a match is index_path and value only' );
+
+$values = muster_acf_test_return( 'get', array( 'av_modules.*.acf_fc_layout' ), 'values' );
+$row    = $values['results'][0];
+muster_acf_assert( ! isset( $row['matches'][0]['field'] ), 'matches that share the pattern field carry none of their own' );
+
+$values = muster_acf_test_return( 'get', array( 'nope_root' ), 'values' );
+muster_acf_assert( isset( $values['results'][0]['error'] ), 'an error row keeps its error' );
+
+muster_acf_test_reset();
+$values = muster_acf_test_return(
+	'apply',
+	array( array( 'path' => 'av_modules.0.section_id', 'value' => 'projected' ) ),
+	'values',
+	array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Row' ) ) )
+);
+$row = $values['results'][0];
+muster_acf_assert( ! isset( $row['field'] ), 'a write result drops the field object' );
+muster_acf_assert( $row['applied'] === true && $row['changed'] === true && isset( $row['warnings'] ), 'and keeps applied, changed and warnings' );
+muster_acf_assert( isset( $row['old'] ) && isset( $row['new'] ), 'and keeps old and new' );
+$op = $values['rows'][0];
+muster_acf_assert( ! isset( $op['row_layouts'] ), 'an op drops row_layouts' );
+muster_acf_assert( $op['before_count'] === 2 && $op['after_count'] === 3 && $op['applied'] === true, 'and keeps its counts' );
+muster_acf_assert(
+	$values['revert'] === array(
+		'target' => array( 'kind' => 'option' ),
+		'fields' => array( array( 'path' => 'av_modules.0.section_id', 'value' => '' ) ),
+		'rows'   => array( array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 2 ) ),
+	),
+	'the revert is never abbreviated'
+);
+
+// --- 37. Checksum digests are stable across shape, not across content. ------
+muster_acf_test_reset();
+$link = array( 'key' => 'field_l', 'name' => 'l', 'type' => 'link' );
+muster_acf_assert(
+	muster_acf_digest( $link, array( 'title' => 'T', 'url' => 'https://x.test', 'target' => '' ) )
+		=== muster_acf_digest( $link, array( 'url' => 'https://x.test', 'title' => 'T' ) ),
+	'key order and an empty key do not change a digest'
+);
+$number = array( 'key' => 'field_n', 'name' => 'n', 'type' => 'number' );
+muster_acf_assert( muster_acf_digest( $number, 60 ) === muster_acf_digest( $number, '60' ), 'a number and its string digest the same' );
+$text = array( 'key' => 'field_t', 'name' => 't', 'type' => 'text' );
+muster_acf_assert( muster_acf_digest( $text, null ) === muster_acf_digest( $text, '' ), 'null and empty digest the same' );
+muster_acf_assert( muster_acf_digest( $text, 'a' ) !== muster_acf_digest( $text, 'b' ), 'different values digest differently' );
+
+$repeater = array(
+	'key'        => 'field_r',
+	'name'       => 'r',
+	'type'       => 'repeater',
+	'sub_fields' => array(
+		array( 'key' => 'field_ra', 'name' => 'a', 'type' => 'text' ),
+		array( 'key' => 'field_rb', 'name' => 'b', 'type' => 'number' ),
+	),
+);
+muster_acf_assert(
+	muster_acf_digest( $repeater, array( array( 'a' => 'x', 'b' => 1 ) ) ) === muster_acf_digest( $repeater, array( array( 'field_rb' => '1', 'field_ra' => 'x' ) ) ),
+	'a name-keyed row and its stored form digest the same'
+);
+muster_acf_assert(
+	muster_acf_digest( $repeater, array( array( 'a' => 'x' ) ) ) !== muster_acf_digest( $repeater, array( array( 'a' => 'x' ), array( 'a' => 'y' ) ) ),
+	'row count changes the digest'
+);
+
+function muster_acf_test_checksum( $fields = array(), $target = null ) {
+	return muster_acf_run(
+		array(
+			'mode'   => 'checksum',
+			'target' => $target === null ? array( 'kind' => 'option' ) : $target,
+			'fields' => $fields,
+		)
+	);
+}
+
+$run = muster_acf_test_checksum( array( 'band_count', 'av_modules.0.body' ) );
+muster_acf_assert( $run['ok'] === true && $run['checksum'] === true, 'checksum answers a checksum envelope' );
+muster_acf_assert( $run['results'][0]['path'] === 'band_count' && strlen( $run['results'][0]['digest'] ) === 40, 'a path digest is a sha1' );
+muster_acf_assert( ! isset( $run['target_digest'] ), 'named paths carry no target digest' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0, 'checksum writes nothing' );
+
+$whole = muster_acf_test_checksum();
+muster_acf_assert( isset( $whole['target_digest'] ) && strlen( $whole['target_digest'] ) === 40, 'the whole target digests' );
+foreach ( array( 'band_count', 'hero_image', 'spacing_templates', 'hero', 'av_modules' ) as $root ) {
+	$entry = muster_acf_test_entry( $whole, $root );
+	muster_acf_assert( $entry !== null && strlen( $entry['digest'] ) === 40, "every usable root is listed: {$root}" );
+}
+muster_acf_assert( muster_acf_test_entry( $whole, 'block_heading' ) === null, 'a block root is not listed' );
+$twice = muster_acf_test_checksum();
+muster_acf_assert( $twice['target_digest'] === $whole['target_digest'], 'an untouched target digests the same twice' );
+
+muster_acf_test_run( 'apply', array( array( 'path' => 'band_count', 'value' => 61 ) ) );
+$after = muster_acf_test_checksum();
+muster_acf_assert( $after['target_digest'] !== $whole['target_digest'], 'a write moves the target digest' );
+muster_acf_assert( muster_acf_test_entry( $after, 'band_count' )['digest'] !== muster_acf_test_entry( $whole, 'band_count' )['digest'], 'and the root digest it touched' );
+muster_acf_assert( muster_acf_test_entry( $after, 'hero' )['digest'] === muster_acf_test_entry( $whole, 'hero' )['digest'], 'but not the roots it did not' );
+
+$run = muster_acf_test_checksum( array( 'av_modules.*.section_id' ) );
+muster_acf_assert( $run['results'][0]['error'] === 'wildcards are not valid in checksum.', 'checksum refuses a pattern' );
+$run = muster_acf_test_checksum( array( 'nope_root' ) );
+muster_acf_assert( strpos( $run['results'][0]['error'], 'not registered' ) !== false, 'checksum reports an unknown root' );
+
+// --- 38. Several targets in one run, atomic one target at a time. ----------
+muster_acf_test_reset();
+$run = muster_acf_run(
+	array(
+		'mode'    => 'get',
+		'targets' => array( array( 'kind' => 'option' ), array( 'kind' => 'post', 'id' => 672 ) ),
+		'fields'  => array( 'band_count' ),
+	)
+);
+muster_acf_assert( $run['ok'] === true && count( $run['targets'] ) === 2, 'two targets answer two envelopes' );
+muster_acf_assert( $run['targets'][0]['target'] === array( 'kind' => 'option' ), 'each envelope names its target' );
+muster_acf_assert( $run['targets'][1]['results'][0]['value'] === '60', 'and carries its own results' );
+
+$run = muster_acf_run(
+	array(
+		'mode'    => 'apply',
+		'targets' => array( array( 'kind' => 'option' ), array( 'kind' => 'post', 'id' => 999 ) ),
+		'fields'  => array( array( 'path' => 'band_count', 'value' => 42 ) ),
+	)
+);
+muster_acf_assert( $run['ok'] === false, 'one failing target fails the call' );
+muster_acf_assert( $run['targets'][0]['ok'] === true && $run['targets'][0]['apply'] === true, 'the good target still applied' );
+muster_acf_assert( $run['targets'][1]['ok'] === false && strpos( $run['targets'][1]['error'], '999 does not exist' ) !== false, 'the bad target says why' );
+muster_acf_assert( $MUSTER_DB['options_band_count'] === '42', 'writes are atomic per target, not across targets' );
+
+$run = muster_acf_run( array( 'mode' => 'get', 'targets' => array(), 'fields' => array( 'band_count' ) ) );
+muster_acf_assert( $run['ok'] === false && $run['error'] === 'targets is empty.', 'an empty targets list is refused' );
+$run = muster_acf_run( array( 'mode' => 'get', 'target' => array( 'kind' => 'option' ), 'targets' => array( array( 'kind' => 'option' ) ), 'fields' => array( 'band_count' ) ) );
+muster_acf_assert( $run['error'] === 'target and targets cannot both be given.', 'target and targets are exclusive' );
+$many = array();
+for ( $i = 0; $i < 21; $i++ ) {
+	$many[] = array( 'kind' => 'option' );
+}
+$run = muster_acf_run( array( 'mode' => 'get', 'targets' => $many, 'fields' => array( 'band_count' ) ) );
+muster_acf_assert( $run['error'] === 'targets takes at most 20 entries; 21 given.', 'more than 20 targets is refused' );
+
+$run = muster_acf_run(
+	array(
+		'mode'    => 'checksum',
+		'targets' => array( array( 'kind' => 'option' ), array( 'kind' => 'post', 'id' => 672 ) ),
+		'fields'  => array( 'band_count' ),
+	)
+);
+muster_acf_assert( $run['targets'][0]['results'][0]['digest'] === $run['targets'][1]['results'][0]['digest'], 'checksum across targets compares by digest' );
+
+// --- 39. A mismatch warning lands on the row it is about. ------------------
+muster_acf_test_reset();
+$MUSTER_REJECT_WRITES = array( 'field_bc' );
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'band_count', 'value' => 7 ) ) );
+muster_acf_assert(
+	muster_acf_test_has_warning( $run['results'][0]['warnings'], 'write issued but the re-read did not match: band_count' ),
+	'the mismatch warning is on the result row'
+);
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], 'write issued but the re-read did not match' ), 'and still at the top level' );
+
+muster_acf_test_reset();
+$MUSTER_REJECT_WRITES = array( 'field_av' );
+$run = muster_acf_test_rows( 'apply', array( array( 'op' => 'append', 'path' => 'av_modules', 'layout' => 'text' ) ) );
+muster_acf_assert(
+	muster_acf_test_has_warning( $run['rows'][0]['warnings'], 'write issued but the re-read did not match: av_modules' ),
+	'the op mismatch warning is on the op row'
+);
+
+// --- 40. Every apply carries the digests of the roots it re-read. ----------
+muster_acf_test_reset();
+$before = muster_acf_test_checksum();
+$run    = muster_acf_test_rows(
+	'apply',
+	array( array( 'op' => 'append', 'path' => 'spacing_templates', 'values' => array( 'name' => 'Fresh' ) ) ),
+	array( array( 'path' => 'band_count', 'value' => 99 ) )
+);
+muster_acf_assert( array_keys( $run['digests'] ) === array( 'band_count', 'spacing_templates' ), 'apply digests every root it wrote, sorted' );
+muster_acf_assert( $run['digests']['band_count'] === muster_acf_test_entry( muster_acf_test_checksum(), 'band_count' )['digest'], 'an apply digest matches a checksum taken after it' );
+muster_acf_assert( $run['digests']['spacing_templates'] !== muster_acf_test_entry( $before, 'spacing_templates' )['digest'], 'and moved where the write landed' );
+muster_acf_assert( ! isset( $run['digests']['hero'] ), 'roots the call did not touch are not digested' );
+
+// --- 41. Snapshot writes the values beside the payload. --------------------
+muster_acf_test_reset();
+$payload_path = tempnam( sys_get_temp_dir(), 'muster-acf-' );
+$GLOBALS['muster_acf_cli_args'] = array( $payload_path );
+// Runs even when an assertion below exits early, so a failure leaves no temp files behind.
+register_shutdown_function(
+	function () use ( $payload_path ) {
+		@unlink( $payload_path . '.out' );
+		@unlink( $payload_path );
+	}
+);
+
+function muster_acf_test_snapshot( $fields = array() ) {
+	return muster_acf_run(
+		array(
+			'mode'   => 'snapshot',
+			'target' => array( 'kind' => 'option' ),
+			'fields' => $fields,
+		)
+	);
+}
+
+$snap = muster_acf_test_snapshot();
+muster_acf_assert( $snap['ok'] === true && $snap['snapshot'] === true, 'snapshot answers a snapshot envelope' );
+muster_acf_assert( $snap['output_file'] === $payload_path . '.out', 'the file sits beside the payload' );
+muster_acf_assert( ! isset( $snap['roots'] ), 'the values do not come back on stdout' );
+muster_acf_assert( $snap['bytes'] === strlen( file_get_contents( $snap['output_file'] ) ), 'bytes counts what was written' );
+muster_acf_assert( $snap['target_digest'] === muster_acf_test_checksum()['target_digest'], 'the snapshot digest matches a checksum of the same target' );
+
+$stored = json_decode( file_get_contents( $snap['output_file'] ), true );
+muster_acf_assert( $stored['ok'] === true && $stored['target'] === array( 'kind' => 'option' ), 'the file names its target' );
+muster_acf_assert( $stored['digests'] === $snap['digests'], 'the file repeats the digests' );
+muster_acf_assert( $stored['roots']['spacing_templates'][0]['field_st_name'] === 'Band 40', 'the file holds unformatted values' );
+muster_acf_assert( array_key_exists( 'av_modules', $stored['roots'] ), 'every usable root is snapshotted' );
+
+$snap = muster_acf_test_snapshot( array( 'spacing_templates' ) );
+muster_acf_assert( array_keys( $snap['digests'] ) === array( 'spacing_templates' ), 'named roots snapshot alone' );
+$snap = muster_acf_test_snapshot( array( 'spacing_templates.0.name' ) );
+muster_acf_assert( $snap['ok'] === false && $snap['error'] === "snapshot takes root field names; 'spacing_templates.0.name' is a sub-path.", 'a sub-path is refused' );
+$snap = muster_acf_test_snapshot( array( 'nope_root' ) );
+muster_acf_assert( $snap['ok'] === false && strpos( $snap['error'], 'not registered' ) !== false, 'an unknown root refuses the whole snapshot' );
+
+// --- 42. Restore previews shape, applies values, verifies by digest. -------
+$good = json_decode( file_get_contents( $payload_path . '.out' ), true );
+muster_acf_test_reset();
+$GLOBALS['muster_acf_cli_args'] = array( $payload_path );
+$whole = muster_acf_test_snapshot();
+$saved = json_decode( file_get_contents( $whole['output_file'] ), true );
+
+function muster_acf_test_restore( $roots, $apply ) {
+	return muster_acf_run(
+		array(
+			'mode'   => 'restore',
+			'target' => array( 'kind' => 'option' ),
+			'roots'  => $roots,
+			'apply'  => $apply,
+		)
+	);
+}
+
+muster_acf_test_run( 'apply', array( array( 'path' => 'band_count', 'value' => 5 ) ) );
+muster_acf_test_rows( 'apply', array( array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 1 ) ) );
+muster_acf_assert( count( $MUSTER_DB['options_spacing_templates'] ) === 1, 'the fixture drifted before the restore' );
+
+$writes_before = count( $MUSTER_UPDATE_CALLS );
+$preview = muster_acf_test_restore(
+	array(
+		'band_count'        => $saved['roots']['band_count'],
+		'spacing_templates' => $saved['roots']['spacing_templates'],
+	),
+	false
+);
+muster_acf_assert( $preview['ok'] === true && $preview['apply'] === false && $preview['restore'] === true, 'restore previews by default' );
+$rows = muster_acf_test_entry( $preview, 'spacing_templates' );
+muster_acf_assert( $rows['changed'] === true && $rows['rows'] === array( 'before' => 1, 'after' => 2 ), 'the preview counts rows either side' );
+muster_acf_assert( $rows['digest']['after'] === $saved['digests']['spacing_templates'], 'the preview digest is the snapshot digest' );
+muster_acf_assert( $rows['digest']['before'] !== $rows['digest']['after'], 'and differs from where the field stands' );
+muster_acf_assert( $rows['applied'] === false && ! isset( $rows['value'] ), 'a preview neither writes nor echoes values' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === $writes_before, 'and calls no writer' );
+
+$done = muster_acf_test_restore(
+	array(
+		'band_count'        => $saved['roots']['band_count'],
+		'spacing_templates' => $saved['roots']['spacing_templates'],
+	),
+	true
+);
+muster_acf_assert( $done['apply'] === true, 'restore applies when asked' );
+foreach ( $done['results'] as $row ) {
+	muster_acf_assert( $row['applied'] === true, "restore applied {$row['path']}" );
+	muster_acf_assert( $row['digest']['after'] === $saved['digests'][ $row['path'] ], "restore verified {$row['path']} by digest" );
+}
+muster_acf_assert( $MUSTER_DB['options_band_count'] === '60' && count( $MUSTER_DB['options_spacing_templates'] ) === 2, 'the values are back' );
+muster_acf_assert( muster_acf_test_checksum()['target_digest'] === $whole['target_digest'], 'the whole target digests as it did before the drift' );
+muster_acf_assert( $done['digests']['spacing_templates'] === $saved['digests']['spacing_templates'], 'the restore reports the digests it left behind' );
+
+// A shorter row count rebuilds: restoring 2 rows over 4 drops the extras.
+muster_acf_test_reset();
+$MUSTER_DB['options_spacing_templates'] = array(
+	array( 'field_st_name' => 'a' ),
+	array( 'field_st_name' => 'b' ),
+	array( 'field_st_name' => 'c' ),
+	array( 'field_st_name' => 'd' ),
+);
+$done = muster_acf_test_restore( array( 'spacing_templates' => $saved['roots']['spacing_templates'] ), true );
+muster_acf_assert( count( $MUSTER_DB['options_spacing_templates'] ) === 2, 'a shorter snapshot removes the rows past its count' );
+muster_acf_assert( $done['results'][0]['rows'] === array( 'before' => 4, 'after' => 2 ), 'and says so either side' );
+muster_acf_assert( $done['results'][0]['applied'] === true, 'and verifies' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_restore( array( 'nope_root' => array() ), true );
+muster_acf_assert( $run['ok'] === false && $run['apply_skipped'] === true, 'an unknown root skips the whole restore' );
+muster_acf_assert( count( $MUSTER_UPDATE_CALLS ) === 0, 'and writes nothing' );
+$run = muster_acf_test_restore( array( 'nope_root' => array() ), false );
+muster_acf_assert( $run['ok'] === true && isset( $run['results'][0]['error'] ), 'a preview reports the bad root and stays ok' );
+$run = muster_acf_run( array( 'mode' => 'restore', 'target' => array( 'kind' => 'option' ), 'apply' => false ) );
+muster_acf_assert( $run['ok'] === false && strpos( $run['error'], 'restore needs roots' ) !== false, 'restore without roots is refused' );
+
+muster_acf_test_reset();
+muster_acf_test_rows( 'apply', array( array( 'op' => 'delete', 'path' => 'spacing_templates', 'index' => 1 ) ) );
+$MUSTER_REJECT_WRITES = array( 'field_st' );
+$run = muster_acf_test_restore( array( 'spacing_templates' => $saved['roots']['spacing_templates'] ), true );
+muster_acf_assert( count( $MUSTER_DB['options_spacing_templates'] ) === 1, 'the rejected write left storage where it was' );
+muster_acf_assert( $run['results'][0]['applied'] === false, 'a restore that did not stick reports applied false' );
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], 'write issued but the re-read did not match: spacing_templates' ), 'and names the root' );
+
+@unlink( $payload_path . '.out' );
+@unlink( $payload_path );
+$GLOBALS['muster_acf_cli_args'] = array();
+
 muster_acf_test_reset();
 muster_acf_assert( $MUSTER_FORMATTED_READS === 0, 'never reads formatted values' );
 
