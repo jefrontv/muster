@@ -170,6 +170,63 @@ $MUSTER_FIELDS = array(
 			array( 'key' => 'field_or_refs', 'name' => 'refs', 'type' => 'post_object', 'multiple' => 1, 'parent' => 'field_or' ),
 		),
 	),
+	// Avalon shape: tabs/messages with no name, a seamless clone child (composite key), a repeater of groups.
+	array(
+		'key'     => 'field_av',
+		'name'    => 'av_modules',
+		'type'    => 'flexible_content',
+		'parent'  => 'group_opts',
+		'layouts' => array(
+			array(
+				'key'        => 'layout_text',
+				'name'       => 'text',
+				'label'      => 'Text',
+				'sub_fields' => array(
+					array( 'key' => 'field_av_tab', 'name' => '', 'type' => 'tab', 'label' => 'Content', 'parent' => 'field_av' ),
+					array( 'key' => 'field_av_body', 'name' => 'body', 'type' => 'wysiwyg', 'parent' => 'field_av' ),
+					array( 'key' => 'field_av_msg', 'name' => '', 'type' => 'message', 'parent' => 'field_av' ),
+					array( 'key' => 'field_av_sid', 'name' => 'section_id', 'type' => 'text', 'parent' => 'field_av' ),
+					array(
+						'key'     => 'field_av_clone_field_bg',
+						'name'    => 'module_bg_colour',
+						'type'    => 'radio',
+						'choices' => array( 'white' => 'White', 'navy' => 'Navy' ),
+						'parent'  => 'field_av',
+					),
+				),
+			),
+			array(
+				'key'        => 'layout_media',
+				'name'       => 'media',
+				'label'      => 'Media',
+				'sub_fields' => array(
+					array(
+						'key'        => 'field_av_slides',
+						'name'       => 'slides',
+						'type'       => 'repeater',
+						'parent'     => 'field_av',
+						'sub_fields' => array(
+							array(
+								'key'        => 'field_av_vs',
+								'name'       => 'video_settings',
+								'type'       => 'group',
+								'parent'     => 'field_av_slides',
+								'sub_fields' => array(
+									array(
+										'key'     => 'field_av_cs',
+										'name'    => 'controls_settings',
+										'type'    => 'checkbox',
+										'choices' => array( 'play_pause' => 'Play/Pause', 'fullscreen' => 'Fullscreen' ),
+										'parent'  => 'field_av_vs',
+									),
+								),
+							),
+						),
+					),
+				),
+			),
+		),
+	),
 	array( 'key' => 'field_bh', 'name' => 'block_heading', 'type' => 'text', 'parent' => 'group_block' ),
 	// DB-stored fields carry numeric parents: 77 is a block group post, 88 is a repeater field post.
 	array( 'key' => 'field_dbb', 'name' => 'db_block', 'type' => 'text', 'parent' => 77 ),
@@ -205,6 +262,20 @@ function muster_acf_test_reset() {
 		),
 		'options_hero'              => array( 'field_hero_title' => 'Old title' ),
 		'options_orphan_rep'        => array( array( 'field_or_refs' => array( '3' ) ) ),
+		'options_av_modules'        => array(
+			array(
+				'acf_fc_layout'           => 'text',
+				'field_av_body'           => '<h4>MEDIA</h4>',
+				'field_av_sid'            => '',
+				'field_av_clone_field_bg' => 'white',
+			),
+			array(
+				'acf_fc_layout'   => 'media',
+				'field_av_slides' => array(
+					array( 'field_av_vs' => array( 'field_av_cs' => array( 'play_pause' ) ) ),
+				),
+			),
+		),
 	);
 	$MUSTER_UPDATE_CALLS = array();
 }
@@ -507,6 +578,178 @@ $row = $run['results'][0];
 muster_acf_assert( ! isset( $row['error'] ), 'a multiple post_object sub-field accepts an array of IDs' );
 muster_acf_assert( $MUSTER_DB['options_orphan_rep'][0]['field_or_refs'] === array( 7, 8 ), 'both IDs written' );
 muster_acf_assert( $row['applied'] === true, 'multiple post_object applied' );
+
+// --- 11. Container reads come back keyed by sub-field name. ------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'get', array( 'av_modules.0' ) );
+$value = $run['results'][0]['value'];
+muster_acf_assert( $value['acf_fc_layout'] === 'text', 'flex row keeps acf_fc_layout' );
+muster_acf_assert( $value['body'] === '<h4>MEDIA</h4>', 'flex row sub-field is name-keyed' );
+muster_acf_assert( $value['module_bg_colour'] === 'white', 'seamless clone child is name-keyed' );
+muster_acf_assert( array_keys( $value ) === array( 'acf_fc_layout', 'body', 'section_id', 'module_bg_colour' ), 'no composite keys survive' );
+
+$run   = muster_acf_test_run( 'get', array( 'av_modules.1.slides' ) );
+$slides = $run['results'][0]['value'];
+muster_acf_assert( array_keys( $slides[0] ) === array( 'video_settings' ), 'repeater rows are name-keyed' );
+muster_acf_assert( $slides[0]['video_settings']['controls_settings'] === array( 'play_pause' ), 'nested group recurses' );
+
+$run = muster_acf_test_run( 'get', array( 'av_modules.1.slides.0.video_settings' ) );
+muster_acf_assert( $run['results'][0]['value'] === array( 'controls_settings' => array( 'play_pause' ) ), 'group read is name-keyed' );
+
+$run = muster_acf_test_run( 'get', array( 'av_modules' ) );
+$rows = $run['results'][0]['value'];
+muster_acf_assert( count( $rows ) === 2 && $rows[1]['slides'][0]['video_settings']['controls_settings'] === array( 'play_pause' ), 'whole flex field presents every level' );
+
+$run = muster_acf_test_run( 'get', array( 'av_modules.0.body' ) );
+muster_acf_assert( $run['results'][0]['value'] === '<h4>MEDIA</h4>', 'a scalar leaf is left alone' );
+
+// --- 12. acf_fc_layout is readable on a flex row, never writable. ------------
+$run = muster_acf_test_run( 'get', array( 'av_modules.0.acf_fc_layout' ) );
+$row = $run['results'][0];
+muster_acf_assert( $row['value'] === 'text', 'acf_fc_layout reads the layout name' );
+muster_acf_assert( $row['field']['name'] === 'acf_fc_layout' && $row['field']['type'] === 'layout', 'acf_fc_layout reports a pseudo field' );
+muster_acf_assert( $row['field']['key'] === '' && $row['field']['parent_layout'] === 'text', 'acf_fc_layout carries the row layout' );
+
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.0.acf_fc_layout', 'value' => 'media' ) ) );
+muster_acf_assert(
+	$run['results'][0]['error'] === 'acf_fc_layout is read-only; rewrite the row or use a row operation',
+	'acf_fc_layout is a per-path write error'
+);
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'av_modules.0.acf_fc_layout', 'value' => 'media' ) ) );
+muster_acf_assert( $run['apply_skipped'] === true && count( $MUSTER_UPDATE_CALLS ) === 0, 'an acf_fc_layout write skips the apply' );
+
+$run = muster_acf_test_run( 'get', array( 'spacing_templates.0.acf_fc_layout' ) );
+muster_acf_assert(
+	strpos( $run['results'][0]['error'], "subfield 'acf_fc_layout' not found" ) === 0,
+	'acf_fc_layout is not a repeater sub-field'
+);
+
+// --- 13. Tabs, messages and empty names stay out of "Available". ------------
+$run = muster_acf_test_run( 'get', array( 'av_modules.0.nope_field' ) );
+muster_acf_assert(
+	$run['results'][0]['error'] === "subfield 'nope_field' not found on layout 'text'. Available: body, section_id, module_bg_colour",
+	'available names skip tab/message/empty'
+);
+
+// --- 14. Unknown choices warn, never block. ---------------------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.0.module_bg_colour', 'value' => 'definitely-not-a-choice' ) ) );
+muster_acf_assert( ! isset( $run['results'][0]['error'] ), 'an unknown choice is not an error' );
+muster_acf_assert(
+	muster_acf_test_has_warning( $run['warnings'], "'definitely-not-a-choice' is not a registered choice. Valid: white, navy" ),
+	'radio warns with the value and the valid keys'
+);
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.0.module_bg_colour', 'value' => 'navy' ) ) );
+muster_acf_assert( ! muster_acf_test_has_warning( $run['warnings'], 'not a registered choice' ), 'a valid choice is silent' );
+$run = muster_acf_test_run(
+	'preview',
+	array( array( 'path' => 'av_modules.1.slides.0.video_settings.controls_settings', 'value' => array( 'play_pause', 'nope' ) ) )
+);
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], "'nope' is not a registered choice" ), 'checkbox warns per element' );
+muster_acf_assert( ! muster_acf_test_has_warning( $run['warnings'], "'play_pause' is not" ), 'a valid element is silent' );
+
+// --- 15. A skipped apply is not ok; a preview with path errors still is. -----
+muster_acf_test_reset();
+$run = muster_acf_test_run(
+	'apply',
+	array(
+		array( 'path' => 'band_count', 'value' => 7 ),
+		array( 'path' => 'nope_root', 'value' => 'x' ),
+	)
+);
+muster_acf_assert( $run['ok'] === false, 'a skipped apply reports ok false' );
+muster_acf_assert( $run['apply'] === false && $run['apply_skipped'] === true, 'skipped apply keeps its flags' );
+muster_acf_assert( muster_acf_test_has_warning( $run['warnings'], 'apply skipped' ), 'skipped apply keeps the warning' );
+muster_acf_assert( isset( $run['results'][1]['error'] ), 'skipped apply keeps the per-row error' );
+muster_acf_assert( $run['revert']['fields'] === array(), 'a skipped apply reverts nothing' );
+muster_acf_assert( $MUSTER_DB['options_band_count'] === '60', 'a skipped apply writes nothing' );
+
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'nope_root', 'value' => 'x' ) ) );
+muster_acf_assert( $run['ok'] === true, 'a preview with path errors stays ok' );
+
+// --- 16. A row path describes the container, not the row's layout. -----------
+$run = muster_acf_test_run( 'get', array( 'av_modules.0' ) );
+$field = $run['results'][0]['field'];
+muster_acf_assert( $field['name'] === 'av_modules' && $field['parent_layout'] === null, 'a root row path has no parent layout' );
+muster_acf_assert( $field['layout'] === 'text', 'a row path names its own layout' );
+
+$run = muster_acf_test_run( 'get', array( 'av_modules.1.slides.0' ) );
+$field = $run['results'][0]['field'];
+muster_acf_assert( $field['name'] === 'slides' && $field['layout'] === null, 'a repeater row has a null layout' );
+muster_acf_assert( $field['parent_layout'] === 'media', 'a nested container keeps its enclosing layout' );
+
+$run = muster_acf_test_run( 'get', array( 'av_modules.0.body' ) );
+$field = $run['results'][0]['field'];
+muster_acf_assert( $field['parent_layout'] === 'text' && ! array_key_exists( 'layout', $field ), 'a sub-field keeps parent_layout only' );
+
+$run = muster_acf_test_run( 'get', array( 'spacing_templates.0' ) );
+muster_acf_assert( $run['results'][0]['field']['layout'] === null, 'a repeater root row has a null layout' );
+
+// --- 17. Revert payload round-trips through the walker. ---------------------
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.0.section_id', 'value' => 'muster-test-1' ) ) );
+muster_acf_assert( $run['revert']['target'] === array( 'kind' => 'option' ), 'revert echoes the target as received' );
+muster_acf_assert( $run['revert']['fields'] === array( array( 'path' => 'av_modules.0.section_id', 'value' => '' ) ), 'preview reverts every changed row' );
+
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.0.section_id', 'value' => '' ) ) );
+muster_acf_assert( $run['revert']['fields'] === array(), 'an unchanged preview reverts nothing' );
+
+muster_acf_test_reset();
+$run    = muster_acf_test_run( 'apply', array( array( 'path' => 'av_modules.0.section_id', 'value' => 'muster-test-1' ) ) );
+$revert = $run['revert'];
+muster_acf_assert( $run['results'][0]['applied'] === true, 'the test write applied' );
+muster_acf_assert( $revert['fields'] === array( array( 'path' => 'av_modules.0.section_id', 'value' => '' ) ), 'apply reverts every applied row' );
+$back = muster_acf_test_run( 'preview', $revert['fields'] );
+muster_acf_assert( $back['results'][0]['old'] === 'muster-test-1', 'the revert preview sees the written value' );
+muster_acf_assert( $back['results'][0]['new'] === '' && $back['results'][0]['changed'] === true, 'the revert preview restores old' );
+$done = muster_acf_test_run( 'apply', $revert['fields'] );
+muster_acf_assert( $done['results'][0]['applied'] === true, 'the revert applies' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][0]['field_av_sid'] === '', 'storage is back where it started' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_run(
+	'apply',
+	array(
+		array(
+			'path'  => 'av_modules.0',
+			'value' => array(
+				'acf_fc_layout'    => 'text',
+				'body'             => 'New body',
+				'section_id'       => 'sid',
+				'module_bg_colour' => 'navy',
+			),
+		),
+	)
+);
+$revert = $run['revert'];
+muster_acf_assert( count( $revert['fields'] ) === 1, 'a whole-row apply reverts one path' );
+muster_acf_assert(
+	$revert['fields'][0]['value'] === array(
+		'acf_fc_layout'    => 'text',
+		'body'             => '<h4>MEDIA</h4>',
+		'section_id'       => '',
+		'module_bg_colour' => 'white',
+	),
+	'the reverted row is name-keyed'
+);
+$done = muster_acf_test_run( 'apply', $revert['fields'] );
+muster_acf_assert( $done['results'][0]['applied'] === true, 'the row revert applies' );
+muster_acf_assert( $MUSTER_DB['options_av_modules'][0]['field_av_body'] === '<h4>MEDIA</h4>', 'the row is back where it started' );
+
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'apply', array( array( 'path' => 'hero_image', 'value' => null ) ) );
+muster_acf_assert( $run['revert']['fields'] === array( array( 'path' => 'hero_image', 'value' => '42' ) ), 'a cleared field reverts to its old ID' );
+$run = muster_acf_test_run( 'get', array( 'hero_image' ) );
+muster_acf_assert( $run['results'][0]['value'] === null, 'a cleared field reads as null' );
+muster_acf_assert( ! isset( $run['revert'] ), 'get carries no revert payload' );
+
+// A row rejected by the coercer echoes the value as sent and still presents old.
+muster_acf_test_reset();
+$run = muster_acf_test_run( 'preview', array( array( 'path' => 'av_modules.0', 'value' => 'not-a-row' ) ) );
+$row = $run['results'][0];
+muster_acf_assert( isset( $row['error'] ) && $row['new'] === 'not-a-row', 'a rejected value is echoed unchanged' );
+muster_acf_assert( $row['old']['body'] === '<h4>MEDIA</h4>', 'a rejected row still presents old' );
 
 muster_acf_assert( $MUSTER_FORMATTED_READS === 0, 'never reads formatted values' );
 
