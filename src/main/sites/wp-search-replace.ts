@@ -16,6 +16,7 @@ import {
   type SiteRunContext,
   SiteRunStepError
 } from './pipeline-contract'
+import { buildDomainRewritePairs, type DomainRewritePair } from './wp-domain-rewrite-pairs'
 
 const STEP = 'wp-search-replace'
 const WP_BINARY = 'wp'
@@ -47,6 +48,14 @@ export async function runWpSearchReplace(
   context.status('Running WP Search and Replace…')
   await prepareLocalWpConfig(context, config)
 
+  const pairs = buildDomainRewritePairs(liveDomain, localDomain)
+  if (pairs.length === 0) {
+    context.log(
+      `Skipping WP Search and Replace: ${liveDomain} and ${localDomain} are the same host.`
+    )
+    return
+  }
+
   context.throwIfCancelled()
   const abspath = await resolveWpCliPath(config.wpDir)
   if (!(await hasWordPressCore(abspath))) {
@@ -67,10 +76,41 @@ export async function runWpSearchReplace(
   const timeoutMs = timeoutSeconds > 0 ? timeoutSeconds * 1000 : 0
 
   context.status('Running WP-CLI search-replace (may take several minutes)…')
-  const args = [
+  let replacements: number | null = null
+  let ignoredWarnings = false
+  for (const pair of pairs) {
+    context.throwIfCancelled()
+    const result = await runWpCli(
+      context,
+      config,
+      searchReplaceArgs(pair, abspath),
+      environment,
+      timeoutMs
+    )
+    if (result === null) {
+      return
+    }
+    if (result.timedOut) {
+      throw new SiteRunStepError(
+        STEP,
+        `WP Search and Replace exceeded its ${timeoutSeconds}s timeout. Raise or disable the search-replace timeout for this site and try again.`
+      )
+    }
+    const pass = readSearchReplacePass(result.code, result.stdout, result.stderr)
+    if (pass.replacements !== null) {
+      replacements = (replacements ?? 0) + pass.replacements
+    }
+    ignoredWarnings ||= pass.ignoredWarnings
+  }
+  reportSearchReplaceTotal(context, replacements, ignoredWarnings)
+}
+
+/** Per pass, not per step: an import runs `www.live` and then bare `live` through the same flags. */
+function searchReplaceArgs(pair: DomainRewritePair, abspath: string): string[] {
+  return [
     'search-replace',
-    liveDomain,
-    localDomain,
+    pair.from,
+    pair.to,
     '--all-tables',
     '--precise',
     '--report-changed-only',
@@ -86,17 +126,6 @@ export async function runWpSearchReplace(
     '--skip-packages',
     `--path=${abspath}`
   ]
-  const result = await runWpCli(context, config, args, environment, timeoutMs)
-  if (result === null) {
-    return
-  }
-  if (result.timedOut) {
-    throw new SiteRunStepError(
-      STEP,
-      `WP Search and Replace exceeded its ${timeoutSeconds}s timeout. Raise or disable the search-replace timeout for this site and try again.`
-    )
-  }
-  reportSearchReplaceResult(context, result.code, result.stdout, result.stderr)
 }
 
 /** Null when WP-CLI could not be run at all — logged as a degrade, not an import failure. */
@@ -128,21 +157,12 @@ async function runWpCli(
   }
 }
 
-function reportSearchReplaceResult(
-  context: SiteRunContext,
-  code: number,
-  stdout: string,
-  stderr: string
-): void {
+/** `replacements` is null when the pass printed no countable Success line. */
+type SearchReplacePass = { replacements: number | null; ignoredWarnings: boolean }
+
+function readSearchReplacePass(code: number, stdout: string, stderr: string): SearchReplacePass {
   if (code === 0) {
-    // WP-CLI's per-table table wraps into an unreadable mess in the log view; the Success: line
-    // carries the only number anyone reads.
-    const summary = stdout
-      .split('\n')
-      .map((line) => line.trim())
-      .find((line) => line.toLowerCase().startsWith('success'))
-    context.log(summary ? `WP Search and Replace: ${summary}` : 'WP Search and Replace completed')
-    return
+    return { replacements: countReplacements(stdout), ignoredWarnings: false }
   }
 
   const errorLines = stderr
@@ -157,13 +177,35 @@ function reportSearchReplaceResult(
       (line) => /warning|notice|deprecated/i.test(line) && !/\b(?:fatal|error)\b/i.test(line)
     )
   if (onlyWarnings) {
-    context.log('WP Search and Replace completed (ignored PHP warnings from wp-config).')
-    return
+    return { replacements: countReplacements(stdout), ignoredWarnings: true }
   }
   throw new SiteRunStepError(
     STEP,
     `WP Search and Replace failed: ${errorLines.join(' ') || `wp exited ${code}`}`
   )
+}
+
+/** WP-CLI's per-table table wraps into an unreadable mess; the Success: line carries the number. */
+function countReplacements(stdout: string): number | null {
+  const summary = stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.toLowerCase().startsWith('success'))
+  const counted = summary === undefined ? null : /(\d[\d,]*)\s+replacement/i.exec(summary)
+  return counted === null ? null : Number(counted[1]!.replaceAll(',', ''))
+}
+
+/** One line for the whole step, however many passes ran. */
+function reportSearchReplaceTotal(
+  context: SiteRunContext,
+  replacements: number | null,
+  ignoredWarnings: boolean
+): void {
+  const summary =
+    replacements === null
+      ? 'WP Search and Replace completed'
+      : `WP Search and Replace: Made ${replacements} replacement(s).`
+  context.log(ignoredWarnings ? `${summary} (ignored PHP warnings from wp-config).` : summary)
 }
 
 /**

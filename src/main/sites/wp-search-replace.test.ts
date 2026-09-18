@@ -127,9 +127,9 @@ function wpConfig(): string {
   return readFileSync(path.join(wpDir, 'wp-config.php'), 'utf8')
 }
 
-/** The wp invocation, ignoring the resolver plumbing around it. */
-function wpCall(): { args: string[]; options: StreamCommandOptions | undefined } {
-  const call = streamCommandMock.mock.calls.at(0)
+/** One wp invocation, ignoring the resolver plumbing around it. Pass 0 is the `www.` needle. */
+function wpCall(index = 0): { args: string[]; options: StreamCommandOptions | undefined } {
+  const call = streamCommandMock.mock.calls.at(index)
   return { args: call?.[1] ?? [], options: call?.[2] }
 }
 
@@ -257,7 +257,7 @@ describe('runWpSearchReplace', () => {
 
     await runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
 
-    expect(streamCommandMock).toHaveBeenCalledTimes(1)
+    expect(streamCommandMock).toHaveBeenCalledTimes(2)
   })
 
   it('repoints package.json config.dev, and only when it already exists', async () => {
@@ -295,7 +295,7 @@ describe('runWpSearchReplace', () => {
 
     await runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
 
-    expect(wpCall().args).toEqual([
+    expect(wpCall(1).args).toEqual([
       'search-replace',
       'acme.com.au',
       'acme.local',
@@ -312,6 +312,35 @@ describe('runWpSearchReplace', () => {
     expect(wpCall().options?.env?.WP_CLI_PHP_ARGS).toBe(
       '-d error_reporting=E_ERROR -d display_errors=0'
     )
+  })
+
+  // jefrontv/muster#29: one literal pass turned www.acme.com.au into www.acme.local, a host that
+  // does not exist. The www needle has to run before the bare one or it never matches anything.
+  it('runs the www pass before the bare pass, whichever form the live domain was entered in', async () => {
+    const { context } = createTestContext()
+
+    await runWpSearchReplace(
+      context,
+      createConfig({ liveDomain: 'www.acme.com.au' }),
+      noLocalWpEnvironment
+    )
+
+    expect(streamCommandMock).toHaveBeenCalledTimes(2)
+    expect(wpCall(0).args.slice(0, 3)).toEqual(['search-replace', 'www.acme.com.au', 'acme.local'])
+    expect(wpCall(1).args.slice(0, 3)).toEqual(['search-replace', 'acme.com.au', 'acme.local'])
+  })
+
+  it('skips both passes when the live and local domains are the same host', async () => {
+    const { context, logs } = createTestContext()
+
+    await runWpSearchReplace(
+      context,
+      createConfig({ liveDomain: 'www.acme.local' }),
+      noLocalWpEnvironment
+    )
+
+    expect(streamCommandMock).not.toHaveBeenCalled()
+    expect(logs.join('\n')).toContain('are the same host')
   })
 
   it('passes skip-columns exactly once, since WP-CLI keeps only the last repeated assoc arg', async () => {
@@ -397,7 +426,7 @@ describe('runWpSearchReplace', () => {
     expect(wpCall().options?.env?.PATH).toBe(process.env.PATH)
   })
 
-  it('surfaces only the Success summary line, not the per-table report', async () => {
+  it('sums both passes into one line, without the per-table report', async () => {
     const { context, logs } = createTestContext()
     streamCommandMock.mockResolvedValue(
       commandResult({
@@ -407,7 +436,7 @@ describe('runWpSearchReplace', () => {
 
     await runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)
 
-    expect(logs).toContain('WP Search and Replace: Success: Made 12 replacements.')
+    expect(logs).toContain('WP Search and Replace: Made 24 replacement(s).')
   })
 
   it('tolerates a nonzero exit whose stderr is only PHP warnings', async () => {
