@@ -253,6 +253,27 @@ describe('wp_eval_file', () => {
   })
 })
 
+describe('oversize responses', () => {
+  it('tells the agent the output was cut instead of blaming the JSON', async () => {
+    vi.mocked(streamCommand).mockResolvedValueOnce({
+      code: 0,
+      stdout: `{"ok":true,"results":[${'x'.repeat(1_000_050)}`,
+      stderr: '',
+      timedOut: false,
+      truncated: false,
+      stoppedEarly: false
+    })
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'local',
+      target: { kind: 'post', id: 672 },
+      fields: ['modules.*.acf_fc_layout']
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain('cut at 1000000 characters')
+    expect(String(payload.error)).toContain('layout_filter')
+  })
+})
+
 describe('update_wp_fields rows', () => {
   it('sends the row operations to the runner alongside fields', async () => {
     evalFiles.length = 0

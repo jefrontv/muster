@@ -191,6 +191,45 @@ describe('parseAcfRunnerOutcome', () => {
     ).toEqual({ ok: false, error: 'unknown field hero_titel' })
   })
 
+  it('names the cut when a truncated envelope fails to parse', () => {
+    expect(() =>
+      parseAcfRunnerOutcome({
+        exitCode: 0,
+        stdout: '{"ok":true,"results":[{"path":"modules.0","value":{"body":"abc',
+        stderr: '',
+        location: 'remote',
+        wpRoot: '/var/www',
+        outputTruncated: true,
+        maxOutputChars: 1_000_000
+      })
+    ).toThrow(/cut at 1000000 characters/)
+  })
+
+  it('names the cut when truncation left no JSON object at all', () => {
+    const error = explainAcfRunnerFailure({
+      exitCode: 0,
+      stdout: '{"ok":true,"results":[',
+      stderr: '',
+      location: 'local',
+      wpRoot: '/Sites/acme',
+      outputTruncated: true,
+      maxOutputChars: 1_000_000
+    })
+    expect(error.message).toMatch(/Narrow the request/)
+  })
+
+  it('keeps the plain parse failure when nothing was cut', () => {
+    expect(() =>
+      parseAcfRunnerOutcome({
+        exitCode: 0,
+        stdout: '{"ok":true,,}',
+        stderr: '',
+        location: 'local',
+        wpRoot: '/Sites/acme'
+      })
+    ).toThrow(/invalid JSON/)
+  })
+
   it('throws the explained failure when stdout is empty', () => {
     expect(() =>
       parseAcfRunnerOutcome({

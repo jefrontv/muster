@@ -38,6 +38,14 @@ export const LOCATION_PROPERTY = {
   }
 } as const
 
+export const TARGET_PROPERTY = {
+  target: {
+    type: 'object',
+    description:
+      "ACF $post_id. kind: option (id optional custom post_id), post, term, user, comment (id required). 'options' is accepted as option."
+  }
+} as const
+
 export const CONFIRM_PROPERTY = {
   confirm: {
     type: 'boolean',

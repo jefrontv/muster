@@ -219,6 +219,8 @@ export type AcfRunnerOutcome = {
   location: 'local' | 'remote'
   wpRoot: string
   command?: string
+  outputTruncated?: boolean
+  maxOutputChars?: number
 }
 
 // Tested before NO_WORDPRESS: WP-CLI's database error also names wp-config.php.
@@ -227,14 +229,31 @@ const DB_FAILURE =
 const NO_WORDPRESS =
   /this does not seem to be a wordpress installation|wp-config\.php\W*(?:file )?(?:is empty|not found|is missing)|(?:strange|missing|no) wp-config\.php/i
 
-export function explainAcfRunnerFailure(outcome: AcfRunnerOutcome): SiteMcpToolError {
-  const details: Record<string, unknown> = {
+function runnerFailureDetails(outcome: AcfRunnerOutcome): Record<string, unknown> {
+  return {
     exit_code: outcome.exitCode,
     location: outcome.location,
     wp_root: outcome.wpRoot,
     stderr: outputTail(outcome.stderr),
     stdout: outputTail(outcome.stdout),
     ...(outcome.command ? { command: outcome.command } : {})
+  }
+}
+
+// A cut envelope usually still holds a '{' and a '}', so it reads as invalid JSON rather than as
+// missing JSON. Both routes name the cut, because "invalid JSON" sends the agent hunting a bug.
+export function acfOutputCutError(outcome: AcfRunnerOutcome): SiteMcpToolError {
+  const cap = outcome.maxOutputChars ?? outcome.stdout.length
+  return new SiteMcpToolError(
+    `ACF runner output was cut at ${cap} characters. Narrow the request: fewer paths, a layout_filter, or describe one container.`,
+    runnerFailureDetails(outcome)
+  )
+}
+
+export function explainAcfRunnerFailure(outcome: AcfRunnerOutcome): SiteMcpToolError {
+  const details = runnerFailureDetails(outcome)
+  if (outcome.outputTruncated === true) {
+    return acfOutputCutError(outcome)
   }
   if (DB_FAILURE.test(outcome.stderr)) {
     return new SiteMcpToolError(
@@ -268,5 +287,9 @@ export function parseAcfRunnerOutcome(outcome: AcfRunnerOutcome): Record<string,
   if (extractJsonObject(outcome.stdout) === null) {
     throw explainAcfRunnerFailure(outcome)
   }
-  return parseAcfRunnerStdout(outcome.stdout)
+  try {
+    return parseAcfRunnerStdout(outcome.stdout)
+  } catch (error) {
+    throw outcome.outputTruncated === true ? acfOutputCutError(outcome) : error
+  }
 }

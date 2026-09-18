@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
 import { SiteRunStepError } from './pipeline-contract'
 import { createFakeSshSession } from './site-tool-test-fixtures'
-import { runLocalWpEvalFile, runRemoteWpEvalFile, WP_EVAL_FILE_MAX_BYTES } from './wp-eval-file'
+import {
+  runLocalWpEvalFile,
+  runRemoteWpEvalFile,
+  WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS,
+  WP_EVAL_FILE_MAX_BYTES
+} from './wp-eval-file'
 
 vi.mock('../lib/stream-command', () => ({ streamCommand: vi.fn() }))
 
@@ -69,6 +74,21 @@ describe('runLocalWpEvalFile', () => {
     expect(streamCommandMock).not.toHaveBeenCalled()
   })
 
+  it('cuts stdout at 50,000 chars by default and at the given cap for a bundled runner', async () => {
+    const long = 'x'.repeat(120_000)
+    streamCommandMock.mockResolvedValue(commandResult({ stdout: long }))
+    const capped = await runLocalWpEvalFile({ wpDir: '/sites/acme', php: '<?php echo 1;' })
+    expect(capped.stdout).toHaveLength(50_000)
+    expect(capped.stdoutTruncated).toBe(true)
+    const raised = await runLocalWpEvalFile({
+      wpDir: '/sites/acme',
+      php: '<?php echo 1;',
+      maxOutputChars: WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS
+    })
+    expect(raised.stdout).toHaveLength(120_000)
+    expect(raised.stdoutTruncated).toBe(false)
+  })
+
   it('refuses an oversize PHP body', async () => {
     await expect(
       runLocalWpEvalFile({
@@ -95,6 +115,22 @@ describe('runRemoteWpEvalFile', () => {
     expect(fake.commands[0]).toContain("'public_html'")
     expect(fake.removed).toEqual([fake.secureFiles[0]?.path, fake.secureFiles[1]?.path])
     expect(result.stdout).toBe('{"ok":true}')
+  })
+
+  it('applies the same cap over SSH', async () => {
+    const long = 'y'.repeat(120_000)
+    const fake = createFakeSshSession(() => ({ stdout: long }))
+    const capped = await runRemoteWpEvalFile(fake.session, {
+      webroot: 'public_html',
+      php: '<?php echo 1;'
+    })
+    expect(capped.stdout).toHaveLength(50_000)
+    const raised = await runRemoteWpEvalFile(fake.session, {
+      webroot: 'public_html',
+      php: '<?php echo 1;',
+      maxOutputChars: WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS
+    })
+    expect(raised.stdout).toHaveLength(120_000)
   })
 
   it('deletes uploaded files when exec throws', async () => {

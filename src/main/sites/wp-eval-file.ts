@@ -29,6 +29,10 @@ export const WP_EVAL_FILE_MAX_BYTES = 64 * 1024
 // The 64 KB cap bounds what an agent sends. Muster's own bundled runners are trusted and grow with
 // every ACF feature, so they get their own ceiling instead of silently breaking every field call.
 export const WP_EVAL_BUNDLED_MAX_BYTES = 256 * 1024
+// Same reasoning for the answer: the walker's JSON for a 260-row flex field dwarfs the 50,000-char
+// tail an agent's own script needs, and a cut envelope is unparseable rather than merely shorter.
+// Kept under the SSH layer's own 1 MiB buffer so the cut, when it comes, is this one.
+export const WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS = 1_000_000
 export const WP_EVAL_SIDECAR_MAX_BYTES = 256 * 1024
 
 const WP_BINARY = 'wp'
@@ -49,6 +53,7 @@ export type WpEvalFileRequest = {
   args?: readonly string[]
   sidecar?: string
   maxPhpBytes?: number
+  maxOutputChars?: number
   timeoutMs?: number
   signal?: AbortSignal
 }
@@ -95,10 +100,11 @@ function clampTimeout(timeoutMs: number | undefined): number {
 
 function finish(
   command: string,
-  result: { code: number; stdout: string; stderr: string }
+  result: { code: number; stdout: string; stderr: string },
+  maxOutputChars: number = WP_CLI_MAX_OUTPUT_CHARS
 ): WpEvalFileResult {
-  const stdout = result.stdout.slice(0, WP_CLI_MAX_OUTPUT_CHARS)
-  const stderr = result.stderr.slice(0, WP_CLI_MAX_OUTPUT_CHARS)
+  const stdout = result.stdout.slice(0, maxOutputChars)
+  const stderr = result.stderr.slice(0, maxOutputChars)
   return {
     command,
     code: result.code,
@@ -161,7 +167,7 @@ export async function runLocalWpEvalFile(
         `WP-CLI (\`wp\`) could not be run in ${request.wpDir}: ${detail}`
       )
     }
-    return finish(command, result)
+    return finish(command, result, request.maxOutputChars)
   } finally {
     await Promise.all(written.map((file) => unlink(file).catch(() => undefined)))
   }
@@ -198,7 +204,7 @@ export async function runRemoteWpEvalFile(
       written.push(jsonPath)
     }
     const result = await session.exec(command, { timeoutMs: clampTimeout(request.timeoutMs) })
-    return finish(command, result)
+    return finish(command, result, request.maxOutputChars)
   } finally {
     for (const remotePath of written) {
       await session.removeRemoteFile(remotePath)
