@@ -24,6 +24,16 @@ function muster_acf_parse_path( $path ) {
 		if ( $part === '' ) {
 			return array( 'error' => "invalid path '{$path}'." );
 		}
+		if ( $part === '*' ) {
+			if ( $i === 0 ) {
+				return array( 'error' => 'path cannot start with a wildcard.' );
+			}
+			$segments[] = array(
+				'kind' => 'wildcard',
+				'name' => '*',
+			);
+			continue;
+		}
 		if ( preg_match( '/^[0-9]+$/', $part ) ) {
 			if ( $i === 0 ) {
 				return array( 'error' => 'path cannot start with a row index.' );
@@ -182,20 +192,23 @@ function muster_acf_owning_group( $field ) {
 	return false;
 }
 
-function muster_acf_field_is_block( $field ) {
-	$group    = muster_acf_owning_group( $field );
+function muster_acf_group_has_param( $group, $param ) {
 	$location = is_array( $group ) && isset( $group['location'] ) && is_array( $group['location'] ) ? $group['location'] : array();
 	foreach ( $location as $rule_group ) {
 		if ( ! is_array( $rule_group ) ) {
 			continue;
 		}
 		foreach ( $rule_group as $rule ) {
-			if ( is_array( $rule ) && isset( $rule['param'] ) && $rule['param'] === 'block' ) {
+			if ( is_array( $rule ) && isset( $rule['param'] ) && $rule['param'] === $param ) {
 				return true;
 			}
 		}
 	}
 	return false;
+}
+
+function muster_acf_field_is_block( $field ) {
+	return muster_acf_group_has_param( muster_acf_owning_group( $field ), 'block' );
 }
 
 function muster_acf_layout_subfields( $parent, $layout_name = null ) {
@@ -837,6 +850,424 @@ function muster_acf_revert_fields( $results, $flag ) {
 	return $fields;
 }
 
+/**
+ * Field groups whose location rules put them on this target.
+ * ACF matches an options page by its menu slug, never by the ACF post_id, so those are resolved first.
+ */
+function muster_acf_describe_groups( $target, $post_id ) {
+	if ( ! function_exists( 'acf_get_field_groups' ) ) {
+		return array();
+	}
+	$kind = is_array( $target ) && isset( $target['kind'] ) ? $target['kind'] : 'option';
+	$id   = is_array( $target ) && isset( $target['id'] ) ? $target['id'] : null;
+	if ( $kind === 'post' ) {
+		return muster_acf_usable_groups( acf_get_field_groups( array( 'post_id' => (int) $post_id ) ) );
+	}
+	if ( $kind === 'term' ) {
+		$taxonomy = '';
+		if ( function_exists( 'get_term' ) ) {
+			$term = get_term( (int) $id );
+			if ( is_object( $term ) && isset( $term->taxonomy ) ) {
+				$taxonomy = $term->taxonomy;
+			} elseif ( is_array( $term ) && isset( $term['taxonomy'] ) ) {
+				$taxonomy = $term['taxonomy'];
+			}
+		}
+		return $taxonomy === '' ? array() : muster_acf_usable_groups( acf_get_field_groups( array( 'taxonomy' => $taxonomy ) ) );
+	}
+	if ( $kind === 'user' ) {
+		return muster_acf_usable_groups(
+			acf_get_field_groups(
+				array(
+					'user_id'   => (int) $id,
+					'user_form' => 'edit',
+				)
+			)
+		);
+	}
+	if ( $kind === 'comment' ) {
+		$post_type = '';
+		if ( function_exists( 'get_comment' ) && function_exists( 'get_post_type' ) ) {
+			$comment = get_comment( (int) $id );
+			if ( is_object( $comment ) && isset( $comment->comment_post_ID ) ) {
+				$post_type = (string) get_post_type( $comment->comment_post_ID );
+			}
+		}
+		return $post_type === '' ? array() : muster_acf_usable_groups( acf_get_field_groups( array( 'comment' => $post_type ) ) );
+	}
+	return muster_acf_usable_groups( muster_acf_option_groups( $post_id ) );
+}
+
+/** Block groups live in post_content and are refused on write, so describe leaves them out too. */
+function muster_acf_usable_groups( $groups ) {
+	$out  = array();
+	$seen = array();
+	foreach ( is_array( $groups ) ? $groups : array() as $group ) {
+		if ( ! is_array( $group ) || muster_acf_group_has_param( $group, 'block' ) ) {
+			continue;
+		}
+		$key = isset( $group['key'] ) ? (string) $group['key'] : '';
+		if ( $key !== '' && isset( $seen[ $key ] ) ) {
+			continue;
+		}
+		$seen[ $key ] = true;
+		$out[]        = $group;
+	}
+	return $out;
+}
+
+function muster_acf_option_groups( $post_id ) {
+	$wanted = in_array( (string) $post_id, array( 'option', 'options' ), true ) ? '' : (string) $post_id;
+	$slugs  = array();
+	if ( function_exists( 'acf_get_options_pages' ) ) {
+		$pages = acf_get_options_pages();
+		foreach ( is_array( $pages ) ? $pages : array() as $page ) {
+			if ( ! is_array( $page ) || empty( $page['menu_slug'] ) ) {
+				continue;
+			}
+			$page_id = isset( $page['post_id'] ) && $page['post_id'] !== '' ? (string) $page['post_id'] : 'options';
+			$default = in_array( $page_id, array( 'option', 'options' ), true );
+			if ( $wanted === '' ? ! $default : $page_id !== $wanted ) {
+				continue;
+			}
+			$slugs[] = (string) $page['menu_slug'];
+		}
+	}
+	$groups = array();
+	foreach ( $slugs as $slug ) {
+		foreach ( acf_get_field_groups( array( 'options_page' => $slug ) ) as $group ) {
+			$groups[] = $group;
+		}
+	}
+	if ( count( $slugs ) > 0 ) {
+		return $groups;
+	}
+	// No options page resolves this post_id; fall back to every group that targets one at all.
+	$all = acf_get_field_groups();
+	$out = array();
+	foreach ( is_array( $all ) ? $all : array() as $group ) {
+		if ( muster_acf_group_has_param( $group, 'options_page' ) ) {
+			$out[] = $group;
+		}
+	}
+	return $out;
+}
+
+function muster_acf_describe_subfields( $subs ) {
+	$out  = array();
+	$seen = array();
+	foreach ( $subs as $sub ) {
+		$name = isset( $sub['name'] ) ? $sub['name'] : '';
+		$type = isset( $sub['type'] ) ? $sub['type'] : '';
+		if ( $name === '' || ! muster_acf_is_value_type( $type ) || isset( $seen[ $name ] ) ) {
+			continue;
+		}
+		$seen[ $name ] = true;
+		$entry         = array(
+			'name'  => $name,
+			'type'  => $type,
+			'label' => isset( $sub['label'] ) ? $sub['label'] : '',
+		);
+		$choices = isset( $sub['choices'] ) && is_array( $sub['choices'] ) ? $sub['choices'] : array();
+		if ( count( $choices ) > 50 ) {
+			$entry['choices_count'] = count( $choices );
+		} elseif ( count( $choices ) > 0 ) {
+			$entry['choices'] = $choices;
+		}
+		if ( ! empty( $sub['required'] ) ) {
+			$entry['required'] = true;
+		}
+		$out[] = $entry;
+	}
+	return $out;
+}
+
+function muster_acf_field_layouts( $field ) {
+	$layouts = isset( $field['layouts'] ) && is_array( $field['layouts'] ) ? $field['layouts'] : array();
+	$out     = array();
+	foreach ( $layouts as $layout ) {
+		if ( ! is_array( $layout ) || empty( $layout['name'] ) ) {
+			continue;
+		}
+		$out[] = $layout;
+	}
+	return $out;
+}
+
+/** One describe entry. $value is the unformatted value at $path; $is_row marks a path ending on a row. */
+function muster_acf_describe_field( $field, $value, $path, $is_row, $layout_filter ) {
+	$type  = isset( $field['type'] ) ? $field['type'] : '';
+	$entry = array(
+		'path'  => $path,
+		'field' => array(
+			'name'  => isset( $field['name'] ) ? $field['name'] : '',
+			'key'   => isset( $field['key'] ) ? $field['key'] : '',
+			'type'  => $type,
+			'label' => isset( $field['label'] ) ? $field['label'] : '',
+		),
+	);
+	if ( $is_row ) {
+		$row    = is_array( $value ) ? $value : array();
+		$layout = isset( $row['acf_fc_layout'] ) && is_string( $row['acf_fc_layout'] ) ? $row['acf_fc_layout'] : null;
+		$entry['layout']     = $layout;
+		$entry['sub_fields'] = muster_acf_describe_subfields( muster_acf_layout_subfields( $field, $layout ) );
+		return $entry;
+	}
+	if ( $type === 'flexible_content' ) {
+		$rows                 = is_array( $value ) ? $value : array();
+		$entry['rows']        = count( $rows );
+		$entry['layouts']     = array();
+		$entry['row_layouts'] = array();
+		foreach ( muster_acf_field_layouts( $field ) as $layout ) {
+			$entry['layouts'][] = array(
+				'name'       => $layout['name'],
+				'label'      => isset( $layout['label'] ) ? $layout['label'] : '',
+				'sub_fields' => muster_acf_describe_subfields( muster_acf_layout_subfields( $field, $layout['name'] ) ),
+			);
+		}
+		$indexes = array();
+		foreach ( $rows as $index => $row ) {
+			$name = is_array( $row ) && isset( $row['acf_fc_layout'] ) ? $row['acf_fc_layout'] : null;
+			$entry['row_layouts'][] = array(
+				'index'  => $index,
+				'layout' => $name,
+			);
+			if ( is_string( $layout_filter ) && $layout_filter !== '' && $name === $layout_filter ) {
+				$indexes[] = $index;
+			}
+		}
+		if ( is_string( $layout_filter ) && $layout_filter !== '' ) {
+			$entry['where'] = array(
+				'layout'  => $layout_filter,
+				'indexes' => $indexes,
+			);
+		}
+		return $entry;
+	}
+	if ( $type === 'repeater' ) {
+		$entry['rows']       = is_array( $value ) ? count( $value ) : 0;
+		$entry['sub_fields'] = muster_acf_describe_subfields( muster_acf_layout_subfields( $field ) );
+		return $entry;
+	}
+	if ( $type === 'group' || $type === 'clone' ) {
+		$entry['sub_fields'] = muster_acf_describe_subfields( muster_acf_layout_subfields( $field ) );
+	}
+	return $entry;
+}
+
+/** 256 KB ceiling: shed the bulkiest detail first, and say so rather than returning a clipped JSON string. */
+function muster_acf_describe_truncate( $results, $warnings ) {
+	$limit  = 262144;
+	$levels = array( 'choices', 'layout_sub_fields', 'sub_fields', 'row_layouts' );
+	$note   = array(
+		'choices'           => 'describe truncated: choice lists dropped.',
+		'layout_sub_fields' => 'describe truncated: layout sub-fields dropped.',
+		'sub_fields'        => 'describe truncated: sub-field and layout detail dropped.',
+		'row_layouts'       => 'describe truncated: row layouts dropped.',
+	);
+	$truncated = false;
+	foreach ( $levels as $level ) {
+		$encoded = json_encode( array( $results, $warnings ) );
+		if ( $encoded === false || strlen( $encoded ) <= $limit ) {
+			return array( $results, $warnings, $truncated );
+		}
+		$truncated  = true;
+		$warnings[] = $note[ $level ];
+		foreach ( $results as $i => $entry ) {
+			if ( $level === 'choices' ) {
+				$results[ $i ] = muster_acf_strip_choices( $entry );
+				continue;
+			}
+			if ( $level === 'layout_sub_fields' && isset( $entry['layouts'] ) ) {
+				foreach ( $entry['layouts'] as $j => $layout ) {
+					unset( $layout['sub_fields'] );
+					$entry['layouts'][ $j ] = $layout;
+				}
+				$results[ $i ] = $entry;
+				continue;
+			}
+			if ( $level === 'sub_fields' ) {
+				unset( $entry['layouts'], $entry['sub_fields'] );
+				$results[ $i ] = $entry;
+				continue;
+			}
+			unset( $entry['row_layouts'] );
+			$results[ $i ] = $entry;
+		}
+	}
+	return array( $results, $warnings, $truncated );
+}
+
+function muster_acf_strip_choices( $entry ) {
+	if ( isset( $entry['sub_fields'] ) ) {
+		$entry['sub_fields'] = muster_acf_strip_choice_list( $entry['sub_fields'] );
+	}
+	if ( isset( $entry['layouts'] ) ) {
+		foreach ( $entry['layouts'] as $i => $layout ) {
+			if ( isset( $layout['sub_fields'] ) ) {
+				$layout['sub_fields'] = muster_acf_strip_choice_list( $layout['sub_fields'] );
+			}
+			$entry['layouts'][ $i ] = $layout;
+		}
+	}
+	return $entry;
+}
+
+function muster_acf_strip_choice_list( $subs ) {
+	foreach ( $subs as $i => $sub ) {
+		if ( ! isset( $sub['choices'] ) ) {
+			continue;
+		}
+		$sub['choices_count'] = count( $sub['choices'] );
+		unset( $sub['choices'] );
+		$subs[ $i ] = $sub;
+	}
+	return $subs;
+}
+
+function muster_acf_has_wildcard( $segments ) {
+	foreach ( $segments as $seg ) {
+		if ( $seg['kind'] === 'wildcard' ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function muster_acf_path_string( $segments ) {
+	$parts = array();
+	foreach ( $segments as $seg ) {
+		$parts[] = $seg['kind'] === 'index' ? (string) $seg['index'] : $seg['name'];
+	}
+	return implode( '.', $parts );
+}
+
+/**
+ * Turns one starred pattern into the concrete paths it addresses.
+ * Row counts come from the stored value, so a star only ever expands to rows that exist.
+ */
+function muster_acf_expand_wildcards( $root_field, $root_value, $segments, $index_path, &$skipped ) {
+	$pos = -1;
+	foreach ( $segments as $i => $seg ) {
+		if ( $seg['kind'] === 'wildcard' ) {
+			$pos = $i;
+			break;
+		}
+	}
+	if ( $pos < 0 ) {
+		return array(
+			'paths' => array(
+				array(
+					'segments'   => $segments,
+					'index_path' => $index_path,
+				),
+			),
+		);
+	}
+	$prefix = array_slice( $segments, 0, $pos );
+	$walk   = muster_acf_walk( $root_field, $root_value, $prefix, 'get' );
+	$fail   = null;
+	if ( isset( $walk['error'] ) ) {
+		$fail = $walk['error'];
+	} elseif ( ! empty( $walk['leaf_is_row'] ) || ! in_array( isset( $walk['leaf_field']['type'] ) ? $walk['leaf_field']['type'] : '', array( 'repeater', 'flexible_content' ), true ) ) {
+		$fail = "'*' is only valid where a row index is valid.";
+	}
+	if ( $fail !== null ) {
+		// Already inside an expanded row: this branch is a skip, the way a missing sub-field is.
+		if ( count( $index_path ) === 0 ) {
+			return array( 'error' => $fail );
+		}
+		$skipped[] = array(
+			'index_path' => $index_path,
+			'layout'     => muster_acf_wildcard_row_layout( $root_field, $root_value, $prefix ),
+		);
+		return array( 'paths' => array() );
+	}
+	$rows = is_array( $walk['value'] ) ? $walk['value'] : array();
+	$out  = array();
+	foreach ( array_keys( $rows ) as $index ) {
+		if ( ! is_int( $index ) ) {
+			continue;
+		}
+		$concrete         = $segments;
+		$concrete[ $pos ] = array(
+			'kind'  => 'index',
+			'index' => $index,
+			'name'  => (string) $index,
+		);
+		$deeper = muster_acf_expand_wildcards( $root_field, $root_value, $concrete, array_merge( $index_path, array( $index ) ), $skipped );
+		if ( isset( $deeper['error'] ) ) {
+			return $deeper;
+		}
+		foreach ( $deeper['paths'] as $item ) {
+			$out[] = $item;
+		}
+	}
+	return array( 'paths' => $out );
+}
+
+/** The layout of the deepest row a pattern did reach; how a skipped match says why it was skipped. */
+function muster_acf_wildcard_row_layout( $root_field, $root_value, $segments ) {
+	for ( $i = count( $segments ) - 1; $i >= 0; $i-- ) {
+		if ( $segments[ $i ]['kind'] !== 'index' ) {
+			continue;
+		}
+		$walk = muster_acf_walk( $root_field, $root_value, array_slice( $segments, 0, $i + 1 ), 'get' );
+		if ( isset( $walk['error'] ) ) {
+			continue;
+		}
+		return isset( $walk['field']['layout'] ) ? $walk['field']['layout'] : null;
+	}
+	return null;
+}
+
+function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments ) {
+	$skipped  = array();
+	$expanded = muster_acf_expand_wildcards( $root_field, $root_value, $segments, array(), $skipped );
+	if ( isset( $expanded['error'] ) ) {
+		return array(
+			'path'   => $path,
+			'exists' => false,
+			'error'  => $expanded['error'],
+		);
+	}
+	$matches   = array();
+	$truncated = false;
+	foreach ( $expanded['paths'] as $item ) {
+		if ( count( $matches ) >= 2000 ) {
+			$truncated = true;
+			break;
+		}
+		$walk = muster_acf_walk( $root_field, $root_value, $item['segments'], 'get' );
+		if ( isset( $walk['error'] ) ) {
+			$skipped[] = array(
+				'index_path' => $item['index_path'],
+				'layout'     => muster_acf_wildcard_row_layout( $root_field, $root_value, $item['segments'] ),
+			);
+			continue;
+		}
+		$leaf      = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		$matches[] = array(
+			'index_path' => $item['index_path'],
+			'path'       => muster_acf_path_string( $item['segments'] ),
+			'value'      => muster_acf_present_at( $leaf, ! empty( $walk['leaf_is_row'] ), $walk['value'] ),
+			'field'      => $walk['field'],
+		);
+	}
+	$row = array(
+		'path'     => $path,
+		'exists'   => true,
+		'wildcard' => true,
+		'count'    => count( $matches ),
+		'matches'  => $matches,
+		'skipped'  => $skipped,
+	);
+	if ( $truncated ) {
+		$row['truncated'] = true;
+	}
+	return $row;
+}
+
 function muster_acf_envelope( $ok, $extra = array() ) {
 	return array_merge(
 		array(
@@ -847,6 +1278,120 @@ function muster_acf_envelope( $ok, $extra = array() ) {
 			'results'     => array(),
 		),
 		$extra
+	);
+}
+
+/** The root-name guards, shared by every mode: unknown, block-located, a sub-field, or not a value field. */
+function muster_acf_resolve_root( $root_name ) {
+	$root_field = acf_get_field( $root_name );
+	if ( ! $root_field ) {
+		return array( 'error' => "field '{$root_name}' is not registered on this WordPress (home=" . ( muster_acf_home() ? muster_acf_home() : '?' ) . ').' );
+	}
+	if ( muster_acf_field_is_block( $root_field ) ) {
+		return array( 'error' => "field '{$root_name}' is an ACF block field; Gutenberg blocks live in post_content and are not updated." );
+	}
+	// acf_get_field() resolves sub-field names too; addressing one as a root writes a stray top-level meta row.
+	$owner = muster_acf_parent_field( isset( $root_field['parent'] ) ? $root_field['parent'] : 0 );
+	if ( is_array( $owner ) ) {
+		$owner_name = isset( $owner['name'] ) ? $owner['name'] : '';
+		$owner_type = isset( $owner['type'] ) ? $owner['type'] : '';
+		$dotted     = in_array( $owner_type, array( 'repeater', 'flexible_content' ), true )
+			? "{$owner_name}.<row>.{$root_name}"
+			: "{$owner_name}.{$root_name}";
+		return array( 'error' => "'{$root_name}' is a sub-field of '{$owner_name}'; address it as {$dotted}" );
+	}
+	if ( ! muster_acf_is_value_type( isset( $root_field['type'] ) ? $root_field['type'] : '' ) ) {
+		return array( 'error' => "field '{$root_name}' is not a value field." );
+	}
+	return array( 'field' => $root_field );
+}
+
+function muster_acf_describe_run( $payload, $target, $post_id ) {
+	$layout_filter = isset( $payload['layout_filter'] ) && is_string( $payload['layout_filter'] ) ? $payload['layout_filter'] : null;
+	$items         = isset( $payload['fields'] ) && is_array( $payload['fields'] ) ? $payload['fields'] : array();
+	$results       = array();
+	$warnings      = array();
+
+	if ( count( $items ) === 0 ) {
+		foreach ( muster_acf_describe_groups( $target, $post_id ) as $group ) {
+			$fields = function_exists( 'acf_get_fields' ) ? acf_get_fields( $group ) : array();
+			foreach ( is_array( $fields ) ? $fields : array() as $field ) {
+				$name = is_array( $field ) && isset( $field['name'] ) ? $field['name'] : '';
+				if ( $name === '' || ! muster_acf_is_value_type( isset( $field['type'] ) ? $field['type'] : '' ) ) {
+					continue;
+				}
+				$results[] = muster_acf_describe_field(
+					$field,
+					muster_acf_load_root_value( $field, $post_id ),
+					$name,
+					false,
+					$layout_filter
+				);
+			}
+		}
+		if ( count( $results ) === 0 ) {
+			$warnings[] = 'no field groups match this target.';
+		}
+	}
+
+	foreach ( $items as $item ) {
+		$path   = is_array( $item ) && isset( $item['path'] ) ? $item['path'] : ( is_string( $item ) ? $item : '' );
+		$parsed = muster_acf_parse_path( $path );
+		if ( isset( $parsed['error'] ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => $parsed['error'],
+			);
+			continue;
+		}
+		$segments = $parsed['segments'];
+		if ( muster_acf_has_wildcard( $segments ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => 'wildcards are not valid in describe.',
+			);
+			continue;
+		}
+		$root = muster_acf_resolve_root( $segments[0]['name'] );
+		if ( isset( $root['error'] ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => false,
+				'error'  => $root['error'],
+			);
+			continue;
+		}
+		$root_field = $root['field'];
+		$walk       = muster_acf_walk( $root_field, muster_acf_load_root_value( $root_field, $post_id ), $segments, 'get' );
+		if ( isset( $walk['error'] ) ) {
+			$results[] = array(
+				'path'   => $path,
+				'exists' => isset( $walk['exists'] ) ? $walk['exists'] : false,
+				'error'  => $walk['error'],
+			);
+			continue;
+		}
+		$results[] = muster_acf_describe_field(
+			is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field,
+			$walk['value'],
+			$path,
+			! empty( $walk['leaf_is_row'] ),
+			$layout_filter
+		);
+	}
+
+	list( $results, $warnings, $truncated ) = muster_acf_describe_truncate( $results, $warnings );
+	return muster_acf_envelope(
+		true,
+		array(
+			'warnings'  => $warnings,
+			'results'   => $results,
+			'apply'     => false,
+			'describe'  => true,
+			'truncated' => $truncated,
+		)
 	);
 }
 
@@ -867,7 +1412,10 @@ function muster_acf_run( $payload ) {
 	if ( isset( $resolved['error'] ) ) {
 		return muster_acf_envelope( false, array( 'error' => $resolved['error'] ) );
 	}
-	$post_id     = $resolved['post_id'];
+	$post_id = $resolved['post_id'];
+	if ( $mode === 'describe' ) {
+		return muster_acf_describe_run( $payload, $target, $post_id );
+	}
 	$results     = array();
 	$warnings    = array();
 	$roots       = array();
@@ -886,57 +1434,41 @@ function muster_acf_run( $payload ) {
 			continue;
 		}
 		$segments = $parsed['segments'];
-		$root_name = $segments[0]['name'];
-		$root_field = acf_get_field( $root_name );
-		if ( ! $root_field ) {
+		if ( muster_acf_has_wildcard( $segments ) && $mode !== 'get' ) {
 			$path_errors = true;
 			$results[]   = array(
 				'path'   => $path,
 				'exists' => false,
-				'error'  => "field '{$root_name}' is not registered on this WordPress (home=" . ( muster_acf_home() ? muster_acf_home() : '?' ) . ').',
+				'error'  => 'wildcards are read-only',
 			);
 			continue;
 		}
-		if ( muster_acf_field_is_block( $root_field ) ) {
+		$root_name     = $segments[0]['name'];
+		$resolved_root = muster_acf_resolve_root( $root_name );
+		if ( isset( $resolved_root['error'] ) ) {
 			$path_errors = true;
 			$results[]   = array(
 				'path'   => $path,
 				'exists' => false,
-				'error'  => "field '{$root_name}' is an ACF block field; Gutenberg blocks live in post_content and are not updated.",
+				'error'  => $resolved_root['error'],
 			);
 			continue;
 		}
-		// acf_get_field() resolves sub-field names too; addressing one as a root writes a stray top-level meta row.
-		$owner = muster_acf_parent_field( isset( $root_field['parent'] ) ? $root_field['parent'] : 0 );
-		if ( is_array( $owner ) ) {
-			$owner_name = isset( $owner['name'] ) ? $owner['name'] : '';
-			$owner_type = isset( $owner['type'] ) ? $owner['type'] : '';
-			$dotted     = in_array( $owner_type, array( 'repeater', 'flexible_content' ), true )
-				? "{$owner_name}.<row>.{$root_name}"
-				: "{$owner_name}.{$root_name}";
-			$path_errors = true;
-			$results[]   = array(
-				'path'   => $path,
-				'exists' => false,
-				'error'  => "'{$root_name}' is a sub-field of '{$owner_name}'; address it as {$dotted}",
-			);
-			continue;
-		}
-		if ( ! muster_acf_is_value_type( isset( $root_field['type'] ) ? $root_field['type'] : '' ) ) {
-			$path_errors = true;
-			$results[]   = array(
-				'path'   => $path,
-				'exists' => false,
-				'error'  => "field '{$root_name}' is not a value field.",
-			);
-			continue;
-		}
-		$root_key = $root_field['key'];
+		$root_field = $resolved_root['field'];
+		$root_key   = $root_field['key'];
 		if ( ! array_key_exists( $root_key, $roots ) ) {
 			$roots[ $root_key ] = array(
 				'field' => $root_field,
 				'value' => muster_acf_load_root_value( $root_field, $post_id ),
 			);
+		}
+		if ( muster_acf_has_wildcard( $segments ) ) {
+			$expanded = muster_acf_wildcard_result( $root_field, $roots[ $root_key ]['value'], $path, $segments );
+			if ( isset( $expanded['error'] ) ) {
+				$path_errors = true;
+			}
+			$results[] = $expanded;
+			continue;
 		}
 		$walk = muster_acf_walk( $root_field, $roots[ $root_key ]['value'], $segments, $mode );
 		if ( isset( $walk['error'] ) ) {
