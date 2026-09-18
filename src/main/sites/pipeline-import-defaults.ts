@@ -7,7 +7,8 @@ import {
   decideAgentLocalRoutes,
   importDatabaseViaAgentLocal,
   rewriteDomainViaAgentLocal,
-  verifySiteViaAgentLocal
+  verifySiteViaAgentLocal,
+  verifyUploadFallbackViaAgentLocal
 } from './agent-local-import-steps'
 import { extractZipArchive } from './local-archive-extract'
 import { importLocalDatabase } from './local-database-import'
@@ -52,6 +53,7 @@ export function createDefaultSiteImportDependencies(): SiteImportDependencies {
     applyWpUploadRewrite,
     cleanUpStaleDropIns,
     cleanUpLocalHtaccess,
+    verifyUploadFallbackViaAgentLocal,
     runWpSearchReplace,
     decideAgentLocalRoutes,
     importDatabaseViaAgentLocal,

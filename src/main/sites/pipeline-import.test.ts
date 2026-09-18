@@ -134,6 +134,7 @@ type Harness = {
     applyWpUploadRewrite: ReturnType<typeof vi.fn>
     cleanUpStaleDropIns: ReturnType<typeof vi.fn>
     cleanUpLocalHtaccess: ReturnType<typeof vi.fn>
+    verifyUploadFallbackViaAgentLocal: ReturnType<typeof vi.fn>
     runWpSearchReplace: ReturnType<typeof vi.fn>
     decideAgentLocalRoutes: ReturnType<typeof vi.fn>
     importDatabaseViaAgentLocal: ReturnType<typeof vi.fn>
@@ -167,6 +168,7 @@ function createHarness(overrides: Partial<SiteImportDependencies> = {}): Harness
     applyWpUploadRewrite: record('applyWpUploadRewrite', undefined),
     cleanUpStaleDropIns: record('cleanUpStaleDropIns', undefined),
     cleanUpLocalHtaccess: record('cleanUpLocalHtaccess', undefined),
+    verifyUploadFallbackViaAgentLocal: record('verifyUploadFallbackViaAgentLocal', undefined),
     runWpSearchReplace: record('runWpSearchReplace', undefined),
     // Off by default: the existing tests describe the LocalWP path.
     decideAgentLocalRoutes: record('decideAgentLocalRoutes', {
@@ -628,7 +630,7 @@ describe('runImportPipeline', () => {
       const harness = createHarness({
         decideAgentLocalRoutes: vi.fn(async () => ({
           slug: null,
-          reason: 'Agent Local 0.26.0 is older than 0.27.0'
+          reason: 'Agent Local 0.32.1 is older than 0.32.2'
         }))
       })
       const { context, logs } = createTestContext()
@@ -647,8 +649,40 @@ describe('runImportPipeline', () => {
       expect(harness.calls.importDatabaseViaAgentLocal).not.toHaveBeenCalled()
       expect(harness.calls.verifySiteViaAgentLocal).not.toHaveBeenCalled()
       expect(logs.join('\n')).toContain(
-        "Using Muster's own database tools: Agent Local 0.26.0 is older than 0.27.0."
+        "Using Muster's own database tools: Agent Local 0.32.1 is older than 0.32.2."
       )
+    })
+
+    it('checks the upload fallback through the daemon, after the .htaccess cleanup', async () => {
+      const harness = createHarness({
+        decideAgentLocalRoutes: vi.fn(async () => ({ slug: 'acme', domain: 'acme.local' }))
+      })
+      const { context } = createTestContext()
+
+      await runImportPipeline(
+        context,
+        createConfig({ wpUploadRewrite: true }, { localStack: 'agent-local' }),
+        harness.deps
+      )
+
+      expect(harness.calls.verifyUploadFallbackViaAgentLocal).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        { slug: 'acme', domain: 'acme.local' }
+      )
+      expect(harness.order.indexOf('verifyUploadFallbackViaAgentLocal')).toBeGreaterThan(
+        harness.order.indexOf('cleanUpLocalHtaccess')
+      )
+    })
+
+    it('leaves the upload fallback unchecked on a stack the daemon does not serve', async () => {
+      const harness = createHarness()
+      const { context } = createTestContext()
+
+      await runImportPipeline(context, createConfig({ wpUploadRewrite: true }), harness.deps)
+
+      expect(harness.calls.applyWpUploadRewrite).toHaveBeenCalled()
+      expect(harness.calls.verifyUploadFallbackViaAgentLocal).not.toHaveBeenCalled()
     })
 
     it('never mentions the daemon for a LocalWP site', async () => {

@@ -17,13 +17,16 @@ import {
   importDatabaseViaDaemon,
   probeSiteViaDaemon,
   readAgentLocalStatus,
+  readMediaFallbackViaDaemon,
   readRecentSiteErrors,
   searchReplaceViaDaemon,
-  type AgentLocalImportApiOptions
+  type AgentLocalImportApiOptions,
+  type AgentLocalMediaFallback
 } from './agent-local-import-api'
 import { agentLocalCertStatus } from './agent-local-cert'
 import { resolveAgentLocalSite } from './agent-local-site-resolve'
 import { SiteRunStepError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
+import { buildDomainRewritePairs } from './wp-domain-rewrite-pairs'
 import { prepareLocalWpConfig } from './wp-search-replace'
 
 const VERDICT_STEP = 'Checking the site'
@@ -180,25 +183,43 @@ export async function rewriteDomainViaAgentLocal(
       `Agent Local serves this site on ${localDomain}, not ${runConfig.site.localDomain || '(none)'}; rewriting to ${localDomain}.`
     )
   }
+  const pairs = buildDomainRewritePairs(liveDomain, localDomain)
+  if (pairs.length === 0) {
+    context.log(
+      `Skipping WP Search and Replace: ${liveDomain} and ${localDomain} are the same host.`
+    )
+    return
+  }
   context.status('Rewriting domain through Agent Local…')
   // Production wp-config.php arrived in base.zip since the load: its DB constants must point at the
   // local stack before the daemon boots WP-CLI, or the rewrite fails on "Error establishing a
   // database connection" (seen live).
   await prepareLocalWpConfig(context, config, { scheme: await servedScheme(config, options) })
   try {
-    const report = await searchReplaceViaDaemon({
-      slug,
-      from: liveDomain,
-      to: localDomain,
-      signal: context.signal,
-      options
-    })
+    let total = 0
+    let configPinsRewritten = false
+    // Deduplicated: a column hit by both the www and the bare pass is still one column.
+    const columns = new Set<string>()
+    for (const pair of pairs) {
+      const report = await searchReplaceViaDaemon({
+        slug,
+        from: pair.from,
+        to: pair.to,
+        signal: context.signal,
+        options
+      })
+      total += report.total
+      configPinsRewritten ||= report.configPinsRewritten
+      for (const hit of report.hits) {
+        columns.add(`${hit.table}.${hit.column}`)
+      }
+    }
     context.log(
-      report.total === 0
+      total === 0
         ? `No rows still referenced ${liveDomain}.`
-        : `Replaced ${report.total} reference(s) to ${liveDomain} across ${report.hits.length} column(s).`
+        : `Replaced ${total} reference(s) to ${liveDomain} across ${columns.size} column(s).`
     )
-    if (report.configPinsRewritten) {
+    if (configPinsRewritten) {
       context.log(`wp-config.php URL constants repointed to ${localDomain}.`)
     }
   } catch (error) {
@@ -207,6 +228,63 @@ export async function rewriteDomainViaAgentLocal(
     }
     throw error
   }
+}
+
+/**
+ * Confirms the uploads rewrite actually fires. The step that writes it only writes .htaccess, and
+ * Agent Local runs no Apache — it parses that file itself — so "rule added successfully" described
+ * a file write, not behaviour, while every wp-content/uploads request 404ed (jefrontv/muster#29).
+ *
+ * A disagreement is a warning, never a failure: the database is already in and the fix is one
+ * command away.
+ */
+export async function verifyUploadFallbackViaAgentLocal(
+  context: SiteRunContext,
+  runConfig: SiteRunConfig,
+  routes: { slug: string; domain: string },
+  options: AgentLocalImportApiOptions = {}
+): Promise<void> {
+  const { liveDomain, liveDomainProtocol } = runConfig.environment
+  if (!liveDomain) {
+    return
+  }
+  let media: AgentLocalMediaFallback
+  try {
+    media = await readMediaFallbackViaDaemon({
+      slug: routes.slug,
+      signal: context.signal,
+      options
+    })
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    context.log(`⚠ Could not confirm the upload fallback with Agent Local: ${detail}`)
+    return
+  }
+  const expected = `${liveDomainProtocol}://${liveDomain}`
+  // `effective` only exists on newer daemons. Unknown is not a problem: say where uploads go.
+  const cannotFire = media.effective === false
+  if (media.origin === expected && !cannotFire) {
+    context.log(`Missing uploads fall back to ${expected}.`)
+    return
+  }
+  const kind = media.kind.length > 0 ? ` Agent Local records this site as "${media.kind}".` : ''
+  const fix = `Run \`agent-local doctor ${routes.slug}\`.`
+  context.log(`⚠ ${describeBrokenFallback(media, expected, cannotFire)}${kind} ${fix}`)
+}
+
+function describeBrokenFallback(
+  media: AgentLocalMediaFallback,
+  expected: string,
+  cannotFire: boolean
+): string {
+  if (media.origin.length === 0) {
+    return 'Agent Local serves no upload fallback for this site, so missing wp-content/uploads requests will 404 despite the .htaccess rule.'
+  }
+  // A stale record leaves the site with an empty uploads prefix, so a correct rule still cannot fire.
+  if (cannotFire) {
+    return `Agent Local has the ${media.origin} fallback but cannot apply it: this site has no uploads prefix, so missing wp-content/uploads requests will 404.`
+  }
+  return `Agent Local sends missing uploads to ${media.origin}, not the ${expected} the .htaccess rule asks for.`
 }
 
 /**

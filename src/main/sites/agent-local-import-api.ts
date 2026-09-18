@@ -2,8 +2,10 @@
 // requestWithDaemon: no retries beyond the daemon start, no interpretation beyond the shape.
 //
 // Version gate: `/db/import` has always existed; `/db/search-replace`, `/probe` and `/errors`
-// arrived in 0.27.0. Read the version once per run (`readAgentLocalVersion`) and branch on it
-// rather than probing for 404s mid-import.
+// arrived in 0.27.0, and 0.32.2 is the first daemon that heals a stale `kind: empty` record — until
+// it does, the site serves an empty uploads prefix and the media fallback can never fire. Read the
+// version once per run (`readAgentLocalVersion`) and branch on it rather than probing for 404s
+// mid-import.
 
 import type { AgentLocalDaemonStatus } from '../../shared/site-stack-types'
 import {
@@ -15,7 +17,7 @@ import {
   type AgentLocalResponse
 } from './agent-local-host'
 
-export const AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION = '0.27.0'
+export const AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION = '0.32.2'
 
 /** A db/import can load a multi-GB dump; poll for as long as the run itself is allowed to live. */
 const JOB_POLL_INTERVAL_MS = 1_000
@@ -203,6 +205,53 @@ export async function searchReplaceViaDaemon(args: {
         count: readNumber(hit, 'count')
       })),
     configPinsRewritten: data?.config_pins_rewritten === true
+  }
+}
+
+export type AgentLocalMediaFallback = {
+  /** Where missing uploads actually go: the pinned origin, else what the site's .htaccess implies. */
+  origin: string
+  pinned: string
+  off: boolean
+  /** Whether an origin and a non-empty uploads prefix both exist. Null on daemons that omit it. */
+  effective: boolean | null
+  /** '' when nothing can redirect, and also when the daemon does not report it. */
+  uploadsPrefix: string
+  /** wordpress, joomla, laravel, drupal, php or empty; '' on daemons that do not report it. */
+  kind: string
+}
+
+/**
+ * Agent Local runs no Apache: it parses the site's .htaccess itself and serves the uploads rule
+ * from that. Writing the rule therefore proves nothing, and only this route says what fires.
+ */
+export async function readMediaFallbackViaDaemon(args: {
+  slug: string
+  signal?: AbortSignal
+  options?: AgentLocalImportApiOptions
+}): Promise<AgentLocalMediaFallback> {
+  const host = args.options?.host ?? createAgentLocalHost()
+  const response = await requestWithDaemon(
+    host,
+    'GET',
+    `/sites/${encodeURIComponent(args.slug)}/media`,
+    undefined,
+    { timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS, signal: args.signal }
+  )
+  if (!response.ok) {
+    fail(response)
+  }
+  const data = asRecord(response.data)
+  // `effective`, `uploads_prefix` and `kind` arrived after the floor daemon; absent is unknown,
+  // never false, or every older daemon would report a problem it never had.
+  const effective = data?.effective
+  return {
+    origin: readString(data, 'media_fallback'),
+    pinned: readString(data, 'pinned'),
+    off: data?.off === true,
+    effective: typeof effective === 'boolean' ? effective : null,
+    uploadsPrefix: readString(data, 'uploads_prefix'),
+    kind: readString(data, 'kind')
   }
 }
 

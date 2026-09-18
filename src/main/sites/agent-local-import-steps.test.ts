@@ -7,7 +7,8 @@ import {
   decideAgentLocalRoutes,
   importDatabaseViaAgentLocal,
   rewriteDomainViaAgentLocal,
-  verifySiteViaAgentLocal
+  verifySiteViaAgentLocal,
+  verifyUploadFallbackViaAgentLocal
 } from './agent-local-import-steps'
 import { SiteRunStepError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
 
@@ -117,19 +118,21 @@ describe('decideAgentLocalRoutes', () => {
   })
 
   it('refuses an old daemon and names the version', async () => {
-    const h = host({ 'GET /status': status('0.26.0') })
+    const h = host({ 'GET /status': status('0.32.1') })
     const decided = await decideAgentLocalRoutes(config(), {
       host: h,
       resolveSite: async () => ({ slug: 'acme', domain: 'acme.local' })
     })
     expect(decided).toEqual({
       slug: null,
-      reason: expect.stringContaining('Agent Local 0.26.0 is older than 0.27.0')
+      reason: expect.stringContaining('Agent Local 0.32.1 is older than 0.32.2')
     })
   })
 
+  // 0.32.2 is the first daemon that heals a stale `kind: empty`, which is what leaves a site with
+  // no uploads prefix and no media fallback however correct the .htaccess rule is.
   it('returns the slug on a new enough daemon that lists the site', async () => {
-    const h = host({ 'GET /status': status('0.27.0') })
+    const h = host({ 'GET /status': status('0.32.2') })
     const decided = await decideAgentLocalRoutes(config(), {
       host: h,
       resolveSite: async () => ({ slug: 'acme', domain: 'acme.local' })
@@ -193,29 +196,140 @@ describe('importDatabaseViaAgentLocal', () => {
 })
 
 describe('rewriteDomainViaAgentLocal', () => {
-  it('applies (never dry-runs) and reports pins when the daemon repointed wp-config', async () => {
+  // jefrontv/muster#29: one literal pass rewrote www.acme.com.au to www.acme.local. The www needle
+  // runs first, and the two passes report as one line with each column counted once.
+  it('applies both passes, www first, and reports pins when the daemon repointed wp-config', async () => {
     const h = host({
       'GET /certs/acme.local': ok({ exists: true, trusted: true }),
-      'POST /sites/acme/db/search-replace': ok({
-        needle: 'acme.com.au',
-        replacement: 'acme.local',
-        dry_run: false,
-        hits: [
-          { table: 'wp_options', column: 'option_value', count: 2 },
-          { table: 'wp_posts', column: 'post_content', count: 14 }
-        ],
-        total: 16,
-        config_pins_rewritten: true
-      })
+      'POST /sites/acme/db/search-replace': [
+        ok({
+          hits: [{ table: 'wp_options', column: 'option_value', count: 2 }],
+          total: 2,
+          config_pins_rewritten: false
+        }),
+        ok({
+          hits: [
+            { table: 'wp_options', column: 'option_value', count: 2 },
+            { table: 'wp_posts', column: 'post_content', count: 12 }
+          ],
+          total: 14,
+          config_pins_rewritten: true
+        })
+      ]
     })
     const ctx = context()
     await rewriteDomainViaAgentLocal(ctx, config(), ACME, { host: h })
-    const replaceCall = h.calls.indexOf('POST /sites/acme/db/search-replace')
-    expect(h.bodies[replaceCall]).toEqual({ old: 'acme.com.au', new: 'acme.local', dry_run: false })
+    const replaced = h.calls
+      .map((call, index) => ({ call, body: h.bodies[index] }))
+      .filter((entry) => entry.call === 'POST /sites/acme/db/search-replace')
+      .map((entry) => entry.body)
+    expect(replaced).toEqual([
+      { old: 'www.acme.com.au', new: 'acme.local', dry_run: false },
+      { old: 'acme.com.au', new: 'acme.local', dry_run: false }
+    ])
     expect(ctx.logs).toEqual([
       'Replaced 16 reference(s) to acme.com.au across 2 column(s).',
       'wp-config.php URL constants repointed to acme.local.'
     ])
+  })
+
+  it('skips the daemon entirely when the live and local domains are the same host', async () => {
+    const h = host({})
+    const ctx = context()
+    const same = config()
+    same.environment.liveDomain = 'www.acme.local'
+
+    await rewriteDomainViaAgentLocal(ctx, same, ACME, { host: h })
+
+    expect(h.calls).toEqual([])
+    expect(ctx.logs.join('\n')).toContain('are the same host')
+  })
+})
+
+describe('verifyUploadFallbackViaAgentLocal', () => {
+  it('confirms the rule when the daemon reports it as effective', async () => {
+    const h = host({
+      'GET /sites/acme/media': ok({
+        media_fallback: 'https://acme.com.au',
+        effective: true,
+        uploads_prefix: 'wp-content/uploads',
+        kind: 'wordpress'
+      })
+    })
+    const ctx = context()
+
+    await verifyUploadFallbackViaAgentLocal(ctx, config(), ACME, { host: h })
+
+    expect(ctx.logs).toEqual(['Missing uploads fall back to https://acme.com.au.'])
+  })
+
+  // `effective`, `uploads_prefix` and `kind` postdate the 0.32.2 floor, so a daemon at the floor
+  // sends none of them. Missing is unknown, not broken: the origin alone still passes.
+  it('accepts an older daemon that reports the origin and nothing else', async () => {
+    const h = host({ 'GET /sites/acme/media': ok({ media_fallback: 'https://acme.com.au' }) })
+    const ctx = context()
+
+    await verifyUploadFallbackViaAgentLocal(ctx, config(), ACME, { host: h })
+
+    expect(ctx.logs).toEqual(['Missing uploads fall back to https://acme.com.au.'])
+  })
+
+  // The reported shape: the .htaccess rule parsed fine, but a stale record left the site with no
+  // uploads prefix, so nothing could redirect and every upload 404ed anyway.
+  it('warns when the origin is right but the daemon says it cannot fire', async () => {
+    const h = host({
+      'GET /sites/acme/media': ok({
+        media_fallback: 'https://acme.com.au',
+        effective: false,
+        uploads_prefix: '',
+        kind: 'empty'
+      })
+    })
+    const ctx = context()
+
+    await expect(
+      verifyUploadFallbackViaAgentLocal(ctx, config(), ACME, { host: h })
+    ).resolves.toBeUndefined()
+
+    expect(ctx.logs).toHaveLength(1)
+    expect(ctx.logs[0]).toContain('cannot apply it')
+    expect(ctx.logs[0]).toContain('no uploads prefix')
+    expect(ctx.logs[0]).toContain('"empty"')
+    expect(ctx.logs[0]).toContain('agent-local doctor acme')
+  })
+
+  // The reported symptom: the rewrite step said "added successfully" and every upload still 404ed.
+  it('warns, without failing the run, when the daemon serves no fallback at all', async () => {
+    const h = host({ 'GET /sites/acme/media': ok({ media_fallback: '', kind: 'empty' }) })
+    const ctx = context()
+
+    await expect(
+      verifyUploadFallbackViaAgentLocal(ctx, config(), ACME, { host: h })
+    ).resolves.toBeUndefined()
+
+    expect(ctx.logs).toHaveLength(1)
+    expect(ctx.logs[0]).toContain('⚠ Agent Local serves no upload fallback')
+    expect(ctx.logs[0]).toContain('"empty"')
+    expect(ctx.logs[0]).toContain('agent-local doctor acme')
+  })
+
+  it('warns when the daemon sends uploads somewhere else', async () => {
+    const h = host({ 'GET /sites/acme/media': ok({ media_fallback: 'https://old.example' }) })
+    const ctx = context()
+
+    await verifyUploadFallbackViaAgentLocal(ctx, config(), ACME, { host: h })
+
+    expect(ctx.logs[0]).toContain('sends missing uploads to https://old.example')
+    expect(ctx.logs[0]).toContain('https://acme.com.au')
+  })
+
+  it('says so, and moves on, when the daemon cannot answer', async () => {
+    const h = host({})
+    const ctx = context()
+
+    await verifyUploadFallbackViaAgentLocal(ctx, config(), ACME, { host: h })
+
+    expect(ctx.logs[0]).toContain('Could not confirm the upload fallback')
   })
 })
 
@@ -235,7 +349,11 @@ describe('rewriteDomainViaAgentLocal with a drifted record', () => {
       { host: h }
     )
     const replaceCall = h.calls.indexOf('POST /sites/pact/db/search-replace')
-    expect(h.bodies[replaceCall]).toEqual({ old: 'acme.com.au', new: 'pact.al', dry_run: false })
+    expect(h.bodies[replaceCall]).toEqual({
+      old: 'www.acme.com.au',
+      new: 'pact.al',
+      dry_run: false
+    })
     expect(ctx.logs[0]).toContain('Agent Local serves this site on pact.al, not acme.local')
   })
 })

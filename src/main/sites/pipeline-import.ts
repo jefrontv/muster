@@ -75,6 +75,12 @@ export type SiteImportDependencies = {
   /** Sets aside caching drop-ins that point at production paths; runs right after wp-content lands. */
   cleanUpStaleDropIns: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   cleanUpLocalHtaccess: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
+  /** Agent Local emulates the uploads rule instead of running Apache, so only it can confirm it. */
+  verifyUploadFallbackViaAgentLocal: (
+    context: SiteRunContext,
+    config: SiteRunConfig,
+    routes: { slug: string; domain: string }
+  ) => Promise<void>
   runWpSearchReplace: (context: SiteRunContext, config: SiteRunConfig) => Promise<void>
   /**
    * The agent-local branch: decided once per run, then the daemon loads the dump, rewrites the
@@ -160,7 +166,11 @@ export async function runImportPipeline(
     if (wpUploadRewrite) {
       context.throwIfCancelled()
       await deps.applyWpUploadRewrite(context, active)
+      // After the cleanup, not before it: the daemon reads whatever .htaccess ends up on disk.
       await deps.cleanUpLocalHtaccess(context, active)
+      if (routes.slug !== null) {
+        await deps.verifyUploadFallbackViaAgentLocal(context, active, routes)
+      }
     }
     if (wpSearchReplace) {
       context.throwIfCancelled()
