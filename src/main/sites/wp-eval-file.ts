@@ -5,7 +5,7 @@
 // and quoteShellArgument so nothing on the remote command line can break out of a token.
 
 import { randomUUID } from 'node:crypto'
-import { unlink, writeFile } from 'node:fs/promises'
+import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
@@ -34,6 +34,11 @@ export const WP_EVAL_BUNDLED_MAX_BYTES = 256 * 1024
 // Kept under the SSH layer's own 1 MiB buffer so the cut, when it comes, is this one.
 export const WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS = 1_000_000
 export const WP_EVAL_SIDECAR_MAX_BYTES = 256 * 1024
+// A restore carries the whole snapshot back as its payload, so that one mode buys a bigger sidecar.
+export const WP_EVAL_RESTORE_SIDECAR_MAX_BYTES = 32 * 1024 * 1024
+// A snapshot of a 260-row page dwarfs any stdout ceiling, so the walker writes it beside the
+// payload and we collect the file instead.
+export const WP_EVAL_OUTPUT_FILE_MAX_BYTES = 64 * 1024 * 1024
 
 const WP_BINARY = 'wp'
 const WP_EVAL_MIN_TIMEOUT_MS = 5_000
@@ -46,6 +51,7 @@ export type WpEvalFileResult = {
   stdoutTruncated: boolean
   stderrTruncated: boolean
   command: string
+  outputFileContents?: string
 }
 
 export type WpEvalFileRequest = {
@@ -54,6 +60,8 @@ export type WpEvalFileRequest = {
   sidecar?: string
   maxPhpBytes?: number
   maxOutputChars?: number
+  maxSidecarBytes?: number
+  collectOutputFile?: boolean
   timeoutMs?: number
   signal?: AbortSignal
 }
@@ -62,7 +70,8 @@ function assertEvalPayload(
   php: string,
   args: readonly string[],
   sidecar: string | undefined,
-  maxPhpBytes: number = WP_EVAL_FILE_MAX_BYTES
+  maxPhpBytes: number = WP_EVAL_FILE_MAX_BYTES,
+  maxSidecarBytes: number = WP_EVAL_SIDECAR_MAX_BYTES
 ): void {
   if (php.length === 0) {
     throw new SiteRunStepError(WP_EVAL_FILE_STEP, 'PHP body is empty.')
@@ -70,10 +79,10 @@ function assertEvalPayload(
   if (Buffer.byteLength(php, 'utf8') > maxPhpBytes) {
     throw new SiteRunStepError(WP_EVAL_FILE_STEP, `PHP body is over the ${maxPhpBytes}-byte cap.`)
   }
-  if (sidecar !== undefined && Buffer.byteLength(sidecar, 'utf8') > WP_EVAL_SIDECAR_MAX_BYTES) {
+  if (sidecar !== undefined && Buffer.byteLength(sidecar, 'utf8') > maxSidecarBytes) {
     throw new SiteRunStepError(
       WP_EVAL_FILE_STEP,
-      `JSON sidecar is over the ${WP_EVAL_SIDECAR_MAX_BYTES}-byte cap.`
+      `JSON sidecar is over the ${maxSidecarBytes}-byte cap.`
     )
   }
   for (const argument of args) {
@@ -115,6 +124,56 @@ function finish(
   }
 }
 
+async function readOutputFile(file: string): Promise<string> {
+  const info = await stat(file)
+  if (info.size > WP_EVAL_OUTPUT_FILE_MAX_BYTES) {
+    throw new SiteRunStepError(
+      WP_EVAL_FILE_STEP,
+      `Walker output file is over the ${WP_EVAL_OUTPUT_FILE_MAX_BYTES}-byte cap.`
+    )
+  }
+  return readFile(file, 'utf8')
+}
+
+// No file means the walker had nothing to write; any other failure is worth saying out loud.
+async function collectLocalOutputFile(jsonPath: string): Promise<string | undefined> {
+  try {
+    return await readOutputFile(`${jsonPath}.out`)
+  } catch (error) {
+    if (error instanceof SiteRunStepError) {
+      throw error
+    }
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return undefined
+    }
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new SiteRunStepError(
+      WP_EVAL_FILE_STEP,
+      `Could not read the walker output file: ${detail}`
+    )
+  }
+}
+
+async function collectRemoteOutputFile(
+  session: SiteSshSession,
+  jsonPath: string
+): Promise<string | undefined> {
+  const localCopy = path.join(tmpdir(), `muster-eval-out-${randomUUID()}.json`)
+  try {
+    await session.download(`${jsonPath}.out`, localCopy)
+  } catch {
+    // The walker writes the file only in the modes that produce one, so a missing file is normal.
+    return undefined
+  } finally {
+    await session.removeRemoteFile(`${jsonPath}.out`)
+  }
+  try {
+    return await readOutputFile(localCopy)
+  } finally {
+    await unlink(localCopy).catch(() => undefined)
+  }
+}
+
 function evalFileNames(): { phpName: string; jsonName: string } {
   const id = randomUUID()
   return { phpName: `muster-eval-${id}.php`, jsonName: `muster-eval-${id}.json` }
@@ -126,7 +185,13 @@ export async function runLocalWpEvalFile(
     buildLocalWpWpEnv(createLocalWpHost(), socketPath)
 ): Promise<WpEvalFileResult> {
   const extra = request.args ?? []
-  assertEvalPayload(request.php, extra, request.sidecar, request.maxPhpBytes)
+  assertEvalPayload(
+    request.php,
+    extra,
+    request.sidecar,
+    request.maxPhpBytes,
+    request.maxSidecarBytes
+  )
   const { phpName, jsonName } = evalFileNames()
   const phpPath = path.join(tmpdir(), phpName)
   const jsonPath = path.join(tmpdir(), jsonName)
@@ -167,7 +232,13 @@ export async function runLocalWpEvalFile(
         `WP-CLI (\`wp\`) could not be run in ${request.wpDir}: ${detail}`
       )
     }
-    return finish(command, result, request.maxOutputChars)
+    const finished = finish(command, result, request.maxOutputChars)
+    if (!request.collectOutputFile) {
+      return finished
+    }
+    written.push(`${jsonPath}.out`)
+    const outputFileContents = await collectLocalOutputFile(jsonPath)
+    return outputFileContents === undefined ? finished : { ...finished, outputFileContents }
   } finally {
     await Promise.all(written.map((file) => unlink(file).catch(() => undefined)))
   }
@@ -178,7 +249,13 @@ export async function runRemoteWpEvalFile(
   request: WpEvalFileRequest & { webroot: string }
 ): Promise<WpEvalFileResult> {
   const extra = request.args ?? []
-  assertEvalPayload(request.php, extra, request.sidecar, request.maxPhpBytes)
+  assertEvalPayload(
+    request.php,
+    extra,
+    request.sidecar,
+    request.maxPhpBytes,
+    request.maxSidecarBytes
+  )
   const { phpName, jsonName } = evalFileNames()
   const phpPath = `/tmp/${phpName}`
   const jsonPath = `/tmp/${jsonName}`
@@ -204,7 +281,12 @@ export async function runRemoteWpEvalFile(
       written.push(jsonPath)
     }
     const result = await session.exec(command, { timeoutMs: clampTimeout(request.timeoutMs) })
-    return finish(command, result, request.maxOutputChars)
+    const finished = finish(command, result, request.maxOutputChars)
+    if (!request.collectOutputFile) {
+      return finished
+    }
+    const outputFileContents = await collectRemoteOutputFile(session, jsonPath)
+    return outputFileContents === undefined ? finished : { ...finished, outputFileContents }
   } finally {
     for (const remotePath of written) {
       await session.removeRemoteFile(remotePath)

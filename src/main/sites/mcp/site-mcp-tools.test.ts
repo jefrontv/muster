@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import {
@@ -11,6 +13,7 @@ import {
   type SiteSecretPresence,
   type SiteSummary
 } from '../../../shared/site-types'
+import { createAcfStateStore } from '../wp-acf-state-store'
 import type { SiteMcpContext, SiteMcpStartRunRequest } from './site-mcp-context'
 import { dispatchSiteMcpTool, findSiteMcpTool, SITE_MCP_TOOLS } from './site-mcp-tools'
 
@@ -198,12 +201,20 @@ function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions 
         }
         return { code: 0, stdout: 'remote-ok', stderr: '' }
       },
-      download: async () => undefined,
+      // The walker writes its snapshot beside the payload; the real session downloads that file.
+      download: async (_remotePath: string, localPath: string) => {
+        writeFileSync(
+          localPath,
+          '{"ok":true,"target":{"kind":"option"},"roots":{"hero_title":"Old"},"digests":{"hero_title":"aaa"},"target_digest":"root"}',
+          'utf8'
+        )
+      },
       upload: async () => undefined,
       writeSecureRemoteFile: async () => undefined,
       removeRemoteFile: async () => undefined,
       close: async () => undefined
     }),
+    acfState,
     store: {
       listSites: () => records,
       getSite: (siteId) => records.find((site) => site.id === siteId) ?? null,
@@ -290,6 +301,36 @@ async function call(
 }
 
 /** Every tool, with arguments that exercise its happy path against the fixture. */
+// A real store on a temp directory: the census drives every tool, and stubbing this one would stop
+// it proving that the snapshot and revert tools work end to end.
+const acfState = createAcfStateStore(mkdtempSync(join(tmpdir(), 'muster-census-acf-')))
+acfState.save({
+  kind: 'revert',
+  site_id: 'site-1',
+  location: 'remote',
+  environment: 'main',
+  target: { kind: 'option' },
+  summary: '1 field, 0 row ops on kind option',
+  digests: { hero_title: 'aaa' },
+  payload: { target: { kind: 'option' }, fields: [{ path: 'hero_title', value: 'Old' }] }
+})
+const CENSUS_SNAPSHOT = acfState.save({
+  kind: 'snapshot',
+  site_id: 'site-1',
+  location: 'remote',
+  environment: 'main',
+  target: { kind: 'option' },
+  summary: '1 root',
+  digests: { hero_title: 'aaa' },
+  payload: {
+    ok: true,
+    target: { kind: 'option' },
+    roots: { hero_title: 'Old' },
+    digests: { hero_title: 'aaa' },
+    target_digest: 'root'
+  }
+})
+
 const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   list_sites: {},
   find_sites: { hostname: 'acme' },
@@ -328,6 +369,9 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
     fields: [{ path: 'hero_title', value: 'Hello' }]
   },
   wp_eval_file: { location: 'remote', env: 'main', php: '<?php echo "ok";' },
+  list_wp_reverts: {},
+  snapshot_wp_fields: { location: 'remote', env: 'main', target: { kind: 'option' } },
+  restore_wp_fields: { token: CENSUS_SNAPSHOT.token, env: 'main' },
   list_recent_runs: {},
   get_run_log: { run_id: RUN_ID },
   list_jobs: {},

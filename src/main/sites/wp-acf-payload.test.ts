@@ -10,7 +10,6 @@ import {
   parseAcfPath,
   parseAcfRunnerOutcome,
   parseAcfRunnerStdout,
-  parseAcfTarget,
   readAcfGetPaths,
   readAcfWrites
 } from './wp-acf-payload'
@@ -58,31 +57,6 @@ describe('wildcards in the path grammar', () => {
     expect(() => readAcfWrites({ fields: [{ path: 'modules.*.section_id', value: 'x' }] })).toThrow(
       /wildcards are read-only/
     )
-  })
-})
-
-describe('parseAcfTarget', () => {
-  it('normalises options to option and omits empty id', () => {
-    expect(parseAcfTarget({ kind: 'options' })).toEqual({ kind: 'option' })
-  })
-
-  it('requires id on post', () => {
-    expect(() => parseAcfTarget({ kind: 'post' })).toThrow(/target.id/)
-  })
-
-  it('rejects an unknown kind', () => {
-    expect(() => parseAcfTarget({ kind: 'widget' })).toThrow(/target.kind/)
-  })
-
-  it.each([
-    ['post', '0'],
-    ['post', 0],
-    ['term', '0'],
-    ['term', 0],
-    ['user', '0'],
-    ['user', 0]
-  ])('rejects %s id %j', (kind, id) => {
-    expect(() => parseAcfTarget({ kind, id })).toThrow(/positive integer/)
   })
 })
 

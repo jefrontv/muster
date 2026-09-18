@@ -1,26 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { readAcfDescribePaths, readAcfGetRequest } from './wp-acf-read-request'
+import { readAcfContainerPaths, readAcfGetLocation, readAcfGetRequest } from './wp-acf-read-request'
 
-describe('readAcfDescribePaths', () => {
+describe('readAcfContainerPaths', () => {
   it('accepts an omitted list, meaning describe the whole target', () => {
-    expect(readAcfDescribePaths({})).toEqual([])
-    expect(readAcfDescribePaths({ fields: [] })).toEqual([])
+    expect(readAcfContainerPaths({}, 'describe')).toEqual([])
+    expect(readAcfContainerPaths({ fields: [] }, 'describe')).toEqual([])
   })
 
   it('keeps root and container paths', () => {
-    expect(readAcfDescribePaths({ fields: ['modules', 'modules.10.slides'] })).toEqual([
-      'modules',
-      'modules.10.slides'
-    ])
+    expect(readAcfContainerPaths({ fields: ['modules', 'modules.10.slides'] }, 'describe')).toEqual(
+      ['modules', 'modules.10.slides']
+    )
   })
 
   it('refuses a wildcard, which has no rows to expand here', () => {
-    expect(() => readAcfDescribePaths({ fields: ['modules.*'] })).toThrow(/wildcard/)
+    expect(() => readAcfContainerPaths({ fields: ['modules.*'] }, 'describe')).toThrow(/wildcard/)
   })
 
   it('refuses more than 40 paths', () => {
     expect(() =>
-      readAcfDescribePaths({ fields: Array.from({ length: 41 }, () => 'modules') })
+      readAcfContainerPaths({ fields: Array.from({ length: 41 }, () => 'modules') }, 'describe')
     ).toThrow(/at most 40/)
   })
 })
@@ -51,5 +50,33 @@ describe('readAcfGetRequest', () => {
     expect(() => readAcfGetRequest({ fields: ['modules'], layout_filter: 'media' })).toThrow(
       /describe/
     )
+  })
+})
+
+describe('readAcfGetLocation', () => {
+  it.each(['local', 'remote', 'both'])('accepts %s', (location) => {
+    expect(readAcfGetLocation({ location })).toBe(location)
+  })
+
+  it('refuses anything else', () => {
+    expect(() => readAcfGetLocation({ location: 'staging' })).toThrow(/local.*remote.*both/)
+  })
+})
+
+describe('checksum mode', () => {
+  it('asks for digests and allows an omitted fields list', () => {
+    expect(readAcfGetRequest({ checksum: true })).toEqual({ mode: 'checksum', fields: [] })
+    expect(readAcfGetRequest({ checksum: 'true', fields: ['modules'] })).toEqual({
+      mode: 'checksum',
+      fields: ['modules']
+    })
+  })
+
+  it('refuses a wildcard, which has no single digest', () => {
+    expect(() => readAcfGetRequest({ checksum: true, fields: ['modules.*'] })).toThrow(/checksum/)
+  })
+
+  it('refuses describe and checksum together', () => {
+    expect(() => readAcfGetRequest({ checksum: true, describe: true })).toThrow(/different modes/)
   })
 })

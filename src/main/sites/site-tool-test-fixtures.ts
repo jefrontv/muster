@@ -6,6 +6,8 @@ import {
   type Site,
   type SiteEnvironment
 } from '../../shared/site-types'
+import type { SiteMcpContext } from './mcp/site-mcp-context'
+import type { AcfStateStore } from './wp-acf-state-store'
 import {
   SiteRunCancelledError,
   type SiteExecOptions,
@@ -164,4 +166,110 @@ export const STANDARD_LAYOUT_EXEC: FakeExecHandler = (command) => {
     return { stdout: 'yes\n' }
   }
   return undefined
+}
+
+export type FakeMcpExec = (command: string) => { code: number; stdout: string; stderr: string }
+
+export type FakeMcpContextOptions = {
+  branch?: string | null
+  acfState?: AcfStateStore
+  exec?: FakeMcpExec
+  /** Stands in for the walker writing its snapshot beside the payload. */
+  download?: (remotePath: string, localPath: string) => void
+  /** Every file the tools upload, in order, so a test can read the payload that was sent. */
+  uploads?: { path: string; contents: string }[]
+}
+
+export function fakeMcpSite(): Site {
+  return {
+    id: 'site-1',
+    path: '/Sites/acme',
+    repoId: null,
+    displayName: 'Acme',
+    localWpRoot: '',
+    localDomain: 'acme.local',
+    localStack: 'plain',
+    dbUser: 'root',
+    dbSocket: '',
+    dbPort: null,
+    phpVersion: '8.2',
+    activeEnvironment: 'main',
+    environments: {
+      main: {
+        ...createEmptySiteEnvironment(),
+        hostname: 'acme.example.com',
+        username: 'deploy',
+        liveDomain: 'acme.com',
+        deployThemes: true
+      }
+    },
+    notes: '',
+    searchReplaceTimeoutSeconds: 600
+  }
+}
+
+/** An MCP context with one site, a scripted SSH session and no Electron anywhere near it. */
+export function createFakeSiteMcpContext(options: FakeMcpContextOptions = {}): SiteMcpContext {
+  const site = fakeMcpSite()
+  const branch = options.branch === undefined ? 'main' : options.branch
+  const summarize = async () => ({
+    site,
+    pathExists: true,
+    branch,
+    resolvedEnvironment: {
+      environment: 'main',
+      reason: branch === 'main' ? ('branch-match' as const) : ('active-environment' as const),
+      requiresConfirmation: branch !== 'main'
+    },
+    secrets: { main: { ssh: true, db: true } },
+    importSelectedCount: 0,
+    deploySelectedCount: 1
+  })
+  return {
+    cwd: site.path,
+    store: {
+      listSites: () => [site],
+      getSite: (siteId) => (siteId === site.id ? site : null),
+      findSiteByPath: () => site,
+      updateSite: () => site
+    },
+    ...(options.acfState ? { acfState: options.acfState } : {}),
+    annotatePlan: async () => ({ requestId: 'r1' }),
+    collectPlanReview: async () => ({ status: 'unknown' as const }),
+    updateSite: async () => site,
+    summarize,
+    summarizeAll: async (sites) => Promise.all(sites.map(() => summarize())),
+    hasSshSecret: () => true,
+    copyEnvironmentSecrets: () => undefined,
+    deleteEnvironmentSecrets: () => undefined,
+    gitStatus: async () => null,
+    listRuns: () => [],
+    readRunLog: () => ({ run: null, lines: [], truncatedEarlier: 0, firstErrorIndex: -1 }),
+    listActiveRuns: () => [],
+    startRun: () => {
+      throw new Error('not used')
+    },
+    cancelRun: () => false,
+    openSshSession: async () => ({
+      exec: async (command: string) => {
+        if (command.includes('bedrock-root')) {
+          return { code: 0, stdout: 'standard\n', stderr: '' }
+        }
+        if (command.includes('wp-config.php')) {
+          return { code: 0, stdout: 'yes\n', stderr: '' }
+        }
+        return options.exec?.(command) ?? { code: 0, stdout: 'ok', stderr: '' }
+      },
+      download: async (remotePath: string, localPath: string) => {
+        options.download?.(remotePath, localPath)
+      },
+      upload: async () => undefined,
+      writeSecureRemoteFile: async (path, contents) => {
+        options.uploads?.push({ path, contents })
+      },
+      removeRemoteFile: async () => undefined,
+      close: async () => undefined
+    }),
+    shutdownRuns: async () => undefined
+  }
 }

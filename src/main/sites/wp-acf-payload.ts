@@ -3,7 +3,8 @@
 // Paths are 0-based and match unformatted get_field() arrays / option-key integers.
 // The PHP walker is the authority at runtime; this module refuses junk before SSH.
 
-import { SiteMcpToolError, type ToolArguments } from './mcp/site-mcp-arguments'
+import { readString, SiteMcpToolError, type ToolArguments } from './mcp/site-mcp-arguments'
+import type { AcfTarget } from './wp-acf-target'
 import acfFieldsPhp from './php/acf-fields.php?raw'
 // Type-only, so the row-op module can keep importing the path grammar from here without a runtime cycle.
 import type { AcfRowOp } from './wp-acf-row-ops'
@@ -17,13 +18,6 @@ export type AcfPathSegment =
   | { kind: 'index'; index: number }
   | { kind: 'wildcard' }
 
-export type AcfTargetKind = 'option' | 'post' | 'term' | 'user' | 'comment'
-
-export type AcfTarget = {
-  kind: AcfTargetKind
-  id?: string | number
-}
-
 export type AcfFieldWrite = {
   path: string
   value: unknown
@@ -32,7 +26,6 @@ export type AcfFieldWrite = {
 const FIELD_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
 const INDEX_SEGMENT = /^[0-9]+$/
 export const WILDCARD_SEGMENT = '*'
-const TARGET_KINDS: readonly AcfTargetKind[] = ['option', 'post', 'term', 'user', 'comment']
 
 export function parseAcfPath(path: string): AcfPathSegment[] {
   if (path.length === 0) {
@@ -60,48 +53,6 @@ export function parseAcfPath(path: string): AcfPathSegment[] {
     }
     return { kind: 'field', name: part }
   })
-}
-
-export function parseAcfTarget(raw: Record<string, unknown>): AcfTarget {
-  const kindRaw = raw.kind
-  if (kindRaw === 'options') {
-    return parseAcfTarget({ ...raw, kind: 'option' })
-  }
-  if (typeof kindRaw !== 'string' || !(TARGET_KINDS as readonly string[]).includes(kindRaw)) {
-    throw new SiteMcpToolError("'target.kind' must be option, post, term, user, or comment.")
-  }
-  const kind = kindRaw as AcfTargetKind
-  const id = raw.id
-  if (kind === 'option') {
-    if (id === undefined || id === null || id === '') {
-      return { kind: 'option' }
-    }
-    if (typeof id === 'string' || typeof id === 'number') {
-      return { kind: 'option', id }
-    }
-    throw new SiteMcpToolError("'target.id' for option must be a string.")
-  }
-  if (id === undefined || id === null || id === '') {
-    throw new SiteMcpToolError(`'target.id' is required for kind '${kind}'.`)
-  }
-  if (typeof id === 'number' && Number.isInteger(id) && id > 0) {
-    return { kind, id }
-  }
-  if (typeof id === 'string' && /^[0-9]+$/.test(id)) {
-    const parsed = Number.parseInt(id, 10)
-    if (parsed > 0) {
-      return { kind, id: parsed }
-    }
-  }
-  throw new SiteMcpToolError(`'target.id' for kind '${kind}' must be a positive integer.`)
-}
-
-export function readAcfTarget(args: ToolArguments): AcfTarget {
-  const value = args.target
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new SiteMcpToolError("'target' must be an object.")
-  }
-  return parseAcfTarget(value as Record<string, unknown>)
 }
 
 export function readAcfGetPaths(args: ToolArguments): string[] {
@@ -157,23 +108,41 @@ export function hasAcfWildcard(segments: readonly AcfPathSegment[]): boolean {
   return segments.some((segment) => segment.kind === 'wildcard')
 }
 
+export type AcfReturnMode = 'full' | 'values'
+
+// 'full' stays byte-identical to what shipped, so the key is only sent when it changes something.
+export function readAcfReturnMode(args: ToolArguments): AcfReturnMode {
+  const value = readString(args, 'return', 'full')
+  if (value !== 'full' && value !== 'values') {
+    throw new SiteMcpToolError("'return' must be 'full' or 'values'.")
+  }
+  return value
+}
+
 export function buildAcfPayload(input: {
-  mode: 'get' | 'describe' | 'preview' | 'apply'
-  target: AcfTarget
+  mode: 'get' | 'describe' | 'checksum' | 'preview' | 'apply' | 'snapshot' | 'restore'
+  target?: AcfTarget
+  targets?: readonly AcfTarget[]
   fields: (string | AcfFieldWrite)[]
   layoutFilter?: string
+  returnMode?: AcfReturnMode
   rows?: readonly AcfRowOp[]
+  roots?: Record<string, unknown>
+  applyFlag?: boolean
 }): string {
-  const reading = input.mode === 'get' || input.mode === 'describe'
-  const fields = reading
-    ? (input.fields as string[]).map((path) => ({ path }))
-    : (input.fields as AcfFieldWrite[])
+  const writing = input.mode === 'preview' || input.mode === 'apply'
+  const fields = writing
+    ? (input.fields as AcfFieldWrite[])
+    : (input.fields as string[]).map((path) => ({ path }))
   const json = JSON.stringify({
     mode: input.mode,
-    target: input.target,
+    ...(input.targets ? { targets: input.targets } : { target: input.target }),
     fields,
     ...(input.layoutFilter ? { layout_filter: input.layoutFilter } : {}),
-    ...(input.rows && input.rows.length > 0 ? { rows: input.rows } : {})
+    ...(input.returnMode === 'values' ? { return: 'values' } : {}),
+    ...(input.rows && input.rows.length > 0 ? { rows: input.rows } : {}),
+    ...(input.roots ? { roots: input.roots } : {}),
+    ...(input.applyFlag === undefined ? {} : { apply: input.applyFlag })
   })
   if (Buffer.byteLength(json, 'utf8') > ACF_MAX_PAYLOAD_BYTES) {
     throw new SiteMcpToolError(`Field payload is over the ${ACF_MAX_PAYLOAD_BYTES}-byte cap.`)

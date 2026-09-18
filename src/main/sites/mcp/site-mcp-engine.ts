@@ -16,6 +16,7 @@ import {
 } from '../site-secret-store'
 import { buildSiteSummaries, buildSiteSummary } from '../site-summary'
 import { createSiteSshSession } from '../site-ssh-session'
+import { acfStateDir, createAcfStateStore } from '../wp-acf-state-store'
 import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
 import { setStepLibraryThroughBridge, updateSiteThroughBridge } from './site-mcp-store-bridge'
@@ -105,6 +106,7 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
       }
       write(steps)
     },
+    acfState: createAcfStateStore(acfStateDir(options.runsBaseDir)),
     summarize: buildSiteSummary,
     summarizeAll: buildSiteSummaries,
     hasSshSecret: (siteId, environment) => hasSiteSecret(siteId, environment, 'ssh'),

@@ -253,6 +253,150 @@ describe('wp_eval_file', () => {
   })
 })
 
+describe('return projection', () => {
+  it('drops the host bookkeeping and asks PHP for the short shape', async () => {
+    evalFiles.length = 0
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' },
+      fields: ['hero_title'],
+      return: 'values'
+    })
+    expect(isError).toBe(false)
+    expect(payload).toMatchObject({
+      ok: true,
+      site: 'Acme',
+      location: 'remote',
+      environment: 'main'
+    })
+    for (const key of ['site_id', 'host', 'wp_root', 'command']) {
+      expect(payload).not.toHaveProperty(key)
+    }
+    expect(
+      JSON.parse(evalFiles.find((file) => file.path.endsWith('.json'))?.contents ?? '{}')
+    ).toMatchObject({ return: 'values' })
+  })
+
+  it('keeps the full envelope by default and sends no return key', async () => {
+    evalFiles.length = 0
+    const { payload } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' },
+      fields: ['hero_title']
+    })
+    expect(payload).toHaveProperty('wp_root')
+    expect(payload).toHaveProperty('command')
+    expect(
+      JSON.parse(evalFiles.find((file) => file.path.endsWith('.json'))?.contents ?? '{}')
+    ).not.toHaveProperty('return')
+  })
+
+  it('refuses an unknown return mode', async () => {
+    const { isError, payload } = await call('update_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' },
+      fields: [{ path: 'hero_title', value: 'Hi' }],
+      return: 'brief'
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("'return'")
+  })
+})
+
+describe('multi-target', () => {
+  it('sends targets in place of target', async () => {
+    evalFiles.length = 0
+    const targets = [
+      { kind: 'post', id: 1 },
+      { kind: 'post', id: 2 }
+    ]
+    const { isError } = await call('update_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      targets,
+      fields: [{ path: 'page_theme', value: 'blue' }]
+    })
+    expect(isError).toBe(false)
+    expect(
+      JSON.parse(evalFiles.find((file) => file.path.endsWith('.json'))?.contents ?? '{}')
+    ).toMatchObject({ targets })
+    expect(
+      JSON.parse(evalFiles.find((file) => file.path.endsWith('.json'))?.contents ?? '{}')
+    ).not.toHaveProperty('target')
+  })
+
+  it('refuses target and targets in one call', async () => {
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'option' },
+      targets: [{ kind: 'post', id: 1 }],
+      fields: ['hero_title']
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain('not both')
+  })
+
+  it('refuses targets alongside location both', async () => {
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'both',
+      env: 'main',
+      targets: [{ kind: 'post', id: 1 }],
+      fields: ['hero_title']
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("location 'both'")
+  })
+})
+
+describe('location both', () => {
+  it('reads each host once and merges them into one comparison', async () => {
+    evalFiles.length = 0
+    cannedRun(
+      JSON.stringify({
+        ok: true,
+        home: 'https://acme.local',
+        acf_version: '6.8.10',
+        warnings: [],
+        results: [{ path: 'page_theme', exists: true, value: 'red' }]
+      })
+    )
+    const { isError, payload } = await call('get_wp_fields', {
+      location: 'both',
+      env: 'main',
+      target: { kind: 'post', id: 672 },
+      fields: ['page_theme']
+    })
+    expect(isError).toBe(false)
+    expect(payload).toMatchObject({ location: 'both', differs_count: 1, environment: 'main' })
+    expect(payload.local).toMatchObject({ home: 'https://acme.local' })
+    expect(payload.remote).toMatchObject({ home: 'https://acme.com' })
+    expect(payload.results[0]).toMatchObject({
+      path: 'page_theme',
+      local: 'red',
+      remote: null,
+      differs: true
+    })
+    expect(
+      JSON.parse(evalFiles.find((file) => file.path.endsWith('.json'))?.contents ?? '{}')
+    ).toMatchObject({ mode: 'get', fields: [{ path: 'page_theme' }] })
+  })
+
+  it('keeps update_wp_fields on one host', async () => {
+    const { isError, payload } = await call('update_wp_fields', {
+      location: 'both',
+      env: 'main',
+      target: { kind: 'option' },
+      fields: [{ path: 'hero_title', value: 'Hi' }]
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("'local' or 'remote'")
+  })
+})
+
 describe('oversize responses', () => {
   it('tells the agent the output was cut instead of blaming the JSON', async () => {
     vi.mocked(streamCommand).mockResolvedValueOnce({

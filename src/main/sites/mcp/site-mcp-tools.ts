@@ -22,6 +22,7 @@ import { SITE_MCP_TRANSFER_TOOLS } from './site-mcp-transfer-tools'
 import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
 import { SITE_MCP_WP_CLI_TOOLS } from './site-mcp-wp-cli-tools'
 import { SITE_MCP_WP_FIELD_TOOLS } from './site-mcp-wp-field-tools'
+import { SITE_MCP_WP_SNAPSHOT_TOOLS } from './site-mcp-wp-snapshot-tools'
 
 export const SITE_MCP_SERVER_NAME = 'muster-sites'
 
@@ -35,6 +36,7 @@ export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_SSH_TOOLS,
   ...SITE_MCP_WP_CLI_TOOLS,
   ...SITE_MCP_WP_FIELD_TOOLS,
+  ...SITE_MCP_WP_SNAPSHOT_TOOLS,
   ...SITE_MCP_TRANSFER_TOOLS,
   ...SITE_MCP_JOB_TOOLS,
   ...SITE_MCP_PIPELINE_TOOLS,

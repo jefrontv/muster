@@ -11,12 +11,24 @@ import {
 } from './mcp/site-mcp-arguments'
 import { ACF_MAX_PATHS, hasAcfWildcard, parseAcfPath, readAcfGetPaths } from './wp-acf-payload'
 
+export type AcfGetLocation = 'local' | 'remote' | 'both'
+
 export type AcfGetRequest =
   | { mode: 'get'; fields: string[] }
   | { mode: 'describe'; fields: string[]; layoutFilter?: string }
+  | { mode: 'checksum'; fields: string[] }
 
-// A describe path names a root or a container, so a wildcard would have no rows to expand.
-export function readAcfDescribePaths(args: ToolArguments): string[] {
+// Only a read can run on both hosts, so update_wp_fields keeps site-mcp-arguments' readLocation.
+export function readAcfGetLocation(args: ToolArguments): AcfGetLocation {
+  const value = readString(args, 'location')
+  if (value !== 'local' && value !== 'remote' && value !== 'both') {
+    throw new SiteMcpToolError("'location' must be 'local', 'remote', or 'both'.")
+  }
+  return value
+}
+
+// A describe or checksum path names a root or a container, so a wildcard has no rows to expand.
+export function readAcfContainerPaths(args: ToolArguments, mode: string): string[] {
   const value = args.fields
   if (value === undefined || value === null) {
     return []
@@ -32,7 +44,7 @@ export function readAcfDescribePaths(args: ToolArguments): string[] {
       throw new SiteMcpToolError(`'fields[${index}]' must be a non-empty path.`)
     }
     if (hasAcfWildcard(parseAcfPath(entry))) {
-      throw new SiteMcpToolError(`'fields[${index}]' cannot use a wildcard with describe.`)
+      throw new SiteMcpToolError(`'fields[${index}]' cannot use a wildcard with ${mode}.`)
     }
     return entry
   })
@@ -40,13 +52,24 @@ export function readAcfDescribePaths(args: ToolArguments): string[] {
 
 export function readAcfGetRequest(args: ToolArguments): AcfGetRequest {
   const layoutFilter = readString(args, 'layout_filter')
-  if (!readBoolean(args, 'describe')) {
+  const describe = readBoolean(args, 'describe')
+  const checksum = readBoolean(args, 'checksum')
+  if (describe && checksum) {
+    throw new SiteMcpToolError("'describe' and 'checksum' are different modes; pass one.")
+  }
+  if (checksum) {
+    if (layoutFilter.length > 0) {
+      throw new SiteMcpToolError("'layout_filter' needs describe: true.")
+    }
+    return { mode: 'checksum', fields: readAcfContainerPaths(args, 'checksum') }
+  }
+  if (!describe) {
     if (layoutFilter.length > 0) {
       throw new SiteMcpToolError("'layout_filter' needs describe: true.")
     }
     return { mode: 'get', fields: readAcfGetPaths(args) }
   }
-  const fields = readAcfDescribePaths(args)
+  const fields = readAcfContainerPaths(args, 'describe')
   return layoutFilter.length > 0
     ? { mode: 'describe', fields, layoutFilter }
     : { mode: 'describe', fields }

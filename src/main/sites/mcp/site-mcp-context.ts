@@ -10,6 +10,7 @@
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
 import type { Site, SiteCustomStep, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
 import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
+import type { AcfStateStore } from '../wp-acf-state-store'
 import type { PlanAnnotationRequest } from '../../../shared/plan-annotation-types'
 import type { PlanReviewOutcome } from './site-mcp-plan-bridge'
 
@@ -75,6 +76,11 @@ export type SiteMcpContext = {
    * whole-state save.
    */
   setStepLibrary?: (steps: readonly SiteCustomStep[]) => Promise<void>
+  /**
+   * Token-addressed undo and snapshot records for the ACF tools. Absent on a transport that keeps
+   * no state, which is why every caller degrades instead of assuming a token can be issued.
+   */
+  acfState?: AcfStateStore
   summarize: (site: Site) => Promise<SiteSummary>
   summarizeAll: (sites: Site[]) => Promise<SiteSummary[]>
   /** Presence only. A run is blocked on a missing credential; the value never leaves the host. */
