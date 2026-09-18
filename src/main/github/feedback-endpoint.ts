@@ -22,6 +22,7 @@ export type FeedbackEndpointPayload = {
   submissionType: 'feedback' | 'crash'
   githubLogin: string | null
   githubEmail: string | null
+  reporterName: string | null
   appVersion: string
   platform: string
   osRelease: string

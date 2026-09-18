@@ -17,6 +17,29 @@ import type { GitHubViewer } from '../../../../shared/types'
 import { translate } from '@/i18n/i18n'
 
 const GITHUB_ISSUES_URL = 'https://github.com/jefrontv/muster/issues/'
+/** Per-viewer convenience only: the name is re-sent with every report, never read back. */
+const REPORTER_NAME_STORAGE_KEY = 'muster.feedback.reporterName'
+const REPORTER_NAME_MAX_LENGTH = 80
+
+function readRememberedReporterName(): string {
+  try {
+    return window.localStorage.getItem(REPORTER_NAME_STORAGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function rememberReporterName(name: string): void {
+  try {
+    if (name.length > 0) {
+      window.localStorage.setItem(REPORTER_NAME_STORAGE_KEY, name)
+    } else {
+      window.localStorage.removeItem(REPORTER_NAME_STORAGE_KEY)
+    }
+  } catch {
+    // Private windows and blocked storage: the report still sends, the name is just not kept.
+  }
+}
 
 type SubmitIdentity = {
   githubLogin: string | null
@@ -51,6 +74,7 @@ export function SidebarFeedbackDialog({
   onOpenChange
 }: SidebarFeedbackDialogProps): React.JSX.Element {
   const [feedback, setFeedback] = useState('')
+  const [reporterName, setReporterName] = useState(readRememberedReporterName)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [viewer, setViewer] = useState<GitHubViewer | null>(null)
   const [isViewerLoading, setIsViewerLoading] = useState(false)
@@ -102,6 +126,7 @@ export function SidebarFeedbackDialog({
     }
 
     setIsSubmitting(true)
+    const trimmedName = reporterName.trim()
     try {
       const identity = getSubmitIdentity(viewer, submitAnonymously)
       // Why: submission is proxied through the main process via IPC because
@@ -112,6 +137,7 @@ export function SidebarFeedbackDialog({
       const result = await window.api.feedback.submit({
         feedback: trimmed,
         submitAnonymously,
+        ...(trimmedName.length > 0 ? { reporterName: trimmedName } : {}),
         githubLogin: identity.githubLogin,
         githubEmail: identity.githubEmail
       })
@@ -120,6 +146,7 @@ export function SidebarFeedbackDialog({
         throw new Error(`Feedback request failed: ${result.error}`)
       }
 
+      rememberReporterName(trimmedName)
       if (mountedRef.current) {
         toast.success(
           translate(
@@ -193,6 +220,23 @@ export function SidebarFeedbackDialog({
             </Button>
           </div>
         </div>
+
+        <input
+          type="text"
+          value={reporterName}
+          onChange={(event) => setReporterName(event.target.value)}
+          maxLength={REPORTER_NAME_MAX_LENGTH}
+          autoComplete="name"
+          aria-label={translate(
+            'auto.components.sidebar.SidebarFeedbackDialog.b3f59dc70e',
+            'Your name (optional)'
+          )}
+          placeholder={translate(
+            'auto.components.sidebar.SidebarFeedbackDialog.b3f59dc70e',
+            'Your name (optional)'
+          )}
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
 
         <textarea
           ref={feedbackTextareaRef}

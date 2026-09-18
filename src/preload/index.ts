@@ -1427,6 +1427,7 @@ const api = {
     submit: (args: {
       feedback: string
       submitAnonymously?: boolean
+      reporterName?: string
       githubLogin: string | null
       githubEmail: string | null
     }): Promise<{ ok: true } | { ok: false; status: number | null; error: string }> =>

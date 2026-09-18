@@ -6,6 +6,7 @@ import {
   feedbackIssueTitle,
   type FeedbackIssueKind
 } from '../github/feedback-issue'
+import { cleanReporterName, reporterNameLine } from '../github/feedback-reporter-name'
 
 // Feedback and crash reports are filed as issues on the Muster repo, preferring
 // the user's own `gh` auth so the issue is authored by a real account. When gh
@@ -25,6 +26,8 @@ export type FeedbackSubmitArgs = {
   submitAnonymously?: boolean
   githubLogin: string | null
   githubEmail: string | null
+  /** Optional, typed by the reporter; opens the issue body as "Issue posted by: …". */
+  reporterName?: string
 }
 
 export type FeedbackDiagnosticBundleAttachment = {
@@ -39,6 +42,7 @@ type FeedbackSubmitBody = {
   submissionType: FeedbackSubmissionType
   githubLogin: string | null
   githubEmail: string | null
+  reporterName: string | null
   appVersion: string
   platform: NodeJS.Platform
   osRelease: string
@@ -79,6 +83,8 @@ function buildSubmitBody(args: InternalFeedbackSubmitArgs): FeedbackSubmitBody {
     feedback: args.feedback,
     submissionType: args.submissionType ?? 'feedback',
     ...identity,
+    // Not part of the anonymity decision: a typed name is an explicit choice, the GitHub identity is not.
+    reporterName: cleanReporterName(args.reporterName),
     appVersion: app.getVersion(),
     platform: process.platform,
     osRelease: os.release(),
@@ -127,7 +133,8 @@ function buildDiagnosticSection(bundle: FeedbackDiagnosticBundleAttachment): str
 }
 
 function buildIssueBody(body: FeedbackSubmitBody): string {
-  const sections = [body.feedback.trim(), '', '---', buildEnvironmentSection(body)]
+  const sections = body.reporterName ? [reporterNameLine(body.reporterName), ''] : []
+  sections.push(body.feedback.trim(), '', '---', buildEnvironmentSection(body))
   if (body.diagnosticBundle) {
     sections.push(buildDiagnosticSection(body.diagnosticBundle))
   }
