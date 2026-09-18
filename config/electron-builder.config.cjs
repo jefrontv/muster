@@ -12,6 +12,7 @@ const {
   verifyPackagedMainRuntimeDeps
 } = require('./packaged-runtime-node-modules.cjs')
 const { verifyLinuxGlibcFloor } = require('./scripts/verify-linux-glibc-floor.cjs')
+const { readMacTargetArchs } = require('./electron-builder-mac-archs.cjs')
 
 const isMacRelease = process.env.ORCA_MAC_RELEASE === '1'
 // Why: an internal fleet can auto-update without an Apple Developer ID by signing every release
@@ -528,18 +529,3 @@ function findInstalledMacSigningIdentity(keychainFile) {
   } catch {}
   return null
 }
-
-function readMacTargetArchs(rawValue) {
-  const archs = (rawValue ?? '')
-    .split(',')
-    .map((arch) => arch.trim())
-    .filter(Boolean)
-  for (const arch of archs) {
-    if (arch !== 'x64' && arch !== 'arm64') {
-      throw new Error(`MUSTER_MAC_ARCHS: unsupported mac arch '${arch}' (use x64, arm64)`)
-    }
-  }
-  return archs.length > 0 ? archs : ['x64', 'arm64']
-}
-
-module.exports.readMacTargetArchs = readMacTargetArchs

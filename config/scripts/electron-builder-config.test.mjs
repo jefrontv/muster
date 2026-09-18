@@ -41,7 +41,7 @@ describe('electron-builder config', () => {
   })
 
   it('packages both mac arches unless MUSTER_MAC_ARCHS narrows the list', () => {
-    const { readMacTargetArchs } = electronBuilderConfig
+    const { readMacTargetArchs } = require('../electron-builder-mac-archs.cjs')
     expect(readMacTargetArchs(undefined)).toEqual(['x64', 'arm64'])
     expect(readMacTargetArchs('arm64')).toEqual(['arm64'])
     expect(readMacTargetArchs(' x64 , arm64 ')).toEqual(['x64', 'arm64'])
