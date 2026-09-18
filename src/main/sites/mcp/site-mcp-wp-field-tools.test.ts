@@ -253,6 +253,68 @@ describe('wp_eval_file', () => {
   })
 })
 
+describe('update_wp_fields rows', () => {
+  it('sends the row operations to the runner alongside fields', async () => {
+    evalFiles.length = 0
+    const rows = [
+      { op: 'append', path: 'modules', layout: 'media', values: { section_id: 'hero' } },
+      { op: 'move', path: 'modules', index: 7, to: 2 }
+    ]
+    const { isError } = await call('update_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'post', id: 672 },
+      fields: [{ path: 'page_theme', value: 'blue' }],
+      rows
+    })
+    expect(isError).toBe(false)
+    const sidecar = evalFiles.find((file) => file.path.endsWith('.json'))
+    expect(JSON.parse(sidecar?.contents ?? '{}')).toMatchObject({
+      mode: 'preview',
+      fields: [{ path: 'page_theme', value: 'blue' }],
+      rows
+    })
+  })
+
+  it('accepts rows on their own', async () => {
+    evalFiles.length = 0
+    const { isError } = await call('update_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'post', id: 672 },
+      rows: [{ op: 'delete', path: 'modules', index: 7 }],
+      apply: true
+    })
+    expect(isError).toBe(false)
+    const sidecar = evalFiles.find((file) => file.path.endsWith('.json'))
+    expect(JSON.parse(sidecar?.contents ?? '{}')).toMatchObject({ mode: 'apply', fields: [] })
+  })
+
+  it('refuses a call that changes nothing', async () => {
+    const { isError, payload } = await call('update_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'post', id: 672 }
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("'fields' or 'rows'")
+  })
+
+  it('reports a bad operation before opening SSH', async () => {
+    evalFiles.length = 0
+    const { isError, payload } = await call('update_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'post', id: 672 },
+      rows: [{ op: 'move', path: 'modules', index: 7 }],
+      apply: true
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("'rows[0].to' is required by move.")
+    expect(evalFiles).toHaveLength(0)
+  })
+})
+
 describe('get_wp_fields describe mode', () => {
   it('sends mode describe, the paths and layout_filter to the runner', async () => {
     evalFiles.length = 0

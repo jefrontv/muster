@@ -26,6 +26,9 @@ import {
 
 export const WP_EVAL_FILE_STEP = 'wp-eval-file'
 export const WP_EVAL_FILE_MAX_BYTES = 64 * 1024
+// The 64 KB cap bounds what an agent sends. Muster's own bundled runners are trusted and grow with
+// every ACF feature, so they get their own ceiling instead of silently breaking every field call.
+export const WP_EVAL_BUNDLED_MAX_BYTES = 256 * 1024
 export const WP_EVAL_SIDECAR_MAX_BYTES = 256 * 1024
 
 const WP_BINARY = 'wp'
@@ -45,6 +48,7 @@ export type WpEvalFileRequest = {
   php: string
   args?: readonly string[]
   sidecar?: string
+  maxPhpBytes?: number
   timeoutMs?: number
   signal?: AbortSignal
 }
@@ -52,16 +56,14 @@ export type WpEvalFileRequest = {
 function assertEvalPayload(
   php: string,
   args: readonly string[],
-  sidecar: string | undefined
+  sidecar: string | undefined,
+  maxPhpBytes: number = WP_EVAL_FILE_MAX_BYTES
 ): void {
   if (php.length === 0) {
     throw new SiteRunStepError(WP_EVAL_FILE_STEP, 'PHP body is empty.')
   }
-  if (Buffer.byteLength(php, 'utf8') > WP_EVAL_FILE_MAX_BYTES) {
-    throw new SiteRunStepError(
-      WP_EVAL_FILE_STEP,
-      `PHP body is over the ${WP_EVAL_FILE_MAX_BYTES}-byte cap.`
-    )
+  if (Buffer.byteLength(php, 'utf8') > maxPhpBytes) {
+    throw new SiteRunStepError(WP_EVAL_FILE_STEP, `PHP body is over the ${maxPhpBytes}-byte cap.`)
   }
   if (sidecar !== undefined && Buffer.byteLength(sidecar, 'utf8') > WP_EVAL_SIDECAR_MAX_BYTES) {
     throw new SiteRunStepError(
@@ -75,6 +77,15 @@ function assertEvalPayload(
       throw new SiteRunStepError(WP_EVAL_FILE_STEP, unsafe)
     }
   }
+}
+
+// WP-CLI includes a tagless body as plain text and still exits 0, which reads as success. A BOM
+// ahead of the tag would reach stdout as three stray bytes, so it goes whether or not one is added.
+const PHP_OPEN_TAG = /^\s*(?:<\?php|<\?=)/
+
+export function withPhpOpenTag(body: string): string {
+  const withoutBom = body.startsWith('\uFEFF') ? body.slice(1) : body
+  return PHP_OPEN_TAG.test(withoutBom) ? withoutBom : `<?php\n${withoutBom}`
 }
 
 function clampTimeout(timeoutMs: number | undefined): number {
@@ -109,7 +120,7 @@ export async function runLocalWpEvalFile(
     buildLocalWpWpEnv(createLocalWpHost(), socketPath)
 ): Promise<WpEvalFileResult> {
   const extra = request.args ?? []
-  assertEvalPayload(request.php, extra, request.sidecar)
+  assertEvalPayload(request.php, extra, request.sidecar, request.maxPhpBytes)
   const { phpName, jsonName } = evalFileNames()
   const phpPath = path.join(tmpdir(), phpName)
   const jsonPath = path.join(tmpdir(), jsonName)
@@ -161,7 +172,7 @@ export async function runRemoteWpEvalFile(
   request: WpEvalFileRequest & { webroot: string }
 ): Promise<WpEvalFileResult> {
   const extra = request.args ?? []
-  assertEvalPayload(request.php, extra, request.sidecar)
+  assertEvalPayload(request.php, extra, request.sidecar, request.maxPhpBytes)
   const { phpName, jsonName } = evalFileNames()
   const phpPath = `/tmp/${phpName}`
   const jsonPath = `/tmp/${jsonName}`

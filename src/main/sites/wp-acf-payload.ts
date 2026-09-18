@@ -3,13 +3,10 @@
 // Paths are 0-based and match unformatted get_field() arrays / option-key integers.
 // The PHP walker is the authority at runtime; this module refuses junk before SSH.
 
-import {
-  readBoolean,
-  readString,
-  SiteMcpToolError,
-  type ToolArguments
-} from './mcp/site-mcp-arguments'
+import { SiteMcpToolError, type ToolArguments } from './mcp/site-mcp-arguments'
 import acfFieldsPhp from './php/acf-fields.php?raw'
+// Type-only, so the row-op module can keep importing the path grammar from here without a runtime cycle.
+import type { AcfRowOp } from './wp-acf-row-ops'
 
 export const ACF_FIELDS_PHP = acfFieldsPhp
 export const ACF_MAX_PATHS = 40
@@ -126,8 +123,11 @@ export function readAcfGetPaths(args: ToolArguments): string[] {
 
 export function readAcfWrites(args: ToolArguments): AcfFieldWrite[] {
   const value = args.fields
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new SiteMcpToolError("'fields' must be a non-empty array of {path, value}.")
+  if (value === undefined || value === null) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    throw new SiteMcpToolError("'fields' must be an array of {path, value}.")
   }
   if (value.length > ACF_MAX_PATHS) {
     throw new SiteMcpToolError(`'fields' may list at most ${ACF_MAX_PATHS} paths.`)
@@ -143,7 +143,7 @@ export function readAcfWrites(args: ToolArguments): AcfFieldWrite[] {
     if (!('value' in row)) {
       throw new SiteMcpToolError(`'fields[${index}].value' is required.`)
     }
-    if (hasWildcard(parseAcfPath(row.path))) {
+    if (hasAcfWildcard(parseAcfPath(row.path))) {
       throw new SiteMcpToolError(
         `'fields[${index}].path' uses a wildcard; wildcards are read-only. Use get_wp_fields to expand them, or a row operation.`
       )
@@ -152,49 +152,9 @@ export function readAcfWrites(args: ToolArguments): AcfFieldWrite[] {
   })
 }
 
-function hasWildcard(segments: readonly AcfPathSegment[]): boolean {
+// Exported so the read-request and row-op modules can refuse a pattern without re-walking the path.
+export function hasAcfWildcard(segments: readonly AcfPathSegment[]): boolean {
   return segments.some((segment) => segment.kind === 'wildcard')
-}
-
-export type AcfGetRequest =
-  | { mode: 'get'; fields: string[] }
-  | { mode: 'describe'; fields: string[]; layoutFilter?: string }
-
-// describe answers "what is on this target"; its paths name containers, so a wildcard has nothing to expand.
-export function readAcfDescribePaths(args: ToolArguments): string[] {
-  const value = args.fields
-  if (value === undefined || value === null) {
-    return []
-  }
-  if (!Array.isArray(value)) {
-    throw new SiteMcpToolError("'fields' must be an array of paths.")
-  }
-  if (value.length > ACF_MAX_PATHS) {
-    throw new SiteMcpToolError(`'fields' may list at most ${ACF_MAX_PATHS} paths.`)
-  }
-  return value.map((entry, index) => {
-    if (typeof entry !== 'string' || entry.length === 0) {
-      throw new SiteMcpToolError(`'fields[${index}]' must be a non-empty path.`)
-    }
-    if (hasWildcard(parseAcfPath(entry))) {
-      throw new SiteMcpToolError(`'fields[${index}]' cannot use a wildcard with describe.`)
-    }
-    return entry
-  })
-}
-
-export function readAcfGetRequest(args: ToolArguments): AcfGetRequest {
-  const layoutFilter = readString(args, 'layout_filter')
-  if (!readBoolean(args, 'describe')) {
-    if (layoutFilter.length > 0) {
-      throw new SiteMcpToolError("'layout_filter' needs describe: true.")
-    }
-    return { mode: 'get', fields: readAcfGetPaths(args) }
-  }
-  const fields = readAcfDescribePaths(args)
-  return layoutFilter.length > 0
-    ? { mode: 'describe', fields, layoutFilter }
-    : { mode: 'describe', fields }
 }
 
 export function buildAcfPayload(input: {
@@ -202,6 +162,7 @@ export function buildAcfPayload(input: {
   target: AcfTarget
   fields: (string | AcfFieldWrite)[]
   layoutFilter?: string
+  rows?: readonly AcfRowOp[]
 }): string {
   const reading = input.mode === 'get' || input.mode === 'describe'
   const fields = reading
@@ -211,7 +172,8 @@ export function buildAcfPayload(input: {
     mode: input.mode,
     target: input.target,
     fields,
-    ...(input.layoutFilter ? { layout_filter: input.layoutFilter } : {})
+    ...(input.layoutFilter ? { layout_filter: input.layoutFilter } : {}),
+    ...(input.rows && input.rows.length > 0 ? { rows: input.rows } : {})
   })
   if (Buffer.byteLength(json, 'utf8') > ACF_MAX_PAYLOAD_BYTES) {
     throw new SiteMcpToolError(`Field payload is over the ${ACF_MAX_PAYLOAD_BYTES}-byte cap.`)

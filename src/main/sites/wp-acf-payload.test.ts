@@ -11,9 +11,7 @@ import {
   parseAcfRunnerOutcome,
   parseAcfRunnerStdout,
   parseAcfTarget,
-  readAcfDescribePaths,
   readAcfGetPaths,
-  readAcfGetRequest,
   readAcfWrites
 } from './wp-acf-payload'
 
@@ -45,7 +43,7 @@ describe('parseAcfPath', () => {
   })
 })
 
-describe('wildcards are read-only', () => {
+describe('wildcards in the path grammar', () => {
   it('lets get_wp_fields ask for a pattern', () => {
     expect(readAcfGetPaths({ fields: ['modules.*.section_id'] })).toEqual(['modules.*.section_id'])
   })
@@ -59,35 +57,6 @@ describe('wildcards are read-only', () => {
   it('refuses a write through a pattern', () => {
     expect(() => readAcfWrites({ fields: [{ path: 'modules.*.section_id', value: 'x' }] })).toThrow(
       /wildcards are read-only/
-    )
-  })
-
-  it('refuses a wildcard in a describe path', () => {
-    expect(() => readAcfDescribePaths({ fields: ['modules.*'] })).toThrow(/wildcard/)
-  })
-})
-
-describe('readAcfGetRequest', () => {
-  it('reads values when describe is absent', () => {
-    expect(readAcfGetRequest({ fields: ['hero_title'] })).toEqual({
-      mode: 'get',
-      fields: ['hero_title']
-    })
-  })
-
-  it('allows an omitted fields list in describe mode', () => {
-    expect(readAcfGetRequest({ describe: true })).toEqual({ mode: 'describe', fields: [] })
-  })
-
-  it('carries layout_filter through describe', () => {
-    expect(
-      readAcfGetRequest({ describe: 'true', fields: ['modules'], layout_filter: 'media' })
-    ).toEqual({ mode: 'describe', fields: ['modules'], layoutFilter: 'media' })
-  })
-
-  it('refuses layout_filter without describe', () => {
-    expect(() => readAcfGetRequest({ fields: ['modules'], layout_filter: 'media' })).toThrow(
-      /describe/
     )
   })
 })
@@ -114,6 +83,16 @@ describe('parseAcfTarget', () => {
     ['user', 0]
   ])('rejects %s id %j', (kind, id) => {
     expect(() => parseAcfTarget({ kind, id })).toThrow(/positive integer/)
+  })
+})
+
+describe('readAcfWrites', () => {
+  it('returns nothing when fields is omitted, so rows can carry the call', () => {
+    expect(readAcfWrites({})).toEqual([])
+  })
+
+  it('still refuses a fields value that is not an array', () => {
+    expect(() => readAcfWrites({ fields: 'hero_title' })).toThrow(/must be an array/)
   })
 })
 
@@ -258,6 +237,30 @@ describe('buildAcfPayload', () => {
     expect(
       JSON.parse(buildAcfPayload({ mode: 'describe', target: { kind: 'option' }, fields: [] }))
     ).toEqual({ mode: 'describe', target: { kind: 'option' }, fields: [] })
+  })
+
+  it('carries row operations and leaves the key out when there are none', () => {
+    const rows = [{ op: 'delete' as const, path: 'modules', index: 7 }]
+    expect(
+      JSON.parse(buildAcfPayload({ mode: 'apply', target: { kind: 'option' }, fields: [], rows }))
+    ).toEqual({ mode: 'apply', target: { kind: 'option' }, fields: [], rows })
+    expect(
+      JSON.parse(
+        buildAcfPayload({ mode: 'apply', target: { kind: 'option' }, fields: [], rows: [] })
+      )
+    ).toEqual({ mode: 'apply', target: { kind: 'option' }, fields: [] })
+  })
+
+  it('counts row operations against the 256 KB payload cap', () => {
+    const rows = Array.from({ length: 40 }, () => ({
+      op: 'append' as const,
+      path: 'modules',
+      layout: 'media',
+      values: { body: 'x'.repeat(8_000) }
+    }))
+    expect(() =>
+      buildAcfPayload({ mode: 'apply', target: { kind: 'option' }, fields: [], rows })
+    ).toThrow(/byte cap/)
   })
 })
 

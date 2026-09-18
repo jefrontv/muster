@@ -7,11 +7,18 @@ import {
   ACF_FIELDS_PHP,
   buildAcfPayload,
   parseAcfRunnerOutcome,
-  readAcfGetRequest,
   readAcfTarget,
   readAcfWrites
 } from '../wp-acf-payload'
-import { runLocalWpEvalFile, runRemoteWpEvalFile, WP_EVAL_FILE_MAX_BYTES } from '../wp-eval-file'
+import { readAcfGetRequest } from '../wp-acf-read-request'
+import { readAcfRowOps } from '../wp-acf-row-ops'
+import {
+  runLocalWpEvalFile,
+  runRemoteWpEvalFile,
+  withPhpOpenTag,
+  WP_EVAL_BUNDLED_MAX_BYTES,
+  WP_EVAL_FILE_MAX_BYTES
+} from '../wp-eval-file'
 import {
   readBoolean,
   readLocation,
@@ -47,12 +54,15 @@ async function runEval(
   extraArgs: readonly string[] = []
 ): Promise<Record<string, unknown>> {
   const location = readLocation(args)
+  // The walker is ours and outgrew the agent-body cap; an agent's own script keeps the 64 KB one.
+  const maxPhpBytes = php === ACF_FIELDS_PHP ? WP_EVAL_BUNDLED_MAX_BYTES : WP_EVAL_FILE_MAX_BYTES
   if (location === 'local') {
     const { site, wpDir, dbSocket } = resolveMcpLocalWp(context, args)
     const result = await runLocalWpEvalFile({
       wpDir,
       php,
       sidecar,
+      maxPhpBytes,
       args: extraArgs,
       ...(dbSocket ? { dbSocket } : {})
     })
@@ -80,6 +90,7 @@ async function runEval(
       webroot: layout.webroot,
       php,
       sidecar,
+      maxPhpBytes,
       args: extraArgs
     })
     const secrets = [config.sshPassword, config.dbPassword]
@@ -141,21 +152,18 @@ async function updateWpFields(
   args: ToolArguments
 ): Promise<Record<string, unknown>> {
   const apply = readBoolean(args, 'apply')
+  const fields = readAcfWrites(args)
+  const rows = readAcfRowOps(args)
+  if (fields.length === 0 && rows.length === 0) {
+    throw new SiteMcpToolError("'fields' or 'rows' must list at least one change.")
+  }
   const sidecar = buildAcfPayload({
     mode: apply ? 'apply' : 'preview',
     target: readAcfTarget(args),
-    fields: readAcfWrites(args)
+    fields,
+    rows
   })
   return fieldResult(await runEval(context, args, 'Update ACF fields', ACF_FIELDS_PHP, sidecar))
-}
-
-// WP-CLI includes a tagless eval-file body as plain text and still exits 0, which reads as success.
-const PHP_OPEN_TAG = /^\s*(?:<\?php|<\?=)/
-
-// A BOM ahead of the tag would reach stdout as three stray bytes, so it goes in both branches.
-function withPhpOpenTag(body: string): string {
-  const withoutBom = body.startsWith('\uFEFF') ? body.slice(1) : body
-  return PHP_OPEN_TAG.test(withoutBom) ? withoutBom : `<?php\n${withoutBom}`
 }
 
 async function wpEvalFile(
@@ -229,7 +237,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'update_wp_fields',
     description:
-      "Preview or apply ACF field writes via update_field (never raw wp option update). Required location local|remote. Paths are 0-based. apply defaults to false (preview, returns old→new). apply=true writes; a typo'd field name is a hard error and nothing is written. ok is false when nothing was applied because a path failed; a preview keeps ok true. Preview and apply both return revert: {target, fields: [{path, value}]}. Send revert.fields back as fields with apply=true to undo the write. After apply, page-cache plugins may still serve stale HTML. Gutenberg ACF blocks are refused.",
+      "Preview or apply ACF field writes via update_field (never raw wp option update). Required location local|remote. Paths are 0-based. apply defaults to false (preview, returns old→new). apply=true writes; a typo'd field name or a bad row operation is a hard error and nothing is written. fields sets leaf values, rows adds, removes, reorders or copies rows of a repeater or flexible field; pass either or both. ok is false when nothing was applied because a path failed; a preview keeps ok true. Preview and apply both return revert: {target, fields: [{path, value}], rows: [op, …]}, already in reverse application order. To undo, replay revert.rows as rows with apply=true first, then revert.fields as fields with apply=true, because row operations move the indexes a field path uses. After apply, page-cache plugins may still serve stale HTML. Gutenberg ACF blocks are refused.",
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
@@ -237,7 +245,12 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
         fields: {
           type: 'array',
           description:
-            '[{path, value}, …]. value is JSON in ACF input format (image = ID, not the array get_field returns). Wildcard paths are refused here; expand them with get_wp_fields first.'
+            '[{path, value}, …]. value is JSON in ACF input format (image = ID, not the array get_field returns). Optional when rows is given. Wildcard paths are refused here; expand them with get_wp_fields first.'
+        },
+        rows: {
+          type: 'array',
+          description:
+            "Row operations, at most 40. path names the repeater or flexible field itself, never one of its rows. append adds a row at the end: {op:'append', path, layout, values}. insert puts one at index and shifts the rest down: {op:'insert', path, index, layout, values}. delete removes the row at index: {op:'delete', path, index}. move takes the row at index and puts it at to: {op:'move', path, index, to}. duplicate copies the row at index to to, or to just after it: {op:'duplicate', path, index, to}. layout names the flexible-content layout; it is required for a flexible field and refused for a repeater. values are keyed by sub-field name and omitted sub-fields keep ACF's defaults. Previewed unless apply=true, applied atomically alongside fields, and undone with the same revert payload. The response carries a top-level rows array beside results, one entry per operation: op, path, before_count, after_count, row_layouts, applied, and error when one failed."
         },
         apply: {
           type: 'boolean',
@@ -247,7 +260,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
         ...ENV_PROPERTY,
         ...CONFIRM_PROPERTY
       },
-      ['location', 'target', 'fields']
+      ['location', 'target']
     ),
     run: updateWpFields
   },
