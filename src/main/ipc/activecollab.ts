@@ -270,7 +270,12 @@ export function registerActiveCollabHandlers(store: Store): void {
     fetchPage: (page) => acListAssignedTasks({ page }),
     // Page one is enough: the stream is newest-first, and a mention older than 30 pending updates
     // is not news worth a banner.
-    fetchUpdates: () => acListUpdates({ page: 1 })
+    fetchUpdates: () => acListUpdates({ page: 1 }),
+    // Confirms who wrote a comment, so the user's own comments do not come back as notifications.
+    fetchTaskComments: async (task) => {
+      const result = await acGetTaskDetail({ projectId: task.projectId, taskId: task.id })
+      return result.ok ? { ok: true, value: result.value.comments } : result
+    }
   })
   // Wake catch-up: after sleep the pending poll timer may be most of an interval away, so
   // overnight changes would otherwise surface minutes late (same pattern as agent-awake-service).

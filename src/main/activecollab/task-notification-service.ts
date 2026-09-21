@@ -31,6 +31,8 @@ import {
   acDueBucketPhrase,
   acDueBucketRank
 } from './task-due-bucket'
+import { getActiveCollabCredential } from './credential-store'
+import type { AcTaskCommentsFetch } from './self-comment-filter'
 import { createAcTaskPoller, type AcTaskPoller } from './task-notification-poller'
 import {
   acCurrentTaskSnapshotKey,
@@ -171,6 +173,8 @@ export function startAcTaskNotifications(args: {
   fetchPage: (page: number) => Promise<ActiveCollabResult<ActiveCollabTaskPage>>
   /** The notifications stream, for the mention pass. Absent leaves mentions switched off. */
   fetchUpdates?: () => Promise<ActiveCollabResult<ActiveCollabUpdates>>
+  /** One task's comments, for the author check. Absent leaves self-authored comments announced. */
+  fetchTaskComments?: AcTaskCommentsFetch
 }): void {
   stopAcTaskNotifications()
   const { store, fetchPage } = args
@@ -209,6 +213,8 @@ export function startAcTaskNotifications(args: {
         activeCollabSummary: { count }
       }).catch(() => undefined)
     },
+    selfUserId: () => getActiveCollabCredential()?.userId ?? null,
+    fetchTaskComments: args.fetchTaskComments,
     fetchMentions: args.fetchUpdates,
     loadMentionSeen: acLoadMentionSeen,
     saveMentionSeen: acSaveMentionSeen,

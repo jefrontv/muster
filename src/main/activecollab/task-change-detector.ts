@@ -22,6 +22,11 @@
 //     Dropping waits out ONE poll of grace first (see `missedPolls`), because pagination shift can
 //     hide a task from a single fetch and an immediate drop re-announces it as new.
 //
+//   - A row fetched BEFORE a local write is not diffable against the folded entry. `foldedAt` vs
+//     the caller's `fetchStartedAt` catches the overlap; without it a comment posted while a poll
+//     was in flight has its fold overwritten by the pre-write count, and the next poll announces
+//     the user's own comment back to them.
+//
 // Two rules live outside this function because neither is a diff. A FAILED fetch must never reach
 // it — diffing an empty result reports every task as gone and re-announces them all on recovery
 // (see task-notification-poller.ts). And this app's OWN writes are folded into the snapshot at
@@ -47,6 +52,13 @@ export type AcTaskSnapshotEntry = {
    * re-announces it as a brand-new assignment when it reappears. Absent twice in a row = gone.
    */
   missedPolls?: number
+  /**
+   * When `acFoldLocalWrite` last patched this entry. A fetch that STARTED before that moment
+   * carries a row from before the write, so diffing against it both reports nothing (the delta
+   * goes negative) and then saves the pre-write count — which is exactly how the user's own
+   * comment gets announced on the following poll.
+   */
+  foldedAt?: number
 }
 
 /** Keyed by task id as a string, because that is what survives a JSON round trip. */
@@ -77,14 +89,27 @@ export function acDiffTaskSnapshot(args: {
   previous: AcTaskSnapshot | null
   tasks: readonly ActiveCollabTask[]
   now: number
+  /** When the fetch below was issued. Omitted = no local write can have raced it. */
+  fetchStartedAt?: number
 }): { changes: AcTaskChange[]; snapshot: AcTaskSnapshot } {
-  const { previous, tasks, now } = args
+  const { previous, tasks, now, fetchStartedAt } = args
   const snapshot: AcTaskSnapshot = {}
   const changes: AcTaskChange[] = []
 
   for (const task of tasks) {
     const key = String(task.id)
     const state = previous?.[key]
+
+    if (
+      state !== undefined &&
+      fetchStartedAt !== undefined &&
+      (state.foldedAt ?? 0) > fetchStartedAt
+    ) {
+      // This row predates a local write. Keep the folded entry whole: adopting the stale count
+      // would re-announce the write as somebody else's change on the next poll.
+      snapshot[key] = state
+      continue
+    }
 
     if (previous === null || state === undefined) {
       // Recording the current bucket as already notified is what keeps an arriving overdue task to
@@ -170,7 +195,10 @@ export function acFoldLocalWrite(args: {
 }): AcTaskSnapshot {
   const key = String(args.taskId)
   if (args.task) {
-    return { ...args.snapshot, [key]: acTaskSnapshotEntry(args.task, args.now) }
+    return {
+      ...args.snapshot,
+      [key]: { ...acTaskSnapshotEntry(args.task, args.now), foldedAt: args.now }
+    }
   }
   const state = args.snapshot[key]
   if (state === undefined) {
@@ -182,7 +210,8 @@ export function acFoldLocalWrite(args: {
       commentCount: state.commentCount + (args.postedComments ?? 0),
       notifiedDueBucket:
         args.dueOn === undefined ? state.notifiedDueBucket : acDueBucketFor(args.dueOn, args.now),
-      updatedOn: null
+      updatedOn: null,
+      foldedAt: args.now
     }
   }
 }

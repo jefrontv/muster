@@ -26,6 +26,8 @@
 //     themselves into that file (task-snapshot-store.ts), and a cached copy would miss the fold and
 //     notify the user about their own edit. The unread counts are re-read for the same reason —
 //     marking a task read writes that file from outside this loop.
+//   - A comment delta is confirmed against the thread's authors before it reports anything, because
+//     the fold only covers comments posted through THIS app (see self-comment-filter.ts).
 //
 // ONE DIFF FEEDS BOTH SURFACES. The banners and the unread counts come from the same
 // `acDiffTaskSnapshot` call, so they cannot disagree, and a count costs no extra request.
@@ -46,6 +48,7 @@ import type {
   ActiveCollabUpdates
 } from '../../shared/activecollab-types'
 import { acDiffMentions, type AcMentionSeen } from './mention-detector'
+import { acDropSelfAuthoredComments, type AcTaskCommentsFetch } from './self-comment-filter'
 import {
   acDiffTaskSnapshot,
   type AcTaskChange,
@@ -109,6 +112,12 @@ export type AcTaskPollerDeps = {
   saveMentionSeen?: (key: string, seen: AcMentionSeen) => void
   emitMention?: (update: ActiveCollabObjectUpdate) => void
   mentionsEnabled?: () => boolean
+  /**
+   * The author check, all-or-nothing like the mention pass: absent leaves a comment delta
+   * announced whoever wrote it, exactly as before this existed. See self-comment-filter.ts.
+   */
+  selfUserId?: () => number | null
+  fetchTaskComments?: AcTaskCommentsFetch
 }
 
 export type AcTaskPoller = {
@@ -272,6 +281,8 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
       return
     }
     inFlight = true
+    // Stamped before the request so a local write landing mid-fetch is detectable.
+    const fetchStartedAt = deps.now()
     try {
       const fetched = await acFetchAssignedTasks(deps.fetchPage)
       if (!fetched.ok) {
@@ -296,18 +307,31 @@ export function createAcTaskPoller(deps: AcTaskPollerDeps): AcTaskPoller {
       const { changes, snapshot } = acDiffTaskSnapshot({
         previous: deps.loadSnapshot(key),
         tasks: fetched.tasks,
-        now: deps.now()
+        now: deps.now(),
+        fetchStartedAt
       })
       deps.saveSnapshot(key, snapshot)
+      // Before either surface: a comment the user wrote is not news, and not unread to them.
+      const reportable = deps.fetchTaskComments
+        ? await acDropSelfAuthoredComments({
+            changes,
+            selfUserId: deps.selfUserId?.() ?? null,
+            fetchTaskComments: deps.fetchTaskComments
+          })
+        : changes
       // Snapshot first: saving counts cannot create the file, so the seeding poll has to.
       const previousUnread = deps.loadUnread(key)
-      const unread = acMergeTaskUnread({ unread: previousUnread, changes, tasks: fetched.tasks })
+      const unread = acMergeTaskUnread({
+        unread: previousUnread,
+        changes: reportable,
+        tasks: fetched.tasks
+      })
       if (unread !== previousUnread) {
         deps.saveUnread(key, unread)
         deps.onUnread(unread)
       }
       const kinds = deps.notifyKinds()
-      const wanted = changes.filter((change) => kinds.has(change.kind))
+      const wanted = reportable.filter((change) => kinds.has(change.kind))
       if (wanted.length <= AC_POLL_BANNER_CAP || !deps.emitSummary) {
         for (const change of wanted) {
           deps.emit(change)

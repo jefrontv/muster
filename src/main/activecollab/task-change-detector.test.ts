@@ -330,8 +330,46 @@ describe('acFoldLocalWrite', () => {
 
     const folded = acFoldLocalWrite({ snapshot, taskId: 1, task: echo, now: NOW })
 
-    expect(folded['1']).toEqual(acTaskSnapshotEntry(echo, NOW))
+    expect(folded['1']).toEqual({ ...acTaskSnapshotEntry(echo, NOW), foldedAt: NOW })
     expect(acDiffTaskSnapshot({ previous: folded, tasks: [echo], now: NOW }).changes).toEqual([])
+  })
+
+  it('keeps a fold that landed while a poll was already in flight', () => {
+    const before = acTask({ id: 1, commentCount: 5, updatedOn: EARLIER })
+    const snapshot = snapshotOf([before])
+    const fetchStartedAt = NOW - 1_000
+
+    // The user comments through this app while the poll above is still in flight.
+    const folded = acFoldLocalWrite({ snapshot, taskId: 1, postedComments: 1, now: NOW })
+    const { changes, snapshot: next } = acDiffTaskSnapshot({
+      previous: folded,
+      tasks: [before],
+      now: NOW,
+      fetchStartedAt
+    })
+
+    expect(changes).toEqual([])
+    // Without the stamp this saved 5, and the next poll read the server's 6 as a new comment.
+    expect(next['1']?.commentCount).toBe(6)
+  })
+
+  it('diffs normally once the fetch started after the fold', () => {
+    const snapshot = acFoldLocalWrite({
+      snapshot: snapshotOf([acTask({ id: 1, commentCount: 5, updatedOn: EARLIER })]),
+      taskId: 1,
+      postedComments: 1,
+      now: NOW - 5_000
+    })
+    const { changes } = acDiffTaskSnapshot({
+      previous: snapshot,
+      tasks: [acTask({ id: 1, commentCount: 7, updatedOn: NOW })],
+      now: NOW,
+      fetchStartedAt: NOW - 1_000
+    })
+
+    expect(changes).toEqual([
+      { kind: 'comments', task: acTask({ id: 1, commentCount: 7, updatedOn: NOW }), newComments: 1 }
+    ])
   })
 
   it('records a task the snapshot has never seen, so self-assignment is not an assignment', () => {
@@ -347,7 +385,12 @@ describe('acFoldLocalWrite', () => {
 
     const folded = acFoldLocalWrite({ snapshot, taskId: 1, postedComments: 1, now: NOW })
 
-    expect(folded['1']).toEqual({ commentCount: 5, notifiedDueBucket: 'none', updatedOn: null })
+    expect(folded['1']).toEqual({
+      commentCount: 5,
+      notifiedDueBucket: 'none',
+      updatedOn: null,
+      foldedAt: NOW
+    })
   })
 
   it('re-buckets from the date this app wrote when the server echoed nothing usable', () => {
