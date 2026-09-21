@@ -44,14 +44,11 @@ export function ChatWorkspaceAppearanceSection({
       </div>
       <RepositoryIconTabs
         initialTab={initialTab}
-        hideAvatarTab
         selectedLucideName={icon?.type === 'lucide' ? icon.name : null}
         selectedEmoji={icon?.type === 'emoji' ? icon.emoji : ''}
         currentIcon={icon}
-        loadingGitHub={false}
         defaultFaviconDomain={defaultFaviconDomain ?? ''}
         onSetIcon={onIconChange}
-        onUseGitHubAvatar={() => undefined}
         onTabChange={setActiveTab}
       />
       {activeTab === 'icon' ? (

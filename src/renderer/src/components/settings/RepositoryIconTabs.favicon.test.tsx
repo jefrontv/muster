@@ -23,10 +23,8 @@ function renderFaviconTab(onSetIcon: (icon: unknown) => void, defaultFaviconDoma
         initialTab="favicon"
         selectedLucideName={null}
         selectedEmoji=""
-        loadingGitHub={false}
         defaultFaviconDomain={defaultFaviconDomain}
         onSetIcon={onSetIcon}
-        onUseGitHubAvatar={() => {}}
       />
     )
   })

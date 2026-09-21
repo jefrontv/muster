@@ -27,10 +27,8 @@ function render(currentIcon: RepoIcon | null, onSetIcon: (icon: RepoIcon | null)
         selectedLucideName={null}
         selectedEmoji=""
         currentIcon={currentIcon}
-        loadingGitHub={false}
         defaultFaviconDomain="acme.local"
         onSetIcon={onSetIcon}
-        onUseGitHubAvatar={() => {}}
       />
     )
   })

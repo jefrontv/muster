@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { RotateCcw } from 'lucide-react'
 import type { Repo } from '../../../../shared/types'
 import type { RepoIcon } from '../../../../shared/repo-icon'
@@ -16,11 +15,7 @@ import { findSiteForProject } from '../right-sidebar/site-for-project'
 import type { SiteSummary } from '../../../../shared/site-types'
 import { RepositoryIconColorSection } from './RepositoryIconColorSection'
 import { RepositoryIconTabs } from './RepositoryIconTabs'
-import {
-  buildRepositoryGitHubAvatarUpdate,
-  resolveRepositoryGitHubAvatar,
-  resolveRepositoryUpstreamLive
-} from './repository-icon-github'
+import { resolveRepositoryUpstreamLive } from './repository-icon-github'
 import { translate } from '@/i18n/i18n'
 
 const NO_SITES: SiteSummary[] = []
@@ -32,7 +27,6 @@ export function RepositoryIconPicker({
   repo: Repo
   updateRepo: (repoId: string, updates: Partial<Repo>) => void
 }): React.JSX.Element {
-  const [loadingGitHub, setLoadingGitHub] = useState(false)
   const [resetting, setResetting] = useState(false)
   const mountedRef = useMountedRef()
   // Why: resolve this repo's upstream/avatar on the host that owns it, not the
@@ -50,7 +44,7 @@ export function RepositoryIconPicker({
         ? 'icon'
         : repo.repoIcon?.type === 'image' && repo.repoIcon.source === 'favicon'
           ? 'favicon'
-          : 'avatar'
+          : 'icon'
   const runtimeTarget = useMemo(
     () => getActiveRuntimeTarget({ activeRuntimeEnvironmentId }),
     [activeRuntimeEnvironmentId]
@@ -100,102 +94,36 @@ export function RepositoryIconPicker({
     [runtimeTarget, repo]
   )
 
-  const resolveGitHubAvatar = useCallback(
-    (options?: { forceLive?: boolean }) =>
-      resolveRepositoryGitHubAvatar(runtimeTarget, repo, options),
-    [runtimeTarget, repo]
-  )
-
-  const handleUseGitHubAvatar = async () => {
-    setLoadingGitHub(true)
-    try {
-      const resolution = await resolveGitHubAvatar({ forceLive: true })
-      if (!mountedRef.current) {
-        return
-      }
-      if (!resolution.repoIcon) {
-        toast.error(
-          translate(
-            'auto.components.settings.RepositoryIconPicker.f79972271a',
-            'No GitHub remote found for this repo.'
-          )
-        )
-        return
-      }
-      // A null build means the stored icon/upstream already match — nothing to write.
-      const updates = buildRepositoryGitHubAvatarUpdate(repo, resolution)
-      if (updates) {
-        updateRepo(repo.id, updates)
-      }
-    } catch {
-      if (mountedRef.current) {
-        toast.error(
-          translate(
-            'auto.components.settings.RepositoryIconPicker.d71df44587',
-            'Failed to resolve the GitHub repo.'
-          )
-        )
-      }
-    } finally {
-      if (mountedRef.current) {
-        setLoadingGitHub(false)
-      }
-    }
-  }
-
-  const handleResetToDefault = async () => {
+  const handleResetToDefault = () => {
     setResetting(true)
-    try {
-      const resolution = await resolveGitHubAvatar({ forceLive: true }).catch(() => null)
-      if (!mountedRef.current) {
-        return
-      }
-      const updates = resolution
-        ? buildRepositoryGitHubAvatarUpdate(repo, resolution, { clearMissingIcon: true })
-        : { repoIcon: null }
-      if (updates) {
-        updateRepo(repo.id, updates)
-      }
-    } finally {
-      if (mountedRef.current) {
-        setResetting(false)
-      }
-    }
+    updateRepo(repo.id, { repoIcon: null })
+    setResetting(false)
   }
 
-  const githubIdentityRefreshedRef = useRef<string | null>(null)
+  const upstreamResolvedRef = useRef<string | null>(null)
   useEffect(() => {
-    const hasGitHubAvatar = repo.repoIcon?.type === 'image' && repo.repoIcon.source === 'github'
-    const shouldRefresh = hasGitHubAvatar || repo.upstream === undefined
-    if (!shouldRefresh || githubIdentityRefreshedRef.current === repo.id) {
+    // Why: `undefined` upstream is unresolved, and the fork indicator needs it.
+    if (repo.upstream !== undefined || upstreamResolvedRef.current === repo.id) {
       return
     }
-    githubIdentityRefreshedRef.current = repo.id
+    upstreamResolvedRef.current = repo.id
     let cancelled = false
+    // Why an async wrapper: the resolver can throw synchronously (no gh bridge), which a
+    // trailing .catch() on the call would never see.
     void (async () => {
-      let updates: Partial<Repo> | null
       try {
-        if (hasGitHubAvatar) {
-          // Why: stored upstream/icon metadata can outlive a GitHub repo transfer.
-          // Refresh only when settings opens for the affected GitHub-avatar repo.
-          const resolution = await resolveGitHubAvatar({ forceLive: true })
-          updates = buildRepositoryGitHubAvatarUpdate(repo, resolution)
-        } else {
-          const upstream = await resolveUpstreamLive()
-          updates = { upstream: upstream ?? null }
+        const upstream = await resolveUpstreamLive()
+        if (!cancelled && mountedRef.current) {
+          updateRepo(repo.id, { upstream: upstream ?? null })
         }
       } catch {
-        return
+        // Best-effort: an unresolved upstream only costs the fork indicator.
       }
-      if (cancelled || !mountedRef.current || !updates) {
-        return
-      }
-      updateRepo(repo.id, updates)
     })()
     return () => {
       cancelled = true
     }
-  }, [repo, resolveGitHubAvatar, resolveUpstreamLive, updateRepo, mountedRef])
+  }, [repo.id, repo.upstream, resolveUpstreamLive, updateRepo, mountedRef])
 
   return (
     <div className="space-y-3">
@@ -218,7 +146,7 @@ export function RepositoryIconPicker({
           size="sm"
           className="gap-2"
           disabled={resetting}
-          onClick={() => void handleResetToDefault()}
+          onClick={handleResetToDefault}
         >
           <RotateCcw className="size-3.5" />
           {translate('auto.components.settings.RepositoryIconPicker.549d126081', 'Reset')}
@@ -232,10 +160,8 @@ export function RepositoryIconPicker({
         selectedLucideName={selectedLucideName}
         selectedEmoji={selectedEmoji}
         currentIcon={repo.repoIcon}
-        loadingGitHub={loadingGitHub}
         defaultFaviconDomain={defaultFaviconDomain}
         onSetIcon={setIcon}
-        onUseGitHubAvatar={() => void handleUseGitHubAvatar()}
       />
     </div>
   )
