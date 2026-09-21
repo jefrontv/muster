@@ -1,7 +1,13 @@
 import { createServer, type Server } from 'node:http'
+import { gzipSync } from 'node:zlib'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  allowsThirdPartyIconLookup,
   extractIconLinkHref,
+  extractIconLinkHrefs,
+  extractManifestHref,
+  extractManifestIconSrcs,
+  faviconHostVariants,
   fetchFaviconAsDataUrl,
   normalizeFaviconTarget,
   sniffFaviconMimeType
@@ -102,6 +108,93 @@ describe('extractIconLinkHref', () => {
   it('returns null when no icon link exists', () => {
     expect(extractIconLinkHref('<link rel="stylesheet" href="/a.css"><p>hi</p>')).toBeNull()
     expect(extractIconLinkHref('<link rel="icon">')).toBeNull()
+  })
+})
+
+describe('extractIconLinkHrefs', () => {
+  it('returns every declared icon, best first, so a 404 can fall through', () => {
+    const html = `
+      <link rel="icon" href="/small.png" sizes="16x16">
+      <link rel="icon" href="/large.png" sizes="512x512">
+      <link rel="apple-touch-icon" href="/touch.png">`
+    expect(extractIconLinkHrefs(html)).toEqual(['/large.png', '/touch.png', '/small.png'])
+  })
+
+  it('de-duplicates an href declared at several sizes', () => {
+    const html = `
+      <link rel="icon" href="/fav.png" sizes="32x32">
+      <link rel="icon" href="/fav.png" sizes="16x16">`
+    expect(extractIconLinkHrefs(html)).toEqual(['/fav.png'])
+  })
+
+  it('returns an empty list when nothing is declared', () => {
+    expect(extractIconLinkHrefs('<link rel="stylesheet" href="/a.css">')).toEqual([])
+  })
+})
+
+describe('extractManifestHref', () => {
+  it('finds the web app manifest link', () => {
+    expect(extractManifestHref('<link rel="manifest" href="/site.webmanifest">')).toBe(
+      '/site.webmanifest'
+    )
+  })
+
+  it('ignores other rels and a manifest link with no href', () => {
+    expect(extractManifestHref('<link rel="icon" href="/a.png">')).toBeNull()
+    expect(extractManifestHref('<link rel="manifest">')).toBeNull()
+  })
+})
+
+describe('extractManifestIconSrcs', () => {
+  it('orders manifest icons largest first', () => {
+    const json = JSON.stringify({
+      icons: [
+        { src: '/i-192.png', sizes: '192x192' },
+        { src: '/i-512.png', sizes: '512x512' }
+      ]
+    })
+    expect(extractManifestIconSrcs(json)).toEqual(['/i-512.png', '/i-192.png'])
+  })
+
+  it('survives invalid json, a missing icons array, and entries with no src', () => {
+    expect(extractManifestIconSrcs('not json')).toEqual([])
+    expect(extractManifestIconSrcs('{"name":"x"}')).toEqual([])
+    expect(extractManifestIconSrcs('{"icons":[{"sizes":"48x48"}]}')).toEqual([])
+  })
+})
+
+describe('faviconHostVariants', () => {
+  it('pairs an apex with its www spelling, in both directions', () => {
+    expect(faviconHostVariants('example.com')).toEqual(['example.com', 'www.example.com'])
+    expect(faviconHostVariants('www.example.com')).toEqual(['www.example.com', 'example.com'])
+  })
+
+  it('leaves a specific machine alone: explicit port, IP literal, single label', () => {
+    expect(faviconHostVariants('foo.local:10004')).toEqual(['foo.local:10004'])
+    expect(faviconHostVariants('127.0.0.1')).toEqual(['127.0.0.1'])
+    expect(faviconHostVariants('localhost')).toEqual(['localhost'])
+  })
+})
+
+describe('allowsThirdPartyIconLookup', () => {
+  it('allows public domains', () => {
+    expect(allowsThirdPartyIconLookup('timberline.com.au')).toBe(true)
+    expect(allowsThirdPartyIconLookup('example.org')).toBe(true)
+  })
+
+  it('never sends private or local names to an external service', () => {
+    for (const host of [
+      'mysite.local',
+      'localhost',
+      'foo.local:10004',
+      '127.0.0.1',
+      '192.168.1.10',
+      'box.internal',
+      'thing.test',
+      'server.lan'
+    ]) {
+      expect(allowsThirdPartyIconLookup(host)).toBe(false)
+    }
   })
 })
 
@@ -286,5 +379,123 @@ describe('fetchFaviconAsDataUrl', () => {
     if (!result.ok) {
       expect(result.error).toContain('is not an image')
     }
+  })
+  it('falls through to the next declared icon when the best one 404s', async () => {
+    const host = await listen((req, res) => {
+      if (req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end(
+          '<html><head><link rel="icon" href="/big.png" sizes="512x512">' +
+            '<link rel="icon" href="/small.png" sizes="16x16"></head></html>'
+        )
+        return
+      }
+      if (req.url === '/small.png') {
+        res.writeHead(200, { 'Content-Type': 'image/png' })
+        res.end(PNG_1X1)
+        return
+      }
+      res.writeHead(404).end()
+    })
+    const result = await fetchFaviconAsDataUrl(host)
+    expect(result).toEqual({
+      ok: true,
+      dataUrl: `data:image/png;base64,${PNG_1X1.toString('base64')}`
+    })
+  })
+
+  it('reads a gzipped homepage', async () => {
+    const host = await listen((req, res) => {
+      if (req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Encoding': 'gzip' })
+        res.end(gzipSync(Buffer.from('<html><head><link rel="icon" href="/brand.png"></head>')))
+        return
+      }
+      if (req.url === '/brand.png') {
+        res.writeHead(200, { 'Content-Type': 'image/png' })
+        res.end(PNG_1X1)
+        return
+      }
+      res.writeHead(404).end()
+    })
+    const result = await fetchFaviconAsDataUrl(host)
+    expect(result).toEqual({
+      ok: true,
+      dataUrl: `data:image/png;base64,${PNG_1X1.toString('base64')}`
+    })
+  })
+
+  it('stops reading the homepage at </head> instead of waiting for the body', async () => {
+    // The body never arrives. Only an early stop at </head> can complete this fetch.
+    const host = await listen((req, res) => {
+      if (req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.write('<html><head><link rel="icon" href="/brand.png"></head>')
+        res.write('<body>')
+        return
+      }
+      if (req.url === '/brand.png') {
+        res.writeHead(200, { 'Content-Type': 'image/png' })
+        res.end(PNG_1X1)
+        return
+      }
+      res.writeHead(404).end()
+    })
+    const startedAt = Date.now()
+    const result = await fetchFaviconAsDataUrl(host)
+    expect(Date.now() - startedAt).toBeLessThan(2_000)
+    expect(result).toEqual({
+      ok: true,
+      dataUrl: `data:image/png;base64,${PNG_1X1.toString('base64')}`
+    })
+  })
+
+  it('takes the largest icon from the web app manifest when the page declares none', async () => {
+    const host = await listen((req, res) => {
+      if (req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end('<html><head><link rel="manifest" href="/site.webmanifest"></head></html>')
+        return
+      }
+      if (req.url === '/site.webmanifest') {
+        res.writeHead(200, { 'Content-Type': 'application/manifest+json' })
+        res.end(
+          JSON.stringify({
+            icons: [
+              { src: '/i-48.png', sizes: '48x48' },
+              { src: '/i-512.png', sizes: '512x512' }
+            ]
+          })
+        )
+        return
+      }
+      if (req.url === '/i-512.png') {
+        res.writeHead(200, { 'Content-Type': 'image/png' })
+        res.end(PNG_1X1)
+        return
+      }
+      res.writeHead(404).end()
+    })
+    const result = await fetchFaviconAsDataUrl(host)
+    expect(result).toEqual({
+      ok: true,
+      dataUrl: `data:image/png;base64,${PNG_1X1.toString('base64')}`
+    })
+  })
+
+  it('tries the well-known paths beyond /favicon.ico', async () => {
+    const host = await listen((req, res) => {
+      if (req.url === '/apple-touch-icon.png') {
+        res.writeHead(200, { 'Content-Type': 'image/png' })
+        res.end(PNG_1X1)
+        return
+      }
+      res.writeHead(404).end()
+    })
+    const result = await fetchFaviconAsDataUrl(host)
+    expect(result).toEqual({
+      ok: true,
+      dataUrl: `data:image/png;base64,${PNG_1X1.toString('base64')}`
+    })
   })
 })
