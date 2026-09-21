@@ -92,7 +92,8 @@ describe('acDropSelfAuthoredComments', () => {
     const kept = await acDropSelfAuthoredComments({
       changes: [commentChange(1, 1)],
       selfUserId: ME,
-      fetchTaskComments: () => Promise.resolve({ ok: false, kind: 'network', message: 'offline' })
+      fetchTaskComments: () =>
+        Promise.resolve({ ok: false, kind: 'network', error: 'offline', status: null })
     })
 
     expect(kept).toEqual([commentChange(1, 1)])
