@@ -1,12 +1,24 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gitExecFileAsync } from './git/runner'
+import { fetchFaviconAsDataUrl } from './favicon-fetch'
+import { getRepoHomepage } from './github/repo-homepage'
 import { detectRepoIcon, detectRepoIconAndUpstream } from './repo-icon-autodetect'
+
+// Icon detection reaches the network twice: the repo's GitHub homepage, and the
+// favicon behind whatever website it names. Both are stubbed so these stay offline.
+vi.mock('./favicon-fetch', () => ({ fetchFaviconAsDataUrl: vi.fn() }))
+vi.mock('./github/repo-homepage', () => ({ getRepoHomepage: vi.fn() }))
+
+const mockFetchFavicon = vi.mocked(fetchFaviconAsDataUrl)
+const mockRepoHomepage = vi.mocked(getRepoHomepage)
 
 const PNG_1X1_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+
+const FAVICON_DATA_URL = `data:image/png;base64,${PNG_1X1_BASE64}`
 
 const tempDirs: string[] = []
 
@@ -16,7 +28,13 @@ async function makeTempRepoDir(): Promise<string> {
   return dir
 }
 
+beforeEach(() => {
+  mockFetchFavicon.mockResolvedValue({ ok: true, dataUrl: FAVICON_DATA_URL })
+  mockRepoHomepage.mockResolvedValue(null)
+})
+
 afterEach(async () => {
+  vi.clearAllMocks()
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
 
@@ -46,10 +64,11 @@ describe('detectRepoIcon', () => {
 
     await expect(detectRepoIcon({ repoPath, kind: 'folder' })).resolves.toEqual({
       type: 'image',
-      src: 'https://www.google.com/s2/favicons?domain=app.example.com&sz=64',
+      src: FAVICON_DATA_URL,
       source: 'favicon',
       label: 'Website favicon'
     })
+    expect(mockFetchFavicon).toHaveBeenCalledWith('https://app.example.com/docs')
   })
 
   it('resolves declared icon hrefs from project source files', async () => {
@@ -114,19 +133,43 @@ describe('detectRepoIcon', () => {
     await expect(detectRepoIcon({ repoPath, kind: 'folder' })).resolves.toBeUndefined()
   })
 
-  it('falls back to the GitHub owner avatar for GitHub repos', async () => {
+  it('fetches the favicon of the website the GitHub repo links to', async () => {
+    const repoPath = await makeTempRepoDir()
+    await gitExecFileAsync(['init'], { cwd: repoPath })
+    await gitExecFileAsync(['remote', 'add', 'origin', 'git@github.com:stablyai/orca.git'], {
+      cwd: repoPath
+    })
+    mockRepoHomepage.mockResolvedValue('https://orca.computer')
+
+    await expect(detectRepoIcon({ repoPath, kind: 'git' })).resolves.toEqual({
+      type: 'image',
+      src: FAVICON_DATA_URL,
+      source: 'favicon',
+      label: 'Website favicon'
+    })
+    expect(mockFetchFavicon).toHaveBeenCalledWith('https://orca.computer')
+  })
+
+  it('leaves the icon unset when a GitHub repo names no website', async () => {
     const repoPath = await makeTempRepoDir()
     await gitExecFileAsync(['init'], { cwd: repoPath })
     await gitExecFileAsync(['remote', 'add', 'origin', 'git@github.com:stablyai/orca.git'], {
       cwd: repoPath
     })
 
-    await expect(detectRepoIcon({ repoPath, kind: 'git' })).resolves.toEqual({
-      type: 'image',
-      src: 'https://github.com/stablyai.png?size=64',
-      source: 'github',
-      label: 'stablyai/orca'
-    })
+    await expect(detectRepoIcon({ repoPath, kind: 'git' })).resolves.toBeUndefined()
+    expect(mockFetchFavicon).not.toHaveBeenCalled()
+  })
+
+  it('leaves the icon unset when the site has no fetchable favicon', async () => {
+    const repoPath = await makeTempRepoDir()
+    await writeFile(
+      join(repoPath, 'package.json'),
+      JSON.stringify({ homepage: 'https://app.example.com/docs' })
+    )
+    mockFetchFavicon.mockResolvedValue({ ok: false, error: 'No favicon found.' })
+
+    await expect(detectRepoIcon({ repoPath, kind: 'folder' })).resolves.toBeUndefined()
   })
 
   it('skips code-host package homepages so GitHub remotes stay repo-specific', async () => {
@@ -140,12 +183,8 @@ describe('detectRepoIcon', () => {
       cwd: repoPath
     })
 
-    await expect(detectRepoIcon({ repoPath, kind: 'git' })).resolves.toEqual({
-      type: 'image',
-      src: 'https://github.com/stablyai.png?size=64',
-      source: 'github',
-      label: 'stablyai/orca'
-    })
+    await expect(detectRepoIcon({ repoPath, kind: 'git' })).resolves.toBeUndefined()
+    expect(mockFetchFavicon).not.toHaveBeenCalled()
   })
 
   it('stores a null upstream marker for git repos without a resolved fork parent', async () => {
@@ -157,7 +196,7 @@ describe('detectRepoIcon', () => {
     })
   })
 
-  it('uses the resolved fork upstream for both metadata and the GitHub avatar', async () => {
+  it('uses the resolved fork upstream for the stored git metadata', async () => {
     const repoPath = await makeTempRepoDir()
     await gitExecFileAsync(['init'], { cwd: repoPath })
     await gitExecFileAsync(['remote', 'add', 'origin', 'git@github.com:tmchow/orca.git'], {
@@ -173,13 +212,7 @@ describe('detectRepoIcon', () => {
         remoteName: 'upstream',
         remoteUrl: 'git@github.com:stablyai/orca.git'
       },
-      repoIcon: {
-        type: 'image',
-        src: 'https://github.com/stablyai.png?size=64',
-        source: 'github',
-        label: 'stablyai/orca'
-      },
-      // Why: fork parents resolve host-qualified so avatars/links stay on the fork's server.
+      // Why: fork parents resolve host-qualified so links stay on the fork's server.
       upstream: { owner: 'stablyai', repo: 'orca', host: 'github.com' }
     })
   })

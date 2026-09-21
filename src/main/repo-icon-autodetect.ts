@@ -1,12 +1,9 @@
 import { readFile, stat } from 'node:fs/promises'
 import type { GitHubRepositoryIdentity, RepoKind } from '../shared/types'
-import {
-  faviconUrlFromWebsite,
-  githubAvatarIcon,
-  MAX_REPO_ICON_UPLOAD_BYTES,
-  type RepoIcon
-} from '../shared/repo-icon'
+import { MAX_REPO_ICON_UPLOAD_BYTES, type RepoIcon } from '../shared/repo-icon'
+import { fetchFaviconAsDataUrl } from './favicon-fetch'
 import { getRepoSlug, getRepoUpstream } from './github/client'
+import { getRepoHomepage } from './github/repo-homepage'
 import { getSshFilesystemProvider } from './providers/ssh-filesystem-dispatch'
 import type { IFilesystemProvider } from './providers/types'
 import { detectGitRemoteIdentity } from './repo-git-remote-identity'
@@ -212,35 +209,39 @@ async function detectRemotePngIcon(
   return null
 }
 
-function packageHomepageIcon(packageJson: unknown): RepoIcon | null {
-  if (!packageJson || typeof packageJson !== 'object') {
+/** The site's real favicon bytes, stored inline so the icon needs no network to render. */
+async function websiteFaviconIcon(homepage: string): Promise<RepoIcon | null> {
+  if (!shouldUseWebsiteFavicon(homepage)) {
     return null
   }
-  const homepage = (packageJson as { homepage?: unknown }).homepage
-  if (typeof homepage !== 'string' || !shouldUseWebsiteFavicon(homepage)) {
-    return null
-  }
-  const src = faviconUrlFromWebsite(homepage)
-  return src ? { type: 'image', src, source: 'favicon', label: 'Website favicon' } : null
+  const result = await fetchFaviconAsDataUrl(homepage)
+  return result.ok
+    ? { type: 'image', src: result.dataUrl, source: 'favicon', label: 'Website favicon' }
+    : null
 }
 
-async function detectLocalPackageHomepageIcon(repoPath: string): Promise<RepoIcon | null> {
+function packageHomepage(packageJson: unknown): string | null {
+  const homepage = (packageJson as { homepage?: unknown })?.homepage
+  return typeof homepage === 'string' && homepage ? homepage : null
+}
+
+async function detectLocalPackageHomepage(repoPath: string): Promise<string | null> {
   try {
     const packageJsonPath = joinWorktreeRelativePath(repoPath, 'package.json')
     const info = await stat(packageJsonPath)
     if (!info.isFile() || info.size > 128 * 1024) {
       return null
     }
-    return packageHomepageIcon(JSON.parse(await readFile(packageJsonPath, 'utf8')))
+    return packageHomepage(JSON.parse(await readFile(packageJsonPath, 'utf8')))
   } catch {
     return null
   }
 }
 
-async function detectRemotePackageHomepageIcon(
+async function detectRemotePackageHomepage(
   repoPath: string,
   fsProvider: IFilesystemProvider
-): Promise<RepoIcon | null> {
+): Promise<string | null> {
   try {
     const packageJsonPath = joinWorktreeRelativePath(repoPath, 'package.json')
     const info = await fsProvider.stat(packageJsonPath)
@@ -251,21 +252,21 @@ async function detectRemotePackageHomepageIcon(
     if (result.isBinary) {
       return null
     }
-    return packageHomepageIcon(JSON.parse(result.content))
+    return packageHomepage(JSON.parse(result.content))
   } catch {
     return null
   }
 }
 
-async function detectGitHubAvatarIcon(
+/** The website the GitHub repo links to, via the upstream owner for a fork. */
+async function detectGitHubHomepage(
   repoPath: string,
   connectionId?: string | null,
   upstream?: GitHubRepositoryIdentity | null
-): Promise<RepoIcon | null> {
+): Promise<string | null> {
   try {
-    // Why: a fork's origin is the personal copy, so prefer the upstream owner.
     const slug = upstream ?? (await getRepoSlug(repoPath, connectionId))
-    return slug ? githubAvatarIcon(slug) : null
+    return slug ? await getRepoHomepage(slug, repoPath, connectionId) : null
   } catch {
     return null
   }
@@ -291,15 +292,14 @@ export async function detectRepoIcon({
       return fileIcon
     }
 
-    const homepageIcon = fsProvider
-      ? await detectRemotePackageHomepageIcon(repoPath, fsProvider)
-      : await detectLocalPackageHomepageIcon(repoPath)
-    if (homepageIcon) {
-      return homepageIcon
-    }
-
-    if (kind === 'git') {
-      return (await detectGitHubAvatarIcon(repoPath, connectionId, upstream)) ?? undefined
+    // Why: the repo's own declared website beats anything guessed from the remote.
+    const homepage =
+      (fsProvider
+        ? await detectRemotePackageHomepage(repoPath, fsProvider)
+        : await detectLocalPackageHomepage(repoPath)) ??
+      (kind === 'git' ? await detectGitHubHomepage(repoPath, connectionId, upstream) : null)
+    if (homepage) {
+      return (await websiteFaviconIcon(homepage)) ?? undefined
     }
   } catch {
     // Repo creation must not fail because a best-effort icon probe failed.
