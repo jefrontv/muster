@@ -160,7 +160,7 @@ export function ChatModeDraftHero({
                   <ChevronDown className="ml-1 inline size-4 align-baseline text-muted-foreground" />
                 </span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="max-h-80 w-64 overflow-y-auto">
+              <DropdownMenuContent align="center" className="scrollbar-sleek max-h-80 w-64 overflow-y-auto">
                 <DropdownMenuRadioGroup
                   value={selectedWorkspace?.id ?? STANDALONE}
                   onValueChange={(value) =>

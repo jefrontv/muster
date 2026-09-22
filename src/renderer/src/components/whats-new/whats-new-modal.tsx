@@ -97,7 +97,7 @@ export function WhatsNewModal({
         {sections.some((section) => section.notes) ? (
           // Why the fixed-height scroll: release notes run long; an unbounded
           // dialog would grow past the window on small displays.
-          <div className="max-h-[50vh] overflow-y-auto text-[13px] leading-relaxed text-foreground">
+          <div className="scrollbar-sleek max-h-[50vh] overflow-y-auto text-[13px] leading-relaxed text-foreground">
             {sections.map((section, index) => (
               <section key={section.version}>
                 {/* Why label every section once there is more than one: without a version heading a

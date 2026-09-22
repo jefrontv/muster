@@ -1,8 +1,9 @@
 // TypeScript 7 is a native CLI; AST consumers still need the legacy JavaScript API.
 import ts from 'typescript-api'
 
+// scrollbar-none counts: hiding the bar is a deliberate Muster choice, not native drift.
 const STYLED_SCROLLBAR_CLASSES = new Set(
-  'scrollbar-sleek scrollbar-editor worktree-sidebar-scrollbar'.split(' ')
+  'scrollbar-sleek scrollbar-editor worktree-sidebar-scrollbar scrollbar-none'.split(' ')
 )
 // Why: vertical scroll is where native scrollbar drift keeps recurring. The
 // guard intentionally ignores horizontal-only overflow.
