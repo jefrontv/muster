@@ -12,6 +12,7 @@ import {
 import { copyRichMarkdownLink } from '@/components/editor/rich-markdown-link-clipboard'
 import { createEditableMarkdownLinkBubble } from '@/components/editor/rich-markdown-selected-link-actions'
 import { safeActiveCollabCommentHref } from './activecollab-comment-body-html'
+import { caretInsideLink } from './activecollab-comment-link-caret'
 
 export type ActiveCollabCommentLinkBubble = {
   linkBubble: LinkBubbleState | null
@@ -54,6 +55,10 @@ export function useActiveCollabCommentLinkBubble({
 
   // Parking the caret in an existing link should surface its actions without the author hunting for
   // the toolbar; while the URL field is open the selection is the editor's, not theirs, so leave it.
+  //
+  // `caretInsideLink` rather than `isActive('link')`: the latter is also true with the caret against
+  // a link's trailing edge, which is exactly where pasting or typing a URL leaves it, so the bubble
+  // used to open over the footer every time an author added a link themselves.
   useEffect(() => {
     if (editor === null) {
       return
@@ -62,7 +67,7 @@ export function useActiveCollabCommentLinkBubble({
       if (isEditing) {
         return
       }
-      if (!editor.isActive('link')) {
+      if (!caretInsideLink(editor.state)) {
         setLinkBubble(null)
         return
       }

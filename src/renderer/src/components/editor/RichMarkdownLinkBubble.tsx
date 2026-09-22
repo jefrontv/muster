@@ -77,6 +77,29 @@ function clampDocumentBubblePosition(linkBubble: LinkBubbleState): React.CSSProp
   }
 }
 
+/**
+ * The anchored position, kept inside the anchor's own width.
+ *
+ * The clamped variant above only ever guarded the portalled bubble. Anchored, it was placed at the
+ * caret with no bound at all, so in a narrow container — the task pane's comment composer, where
+ * the field is a few hundred pixels wide — a link near the right edge put the bubble half outside
+ * it and the URL was cut off mid-address.
+ */
+function clampAnchoredBubblePosition(
+  linkBubble: LinkBubbleState,
+  anchorRect: DOMRect | undefined
+): React.CSSProperties {
+  const left = linkBubble.left - (anchorRect?.left ?? 0)
+  const top = linkBubble.top - (anchorRect?.top ?? 0)
+  if (anchorRect === undefined) {
+    return { position: 'absolute', left, top }
+  }
+  // A container narrower than the bubble cannot fit it either way; pinning to 0 there keeps the
+  // start of the URL visible, which is the half worth reading.
+  const maxLeft = Math.max(0, anchorRect.width - LINK_BUBBLE_MAX_WIDTH)
+  return { position: 'absolute', left: Math.min(Math.max(left, 0), maxLeft), top }
+}
+
 export function getLinkBubblePosition(
   editor: Editor,
   rootEl: HTMLElement | null
@@ -276,11 +299,7 @@ export function RichMarkdownLinkBubble({
   const anchorRect = anchorElement?.getBoundingClientRect()
   const positionStyle: React.CSSProperties = portalToDocument
     ? clampDocumentBubblePosition(linkBubble)
-    : {
-        position: 'absolute',
-        left: linkBubble.left - (anchorRect?.left ?? 0),
-        top: linkBubble.top - (anchorRect?.top ?? 0)
-      }
+    : clampAnchoredBubblePosition(linkBubble, anchorRect)
 
   const bubble = (
     <div
