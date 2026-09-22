@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: centralizes Monaco setup, markdown annotations, content sync, reveal handling, and editor-local UI overlays. */
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: selection annotations are synchronized from Monaco editor selection and layout APIs, not derived React props. */
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useEditorThemeName } from '@/lib/use-editor-theme-name'
 import Editor, { type OnMount } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import { toast } from 'sonner'
@@ -193,6 +194,7 @@ export default function MonacoEditor({
   const isDark =
     settings?.theme === 'dark' ||
     (settings?.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const editorThemeName = useEditorThemeName(isDark)
 
   const updateMarkdownCompletionDocuments = useCallback((): void => {
     const modelKey = editorRef.current?.getModel()?.uri.toString() ?? null
@@ -825,7 +827,7 @@ export default function MonacoEditor({
         language={language}
         // Why: defaultValue, not controlled value — Orca owns post-mount content sync; a controlled path would double setValue.
         defaultValue={content}
-        theme={isDark ? 'vs-dark' : 'vs'}
+        theme={editorThemeName}
         onChange={handleChange}
         onMount={handleMount}
         options={{

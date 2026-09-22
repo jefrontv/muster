@@ -1,4 +1,5 @@
 import type { RefObject } from 'react'
+import { useEditorThemeName } from '@/lib/use-editor-theme-name'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { DiffEditor, type DiffOnMount } from '@monaco-editor/react'
@@ -69,6 +70,9 @@ export function DiffSectionBody({
   onSaveLimitedDiff,
   onMount
 }: DiffSectionBodyProps): React.JSX.Element {
+  // `isDark` still arrives as a prop here rather than being read from settings, because the parent
+  // computes it once for a whole list of sections; the theme name is derived from it.
+  const editorThemeName = useEditorThemeName(isDark)
   const renderLimit = section.largeDiffRenderLimit?.limited ? section.largeDiffRenderLimit : null
 
   return (
@@ -177,7 +181,7 @@ export function DiffSectionBody({
           language={language}
           original={section.originalContent}
           modified={section.modifiedContent}
-          theme={isDark ? 'vs-dark' : 'vs'}
+          theme={editorThemeName}
           onMount={onMount}
           // Why: @monaco-editor/react can dispose models before widget teardown.
           // Keep them through unmount and dispose unattached models next tick.

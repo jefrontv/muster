@@ -13,6 +13,7 @@ import React, {
   type MutableRefObject
 } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
+import { useEditorThemeName } from '@/lib/use-editor-theme-name'
 import DOMPurify from 'dompurify'
 import Markdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
@@ -348,6 +349,7 @@ function CodeCell({
   const fontSize = computeEditorFontSize(settings?.terminalFontSize ?? 13, editorFontZoomLevel)
   const editorHeight = getIpynbCodeCellEditorHeight(source, fontSize)
   const isDark = resolveDocumentTheme(settings?.theme ?? 'system')
+  const editorThemeName = useEditorThemeName(isDark)
   const lines = useMemo(() => getIpynbCodeCellPreviewLines(source), [source])
   const handleMount: OnMount = useCallback((editorInstance, monacoInstance) => {
     editorInstance.focus()
@@ -374,8 +376,8 @@ function CodeCell({
   }, [])
 
   useEffect(() => {
-    monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs')
-  }, [isDark])
+    monaco.editor.setTheme(editorThemeName)
+  }, [editorThemeName])
 
   if (!active) {
     return (
@@ -407,7 +409,7 @@ function CodeCell({
         height={editorHeight}
         defaultLanguage={cell.language}
         language={cell.language}
-        theme={isDark ? 'vs-dark' : 'vs'}
+        theme={editorThemeName}
         value={source}
         onMount={handleMount}
         onChange={(value) => onChange(value ?? '')}

@@ -34,6 +34,7 @@ import type { AgentKind, LaunchSource, RequestKind } from './telemetry-events'
 import type { SleepingAgentLaunchConfig, SleepingAgentSessionRecord } from './agent-session-resume'
 import type { ClaudeAgentTeamsMode } from './claude-agent-teams-tmux-compat'
 import type { TerminalCustomTheme } from './terminal-custom-themes'
+import type { EditorCustomTheme } from './vscode-themes'
 import type { UiLanguage } from './ui-language'
 import type { ForkSyncMode } from './git-fork-sync'
 import type { GitRemoteIdentity } from './git-remote-identity'
@@ -2765,6 +2766,18 @@ export type GlobalSettings = {
   terminalCursorBlink: boolean
   terminalThemeDark: string
   terminalCustomThemes?: TerminalCustomTheme[]
+  /**
+   * Themes imported from VS Code or Cursor, for the built-in code editor.
+   *
+   * Copied in rather than referenced on disk, matching the terminal import: a theme survives the
+   * user uninstalling the extension it came from, and nothing in the app depends on another
+   * application's files still being where they were.
+   */
+  editorCustomThemes?: EditorCustomTheme[]
+  /** An imported theme id for dark mode, or undefined to use Monaco's own `vs-dark`. */
+  editorThemeDark?: string
+  /** An imported theme id for light mode, or undefined to use Monaco's own `vs`. */
+  editorThemeLight?: string
   terminalDividerColorDark: string
   terminalUseSeparateLightTheme: boolean
   terminalThemeLight: string
