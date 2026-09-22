@@ -10288,7 +10288,8 @@
             "aiVaultSessionHistory": "エージェント",
             "folderWorkspaces": "添付ワークツリー",
             "parentPrChecks": "PR チェック",
-            "siteTab": "Site"
+            "siteTab": "Site",
+            "tasksTab": "Tasks"
           },
           "right": {
             "panel": {
@@ -10763,6 +10764,28 @@
             "writeBody": "Runs `{{command}}` on {{environment}}.",
             "run": "Run",
             "truncated": "truncated"
+          },
+          "tasks": {
+            "cap": "You can send {{count}} tasks at a time.",
+            "no_workspace": "Open a workspace to see its tasks.",
+            "unbound": "Pick the ActiveCollab project this project’s work lives in. Every workspace under it shares the choice.",
+            "send_one": "Send this task to an agent",
+            "back": "All tasks",
+            "project": "ActiveCollab project",
+            "refresh": "Refresh tasks",
+            "unbind": "Change project",
+            "loading": "Reading your tasks…",
+            "empty": "Nothing in this project is assigned to you.",
+            "search_projects": "Search projects…",
+            "select_task": "Select {{name}}",
+            "selected": "{{count}} selected",
+            "clear": "Clear",
+            "send": "Send to…",
+            "send_failed": "Could not reach {{name}}. It may have exited.",
+            "sent": "Sent to {{name}}",
+            "copied": "Prompt copied to the clipboard",
+            "copy_prompt": "Copy prompt",
+            "no_agents": "No agent session is open here."
           }
         }
       },

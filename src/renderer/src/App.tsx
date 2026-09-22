@@ -1837,6 +1837,14 @@ function App(): React.JSX.Element {
         }
       }
 
+      if (matchShortcut('sidebar.tasks.toggle')) {
+        input.preventDefault()
+        notifyTerminalCapture('sidebar.tasks.toggle')
+        actions.setRightSidebarTab('tasks')
+        actions.setRightSidebarOpen(true)
+        return
+      }
+
       if (matchShortcut('sidebar.checks.toggle')) {
         input.preventDefault()
         notifyTerminalCapture('sidebar.checks.toggle')

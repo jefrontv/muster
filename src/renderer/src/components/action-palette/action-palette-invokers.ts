@@ -8,7 +8,10 @@ import { requestScrollToCurrentWorkspaceRevealAndRename } from '@/lib/scroll-to-
 
 export type ActionPaletteInvoker = (state: AppState) => void
 
-function revealRightSidebarTab(state: AppState, tab: 'source-control' | 'checks' | 'ports'): void {
+function revealRightSidebarTab(
+  state: AppState,
+  tab: 'source-control' | 'tasks' | 'checks' | 'ports'
+): void {
   if (!canShowRightSidebarForView(state.activeView)) {
     return
   }
@@ -57,6 +60,7 @@ export const ACTION_PALETTE_INVOKERS: Partial<Record<KeybindingActionId, ActionP
     }
   },
   'sidebar.sourceControl.toggle': (state) => revealRightSidebarTab(state, 'source-control'),
+  'sidebar.tasks.toggle': (state) => revealRightSidebarTab(state, 'tasks'),
   'sidebar.checks.toggle': (state) => revealRightSidebarTab(state, 'checks'),
   'sidebar.ports.toggle': (state) => revealRightSidebarTab(state, 'ports'),
   'sidebar.sleepingWorkspaces.toggle': (state) => {

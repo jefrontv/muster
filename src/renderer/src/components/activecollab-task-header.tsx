@@ -33,6 +33,11 @@ type ActiveCollabTaskHeaderProps = {
   onOpenProject?: (id: number, name: string) => void
   /** Collapse the detail pane back to the list. */
   onClose?: () => void
+  /**
+   * Replaces the discuss button. The sidebar panel hands this task to an open agent session
+   * instead, and that control owns its own menu, so it cannot be expressed as a click handler.
+   */
+  discussSlot?: React.ReactNode
 }
 
 /**
@@ -130,7 +135,8 @@ export function ActiveCollabTaskHeader({
   onCompletedChange,
   onNameChange,
   onOpenProject,
-  onClose
+  onClose,
+  discussSlot
 }: ActiveCollabTaskHeaderProps): React.JSX.Element {
   const created = activeCollabStamp(task.createdOn, 'date')
   const toggleLabel = task.isCompleted
@@ -286,20 +292,22 @@ export function ActiveCollabTaskHeader({
               <TooltipContent side="bottom">{startWorkHint}</TooltipContent>
             </Tooltip>
           ) : null}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="-mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
-                aria-label={discussLabel}
-                onClick={() => void discussTaskInChat(task)}
-              >
-                <MessageSquarePlus className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{discussLabel}</TooltipContent>
-          </Tooltip>
+          {discussSlot ?? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="-mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                  aria-label={discussLabel}
+                  onClick={() => void discussTaskInChat(task)}
+                >
+                  <MessageSquarePlus className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{discussLabel}</TooltipContent>
+            </Tooltip>
+          )}
           {browserUrl ? (
             <Tooltip>
               <TooltipTrigger asChild>

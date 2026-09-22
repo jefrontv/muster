@@ -45,6 +45,7 @@ export type KeybindingActionId =
   | 'sidebar.explorer.toggle'
   | 'sidebar.search.toggle'
   | 'sidebar.sourceControl.toggle'
+  | 'sidebar.tasks.toggle'
   | 'sidebar.checks.toggle'
   | 'sidebar.ports.toggle'
   | 'sidebar.sleepingWorkspaces.toggle'
@@ -393,6 +394,16 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'source control', 'git'],
     defaultBindings: platformBindings(['Mod+Shift+G'])
+  },
+  {
+    id: 'sidebar.tasks.toggle',
+    title: 'Show Tasks',
+    group: 'Global',
+    scope: 'global',
+    searchKeywords: ['shortcut', 'sidebar', 'tasks', 'activecollab'],
+    // Unbound by default, matching the Checks entry it replaces: the sidebar tabs that ship with a
+    // chord are the ones people live in, and a new one has not earned a default yet.
+    defaultBindings: platformBindings([])
   },
   {
     id: 'sidebar.checks.toggle',

@@ -27,6 +27,8 @@ export type ActiveCollabTaskWorkspaceProps = {
   onOpenProject?: (id: number, name: string) => void
   /** Collapse the detail pane back to the list. */
   onClose?: () => void
+  /** Replaces the header's discuss button. Built per task, so the caller takes the loaded task. */
+  discussSlot?: (task: ActiveCollabTask) => React.ReactNode
 }
 
 // One class list for every state the pane can be in, so a skeleton, a failure and a loaded task all
@@ -158,7 +160,8 @@ export function ActiveCollabTaskWorkspace({
   projectId,
   taskId,
   onOpenProject,
-  onClose
+  onClose,
+  discussSlot
 }: ActiveCollabTaskWorkspaceProps): React.JSX.Element | null {
   const {
     detail,
@@ -221,6 +224,7 @@ export function ActiveCollabTaskWorkspace({
         onNameChange={(name) => void writes.setTitle(name)}
         onOpenProject={onOpenProject}
         onClose={onClose}
+        discussSlot={discussSlot?.(task)}
       />
 
       {notice ? (

@@ -2964,6 +2964,10 @@ export type GlobalSettings = {
   visibleTaskProvidersNarrowedToActiveCollab: boolean
   /** ActiveCollab project → site bindings, keyed by `activeCollabProjectSiteKey`. */
   activeCollabProjectSites: Record<string, string>
+  /** Why keyed by repo and not by workspace: every worktree under a project shares one binding, so
+   *  a worktree made tomorrow already knows its ActiveCollab project and deleting one does not lose
+   *  the answer. Repo id → ActiveCollab project id. */
+  activeCollabRepoProjects?: Record<string, number>
   /** Why: ActiveCollab has no push channel, so the cadence is a per-user trade between freshness
    *  and API budget. Clamped by `clampActiveCollabPollIntervalMs` so a typo cannot hammer the API. */
   activeCollabPollIntervalMs?: number
@@ -3357,6 +3361,7 @@ export type RightSidebarTab =
   | 'workspaces'
   | 'pr-checks'
   | 'source-control'
+  | 'tasks'
   | 'checks'
   | 'ports'
   | 'site'
