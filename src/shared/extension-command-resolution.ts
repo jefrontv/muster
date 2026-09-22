@@ -25,9 +25,15 @@ export function extensionCommandSpec(entry: ExtensionEntry): ExtensionCommandSpe
 }
 
 /**
- * Null means there is nothing to run: either the entry needs no command, or it needs one the
- * catalog does not carry. Agent Local is the second case — it updates itself but has no in-app
- * first-install route — and the card shows its homepage instead of a button that lies.
+ * Null means there is nothing to run, and the card shows no button rather than one that lies.
+ *
+ * Three ways to get here: the entry needs no command; it needs one the catalog does not carry; or
+ * it is installed and already on the newest version anyone knows about, which is the case this
+ * function used to answer with an Update button that would reinstall the same version.
+ *
+ * "Already current" is deliberately narrow. It requires a version on BOTH sides, because an entry
+ * whose installed version cannot be read has no claim to being current and hiding its button would
+ * leave someone with a stale copy and nothing to press.
  */
 export function resolveExtensionCommand(
   entry: ExtensionEntry,
@@ -41,6 +47,11 @@ export function resolveExtensionCommand(
   // first install that happens to be replacing someone else's wiring, not an upgrade of ours.
   if (!state.installed || state.externallyManaged === true) {
     return spec.install ? { kind: 'install', command: spec.install } : null
+  }
+  // Installed and current: both versions read, and they agree. `versionStatus` only reaches
+  // 'current' in that case, so this cannot hide the button on an unreadable version.
+  if (state.status === 'current') {
+    return null
   }
   // Homebrew owns the program, so the catalog's own update command cannot do the job: a tool that
   // self-updates refuses when a package manager installed it, prints the brew line and exits, and

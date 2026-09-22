@@ -55,6 +55,41 @@ describe('resolveExtensionCommand', () => {
     expect(result).toEqual({ kind: 'update', command: 'pipx install --force acme' })
   })
 
+  it('offers nothing when the installed version is already the latest', () => {
+    // No button beats a button that reinstalls the version you already have.
+    const result = resolveExtensionCommand(
+      entry({ method: 'command', command: { install: 'pipx install acme', update: 'acme update' } }),
+      state({ installed: true, status: 'current', installedVersion: '1.2.3', latestVersion: '1.2.3' })
+    )
+    expect(result).toBeNull()
+  })
+
+  it('still offers an update when the installed version cannot be read', () => {
+    // 'unknown', not 'current': nothing proves this copy is up to date, so hiding the button would
+    // leave someone stale with nothing to press. This is the Agent Local case.
+    const result = resolveExtensionCommand(
+      entry({ method: 'command', command: { install: 'pipx install acme', update: 'acme update' } }),
+      state({ installed: true, status: 'unknown', installedVersion: null, latestVersion: '1.2.3' })
+    )
+    expect(result).toEqual({ kind: 'update', command: 'acme update' })
+  })
+
+  it('still offers an update when the installed version is behind', () => {
+    const result = resolveExtensionCommand(
+      entry({ method: 'command', command: { install: 'pipx install acme', update: 'acme update' } }),
+      state({ installed: true, status: 'outdated', installedVersion: '1.0.0', latestVersion: '1.2.3' })
+    )
+    expect(result).toEqual({ kind: 'update', command: 'acme update' })
+  })
+
+  it('offers nothing for a current Homebrew install either', () => {
+    const result = resolveExtensionCommand(
+      entry({ method: 'command', command: { install: 'brew install acme', update: 'acme update' } }),
+      state({ installed: true, status: 'current', homebrewFormula: 'acme' })
+    )
+    expect(result).toBeNull()
+  })
+
   it('updates through Homebrew when Homebrew owns the program', () => {
     // Agent Local's own update command refuses in this case and prints the brew line, so running
     // it could only ever fail. See homebrew-owned-binary.ts.
