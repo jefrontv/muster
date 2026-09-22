@@ -201,6 +201,17 @@ jobs:
           SHA: ${{ needs.resolve.outputs.sha }}
         run: gh release create "$TAG" --draft --title "$TAG" --notes "" --target "$SHA" --repo "${{ github.repository }}" || true
 
+      # Why on the release rather than in the app bundle alone: the Extension Hub fetches this file
+      # at runtime from /releases/latest/download, so a build that ships the catalog but never
+      # publishes it leaves every installed copy falling back to whatever it was built with.
+      - name: Upload extension catalog
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          node config/scripts/verify-extension-catalog.mjs
+          gh release upload "$TAG" resources/extensions/extension-catalog.json \
+            --clobber --repo "${{ github.repository }}"
+
       # Typecheck runs in the parallel `typecheck` job, so this is build:desktop
       # minus `pnpm run typecheck`.
       - name: Build desktop + native mac helpers

@@ -15,7 +15,7 @@
   "main": "./out/main/index.js",
   "scripts": {
     "format": "oxfmt --write .",
-    "lint": "oxlint && pnpm run lint:switch-exhaustiveness && node config/scripts/check-styled-scrollbars.mjs && pnpm run check:reliability-gates && pnpm run check:max-lines-ratchet && pnpm run verify:bundled-skill-guides && pnpm run verify:skill-bundle-manifest && pnpm run verify:localization-catalog && pnpm run verify:localization-coverage",
+    "lint": "oxlint && pnpm run lint:switch-exhaustiveness && node config/scripts/check-styled-scrollbars.mjs && pnpm run check:reliability-gates && pnpm run check:max-lines-ratchet && pnpm run verify:bundled-skill-guides && pnpm run verify:skill-bundle-manifest && pnpm run verify:extension-catalog && pnpm run verify:localization-catalog && pnpm run verify:localization-coverage",
     "lint:react-doctor": "oxlint --config config/oxlint-react-doctor.json",
     "lint:react-doctor:changed": "node config/scripts/lint-react-doctor-changed.mjs",
     "lint:switch-exhaustiveness": "oxlint --type-aware --config config/oxlint-switch-exhaustiveness.json src/main src/preload src/shared src/relay src/cli src/renderer/src config tests --quiet",
@@ -104,7 +104,8 @@
     "bench:multi-workspace-typing": "pnpm run ensure:electron-runtime && node config/scripts/run-multi-workspace-typing-bench.mjs",
     "bench:cold-park-reveal": "pnpm run ensure:electron-runtime && node tools/benchmarks/terminal-cold-park-reveal-bench.mjs",
     "bench:cold-park-resource": "pnpm run ensure:electron-runtime && node tools/benchmarks/terminal-cold-park-resource-bench.mjs",
-    "bench:compare": "node config/scripts/compare-benchmark-artifacts.mjs"
+    "bench:compare": "node config/scripts/compare-benchmark-artifacts.mjs",
+    "verify:extension-catalog": "node config/scripts/verify-extension-catalog.mjs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

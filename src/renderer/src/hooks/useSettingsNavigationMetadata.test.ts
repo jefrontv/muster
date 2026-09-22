@@ -35,10 +35,11 @@ function ids(
 
 describe('settings navigation metadata', () => {
   it('puts AI capability panes at the top on desktop', () => {
-    expect(ids().slice(0, 8)).toEqual([
+    expect(ids().slice(0, 9)).toEqual([
       'agents',
       'accounts',
       'agent-capabilities',
+      'extensions',
       'voice',
       'setup-guide',
       'general',
@@ -94,8 +95,8 @@ describe('settings navigation metadata', () => {
     const connectedIds = ids({ isLinearConnected: true })
     expect(connectedIds).toContain('linear')
     // Orchestration used to anchor its position; with that pane hidden, Linear follows the
-    // Agent Capabilities pane that now sits between it and Accounts.
-    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('agent-capabilities') + 1)
+    // Extensions pane that now sits after Agent Capabilities.
+    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('extensions') + 1)
 
     const linearSection = buildSettingsNavigationMetadata({
       isMac: false,

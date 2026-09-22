@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-22",
+  "entries": [
+    {
+      "id": "activecollab-mcp",
+      "kind": "mcp",
+      "name": "ActiveCollab MCP",
+      "description": "Task, comment, attachment and time-tracking tools for your coding agents.",
+      "keywords": [
+        "activecollab",
+        "tasks",
+        "tickets",
+        "time",
+        "mcp"
+      ],
+      "version": "0.0.0",
+      "install": {
+        "method": "config-write",
+        "provision": {
+          "install": "pipx install activecollab-mcp",
+          "update": "pipx upgrade activecollab-mcp",
+          "binary": "activecollab-mcp",
+          "versionArgs": [
+            "--version"
+          ],
+          "uninstall": "pipx uninstall activecollab-mcp"
+        },
+        "server": {
+          "key": "activecollab",
+          "harnesses": [
+            {
+              "id": "claude-code",
+              "transport": {
+                "kind": "stdio",
+                "binary": "activecollab-mcp",
+                "args": [
+                  "--stdio"
+                ],
+                "env": {}
+              }
+            },
+            {
+              "id": "codex",
+              "transport": {
+                "kind": "stdio",
+                "binary": "activecollab-mcp",
+                "args": [
+                  "--stdio"
+                ],
+                "env": {}
+              }
+            },
+            {
+              "id": "cursor",
+              "transport": {
+                "kind": "http",
+                "url": "http://127.0.0.1:8787/mcp"
+              }
+            },
+            {
+              "id": "grok",
+              "transport": {
+                "kind": "stdio",
+                "binary": "activecollab-mcp",
+                "args": [
+                  "--stdio"
+                ],
+                "env": {}
+              }
+            },
+            {
+              "id": "omp",
+              "transport": {
+                "kind": "stdio",
+                "binary": "activecollab-mcp",
+                "args": [
+                  "--stdio"
+                ],
+                "env": {}
+              }
+            },
+            {
+              "id": "pi",
+              "transport": {
+                "kind": "stdio",
+                "binary": "activecollab-mcp",
+                "args": [
+                  "--stdio"
+                ],
+                "env": {}
+              }
+            }
+          ]
+        }
+      },
+      "latest": {
+        "source": "pypi",
+        "package": "activecollab-mcp"
+      },
+      "autoUpdate": {
+        "supported": true
+      }
+    },
+    {
+      "id": "acf-json-mcp",
+      "kind": "mcp",
+      "name": "ACF JSON MCP",
+      "description": "Read and edit ACF field groups, layouts and post types straight from acf-json.",
+      "keywords": [
+        "acf",
+        "wordpress",
+        "fields",
+        "json",
+        "mcp"
+      ],
+      "version": "0.1.0",
+      "install": {
+        "method": "config-write",
+        "provision": {
+          "install": "npm install -g https://github.com/jefrontv/acf-json-mcp/archive/refs/heads/master.tar.gz",
+          "binary": "acf-json-mcp",
+          "versionArgs": [
+            "--version"
+          ],
+          "uninstall": "npm uninstall -g acf-json-mcp",
+          "update": "npm install -g https://github.com/jefrontv/acf-json-mcp/archive/refs/heads/master.tar.gz"
+        },
+        "server": {
+          "key": "acf-json",
+          "harnesses": [
+            {
+              "id": "claude-code",
+              "transport": {
+                "kind": "stdio",
+                "binary": "acf-json-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "codex",
+              "transport": {
+                "kind": "stdio",
+                "binary": "acf-json-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "cursor",
+              "transport": {
+                "kind": "stdio",
+                "binary": "acf-json-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "grok",
+              "transport": {
+                "kind": "stdio",
+                "binary": "acf-json-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "omp",
+              "transport": {
+                "kind": "stdio",
+                "binary": "acf-json-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "pi",
+              "transport": {
+                "kind": "stdio",
+                "binary": "acf-json-mcp",
+                "args": [],
+                "env": {}
+              }
+            }
+          ]
+        }
+      },
+      "latest": {
+        "source": "git-tag",
+        "remote": "https://github.com/jefrontv/acf-json-mcp.git"
+      },
+      "autoUpdate": {
+        "supported": false,
+        "reason": "A global npm install may need sudo, which cannot be answered unattended."
+      },
+      "homepage": "https://github.com/jefrontv/acf-json-mcp"
+    },
+    {
+      "id": "agent-local",
+      "kind": "app",
+      "name": "Agent Local",
+      "description": "Runs WordPress sites locally, with databases, TLS and WP-CLI your agents can drive.",
+      "keywords": [
+        "wordpress",
+        "local",
+        "sites",
+        "database",
+        "wp"
+      ],
+      "version": "0.34.1",
+      "platforms": [
+        "darwin"
+      ],
+      "install": {
+        "method": "command",
+        "command": {
+          "update": "agent-local update",
+          "binary": "agent-local",
+          "versionArgs": [
+            "version"
+          ],
+          "install": "curl -fsSL https://al.tools.efront.dev/install.sh | bash -s -- --setup",
+          "setup": "agent-local setup"
+        }
+      },
+      "latest": {
+        "source": "agent-local-daemon"
+      },
+      "autoUpdate": {
+        "supported": true
+      },
+      "about": "Agent Local replaces LocalWP, MAMP and ddev. A background daemon runs PHP, MySQL and a local HTTPS proxy, so a site is a folder plus a hostname with a trusted certificate rather than a container stack to babysit. Import a site from a live host, snapshot and restore the database, switch PHP versions, read the mail it would have sent, and run WP-CLI against it. Every one of those is also an MCP tool, so a coding agent can do the same work without a person clicking through a GUI.",
+      "homepage": "https://al.tools.efront.dev/"
+    },
+    {
+      "id": "context7-mcp",
+      "kind": "mcp",
+      "name": "Context7",
+      "description": "Current documentation for any library, pulled into your agent's context on demand.",
+      "about": "Ask for a library and Context7 fetches that version\u2019s real documentation and code examples instead of letting the model recall an API that may have changed. Two tools: one resolves a library name to an id, the other returns docs for it. Add the line \"Always use Context7 when I need library or API documentation\" to your agent\u2019s rules and it will reach for this on its own.",
+      "keywords": [
+        "docs",
+        "documentation",
+        "library",
+        "api",
+        "context7",
+        "mcp"
+      ],
+      "version": "4.1.1",
+      "install": {
+        "method": "config-write",
+        "provision": {
+          "install": "npm install -g @upstash/context7-mcp",
+          "update": "npm install -g @upstash/context7-mcp@latest",
+          "uninstall": "npm uninstall -g @upstash/context7-mcp",
+          "binary": "context7-mcp"
+        },
+        "server": {
+          "key": "context7",
+          "harnesses": [
+            {
+              "id": "claude-code",
+              "transport": {
+                "kind": "stdio",
+                "binary": "context7-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "codex",
+              "transport": {
+                "kind": "stdio",
+                "binary": "context7-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "cursor",
+              "transport": {
+                "kind": "stdio",
+                "binary": "context7-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "grok",
+              "transport": {
+                "kind": "stdio",
+                "binary": "context7-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "omp",
+              "transport": {
+                "kind": "stdio",
+                "binary": "context7-mcp",
+                "args": [],
+                "env": {}
+              }
+            },
+            {
+              "id": "pi",
+              "transport": {
+                "kind": "stdio",
+                "binary": "context7-mcp",
+                "args": [],
+                "env": {}
+              }
+            }
+          ]
+        }
+      },
+      "latest": {
+        "source": "npm",
+        "package": "@upstash/context7-mcp"
+      },
+      "autoUpdate": {
+        "supported": false,
+        "reason": "A global npm install may need sudo, which cannot be answered unattended."
+      },
+      "homepage": "https://context7.com",
+      "settings": [
+        {
+          "key": "CONTEXT7_API_KEY",
+          "label": "API key",
+          "help": "Optional. A free key from context7.com/dashboard raises the rate limit.",
+          "secret": true
+        }
+      ]
+    }
+  ]
+}

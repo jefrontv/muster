@@ -42,6 +42,8 @@ import { registerSettingsHandlers } from './settings'
 import { registerSettingsTransferHandlers } from './settings-transfer'
 import { registerDiagnosticsHandlers } from './diagnostics'
 import { registerSkillsHandlers } from './skills'
+import { registerExtensionHandlers } from './extensions'
+import { runExtensionAutoUpdates } from '../extensions/auto-update-runner'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
 import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
@@ -200,6 +202,13 @@ export function registerCoreHandlers(
   registerSettingsHandlers(store, agentAwakeService)
   registerSettingsTransferHandlers(store)
   registerSkillsHandlers(store)
+  registerExtensionHandlers(store)
+  // Why here, and only here: this is the one moment before any harness is spawned. Replacing a
+  // binary or rewriting an MCP config underneath a running agent is the failure this pass must not
+  // cause. Fire-and-forget so a slow package manager never delays a window appearing.
+  void runExtensionAutoUpdates(store).catch((error: unknown) => {
+    console.warn('[extensions] auto-update pass failed', error)
+  })
   if (automations) {
     registerAutomationHandlers(store, automations)
   }

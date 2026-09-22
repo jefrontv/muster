@@ -103,6 +103,10 @@ import type {
 } from '../shared/shell-open-types'
 import type { SkillDiscoveryResult, SkillDiscoveryTarget } from '../shared/skills'
 import type { SkillFreshnessInventory } from '../shared/skill-freshness'
+import type { SiteResult } from '../shared/site-types'
+import type { ExtensionInventory } from '../shared/extension-state-types'
+import type { ExtensionCommandRunEvent } from '../shared/extension-run-types'
+import type { ExtensionHarnessId } from '../shared/extension-catalog-types'
 import type { BundledAgentSkill } from '../shared/bundled-agent-skills'
 import type { SettingsExportOutcome, SettingsImportOutcome } from '../shared/settings-transfer'
 import type {
@@ -2565,6 +2569,45 @@ const api = {
 
     copyFile: (args: { srcPath: string; destPath: string }): Promise<void> =>
       ipcRenderer.invoke('shell:copyFile', args)
+  },
+
+  extensions: {
+    inventory: (args?: { force?: boolean }): Promise<SiteResult<ExtensionInventory>> =>
+      ipcRenderer.invoke('extensions:inventory', args),
+    runCommand: (args: {
+      id: string
+      mode?: 'install' | 'setup'
+    }): Promise<SiteResult<{ command: string; code: number }>> =>
+      ipcRenderer.invoke('extensions:runCommand', args),
+    cancelCommand: (): Promise<SiteResult<null>> =>
+      ipcRenderer.invoke('extensions:cancelCommand'),
+    refreshHarnesses: (args: { id: string }): Promise<SiteResult<ExtensionInventory>> =>
+      ipcRenderer.invoke('extensions:refreshHarnesses', args),
+    setEnabled: (args: {
+      id: string
+      enabled: boolean
+    }): Promise<SiteResult<ExtensionInventory>> =>
+      ipcRenderer.invoke('extensions:setEnabled', args),
+    uninstall: (args: { id: string }): Promise<SiteResult<{ command: string | null }>> =>
+      ipcRenderer.invoke('extensions:uninstall', args),
+    removeSkill: (args: { id: string }): Promise<SiteResult<{ path: string }>> =>
+      ipcRenderer.invoke('extensions:removeSkill', args),
+    onRunEvent: (listener: (event: ExtensionCommandRunEvent) => void): (() => void) => {
+      const handler = (_event: unknown, payload: ExtensionCommandRunEvent): void =>
+        listener(payload)
+      ipcRenderer.on('extensions:runEvent', handler)
+      return () => ipcRenderer.removeListener('extensions:runEvent', handler)
+    },
+    installHarness: (args: {
+      id: string
+      harnessId: ExtensionHarnessId
+    }): Promise<SiteResult<ExtensionInventory>> =>
+      ipcRenderer.invoke('extensions:installHarness', args),
+    uninstallHarness: (args: {
+      id: string
+      harnessId: ExtensionHarnessId
+    }): Promise<SiteResult<ExtensionInventory>> =>
+      ipcRenderer.invoke('extensions:uninstallHarness', args)
   },
 
   skills: {

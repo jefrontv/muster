@@ -425,6 +425,9 @@ import type {
 } from '../shared/shell-open-types'
 import type { SkillDiscoveryResult, SkillDiscoveryTarget } from '../shared/skills'
 import type { SkillFreshnessInventory } from '../shared/skill-freshness'
+import type { ExtensionInventory } from '../shared/extension-state-types'
+import type { ExtensionCommandRunEvent } from '../shared/extension-run-types'
+import type { ExtensionHarnessId } from '../shared/extension-catalog-types'
 import type { BundledAgentSkill } from '../shared/bundled-agent-skills'
 import type { SettingsExportOutcome, SettingsImportOutcome } from '../shared/settings-transfer'
 import type {
@@ -2791,6 +2794,30 @@ export type PreloadApi = {
     pickAudio: () => Promise<string | null>
     pickDirectory: (args: { defaultPath?: string }) => Promise<string | null>
     copyFile: (args: { srcPath: string; destPath: string }) => Promise<void>
+  }
+  extensions: {
+    inventory: (args?: { force?: boolean }) => Promise<SiteResult<ExtensionInventory>>
+    runCommand: (args: {
+      id: string
+      /** 'setup' runs the catalog's one-off configuration pass instead of install or update. */
+      mode?: 'install' | 'setup'
+    }) => Promise<SiteResult<{ command: string; code: number }>>
+    cancelCommand: () => Promise<SiteResult<null>>
+    /** Rewrites the entries this extension already has, after its stored values changed. */
+    refreshHarnesses: (args: { id: string }) => Promise<SiteResult<ExtensionInventory>>
+    setEnabled: (args: { id: string; enabled: boolean }) => Promise<SiteResult<ExtensionInventory>>
+    uninstall: (args: { id: string }) => Promise<SiteResult<{ command: string | null }>>
+    removeSkill: (args: { id: string }) => Promise<SiteResult<{ path: string }>>
+    /** Returns an unsubscribe function. */
+    onRunEvent: (listener: (event: ExtensionCommandRunEvent) => void) => () => void
+    installHarness: (args: {
+      id: string
+      harnessId: ExtensionHarnessId
+    }) => Promise<SiteResult<ExtensionInventory>>
+    uninstallHarness: (args: {
+      id: string
+      harnessId: ExtensionHarnessId
+    }) => Promise<SiteResult<ExtensionInventory>>
   }
   skills: {
     discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>

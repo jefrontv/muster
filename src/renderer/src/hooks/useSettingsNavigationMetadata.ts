@@ -42,6 +42,9 @@ import type { SettingsNavSection } from '@/lib/settings-navigation-types'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents-search'
 import { getAgentCapabilitiesPaneSearchEntries } from '@/components/settings/agent-capabilities-search'
+import { getExtensionsPaneSearchEntries } from '@/components/settings/extensions-search'
+import { useExtensionInventory } from '@/hooks/useExtensionInventory'
+import { countExtensionUpdates } from '../../../shared/extension-state-types'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts-search'
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations-search'
 import { getGitPaneSearchEntries } from '@/components/settings/git-search'
@@ -130,6 +133,7 @@ export function buildSettingsNavigationMetadata({
   isDev = import.meta.env.DEV,
   isLinearConnected = false,
   showHiddenSections = false,
+  extensionUpdateCount = 0,
   repos
 }: {
   isMac: boolean
@@ -140,6 +144,8 @@ export function buildSettingsNavigationMetadata({
   isLinearConnected?: boolean
   /** Settings → Advanced escape hatch; when true the panes below stay in the sidebar. */
   showHiddenSections?: boolean
+  /** Outdated extensions, which badge the Extensions entry. */
+  extensionUpdateCount?: number
   repos: readonly Repo[]
 }): SettingsNavSection[] {
   const showDesktopOnlySettings = !isWebClient
@@ -205,6 +211,25 @@ export function buildSettingsNavigationMetadata({
             icon: Boxes,
             searchEntries: getAgentCapabilitiesPaneSearchEntries(),
             group: 'capabilities'
+          },
+          {
+            id: 'extensions',
+            title: translate(
+              'auto.hooks.useSettingsNavigationMetadata.extensionsTitle',
+              'Extensions'
+            ),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.extensionsDescription',
+              'Install and update the skills, MCP servers and tools your agents use.'
+            ),
+            icon: Blocks,
+            searchEntries: getExtensionsPaneSearchEntries(),
+            group: 'capabilities',
+            // Why a badge rather than a count: the sidebar's job is to say there is work here; the
+            // pane itself says how much, and two numbers that can disagree are worse than one.
+            ...(extensionUpdateCount > 0
+              ? { installStatus: 'update-available' as const }
+              : {})
           }
         ]
       : []),
@@ -622,6 +647,7 @@ export function useSettingsNavigationMetadata(): SettingsNavSection[] {
   )
   const isWindowsTerminalHost = isWindows || windowsTerminalCapabilities.hostPlatform === 'win32'
   const showHiddenSections = settings?.showHiddenSettingsSections === true
+  const extensionUpdateCount = countExtensionUpdates(useExtensionInventory().inventory)
 
   // Why: Settings and Cmd+J share this metadata so platform/runtime visibility
   // and search entries cannot drift. Keep this hook free of Settings pane UI
@@ -636,6 +662,7 @@ export function useSettingsNavigationMetadata(): SettingsNavSection[] {
         isDev: import.meta.env.DEV,
         isLinearConnected,
         showHiddenSections,
+        extensionUpdateCount,
         repos
       }),
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- activeLocale is read implicitly by the translate() calls inside buildSettingsNavigationMetadata; without it the memo keeps the previous language's sections.
@@ -646,6 +673,7 @@ export function useSettingsNavigationMetadata(): SettingsNavSection[] {
       isWebClient,
       isLinearConnected,
       showHiddenSections,
+      extensionUpdateCount,
       repos,
       activeLocale
     ]

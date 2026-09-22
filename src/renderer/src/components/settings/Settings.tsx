@@ -53,6 +53,7 @@ import { SshPane } from './SshPane'
 import { ExperimentalPane } from './ExperimentalPane'
 import { AgentsPane } from './AgentsPane'
 import { AgentCapabilitiesPane } from './AgentCapabilitiesPane'
+import { ExtensionsPane } from './ExtensionsPane'
 import { OrchestrationPane } from './OrchestrationPane'
 import { LinearAgentSkillPane } from './LinearAgentSkillPane'
 import { AccountsPane } from './AccountsPane'
@@ -1200,6 +1201,23 @@ function Settings(): React.JSX.Element {
                     {isSectionMounted('agent-capabilities') ? (
                       <AgentCapabilitiesPane settings={settings} updateSettings={updateSettings} />
                     ) : null}
+                  </SettingsSection>
+                ) : null}
+
+                {showDesktopOnlySettings ? (
+                  <SettingsSection
+                    id="extensions"
+                    title={translate(
+                      'auto.components.settings.Settings.extensionsTitle',
+                      'Extensions'
+                    )}
+                    description={translate(
+                      'auto.components.settings.Settings.extensionsDescription',
+                      'Install and update the skills, MCP servers and tools your agents use.'
+                    )}
+                    searchEntries={getSectionSearchEntries('extensions')}
+                  >
+                    {isSectionMounted('extensions') ? <ExtensionsPane /> : null}
                   </SettingsSection>
                 ) : null}
 

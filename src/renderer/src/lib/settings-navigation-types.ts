@@ -35,6 +35,7 @@ export type SettingsNavTarget =
   | 'experimental'
   | 'agents'
   | 'agent-capabilities'
+  | 'extensions'
   | 'orchestration'
   | 'linear'
   | 'servers'

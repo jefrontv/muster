@@ -60,11 +60,18 @@ const bundledBrowserExtensionResources = {
 // from package directories where pnpm's symlink farm is absent. Copy the exact
 // runtime dependency closure to Resources/node_modules so bare require() calls
 // do not fall through to a developer checkout's node_modules.
+// Why: the Extension Hub's bundled catalog is the floor it falls back to when the published
+// catalog cannot be fetched, so a build without it shows an empty hub on every offline launch.
+const extensionCatalogResources = {
+  from: 'resources/extensions',
+  to: 'extensions'
+}
 const commonExtraResources = [
   relayExtraResource,
   skillFreshnessResources,
   skillPackageResources,
-  bundledBrowserExtensionResources
+  bundledBrowserExtensionResources,
+  extensionCatalogResources
 ]
 const macSpeechNativeResource = {
   from: 'node_modules/sherpa-onnx-darwin-${arch}',

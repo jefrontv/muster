@@ -12,7 +12,8 @@ const STATUS_TONE_CLASSES: Record<IntegrationCardStatusTone, string> = {
 
 export function IntegrationCardShell(props: {
   icon: React.ReactNode
-  name: string
+  /** A node, not just a string, so a card can set trailing metadata on the title line. */
+  name: React.ReactNode
   description: React.ReactNode
   statusLabel: string
   statusTone: IntegrationCardStatusTone
@@ -40,7 +41,7 @@ export function IntegrationCardShell(props: {
       <div className="flex flex-wrap items-start gap-3">
         <span className="shrink-0 text-muted-foreground">{props.icon}</span>
         <div className="min-w-0 flex-1 basis-[16rem] space-y-0.5">
-          <p className="text-sm font-medium">{props.name}</p>
+          <div className="text-sm font-medium">{props.name}</div>
           <p className="text-xs text-muted-foreground">{props.description}</p>
         </div>
         {/* Why: settings can be narrow with the sidebar open; controls need their

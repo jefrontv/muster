@@ -366,6 +366,11 @@ const SshPassphraseDialog = lazy(() =>
     default: module.SshPassphraseDialog
   }))
 )
+const ExtensionUpdatesCard = lazy(() =>
+  import('./components/ExtensionUpdatesCard').then((module) => ({
+    default: module.ExtensionUpdatesCard
+  }))
+)
 const UpdateCard = lazy(() =>
   import('./components/UpdateCard').then((module) => ({ default: module.UpdateCard }))
 )
@@ -2574,6 +2579,20 @@ function App(): React.JSX.Element {
                   compact
                 >
                   <UpdateCard />
+                </RecoverableRenderErrorBoundary>
+              </Suspense>
+            ) : null}
+            {/* Why gated on the app's own card and on onboarding: one corner card at a time, and
+                the app update outranks an extension update. Two stacked cards read as spam. */}
+            {!shouldMountUpdateCard && !shouldRenderOnboarding ? (
+              <Suspense fallback={null}>
+                <RecoverableRenderErrorBoundary
+                  boundaryId="overlay.extension-updates-card"
+                  surface="overlay"
+                  resetKey={activeView}
+                  compact
+                >
+                  <ExtensionUpdatesCard />
                 </RecoverableRenderErrorBoundary>
               </Suspense>
             ) : null}

@@ -3008,6 +3008,16 @@ export type GlobalSettings = {
   /** Why: per-bundled-skill opt-out keyed by skill id. A missing key reads as enabled so an
    *  upgrade never silently withdraws a skill an agent already depends on. */
   agentCapabilityBundledSkills?: Record<string, boolean>
+  /** Why: `master` is only a DEFAULT for entries with no explicit choice — turning it on should
+   *  set the policy going forward, not silently opt in tools the user had reasons to pin. */
+  extensionAutoUpdate?: { master: boolean; entries: Record<string, boolean> }
+  /** Why: dismissals are keyed `<id>@<version>` so the same update never nags twice, but a newer
+   *  one still gets to ask. Bounded when written so it cannot grow without limit. */
+  extensionUpdateDismissals?: string[]
+  /** Why: values an extension asks for, keyed `<extension id>` then env var name. They are written
+   *  into the agent config files anyway, so this is a second copy of something already on disk in
+   *  the clear, not a secret store — the dialog says so where the user types it. */
+  extensionSettingValues?: Record<string, Record<string, string>>
   /** Why: generated tab titles are subjective, so they stay opt-in and manual renames win. */
   tabAutoGenerateTitle: boolean
   /** Chat-mode threads name themselves after their first turn. Missing reads as
