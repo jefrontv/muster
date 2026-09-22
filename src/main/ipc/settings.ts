@@ -4,6 +4,7 @@ import type { GlobalSettings, PersistedState } from '../../shared/types'
 import { listSystemFontFamilies } from '../system-fonts'
 import { previewGhosttyImport } from '../ghostty/index'
 import { previewWarpThemeImport } from '../warp-themes'
+import { previewEditorThemeImport } from '../vscode-themes'
 import { setMainUiLanguage } from '../i18n/main-i18n'
 import { rebuildAppMenu } from '../menu/register-app-menu'
 import { track } from '../telemetry/client'
@@ -232,6 +233,12 @@ export function registerSettingsHandlers(
 
   ipcMain.handle('settings:previewGhosttyImport', () => {
     return previewGhosttyImport(store)
+  })
+
+  // No arguments: unlike the Warp import there is no folder to pick, because the editors keep
+  // their themes in known locations and a manual pick would only let someone aim it somewhere wrong.
+  ipcMain.handle('settings:previewEditorThemeImport', () => {
+    return previewEditorThemeImport()
   })
 
   ipcMain.handle('settings:previewWarpThemeImport', (event, args?: unknown) => {

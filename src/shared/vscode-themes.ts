@@ -296,3 +296,23 @@ function normalizeImportedTerminalColors(value: unknown): TerminalColorOverrides
   }
   return Object.keys(output).length > 0 ? output : null
 }
+
+/** One row in the import dialog: a parsed theme plus whether its editor is currently using it. */
+export type EditorThemeImportCandidate = EditorCustomTheme & {
+  active: boolean
+}
+
+/**
+ * The result of scanning for importable themes.
+ *
+ * Lives in shared rather than beside the scanner because it crosses the IPC boundary, and preload
+ * must be able to name it without reaching into main.
+ */
+export type EditorThemeImportPreview = {
+  found: boolean
+  themes: EditorThemeImportCandidate[]
+  /** Editors whose theme folders were found, for saying where the list came from. */
+  editors: string[]
+  /** Files that could not be read or parsed, so the dialog can be honest about it. */
+  skipped: number
+}

@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useLayoutEffect, useState } from 'react'
-import { AppWindow, PanelLeft, TerminalSquare } from 'lucide-react'
+import { AppWindow, Code2, PanelLeft, TerminalSquare } from 'lucide-react'
 
 import type { GlobalSettings } from '../../../../shared/types'
 
@@ -27,6 +27,7 @@ import {
 } from './appearance-search'
 import { getTerminalAppearanceSearchEntries } from './terminal-search'
 import { TerminalAppearanceSection } from './TerminalAppearanceSection'
+import { EditorAppearanceSection } from './EditorAppearanceSection'
 import type { UseGhosttyImportReturn } from './useGhosttyImport'
 import type { UseWarpThemeImportReturn } from './useWarpThemeImport'
 import { AppIconSelector } from './AppIconSelector'
@@ -53,7 +54,7 @@ type AppearancePaneProps = {
   warpThemes: UseWarpThemeImportReturn
 }
 
-type AppearanceSectionKey = 'interface' | 'terminal' | 'window'
+type AppearanceSectionKey = 'interface' | 'editor' | 'terminal' | 'window'
 
 function resolveThemeSummary(theme: GlobalSettings['theme']): string {
   if (theme === 'system') {
@@ -115,6 +116,11 @@ export function AppearancePane({
     'auto.components.settings.AppearancePane.interfaceTitle',
     'Interface'
   )
+  const editorTitle = translate('auto.components.settings.AppearancePane.editorTitle', 'Editor')
+  const editorSummary = translate(
+    'auto.components.settings.AppearancePane.editorSummary',
+    'Code editor, diffs and notebooks'
+  )
   const terminalTitle = translate(
     'auto.components.settings.AppearancePane.terminalTitle',
     'Terminal'
@@ -139,6 +145,10 @@ export function AppearancePane({
     ...getSystemTrayEntries({ showSystemTray: isDesktopWindows }),
     ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac })
   ]
+  const editorSearchEntries = [
+    { title: editorTitle, description: editorSummary },
+    { title: 'Editor theme', description: 'Import a theme from VS Code or Cursor' }
+  ]
   const terminalSearchEntries = [
     { title: terminalTitle },
     ...getTerminalAppearanceSearchEntries({ showWarpImport: !isWebClient })
@@ -156,6 +166,7 @@ export function AppearancePane({
   ]
 
   const interfaceMatches = matchesSettingsSearch(searchQuery, interfaceSearchEntries)
+  const editorMatches = matchesSettingsSearch(searchQuery, editorSearchEntries)
   const terminalMatches = matchesSettingsSearch(searchQuery, terminalSearchEntries)
   const windowMatches = matchesSettingsSearch(searchQuery, windowSearchEntries)
   const interfaceLabelMatches = matchesSettingsSearch(searchQuery, { title: interfaceTitle })
@@ -173,9 +184,11 @@ export function AppearancePane({
     if (isSearching) {
       return key === 'interface'
         ? interfaceMatches
-        : key === 'terminal'
-          ? terminalMatches
-          : windowMatches
+        : key === 'editor'
+          ? editorMatches
+          : key === 'terminal'
+            ? terminalMatches
+            : windowMatches
     }
     return manuallyOpenSection === key
   }
@@ -222,6 +235,19 @@ export function AppearancePane({
           there is no markdown-style or line-number setting — so a fourth row would
           be empty. We surface only the three sections that hold real controls
           rather than fabricate settings. */}
+
+      {editorMatches ? (
+        <AppearanceSection
+          id="editor"
+          icon={<Code2 aria-hidden="true" />}
+          title={editorTitle}
+          summary={editorSummary}
+          open={isSectionOpen('editor')}
+          onToggle={() => toggleSection('editor')}
+        >
+          <EditorAppearanceSection settings={settings} updateSettings={updateSettings} />
+        </AppearanceSection>
+      ) : null}
 
       {terminalMatches ? (
         <AppearanceSection

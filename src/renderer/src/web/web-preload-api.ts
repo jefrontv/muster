@@ -636,6 +636,10 @@ function createWebPreloadApi(): Partial<PreloadApi> {
       },
       updatePRBotAuthorOverride: (args) => updateRuntimePRBotAuthorOverride(args),
       listFonts: () => Promise.resolve([]),
+      // Nothing to find: the web client has no access to the machine's VS Code or Cursor install,
+      // so it answers an empty scan rather than an error the user cannot act on.
+      previewEditorThemeImport: () =>
+        Promise.resolve({ found: false, themes: [], editors: [], skipped: 0 }),
       onChanged: () => noopUnsubscribe
     } satisfies Partial<WebSettingsApi> as unknown as WebSettingsApi,
     keybindings: createWebKeybindingsApi(),

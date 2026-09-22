@@ -16,7 +16,9 @@ import {
   normalizeTokenColors,
   resolveEditorThemeMode,
   hasUsableEditorThemeColors,
-  type EditorCustomTheme
+  type EditorCustomTheme,
+  type EditorThemeImportCandidate,
+  type EditorThemeImportPreview
 } from '../../shared/vscode-themes'
 import { unsupportedThemeFeatures } from '../../shared/vscode-theme-merge'
 import { editorThemeTerminalColors } from '../../shared/vscode-theme-to-terminal'
@@ -25,19 +27,7 @@ import { editorInstallPaths } from './editor-installs'
 import { readThemeDocument } from './theme-document-reader'
 import { themesForEditor, type ThemeCandidate } from './theme-catalog'
 
-export type EditorThemeImportCandidate = EditorCustomTheme & {
-  /** True when this is the theme the source editor is currently set to. */
-  active: boolean
-}
-
-export type EditorThemeImportPreview = {
-  found: boolean
-  themes: EditorThemeImportCandidate[]
-  /** Editors whose theme folders were found, for saying where the list came from. */
-  editors: string[]
-  /** Count of files that could not be read or parsed, so the dialog can be honest about it. */
-  skipped: number
-}
+export type { EditorThemeImportCandidate, EditorThemeImportPreview }
 
 /**
  * The declared `uiTheme` beats luminance, because the extension author stated it.

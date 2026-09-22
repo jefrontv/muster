@@ -326,6 +326,7 @@ import type {
   WarpThemeImportPreview,
   WarpThemeImportSource
 } from '../shared/terminal-custom-themes'
+import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 
 import type { SetupScriptImportCandidate } from '../shared/setup-script-imports'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
@@ -2631,6 +2632,9 @@ export type PreloadApi = {
     listFonts: () => Promise<string[]>
     previewGhosttyImport: () => Promise<GhosttyImportPreview>
     previewWarpThemeImport: (source: WarpThemeImportSource) => Promise<WarpThemeImportPreview>
+    /** Themes found in the user's VS Code and Cursor installs, already parsed. Takes no source: the
+     *  editors keep their themes in known places, so there is nothing to point at. */
+    previewEditorThemeImport: () => Promise<EditorThemeImportPreview>
     /** Write the portable, secret-free settings file the user picks a location for. */
     exportToFile: () => Promise<SettingsExportOutcome>
     /** Validate a settings file and merge the keys this build recognises. */

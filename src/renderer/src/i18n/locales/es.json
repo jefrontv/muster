@@ -5201,7 +5201,9 @@
           },
           "terminalZoom": "Terminal Zoom",
           "terminalZoomDesc": "Default zoom for terminal panes; applies to new panes and Cmd+0 reset.",
-          "terminalZoomHint": "inside a terminal pane zooms that pane only."
+          "terminalZoomHint": "inside a terminal pane zooms that pane only.",
+          "editorTitle": "Editor",
+          "editorSummary": "Code editor, diffs and notebooks"
         },
         "AutoRenameBranchFromWorkSetting": {
           "1626524572": "Nautilus",
@@ -9437,6 +9439,28 @@
             "context7Title": "Context7",
             "context7Description": "Install or update the Context7 MCP server so your agents can read current library docs."
           }
+        },
+        "editor_appearance": {
+          "theme_title": "Editor theme",
+          "theme_description": "Applies to the code editor, diffs and notebooks.",
+          "dark": "Dark",
+          "light": "Light",
+          "import": "Import themes",
+          "import_description": "Bring a theme across from VS Code or Cursor.",
+          "imported_count": "{{count}} imported",
+          "import_button": "Import…"
+        },
+        "editor_theme_import": {
+          "title": "Import a theme from your editor",
+          "scanning": "Looking for VS Code and Cursor themes…",
+          "none": "No VS Code or Cursor themes found on this machine.",
+          "search": "Search themes…",
+          "has_terminal": "terminal colours",
+          "in_use": "In use",
+          "skipped": "{{count}} could not be read",
+          "use_for_terminal": "Use its colours for the terminal too",
+          "cancel": "Cancel",
+          "confirm": "Import {{count}}"
         }
       },
       "right": {

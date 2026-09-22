@@ -95,6 +95,7 @@ import type {
   WarpThemeImportPreview,
   WarpThemeImportSource
 } from '../shared/terminal-custom-themes'
+import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
 import type {
   ShellOpenExternalEditorRequest,
@@ -2183,6 +2184,8 @@ const api = {
 
     previewWarpThemeImport: (source: WarpThemeImportSource): Promise<WarpThemeImportPreview> =>
       ipcRenderer.invoke('settings:previewWarpThemeImport', source),
+    previewEditorThemeImport: (): Promise<EditorThemeImportPreview> =>
+      ipcRenderer.invoke('settings:previewEditorThemeImport'),
 
     exportToFile: (): Promise<SettingsExportOutcome> => ipcRenderer.invoke('settings:exportToFile'),
 
