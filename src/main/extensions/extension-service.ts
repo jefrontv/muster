@@ -35,6 +35,7 @@ import {
 } from '../skills/skill-discovery-target'
 import { discoveredSkillEntries } from './discovered-skill-entries'
 import { readAgentLocalDaemonStatus } from '../sites/agent-local-import-api'
+import { readVersionByCommand } from './binary-version-command'
 
 let pending: Promise<ExtensionInventory> | null = null
 
@@ -110,6 +111,7 @@ async function scan(store: Store, force: boolean): Promise<ExtensionInventory> {
     probeAccess: (spec) => probeExtensionAccess(spec),
     skillStatus: async (skill) => skillStatus(skill),
     readAgentLocal: async () => agentLocal,
+    readVersionByCommand: (path, versionArgs) => readVersionByCommand(path, versionArgs),
     autoUpdate: readExtensionAutoUpdate(settings)
   })
 

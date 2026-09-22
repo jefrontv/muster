@@ -22,6 +22,7 @@ function env(overrides: Partial<ExtensionInventoryEnv> = {}): ExtensionInventory
     probeAccess: async () => undefined,
     skillStatus: async () => null,
     readAgentLocal: async () => ({ version: null, latest: null }),
+    readVersionByCommand: async () => null,
     autoUpdate: { master: false, entries: {} },
     ...overrides
   }

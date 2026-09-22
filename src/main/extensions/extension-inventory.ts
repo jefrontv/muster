@@ -28,6 +28,7 @@ import type {
 import type { ExtensionAutoUpdatePreferences } from '../../shared/extension-preferences'
 import type { ExtensionAccessResult } from './extension-access'
 import type { BinaryProbeResult } from './binary-probe'
+import { homebrewFormulaFromPath } from '../../shared/homebrew-owned-binary'
 import { isOutdated } from './version-probe'
 
 export type ExtensionInventoryEnv = {
@@ -45,6 +46,11 @@ export type ExtensionInventoryEnv = {
   skillStatus: (skill: string) => Promise<{ installed: boolean; outdated: boolean } | null>
   /** Agent Local answers for its own installed and published version. */
   readAgentLocal: () => Promise<{ version: string | null; latest: string | null }>
+  /** Last resort for a compiled binary: ask the program. Cached against the file it ran. */
+  readVersionByCommand: (
+    path: string,
+    versionArgs: readonly string[] | undefined
+  ) => Promise<string | null>
   autoUpdate: ExtensionAutoUpdatePreferences
 }
 
@@ -156,8 +162,21 @@ async function buildState(
   const binary = command ? env.probeBinary(binaryName) : null
   const agentLocalVersion =
     entry.latest.source === 'agent-local-daemon' ? (await env.readAgentLocal()).version : null
-  const installedVersion = agentLocalVersion ?? binary?.version ?? null
+  // Three sources, cheapest first. The command is last because it spawns a process, and it is
+  // reached at all because a compiled binary records its version nowhere a probe can read: an
+  // Agent Local install whose daemon is stopped, or whose daemon is too old to report its own
+  // version over /status, has no other honest answer.
+  const installedVersion =
+    agentLocalVersion ??
+    binary?.version ??
+    (binary?.found && binary.path
+      ? await env.readVersionByCommand(binary.path, command?.versionArgs)
+      : null)
   const latestVersion = await resolveLatest(entry, env)
+
+  const homebrewFormula = binary?.found
+    ? (homebrewFormulaFromPath(binary.realPath) ?? undefined)
+    : undefined
 
   const harnesses =
     entry.install.method === 'config-write'
@@ -184,6 +203,9 @@ async function buildState(
       ? 'Set up outside Muster. Installing replaces those entries with the managed copy.'
       : undefined,
     binaryPath: binary?.path ?? null,
+    // Read from the resolved target, not the invoked shim: a Homebrew shim and a curl install both
+    // sit in a bin directory, and only the Cellar path they point at tells the two apart.
+    ...(homebrewFormula ? { homebrewFormula } : {}),
     harnesses
   }
 }
