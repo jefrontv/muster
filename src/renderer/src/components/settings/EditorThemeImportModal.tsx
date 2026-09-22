@@ -18,6 +18,17 @@ import { translate } from '@/i18n/i18n'
 import { styleForScope } from '../../../../shared/vscode-theme-to-monaco'
 import type { EditorThemeImportCandidate } from '../../../../shared/vscode-themes'
 
+/**
+ * Which editor a theme came from, spelled the way the editor spells itself.
+ *
+ * On the row because both editors ship the same built-in themes, so "Red", "Solarized Dark" and
+ * "Tomorrow Night Blue" each appear twice with the same extension name under them. Without this
+ * they are two identical rows and the choice between them is a coin toss — and they are not
+ * interchangeable: the two installs carry different versions, so the same theme name had 95
+ * colours from one and 91 from the other.
+ */
+const EDITOR_LABEL = { vscode: 'VS Code', cursor: 'Cursor' } as const
+
 function ThemeSwatch({ theme }: { theme: EditorThemeImportCandidate }): React.JSX.Element {
   const background = theme.editorColors['editor.background'] ?? '#00000000'
   const foreground = theme.editorColors['editor.foreground'] ?? '#888888'
@@ -150,7 +161,7 @@ export function EditorThemeImportModal({
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate">{theme.name}</span>
                     <span className="truncate text-[11px] text-muted-foreground">
-                      {theme.sourceLabel} · {theme.mode}
+                      {EDITOR_LABEL[theme.source]} · {theme.sourceLabel} · {theme.mode}
                       {theme.terminal !== null
                         ? ` · ${translate('auto.components.settings.editor_theme_import.has_terminal', 'terminal colours')}`
                         : ''}
