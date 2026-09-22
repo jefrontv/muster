@@ -47,6 +47,11 @@ export type ExtensionState = {
    * checkout, a hand-written entry, an older global install. Installing takes it over.
    */
   externallyManaged?: boolean
+  /**
+   * The Homebrew formula that owns this program, when one does. A self-updating tool refuses to
+   * update itself in that case, so the update command has to be Homebrew's.
+   */
+  homebrewFormula?: string
 }
 
 /**

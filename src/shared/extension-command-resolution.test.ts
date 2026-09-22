@@ -55,6 +55,27 @@ describe('resolveExtensionCommand', () => {
     expect(result).toEqual({ kind: 'update', command: 'pipx install --force acme' })
   })
 
+  it('updates through Homebrew when Homebrew owns the program', () => {
+    // Agent Local's own update command refuses in this case and prints the brew line, so running
+    // it could only ever fail. See homebrew-owned-binary.ts.
+    const result = resolveExtensionCommand(
+      entry({
+        method: 'command',
+        command: { install: 'curl -fsSL https://example.test/install.sh | bash', update: 'acme update' }
+      }),
+      state({ installed: true, homebrewFormula: 'acme' })
+    )
+    expect(result).toEqual({ kind: 'update', command: 'brew upgrade acme' })
+  })
+
+  it('leaves a first install alone even when a Homebrew copy is around', () => {
+    const result = resolveExtensionCommand(
+      entry({ method: 'command', command: { install: 'brew install acme', update: 'acme update' } }),
+      state({ installed: false, homebrewFormula: 'acme' })
+    )
+    expect(result).toEqual({ kind: 'install', command: 'brew install acme' })
+  })
+
   it('falls back to the install command when no update command is given', () => {
     const result = resolveExtensionCommand(
       entry({ method: 'command', command: { install: 'npm i -g acme' } }),

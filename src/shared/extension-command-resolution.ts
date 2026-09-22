@@ -7,6 +7,7 @@
 
 import type { ExtensionCommandSpec, ExtensionEntry } from './extension-catalog-types'
 import type { ExtensionState } from './extension-state-types'
+import { homebrewUpgradeCommand } from './homebrew-owned-binary'
 
 export type ExtensionCommandAction = {
   kind: 'install' | 'update'
@@ -40,6 +41,12 @@ export function resolveExtensionCommand(
   // first install that happens to be replacing someone else's wiring, not an upgrade of ours.
   if (!state.installed || state.externallyManaged === true) {
     return spec.install ? { kind: 'install', command: spec.install } : null
+  }
+  // Homebrew owns the program, so the catalog's own update command cannot do the job: a tool that
+  // self-updates refuses when a package manager installed it, prints the brew line and exits, and
+  // the hub read that refusal as a failed update with no way forward.
+  if (state.homebrewFormula) {
+    return { kind: 'update', command: homebrewUpgradeCommand(state.homebrewFormula) }
   }
   const update = spec.update ?? spec.install
   return update ? { kind: 'update', command: update } : null
