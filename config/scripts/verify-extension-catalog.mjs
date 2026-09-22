@@ -5,10 +5,9 @@
 // on every machine that fetches it. Validating here means the bad version never leaves CI.
 
 import { readFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
-import { dirname, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+const repoRoot = resolve(import.meta.dirname, '..', '..')
 const catalogPath = join(repoRoot, 'resources', 'extensions', 'extension-catalog.json')
 
 function fail(message) {
