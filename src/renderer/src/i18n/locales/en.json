@@ -14050,7 +14050,8 @@
           "subtasks": "Subtasks",
           "unwatch": "Stop watching",
           "watch": "Watch this task",
-          "no_watchers": "Nobody"
+          "no_watchers": "Nobody",
+          "mention_menu_widened": "No one on this project matches — showing everyone"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",

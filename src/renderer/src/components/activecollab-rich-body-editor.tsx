@@ -145,6 +145,7 @@ export function ActiveCollabRichBodyFrame({
           activeIndex={menu.highlighted}
           listboxId={menu.listboxId}
           scoped={menu.scoped}
+          widened={menu.widened}
           onPick={menu.pick}
         />
       ) : null}

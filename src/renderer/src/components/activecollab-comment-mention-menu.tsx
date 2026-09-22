@@ -12,24 +12,32 @@ import type { ActiveCollabUser } from '../../../shared/activecollab-types'
  * Never rendered empty — the composer drops the menu when nothing matches — so there is no
  * "no matches" row to write, and a bare `@` still lists people.
  *
- * `scoped: false` means these are all 176 accounts on the instance rather than the handful on this
- * project, because the membership read did not answer with people. That is worth a line: without
- * it the author is silently handed strangers from other clients' projects and has no way to tell
- * this list apart from the right one. It is a footer, NOT an option row — it must not be
- * selectable, must not consume one of the six suggestions, and must not shift the option indices
- * that `aria-activedescendant` addresses, so it sits outside the listbox.
+ * `scoped: false` means these are accounts from the whole instance rather than the handful on this
+ * project. That is worth a line: without it the author is silently handed strangers from other
+ * clients' projects and has no way to tell this list apart from the right one. It is a footer, NOT
+ * an option row — it must not be selectable, must not consume one of the six suggestions, and must
+ * not shift the option indices that `aria-activedescendant` addresses, so it sits outside the
+ * listbox.
+ *
+ * Two ways to get there, and the footer says which. `widened` means the project's members WERE
+ * read and none of them matched what was typed, which is the common one: someone mentioning a
+ * colleague on a project that colleague is not a member of. Otherwise the membership read itself
+ * did not answer. Telling a user their colleague is not on this project, when the list plainly
+ * shows people, is a different message from telling them the list could not be fetched.
  */
 export function ActiveCollabMentionMenu({
   users,
   activeIndex,
   listboxId,
   scoped,
+  widened = false,
   onPick
 }: {
   users: readonly ActiveCollabUser[]
   activeIndex: number
   listboxId: string
   scoped: boolean
+  widened?: boolean
   onPick: (user: ActiveCollabUser) => void
 }): React.JSX.Element {
   const activeItemRef = useRef<HTMLButtonElement | null>(null)
@@ -78,10 +86,15 @@ export function ActiveCollabMentionMenu({
       </div>
       {scoped ? null : (
         <p className="border-t border-border px-3 py-1.5 text-[11px] text-muted-foreground">
-          {translate(
-            'auto.components.activecollab.task_workspace.mention_menu_unscoped',
-            'All people — project members unavailable'
-          )}
+          {widened
+            ? translate(
+                'auto.components.activecollab.task_workspace.mention_menu_widened',
+                'No one on this project matches — showing everyone'
+              )
+            : translate(
+                'auto.components.activecollab.task_workspace.mention_menu_unscoped',
+                'All people — project members unavailable'
+              )}
         </p>
       )}
     </div>

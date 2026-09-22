@@ -87,10 +87,36 @@ export function activeCollabMentionToken(
 }
 
 /**
- * People worth offering for this token. The connected user is excluded outright: ActiveCollab has
- * no self-mention, so listing yourself only offers a pick that notifies nobody.
+ * How well a name answers a query: 0 best, 3 no match.
+ *
+ * First name first, because that is how people address each other and how they type. `@m` used to
+ * put "Alfredo Mendoza" above "Milli Lasky" — both contain an m, and the roster order decided the
+ * rest — so the person whose name actually begins with the letter typed came third.
+ *
+ * Tier 1 keeps surname matches useful: typing `@mendoza` should still find Alfredo. Tier 2 is the
+ * plain substring, which is what makes `@mke` reach "Lemke" at all.
+ */
+function mentionMatchRank(name: string, needle: string): number {
+  const lowered = name.toLowerCase()
+  if (lowered.startsWith(needle)) {
+    return 0
+  }
+  if (lowered.split(/\s+/).some((word) => word.startsWith(needle))) {
+    return 1
+  }
+  return lowered.includes(needle) ? 2 : 3
+}
+
+/**
+ * People worth offering for this token, best match first. The connected user is excluded outright:
+ * ActiveCollab has no self-mention, so listing yourself only offers a pick that notifies nobody.
  *
  * An empty query lists people rather than nothing — a bare `@` is a request to browse.
+ *
+ * Every candidate is ranked before the list is cut to `limit`. Cutting while scanning, which is
+ * what this did, meant the six kept were the first six in roster order: on a 200-person instance
+ * the person whose first name you had just typed could be ranked out of a list they should have
+ * topped, purely because five weaker matches came earlier in the roster.
  */
 export function activeCollabMentionSuggestions(args: {
   users: readonly ActiveCollabUser[]
@@ -100,18 +126,56 @@ export function activeCollabMentionSuggestions(args: {
 }): ActiveCollabUser[] {
   const needle = args.query.trim().toLowerCase()
   const limit = args.limit ?? ACTIVECOLLAB_MENTION_LIMIT
-  const matches: ActiveCollabUser[] = []
-  for (const user of args.users) {
-    if (user.id <= 0 || user.id === args.currentUserId) {
-      continue
-    }
-    if (needle !== '' && !user.name.toLowerCase().includes(needle)) {
-      continue
-    }
-    matches.push(user)
-    if (matches.length === limit) {
-      break
-    }
+  const eligible = args.users.filter(
+    (user) => user.id > 0 && user.id !== args.currentUserId
+  )
+  if (needle === '') {
+    return eligible.slice(0, limit)
   }
-  return matches
+  return eligible
+    .map((user, index) => ({ user, rank: mentionMatchRank(user.name, needle), index }))
+    .filter((entry) => entry.rank < 3)
+    // The index tie-break keeps the roster's own order within a tier, so an equally good match
+    // does not jump around as the query grows.
+    .sort((left, right) => left.rank - right.rank || left.index - right.index)
+    .slice(0, limit)
+    .map((entry) => entry.user)
+}
+
+/**
+ * Project members first, then everyone else when the members answer nothing.
+ *
+ * Why the second half exists: the menu is scoped to the task's project, which is right almost
+ * always — you mention the people on the job. But a query that matches no member produced an empty
+ * menu and no explanation, and an empty menu is indistinguishable from a broken one. Someone typing
+ * a colleague's name on a project that colleague is not a member of saw mentions simply not work.
+ *
+ * The roster is only consulted when the scoped list has nothing to offer, so the common case still
+ * costs one request and still puts the project's own people at the top.
+ */
+export function activeCollabMentionSuggestionsWithFallback(args: {
+  members: readonly ActiveCollabUser[]
+  /** Null until the whole-instance roster has been fetched, which happens only when needed. */
+  roster: readonly ActiveCollabUser[] | null
+  query: string
+  currentUserId: number | null
+  limit?: number
+}): ActiveCollabMentionPeople {
+  const scoped = activeCollabMentionSuggestions({
+    users: args.members,
+    query: args.query,
+    currentUserId: args.currentUserId,
+    limit: args.limit
+  })
+  if (scoped.length > 0 || args.query.trim() === '' || args.roster === null) {
+    return { users: scoped, scoped: true }
+  }
+  const wider = activeCollabMentionSuggestions({
+    users: args.roster,
+    query: args.query,
+    currentUserId: args.currentUserId,
+    limit: args.limit
+  })
+  // Still scoped when the wider search also found nobody: there is no list to explain.
+  return wider.length > 0 ? { users: wider, scoped: false } : { users: [], scoped: true }
 }

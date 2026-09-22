@@ -4,6 +4,7 @@ import type { ActiveCollabResult } from '../../../shared/activecollab-api-types'
 import {
   activeCollabMentionPeople,
   activeCollabMentionSuggestions,
+  activeCollabMentionSuggestionsWithFallback,
   activeCollabMentionToken
 } from './activecollab-comment-mentions'
 import type { ActiveCollabUser } from '../../../shared/activecollab-types'
@@ -77,6 +78,58 @@ describe('activeCollabMentionSuggestions', () => {
     expect(
       activeCollabMentionSuggestions({ users: ROSTER, query: 'varrese', currentUserId: null })
     ).toEqual([JAKE])
+  })
+
+  it('puts a first-name match above a surname match', () => {
+    // The reported case: `@m` listed Alfredo Mendoza, then Felicity Lemke, then Milli Lasky.
+    const ALFREDO: ActiveCollabUser = { id: 1, name: 'Alfredo Mendoza', avatarUrl: null }
+    const FELICITY: ActiveCollabUser = { id: 2, name: 'Felicity Lemke', avatarUrl: null }
+    const MILLI: ActiveCollabUser = { id: 3, name: 'Milli Lasky', avatarUrl: null }
+    expect(
+      activeCollabMentionSuggestions({
+        users: [ALFREDO, FELICITY, MILLI],
+        query: 'm',
+        currentUserId: null
+      })
+    ).toEqual([MILLI, ALFREDO, FELICITY])
+  })
+
+  it('still finds someone by surname', () => {
+    const ALFREDO: ActiveCollabUser = { id: 1, name: 'Alfredo Mendoza', avatarUrl: null }
+    expect(
+      activeCollabMentionSuggestions({ users: [ADA, ALFREDO], query: 'mendoza', currentUserId: null })
+    ).toEqual([ALFREDO])
+  })
+
+  it('still finds a match mid-word, which no prefix rule would reach', () => {
+    const FELICITY: ActiveCollabUser = { id: 2, name: 'Felicity Lemke', avatarUrl: null }
+    expect(
+      activeCollabMentionSuggestions({ users: [FELICITY], query: 'mke', currentUserId: null })
+    ).toEqual([FELICITY])
+  })
+
+  it('keeps roster order within one tier, so equal matches do not shuffle', () => {
+    const MIA: ActiveCollabUser = { id: 1, name: 'Mia Carter', avatarUrl: null }
+    const MILO: ActiveCollabUser = { id: 2, name: 'Milo Drake', avatarUrl: null }
+    expect(
+      activeCollabMentionSuggestions({ users: [MIA, MILO], query: 'mi', currentUserId: null })
+    ).toEqual([MIA, MILO])
+  })
+
+  it('ranks the whole roster before cutting to the limit', () => {
+    // Five weaker matches ahead of the best one used to push it out of the list entirely.
+    const weak = Array.from({ length: 8 }, (_unused, index) => ({
+      id: 100 + index,
+      name: `Zoe Marsh${index}`,
+      avatarUrl: null
+    }))
+    const best: ActiveCollabUser = { id: 9, name: 'Marcus Reed', avatarUrl: null }
+    const suggestions = activeCollabMentionSuggestions({
+      users: [...weak, best],
+      query: 'mar',
+      currentUserId: null
+    })
+    expect(suggestions[0]).toEqual(best)
   })
 
   it('never suggests the connected user, because ActiveCollab has no self-mention', () => {
@@ -186,5 +239,83 @@ describe('activeCollabMentionPeople', () => {
     )
 
     await expect(activeCollabMentionPeople(args)).resolves.toEqual({ users: [], scoped: false })
+  })
+})
+
+describe('activeCollabMentionSuggestionsWithFallback', () => {
+  const MEMBERS = [
+    { id: 1, name: 'Paul Borella', avatarUrl: null },
+    { id: 2, name: 'Nicky Deev', avatarUrl: null }
+  ]
+  const ROSTER = [...MEMBERS, { id: 3, name: 'Milli Lasky', avatarUrl: null }]
+
+  it('offers project members and says so', () => {
+    expect(
+      activeCollabMentionSuggestionsWithFallback({
+        members: MEMBERS,
+        roster: ROSTER,
+        query: 'paul',
+        currentUserId: null
+      })
+    ).toEqual({ users: [MEMBERS[0]], scoped: true })
+  })
+
+  it('reaches the wider roster when no member matches', () => {
+    // The reported case: typing a colleague's name on a project they are not a member of showed
+    // an empty menu, which is indistinguishable from mentions being broken.
+    expect(
+      activeCollabMentionSuggestionsWithFallback({
+        members: MEMBERS,
+        roster: ROSTER,
+        query: 'milli',
+        currentUserId: null
+      })
+    ).toEqual({ users: [ROSTER[2]], scoped: false })
+  })
+
+  it('does not widen a bare @, which is a request to browse this project', () => {
+    const result = activeCollabMentionSuggestionsWithFallback({
+      members: MEMBERS,
+      roster: ROSTER,
+      query: '',
+      currentUserId: null
+    })
+    expect(result).toEqual({ users: MEMBERS, scoped: true })
+  })
+
+  it('does not widen before the roster has been fetched', () => {
+    expect(
+      activeCollabMentionSuggestionsWithFallback({
+        members: MEMBERS,
+        roster: null,
+        query: 'milli',
+        currentUserId: null
+      })
+    ).toEqual({ users: [], scoped: true })
+  })
+
+  it('stays scoped when nobody anywhere matches, since there is no wider list to explain', () => {
+    expect(
+      activeCollabMentionSuggestionsWithFallback({
+        members: MEMBERS,
+        roster: ROSTER,
+        query: 'zzzz',
+        currentUserId: null
+      })
+    ).toEqual({ users: [], scoped: true })
+  })
+
+  it('keeps first-name-first ranking inside the widened list', () => {
+    const wide = [
+      { id: 4, name: 'Alfredo Mendoza', avatarUrl: null },
+      { id: 5, name: 'Milli Lasky', avatarUrl: null }
+    ]
+    const result = activeCollabMentionSuggestionsWithFallback({
+      members: MEMBERS,
+      roster: wide,
+      query: 'm',
+      currentUserId: null
+    })
+    expect(result.users.map((user) => user.name)).toEqual(['Milli Lasky', 'Alfredo Mendoza'])
   })
 })

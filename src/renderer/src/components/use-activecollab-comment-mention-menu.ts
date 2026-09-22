@@ -14,7 +14,7 @@ import {
 } from './activecollab-comment-mention-document'
 import {
   activeCollabMentionPeople,
-  activeCollabMentionSuggestions,
+  activeCollabMentionSuggestionsWithFallback,
   type ActiveCollabMentionPeople
 } from './activecollab-comment-mentions'
 
@@ -22,6 +22,8 @@ export type ActiveCollabCommentMentionMenu = {
   suggestions: readonly ActiveCollabUser[]
   highlighted: number
   scoped: boolean
+  /** True when these came from the wider roster because no project member matched the query. */
+  widened: boolean
   listboxId: string
   pick: (user: ActiveCollabUser) => void
   /** True when the key was consumed by the menu, which is also ProseMirror's "stop here". */
@@ -38,6 +40,8 @@ export function useActiveCollabCommentMentionMenu({
 }): ActiveCollabCommentMentionMenu {
   const [token, setToken] = useState<ActiveCollabMentionRange | null>(null)
   const [people, setPeople] = useState<ActiveCollabMentionPeople>({ users: [], scoped: true })
+  /** The whole-instance roster, fetched only once a query matches nobody on the project. */
+  const [roster, setRoster] = useState<readonly ActiveCollabUser[] | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [dismissedAt, setDismissedAt] = useState<number | null>(null)
 
@@ -83,17 +87,48 @@ export function useActiveCollabCommentMentionMenu({
     }
   }, [editor])
 
-  const suggestions = useMemo(() => {
+  const resolved = useMemo(() => {
     if (token === null || token.from === dismissedAt) {
-      return []
+      return { users: [], scoped: true } as ActiveCollabMentionPeople
     }
-    return activeCollabMentionSuggestions({
-      users: people.users,
+    return activeCollabMentionSuggestionsWithFallback({
+      members: people.users,
+      // The roster is the fallback only when this list IS the project's; when the members read
+      // already fell back, `people.users` is the roster and there is nothing wider to try.
+      roster: people.scoped ? roster : null,
       query: token.query,
       currentUserId
     })
-  }, [token, dismissedAt, people, currentUserId])
+  }, [token, dismissedAt, people, roster, currentUserId])
+  const suggestions = resolved.users
   const highlighted = Math.min(activeIndex, Math.max(suggestions.length - 1, 0))
+
+  // Fetch the wider roster only once a real query has matched nobody on the project. A menu that
+  // silently shows nothing is indistinguishable from a broken one, which is how this read to
+  // someone mentioning a colleague who is not a member of the task's project.
+  const rosterRequested = useRef(false)
+  useEffect(() => {
+    if (
+      token === null ||
+      token.query.trim() === '' ||
+      suggestions.length > 0 ||
+      roster !== null ||
+      rosterRequested.current ||
+      !people.scoped
+    ) {
+      return
+    }
+    rosterRequested.current = true
+    let live = true
+    void listUsers().then((result) => {
+      if (live && result.ok) {
+        setRoster(result.value)
+      }
+    })
+    return () => {
+      live = false
+    }
+  }, [token, suggestions.length, roster, people.scoped, listUsers])
 
   // The people list is fetched on the FIRST `@` and never on mount: a comment written without a
   // mention must not cost a request at all. One attempt per PROJECT — retrying a refused read on
@@ -105,6 +140,10 @@ export function useActiveCollabCommentMentionMenu({
       return
     }
     requestedFor.current = projectId
+    // A new project means a new member list, so a roster fetched for the previous one no longer
+    // describes what is missing from this one.
+    rosterRequested.current = false
+    setRoster(null)
     let live = true
     void activeCollabMentionPeople({
       projectId,
@@ -175,7 +214,11 @@ export function useActiveCollabCommentMentionMenu({
   return {
     suggestions,
     highlighted,
-    scoped: people.scoped,
+    // Unscoped either way: the members read may have failed outright, or it may have succeeded and
+    // simply matched nobody. Both mean the names on screen are not this project's, and only the
+    // second is a `widened` one — the footer says which.
+    scoped: people.scoped && resolved.scoped,
+    widened: !resolved.scoped,
     listboxId,
     pick,
     handleKeyDown,
