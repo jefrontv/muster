@@ -6513,6 +6513,44 @@ describe('Last-status persistence', () => {
     }
   })
 
+  it('drops persisted omp sub-agent rows on hydration', async () => {
+    // Why: nothing proves an omp child survived the restart; the extension's next post restores live ones.
+    mkdirSync(join(userDataPath, 'agent-hooks'), { recursive: true })
+    const receivedAt = recentTs()
+    writeFileSync(
+      lastStatusPath(),
+      JSON.stringify({
+        version: 2,
+        entries: {
+          [PANE]: {
+            paneKey: PANE,
+            tabId: 'tab-1',
+            worktreeId: 'wt-1',
+            receivedAt,
+            stateStartedAt: recentTs(-1000),
+            payload: {
+              state: 'working',
+              prompt: 'run scouts',
+              agentType: 'omp',
+              subagents: [{ id: 'ListScout', state: 'working', startedAt: receivedAt - 5000 }]
+            }
+          }
+        }
+      }),
+      'utf8'
+    )
+
+    const server = new AgentHookServer()
+    await server.start({ env: 'production', userDataPath })
+    try {
+      const [snapshot] = server.getStatusSnapshot()
+      expect(snapshot).toMatchObject({ agentType: 'omp', prompt: 'run scouts' })
+      expect(snapshot).not.toHaveProperty('subagents')
+    } finally {
+      server.stop()
+    }
+  })
+
   it('restores Codex child hierarchy and reaps unconfirmed children on the next root Stop', async () => {
     mkdirSync(join(userDataPath, 'agent-hooks'), { recursive: true })
     const receivedAt = recentTs()

@@ -13,6 +13,7 @@
 import type { PiAgentKind } from '../../shared/pi-agent-kind'
 import { getPiAgentStatusHandlerSourceLines } from './agent-status-handler-source'
 import { getPiAgentStatusRuntimeDetectionSourceLines } from './agent-status-runtime-detection-source'
+import { getPiAgentStatusSubagentRosterSourceLines } from './agent-status-subagent-roster-source'
 
 export const ORCA_PI_AGENT_STATUS_EXTENSION_FILE = 'orca-agent-status.ts'
 
@@ -82,8 +83,8 @@ export function getPiAgentStatusExtensionSource(kind: PiAgentKind = 'pi'): strin
   // Why: Pi resumes from an existing transcript; OMP resumes directly by session id (#8962).
   const payloadLine =
     kind === 'pi'
-      ? '    payload: { hook_event_name: hookEventName, ...(ompRuntime ? metadata : getPersistedSessionMetadata()), ...extra },'
-      : '    payload: { hook_event_name: hookEventName, ...metadata, ...extra },'
+      ? '    payload: { hook_event_name: hookEventName, ...(ompRuntime ? metadata : getPersistedSessionMetadata()), ...extra, ...(ompRuntime ? { subagents: snapshotOmpSubagents() } : {}) },'
+      : '    payload: { hook_event_name: hookEventName, ...metadata, ...extra, subagents: snapshotOmpSubagents() },'
 
   // Why: keep this string self-contained — it runs inside the pi process,
   // so it cannot import from Orca's main bundle. fs/http coords come from
@@ -159,6 +160,7 @@ export function getPiAgentStatusExtensionSource(kind: PiAgentKind = 'pi'): strin
     '',
     ...getPiAgentStatusRuntimeDetectionSourceLines(kind),
     '',
+    ...getPiAgentStatusSubagentRosterSourceLines(),
     'function post(hookEventName: string, extra: Record<string, unknown> = {}): void {',
     '  const ompRuntime = isOmpRuntime()',
     '  pendingPost = {',

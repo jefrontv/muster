@@ -1881,6 +1881,11 @@ export class AgentHookServer {
             (entry.payload.subagents?.length ?? 0) - (hydratedPayload.subagents?.length ?? 0)
           entry.payload = hydratedPayload
         }
+        // Why: omp sub-agents can't be proven alive after a restart; the extension's next post restores them.
+        if (entry.payload.agentType === 'omp' && entry.payload.subagents) {
+          const { subagents: _staleOmpSubagents, ...withoutSubagents } = entry.payload
+          entry.payload = withoutSubagents
+        }
         this.state.lastStatusByPaneKey.set(resolvedPaneKey, entry)
         if (entry.connectionId) {
           // Why: a restart can see an earlier wall clock; seed ordering so new events stay after disk state.

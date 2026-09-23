@@ -46,6 +46,12 @@ import {
   upsertCodexSubagent,
   type CodexSubagentRoster
 } from './codex-subagent-roster'
+import {
+  ompEffectiveState,
+  readOmpSubagentRoster,
+  type OmpLeadState,
+  type OmpSubagentEntry
+} from './omp-subagent-status'
 import { ORCA_HOOK_PROTOCOL_VERSION } from './agent-hook-types'
 import { REMOTE_AGENT_HOOK_ENV, type AgentHookSource } from './agent-hook-relay'
 import {
@@ -114,6 +120,10 @@ export type HookListenerState = {
   codexSubagentRosterByPaneKey: Map<string, CodexSubagentRoster>
   /** Root Codex state/model, kept separate from child hook traffic. */
   codexLeadStateByPaneKey: Map<string, CodexLeadTurnState>
+  /** Latest omp sub-agent roster per pane; the extension sends the whole list on every post. */
+  ompSubagentRosterByPaneKey: Map<string, OmpSubagentEntry[]>
+  /** The omp lead's own state, so a sub-agent change can re-emit it. */
+  ompLeadStateByPaneKey: Map<string, OmpLeadState>
 }
 
 export type ClaudeLeadTurnState = {
@@ -142,7 +152,9 @@ export function createHookListenerState(): HookListenerState {
     claudeSubagentRosterByPaneKey: new Map(),
     claudeLeadStateByPaneKey: new Map(),
     codexSubagentRosterByPaneKey: new Map(),
-    codexLeadStateByPaneKey: new Map()
+    codexLeadStateByPaneKey: new Map(),
+    ompSubagentRosterByPaneKey: new Map(),
+    ompLeadStateByPaneKey: new Map()
   }
 }
 
@@ -156,6 +168,8 @@ export function clearPaneCacheState(state: HookListenerState, paneKey: string): 
   state.claudeLeadStateByPaneKey.delete(paneKey)
   state.codexSubagentRosterByPaneKey.delete(paneKey)
   state.codexLeadStateByPaneKey.delete(paneKey)
+  state.ompSubagentRosterByPaneKey.delete(paneKey)
+  state.ompLeadStateByPaneKey.delete(paneKey)
 }
 
 function movePaneScopedMapEntries<T>(
@@ -199,6 +213,8 @@ export function movePaneCacheState(
   movePaneScopedMapEntries(state.claudeLeadStateByPaneKey, fromPaneKey, toPaneKey)
   movePaneScopedMapEntries(state.codexSubagentRosterByPaneKey, fromPaneKey, toPaneKey)
   movePaneScopedMapEntries(state.codexLeadStateByPaneKey, fromPaneKey, toPaneKey)
+  movePaneScopedMapEntries(state.ompSubagentRosterByPaneKey, fromPaneKey, toPaneKey)
+  movePaneScopedMapEntries(state.ompLeadStateByPaneKey, fromPaneKey, toPaneKey)
 }
 
 function clearPaneTurnCacheState(state: HookListenerState, paneKey: string): void {
@@ -240,6 +256,8 @@ export function clearAllListenerCaches(state: HookListenerState): void {
   state.claudeLeadStateByPaneKey.clear()
   state.codexSubagentRosterByPaneKey.clear()
   state.codexLeadStateByPaneKey.clear()
+  state.ompSubagentRosterByPaneKey.clear()
+  state.ompLeadStateByPaneKey.clear()
 }
 
 /** Warn-once on cross-build (`version`) and dev-vs-prod (`env`) mismatches; the relay's "remote" env marker is a location tag, not a build env, so it must not warn as a stale local hook. */
@@ -3487,6 +3505,17 @@ function normalizePiCompatibleEvent(
     return null
   }
 
+  const ompRoster = agentType === 'omp' ? readOmpSubagentRoster(hookPayload.subagents) : undefined
+  if (ompRoster) {
+    state.ompSubagentRosterByPaneKey.set(paneKey, ompRoster)
+  }
+  if (agentType === 'omp' && eventName === 'subagent_lifecycle') {
+    // Why: a sub-agent change re-emits the lead's state; it must not touch the tool or prompt cache.
+    const lead = state.ompLeadStateByPaneKey.get(paneKey) ?? 'working'
+    const snapshot = state.lastToolByPaneKey.get(paneKey) ?? {}
+    return buildPiCompatibleStatusPayload(state, agentType, paneKey, lead, '', snapshot, false)
+  }
+
   // Why: gate on the event's own tool_name (not a merged snapshot) so a stale cached ask_user_question can't re-enter blocked.
   const isPiAskUserQuestion =
     agentType === 'pi' &&
@@ -3510,24 +3539,46 @@ function normalizePiCompatibleEvent(
     return null
   }
 
+  if (agentType === 'omp') {
+    state.ompLeadStateByPaneKey.set(paneKey, stateName)
+  }
   const snapshot = resolveToolState(
     state,
     paneKey,
     extractToolFields(agentType, eventName, hookPayload),
     { resetOnNewTurn: isNewTurnEvent(agentType, eventName) }
   )
+  return buildPiCompatibleStatusPayload(
+    state,
+    agentType,
+    paneKey,
+    stateName,
+    promptText,
+    snapshot,
+    isNewTurnEvent(agentType, eventName)
+  )
+}
 
+function buildPiCompatibleStatusPayload(
+  state: HookListenerState,
+  agentType: 'pi' | 'omp',
+  paneKey: string,
+  leadState: OmpLeadState,
+  promptText: string,
+  snapshot: ToolSnapshot,
+  resetOnNewTurn: boolean
+): ParsedAgentStatusPayload | null {
+  const roster = agentType === 'omp' ? state.ompSubagentRosterByPaneKey.get(paneKey) : undefined
   return parseAgentStatusPayload(
     JSON.stringify({
-      state: stateName,
-      prompt: resolvePrompt(state, paneKey, promptText, {
-        resetOnNewTurn: isNewTurnEvent(agentType, eventName)
-      }),
+      state: agentType === 'omp' ? ompEffectiveState(leadState, roster) : leadState,
+      prompt: resolvePrompt(state, paneKey, promptText, { resetOnNewTurn }),
       agentType,
       toolName: snapshot.toolName,
       toolInput: snapshot.toolInput,
       interactivePrompt: snapshot.interactivePrompt,
-      lastAssistantMessage: snapshot.lastAssistantMessage
+      lastAssistantMessage: snapshot.lastAssistantMessage,
+      ...(roster && roster.length > 0 ? { subagents: roster } : {})
     })
   )
 }
