@@ -92,10 +92,8 @@ export function getCompactAgentSingleText(
   agent: DashboardAgentRowData,
   conversationName: string | null
 ): string {
-  const toolName = agent.state === 'working' ? (agent.entry.toolName?.trim() ?? '') : ''
-  const text = stripInlineMarkdown(
-    toolName || conversationName?.trim() || getAgentRowPrimaryText(agent.entry)
-  )
+  // Why: the row names the conversation; tool names flicker per call and read as noise.
+  const text = stripInlineMarkdown(conversationName?.trim() || getAgentRowPrimaryText(agent.entry))
   return text || agentStateLabel(getAgentDotState(agent))
 }
 

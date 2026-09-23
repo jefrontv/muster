@@ -269,7 +269,7 @@ describe('new-style compact agent rows', () => {
     expect(listMarkup).toContain('inline-flex w-3 shrink-0 justify-center')
   })
 
-  it('shows the tool name while a new-style agent is working', async () => {
+  it('keeps the conversation name while a new-style agent is working', async () => {
     const { getCompactAgentSingleText } = await import('./worktree-card-compact-agent-row')
     const working = mockAgent({ agentType: 'codex', state: 'working', prompt: 'Fix *it*' }) as {
       entry: Record<string, unknown>
@@ -281,7 +281,10 @@ describe('new-style compact agent rows', () => {
     done.entry.toolName = 'Read'
 
     expect(getCompactAgentSingleText(working as unknown as DashboardAgentRowData, 'Chat')).toBe(
-      'Read'
+      'Chat'
+    )
+    expect(getCompactAgentSingleText(working as unknown as DashboardAgentRowData, null)).toBe(
+      'Fix it'
     )
     expect(getCompactAgentSingleText(done as unknown as DashboardAgentRowData, '`Chat` name')).toBe(
       'Chat name'
