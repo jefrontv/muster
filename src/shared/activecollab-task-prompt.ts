@@ -18,17 +18,6 @@ export type ActiveCollabTaskPromptTask = {
   projectName: string
 }
 
-export const MAX_TASKS_PER_PROMPT = 10
-
-/**
- * Why a cap at all: a prompt naming thirty tasks is not a task, it is a backlog dump, and an agent
- * handed one will either pick arbitrarily or try all of them badly. Ten is generous for the "a few
- * related tickets" case this is for.
- */
-export function exceedsTaskPromptLimit(count: number): boolean {
-  return count > MAX_TASKS_PER_PROMPT
-}
-
 function line(task: ActiveCollabTaskPromptTask): string {
   return `#${task.taskNumber} (id ${task.id}) ${task.name.trim()}`
 }
@@ -45,9 +34,8 @@ export function buildActiveCollabTaskPrompt(
   if (tasks.length === 0) {
     return null
   }
-  const capped = tasks.slice(0, MAX_TASKS_PER_PROMPT)
-  const project = capped[0]
-  if (capped.length === 1) {
+  const project = tasks[0]
+  if (tasks.length === 1) {
     return [
       `Work on ActiveCollab task ${line(project)}, in project ${project.projectName} (id ${project.projectId}).`,
       'Read it with the activecollab MCP before you start, including its comments and attachments.'
@@ -57,7 +45,7 @@ export function buildActiveCollabTaskPrompt(
   // one bound project, so repeating it on every line is noise the agent has to read past.
   return [
     `Work on these ActiveCollab tasks, all in project ${project.projectName} (id ${project.projectId}):`,
-    ...capped.map((task) => `- ${line(task)}`),
+    ...tasks.map((task) => `- ${line(task)}`),
     '',
     'Read each one with the activecollab MCP before you start, including its comments and attachments.'
   ].join('\n')

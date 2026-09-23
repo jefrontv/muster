@@ -11,17 +11,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, LoaderCircle, RefreshCw, Send, X } from 'lucide-react'
-import { toast } from 'sonner'
 import { ActiveCollabTaskWorkspace } from '@/components/ActiveCollabTaskWorkspace'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { useActiveCollabRepoProject } from '@/hooks/useActiveCollabRepoProject'
 import type { ActiveCollabTask } from '../../../../shared/activecollab-types'
-import {
-  buildActiveCollabTaskPrompt,
-  MAX_TASKS_PER_PROMPT
-} from '../../../../shared/activecollab-task-prompt'
+import { buildActiveCollabTaskPrompt } from '../../../../shared/activecollab-task-prompt'
 import { groupByTaskList, myOpenTasks } from './tasks-panel-projection'
 import { useTasksPanelTasks } from './use-tasks-panel-tasks'
 import { listTaskSendTargets } from './tasks-panel-send-targets'
@@ -75,15 +71,8 @@ export default function TasksPanel(): React.JSX.Element {
       const next = new Set(previous)
       if (next.has(task.id)) {
         next.delete(task.id)
-      } else if (next.size < MAX_TASKS_PER_PROMPT) {
-        next.add(task.id)
       } else {
-        toast.error(
-          translate(
-            'auto.components.right.sidebar.tasks.cap',
-            'You can send {{count}} tasks at a time.'
-          ).replace('{{count}}', String(MAX_TASKS_PER_PROMPT))
-        )
+        next.add(task.id)
       }
       return next
     })

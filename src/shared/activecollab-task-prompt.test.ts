@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildActiveCollabTaskPrompt,
-  exceedsTaskPromptLimit,
-  MAX_TASKS_PER_PROMPT,
   type ActiveCollabTaskPromptTask
 } from './activecollab-task-prompt'
 
@@ -56,23 +54,11 @@ describe('buildActiveCollabTaskPrompt', () => {
     )
   })
 
-  it('never sends more than the cap, even when handed more', () => {
+  it('sends every selected task, with no cap', () => {
     const many = Array.from({ length: 25 }, (_, index) =>
       task({ id: 1000 + index, taskNumber: index + 1 })
     )
     const prompt = buildActiveCollabTaskPrompt(many) ?? ''
-    expect(prompt.split('\n').filter((row) => row.startsWith('- '))).toHaveLength(
-      MAX_TASKS_PER_PROMPT
-    )
-  })
-})
-
-describe('exceedsTaskPromptLimit', () => {
-  it('allows exactly the cap', () => {
-    expect(exceedsTaskPromptLimit(MAX_TASKS_PER_PROMPT)).toBe(false)
-  })
-
-  it('rejects one past it', () => {
-    expect(exceedsTaskPromptLimit(MAX_TASKS_PER_PROMPT + 1)).toBe(true)
+    expect(prompt.split('\n').filter((row) => row.startsWith('- '))).toHaveLength(25)
   })
 })
