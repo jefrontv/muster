@@ -30,7 +30,6 @@ import {
   LOCALWP_DATABASE_PASSWORD,
   LOCALWP_DATABASE_USER
 } from '../sites/localwp-host'
-import { setSiteSecret } from '../sites/site-secret-store'
 import type { LocalWpMigrationPlan } from '../sites/localwp-migration-plan'
 import {
   previewLocalWpMigration,
@@ -48,6 +47,7 @@ import {
   requireId
 } from './site-stack-request'
 import { createMigrationProgressForwarder } from './site-stack-progress'
+import { adoptServingStack, persistLocalWpDatabasePassword } from './site-stack-adopt'
 import { failure, requireSite, type SiteResult } from './sites-result'
 
 const SITE_STACK_CHANNELS = [
@@ -55,6 +55,7 @@ const SITE_STACK_CHANNELS = [
   'siteStacks:start',
   'siteStacks:stop',
   'siteStacks:setDomain',
+  'siteStacks:adoptServing',
   'siteStacks:resolveSocket',
   'siteStacks:available',
   'siteStacks:agentLocalStatus',
@@ -189,12 +190,20 @@ export function registerSiteStackHandlers(store: Store): void {
     }
   )
 
+  ipcMain.handle('siteStacks:adoptServing', async (_event, siteId: unknown) => {
+    try {
+      return { ok: true, value: await adoptServingStack(store, requireId(siteId)) }
+    } catch (error) {
+      return failure(error)
+    }
+  })
+
   // Version and update state of the agent-local daemon, for the stack panel.
   ipcMain.handle(
     'siteStacks:agentLocalStatus',
     async (): Promise<SiteResult<AgentLocalDaemonStatus>> => ({
       ok: true,
-      value: await readAgentLocalDaemonStatus()
+      value: await readAgentLocalDaemonStatus({ startDaemon: false })
     })
   )
 
@@ -298,26 +307,6 @@ export function registerSiteStackHandlers(store: Store): void {
       }
     }
   )
-}
-
-/**
- * Stores Local's MySQL root password so a later import can authenticate.
- *
- * Why every environment: ocsites keeps `db_user`/`db_password` in SITE_FIELD_KEYS (deploy/config.py
- * :38-47) because they are local-only concerns shared across environments, but Muster's secret
- * store is keyed per environment. Writing all of them keeps the credential reachable after an
- * environment switch instead of failing with "using password: NO" on the next import.
- */
-function persistLocalWpDatabasePassword(store: Store, siteId: string): void {
-  const site = requireSite(store, siteId)
-  for (const environmentName of Object.keys(site.environments)) {
-    try {
-      setSiteSecret(siteId, environmentName, 'db', LOCALWP_DATABASE_PASSWORD)
-    } catch {
-      // A locked keychain must not fail the migration that already succeeded on disk; the import
-      // reports the missing credential precisely at the step that needs it.
-    }
-  }
 }
 
 /**

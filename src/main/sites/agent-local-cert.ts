@@ -50,13 +50,10 @@ export async function agentLocalCertStatus(
   options: AgentLocalCertOptions = {}
 ): Promise<LocalWpCertStatus> {
   const host = options.host ?? createAgentLocalHost()
-  const response = await requestWithDaemon(
-    host,
-    'GET',
-    `/certs/${encodeURIComponent(domain)}`,
-    undefined,
-    { timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS }
-  )
+  // The review re-checks this on every domain keystroke; a status read must not start the daemon.
+  const response = await host.request('GET', `/certs/${encodeURIComponent(domain)}`, undefined, {
+    timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS
+  })
   const data = asRecord(response.data)
   const exists = response.ok && data?.exists === true
   const trusted = response.ok && data?.trusted === true

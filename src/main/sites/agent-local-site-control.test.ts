@@ -86,6 +86,33 @@ describe('resolveAgentLocalSite', () => {
     expect(match).toMatchObject({ slug: 'ebes', running: true, wpDir: '/Users/jake/Sites/ebes' })
   })
 
+  it('never adopts a same-named site whose folder still exists elsewhere', async () => {
+    const { match } = await resolveAgentLocalSite(
+      { path: '/Users/jake/Sites/ebes', localStack: 'agent-local' },
+      {
+        pathExists: (target) => target === '/Users/jake/Old/ebes',
+        host: host({
+          'GET /sites': {
+            ok: true,
+            status: 200,
+            data: [
+              {
+                slug: 'ebes',
+                work_dir: '/Users/jake/Old/ebes',
+                wp_dir: '/Users/jake/Old/ebes',
+                domain: 'ebes.local',
+                php_version: '8.4',
+                state: 'running'
+              }
+            ]
+          }
+        })
+      }
+    )
+
+    expect(match).toBeNull()
+  })
+
   it('matches a leftover slug when the recorded work dir is gone', async () => {
     const { match } = await resolveAgentLocalSite(
       { path: '/Users/jake/Sites/ebes', localStack: 'agent-local' },

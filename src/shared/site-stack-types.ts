@@ -72,6 +72,8 @@ export type LocalWpMigrationResult = {
   localWpRoot: string
   databaseImported: boolean
   log: string[]
+  /** The domain the stack ended up serving; Agent Local's adopt path keeps the existing site's. */
+  domain?: string
 }
 
 /**

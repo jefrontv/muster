@@ -7,7 +7,12 @@
 
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { localWpWordPressRoot, type LocalWpHost } from './localwp-host'
+import {
+  LOCALWP_DATABASE_PASSWORD,
+  LOCALWP_DATABASE_USER,
+  localWpWordPressRoot,
+  type LocalWpHost
+} from './localwp-host'
 
 export type LocalWpFileOperations = {
   listDirectory: (dirPath: string) => Promise<string[]>
@@ -108,12 +113,14 @@ export async function restoreGitAppPublic(
 export async function moveRootEntriesIntoAppPublic(
   sitePath: string,
   fileOperations: LocalWpFileOperations,
-  onStatus?: (message: string) => void
+  onStatus?: (message: string) => void,
+  /** Listed before Local created the site; re-listing after would sweep up its conf/ and logs/. */
+  entries?: readonly string[]
 ): Promise<LocalWpFileOutcome & { moved: string[] }> {
   const appPublic = localWpWordPressRoot(sitePath)
   await fileOperations.makeDirectory(appPublic)
   const moved: string[] = []
-  for (const entry of await listRootEntriesToMove(sitePath, fileOperations)) {
+  for (const entry of entries ?? (await listRootEntriesToMove(sitePath, fileOperations))) {
     const destination = path.join(appPublic, entry)
     try {
       if (await fileOperations.pathExists(destination)) {
@@ -142,11 +149,11 @@ export async function listRootEntriesToMove(
 }
 
 /**
- * Points the relocated wp-config.php at Local's MySQL. Local reaches its per-site daemon through the
+ * Points the relocated wp-config.php at Local's MySQL, login included. Local reaches its per-site daemon through the
  * socket configured for the PHP process, so DB_HOST must be plain 'localhost' — an inherited
  * 127.0.0.1 from a MAMP setup forces TCP and fails.
  */
-export async function rewriteLocalDbHost(
+export async function rewriteLocalDbConnection(
   wpConfigPath: string,
   fileOperations: LocalWpFileOperations
 ): Promise<boolean> {
@@ -154,9 +161,19 @@ export async function rewriteLocalDbHost(
     return false
   }
   const contents = await fileOperations.readTextFile(wpConfigPath)
-  const rewritten = contents.replace(
-    /define\s*\(\s*['"]DB_HOST['"]\s*,\s*['"][^'"]*['"]\s*\)/g,
-    `define('DB_HOST', 'localhost')`
+  // Local's MySQL only knows root/root; the source site's login would leave WordPress unable to
+  // connect until an import happened to rewrite it.
+  const rewritten = [
+    ['DB_HOST', 'localhost'],
+    ['DB_USER', LOCALWP_DATABASE_USER],
+    ['DB_PASSWORD', LOCALWP_DATABASE_PASSWORD]
+  ].reduce(
+    (text, [name, value]) =>
+      text.replace(
+        new RegExp(`define\\s*\\(\\s*['"]${name}['"]\\s*,\\s*(['"])(?:(?!\\1).)*\\1\\s*\\)`, 'g'),
+        `define('${name}', '${value}')`
+      ),
+    contents
   )
   if (rewritten === contents) {
     return false

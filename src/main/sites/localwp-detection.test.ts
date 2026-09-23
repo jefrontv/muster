@@ -13,7 +13,12 @@ import {
   resolveLocalWpServiceVersion,
   siteIdFromSocketPath
 } from './localwp-detection'
-import { createLocalWpHost, type LocalWpCommandResult, type LocalWpHost } from './localwp-host'
+import {
+  createLocalWpHost,
+  isLocalWpInstalled,
+  type LocalWpCommandResult,
+  type LocalWpHost
+} from './localwp-host'
 
 const HOME = '/Users/tester'
 const SUPPORT = path.join(HOME, 'Library', 'Application Support', 'Local')
@@ -184,6 +189,12 @@ describe('socket resolution from a site path', () => {
     expect(await currentSocketIfRunning(host, SITE_PATH)).toBe(SOCKET)
   })
 
+  it('matches a site Local stored with a ~ path', async () => {
+    const localSite = path.join(HOME, 'Local Sites', 'acme')
+    const host = fakeHost({ files: sitesJson({ [SITE_ID]: { path: '~/Local Sites/acme' } }) })
+    expect(await findLocalWpSiteId(host, localSite)).toBe(SITE_ID)
+  })
+
   it('withholds the socket when the file exists but mysqld refuses connections', async () => {
     const host = fakeHost({
       files: sitesJson({ [SITE_ID]: { path: SITE_PATH } }),
@@ -274,3 +285,18 @@ describe('stack detection', () => {
 function ok(stdout: string): LocalWpCommandResult {
   return { code: 0, stdout, stderr: '' }
 }
+
+describe('isLocalWpInstalled', () => {
+  it('needs the app or its services on disk, not just macOS', async () => {
+    expect(await isLocalWpInstalled(fakeHost())).toBe(false)
+    expect(await isLocalWpInstalled(fakeHost({ existing: ['/Applications/Local.app'] }))).toBe(true)
+    expect(
+      await isLocalWpInstalled(fakeHost({ existing: [path.join(SUPPORT, 'lightning-services')] }))
+    ).toBe(true)
+    expect(
+      await isLocalWpInstalled(
+        fakeHost({ platform: 'linux', existing: ['/Applications/Local.app'] })
+      )
+    ).toBe(false)
+  })
+})

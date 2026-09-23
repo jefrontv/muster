@@ -20,7 +20,7 @@ import { ensureLocalWpHttpsCert } from './localwp-cert-ensure'
 import { currentSocketIfRunning, detectLocalWpStack } from './localwp-detection'
 import {
   createLocalWpHost,
-  isLocalWpSupported,
+  isLocalWpInstalled,
   LOCALWP_DATABASE_PASSWORD,
   LOCALWP_DATABASE_USER
 } from './localwp-host'
@@ -103,7 +103,8 @@ export function localStackSkip(state: LocalWpControlState, message: string): Loc
 
 const localWpProvider: LocalStackProvider = {
   id: 'localwp',
-  isAvailable: async () => isLocalWpSupported(createLocalWpHost()),
+  // Any Mac passed before, so LocalWP was the default pick with nothing installed to serve it.
+  isAvailable: async () => isLocalWpInstalled(createLocalWpHost()),
   detect: (sitePath) => detectLocalWpStack(createLocalWpHost(), sitePath),
   ensureRunning: (site, onStatus) => ensureSiteRunning(site.path, { onStatus }),
   stop: (site) => stopSite(site.path),

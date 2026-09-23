@@ -5,7 +5,7 @@ import {
   listRootEntriesToMove,
   moveRootEntriesIntoAppPublic,
   restoreGitAppPublic,
-  rewriteLocalDbHost,
+  rewriteLocalDbConnection,
   type LocalWpFileOperations
 } from './localwp-app-public'
 import { fakeFileOperations } from './localwp-app-public.test-fixtures'
@@ -133,26 +133,26 @@ describe('moveRootEntriesIntoAppPublic', () => {
   })
 })
 
-describe('rewriteLocalDbHost', () => {
+describe('rewriteLocalDbConnection', () => {
   const configPath = path.join(APP_PUBLIC, 'wp-config.php')
 
   it('rewrites an inherited MAMP host to localhost', async () => {
     const { operations, entries } = fakeFileOperations({
       [configPath]: `<?php\ndefine( 'DB_HOST', '127.0.0.1:8889' );\n`
     })
-    expect(await rewriteLocalDbHost(configPath, operations)).toBe(true)
+    expect(await rewriteLocalDbConnection(configPath, operations)).toBe(true)
     expect(entries.get(configPath)).toBe(`<?php\ndefine('DB_HOST', 'localhost');\n`)
   })
 
   it('leaves an already-correct config untouched', async () => {
     const original = `<?php\ndefine('DB_HOST', 'localhost');\n`
     const { operations, entries } = fakeFileOperations({ [configPath]: original })
-    expect(await rewriteLocalDbHost(configPath, operations)).toBe(false)
+    expect(await rewriteLocalDbConnection(configPath, operations)).toBe(false)
     expect(entries.get(configPath)).toBe(original)
   })
 
   it('returns false when the config is missing', async () => {
     const { operations } = fakeFileOperations({})
-    expect(await rewriteLocalDbHost(configPath, operations)).toBe(false)
+    expect(await rewriteLocalDbConnection(configPath, operations)).toBe(false)
   })
 })

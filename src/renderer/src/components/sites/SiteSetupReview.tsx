@@ -71,8 +71,9 @@ export function SiteSetupReview({
         ? strings.serveAlreadyLocalWp.replace('{{domain}}', serveDomain)
         : strings.serveCreateLocalWp.replace('{{domain}}', serveDomain)
 
-  const serveRuledOut: Partial<Record<SiteLocalStack, string>> =
-    plan && !plan.stack.hasWordPress ? { 'agent-local': strings.serveAgentLocalNeedsWordPress } : {}
+  // Nothing is ruled out on WordPress presence: Agent Local attaches a bare repo against an empty
+  // database, which is what the no-WordPress block used to deny.
+  const serveRuledOut: Partial<Record<SiteLocalStack, string>> = {}
 
   const httpsReason = cert && !cert.supported ? cert.reason : null
   const httpsAlreadyTrusted = cert?.trusted ?? false

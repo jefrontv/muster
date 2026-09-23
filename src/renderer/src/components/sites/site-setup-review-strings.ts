@@ -43,10 +43,6 @@ export const getSiteSetupReviewStrings = createLocalizedCatalog(() => ({
     'Agent Local'
   ),
   serveDomainLabel: translate('auto.components.sites.SiteSetupReview.serveDomainLabel', 'Domain'),
-  serveAgentLocalNeedsWordPress: translate(
-    'auto.components.sites.SiteSetupReview.serveAgentLocalNeedsWordPress',
-    'Agent Local needs a WordPress install in the folder; this repo has none yet.'
-  ),
   httpsTitle: translate('auto.components.sites.SiteSetupReview.httpsTitle', 'HTTPS'),
   httpsTrust: translate(
     'auto.components.sites.SiteSetupReview.httpsTrust',

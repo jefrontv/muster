@@ -1034,6 +1034,8 @@ export type SiteStacksApi = {
     siteId: string
     domain: string
   }) => Promise<SiteResult<LocalWpControlOutcome>>
+  /** Saves the stack already serving the folder, and the domain it serves, onto the site record. */
+  adoptServing: (siteId: string) => Promise<SiteResult<{ stack: SiteLocalStack; domain: string }>>
   /**
    * Status lines from an in-flight `runMigration`, in order. Every subscriber sees every migration
    * this window started, so a consumer must filter on `siteId`.

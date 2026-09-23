@@ -8,6 +8,7 @@
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
+import { localWpServedScheme } from './localwp-served-scheme'
 import { createLocalWpHost } from './localwp-host'
 import { buildLocalWpWpEnv } from './localwp-wp-cli-environment'
 import {
@@ -31,6 +32,8 @@ const resolveLocalWpEnvironmentDefault: LocalWpEnvironmentResolver = (socketPath
 
 export type WpSearchReplaceOptions = {
   resolveLocalWpEnvironment?: LocalWpEnvironmentResolver
+  /** Injected so tests need no keychain; defaults to LocalWP's own cert check. */
+  isCertTrusted?: (domain: string) => Promise<boolean>
 }
 
 export async function runWpSearchReplace(
@@ -46,9 +49,10 @@ export async function runWpSearchReplace(
   }
 
   context.status('Running WP Search and Replace…')
-  await prepareLocalWpConfig(context, config)
+  const scheme = await localWpServedScheme(config, options.isCertTrusted)
+  await prepareLocalWpConfig(context, config, scheme ? { scheme } : {})
 
-  const pairs = buildDomainRewritePairs(liveDomain, localDomain)
+  const pairs = buildDomainRewritePairs(liveDomain, localDomain, scheme)
   if (pairs.length === 0) {
     context.log(
       `Skipping WP Search and Replace: ${liveDomain} and ${localDomain} are the same host.`

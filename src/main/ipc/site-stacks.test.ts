@@ -154,6 +154,7 @@ describe('registerSiteStackHandlers', () => {
     const { store } = storeStub()
     registerSiteStackHandlers(store)
     expect([...handlers.keys()].sort()).toEqual([
+      'siteStacks:adoptServing',
       'siteStacks:agentLocalStatus',
       'siteStacks:available',
       'siteStacks:detect',

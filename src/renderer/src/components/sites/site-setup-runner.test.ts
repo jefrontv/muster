@@ -63,6 +63,7 @@ type Calls = string[]
 function fakeApi(options: {
   plan?: SiteSetupPlan
   migrationOk?: boolean
+  servedDomain?: string
   calls: Calls
   runEvents?: { emit: (event: unknown) => void }
 }): SiteSetupRunnerApi {
@@ -103,6 +104,13 @@ function fakeApi(options: {
     siteStacks: {
       onMigrationProgress: vi.fn(() => () => {}),
       setDomain: vi.fn(),
+      adoptServing: vi.fn(async () => {
+        options.calls.push('adoptServing')
+        return ok({
+          stack: 'localwp' as const,
+          domain: options.servedDomain ?? 'flex.local'
+        })
+      }),
       previewMigration: vi.fn(async () => {
         options.calls.push('previewMigration')
         return ok({ ok: true, blockedReason: '', mode: 'create', moves: [], appPublicEntries: [] })
@@ -179,6 +187,29 @@ describe('createSiteSetupRunner', () => {
       'serve:done',
       'https:done'
     ])
+  })
+
+  it('saves a folder LocalWP already serves and settles on the domain it serves', async () => {
+    const api = fakeApi({
+      calls,
+      servedDomain: 'acme.local',
+      plan: plan({
+        stack: 'localwp',
+        alreadyLocalWp: true,
+        suggestedDomain: 'acme.local'
+      })
+    })
+    const runner = createSiteSetupRunner(api)
+    await runner.start(
+      REPO_SOURCE,
+      choices({
+        serve: { enabled: true, stack: 'localwp', domain: 'typo.local' }
+      })
+    )
+
+    expect(calls).toContain('adoptServing')
+    expect(calls).not.toContain('runMigration')
+    expect(runner.snapshot().domain).toBe('acme.local')
   })
 
   it('goes through ensure, never trust, when the certificate file already exists', async () => {

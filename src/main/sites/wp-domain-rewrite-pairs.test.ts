@@ -38,4 +38,17 @@ describe('buildDomainRewritePairs', () => {
     expect(buildDomainRewritePairs('acme.local', 'acme.local')).toEqual([])
     expect(buildDomainRewritePairs('www.acme.local', 'acme.local')).toEqual([])
   })
+
+  it('flips the other scheme first when the local scheme is known', () => {
+    expect(buildDomainRewritePairs('acme.com.au', 'acme.local', 'http')).toEqual([
+      { from: 'https://www.acme.com.au', to: 'http://acme.local' },
+      { from: 'https://acme.com.au', to: 'http://acme.local' },
+      { from: 'www.acme.com.au', to: 'acme.local' },
+      { from: 'acme.com.au', to: 'acme.local' }
+    ])
+    expect(buildDomainRewritePairs('acme.com.au', 'acme.local', 'https')[1]).toEqual({
+      from: 'http://acme.com.au',
+      to: 'https://acme.local'
+    })
+  })
 })

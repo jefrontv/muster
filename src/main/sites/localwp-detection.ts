@@ -181,10 +181,20 @@ export async function readLocalWpSites(
   const sites: Record<string, Record<string, unknown>> = {}
   for (const [siteId, record] of Object.entries(parsed ?? {})) {
     if (typeof record === 'object' && record !== null && !Array.isArray(record)) {
-      sites[siteId] = record as Record<string, unknown>
+      const entry = record as Record<string, unknown>
+      sites[siteId] =
+        typeof entry.path === 'string' ? { ...entry, path: expandHome(host, entry.path) } : entry
     }
   }
   return sites
+}
+
+/** Sites made in Local's own UI are stored as `~/Local Sites/x`, which realpath cannot resolve. */
+function expandHome(host: Pick<LocalWpHost, 'homeDir'>, sitePath: string): string {
+  if (sitePath === '~') {
+    return host.homeDir
+  }
+  return /^~[/\\]/.test(sitePath) ? path.join(host.homeDir, sitePath.slice(2)) : sitePath
 }
 
 /** The registered site id whose path matches sitePath, or null. Compares resolved paths. */

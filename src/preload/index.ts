@@ -980,6 +980,7 @@ const api = {
     previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
     runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args),
     setDomain: (args) => ipcRenderer.invoke('siteStacks:setDomain', args),
+    adoptServing: (siteId) => ipcRenderer.invoke('siteStacks:adoptServing', siteId),
     onMigrationProgress: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

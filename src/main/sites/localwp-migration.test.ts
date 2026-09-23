@@ -421,9 +421,11 @@ describe('runLocalWpMigration', () => {
       tree.entries.has(path.join(APP_PUBLIC, 'wp-content', 'themes', 'acme', 'style.css'))
     ).toBe(true)
     expect(tree.entries.has(path.join(SITE_PATH, 'wp-config.php'))).toBe(false)
-    expect(tree.entries.get(path.join(APP_PUBLIC, 'wp-config.php'))).toContain(
-      `define('DB_HOST', 'localhost')`
-    )
+    const config = tree.entries.get(path.join(APP_PUBLIC, 'wp-config.php'))
+    expect(config).toContain(`define('DB_HOST', 'localhost')`)
+    // Local's MySQL has only root/root; the source login would leave the site unable to connect.
+    expect(config).toContain(`define('DB_USER', 'root')`)
+    expect(config).toContain(`define('DB_PASSWORD', 'root')`)
   })
 
   it('streams the ocsites setup sequence through onStatus, in order', async () => {
@@ -564,6 +566,9 @@ describe('create mode on a real filesystem', () => {
         createSite: async () => {
           await mkdir(path.join(appPublic, 'wp-content'), { recursive: true })
           await writeFile(path.join(appPublic, 'index.php'), '// scaffold')
+          // Local also writes its own conf/ and logs/ beside app/, which must stay there.
+          await mkdir(path.join(root, 'conf', 'php'), { recursive: true })
+          await mkdir(path.join(root, 'logs'), { recursive: true })
           return { ok: true, siteId: SITE_ID, message: 'LocalWP site created' }
         },
         awaitSocket: async () => SOCKET
@@ -575,8 +580,8 @@ describe('create mode on a real filesystem', () => {
     expect(result.socketPath).toBe(SOCKET)
     expect(result.localWpRoot).toBe('app/public')
     expect(result.message).toBe(LOCALWP_SITE_READY)
-    // app/ is Local's, so it stays at the root; everything else moved inside app/public.
-    expect((await readdir(root)).sort()).toEqual(['app'])
+    // app/, conf/ and logs/ are Local's, so they stay at the root; the project moved inside app/public.
+    expect((await readdir(root)).sort()).toEqual(['app', 'conf', 'logs'])
     expect((await readdir(appPublic)).sort()).toEqual(['.git', 'composer.json', 'web'])
     expect((await readdir(path.join(appPublic, 'web', 'app', 'themes'))).sort()).toEqual(['acme'])
     // Local's scaffold is gone rather than nested under the project's files.

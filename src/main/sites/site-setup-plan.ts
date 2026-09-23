@@ -151,7 +151,12 @@ function buildStackReadiness(
     // Local rejects a blank domain, so fall back to the folder name rather than offering nothing —
     // through ocsites' own default_local_domain, so a domain-shaped folder gives acme.local rather
     // than acme.com.au.local.
-    suggestedDomain: site.localDomain.trim() || defaultLocalDomain(path.basename(site.path)),
+    // A stack already serving the folder is authoritative: a stale record otherwise trusted a cert
+    // and printed a URL for a name nothing answers on.
+    suggestedDomain:
+      (managedStack ? detection.domain.trim() : '') ||
+      site.localDomain.trim() ||
+      defaultLocalDomain(path.basename(site.path)),
     // `reason` is only a contract when the stage is closed, and the type does not promise
     // detection filled it in, so the platform message is the floor.
     // Name the stack that actually owns it: "already a LocalWP site" was shown for agent-local

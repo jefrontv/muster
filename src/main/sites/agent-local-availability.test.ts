@@ -12,7 +12,8 @@ const harness = vi.hoisted(() => ({
   platform: 'darwin',
   readToken: vi.fn(),
   request: vi.fn(),
-  onPath: vi.fn()
+  onPath: vi.fn(),
+  binFolder: vi.fn()
 }))
 
 vi.mock('./agent-local-host', async (importOriginal) => ({
@@ -28,6 +29,9 @@ vi.mock('./agent-local-host', async (importOriginal) => ({
 }))
 
 vi.mock('../ipc/preflight-command-exec', () => ({ isCommandOnPath: harness.onPath }))
+vi.mock('../extensions/binary-probe', () => ({
+  probeBinary: () => ({ found: harness.binFolder() === true })
+}))
 
 import { agentLocalProvider } from './agent-local-site-control'
 
@@ -37,17 +41,24 @@ describe('agentLocalProvider.isAvailable', () => {
     harness.readToken.mockReset()
     harness.request.mockReset()
     harness.onPath.mockReset()
+    harness.binFolder.mockReset()
   })
 
-  it('answers from the token alone, never asking the daemon that could have answered', async () => {
+  it('does not offer a leftover token with no binary, and never asks the daemon', async () => {
     harness.readToken.mockResolvedValue('token')
     harness.onPath.mockResolvedValue(false)
-    // A daemon that is up and would say yes. Reaching it is the bug: this probe is re-run on a
-    // timer, and `requestWithDaemon` starts the daemon when it is down.
+    // Reaching the daemon is the bug: this probe is re-run on a timer.
     harness.request.mockResolvedValue({ ok: true, status: 200 })
 
-    await expect(agentLocalProvider.isAvailable()).resolves.toBe(true)
+    await expect(agentLocalProvider.isAvailable()).resolves.toBe(false)
     expect(harness.request).not.toHaveBeenCalled()
+  })
+
+  it('offers an install in a bin folder the GUI PATH lacks', async () => {
+    harness.onPath.mockResolvedValue(false)
+    harness.binFolder.mockReturnValue(true)
+
+    await expect(agentLocalProvider.isAvailable()).resolves.toBe(true)
   })
 
   it('offers a fresh install that has never run, when the binary is on PATH', async () => {

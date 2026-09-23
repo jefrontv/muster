@@ -180,6 +180,24 @@ export function localWpServicesDirectory(host: LocalWpHost): string {
   return path.join(localWpSupportDirectory(host), 'lightning-services')
 }
 
+/** The app bundle in either Applications folder, or the services Local downloads on first run. */
+export async function isLocalWpInstalled(host: LocalWpHost): Promise<boolean> {
+  if (!isLocalWpSupported(host)) {
+    return false
+  }
+  const candidates = [
+    path.join('/Applications', 'Local.app'),
+    path.join(host.homeDir, 'Applications', 'Local.app'),
+    localWpServicesDirectory(host)
+  ]
+  for (const candidate of candidates) {
+    if (await host.pathExists(candidate)) {
+      return true
+    }
+  }
+  return false
+}
+
 export async function readLocalWpJsonRecord(
   host: LocalWpHost,
   filePath: string

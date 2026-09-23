@@ -1,5 +1,6 @@
 // Muster path → agent-local site. `/resolve` first, then `GET /sites` by path, then leftover slug.
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import {
@@ -19,7 +20,13 @@ export type AgentLocalSiteMatch = {
   running: boolean
 }
 
-export type AgentLocalResolveOptions = { host?: AgentLocalHost }
+export type AgentLocalResolveOptions = {
+  host?: AgentLocalHost
+  /** Injectable for tests; defaults to the real filesystem. */
+  pathExists?: (target: string) => boolean
+  /** False for passive probes, which must never launch the daemon. */
+  startDaemon?: boolean
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -98,17 +105,17 @@ export async function resolveAgentLocalSite(
   options: AgentLocalResolveOptions = {}
 ): Promise<{ match: AgentLocalSiteMatch | null; response: AgentLocalResponse }> {
   const host = options.host ?? createAgentLocalHost()
-  const resolved = await requestWithDaemon(
-    host,
-    'GET',
-    `/resolve?path=${encodeURIComponent(site.path)}`
-  )
+  const get = (apiPath: string): Promise<AgentLocalResponse> =>
+    options.startDaemon === false
+      ? host.request('GET', apiPath)
+      : requestWithDaemon(host, 'GET', apiPath)
+  const resolved = await get(`/resolve?path=${encodeURIComponent(site.path)}`)
   const fromResolve = resolved.ok ? matchFromResolvePayload(resolved.data) : null
   if (fromResolve && resolveAnswerNests(fromResolve, site.path)) {
     return { match: fromResolve, response: resolved }
   }
 
-  const response = await requestWithDaemon(host, 'GET', '/sites')
+  const response = await get('/sites')
   if (!response.ok || !Array.isArray(response.data)) {
     return { match: null, response: resolved.ok ? resolved : response }
   }
@@ -122,7 +129,18 @@ export async function resolveAgentLocalSite(
   if (byPath) {
     return { match: byPath, response }
   }
+  // Only a leftover whose folders are gone: a live site elsewhere with the same folder name belongs
+  // to that folder, and adopting it drove start, stop and domain changes at the wrong site.
+  const exists = options.pathExists ?? existsSync
   const slug = expectedSlug(site.path)
-  const bySlug = slug.length > 0 ? (listed.find((entry) => entry.slug === slug) ?? null) : null
+  const bySlug =
+    slug.length > 0
+      ? (listed.find(
+          (entry) =>
+            entry.slug === slug &&
+            !(entry.wpDir.length > 0 && exists(entry.wpDir)) &&
+            !(entry.workDir.length > 0 && exists(entry.workDir))
+        ) ?? null)
+      : null
   return { match: bySlug, response }
 }

@@ -16,17 +16,24 @@ export type DomainRewritePair = { from: string; to: string }
  */
 export function buildDomainRewritePairs(
   liveDomain: string,
-  localDomain: string
+  localDomain: string,
+  /** How the local site is served. Given, URLs on the other scheme are flipped first. */
+  localScheme?: 'http' | 'https'
 ): DomainRewritePair[] {
   const live = bareHost(liveDomain)
   const local = bareHost(localDomain)
   if (live.length === 0 || local.length === 0 || live === local) {
     return []
   }
-  return [
-    { from: `www.${live}`, to: local },
-    { from: live, to: local }
-  ]
+  // Host-only pairs leave https://live as https://local, which warns when the cert is untrusted.
+  const otherScheme = localScheme === 'http' ? 'https' : 'http'
+  const schemePairs: DomainRewritePair[] = localScheme
+    ? [
+        { from: `${otherScheme}://www.${live}`, to: `${localScheme}://${local}` },
+        { from: `${otherScheme}://${live}`, to: `${localScheme}://${local}` }
+      ]
+    : []
+  return [...schemePairs, { from: `www.${live}`, to: local }, { from: live, to: local }]
 }
 
 /** One leading `www.`, not every label: `www.www.example.com` is a real (if odd) host. */

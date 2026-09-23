@@ -14,6 +14,7 @@
 //    the site path over `GET /sites`. See resolveAgentLocalSite for the ordering.
 
 import type { LocalWpStackDetection } from '../../shared/site-stack-types'
+import { probeBinary } from '../extensions/binary-probe'
 import { isCommandOnPath } from '../ipc/preflight-command-exec'
 import { agentLocalCertStatus, agentLocalCertTrust } from './agent-local-cert'
 import {
@@ -270,7 +271,9 @@ export async function detectAgentLocalStack(
   if (!isAgentLocalSupported(host)) {
     return absent
   }
-  const status = await requestWithDaemon(host, 'GET', '/status', undefined, {
+  // Asked on every detect and plan, so never a daemon start: that is up to 70 s behind a question,
+  // and it held LocalWP detection hostage too.
+  const status = await host.request('GET', '/status', undefined, {
     timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS
   })
   if (!status.ok) {
@@ -282,9 +285,7 @@ export async function detectAgentLocalStack(
   }
   const { match } = await resolveAgentLocalSite(
     { path: sitePath, localStack: 'agent-local' },
-    {
-      host
-    }
+    { host, startDaemon: false }
   )
   if (!match) {
     return { ...absent, appRunning: true }
@@ -336,15 +337,16 @@ export const agentLocalProvider: LocalStackProvider = {
    * re-runs it on a timer, so starting a service from here would turn a question into a retry loop.
    * Starting stays where the user asked for it — `ensureRunning`, on Start.
    *
-   * Either half is proof enough: the token file exists once agent-local has run, and a binary on
-   * PATH covers a fresh install that has never been started.
+   * Only the binary counts. The token file outlives an uninstall, and offering Agent Local on it
+   * alone ended in "Agent Local is not installed." at Serve. The bin-folder probe covers installs on
+   * a PATH a GUI app does not inherit.
    */
   isAvailable: async () => {
     const host = createAgentLocalHost()
     if (!isAgentLocalSupported(host)) {
       return false
     }
-    return (await host.readToken()) !== null || (await isCommandOnPath('agent-local'))
+    return (await isCommandOnPath('agent-local')) || probeBinary('agent-local').found
   },
   detect: (sitePath) => detectAgentLocalStack(sitePath),
   ensureRunning: (site, onStatus) => ensureAgentLocalSiteRunning(site, onStatus),

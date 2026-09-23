@@ -22,7 +22,7 @@ import {
   emptyAppPublic,
   moveRootEntriesIntoAppPublic,
   restoreGitAppPublic,
-  rewriteLocalDbHost,
+  rewriteLocalDbConnection,
   type LocalWpFileOperations
 } from './localwp-app-public'
 import { discardLocalDatabaseExport, exportLocalDatabase } from './localwp-database-export'
@@ -33,8 +33,7 @@ import {
   planLocalWpMigration,
   readTextOrEmpty,
   type LocalWpMigrationPlan,
-  type LocalWpMigrationRequest,
-  type LocalWpSetupMode
+  type LocalWpMigrationRequest
 } from './localwp-migration-plan'
 import { addLocalWpSite } from './localwp-site-creation'
 import { waitForSocket } from './localwp-site-control'
@@ -122,7 +121,7 @@ export async function runLocalWpMigration(
       )
     }
     record('Socket ready.')
-    const relocateError = await relocateProject(request, host, fileOperations, record, plan.mode)
+    const relocateError = await relocateProject(request, host, fileOperations, record, plan)
     if (relocateError) {
       return failed(plan, relocateError, log)
     }
@@ -200,8 +199,9 @@ async function relocateProject(
   host: LocalWpHost,
   fileOperations: LocalWpFileOperations,
   record: (message: string) => void,
-  mode: LocalWpSetupMode
+  plan: Pick<LocalWpMigrationPlan, 'mode' | 'moves'>
 ): Promise<string> {
+  const mode = plan.mode
   // Local scaffolds app/public while creating the site; clear it so the project's own wp-content
   // replaces the scaffold rather than nesting inside it. ocsites clears here too, one step after the
   // socket is ready (tui_deploy:2620).
@@ -222,7 +222,12 @@ async function relocateProject(
     }
   }
   record('Moving project files into app/public…')
-  const moved = await moveRootEntriesIntoAppPublic(request.sitePath, fileOperations, record)
+  const moved = await moveRootEntriesIntoAppPublic(
+    request.sitePath,
+    fileOperations,
+    record,
+    plan.moves.map((move) => path.basename(move.from))
+  )
   return moved.ok ? '' : moved.message
 }
 
@@ -237,8 +242,8 @@ async function applyLocalWpConfigEdits(
   record: (message: string) => void
 ): Promise<void> {
   const configPath = plan.edits[0] ?? ''
-  if (await rewriteLocalDbHost(configPath, fileOperations)) {
-    record('Updated DB_HOST in wp-config.php.')
+  if (await rewriteLocalDbConnection(configPath, fileOperations)) {
+    record("Pointed wp-config.php at Local's database (DB_HOST, DB_USER, DB_PASSWORD).")
   }
   // A constant defined twice emits a PHP warning that later aborts WP-CLI.
   const sanitized = sanitizeWpConfig(await readTextOrEmpty(fileOperations, configPath))

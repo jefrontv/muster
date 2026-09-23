@@ -78,6 +78,7 @@ type ConfigOverrides = {
   dbPort?: number | null
   localDatabaseName?: string
   searchReplaceTimeoutSeconds?: number
+  localStack?: Site['localStack']
 }
 
 function createConfig(overrides: ConfigOverrides = {}): SiteRunConfig {
@@ -92,7 +93,7 @@ function createConfig(overrides: ConfigOverrides = {}): SiteRunConfig {
     displayName: 'Acme',
     localWpRoot: '',
     localDomain: overrides.localDomain ?? 'acme.local',
-    localStack: 'plain',
+    localStack: overrides.localStack ?? 'plain',
     dbUser: overrides.dbUser ?? 'root',
     dbSocket: overrides.dbSocket ?? '',
     dbPort: overrides.dbPort ?? null,
@@ -165,6 +166,30 @@ describe('runWpSearchReplace', () => {
     // Unrelated defines survive.
     expect(written).toContain("define('DB_NAME', 'local')")
     expect(logs.some((line) => line.startsWith('Updated wp-config.php:'))).toBe(true)
+  })
+
+  it('writes an https URL override for a LocalWP site whose cert is trusted', async () => {
+    const { context } = createTestContext()
+    writeFileSync(path.join(wpDir, 'wp-config.php'), WP_CONFIG)
+
+    await runWpSearchReplace(context, createConfig({ localStack: 'localwp' }), {
+      ...noLocalWpEnvironment,
+      isCertTrusted: async () => true
+    })
+
+    expect(wpConfig()).toContain("define('EFRONT_URL_OVERRIDE', 'https://acme.local')")
+  })
+
+  it('keeps http for a LocalWP site whose cert is not trusted', async () => {
+    const { context } = createTestContext()
+    writeFileSync(path.join(wpDir, 'wp-config.php'), WP_CONFIG)
+
+    await runWpSearchReplace(context, createConfig({ localStack: 'localwp' }), {
+      ...noLocalWpEnvironment,
+      isCertTrusted: async () => false
+    })
+
+    expect(wpConfig()).toContain("define('EFRONT_URL_OVERRIDE', 'http://acme.local')")
   })
 
   it('uses localhost, not 127.0.0.1, when the site has a unix socket', async () => {

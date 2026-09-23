@@ -208,7 +208,13 @@ export async function runServe(ctx: StepContext): Promise<void> {
         }
         ctx.appendLog('serve', renamed.value.message)
       }
-      const settled = domain || plan.stack.suggestedDomain
+      // Saved so the record says which stack serves it, with its domain, root and socket.
+      const adopted = await ctx.api.siteStacks.adoptServing(ctx.state().siteId)
+      if (!adopted.ok) {
+        throw new StepFailure(adopted.error)
+      }
+      const renamedTo = stack === 'agent-local' && domain.length > 0 ? domain : ''
+      const settled = renamedTo || adopted.value.domain || domain || plan.stack.suggestedDomain
       ctx.patch({ domain: settled })
       ctx.patchStep('serve', {
         state: 'done',
@@ -242,13 +248,15 @@ export async function runServe(ctx: StepContext): Promise<void> {
       throw new StepFailure(migrated.value.message)
     }
     rememberLocalStackChoice(stack)
+    // Agent Local adopting an existing site keeps that site's domain, not the one typed here.
+    const served = migrated.value.domain?.trim() || domain
     ctx.patch({
-      domain,
+      domain: served,
       createdLocalWp: stack === 'localwp' && migrated.value.plan.mode === 'create'
     })
     ctx.patchStep('serve', {
       state: 'done',
-      detail: strings.serving.replace('{{stack}}', stackLabel).replace('{{domain}}', domain)
+      detail: strings.serving.replace('{{stack}}', stackLabel).replace('{{domain}}', served)
     })
   } finally {
     offProgress()
