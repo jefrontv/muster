@@ -1131,6 +1131,68 @@ describe('updater', () => {
     expect(autoUpdaterMock.allowPrerelease).not.toBe(true)
   })
 
+  it('reports not-available on an Intel Mac when the release ships only arm64 assets', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'darwin', arch: 'x64' })
+    fetchNewerReleaseTagsMock.mockResolvedValue({ tags: ['v1.0.61'], state: 'ready' })
+    autoUpdaterMock.checkForUpdates.mockImplementation(() => {
+      autoUpdaterMock.emit('checking-for-update')
+      queueMicrotask(() => {
+        autoUpdaterMock.emit('update-available', {
+          version: '1.0.61',
+          files: [{ url: 'Muster-1.0.61-arm64-mac.zip' }, { url: 'muster-macos-arm64.dmg' }]
+        })
+      })
+      return Promise.resolve(undefined)
+    })
+    const sendMock = vi.fn()
+    const mainWindow = { webContents: { send: sendMock } }
+
+    const { setupAutoUpdater, checkForUpdatesFromMenu } = await import('./updater')
+
+    setupAutoUpdater(mainWindow as never, { getLastUpdateCheckAt: () => Date.now() })
+    checkForUpdatesFromMenu()
+
+    await vi.waitFor(() => {
+      expect(sendMock).toHaveBeenCalledWith('updater:status', {
+        state: 'not-available',
+        userInitiated: true
+      })
+    })
+    expect(sendMock).not.toHaveBeenCalledWith(
+      'updater:status',
+      expect.objectContaining({ state: 'available' })
+    )
+  })
+
+  it('still offers the update on an Intel Mac when an x64 asset is published', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'darwin', arch: 'x64' })
+    fetchNewerReleaseTagsMock.mockResolvedValue({ tags: ['v1.0.61'], state: 'ready' })
+    autoUpdaterMock.checkForUpdates.mockImplementation(() => {
+      autoUpdaterMock.emit('checking-for-update')
+      queueMicrotask(() => {
+        autoUpdaterMock.emit('update-available', {
+          version: '1.0.61',
+          files: [{ url: 'Muster-1.0.61-arm64-mac.zip' }, { url: 'Muster-1.0.61-mac.zip' }]
+        })
+      })
+      return Promise.resolve(undefined)
+    })
+    const sendMock = vi.fn()
+    const mainWindow = { webContents: { send: sendMock } }
+
+    const { setupAutoUpdater, checkForUpdatesFromMenu } = await import('./updater')
+
+    setupAutoUpdater(mainWindow as never, { getLastUpdateCheckAt: () => Date.now() })
+    checkForUpdatesFromMenu()
+
+    await vi.waitFor(() => {
+      expect(sendMock).toHaveBeenCalledWith(
+        'updater:status',
+        expect.objectContaining({ state: 'available', version: '1.0.61' })
+      )
+    })
+  })
+
   it('still surfaces updater error events while a download is in flight', async () => {
     fetchNewerReleaseTagsMock.mockResolvedValue({ tags: ['v1.0.61'], state: 'ready' })
     autoUpdaterMock.checkForUpdates.mockImplementation(() => {

@@ -10,6 +10,7 @@ import {
 } from './updater-mac-install'
 import { compareVersions } from './updater-fallback'
 import { fetchChangelog } from './updater-changelog'
+import { hasMacUpdateAssetForHost, isArm64MacHost } from './updater-mac-arch-assets'
 import type { ElectronAutoUpdater } from './electron-updater-loader'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
 
@@ -158,8 +159,15 @@ export function registerAutoUpdaterHandlers({
     const wasUserInitiated = missingManifestFallback?.userInitiated ?? getUserInitiatedCheck()
     setUserInitiatedCheck(false)
 
+    // Why: an arm64-only release on an Intel Mac fails at download with "No files provided"; offer nothing instead.
+    const lacksHostArchAsset =
+      process.platform === 'darwin' && !hasMacUpdateAssetForHost(info.files, isArm64MacHost())
+    if (lacksHostArchAsset) {
+      console.warn(`[updater] ${info.version} has no ${process.arch} mac build; staying put`)
+    }
+
     // Guard: don't show an update that isn't actually newer than what's running.
-    if (compareVersions(info.version, app.getVersion()) <= 0) {
+    if (compareVersions(info.version, app.getVersion()) <= 0 || lacksHostArchAsset) {
       clearAvailableUpdateContext()
       if (missingManifestFallback || publishingWindowLastGoodCheck) {
         // Why: a current-version fallback manifest means the primary is transiently missing; keep the short retry cadence.

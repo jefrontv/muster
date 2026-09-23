@@ -13,7 +13,7 @@
 # deps. Runs on refs/heads/muster share one cache. It also means upstream orca
 # tags synced into this repo can never start a build here.
 # Signing/notarization: set MAC_CERTS + Apple notary secrets for production
-# builds; without them the workflow still publishes an ad-hoc arm64 package
+# builds; without them the workflow still publishes ad-hoc x64 + arm64 packages
 # suitable for private/team installs.
 
 name: Release
@@ -152,10 +152,10 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=8192
       # electron-builder GitHub publisher
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Why arm64-only: team fleet is Apple Silicon; the x64 slice doubled
-      # package+sign time. The config's per-target arch list overrides
-      # electron-builder's CLI arch flags, so this env is the only switch.
-      MUSTER_MAC_ARCHS: arm64
+      # Why both: Intel Macs got no update from arm64-only releases (v1.14.10+).
+      # The config's per-target arch list overrides electron-builder's CLI arch
+      # flags, so this env is the only switch.
+      MUSTER_MAC_ARCHS: x64,arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -227,11 +227,11 @@ jobs:
           pnpm run build:cli
           pnpm run build:electron-vite
           pnpm run build:web
-          # --single-arch builds the helper for the host arch (arm64), matching MUSTER_MAC_ARCHS.
-          pnpm run build:notification-status-macos -- --single-arch
+          # Universal helper (no --single-arch) so the x64 app gets an x86_64 slice too.
+          pnpm run build:notification-status-macos
           pnpm run ensure:electron-runtime
 
-      - name: Package and publish macOS arm64
+      - name: Package and publish macOS x64 + arm64
         # electron-builder --publish always uploads latest-mac.yml + zip/dmg to the
         # draft release created above so the in-app updater can find them.
         env:
