@@ -110,10 +110,34 @@ function harnessStateCopy(kind: SiteMcpHarnessStateKind): HarnessStateCopy {
   }
 }
 
+/**
+ * One bound harness is enough: the others are optional, not outstanding work. A stale bound entry
+ * still counts, because that harness spawns a command that no longer exists.
+ */
+export function siteMcpNeedsSetup(harnesses: readonly SiteMcpHarnessStatus[]): boolean {
+  const kinds = harnesses.map(siteMcpHarnessStateKind)
+  if (kinds.includes('stale')) {
+    return true
+  }
+  return !kinds.includes('current') && kinds.includes('unconfigured')
+}
+
 export function describeSiteMcpHarness(
   harness: SiteMcpHarnessStatus,
-  blockedReason: string | null
+  blockedReason: string | null,
+  /** Another harness already has a current entry, so this one is optional. */
+  boundElsewhere = false
 ): SiteMcpHarnessState {
   const kind = siteMcpHarnessStateKind(harness)
-  return { kind, ...harnessStateCopy(kind), blockedReason }
+  const copy = harnessStateCopy(kind)
+  if (kind === 'unconfigured' && boundElsewhere) {
+    return {
+      kind,
+      ...copy,
+      tone: 'neutral',
+      actionVariant: 'outline',
+      blockedReason
+    }
+  }
+  return { kind, ...copy, blockedReason }
 }

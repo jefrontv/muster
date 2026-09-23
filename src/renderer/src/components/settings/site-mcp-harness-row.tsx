@@ -12,6 +12,7 @@ export function SiteMcpHarnessRow({
   busy,
   notice,
   blockedReason,
+  boundElsewhere = false,
   onInstall
 }: {
   harness: SiteMcpHarnessStatus
@@ -19,9 +20,11 @@ export function SiteMcpHarnessRow({
   notice: SiteMcpGlobalNotice | null
   /** Non-null disables the install action and says why (the Site tools toggle is off). */
   blockedReason: string | null
+  /** Another harness has a current entry, so an unconfigured one here is optional. */
+  boundElsewhere?: boolean
   onInstall: () => void
 }): React.JSX.Element {
-  const state = describeSiteMcpHarness(harness, blockedReason)
+  const state = describeSiteMcpHarness(harness, blockedReason, boundElsewhere)
   const rowClass = useIntegrationSubordinateRowClass('space-y-2')
 
   return (

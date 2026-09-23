@@ -5,7 +5,7 @@ import { translate } from '@/i18n/i18n'
 import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
 import { useIntegrationSubordinateRowClass } from './integration-card-presentation'
 import { SiteMcpHarnessRow } from './site-mcp-harness-row'
-import { siteMcpHarnessStateKind } from './site-mcp-harness-state'
+import { siteMcpHarnessStateKind, siteMcpNeedsSetup } from './site-mcp-harness-state'
 import { useSiteMcpGlobalStatus } from './use-site-mcp-global-status'
 
 // The global install card for the built-in muster-sites MCP server, mirroring the ActiveCollab MCP
@@ -15,10 +15,9 @@ export function SiteMcpInstallCard({ enabled }: { enabled: boolean }): React.JSX
   const mcp = useSiteMcpGlobalStatus()
   const status = mcp.status
   const commandRowClass = useIntegrationSubordinateRowClass('space-y-1')
-  const needSetup = (status?.harnesses ?? []).filter((harness) => {
-    const kind = siteMcpHarnessStateKind(harness)
-    return kind === 'stale' || kind === 'unconfigured'
-  }).length
+  const harnesses = status?.harnesses ?? []
+  const needSetup = siteMcpNeedsSetup(harnesses)
+  const bound = harnesses.some((harness) => siteMcpHarnessStateKind(harness) === 'current')
 
   // Why the card never hides: the toggle governs the AGENTS' access, not the user's visibility —
   // the state stays readable, only the writes are blocked.
@@ -38,11 +37,11 @@ export function SiteMcpInstallCard({ enabled }: { enabled: boolean }): React.JSX
         'Register the built-in site MCP server with your coding harnesses so agents can run deploys, imports, and database queries.'
       )}
       checking={!mcp.checked}
-      statusTone={mcp.loadError || needSetup > 0 ? 'attention' : 'connected'}
+      statusTone={mcp.loadError || needSetup ? 'attention' : 'connected'}
       statusLabel={
         mcp.loadError
           ? translate('auto.components.settings.siteMcp.status_unavailable', 'Status unavailable')
-          : needSetup > 0
+          : needSetup
             ? translate('auto.components.settings.siteMcp.status_setup', 'Setup needed')
             : translate('auto.components.settings.siteMcp.status_current', 'Up to date')
       }
@@ -91,6 +90,7 @@ export function SiteMcpInstallCard({ enabled }: { enabled: boolean }): React.JSX
                   busy={mcp.busy === harness.id}
                   notice={mcp.notice?.scope === harness.id ? mcp.notice : null}
                   blockedReason={blockedReason}
+                  boundElsewhere={bound}
                   onInstall={() => void mcp.install(harness.id)}
                 />
               ))}

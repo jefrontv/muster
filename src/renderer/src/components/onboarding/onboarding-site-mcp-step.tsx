@@ -10,7 +10,10 @@
 // card uses, so the two surfaces can never disagree about what is installed.
 
 import { SiteMcpHarnessRow } from '@/components/settings/site-mcp-harness-row'
-import { siteMcpHarnessStateKind } from '@/components/settings/site-mcp-harness-state'
+import {
+  siteMcpHarnessStateKind,
+  siteMcpNeedsSetup
+} from '@/components/settings/site-mcp-harness-state'
 import { useSiteMcpGlobalStatus } from '@/components/settings/use-site-mcp-global-status'
 import { Button } from '@/components/ui/button'
 import { IntegrationStatusPill } from '@/components/integration-status-pill'
@@ -19,12 +22,9 @@ import { translate } from '@/i18n/i18n'
 export function OnboardingSiteMcpStep(): React.JSX.Element {
   const mcp = useSiteMcpGlobalStatus()
   const harnesses = mcp.status?.harnesses ?? []
-  const needSetup = harnesses.filter((harness) => {
-    const kind = siteMcpHarnessStateKind(harness)
-    return kind === 'stale' || kind === 'unconfigured'
-  })
+  const bound = harnesses.some((harness) => siteMcpHarnessStateKind(harness) === 'current')
   const allReady =
-    mcp.checked && mcp.loadError === null && harnesses.length > 0 && needSetup.length === 0
+    mcp.checked && mcp.loadError === null && harnesses.length > 0 && !siteMcpNeedsSetup(harnesses)
 
   return (
     <div className="space-y-5" data-testid="onboarding-site-mcp-step">
@@ -83,6 +83,7 @@ export function OnboardingSiteMcpStep(): React.JSX.Element {
               busy={mcp.busy === harness.id}
               notice={mcp.notice?.scope === harness.id ? mcp.notice : null}
               blockedReason={null}
+              boundElsewhere={bound}
               onInstall={() => void mcp.install(harness.id)}
             />
           ))}

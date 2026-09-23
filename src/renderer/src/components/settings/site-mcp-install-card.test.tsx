@@ -124,6 +124,32 @@ describe('SiteMcpInstallCard', () => {
     expect(rendered.textContent).toContain('.mcp.json')
   })
 
+  it('reports up to date when one harness is bound and the rest are only unconfigured', async () => {
+    globalStatusMock.mockResolvedValue({
+      ok: true,
+      value: globalStatus({
+        harnesses: [harness('claude-code'), harness('codex', { configured: false, current: false })]
+      })
+    })
+    const rendered = await renderCard()
+    expect(rendered.textContent).toContain('Up to date')
+    expect(rendered.textContent).not.toContain('Setup needed')
+  })
+
+  it('asks for setup when no harness is bound', async () => {
+    globalStatusMock.mockResolvedValue({
+      ok: true,
+      value: globalStatus({
+        harnesses: [
+          harness('claude-code', { configured: false, current: false }),
+          harness('codex', { configured: false, current: false })
+        ]
+      })
+    })
+    const rendered = await renderCard()
+    expect(rendered.textContent).toContain('Setup needed')
+  })
+
   it('installs through IPC and re-checks the status afterwards', async () => {
     globalStatusMock.mockResolvedValue({
       ok: true,
