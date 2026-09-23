@@ -8,6 +8,11 @@ const SECONDARY_GROUP_HEADER_TOP_MARGIN = 4
 const IMPORTED_WORKTREES_LINE_ROW_HEIGHT = 36
 const PENDING_CREATION_ROW_HEIGHT = 56
 const FOLDER_WORKSPACE_ROW_HEIGHT = 64
+// Why: repo/group headers render `pt-2` in the new style; host headers keep `pt-1`.
+export const NEW_CARD_STYLE_GROUP_HEADER_TOP_MARGIN = 8
+export const NEW_CARD_STYLE_TWO_LINE_ROW_HEIGHT = 50
+// Why: nested children add `space-y-1`/`mt-1.5` inside the parent surface.
+const NEW_CARD_STYLE_LINEAGE_CHILD_ROW_HEIGHT = NEW_CARD_STYLE_TWO_LINE_ROW_HEIGHT + 4
 
 type WorktreeItemRow = Extract<HostSectionRow, { type: 'item' }>
 export type RenderRow =
@@ -25,10 +30,13 @@ export function shouldUseHeaderTopSpacing(args: {
   return args.index !== args.firstHeaderIndex && !followsCollapsedPinnedHeader
 }
 
+// Why: header rows are never DOM-measured (see WorktreeList measureElement), so the
+// header estimate is the rendered size and must match its top padding exactly.
 export function estimateRenderRowSize(
   rows: readonly RenderRow[],
   index: number,
-  firstHeaderIndex: number
+  firstHeaderIndex: number,
+  experimentalNewWorktreeCardStyle = false
 ): number {
   const row = rows[index]
   if (row?.type === 'host-header') {
@@ -51,9 +59,17 @@ export function estimateRenderRowSize(
         index,
         firstHeaderIndex
       })
-        ? SECONDARY_GROUP_HEADER_TOP_MARGIN
+        ? experimentalNewWorktreeCardStyle
+          ? NEW_CARD_STYLE_GROUP_HEADER_TOP_MARGIN
+          : SECONDARY_GROUP_HEADER_TOP_MARGIN
         : 0)
     )
+  }
+  if (experimentalNewWorktreeCardStyle) {
+    const newStyleSize = estimateNewCardStyleRowSize(row)
+    if (newStyleSize !== null) {
+      return newStyleSize
+    }
   }
   if (row?.type === 'lineage-group') {
     return 100 + Math.max(0, row.rows.length - 1) * 96
@@ -68,6 +84,20 @@ export function estimateRenderRowSize(
     return FOLDER_WORKSPACE_ROW_HEIGHT
   }
   return 116
+}
+
+// Why: most new-style rows carry a second line; title-only rows (~32px) re-measure.
+function estimateNewCardStyleRowSize(row: RenderRow | undefined): number | null {
+  if (row?.type === 'lineage-group') {
+    return (
+      NEW_CARD_STYLE_TWO_LINE_ROW_HEIGHT +
+      Math.max(0, row.rows.length - 1) * NEW_CARD_STYLE_LINEAGE_CHILD_ROW_HEIGHT
+    )
+  }
+  if (row?.type === 'item' || row?.type === 'folder-workspace') {
+    return NEW_CARD_STYLE_TWO_LINE_ROW_HEIGHT
+  }
+  return null
 }
 
 export function getVirtualRowTransform(start: number): string {

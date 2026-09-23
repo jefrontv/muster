@@ -4,6 +4,8 @@ type WorktreeCardTitleDisplayInput = {
   linearIssueTitle?: string | null
   issueTitle?: string | null
   reviewTitle?: string | null
+  // A stored name that only repeats this (the project name on a folder row) is not the user's own.
+  defaultDisplayName?: string | null
 }
 
 function normalizeComparableTitle(value: string | null | undefined): string | null {
@@ -40,20 +42,21 @@ export function getWorktreeCardTitleDisplay({
   branchName,
   linearIssueTitle,
   issueTitle,
-  reviewTitle
+  reviewTitle,
+  defaultDisplayName
 }: WorktreeCardTitleDisplayInput): string {
   const normalizedStoredDisplayName = normalizeComparableTitle(storedDisplayName)
   const normalizedBranchName = normalizeComparableTitle(branchName)
   const visibleStoredDisplayName = coerceWorktreeCardVisibleTitle(storedDisplayName)
+  const hasOwnDisplayName =
+    normalizedStoredDisplayName !== null &&
+    normalizedStoredDisplayName !== normalizeComparableTitle(defaultDisplayName)
 
   if (!normalizedBranchName) {
     return normalizedStoredDisplayName ? visibleStoredDisplayName : ''
   }
 
-  if (
-    normalizedStoredDisplayName &&
-    !isBranchTitle(normalizedStoredDisplayName, normalizedBranchName)
-  ) {
+  if (hasOwnDisplayName && !isBranchTitle(normalizedStoredDisplayName, normalizedBranchName)) {
     return visibleStoredDisplayName
   }
 
@@ -63,6 +66,7 @@ export function getWorktreeCardTitleDisplay({
     normalizeTitle(linearIssueTitle) ??
     normalizeTitle(issueTitle) ??
     normalizeTitle(reviewTitle) ??
-    (normalizedStoredDisplayName ? visibleStoredDisplayName : '')
+    // Why: a cleared name falls back to the branch so the card never goes blank.
+    (hasOwnDisplayName ? visibleStoredDisplayName : normalizedBranchName)
   )
 }

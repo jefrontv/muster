@@ -27,6 +27,7 @@ import { LinearAgentSkillSetupPrompt } from './LinearAgentSkillSetupPrompt'
 import WorktreeCardAgents from './WorktreeCardAgents'
 import { useWorktreeAgentRows } from './useWorktreeAgentRows'
 import { WorktreeCardStatusSlot } from './WorktreeCardStatusSlot'
+import { WorktreeCardTimeSlot, getLatestAgentActivityAt } from './worktree-card-time-slot'
 import { cn } from '@/lib/utils'
 import { activateWorktreeFromSidebar } from '@/lib/sidebar-worktree-activation'
 import { isFolderRepo } from '../../../../shared/repo-kind'
@@ -41,6 +42,7 @@ import type {
   LinearIssue
 } from '../../../../shared/types'
 import { CONFLICT_OPERATION_LABELS } from './WorktreeCardHelpers'
+import { useFolderProjectHeadBranch } from '@/hooks/useFolderProjectHeadBranch'
 import {
   WorktreeCardDetailsHover,
   hasWorktreeCardDetails,
@@ -79,10 +81,7 @@ import {
 } from './workspace-delete-quick-action'
 import { DetachedHeadBadge } from '@/components/DetachedHeadBadge'
 import { getWorktreeGitIdentityDisplay } from '@/lib/worktree-git-identity-display'
-import {
-  getFlushWorktreeCardPaddingLeft,
-  getNewCardStyleParentContentMarginLeft
-} from './worktree-list-indentation'
+import { getFlushWorktreeCardPaddingLeft } from './worktree-list-indentation'
 import { translate } from '@/i18n/i18n'
 import { recordRendererCrashBreadcrumb } from '@/lib/crash-diagnostics'
 import { folderWorkspaceKey, parseWorkspaceKey } from '../../../../shared/workspace-scope'
@@ -411,6 +410,10 @@ const WorktreeCard = React.memo(function WorktreeCard({
   const folderWorkspaceId =
     workspaceScope?.type === 'folder' ? workspaceScope.folderWorkspaceId : null
   const isFolder = repo ? isFolderRepo(repo) : folderWorkspaceId !== null
+  // Why: folder rows carry no branch; a LocalWP checkout sits at app/public. Local disk only.
+  const folderHeadBranch = useFolderProjectHeadBranch(
+    newCardStyle && isFolder && !repo?.connectionId ? worktree.path : null
+  )
   // Why: project groups gate folder workspaces, so folder paths stay hidden from identity surfaces until that capability exists.
   const hasProjectGroups = projectGroups.length > 0
   const branchIdentityDisplay = !isFolder && branch.length > 0 ? branch : undefined
@@ -628,7 +631,8 @@ const WorktreeCard = React.memo(function WorktreeCard({
     : null
   const cardTitleDisplay = getWorktreeCardTitleDisplay({
     storedDisplayName: worktree.displayName,
-    branchName: branch,
+    branchName: branch || folderHeadBranch,
+    defaultDisplayName: isFolder ? repo?.displayName : undefined,
     linearIssueTitle: linearIssueDisplay?.title,
     issueTitle: issueDisplay?.title,
     reviewTitle: prDisplay?.title
@@ -1301,14 +1305,14 @@ const WorktreeCard = React.memo(function WorktreeCard({
   // Why: sidebar rows need a small surface inset while content stays aligned with the pre-inset layout.
   const applyNewCardStyleStatusLaneOffset = newCardStyle && showCombinedStatusSlot
   const cardPaddingLeft = flushSurface
-    ? getFlushWorktreeCardPaddingLeft(contentIndent, applyNewCardStyleStatusLaneOffset)
+    ? getFlushWorktreeCardPaddingLeft(
+        contentIndent,
+        applyNewCardStyleStatusLaneOffset,
+        newCardStyle
+      )
     : contentIndent > 0
       ? `calc(0.125rem + ${contentIndent}px)`
       : null
-  const parentContentMarginLeft =
-    flushSurface && applyNewCardStyleStatusLaneOffset
-      ? getNewCardStyleParentContentMarginLeft(contentIndent)
-      : 0
   const cardStyle = cardPaddingLeft ? { paddingLeft: cardPaddingLeft } : undefined
   const detailsAndPortsContent =
     hasDetails || hasPorts ? (
@@ -1363,8 +1367,105 @@ const WorktreeCard = React.memo(function WorktreeCard({
     ) : (
       detailsAndPortsContent
     )
+  // Why: the new card shows the host in line 1's trailing cluster; legacy keeps it before the title.
+  const hostIndicator = repo?.connectionId ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="shrink-0 inline-flex items-center">
+          {isSshDisconnected ? (
+            <ServerOff className="size-3 text-destructive" />
+          ) : (
+            <Server className="size-3 text-worktree-sidebar-muted-foreground" />
+          )}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {isSshDisconnected
+          ? translate('auto.components.sidebar.WorktreeCard.021538e1d1', 'SSH disconnected')
+          : translate('auto.components.sidebar.WorktreeCard.ca74db7550', 'Project on SSH host')}
+      </TooltipContent>
+    </Tooltip>
+  ) : parsedRepoHost?.kind === 'runtime' ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="shrink-0 inline-flex items-center">
+          {isRuntimeDisconnected ? (
+            <ServerOff className="size-3 text-destructive" />
+          ) : (
+            <Server className="size-3 text-worktree-sidebar-muted-foreground" />
+          )}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {isRuntimeDisconnected
+          ? runtimeHostLabel
+            ? translate(
+                'auto.components.sidebar.WorktreeCard.runtimeHostDisconnectedNamed',
+                '{{hostName}} disconnected',
+                { hostName: runtimeHostLabel }
+              )
+            : translate(
+                'auto.components.sidebar.WorktreeCard.runtimeHostDisconnected',
+                'Server disconnected'
+              )
+          : runtimeHostLabel
+            ? translate(
+                'auto.components.sidebar.WorktreeCard.runtimeHostProjectNamed',
+                'Project on {{hostName}}',
+                { hostName: runtimeHostLabel }
+              )
+            : translate(
+                'auto.components.sidebar.WorktreeCard.runtimeHostProject',
+                'Project on Muster server'
+              )}
+      </TooltipContent>
+    </Tooltip>
+  ) : null
   const titleRowIndicators = showTitleRowIndicators ? (
     <div className="ml-auto flex shrink-0 items-center gap-1 pr-1.5">{detailsAndPorts}</div>
+  ) : null
+  const deleteQuickAction = showDeleteQuickAction ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          data-workspace-board-preserve-open=""
+          onPointerDown={stopQuickActionPointerPropagation}
+          onClick={handleWorkspaceQuickAction}
+          className={cn(
+            'worktree-card-delete-quick-action inline-flex items-center justify-center rounded bg-transparent opacity-0 transition-colors transition-opacity motion-reduce:transition-none',
+            newCardStyle ? 'size-5' : 'size-4',
+            'group-hover/worktree-card:opacity-100 group-focus-within/worktree-card:opacity-100 focus-visible:opacity-100',
+            'text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive'
+          )}
+          aria-label={translate(
+            'auto.components.sidebar.WorktreeCard.6f09f58541',
+            'Delete workspace'
+          )}
+        >
+          <Trash2 className={newCardStyle ? 'size-3' : 'size-3.5'} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {translate('auto.components.sidebar.WorktreeCard.6f09f58541', 'Delete workspace')}
+      </TooltipContent>
+    </Tooltip>
+  ) : null
+  const newCardActivityAt =
+    newCardStyle && compactInlineAgentRowsVisible
+      ? getLatestAgentActivityAt(compactInlineAgentRows)
+      : null
+  const newCardTrailingCluster = newCardStyle ? (
+    <div
+      className="ml-auto flex shrink-0 items-center gap-1.5"
+      data-worktree-card-trailing-cluster=""
+    >
+      {hostIndicator}
+      {detailsAndPorts ? (
+        <div className="flex shrink-0 items-center [&_svg]:size-3">{detailsAndPorts}</div>
+      ) : null}
+      <WorktreeCardTimeSlot timestamp={newCardActivityAt} deleteAction={deleteQuickAction} />
+    </div>
   ) : null
   const hasSecondaryCardContent =
     hasMetaRow || !!remoteBranchConflict || showInlineAgentList || showLineageChildChip
@@ -1373,19 +1474,17 @@ const WorktreeCard = React.memo(function WorktreeCard({
   const parentCardContent = (
     <div
       className={cn(
-        'flex w-full min-w-0 gap-0.5 pl-0',
+        // Why: in the new style the lane's mr-1.5 is the whole 6px glyph-to-text gap.
+        newCardStyle ? 'flex w-full min-w-0 gap-0 pl-0' : 'flex w-full min-w-0 gap-0.5 pl-0',
         titleOnlyCard ? 'items-center' : 'items-start'
       )}
-      style={
-        parentContentMarginLeft < 0 ? { marginLeft: `${parentContentMarginLeft}px` } : undefined
-      }
       data-worktree-card-parent-content=""
     >
       {showCombinedStatusSlot ? (
         <div
           className={cn(
             'flex shrink-0 justify-center',
-            newCardStyle ? 'mr-1 w-5 items-center' : 'items-start pt-[2px]',
+            newCardStyle ? 'mr-1.5 w-4 items-center' : 'items-start pt-[2px]',
             affiliateListMode && 'px-1'
           )}
           data-worktree-card-status-slot=""
@@ -1400,7 +1499,6 @@ const WorktreeCard = React.memo(function WorktreeCard({
             onToggleUnread={handleToggleUnreadQuick}
             prDisplay={statusLaneReview}
             newCardStyle={newCardStyle}
-            hasBranchIdentity={Boolean(branchIdentityDisplay)}
           />
         </div>
       ) : null}
@@ -1429,67 +1527,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
               </RepoIdentityChip>
             )}
 
-            {repo?.connectionId && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="shrink-0 inline-flex items-center">
-                    {isSshDisconnected ? (
-                      <ServerOff className="size-3 text-red-400" />
-                    ) : (
-                      <Server className="size-3 text-muted-foreground" />
-                    )}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  {isSshDisconnected
-                    ? translate(
-                        'auto.components.sidebar.WorktreeCard.021538e1d1',
-                        'SSH disconnected'
-                      )
-                    : translate(
-                        'auto.components.sidebar.WorktreeCard.ca74db7550',
-                        'Project on SSH host'
-                      )}
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {!repo?.connectionId && parsedRepoHost?.kind === 'runtime' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="shrink-0 inline-flex items-center">
-                    {isRuntimeDisconnected ? (
-                      <ServerOff className="size-3 text-red-400" />
-                    ) : (
-                      <Server className="size-3 text-muted-foreground" />
-                    )}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  {isRuntimeDisconnected
-                    ? runtimeHostLabel
-                      ? translate(
-                          'auto.components.sidebar.WorktreeCard.runtimeHostDisconnectedNamed',
-                          '{{hostName}} disconnected',
-                          { hostName: runtimeHostLabel }
-                        )
-                      : translate(
-                          'auto.components.sidebar.WorktreeCard.runtimeHostDisconnected',
-                          'Server disconnected'
-                        )
-                    : runtimeHostLabel
-                      ? translate(
-                          'auto.components.sidebar.WorktreeCard.runtimeHostProjectNamed',
-                          'Project on {{hostName}}',
-                          { hostName: runtimeHostLabel }
-                        )
-                      : translate(
-                          'auto.components.sidebar.WorktreeCard.runtimeHostProject',
-                          'Project on Muster server'
-                        )}
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {!newCardStyle && hostIndicator}
 
             {showInlineRepoBadge && (
               <RepoIdentityChip repo={repo}>
@@ -1507,7 +1545,6 @@ const WorktreeCard = React.memo(function WorktreeCard({
               displayName={visibleCardTitle}
               disabled={isDeleting || affiliateListMode}
               showUnreadEmphasis={showUnreadEmphasis}
-              dimReadTitle={newCardStyle}
               className="text-[13px] leading-5"
               editingClassName="flex-1"
               titleWrapper={titleWrapper}
@@ -1552,7 +1589,13 @@ const WorktreeCard = React.memo(function WorktreeCard({
                 </TooltipContent>
               </Tooltip>
             ) : null}
-            {!compactCards && worktree.isMainWorktree && !isFolder && (
+            {/* The new style marks the primary only for screen readers: it was on nearly every row. */}
+            {newCardStyle && worktree.isMainWorktree && !isFolder ? (
+              <span className="sr-only">
+                {translate('auto.components.sidebar.WorktreeCard.0d224eff10', 'Primary worktree')}
+              </span>
+            ) : null}
+            {!compactCards && !newCardStyle && worktree.isMainWorktree && !isFolder && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Badge
@@ -1599,10 +1642,12 @@ const WorktreeCard = React.memo(function WorktreeCard({
               </Tooltip>
             )}
 
-            {showTitleRowIndicators && titleRowIndicators}
+            {!newCardStyle && showTitleRowIndicators && titleRowIndicators}
           </div>
 
-          {showHeaderActions && (
+          {newCardTrailingCluster}
+
+          {!newCardStyle && showHeaderActions && (
             <div className="ml-auto flex shrink-0 items-center justify-center gap-1 pr-1.5">
               {showTitleRowPrimary && (
                 <Tooltip>
@@ -1626,35 +1671,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
                 </Tooltip>
               )}
 
-              {showDeleteQuickAction && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      data-workspace-board-preserve-open=""
-                      onPointerDown={stopQuickActionPointerPropagation}
-                      onClick={handleWorkspaceQuickAction}
-                      className={cn(
-                        'inline-flex size-4 items-center justify-center rounded bg-transparent opacity-0 transition-colors transition-opacity',
-                        'group-hover/worktree-card:opacity-100 group-focus-within/worktree-card:opacity-100 focus-visible:opacity-100',
-                        'text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive'
-                      )}
-                      aria-label={translate(
-                        'auto.components.sidebar.WorktreeCard.6f09f58541',
-                        'Delete workspace'
-                      )}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>
-                    {translate(
-                      'auto.components.sidebar.WorktreeCard.6f09f58541',
-                      'Delete workspace'
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              {deleteQuickAction}
             </div>
           )}
         </div>
@@ -1762,7 +1779,13 @@ const WorktreeCard = React.memo(function WorktreeCard({
           <WorktreeCardAgents
             worktreeId={worktree.id}
             agents={agentActivityDisplayMode === 'compact' ? compactInlineAgentRows : undefined}
-            className={hasMetaRow || remoteBranchConflict ? 'mt-0' : '-mt-1'}
+            className={cn(
+              hasMetaRow || remoteBranchConflict ? 'mt-0' : '-mt-1',
+              // Why: outdent past the 16px lane + 6px gap, plus 2px so a row's 4px inset lands its
+              // 12px glyph slot on the status dot's box; +4px right so a row's 4px inset meets line 1's time.
+              newCardStyle && showCombinedStatusSlot && '!ms-[-24px] !w-[calc(100%+28px)]'
+            )}
+            newCardStyle={newCardStyle}
           />
         )}
 
@@ -1866,19 +1889,30 @@ const WorktreeCard = React.memo(function WorktreeCard({
   const cardBody = (
     <div
       className={cn(
-        'relative flex cursor-pointer flex-col pr-1.5 transition-[background-color,border-color,opacity,box-shadow] duration-200 outline-none select-none',
-        titleOnlyCard ? 'py-2' : 'pt-1.25 pb-1.5',
+        'relative flex cursor-pointer flex-col transition-[background-color,border-color,opacity,box-shadow] duration-200 outline-none select-none',
+        // Why: 8px right keeps agent-row fills 4px off both card edges with 4px inside each.
+        newCardStyle ? 'py-1.5 pr-2' : titleOnlyCard ? 'py-2 pr-1.5' : 'pt-1.25 pb-1.5 pr-1.5',
         flushSurface ? 'ml-1 w-[calc(100%-0.25rem)]' : 'ml-1',
-        'rounded-lg',
-        isLineageDropTarget
-          ? 'border border-accent-foreground/20 bg-accent/80'
-          : isActiveSurface
-            ? activeSurfaceIsSecondary
-              ? 'border border-sidebar-ring/25 bg-sidebar-accent/45 shadow-none ring-1 ring-sidebar-ring/15'
-              : 'bg-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.015] dark:bg-white/[0.10] dark:border-border/40 dark:shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
-            : isMultiSelected
-              ? 'border border-worktree-sidebar-ring/35 bg-worktree-sidebar-accent/70 ring-1 ring-worktree-sidebar-ring/30'
-              : 'border border-transparent worktree-sidebar-card-hover',
+        newCardStyle ? 'rounded-md' : 'rounded-lg',
+        // Why: the new style is borderless (states use fill and rings) and its active look lives only in main.css,
+        // which WorktreeList also toggles imperatively on activation.
+        newCardStyle
+          ? isLineageDropTarget
+            ? 'bg-accent/80 ring-1 ring-accent-foreground/20'
+            : isActiveSurface
+              ? null
+              : isMultiSelected
+                ? 'bg-worktree-sidebar-accent/70 ring-1 ring-worktree-sidebar-ring/30'
+                : 'worktree-sidebar-card-hover'
+          : isLineageDropTarget
+            ? 'border border-accent-foreground/20 bg-accent/80'
+            : isActiveSurface
+              ? activeSurfaceIsSecondary
+                ? 'border border-sidebar-ring/25 bg-sidebar-accent/45 shadow-none ring-1 ring-sidebar-ring/15'
+                : 'bg-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.015] dark:bg-white/[0.10] dark:border-border/40 dark:shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
+              : isMultiSelected
+                ? 'border border-worktree-sidebar-ring/35 bg-worktree-sidebar-accent/70 ring-1 ring-worktree-sidebar-ring/30'
+                : 'border border-transparent worktree-sidebar-card-hover',
         isActiveSurface && isMultiSelected && 'ring-1 ring-worktree-sidebar-ring/35',
         revealHighlight && [
           'scroll-to-current-workspace-reveal-highlight',
@@ -1889,6 +1923,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
         (isSshDisconnected || isRuntimeDisconnected) && !isDeleting && 'opacity-60'
       )}
       data-worktree-card-surface="true"
+      data-worktree-card-style={newCardStyle ? 'new' : undefined}
       data-worktree-card-active={isActiveSurface ? activeSurfaceVariant : undefined}
       onClick={handleClick}
       onDoubleClick={affiliateListMode ? undefined : handleDoubleClick}

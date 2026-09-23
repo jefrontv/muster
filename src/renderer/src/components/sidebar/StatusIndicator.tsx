@@ -12,12 +12,18 @@ export type Status = WorktreeStatus
 
 type StatusIndicatorProps = React.ComponentProps<'span'> & {
   status: Status
+  /** Idle draws nothing; the new sidebar rows show state only when there is one. */
+  hideInactive?: boolean
+  /** Breathe until seen: finished or waiting on the user. */
+  pulse?: boolean
 }
 
 const StatusIndicator = React.memo(function StatusIndicator({
   status,
   className,
   title,
+  hideInactive = false,
+  pulse = false,
   ...rest
 }: StatusIndicatorProps) {
   // Why: surface the status label as a native tooltip so hovering the dot
@@ -35,7 +41,7 @@ const StatusIndicator = React.memo(function StatusIndicator({
         title={resolvedTitle}
         {...rest}
       >
-        <AgentWorkingSpinner className="size-2" />
+        <AgentWorkingSpinner className="size-2.5" />
       </span>
     )
   }
@@ -43,32 +49,58 @@ const StatusIndicator = React.memo(function StatusIndicator({
   if (status === 'permission') {
     return (
       <span
-        className={cn('inline-flex h-3 w-3 shrink-0 items-center justify-center', className)}
+        className={cn(
+          'inline-flex h-3 w-3 shrink-0 items-center justify-center',
+          pulse && 'sidebar-attention-pulse relative',
+          className
+        )}
         title={resolvedTitle}
         {...rest}
       >
-        <MessageCircleQuestion className="size-3 text-amber-500" aria-hidden="true" />
+        {pulse ? (
+          <svg
+            viewBox="0 0 12 12"
+            aria-hidden="true"
+            className="absolute inset-0 size-3 overflow-visible fill-status-attention"
+          >
+            <circle cx="6" cy="6" r="5" className="sidebar-attention-halo" />
+          </svg>
+        ) : null}
+        <MessageCircleQuestion
+          className="relative size-3 text-status-attention"
+          aria-hidden="true"
+        />
       </span>
     )
   }
 
+  if (hideInactive && status === 'inactive') {
+    return <span className={cn('inline-flex h-3 w-3 shrink-0', className)} {...rest} />
+  }
+
+  const success = status === 'done' || status === 'active'
   return (
     <span
       className={cn('inline-flex h-3 w-3 shrink-0 items-center justify-center', className)}
       title={resolvedTitle}
       {...rest}
     >
-      <span
+      {/* SVG, not a rounded box: at fractional display scales an 8px box lands on part-pixels and
+          rounds into a lopsided dot, and a halo scaled from it drifts off centre. */}
+      <svg
+        viewBox="0 0 12 12"
+        aria-hidden="true"
         className={cn(
-          'block size-2 rounded-full',
-          status === 'done' || status === 'active'
-            ? // Green dot for both hook-reported 'done' and the heuristic
-              // 'active' (terminal open, quiet). Working uses a yellow
-              // ring above; 'inactive' stays grey.
-              'bg-emerald-500'
-            : 'bg-neutral-500/40'
+          'block size-3 overflow-visible',
+          pulse && 'sidebar-attention-pulse',
+          // Green for both hook-reported 'done' and the heuristic 'active' (terminal open,
+          // quiet). Working uses the spinner above; 'inactive' stays grey.
+          success ? 'fill-status-success' : 'fill-neutral-500/40'
         )}
-      />
+      >
+        {pulse ? <circle cx="6" cy="6" r="4" className="sidebar-attention-halo" /> : null}
+        <circle cx="6" cy="6" r="4" />
+      </svg>
     </span>
   )
 })

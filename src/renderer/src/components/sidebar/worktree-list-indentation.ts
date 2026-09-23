@@ -1,3 +1,11 @@
+import {
+  SIDEBAR_ROW_STEP,
+  WORKTREE_CARD_SURFACE_BORDER,
+  getSidebarGlyphIndent
+} from './sidebar-row-grid'
+
+export { SIDEBAR_ROW_STEP } from './sidebar-row-grid'
+
 export const SIDEBAR_TREE_INDENT = 18
 // Why: project-grouped cards need to read as children even after the card
 // surface inset is subtracted, while lineage rows keep the base tree step.
@@ -6,9 +14,6 @@ const PROJECT_WORKTREE_CARD_EXTRA_INDENT = 2
 // raw tree indent to sit under the group header. A smaller pullback nudges
 // content rightward for clearer nesting; this is the knob to tune that gap.
 export const FLUSH_CARD_CONTENT_PULLBACK = 4
-// Why: experimental cards reserve a fixed status lane inside the padded
-// content box; pull the box back so title/meta text stay on the tree step.
-export const NEW_CARD_STYLE_STATUS_LANE_EXTRA_PULLBACK = 6
 // Why: even at zero indent a flush card keeps this minimal left inset so its
 // surface never sits hard against the sidebar edge.
 export const FLUSH_CARD_MIN_CONTENT_INSET = 2
@@ -20,6 +25,10 @@ export const LINEAGE_IMMEDIATE_PARENT_STEP =
 export const LINEAGE_NESTED_ROW_SURFACE_INSET = 0
 export const LINEAGE_CHILDREN_INLINE_OFFSET =
   LINEAGE_IMMEDIATE_PARENT_STEP - WORKTREE_CARD_SURFACE_MARGIN - FLUSH_CARD_MIN_CONTENT_INSET
+// Why: new-style children sit inside the parent's content box, so wrapper offset + this
+// indent is the whole parent-glyph -> child-glyph step.
+export const NEW_CARD_STYLE_LINEAGE_CHILD_CONTENT_INDENT =
+  SIDEBAR_ROW_STEP - LINEAGE_CHILDREN_INLINE_OFFSET
 // Why: grouped workspace cards should move their surface inward without using
 // the full tree step, preserving the existing compact child-card rhythm.
 const GROUPED_WORKTREE_CARD_SURFACE_INDENT = 14
@@ -30,31 +39,53 @@ export const WORKTREE_SECTION_HEADER_PADDING_LEFT = PROJECT_GROUP_HEADER_BASE_PA
 export const PROJECT_GROUP_HEADER_INDENT = 10
 export const MAX_PROJECT_GROUP_HEADER_DEPTH = 6
 
+type NewCardStyleFlag = { experimentalNewWorktreeCardStyle?: boolean }
+
 function clampDepth(depth: number): number {
   return Math.max(0, Math.floor(Number.isFinite(depth) ? depth : 0))
 }
 
-export function getProjectGroupHeaderPaddingLeft(depth: number): number {
-  return (
-    PROJECT_GROUP_HEADER_BASE_PADDING +
-    Math.min(clampDepth(depth), MAX_PROJECT_GROUP_HEADER_DEPTH) * PROJECT_GROUP_HEADER_INDENT
-  )
+// Why: new-style surfaces step with their header so every card keeps the same inner padding.
+function getNewCardStyleSurfaceInset(groupDepth: number): number {
+  return clampDepth(groupDepth) * SIDEBAR_ROW_STEP
 }
 
-export function getWorktreeCardContentIndent(args: {
-  isGrouped: boolean
-  groupDepth: number
-  lineageDepth: number
-}): number {
+export function getProjectGroupHeaderPaddingLeft(
+  depth: number,
+  experimentalNewWorktreeCardStyle = false
+): number {
+  const clampedDepth = Math.min(clampDepth(depth), MAX_PROJECT_GROUP_HEADER_DEPTH)
+  if (experimentalNewWorktreeCardStyle) {
+    return getSidebarGlyphIndent(clampedDepth)
+  }
+  return PROJECT_GROUP_HEADER_BASE_PADDING + clampedDepth * PROJECT_GROUP_HEADER_INDENT
+}
+
+export function getWorktreeCardContentIndent(
+  args: {
+    isGrouped: boolean
+    groupDepth: number
+    lineageDepth: number
+  } & NewCardStyleFlag
+): number {
   const groupSteps = args.isGrouped ? clampDepth(args.groupDepth) + 1 : 0
+  if (args.experimentalNewWorktreeCardStyle) {
+    // Why: a card's status glyph shares its header's glyph column; only lineage steps in.
+    return getSidebarGlyphIndent(Math.max(0, groupSteps - 1) + clampDepth(args.lineageDepth))
+  }
   const projectCardIndent = args.isGrouped ? PROJECT_WORKTREE_CARD_EXTRA_INDENT : 0
   return (groupSteps + clampDepth(args.lineageDepth)) * SIDEBAR_TREE_INDENT + projectCardIndent
 }
 
-export function getFolderBackedRepoWorktreeCardContentIndent(args: {
-  groupDepth: number
-  lineageDepth: number
-}): number {
+export function getFolderBackedRepoWorktreeCardContentIndent(
+  args: {
+    groupDepth: number
+    lineageDepth: number
+  } & NewCardStyleFlag
+): number {
+  if (args.experimentalNewWorktreeCardStyle) {
+    return getSidebarGlyphIndent(clampDepth(args.groupDepth) + clampDepth(args.lineageDepth))
+  }
   // Why: folder-scanned groups indent repo headers by the compact header step;
   // worktree rows should follow that rhythm instead of adding a full tree step.
   return (
@@ -64,10 +95,15 @@ export function getFolderBackedRepoWorktreeCardContentIndent(args: {
   )
 }
 
-export function getFolderBackedRepoWorktreeCardSurfaceInset(args: {
-  groupDepth: number
-  lineageDepth: number
-}): number {
+export function getFolderBackedRepoWorktreeCardSurfaceInset(
+  args: {
+    groupDepth: number
+    lineageDepth: number
+  } & NewCardStyleFlag
+): number {
+  if (args.experimentalNewWorktreeCardStyle) {
+    return getNewCardStyleSurfaceInset(args.groupDepth)
+  }
   const contentAnchor = getFolderBackedRepoWorktreeCardContentIndent(args)
   const genericSurfaceInset = getWorktreeCardSurfaceInset({
     isGrouped: true,
@@ -117,11 +153,13 @@ export function getFolderWorkspaceRowGeometry(args: {
     // offset, so align them to the comparable folder-backed repo row anchor.
     const contentAnchor = getFolderBackedRepoWorktreeCardContentIndent({
       groupDepth: args.groupDepth,
-      lineageDepth: 0
+      lineageDepth: 0,
+      experimentalNewWorktreeCardStyle: true
     })
     const surfaceInset = getFolderBackedRepoWorktreeCardSurfaceInset({
       groupDepth: args.groupDepth,
-      lineageDepth: 0
+      lineageDepth: 0,
+      experimentalNewWorktreeCardStyle: true
     })
 
     return {
@@ -137,7 +175,8 @@ export function getFolderWorkspaceRowGeometry(args: {
     : getWorktreeCardContentIndent({
         isGrouped: args.isGrouped,
         groupDepth: args.groupDepth,
-        lineageDepth: args.lineageDepth
+        lineageDepth: args.lineageDepth,
+        experimentalNewWorktreeCardStyle: args.experimentalNewWorktreeCardStyle
       })
   // Why: legacy folder-scanned folder workspaces keep their compact anchor,
   // while all other folder rows share the normal worktree row surface path.
@@ -148,7 +187,8 @@ export function getFolderWorkspaceRowGeometry(args: {
       })
     : getWorktreeCardSurfaceInset({
         isGrouped: args.isGrouped,
-        groupDepth: args.groupDepth
+        groupDepth: args.groupDepth,
+        experimentalNewWorktreeCardStyle: args.experimentalNewWorktreeCardStyle
       })
 
   return {
@@ -157,48 +197,45 @@ export function getFolderWorkspaceRowGeometry(args: {
   }
 }
 
-export function getWorktreeCardSurfaceInset(args: {
-  isGrouped: boolean
-  groupDepth: number
-}): number {
-  return args.isGrouped ? clampDepth(args.groupDepth) * GROUPED_WORKTREE_CARD_SURFACE_INDENT : 0
+export function getWorktreeCardSurfaceInset(
+  args: {
+    isGrouped: boolean
+    groupDepth: number
+  } & NewCardStyleFlag
+): number {
+  if (!args.isGrouped) {
+    return 0
+  }
+  return args.experimentalNewWorktreeCardStyle
+    ? getNewCardStyleSurfaceInset(args.groupDepth)
+    : clampDepth(args.groupDepth) * GROUPED_WORKTREE_CARD_SURFACE_INDENT
 }
 
+/**
+ * New style: `contentIndent` is the status glyph's x inside the card's row box, so the
+ * padding is that minus the surface margin and border. Without a status lane the title
+ * takes the text column instead.
+ */
 export function getFlushWorktreeCardPaddingLeft(
   contentIndent: number,
-  applyNewCardStyleStatusLaneOffset = false
+  applyNewCardStyleStatusLaneOffset = false,
+  experimentalNewWorktreeCardStyle = applyNewCardStyleStatusLaneOffset
 ): string {
-  const pullback =
-    FLUSH_CARD_CONTENT_PULLBACK +
-    (applyNewCardStyleStatusLaneOffset ? NEW_CARD_STYLE_STATUS_LANE_EXTRA_PULLBACK : 0)
+  if (experimentalNewWorktreeCardStyle) {
+    const glyphPadding = Math.max(
+      FLUSH_CARD_MIN_CONTENT_INSET,
+      contentIndent - WORKTREE_CARD_SURFACE_MARGIN - WORKTREE_CARD_SURFACE_BORDER
+    )
+    return `${applyNewCardStyleStatusLaneOffset ? glyphPadding : glyphPadding + SIDEBAR_ROW_STEP}px`
+  }
   return contentIndent > 0
-    ? `max(${FLUSH_CARD_MIN_CONTENT_INSET}px, calc(${contentIndent}px - ${pullback}px))`
+    ? `max(${FLUSH_CARD_MIN_CONTENT_INSET}px, calc(${contentIndent}px - ${FLUSH_CARD_CONTENT_PULLBACK}px))`
     : `${FLUSH_CARD_MIN_CONTENT_INSET}px`
 }
 
-export function getNewCardStyleParentContentMarginLeft(contentIndent: number): number {
-  if (contentIndent <= 0) {
-    return 0
-  }
-
-  const legacyInnerPadding = Math.max(
-    FLUSH_CARD_MIN_CONTENT_INSET,
-    contentIndent - FLUSH_CARD_CONTENT_PULLBACK
-  )
-  const newInnerPadding = Math.max(
-    FLUSH_CARD_MIN_CONTENT_INSET,
-    contentIndent - FLUSH_CARD_CONTENT_PULLBACK - NEW_CARD_STYLE_STATUS_LANE_EXTRA_PULLBACK
-  )
-  const paddingShift = legacyInnerPadding - newInnerPadding
-  const remainingShift = NEW_CARD_STYLE_STATUS_LANE_EXTRA_PULLBACK - paddingShift
-  if (remainingShift <= 0) {
-    return 0
-  }
-
-  // Why: shallow rows hit the flush-card padding floor; finish the status-lane
-  // offset with margin, but never pull content past the card's inner edge.
-  const rawMargin = -remainingShift
-  return Math.max(-newInnerPadding, rawMargin)
+/** @deprecated New-style padding is exact now; kept until WorktreeCard stops calling it. */
+export function getNewCardStyleParentContentMarginLeft(_contentIndent: number): number {
+  return 0
 }
 
 export function getLineageNestedRowGeometry(args: {
@@ -215,7 +252,7 @@ export function getLineageNestedRowGeometry(args: {
     // adding global lineage depth here would double-count nested descendants.
     return {
       surfaceInset: LINEAGE_NESTED_ROW_SURFACE_INSET,
-      cardContentIndent: 0,
+      cardContentIndent: NEW_CARD_STYLE_LINEAGE_CHILD_CONTENT_INDENT,
       lineageChildrenInlineOffset: LINEAGE_CHILDREN_INLINE_OFFSET
     }
   }

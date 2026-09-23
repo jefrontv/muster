@@ -43,7 +43,9 @@ test.describe('Reveal active workspace button', () => {
   }) => {
     await prepareSidebarForScrollTest(orcaPage)
 
-    const renderedOptions = orcaPage.locator('[data-worktree-sidebar] [role="option"]')
+    const renderedOptions = orcaPage.locator(
+      '[data-worktree-sidebar] [role="treeitem"][data-worktree-id]'
+    )
     await expect(renderedOptions).toHaveCount(2)
 
     const targetId = await renderedOptions.last().getAttribute('data-worktree-id')

@@ -45,6 +45,32 @@ describe('getEmptyProjectPlaceholderRepoIds', () => {
     ).toEqual([repo.id])
   })
 
+  it('skips a repo whose list has not loaded while Hide sleeping waits on startup', () => {
+    const ids = getEmptyProjectPlaceholderRepoIds({
+      groupBy: 'repo',
+      repos: [repo],
+      worktreesByRepo: {},
+      visibleWorktrees: [],
+      filterRepoIds: [],
+      hideUnloaded: true,
+      detectedWorktreesByRepo: {}
+    })
+    expect(Array.from(ids)).toEqual([])
+  })
+
+  it('still shows a repo that loaded and is genuinely empty during startup', () => {
+    const ids = getEmptyProjectPlaceholderRepoIds({
+      groupBy: 'repo',
+      repos: [repo],
+      worktreesByRepo: {},
+      visibleWorktrees: [],
+      filterRepoIds: [],
+      hideUnloaded: true,
+      detectedWorktreesByRepo: { [repo.id]: [] }
+    })
+    expect(Array.from(ids)).toEqual([repo.id])
+  })
+
   it('treats missing worktreesByRepo keys as empty for the current render', () => {
     expect(
       Array.from(

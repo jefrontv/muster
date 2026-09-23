@@ -25,7 +25,7 @@ const SidebarHeader = React.memo(function SidebarHeader({
     <div className="mt-2 flex h-8 items-center justify-between px-2 gap-2">
       <div className="flex min-w-0 items-center gap-1">
         <span
-          className="pl-2 pr-0.5 text-xs font-semibold text-muted-foreground/80 select-none"
+          className="pl-2 pr-0.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-worktree-sidebar-muted-foreground select-none"
           data-sidebar-section-title={groupBy === 'repo' ? 'projects' : 'workspaces'}
         >
           {sidebarTitle}
@@ -49,7 +49,7 @@ const SidebarHeader = React.memo(function SidebarHeader({
               )}
               onClick={() => openModal('add-repo')}
             >
-              <FolderPlus className="size-3.5" strokeWidth={2.25} />
+              <FolderPlus className="size-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={6}>
@@ -74,7 +74,7 @@ const SidebarHeader = React.memo(function SidebarHeader({
                 )}
                 data-contextual-tour-target="workspace-create-control"
               >
-                <Plus className="size-3.5" strokeWidth={2.25} />
+                <Plus className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={6}>

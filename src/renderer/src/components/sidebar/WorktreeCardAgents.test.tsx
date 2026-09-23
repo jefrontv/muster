@@ -185,6 +185,8 @@ vi.mock('@/components/ui/tooltip', () => ({
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>
 }))
 
+const MUTED = 'text-worktree-sidebar-muted-foreground'
+
 describe('WorktreeCardAgents', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -236,8 +238,8 @@ describe('WorktreeCardAgents', () => {
 
     const markup = renderToStaticMarkup(<WorktreeCardAgents worktreeId="wt-1" />)
 
-    expect(markup).toContain('<span class="text-muted-foreground/90">Run tests</span>')
-    expect(markup).toContain('<span class="text-muted-foreground/65"> - Inspecting changes</span>')
+    expect(markup).toContain(`<span class="${MUTED}">Run tests</span>`)
+    expect(markup).toContain(`<span class="${MUTED}"> - Inspecting changes</span>`)
     expect(markup).not.toContain('data-focused-agent-pane="true"')
     expect(markup).not.toContain('<span class="text-foreground">Run tests</span>')
   })
@@ -260,7 +262,7 @@ describe('WorktreeCardAgents', () => {
     expect(markup).toContain('data-focused-agent-pane="true"')
     expect(markup).toContain('<span class="text-foreground">Focused prompt</span>')
     expect(markup).toContain('<span class="text-foreground/70"> - Reading output</span>')
-    expect(markup).not.toContain('<span class="text-muted-foreground/90">Focused prompt</span>')
+    expect(markup).not.toContain(`<span class="${MUTED}">Focused prompt</span>`)
   })
 
   it('shows a matching pane prompt-cache timer before the compact row age', async () => {

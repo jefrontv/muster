@@ -104,16 +104,16 @@ export function CompactAgentSummaryButton({
       draggable={false}
       className={cn(
         'compact-agent-summary-button group/agent-summary flex h-6 w-full min-w-0 items-center gap-1 rounded-sm',
-        'px-1 text-left text-[11px] leading-none text-muted-foreground',
+        'text-left text-[11px] leading-none text-worktree-sidebar-muted-foreground',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring',
-        // Why: worktree-sidebar-accent is near-white in light mode and dark in dark
-        // mode, so hover lightening needs a theme-specific token mix.
-        'hover:bg-worktree-sidebar-accent/55 dark:hover:bg-worktree-sidebar-foreground/[0.035]',
+        // Same hover as each agent row, so the summary and the rows it expands read as one list.
+        'worktree-agent-row-hover',
         // Why: expanded is a tree header inside the card, so only the
         // standalone collapsed pill gets a resting surface and border.
         expanded
-          ? 'compact-agent-summary-button-expanded'
-          : 'border border-worktree-sidebar-border/70 bg-worktree-sidebar-accent/35'
+          ? 'compact-agent-summary-button-expanded px-1'
+          : // 2px inset on the status pills; the chevron keeps its own breathing room.
+            'border border-worktree-sidebar-border/70 bg-worktree-sidebar-accent/35 pr-[3px] pl-0.5'
       )}
       aria-label={
         expanded
@@ -136,9 +136,7 @@ export function CompactAgentSummaryButton({
       onDragStart={stopPointerPropagation}
     >
       {expanded ? (
-        <span className="min-w-0 flex-1 truncate px-1 font-medium text-muted-foreground">
-          {subjectLabel}
-        </span>
+        <span className="min-w-0 flex-1 truncate px-1 font-medium">{subjectLabel}</span>
       ) : (
         <>
           <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden" aria-hidden>
@@ -148,12 +146,12 @@ export function CompactAgentSummaryButton({
               return (
                 <span
                   key={group.state}
-                  className="inline-flex min-w-0 shrink-0 items-center gap-0.5 rounded-sm bg-worktree-sidebar/70 px-1 py-0.5"
+                  className="inline-flex min-w-0 shrink-0 items-center gap-1 rounded-sm bg-worktree-sidebar/70 px-1 py-px"
                 >
                   <AgentStateDot state={group.state} size="sm" />
                   {/* Why: same-state agent identities read as one status cluster;
                       overlapping them saves width without merging different states. */}
-                  <span className="inline-flex shrink-0 items-center -space-x-0.5 pl-0.5">
+                  <span className="inline-flex shrink-0 items-center -space-x-0.5">
                     {iconAgents.map((agent) => (
                       <span
                         key={agent.paneKey}
@@ -164,7 +162,7 @@ export function CompactAgentSummaryButton({
                     ))}
                   </span>
                   {hiddenIconCount > 0 && (
-                    <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                    <span className="shrink-0 text-[10px] tabular-nums text-worktree-sidebar-muted-foreground">
                       +{hiddenIconCount}
                     </span>
                   )}
@@ -173,7 +171,7 @@ export function CompactAgentSummaryButton({
             })}
           </span>
           {hiddenGroupAgentCount > 0 && (
-            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+            <span className="shrink-0 text-[10px] tabular-nums text-worktree-sidebar-muted-foreground">
               +{hiddenGroupAgentCount}
             </span>
           )}

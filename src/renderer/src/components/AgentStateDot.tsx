@@ -8,8 +8,8 @@ import { AgentWorkingSpinner } from '@/components/AgentWorkingSpinner'
 // 'working' renders a spinner. 'done' intentionally diverges from the
 // sidebar's StatusIndicator: the dashboard uses a check icon so completion
 // is visually distinct from 'idle' (grey dot) and the sidebar's 'active'
-// (emerald dot), while the sidebar collapses 'done'/'active' to the same
-// emerald dot and relies on a tooltip. It sits next to the agent icon
+// (success dot), while the sidebar collapses 'done'/'active' to the same
+// success dot and relies on a tooltip. It sits next to the agent icon
 // (Claude/Codex/etc.) — two distinct glyphs: one for *who* (agent icon) and
 // one for *what state* (this indicator). Keeping them separate keeps each
 // scannable instead of fused into one decorated icon.
@@ -66,7 +66,11 @@ export const AgentStateDot = React.memo(function AgentStateDot({
   className
 }: Props): React.JSX.Element {
   const box = size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'
-  const inner = size === 'md' ? 'size-2' : 'size-1.5'
+  // Box and dot in px: 12/8 for md, 10/6 for sm.
+  const dotBox = size === 'md' ? 12 : 10
+  const dotRadius = size === 'md' ? 4 : 3
+  // The arc needs a little more room than a dot to read as a spinner.
+  const spinner = size === 'md' ? 'size-2.5' : 'size-2'
   const icon = size === 'md' ? 'size-3' : 'size-2.5'
 
   if (state === 'working') {
@@ -75,7 +79,7 @@ export const AgentStateDot = React.memo(function AgentStateDot({
         className={cn('inline-flex shrink-0 items-center justify-center', box, className)}
         aria-label={agentStateLabel(state)}
       >
-        <AgentWorkingSpinner className={inner} />
+        <AgentWorkingSpinner className={spinner} />
       </span>
     )
   }
@@ -84,13 +88,13 @@ export const AgentStateDot = React.memo(function AgentStateDot({
     // Why: the dashboard lists many agents, so a check glyph scans well for
     // agent-reported completion and keeps 'done' visually distinct from
     // 'idle' and other dot states at a glance. The sidebar's StatusIndicator
-    // intentionally diverges (emerald dot + tooltip) — see file header.
+    // intentionally diverges (success dot + tooltip) — see file header.
     return (
       <span
         className={cn('inline-flex shrink-0 items-center justify-center', box, className)}
         aria-label={agentStateLabel(state)}
       >
-        <CircleCheck className={cn('text-emerald-500', icon)} aria-hidden="true" />
+        <CircleCheck className={cn('text-status-success', icon)} aria-hidden="true" />
       </span>
     )
   }
@@ -101,7 +105,7 @@ export const AgentStateDot = React.memo(function AgentStateDot({
         className={cn('inline-flex shrink-0 items-center justify-center', box, className)}
         aria-label={agentStateLabel(state)}
       >
-        <MessageCircleQuestion className={cn('text-amber-500', icon)} aria-hidden="true" />
+        <MessageCircleQuestion className={cn('text-status-attention', icon)} aria-hidden="true" />
       </span>
     )
   }
@@ -111,15 +115,19 @@ export const AgentStateDot = React.memo(function AgentStateDot({
       className={cn('inline-flex shrink-0 items-center justify-center', box, className)}
       aria-label={agentStateLabel(state)}
     >
-      <span
-        className={cn(
-          'block rounded-full',
-          inner,
-          state === 'blocked' || state === 'interrupted' || state === 'failed'
-            ? 'bg-red-500'
-            : 'bg-neutral-500/40'
-        )}
-      />
+      {/* Why: an SVG circle stays round at fractional zoom; a rounded 6px box snaps to an oval. */}
+      <svg viewBox={`0 0 ${dotBox} ${dotBox}`} className={cn('block', box)} aria-hidden="true">
+        <circle
+          cx={dotBox / 2}
+          cy={dotBox / 2}
+          r={dotRadius}
+          className={
+            state === 'blocked' || state === 'interrupted' || state === 'failed'
+              ? 'fill-red-500'
+              : 'fill-neutral-500/40'
+          }
+        />
+      </svg>
     </span>
   )
 })

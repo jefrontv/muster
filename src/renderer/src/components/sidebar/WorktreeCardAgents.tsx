@@ -36,7 +36,7 @@ const dispatchSuppressScrollAdjustment = () => {
 
 function revealCompactAgentCard(agentListRoot: HTMLElement | null): void {
   const sidebarElement = agentListRoot?.closest('[data-worktree-sidebar]')
-  const worktreeOptionElement = agentListRoot?.closest('[role="option"]')
+  const worktreeOptionElement = agentListRoot?.closest('[data-worktree-row-key]')
   if (!(sidebarElement instanceof HTMLElement) || !worktreeOptionElement) {
     return
   }
@@ -48,13 +48,15 @@ type Props = {
   agents?: DashboardAgentRowData[]
   /** Spacing from the card body above; parent decides whether a divider is appropriate. */
   className?: string
+  newCardStyle?: boolean
 }
 
 /** Inline agent list rendered inside WorktreeCard when 'inline-agents' is enabled. */
 const WorktreeCardAgents = React.memo(function WorktreeCardAgents({
   worktreeId,
   agents: precomputedAgents,
-  className
+  className,
+  newCardStyle = false
 }: Props) {
   const selectedAgents = useWorktreeAgentRows(worktreeId, precomputedAgents === undefined)
   const agents = precomputedAgents ?? selectedAgents
@@ -62,19 +64,28 @@ const WorktreeCardAgents = React.memo(function WorktreeCardAgents({
     return null
   }
   // Why: mount the inner body (owns the 30s useNow tick) only for non-empty rows, so idle worktrees pay no timer cost.
-  return <WorktreeCardAgentsBody worktreeId={worktreeId} agents={agents} className={className} />
+  return (
+    <WorktreeCardAgentsBody
+      worktreeId={worktreeId}
+      agents={agents}
+      className={className}
+      newCardStyle={newCardStyle}
+    />
+  )
 })
 
 type BodyProps = {
   worktreeId: string
   agents: DashboardAgentRowData[]
   className?: string
+  newCardStyle: boolean
 }
 
 const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
   worktreeId,
   agents,
-  className
+  className,
+  newCardStyle
 }: BodyProps) {
   const agentActivityDisplayMode =
     useAppStore((s) => s.agentActivityDisplayMode) ?? DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE
@@ -300,7 +311,8 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
   const renderCompactAgentBranch = (
     agent: DashboardAgentRowData,
     ancestorPaneKeys: ReadonlySet<string> = new Set(),
-    cacheTimerActive = true
+    cacheTimerActive = true,
+    inMultiAgentList = false
   ): React.ReactNode => {
     if (ancestorPaneKeys.has(agent.paneKey)) {
       return null
@@ -336,15 +348,22 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
           reserveDisclosureGutter={isRootAgent && anyRootHasChildren && !hasChildAgents}
           isFocusedPane={agent.paneKey === focusedAgentPaneKey}
           cacheTimerActive={cacheTimerActive}
+          layout={newCardStyle ? (inMultiAgentList ? 'card-list' : 'card-line') : 'legacy'}
         />
         {hasChildAgents ? (
           <CompactAgentExpansion expanded={expanded}>
-            <div className="worktree-agent-lineage-children flex flex-col gap-0.5">
+            <div
+              className={cn(
+                'worktree-agent-lineage-children flex flex-col gap-0.5',
+                newCardStyle && 'worktree-agent-lineage-children--card'
+              )}
+            >
               {childAgents.map((childAgent) =>
                 renderCompactAgentBranch(
                   childAgent,
                   descendantAncestorPaneKeys,
-                  cacheTimerActive && expanded
+                  cacheTimerActive && expanded,
+                  inMultiAgentList
                 )
               )}
             </div>
@@ -363,7 +382,7 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
     return (
       <div
         ref={compactAgentListRootRef}
-        className={cn('flex flex-col mt-1 gap-0.5', className)}
+        className={cn('flex flex-col', newCardStyle ? 'mt-0 gap-0' : 'mt-1 gap-0.5', className)}
         onClick={stopBubble}
         onDoubleClick={stopBubble}
         onMouseDown={stopBubble}
@@ -377,7 +396,9 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
           <div
             className={cn(
               'compact-agent-summary-panel',
-              compactRootListExpanded && 'compact-agent-summary-panel-expanded'
+              compactRootListExpanded && 'compact-agent-summary-panel-expanded',
+              // Why: the new card aligns row glyphs to the status lane; the panel's 2px inset would offset them.
+              newCardStyle && '!p-0'
             )}
           >
             <CompactAgentSummaryButton
@@ -391,7 +412,7 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
             />
             <CompactAgentExpansion expanded={compactRootListExpanded}>
               {rootAgents.map((rootAgent) =>
-                renderCompactAgentBranch(rootAgent, new Set(), compactRootListExpanded)
+                renderCompactAgentBranch(rootAgent, new Set(), compactRootListExpanded, true)
               )}
             </CompactAgentExpansion>
           </div>

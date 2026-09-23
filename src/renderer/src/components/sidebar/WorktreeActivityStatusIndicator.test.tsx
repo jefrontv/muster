@@ -28,14 +28,14 @@ describe('WorktreeActivityStatusIndicator', () => {
     const markup = renderMarkup('inactive')
 
     expect(markup).toContain('Inactive')
-    expect(markup).toContain('bg-neutral-500/40')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).toContain('fill-neutral-500/40')
+    expect(markup).not.toContain('fill-status-success')
   })
 
   it('renders the shared active status when the worktree is live', () => {
     const markup = renderMarkup('active')
 
     expect(markup).toContain('Active')
-    expect(markup).toContain('bg-emerald-500')
+    expect(markup).toContain('fill-status-success')
   })
 })

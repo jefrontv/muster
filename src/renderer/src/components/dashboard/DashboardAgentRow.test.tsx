@@ -253,8 +253,8 @@ describe('DashboardAgentRow', () => {
 
     expect(markup).toContain('aria-label="Waiting for input"')
     expect(markup).toContain('lucide-message-circle-question-mark')
-    expect(tokens).toContain('text-amber-500')
-    expect(tokens).not.toContain('bg-red-500')
+    expect(tokens).toContain('text-status-attention')
+    expect(tokens).not.toContain('fill-red-500')
   })
 
   it('keeps blocked rows red', () => {
@@ -262,8 +262,8 @@ describe('DashboardAgentRow', () => {
     const tokens = classTokens(markup)
 
     expect(markup).toContain('aria-label="Blocked"')
-    expect(tokens).toContain('bg-red-500')
-    expect(tokens).not.toContain('bg-amber-500')
+    expect(tokens).toContain('fill-red-500')
+    expect(tokens).not.toContain('bg-status-attention')
   })
 
   it('keeps each row hover boundary inside an anonymous ancestor group', () => {
@@ -319,7 +319,7 @@ describe('DashboardAgentRow', () => {
     // on the response line so it does not compete with the user's prompt.
     expect(markup).toContain('data-slot="tooltip-trigger"')
     expect(markup).toContain('aria-label="Interrupted by user"')
-    expect(markup).toContain('bg-red-500')
+    expect(markup).toContain('fill-red-500')
     expect(markup).not.toContain('data-slot="badge"')
     expect(interruptedIndex).toBeGreaterThan(promptIndex)
     expect(markup).not.toContain('lucide-circle-check')

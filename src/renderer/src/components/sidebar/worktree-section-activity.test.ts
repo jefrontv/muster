@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
-import type { ProjectGroup, Repo, TerminalTab, Worktree } from '../../../../shared/types'
+import type {
+  FolderWorkspace,
+  ProjectGroup,
+  Repo,
+  TerminalTab,
+  Worktree
+} from '../../../../shared/types'
+import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import {
   getProjectGroupHeaderKey,
   PINNED_GROUP_KEY,
@@ -9,6 +16,7 @@ import {
 } from './worktree-list-groups'
 import {
   buildWorktreeSectionActivitySummaries,
+  groupWorktreeIdsBySection,
   type WorktreeSectionActivityState
 } from './worktree-section-activity'
 
@@ -148,13 +156,16 @@ describe('buildWorktreeSectionActivitySummaries', () => {
     })
 
     expect(summaries.get(getProjectGroupHeaderKey(parent.id))).toEqual({
-      runningCount: 1
+      runningCount: 1,
+      attentionCount: 0
     })
     expect(summaries.get(getProjectGroupHeaderKey(child.id))).toEqual({
-      runningCount: 1
+      runningCount: 1,
+      attentionCount: 0
     })
     expect(summaries.get(`repo:${repo.id}`)).toEqual({
-      runningCount: 1
+      runningCount: 1,
+      attentionCount: 0
     })
   })
 
@@ -188,13 +199,80 @@ describe('buildWorktreeSectionActivitySummaries', () => {
     })
 
     expect(summaries.get(PINNED_GROUP_KEY)).toEqual({
-      runningCount: 1
+      runningCount: 1,
+      attentionCount: 0
     })
     expect(summaries.get(`repo:${repo.id}`)).toEqual({
-      runningCount: 1
+      runningCount: 1,
+      attentionCount: 0
     })
     expect(summaries.get(getProjectGroupHeaderKey('group-1'))).toEqual({
-      runningCount: 1
+      runningCount: 1,
+      attentionCount: 0
     })
+  })
+
+  it('counts waiting worktrees as attention, not running', () => {
+    const repo = makeRepo()
+    const worktree = makeWorktree({ repoId: repo.id })
+    const now = Date.now()
+    const entry: AgentStatusEntry = {
+      state: 'waiting',
+      prompt: '',
+      updatedAt: now,
+      stateStartedAt: now,
+      paneKey: makePaneKey('tab-1', LEAF_ID),
+      stateHistory: []
+    }
+    const state = makeState({
+      tabsByWorktree: {
+        [worktree.id]: [makeTerminalTab({ id: 'tab-1', worktreeId: worktree.id })]
+      },
+      agentStatusEpoch: 1,
+      agentStatusByPaneKey: { [entry.paneKey]: entry }
+    })
+
+    const summaries = buildSummaries({ worktrees: [worktree], repos: [repo], state })
+
+    expect(summaries.get(`repo:${repo.id}`)).toEqual({ runningCount: 0, attentionCount: 1 })
+  })
+})
+
+describe('groupWorktreeIdsBySection', () => {
+  it('limits ids to the requested sections and includes folder workspaces', () => {
+    const parent = makeProjectGroup({ id: 'parent' })
+    const child = makeProjectGroup({ id: 'child', parentGroupId: parent.id })
+    const repo = makeRepo({ projectGroupId: child.id })
+    const worktree = makeWorktree({ repoId: repo.id })
+
+    const ids = groupWorktreeIdsBySection({
+      groupBy: 'repo',
+      worktrees: [worktree],
+      repoMap: new Map([[repo.id, repo]]),
+      prCache: null,
+      workspaceStatuses: [],
+      projectGroups: [parent, child],
+      folderWorkspaces: [
+        {
+          id: 'fw-1',
+          projectGroupId: child.id,
+          name: 'Docs',
+          folderPath: '/tmp/docs',
+          linkedTask: null,
+          comment: '',
+          isArchived: false,
+          isUnread: false,
+          isPinned: false,
+          sortOrder: 0
+        } as FolderWorkspace
+      ],
+      sectionKeys: new Set([getProjectGroupHeaderKey(parent.id)])
+    })
+
+    expect([...ids.keys()]).toEqual([getProjectGroupHeaderKey(parent.id)])
+    expect(ids.get(getProjectGroupHeaderKey(parent.id))).toEqual([
+      worktree.id,
+      folderWorkspaceKey('fw-1')
+    ])
   })
 })

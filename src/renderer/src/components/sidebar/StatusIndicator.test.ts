@@ -9,7 +9,7 @@ function renderMarkup(status: Status): string {
 
 function renderDotClassNames(status: Status): string[] {
   const markup = renderMarkup(status)
-  const dotClassName = markup.match(/<span class="([^"]*rounded-full[^"]*)"/)?.[1]
+  const dotClassName = markup.match(/<svg[^>]*class="([^"]*fill-[^"]*)"/)?.[1]
 
   expect(dotClassName).toBeDefined()
 
@@ -20,14 +20,13 @@ describe('StatusIndicator', () => {
   it('renders working as a clock-driven yellow spinner ring', () => {
     const markup = renderMarkup('working')
 
-    expect(markup).toContain('border-yellow-500')
-    expect(markup).toContain('border-t-transparent')
+    expect(markup).toContain('agent-working-spinner')
     // Why: rotation comes from the shared agent-spinner clock, not a
     // per-element CSS animation that would keep the compositor awake.
     expect(markup).toContain('data-agent-spinner')
     // Why: under reduced motion the top border is filled so the static ring
     // reads as a complete marker, not a broken partial spinner (#9515).
-    expect(markup).toContain('motion-reduce:border-t-yellow-500')
+    expect(markup).toContain('motion-reduce:opacity-100')
     expect(markup).not.toContain('animate-spin')
     expect(markup).not.toContain('animation:spin')
   })
@@ -36,20 +35,20 @@ describe('StatusIndicator', () => {
     const markup = renderMarkup('permission')
 
     expect(markup).toContain('lucide-message-circle-question-mark')
-    expect(markup).toContain('text-amber-500')
-    expect(markup).not.toContain('bg-amber-500')
+    expect(markup).toContain('text-status-attention')
+    expect(markup).not.toContain('bg-status-attention')
     expect(markup).not.toContain('data-agent-spinner')
   })
 
   it('renders active as full emerald dot', () => {
     const classNames = renderDotClassNames('active')
 
-    expect(classNames).toContain('bg-emerald-500')
+    expect(classNames).toContain('fill-status-success')
   })
 
   it('renders done as an emerald dot', () => {
     const classNames = renderDotClassNames('done')
 
-    expect(classNames).toContain('bg-emerald-500')
+    expect(classNames).toContain('fill-status-success')
   })
 })

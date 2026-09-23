@@ -291,7 +291,7 @@ async function expectActiveWorkspaceBelongsToRepo(
 
 async function expectActiveWorkspaceVisible(page: Page, workspaceName: string): Promise<void> {
   const activeWorkspace = page
-    .locator('[role="option"][aria-current="page"]')
+    .locator('[role="treeitem"][aria-current="page"]')
     .filter({ hasText: new RegExp(escapeRegExp(workspaceName)) })
     .first()
   await expect(activeWorkspace).toBeVisible({ timeout: 20_000 })

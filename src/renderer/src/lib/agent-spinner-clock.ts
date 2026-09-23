@@ -11,12 +11,11 @@ import {
   registerStaleDocumentVisibilityRecovery
 } from '@/components/terminal-pane/stale-document-visibility'
 
-const SPIN_STEP_DEGREES = 30
+const SPIN_STEP_DEGREES = 15
 const SPIN_STEPS = 360 / SPIN_STEP_DEGREES
-// Why: 12 steps/s at 30° matches the retired CSS animation exactly — slower
-// cadences read as sluggish next to it. The win over CSS is structural (idle
-// between ticks, one timer for N spinners), not the tick rate.
-export const AGENT_SPINNER_TICK_MS = 1000 / 12
+// Why: one turn a second, as before, in 15° steps. 30° steps read as a jerky tick on the arc
+// spinner. The win over CSS is structural (idle between ticks, one timer for N spinners).
+export const AGENT_SPINNER_TICK_MS = 1000 / 24
 
 const elements = new Set<HTMLElement>()
 let timer: ReturnType<typeof setInterval> | null = null

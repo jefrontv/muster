@@ -74,6 +74,13 @@
   --color-worktree-sidebar-accent-foreground: var(--worktree-sidebar-accent-foreground);
   --color-worktree-sidebar-border: var(--worktree-sidebar-border);
   --color-worktree-sidebar-ring: var(--worktree-sidebar-ring);
+  /* Inlined, not a :root var: the sidebar tint sets its colours on the sidebar element, and a
+     :root mix would resolve against the untinted ones. 65% holds AA on idle and active rows. */
+  --color-worktree-sidebar-muted-foreground: color-mix(
+    in srgb,
+    var(--worktree-sidebar-foreground) 65%,
+    var(--worktree-sidebar)
+  );
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
@@ -102,6 +109,7 @@
   --color-status-success: var(--status-success);
   --color-status-success-background: var(--status-success-background);
   --color-status-success-border: var(--status-success-border);
+  --color-status-attention: var(--status-attention);
   --color-tab-group-split-divider: var(--tab-group-split-divider);
   --color-tab-group-split-divider-strong: var(--tab-group-split-divider-strong);
   --color-git-graph-ref: var(--git-graph-ref);
@@ -157,6 +165,8 @@
   --terminal-pane-locate: var(--color-blue-600);
   --ai-action-accent: var(--color-violet-500);
   --status-success: #15803d;
+  /* Waiting, permission, unread. amber-500 was 1.97:1 on the light sidebar. */
+  --status-attention: #b45309;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
   --status-success-border: color-mix(in srgb, var(--status-success) 25%, transparent);
   --chart-1: var(--color-blue-300);
@@ -244,6 +254,7 @@
   --terminal-pane-locate: var(--color-blue-400);
   --ai-action-accent: var(--color-violet-400);
   --status-success: #86efac;
+  --status-attention: #fbbf24;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
   --status-success-border: color-mix(in srgb, var(--status-success) 25%, transparent);
   --chart-1: var(--color-blue-300);
@@ -1145,8 +1156,56 @@
   background: color-mix(in srgb, var(--sidebar-accent) 34%, transparent);
 }
 
+/* Why: the new card style marks the active row with its fill only, so activation never shifts
+   layout. WorktreeList flips data-worktree-card-active ahead of React, so this rule
+   is the single source of the active look. */
+[data-worktree-card-surface][data-worktree-card-style='new'][data-worktree-card-active] {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Keyboard focus on the listbox's active descendant. --worktree-sidebar-ring fails in light mode. */
+[data-worktree-sidebar]:focus-visible
+  [data-worktree-card-surface][data-worktree-card-style='new'][data-worktree-card-active='primary'] {
+  outline: 1px solid color-mix(in srgb, var(--worktree-sidebar-foreground) 50%, transparent);
+  outline-offset: -1px;
+}
+
+/* The row never takes DOM focus (aria-activedescendant), so keyboard focus swaps time for the
+   delete action here instead of via group-focus-within. */
+[data-worktree-sidebar]:focus-visible
+  [data-worktree-card-style='new'][data-worktree-card-active='primary']
+  > [data-worktree-card-hover-trigger]
+  [data-worktree-card-time-slot][data-has-action]
+  [data-worktree-card-time] {
+  opacity: 0;
+}
+
+[data-worktree-sidebar]:focus-visible
+  [data-worktree-card-style='new'][data-worktree-card-active='primary']
+  > [data-worktree-card-hover-trigger]
+  [data-worktree-card-time-slot][data-has-action]
+  .worktree-card-delete-quick-action {
+  opacity: 1;
+}
+
+/* Why: each agent row is its own click target inside the card, so it needs a hover that reads on
+   top of the card's own hover. 1.25% was invisible; worktree-sidebar vars follow the sidebar tint. */
+.worktree-agent-row-hover {
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .worktree-agent-row-hover {
+    transition: none;
+  }
+}
+
 .worktree-agent-row-hover:hover {
-  background: color-mix(in srgb, var(--sidebar-foreground) 1.25%, transparent);
+  background: color-mix(in srgb, var(--worktree-sidebar-foreground) 7%, transparent);
+  color: var(--worktree-sidebar-foreground);
 }
 
 .worktree-agent-row-hover[data-focused-agent-pane='true'] {
@@ -1157,7 +1216,7 @@
 }
 
 .dark .worktree-agent-row-hover:hover {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--worktree-sidebar-foreground) 9%, transparent);
 }
 
 .dark .worktree-agent-row-hover[data-focused-agent-pane='true'] {
@@ -1378,6 +1437,77 @@
   border-left-color: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
+/* Why: new-style card rows centre the parent's glyph at +10; the tree hangs from there and children
+   start their glyph where the parent's logo starts (+20). Lines are drawn per row, not as a border. */
+.worktree-agent-lineage-children--card {
+  --agent-tree-line: color-mix(in srgb, var(--worktree-sidebar-foreground) 22%, transparent);
+  margin-left: 10px;
+  padding-left: 6px;
+}
+
+[data-compact-agent-list='true']
+  .worktree-agent-lineage-children.worktree-agent-lineage-children--card {
+  border-left: none;
+}
+
+[data-agent-row-layout].worktree-agent-lineage-parent-row {
+  position: relative;
+}
+
+/* Stub from under the parent glyph down to where the children start. */
+[data-agent-row-layout].worktree-agent-lineage-parent-row[aria-expanded='true']::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: calc(50% + 7px);
+  bottom: -2px;
+  border-left: 1px solid color-mix(in srgb, var(--worktree-sidebar-foreground) 22%, transparent);
+  pointer-events: none;
+}
+
+[data-compact-agent-list='true']
+  .worktree-agent-lineage-children--card
+  > .compact-agent-row.worktree-agent-lineage-child-row::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  /* Each segment covers the 2px gap above it only, so translucent segments never overlap. */
+  top: -2px;
+  bottom: 0;
+  width: 0;
+  border: 0;
+  border-left: 1px solid var(--agent-tree-line);
+  pointer-events: none;
+}
+
+[data-compact-agent-list='true']
+  .worktree-agent-lineage-children--card
+  > .compact-agent-row.worktree-agent-lineage-child-row::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 9px;
+  border-top: 1px solid var(--agent-tree-line);
+  pointer-events: none;
+}
+
+/* The last child ends the spine in a rounded elbow instead of a tee. */
+[data-compact-agent-list='true']
+  .worktree-agent-lineage-children--card
+  > .compact-agent-row.worktree-agent-lineage-child-row:last-child::before {
+  bottom: calc(50% - 1px);
+  width: 9px;
+  border-bottom: 1px solid var(--agent-tree-line);
+  border-bottom-left-radius: 4px;
+}
+
+[data-compact-agent-list='true']
+  .worktree-agent-lineage-children--card
+  > .compact-agent-row.worktree-agent-lineage-child-row:last-child::after {
+  content: none;
+}
+
 .worktree-agent-send-target-button {
   /* Why: the row remains an ordinary agent row during send-target mode; the
      action itself carries the AI target outline so the clickable affordance
@@ -1466,7 +1596,7 @@
   .compact-agent-row.worktree-agent-lineage-parent-row.worktree-agent-row-hover:hover,
 [data-compact-agent-list='true']
   .compact-agent-row.worktree-agent-lineage-child-row.worktree-agent-row-hover:hover {
-  background: color-mix(in srgb, var(--sidebar-foreground) 1.25%, transparent);
+  background: color-mix(in srgb, var(--worktree-sidebar-foreground) 7%, transparent);
 }
 
 .dark
@@ -1475,7 +1605,7 @@
 .dark
   [data-compact-agent-list='true']
   .compact-agent-row.worktree-agent-lineage-child-row.worktree-agent-row-hover:hover {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--worktree-sidebar-foreground) 9%, transparent);
 }
 
 [data-compact-agent-list='true']
@@ -2350,6 +2480,99 @@
   .animate-attention-pulse {
     animation: none;
     opacity: 0.8;
+  }
+}
+
+/* Why: rows past the fold are invisible otherwise. A soft fade in the sidebar's own foreground
+   (so it follows the tint) appears only on the edge that has more to scroll. */
+/* Why: a project opening or closing slides the rows below and fades in the revealed ones. The flag
+   is only set around a user toggle (use-sidebar-collapse-transition), so scrolling, filtering and
+   first load never animate. @starting-style limits the fade to rows inserted by the toggle. */
+[data-collapse-transition='true'] [data-worktree-virtual-row] {
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 180ms ease-out;
+}
+
+@starting-style {
+  [data-collapse-transition='true'] [data-worktree-virtual-row] {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-collapse-transition='true'] [data-worktree-virtual-row] {
+    transition: none;
+  }
+}
+
+.worktree-list-edge-shadow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  height: 12px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--worktree-sidebar-foreground) 7%, transparent),
+    transparent
+  );
+  transition: opacity 150ms ease-out;
+}
+
+.worktree-list-edge-shadow--bottom {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--worktree-sidebar-foreground) 7%, transparent),
+    transparent
+  );
+}
+
+.worktree-list-edge-shadow.is-visible {
+  opacity: 1;
+}
+
+.dark .worktree-list-edge-shadow {
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.28), transparent);
+}
+
+.dark .worktree-list-edge-shadow--bottom {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.28), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .worktree-list-edge-shadow {
+    transition: none;
+  }
+}
+
+/* Why: an agent that finished or needs input pulses until the user opens its workspace, which
+   clears unread. The circle stays solid; an SVG halo behind it grows from the circle's own centre
+   (fill-box origin) and fades, the familiar "live" pulse. */
+.sidebar-attention-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sidebar-attention-halo 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes sidebar-attention-halo {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-attention-halo {
+    animation: none;
+    opacity: 0;
   }
 }
 

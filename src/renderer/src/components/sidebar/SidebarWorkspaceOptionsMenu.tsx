@@ -118,16 +118,16 @@ const SidebarWorkspaceOptionsMenu = React.memo(function SidebarWorkspaceOptionsM
               }
               data-workspace-board-preserve-open={preserveWorkspaceBoardOpen ? '' : undefined}
             >
-              <SlidersHorizontal className="size-3.5" strokeWidth={2.25} />
+              <SlidersHorizontal className="size-3.5" />
               {hasAnyFilter && (
                 // Why: this combined options button now owns filtering, so it
                 // needs the same at-a-glance signal that the old filter button had.
+                // A dot, not a count: a saved preference like "hide sleeping" read as an alert. The
+                // count stays in the aria-label and tooltip.
                 <span
                   aria-hidden
-                  className="absolute -top-0.5 -right-0.5 flex h-3 min-w-3 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-medium leading-none text-primary-foreground"
-                >
-                  {activeFilterCount > 9 ? '9+' : activeFilterCount}
-                </span>
+                  className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-worktree-sidebar-foreground"
+                />
               )}
             </Button>
           </DropdownMenuTrigger>

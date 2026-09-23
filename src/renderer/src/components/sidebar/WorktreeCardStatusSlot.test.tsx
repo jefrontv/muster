@@ -54,11 +54,11 @@ describe('WorktreeCardStatusSlot', () => {
     expect(markup).toContain('aria-label="Mark as read"')
     expect(markup).toContain('Mark as read')
     expect(markup).not.toContain('Active · Mark as read')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).not.toContain('fill-status-success')
     expect(markup).toContain('text-amber-500')
   })
 
-  it('overlays an unread badge on the status dot when new card style is on', () => {
+  it('pulses the status circle instead of adding a badge for an unread row', () => {
     const markup = renderToStaticMarkup(
       <WorktreeCardStatusSlot
         worktreeId="wt-1"
@@ -69,17 +69,15 @@ describe('WorktreeCardStatusSlot', () => {
         onPointerDown={vi.fn()}
         onToggleUnread={vi.fn()}
         newCardStyle
-        hasBranchIdentity={false}
       />
     )
 
     expect(markup).not.toContain('aria-label="Mark as read"')
     expect(markup).not.toContain('Mark as read')
     expect(markup).toContain('Active · Unread')
-    expect(markup).toContain('data-worktree-status-lane-unread=""')
-    expect(markup).toContain('data-worktree-unread-alert=""')
-    expect(markup).toContain('bg-amber-500')
-    expect(markup).toContain('bg-emerald-500')
+    expect(markup).toContain('sidebar-attention-pulse')
+    expect(markup).not.toContain('data-worktree-unread-alert=""')
+    expect(markup).toContain('fill-status-success')
     expect(markup).not.toContain('lucide-bell')
     expect(markup).not.toContain('text-amber-500')
   })
@@ -96,17 +94,16 @@ describe('WorktreeCardStatusSlot', () => {
         onPointerDown={vi.fn()}
         onToggleUnread={vi.fn()}
         newCardStyle
-        hasBranchIdentity={false}
       />
     )
 
     expect(markup).toContain('Working · Unread')
-    expect(markup).toContain('border-yellow-500')
+    expect(markup).toContain('agent-working-spinner')
     expect(markup).not.toContain('data-worktree-status-lane-unread=""')
     expect(markup).not.toContain('data-worktree-unread-alert=""')
     expect(markup).not.toContain('aria-label="Mark as read"')
     expect(markup).not.toContain('lucide-bell')
-    expect(markup).not.toContain('text-amber-500')
+    expect(markup).not.toContain('text-status-attention')
   })
 
   it('suppresses the new-card unread badge while unread status is permission', () => {
@@ -121,13 +118,12 @@ describe('WorktreeCardStatusSlot', () => {
         onPointerDown={vi.fn()}
         onToggleUnread={vi.fn()}
         newCardStyle
-        hasBranchIdentity={false}
       />
     )
 
     expect(markup).toContain('Needs permission · Unread')
     expect(markup).toContain('lucide-message-circle-question-mark')
-    expect(markup).toContain('text-amber-500')
+    expect(markup).toContain('text-status-attention')
     expect(markup).not.toContain('data-worktree-status-lane-unread=""')
     expect(markup).not.toContain('data-worktree-unread-alert=""')
     expect(markup).not.toContain('aria-label="Mark as read"')
@@ -152,7 +148,7 @@ describe('WorktreeCardStatusSlot', () => {
     expect(markup).toContain('Mark as read')
     expect(markup).toContain('Working')
     expect(markup).toContain('text-amber-500')
-    expect(markup).not.toContain('border-yellow-500')
+    expect(markup).not.toContain('agent-working-spinner')
     expect(markup).not.toContain('data-worktree-unread-alert=""')
   })
 
@@ -170,7 +166,7 @@ describe('WorktreeCardStatusSlot', () => {
     )
 
     expect(markup).toContain('Active · Mark as unread')
-    expect(markup).toContain('bg-emerald-500')
+    expect(markup).toContain('fill-status-success')
   })
 
   it('keeps the quiet active dot ahead of PR status by default', () => {
@@ -188,7 +184,7 @@ describe('WorktreeCardStatusSlot', () => {
     )
 
     expect(markup).toContain('Active')
-    expect(markup).toContain('bg-emerald-500')
+    expect(markup).toContain('fill-status-success')
     expect(markup).not.toContain('PR checks: Failed')
   })
 
@@ -211,7 +207,7 @@ describe('WorktreeCardStatusSlot', () => {
     expect(markup).toContain('inline-flex size-5 items-center justify-center')
     expect(markup).toContain('size-[13px] translate-x-px')
     expect(markup).toContain('text-rose-500/85')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).not.toContain('fill-status-success')
   })
 
   it('uses the unified compact review glyph for GitLab MR status', () => {
@@ -253,7 +249,7 @@ describe('WorktreeCardStatusSlot', () => {
     )
 
     expect(markup).toContain('PR checks: Failed')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).not.toContain('fill-status-success')
   })
 
   it('uses PR status instead of the inactive dot when new card style is on', () => {
@@ -274,10 +270,11 @@ describe('WorktreeCardStatusSlot', () => {
 
     expect(markup).toContain('PR checks: Failed')
     expect(markup).toContain('text-rose-500/85')
-    expect(markup).not.toContain('bg-neutral-500/40')
+    expect(markup).not.toContain('fill-neutral-500/40')
   })
 
-  it('uses a branch icon with branch-only tooltip copy by default', () => {
+  it('draws nothing for an idle row in new card style, and never a branch glyph', () => {
+    mocks.status = 'inactive'
     const markup = renderToStaticMarkup(
       <WorktreeCardStatusSlot
         worktreeId="wt-1"
@@ -288,36 +285,12 @@ describe('WorktreeCardStatusSlot', () => {
         onPointerDown={vi.fn()}
         onToggleUnread={vi.fn()}
         newCardStyle
-        hasBranchIdentity
       />
     )
 
-    expect(markup).toContain('Branch')
-    expect(markup).not.toContain('Branch or folder path')
-    expect(markup).toContain('lucide-git-branch')
-    expect(markup).toContain('size-[13px] translate-x-px text-muted-foreground/70')
-    expect(markup).toContain('text-muted-foreground/70')
-    expect(markup).not.toContain('bg-emerald-500')
-  })
-
-  it('uses context-aware branch or folder path tooltip copy', () => {
-    const markup = renderToStaticMarkup(
-      <WorktreeCardStatusSlot
-        worktreeId="wt-1"
-        showStatus
-        showUnreadAction={false}
-        isUnread={false}
-        unreadTooltip="Mark as unread"
-        onPointerDown={vi.fn()}
-        onToggleUnread={vi.fn()}
-        newCardStyle
-        hasBranchIdentity
-        branchIdentityLabel="Branch or folder path"
-      />
-    )
-
-    expect(markup).toContain('Branch or folder path')
-    expect(markup).toContain('lucide-git-branch')
+    expect(markup).not.toContain('lucide-git-branch')
+    expect(markup).not.toContain('fill-neutral-500/40')
+    expect(markup).toContain('sr-only')
   })
 
   it('keeps the quiet dot when the row has no branch identity', () => {
@@ -331,12 +304,11 @@ describe('WorktreeCardStatusSlot', () => {
         onPointerDown={vi.fn()}
         onToggleUnread={vi.fn()}
         newCardStyle
-        hasBranchIdentity={false}
       />
     )
 
     expect(markup).toContain('Active')
-    expect(markup).toContain('bg-emerald-500')
+    expect(markup).toContain('fill-status-success')
     expect(markup).not.toContain('lucide-git-branch')
   })
 
@@ -358,7 +330,7 @@ describe('WorktreeCardStatusSlot', () => {
 
     expect(markup).toContain('Working')
     expect(markup).toContain('inline-flex size-5 items-center justify-center')
-    expect(markup).toContain('border-yellow-500')
+    expect(markup).toContain('agent-working-spinner')
     expect(markup).not.toContain('PR checks: Failed')
   })
 
@@ -380,7 +352,7 @@ describe('WorktreeCardStatusSlot', () => {
 
     expect(markup).toContain('Needs permission')
     expect(markup).toContain('lucide-message-circle-question-mark')
-    expect(markup).toContain('text-amber-500')
+    expect(markup).toContain('text-status-attention')
     expect(markup).not.toContain('PR checks: Failed')
   })
 
@@ -402,7 +374,7 @@ describe('WorktreeCardStatusSlot', () => {
     expect(markup).toContain('Mark as read')
     expect(markup).not.toContain('Active · Mark as read')
     expect(markup).not.toContain('PR checks: Failed')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).not.toContain('fill-status-success')
     expect(markup).toContain('text-amber-500')
   })
 
@@ -429,13 +401,14 @@ describe('WorktreeCardStatusSlot', () => {
     expect(markup).not.toContain('group/unread')
     expect(markup).not.toContain('cursor-pointer')
     expect(markup).toContain('text-rose-500/85')
-    expect(markup).toContain('bg-amber-500')
+    expect(markup).toContain('bg-status-attention')
     expect(markup).not.toContain('lucide-bell')
     expect(markup).not.toContain('text-amber-500')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).not.toContain('fill-status-success')
   })
 
-  it('overlays an unread badge on the branch icon in new card style', () => {
+  it('keeps the badge for an unread idle row, which draws no circle to pulse', () => {
+    mocks.status = 'inactive'
     const markup = renderToStaticMarkup(
       <WorktreeCardStatusSlot
         worktreeId="wt-1"
@@ -446,20 +419,30 @@ describe('WorktreeCardStatusSlot', () => {
         onPointerDown={vi.fn()}
         onToggleUnread={vi.fn()}
         newCardStyle
-        hasBranchIdentity
       />
     )
 
-    expect(markup).toContain('Branch · Unread')
-    expect(markup).toContain('data-worktree-status-lane-unread=""')
     expect(markup).toContain('data-worktree-unread-alert=""')
-    expect(markup).not.toContain('Mark as read')
-    expect(markup).not.toContain('group/unread')
-    expect(markup).not.toContain('cursor-pointer')
-    expect(markup).toContain('lucide-git-branch')
-    expect(markup).toContain('bg-amber-500')
-    expect(markup).not.toContain('lucide-bell')
-    expect(markup).not.toContain('text-amber-500')
-    expect(markup).not.toContain('bg-emerald-500')
+    expect(markup).toContain('bg-status-attention')
+    expect(markup).not.toContain('sidebar-attention-pulse')
+  })
+
+  it('pulses the needs-input glyph while it is unread', () => {
+    mocks.status = 'permission'
+    const markup = renderToStaticMarkup(
+      <WorktreeCardStatusSlot
+        worktreeId="wt-1"
+        showStatus
+        showUnreadAction
+        isUnread
+        unreadTooltip="Mark as read"
+        onPointerDown={vi.fn()}
+        onToggleUnread={vi.fn()}
+        newCardStyle
+      />
+    )
+
+    expect(markup).toContain('sidebar-attention-pulse')
+    expect(markup).toContain('text-status-attention')
   })
 })

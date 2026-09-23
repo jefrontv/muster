@@ -2,13 +2,14 @@ import { estimateRenderRowSize, type RenderRow } from './worktree-list-virtual-r
 
 function getEstimatedRenderRowStarts(
   rows: readonly RenderRow[],
-  firstHeaderIndex: number
+  firstHeaderIndex: number,
+  newCardStyle: boolean
 ): number[] {
   const starts: number[] = []
   let offset = 0
   for (let index = 0; index < rows.length; index++) {
     starts[index] = offset
-    offset += estimateRenderRowSize(rows, index, firstHeaderIndex)
+    offset += estimateRenderRowSize(rows, index, firstHeaderIndex, newCardStyle)
   }
   starts[rows.length] = offset
   return starts
@@ -65,10 +66,15 @@ function findProjectGroupSectionEndIndex(
 export function getRepoHeaderSectionEndByRepoId(args: {
   rows: readonly RenderRow[]
   firstHeaderIndex: number
+  newCardStyle?: boolean
   sidebarRepoHeaderIdsByBucket: ReadonlyMap<string, readonly string[]>
   repoHeaderBucketByRepoId: ReadonlyMap<string, string>
 }): Map<string, number> {
-  const rowStarts = getEstimatedRenderRowStarts(args.rows, args.firstHeaderIndex)
+  const rowStarts = getEstimatedRenderRowStarts(
+    args.rows,
+    args.firstHeaderIndex,
+    args.newCardStyle === true
+  )
   const sectionEndByRepoId = new Map<string, number>()
   for (let index = 0; index < args.rows.length; index++) {
     const row = args.rows[index]
@@ -94,10 +100,15 @@ export function getRepoHeaderSectionEndByRepoId(args: {
 export function getProjectGroupHeaderSectionEndByGroupId(args: {
   rows: readonly RenderRow[]
   firstHeaderIndex: number
+  newCardStyle?: boolean
   sidebarProjectGroupHeaderIdsByBucket: ReadonlyMap<string, readonly string[]>
   projectGroupHeaderBucketByGroupId: ReadonlyMap<string, string>
 }): Map<string, number> {
-  const rowStarts = getEstimatedRenderRowStarts(args.rows, args.firstHeaderIndex)
+  const rowStarts = getEstimatedRenderRowStarts(
+    args.rows,
+    args.firstHeaderIndex,
+    args.newCardStyle === true
+  )
   const sectionEndByGroupId = new Map<string, number>()
   for (let index = 0; index < args.rows.length; index++) {
     const row = args.rows[index]

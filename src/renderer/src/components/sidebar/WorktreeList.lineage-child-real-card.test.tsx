@@ -11,12 +11,12 @@ import type {
   WorktreeLineage
 } from '../../../../shared/types'
 import {
-  FLUSH_CARD_MIN_CONTENT_INSET,
   LINEAGE_CHILDREN_INLINE_OFFSET,
-  LINEAGE_IMMEDIATE_PARENT_STEP,
   LINEAGE_NESTED_ROW_SURFACE_INSET,
+  NEW_CARD_STYLE_LINEAGE_CHILD_CONTENT_INDENT,
   WORKTREE_CARD_SURFACE_MARGIN
 } from './worktree-list-indentation'
+import { SIDEBAR_ROW_STEP, WORKTREE_CARD_SURFACE_BORDER } from './sidebar-row-grid'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -378,9 +378,10 @@ function expectBoundaryStep(args: {
     px(args.wrapper.style.marginLeft) +
     px(args.row.style.paddingLeft) +
     WORKTREE_CARD_SURFACE_MARGIN +
+    WORKTREE_CARD_SURFACE_BORDER +
     px(args.surface.style.paddingLeft)
 
-  expect(effectiveStep).toBe(LINEAGE_IMMEDIATE_PARENT_STEP)
+  expect(effectiveStep).toBe(SIDEBAR_ROW_STEP)
 }
 
 describe('WorktreeList real child WorktreeCard integration', () => {
@@ -444,8 +445,12 @@ describe('WorktreeList real child WorktreeCard integration', () => {
     expect(grandchildSurface).not.toBeNull()
     expect(px(childRow!.style.paddingLeft)).toBe(LINEAGE_NESTED_ROW_SURFACE_INSET)
     expect(px(grandchildRow!.style.paddingLeft)).toBe(LINEAGE_NESTED_ROW_SURFACE_INSET)
-    expect(px(childSurface!.style.paddingLeft)).toBe(FLUSH_CARD_MIN_CONTENT_INSET)
-    expect(px(grandchildSurface!.style.paddingLeft)).toBe(FLUSH_CARD_MIN_CONTENT_INSET)
+    const childPadding =
+      NEW_CARD_STYLE_LINEAGE_CHILD_CONTENT_INDENT -
+      WORKTREE_CARD_SURFACE_MARGIN -
+      WORKTREE_CARD_SURFACE_BORDER
+    expect(px(childSurface!.style.paddingLeft)).toBe(childPadding)
+    expect(px(grandchildSurface!.style.paddingLeft)).toBe(childPadding)
 
     expectBoundaryStep({
       wrapper: wrappers[0]!,

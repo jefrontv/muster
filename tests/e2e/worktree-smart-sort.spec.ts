@@ -15,7 +15,7 @@ type SmartSortScenario = {
 
 async function getVisibleWorktreeIdsByTop(page: Page): Promise<string[]> {
   return page
-    .locator('[data-worktree-sidebar] [role="option"][data-worktree-id]')
+    .locator('[data-worktree-sidebar] [role="treeitem"][data-worktree-id]')
     .evaluateAll((elements) =>
       elements
         .map((element) => ({

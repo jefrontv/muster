@@ -79,13 +79,13 @@ describe('worktree card title display', () => {
     ).toBe('Fix stale issue')
   })
 
-  it('treats blank stored titles as absent', () => {
+  it('falls back to the branch when the stored title is blank', () => {
     expect(
       getWorktreeCardTitleDisplay({
         storedDisplayName: '   ',
         branchName: 'feature/local-branch'
       })
-    ).toBe('')
+    ).toBe('feature/local-branch')
 
     expect(
       getWorktreeCardTitleDisplay({
@@ -112,6 +112,32 @@ describe('worktree card title display', () => {
         reviewTitle: 'Fix stale GH PR'
       })
     ).toBe('')
+  })
+
+  it('prefers the branch over a folder row name that only repeats the project', () => {
+    expect(
+      getWorktreeCardTitleDisplay({
+        storedDisplayName: 'watchswiss.com',
+        branchName: 'master',
+        defaultDisplayName: 'watchswiss.com'
+      })
+    ).toBe('master')
+
+    expect(
+      getWorktreeCardTitleDisplay({
+        storedDisplayName: 'watchswiss.com',
+        branchName: '',
+        defaultDisplayName: 'watchswiss.com'
+      })
+    ).toBe('watchswiss.com')
+
+    expect(
+      getWorktreeCardTitleDisplay({
+        storedDisplayName: 'Checkout redesign',
+        branchName: 'master',
+        defaultDisplayName: 'watchswiss.com'
+      })
+    ).toBe('Checkout redesign')
   })
 
   it('coerces legacy visible titles before downstream title operations', () => {

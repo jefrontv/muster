@@ -4877,6 +4877,12 @@
           "bind": "Bind ActiveCollab project…",
           "unbind": "Unbind from project",
           "disconnected": "Connect ActiveCollab in Settings to pick a project."
+        },
+        "collapsedSectionActivity": {
+          "hiddenOne": "1 hidden workspace",
+          "hiddenMany": "{{value0}} hidden workspaces",
+          "needsInput": "{{value0}} needs input",
+          "working": "{{value0}} working"
         }
       },
       "shared": {
@@ -10813,7 +10819,6 @@
             "truncated": "truncated"
           },
           "tasks": {
-            "cap": "You can send {{count}} tasks at a time.",
             "no_workspace": "Open a workspace to see its tasks.",
             "unbound": "Pick the ActiveCollab project this project’s work lives in. Every workspace under it shares the choice.",
             "send_one": "Send this task to an agent",

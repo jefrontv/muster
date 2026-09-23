@@ -32,7 +32,7 @@ describe('TerminalTabLeadingIcon', () => {
 
     expect(markup).toContain('data-agent-activity-status="done"')
     expect(markup).toContain('lucide-circle-check')
-    expect(markup).toContain('text-emerald-500')
+    expect(markup).toContain('text-status-success')
     expect(markup).toContain('data-agent-icon="codex"')
   })
 
@@ -41,7 +41,7 @@ describe('TerminalTabLeadingIcon', () => {
 
     expect(markup).toContain('data-agent-activity-status="permission"')
     expect(markup).toContain('lucide-message-circle-question-mark')
-    expect(markup).toContain('text-amber-500')
+    expect(markup).toContain('text-status-attention')
     expect(markup).not.toContain('bg-red-500')
   })
 

@@ -593,7 +593,9 @@ describe('WorktreeCard compact hover details', () => {
     settings = { compactWorktreeCards: false, experimentalNewWorktreeCardStyle: true }
     worktreeCardProperties = ['status', 'inline-agents']
     agentActivityDisplayMode = 'compact'
-    mockInlineAgentRows = [{} as DashboardAgentRowData]
+    mockInlineAgentRows = [
+      { startedAt: 0, entry: { state: 'working', stateStartedAt: 0 } } as DashboardAgentRowData
+    ]
     const worktree = makeWorktree()
     const { default: WorktreeCard } = await import('./WorktreeCard')
 
@@ -669,7 +671,7 @@ describe('WorktreeCard compact hover details', () => {
     expect(markup).not.toContain('data-worktree-card-meta-row=""')
     expect(markup).toContain('data-worktree-card-parent-content=""')
     expect(markup).toContain('items-center')
-    expect(markup).toContain('w-5 items-center')
+    expect(markup).toContain('w-4 items-center')
     expect(markup).toContain('text-[13px] leading-5')
   })
 

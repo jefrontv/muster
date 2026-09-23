@@ -1,6 +1,7 @@
 import type { AppState } from '@/store/types'
 import { resolveWorktreeStatus } from '@/lib/worktree-status'
 import type {
+  FolderWorkspace,
   ProjectGroup,
   Repo,
   TerminalPaneLayoutNode,
@@ -10,13 +11,17 @@ import type {
 } from '../../../../shared/types'
 import {
   getGroupKeysForWorktree,
+  getProjectGroupHeaderKey,
+  type ProjectGroupingModel,
   type WorktreeGroupBy,
   PINNED_GROUP_KEY
 } from './worktree-list-groups'
 import {
   selectLivePtyIdsForWorktree,
-  selectRuntimePaneTitlesForWorktree
+  selectRuntimePaneTitlesForWorktree,
+  selectTerminalLayoutRootsForWorktrees
 } from './worktree-card-status-inputs'
+import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import { selectWorktreeAgentActivitySummary } from './worktree-agent-activity-summary'
 import type { BrowserActivityTab } from './visible-worktree-activity-inputs'
 
@@ -36,22 +41,16 @@ export type WorktreeSectionActivityState = Pick<
 
 export type WorktreeSectionActivitySummary = {
   runningCount: number
+  /** Waiting, blocked or permission-seeking worktrees. */
+  attentionCount: number
 }
 
 export const EMPTY_WORKTREE_SECTION_ACTIVITY: WorktreeSectionActivitySummary = {
-  runningCount: 0
+  runningCount: 0,
+  attentionCount: 0
 }
 
-export function buildWorktreeSectionActivitySummaries({
-  groupBy,
-  worktrees,
-  repoMap,
-  prCache,
-  workspaceStatuses,
-  settings,
-  projectGroups,
-  state
-}: {
+type SectionGroupingArgs = {
   groupBy: WorktreeGroupBy
   worktrees: readonly Worktree[]
   repoMap: Map<string, Repo>
@@ -59,37 +58,137 @@ export function buildWorktreeSectionActivitySummaries({
   workspaceStatuses: readonly WorkspaceStatusDefinition[]
   settings?: AppState['settings']
   projectGroups: readonly ProjectGroup[]
-  state: WorktreeSectionActivityState
-}): Map<string, WorktreeSectionActivitySummary> {
-  const summaries = new Map<string, WorktreeSectionActivitySummary>()
+  projectGrouping?: ProjectGroupingModel
+  folderWorkspaces?: readonly FolderWorkspace[]
+  /** Only collect ids for these section keys. */
+  sectionKeys?: ReadonlySet<string>
+  /** Single-location pinning renders pinned worktrees only under the pinned header. */
+  pinnedOnlyInPinnedSection?: boolean
+}
 
-  for (const worktree of worktrees) {
-    const groupKeys = [
-      ...(worktree.isPinned ? [PINNED_GROUP_KEY] : []),
-      ...getGroupKeysForWorktree(
-        groupBy,
-        worktree,
-        repoMap,
-        prCache,
-        workspaceStatuses,
-        settings,
-        projectGroups
-      )
-    ]
-    if (groupKeys.length === 0) {
-      continue
+export function groupWorktreeIdsBySection({
+  groupBy,
+  worktrees,
+  repoMap,
+  prCache,
+  workspaceStatuses,
+  settings,
+  projectGroups,
+  projectGrouping,
+  folderWorkspaces = [],
+  sectionKeys,
+  pinnedOnlyInPinnedSection = false
+}: SectionGroupingArgs): Map<string, string[]> {
+  const idsBySection = new Map<string, string[]>()
+  const add = (groupKey: string, worktreeId: string): void => {
+    if (sectionKeys && !sectionKeys.has(groupKey)) {
+      return
     }
-
-    const status = getSectionWorktreeStatus(state, worktree.id)
-    for (const groupKey of groupKeys) {
-      const summary = summaries.get(groupKey) ?? { ...EMPTY_WORKTREE_SECTION_ACTIVITY }
-      if (status === 'working') {
-        summary.runningCount++
-      }
-      summaries.set(groupKey, summary)
+    const ids = idsBySection.get(groupKey)
+    if (ids) {
+      ids.push(worktreeId)
+    } else {
+      idsBySection.set(groupKey, [worktreeId])
     }
   }
 
+  for (const worktree of worktrees) {
+    if (worktree.isPinned) {
+      add(PINNED_GROUP_KEY, worktree.id)
+      if (pinnedOnlyInPinnedSection) {
+        continue
+      }
+    }
+    for (const groupKey of getGroupKeysForWorktree(
+      groupBy,
+      worktree,
+      repoMap,
+      prCache,
+      workspaceStatuses,
+      settings,
+      projectGroups,
+      projectGrouping
+    )) {
+      add(groupKey, worktree.id)
+    }
+  }
+
+  if (groupBy === 'repo' && folderWorkspaces.length > 0) {
+    const groupsById = new Map(projectGroups.map((group) => [group.id, group]))
+    for (const folderWorkspace of folderWorkspaces) {
+      const visited = new Set<string>()
+      let groupId: string | null = folderWorkspace.projectGroupId
+      // Why: folder workspaces count toward every ancestor group, like repo worktrees.
+      while (groupId && !visited.has(groupId) && groupsById.has(groupId)) {
+        visited.add(groupId)
+        add(getProjectGroupHeaderKey(groupId), folderWorkspaceKey(folderWorkspace.id))
+        groupId = groupsById.get(groupId)?.parentGroupId ?? null
+      }
+    }
+  }
+  return idsBySection
+}
+
+export function summarizeWorktreeSectionActivity(
+  state: WorktreeSectionActivityState,
+  worktreeIds: readonly string[]
+): WorktreeSectionActivitySummary {
+  const summary = { ...EMPTY_WORKTREE_SECTION_ACTIVITY }
+  for (const worktreeId of worktreeIds) {
+    const status = getSectionWorktreeStatus(state, worktreeId)
+    if (status === 'working') {
+      summary.runningCount++
+    } else if (status === 'permission') {
+      summary.attentionCount++
+    }
+  }
+  return summary
+}
+
+type SectionActivityStoreState = Pick<
+  AppState,
+  | 'tabsByWorktree'
+  | 'browserTabsByWorktree'
+  | 'terminalLayoutsByTabId'
+  | 'ptyIdsByTabId'
+  | 'runtimePaneTitlesByTabId'
+  | 'agentStatusEpoch'
+  | 'agentStatusByPaneKey'
+  | 'migrationUnsupportedByPtyId'
+  | 'retainedAgentsByPaneKey'
+>
+
+/** Store selector for one collapsed section; compare the result shallowly. */
+export function selectWorktreeSectionActivity(
+  state: SectionActivityStoreState,
+  worktreeIds: readonly string[]
+): WorktreeSectionActivitySummary {
+  return summarizeWorktreeSectionActivity(
+    {
+      tabsByWorktree: state.tabsByWorktree,
+      browserTabsByWorktree: state.browserTabsByWorktree,
+      terminalLayoutRootsByTabId: selectTerminalLayoutRootsForWorktrees(state, worktreeIds),
+      ptyIdsByTabId: state.ptyIdsByTabId,
+      runtimePaneTitlesByTabId: state.runtimePaneTitlesByTabId,
+      agentStatusEpoch: state.agentStatusEpoch,
+      agentStatusByPaneKey: state.agentStatusByPaneKey,
+      migrationUnsupportedByPtyId: state.migrationUnsupportedByPtyId,
+      retainedAgentsByPaneKey: state.retainedAgentsByPaneKey
+    },
+    worktreeIds
+  )
+}
+
+export function buildWorktreeSectionActivitySummaries({
+  state,
+  ...groupingArgs
+}: SectionGroupingArgs & {
+  state: WorktreeSectionActivityState
+}): Map<string, WorktreeSectionActivitySummary> {
+  const summaries = new Map<string, WorktreeSectionActivitySummary>()
+  for (const [groupKey, worktreeIds] of groupWorktreeIdsBySection(groupingArgs)) {
+    summaries.set(groupKey, summarizeWorktreeSectionActivity(state, worktreeIds))
+  }
   return summaries
 }
 

@@ -9,7 +9,7 @@ function renderMarkup(state: AgentDotState): string {
 
 function renderDotClassNames(state: AgentDotState): string[] {
   const markup = renderMarkup(state)
-  const dotClassName = markup.match(/<span class="([^"]*rounded-full[^"]*)"/)?.[1]
+  const dotClassName = markup.match(/<circle[^>]*class="([^"]*)"/)?.[1]
 
   expect(dotClassName).toBeDefined()
 
@@ -20,15 +20,14 @@ describe('AgentStateDot', () => {
   it('renders working as a yellow spinner', () => {
     const markup = renderMarkup('working')
 
-    expect(markup).toContain('border-yellow-500')
-    expect(markup).toContain('border-t-transparent')
+    expect(markup).toContain('agent-working-spinner')
     // Why: rotation comes from the shared agent-spinner clock (which also
     // honors prefers-reduced-motion), not a per-element CSS animation that
     // would keep the compositor awake.
     expect(markup).toContain('data-agent-spinner')
     // Why: under reduced motion the top border is filled so the static ring
     // reads as a complete marker, not a broken partial spinner (#9515).
-    expect(markup).toContain('motion-reduce:border-t-yellow-500')
+    expect(markup).toContain('motion-reduce:opacity-100')
     expect(markup).not.toContain('animate-spin')
     expect(markup).not.toContain('animation:spin')
   })
@@ -43,7 +42,7 @@ describe('AgentStateDot', () => {
     // class hook + emerald text color, identifying the check icon without
     // coupling to the exact SVG path markup lucide emits.
     expect(markup).toContain('lucide-circle-check')
-    expect(markup).toContain('text-emerald-500')
+    expect(markup).toContain('text-status-success')
   })
 
   it.each(['permission', 'waiting'] satisfies AgentDotState[])(
@@ -52,8 +51,8 @@ describe('AgentStateDot', () => {
       const markup = renderMarkup(state)
 
       expect(markup).toContain('lucide-message-circle-question-mark')
-      expect(markup).toContain('text-amber-500')
-      expect(markup).not.toContain('bg-amber-500')
+      expect(markup).toContain('text-status-attention')
+      expect(markup).not.toContain('bg-status-attention')
       expect(markup).not.toContain('data-agent-spinner')
     }
   )
@@ -63,8 +62,8 @@ describe('AgentStateDot', () => {
     (state) => {
       const classNames = renderDotClassNames(state)
 
-      expect(classNames).toContain('bg-red-500')
-      expect(classNames).not.toContain('bg-amber-500')
+      expect(classNames).toContain('fill-red-500')
+      expect(classNames).not.toContain('bg-status-attention')
     }
   )
 })

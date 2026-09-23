@@ -12,7 +12,7 @@ import { useAgentRowConversationName } from '@/components/dashboard/use-agent-ro
 import { lastEnteredDoneAt } from '@/components/dashboard/agent-finished-timestamp'
 import CacheTimer, { usePromptCacheCountdownForPane } from './CacheTimer'
 
-function formatShortTimeAgo(ts: number, now: number): string {
+export function formatShortTimeAgo(ts: number, now: number): string {
   const delta = now - ts
   if (delta < 60_000) {
     return 'now'
@@ -61,13 +61,42 @@ function getCompactAgentSecondary(agent: DashboardAgentRowData): string {
   return formatAgentTypeLabel(agent.agentType)
 }
 
-function getCompactAgentTime(agent: DashboardAgentRowData, now: number): string | null {
+export function getCompactAgentTimestamp(agent: DashboardAgentRowData): number | null {
   const doneAt = lastEnteredDoneAt(agent)
   if (doneAt !== null) {
-    return formatShortTimeAgo(doneAt, now)
+    return doneAt
   }
   const startedAt = agent.startedAt > 0 ? agent.startedAt : agent.entry.stateStartedAt
-  return startedAt > 0 ? formatShortTimeAgo(startedAt, now) : null
+  return startedAt > 0 ? startedAt : null
+}
+
+function getCompactAgentTime(agent: DashboardAgentRowData, now: number): string | null {
+  const timestamp = getCompactAgentTimestamp(agent)
+  return timestamp === null ? null : formatShortTimeAgo(timestamp, now)
+}
+
+// Why: prompts and conversation names arrive as raw markdown; a 30-character line shows the syntax, not the words.
+export function stripInlineMarkdown(text: string): string {
+  return text
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}(?:>\s?|[-*+]\s+|\d+\.\s+)/gm, '')
+    .replace(/(^|\s)#{1,6}\s+/g, '$1')
+    .replace(/\*+|`+|~~/g, '')
+    .replace(/[[\]]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Why: the new card has room for one text: what the agent is doing now, else what it is about.
+export function getCompactAgentSingleText(
+  agent: DashboardAgentRowData,
+  conversationName: string | null
+): string {
+  const toolName = agent.state === 'working' ? (agent.entry.toolName?.trim() ?? '') : ''
+  const text = stripInlineMarkdown(
+    toolName || conversationName?.trim() || getAgentRowPrimaryText(agent.entry)
+  )
+  return text || agentStateLabel(getAgentDotState(agent))
 }
 
 function stopActivationKeyPropagation(e: React.KeyboardEvent): void {
@@ -94,6 +123,9 @@ type CompactAgentRowProps = {
   isFocusedPane?: boolean
   hideIdentityIcon?: boolean
   cacheTimerActive?: boolean
+  // Why: the new card style shows one stripped text. 'card-line' is the card's line 2 (its time sits on
+  // line 1); 'card-list' is a row in the expanded multi-agent list and keeps its own time.
+  layout?: 'legacy' | 'card-line' | 'card-list'
 }
 
 export const CompactAgentRow = React.memo(function CompactAgentRow({
@@ -109,8 +141,10 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
   reserveDisclosureGutter = false,
   isFocusedPane = false,
   hideIdentityIcon = false,
-  cacheTimerActive = true
+  cacheTimerActive = true,
+  layout = 'legacy'
 }: CompactAgentRowProps) {
+  const singleText = layout !== 'legacy'
   const hasChildDisclosure =
     typeof childAgentCount === 'number' &&
     childAgentCount > 0 &&
@@ -121,11 +155,17 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
   const hideIcon = hideIdentityIcon || agent.rowSource === 'subagent'
   const dotState = getAgentDotState(agent)
   const conversationName = useAgentRowConversationName(agent)
-  const primary = getCompactAgentPrimary(agent, conversationName)
+  const primary = singleText
+    ? getCompactAgentSingleText(agent, conversationName)
+    : getCompactAgentPrimary(agent, conversationName)
   const isLineageChild = agent.lineage?.depth === 1
   const secondary = getCompactAgentSecondary(agent)
-  const model = agent.entry.model?.trim() ?? ''
-  const shortTime = getCompactAgentTime(agent, now)
+  const model = singleText ? '' : (agent.entry.model?.trim() ?? '')
+  // Why: a new-style parent ends in its chevron instead; children carry their own times.
+  const shortTime =
+    layout === 'card-line' || (singleText && hasChildDisclosure)
+      ? null
+      : getCompactAgentTime(agent, now)
   const cacheTimer = usePromptCacheCountdownForPane(agent.paneKey, cacheTimerActive)
 
   const handleActivate = useCallback(
@@ -165,51 +205,94 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
     },
     [onToggleChildAgents]
   )
+  // Why: from another pane the click must reach this agent's terminal; only once it is focused does
+  // the row become the sub-agent toggle.
+  const handleRowToggleChildren = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isFocusedPane) {
+        handleActivate(e)
+        if (!childAgentsExpanded) {
+          onToggleChildAgents?.()
+        }
+        return
+      }
+      e.stopPropagation()
+      onToggleChildAgents?.()
+    },
+    [childAgentsExpanded, handleActivate, isFocusedPane, onToggleChildAgents]
+  )
+  const rowTogglesChildren = singleText && hasChildDisclosure
+
+  const disclosureButton = hasChildDisclosure ? (
+    <button
+      type="button"
+      className={cn(
+        'compact-agent-child-disclosure-button flex size-4 shrink-0 items-center justify-center rounded-sm text-worktree-sidebar-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring',
+        // Why: new-style rows toggle on a click anywhere, so the chevron is a marker with no hover of
+        // its own; its glyph, not the 16px hit box, ends on the time column.
+        singleText ? '-mr-0.5' : 'hover:bg-worktree-sidebar-accent hover:text-foreground'
+      )}
+      aria-label={translate(
+        'auto.components.sidebar.worktree.card.compact.agents.a128d7006b',
+        '{{value0}} {{value1}} child {{value2}}',
+        {
+          value0: childAgentsExpanded ? 'Hide' : 'Show',
+          value1: childAgentCount,
+          value2: childAgentCount === 1 ? 'agent' : 'agents'
+        }
+      )}
+      aria-expanded={childAgentsExpanded}
+      onClick={handleToggleChildren}
+      onKeyDown={stopActivationKeyPropagation}
+    >
+      <ChevronRight
+        className={cn(
+          'size-3 transition-transform duration-150',
+          childAgentsExpanded && 'rotate-90'
+        )}
+        aria-hidden
+      />
+    </button>
+  ) : null
 
   const rowBody = (
     <>
-      {hasChildDisclosure ? (
-        <button
-          type="button"
-          className="compact-agent-child-disclosure-button flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-worktree-sidebar-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring"
-          aria-label={translate(
-            'auto.components.sidebar.worktree.card.compact.agents.a128d7006b',
-            '{{value0}} {{value1}} child {{value2}}',
-            {
-              value0: childAgentsExpanded ? 'Hide' : 'Show',
-              value1: childAgentCount,
-              value2: childAgentCount === 1 ? 'agent' : 'agents'
-            }
-          )}
-          aria-expanded={childAgentsExpanded}
-          onClick={handleToggleChildren}
-          onKeyDown={stopActivationKeyPropagation}
-        >
-          <ChevronRight
-            className={cn(
-              'size-3 transition-transform duration-150',
-              childAgentsExpanded && 'rotate-90'
-            )}
-            aria-hidden
-          />
-        </button>
+      {/* Why: new-style rows keep the chevron at the right end so every glyph stays on the dot's column. */}
+      {singleText ? null : hasChildDisclosure ? (
+        disclosureButton
       ) : reserveDisclosureGutter ? (
         <span className="size-4 shrink-0" aria-hidden />
       ) : null}
-      <AgentStateDot state={dotState} size="sm" />
+      {/* Why: a lone agent's state is already the card's status dot, so its logo takes that column. */}
+      {layout === 'card-line' && !hideIcon ? (
+        <span className="sr-only">{agentStateLabel(dotState)}</span>
+      ) : singleText ? (
+        // Why: a fixed slot keeps text aligned across rows; 12px matches the card's status dot box.
+        <span className="inline-flex w-3 shrink-0 justify-center">
+          <AgentStateDot state={dotState} size="sm" />
+        </span>
+      ) : (
+        <AgentStateDot state={dotState} size="sm" />
+      )}
       {!hideIcon && (
         <span className="inline-flex shrink-0" title={formatAgentTypeLabel(agent.agentType)}>
-          <AgentIcon agent={agentTypeToIconAgent(agent.agentType)} size={13} />
+          <AgentIcon agent={agentTypeToIconAgent(agent.agentType)} size={singleText ? 12 : 13} />
         </span>
       )}
       <span className="min-w-0 flex-1 truncate">
         {/* Why: the selected-row fill is strong enough to wash out the dimmed
             prompt/secondary text, so lift both toward full foreground when focused. */}
-        <span className={isFocusedPane ? 'text-foreground' : 'text-muted-foreground/90'}>
+        <span
+          className={isFocusedPane ? 'text-foreground' : 'text-worktree-sidebar-muted-foreground'}
+        >
           {primary}
         </span>
-        {secondary && (
-          <span className={isFocusedPane ? 'text-foreground/70' : 'text-muted-foreground/65'}>
+        {secondary && !singleText && (
+          <span
+            className={
+              isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
+            }
+          >
             {' '}
             - {secondary}
           </span>
@@ -219,7 +302,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
         <span
           className={cn(
             'max-w-24 shrink-0 truncate font-mono text-[10px]',
-            isFocusedPane ? 'text-foreground/70' : 'text-muted-foreground/70'
+            isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
           )}
           title={model}
         >
@@ -230,7 +313,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
         <span
           className={cn(
             'shrink-0 text-[10px] tabular-nums',
-            isFocusedPane ? 'text-foreground/70' : 'text-muted-foreground/70'
+            isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
           )}
         >
           +{childAgentCount}
@@ -242,12 +325,13 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
           className={cn(
             'shrink-0 text-[10px] tabular-nums',
             // Why: the muted timestamp drops out against the selected-row fill.
-            isFocusedPane ? 'text-foreground/70' : 'text-muted-foreground/60'
+            isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
           )}
         >
           {shortTime}
         </span>
       )}
+      {singleText && disclosureButton}
     </>
   )
 
@@ -255,21 +339,24 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
     <div
       draggable={false}
       className={cn(
-        'compact-agent-row group/compact-agent-row min-w-0 cursor-pointer rounded-sm px-1 text-[11px] leading-none',
-        'text-muted-foreground worktree-agent-row-hover',
+        singleText
+          ? 'compact-agent-row group/compact-agent-row min-w-0 cursor-pointer rounded-sm px-1 text-[12px] leading-none'
+          : 'compact-agent-row group/compact-agent-row min-w-0 cursor-pointer rounded-sm px-1 text-[11px] leading-none',
+        'text-worktree-sidebar-muted-foreground worktree-agent-row-hover',
         hasChildDisclosure && 'worktree-agent-lineage-parent-row',
         isLineageChild && 'worktree-agent-lineage-child-row',
-        'flex h-6 items-center gap-1',
+        layout === 'card-line' ? 'flex h-5 items-center gap-1' : 'flex h-6 items-center gap-1',
         isFocusedPane && 'bg-worktree-sidebar-accent',
         sendTargetStatus === 'sending' && 'cursor-progress opacity-75',
         sendTargetStatus === 'disabled' && 'cursor-default opacity-60'
       )}
       onClickCapture={handleSendTargetClickCapture}
-      onClick={handleActivate}
+      onClick={rowTogglesChildren ? handleRowToggleChildren : handleActivate}
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onDragStart={(e) => e.stopPropagation()}
       data-focused-agent-pane={isFocusedPane ? 'true' : undefined}
+      data-agent-row-layout={singleText ? layout : undefined}
       data-agent-send-target={sendTargetStatus}
       role={agent.lineage ? 'treeitem' : undefined}
       aria-level={agent.lineage ? agent.lineage.depth + 1 : undefined}
