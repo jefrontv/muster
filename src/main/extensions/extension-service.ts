@@ -61,9 +61,13 @@ async function readAgentLocal(): Promise<{ version: string | null; latest: strin
   // Why guarded: the daemon answers with empty strings when it is not running, and the module
   // itself refuses on platforms Agent Local does not support.
   try {
-    const status = await readAgentLocalDaemonStatus()
+    // Scans fire on window focus; starting the daemon from one would launch Agent Local unasked.
+    const status = await readAgentLocalDaemonStatus({ startDaemon: false })
+    // The binary on disk, not the running daemon: after `agent-local update` the daemon reports
+    // the old version until it hands over, which made a finished update look pending.
+    const version = status.installed || status.version
     return {
-      version: status.version.length > 0 ? status.version : null,
+      version: version.length > 0 ? version : null,
       latest: status.latest.length > 0 ? status.latest : null
     }
   } catch {

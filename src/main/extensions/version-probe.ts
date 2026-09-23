@@ -41,7 +41,7 @@ export function createDefaultVersionProbeEnv(): VersionProbeEnv {
     gitLsRemoteTags: defaultGitLsRemoteTags,
     readAgentLocalLatest: async () => {
       const { readAgentLocalDaemonStatus } = await import('../sites/agent-local-import-api')
-      const status = await readAgentLocalDaemonStatus()
+      const status = await readAgentLocalDaemonStatus({ startDaemon: false })
       return status.latest.length > 0 ? status.latest : null
     }
   }

@@ -188,7 +188,8 @@ async function buildState(
   // hand-written entry. Calling that "not installed" contradicts what they can see in their agent,
   // and it hid the very rows they would use to hand it over to Muster.
   const externallyManaged = wired && binary !== null && !binary.found
-  const installed = binary ? binary.found || wired : wired
+  // A daemon that answers with its version is installed even when the PATH probe misses the binary.
+  const installed = (binary ? binary.found || wired : wired) || agentLocalVersion !== null
 
   return {
     ...base,

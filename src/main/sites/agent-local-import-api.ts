@@ -77,13 +77,16 @@ export type AgentLocalStatus = {
   update: { latest: string; available: boolean }
 }
 
+/** `startDaemon: false` for passive probes: a settings scan must not launch Agent Local. */
 export async function readAgentLocalStatus(
-  options: AgentLocalImportApiOptions = {}
+  options: AgentLocalImportApiOptions & { startDaemon?: boolean } = {}
 ): Promise<AgentLocalStatus> {
   const host = options.host ?? createAgentLocalHost()
-  const response = await requestWithDaemon(host, 'GET', '/status', undefined, {
-    timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS
-  })
+  const requestOptions = { timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS }
+  const response =
+    options.startDaemon === false
+      ? await host.request('GET', '/status', undefined, requestOptions)
+      : await requestWithDaemon(host, 'GET', '/status', undefined, requestOptions)
   if (!response.ok) {
     fail(response)
   }
@@ -336,7 +339,7 @@ export async function readRecentSiteErrors(args: {
  * answers with empty strings rather than an error: the panel shows nothing, not a failure.
  */
 export async function readAgentLocalDaemonStatus(
-  options: AgentLocalImportApiOptions = {}
+  options: AgentLocalImportApiOptions & { startDaemon?: boolean } = {}
 ): Promise<AgentLocalDaemonStatus> {
   try {
     const status = await readAgentLocalStatus(options)

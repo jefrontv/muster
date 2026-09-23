@@ -132,6 +132,50 @@ describe('inventoryExtensions', () => {
     expect(state).toMatchObject({ installedVersion: '0.34.1', latestVersion: '0.35.0', status: 'outdated' })
   })
 
+  it('reports an absent Agent Local as not installed, with nothing to update', async () => {
+    const state = await stateOf({
+      ...commandEntry,
+      id: 'agent-local',
+      version: '0.34.1',
+      latest: { source: 'agent-local-daemon' },
+      install: {
+        method: 'command',
+        command: { update: 'agent-local update', binary: 'agent-local' }
+      }
+    })
+    expect(state).toMatchObject({
+      installed: false,
+      installedVersion: null,
+      latestVersion: '0.34.1',
+      status: 'not-installed'
+    })
+    expect(
+      eligibleExtensionAutoUpdates({
+        schemaVersion: 1,
+        entries: [{ entry: commandEntry, state }],
+        catalogOrigin: 'bundled',
+        catalogUpdatedAt: '2026-09-22',
+        scannedAt: 0
+      })
+    ).toEqual([])
+  })
+
+  it('treats a daemon that reports its version as installed when the PATH probe misses it', async () => {
+    const state = await stateOf(
+      {
+        ...commandEntry,
+        id: 'agent-local',
+        latest: { source: 'agent-local-daemon' },
+        install: {
+          method: 'command',
+          command: { update: 'agent-local update', binary: 'agent-local' }
+        }
+      },
+      { readAgentLocal: async () => ({ version: '0.34.1', latest: '0.34.1' }) }
+    )
+    expect(state).toMatchObject({ installed: true, status: 'current' })
+  })
+
   it('counts a config-write entry with no provision by its wiring', async () => {
     const entry: ExtensionEntry = {
       ...commandEntry,

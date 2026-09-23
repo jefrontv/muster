@@ -39,7 +39,10 @@ import { extensionSettingSpecs } from '../../../../shared/extension-setting-valu
 import { useConfirmationDialog } from '@/components/confirmation-dialog'
 import { publishExtensionInventory, refreshExtensionInventory } from '@/hooks/useExtensionInventory'
 import { useExtensionRun } from '@/hooks/useExtensionRun'
-import { describeExtensionStatus } from '../extensions/extension-status-presentation'
+import {
+  describeExtensionStatus,
+  describeExtensionVersions
+} from '../extensions/extension-status-presentation'
 import { shortenExtensionConfigPath } from '../extensions/extension-config-path'
 import { ExtensionHarnessRow } from './extension-harness-row'
 import { ExtensionRunPanel } from './extension-run-panel'
@@ -160,12 +163,16 @@ export function ExtensionDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-baseline gap-x-2.5">
             <span>{entry.name}</span>
-            {state.installedVersion || state.latestVersion ? (
+            {/* Not installed: just the version Install would fetch. "not installed → 0.34.1" read as
+                an update the user owed. */}
+            {!state.installed && state.latestVersion ? (
+              <span className="font-mono text-xs font-normal tabular-nums text-muted-foreground">
+                {describeExtensionVersions(state)}
+              </span>
+            ) : state.installedVersion || state.latestVersion ? (
               <span className="font-mono text-xs font-normal tabular-nums text-muted-foreground">
                 {state.installedVersion ??
-                  (state.installed
-                    ? translate('auto.components.extensions.version_unknown', 'version unknown')
-                    : translate('auto.components.extensions.version_none', 'not installed'))}
+                  translate('auto.components.extensions.version_unknown', 'version unknown')}
                 {state.latestVersion && state.latestVersion !== state.installedVersion ? (
                   <>
                     <span aria-hidden> → </span>
@@ -304,7 +311,7 @@ export function ExtensionDetailDialog({
             </div>
           ) : null}
 
-          {state.autoUpdateSupported ? (
+          {state.autoUpdateSupported && state.installed ? (
             <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
               <span className="text-xs text-muted-foreground">{autoUpdateLabel}</span>
               <SettingsSwitch
