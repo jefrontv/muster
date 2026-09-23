@@ -187,10 +187,10 @@ describe('worktree list indentation', () => {
     })
 
     expect(geometry).toEqual({
-      surfaceInset: 22,
-      cardContentIndent: 10
+      surfaceInset: 42,
+      cardContentIndent: 12
     })
-    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(1))
+    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(2))
   })
 
   it('uses comparable repo worktree geometry for experimental nested folder workspaces', () => {
@@ -203,10 +203,10 @@ describe('worktree list indentation', () => {
     })
 
     expect(geometry).toEqual({
-      surfaceInset: 88,
-      cardContentIndent: 10
+      surfaceInset: 108,
+      cardContentIndent: 12
     })
-    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(4))
+    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(5))
   })
 
   it('keeps experimental manual grouped folder workspaces on normal worktree geometry', () => {
@@ -221,7 +221,7 @@ describe('worktree list indentation', () => {
     expect(geometry).toEqual(
       getNewStyleRowGeometry({ isGrouped: true, groupDepth: 1, lineageDepth: 0 })
     )
-    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(1))
+    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(2))
   })
 
   it('keeps experimental flat folder workspaces on normal worktree geometry', () => {
@@ -376,22 +376,22 @@ describe('new card style grid', () => {
     expect(getProjectGroupHeaderPaddingLeft(100, true)).toBe(getSidebarGlyphX(6) - 4)
   })
 
-  it('puts grouped worktree glyphs on their header glyph column', () => {
+  it('puts grouped worktree glyphs one level under their header', () => {
     for (const groupDepth of [0, 1, 3]) {
       const geometry = getNewStyleRowGeometry({ isGrouped: true, groupDepth, lineageDepth: 0 })
-      expect(geometry.cardContentIndent).toBe(10)
-      expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(groupDepth))
+      expect(geometry.cardContentIndent).toBe(12)
+      expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(groupDepth + 1))
     }
   })
 
-  it('keeps a 4px surface inset at the top level', () => {
+  it('clears the header glyph column with the top-level surface', () => {
     const geometry = getNewStyleRowGeometry({ isGrouped: true, groupDepth: 0, lineageDepth: 0 })
-    expect(SIDEBAR_LIST_INSET + geometry.surfaceInset + WORKTREE_CARD_SURFACE_MARGIN).toBe(8)
+    expect(SIDEBAR_LIST_INSET + geometry.surfaceInset + WORKTREE_CARD_SURFACE_MARGIN).toBe(28)
   })
 
   it('adds flat lineage depth by row step', () => {
     const geometry = getNewStyleRowGeometry({ isGrouped: true, groupDepth: 0, lineageDepth: 2 })
-    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(2))
+    expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(3))
   })
 
   it('puts ungrouped rows on level 0', () => {
@@ -426,13 +426,13 @@ describe('new card style grid', () => {
         groupDepth: 2,
         lineageDepth: 0
       })
-      expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(2))
+      expect(getNewStyleCardLeadX(geometry)).toBe(getSidebarGlyphX(3))
     }
   })
 
   it('places the title on the text column without a status lane', () => {
     const geometry = getNewStyleRowGeometry({ isGrouped: true, groupDepth: 0, lineageDepth: 0 })
-    expect(getNewStyleCardLeadX(geometry, false)).toBe(getSidebarTextX(0))
+    expect(getNewStyleCardLeadX(geometry, false)).toBe(getSidebarTextX(1))
   })
 })
 

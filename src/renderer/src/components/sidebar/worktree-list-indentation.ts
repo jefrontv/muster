@@ -1,4 +1,5 @@
 import {
+  SIDEBAR_GLYPH_COLUMN,
   SIDEBAR_ROW_STEP,
   WORKTREE_CARD_SURFACE_BORDER,
   getSidebarGlyphIndent
@@ -45,9 +46,17 @@ function clampDepth(depth: number): number {
   return Math.max(0, Math.floor(Number.isFinite(depth) ? depth : 0))
 }
 
+// Why: new-style child surfaces clear the header glyph column so the tree line runs beside them.
+export const NEW_CARD_STYLE_CHILD_SURFACE_INSET = 20
+
 // Why: new-style surfaces step with their header so every card keeps the same inner padding.
 function getNewCardStyleSurfaceInset(groupDepth: number): number {
-  return clampDepth(groupDepth) * SIDEBAR_ROW_STEP
+  return clampDepth(groupDepth) * SIDEBAR_ROW_STEP + NEW_CARD_STYLE_CHILD_SURFACE_INSET
+}
+
+/** Tree line x inside a card's row box: the centre of its header's glyph column. */
+export function getNewCardStyleTreeLineX(groupDepth: number): number {
+  return getSidebarGlyphIndent(clampDepth(groupDepth)) + SIDEBAR_GLYPH_COLUMN / 2
 }
 
 export function getProjectGroupHeaderPaddingLeft(
@@ -70,8 +79,7 @@ export function getWorktreeCardContentIndent(
 ): number {
   const groupSteps = args.isGrouped ? clampDepth(args.groupDepth) + 1 : 0
   if (args.experimentalNewWorktreeCardStyle) {
-    // Why: a card's status glyph shares its header's glyph column; only lineage steps in.
-    return getSidebarGlyphIndent(Math.max(0, groupSteps - 1) + clampDepth(args.lineageDepth))
+    return getSidebarGlyphIndent(groupSteps + clampDepth(args.lineageDepth))
   }
   const projectCardIndent = args.isGrouped ? PROJECT_WORKTREE_CARD_EXTRA_INDENT : 0
   return (groupSteps + clampDepth(args.lineageDepth)) * SIDEBAR_TREE_INDENT + projectCardIndent
@@ -84,7 +92,7 @@ export function getFolderBackedRepoWorktreeCardContentIndent(
   } & NewCardStyleFlag
 ): number {
   if (args.experimentalNewWorktreeCardStyle) {
-    return getSidebarGlyphIndent(clampDepth(args.groupDepth) + clampDepth(args.lineageDepth))
+    return getSidebarGlyphIndent(clampDepth(args.groupDepth) + 1 + clampDepth(args.lineageDepth))
   }
   // Why: folder-scanned groups indent repo headers by the compact header step;
   // worktree rows should follow that rhythm instead of adding a full tree step.

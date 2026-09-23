@@ -1099,11 +1099,11 @@ describe('WorktreeList lineage child card renderer', () => {
     const surfaceOpeningTag = getFolderWorkspaceSurfaceOpeningTag(markup, 'folder-workspace-1')
     const cardContentIndent = getDataNumber(cardOpeningTag, 'data-content-indent')
 
-    expect(surfaceOpeningTag).toContain('padding-left:22px')
-    expect(cardOpeningTag).toContain('data-content-indent="10"')
+    expect(surfaceOpeningTag).toContain('padding-left:42px')
+    expect(cardOpeningTag).toContain('data-content-indent="12"')
     expect(cardOpeningTag).toContain('data-flush-surface="true"')
-    // New style: content indent is the glyph offset from the card box; 4px list inset -> x=36.
-    expect(4 + getPaddingLeft(surfaceOpeningTag) + cardContentIndent).toBe(36)
+    // New style: content indent is the glyph offset from the card box; 4px list inset -> x=58.
+    expect(4 + getPaddingLeft(surfaceOpeningTag) + cardContentIndent).toBe(58)
   })
 
   it('preserves manual folder workspace indentation outside folder-scanned groups', async () => {

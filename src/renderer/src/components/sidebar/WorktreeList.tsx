@@ -278,9 +278,11 @@ import {
   getLineageChildrenInlineStyle,
   getLineageNestedRowGeometry,
   getProjectGroupHeaderPaddingLeft,
+  getNewCardStyleTreeLineX,
   getWorktreeCardContentIndent,
   getWorktreeCardSurfaceInset
 } from './worktree-list-indentation'
+import { buildWorktreeTreeBranches } from './worktree-list-tree-branches'
 import { useScrollEdges, WorktreeListScrollShadows } from './worktree-list-scroll-shadows'
 import { addHostSectionRows, type HostHeaderRow, type HostSectionRow } from './host-section-rows'
 import { orderHostSectionOptions } from './host-section-order'
@@ -2572,6 +2574,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
     () => buildWorktreeTreeNavItems(renderRows, collapsedGroups),
     [collapsedGroups, renderRows]
   )
+  const treeBranchByRowKey = useMemo(() => buildWorktreeTreeBranches(renderRows), [renderRows])
   const treeNavIndexByOptionId = useMemo(
     () => new Map(treeNavItems.map((item, index) => [item.optionId, index])),
     [treeNavItems]
@@ -5005,6 +5008,11 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
               const isActiveWorktree = activeWorktreeId === itemRow.worktree.id
               const activeSurfaceVariant = getActiveSurfaceVariant(itemRow)
               const itemOptionId = getWorktreeOptionId(itemRow.rowKey)
+              const treeBranch =
+                newCardStyle && !nested && groupBy !== 'none'
+                  ? treeBranchByRowKey.get(itemRow.rowKey)
+                  : undefined
+              const treeLineX = getNewCardStyleTreeLineX(itemRow.groupDepth)
               return (
                 <div
                   key={itemRow.rowKey}
@@ -5032,6 +5040,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                   data-scroll-reveal-highlight={
                     highlightedRevealRowKey === itemRow.rowKey ? 'true' : undefined
                   }
+                  data-tree-branch={treeBranch}
                   // Why: nested child cards live inside the parent's clickable body; bubbling would activate/edit the parent too.
                   onClick={nested ? stopNestedWorktreeCardBubble : undefined}
                   onClickCapture={handleWorktreeRowClickCapture}
@@ -5044,7 +5053,14 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                     handleWorktreeRowPointerDown(event, itemRow.worktree.id, itemRow.rowKey)
                   }}
                   style={{
-                    paddingLeft: surfaceInset > 0 ? `${surfaceInset}px` : undefined
+                    paddingLeft: surfaceInset > 0 ? `${surfaceInset}px` : undefined,
+                    // Why: the connector ends just short of the status dot's circle (lane + 4px).
+                    ...(treeBranch
+                      ? ({
+                          '--tree-line-x': `${treeLineX}px`,
+                          '--tree-tick-width': `${paddingLeft + 1 - treeLineX}px`
+                        } as React.CSSProperties)
+                      : null)
                   }}
                 >
                   <WorktreeCard

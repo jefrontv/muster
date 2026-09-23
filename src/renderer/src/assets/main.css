@@ -2485,6 +2485,59 @@
 
 /* Why: rows past the fold are invisible otherwise. A soft fade in the sidebar's own foreground
    (so it follows the tint) appears only on the edge that has more to scroll. */
+/* Why: new-style cards hang from their project's glyph: a spine at --tree-line-x and an elbow
+   into each card at its status dot (line 1 centre, 16px down). 2px covers the virtual row gap. */
+[data-tree-branch] {
+  --tree-line: color-mix(in srgb, var(--worktree-sidebar-foreground) 22%, transparent);
+  --tree-dot-y: 16px;
+  --tree-reach: 7px;
+}
+
+[data-tree-branch]::before,
+[data-tree-branch]::after {
+  content: '';
+  position: absolute;
+  left: var(--tree-line-x);
+  pointer-events: none;
+}
+
+[data-tree-branch]::before {
+  top: -2px;
+  bottom: 0;
+  border-left: 1px solid var(--tree-line);
+}
+
+[data-tree-branch]::after {
+  top: var(--tree-dot-y);
+  width: var(--tree-tick-width);
+  border-top: 1px solid var(--tree-line);
+}
+
+/* The first card reaches up past the gap to the header glyph. */
+[data-tree-branch='first']::before,
+[data-tree-branch='only']::before {
+  top: calc(-1 * var(--tree-reach));
+}
+
+/* The last card ends the spine in a rounded elbow instead of a tee. */
+[data-tree-branch='last']::before,
+[data-tree-branch='only']::before {
+  bottom: auto;
+  height: calc(var(--tree-dot-y) + 2px + 1px);
+  width: var(--tree-tick-width);
+  border-bottom: 1px solid var(--tree-line);
+  border-bottom-left-radius: 4px;
+}
+
+[data-tree-branch='only']::before {
+  height: calc(var(--tree-dot-y) + var(--tree-reach) + 1px);
+}
+
+[data-tree-branch='last']::after,
+[data-tree-branch='only']::after {
+  content: none;
+}
+
 /* Why: a project opening or closing slides the rows below and fades in the revealed ones. The flag
    is only set around a user toggle (use-sidebar-collapse-transition), so scrolling, filtering and
    first load never animate. @starting-style limits the fade to rows inserted by the toggle. */
