@@ -432,8 +432,7 @@ export function buildSettingsNavigationMetadata({
       icon: Palette,
       searchEntries: getAppearancePaneSearchEntries({
         showWarpImport: showDesktopOnlySettings,
-        showSystemTray: showDesktopOnlySettings && isWindows,
-        showMenuBarIcon: showDesktopOnlySettings && isMac
+        showSystemTray: showDesktopOnlySettings && isWindows
       }),
       group: 'interface'
     },

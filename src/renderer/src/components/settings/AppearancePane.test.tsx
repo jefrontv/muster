@@ -364,23 +364,6 @@ describe('AppearancePane', () => {
     ).not.toBeNull()
   })
 
-  it('shows and updates the menu bar icon preference only on desktop macOS', async () => {
-    mocks.state.appPlatform = 'darwin'
-    mocks.state.settingsSearchQuery = 'menu bar'
-    const updateSettings = vi.fn()
-    const container = await renderAppearancePane(getDefaultSettings('/tmp'), updateSettings)
-    const toggle = container.querySelector<HTMLButtonElement>(
-      'button[role="switch"][aria-label="Show Menu Bar Icon"]'
-    )
-
-    expect(toggle).not.toBeNull()
-    expect(container.textContent).not.toContain('Minimize to Tray on Close')
-    await act(async () => {
-      toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    })
-    expect(updateSettings).toHaveBeenCalledWith({ showMenuBarIcon: false })
-  })
-
   it('keeps description-only search matches visible after helper text is hidden', async () => {
     mocks.state.settingsSearchQuery = 'app window'
     const container = await renderAppearancePane(getDefaultSettings('/tmp'))

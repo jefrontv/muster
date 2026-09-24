@@ -31,10 +31,6 @@
         "portsToggleDescription": "Muestra los puertos activos de los espacios de trabajo. Haz clic para ver los puertos de cada espacio de trabajo y los puertos externos.",
         "antigravityToggleDescription": "Muestra el uso de suscripción de Antigravity para el espacio de trabajo activo.",
         "grokToggleDescription": "Muestra el uso de créditos de suscripción de Grok cuando has iniciado sesión con Grok CLI."
-      },
-      "menuBarIcon": {
-        "title": "Mostrar icono en la barra de menús",
-        "description": "Mantén un acceso directo de Muster e indicador de actividad en la barra de menús de macOS."
       }
     }
   },

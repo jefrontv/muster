@@ -47,40 +47,7 @@ const getSystemTrayEntryCatalog = createLocalizedCatalog((): SettingsSearchEntry
   }
 ])
 
-const getMenuBarIconEntryCatalog = createLocalizedCatalog((): SettingsSearchEntry[] => [
-  {
-    title: translate('settings.appearance.menuBarIcon.title', 'Show Menu Bar Icon'),
-    description: translate(
-      'settings.appearance.menuBarIcon.description',
-      'Keep a Muster shortcut and activity indicator in the macOS menu bar.'
-    ),
-    keywords: [
-      ...translateSearchKeyword('settings.appearance.menuBarIcon.keyword.menuBar', 'menu bar', {
-        englishOnly: true
-      }),
-      ...translateSearchKeyword('auto.components.settings.appearance.search.tray.tray', 'tray', {
-        englishOnly: true
-      }),
-      ...translateSearchKeyword('auto.components.settings.appearance.search.1f2880a9d5', 'orca'),
-      ...translateSearchKeyword(
-        'settings.appearance.menuBarIcon.keyword.statusItem',
-        'status item',
-        { englishOnly: true }
-      ),
-      ...translateSearchKeyword('settings.appearance.menuBarIcon.keyword.activity', 'activity', {
-        englishOnly: true
-      }),
-      ...translateSearchKeyword(
-        'auto.components.settings.appearance.search.tray.background',
-        'background',
-        { englishOnly: true }
-      )
-    ]
-  }
-])
-
 type SystemPresenceSearchOptions = {
-  showMenuBarIcon?: boolean
   showSystemTray?: boolean
 }
 
@@ -92,12 +59,4 @@ export function getSystemTrayEntries(
     // Why: a Windows web client can report win32, but it has no local tray.
     (getRendererAppPlatform() === 'win32' && !isWebClientLocation())
   return show ? getSystemTrayEntryCatalog() : []
-}
-
-export function getMenuBarIconEntries(
-  options: SystemPresenceSearchOptions = {}
-): SettingsSearchEntry[] {
-  const show =
-    options.showMenuBarIcon ?? (getRendererAppPlatform() === 'darwin' && !isWebClientLocation())
-  return show ? getMenuBarIconEntryCatalog() : []
 }

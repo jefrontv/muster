@@ -31,10 +31,6 @@
         "portsToggleDescription": "显示实时工作区端口。单击可查看工作区范围的端口和外部监听器。",
         "antigravityToggleDescription": "显示当前工作区的 Antigravity 订阅使用量。",
         "grokToggleDescription": "通过 Grok CLI 登录后显示 Grok 订阅额度使用量。"
-      },
-      "menuBarIcon": {
-        "title": "显示菜单栏图标",
-        "description": "在 macOS 菜单栏中保留 Muster 快捷方式和活动指示器。"
       }
     }
   },

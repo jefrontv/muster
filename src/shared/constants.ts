@@ -258,8 +258,6 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     terminalFocusFollowsMouse: false,
     windowBackgroundBlur: false,
     minimizeToTrayOnClose: false,
-    // Why: default-on everywhere so it round-trips across platforms; only darwin acts on it.
-    showMenuBarIcon: true,
     terminalClipboardOnSelect: false,
     // Why: OSC 52 is a clipboard data-exfiltration vector; default off (query stays disabled separately).
     terminalAllowOsc52Clipboard: false,

@@ -16,7 +16,6 @@ import {
   getAppearancePaneSearchEntries,
   getLanguageEntries,
   getLayoutEntries,
-  getMenuBarIconEntries,
   getSidebarEntries,
   getStatusBarEntries,
   getSystemTrayEntries,
@@ -87,7 +86,6 @@ export function AppearancePane({
   // Why: the system tray behavior is desktop-Electron Windows-only; a Windows
   // browser web client has no local tray to control.
   const isDesktopWindows = getRendererAppPlatform() === 'win32' && !isWebClient
-  const isDesktopMac = getRendererAppPlatform() === 'darwin' && !isWebClient
 
   const [manuallyOpenSection, setManuallyOpenSection] = useState<AppearanceSectionKey | null>(
     'interface'
@@ -142,8 +140,7 @@ export function AppearancePane({
     ...getTypographyEntries(),
     ...(SHOW_UI_LANGUAGE_SETTING ? getLanguageEntries() : []),
     ...getTitlebarEntries(),
-    ...getSystemTrayEntries({ showSystemTray: isDesktopWindows }),
-    ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac })
+    ...getSystemTrayEntries({ showSystemTray: isDesktopWindows })
   ]
   const editorSearchEntries = [
     { title: editorTitle, description: editorSummary },
@@ -223,7 +220,6 @@ export function AppearancePane({
             applyTheme={applyTheme}
             fontSuggestions={fontSuggestions}
             onRequestFontSuggestions={onRequestFontSuggestions}
-            isDesktopMac={isDesktopMac}
             isDesktopWindows={isDesktopWindows}
             forceVisiblePrimary={interfaceLabelMatches}
           />

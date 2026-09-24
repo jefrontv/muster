@@ -3256,8 +3256,6 @@ export class Store {
             appIcon: normalizeAppIconId(parsed.settings?.appIcon),
             // Why: persisted settings may be hand-edited or from older builds; keep tray-minimize false unless stored value is true.
             minimizeToTrayOnClose: parsed.settings?.minimizeToTrayOnClose === true,
-            // Why: missing means default-on; round-trips unchanged on non-mac since darwin consumers gate the effect.
-            showMenuBarIcon: parsed.settings?.showMenuBarIcon !== false,
             uiLanguage: normalizeUiLanguage(parsed.settings?.uiLanguage),
             defaultTaskSource: taskProviderSettings.defaultTaskSource,
             visibleTaskProviders: taskProviderSettings.visibleTaskProviders,
@@ -5550,9 +5548,6 @@ export class Store {
     // Why: coerce to boolean here (not the IPC edge) so every write path is covered and a truthy non-bool can't persist as "tray-minimize on".
     if ('minimizeToTrayOnClose' in updates) {
       sanitizedUpdates.minimizeToTrayOnClose = updates.minimizeToTrayOnClose === true
-    }
-    if ('showMenuBarIcon' in updates) {
-      sanitizedUpdates.showMenuBarIcon = updates.showMenuBarIcon === true
     }
     if ('disabledTuiAgents' in updates) {
       sanitizedUpdates.disabledTuiAgents = normalizeDisabledTuiAgents(updates.disabledTuiAgents)

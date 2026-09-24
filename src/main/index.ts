@@ -2,7 +2,7 @@
 import { existsSync, statSync } from 'node:fs'
 import { isAbsolute, join } from 'node:path'
 import os from 'node:os'
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, type Tray } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron'
 import { electronApp, is } from '@electron-toolkit/utils'
 import * as QRCode from 'qrcode'
 import {
@@ -152,7 +152,6 @@ import { zoomDashboardPopoutIfFocused } from './window/dashboard-popout-window'
 import {
   createSystemTray,
   destroySystemTray,
-  setMacMenuBarIconVisible,
   setTrayAttention,
   type SystemTrayOptions
 } from './tray/system-tray'
@@ -1083,22 +1082,8 @@ function getSystemTrayOptions(): SystemTrayOptions | null {
     isDevInstance: devInstanceIdentity.isDev,
     devInstanceLabel: devInstanceIdentity.devLabel,
     onOpen: showMainWindowFromTray,
-    onOpenSettings: openSettingsFromSystemMenu,
-    onCheckForUpdates: () => {
-      // Why: updater status renders in the main window, so a bare check would complete invisibly.
-      showMainWindowFromTray()
-      runUserInitiatedUpdateCheck()
-    },
     onQuit: quitFromSystemTray
   }
-}
-
-function syncMacMenuBarIcon(showMenuBarIcon: boolean): Tray | null {
-  if (process.platform !== 'darwin' || isServeMode) {
-    return null
-  }
-  const options = getSystemTrayOptions()
-  return options ? setMacMenuBarIconVisible(showMenuBarIcon, options) : null
 }
 
 function openMainWindow(): BrowserWindow {
@@ -1206,20 +1191,13 @@ function openMainWindow(): BrowserWindow {
   })
   recordCrashBreadcrumb('main_window_created')
   logStartupMilestone('window-created')
-  // Why: Windows Tray construction can block synchronously on Shell_NotifyIcon, so both platforms defer creation to after first paint.
+  // Why: Windows Tray construction can block synchronously on Shell_NotifyIcon, so creation is deferred to after first paint.
   let trayCreated = false
   const createSystemTrayDeferred = (): void => {
     if (trayCreated || window.isDestroyed() || isQuitting || !store) {
       return
     }
     trayCreated = true
-    if (process.platform === 'darwin') {
-      // Why: route through syncMacMenuBarIcon so startup and the live toggle share one serve-mode/visibility policy.
-      if (syncMacMenuBarIcon(store.getSettings().showMenuBarIcon !== false)) {
-        logStartupMilestone('tray-created')
-      }
-      return
-    }
     const options = getSystemTrayOptions()
     if (options && createSystemTray(options)) {
       logStartupMilestone('tray-created')
@@ -1965,10 +1943,6 @@ app.whenReady().then(async () => {
     if ('terminalWindowsWslDistro' in updates) {
       // Why: synchronize fallback WSL distro updates to runner.
       setDefaultWslDistroOverride(settings.terminalWindowsWslDistro ?? null)
-    }
-    if ('showMenuBarIcon' in updates) {
-      // Why: Store is the mutation authority for all settings writes, so every macOS toggle updates the native item live.
-      syncMacMenuBarIcon(settings.showMenuBarIcon !== false)
     }
   })
   // Why: run before ClaudeRuntimeAuthService's constructor sync — a surviving daemon Claude CLI holds the single-use refresh token; early refresh rotates it out mid-session.
