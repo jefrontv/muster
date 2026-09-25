@@ -96,7 +96,7 @@ export type SiteImportDependencies = {
   rewriteDomainViaAgentLocal: (
     context: SiteRunContext,
     config: SiteRunConfig,
-    routes: { slug: string; domain: string }
+    routes: { slug: string; domain: string; databaseImported?: boolean }
   ) => Promise<void>
   verifySiteViaAgentLocal: (context: SiteRunContext, slug: string) => Promise<void>
   /** Overridden only by tests. */
@@ -175,7 +175,10 @@ export async function runImportPipeline(
     if (wpSearchReplace) {
       context.throwIfCancelled()
       await (routes.slug !== null
-        ? deps.rewriteDomainViaAgentLocal(context, active, routes)
+        ? deps.rewriteDomainViaAgentLocal(context, active, {
+            ...routes,
+            databaseImported: exportDatabase
+          })
         : deps.runWpSearchReplace(context, active))
     }
 

@@ -72,6 +72,16 @@ function matchFromResolvePayload(data: unknown): AgentLocalSiteMatch | null {
   if (!match || !record) {
     return match
   }
+  if (record.matched === 'worktree') {
+    // A branch preview: `site` is the parent (whose slug control calls use), the top level is the
+    // preview's own domain, docroot and pool.
+    return {
+      ...match,
+      domain: readString(record, 'domain') || match.domain,
+      wpDir: readString(record, 'wp_dir') || match.wpDir,
+      running: record.running === true
+    }
+  }
   return record.running === true ? { ...match, running: true } : match
 }
 

@@ -14,6 +14,7 @@ import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 
 export const AGENT_LOCAL_UNSUPPORTED_PLATFORM = 'Agent Local is only available on macOS.'
 
+// Must stay a loopback literal: the daemon answers 421 to any other Host header (DNS-rebinding guard).
 export const AGENT_LOCAL_API_ORIGIN = 'http://127.0.0.1:10809'
 
 /** The one MariaDB every agent-local site shares; per-site isolation is by schema and user. */
@@ -39,6 +40,10 @@ export type AgentLocalResponse = {
   status: number
   data?: unknown
   error?: string
+  /** Machine-readable error, e.g. `site_exists`; absent on daemons older than 0.37.0. */
+  code?: string
+  /** Non-fatal problems reported next to `data`, e.g. a hosts entry that could not be written. */
+  warnings?: string[]
 }
 
 export type AgentLocalRequestOptions = { timeoutMs?: number; signal?: AbortSignal }
@@ -116,6 +121,8 @@ export const AGENT_LOCAL_NOT_INSTALLED = 'Agent Local is not installed.'
 /** restart-daemon ran and the API still did not answer: a crash or a broken launchd job. */
 export const AGENT_LOCAL_DAEMON_UNREACHABLE =
   'Agent Local did not come back after a restart. Run `agent-local doctor` in a terminal.'
+/** 421: the daemon refused our Host header, so the origin above changed without the daemon. */
+export const AGENT_LOCAL_HOST_REJECTED = 'Agent Local rejected the request host; update Muster.'
 
 function safeParseJson(body: string): unknown {
   try {
@@ -163,13 +170,27 @@ async function requestAgentLocal(
       return ''
     })
     const payload: unknown = responseBody.length > 0 ? safeParseJson(responseBody) : null
-    const envelope = (payload ?? {}) as { ok?: unknown; data?: unknown; error?: unknown }
+    const envelope = (payload ?? {}) as {
+      ok?: unknown
+      data?: unknown
+      error?: unknown
+      code?: unknown
+      warnings?: unknown
+    }
+    if (response.status === 421) {
+      return { ok: false, status: 421, error: AGENT_LOCAL_HOST_REJECTED }
+    }
+    const warnings = Array.isArray(envelope.warnings)
+      ? envelope.warnings.filter((item): item is string => typeof item === 'string')
+      : []
     return {
       // The envelope is authoritative when present; a bare non-2xx with no body is still a failure.
       ok: typeof envelope.ok === 'boolean' ? envelope.ok : response.ok,
       status: response.status,
       data: envelope.data,
-      error: typeof envelope.error === 'string' ? envelope.error : undefined
+      error: typeof envelope.error === 'string' ? envelope.error : undefined,
+      ...(typeof envelope.code === 'string' ? { code: envelope.code } : {}),
+      ...(warnings.length > 0 ? { warnings } : {})
     }
   } catch (error) {
     if (isConnectionRefusal(error)) {

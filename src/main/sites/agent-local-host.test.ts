@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   AGENT_LOCAL_DAEMON_DOWN,
   AGENT_LOCAL_DAEMON_UNREACHABLE,
+  AGENT_LOCAL_HOST_REJECTED,
   AGENT_LOCAL_NOT_INSTALLED,
   agentLocalTokenPath,
   createAgentLocalHost,
@@ -252,6 +253,40 @@ describe('createAgentLocalHost', () => {
 
       expect(result.ok).toBe(false)
       expect(result.status).toBe(500)
+    })
+
+    it('keeps the error code and envelope warnings when the daemon sends them', async () => {
+      stubFetch({
+        status: 409,
+        body: JSON.stringify({ ok: false, error: 'site "x" already exists', code: 'site_exists' })
+      })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+      expect(await host.request('POST', '/import', {})).toMatchObject({ code: 'site_exists' })
+
+      stubFetch({
+        body: JSON.stringify({ ok: true, data: 'x.test', warnings: ['hosts: denied', 3] })
+      })
+      const renamed = await host.request('POST', '/sites/x/domain', { domain: 'x.test' })
+      expect(renamed).toMatchObject({ ok: true, data: 'x.test', warnings: ['hosts: denied'] })
+    })
+
+    it('omits code and warnings for a daemon that predates them', async () => {
+      stubFetch({ body: JSON.stringify({ ok: true, data: 'x.test' }) })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+
+      const result = await host.request('POST', '/sites/x/domain', { domain: 'x.test' })
+
+      expect(result).not.toHaveProperty('code')
+      expect(result).not.toHaveProperty('warnings')
+    })
+
+    it('names a rejected Host header instead of passing on the raw 421', async () => {
+      stubFetch({ status: 421, body: 'misdirected request' })
+      const host = createAgentLocalHost({ readToken: async () => 'tok' })
+
+      const result = await host.request('GET', '/status')
+
+      expect(result).toMatchObject({ ok: false, status: 421, error: AGENT_LOCAL_HOST_REJECTED })
     })
   })
 })

@@ -613,7 +613,8 @@ describe('runImportPipeline', () => {
       expect(harness.calls.rewriteDomainViaAgentLocal).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        { slug: 'acme', domain: 'acme.local' }
+        // The daemon import took the save point, so the rewrite must not take a second one.
+        { slug: 'acme', domain: 'acme.local', databaseImported: true }
       )
       expect(harness.calls.verifySiteViaAgentLocal).toHaveBeenCalledWith(expect.anything(), 'acme')
       // Nothing that needs a mysql or wp binary ran.

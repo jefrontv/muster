@@ -199,7 +199,8 @@ export async function runAgentLocalMigration(
   if (
     !response.ok &&
     !attaching &&
-    isSourceDatabaseUnreachable(describeAgentLocalResponse(response))
+    (response.code === 'source_db_unreachable' ||
+      isSourceDatabaseUnreachable(describeAgentLocalResponse(response)))
   ) {
     report(
       'Could not copy the existing local database — registering the files without it. Re-run the import to bring the database back.'
@@ -209,7 +210,8 @@ export async function runAgentLocalMigration(
   }
   if (!response.ok) {
     const reason = describeAgentLocalResponse(response)
-    if (isAlreadyRegisteredSite(reason)) {
+    // The code from 0.37.0; the message for every daemon before it.
+    if (response.code === 'site_exists' || isAlreadyRegisteredSite(reason)) {
       const adopted = await adoptExistingAgentLocalSite(request, host, plan, log, report)
       if (adopted) {
         return adopted

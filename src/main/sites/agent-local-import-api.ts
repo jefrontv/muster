@@ -16,8 +16,10 @@ import {
   type AgentLocalHost,
   type AgentLocalResponse
 } from './agent-local-host'
-
-export const AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION = '0.32.2'
+import {
+  AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION,
+  agentLocalVersionAtLeast
+} from './agent-local-version'
 
 /** A db/import can load a multi-GB dump; poll for as long as the run itself is allowed to live. */
 const JOB_POLL_INTERVAL_MS = 1_000
@@ -48,26 +50,6 @@ export class AgentLocalImportError extends Error {}
 
 function fail(response: AgentLocalResponse): never {
   throw new AgentLocalImportError(describeAgentLocalResponse(response))
-}
-
-/** `[major, minor, patch]`; anything unparseable is `[0, 0, 0]`, which fails every gate. */
-export function parseAgentLocalVersion(version: string): [number, number, number] {
-  const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(version.trim())
-  if (!match) {
-    return [0, 0, 0]
-  }
-  return [Number(match[1]), Number(match[2]), Number(match[3])]
-}
-
-export function agentLocalVersionAtLeast(version: string, minimum: string): boolean {
-  const have = parseAgentLocalVersion(version)
-  const want = parseAgentLocalVersion(minimum)
-  for (let index = 0; index < 3; index += 1) {
-    if (have[index] !== want[index]) {
-      return (have[index] ?? 0) > (want[index] ?? 0)
-    }
-  }
-  return true
 }
 
 export type AgentLocalStatus = {
@@ -135,6 +117,7 @@ export async function importDatabaseViaDaemon(args: {
     return typeof started.data === 'string' ? started.data : 'Database imported.'
   }
   let reported = 0
+  let answered = false
   for (;;) {
     if (args.signal?.aborted) {
       throw new AgentLocalImportError(
@@ -146,8 +129,15 @@ export async function importDatabaseViaDaemon(args: {
       timeoutMs: AGENT_LOCAL_READ_TIMEOUT_MS
     })
     if (!polled.ok) {
+      // Jobs live in daemon memory: a 404 for one that answered before means the daemon restarted.
+      if (answered && polled.status === 404) {
+        throw new AgentLocalImportError(
+          'Agent Local restarted during the import; the database may be partly loaded. Run the import again.'
+        )
+      }
       fail(polled)
     }
+    answered = true
     const view = asRecord(polled.data)
     const steps = Array.isArray(view?.steps) ? view.steps : []
     for (const step of steps.slice(reported)) {
@@ -180,6 +170,8 @@ export async function searchReplaceViaDaemon(args: {
   slug: string
   from: string
   to: string
+  /** False when a save point already covers this write (a db/import this run, or an earlier pass). */
+  snapshot: boolean
   signal?: AbortSignal
   options?: AgentLocalImportApiOptions
 }): Promise<AgentLocalSearchReplaceReport> {
@@ -189,7 +181,8 @@ export async function searchReplaceViaDaemon(args: {
     'POST',
     `/sites/${encodeURIComponent(args.slug)}/db/search-replace`,
     // dry_run defaults to TRUE on the daemon; this is the one place it must be explicit.
-    { old: args.from, new: args.to, dry_run: false },
+    // Daemons before 0.37.0 ignore no_snapshot and never snapshot here.
+    { old: args.from, new: args.to, dry_run: false, no_snapshot: !args.snapshot },
     { timeoutMs: SEARCH_REPLACE_TIMEOUT_MS, signal: args.signal }
   )
   if (!response.ok) {

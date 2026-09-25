@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SiteEnvironment, Site } from '../../shared/site-types'
 import { createEmptySiteEnvironment } from '../../shared/site-types'
 import type { AgentLocalHost, AgentLocalResponse } from './agent-local-host'
-import { agentLocalVersionAtLeast } from './agent-local-import-api'
+import { agentLocalVersionAtLeast } from './agent-local-version'
 import {
   decideAgentLocalRoutes,
   importDatabaseViaAgentLocal,
@@ -224,8 +224,8 @@ describe('rewriteDomainViaAgentLocal', () => {
       .filter((entry) => entry.call === 'POST /sites/acme/db/search-replace')
       .map((entry) => entry.body)
     expect(replaced).toEqual([
-      { old: 'www.acme.com.au', new: 'acme.local', dry_run: false },
-      { old: 'acme.com.au', new: 'acme.local', dry_run: false }
+      { old: 'www.acme.com.au', new: 'acme.local', dry_run: false, no_snapshot: false },
+      { old: 'acme.com.au', new: 'acme.local', dry_run: false, no_snapshot: true }
     ])
     expect(ctx.logs).toEqual([
       'Replaced 16 reference(s) to acme.com.au across 2 column(s).',
@@ -352,7 +352,8 @@ describe('rewriteDomainViaAgentLocal with a drifted record', () => {
     expect(h.bodies[replaceCall]).toEqual({
       old: 'www.acme.com.au',
       new: 'pact.al',
-      dry_run: false
+      dry_run: false,
+      no_snapshot: false
     })
     expect(ctx.logs[0]).toContain('Agent Local serves this site on pact.al, not acme.local')
   })

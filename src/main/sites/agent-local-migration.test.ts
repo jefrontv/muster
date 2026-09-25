@@ -231,6 +231,33 @@ describe('runAgentLocalMigration', () => {
     expect(result.message).toContain('empty database')
   })
 
+  it('registers the files on the source_db_unreachable code, whatever the message says', async () => {
+    const calls: string[] = []
+    const recording: AgentLocalHost = {
+      platform: 'darwin',
+      homeDir: '/home/test',
+      readToken: async () => 'token',
+      request: async (_method: string, apiPath: string) => {
+        calls.push(apiPath)
+        return apiPath === '/import'
+          ? {
+              ok: false,
+              status: 502,
+              error: 'the source database refused us',
+              code: 'source_db_unreachable'
+            }
+          : importResponse
+      },
+      spawnDaemon: async () => ({ kind: 'started' as const }),
+      sleep: async () => undefined
+    }
+
+    const result = await runAgentLocalMigration(request(), { host: recording })
+
+    expect(calls).toEqual(['/import', '/attach'])
+    expect(result.ok).toBe(true)
+  })
+
   it('adopts a leftover Agent Local slug instead of failing site already exists', async () => {
     const result = await runAgentLocalMigration(
       request({ siteName: 'ebes', domain: 'ebes.local' }),

@@ -609,3 +609,97 @@ describe('setAgentLocalSiteDomain', () => {
     expect(outcome.ok).toBe(false)
   })
 })
+
+describe('agent-local 0.37 envelope', () => {
+  it('reports a rename that landed with warnings as done, naming what did not follow', async () => {
+    const outcome = await setAgentLocalSiteDomain(
+      { path: '/Sites/sulo', localStack: 'agent-local' },
+      'sulo.al',
+      {
+        host: host({
+          ...listSites,
+          'POST /sites/sulo/domain': {
+            ok: true,
+            status: 200,
+            data: 'sulo.al',
+            warnings: ['could not update /etc/hosts']
+          }
+        })
+      }
+    )
+
+    expect(outcome.ok).toBe(true)
+    expect(outcome.message).toContain('could not update /etc/hosts')
+  })
+
+  it('treats a missing route as the daemon being too old, not the site being unmanaged', async () => {
+    const tooOld: AgentLocalResponse = {
+      ok: false,
+      status: 404,
+      error: 'no such route',
+      code: 'route_not_found'
+    }
+    const outcome = await ensureAgentLocalSiteRunning(
+      { path: '/Sites/elsewhere', localStack: 'agent-local' },
+      undefined,
+      { host: host({ 'GET /resolve': tooOld, 'GET /sites': tooOld }) }
+    )
+
+    expect(outcome.ok).toBe(false)
+    expect(outcome.message).not.toBe(AGENT_LOCAL_NOT_MANAGED)
+  })
+
+  it('encodes the slug into every site route', async () => {
+    const odd = {
+      ...SITES[1],
+      slug: 'a b',
+      work_dir: '/Sites/odd/app',
+      wp_dir: '/Sites/odd/app/public'
+    }
+    const machine = host({
+      'GET /sites': { ok: true, status: 200, data: [odd] },
+      'POST /sites/a%20b/stop': { ok: true, status: 200, data: 'stopped' }
+    })
+
+    const outcome = await stopAgentLocalSite(
+      { path: '/Sites/odd', localStack: 'agent-local' },
+      {
+        host: machine
+      }
+    )
+
+    expect(outcome.ok).toBe(true)
+    expect(machine.calls).toContain('POST /sites/a%20b/stop')
+  })
+})
+
+describe('resolve on a branch preview', () => {
+  it('describes the preview, not its parent, and keeps the parent slug', async () => {
+    const { match } = await resolveAgentLocalSite(
+      { path: '/Sites/sulo/app/@/feature', localStack: 'agent-local' },
+      {
+        host: host({
+          'GET /resolve': {
+            ok: true,
+            status: 200,
+            data: {
+              slug: 'sulo',
+              matched: 'worktree',
+              domain: 'feature.sulo.test',
+              wp_dir: '/Sites/sulo/app/@/feature',
+              running: false,
+              site: { ...SITES[1], state: 'running' }
+            }
+          }
+        })
+      }
+    )
+
+    expect(match).toMatchObject({
+      slug: 'sulo',
+      domain: 'feature.sulo.test',
+      wpDir: '/Sites/sulo/app/@/feature',
+      running: false
+    })
+  })
+})

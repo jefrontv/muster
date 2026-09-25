@@ -11,9 +11,7 @@
 import type { Site } from '../../shared/site-types'
 import { AGENT_LOCAL_DATABASE_LOAD_STAGE } from '../../shared/site-run-types'
 import {
-  AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION,
   AgentLocalImportError,
-  agentLocalVersionAtLeast,
   importDatabaseViaDaemon,
   probeSiteViaDaemon,
   readAgentLocalStatus,
@@ -23,6 +21,10 @@ import {
   type AgentLocalImportApiOptions,
   type AgentLocalMediaFallback
 } from './agent-local-import-api'
+import {
+  AGENT_LOCAL_IMPORT_ROUTES_MIN_VERSION,
+  agentLocalVersionAtLeast
+} from './agent-local-version'
 import { agentLocalCertStatus } from './agent-local-cert'
 import { resolveAgentLocalSite } from './agent-local-site-resolve'
 import { SiteRunStepError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
@@ -167,7 +169,7 @@ export async function importDatabaseViaAgentLocal(
 export async function rewriteDomainViaAgentLocal(
   context: SiteRunContext,
   runConfig: SiteRunConfig,
-  routes: { slug: string; domain: string },
+  routes: { slug: string; domain: string; databaseImported?: boolean },
   options: AgentLocalImportApiOptions = {}
 ): Promise<void> {
   const { slug } = routes
@@ -200,11 +202,13 @@ export async function rewriteDomainViaAgentLocal(
     let configPinsRewritten = false
     // Deduplicated: a column hit by both the www and the bare pass is still one column.
     const columns = new Set<string>()
-    for (const pair of pairs) {
+    for (const [index, pair] of pairs.entries()) {
       const report = await searchReplaceViaDaemon({
         slug,
         from: pair.from,
         to: pair.to,
+        // One save point per run: the import's own, else the first pass's.
+        snapshot: routes.databaseImported !== true && index === 0,
         signal: context.signal,
         options
       })

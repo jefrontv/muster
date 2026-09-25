@@ -90,6 +90,18 @@ function credentialsFromPayload(data: unknown): LocalStackCredentials | null {
   }
 }
 
+/**
+ * A resolve that found nothing: `/sites` answered, or `/resolve` said 404 for this path. A 404 whose
+ * code is `route_not_found` is a daemon missing the route, not an unmanaged folder.
+ */
+function isNotManaged(response: AgentLocalResponse): boolean {
+  return response.ok || (response.status === 404 && response.code !== 'route_not_found')
+}
+
+function sitePath(slug: string, action: string): string {
+  return `/sites/${encodeURIComponent(slug)}/${action}`
+}
+
 function unavailableOutcome(response: AgentLocalResponse): LocalStackOutcome {
   return {
     ok: false,
@@ -112,13 +124,13 @@ export async function ensureAgentLocalSiteRunning(
   }
   const { match, response } = await resolveAgentLocalSite(site, { host })
   if (!match) {
-    return response.ok || response.status === 404
+    return isNotManaged(response)
       ? localStackSkip('not-managed', AGENT_LOCAL_NOT_MANAGED)
       : unavailableOutcome(response)
   }
   onStatus?.(`Starting Agent Local site '${match.slug}'…`)
   // Idempotent by design: start on a running site returns the same payload rather than an error.
-  const started = await requestWithDaemon(host, 'POST', `/sites/${match.slug}/start`, undefined, {
+  const started = await requestWithDaemon(host, 'POST', sitePath(match.slug, 'start'), undefined, {
     timeoutMs: AGENT_LOCAL_START_TIMEOUT_MS
   })
   if (!started.ok) {
@@ -149,11 +161,11 @@ export async function stopAgentLocalSite(
   }
   const { match, response } = await resolveAgentLocalSite(site, { host })
   if (!match) {
-    return response.ok || response.status === 404
+    return isNotManaged(response)
       ? localStackSkip('not-managed', AGENT_LOCAL_NOT_MANAGED)
       : unavailableOutcome(response)
   }
-  const stopped = await requestWithDaemon(host, 'POST', `/sites/${match.slug}/stop`)
+  const stopped = await requestWithDaemon(host, 'POST', sitePath(match.slug, 'stop'))
   if (!stopped.ok) {
     return unavailableOutcome(stopped)
   }
@@ -198,9 +210,7 @@ export async function setAgentLocalSiteDomain(
   }
   const { match, response } = await resolveAgentLocalSite(site, { host })
   if (!match) {
-    return response.ok || response.status === 404
-      ? refuse(AGENT_LOCAL_NOT_MANAGED)
-      : unavailableOutcome(response)
+    return isNotManaged(response) ? refuse(AGENT_LOCAL_NOT_MANAGED) : unavailableOutcome(response)
   }
   if (match.domain === wanted) {
     // Already there. Reporting success keeps the caller's "make it so" intent idempotent.
@@ -211,17 +221,22 @@ export async function setAgentLocalSiteDomain(
       message: `Agent Local site '${match.slug}' already serves ${wanted}`
     }
   }
-  const renamed = await requestWithDaemon(host, 'POST', `/sites/${match.slug}/domain`, {
+  const renamed = await requestWithDaemon(host, 'POST', sitePath(match.slug, 'domain'), {
     domain: wanted
   })
   if (!renamed.ok) {
     return unavailableOutcome(renamed)
   }
+  // The rename landed; a hosts entry or cert that did not follow is worth saying, not failing on.
+  const warnings = renamed.warnings ?? []
   return {
     ok: true,
     socketPath: '',
     state: match.running ? 'running' : 'stopped',
-    message: `Agent Local site '${match.slug}' now serves ${wanted}`
+    message:
+      warnings.length > 0
+        ? `Agent Local site '${match.slug}' now serves ${wanted}, but: ${warnings.join('; ')}`
+        : `Agent Local site '${match.slug}' now serves ${wanted}`
   }
 }
 
@@ -242,7 +257,7 @@ export async function agentLocalCredentials(
     return null
   }
   // POST /sites/{slug}/db starts MariaDB if it is down, so this doubles as "make the DB reachable".
-  const response = await requestWithDaemon(host, 'POST', `/sites/${match.slug}/db`, undefined, {
+  const response = await requestWithDaemon(host, 'POST', sitePath(match.slug, 'db'), undefined, {
     timeoutMs: AGENT_LOCAL_START_TIMEOUT_MS
   })
   if (!response.ok) {

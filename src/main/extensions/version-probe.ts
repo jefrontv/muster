@@ -70,6 +70,10 @@ export function isOutdated(installed: string | null, latest: string | null): boo
   if (installed === null || latest === null) {
     return false
   }
+  // A source build (agent-local reports `dev`) is whatever its author checked out, not stale.
+  if (installed.trim() === 'dev') {
+    return false
+  }
   return compareVersions(installed, latest) < 0
 }
 

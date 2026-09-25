@@ -47,19 +47,25 @@ describe('isOutdated', () => {
   it('does not call a newer install outdated', () => {
     expect(isOutdated('2.0.0', '1.0.0')).toBe(false)
   })
+
+  it('does not call a source build outdated', () => {
+    expect(isOutdated('dev', '0.34.2')).toBe(false)
+  })
 })
 
 describe('probeLatestVersion', () => {
   it('reads a PyPI version', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ info: { version: '1.4.2' } }))
-    expect(await probeLatestVersion({ source: 'pypi', package: 'acme' }, env({ fetch: fetchMock })))
-      .toBe('1.4.2')
+    expect(
+      await probeLatestVersion({ source: 'pypi', package: 'acme' }, env({ fetch: fetchMock }))
+    ).toBe('1.4.2')
   })
 
   it('reads an npm version', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ version: '3.1.0' }))
-    expect(await probeLatestVersion({ source: 'npm', package: 'acme' }, env({ fetch: fetchMock })))
-      .toBe('3.1.0')
+    expect(
+      await probeLatestVersion({ source: 'npm', package: 'acme' }, env({ fetch: fetchMock }))
+    ).toBe('3.1.0')
   })
 
   it('strips the v from a GitHub release tag', async () => {
@@ -106,7 +112,10 @@ describe('probeLatestVersion', () => {
   it('asks Agent Local for its own published version', async () => {
     const readLatest = vi.fn().mockResolvedValue('0.35.0')
     expect(
-      await probeLatestVersion({ source: 'agent-local-daemon' }, env({ readAgentLocalLatest: readLatest }))
+      await probeLatestVersion(
+        { source: 'agent-local-daemon' },
+        env({ readAgentLocalLatest: readLatest })
+      )
     ).toBe('0.35.0')
   })
 })

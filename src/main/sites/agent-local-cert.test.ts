@@ -63,7 +63,8 @@ describe('agentLocalCertTrust', () => {
     const result = await agentLocalCertTrust(DOMAIN, { host: h, runTrustCli: cli })
     expect(cli).toHaveBeenCalledWith(DOMAIN)
     expect(result).toEqual({ ok: true, message: `Trusted ${DOMAIN}.` })
-    expect(h.calls).toEqual([TRUST, STATUS])
+    // The first read only asks whether the CA needs the prompt; none reported on this daemon.
+    expect(h.calls).toEqual([STATUS, TRUST, STATUS])
   })
 
   it('reports a cancelled prompt plainly instead of the daemon\u2019s sudo hint', async () => {
@@ -122,5 +123,40 @@ describe('agentLocalCertTrust', () => {
     })
     expect(result.ok).toBe(false)
     expect(result.message).toContain('agent-local sudo')
+  })
+})
+
+describe('agentLocalCertTrust with a local CA (agent-local 0.36.0+)', () => {
+  const caUntrusted: AgentLocalResponse = {
+    ok: true,
+    status: 200,
+    data: { exists: true, trusted: false, ca: { trusted: false } }
+  }
+  const caTrusted: AgentLocalResponse = {
+    ok: true,
+    status: 200,
+    data: { exists: true, trusted: true, ca: { trusted: true } }
+  }
+
+  it('goes straight to the prompt when the CA is not trusted yet', async () => {
+    const machine = host({ [STATUS]: [caUntrusted, caTrusted] })
+    const cli = vi.fn(async () => ({ code: 0, stdout: '', stderr: '', timedOut: false }))
+
+    const result = await agentLocalCertTrust(DOMAIN, { host: machine, runTrustCli: cli })
+
+    expect(machine.calls).not.toContain(TRUST)
+    expect(cli).toHaveBeenCalledOnce()
+    expect(result).toMatchObject({ ok: true })
+    expect(result.message).toContain('certificate authority')
+  })
+
+  it('trusts through the daemon with no prompt once the CA is trusted', async () => {
+    const machine = host({ [STATUS]: caTrusted, [TRUST]: caTrusted })
+    const cli = vi.fn()
+
+    const result = await agentLocalCertTrust(DOMAIN, { host: machine, runTrustCli: cli })
+
+    expect(result).toEqual({ ok: true, message: `Trusted ${DOMAIN}.` })
+    expect(cli).not.toHaveBeenCalled()
   })
 })
