@@ -66,10 +66,14 @@ async function applyEnvironmentPatch(
       available_environments: Object.keys(site.environments)
     })
   }
-  const updated = await context.updateSite(site.id, {
-    ...sitePatch,
-    environments: { ...site.environments, [environmentName]: { ...base, ...environmentPatch } }
-  })
+  // A patch, not a rebuilt map: the site was read from disk, which trails the GUI's save.
+  const updated = await context.updateSite(
+    site.id,
+    sitePatch,
+    Object.keys(environmentPatch).length > 0
+      ? { [environmentName]: { merge: environmentPatch } }
+      : undefined
+  )
   // Why not fall back to `site`: summarizing the pre-write record reported ok:true
   // with the OLD values, so a write that never landed read as success.
   if (!updated) {

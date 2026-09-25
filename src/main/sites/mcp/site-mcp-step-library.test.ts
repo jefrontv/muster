@@ -67,47 +67,42 @@ describe('library access through the context', () => {
 
 describe('setStepLibraryThroughBridge', () => {
   const steps = [libraryStep()]
+  const endpoint = { port: 1234, token: 't', pid: 9 }
 
   it('sends the write to the running GUI instead of this process', async () => {
-    const setSiteStepLibrary = vi.fn()
-    const postLibrary = vi.fn(async () => true)
+    const writeLocally = vi.fn()
+    const postLibrary = vi.fn(async () => ({ kind: 'applied' as const, value: true }))
 
-    await setStepLibraryThroughBridge(
-      { setSiteStepLibrary },
-      { steps, bridgeFile: '/tmp/bridge.json' },
-      { readEndpoint: () => ({ port: 1234, token: 't', pid: 9 }), postLibrary }
-    )
+    await setStepLibraryThroughBridge({ steps, bridgeFile: '/tmp/bridge.json' }, writeLocally, {
+      readEndpoint: () => endpoint,
+      postLibrary
+    })
 
     expect(postLibrary).toHaveBeenCalledTimes(1)
     // Why: the GUI applied it. Writing here too would race its next whole-state save.
-    expect(setSiteStepLibrary).not.toHaveBeenCalled()
+    expect(writeLocally).not.toHaveBeenCalled()
   })
 
   it('writes locally when no GUI is running', async () => {
-    const setSiteStepLibrary = vi.fn()
+    const writeLocally = vi.fn()
 
-    await setStepLibraryThroughBridge(
-      { setSiteStepLibrary },
-      { steps, bridgeFile: '/tmp/bridge.json' },
-      { readEndpoint: () => null }
-    )
+    await setStepLibraryThroughBridge({ steps, bridgeFile: '/tmp/bridge.json' }, writeLocally, {
+      readEndpoint: () => null
+    })
 
-    expect(setSiteStepLibrary).toHaveBeenCalledWith(steps)
+    expect(writeLocally).toHaveBeenCalledWith(steps)
   })
 
-  it('falls back to a local write when the GUI refuses or times out', async () => {
-    const setSiteStepLibrary = vi.fn()
+  it('refuses rather than writing around a GUI that is up but did not apply it', async () => {
+    const writeLocally = vi.fn()
 
-    await setStepLibraryThroughBridge(
-      { setSiteStepLibrary },
-      { steps, bridgeFile: '/tmp/bridge.json' },
-      {
-        readEndpoint: () => ({ port: 1234, token: 't', pid: 9 }),
-        postLibrary: async () => false
-      }
-    )
-
-    expect(setSiteStepLibrary).toHaveBeenCalledWith(steps)
+    await expect(
+      setStepLibraryThroughBridge({ steps, bridgeFile: '/tmp/bridge.json' }, writeLocally, {
+        readEndpoint: () => endpoint,
+        postLibrary: async () => ({ kind: 'refused' as const, detail: 'no answer within 5 s' })
+      })
+    ).rejects.toThrow('Muster is open but did not save the change (no answer within 5 s)')
+    expect(writeLocally).not.toHaveBeenCalled()
   })
 })
 

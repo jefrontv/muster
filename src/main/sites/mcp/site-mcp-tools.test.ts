@@ -1,22 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
+import type { SiteActiveRun, SiteRun } from '../../../shared/site-run-types'
+import { CUSTOM_STEP_SCRIPT_DIR, SITE_LOCAL_STACKS } from '../../../shared/site-types'
+import { SITE_MCP_TOOLS } from './site-mcp-tools'
 import {
-  createEmptySiteEnvironment,
-  CUSTOM_STEP_SCRIPT_DIR,
-  resolveSiteEnvironment,
-  SITE_LOCAL_STACKS,
-  type Site,
-  type SiteEnvironment,
-  type SiteCustomStep,
-  type SiteSecretPresence,
-  type SiteSummary
-} from '../../../shared/site-types'
-import { createAcfStateStore } from '../wp-acf-state-store'
-import type { SiteMcpContext, SiteMcpStartRunRequest } from './site-mcp-context'
-import { dispatchSiteMcpTool, findSiteMcpTool, SITE_MCP_TOOLS } from './site-mcp-tools'
+  acfState,
+  call,
+  createFakeContext,
+  DB_SECRET,
+  environment,
+  PERSISTED_RUN,
+  RUN_ID,
+  siteRecord,
+  SSH_SECRET
+} from './site-mcp-fake-context'
 
 vi.mock('../../lib/stream-command', () => ({
   streamCommand: vi.fn(async () => ({
@@ -30,281 +27,7 @@ vi.mock('../../lib/stream-command', () => ({
   }))
 }))
 
-// Sentinels. Nothing a tool returns may ever contain these, no matter which tool or which branch.
-const SSH_SECRET = 'ssh-pw-SENTINEL-must-never-leak'
-const DB_SECRET = 'db-pw-SENTINEL-must-never-leak'
-const RUN_ID = 'run-1'
-
-function environment(overrides: Partial<SiteEnvironment> = {}): SiteEnvironment {
-  return {
-    ...createEmptySiteEnvironment(),
-    hostname: 'acme.example.com',
-    username: 'deploy',
-    liveDomain: 'acme.com',
-    ...overrides
-  }
-}
-
-/**
- * The rogue password properties are deliberate: an ocsites-imported record could carry them, and
- * any tool that spreads a raw Site into its response would leak them. Site has no such properties,
- * so this is the only way to prove the responses are built field by field.
- */
-function siteRecord(overrides: Partial<Site> = {}): Site {
-  const base: Site = {
-    id: 'site-1',
-    path: '/Sites/acme',
-    repoId: null,
-    displayName: 'Acme',
-    localWpRoot: '',
-    localDomain: 'acme.local',
-    localStack: 'plain',
-    dbUser: 'root',
-    dbSocket: '',
-    dbPort: null,
-    phpVersion: '8.2',
-    activeEnvironment: 'main',
-    environments: {
-      main: environment({ exportDatabase: true, deployThemes: true }),
-      staging: environment({
-        hostname: 'staging.acme.example.com',
-        exportFiles: true
-      })
-    },
-    notes: '',
-    searchReplaceTimeoutSeconds: 600,
-    customSteps: [
-      {
-        id: 'step-1',
-        name: 'Warm the cache',
-        group: 'deploy',
-        runsOn: 'remote',
-        command: 'curl -s https://acme.com > /dev/null',
-        position: 'after',
-        order: 0,
-        // Disabled on purpose: the run-plan tests assert step counts, and an enabled custom step
-        // would silently change every one of them.
-        enabled: false
-      }
-    ],
-    ...overrides
-  }
-  return Object.assign(base, { password: SSH_SECRET, db_password: DB_SECRET })
-}
-
-const PERSISTED_RUN: SiteRun = {
-  id: RUN_ID,
-  siteId: 'site-1',
-  siteName: 'Acme',
-  group: 'deploy',
-  environment: 'main',
-  branch: 'main',
-  status: 'succeeded',
-  startedAt: 1_000,
-  endedAt: 5_000,
-  error: null,
-  logPath: '/runs/site-1/run-1/output.log'
-}
-
-type FakeContext = SiteMcpContext & {
-  started: SiteMcpStartRunRequest[]
-  cancelled: string[]
-  secretMoves: string[]
-}
-
-type FakeOptions = {
-  branch?: string | null
-  sshEnvironments?: string[]
-  pathExists?: boolean
-  activeRuns?: SiteActiveRun[]
-}
-
-function createFakeContext(sites: Site[] = [siteRecord()], options: FakeOptions = {}): FakeContext {
-  const branch = options.branch === undefined ? 'main' : options.branch
-  const sshEnvironments = options.sshEnvironments ?? ['main']
-  const pathExists = options.pathExists ?? true
-  const records = [...sites]
-  const started: SiteMcpStartRunRequest[] = []
-  const cancelled: string[] = []
-  const secretMoves: string[] = []
-  let library: SiteCustomStep[] = [
-    {
-      id: 'library-1',
-      name: 'Purge Cloudflare',
-      group: 'deploy',
-      runsOn: 'local',
-      command: 'echo purge',
-      position: 'after',
-      order: 0,
-      enabled: false
-    }
-  ]
-
-  const summarize = (site: Site): Promise<SiteSummary> => {
-    const secrets: Record<string, SiteSecretPresence> = {}
-    for (const name of Object.keys(site.environments)) {
-      secrets[name] = {
-        ssh: sshEnvironments.includes(name),
-        db: sshEnvironments.includes(name)
-      }
-    }
-    const resolvedEnvironment = resolveSiteEnvironment(site, branch)
-    const active = resolvedEnvironment.environment
-    const environmentRecord = active ? site.environments[active] : undefined
-    return Promise.resolve({
-      site,
-      pathExists,
-      branch,
-      resolvedEnvironment,
-      secrets,
-      importSelectedCount: environmentRecord?.exportDatabase === true ? 1 : 0,
-      deploySelectedCount: environmentRecord?.deployThemes === true ? 1 : 0
-    })
-  }
-
-  const logPage: SiteRunLogPage = {
-    run: PERSISTED_RUN,
-    lines: [{ at: 1_100, level: 'info', text: 'connected to acme.example.com' }],
-    truncatedEarlier: 0,
-    firstErrorIndex: -1
-  }
-
-  return {
-    cwd: '/Sites/acme/wp-content/themes/acme',
-    // The census invokes every tool; a plan review resolves immediately so it never hangs a sweep.
-    annotatePlan: () => Promise.resolve({ requestId: 'r1' }),
-    collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
-    updateSite: async (siteId, updates) => {
-      const index = records.findIndex((site) => site.id === siteId)
-      const existing = records[index]
-      if (!existing) {
-        return null
-      }
-      const next = { ...existing, ...updates, id: siteId }
-      records[index] = next
-      return next
-    },
-    openSshSession: async () => ({
-      exec: async (command: string) => {
-        if (command.includes('bedrock-root')) {
-          return { code: 0, stdout: 'standard\n', stderr: '' }
-        }
-        if (command.includes('wp-config.php') && command.includes('echo yes')) {
-          return { code: 0, stdout: 'yes\n', stderr: '' }
-        }
-        if (command.includes('eval-file')) {
-          return {
-            code: 0,
-            stdout:
-              '{"ok":true,"home":"https://acme.com","acf_version":"6.3.0","warnings":[],"results":[]}',
-            stderr: ''
-          }
-        }
-        return { code: 0, stdout: 'remote-ok', stderr: '' }
-      },
-      // The walker writes its snapshot beside the payload; the real session downloads that file.
-      download: async (_remotePath: string, localPath: string) => {
-        writeFileSync(
-          localPath,
-          '{"ok":true,"target":{"kind":"option"},"roots":{"hero_title":"Old"},"digests":{"hero_title":"aaa"},"target_digest":"root"}',
-          'utf8'
-        )
-      },
-      upload: async () => undefined,
-      writeSecureRemoteFile: async () => undefined,
-      removeRemoteFile: async () => undefined,
-      close: async () => undefined
-    }),
-    acfState,
-    store: {
-      listSites: () => records,
-      getSite: (siteId) => records.find((site) => site.id === siteId) ?? null,
-      findSiteByPath: (sitePath) => records.find((site) => site.path === sitePath) ?? null,
-      updateSite: (siteId, updates) => {
-        const index = records.findIndex((site) => site.id === siteId)
-        const existing = records[index]
-        if (!existing) {
-          return null
-        }
-        const next = { ...existing, ...updates, id: siteId }
-        records[index] = next
-        return next
-      }
-    },
-    getStepLibrary: () => library,
-    setStepLibrary: async (steps) => {
-      library = [...steps]
-    },
-    summarize,
-    summarizeAll: (list) => Promise.all(list.map((site) => summarize(site))),
-    hasSshSecret: (_siteId, name) => sshEnvironments.includes(name),
-    copyEnvironmentSecrets: (_siteId, from, to) => secretMoves.push(`copy:${from}->${to}`),
-    deleteEnvironmentSecrets: (_siteId, name) => secretMoves.push(`delete:${name}`),
-    gitStatus: () =>
-      Promise.resolve({
-        branch: branch ?? 'HEAD',
-        detached_head: false,
-        remote_url: 'git@example.com:acme/acme.git',
-        has_upstream: true,
-        ahead: 1,
-        behind: 0,
-        last_commit: 'abc1234 fix things (2 hours ago by Dev)',
-        dirty: false,
-        dirty_file_count: 0
-      }),
-    listRuns: (siteId) => (siteId === 'site-1' ? [PERSISTED_RUN] : []),
-    readRunLog: (siteId, runId) =>
-      siteId === 'site-1' && runId === RUN_ID
-        ? logPage
-        : { run: null, lines: [], truncatedEarlier: 0, firstErrorIndex: -1 },
-    listActiveRuns: () => options.activeRuns ?? [],
-    startRun: (request) => {
-      started.push(request)
-      return {
-        ...PERSISTED_RUN,
-        id: 'run-2',
-        group: request.group,
-        environment: request.environment,
-        branch: request.branch,
-        status: 'running',
-        endedAt: null
-      }
-    },
-    cancelRun: (runId) => {
-      cancelled.push(runId)
-      return true
-    },
-    shutdownRuns: () => Promise.resolve(),
-    started,
-    cancelled,
-    secretMoves
-  }
-}
-
-type CallOutcome = {
-  isError: boolean
-  payload: Record<string, unknown>
-  text: string
-}
-
-async function call(
-  context: SiteMcpContext,
-  name: string,
-  args: Record<string, unknown> = {}
-): Promise<CallOutcome> {
-  const tool = findSiteMcpTool(name)
-  if (!tool) {
-    throw new Error(`tool ${name} is not registered`)
-  }
-  const result = await dispatchSiteMcpTool(context, tool, args)
-  const text = result.content[0]?.text ?? ''
-  return { isError: result.isError === true, payload: JSON.parse(text), text }
-}
-
 /** Every tool, with arguments that exercise its happy path against the fixture. */
-// A real store on a temp directory: the census drives every tool, and stubbing this one would stop
-// it proving that the snapshot and revert tools work end to end.
-const acfState = createAcfStateStore(mkdtempSync(join(tmpdir(), 'muster-census-acf-')))
 acfState.save({
   kind: 'revert',
   site_id: 'site-1',
@@ -739,6 +462,33 @@ describe('environment CRUD', () => {
     expect(Object.keys(context.store.getSite('site-1')?.environments ?? {})).toEqual([
       'main',
       'stage'
+    ])
+  })
+
+  it('takes the new environment back out when its passwords cannot be copied', async () => {
+    const context = createFakeContext()
+    context.copyEnvironmentSecrets = () => {
+      throw new Error('OS encryption is unavailable')
+    }
+    const outcome = await call(context, 'duplicate_environment', { source: 'main', new_name: 'qa' })
+    expect(outcome.isError).toBe(true)
+    expect(String(outcome.payload.error)).toContain("Environment 'qa' was not created")
+    expect(Object.keys(context.store.getSite('site-1')?.environments ?? {})).not.toContain('qa')
+  })
+
+  it('puts the old name back when a rename cannot move the passwords', async () => {
+    const context = createFakeContext()
+    context.copyEnvironmentSecrets = () => {
+      throw new Error('OS encryption is unavailable')
+    }
+    const outcome = await call(context, 'rename_environment', {
+      old_name: 'staging',
+      new_name: 'stage'
+    })
+    expect(outcome.isError).toBe(true)
+    expect(Object.keys(context.store.getSite('site-1')?.environments ?? {})).toEqual([
+      'main',
+      'staging'
     ])
   })
 

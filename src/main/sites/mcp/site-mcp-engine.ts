@@ -5,7 +5,8 @@
 // the MCP directory that pulls in Electron-dependent code, which is what keeps the tool tests free
 // of the app.
 
-import type { Site } from '../../../shared/site-types'
+import type { Site, SiteCustomStep } from '../../../shared/site-types'
+import { applyEnvironmentPatches } from '../site-environment-patches'
 import { createSiteRunJob } from '../site-run-dispatch'
 import { listSiteRuns, readSiteRunLog } from '../site-run-log'
 import { createSiteRunService } from '../site-run-service'
@@ -19,7 +20,13 @@ import { createSiteSshSession } from '../site-ssh-session'
 import { acfStateDir, createAcfStateStore } from '../wp-acf-state-store'
 import type { SiteMcpContext, SiteMcpStore } from './site-mcp-context'
 import { readSiteGitStatus } from './site-mcp-git-status'
-import { setStepLibraryThroughBridge, updateSiteThroughBridge } from './site-mcp-store-bridge'
+import { writeSiteToDataFile, writeStepLibraryToDataFile } from './site-mcp-disk-write'
+import {
+  changeSecretsThroughBridge,
+  setStepLibraryThroughBridge,
+  updateSiteThroughBridge,
+  type SiteWriteBridgeBody
+} from './site-mcp-store-bridge'
 import {
   collectPlanAnnotationThroughBridge,
   openPlanAnnotationThroughBridge,
@@ -36,6 +43,11 @@ export type SiteMcpEngineOptions = {
    * with no userData) means writes go straight to this process's store.
    */
   bridgeFile?: string
+  /**
+   * The profile data file. With no GUI running, writes patch just the changed slice of it; this
+   * process's startup Store would save its whole snapshot over whatever changed since.
+   */
+  dataFile?: string
 }
 
 /**
@@ -62,17 +74,62 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
     emit: () => {}
   })
 
+  const applyBody =
+    (body: SiteWriteBridgeBody) =>
+    (current: Site): Site => ({
+      ...current,
+      ...body.updates,
+      ...(body.environmentPatches
+        ? { environments: applyEnvironmentPatches(current.environments, body.environmentPatches) }
+        : {}),
+      id: current.id
+    })
+  const writeSiteLocally = (body: SiteWriteBridgeBody): Site | null => {
+    if (options.dataFile) {
+      return writeSiteToDataFile(options.dataFile, body.siteId, applyBody(body))
+    }
+    const current = store.getSite(body.siteId)
+    if (!current) {
+      return null
+    }
+    const { id: _id, ...rest } = applyBody(body)(current)
+    return store.updateSite(body.siteId, rest)
+  }
+  const writeLibraryLocally = (steps: readonly SiteCustomStep[]): void => {
+    if (options.dataFile) {
+      writeStepLibraryToDataFile(options.dataFile, steps)
+      return
+    }
+    store.setSiteStepLibrary?.(steps)
+  }
+  // Only the GUI can decrypt stored passwords; this process tries its own copy only with no GUI.
+  const changeSecrets = async (
+    siteId: string,
+    change: { copy?: { from: string; to: string }; remove?: string }
+  ): Promise<void> => {
+    if (
+      options.bridgeFile &&
+      (await changeSecretsThroughBridge({ bridgeFile: options.bridgeFile, siteId, ...change }))
+    ) {
+      return
+    }
+    if (change.copy) {
+      copySiteEnvironmentSecrets(siteId, change.copy.from, change.copy.to)
+    }
+    if (change.remove) {
+      deleteSiteEnvironmentSecrets(siteId, change.remove)
+    }
+  }
+
   return {
     cwd: options.cwd ?? process.cwd(),
     store,
-    updateSite: (siteId, updates) =>
-      options.bridgeFile
-        ? updateSiteThroughBridge(store, {
-            siteId,
-            updates,
-            bridgeFile: options.bridgeFile
-          })
-        : Promise.resolve(store.updateSite(siteId, updates)),
+    updateSite: (siteId, updates, environmentPatches) => {
+      const body = { siteId, updates, ...(environmentPatches ? { environmentPatches } : {}) }
+      return options.bridgeFile
+        ? updateSiteThroughBridge({ ...body, bridgeFile: options.bridgeFile }, writeSiteLocally)
+        : Promise.resolve(writeSiteLocally(body))
+    },
     annotatePlan: (request) =>
       openPlanAnnotationThroughBridge({
         // Why throw when absent rather than degrade: a plan review needs a person, and this process
@@ -90,28 +147,25 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
     // bridge-first path as a site write, for the same clobbering reason.
     getStepLibrary: () => store.getSiteStepLibrary?.() ?? [],
     setStepLibrary: async (steps) => {
-      const write = store.setSiteStepLibrary
-      if (!write) {
+      if (!store.setSiteStepLibrary && !options.dataFile) {
         return
       }
       if (options.bridgeFile) {
         await setStepLibraryThroughBridge(
-          { setSiteStepLibrary: write },
-          {
-            steps,
-            bridgeFile: options.bridgeFile
-          }
+          { steps, bridgeFile: options.bridgeFile },
+          writeLibraryLocally
         )
         return
       }
-      write(steps)
+      writeLibraryLocally(steps)
     },
     acfState: createAcfStateStore(acfStateDir(options.runsBaseDir)),
     summarize: buildSiteSummary,
     summarizeAll: buildSiteSummaries,
     hasSshSecret: (siteId, environment) => hasSiteSecret(siteId, environment, 'ssh'),
-    copyEnvironmentSecrets: copySiteEnvironmentSecrets,
-    deleteEnvironmentSecrets: deleteSiteEnvironmentSecrets,
+    copyEnvironmentSecrets: (siteId, from, to) => changeSecrets(siteId, { copy: { from, to } }),
+    deleteEnvironmentSecrets: (siteId, environment) =>
+      changeSecrets(siteId, { remove: environment }),
     gitStatus: readSiteGitStatus,
     listRuns: (siteId, limit) => listSiteRuns(options.runsBaseDir, siteId, limit),
     readRunLog: (siteId, runId, maxLines) =>

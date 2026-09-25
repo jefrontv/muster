@@ -888,6 +888,8 @@ export type SitesApi = {
   addDiscoveredToSidebar: () => Promise<SiteResult<SiteSidebarSyncResult>>
   /** Fires after an AUTOMATIC adopt-and-link changed something, so the sidebar can refetch. */
   onSidebarSynced: (callback: (result: SiteSidebarSyncResult) => void) => () => void
+  /** Fires after an agent changed a site through the MCP bridge; carries the site id. */
+  onChanged: (callback: (siteId: string) => void) => () => void
   /** Local branch names of the site's checkout — suggestions only, [] when git is absent. */
   listBranches: (siteId: string) => Promise<SiteResult<string[]>>
   /**

@@ -1307,6 +1307,15 @@ export function useIpcEvents(): void {
         })
       )
     }
+    // An agent edited a site over MCP; without this the window keeps the old record and its next
+    // whole-array write (custom steps, toggles) erases the agent's change.
+    if (window.api.sites?.onChanged) {
+      unsubs.push(
+        window.api.sites.onChanged(() => {
+          void useAppStore.getState().fetchSites()
+        })
+      )
+    }
 
     if (window.api.keybindings) {
       unsubs.push(

@@ -8,6 +8,7 @@
 // run guard needs (site-run-plan.ts), and it is all an agent is ever allowed to learn.
 
 import type { SiteActiveRun, SiteRun, SiteRunLogPage } from '../../../shared/site-run-types'
+import type { SiteEnvironmentPatches } from '../site-environment-patches'
 import type { Site, SiteCustomStep, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
 import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
 import type { AcfStateStore } from '../wp-acf-state-store'
@@ -67,7 +68,12 @@ export type SiteMcpContext = {
    * running it owns the live state, and a direct disk write here is reverted by
    * the GUI's next whole-state save (and ignored by runs it starts).
    */
-  updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Promise<Site | null>
+  updateSite: (
+    siteId: string,
+    updates: Partial<Omit<Site, 'id'>>,
+    /** Per-environment edits, merged into the live record by whichever process holds it. */
+    environmentPatches?: SiteEnvironmentPatches
+  ) => Promise<Site | null>
   /** Shared step library, read fresh. Absent on a transport that does not carry it. */
   getStepLibrary?: () => SiteCustomStep[]
   /**
@@ -86,8 +92,8 @@ export type SiteMcpContext = {
   /** Presence only. A run is blocked on a missing credential; the value never leaves the host. */
   hasSshSecret: (siteId: string, environment: string) => boolean
   /** Carries stored secrets to a new environment name. Values pass through the store, never here. */
-  copyEnvironmentSecrets: (siteId: string, from: string, to: string) => void
-  deleteEnvironmentSecrets: (siteId: string, environment: string) => void
+  copyEnvironmentSecrets: (siteId: string, from: string, to: string) => void | Promise<void>
+  deleteEnvironmentSecrets: (siteId: string, environment: string) => void | Promise<void>
   /** Null when the checkout is not a git repository or is unreadable. */
   gitStatus: (sitePath: string) => Promise<SiteGitStatus | null>
   listRuns: (siteId: string, limit: number) => SiteRun[]

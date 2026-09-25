@@ -12,6 +12,8 @@ import {
   migrateMobilePairingDataToCanonicalUserDataPath
 } from './persistence'
 import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
+import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
+import { sendToTrustedUIRenderer } from './ipc/ui'
 import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
 import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
@@ -830,6 +832,9 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
           await siteWriteBridgeServer.start({
             store,
             userDataPath: getCanonicalUserDataPath(),
+            // An agent's write must reach the open window, or the next UI edit saves over it.
+            onSiteChanged: (site) => sendToTrustedUIRenderer('sites:changed', site.id),
+            secrets: { copy: copySiteEnvironmentSecrets, remove: deleteSiteEnvironmentSecrets },
             onPlanAnnotationRequested: openPlanAnnotation,
             onPlanAnnotationCollect: awaitPlanAnnotationResult
           })

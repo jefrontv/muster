@@ -8,6 +8,7 @@
 import {
   createEmptySiteEnvironment,
   resolveSiteEnvironment,
+  type Site,
   type SiteEnvironment
 } from '../../../shared/site-types'
 import {
@@ -44,18 +45,44 @@ async function createEnvironment(
     })
   }
   const seed: SiteEnvironment = source ? { ...source } : createEmptySiteEnvironment()
-  const updated = await context.updateSite(site.id, {
-    environments: { ...site.environments, [name]: seed },
-    activeEnvironment: site.activeEnvironment || name
-  })
+  const updated = requireWritten(
+    await context.updateSite(
+      site.id,
+      { activeEnvironment: site.activeEnvironment || name },
+      { [name]: { create: seed } }
+    ),
+    site.id
+  )
   if (copyFrom.length > 0) {
-    context.copyEnvironmentSecrets(site.id, copyFrom, name)
+    try {
+      await context.copyEnvironmentSecrets(site.id, copyFrom, name)
+    } catch (error) {
+      // Half a copy is worse than none: an env that looks complete but fails on its first run.
+      await context.updateSite(site.id, {}, { [name]: { remove: true } }).catch(() => null)
+      throw new SiteMcpToolError(
+        `Environment '${name}' was not created: its stored passwords could not be copied (${describeError(error)}). Open Muster and try again.`
+      )
+    }
   }
   return {
     created: name,
     copied_from: copyFrom.length > 0 ? copyFrom : null,
-    ...buildEnvironmentView(await context.summarize(updated ?? site))
+    ...buildEnvironmentView(await context.summarize(updated))
   }
+}
+
+/** A null write means nothing landed; summarizing the old record reported that as success. */
+function requireWritten(updated: Site | null, siteId: string): Site {
+  if (!updated) {
+    throw new SiteMcpToolError('The site could not be updated; nothing was saved.', {
+      site_id: siteId
+    })
+  }
+  return updated
+}
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
@@ -127,22 +154,33 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       if (from !== to && Object.hasOwn(site.environments, to)) {
         throw new SiteMcpToolError(`Environment '${to}' already exists.`)
       }
-      // Rebuilt by iteration rather than delete-then-add so the environment keeps its position.
-      const environments: Record<string, SiteEnvironment> = {}
-      for (const [name, environment] of Object.entries(site.environments)) {
-        environments[name === from ? to : name] = environment
+      if (from === to) {
+        return { renamed: { from, to }, ...buildEnvironmentView(await context.summarize(site)) }
       }
-      context.copyEnvironmentSecrets(site.id, from, to)
-      if (from !== to) {
-        context.deleteEnvironmentSecrets(site.id, from)
+      const activeEnvironment = site.activeEnvironment === from ? to : site.activeEnvironment
+      const updated = requireWritten(
+        await context.updateSite(site.id, { activeEnvironment }, { [to]: { rename: from } }),
+        site.id
+      )
+      try {
+        await context.copyEnvironmentSecrets(site.id, from, to)
+      } catch (error) {
+        // Stored passwords are keyed by name; renaming without them breaks the next run.
+        await context
+          .updateSite(
+            site.id,
+            { activeEnvironment: site.activeEnvironment },
+            { [from]: { rename: to } }
+          )
+          .catch(() => null)
+        throw new SiteMcpToolError(
+          `Environment '${from}' was not renamed: its stored passwords could not be moved (${describeError(error)}). Open Muster and try again.`
+        )
       }
-      const updated = await context.updateSite(site.id, {
-        environments,
-        activeEnvironment: site.activeEnvironment === from ? to : site.activeEnvironment
-      })
+      await context.deleteEnvironmentSecrets(site.id, from)
       return {
         renamed: { from, to },
-        ...buildEnvironmentView(await context.summarize(updated ?? site))
+        ...buildEnvironmentView(await context.summarize(updated))
       }
     }
   },
@@ -184,16 +222,29 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
           )
         }
       }
-      const environments = { ...site.environments }
-      delete environments[name]
-      context.deleteEnvironmentSecrets(site.id, name)
-      const remaining = Object.keys(environments)
-      const updated = await context.updateSite(site.id, {
-        environments,
-        activeEnvironment:
-          site.activeEnvironment === name ? (remaining[0] ?? '') : site.activeEnvironment
-      })
-      return { deleted: name, ...buildEnvironmentView(await context.summarize(updated ?? site)) }
+      const nextActive = names.find((entry) => entry !== name) ?? ''
+      const updated = requireWritten(
+        await context.updateSite(
+          site.id,
+          {
+            activeEnvironment: site.activeEnvironment === name ? nextActive : site.activeEnvironment
+          },
+          { [name]: { remove: true } }
+        ),
+        site.id
+      )
+      // After the config write: a failed write must not have already dropped the passwords.
+      let passwordsNote: string | null = null
+      try {
+        await context.deleteEnvironmentSecrets(site.id, name)
+      } catch (error) {
+        passwordsNote = `Stored passwords for '${name}' could not be removed (${describeError(error)}).`
+      }
+      return {
+        deleted: name,
+        ...(passwordsNote ? { warning: passwordsNote } : {}),
+        ...buildEnvironmentView(await context.summarize(updated))
+      }
     }
   },
   {

@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Site } from '../../../shared/site-types'
-import type { SiteMcpStore } from './site-mcp-context'
-import { updateSiteThroughBridge, type SiteWriteBridgeTransport } from './site-mcp-store-bridge'
+import {
+  SiteBridgeRefusedError,
+  updateSiteThroughBridge,
+  type SiteWriteBridgeBody,
+  type SiteWriteBridgeTransport
+} from './site-mcp-store-bridge'
 
 function site(overrides: Partial<Site> = {}): Site {
   return {
@@ -14,66 +18,73 @@ function site(overrides: Partial<Site> = {}): Site {
   } as Site
 }
 
-function fakeStore(): SiteMcpStore & { calls: { siteId: string }[] } {
-  const calls: { siteId: string }[] = []
-  return {
-    calls,
-    listSites: () => [site()],
-    getSite: () => site(),
-    findSiteByPath: () => site(),
-    updateSite: (siteId) => {
-      calls.push({ siteId })
-      return site({ displayName: 'written-to-disk' })
-    }
-  }
-}
+const endpoint = { port: 1234, token: 't', pid: 1 }
+const args = { siteId: 's1', updates: { displayName: 'Next' }, bridgeFile: '/tmp/bridge.json' }
 
 function transport(overrides: Partial<SiteWriteBridgeTransport> = {}): SiteWriteBridgeTransport {
   return {
-    readEndpoint: () => ({ port: 1234, token: 't', pid: 1 }),
-    post: async () => site({ displayName: 'written-through-gui' }),
+    readEndpoint: () => endpoint,
+    post: async () => ({ kind: 'applied', value: site({ displayName: 'written-through-gui' }) }),
     ...overrides
   }
 }
 
 describe('updateSiteThroughBridge', () => {
-  it('routes the write through the running GUI', async () => {
-    const store = fakeStore()
-    const post = vi.fn(async () => site({ displayName: 'written-through-gui' }))
+  it('routes the write, patches included, through the running GUI', async () => {
+    const writeLocally = vi.fn(() => site())
+    const post = vi.fn(async (_endpoint: unknown, _body: SiteWriteBridgeBody) => ({
+      kind: 'applied' as const,
+      value: site({ displayName: 'written-through-gui' })
+    }))
+    const environmentPatches = { main: { merge: { hostname: 'x.example' } } }
+
     const result = await updateSiteThroughBridge(
-      store,
-      { siteId: 's1', updates: { displayName: 'Next' }, bridgeFile: '/tmp/bridge.json' },
+      { ...args, environmentPatches },
+      writeLocally,
       transport({ post })
     )
+
     expect(result?.displayName).toBe('written-through-gui')
-    expect(post).toHaveBeenCalledWith(
-      { port: 1234, token: 't', pid: 1 },
-      { siteId: 's1', updates: { displayName: 'Next' } }
-    )
+    expect(post).toHaveBeenCalledWith(endpoint, {
+      siteId: 's1',
+      updates: { displayName: 'Next' },
+      environmentPatches
+    })
     // The GUI owns the write; this process must not also touch the file.
-    expect(store.calls).toEqual([])
+    expect(writeLocally).not.toHaveBeenCalled()
   })
 
-  it('writes to disk when no GUI is running', async () => {
-    const store = fakeStore()
+  it('writes the file itself when no GUI is running', async () => {
+    const writeLocally = vi.fn(() => site({ displayName: 'written-to-disk' }))
     const result = await updateSiteThroughBridge(
-      store,
-      { siteId: 's1', updates: {}, bridgeFile: '/tmp/bridge.json' },
+      args,
+      writeLocally,
       transport({ readEndpoint: () => null })
     )
     expect(result?.displayName).toBe('written-to-disk')
-    expect(store.calls).toEqual([{ siteId: 's1' }])
+    expect(writeLocally).toHaveBeenCalledTimes(1)
   })
 
-  it('falls back to disk when the bridge is unreachable', async () => {
-    const store = fakeStore()
-    // A stale endpoint file outlives the GUI that wrote it; the write must still land.
+  it('writes the file itself when the endpoint is stale and nothing is listening', async () => {
+    const writeLocally = vi.fn(() => site({ displayName: 'written-to-disk' }))
     const result = await updateSiteThroughBridge(
-      store,
-      { siteId: 's1', updates: {}, bridgeFile: '/tmp/bridge.json' },
-      transport({ post: async () => null })
+      args,
+      writeLocally,
+      transport({ post: async () => ({ kind: 'no-gui' }) })
     )
     expect(result?.displayName).toBe('written-to-disk')
-    expect(store.calls).toEqual([{ siteId: 's1' }])
+  })
+
+  it('refuses rather than writing around a GUI that is up but did not apply it', async () => {
+    // The old fallback wrote to disk and reported success; the GUI's next save then reverted it.
+    const writeLocally = vi.fn(() => site())
+    await expect(
+      updateSiteThroughBridge(
+        args,
+        writeLocally,
+        transport({ post: async () => ({ kind: 'refused', detail: 'no answer within 5 s' }) })
+      )
+    ).rejects.toBeInstanceOf(SiteBridgeRefusedError)
+    expect(writeLocally).not.toHaveBeenCalled()
   })
 })

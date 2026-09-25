@@ -162,7 +162,11 @@ export async function runSiteMcpEntry(options: SiteMcpEntryOptions = {}): Promis
       initDataPath()
       initOrcaProfilePaths()
       dataFile = ensureActiveOrcaProfile(getProfileUserDataPath()).dataFile
-      return new Store({ dataFile })
+      const opened = new Store({ dataFile })
+      // Read-only here: every write goes through the GUI or patches its slice of the file. A save
+      // of this startup snapshot would revert whatever the GUI changed since.
+      opened.freezeWrites()
+      return opened
     })()
   const context = createSiteMcpContext({
     // Why wrapped: this server outlives GUI edits to the same file, and its snapshot would
@@ -172,6 +176,7 @@ export async function runSiteMcpEntry(options: SiteMcpEntryOptions = {}): Promis
     // Writes prefer the running GUI, which owns the live in-memory sites; absent
     // file means no GUI, and this process writes the profile data file itself.
     bridgeFile: siteWriteBridgeFile(getCanonicalUserDataPath()),
+    ...(dataFile ? { dataFile } : {}),
     cwd: options.cwd ?? process.env.MUSTER_MCP_CWD ?? process.cwd()
   })
   const server = createSiteMcpServer({

@@ -845,6 +845,11 @@ const api = {
       ipcRenderer.on('sites:sidebarSynced', listener)
       return () => ipcRenderer.removeListener('sites:sidebarSynced', listener)
     },
+    onChanged: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, siteId: string) => callback(siteId)
+      ipcRenderer.on('sites:changed', listener)
+      return () => ipcRenderer.removeListener('sites:changed', listener)
+    },
     listBranches: (siteId) => ipcRenderer.invoke('sites:listBranches', siteId),
     pipelines: (siteId) => ipcRenderer.invoke('sites:pipelines', siteId),
     stepLibrary: {
@@ -2583,14 +2588,10 @@ const api = {
       mode?: 'install' | 'setup'
     }): Promise<SiteResult<{ command: string; code: number }>> =>
       ipcRenderer.invoke('extensions:runCommand', args),
-    cancelCommand: (): Promise<SiteResult<null>> =>
-      ipcRenderer.invoke('extensions:cancelCommand'),
+    cancelCommand: (): Promise<SiteResult<null>> => ipcRenderer.invoke('extensions:cancelCommand'),
     refreshHarnesses: (args: { id: string }): Promise<SiteResult<ExtensionInventory>> =>
       ipcRenderer.invoke('extensions:refreshHarnesses', args),
-    setEnabled: (args: {
-      id: string
-      enabled: boolean
-    }): Promise<SiteResult<ExtensionInventory>> =>
+    setEnabled: (args: { id: string; enabled: boolean }): Promise<SiteResult<ExtensionInventory>> =>
       ipcRenderer.invoke('extensions:setEnabled', args),
     uninstall: (args: { id: string }): Promise<SiteResult<{ command: string | null }>> =>
       ipcRenderer.invoke('extensions:uninstall', args),

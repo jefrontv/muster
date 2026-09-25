@@ -13,6 +13,11 @@ import { randomBytes } from 'node:crypto'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Site, SiteCustomStep } from '../../shared/site-types'
+import {
+  applyEnvironmentPatches,
+  SiteEnvironmentPatchError,
+  type SiteEnvironmentPatches
+} from './site-environment-patches'
 import type {
   PlanAnnotationRequest,
   PlanAnnotationResult
@@ -28,6 +33,8 @@ export type SiteWriteBridgeEndpoint = {
 }
 
 export type SiteWriteBridgeStore = {
+  /** Needed to merge environment patches into the live record. */
+  getSite: (siteId: string) => Site | null
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
   /** Absent on a store that predates the shared step library. */
   setSiteStepLibrary?: (steps: readonly SiteCustomStep[]) => void
@@ -42,6 +49,11 @@ type StartArgs = {
   userDataPath: string
   /** Called after a successful write so the renderer can re-read the site. */
   onSiteChanged?: (site: Site) => void
+  /** Stored passwords, which only this process can decrypt. Absent = route off. */
+  secrets?: {
+    copy: (siteId: string, from: string, to: string) => void
+    remove: (siteId: string, environment: string) => void
+  }
   /** Opens a review and answers at once with its id. Absent = feature off. */
   onPlanAnnotationRequested?: (
     request: Omit<PlanAnnotationRequest, 'requestId'>
@@ -102,12 +114,39 @@ export class SiteWriteBridgeServer {
     const isLibraryUpdate = req.method === 'POST' && req.url === '/library/update'
     const isPlanAnnotate = req.method === 'POST' && req.url === '/plan/annotate'
     const isPlanCollect = req.method === 'POST' && req.url === '/plan/collect'
-    if (!isSiteUpdate && !isLibraryUpdate && !isPlanAnnotate && !isPlanCollect) {
+    const isSecrets = req.method === 'POST' && req.url === '/site/secrets'
+    if (!isSiteUpdate && !isLibraryUpdate && !isPlanAnnotate && !isPlanCollect && !isSecrets) {
       reply(404, { error: 'not found' })
       return
     }
     if (req.headers['x-muster-site-bridge-token'] !== this.token) {
       reply(401, { error: 'unauthorized' })
+      return
+    }
+    if (isSecrets) {
+      try {
+        const body = await readJsonBody(req)
+        const siteId = typeof body.siteId === 'string' ? body.siteId : ''
+        const secrets = args.secrets
+        if (!secrets) {
+          reply(404, { error: 'this build cannot change stored passwords' })
+          return
+        }
+        if (siteId === '' || !args.store.getSite(siteId)) {
+          reply(404, { error: `no site with id ${siteId}` })
+          return
+        }
+        const copy = body.copy as { from?: unknown; to?: unknown } | undefined
+        if (copy && typeof copy.from === 'string' && typeof copy.to === 'string') {
+          secrets.copy(siteId, copy.from, copy.to)
+        }
+        if (typeof body.remove === 'string') {
+          secrets.remove(siteId, body.remove)
+        }
+        reply(200, { ok: true })
+      } catch (error) {
+        reply(500, { error: error instanceof Error ? error.message : String(error) })
+      }
       return
     }
     if (isPlanCollect) {
@@ -191,9 +230,26 @@ export class SiteWriteBridgeServer {
         reply(400, { error: 'siteId is required' })
         return
       }
+      const patches = body.environmentPatches as SiteEnvironmentPatches | undefined
+      if (patches && typeof patches === 'object') {
+        const live = args.store.getSite(siteId)
+        if (!live) {
+          reply(404, { error: `no site with id ${siteId}` })
+          return
+        }
+        try {
+          // Merged here, into the record this process holds, so nothing unsaved is overwritten.
+          updates.environments = applyEnvironmentPatches(live.environments, patches)
+        } catch (error) {
+          if (error instanceof SiteEnvironmentPatchError) {
+            reply(409, { error: error.message })
+            return
+          }
+          throw error
+        }
+      }
       const site = args.store.updateSite(siteId, updates)
       if (!site) {
-        // Not an error the caller can fix by retrying here: fall back to its own write.
         reply(404, { error: `no site with id ${siteId}` })
         return
       }

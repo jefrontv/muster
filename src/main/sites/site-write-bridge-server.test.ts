@@ -57,10 +57,19 @@ afterEach(async () => {
 async function startServer(args: {
   userDataPath: string
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
+  getSite?: (siteId: string) => Site | null
+  secrets?: {
+    copy: (siteId: string, from: string, to: string) => void
+    remove: (siteId: string, environment: string) => void
+  }
 }): Promise<SiteWriteBridgeServer> {
   const server = new SiteWriteBridgeServer()
   servers.push(server)
-  await server.start({ store: { updateSite: args.updateSite }, userDataPath: args.userDataPath })
+  await server.start({
+    store: { updateSite: args.updateSite, getSite: args.getSite ?? (() => site()) },
+    userDataPath: args.userDataPath,
+    ...(args.secrets ? { secrets: args.secrets } : {})
+  })
   return server
 }
 
@@ -82,6 +91,67 @@ describe('SiteWriteBridgeServer', () => {
     expect(result.status).toBe(200)
     expect((result.payload.site as Site).displayName).toBe('Renamed')
     expect(applied).toEqual([{ siteId: 's1', updates: { displayName: 'Renamed' } }])
+  })
+
+  it('merges environment patches into the live record, not a stale copy', async () => {
+    const userDataPath = newUserData()
+    const live = site({
+      environments: {
+        main: {
+          hostname: 'main.example',
+          username: 'set-in-the-gui'
+        } as Site['environments'][string]
+      }
+    })
+    const applied: Partial<Site>[] = []
+    await startServer({
+      userDataPath,
+      getSite: () => live,
+      updateSite: (_siteId, updates) => {
+        applied.push(updates)
+        return { ...live, ...updates }
+      }
+    })
+    const result = await post(readEndpoint(userDataPath), {
+      siteId: 's1',
+      updates: {},
+      environmentPatches: { main: { merge: { hostname: 'new.example' } } }
+    })
+    expect(result.status).toBe(200)
+    expect(applied[0]?.environments?.main).toMatchObject({
+      hostname: 'new.example',
+      username: 'set-in-the-gui'
+    })
+  })
+
+  it('answers 409 when a patched environment was deleted in the GUI', async () => {
+    const userDataPath = newUserData()
+    const updateSite = vi.fn(() => site())
+    await startServer({ userDataPath, updateSite })
+    const result = await post(readEndpoint(userDataPath), {
+      siteId: 's1',
+      updates: {},
+      environmentPatches: { gone: { merge: { hostname: 'x' } } }
+    })
+    expect(result.status).toBe(409)
+    expect(String(result.payload.error)).toContain("'gone' no longer exists")
+    expect(updateSite).not.toHaveBeenCalled()
+  })
+
+  it('copies and removes stored passwords on /site/secrets', async () => {
+    const userDataPath = newUserData()
+    const copy = vi.fn()
+    const remove = vi.fn()
+    await startServer({ userDataPath, updateSite: () => site(), secrets: { copy, remove } })
+    const endpoint = readEndpoint(userDataPath)
+    const response = await fetch(`http://127.0.0.1:${endpoint.port}/site/secrets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-muster-site-bridge-token': endpoint.token },
+      body: JSON.stringify({ siteId: 's1', copy: { from: 'main', to: 'prod' }, remove: 'main' })
+    })
+    expect(response.status).toBe(200)
+    expect(copy).toHaveBeenCalledWith('s1', 'main', 'prod')
+    expect(remove).toHaveBeenCalledWith('s1', 'main')
   })
 
   it('refuses a request without the endpoint token', async () => {
@@ -123,7 +193,7 @@ describe('plan review route', () => {
     servers.push(server)
     const gate: { answer: ((result: PlanAnnotationResult) => void) | null } = { answer: null }
     await server.start({
-      store: { updateSite: () => null },
+      store: { updateSite: () => null, getSite: () => null },
       userDataPath,
       onPlanAnnotationRequested: () => ({ requestId: 'review-1' }),
       onPlanAnnotationCollect: async () => {
@@ -173,7 +243,7 @@ describe('plan review route', () => {
     servers.push(server)
     const asked = vi.fn()
     await server.start({
-      store: { updateSite: () => null },
+      store: { updateSite: () => null, getSite: () => null },
       userDataPath,
       onPlanAnnotationRequested: () => {
         asked()
@@ -195,7 +265,7 @@ describe('plan review route', () => {
     const server = new SiteWriteBridgeServer()
     servers.push(server)
     await server.start({
-      store: { updateSite: () => null },
+      store: { updateSite: () => null, getSite: () => null },
       userDataPath,
       onPlanAnnotationRequested: () => ({ requestId: 'review-1' })
     })
@@ -216,7 +286,7 @@ describe('plan review route', () => {
     const server = new SiteWriteBridgeServer()
     servers.push(server)
     await server.start({
-      store: { updateSite: () => null },
+      store: { updateSite: () => null, getSite: () => null },
       userDataPath,
       onPlanAnnotationRequested: () => ({ requestId: 'review-1' }),
       onPlanAnnotationCollect: async () => ({ status: 'unknown' as const })
