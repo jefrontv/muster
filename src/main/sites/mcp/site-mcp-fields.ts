@@ -14,6 +14,7 @@
 import {
   SITE_DEPLOY_TOGGLES,
   SITE_IMPORT_TOGGLES,
+  SITE_LOCAL_STACKS,
   type Site,
   type SiteEnvironment,
   type SiteToggleKey
@@ -121,7 +122,8 @@ export const SITE_MCP_FIELDS: readonly SiteMcpField[] = [
     property: 'localStack',
     description: 'Local stack',
     kind: 'enum',
-    choices: ['plain', 'mamp', 'localwp']
+    // The app's own list: a copy here left agents unable to pick agent-local (muster#30).
+    choices: SITE_LOCAL_STACKS
   },
   {
     key: 'db_user',

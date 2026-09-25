@@ -7,6 +7,7 @@ import {
   createEmptySiteEnvironment,
   CUSTOM_STEP_SCRIPT_DIR,
   resolveSiteEnvironment,
+  SITE_LOCAL_STACKS,
   type Site,
   type SiteEnvironment,
   type SiteCustomStep,
@@ -532,6 +533,19 @@ describe('password redaction', () => {
     })
     expect(context.store.getSite('site-1')?.notes).toBe('')
   })
+
+  // muster#30: the choice list was a copy that predated agent-local.
+  it.each(SITE_LOCAL_STACKS)(
+    'sets local_stack to %s like the settings screen can',
+    async (stack) => {
+      const context = createFakeContext()
+      const outcome = await call(context, 'set_deployment_fields', {
+        fields: { local_stack: stack }
+      })
+      expect(outcome.isError).not.toBe(true)
+      expect(context.store.getSite('site-1')?.localStack).toBe(stack)
+    }
+  )
 })
 
 describe('the accidental-production guard', () => {
