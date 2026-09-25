@@ -73,6 +73,18 @@ function toolResult(payload: unknown, isError: boolean): SiteMcpToolResult {
   return isError ? { content, isError: true } : { content }
 }
 
+/** Keys a closed schema does not declare; clients are not required to enforce the schema. */
+function unknownArgumentKeys(tool: SiteMcpTool, args: Record<string, unknown>): string[] {
+  const schema = tool.inputSchema
+  if (schema.additionalProperties !== false) {
+    return []
+  }
+  const known = new Set(Object.keys(schema.properties ?? {}))
+  return Object.keys(args)
+    .filter((key) => !known.has(key))
+    .sort()
+}
+
 /**
  * Runs one tool. A tool failure is reported as an `isError` result, not a thrown exception and not
  * a JSON-RPC error: the model needs to read the message and correct itself, and an exception
@@ -83,6 +95,18 @@ export async function dispatchSiteMcpTool(
   tool: SiteMcpTool,
   args: Record<string, unknown>
 ): Promise<SiteMcpToolResult> {
+  const unknown = unknownArgumentKeys(tool, args)
+  if (unknown.length > 0) {
+    // A misspelled `environment` on a deploy used to be dropped and the branch's env deployed.
+    return toolResult(
+      {
+        ok: false,
+        error: `Unknown argument(s) for ${tool.name}: ${unknown.join(', ')}. Nothing was run.`,
+        valid_keys: Object.keys(tool.inputSchema.properties ?? {}).sort()
+      },
+      true
+    )
+  }
   try {
     return toolResult(await tool.run(context, args), false)
   } catch (error) {

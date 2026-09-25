@@ -551,6 +551,19 @@ describe('password redaction', () => {
 describe('the accidental-production guard', () => {
   const unmatchedBranch = { branch: 'feature/login' }
 
+  it('refuses a misspelled argument instead of deploying to the inferred environment', async () => {
+    const context = createFakeContext([siteRecord()])
+    const { payload, isError } = await call(context, 'run_deploy_functions', {
+      environment: 'staging'
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain(
+      'Unknown argument(s) for run_deploy_functions: environment'
+    )
+    expect(payload.valid_keys).toContain('env')
+    expect(context.started).toHaveLength(0)
+  })
+
   it('refuses a deploy off an unmatched branch and returns the preview', async () => {
     const context = createFakeContext([siteRecord()], unmatchedBranch)
     const { payload } = await call(context, 'run_deploy_functions', {})
