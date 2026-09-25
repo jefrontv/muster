@@ -3,14 +3,23 @@
 // so a compromised renderer cannot push a multi-megabyte string into orca-data.json, and unknown
 // keys are rejected outright rather than merged into a persisted record.
 
+import {
+  ENVIRONMENT_STRING_FIELD_LIMITS,
+  SITE_MAX_DB_PORT,
+  SITE_MAX_NAME_LENGTH,
+  SITE_MAX_NOTES_LENGTH,
+  SITE_MAX_PATH_LENGTH,
+  SITE_MAX_TIMEOUT_SECONDS,
+  SITE_STRING_FIELD_LIMITS
+} from '../../shared/site-field-limits'
 import { isSafeCustomStepScriptPath, SITE_LOCAL_STACKS } from '../../shared/site-types'
 import type { SiteCustomStep, SiteEnvironment, SiteLocalStack } from '../../shared/site-types'
 
-const MAX_PATH_LENGTH = 4_096
-const MAX_NAME_LENGTH = 256
-const MAX_NOTES_LENGTH = 16_384
-const MAX_TIMEOUT_SECONDS = 86_400
-const MAX_DB_PORT = 65_535
+const MAX_PATH_LENGTH = SITE_MAX_PATH_LENGTH
+const MAX_NAME_LENGTH = SITE_MAX_NAME_LENGTH
+const MAX_TIMEOUT_SECONDS = SITE_MAX_TIMEOUT_SECONDS
+const MAX_DB_PORT = SITE_MAX_DB_PORT
+const MAX_NOTES_LENGTH = SITE_MAX_NOTES_LENGTH
 const MAX_COMMAND_LENGTH = 8_192
 const MAX_CUSTOM_STEPS = 64
 /** Scripts are whole files, so they need far more room than a one-line command. */
@@ -54,26 +63,9 @@ function isLocalStack(value: unknown): value is SiteLocalStack {
   return SITE_LOCAL_STACKS.some((stack) => stack === value)
 }
 
-const SITE_STRING_FIELDS = {
-  displayName: MAX_NAME_LENGTH,
-  localWpRoot: MAX_PATH_LENGTH,
-  localDomain: MAX_NAME_LENGTH,
-  dbUser: MAX_NAME_LENGTH,
-  dbSocket: MAX_PATH_LENGTH,
-  phpVersion: MAX_NAME_LENGTH,
-  activeEnvironment: MAX_NAME_LENGTH,
-  notes: MAX_NOTES_LENGTH
-} as const
+const SITE_STRING_FIELDS = SITE_STRING_FIELD_LIMITS
 
-const ENVIRONMENT_STRING_FIELDS = {
-  hostname: MAX_NAME_LENGTH,
-  sshPort: MAX_NAME_LENGTH,
-  username: MAX_NAME_LENGTH,
-  rootPath: MAX_PATH_LENGTH,
-  liveDomain: MAX_NAME_LENGTH,
-  deployCommand: MAX_PATH_LENGTH,
-  themeDistPath: MAX_PATH_LENGTH
-} as const
+const ENVIRONMENT_STRING_FIELDS = ENVIRONMENT_STRING_FIELD_LIMITS
 
 const ENVIRONMENT_BOOLEAN_FIELDS = [
   'exportDatabase',

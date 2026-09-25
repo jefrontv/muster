@@ -53,7 +53,8 @@ export const SITE_MCP_STEP_LIBRARY_TOOLS: readonly SiteMcpTool[] = [
         library_step: { type: 'string', description: 'Library step id.' },
         enabled: {
           type: 'boolean',
-          description: 'Whether the installed step starts ticked (default true).'
+          description:
+            'Whether the installed step starts ticked (default false, as with create_custom_step).'
         },
         ...SITE_PROPERTY
       },
@@ -75,7 +76,8 @@ export const SITE_MCP_STEP_LIBRARY_TOOLS: readonly SiteMcpTool[] = [
         site,
         template,
         steps,
-        raw.enabled === undefined ? true : raw.enabled === true || raw.enabled === 'true'
+        // Off unless asked, as in create_custom_step.
+        raw.enabled === true || raw.enabled === 'true'
       ).catch((error: unknown) => {
         throw new SiteMcpToolError(String(error instanceof Error ? error.message : error))
       })

@@ -89,7 +89,8 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         },
         enabled: {
           type: 'boolean',
-          description: 'Whether it is ticked (default true).'
+          description:
+            'Whether it is ticked. Default false: a step an agent creates runs on the next deploy anyone starts, so it stays off until someone ticks it.'
         },
         ...SITE_PROPERTY
       },
@@ -109,7 +110,8 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         ...readStepSource(raw, true),
         position,
         order: nextOrder(steps, group, position),
-        enabled: raw.enabled === undefined ? true : raw.enabled === true || raw.enabled === 'true'
+        // Off unless asked: it runs on the next import or deploy, including one a person starts.
+        enabled: raw.enabled === true || raw.enabled === 'true'
       }
       const description = raw.description
       if (typeof description === 'string' && description.trim().length > 0) {

@@ -50,7 +50,39 @@ async function resolveTargetEnvironment(
   if (!resolved) {
     throw new SiteMcpToolError('Site has no environments. Create one with create_environment.')
   }
+  // A run refuses this branch without confirmation; a config write must not quietly edit a guess.
+  if (summary.resolvedEnvironment.requiresConfirmation) {
+    throw new SiteMcpToolError(
+      `The checked-out branch does not identify an environment (it fell back to '${resolved}'). Pass env to say which one to change. Nothing was saved.`,
+      { available_environments: Object.keys(site.environments) }
+    )
+  }
   return resolved
+}
+
+/** Every settable key, so a model sees the enums (local_stack's included) without asking first. */
+function fieldProperties(): Record<string, Record<string, unknown>> {
+  return Object.fromEntries(
+    SITE_MCP_FIELDS.map((field) => [
+      field.key,
+      field.kind === 'number'
+        ? { type: ['number', 'string', 'null'], description: field.description }
+        : {
+            type: 'string',
+            description: `${field.description}${field.target === 'environment' ? ' (per environment)' : ''}`,
+            ...(field.choices ? { enum: [...field.choices] } : {})
+          }
+    ])
+  )
+}
+
+function toggleProperties(): Record<string, Record<string, unknown>> {
+  return Object.fromEntries(
+    [...SITE_IMPORT_TOGGLES, ...SITE_DEPLOY_TOGGLES].map((toggle) => [
+      canonicalKey(toggle.key),
+      { type: 'boolean', description: toggle.label }
+    ])
+  )
 }
 
 async function applyEnvironmentPatch(
@@ -95,14 +127,26 @@ function toggleDescriptors(
 function collectToggleUpdates(raw: Record<string, unknown>): Partial<SiteEnvironment> {
   const patch: Partial<SiteEnvironment> = {}
   const unknown: string[] = []
+  const invalid: string[] = []
   for (const [key, value] of Object.entries(raw)) {
     const toggle = resolveToggleKey(key)
     if (!toggle) {
       unknown.push(key)
       continue
     }
-    // A model sends "true" as often as true; a string would otherwise silently enable a toggle.
-    patch[toggle] = value === true || value === 'true'
+    // A model sends "true" as often as true. Anything else (1, "yes", null) used to mean off.
+    if (value === true || value === 'true') {
+      patch[toggle] = true
+    } else if (value === false || value === 'false') {
+      patch[toggle] = false
+    } else {
+      invalid.push(key)
+    }
+  }
+  if (invalid.length > 0) {
+    throw new SiteMcpToolError(
+      `Toggle values must be true or false: ${invalid.sort().join(', ')}. Nothing was changed.`
+    )
   }
   // Thrown after the loop, before the patch is returned: still all-or-nothing.
   if (unknown.length > 0) {
@@ -178,8 +222,9 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
       {
         toggles: {
           type: 'object',
-          description: 'Map of toggle key to boolean, e.g. {"export_database": true}.',
-          additionalProperties: { type: 'boolean' }
+          description:
+            'Map of toggle key to boolean, e.g. {"export_database": true}. camelCase keys are accepted too.',
+          properties: toggleProperties()
         },
         ...WRITE_SCHEMA_SUFFIX
       },
@@ -200,7 +245,9 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
       {
         fields: {
           type: 'object',
-          description: 'Map of field key to value, e.g. {"hostname": "example.com"}.'
+          description:
+            'Map of field key to value, e.g. {"hostname": "example.com"}. camelCase keys are accepted too. Values out of range are refused, not clamped.',
+          properties: fieldProperties()
         },
         ...WRITE_SCHEMA_SUFFIX
       },

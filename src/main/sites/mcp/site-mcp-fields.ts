@@ -19,11 +19,21 @@ import {
   type SiteEnvironment,
   type SiteToggleKey
 } from '../../../shared/site-types'
+import {
+  ENVIRONMENT_STRING_FIELD_LIMITS,
+  SITE_DEFAULT_SEARCH_REPLACE_TIMEOUT_SECONDS,
+  SITE_MAX_DB_PORT,
+  SITE_MAX_PATH_LENGTH,
+  SITE_MAX_TIMEOUT_SECONDS,
+  SITE_STRING_FIELD_LIMITS
+} from '../../../shared/site-field-limits'
 import { SiteMcpToolError } from './site-mcp-arguments'
 
-const MAX_FIELD_LENGTH = 4_096
-const MAX_TIMEOUT_SECONDS = 86_400
-const MAX_DB_PORT = 65_535
+/** The settings screen's own bounds: a copy here is how agent writes drifted from it. */
+const FIELD_LENGTH_LIMITS: Readonly<Record<string, number>> = {
+  ...SITE_STRING_FIELD_LIMITS,
+  ...ENVIRONMENT_STRING_FIELD_LIMITS
+}
 
 export type SiteMcpFieldTarget = 'site' | 'environment'
 
@@ -158,7 +168,7 @@ export const SITE_MCP_FIELDS: readonly SiteMcpField[] = [
     key: 'search_replace_timeout_seconds',
     target: 'site',
     property: 'searchReplaceTimeoutSeconds',
-    description: 'wp search-replace timeout (0 disables)',
+    description: `wp search-replace timeout in seconds, 0-${SITE_MAX_TIMEOUT_SECONDS} (0 disables; blank restores ${SITE_DEFAULT_SEARCH_REPLACE_TIMEOUT_SECONDS})`,
     kind: 'number'
   }
 ]
@@ -250,24 +260,43 @@ export function buildFieldPatches(fields: Record<string, unknown>): SiteMcpField
   return patches
 }
 
+function coerceNumber(field: SiteMcpField, raw: unknown): number | null {
+  const isPort = field.key === 'db_port'
+  if (raw === null || raw === undefined || (typeof raw === 'string' && raw.trim() === '')) {
+    return isPort ? null : SITE_DEFAULT_SEARCH_REPLACE_TIMEOUT_SECONDS
+  }
+  const parsed =
+    typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw.trim()) : Number.NaN
+  const [min, max] = isPort ? [1, SITE_MAX_DB_PORT] : [0, SITE_MAX_TIMEOUT_SECONDS]
+  // Refused, not clamped: a clamped 0 reached mysql as the port, and 99999 silently became 65535.
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new SiteMcpToolError(`'${field.key}' must be a whole number from ${min} to ${max}.`)
+  }
+  return parsed
+}
+
 function coerceFieldValue(field: SiteMcpField, raw: unknown): string | number | null {
   if (field.kind === 'number') {
-    if (raw === null || raw === '') {
-      return field.key === 'db_port' ? null : 0
-    }
-    const parsed = typeof raw === 'number' ? raw : Number(raw)
-    if (!Number.isFinite(parsed)) {
-      throw new SiteMcpToolError(`'${field.key}' must be a number.`)
-    }
-    const max = field.key === 'db_port' ? MAX_DB_PORT : MAX_TIMEOUT_SECONDS
-    return Math.min(Math.max(Math.trunc(parsed), 0), max)
+    return coerceNumber(field, raw)
   }
-  const text = raw === null || raw === undefined ? '' : String(raw)
-  if (text.length > MAX_FIELD_LENGTH) {
-    throw new SiteMcpToolError(`'${field.key}' exceeds ${MAX_FIELD_LENGTH} characters.`)
+  if (raw !== null && raw !== undefined && typeof raw !== 'string' && typeof raw !== 'number') {
+    // String({}) stored "[object Object]" and String(true) stored "true".
+    throw new SiteMcpToolError(`'${field.key}' must be a string.`)
+  }
+  const text = raw === null || raw === undefined ? '' : String(raw).trim()
+  const limit = FIELD_LENGTH_LIMITS[String(field.property)] ?? SITE_MAX_PATH_LENGTH
+  if (text.length > limit) {
+    throw new SiteMcpToolError(`'${field.key}' exceeds ${limit} characters.`)
   }
   if (field.kind === 'enum' && field.choices && !field.choices.includes(text)) {
     throw new SiteMcpToolError(`'${field.key}' must be one of: ${field.choices.join(', ')}`)
+  }
+  // The import's rm and tree-swap steps run inside this subpath; it must stay inside the checkout.
+  if (
+    field.key === 'local_wp_root' &&
+    (text.startsWith('/') || text.split(/[\\/]/).includes('..'))
+  ) {
+    throw new SiteMcpToolError("'local_wp_root' must be a relative path inside the site folder.")
   }
   return text
 }
