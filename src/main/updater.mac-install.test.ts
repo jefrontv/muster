@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
   appMock,
@@ -118,6 +118,12 @@ vi.mock('./updater-nudge', () => ({
   fetchNudge: vi.fn().mockResolvedValue(null),
   shouldApplyNudge: vi.fn().mockReturnValue(false)
 }))
+
+// Clears the module this test loaded, before the next test's resetModules orphans it.
+afterEach(async () => {
+  const { clearUpdaterTimersForTests } = await import('./updater')
+  clearUpdaterTimersForTests()
+})
 
 describe('updater mac install handoff', () => {
   beforeEach(() => {

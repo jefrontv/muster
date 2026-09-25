@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
   appMock,
@@ -103,6 +103,12 @@ vi.mock('./serve-update-handoff', () => ({
   hasServeUpdateSupervisor: vi.fn(() => true),
   requestServeUpdateHandoff: requestServeUpdateHandoffMock
 }))
+
+// Clears the module this test loaded, before the next test's resetModules orphans it.
+afterEach(async () => {
+  const { clearUpdaterTimersForTests } = await import('./updater')
+  clearUpdaterTimersForTests()
+})
 
 describe('headless serve update install handoff', () => {
   beforeEach(() => {

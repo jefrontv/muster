@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
   appMock,
@@ -158,6 +158,12 @@ vi.mock('./updater-prerelease-feed', () => ({
   getReleaseDownloadUrl: (tag: string) =>
     `https://github.com/jefrontv/muster/releases/download/${tag}`
 }))
+
+// Clears the module this test loaded, before the next test's resetModules orphans it.
+afterEach(async () => {
+  const { clearUpdaterTimersForTests } = await import('./updater')
+  clearUpdaterTimersForTests()
+})
 
 describe('updater', () => {
   beforeEach(() => {
@@ -1657,13 +1663,13 @@ describe('updater', () => {
     const { setupAutoUpdater } = await import('./updater')
 
     setupAutoUpdater(mainWindow as never, {
-      getLastUpdateCheckAt: () => Date.now() - 23 * 60 * 60 * 1000,
+      getLastUpdateCheckAt: () => Date.now() - 23 * 60 * 1000,
       setLastUpdateCheckAt
     })
 
     expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(59 * 60 * 1000)
+    await vi.advanceTimersByTimeAsync(36 * 60 * 1000)
     expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(60 * 1000)
@@ -1671,6 +1677,27 @@ describe('updater', () => {
       expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalledTimes(1)
     })
     expect(setLastUpdateCheckAt).not.toHaveBeenCalled()
+  })
+
+  it('runs a scheduled check the Mac slept through on the next heartbeat', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-03T12:00:00Z'))
+
+    const mainWindow = { webContents: { send: vi.fn() } }
+    const { setupAutoUpdater } = await import('./updater')
+
+    setupAutoUpdater(mainWindow as never, {
+      getLastUpdateCheckAt: () => new Date('2026-04-03T12:00:00Z').getTime(),
+      setLastUpdateCheckAt: vi.fn()
+    })
+    expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled()
+
+    // Sleep moves the wall clock without advancing the timer clock.
+    vi.setSystemTime(new Date('2026-04-03T15:00:00Z'))
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+    await vi.waitFor(() => {
+      expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('deduplicates rapid focus-triggered daily checks before checking status arrives', async () => {
@@ -1763,7 +1790,7 @@ describe('updater', () => {
     })
   })
 
-  it('reschedules the next automatic check 24 hours after finding an available update', async () => {
+  it('reschedules the next automatic check an hour after finding an available update', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-03T12:00:00Z'))
 
@@ -1798,7 +1825,7 @@ describe('updater', () => {
       changelog: null
     })
 
-    await vi.advanceTimersByTimeAsync(23 * 60 * 60 * 1000 + 59 * 60 * 1000)
+    await vi.advanceTimersByTimeAsync(59 * 60 * 1000)
     expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalledTimes(1)
 
     await vi.advanceTimersByTimeAsync(60 * 1000)

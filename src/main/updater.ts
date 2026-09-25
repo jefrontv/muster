@@ -23,6 +23,11 @@ import {
   armUpdateInstallExitWatchdog,
   disarmUpdateInstallExitWatchdog
 } from './update-install-exit-watchdog'
+import {
+  AUTO_UPDATE_CHECK_INTERVAL_MS,
+  AUTO_UPDATE_HEARTBEAT_MS,
+  AUTO_UPDATE_RETRY_INTERVAL_MS
+} from './updater-check-cadence'
 import { registerAutoUpdaterHandlers } from './updater-events'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
 import { createUpdaterFileLogger } from './updater-file-log'
@@ -57,8 +62,6 @@ export type UpdateInstallMode =
   | 'supervised-headless-serve'
   | 'unsupported-headless-serve'
 
-const AUTO_UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
-const AUTO_UPDATE_RETRY_INTERVAL_MS = 60 * 60 * 1000
 // Why: a persistently-failing feed used to re-arm the retry at a fixed 1h cadence forever (issue #7576); backoff doubles per failure up to this cap, any completed check resets.
 const MAX_AUTO_UPDATE_RETRY_INTERVAL_MS = 6 * 60 * 60 * 1000
 const NUDGE_POLL_INTERVAL_MS = 30 * 60 * 1000
@@ -80,6 +83,8 @@ let availableReleaseUrl: string | null = null
 let pendingCheckFailureKey: string | null = null
 let pendingCheckFailurePromise: Promise<void> | null = null
 let autoUpdateCheckTimer: ReturnType<typeof setTimeout> | null = null
+let autoUpdateCheckDueAt: number | null = null
+let autoUpdateHeartbeatTimer: ReturnType<typeof setInterval> | null = null
 let nudgeCheckTimer: ReturnType<typeof setTimeout> | null = null
 let pendingQuitAndInstallTimer: ReturnType<typeof setTimeout> | null = null
 let quitAndInstallInProgress = false
@@ -387,7 +392,7 @@ function armUpdateCheckStallTimer(attemptId: number): void {
       backgroundCheckLaunchPending = false
       backgroundCheckPromotedToUserInitiated = false
       userInitiatedCheck = false
-      scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+      scheduleAutomaticUpdateRetry()
     }
   }, UPDATE_CHECK_STALL_TIMEOUT_MS)
 }
@@ -437,7 +442,7 @@ function completeSilentUpdateCheck(userInitiated: boolean | undefined): boolean 
   clearAvailableUpdateContext()
   if (shouldRetrySoon) {
     // Why: a silent result against a temporary last-good feed is still a release transition, so it must not suppress the short publish retry.
-    scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+    scheduleAutomaticUpdateRetry()
     return true
   }
   recordCompletedUpdateCheck()
@@ -812,7 +817,7 @@ async function sendCheckFailureStatus(
       // Why: benign failures (publishing latest.yml, network blips) are transient — retry, and skip persisting the timestamp (would suppress the next startup check).
       console.warn('[updater] benign check failure:', message)
       clearAvailableUpdateContext()
-      scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+      scheduleAutomaticUpdateRetry()
       if (userInitiated) {
         // Why: a user click needs visible feedback (idle looks broken); the UI already prefixes context, so this carries only the actionable cause.
         sendErrorStatus("Couldn't reach the update server. Try again in a few minutes.", true)
@@ -829,7 +834,7 @@ async function sendCheckFailureStatus(
     clearAvailableUpdateContext()
     persistLastUpdateCheckAt?.(Date.now())
     if (!userInitiated) {
-      scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+      scheduleAutomaticUpdateRetry()
     }
     sendErrorStatus(message, userInitiated)
   }
@@ -924,23 +929,59 @@ export function installRemoteServerUpdate(runtimeId: string): RemoteServerUpdate
 
 let consecutiveAutomaticRetrySchedules = 0
 
-function scheduleAutomaticUpdateCheck(delayMs: number): void {
-  let effectiveDelayMs = delayMs
-  // All retry-cadence callers pass exactly this constant, so keying backoff on it keeps one choke point instead of threading a flag through every schedule site.
-  if (delayMs === AUTO_UPDATE_RETRY_INTERVAL_MS) {
-    effectiveDelayMs = Math.min(
+function scheduleAutomaticUpdateRetry(): void {
+  scheduleAutomaticUpdateCheck(
+    Math.min(
       AUTO_UPDATE_RETRY_INTERVAL_MS * 2 ** consecutiveAutomaticRetrySchedules,
       MAX_AUTO_UPDATE_RETRY_INTERVAL_MS
     )
-    consecutiveAutomaticRetrySchedules += 1
-  }
+  )
+  consecutiveAutomaticRetrySchedules += 1
+}
+
+function scheduleAutomaticUpdateCheck(delayMs: number): void {
   if (autoUpdateCheckTimer) {
     clearTimeout(autoUpdateCheckTimer)
   }
+  autoUpdateCheckDueAt = Date.now() + delayMs
   autoUpdateCheckTimer = setTimeout(() => {
+    autoUpdateCheckTimer = null
+    autoUpdateCheckDueAt = null
     // Why: Orca runs for days, so keep the next background check scheduled in the main process rather than tying it to relaunches or renderer lifetime.
     runBackgroundUpdateCheck()
-  }, effectiveDelayMs)
+  }, delayMs)
+}
+
+// Why: setTimeout runs on a clock that stops while the Mac sleeps, and some settle paths (a promoted user-initiated check) never re-arm; compare wall-clock time instead.
+function runDueUpdateCheck(): void {
+  if (
+    backgroundCheckLaunchPending ||
+    currentStatus.state === 'checking' ||
+    currentStatus.state === 'downloading'
+  ) {
+    return
+  }
+  if (autoUpdateCheckDueAt !== null) {
+    if (Date.now() >= autoUpdateCheckDueAt) {
+      if (autoUpdateCheckTimer) {
+        clearTimeout(autoUpdateCheckTimer)
+        autoUpdateCheckTimer = null
+      }
+      autoUpdateCheckDueAt = null
+      runBackgroundUpdateCheck()
+    }
+    return
+  }
+  const lastCheck = _getLastUpdateCheckAt?.() ?? null
+  const msSince = lastCheck === null ? Number.POSITIVE_INFINITY : Date.now() - lastCheck
+  if (msSince >= AUTO_UPDATE_CHECK_INTERVAL_MS) {
+    runBackgroundUpdateCheck()
+  }
+  scheduleAutomaticUpdateCheck(
+    msSince >= AUTO_UPDATE_CHECK_INTERVAL_MS
+      ? AUTO_UPDATE_CHECK_INTERVAL_MS
+      : AUTO_UPDATE_CHECK_INTERVAL_MS - msSince
+  )
 }
 
 function recordCompletedUpdateCheck(): void {
@@ -1213,6 +1254,31 @@ function runBackgroundUpdateCheck(
       }
       void sendCheckFailureStatus(String(err?.message ?? err), wasUserInitiated, 'promise', err)
     })
+}
+
+/** Test-only: a module left behind by vi.resetModules would otherwise fire its checks into the next test. */
+export function clearUpdaterTimersForTests(): void {
+  for (const timer of [
+    autoUpdateCheckTimer,
+    nudgeCheckTimer,
+    pendingQuitAndInstallTimer,
+    updateCheckStallTimer,
+    updateCheckSilentSettleTimer
+  ]) {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+  if (autoUpdateHeartbeatTimer) {
+    clearInterval(autoUpdateHeartbeatTimer)
+  }
+  autoUpdateCheckTimer = null
+  autoUpdateCheckDueAt = null
+  autoUpdateHeartbeatTimer = null
+  nudgeCheckTimer = null
+  pendingQuitAndInstallTimer = null
+  updateCheckStallTimer = null
+  updateCheckSilentSettleTimer = null
 }
 
 export function checkForUpdates(): void {
@@ -1511,6 +1577,7 @@ export function setupAutoUpdater(
     recordCompletedUpdateCheck,
     sendStatus,
     scheduleAutomaticUpdateCheck,
+    scheduleAutomaticUpdateRetry,
     clearBackgroundCheckLaunchPending,
     setAvailableReleaseUrl: (releaseUrl) => {
       availableReleaseUrl = releaseUrl
@@ -1526,25 +1593,30 @@ export function setupAutoUpdater(
   void checkForUpdateNudge()
   scheduleUpdateNudgeCheck()
 
-  const checkDailyOnWake = () => {
+  const checkDueOnWake = () => {
     void checkForUpdateNudge()
     if (
-      backgroundCheckLaunchPending ||
-      currentStatus.state === 'checking' ||
-      currentStatus.state === 'downloading'
+      !backgroundCheckLaunchPending &&
+      currentStatus.state !== 'checking' &&
+      currentStatus.state !== 'downloading'
     ) {
-      return
+      const lastCheck = _getLastUpdateCheckAt?.() ?? null
+      const msSince = lastCheck === null ? Number.POSITIVE_INFINITY : Date.now() - lastCheck
+      if (msSince >= AUTO_UPDATE_CHECK_INTERVAL_MS) {
+        runBackgroundUpdateCheck()
+        scheduleAutomaticUpdateCheck(AUTO_UPDATE_CHECK_INTERVAL_MS)
+        return
+      }
     }
-    const lastCheck = _getLastUpdateCheckAt?.() ?? null
-    const msSince = lastCheck === null ? Number.POSITIVE_INFINITY : Date.now() - lastCheck
-    if (msSince >= AUTO_UPDATE_CHECK_INTERVAL_MS) {
-      runBackgroundUpdateCheck()
-      scheduleAutomaticUpdateCheck(AUTO_UPDATE_CHECK_INTERVAL_MS)
-    }
+    runDueUpdateCheck()
   }
 
-  powerMonitor.on('resume', checkDailyOnWake)
-  app.on('browser-window-focus', checkDailyOnWake)
+  powerMonitor.on('resume', checkDueOnWake)
+  app.on('browser-window-focus', checkDueOnWake)
+  if (autoUpdateHeartbeatTimer) {
+    clearInterval(autoUpdateHeartbeatTimer)
+  }
+  autoUpdateHeartbeatTimer = setInterval(runDueUpdateCheck, AUTO_UPDATE_HEARTBEAT_MS)
 
   const lastUpdateCheckAt = opts?.getLastUpdateCheckAt?.() ?? null
   const msSinceLastCheck =

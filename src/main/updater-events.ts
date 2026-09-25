@@ -8,14 +8,12 @@ import {
   isMacQuitAndInstallInFlight,
   resetMacInstallState
 } from './updater-mac-install'
+import { AUTO_UPDATE_CHECK_INTERVAL_MS } from './updater-check-cadence'
 import { compareVersions } from './updater-fallback'
 import { fetchChangelog } from './updater-changelog'
 import { hasMacUpdateAssetForHost, isArm64MacHost } from './updater-mac-arch-assets'
 import type { ElectronAutoUpdater } from './electron-updater-loader'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
-
-const AUTO_UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
-const AUTO_UPDATE_RETRY_INTERVAL_MS = 60 * 60 * 1000
 
 type UpdaterHandlerContext = {
   autoUpdater: ElectronAutoUpdater
@@ -50,6 +48,7 @@ type UpdaterHandlerContext = {
   sendErrorStatus: (message: string, userInitiated?: boolean) => void
   sendStatus: (status: UpdateStatus) => void
   scheduleAutomaticUpdateCheck: (delayMs: number) => void
+  scheduleAutomaticUpdateRetry: () => void
   shouldSuppressMissingManifestPrereleaseFallbackEvent: (message: string, error: unknown) => boolean
   suppressMissingManifestPrereleaseFallbackPromiseFailure: (message: string) => void
   setAvailableReleaseUrl: (releaseUrl: string | null) => void
@@ -85,6 +84,7 @@ export function registerAutoUpdaterHandlers({
   sendErrorStatus,
   sendStatus,
   scheduleAutomaticUpdateCheck,
+  scheduleAutomaticUpdateRetry,
   shouldSuppressMissingManifestPrereleaseFallbackEvent,
   suppressMissingManifestPrereleaseFallbackPromiseFailure,
   setAvailableReleaseUrl,
@@ -171,7 +171,7 @@ export function registerAutoUpdaterHandlers({
       clearAvailableUpdateContext()
       if (missingManifestFallback || publishingWindowLastGoodCheck) {
         // Why: a current-version fallback manifest means the primary is transiently missing; keep the short retry cadence.
-        scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+        scheduleAutomaticUpdateRetry()
       } else {
         recordCompletedUpdateCheck()
         if (!wasUserInitiated) {
@@ -201,7 +201,7 @@ export function registerAutoUpdaterHandlers({
         setAvailableReleaseUrl(null)
         if (missingManifestFallback || publishingWindowLastGoodCheck) {
           // Why: last-good release is a temporary fallback; keep probing so users can move to the newest tag once it publishes.
-          scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+          scheduleAutomaticUpdateRetry()
         } else {
           recordCompletedUpdateCheck()
           if (!wasUserInitiated) {
@@ -229,7 +229,7 @@ export function registerAutoUpdaterHandlers({
     clearAvailableUpdateContext()
     if (missingManifestFallback || publishingWindowLastGoodCheck) {
       // Why: last-good not-available is a transient release-transition outcome; keep the short retry, don't suppress for 24h.
-      scheduleAutomaticUpdateCheck(AUTO_UPDATE_RETRY_INTERVAL_MS)
+      scheduleAutomaticUpdateRetry()
     } else {
       recordCompletedUpdateCheck()
       if (!wasUserInitiated) {

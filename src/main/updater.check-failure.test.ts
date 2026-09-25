@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { appMock, browserWindowMock, nativeUpdaterMock, autoUpdaterMock, isMock, killAllPtyMock } =
   vi.hoisted(() => {
@@ -111,6 +111,12 @@ function makeBenignCheckFailure(message: string): void {
     return Promise.reject(new Error(message))
   })
 }
+
+// Clears the module this test loaded, before the next test's resetModules orphans it.
+afterEach(async () => {
+  const { clearUpdaterTimersForTests } = await import('./updater')
+  clearUpdaterTimersForTests()
+})
 
 describe('updater check failure handling', () => {
   beforeEach(() => {
