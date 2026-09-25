@@ -131,6 +131,37 @@ describe('checkWpCliSafety argument rejection', () => {
     }
   )
 
+  it.each([
+    ['--exec=system("id")'],
+    ['--exec'],
+    ['--require'],
+    ['--path'],
+    ['--ssh=prod.example.com'],
+    ['--http=https://evil.test']
+  ])('refuses %s, which runs or loads code or reaches another host, even with writes', (flag) => {
+    expect(checkWpCliSafety(['option', 'get', 'home', flag], false).allowed).toBe(false)
+    expect(checkWpCliSafety(['option', 'get', 'home', flag], true).allowed).toBe(false)
+  })
+
+  it.each([
+    [['user', 'meta', 'update', '1', 'wp_capabilities', 'x']],
+    [['post', 'meta', 'delete', '1', 'k']],
+    [['theme', 'mod', 'set', 'k', 'v']],
+    [['cli', 'alias', 'add', '@x']]
+  ])('treats %j as a write, not a read of its parent command', (args) => {
+    const verdict = checkWpCliSafety(args, false)
+    expect(verdict.allowed).toBe(false)
+  })
+
+  it.each([
+    [['user', 'meta', 'get', '1', 'nickname']],
+    [['post', 'meta', 'list', '1']],
+    [['theme', 'mod', 'get', 'header']],
+    [['cli', 'alias', 'list']]
+  ])('still reads %j freely', (args) => {
+    expect(checkWpCliSafety(args, false).allowed).toBe(true)
+  })
+
   it('refuses an empty argument list and an over-long one', () => {
     expect(checkWpCliSafety([], false).allowed).toBe(false)
     const tooMany = Array.from({ length: WP_CLI_MAX_ARGS + 1 }, () => 'list')

@@ -37,10 +37,11 @@ const WP_CLI_MAX_TIMEOUT_MS = 120_000
  */
 const WP_READ_ALLOWLIST: Record<string, readonly string[]> = {
   option: ['get', 'list', 'pluck'],
-  user: ['list', 'get', 'meta'],
+  // Parent commands as leaf pairs only: 'meta' alone also admitted `meta update` and `meta delete`.
+  user: ['list', 'get', 'meta get', 'meta list', 'meta pluck'],
   plugin: ['list', 'status', 'is-active', 'is-installed', 'path', 'search', 'verify-checksums'],
-  theme: ['list', 'status', 'is-active', 'is-installed', 'path', 'get', 'mod'],
-  post: ['list', 'get', 'meta', 'url'],
+  theme: ['list', 'status', 'is-active', 'is-installed', 'path', 'get', 'mod get', 'mod list'],
+  post: ['list', 'get', 'meta get', 'meta list', 'meta pluck', 'url'],
   page: ['list', 'get'],
   term: ['list', 'get'],
   site: ['list'],
@@ -50,7 +51,7 @@ const WP_READ_ALLOWLIST: Record<string, readonly string[]> = {
   role: ['list', 'exists'],
   rewrite: ['list', 'structure'],
   config: ['list', 'get', 'has', 'path'],
-  cli: ['version', 'info', 'alias', 'param-dump', 'completions'],
+  cli: ['version', 'info', 'alias list', 'alias get', 'param-dump', 'completions'],
   transient: ['list', 'get'],
   cron: ['event list', 'schedule list', 'test'],
   comment: ['list', 'get', 'count'],
@@ -65,15 +66,26 @@ const WP_HARD_BANNED: readonly string[] = ['eval', 'eval-file', 'shell']
 /** Shell metacharacters. Defence in depth — the quoting below already neutralises these. */
 const DANGEROUS_ARGUMENT = /[;`$<>|&]|\$\(|\)\$|\$\{/
 
-/** Flags that would repoint WP-CLI at another install or load caller-chosen PHP. */
-const FORBIDDEN_FLAG_PREFIXES: readonly string[] = ['--path=', '--url=', '--require=']
+/**
+ * Global flags that repoint WP-CLI at another install, load or run caller-chosen PHP, or reach
+ * another host. Matched by name, `=value` or not: `--exec=<php>` runs code before any command.
+ */
+const FORBIDDEN_FLAGS: readonly string[] = [
+  '--path',
+  '--url',
+  '--require',
+  '--exec',
+  '--ssh',
+  '--http'
+]
 
 /** Null when the argument is safe to forward. Shared by eval-file extra args. */
 export function wpCliArgLooksDangerous(argument: string): string | null {
   if (DANGEROUS_ARGUMENT.test(argument)) {
     return `Argument contains shell metacharacters: ${argument}`
   }
-  const forbidden = FORBIDDEN_FLAG_PREFIXES.find((prefix) => argument.startsWith(prefix))
+  const flag = argument.split('=', 1)[0]
+  const forbidden = FORBIDDEN_FLAGS.find((name) => flag === name)
   if (forbidden) {
     return `Refusing a caller-supplied ${forbidden} flag.`
   }
