@@ -53,6 +53,7 @@ describe('onboarding flow persistence', () => {
     const notifications = buildCompletedOnboardingNotificationSettings({
       enabled: false,
       agentTaskComplete: false,
+      agentNeedsInput: false,
       siteRunComplete: false,
       terminalBell: false,
       activeCollabAssigned: false,
@@ -76,6 +77,7 @@ describe('onboarding flow persistence', () => {
     expect(notifications).toEqual({
       enabled: true,
       agentTaskComplete: true,
+      agentNeedsInput: true,
       siteRunComplete: false,
       terminalBell: true,
       activeCollabAssigned: false,

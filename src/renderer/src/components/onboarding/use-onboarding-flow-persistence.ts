@@ -33,6 +33,7 @@ export function buildCompletedOnboardingNotificationSettings(
     ...notifications,
     enabled: true,
     agentTaskComplete: true,
+    agentNeedsInput: true,
     terminalBell: true
   }
 }

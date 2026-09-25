@@ -133,6 +133,7 @@ function createSettings(overrides: TestSettingsOverrides = {}): GlobalSettings {
     notifications: {
       enabled: true,
       agentTaskComplete: true,
+      agentNeedsInput: true,
       siteRunComplete: true,
       terminalBell: false,
       activeCollabAssigned: false,
