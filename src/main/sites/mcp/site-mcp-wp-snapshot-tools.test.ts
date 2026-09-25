@@ -246,10 +246,40 @@ describe('restore_wp_fields', () => {
     })
   })
 
-  it('passes apply through', async () => {
+  it('snapshots the current roots first, then applies, and returns the way back', async () => {
     const record = storedSnapshot()
-    await call('restore_wp_fields', { token: record.token, apply: true })
-    expect(evalPayloads[0]).toMatchObject({ mode: 'restore', apply: true })
+    const { payload } = await call('restore_wp_fields', { token: record.token, apply: true })
+    expect(evalPayloads[0]).toMatchObject({
+      mode: 'snapshot',
+      target: { kind: 'post', id: 672 },
+      fields: [{ path: 'modules' }, { path: 'page_theme' }]
+    })
+    expect(evalPayloads[1]).toMatchObject({ mode: 'restore', apply: true })
+    expect(typeof payload.pre_restore_token).toBe('string')
+    expect(store.load('site-1', payload.pre_restore_token as string)?.kind).toBe('snapshot')
+  })
+
+  it('writes nothing when the pre-restore snapshot cannot be stored', async () => {
+    const record = storedSnapshot()
+    const { isError } = await call(
+      'restore_wp_fields',
+      { token: record.token, apply: true },
+      envelope(),
+      { writeOutputFile: false }
+    )
+    expect(isError).toBe(true)
+    expect(evalPayloads.some((body) => body.mode === 'restore')).toBe(false)
+  })
+
+  it('refuses an env that is not the one the snapshot came from', async () => {
+    const record = storedSnapshot()
+    const { isError, payload } = await call('restore_wp_fields', {
+      token: record.token,
+      env: 'production'
+    })
+    expect(isError).toBe(true)
+    expect(String(payload.error)).toContain("was taken on 'main', not 'production'")
+    expect(evalPayloads).toHaveLength(0)
   })
 
   it('restores onto the host the snapshot came from unless location overrides it', async () => {

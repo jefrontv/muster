@@ -171,10 +171,46 @@ async function restoreWpFields(
     throw new SiteMcpToolError("'location' must be 'local' or 'remote'.")
   }
   const location = override.length > 0 ? (override as 'local' | 'remote') : record.location
+  const requestedEnv = readString(args, 'env')
+  // Same host as the snapshot means its environment; a different env there was silently ignored.
+  if (
+    location === record.location &&
+    requestedEnv.length > 0 &&
+    record.environment !== null &&
+    requestedEnv !== record.environment
+  ) {
+    throw new SiteMcpToolError(
+      `Snapshot '${token}' was taken on '${record.environment}', not '${requestedEnv}'. Omit env to restore where it came from; restoring onto another environment needs location as well.`
+    )
+  }
+  const runEnv = location === record.location ? (record.environment ?? args.env) : args.env
   // The record holds the walker's whole output file; only its roots half goes back.
   const roots = asRecord(asRecord(record.payload).roots)
   if (Object.keys(roots).length === 0) {
     throw new SiteMcpToolError(`Snapshot '${token}' holds no roots to restore.`)
+  }
+  // A restore overwrites whole roots and drops rows past the snapshot's count, so take the way
+  // back first. No save point, no write.
+  let preRestoreToken: string | null = null
+  if (apply) {
+    const before = await snapshotWpFields(context, {
+      site: site.id,
+      location,
+      target: record.target,
+      fields: Object.keys(roots),
+      ...(typeof runEnv === 'string' && runEnv.length > 0 ? { env: runEnv } : {}),
+      ...(readBoolean(args, 'confirm') ? { confirm: true } : {})
+    })
+    if (before.blocked === true) {
+      return before
+    }
+    preRestoreToken = typeof before.token === 'string' ? before.token : null
+    if (!preRestoreToken) {
+      throw new SiteMcpToolError(
+        'Could not snapshot the current values before restoring, so nothing was written.',
+        { snapshot: before }
+      )
+    }
   }
   const sidecar = buildAcfPayload({
     mode: 'restore',
@@ -185,7 +221,7 @@ async function restoreWpFields(
   })
   const transport = await runEval(
     context,
-    { ...args, env: location === record.location ? (record.environment ?? args.env) : args.env },
+    { ...args, env: runEnv },
     location,
     'Restore ACF fields',
     ACF_FIELDS_PHP,
@@ -200,6 +236,7 @@ async function restoreWpFields(
     ...fieldResult(transport),
     snapshot: token,
     apply,
+    ...(preRestoreToken ? { pre_restore_token: preRestoreToken } : {}),
     taken: record.when,
     snapshot_location: record.location,
     snapshot_digests: record.digests
@@ -239,7 +276,7 @@ export const SITE_MCP_WP_SNAPSHOT_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'restore_wp_fields',
     description:
-      "Write a stored snapshot back. apply defaults to false: a preview reports per root whether it would change, the row count before and after, and the digest before and after, without writing. apply=true writes each root through update_field, which rebuilds the rows and drops any beyond the snapshot's count, then verifies each root's digest against the snapshot and reports applied per root. No values come back either way. A root that cannot be resolved means nothing is written, and a preview says which one. Values never go through raw meta: add_post_meta unslashes serialized values and is not a safe route. location defaults to the host the snapshot came from; overriding it restores across hosts, which needs the same post ID on both sides.",
+      "Write a stored snapshot back. apply defaults to false: a preview reports per root whether it would change, the row count before and after, and the digest before and after, without writing. apply=true writes each root through update_field, which rebuilds the rows and drops any beyond the snapshot's count, then verifies each root's digest against the snapshot and reports applied per root. Before it writes, apply=true snapshots the same roots where it is about to write and returns that as pre_restore_token; restore it to undo. No values come back either way. A root that cannot be resolved means nothing is written, and a preview says which one. Values never go through raw meta: add_post_meta unslashes serialized values and is not a safe route. location defaults to the host the snapshot came from, and env must then match the snapshot's environment or be omitted; overriding location restores across hosts, which needs the same post ID on both sides.",
     inputSchema: objectSchema(
       {
         token: {
