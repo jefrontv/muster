@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { AGENT_LOCAL_DOMAIN_CHANGE_TIMEOUT_MS } from './agent-local-host'
 import type { AgentLocalHost, AgentLocalResponse } from './agent-local-host'
 import {
   AGENT_LOCAL_NOT_MANAGED,
@@ -532,6 +533,27 @@ describe('setAgentLocalSiteDomain', () => {
     expect(outcome.ok).toBe(true)
     expect(machine.calls).toContain('POST /sites/sulo/domain')
     expect(outcome.message).toContain('sulo.al')
+  })
+
+  it('waits past the read timeout, since the daemon restarts the site and rewrites its URLs', async () => {
+    const timeouts: (number | undefined)[] = []
+    const machine = host({
+      ...listSites,
+      'POST /sites/sulo/domain': { ok: true, status: 200, data: 'ok' }
+    })
+    const route = machine.request
+    machine.request = async (method, apiPath, body, options) => {
+      if (apiPath.endsWith('/domain')) {
+        timeouts.push(options?.timeoutMs)
+      }
+      return route(method, apiPath, body, options)
+    }
+
+    await setAgentLocalSiteDomain({ path: '/Sites/sulo', localStack: 'agent-local' }, 'sulo.al', {
+      host: machine
+    })
+
+    expect(timeouts).toEqual([AGENT_LOCAL_DOMAIN_CHANGE_TIMEOUT_MS])
   })
 
   it('reports the running state so a caller can keep its own view honest', async () => {

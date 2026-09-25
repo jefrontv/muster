@@ -19,6 +19,7 @@ import { isCommandOnPath } from '../ipc/preflight-command-exec'
 import { agentLocalCertStatus, agentLocalCertTrust } from './agent-local-cert'
 import {
   AGENT_LOCAL_DATABASE_PORT,
+  AGENT_LOCAL_DOMAIN_CHANGE_TIMEOUT_MS,
   AGENT_LOCAL_READ_TIMEOUT_MS,
   AGENT_LOCAL_START_TIMEOUT_MS,
   AGENT_LOCAL_UNSUPPORTED_PLATFORM,
@@ -221,9 +222,13 @@ export async function setAgentLocalSiteDomain(
       message: `Agent Local site '${match.slug}' already serves ${wanted}`
     }
   }
-  const renamed = await requestWithDaemon(host, 'POST', sitePath(match.slug, 'domain'), {
-    domain: wanted
-  })
+  const renamed = await requestWithDaemon(
+    host,
+    'POST',
+    sitePath(match.slug, 'domain'),
+    { domain: wanted },
+    { timeoutMs: AGENT_LOCAL_DOMAIN_CHANGE_TIMEOUT_MS }
+  )
   if (!renamed.ok) {
     return unavailableOutcome(renamed)
   }

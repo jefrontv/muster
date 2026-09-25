@@ -24,6 +24,8 @@ export const AGENT_LOCAL_DATABASE_PORT = 10360
 export const AGENT_LOCAL_READ_TIMEOUT_MS = 5_000
 /** A cold start boots PHP-FPM and MariaDB. */
 export const AGENT_LOCAL_START_TIMEOUT_MS = 60_000
+/** A rename can block on the cert trust dialog, restarts the site, then rewrites every URL in the DB. */
+export const AGENT_LOCAL_DOMAIN_CHANGE_TIMEOUT_MS = 20 * 60_000
 /** How long to wait for a daemon we just spawned to answer /status. */
 export const AGENT_LOCAL_DAEMON_WAIT_MS = 10_000
 /** restart-daemon waits for the API itself, so this only guards against a hung launchctl. */
