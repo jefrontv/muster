@@ -331,6 +331,21 @@ describe('runSiteDeploy', () => {
     )
   })
 
+  it('hands the resolved layout to the cache clear, so Bedrock clears web/app/cache', async () => {
+    const { context } = createRecordingContext()
+    const layouts: unknown[] = []
+    const harness = createHarness({
+      resolveRemoteLayout: async () => ({ webroot: 'public_html/web', contentDir: 'app' }),
+      clearRemoteServerCache: async (_context, _config, _session, layout) => {
+        layouts.push(layout)
+      }
+    })
+
+    await runSiteDeploy(context, createConfig({ clearServerCache: true }), harness.dependencies)
+
+    expect(layouts).toEqual([{ webroot: 'public_html/web', contentDir: 'app' }])
+  })
+
   it('targets wp-content under the root for a standard layout', async () => {
     const { context } = createRecordingContext()
     const harness = createHarness()

@@ -167,7 +167,8 @@ export async function runSiteDeploy(
         await (dependencies.clearRemoteServerCache ?? clearRemoteServerCache)(
           context,
           config,
-          session
+          session,
+          layout
         )
       }
     } else {

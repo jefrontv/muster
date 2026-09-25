@@ -93,50 +93,87 @@ function createFakeSession(script: ExecScript): {
 }
 
 describe('clearRemoteServerCache', () => {
+  const standard = { webroot: 'public_html', contentDir: 'wp-content' }
+  const clearCommand = (dir: string): string =>
+    `if [ ! -d ${dir} ]; then echo __MUSTER_NO_CACHE_DIR__; exit 0; fi; cd ${dir} && rm -rf */`
+
   it('empties wp-content/cache with the glob left unquoted so the remote shell expands it', async () => {
     const { context, stages } = createRecordingContext()
     const { session, commands } = createFakeSession(() => ({}))
 
-    await clearRemoteServerCache(context, createConfig({ rootPath: 'public_html' }), session)
+    await clearRemoteServerCache(context, createConfig(), session, standard)
 
-    expect(commands).toEqual([`cd 'public_html/wp-content/cache' && rm -rf */`])
+    expect(commands).toEqual([clearCommand(`'public_html/wp-content/cache'`)])
     expect(stages).toEqual(['Clearing server cache'])
   })
 
-  it('quotes a root path containing a single quote', async () => {
+  it('clears the Bedrock cache under web/app, not wp-content', async () => {
     const { context } = createRecordingContext()
     const { session, commands } = createFakeSession(() => ({}))
 
-    await clearRemoteServerCache(context, createConfig({ rootPath: "o'brien/html" }), session)
+    await clearRemoteServerCache(context, createConfig(), session, {
+      webroot: 'site/web',
+      contentDir: 'app'
+    })
 
-    expect(commands[0]).toBe(`cd 'o'\\''brien/html/wp-content/cache' && rm -rf */`)
+    expect(commands).toEqual([clearCommand(`'site/web/app/cache'`)])
   })
 
-  it('fails on any stderr, because a partially cleared cache serves stale pages', async () => {
+  it('quotes a webroot containing a single quote', async () => {
     const { context } = createRecordingContext()
-    const { session } = createFakeSession(() => ({ stderr: 'permission denied\n' }))
+    const { session, commands } = createFakeSession(() => ({}))
 
-    await expect(clearRemoteServerCache(context, createConfig(), session)).rejects.toThrowError(
-      /Error clearing server cache: permission denied/
-    )
+    await clearRemoteServerCache(context, createConfig(), session, {
+      webroot: "o'brien/html",
+      contentDir: 'wp-content'
+    })
+
+    expect(commands[0]).toBe(clearCommand(`'o'\\''brien/html/wp-content/cache'`))
+  })
+
+  it('treats a missing cache directory as nothing to clear', async () => {
+    const { context, logs } = createRecordingContext()
+    const { session } = createFakeSession(() => ({ stdout: '__MUSTER_NO_CACHE_DIR__\n' }))
+
+    await clearRemoteServerCache(context, createConfig(), session, standard)
+
+    expect(logs).toEqual(['No cache directory at public_html/wp-content/cache; nothing to clear.'])
+  })
+
+  it('fails on a non-zero exit and reports stderr, because a partial clear serves stale pages', async () => {
+    const { context } = createRecordingContext()
+    const { session } = createFakeSession(() => ({ code: 1, stderr: 'permission denied\n' }))
+
+    await expect(
+      clearRemoteServerCache(context, createConfig(), session, standard)
+    ).rejects.toThrowError(/Error clearing server cache: permission denied/)
   })
 
   it('fails on a non-zero exit with no stderr', async () => {
     const { context } = createRecordingContext()
     const { session } = createFakeSession(() => ({ code: 1 }))
 
-    const error = await clearRemoteServerCache(context, createConfig(), session).catch(
+    const error = await clearRemoteServerCache(context, createConfig(), session, standard).catch(
       (thrown: unknown) => thrown
     )
     expect(error).toBeInstanceOf(SiteRunStepError)
     expect((error as SiteRunStepError).step).toBe('clear-server-cache')
   })
 
+  it('logs stderr from a clean exit instead of failing an already-live deploy', async () => {
+    const { context, logs } = createRecordingContext()
+    const { session } = createFakeSession(() => ({ stderr: 'bash: warning: setlocale\n' }))
+
+    await clearRemoteServerCache(context, createConfig(), session, standard)
+
+    expect(logs).toEqual(['bash: warning: setlocale'])
+  })
+
   it('logs remote stdout when there is any', async () => {
     const { context, logs } = createRecordingContext()
     const { session } = createFakeSession(() => ({ stdout: '  removed 4 dirs \n' }))
 
-    await clearRemoteServerCache(context, createConfig(), session)
+    await clearRemoteServerCache(context, createConfig(), session, standard)
 
     expect(logs).toEqual(['removed 4 dirs'])
   })
