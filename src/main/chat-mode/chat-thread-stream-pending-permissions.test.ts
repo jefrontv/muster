@@ -6,6 +6,7 @@ import {
   startChatThreadStream,
   stopChatThreadStream
 } from './chat-thread-stream'
+import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 
 function fakeChild(): EventEmitter & {
   stdout: PassThrough
@@ -25,14 +26,14 @@ function fakeChild(): EventEmitter & {
 
 const started: string[] = []
 
-function start(threadId: string): ReturnType<typeof fakeChild> {
+function start(threadId: string, sent: ChatThreadStreamEvent[] = []): ReturnType<typeof fakeChild> {
   const child = fakeChild()
   started.push(threadId)
   const result = startChatThreadStream(
     {
       threadId,
       command: 'claude',
-      sender: { send: () => undefined, isDestroyed: () => false }
+      sender: { send: (_channel, event) => sent.push(event), isDestroyed: () => false }
     },
     { spawn: () => child as never }
   )
@@ -97,5 +98,27 @@ describe('listPendingChatThreadPermissionRequests', () => {
 
     stopChatThreadStream('t3')
     expect(listPendingChatThreadPermissionRequests()).toEqual([])
+  })
+
+  it('retires the renderer card for each question a stop denies', async () => {
+    const sent: ChatThreadStreamEvent[] = []
+    const child = start('t4', sent)
+    askPermission(child, 'req-4', 'Bash', {})
+    await new Promise((resolve) => setImmediate(resolve))
+
+    stopChatThreadStream('t4')
+    expect(sent).toContainEqual({ threadId: 't4', kind: 'permission-cancel', requestId: 'req-4' })
+  })
+
+  it('drops output a stopped child writes during its kill grace', async () => {
+    const sent: ChatThreadStreamEvent[] = []
+    const child = start('t5', sent)
+    stopChatThreadStream('t5')
+    child.stdout.write(`${JSON.stringify({ type: 'result', subtype: 'success' })}\n`)
+    askPermission(child, 'req-5', 'Bash', {})
+    await new Promise((resolve) => setImmediate(resolve))
+    child.emit('close', 0)
+
+    expect(sent).toEqual([])
   })
 })

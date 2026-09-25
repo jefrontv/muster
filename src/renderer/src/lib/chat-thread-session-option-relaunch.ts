@@ -93,17 +93,25 @@ export async function dispatchChatThreadSessionOption(args: {
   await window.api.chatThreadStream.stop(threadId)
   // Refetch: an init event may have landed a newer claudeSessionId to resume.
   const latestStore = useAppStore.getState()
+  // The killed turn never completes, so its partial text would prefix the next turn's.
+  latestStore.clearChatThreadStreamingText(threadId)
+  latestStore.clearChatThreadPermissionRequests(threadId)
+  if (previousSession) {
+    latestStore.clearAgentLaunchConfig(previousSession.paneKey)
+  }
   const latestThread = latestStore.chatThreads.find((t) => t.id === threadId) ?? thread
   const result = await launchChatThreadSession({
     thread: latestThread,
     workspace,
     sessionOptions: next
+  }).catch((error: unknown) => {
+    latestStore.setChatThreadSession(threadId, null)
+    throw error
   })
   if (!result) {
+    // The old child is gone; dropping its record lands the view on its resume state.
+    latestStore.setChatThreadSession(threadId, null)
     throw new Error('The chat session could not be relaunched with the new option.')
-  }
-  if (previousSession) {
-    latestStore.clearAgentLaunchConfig(previousSession.paneKey)
   }
   latestStore.setChatThreadSession(threadId, {
     ...result,

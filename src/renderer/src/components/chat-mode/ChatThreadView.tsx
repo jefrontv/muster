@@ -74,6 +74,10 @@ export function ChatThreadView({
     const launchedForThreadId = thread.id
     void launchChatThreadSession({ thread, workspace })
       .then((result) => {
+        // Deleted mid-launch: main already stopped the child, so don't record a session for it.
+        if (!useAppStore.getState().chatThreads.some((t) => t.id === launchedForThreadId)) {
+          return
+        }
         if (result) {
           setChatThreadSession(launchedForThreadId, result)
           if (threadIdRef.current === launchedForThreadId) {

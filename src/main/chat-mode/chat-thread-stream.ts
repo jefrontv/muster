@@ -56,8 +56,8 @@ export type ChatThreadStreamDeps = {
 
 type StreamEntry = {
   child: ChildProcess
-  /** True once the renderer asked for the stop; suppresses the exit event so an
-   *  intentional stop/relaunch never races the renderer's session bookkeeping. */
+  /** True once the renderer asked for the stop; suppresses every later event (exit included) so a
+   *  stopped or superseded child never races the thread's next session. */
   stopping: boolean
   killTimer: ReturnType<typeof setTimeout> | null
   /** can_use_tool requests awaiting a renderer verdict, by request id. The input
@@ -149,7 +149,7 @@ export function startChatThreadStream(
   registry.set(threadId, entry)
 
   const send = (event: ChatThreadStreamEvent): void => {
-    if (sender.isDestroyed()) {
+    if (entry.stopping || sender.isDestroyed()) {
       return
     }
     try {
@@ -315,9 +315,8 @@ export function stopChatThreadStream(threadId: string): void {
   if (!entry || entry.stopping) {
     return
   }
-  // Deny outstanding permission questions before closing stdin, so the CLI's
-  // pending tool_use settles instead of dangling into the kill.
-  for (const [requestId] of entry.pendingPermissionRequests) {
+  // Deny open questions so the CLI settles before the kill; cancel retires the card (no exit event follows).
+  for (const requestId of entry.pendingPermissionRequests.keys()) {
     writeStdinLine(
       entry,
       buildPermissionControlResponse({
@@ -326,8 +325,9 @@ export function stopChatThreadStream(threadId: string): void {
         message: 'The chat session was closed.'
       })
     )
+    // emit() also drops the request from the pending map.
+    entry.emit({ threadId, kind: 'permission-cancel', requestId })
   }
-  entry.pendingPermissionRequests.clear()
   entry.stopping = true
   entry.cleanup?.()
   entry.cleanup = null

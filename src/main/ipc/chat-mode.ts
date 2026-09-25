@@ -25,6 +25,7 @@ import {
 import { sanitizeRepoIcon } from '../../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
 import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
+import { stopChatThreadStream } from '../chat-mode/chat-thread-stream'
 
 const CHANNELS = [
   'chatMode:getState',
@@ -161,10 +162,16 @@ export function registerChatModeHandlers(): void {
       })
   )
 
-  ipcMain.handle(
-    'chatMode:deleteWorkspace',
-    async (_event, id: unknown): Promise<boolean> => chatStore().deleteWorkspace(asString(id, 'id'))
-  )
+  ipcMain.handle('chatMode:deleteWorkspace', async (_event, id: unknown): Promise<boolean> => {
+    const workspaceId = asString(id, 'id')
+    // A deleted thread's child would keep running tools with nothing left to show or stop it.
+    for (const thread of chatStore().getState().threads) {
+      if (thread.workspaceId === workspaceId) {
+        stopChatThreadStream(thread.id)
+      }
+    }
+    return chatStore().deleteWorkspace(workspaceId)
+  })
 
   ipcMain.handle(
     'chatMode:createThread',
@@ -229,10 +236,11 @@ export function registerChatModeHandlers(): void {
       })
   )
 
-  ipcMain.handle(
-    'chatMode:deleteThread',
-    async (_event, id: unknown): Promise<boolean> => chatStore().deleteThread(asString(id, 'id'))
-  )
+  ipcMain.handle('chatMode:deleteThread', async (_event, id: unknown): Promise<boolean> => {
+    const threadId = asString(id, 'id')
+    stopChatThreadStream(threadId)
+    return chatStore().deleteThread(threadId)
+  })
 
   ipcMain.handle(
     'chatMode:searchThreadContent',

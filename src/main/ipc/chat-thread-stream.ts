@@ -8,6 +8,7 @@ import { agentHookServer } from '../agent-hooks/server'
 import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
 import type { Store } from '../persistence'
 import { chatConnectorMcpForStream } from './chat-connector'
+import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
 import {
   interruptChatThreadStream,
   listPendingChatThreadPermissionRequests,
@@ -73,11 +74,20 @@ export function registerChatThreadStreamHandlers(store: Store): void {
           typeof args?.appendSystemPrompt === 'string' && args.appendSystemPrompt !== ''
             ? args.appendSystemPrompt
             : undefined
+        const threadId = asString(args?.threadId, 'threadId')
         // In-process muster MCP: a failed connector start degrades to no tools.
         const mcp = await chatConnectorMcpForStream(store)
+        // Checked after the await: a thread deleted mid-launch would get a child nothing can stop.
+        if (
+          !chatStore()
+            .getState()
+            .threads.some((thread) => thread.id === threadId)
+        ) {
+          return { ok: false, error: 'This chat thread was deleted.' }
+        }
         return startChatThreadStream(
           {
-            threadId: asString(args?.threadId, 'threadId'),
+            threadId,
             command: asString(args?.command, 'command'),
             ...(cwd ? { cwd } : {}),
             ...(env ? { env } : {}),

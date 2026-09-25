@@ -97,6 +97,25 @@ export type ChatModeSlice = ChatThreadPermissionSlice & {
   clearChatThreadStreamingText: (threadId: string) => void
 }
 
+function omitThreadIds<T>(record: Record<string, T>, ids: ReadonlySet<string>): Record<string, T> {
+  return Object.fromEntries(Object.entries(record).filter(([id]) => !ids.has(id)))
+}
+
+/** Every per-thread runtime map, minus the given threads — one list so each delete path drops the same state. */
+function withoutChatThreadRuntime(s: AppState, ids: ReadonlySet<string>): Partial<AppState> {
+  return {
+    chatThreadSessions: omitThreadIds(s.chatThreadSessions, ids),
+    chatThreadStreamingText: omitThreadIds(s.chatThreadStreamingText, ids),
+    chatThreadPermissionRequests: omitThreadIds(s.chatThreadPermissionRequests, ids),
+    chatThreadSessionAllowedTools: omitThreadIds(s.chatThreadSessionAllowedTools, ids),
+    chatThreadAnsweredPermissions: omitThreadIds(s.chatThreadAnsweredPermissions, ids),
+    chatThreadFirstMessage: omitThreadIds(s.chatThreadFirstMessage, ids),
+    chatThreadContextWindow: omitThreadIds(s.chatThreadContextWindow, ids),
+    chatThreadLastError: omitThreadIds(s.chatThreadLastError, ids),
+    chatThreadFullAccess: omitThreadIds(s.chatThreadFullAccess, ids)
+  }
+}
+
 export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> = (
   set,
   get,
@@ -170,8 +189,13 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   },
 
   deleteChatWorkspace: async (id) => {
+    // Main stops the workspace's streams; this drops their renderer-side state.
     await window.api.chatMode.deleteWorkspace(id)
     set((s) => ({
+      ...withoutChatThreadRuntime(
+        s,
+        new Set(s.chatThreads.filter((t) => t.workspaceId === id).map((t) => t.id))
+      ),
       chatWorkspaces: s.chatWorkspaces.filter((w) => w.id !== id),
       chatThreads: s.chatThreads.filter((t) => t.workspaceId !== id),
       activeChatWorkspaceId: s.activeChatWorkspaceId === id ? null : s.activeChatWorkspaceId,
@@ -212,33 +236,13 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   },
 
   deleteChatThread: async (id) => {
-    if (get().chatThreadSessions[id]) {
-      // Why: the session is invisible; deleting the thread is the only close affordance.
-      void window.api.chatThreadStream.stop(id).catch(() => undefined)
-    }
+    // Main stops the stream too, including one the renderer never recorded (mid-launch, or after a reload).
     await window.api.chatMode.deleteThread(id)
-    set((s) => {
-      const { [id]: _dropped, ...remainingSessions } = s.chatThreadSessions
-      const { [id]: _droppedText, ...remainingStreamingText } = s.chatThreadStreamingText
-      const { [id]: _droppedRequests, ...remainingRequests } = s.chatThreadPermissionRequests
-      const { [id]: _droppedAllowed, ...remainingAllowed } = s.chatThreadSessionAllowedTools
-      const { [id]: _droppedFirst, ...remainingFirstMessages } = s.chatThreadFirstMessage
-      const { [id]: _droppedWindow, ...remainingWindows } = s.chatThreadContextWindow
-      const { [id]: _droppedError, ...remainingErrors } = s.chatThreadLastError
-      const { [id]: _droppedAccess, ...remainingAccess } = s.chatThreadFullAccess
-      return {
-        chatThreads: s.chatThreads.filter((t) => t.id !== id),
-        chatThreadSessions: remainingSessions,
-        chatThreadStreamingText: remainingStreamingText,
-        chatThreadPermissionRequests: remainingRequests,
-        chatThreadSessionAllowedTools: remainingAllowed,
-        chatThreadFirstMessage: remainingFirstMessages,
-        chatThreadContextWindow: remainingWindows,
-        chatThreadLastError: remainingErrors,
-        chatThreadFullAccess: remainingAccess,
-        activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
-      }
-    })
+    set((s) => ({
+      ...withoutChatThreadRuntime(s, new Set([id])),
+      chatThreads: s.chatThreads.filter((t) => t.id !== id),
+      activeChatThreadId: s.activeChatThreadId === id ? null : s.activeChatThreadId
+    }))
   },
 
   deleteChatThreadsInScope: async (workspaceId) => {
