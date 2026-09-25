@@ -5927,6 +5927,8 @@
           "b6fc369244": "A background terminal emits a bell character.",
           "591fe605b9": "Terminal Bell",
           "55f901a59b": "A coding agent finishes and becomes idle.",
+          "agentNeedsInputLabel": "Chat Needs You",
+          "agentNeedsInputDescription": "A chat is waiting for your approval or answer.",
           "ca76d06fd2": "Agent Task Complete",
           "deff6d30da": "Native system notifications for background events.",
           "841c8c549f": "Enable Notifications",

@@ -3887,6 +3887,13 @@ const api = {
       ipcRenderer.on('ui:openActiveCollabTask', listener)
       return () => ipcRenderer.removeListener('ui:openActiveCollabTask', listener)
     },
+    /** Fired when the user clicks a chat-thread notification: open that thread. */
+    onOpenChatThread: (callback: (data: { threadId: string }) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, data: { threadId: string }) =>
+        callback(data)
+      ipcRenderer.on('ui:openChatThread', listener)
+      return () => ipcRenderer.removeListener('ui:openChatThread', listener)
+    },
     onCreateTerminal: (
       callback: (data: {
         requestId?: string

@@ -135,6 +135,7 @@ export function getDefaultNotificationSettings(): NotificationSettings {
   return {
     enabled: true,
     agentTaskComplete: true,
+    agentNeedsInput: true,
     siteRunComplete: true,
     siteRunSlackWebhookUrl: '',
     terminalBell: false,

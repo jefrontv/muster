@@ -2381,6 +2381,8 @@ export type UpdateStatus =
 export type NotificationSettings = {
   enabled: boolean
   agentTaskComplete: boolean
+  /** A chat thread is blocked on an approval or a question; the CLI waits until someone answers. */
+  agentNeedsInput: boolean
   terminalBell: boolean
   /** Import/deploy runs; they take minutes, so completion is worth surfacing. */
   siteRunComplete: boolean
@@ -3164,6 +3166,8 @@ export type DiscoveryStatusEmitted = 'found' | 'absent' | 'imported'
 
 export type NotificationEventSource =
   | 'agent-task-complete'
+  /** A chat thread is blocked on an approval or a question. */
+  | 'agent-needs-input'
   | 'terminal-bell'
   | 'site-run-complete'
   | 'activecollab-assigned'
@@ -3193,6 +3197,8 @@ export type NotificationDispatchRequest = {
   isActiveWorktree?: boolean
   agentType?: AgentType
   agentState?: AgentStatusState
+  /** Set for chat-thread banners: the thread a click opens, and its display name. */
+  chatThread?: { threadId: string; title: string; detail?: string }
   /** Set for `site-run-complete`: what finished, and how it ended. */
   siteRun?: { siteName: string; group: 'import' | 'deploy'; environment: string; status: string }
   /** Set for the `activecollab-*` sources: the task that changed, and what changed about it. */

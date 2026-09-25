@@ -5867,6 +5867,8 @@
           "b6fc369244": "Un terminal en segundo plano emite un carácter de campana.",
           "591fe605b9": "Campana del terminal",
           "55f901a59b": "Un agente de programación termina y queda inactivo.",
+          "agentNeedsInputLabel": "Chat Needs You",
+          "agentNeedsInputDescription": "A chat is waiting for your approval or answer.",
           "ca76d06fd2": "Tarea del agente completada",
           "deff6d30da": "Notificaciones nativas del sistema para eventos en segundo plano.",
           "841c8c549f": "Habilitar notificaciones",

@@ -6,6 +6,8 @@ const storeState = vi.hoisted(() => ({
   chatThreadSessions: {} as Record<string, { paneKey: string }>,
   chatThreadPermissionRequests: {} as Record<string, unknown[]>,
   activeChatThreadId: null as string | null,
+  activeView: 'terminal' as string,
+  chatTasksOpen: false,
   addChatThreadPermissionRequest: vi.fn(),
   removeChatThreadPermissionRequest: vi.fn(),
   clearChatThreadPermissionRequests: vi.fn(),
@@ -93,6 +95,33 @@ describe('installChatThreadStreamEvents', () => {
       toolName: 'Bash',
       input: undefined
     })
+    stop()
+  })
+
+  it('alerts the user when a queued question lands on a thread they are not watching', () => {
+    storeState.chatThreadPermissionRequests = { t1: [{ requestId: 'r9' }] }
+    storeState.chatThreads = [{ id: 't1', claudeSessionId: null, title: 'Fix the footer' }] as never
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'permission-request', threadId: 't1', requestId: 'r9', toolName: 'Bash' })
+
+    expect(window.api.notifications.dispatch).toHaveBeenCalledWith({
+      source: 'agent-needs-input',
+      dedupeKey: 'chat-thread-input:t1',
+      chatThread: { threadId: 't1', title: 'Fix the footer', detail: 'Approve Bash to continue.' }
+    })
+    storeState.chatThreadPermissionRequests = {}
+    storeState.chatThreads = []
+    stop()
+  })
+
+  it('stays quiet for a request the store auto-approved', () => {
+    // Full access answers it before it reaches the queue, so there is nothing to ask the user.
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'permission-request', threadId: 't1', requestId: 'r9', toolName: 'Bash' })
+
+    expect(window.api.notifications.dispatch).not.toHaveBeenCalled()
     stop()
   })
 
@@ -239,12 +268,26 @@ describe('installChatThreadStreamEvents', () => {
   it('does not schedule one for the thread the user is watching', () => {
     storeState.chatThreadSessions = { t1: { paneKey: 'chat:t1' } }
     storeState.activeChatThreadId = 't1'
+    storeState.activeView = 'chat'
     vi.stubGlobal('document', { hasFocus: () => true })
     const stop = installChatThreadStreamEvents()
 
     listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
 
     expect(window.setTimeout).not.toHaveBeenCalled()
+    storeState.activeView = 'terminal'
+    stop()
+  })
+
+  it('still schedules one when the thread is only selected behind the Code view', () => {
+    storeState.chatThreadSessions = { t1: { paneKey: 'chat:t1' } }
+    storeState.activeChatThreadId = 't1'
+    vi.stubGlobal('document', { hasFocus: () => true })
+    const stop = installChatThreadStreamEvents()
+
+    listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
+
+    expect(window.setTimeout).toHaveBeenCalled()
     stop()
   })
 })

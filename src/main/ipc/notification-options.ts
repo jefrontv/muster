@@ -77,6 +77,10 @@ export function buildNotificationOptions(
     }
   }
 
+  if (args.chatThread) {
+    return buildChatThreadNotificationOptions(args.source, args.chatThread)
+  }
+
   const richOptions = buildAgentTaskCompleteNotificationOptions(args)
   if (richOptions) {
     return richOptions
@@ -231,6 +235,19 @@ function buildAgentTaskCompleteRichBody(args: NotificationDispatchRequest): stri
   }
 
   return null
+}
+
+function buildChatThreadNotificationOptions(
+  source: NotificationEventSource,
+  thread: NonNullable<NotificationDispatchRequest['chatThread']>
+): { title: string; body: string } {
+  const name =
+    normalizeNotificationText(thread.title, NOTIFICATION_TITLE_CONTEXT_MAX_LENGTH) || 'Chat'
+  const detail = normalizeNotificationText(thread.detail, NOTIFICATION_BODY_PREVIEW_MAX_LENGTH)
+  if (source === 'agent-needs-input') {
+    return { title: `Claude needs you: ${name}`, body: detail || 'Waiting for your answer.' }
+  }
+  return { title: `Chat finished: ${name}`, body: detail || 'Claude finished working.' }
 }
 
 function buildAgentTaskCompleteFallbackNotificationOptions(args: NotificationDispatchRequest): {

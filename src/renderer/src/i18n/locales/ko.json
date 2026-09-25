@@ -5852,6 +5852,8 @@
           "b6fc369244": "백그라운드 terminal이 벨 문자를 내보냅니다.",
           "591fe605b9": "Terminal 벨",
           "55f901a59b": "코딩 agent가 완료되고 유휴 상태가 됩니다.",
+          "agentNeedsInputLabel": "Chat Needs You",
+          "agentNeedsInputDescription": "A chat is waiting for your approval or answer.",
           "ca76d06fd2": "Agent 작업 완료",
           "deff6d30da": "백그라운드 이벤트에 대한 기본 시스템 알림입니다.",
           "841c8c549f": "알림 활성화",

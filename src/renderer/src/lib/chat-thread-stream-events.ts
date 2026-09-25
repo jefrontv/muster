@@ -15,6 +15,12 @@ import {
   scheduleChatCompletionNotification,
   shouldNotifyChatTurnComplete
 } from '../components/chat-mode/chat-thread-completion-notification'
+import {
+  chatThreadDisplayTitle,
+  describeChatThreadInputRequest,
+  isChatThreadWatched,
+  shouldNotifyChatThreadNeedsInput
+} from '../components/chat-mode/chat-thread-attention'
 
 /** How long a sealed streaming preview may outlive its turn when the transcript
  *  never catches up (interrupt, decode gap). */
@@ -29,6 +35,30 @@ const pendingCompletionNotifications = new Map<string, () => void>()
 function cancelPendingCompletionNotification(threadId: string): void {
   pendingCompletionNotifications.get(threadId)?.()
   pendingCompletionNotifications.delete(threadId)
+}
+
+/** Only a request that reached the queue needs the user; an auto-approved one never lands there. */
+function notifyChatThreadNeedsInput(threadId: string, requestId: string, toolName: string): void {
+  const store = useAppStore.getState()
+  const queued = store.chatThreadPermissionRequests[threadId]?.some(
+    (request) => request.requestId === requestId
+  )
+  const watched = isChatThreadWatched(store, threadId, document.hasFocus())
+  if (!queued || !shouldNotifyChatThreadNeedsInput({ watched, settings: store.settings })) {
+    return
+  }
+  const thread = store.chatThreads.find((t) => t.id === threadId)
+  void window.api.notifications
+    .dispatch({
+      source: 'agent-needs-input',
+      dedupeKey: `chat-thread-input:${threadId}`,
+      chatThread: {
+        threadId,
+        title: chatThreadDisplayTitle(thread?.title),
+        detail: describeChatThreadInputRequest(toolName)
+      }
+    })
+    .catch(() => undefined)
 }
 
 export function installChatThreadStreamEvents(): () => void {
@@ -121,7 +151,7 @@ export function installChatThreadStreamEvents(): () => void {
         )
         // A completion the user is watching (thread active, window focused) is
         // read on arrival — it must not light the sidebar's unread "Done".
-        const watched = store.activeChatThreadId === event.threadId && document.hasFocus()
+        const watched = isChatThreadWatched(store, event.threadId, document.hasFocus())
         cancelPendingCompletionNotification(event.threadId)
         if (
           shouldNotifyChatTurnComplete({
@@ -139,7 +169,7 @@ export function installChatThreadStreamEvents(): () => void {
                 {
                   threadId: event.threadId,
                   paneKey: notifyPaneKey,
-                  title: thread?.title ?? 'Chat'
+                  title: chatThreadDisplayTitle(thread?.title)
                 },
                 {
                   readAgentStatus: () => useAppStore.getState().agentStatusByPaneKey[notifyPaneKey],
@@ -151,7 +181,8 @@ export function installChatThreadStreamEvents(): () => void {
                         source: 'agent-task-complete',
                         paneKey,
                         terminalTitle: title,
-                        dedupeKey
+                        dedupeKey,
+                        chatThread: { threadId: event.threadId, title }
                       })
                       .catch(() => undefined)
                   }
@@ -178,6 +209,7 @@ export function installChatThreadStreamEvents(): () => void {
           toolName: event.toolName,
           input: event.input
         })
+        notifyChatThreadNeedsInput(event.threadId, event.requestId, event.toolName)
         break
       case 'permission-cancel':
         store.removeChatThreadPermissionRequest(event.threadId, event.requestId)

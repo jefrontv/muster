@@ -3463,6 +3463,8 @@ export type PreloadApi = {
     onOpenActiveCollabTask: (
       callback: (data: { projectId: number; taskId: number }) => void
     ) => () => void
+    /** Fired when the user clicks a chat-thread notification: open that thread. */
+    onOpenChatThread: (callback: (data: { threadId: string }) => void) => () => void
     onCreateTerminal: (
       callback: (data: {
         requestId?: string

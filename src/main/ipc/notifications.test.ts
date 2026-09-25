@@ -643,6 +643,42 @@ describe('registerNotificationHandlers', () => {
     })
   })
 
+  it('opens the thread when a chat notification is clicked', async () => {
+    const webContentsSend = vi.fn()
+    getAllWindowsMock.mockReturnValue([
+      {
+        isDestroyed: () => false,
+        isFocused: () => true,
+        isMinimized: () => false,
+        restore: vi.fn(),
+        focus: vi.fn(),
+        webContents: { send: webContentsSend }
+      } as never
+    ])
+    registerNotificationHandlers({
+      getSettings: () => ({
+        notifications: { enabled: true, agentNeedsInput: true, suppressWhenFocused: true }
+      })
+    } as never)
+
+    const handler = getDispatchHandler()
+    // Delivered while focused: a chat thread is never the "active worktree" focus suppresses.
+    expect(
+      await handler(
+        {},
+        {
+          source: 'agent-needs-input',
+          dedupeKey: 'chat-thread-input:t1',
+          chatThread: { threadId: 't1', title: 'Fix the footer' }
+        }
+      )
+    ).toEqual({ delivered: true })
+
+    getNotificationEventHandler('click')()
+
+    expect(webContentsSend).toHaveBeenCalledWith('ui:openChatThread', { threadId: 't1' })
+  })
+
   it('binds no click handler when a notification names nowhere to go', async () => {
     // A bare source carries neither a worktree nor a task, so there is nothing to open; binding a
     // handler anyway would raise and steal focus on click and then leave the user where they were.

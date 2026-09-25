@@ -259,6 +259,7 @@ const NOTIFICATION_TOGGLE_BY_SOURCE: Partial<
   Record<NotificationEventSource, NotificationSourceToggle>
 > = {
   'agent-task-complete': 'agentTaskComplete',
+  'agent-needs-input': 'agentNeedsInput',
   'terminal-bell': 'terminalBell',
   'site-run-complete': 'siteRunComplete',
   'activecollab-assigned': 'activeCollabAssigned',
@@ -564,6 +565,16 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
               scrollToBottomIfOutputSinceLastView: true
             })
           }
+        }
+        notification.on('click', clickHandler)
+      } else if (args.chatThread) {
+        // A chat thread has no worktree or terminal pane; the thread itself is the destination.
+        const { threadId } = args.chatThread
+        clickHandler = () => {
+          release()
+          surfaceMainWindowForNotificationClick()?.webContents.send('ui:openChatThread', {
+            threadId
+          })
         }
         notification.on('click', clickHandler)
       } else if (args.activeCollab) {

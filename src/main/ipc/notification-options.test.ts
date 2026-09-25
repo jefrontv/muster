@@ -133,3 +133,22 @@ describe('ActiveCollab notification wording', () => {
     )
   })
 })
+
+describe('chat thread notification wording', () => {
+  const thread = { threadId: 't1', title: 'Fix the footer' }
+
+  it('names the thread and says it finished', () => {
+    expect(buildNotificationOptions({ source: 'agent-task-complete', chatThread: thread })).toEqual(
+      { title: 'Chat finished: Fix the footer', body: 'Claude finished working.' }
+    )
+  })
+
+  it('says what the blocked thread is waiting for', () => {
+    expect(
+      buildNotificationOptions({
+        source: 'agent-needs-input',
+        chatThread: { ...thread, detail: 'Approve Bash to continue.' }
+      })
+    ).toEqual({ title: 'Claude needs you: Fix the footer', body: 'Approve Bash to continue.' })
+  })
+})

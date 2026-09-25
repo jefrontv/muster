@@ -5889,6 +5889,8 @@
           "b6fc369244": "バックグラウンド terminal はベルの文字を発します。",
           "591fe605b9": "Terminal ベル",
           "55f901a59b": "コーディング agent が終了し、アイドル状態になります。",
+          "agentNeedsInputLabel": "Chat Needs You",
+          "agentNeedsInputDescription": "A chat is waiting for your approval or answer.",
           "ca76d06fd2": "Agent のタスクが完了しました",
           "deff6d30da": "バックグラウンド イベントのネイティブ システム通知。",
           "841c8c549f": "通知を有効にする",

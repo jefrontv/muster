@@ -1502,6 +1502,18 @@ export function useIpcEvents(): void {
     )
 
     unsubs.push(
+      window.api.ui.onOpenChatThread(({ threadId }) => {
+        const store = useAppStore.getState()
+        // A thread deleted since the banner fired has nowhere to land; the window surfacing is enough.
+        if (!store.chatThreads.some((thread) => thread.id === threadId)) {
+          return
+        }
+        store.openChatPage()
+        store.setActiveChatThread(threadId)
+      })
+    )
+
+    unsubs.push(
       window.api.ui.onCreateTerminal(
         ({
           requestId,

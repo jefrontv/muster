@@ -3,7 +3,7 @@ import type { GlobalSettings } from '../../../../shared/types'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Separator } from '../ui/separator'
-import { BellRing, Bot, Globe, Siren } from 'lucide-react'
+import { BellRing, Bot, Globe, MessageCircleQuestion, Siren } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   MacNotificationPermissionCard,
@@ -145,6 +145,25 @@ export function NotificationsPane({
         onToggle={() =>
           void updateNotificationSettings({
             agentTaskComplete: !notificationSettings.agentTaskComplete
+          })
+        }
+      />
+
+      <NotificationSettingToggle
+        icon={<MessageCircleQuestion className="size-4" />}
+        label={translate(
+          'auto.components.settings.NotificationsPane.agentNeedsInputLabel',
+          'Chat Needs You'
+        )}
+        description={translate(
+          'auto.components.settings.NotificationsPane.agentNeedsInputDescription',
+          'A chat is waiting for your approval or answer.'
+        )}
+        checked={notificationSettings.agentNeedsInput}
+        disabled={!notificationSettings.enabled}
+        onToggle={() =>
+          void updateNotificationSettings({
+            agentNeedsInput: !notificationSettings.agentNeedsInput
           })
         }
       />

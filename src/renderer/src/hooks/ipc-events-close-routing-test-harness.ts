@@ -155,6 +155,7 @@ export async function useIpcEventsForCloseRouting({
         onOpenNewWorkspace: () => () => {},
         onOpenTasks: () => () => {},
         onOpenActiveCollabTask: () => () => {},
+        onOpenChatThread: () => () => {},
         onOpenWorkspaceBoard: () => () => {},
         onOpenSetupGuide: () => () => {},
         onDeleteCurrentWorkspace: () => () => {},

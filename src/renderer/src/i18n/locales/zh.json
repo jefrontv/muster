@@ -5852,6 +5852,8 @@
           "b6fc369244": "后台终端发出响铃字符。",
           "591fe605b9": "终端响铃",
           "55f901a59b": "编码智能体完成并变得空闲。",
+          "agentNeedsInputLabel": "Chat Needs You",
+          "agentNeedsInputDescription": "A chat is waiting for your approval or answer.",
           "ca76d06fd2": "智能体任务完成",
           "deff6d30da": "后台事件的本机系统通知。",
           "841c8c549f": "启用通知",
