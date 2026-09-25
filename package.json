@@ -40,6 +40,7 @@
     "typecheck:cli": "tsc --noEmit -p config/tsconfig.tc.cli.json",
     "typecheck:web": "tsc --noEmit -p config/tsconfig.tc.web.json",
     "typecheck": "tsc --noEmit -p config/tsconfig.node.json && tsc --noEmit -p config/tsconfig.tc.cli.json && tsc --noEmit -p config/tsconfig.tc.web.json",
+    "typecheck:release": "tsc --noEmit -p config/tsconfig.node.json --incremental false --composite false && tsc --noEmit -p config/tsconfig.tc.cli.json --incremental false --composite false && tsc --noEmit -p config/tsconfig.tc.web.json --incremental false --composite false",
     "typecheck:tsc:node": "tsc --noEmit -p config/tsconfig.node.json --composite false",
     "typecheck:tsc:cli": "tsc --noEmit -p config/tsconfig.cli.json --composite false",
     "typecheck:tsc:web": "tsc --noEmit -p config/tsconfig.web.json --composite false",

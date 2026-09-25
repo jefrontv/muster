@@ -101,6 +101,10 @@ jobs:
     if: needs.resolve.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # actions: write lets the failure step below cancel the parallel mac build.
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -142,6 +146,14 @@ jobs:
 
       - name: Typecheck
         run: pnpm run typecheck
+
+      # Why: release-mac runs in parallel for ~17 minutes and publish skips on a failed typecheck
+      # anyway, so letting the build finish only burns runner time before a re-dispatch.
+      - name: Cancel the release build when typecheck fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
 
   release-mac:
     needs: resolve
