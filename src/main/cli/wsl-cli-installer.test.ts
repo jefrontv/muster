@@ -721,6 +721,13 @@ describe('WslCliInstaller', () => {
       await writeFile(commandPath, PRE_RC4_MANAGED_WSL_LAUNCHER, 'utf8')
       await writeFile(bridgePath, bridge, 'utf8')
 
+      // A sync exec blocks the worker, so testTimeout can't fire; bound it here. The minimal PATH
+      // keeps a user-installed flock shim (arg-incompatible, never exits) out of the lock prelude.
+      const bashOptions = {
+        encoding: 'utf8' as const,
+        timeout: 20_000,
+        env: { ...process.env, PATH: '/usr/bin:/bin' }
+      }
       const runner = async (_distro: string, command: string): Promise<string> => {
         if (command.includes('printf %s "$HOME"')) {
           return home
@@ -730,7 +737,7 @@ describe('WslCliInstaller', () => {
             .split('\n')
             .map((line) => (line.startsWith('mv -f "$command_tmp" ') ? 'exit 71' : line))
             .join('\n')
-          return execFileSync('bash', ['-c', executableCommand], { encoding: 'utf8' })
+          return execFileSync('bash', ['-c', executableCommand], bashOptions)
         }
         if (command.includes('command -v powershell.exe')) {
           return 'yes'
@@ -738,7 +745,7 @@ describe('WslCliInstaller', () => {
         if (command.includes('case ":$PATH:"')) {
           return 'yes'
         }
-        return execFileSync('bash', ['-c', command], { encoding: 'utf8' })
+        return execFileSync('bash', ['-c', command], bashOptions)
       }
       const installer = new WslCliInstaller({
         platform: 'win32',
