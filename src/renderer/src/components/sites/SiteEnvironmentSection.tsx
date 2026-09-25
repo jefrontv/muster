@@ -134,16 +134,28 @@ export function SiteEnvironmentSection({
             </div>
             {/* The password belongs beside the user it authenticates, not in a block of its own. */}
             {field.key === 'username' ? (
-              <SiteSecretField
-                key={`ssh-secret:${environmentName}`}
-                kind="ssh"
-                label={translate(
-                  'auto.components.sites.SiteEnvironmentSection.sshPassword',
-                  'SSH password'
-                )}
-                isSet={presence.ssh}
-                onSetSecret={onSetSecret}
-              />
+              <div className="space-y-1.5">
+                <SiteSecretField
+                  key={`ssh-secret:${environmentName}`}
+                  kind="ssh"
+                  label={translate(
+                    'auto.components.sites.SiteEnvironmentSection.sshPassword',
+                    'SSH password'
+                  )}
+                  isSet={presence.ssh}
+                  onSetSecret={onSetSecret}
+                />
+                <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={environment.sshUseAgent === true}
+                    onCheckedChange={(checked) => onPatch({ sshUseAgent: checked === true })}
+                  />
+                  {translate(
+                    'auto.components.sites.SiteEnvironmentSection.sshUseAgent',
+                    'Use SSH key instead'
+                  )}
+                </label>
+              </div>
             ) : null}
           </Fragment>
         ))}

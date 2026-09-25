@@ -47,7 +47,7 @@ function blockedMessage(
   branch: string | null
 ): string {
   if (plan.blockedBy.includes('missing-ssh-credentials')) {
-    return `No SSH password is stored for '${plan.environment ?? '(none)'}'. Set it in Muster; confirm=true does not override it.`
+    return `No SSH password is stored for '${plan.environment ?? '(none)'}'. Set it in Muster or turn on 'Use SSH key' for this environment; confirm=true does not override it.`
   }
   if (plan.blockedBy.includes('unmatched-branch')) {
     return `Branch '${branch ?? '(none)'}' matches no environment, so this would run on '${plan.environment}' by fallback (which may be production). Re-call with env='${plan.environment}' to target it explicitly, or confirm=true to accept the fallback.`

@@ -43,7 +43,7 @@ export type SiteMcpField = {
   target: SiteMcpFieldTarget
   property: keyof Site | keyof SiteEnvironment
   description: string
-  kind: 'string' | 'number' | 'enum'
+  kind: 'string' | 'number' | 'enum' | 'boolean'
   choices?: readonly string[]
 }
 
@@ -68,6 +68,13 @@ export const SITE_MCP_FIELDS: readonly SiteMcpField[] = [
     property: 'username',
     description: 'SSH username',
     kind: 'string'
+  },
+  {
+    key: 'use_ssh_key',
+    target: 'environment',
+    property: 'sshUseAgent',
+    description: 'Authenticate with your SSH agent/keys instead of a stored password',
+    kind: 'boolean'
   },
   {
     key: 'root_path',
@@ -212,7 +219,9 @@ export function readFieldValues(
       values[field.key] = site[field.property as keyof Site]
       continue
     }
-    values[field.key] = environment ? environment[field.property as keyof SiteEnvironment] : ''
+    const value = environment ? environment[field.property as keyof SiteEnvironment] : ''
+    // An environment saved before a boolean field existed reads as false, never undefined.
+    values[field.key] = field.kind === 'boolean' ? value === true : value
   }
   return values
 }
@@ -275,9 +284,22 @@ function coerceNumber(field: SiteMcpField, raw: unknown): number | null {
   return parsed
 }
 
-function coerceFieldValue(field: SiteMcpField, raw: unknown): string | number | null {
+function coerceBoolean(field: SiteMcpField, raw: unknown): boolean {
+  if (raw === true || raw === 'true') {
+    return true
+  }
+  if (raw === false || raw === 'false' || raw === null || raw === undefined) {
+    return false
+  }
+  throw new SiteMcpToolError(`'${field.key}' must be true or false.`)
+}
+
+function coerceFieldValue(field: SiteMcpField, raw: unknown): string | number | boolean | null {
   if (field.kind === 'number') {
     return coerceNumber(field, raw)
+  }
+  if (field.kind === 'boolean') {
+    return coerceBoolean(field, raw)
   }
   if (raw !== null && raw !== undefined && typeof raw !== 'string' && typeof raw !== 'number') {
     // String({}) stored "[object Object]" and String(true) stored "true".

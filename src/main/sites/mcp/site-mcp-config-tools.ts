@@ -67,11 +67,13 @@ function fieldProperties(): Record<string, Record<string, unknown>> {
       field.key,
       field.kind === 'number'
         ? { type: ['number', 'string', 'null'], description: field.description }
-        : {
-            type: 'string',
-            description: `${field.description}${field.target === 'environment' ? ' (per environment)' : ''}`,
-            ...(field.choices ? { enum: [...field.choices] } : {})
-          }
+        : field.kind === 'boolean'
+          ? { type: ['boolean', 'string'], description: `${field.description} (per environment)` }
+          : {
+              type: 'string',
+              description: `${field.description}${field.target === 'environment' ? ' (per environment)' : ''}`,
+              ...(field.choices ? { enum: [...field.choices] } : {})
+            }
     ])
   )
 }

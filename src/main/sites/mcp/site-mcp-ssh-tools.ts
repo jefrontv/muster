@@ -93,7 +93,7 @@ async function runSshCommand(
       resolved_environment: plan.environment,
       blocked_by: plan.blockedBy,
       message: plan.blockedBy.includes('missing-ssh-credentials')
-        ? `No SSH password is stored for '${plan.environment ?? '(none)'}'. Set it in Muster; confirm=true does not override it.`
+        ? `No SSH password is stored for '${plan.environment ?? '(none)'}'. Set it in Muster or turn on 'Use SSH key' for this environment; confirm=true does not override it.`
         : plan.blockedBy.includes('unmatched-branch')
           ? `Branch '${summary.branch ?? '(none)'}' matches no environment, so this would run on '${plan.environment}' by fallback (which may be production). Re-call with env='${plan.environment}' to target it explicitly, or confirm=true to accept the fallback.`
           : 'This site has no environment to run a command on.'

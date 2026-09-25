@@ -35,7 +35,8 @@ const IMPORT_BLOCKED_REASON: Record<SiteRunBlockedReason, string> = {
   'no-steps-selected': 'No import steps are enabled for this environment — pick at least one.',
   'unmatched-branch':
     'The checked-out branch does not match an environment — confirm the target before importing.',
-  'missing-ssh-credentials': 'Add the SSH password for this environment before importing.',
+  'missing-ssh-credentials':
+    'Add the SSH password for this environment, or turn on Use SSH key, before importing.',
   'missing-path': 'The local checkout is not on disk yet — pick or clone the folder first.'
 }
 

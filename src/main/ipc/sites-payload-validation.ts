@@ -74,7 +74,8 @@ const ENVIRONMENT_BOOLEAN_FIELDS = [
   'wpUploadRewrite',
   'gitPullOnServer',
   'clearServerCache',
-  'deployThemes'
+  'deployThemes',
+  'sshUseAgent'
 ] as const
 
 /**

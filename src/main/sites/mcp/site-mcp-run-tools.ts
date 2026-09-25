@@ -81,7 +81,7 @@ function describeBlockers(planned: PlannedRun, group: SiteRunGroup): string {
         case 'missing-path':
           return 'The local checkout no longer exists on disk.'
         case 'missing-ssh-credentials':
-          return `No SSH password is stored for '${environment}'. Set it in Muster; it cannot be set over MCP and confirm=true does not override it.`
+          return `No SSH password is stored for '${environment}'. Set it in Muster (it cannot be set over MCP) or set use_ssh_key=true; confirm=true does not override it.`
         case 'unmatched-branch':
           return `Branch '${branch}' matches no environment, so this would target '${environment}' by fallback (which may be production). Re-call with env='${environment}' to target it explicitly, or confirm=true to accept the fallback.`
       }

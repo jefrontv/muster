@@ -78,6 +78,19 @@ describe('buildSiteRunPlan', () => {
     expect(canStartRun(plan, true)).toBe(false)
   })
 
+  it('lets a key-auth environment run remote steps with no stored password', () => {
+    const plan = buildSiteRunPlan({
+      site: site({ main: environment({ exportDatabase: true, sshUseAgent: true }) }),
+      group: 'import',
+      branch: 'main',
+      hasSshSecret: neverHasSecret,
+      pathExists: true
+    })
+    expect(plan.requiresRemote).toBe(true)
+    expect(plan.blockedBy).toEqual([])
+    expect(canStartRun(plan, false)).toBe(true)
+  })
+
   it('blocks when the branch matches no environment, and a confirm overrides it', () => {
     const plan = buildSiteRunPlan({
       site: site({ production: environment({ deployThemes: true }) }, 'production'),

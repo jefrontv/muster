@@ -113,6 +113,9 @@ export type SiteEnvironment = {
   /** Empty means the SSH default; kept as text so the field round-trips what the user typed. */
   sshPort: string
   username: string
+  /** Authenticate with the user's SSH agent/keys; no stored password is needed. Optional so
+   *  sites saved before it existed stay valid. */
+  sshUseAgent?: boolean
   /** Remote WordPress root, relative to the SSH user's home. */
   rootPath: string
   liveDomain: string

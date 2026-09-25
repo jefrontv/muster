@@ -116,7 +116,9 @@ function buildSiteSshTarget(config: SiteRunConfig): SshTarget {
     // mid-handshake — an intermittent "handshake dropped" that depends on how many keys the
     // agent happens to carry. A site environment authenticates with its own stored credential, so
     // the keyring is noise here. Password-less environments keep the agent: it is all they have.
-    ...(config.sshPassword ? { identityAgent: 'none' } : {}),
+    ...(config.sshPassword && config.environment.sshUseAgent !== true
+      ? { identityAgent: 'none' }
+      : {}),
     source: 'manual'
   }
 }

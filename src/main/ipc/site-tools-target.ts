@@ -31,7 +31,8 @@ const BLOCKED_EXPLANATION: Record<SiteRunBlockedReason, string> = {
   'no-steps-selected': 'there is nothing to do',
   'unmatched-branch':
     'the checked-out branch does not match an environment — confirm the target explicitly',
-  'missing-ssh-credentials': 'no SSH password is stored for this environment',
+  'missing-ssh-credentials':
+    'no SSH password is stored for this environment and Use SSH key is off',
   'missing-path': 'the local checkout is not on disk'
 }
 

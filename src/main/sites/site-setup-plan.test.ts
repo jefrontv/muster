@@ -360,7 +360,7 @@ describe('buildSiteSetupPlan', () => {
     })
     expect(stageState(plan.stages, 'import')).toBe('blocked')
     expect(stageReason(plan.stages, 'import')).toBe(
-      'Add the SSH password for this environment before importing.'
+      'Add the SSH password for this environment, or turn on Use SSH key, before importing.'
     )
   })
 

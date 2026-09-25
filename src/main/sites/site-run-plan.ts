@@ -150,7 +150,12 @@ function buildPlan(
   if (!input.pathExists) {
     blockedBy.push('missing-path')
   }
-  if (requiresRemote && environmentName && !input.hasSshSecret(environmentName)) {
+  if (
+    requiresRemote &&
+    environmentName &&
+    environment?.sshUseAgent !== true &&
+    !input.hasSshSecret(environmentName)
+  ) {
     blockedBy.push('missing-ssh-credentials')
   }
   // An explicit environment is a deliberate choice, so it never trips the branch guard.

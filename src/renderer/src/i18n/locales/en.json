@@ -13648,6 +13648,7 @@
         },
         "SiteEnvironmentSection": {
           "sshPassword": "SSH password",
+          "sshUseAgent": "Use SSH key instead",
           "secretEnter": "Enter value",
           "importSteps": "Import steps",
           "deploySteps": "Deploy steps",

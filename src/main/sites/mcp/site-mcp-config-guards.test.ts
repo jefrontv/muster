@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { call, createFakeContext, siteRecord } from './site-mcp-fake-context'
 
 describe('set_deployment_fields value checks', () => {
+  it('stores use_ssh_key as a real boolean on the environment', async () => {
+    const context = createFakeContext()
+    const outcome = await call(context, 'set_deployment_fields', {
+      fields: { use_ssh_key: 'true' },
+      env: 'main'
+    })
+    expect(outcome.isError).toBe(false)
+    expect(context.store.getSite('site-1')?.environments.main?.sshUseAgent).toBe(true)
+  })
+
   it.each([
     [{ db_port: 0 }, 'from 1 to 65535'],
     [{ db_port: 70_000 }, 'from 1 to 65535'],
@@ -10,7 +20,8 @@ describe('set_deployment_fields value checks', () => {
     [{ notes: true }, 'must be a string'],
     [{ local_wp_root: '../elsewhere' }, 'relative path inside the site folder'],
     [{ local_wp_root: '/etc' }, 'relative path inside the site folder'],
-    [{ hostname: 'x'.repeat(257) }, 'exceeds 256 characters']
+    [{ hostname: 'x'.repeat(257) }, 'exceeds 256 characters'],
+    [{ use_ssh_key: 'maybe' }, 'must be true or false']
   ])('refuses %j instead of storing a clamped or stringified value', async (fields, message) => {
     const context = createFakeContext()
     const before = JSON.stringify(context.store.getSite('site-1'))
