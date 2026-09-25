@@ -67,6 +67,8 @@ function store(
 ): Store {
   let roots = [...configured]
   return {
+    // Auto-add off (the default), so registering never schedules a background scan.
+    getSettings: () => ({ sitesAutoAddDiscovered: false }),
     getRepos: () => repoPaths.map((path) => ({ path })),
     listSites: () => sitePaths.map((path) => ({ path })),
     getConfiguredSiteRoots: () => roots,

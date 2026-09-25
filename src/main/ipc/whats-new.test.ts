@@ -74,7 +74,14 @@ describe('whats-new ipc handlers', () => {
 
     await expect(get()).resolves.toEqual({
       status: 'ready',
-      payload: { version: '1.5.53', notes: null, notesUrl: null }
+      payload: {
+        version: '1.5.53',
+        notes: null,
+        notesUrl: null,
+        missed: [],
+        missedOverflow: 0,
+        missedUnknown: true
+      }
     })
   })
 

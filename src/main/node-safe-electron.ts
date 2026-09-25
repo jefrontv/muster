@@ -12,10 +12,18 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { App, SafeStorage } from 'electron'
 
-export const electronApp: App | undefined =
-  typeof app === 'object' && app !== null ? app : undefined
-export const electronSafeStorage: SafeStorage | undefined =
-  typeof safeStorage === 'object' && safeStorage !== null ? safeStorage : undefined
+// A vi.mock('electron') factory that omits a binding throws on access; that is the same no-app case.
+function readBinding<T>(read: () => unknown): T | undefined {
+  try {
+    const value = read()
+    return typeof value === 'object' && value !== null ? (value as T) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export const electronApp = readBinding<App>(() => app)
+export const electronSafeStorage = readBinding<SafeStorage>(() => safeStorage)
 
 /**
  * The userData directory when `app` is unavailable. MUST resolve to the same directory Electron

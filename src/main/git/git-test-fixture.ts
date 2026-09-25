@@ -12,9 +12,19 @@
  * out with a plain directory copy so per-test setup costs zero spawns.
  */
 import { execFileSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 
 export const FIXTURE_GIT_USER_EMAIL = 'test@example.com'
 export const FIXTURE_GIT_USER_NAME = 'Test User'
@@ -48,10 +58,46 @@ function populate(dir: string, kind: TemplateKind): void {
   }
 }
 
+function listFiles(root: string, dir: string = root): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory()
+      ? listFiles(root, join(dir, entry.name))
+      : [relative(root, join(dir, entry.name))]
+  )
+}
+
+// Why: macOS's temp cleaner deletes old files but keeps directories, leaving a template with no
+// HEAD or config that every stamped repo inherits. The manifest sits beside the template so it
+// never lands inside a stamped working tree.
+function isTemplateComplete(finalPath: string): boolean {
+  try {
+    const files = JSON.parse(readFileSync(`${finalPath}.manifest.json`, 'utf8')) as string[]
+    return files.length > 0 && files.every((file) => existsSync(join(finalPath, file)))
+  } catch {
+    return false
+  }
+}
+
+const verifiedTemplates = new Set<TemplateKind>()
+
 function templateFor(kind: TemplateKind): string {
   const finalPath = join(TEMPLATE_ROOT, kind)
-  if (existsSync(finalPath)) {
+  if (verifiedTemplates.has(kind)) {
     return finalPath
+  }
+  if (existsSync(finalPath)) {
+    if (isTemplateComplete(finalPath)) {
+      verifiedTemplates.add(kind)
+      return finalPath
+    }
+    // Rename aside first so a concurrent reader never copies a half-deleted tree.
+    const discarded = `${finalPath}.stale-${process.pid}-${Date.now()}`
+    try {
+      renameSync(finalPath, discarded)
+      rmSync(discarded, { recursive: true, force: true })
+    } catch {
+      // Another worker already replaced it.
+    }
   }
   // Why: build somewhere private then rename, so a worker never reads a template
   // another worker is still writing. Losing the rename race is fine - the winner's
@@ -59,11 +105,13 @@ function templateFor(kind: TemplateKind): string {
   mkdirSync(TEMPLATE_ROOT, { recursive: true })
   const staging = mkdtempSync(join(TEMPLATE_ROOT, `.staging-${kind}-`))
   populate(staging, kind)
+  writeFileSync(`${finalPath}.manifest.json`, JSON.stringify(listFiles(staging)))
   try {
     renameSync(staging, finalPath)
   } catch {
     rmSync(staging, { recursive: true, force: true })
   }
+  verifiedTemplates.add(kind)
   return finalPath
 }
 

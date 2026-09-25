@@ -14,7 +14,8 @@ describe('pickQuickWorkspaceAgent', () => {
 
   it('uses the first enabled catalog agent while detection is pending', () => {
     expect(pickQuickWorkspaceAgent(null, null, [])).toBe('claude')
-    expect(pickQuickWorkspaceAgent(null, null, ['claude'])).toBe('claude-agent-teams')
+    // claude-agent-teams is disabled by default in this fork, so it is skipped even when not listed.
+    expect(pickQuickWorkspaceAgent(null, null, ['claude'])).toBe('openclaude')
     expect(pickQuickWorkspaceAgent(null, null, ['claude', 'claude-agent-teams'])).toBe('openclaude')
     expect(
       pickQuickWorkspaceAgent(null, null, ['claude', 'claude-agent-teams', 'openclaude'])

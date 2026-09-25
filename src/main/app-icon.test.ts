@@ -5,24 +5,23 @@ const {
   browserWindowGetAllWindowsMock,
   createFromPathMock,
   dockSetIconMock,
-  isMock,
+  appMock,
   windowSetIconMock
-} = vi.hoisted(() => ({
-  browserWindowGetAllWindowsMock: vi.fn(),
-  createFromPathMock: vi.fn(),
-  dockSetIconMock: vi.fn(),
-  isMock: { dev: false },
-  windowSetIconMock: vi.fn()
-}))
+} = vi.hoisted(() => {
+  const dockSetIconMock = vi.fn()
+  return {
+    browserWindowGetAllWindowsMock: vi.fn(),
+    createFromPathMock: vi.fn(),
+    dockSetIconMock,
+    appMock: { isPackaged: true, dock: { setIcon: dockSetIconMock } },
+    windowSetIconMock: vi.fn()
+  }
+})
 
 vi.mock('electron', () => ({
-  app: { dock: { setIcon: dockSetIconMock } },
+  app: appMock,
   BrowserWindow: { getAllWindows: browserWindowGetAllWindowsMock },
   nativeImage: { createFromPath: createFromPathMock }
-}))
-
-vi.mock('@electron-toolkit/utils', () => ({
-  is: isMock
 }))
 
 vi.mock('../../resources/icon.png?asset', () => ({
@@ -75,7 +74,9 @@ describe('app icon selection', () => {
     createFromPathMock.mockReset()
     dockSetIconMock.mockReset()
     windowSetIconMock.mockReset()
-    isMock.dev = false
+    // Imported packaged so classic resolves to the release icon; calls run unpackaged so dock
+    // persistence never writes Finder metadata on the real app bundle.
+    appMock.isPackaged = false
   })
 
   afterEach(() => {
