@@ -97,7 +97,7 @@ import {
   normalizeUsagePercentageDisplay,
   type UsagePercentageDisplay
 } from '../../../../shared/usage-percentage-display'
-import { formatUsagePercentageLabel } from './usage-percentage-label'
+import { formatCompactUsagePercentage, formatUsagePercentageLabel } from './usage-percentage-label'
 import {
   normalizeStatusBarUsageMode,
   type StatusBarUsageMode
@@ -108,7 +108,9 @@ type StatusBarProps = {
 }
 
 const PetStatusSegment = lazyWithRetry(() =>
-  import('./PetStatusSegment').then((module) => ({ default: module.PetStatusSegment }))
+  import('./PetStatusSegment').then((module) => ({
+    default: module.PetStatusSegment
+  }))
 )
 const ResourceUsageStatusSegment = lazyWithRetry(() =>
   import('./ResourceUsageStatusSegment').then((module) => ({
@@ -116,10 +118,14 @@ const ResourceUsageStatusSegment = lazyWithRetry(() =>
   }))
 )
 const PortsStatusSegment = lazyWithRetry(() =>
-  import('./PortsStatusSegment').then((module) => ({ default: module.PortsStatusSegment }))
+  import('./PortsStatusSegment').then((module) => ({
+    default: module.PortsStatusSegment
+  }))
 )
 const SshStatusSegment = lazyWithRetry(() =>
-  import('./SshStatusSegment').then((module) => ({ default: module.SshStatusSegment }))
+  import('./SshStatusSegment').then((module) => ({
+    default: module.SshStatusSegment
+  }))
 )
 
 export type CodexStatusRuntimeTarget = {
@@ -350,7 +356,12 @@ export function buildCodexStatusSwitchGroups(
     }
     return a.localeCompare(b)
   })) {
-    groups.push(makeGroup({ runtime: 'wsl', wslDistro: key === '__default__' ? null : key }))
+    groups.push(
+      makeGroup({
+        runtime: 'wsl',
+        wslDistro: key === '__default__' ? null : key
+      })
+    )
   }
 
   return groups
@@ -509,7 +520,12 @@ export function buildClaudeStatusSwitchGroups(
     }
     return a.localeCompare(b)
   })) {
-    groups.push(makeGroup({ runtime: 'wsl', wslDistro: key === '__default__' ? null : key }))
+    groups.push(
+      makeGroup({
+        runtime: 'wsl',
+        wslDistro: key === '__default__' ? null : key
+      })
+    )
   }
 
   return groups
@@ -747,7 +763,9 @@ export function ClaudeSwitcherMenu({
   const activeRuntimeEnvironmentId = settings?.activeRuntimeEnvironmentId?.trim() || null
   // Why: keyed on owner id, not settings identity, so routine settings mutations don't re-run the remote snapshot fetch.
   const loadAccounts = useCallback(async () => {
-    const snapshot = await fetchProviderAccountsSnapshot({ activeRuntimeEnvironmentId })
+    const snapshot = await fetchProviderAccountsSnapshot({
+      activeRuntimeEnvironmentId
+    })
     // Why: a failed Claude half is a substituted empty roster; keep prior state.
     if (snapshot.failedProviders?.includes('claude')) {
       console.error('Claude account list failed; keeping previous status bar state.')
@@ -1035,7 +1053,9 @@ export function InlineUsageBars({
             {/* Why: fill follows the selected percentage; color still signals consumption urgency. */}
             <div
               className={`h-full rounded-full ${barColor(window.used)}`}
-              style={{ width: `${getDisplayedUsagePercentage(window.used, display)}%` }}
+              style={{
+                width: `${getDisplayedUsagePercentage(window.used, display)}%`
+              }}
             />
           </div>
           <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
@@ -1124,8 +1144,8 @@ function WindowLabel({
 }): React.JSX.Element {
   return (
     <span className="tabular-nums">
-      {formatUsagePercentageLabel(w.usedPercent, display)}
-      {showLabel ? ` ${label}` : ''}
+      {showLabel ? <span className="text-muted-foreground">{label} </span> : null}
+      {formatCompactUsagePercentage(w.usedPercent, display)}
     </span>
   )
 }
@@ -1197,7 +1217,7 @@ function VerboseProviderUsage({
         {visibleBuckets.length === 0 && p.session ? (
           <WindowLabel
             w={p.session}
-            label={formatRateLimitWindowChipLabel(p.session)}
+            label={translate('auto.components.status.bar.StatusBar.chipSession', 'Session')}
             display={display}
           />
         ) : null}
@@ -1210,14 +1230,15 @@ function VerboseProviderUsage({
       ? {
           key: 'session',
           window: p.session,
-          label: formatRateLimitWindowChipLabel(p.session)
+          // Why: name the window; the reset countdown lives in the popup with the pace line.
+          label: translate('auto.components.status.bar.StatusBar.chipSession', 'Session')
         }
       : null,
     p.weekly
       ? {
           key: 'weekly',
           window: p.weekly,
-          label: formatRateLimitWindowChipLabel(p.weekly)
+          label: translate('auto.components.status.bar.StatusBar.chipWeek', 'Week')
         }
       : null,
     p.fableWeekly
@@ -1232,7 +1253,7 @@ function VerboseProviderUsage({
       ? {
           key: 'monthly',
           window: p.monthly,
-          label: formatRateLimitWindowChipLabel(p.monthly)
+          label: translate('auto.components.status.bar.StatusBar.chipMonth', 'Month')
         }
       : null
   ].filter((window): window is { key: string; window: RateLimitWindow; label: string } => {
@@ -1304,8 +1325,8 @@ export function ProviderSegment({
     return (
       <span className="inline-flex items-center gap-1 text-muted-foreground">
         <ProviderIcon provider={provider} />
-        <AlertTriangle size={11} className="text-muted-foreground/80" />
-        {!compact && <span className="text-[11px] font-medium">{statusLabel}</span>}
+        {/* Why: a persistently failing provider shouldn't shout in chrome; the popup carries the detail. */}
+        <AlertTriangle size={11} className="text-muted-foreground/60" aria-label={statusLabel} />
       </span>
     )
   }
@@ -1410,7 +1431,9 @@ export function CodexSwitcherMenu({
   const activeRuntimeEnvironmentId = settings?.activeRuntimeEnvironmentId?.trim() || null
   // Why: keyed on owner id, not settings identity, so routine settings mutations don't re-run the remote snapshot fetch.
   const loadAccounts = useCallback(async () => {
-    const snapshot = await fetchProviderAccountsSnapshot({ activeRuntimeEnvironmentId })
+    const snapshot = await fetchProviderAccountsSnapshot({
+      activeRuntimeEnvironmentId
+    })
     // Why: a failed Codex half is a substituted empty roster; keep prior state.
     if (snapshot.failedProviders?.includes('codex')) {
       console.error('Codex account list failed; keeping previous status bar state.')
@@ -2204,7 +2227,10 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
         event.preventDefault()
         window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
         const bounds = event.currentTarget.getBoundingClientRect()
-        setMenuPoint({ x: event.clientX - bounds.left, y: event.clientY - bounds.top })
+        setMenuPoint({
+          x: event.clientX - bounds.left,
+          y: event.clientY - bounds.top
+        })
         setMenuOpen(true)
       }}
     >

@@ -22,6 +22,7 @@ import {
   resolveVisibleTaskProvider
 } from '../../../../shared/task-providers'
 import { canBrowseSidebarTasks } from './sidebar-tasks-browse'
+import { TaskDueBadge } from './TaskDueBadge'
 
 function HideTaskSidebarMenu({ onHide }: { onHide: () => void }): React.JSX.Element {
   return (
@@ -273,24 +274,19 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
             ) : null}
           </span>
           {activeCollabUnreadTotal > 0 ? (
-            // Why not inside the hover-only shortcut strip: the whole point is to be visible
-            // without hovering. Rendered only above zero — a "0" badge is noise that trains the
-            // eye to ignore the spot where a real count will appear.
-            //
-            // Why last: it used to sit before the strip, so revealing the strip on hover pushed the
-            // count sideways. Pinned to the end, the flex-1 label absorbs the strip's width and the
-            // badge does not move.
+            // Why a dot: the number slot is the due/overdue count, matching Chat's Tasks row.
+            // Pinned last so revealing the hover shortcut strip doesn't shift it.
             <span
-              className="ml-1 shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary"
+              role="img"
+              className="ml-1 size-1.5 shrink-0 rounded-full bg-primary"
               aria-label={translate(
                 'auto.components.sidebar.SidebarNav.activeCollabUnread',
                 '{{value0}} unread ActiveCollab changes',
                 { value0: String(activeCollabUnreadTotal) }
               )}
-            >
-              {activeCollabUnreadTotal > 9 ? '9+' : activeCollabUnreadTotal}
-            </span>
+            />
           ) : null}
+          <TaskDueBadge className="ml-1" />
         </button>
       </ContextMenuTrigger>
       <HideTaskSidebarMenu onHide={hideTasksButton} />

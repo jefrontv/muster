@@ -4,7 +4,7 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { SettingsSegmentedControl } from '@/components/settings/SettingsFormControls'
 import { useResetCountdownClock } from '@/hooks/useResetCountdownClock'
 import { translate } from '@/i18n/i18n'
-import { formatRateLimitWindowChipLabel, formatWindowLabel } from '@/lib/window-label-formatter'
+import { formatWindowLabel } from '@/lib/window-label-formatter'
 import type { ProviderRateLimits, RateLimitWindow } from '../../../../shared/rate-limit-types'
 import {
   clampUsedPercent,
@@ -36,11 +36,7 @@ function providerMaxUsed(sections: UsageSection[]): number {
 }
 
 // Buckets (Gemini Flash/Pro) keep their model name; windows use their duration.
-function shortLabel(
-  p: ProviderRateLimits,
-  section: UsageSection,
-  useRemainingDuration = false
-): string {
+function shortLabel(p: ProviderRateLimits, section: UsageSection): string {
   if (p.buckets?.some((b) => b.name === section.label)) {
     return section.label
   }
@@ -49,9 +45,7 @@ function shortLabel(
   if (section.window === p.fableWeekly) {
     return 'Fable'
   }
-  return useRemainingDuration
-    ? formatRateLimitWindowChipLabel(section.window)
-    : formatWindowLabel(section.window.windowMinutes)
+  return formatWindowLabel(section.window.windowMinutes)
 }
 
 export function getTightestUsageSection(p: ProviderRateLimits): UsageSection | null {
@@ -66,7 +60,8 @@ export function getTightestUsageSection(p: ProviderRateLimits): UsageSection | n
       ? candidate
       : current
   )
-  return { ...tightest, label: shortLabel(p, tightest, true) }
+  // Why: status bar names the window ("Weekly 53%"); reset countdowns live in the popup.
+  return tightest
 }
 
 // The soonest-resetting window summarizes the agent's next reset in one line.

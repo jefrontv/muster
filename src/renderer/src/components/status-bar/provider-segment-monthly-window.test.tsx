@@ -22,6 +22,11 @@ vi.mock('../../store', () => ({
     selector({ usagePercentageDisplay: 'used' })
 }))
 
+// Why: labels and percentages render in separate spans; assert on the visible text.
+function textOf(markup: string): string {
+  return markup.replace(/<[^>]+>/g, '')
+}
+
 function windowOf(
   usedPercent: number,
   windowMinutes: number,
@@ -47,26 +52,35 @@ describe('ProviderSegment monthly window', () => {
   it('renders a monthly-only snapshot in the chip instead of a bare icon', async () => {
     const { ProviderSegment } = await import('./StatusBar')
 
-    const markup = renderToStaticMarkup(
-      <ProviderSegment p={grokMonthlyLimits('ok')} compact={false} display="used" mode="compact" />
+    const markup = textOf(
+      renderToStaticMarkup(
+        <ProviderSegment
+          p={grokMonthlyLimits('ok')}
+          compact={false}
+          display="used"
+          mode="compact"
+        />
+      )
     )
 
-    expect(markup).toContain('25% used 30d')
+    expect(markup).toContain('Monthly 25%')
   })
 
   it('shows monthly data while fetching instead of the loading placeholder', async () => {
     const { ProviderSegment } = await import('./StatusBar')
 
-    const markup = renderToStaticMarkup(
-      <ProviderSegment
-        p={grokMonthlyLimits('fetching')}
-        compact={false}
-        display="used"
-        mode="compact"
-      />
+    const markup = textOf(
+      renderToStaticMarkup(
+        <ProviderSegment
+          p={grokMonthlyLimits('fetching')}
+          compact={false}
+          display="used"
+          mode="compact"
+        />
+      )
     )
 
-    expect(markup).toContain('25% used 30d')
+    expect(markup).toContain('Monthly 25%')
     expect(markup).not.toContain('···')
   })
 
@@ -82,13 +96,15 @@ describe('ProviderSegment monthly window', () => {
       error: null,
       status: 'ok'
     }
-    const markup = renderToStaticMarkup(
-      <ProviderSegment p={limits} compact={false} display="used" mode="compact" />
+    const markup = textOf(
+      renderToStaticMarkup(
+        <ProviderSegment p={limits} compact={false} display="used" mode="compact" />
+      )
     )
 
-    expect(markup).toContain('30% used 30d')
-    expect(markup).not.toContain('10% used')
-    expect(markup).not.toContain('20% used')
+    expect(markup).toContain('Monthly 30%')
+    expect(markup).not.toContain('10%')
+    expect(markup).not.toContain('20%')
   })
 
   it('selects a named bucket as the tightest provider window', async () => {
@@ -106,17 +122,18 @@ describe('ProviderSegment monthly window', () => {
       status: 'ok'
     }
 
-    const markup = renderToStaticMarkup(
-      <ProviderSegment p={limits} compact={false} display="used" mode="compact" />
+    const markup = textOf(
+      renderToStaticMarkup(
+        <ProviderSegment p={limits} compact={false} display="used" mode="compact" />
+      )
     )
 
-    expect(markup).toContain('80% used Pro')
-    expect(markup).not.toContain('25% used')
+    expect(markup).toContain('Pro 80%')
+    expect(markup).not.toContain('25%')
   })
 
-  // Why: #8378 — status-bar chip showed fixed window size ("5h") while the
-  // usage popup showed remaining time for the same resetsAt.
-  it('shows remaining session time on the chip when resetsAt is known (repro-8378)', async () => {
+  // Why: the chip names the window; reset countdowns live only in the popup, so they can't disagree (#8378).
+  it('names the window on the chip instead of a countdown or window size', async () => {
     const { ProviderSegment } = await import('./StatusBar')
     const now = 1_700_000_000_000
     const dateNow = vi.spyOn(Date, 'now').mockReturnValue(now)
@@ -131,15 +148,17 @@ describe('ProviderSegment monthly window', () => {
         error: null,
         status: 'ok'
       }
-      const markup = renderToStaticMarkup(
-        <ProviderSegment p={limits} compact={false} display="used" mode="compact" />
+      const markup = textOf(
+        renderToStaticMarkup(
+          <ProviderSegment p={limits} compact={false} display="used" mode="compact" />
+        )
       )
 
-      expect(markup).toContain('42% used 2h 33m')
+      expect(markup).toContain('Session 42%')
+      expect(markup).not.toContain('2h 33m')
       expect(markup).not.toContain('5h')
       // The consolidated footer intentionally renders only the tightest window.
-      expect(markup).not.toContain('10% used')
-      expect(markup).not.toContain('wk')
+      expect(markup).not.toContain('10%')
     } finally {
       dateNow.mockRestore()
     }
@@ -158,14 +177,16 @@ describe('ProviderSegment monthly window', () => {
       status: 'ok'
     }
 
-    const markup = renderToStaticMarkup(
-      <ProviderSegment p={limits} compact={false} display="used" mode="verbose" />
+    const markup = textOf(
+      renderToStaticMarkup(
+        <ProviderSegment p={limits} compact={false} display="used" mode="verbose" />
+      )
     )
 
-    expect(markup).toContain('10% used 5h')
-    expect(markup).toContain('20% used wk')
-    expect(markup).toContain('30% used Fable')
-    expect(markup).not.toContain('40% used')
+    expect(markup).toContain('Session 10%')
+    expect(markup).toContain('Week 20%')
+    expect(markup).toContain('Fable 30%')
+    expect(markup).not.toContain('40%')
   })
 })
 

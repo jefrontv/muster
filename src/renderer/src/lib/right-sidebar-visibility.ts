@@ -11,7 +11,9 @@ const RIGHT_SIDEBAR_SUPPRESSED_VIEWS = new Set<ActiveView>([
   'space',
   'skills',
   'mobile',
-  'chat'
+  'chat',
+  // Why: the Sites page is full width; the explorer beside it shows an unrelated workspace.
+  'sites'
 ])
 
 export function canShowRightSidebarForView(activeView: ActiveView): boolean {

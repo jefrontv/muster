@@ -1,4 +1,4 @@
-import { ArrowLeft, DownloadCloud, FolderCog, GitBranchPlus, Globe, Search } from 'lucide-react'
+import { DownloadCloud, Ellipsis, FolderCog, GitBranchPlus, Globe, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -6,6 +6,12 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { filterSites, sitesOnDisk } from './site-filtering'
 import { AddToSidebarButton } from './AddToSidebarButton'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
@@ -184,7 +190,11 @@ export default function SitesPage(): React.JSX.Element {
         translate(
           'auto.components.sites.SitesPage.importDone',
           'Imported {{created}} new and updated {{updated}} sites, {{secrets}} passwords migrated.',
-          { created: result.created, updated: result.updated, secrets: result.secretsStored }
+          {
+            created: result.created,
+            updated: result.updated,
+            secrets: result.secretsStored
+          }
         )
       )
       if (result.repos.added > 0) {
@@ -215,16 +225,13 @@ export default function SitesPage(): React.JSX.Element {
     // a third sidebar column rather than the start of the page.
     <main className="flex min-h-0 flex-1 flex-col border-l border-border bg-background">
       <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-3">
-        <Button variant="outline" size="sm" onClick={closeSitesPage} className="shrink-0 gap-1.5">
-          <ArrowLeft className="size-3.5" />
-          {translate('auto.components.sites.SitesPage.back', 'Back')}
-        </Button>
+        {/* No Back button: the sidebar shows where you are and Escape closes the page. */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Globe className="size-4 shrink-0 text-muted-foreground" />
           <span className="text-sm font-medium">
             {translate('auto.components.sites.SitesPage.title', 'Sites')}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="truncate whitespace-nowrap text-xs text-muted-foreground">
             {translate('auto.components.sites.SitesPage.count', '{{count}} configured', {
               count: availableSites.length
             })}
@@ -239,31 +246,38 @@ export default function SitesPage(): React.JSX.Element {
           <GitBranchPlus className="size-3.5" />
           {getSiteCloneSourceStrings().trigger}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="shrink-0 gap-1.5"
-          onClick={() => setRootsDialogOpen(true)}
-        >
-          <FolderCog className="size-3.5" />
-          {translate('auto.components.sites.SitesPage.folders', 'Folders')}
-        </Button>
         <AddToSidebarButton
           busy={importing}
           autoAdd={autoAddDiscovered}
           onAdd={() => void runAddToSidebar()}
           onAutoAddChange={(next) => void handleAutoAddChange(next)}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          className="shrink-0 gap-1.5"
-          disabled={importing}
-          onClick={() => void runImport()}
-        >
-          <DownloadCloud className="size-3.5" />
-          {translate('auto.components.sites.SitesPage.import', 'Import from ocsites')}
-        </Button>
+        {/* Why: folder roots and ocsites import are one-time setup, so they share an overflow menu. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 px-2"
+              aria-label={translate(
+                'auto.components.sites.SitesPage.moreActions',
+                'More site actions'
+              )}
+            >
+              <Ellipsis className="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => setRootsDialogOpen(true)}>
+              <FolderCog className="size-3.5" />
+              {translate('auto.components.sites.SitesPage.foldersMenu', 'Site folders…')}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={importing} onSelect={() => void runImport()}>
+              <DownloadCloud className="size-3.5" />
+              {translate('auto.components.sites.SitesPage.import', 'Import from ocsites')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <SiteRootsDialog

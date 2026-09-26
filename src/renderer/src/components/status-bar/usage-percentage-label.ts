@@ -17,3 +17,16 @@ export function formatUsagePercentageLabel(
         value0: String(percentage)
       })
 }
+
+// Why: the status bar names the window, so "used" is implied; "left" still needs saying.
+export function formatCompactUsagePercentage(
+  usedPercent: number,
+  display: UsagePercentageDisplay
+): string {
+  const percentage = getDisplayedUsagePercentage(usedPercent, display)
+  return display === 'used'
+    ? `${percentage}%`
+    : translate('auto.components.status.bar.usagePercentageLabel.remaining', '{{value0}}% left', {
+        value0: String(percentage)
+      })
+}

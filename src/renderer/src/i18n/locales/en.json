@@ -3127,7 +3127,10 @@
             "antigravityUsage": "Antigravity Usage",
             "antigravityUsageDetails": "Open Antigravity usage details",
             "grokUsageAria": "Open Grok usage details",
-            "grokUsageMenu": "Grok Usage"
+            "grokUsageMenu": "Grok Usage",
+            "chipSession": "Session",
+            "chipWeek": "Week",
+            "chipMonth": "Month"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "Connect an account",
@@ -3290,7 +3293,15 @@
             "e2c6a4f917": "Run Grok to refresh",
             "d1b7f509ac": "Run grok in a terminal on the computer running Muster and wait for it to start. If prompted, complete sign-in, then retry usage. You do not need to send a chat message.",
             "f90b3d7a16": "Run Kimi to refresh",
-            "a37e8c15d4": "Run kimi in a terminal on the computer running Muster and wait for it to start, then retry usage."
+            "a37e8c15d4": "Run kimi in a terminal on the computer running Muster and wait for it to start, then retry usage.",
+            "pace": {
+              "onPace": "On pace",
+              "reserve": "{{value0}}% in reserve",
+              "deficit": "{{value0}}% in deficit",
+              "lasts": "Lasts until reset",
+              "out": "Out until reset",
+              "runsOut": "Runs out in {{value0}}"
+            }
           },
           "SshTargetStatusRow": {
             "sshHost": "SSH Host"
@@ -13699,7 +13710,9 @@
           "addToSidebarOptions": "Add to sidebar options",
           "autoAddDiscovered": "Add new sites automatically",
           "autoAddDiscoveredHint": "New folders found under your site folders become sidebar projects on their own, with no setup.",
-          "sidebarUpToDate": "Already up to date — every site folder is in the sidebar."
+          "sidebarUpToDate": "Already up to date — every site folder is in the sidebar.",
+          "moreActions": "More site actions",
+          "foldersMenu": "Site folders…"
         },
         "StepLibrary": {
           "heading": "Custom steps",

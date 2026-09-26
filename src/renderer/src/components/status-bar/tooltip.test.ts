@@ -592,3 +592,26 @@ describe('ProviderIcon', () => {
     expect(markup).toMatch(/src="[^"]+"/)
   })
 })
+
+describe('ProviderPanel pace', () => {
+  it('shows pace line and marker for a window with a reset time', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1_800_000_000_000)
+    const html = renderToStaticMarkup(
+      ProviderPanel({
+        p: provider({
+          status: 'ok',
+          session: {
+            usedPercent: 30,
+            windowMinutes: 300,
+            resetsAt: 1_800_000_000_000 + 2.5 * 3_600_000,
+            resetDescription: null
+          }
+        })
+      })
+    )
+    expect(html).toContain('20% in reserve')
+    expect(html).toContain('Lasts until reset')
+    expect(html).toContain('data-pace-marker')
+  })
+})

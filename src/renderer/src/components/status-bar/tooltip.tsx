@@ -17,6 +17,7 @@ import {
   type UsagePercentageDisplay
 } from '../../../../shared/usage-percentage-display'
 import { formatUsagePercentageLabel } from './usage-percentage-label'
+import { computeRateLimitPace, type RateLimitPace } from '../../../../shared/rate-limit-pace'
 
 // Re-exported from its shared home so status-bar callers keep a single import.
 export { clampUsedPercent }
@@ -68,6 +69,67 @@ export function formatResetCreditExpiry(
     : translate('auto.components.status.bar.tooltip.20ad66aed1', 'Expires in {{value0}}', {
         value0: duration
       })
+}
+
+export function formatPaceStatus(pace: RateLimitPace): string {
+  if (pace.status === 'on-pace') {
+    return translate('auto.components.status.bar.tooltip.pace.onPace', 'On pace')
+  }
+  return pace.status === 'reserve'
+    ? translate('auto.components.status.bar.tooltip.pace.reserve', '{{value0}}% in reserve', {
+        value0: String(pace.deltaPercent)
+      })
+    : translate('auto.components.status.bar.tooltip.pace.deficit', '{{value0}}% in deficit', {
+        value0: String(pace.deltaPercent)
+      })
+}
+
+export function formatPaceOutlook(pace: RateLimitPace, now: number = Date.now()): string {
+  if (pace.runsOutAt == null) {
+    return translate('auto.components.status.bar.tooltip.pace.lasts', 'Lasts until reset')
+  }
+  return pace.runsOutAt <= now
+    ? translate('auto.components.status.bar.tooltip.pace.out', 'Out until reset')
+    : translate('auto.components.status.bar.tooltip.pace.runsOut', 'Runs out in {{value0}}', {
+        value0: formatResetDuration(pace.runsOutAt - now)
+      })
+}
+
+// Why: deficit that still lasts to reset is a heads-up; one that runs out is urgent.
+function paceTone(pace: RateLimitPace): { dot: string; text: string } | null {
+  if (pace.status === 'reserve') {
+    return { dot: 'bg-status-success', text: 'text-status-success' }
+  }
+  if (pace.status === 'deficit') {
+    return pace.runsOutAt != null
+      ? { dot: 'bg-destructive', text: 'text-destructive' }
+      : { dot: 'bg-status-attention', text: 'text-status-attention' }
+  }
+  return null
+}
+
+function PaceRow({
+  pace,
+  now,
+  inverted
+}: {
+  pace: RateLimitPace
+  now: number
+  inverted: boolean
+}): React.JSX.Element {
+  const tone = inverted ? null : paceTone(pace)
+  const neutralDot = inverted ? 'bg-background/50' : 'bg-muted-foreground/50'
+  const neutralText = inverted ? 'text-background/80' : 'text-foreground/80'
+  const mutedText = inverted ? 'text-background/60' : 'text-muted-foreground'
+  return (
+    <div className="flex items-center justify-between gap-3 tabular-nums">
+      <span className={`flex items-center gap-1.5 font-medium ${tone?.text ?? neutralText}`}>
+        <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${tone?.dot ?? neutralDot}`} />
+        {formatPaceStatus(pace)}
+      </span>
+      <span className={mutedText}>{formatPaceOutlook(pace, now)}</span>
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -142,7 +204,10 @@ export function getWindowSections(
   p: ProviderRateLimits
 ): { label: string; window: RateLimitWindow | null }[] {
   if (p.buckets?.length) {
-    const bucketSections = p.buckets.map((b) => ({ label: b.name, window: b as RateLimitWindow }))
+    const bucketSections = p.buckets.map((b) => ({
+      label: b.name,
+      window: b as RateLimitWindow
+    }))
     return [
       ...bucketSections,
       {
@@ -280,22 +345,46 @@ export function ProviderPanel({
     }
     const usedPct = clampUsedPercent(w.usedPercent)
     const displayedPct = getDisplayedUsagePercentage(usedPct, usagePercentageDisplay)
-    const resetLabel = w.resetsAt ? formatResetCountdown(w.resetsAt - Date.now()) : null
+    const now = Date.now()
+    const resetLabel = w.resetsAt ? formatResetCountdown(w.resetsAt - now) : null
+    const pace = computeRateLimitPace(w, now)
+    // Why: marker sits where the fill would be at an even burn rate, in the same orientation.
+    const paceMarkerPct = pace
+      ? getDisplayedUsagePercentage(pace.expectedPercent, usagePercentageDisplay)
+      : null
 
     return (
       <div className="space-y-1">
         <div className={`font-medium ${textClass}`}>{label}</div>
-        <div className={`h-[6px] w-full overflow-hidden rounded-full ${emptyBarClass}`}>
-          {/* Why: fill follows the selected percentage; color still signals consumption urgency. */}
-          <div
-            className={`h-full rounded-full ${barColor(usedPct)} transition-all duration-300`}
-            style={{ width: `${displayedPct}%` }}
-          />
+        <div className="relative">
+          <div className={`h-[6px] w-full overflow-hidden rounded-full ${emptyBarClass}`}>
+            {/* Why: fill follows the selected percentage; color still signals consumption urgency. */}
+            <div
+              className={`h-full rounded-full ${barColor(usedPct)} transition-all duration-300`}
+              style={{ width: `${displayedPct}%` }}
+            />
+          </div>
+          {paceMarkerPct !== null ? (
+            // Why: taller than the track with a bg-colored ring so it reads over any fill color.
+            <div
+              data-pace-marker
+              aria-hidden
+              className={`absolute -top-[2px] h-[10px] w-[2px] -translate-x-1/2 rounded-full ${
+                inverted
+                  ? 'bg-background ring-1 ring-foreground'
+                  : 'bg-foreground/70 ring-1 ring-popover'
+              }`}
+              style={{
+                left: `clamp(1px, ${paceMarkerPct}%, calc(100% - 1px))`
+              }}
+            />
+          ) : null}
         </div>
-        <div className={`flex justify-between ${mutedClass}`}>
+        <div className={`flex justify-between tabular-nums ${mutedClass}`}>
           <span>{formatUsagePercentageLabel(usedPct, usagePercentageDisplay)}</span>
           {resetLabel && <span>{resetLabel}</span>}
         </div>
+        {pace ? <PaceRow pace={pace} now={now} inverted={inverted} /> : null}
       </div>
     )
   }
