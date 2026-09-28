@@ -1,7 +1,10 @@
 // The linked-task strip above a chat thread's conversation. Reads as a compact
 // sibling of the Tasks pane header (activecollab-task-header.tsx): same
-// completion toggle anatomy, same muted band. Writes go through the same IPC
-// the Tasks pane uses; the strip re-reads detail after a write so both agree.
+// completion toggle anatomy, same muted band. Writes go through the same store
+// actions the Tasks pane uses, so both read the same patched row.
+//
+// Never the detail endpoint: a detail GET marks the task's ActiveCollab updates
+// seen, and opening a chat is not reading the task.
 
 import { Calendar, LoaderCircle, Check } from 'lucide-react'
 import type React from 'react'
@@ -12,6 +15,9 @@ import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { useAppStore } from '@/store'
+import { getActiveCollabReadScope } from '@/store/slices/activecollab-cache'
+import { findCachedActiveCollabTask } from '@/store/slices/activecollab-task-patch'
+import { activeCollabListProjectTasks } from '@/runtime/runtime-activecollab-client'
 
 export function ChatThreadTaskStrip({
   projectId,
@@ -20,24 +26,42 @@ export function ChatThreadTaskStrip({
   projectId: number
   taskId: number
 }): React.JSX.Element | null {
-  const [task, setTask] = useState<ActiveCollabTask | null>(null)
+  const cached = useAppStore((s) =>
+    findCachedActiveCollabTask(s, taskId, getActiveCollabReadScope(s.settings).cachePrefix)
+  )
+  // A row this strip learned itself: the project-list fallback or a write echo.
+  const [own, setOwn] = useState<ActiveCollabTask | null>(null)
   const [writing, setWriting] = useState(false)
+  const hasCached = cached !== null
 
   useEffect(() => {
+    if (hasCached) {
+      return
+    }
     let cancelled = false
-    void window.api.activecollab
-      .getTaskDetail({ projectId, taskId })
-      .then((result) => {
-        if (!cancelled && result.ok) {
-          setTask(result.value.task)
-        }
-      })
-      .catch(() => undefined)
+    const load = async (): Promise<void> => {
+      const store = useAppStore.getState()
+      await store.listActiveCollabAssignedTasks()
+      const scope = getActiveCollabReadScope(useAppStore.getState().settings)
+      if (
+        cancelled ||
+        findCachedActiveCollabTask(useAppStore.getState(), taskId, scope.cachePrefix)
+      ) {
+        return
+      }
+      // Not assigned to the user: the project list names it without marking anything seen.
+      const result = await activeCollabListProjectTasks({ projectId }, scope.settings)
+      if (!cancelled && result.ok) {
+        setOwn(result.value.tasks.find((row) => row.id === taskId) ?? null)
+      }
+    }
+    void load().catch(() => undefined)
     return () => {
       cancelled = true
     }
-  }, [projectId, taskId])
+  }, [hasCached, projectId, taskId])
 
+  const task = (own?.id === taskId ? own : null) ?? cached
   if (!task) {
     return null
   }
@@ -52,15 +76,13 @@ export function ChatThreadTaskStrip({
     }
     setWriting(true)
     try {
-      const call = task.isCompleted
-        ? window.api.activecollab.reopenTask({ taskId })
-        : window.api.activecollab.completeTask({ taskId })
-      const result = await call
+      const store = useAppStore.getState()
+      const result = task.isCompleted
+        ? await store.reopenActiveCollabTask({ taskId })
+        : await store.completeActiveCollabTask({ taskId })
       if (result.ok) {
-        const detail = await window.api.activecollab.getTaskDetail({ projectId, taskId })
-        if (detail.ok) {
-          setTask(detail.value.task)
-        }
+        // A null echo means the write landed without a usable row; flip locally instead of re-reading.
+        setOwn(result.value ?? { ...task, isCompleted: !task.isCompleted })
       }
     } finally {
       setWriting(false)

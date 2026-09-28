@@ -212,15 +212,16 @@ describe('the notifier lifecycle', () => {
   it('registers with a fetch that reads the caller a page of assigned tasks', async () => {
     registerActiveCollabHandlers(STORE_STUB)
 
-    expect(startNotificationsMock).toHaveBeenCalledWith({
-      store: STORE_STUB,
-      fetchPage: expect.any(Function)
-    })
+    expect(startNotificationsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ store: STORE_STUB, fetchPage: expect.any(Function) })
+    )
 
     requestMock.mockResolvedValue({ data: { tasks: [] }, totalItems: 0, page: 2, perPage: 100 })
     const [registered] = startNotificationsMock.mock.calls[0] as [
-      { fetchPage: (page: number) => Promise<{ ok: boolean }> }
+      { fetchPage: (page: number) => Promise<{ ok: boolean }>; fetchTaskComments?: unknown }
     ]
+    // A task detail GET marks its ActiveCollab updates seen, so the poller must never make one.
+    expect(registered.fetchTaskComments).toBeUndefined()
     const { fetchPage } = registered
     expect((await fetchPage(2)).ok).toBe(true)
     expect(requestMock).toHaveBeenCalledWith('users/407/tasks', { query: { page: 2 } })

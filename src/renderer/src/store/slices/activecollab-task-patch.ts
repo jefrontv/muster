@@ -92,6 +92,32 @@ export function editTaskCaches(
 }
 
 /**
+ * A task row any cache already holds, fresh or stale. For surfaces that only need to name a task:
+ * a detail GET marks the task's ActiveCollab updates seen, so it is reserved for opening the task.
+ */
+export function findCachedActiveCollabTask(
+  state: TaskCaches,
+  taskId: number,
+  cachePrefix: string
+): ActiveCollabTask | null {
+  const prefix = `${cachePrefix}::`
+  for (const [key, entry] of Object.entries(state.activeCollabTaskDetailCache)) {
+    if (key.startsWith(prefix) && entry?.data?.task.id === taskId) {
+      return entry.data.task
+    }
+  }
+  for (const [key, entry] of Object.entries(state.activeCollabTaskPageCache)) {
+    const task = key.startsWith(prefix)
+      ? entry?.data?.tasks.find((row) => row.id === taskId)
+      : undefined
+    if (task) {
+      return task
+    }
+  }
+  return null
+}
+
+/**
  * Detail entries go stale even though they were just patched: the row is authoritative but the
  * comment thread beside it is not. List entries keep their freshness — a patched row is a good row.
  */
