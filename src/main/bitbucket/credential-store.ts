@@ -14,6 +14,8 @@ import { safeStorage } from 'electron'
 import { readStoredCredentialToken } from '../integration-credential-file'
 import { getCanonicalUserDataPath } from '../persistence'
 import { writeSecureFile } from '../../shared/secure-file'
+import { isIntegrationCredentialDecryptionError } from '../../shared/integration-credential-errors'
+import { reportBitbucketAuthLoss } from './auth-loss'
 import type {
   BitbucketAuthCredentialStatus,
   BitbucketAuthMethod
@@ -57,7 +59,15 @@ function readRecord(): BitbucketCredentialRecord | null {
   } catch {
     return null
   }
-  const decrypted = readStoredCredentialToken('Bitbucket', stored)
+  let decrypted: string | null
+  try {
+    decrypted = readStoredCredentialToken('Bitbucket', stored)
+  } catch (error) {
+    if (isIntegrationCredentialDecryptionError(error)) {
+      reportBitbucketAuthLoss('keychain-unreadable')
+    }
+    throw error
+  }
   if (decrypted === null) {
     return null
   }

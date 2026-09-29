@@ -23,6 +23,17 @@ export type BitbucketOAuthTokens = {
   expiresAt: number
 }
 
+/** The token endpoint answered with an error; `status` separates rejection from outages. */
+export class BitbucketOAuthTokenError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'BitbucketOAuthTokenError'
+    this.status = status
+  }
+}
+
 const AUTH_TIMEOUT_MS = 5 * 60 * 1000
 
 let activeCancel: (() => void) | null = null
@@ -95,7 +106,10 @@ async function postToken(
         : typeof payload?.error === 'string'
           ? payload.error
           : `HTTP ${response.status}`
-    throw new Error(`Bitbucket token exchange failed: ${detail}`)
+    throw new BitbucketOAuthTokenError(
+      `Bitbucket token exchange failed: ${detail}`,
+      response.status
+    )
   }
   const expiresIn =
     typeof payload.expires_in === 'number' && Number.isFinite(payload.expires_in)

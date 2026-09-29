@@ -1,23 +1,34 @@
 // IPC for Bitbucket review auth: OAuth Connect in Settings → Integrations.
 // Tokens never leave main on the read path. status reports identity only.
 
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import {
   clearStoredBitbucketCredential,
   getStoredBitbucketCredentialStatus,
   setStoredBitbucketCredential
 } from '../bitbucket/credential-store'
 import { getBitbucketAuthStatus, getBitbucketEnvironmentAuthStatus } from '../bitbucket/client'
+import {
+  dismissBitbucketAuthLoss,
+  getPendingBitbucketAuthLoss,
+  resetBitbucketAuthLoss,
+  wireBitbucketAuthLoss
+} from '../bitbucket/auth-loss'
 import { isBitbucketOAuthAvailable } from '../bitbucket/oauth-config'
 import { beginBitbucketOAuthLogin, cancelBitbucketOAuth } from '../bitbucket/oauth-flow'
 import { _resetPreflightCache } from './preflight'
-import type { BitbucketAuthCredentialStatus } from '../../shared/bitbucket-auth-types'
+import type {
+  BitbucketAuthCredentialStatus,
+  BitbucketAuthLoss
+} from '../../shared/bitbucket-auth-types'
 
 const BITBUCKET_AUTH_CHANNELS = [
   'bitbucketAuth:status',
   'bitbucketAuth:beginOAuth',
   'bitbucketAuth:cancelOAuth',
-  'bitbucketAuth:clear'
+  'bitbucketAuth:clear',
+  'bitbucketAuth:pendingLoss',
+  'bitbucketAuth:dismissLoss'
 ] as const
 
 function currentStatus(): BitbucketAuthCredentialStatus {
@@ -36,10 +47,27 @@ function currentStatus(): BitbucketAuthCredentialStatus {
   return { ...getStoredBitbucketCredentialStatus(), oauthAvailable }
 }
 
+/** Every window, so a prompt dismissed in one closes in the others. */
+function broadcastBitbucketAuthLoss(loss: BitbucketAuthLoss | null): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) {
+      window.webContents.send('bitbucketAuth:lossChanged', loss)
+    }
+  }
+}
+
 export function registerBitbucketAuthHandlers(): void {
   for (const channel of BITBUCKET_AUTH_CHANNELS) {
     ipcMain.removeHandler(channel)
   }
+
+  // Env credentials outrank the saved one and the UI cannot edit them; without an OAuth consumer
+  // Reconnect cannot work. Either way a prompt would be a dead end.
+  wireBitbucketAuthLoss({
+    shouldReport: () =>
+      isBitbucketOAuthAvailable() && !getBitbucketEnvironmentAuthStatus().configured,
+    onChange: broadcastBitbucketAuthLoss
+  })
 
   ipcMain.handle('bitbucketAuth:status', async (): Promise<BitbucketAuthCredentialStatus> => {
     return currentStatus()
@@ -55,6 +83,7 @@ export function registerBitbucketAuthHandlers(): void {
           refreshToken: tokens.refreshToken,
           expiresAt: tokens.expiresAt
         })
+        resetBitbucketAuthLoss()
         _resetPreflightCache()
         const live = await getBitbucketAuthStatus()
         if (live.account) {
@@ -80,10 +109,20 @@ export function registerBitbucketAuthHandlers(): void {
   ipcMain.handle('bitbucketAuth:clear', async (): Promise<{ ok: true } | { error: string }> => {
     try {
       clearStoredBitbucketCredential()
+      resetBitbucketAuthLoss()
       _resetPreflightCache()
       return { ok: true }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
     }
+  })
+
+  ipcMain.handle('bitbucketAuth:pendingLoss', async (): Promise<BitbucketAuthLoss | null> => {
+    return getPendingBitbucketAuthLoss()
+  })
+
+  ipcMain.handle('bitbucketAuth:dismissLoss', async (): Promise<{ ok: true }> => {
+    dismissBitbucketAuthLoss()
+    return { ok: true }
   })
 }

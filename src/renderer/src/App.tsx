@@ -87,6 +87,7 @@ import { requestScrollToCurrentWorkspaceRevealAndRename } from '@/lib/scroll-to-
 import { OPEN_WORKSPACE_BOARD_EVENT } from './components/sidebar/useWorkspaceBoardPanel'
 import { WorkspacePortScanner } from './components/ports/WorkspacePortScanner'
 import { CrashReportDialog } from './components/crash-report/CrashReportDialog'
+import { BitbucketReconnectDialog } from './components/BitbucketReconnectDialog'
 import NewWorkspaceComposerModal from './components/NewWorkspaceComposerModal'
 import { RecoverableRenderErrorBoundary } from './components/error-boundaries/RecoverableRenderErrorBoundary'
 import { ConfirmationDialogProvider } from './components/confirmation-dialog'
@@ -2688,6 +2689,16 @@ function App(): React.JSX.Element {
               </Suspense>
             ) : null}
             {!shouldRenderOnboarding && onboardingLoaded ? <WhatsNewSurface /> : null}
+            {/* Gated like What's New: a z-50 modal under the z-100 onboarding overlay would block it. */}
+            {!shouldRenderOnboarding && onboardingLoaded ? (
+              <RecoverableRenderErrorBoundary
+                boundaryId="modal.bitbucket-reconnect"
+                surface="modal"
+                compact
+              >
+                <BitbucketReconnectDialog />
+              </RecoverableRenderErrorBoundary>
+            ) : null}
             {shouldMountDictationController ? (
               <Suspense fallback={null}>
                 <RecoverableRenderErrorBoundary

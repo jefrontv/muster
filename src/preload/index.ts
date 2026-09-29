@@ -1431,7 +1431,17 @@ const api = {
     status: () => ipcRenderer.invoke('bitbucketAuth:status'),
     beginOAuth: () => ipcRenderer.invoke('bitbucketAuth:beginOAuth'),
     cancelOAuth: () => ipcRenderer.invoke('bitbucketAuth:cancelOAuth'),
-    clear: () => ipcRenderer.invoke('bitbucketAuth:clear')
+    clear: () => ipcRenderer.invoke('bitbucketAuth:clear'),
+    pendingLoss: () => ipcRenderer.invoke('bitbucketAuth:pendingLoss'),
+    dismissLoss: () => ipcRenderer.invoke('bitbucketAuth:dismissLoss'),
+    onLossChanged: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        loss: Parameters<typeof callback>[0]
+      ): void => callback(loss)
+      ipcRenderer.on('bitbucketAuth:lossChanged', listener)
+      return () => ipcRenderer.removeListener('bitbucketAuth:lossChanged', listener)
+    }
   } satisfies PreloadApi['bitbucketAuth'],
 
   feedback: {

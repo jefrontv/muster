@@ -1,9 +1,10 @@
 // Refresh a stored Bitbucket OAuth session. Rotating refresh tokens (May 2026)
 // replace the saved refresh token on every successful refresh.
 
+import { reportBitbucketAuthLoss } from './auth-loss'
 import { getStoredBitbucketCredential, setStoredBitbucketCredential } from './credential-store'
 import { getBitbucketOAuthConsumer } from './oauth-config'
-import { refreshBitbucketOAuthToken } from './oauth-flow'
+import { BitbucketOAuthTokenError, refreshBitbucketOAuthToken } from './oauth-flow'
 
 const EXPIRY_SKEW_MS = 60_000
 
@@ -55,7 +56,14 @@ async function refreshStoredOAuthToken(): Promise<string | null> {
       account: stored.account
     })
     return next.accessToken
-  } catch {
+  } catch (error) {
+    // 400/401 is a refused grant (revoked or expired); network errors and 5xx are transient.
+    if (
+      error instanceof BitbucketOAuthTokenError &&
+      (error.status === 400 || error.status === 401)
+    ) {
+      reportBitbucketAuthLoss('refresh-rejected')
+    }
     return stored.accessToken.length > 0 ? stored.accessToken : null
   }
 }

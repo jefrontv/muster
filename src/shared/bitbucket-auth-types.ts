@@ -24,10 +24,29 @@ export type BitbucketAuthCredentialStatus = {
   oauthAvailable: boolean
 }
 
+/**
+ * Why a saved sign-in stopped working:
+ * - `refresh-rejected`: the OAuth token endpoint refused the saved refresh token (HTTP 400/401).
+ * - `token-rejected`: the API answered 401 to the saved credential, even after a refresh attempt.
+ * - `keychain-unreadable`: the saved credential file exists but could not be decrypted.
+ */
+export type BitbucketAuthLossReason = 'refresh-rejected' | 'token-rejected' | 'keychain-unreadable'
+
+export type BitbucketAuthLoss = {
+  reason: BitbucketAuthLossReason
+  detectedAt: number
+}
+
 export type BitbucketAuthApi = {
   status: () => Promise<BitbucketAuthCredentialStatus>
   /** Opens Bitbucket in the browser and waits for the loopback callback. */
   beginOAuth: () => Promise<{ ok: true; account: string | null } | { error: string }>
   cancelOAuth: () => Promise<{ ok: true }>
   clear: () => Promise<{ ok: true } | { error: string }>
+  /** The undismissed sign-in loss, for a window that mounts after it was detected. */
+  pendingLoss: () => Promise<BitbucketAuthLoss | null>
+  /** "Not now": stays quiet until the user reconnects, disconnects, or restarts the app. */
+  dismissLoss: () => Promise<{ ok: true }>
+  /** Fires with the loss when detected and with null once it is dismissed or resolved. */
+  onLossChanged: (callback: (loss: BitbucketAuthLoss | null) => void) => () => void
 }

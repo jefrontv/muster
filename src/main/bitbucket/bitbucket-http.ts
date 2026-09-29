@@ -3,6 +3,7 @@
 
 import { Buffer } from 'node:buffer'
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
+import { reportBitbucketAuthLoss } from './auth-loss'
 import { getStoredBitbucketCredential } from './credential-store'
 import { ensureFreshBitbucketAccessToken } from './oauth-tokens'
 
@@ -139,6 +140,10 @@ export async function bitbucketRequestJson<T>(
     }
     if (!response.ok) {
       await cancelUnreadResponseBody(response)
+      // Only a final 401 reaches here: a refreshable one already retried above.
+      if (response.status === 401) {
+        reportBitbucketAuthLoss('token-rejected')
+      }
       if (throwOnFailure) {
         throw new Error(`Bitbucket request failed: HTTP ${response.status}`)
       }
