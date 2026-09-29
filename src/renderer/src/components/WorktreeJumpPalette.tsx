@@ -63,6 +63,8 @@ import {
   queueBrowserFocusRequest
 } from '@/components/browser-pane/browser-focus'
 import { RepoBadgeMark } from '@/components/repo/RepoBadgeLabel'
+import { RepoIconGlyph } from '@/components/repo/repo-icon'
+import { resolveRepoHeaderColor } from '@/components/sidebar/project-header-color'
 import { buildSidebarHostOptions } from '@/components/sidebar/sidebar-host-options'
 import { getPaletteHostBadge, type PaletteHostBadge } from '@/components/cmd-j/palette-host-badge'
 import { useSettingsNavigationMetadata } from '@/hooks/useSettingsNavigationMetadata'
@@ -1821,7 +1823,16 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                     )}
                   >
                     <div className="flex w-4 shrink-0 items-center justify-center self-start pt-0.5 text-muted-foreground/85">
-                      <FolderTree className="size-3.5" aria-hidden="true" />
+                      {isProject && result.repo.repoIcon ? (
+                        <RepoIconGlyph
+                          repoIcon={result.repo.repoIcon}
+                          color={resolveRepoHeaderColor(result.repo.badgeColor)}
+                          className="size-3.5"
+                          iconClassName="size-3.5"
+                        />
+                      ) : (
+                        <FolderTree className="size-3.5" aria-hidden="true" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2.5">
