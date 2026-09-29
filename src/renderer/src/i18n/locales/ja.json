@@ -3107,7 +3107,9 @@
             "grokUsageMenu": "Grok の使用状況",
             "chipSession": "Session",
             "chipWeek": "Week",
-            "chipMonth": "Month"
+            "chipMonth": "Month",
+            "resetBadgeOne": "使用量リセットが 1 回利用可能",
+            "resetBadgeMany": "使用量リセットが {{value0}} 回利用可能"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "アカウントを接続する",
@@ -14482,6 +14484,15 @@
         "setting_saved": "Saved",
         "setting_plaintext": "Stored in your agent config files, in the clear.",
         "setting_save": "Save"
+      },
+      "BitbucketReconnectDialog": {
+        "refreshRejected": "Bitbucket が保存済みのサインインの更新を拒否しました。アクセスが取り消されたか、サインインの有効期限が切れた可能性があります。",
+        "tokenRejected": "Bitbucket が保存済みのサインインを拒否しました（HTTP 401）。有効期限が切れたか、取り消された可能性があります。",
+        "keychainUnreadable": "Muster は OS キーチェーンから保存済みのサインインを読み取れませんでした。キーチェーンへのアクセスが拒否された可能性があります。",
+        "connectFailed": "Bitbucket へのサインインに失敗しました。もう一度お試しください。",
+        "title": "Bitbucket に再接続",
+        "impact": "再接続するまで、Bitbucket の PR とビルドステータスは読み込まれません。",
+        "notNow": "後で"
       }
     },
     "i18n": {

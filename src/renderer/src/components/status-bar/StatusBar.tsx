@@ -1354,8 +1354,45 @@ export function ProviderSegment({
           ) : null}
         </>
       )}
+      <ResetCreditBadge p={p} />
       {isStale && <AlertTriangle size={11} className="text-muted-foreground/80" />}
     </span>
+  )
+}
+
+function ResetCreditBadge({ p }: { p: ProviderRateLimits }): React.JSX.Element | null {
+  const count = p.rateLimitResetCredits?.availableCount ?? 0
+  if (count <= 0) {
+    return null
+  }
+  const label =
+    count === 1
+      ? translate('auto.components.status.bar.StatusBar.resetBadgeOne', '1 usage reset available')
+      : translate(
+          'auto.components.status.bar.StatusBar.resetBadgeMany',
+          '{{value0}} usage resets available',
+          { value0: count }
+        )
+  const expiry = formatResetCreditExpiry(p.rateLimitResetCredits?.nextExpiresAt, count)
+  return (
+    <>
+      <span className="text-muted-foreground">·</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="inline-flex items-center gap-0.5 tabular-nums"
+            aria-label={expiry ? `${label}. ${expiry}` : label}
+          >
+            <RotateCcw size={11} className="text-muted-foreground" aria-hidden />
+            {count}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={6}>
+          <div>{label}</div>
+          {expiry ? <div className="opacity-70">{expiry}</div> : null}
+        </TooltipContent>
+      </Tooltip>
+    </>
   )
 }
 

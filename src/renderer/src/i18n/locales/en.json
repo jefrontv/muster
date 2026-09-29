@@ -3130,7 +3130,9 @@
             "grokUsageMenu": "Grok Usage",
             "chipSession": "Session",
             "chipWeek": "Week",
-            "chipMonth": "Month"
+            "chipMonth": "Month",
+            "resetBadgeOne": "1 usage reset available",
+            "resetBadgeMany": "{{value0}} usage resets available"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "Connect an account",
@@ -14505,6 +14507,15 @@
         "setting_saved": "Saved",
         "setting_plaintext": "Stored in your agent config files, in the clear.",
         "setting_save": "Save"
+      },
+      "BitbucketReconnectDialog": {
+        "refreshRejected": "Bitbucket refused to renew the saved sign-in. Access may have been revoked, or the sign-in expired.",
+        "tokenRejected": "Bitbucket rejected the saved sign-in (HTTP 401). It may have expired or been revoked.",
+        "keychainUnreadable": "Muster could not read the saved sign-in from your OS keychain. Keychain access may have been denied.",
+        "connectFailed": "Bitbucket sign-in failed. Try again.",
+        "title": "Reconnect Bitbucket",
+        "impact": "Bitbucket pull requests and build statuses will not load until you reconnect.",
+        "notNow": "Not now"
       }
     },
     "i18n": {

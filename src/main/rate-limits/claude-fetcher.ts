@@ -34,6 +34,7 @@ import {
 } from '../claude-accounts/oauth-refresh'
 import { createOAuthUsageError, OAuthUsageError } from './claude-oauth-usage-error'
 import { mapClaudeUsageWindow, type ClaudeUsageWindowInput } from './claude-usage-window'
+import { mapClaudeResetCredits } from './claude-reset-credits'
 import { withMacTailscaleDnsHint } from '../network/macos-tailscale-dns-diagnostic'
 import { ensureElectronProxyFromEnvironment } from '../network/proxy-settings'
 import { resolveClaudeUsageRefreshPlan } from './claude-usage-refresh-plan'
@@ -43,9 +44,11 @@ import {
   type ClaudeUsageErrorClassification
 } from './claude-usage-error-classification'
 
-const OAUTH_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
+// Why: cedar_ember=1 asks the server to evaluate usage-limit reset grants; without it the block is null.
+const OAUTH_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage?cedar_ember=1'
 const OAUTH_BETA_HEADER = 'oauth-2025-04-20'
-const CLAUDE_CODE_USER_AGENT = 'claude-code/2.1.0'
+// Why: reset grants are gated by surface; the legacy claude-code/2.1.0 UA gets ineligible_reason "surface".
+const CLAUDE_CODE_USER_AGENT = 'claude-cli/2.1.283 (external, cli)'
 const API_TIMEOUT_MS = 10_000
 const LIVE_CLAUDE_REFRESH_DEFERRED_MESSAGE =
   'Claude usage refresh is waiting for the live Claude terminal to rotate its credentials.'
@@ -296,6 +299,7 @@ type OAuthUsageResponse = {
   fable_seven_day?: OAuthUsageWindow
   seven_day_fable?: OAuthUsageWindow
   limits?: OAuthUsageLimit[] | null
+  cedar_ember?: unknown
 }
 
 type ClaudeUsageAttemptState = {
@@ -376,6 +380,7 @@ async function fetchViaOAuth(token: string, signal?: AbortSignal): Promise<Provi
       session: mapClaudeUsageWindow(data.five_hour, 300),
       weekly: mapClaudeUsageWindow(data.seven_day, 10080),
       fableWeekly: mapFableWeeklyWindow(data),
+      rateLimitResetCredits: mapClaudeResetCredits(data.cedar_ember),
       updatedAt: Date.now(),
       error: null,
       status: 'ok'

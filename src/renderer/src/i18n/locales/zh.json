@@ -3107,7 +3107,9 @@
             "grokUsageMenu": "Grok 使用量",
             "chipSession": "Session",
             "chipWeek": "Week",
-            "chipMonth": "Month"
+            "chipMonth": "Month",
+            "resetBadgeOne": "1 次用量重置可用",
+            "resetBadgeMany": "{{value0}} 次用量重置可用"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "连接账户",
@@ -14482,6 +14484,15 @@
         "setting_saved": "Saved",
         "setting_plaintext": "Stored in your agent config files, in the clear.",
         "setting_save": "Save"
+      },
+      "BitbucketReconnectDialog": {
+        "refreshRejected": "Bitbucket 拒绝续订已保存的登录。访问权限可能已被撤销，或登录已过期。",
+        "tokenRejected": "Bitbucket 拒绝了已保存的登录（HTTP 401）。它可能已过期或已被撤销。",
+        "keychainUnreadable": "Muster 无法从操作系统钥匙串读取已保存的登录。钥匙串访问可能已被拒绝。",
+        "connectFailed": "Bitbucket 登录失败。请重试。",
+        "title": "重新连接 Bitbucket",
+        "impact": "重新连接之前，Bitbucket 拉取请求和构建状态将无法加载。",
+        "notNow": "以后再说"
       }
     },
     "i18n": {

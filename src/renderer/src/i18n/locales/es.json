@@ -3107,7 +3107,9 @@
             "grokUsageMenu": "Uso de Grok",
             "chipSession": "Session",
             "chipWeek": "Week",
-            "chipMonth": "Month"
+            "chipMonth": "Month",
+            "resetBadgeOne": "1 reset de uso disponible",
+            "resetBadgeMany": "{{value0}} resets de uso disponibles"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "Conectar una cuenta",
@@ -14482,6 +14484,15 @@
         "setting_saved": "Saved",
         "setting_plaintext": "Stored in your agent config files, in the clear.",
         "setting_save": "Save"
+      },
+      "BitbucketReconnectDialog": {
+        "refreshRejected": "Bitbucket rechazó renovar el inicio de sesión guardado. Es posible que se haya revocado el acceso o que el inicio de sesión haya caducado.",
+        "tokenRejected": "Bitbucket rechazó el inicio de sesión guardado (HTTP 401). Puede que haya caducado o se haya revocado.",
+        "keychainUnreadable": "Muster no pudo leer el inicio de sesión guardado del llavero del sistema operativo. Es posible que se haya denegado el acceso al llavero.",
+        "connectFailed": "Falló el inicio de sesión en Bitbucket. Inténtalo de nuevo.",
+        "title": "Volver a conectar Bitbucket",
+        "impact": "Las solicitudes de extracción y los estados de compilación de Bitbucket no se cargarán hasta que vuelvas a conectarte.",
+        "notNow": "Ahora no"
       }
     },
     "i18n": {

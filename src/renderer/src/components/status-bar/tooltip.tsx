@@ -324,10 +324,9 @@ export function ProviderPanel({
   }
 
   const updatedAgo = p.updatedAt ? `Updated ${formatTimeAgo(p.updatedAt)}` : 'Not yet updated'
-  const resetCreditCount =
-    showResetCredits && p.provider === 'codex'
-      ? (p.rateLimitResetCredits?.availableCount ?? null)
-      : null
+  const resetCreditCount = showResetCredits
+    ? (p.rateLimitResetCredits?.availableCount ?? null)
+    : null
   const resetCreditExpiry =
     resetCreditCount != null
       ? formatResetCreditExpiry(p.rateLimitResetCredits?.nextExpiresAt, resetCreditCount)
