@@ -142,6 +142,10 @@ export async function probeLatestVersion(
       }
       case 'agent-local-daemon':
         return await env.readAgentLocalLatest()
+      case 'version-json': {
+        const body = await fetchJson(env, spec.url)
+        return readString(body, 'version')
+      }
       case 'pinned':
       case 'bundled':
         return null

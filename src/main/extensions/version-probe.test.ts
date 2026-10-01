@@ -75,6 +75,27 @@ describe('probeLatestVersion', () => {
     ).toBe('2.5.0')
   })
 
+  it('reads a version.json version', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ version: '0.4.0' }))
+    expect(
+      await probeLatestVersion(
+        { source: 'version-json', url: 'https://example.com/version.json' },
+        env({ fetch: fetchMock })
+      )
+    ).toBe('0.4.0')
+    expect(fetchMock).toHaveBeenCalledWith('https://example.com/version.json', expect.anything())
+  })
+
+  it('treats a version.json without a version string as could-not-check', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ version: 4 }))
+    expect(
+      await probeLatestVersion(
+        { source: 'version-json', url: 'https://example.com/version.json' },
+        env({ fetch: fetchMock })
+      )
+    ).toBeNull()
+  })
+
   it('picks the highest stable git tag and skips pre-releases', async () => {
     const tags = vi.fn().mockResolvedValue(['v0.9.0', 'v0.10.0', 'v0.11.0-rc1'])
     expect(

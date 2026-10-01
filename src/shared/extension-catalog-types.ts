@@ -27,7 +27,14 @@ export const EXTENSION_CATALOG_SCHEMA_VERSION = 1
 export const EXTENSION_KINDS = ['skill', 'mcp', 'app'] as const
 export type ExtensionKind = (typeof EXTENSION_KINDS)[number]
 
-export const EXTENSION_HARNESS_IDS = ['claude-code', 'codex', 'cursor', 'grok', 'omp', 'pi'] as const
+export const EXTENSION_HARNESS_IDS = [
+  'claude-code',
+  'codex',
+  'cursor',
+  'grok',
+  'omp',
+  'pi'
+] as const
 export type ExtensionHarnessId = (typeof EXTENSION_HARNESS_IDS)[number]
 
 export const EXTENSION_PLATFORMS = ['darwin', 'linux', 'win32'] as const
@@ -116,6 +123,8 @@ export type ExtensionLatestSpec =
   | { source: 'git-tag'; remote: string }
   | { source: 'github-release'; repo: string }
   | { source: 'agent-local-daemon' }
+  /** An https URL answering `{"version": "x.y.z"}`, for software published outside a registry. */
+  | { source: 'version-json'; url: string }
   | { source: 'bundled' }
 
 /** Some entries are private. The probe is advisory: it greys a row, it never blocks an install. */
@@ -217,6 +226,10 @@ const LatestSchema = z.discriminatedUnion('source', [
     repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/, 'repo must be owner/name')
   }),
   z.object({ source: z.literal('agent-local-daemon') }),
+  z.object({
+    source: z.literal('version-json'),
+    url: z.url().refine((value) => value.startsWith('https://'), 'version url must be https')
+  }),
   z.object({ source: z.literal('bundled') })
 ]) as z.ZodType<ExtensionLatestSpec>
 

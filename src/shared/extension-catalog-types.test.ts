@@ -55,6 +55,15 @@ describe('parseExtensionCatalog', () => {
     expect(parsed).toBeNull()
   })
 
+  it('accepts an https version.json source and rejects a plain-http one', () => {
+    const at = (url: string): unknown =>
+      parseExtensionCatalog(
+        catalog([{ ...configWriteEntry, latest: { source: 'version-json', url } }])
+      )
+    expect(at('https://example.com/version.json')).not.toBeNull()
+    expect(at('http://example.com/version.json')).toBeNull()
+  })
+
   it('rejects duplicate entry ids', () => {
     expect(parseExtensionCatalog(catalog([configWriteEntry, configWriteEntry]))).toBeNull()
   })

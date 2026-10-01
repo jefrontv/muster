@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-22",
+  "updatedAt": "2026-10-01",
   "entries": [
     {
       "id": "activecollab-mcp",
@@ -333,6 +333,46 @@
           "secret": true
         }
       ]
+    },
+    {
+      "id": "efront-memory",
+      "kind": "app",
+      "name": "efront Memory",
+      "description": "Shared team memory your agents search and add to: conventions, decisions and gotchas.",
+      "about": "efront Memory gives every agent the same memory of each project: conventions, deploy facts, past decisions and the reasons behind them. Agents search it at the start of a task and propose new memories as they work; a curation step reviews each one before teammates see it. Installing opens the Connect page in your browser: approve there and the API key is stored in your Keychain. Set up repeats that sign-in if you need a new key. Staff logins only.",
+      "keywords": [
+        "memory",
+        "efront",
+        "knowledge",
+        "conventions",
+        "agents"
+      ],
+      "version": "0.4.0",
+      "platforms": [
+        "darwin"
+      ],
+      "install": {
+        "method": "command",
+        "command": {
+          "install": "curl -fsSL https://memory.tools.efront.dev/install.sh | bash -s -- --setup",
+          "update": "efront-memory update",
+          "uninstall": "efront-memory uninstall --yes",
+          "setup": "efront-memory login --browser",
+          "binary": "efront-memory",
+          "versionArgs": [
+            "version"
+          ]
+        }
+      },
+      "latest": {
+        "source": "version-json",
+        "url": "https://memory.tools.efront.dev/version.json"
+      },
+      "autoUpdate": {
+        "supported": false,
+        "reason": "Updating re-registers the plugin in every agent harness, so it runs only when you ask."
+      },
+      "homepage": "https://memory.tools.efront.dev/admin"
     }
   ]
 }
