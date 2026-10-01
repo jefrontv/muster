@@ -61,15 +61,16 @@ export function useExtensionRun(id: string): ExtensionRun {
       if (event.code === 0 && !event.installed && modeRef.current === 'install') {
         setPhase('failed')
         setError(EXTENSION_RUN_PRODUCED_NOTHING)
-        void refreshExtensionInventory(true)
+        void refreshExtensionInventory()
         return
       }
       if (event.code === 0) {
         setPhase('succeeded')
         setRegistered(event.registeredHarnesses)
         // Why refresh here: the version the card shows came from before this command ran, and the
-        // whole point of watching it was to see the new one.
-        void refreshExtensionInventory(true)
+        // whole point of watching it was to see the new one. Not forced: every scan re-probes the
+        // machine, and re-downloading the catalog can drop an entry the release does not carry yet.
+        void refreshExtensionInventory()
       } else {
         setPhase('failed')
         // Why read from the setter: the last output chunk and this event can land in the same
