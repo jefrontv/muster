@@ -12,10 +12,7 @@
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
-import {
-  parseExtensionCatalog,
-  type ExtensionCatalog
-} from '../../shared/extension-catalog-types'
+import { parseExtensionCatalog, type ExtensionCatalog } from '../../shared/extension-catalog-types'
 
 export const EXTENSION_CATALOG_URL =
   'https://github.com/jefrontv/muster/releases/latest/download/extension-catalog.json'
@@ -36,13 +33,15 @@ export type LoadedExtensionCatalog = {
   error?: string
 }
 
-type CachedCatalog = { fetchedAt: number; catalog: unknown }
+/** `appVersion` is the build that wrote it: an app update must not keep serving the old build's copy. */
+type CachedCatalog = { fetchedAt: number; appVersion?: string; catalog: unknown }
 
 /** Everything that touches disk, the clock or the network, so tests can aim all three elsewhere. */
 export type ExtensionCatalogEnv = {
   bundledPath: string
   cachePath: string
   url: string
+  appVersion: string
   now: () => number
   fetch: typeof globalThis.fetch
 }
@@ -55,6 +54,7 @@ export function createDefaultExtensionCatalogEnv(): ExtensionCatalogEnv {
     bundledPath: join(resourceRoot, 'extensions', 'extension-catalog.json'),
     cachePath: join(app.getPath('userData'), 'extension-catalog.json'),
     url: EXTENSION_CATALOG_URL,
+    appVersion: app.getVersion(),
     now: () => Date.now(),
     fetch: globalThis.fetch
   }
@@ -68,14 +68,17 @@ async function readCatalogFile(path: string): Promise<ExtensionCatalog | null> {
   }
 }
 
-async function readCache(path: string): Promise<{ fetchedAt: number; catalog: ExtensionCatalog } | null> {
+type ReadCache = { fetchedAt: number; appVersion: string | null; catalog: ExtensionCatalog }
+
+async function readCache(path: string): Promise<ReadCache | null> {
   try {
     const parsed = JSON.parse(await readFile(path, 'utf8')) as CachedCatalog
     const catalog = parseExtensionCatalog(parsed?.catalog)
     if (!catalog || typeof parsed.fetchedAt !== 'number') {
       return null
     }
-    return { fetchedAt: parsed.fetchedAt, catalog }
+    const appVersion = typeof parsed.appVersion === 'string' ? parsed.appVersion : null
+    return { fetchedAt: parsed.fetchedAt, appVersion, catalog }
   } catch {
     return null
   }
@@ -112,8 +115,16 @@ async function fetchRemoteCatalog(env: ExtensionCatalogEnv): Promise<ExtensionCa
   }
 }
 
-async function loadFloor(env: ExtensionCatalogEnv): Promise<LoadedExtensionCatalog> {
-  const bundled = await readCatalogFile(env.bundledPath)
+/** ISO dates, so a string compare orders them. */
+function isNewerCatalog(candidate: ExtensionCatalog | null, than: ExtensionCatalog): boolean {
+  return candidate !== null && candidate.updatedAt > than.updatedAt
+}
+
+async function loadFloor(
+  env: ExtensionCatalogEnv,
+  preread?: ExtensionCatalog | null
+): Promise<LoadedExtensionCatalog> {
+  const bundled = preread === undefined ? await readCatalogFile(env.bundledPath) : preread
   if (bundled) {
     return { catalog: bundled, origin: 'bundled', fetchedAt: null }
   }
@@ -135,20 +146,28 @@ export async function loadExtensionCatalog(
   env: ExtensionCatalogEnv = createDefaultExtensionCatalogEnv()
 ): Promise<LoadedExtensionCatalog> {
   const cached = await readCache(env.cachePath)
-  if (!options.force && cached && env.now() - cached.fetchedAt < EXTENSION_CATALOG_TTL_MS) {
+  const bundled = await readCatalogFile(env.bundledPath)
+  // Why the build checks: after an app update the cache is usually still inside its TTL, so new
+  // entries the update shipped stayed hidden until a manual refresh.
+  const cacheIsFresh =
+    cached !== null &&
+    env.now() - cached.fetchedAt < EXTENSION_CATALOG_TTL_MS &&
+    cached.appVersion === env.appVersion &&
+    !isNewerCatalog(bundled, cached.catalog)
+  if (!options.force && cached && cacheIsFresh) {
     return { catalog: cached.catalog, origin: 'cache', fetchedAt: cached.fetchedAt }
   }
 
   try {
     const catalog = await fetchRemoteCatalog(env)
     const fetchedAt = env.now()
-    await writeCache(env.cachePath, { fetchedAt, catalog })
+    await writeCache(env.cachePath, { fetchedAt, appVersion: env.appVersion, catalog })
     return { catalog, origin: 'remote', fetchedAt }
   } catch (cause) {
     const error = cause instanceof Error ? cause.message : String(cause)
-    if (cached) {
+    if (cached && !isNewerCatalog(bundled, cached.catalog)) {
       return { catalog: cached.catalog, origin: 'cache', fetchedAt: cached.fetchedAt, error }
     }
-    return { ...(await loadFloor(env)), error }
+    return { ...(await loadFloor(env, bundled)), error }
   }
 }

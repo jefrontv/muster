@@ -45,6 +45,7 @@ beforeEach(async () => {
     bundledPath: join(directory, 'bundled.json'),
     cachePath: join(directory, 'cache.json'),
     url: 'https://example.invalid/extension-catalog.json',
+    appVersion: '1.0.0',
     now: () => now,
     fetch: vi.fn()
   }
@@ -65,7 +66,11 @@ describe('loadExtensionCatalog', () => {
   it('serves a fresh cache without touching the network', async () => {
     await writeFile(
       env.cachePath,
-      JSON.stringify({ fetchedAt: now, catalog: remoteCatalog('cached-entry') }),
+      JSON.stringify({
+        fetchedAt: now,
+        appVersion: '1.0.0',
+        catalog: remoteCatalog('cached-entry')
+      }),
       'utf8'
     )
 
@@ -89,10 +94,60 @@ describe('loadExtensionCatalog', () => {
     expect(result.catalog.entries[0].id).toBe('refreshed')
   })
 
+  it('refetches a fresh cache that an older app build wrote', async () => {
+    await writeFile(
+      env.cachePath,
+      JSON.stringify({ fetchedAt: now, appVersion: '0.9.0', catalog: remoteCatalog('old-build') }),
+      'utf8'
+    )
+    env.fetch = vi.fn().mockResolvedValue(jsonResponse(remoteCatalog('refreshed')))
+
+    const result = await loadExtensionCatalog({}, env)
+
+    expect(result.origin).toBe('remote')
+    expect(result.catalog.entries[0].id).toBe('refreshed')
+    expect(JSON.parse(await readFile(env.cachePath, 'utf8')).appVersion).toBe('1.0.0')
+  })
+
+  it('refetches a fresh cache that is older than the bundled catalog', async () => {
+    await writeFile(
+      env.cachePath,
+      JSON.stringify({
+        fetchedAt: now,
+        appVersion: '1.0.0',
+        catalog: { ...remoteCatalog('stale'), updatedAt: '2025-12-01' }
+      }),
+      'utf8'
+    )
+    env.fetch = vi.fn().mockResolvedValue(jsonResponse(remoteCatalog('refreshed')))
+
+    const result = await loadExtensionCatalog({}, env)
+
+    expect(result.origin).toBe('remote')
+  })
+
+  it('prefers a newer bundled catalog over the cache when offline', async () => {
+    await writeFile(
+      env.cachePath,
+      JSON.stringify({
+        fetchedAt: now,
+        appVersion: '0.9.0',
+        catalog: { ...remoteCatalog('stale'), updatedAt: '2025-12-01' }
+      }),
+      'utf8'
+    )
+    env.fetch = vi.fn().mockRejectedValue(new Error('offline'))
+
+    const result = await loadExtensionCatalog({}, env)
+
+    expect(result.origin).toBe('bundled')
+    expect(result.catalog.entries[0].id).toBe('bundled-entry')
+  })
+
   it('keeps the last good cache when the network fails', async () => {
     await writeFile(
       env.cachePath,
-      JSON.stringify({ fetchedAt: now, catalog: remoteCatalog('last-good') }),
+      JSON.stringify({ fetchedAt: now, appVersion: '1.0.0', catalog: remoteCatalog('last-good') }),
       'utf8'
     )
     env.fetch = vi.fn().mockRejectedValue(new Error('offline'))
