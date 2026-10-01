@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react'
 import { CornerDownLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -26,6 +34,14 @@ type Props = {
   submittingLabel?: string
   onCancel: () => void
   onSubmit: (body: string) => Promise<void>
+  // Optional extensions used by plan review; the diff and markdown views pass none of them.
+  initialBody?: string
+  /** Lets a note whose meaning is carried by `beforeInput` (e.g. "Remove") save with no text. */
+  allowEmptySubmit?: boolean
+  beforeInput?: ReactNode
+  footerStart?: ReactNode
+  /** Receives files dropped on or pasted into the popover. */
+  onFiles?: (files: File[]) => void
 }
 
 function hasDraftText(body: string): boolean {
@@ -43,9 +59,14 @@ export function DiffCommentPopover({
   submitLabel = 'Add note',
   submittingLabel = 'Saving…',
   onCancel,
-  onSubmit
+  onSubmit,
+  initialBody = '',
+  allowEmptySubmit = false,
+  beforeInput,
+  footerStart,
+  onFiles
 }: Props): React.JSX.Element {
-  const [body, setBody] = useState('')
+  const [body, setBody] = useState(initialBody)
   // Why: mirror the draft into a ref so the mousedown listener reads it fresh without re-registering each keystroke.
   const bodyRef = useRef(body)
   bodyRef.current = body
@@ -149,6 +170,16 @@ export function DiffCommentPopover({
     }
     const bodyState = getCommentBodySubmitState(body)
     if (bodyState.status === 'empty') {
+      if (allowEmptySubmit) {
+        setSubmitting(true)
+        try {
+          await onSubmit('')
+        } finally {
+          if (mountedRef.current) {
+            setSubmitting(false)
+          }
+        }
+      }
       return
     }
     if (bodyState.status === 'too-large-leading-whitespace') {
@@ -169,7 +200,7 @@ export function DiffCommentPopover({
       }
     }
   }
-  const canSubmitComment = hasBoundedCommentBodyText(body)
+  const canSubmitComment = allowEmptySubmit || hasBoundedCommentBodyText(body)
 
   return (
     <div
@@ -181,6 +212,26 @@ export function DiffCommentPopover({
       aria-labelledby={labelId}
       onMouseDown={(ev) => ev.stopPropagation()}
       onClick={(ev) => ev.stopPropagation()}
+      onDragOver={onFiles ? (ev) => ev.preventDefault() : undefined}
+      onDrop={
+        onFiles
+          ? (ev) => {
+              ev.preventDefault()
+              onFiles([...ev.dataTransfer.files])
+            }
+          : undefined
+      }
+      onPaste={
+        onFiles
+          ? (ev) => {
+              const files = [...ev.clipboardData.files]
+              if (files.length > 0) {
+                ev.preventDefault()
+                onFiles(files)
+              }
+            }
+          : undefined
+      }
     >
       {/* Content */}
       <div className="orca-diff-comment-content-col" style={{ gap: '8px' }}>
@@ -198,6 +249,7 @@ export function DiffCommentPopover({
                   { value0: lineNumber }
                 ))}
         </div>
+        {beforeInput}
         <textarea
           ref={focusTextareaRef}
           className="orca-diff-comment-popover-textarea"
@@ -225,6 +277,7 @@ export function DiffCommentPopover({
           rows={3}
         />
         <div className="orca-diff-comment-popover-footer">
+          {footerStart}
           <Button variant="ghost" size="sm" onClick={onCancel}>
             {translate('auto.components.diff.comments.DiffCommentPopover.2b3ce6d394', 'Cancel')}
           </Button>

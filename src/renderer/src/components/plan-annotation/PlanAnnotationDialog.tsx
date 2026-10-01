@@ -6,294 +6,171 @@
 // annotate_plan runs off the server's dispatch chain) can ask at once, and a dropped request is a
 // review the user did for nothing.
 //
-// Annotation is inline: select a passage, comment on it where it sits, and the passage stays
-// highlighted for the rest of the review. Notes listed away from the text lose the thing they are
-// about the moment the document is longer than a screen.
+// A full-window overlay rather than an editor tab: the review arrives unprompted, may be about a
+// plan outside any open worktree (or with no file at all), and must appear in Chat mode, which has
+// no editor area. Inside, it behaves like a markdown file in the editor's rich mode.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import type React from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { resolveDocumentTheme } from '@/lib/document-theme'
-import { useAppStore } from '@/store'
-import { PlanAnnotationFooter, PlanAnnotationHeader } from './PlanAnnotationChrome'
 import type {
   PlanAnnotationDecision,
-  PlanAnnotationKind,
+  PlanAnnotationRequest,
   PlanAnnotationResult
 } from '../../../../shared/plan-annotation-types'
-import { PlanAnnotationComposer, type ComposerAnchor } from './PlanAnnotationComposer'
-import { PlanAnnotationDocument } from './PlanAnnotationDocument'
-import { usePlanReviewQueue } from './use-plan-review-queue'
-import { usePlanAnnotationRanges } from './use-plan-annotation-ranges'
-import { PlanAnnotationGlobalNote } from './PlanAnnotationGlobalNote'
-import { VIEW_MODE_SHELL, VIEW_MODE_WIDTH, type PlanViewMode } from './PlanAnnotationViewModes'
-import { unifiedPlanDiff } from './plan-annotation-diff'
-import { PlanAnnotationEditor } from './PlanAnnotationEditor'
-import { PlanAnnotationNoteList } from './PlanAnnotationNoteList'
-import { clearDraft, draftKey, loadDraft, saveDraft } from './plan-annotation-drafts'
-import { clearPlanHighlights } from './plan-annotation-highlights'
 import {
-  createNote,
-  readSelectionAnchor,
-  sortNotes,
-  toAnnotations,
-  type DraftNote
-} from './plan-annotation-notes'
+  PlanAnnotationFooter,
+  PlanAnnotationHeader,
+  type PlanReviewView
+} from './PlanAnnotationChrome'
+import { PlanReviewEditor } from './PlanReviewEditor'
+import { usePlanReviewQueue } from './use-plan-review-queue'
+import { unifiedPlanDiff } from './plan-annotation-diff'
+import {
+  clearDraft,
+  draftKey,
+  loadDraft,
+  saveDraft,
+  type PlanReviewDraft
+} from './plan-annotation-drafts'
+import { toAnnotations, type DraftNote } from './plan-annotation-notes'
+
+const PlanReviewChangesView = lazy(() => import('./PlanReviewChangesView'))
+
+/** Whether a keydown would be consumed by a layer above the review (search, popover, menu). */
+function isInsideNestedLayer(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest('.rich-markdown-search, .orca-diff-comment-popover, [role="menu"]') !== null
+  )
+}
 
 export function PlanAnnotationDialog(): React.JSX.Element | null {
   const { current, waiting, popCurrent } = usePlanReviewQueue()
-  // Why the theme class: the document renders with the markdown preview's `.markdown-body` styles,
-  // and their colours (code, blockquote, table) key on `.markdown-dark` / `.markdown-light`.
-  const settings = useAppStore((s) => s.settings)
-  const isDark = resolveDocumentTheme(settings?.theme ?? 'system')
-  const [notes, setNotes] = useState<DraftNote[]>([])
-  const [composer, setComposer] = useState<ComposerAnchor | null>(null)
-  const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [globalOpen, setGlobalOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<PlanViewMode>('reading')
-  const [editing, setEditing] = useState(false)
-  const [editedContent, setEditedContent] = useState<string | null>(null)
-  // The plan as the rich editor serialises it, so normalisation is never reported as an edit.
-  const [editBaseline, setEditBaseline] = useState<string | null>(null)
+  if (!current) {
+    return null
+  }
+  // Keyed per request so every review starts from its own draft, loaded before the editor mounts.
+  return (
+    <PlanReviewSession
+      key={current.requestId}
+      current={current}
+      waiting={waiting}
+      onSettled={popCurrent}
+    />
+  )
+}
 
-  const scroller = useRef<HTMLDivElement | null>(null)
-  const document_ = useRef<HTMLDivElement | null>(null)
-  const { rangesById, noteAtPoint } = usePlanAnnotationRanges({
-    notes,
-    activeNoteId,
-    documentRef: document_,
-    content: current?.content
-  })
-  const pendingRange = useRef<Range | null>(null)
-  // Why refs: openComposer needs editNote and placeComposer, both of which are declared after it
-  // and depend on state it also touches. Refs break the cycle without reordering the whole file.
-  const editNoteRef = useRef<((id: string) => void) | null>(null)
-  const placeComposerRef = useRef<((range: Range, quote: string) => void) | null>(null)
-
-  const key = current ? draftKey(current) : null
-
-  useEffect(() => {
-    rangesById.current.clear()
-    setNotes(key ? loadDraft(key) : [])
-    setComposer(null)
-    setActiveNoteId(null)
-    setEditingNoteId(null)
-    setGlobalOpen(false)
-    setEditing(false)
-    setEditedContent(null)
-    setEditBaseline(null)
-    setViewMode('reading')
-    return () => clearPlanHighlights()
-  }, [key])
+function PlanReviewSession({
+  current,
+  waiting,
+  onSettled
+}: {
+  current: PlanAnnotationRequest
+  waiting: number
+  onSettled: () => void
+}): React.JSX.Element {
+  const key = draftKey(current)
+  const source = current.content
+  const [draft, setDraft] = useState<PlanReviewDraft>(() => loadDraft(key, source))
+  // The editor's serialization of the plan as sent, restored with edits or taken on first render.
+  const [baseline, setBaseline] = useState<string | null>(() => draft.edits?.baseline ?? null)
+  const [view, setView] = useState<PlanReviewView>('rich')
+  // Open by default when there is an outline to show; a plan with no headings would get an empty panel.
+  const [showTableOfContents, setShowTableOfContents] = useState(() =>
+    /^#{1,6}\s/m.test(current.content)
+  )
+  const [readable, setReadable] = useState(true)
+  const [wholePlanRequest, setWholePlanRequest] = useState(0)
 
   /**
-   * Writes the draft at the point of change rather than from an effect on `notes`.
+   * Writes the draft at the point of change rather than from an effect on `draft`.
    *
-   * Why: an effect keyed on [key, notes] fires once with the NEW key and the OLD notes still in
-   * scope, so opening a review saved an empty list over its own draft and erased it. Persisting
-   * where the change happens has no such ordering hazard.
+   * Why: an effect keyed on [key, draft] fires once with the NEW key and the OLD draft still in
+   * scope, so opening a review saved an empty list over its own draft and erased it.
    */
-  const applyNotes = useCallback(
-    (next: DraftNote[]) => {
-      setNotes(next)
-      if (key) {
+  const applyDraft = useCallback(
+    (update: (previous: PlanReviewDraft) => PlanReviewDraft) => {
+      setDraft((previous) => {
+        const next = update(previous)
         saveDraft(key, next)
-      }
+        return next
+      })
     },
     [key]
   )
 
-  const openComposer = useCallback(
-    (event: { clientX: number; clientY: number }) => {
-      const selection = window.getSelection()
-      // A click with no selection, landing on an existing highlight, means "open that note" rather
-      // than "start a new one" — the same box serves both.
-      if (!selection || selection.isCollapsed) {
-        const hit = noteAtPoint(event.clientX, event.clientY)
-        if (hit) {
-          editNoteRef.current?.(hit)
-        }
+  const setNotes = useCallback(
+    (update: (notes: DraftNote[]) => DraftNote[]) =>
+      applyDraft((previous) => ({ ...previous, notes: update(previous.notes) })),
+    [applyDraft]
+  )
+
+  const handleEdit = useCallback(
+    (markdown: string) => {
+      if (baseline === null) {
         return
       }
-      const parsed = readSelectionAnchor(selection)
-      const pane = scroller.current
-      const shell = pane?.closest('[data-slot="dialog-content"]') ?? null
-      if (!parsed || !pane || !shell) {
-        return
-      }
-      const range = selection.getRangeAt(0)
-      pendingRange.current = range.cloneRange()
-      setEditingNoteId(null)
-      placeComposerRef.current?.(pendingRange.current, parsed.quote)
+      applyDraft((previous) => ({
+        ...previous,
+        edits: markdown === baseline ? null : { source, baseline, content: markdown }
+      }))
     },
-    [noteAtPoint]
+    [applyDraft, baseline, source]
   )
 
-  /** Places the composer over a range, whether that came from a selection or a saved note. */
-  const placeComposer = useCallback((range: Range, quote: string): void => {
-    const pane = scroller.current
-    const shell = pane?.closest('[data-slot="dialog-content"]') ?? null
-    if (!pane || !shell) {
-      return
-    }
-    const rect = range.getBoundingClientRect()
-    const pageRect = pane.getBoundingClientRect()
-    const shellRect = shell.getBoundingClientRect()
-    setComposer({
-      quote,
-      rect: {
-        top: rect.top,
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right
-      },
-      bounds: {
-        top: pageRect.top,
-        bottom: pageRect.bottom,
-        left: pageRect.left,
-        right: pageRect.right
-      },
-      origin: { top: shellRect.top, left: shellRect.left }
-    })
-  }, [])
-
-  /**
-   * Reopens a saved note in the same box that created it.
-   *
-   * Scrolls first so the passage is on screen: placing the composer against an off-screen rect
-   * would pin it to the edge of the pane, nowhere near the text it belongs to.
-   */
-  const editNote = useCallback(
-    (id: string) => {
-      const note = notes.find((entry) => entry.id === id)
-      const range = rangesById.current.get(id)
-      if (!note || !range) {
-        return
-      }
-      pendingRange.current = range
-      setEditingNoteId(id)
-      setActiveNoteId(id)
-      // Instant, not smooth: the composer is positioned from the passage's rect, so the rect has
-      // to be final before it is read. Animating meant guessing when the scroll had settled — and
-      // the rAF that guess hung off never fires at all while the window is hidden.
-      const target =
-        range.startContainer instanceof Element
-          ? range.startContainer
-          : range.startContainer.parentElement
-      target?.scrollIntoView({ block: 'center' })
-      placeComposer(range, note.quote)
-    },
-    [notes, placeComposer]
+  const editedContent = draft.edits?.content ?? null
+  // Against the editor's baseline, not the file: a markdown round trip normalises things nobody
+  // edited (bullets, table padding), and the agent must only be told what a person changed.
+  const diff = useMemo(
+    () =>
+      baseline !== null && editedContent !== null ? unifiedPlanDiff(baseline, editedContent) : '',
+    [baseline, editedContent]
   )
-
-  editNoteRef.current = editNote
-  placeComposerRef.current = placeComposer
-
-  const saveNote = useCallback(
-    (kind: PlanAnnotationKind, body: string, attachments: string[]) => {
-      if (editingNoteId) {
-        applyNotes(
-          notes.map((note) =>
-            note.id === editingNoteId ? { ...note, kind, body, attachments } : note
-          )
-        )
-      } else {
-        const resolved = readSelectionAnchorFromRange(pendingRange.current)
-        if (!resolved) {
-          return
-        }
-        const note = createNote({ kind, body, anchor: resolved, attachments })
-        if (pendingRange.current) {
-          rangesById.current.set(note.id, pendingRange.current)
-        }
-        applyNotes([...notes, note])
-      }
-      setComposer(null)
-      setEditingNoteId(null)
-      pendingRange.current = null
-      window.getSelection()?.removeAllRanges()
-    },
-    [applyNotes, editingNoteId, notes]
-  )
-
-  const removeNote = useCallback(
-    (id: string) => {
-      rangesById.current.delete(id)
-      applyNotes(notes.filter((note) => note.id !== id))
-    },
-    [applyNotes, notes]
-  )
-
-  const addGlobal = useCallback(
-    (body: string) => {
-      applyNotes([...notes, createNote({ kind: 'global', body, anchor: null })])
-      setGlobalOpen(false)
-    },
-    [applyNotes, notes]
-  )
+  const edited = diff.length > 0
+  const hasFeedback = draft.notes.length > 0 || edited
 
   const settle = useCallback(
     (decision: PlanAnnotationDecision) => {
-      if (!current) {
-        return
-      }
-      // Why include the diff: a reviewer who rewrote a passage has already said what they mean
-      // more precisely than a comment could. Describing it again would be the worse channel.
-      //
-      // Against the editor's baseline, not the file: the rich editor re-serialises the whole
-      // document, so diffing the file would bury a one-word fix under markdown normalisation the
-      // reviewer never chose.
-      const before = editBaseline ?? current.content
-      const diff = editedContent === null ? '' : unifiedPlanDiff(before, editedContent)
       const result: PlanAnnotationResult = {
         decision,
-        annotations: decision === 'dismissed' ? [] : toAnnotations(notes),
-        ...(decision !== 'dismissed' && diff.length > 0
+        annotations: decision === 'dismissed' ? [] : toAnnotations(draft.notes),
+        ...(decision !== 'dismissed' && edited
           ? { edits: { unifiedDiff: diff, appliedToDisk: false } }
           : {})
       }
       void window.api.planAnnotation
         .respond({ requestId: current.requestId, result })
         .catch(() => undefined)
-      if (key) {
-        clearDraft(key)
-      }
-      clearPlanHighlights()
-      popCurrent()
+      clearDraft(key)
+      onSettled()
     },
-    [current, editBaseline, editedContent, key, notes]
+    [current.requestId, diff, draft.notes, edited, key, onSettled]
   )
-
-  const sorted = useMemo(() => sortNotes(notes), [notes])
-  const editingNote = editingNoteId ? (notes.find((n) => n.id === editingNoteId) ?? null) : null
-
-  if (!current) {
-    return null
-  }
 
   return (
     <Dialog open onOpenChange={(next) => !next && settle('dismissed')}>
-      {/* Why showCloseButton={false}: the built-in × is absolutely positioned at top-right and
-          lands on top of the header actions. Close lives in the footer with the other decisions. */}
       <DialogContent
         showCloseButton={false}
-        // Why intercept Escape: Radix would dismiss the whole review, which discards every note the
-        // reviewer wrote AND answers the waiting agent with 'no feedback'. Escape closes the thing
-        // on top; ending the review is deliberate, through the footer.
+        // Escape closes whatever is on top (search, note draft, menu); it never ends the review,
+        // which would discard every note AND answer the waiting agent with "no feedback".
         onEscapeKeyDown={(event) => {
           event.preventDefault()
-          if (composer) {
-            setComposer(null)
-            setEditingNoteId(null)
-            pendingRange.current = null
-            return
-          }
-          if (globalOpen) {
-            setGlobalOpen(false)
+          if (!isInsideNestedLayer(event.target) && showTableOfContents) {
+            setShowTableOfContents(false)
           }
         }}
-        className={`flex h-[min(88vh,900px)] flex-col gap-0 overflow-hidden p-0 ${VIEW_MODE_SHELL[viewMode]}`}
+        // Focusing the first header button on open would pop its tooltip over the toolbar.
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        // A click outside must not end the review either.
+        onInteractOutside={(event) => event.preventDefault()}
+        // Readable width is a centred window sized to the plan; full width takes the whole app for
+        // wide tables. A plan rarely needs the whole screen, and a window reads as a dialog.
+        className={`flex max-w-none flex-col gap-0 overflow-hidden bg-[var(--editor-surface)] p-0 sm:max-w-none dark:bg-[var(--editor-surface)] ${
+          readable
+            ? 'h-[min(90vh,1040px)] w-[min(1600px,calc(100vw-4rem))]'
+            : 'top-6 right-6 bottom-6 left-6 w-auto translate-x-0 translate-y-0'
+        }`}
       >
         <PlanAnnotationHeader
           title={current.title}
@@ -301,122 +178,55 @@ export function PlanAnnotationDialog(): React.JSX.Element | null {
           project={current.project}
           round={current.round}
           waiting={waiting}
-          viewMode={viewMode}
-          editing={editing}
-          onModeChange={setViewMode}
-          onToggleEdit={() => {
-            setEditing((was) => {
-              if (!was && editedContent === null) {
-                setEditedContent(current.content)
-              }
-              return !was
-            })
-            setComposer(null)
-          }}
-          onToggleGlobal={() => setGlobalOpen((open) => !open)}
+          view={view}
+          canShowChanges={current.previousContent !== null}
+          showTableOfContents={showTableOfContents}
+          readable={readable}
+          onViewChange={setView}
+          onToggleTableOfContents={() => setShowTableOfContents((open) => !open)}
+          onToggleReadable={() => setReadable((value) => !value)}
+          onWholePlanNote={() => setWholePlanRequest((count) => count + 1)}
           onCopyPlan={() => void navigator.clipboard.writeText(editedContent ?? current.content)}
         />
 
-        {globalOpen ? (
-          <PlanAnnotationGlobalNote onCancel={() => setGlobalOpen(false)} onSave={addGlobal} />
-        ) : null}
-
-        <div className="flex min-h-0 flex-1">
-          <div
-            ref={scroller}
-            className="plan-annotation-canvas scrollbar-sleek min-w-0 flex-1 overflow-y-auto px-6"
-            // Why gated on editing: a selection inside the textarea is a text cursor, not an
-            // annotation, and popping a composer over the caret makes editing impossible.
-            onMouseUp={
-              editing
-                ? undefined
-                : (event) =>
-                    openComposer({
-                      clientX: event.clientX,
-                      clientY: event.clientY
-                    })
-            }
-          >
-            <div
-              className={`plan-annotation-sheet mx-auto my-6 w-full px-10 py-9 ${VIEW_MODE_WIDTH[viewMode]} ${isDark ? 'markdown-dark' : 'markdown-light'}`}
-            >
-              {editing ? (
-                <PlanAnnotationEditor
-                  content={editedContent ?? current.content}
-                  onReady={setEditBaseline}
-                  onChange={setEditedContent}
-                />
-              ) : (
-                <PlanAnnotationDocument
-                  ref={document_}
-                  content={editedContent ?? current.content}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Why only when there are notes: an empty rail was the largest thing on screen for a
-              short plan, and it competed with the document for attention while saying nothing. */}
-          {sorted.length > 0 ? (
-            <PlanAnnotationNoteList
-              notes={sorted}
-              activeNoteId={activeNoteId}
-              onFocusNote={setActiveNoteId}
-              onEditNote={editNote}
-              onRemoveNote={removeNote}
+        <div className="min-h-0 flex-1">
+          {view === 'changes' && current.previousContent !== null ? (
+            <Suspense fallback={null}>
+              <PlanReviewChangesView
+                requestId={current.requestId}
+                previous={current.previousContent}
+                current={editedContent ?? current.content}
+              />
+            </Suspense>
+          ) : (
+            <PlanReviewEditor
+              initialContent={editedContent ?? current.content}
+              notes={draft.notes}
+              readable={readable}
+              showTableOfContents={showTableOfContents}
+              wholePlanRequest={wholePlanRequest}
+              onReady={(serialized) => setBaseline((known) => known ?? serialized)}
+              onChange={handleEdit}
+              onAddNote={(note) => setNotes((notes) => [...notes, note])}
+              onUpdateNote={(id, body) =>
+                setNotes((notes) =>
+                  notes.map((note) => (note.id === id ? { ...note, body } : note))
+                )
+              }
+              onRemoveNote={(id) => setNotes((notes) => notes.filter((note) => note.id !== id))}
+              onCloseTableOfContents={() => setShowTableOfContents(false)}
             />
-          ) : null}
+          )}
         </div>
 
-        {composer ? (
-          <PlanAnnotationComposer
-            anchor={composer}
-            onCancel={() => {
-              setComposer(null)
-              setEditingNoteId(null)
-              pendingRange.current = null
-            }}
-            existing={
-              editingNote
-                ? {
-                    kind: editingNote.kind,
-                    body: editingNote.body,
-                    attachments: editingNote.attachments
-                  }
-                : null
-            }
-            onDelete={() => {
-              if (editingNoteId) {
-                removeNote(editingNoteId)
-              }
-              setComposer(null)
-              setEditingNoteId(null)
-            }}
-            onSave={saveNote}
-          />
-        ) : null}
-
         <PlanAnnotationFooter
-          noteCount={notes.length}
+          noteCount={draft.notes.length}
+          edited={edited}
           onDismiss={() => settle('dismissed')}
-          onApprove={() => settle(notes.length > 0 ? 'approved_with_notes' : 'approved')}
+          onApprove={() => settle(hasFeedback ? 'approved_with_notes' : 'approved')}
           onSend={() => settle('annotated')}
         />
       </DialogContent>
     </Dialog>
   )
-}
-
-/** Re-reads the anchor off the stored Range, so the saved lines match the highlighted text. */
-function readSelectionAnchorFromRange(
-  range: Range | null
-): { quote: string; startLine: number; endLine: number } | null {
-  if (!range) {
-    return null
-  }
-  const selection = window.getSelection()
-  selection?.removeAllRanges()
-  selection?.addRange(range)
-  const parsed = readSelectionAnchor(selection)
-  return parsed
 }

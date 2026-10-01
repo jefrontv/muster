@@ -31,8 +31,9 @@ import { insertToggle } from './rich-markdown-slash-command-primitives'
 
 type RichMarkdownToolbarProps = {
   editor: Editor | null
-  onToggleLink: () => void
-  onImagePick: () => void
+  /** Omitted where links and images cannot be resolved, e.g. an agent's plan with no worktree. */
+  onToggleLink?: () => void
+  onImagePick?: () => void
 }
 
 function Separator(): React.JSX.Element {
@@ -179,20 +180,24 @@ export function RichMarkdownToolbar({
       >
         <Quote className="size-3.5" />
       </RichMarkdownToolbarButton>
-      <RichMarkdownToolbarButton
-        active={false}
-        label={translate('auto.components.editor.RichMarkdownToolbar.6d52624712', 'Link')}
-        onClick={onToggleLink}
-      >
-        <LinkIcon className="size-3.5" />
-      </RichMarkdownToolbarButton>
-      <RichMarkdownToolbarButton
-        active={false}
-        label={translate('auto.components.editor.RichMarkdownToolbar.e935c6b61e', 'Image')}
-        onClick={onImagePick}
-      >
-        <ImageIcon className="size-3.5" />
-      </RichMarkdownToolbarButton>
+      {onToggleLink ? (
+        <RichMarkdownToolbarButton
+          active={false}
+          label={translate('auto.components.editor.RichMarkdownToolbar.6d52624712', 'Link')}
+          onClick={onToggleLink}
+        >
+          <LinkIcon className="size-3.5" />
+        </RichMarkdownToolbarButton>
+      ) : null}
+      {onImagePick ? (
+        <RichMarkdownToolbarButton
+          active={false}
+          label={translate('auto.components.editor.RichMarkdownToolbar.e935c6b61e', 'Image')}
+          onClick={onImagePick}
+        >
+          <ImageIcon className="size-3.5" />
+        </RichMarkdownToolbarButton>
+      ) : null}
       <RichMarkdownMoreBlocksMenu editor={editor} />
     </div>
   )

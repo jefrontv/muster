@@ -1,14 +1,66 @@
-// Header and footer of the plan review dialog.
+// Header and footer of the plan review, laid out like the editor panel's header.
 //
-// Split out purely for size: the dialog owns selection, ranges, highlights and the review queue,
-// and pushing this presentational chrome down keeps that file under the max-lines ratchet without
-// suppressing it.
+// The footer is the one part with no markdown viewer equivalent: the decision is what the waiting
+// agent acts on, so it stays visible rather than behind a menu.
 
 import type React from 'react'
-import { Check, Copy, MessageSquare, Send } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  GitCompareArrows,
+  ListTree,
+  MessageSquarePlus,
+  MoveHorizontal,
+  Pencil,
+  Send
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { PlanAnnotationViewModes, type PlanViewMode } from './PlanAnnotationViewModes'
+import { DialogTitle } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import EditorViewToggle, { type EditorToggleValue } from '../editor/EditorViewToggle'
+
+export type PlanReviewView = 'rich' | 'changes'
+
+const VIEW_METADATA = {
+  rich: { label: 'Rich Editor', icon: Pencil },
+  changes: { label: 'Changes since last round', icon: GitCompareArrows }
+}
+
+function HeaderIconButton({
+  label,
+  pressed,
+  disabled,
+  onClick,
+  children
+}: {
+  label: string
+  pressed?: boolean
+  disabled?: boolean
+  onClick: () => void
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          aria-pressed={pressed}
+          disabled={disabled}
+          onClick={onClick}
+          className={`flex-shrink-0 rounded p-1 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground ${
+            pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'
+          }`}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={4}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
 
 export function PlanAnnotationHeader({
   title,
@@ -16,11 +68,14 @@ export function PlanAnnotationHeader({
   project,
   round,
   waiting,
-  viewMode,
-  editing,
-  onModeChange,
-  onToggleEdit,
-  onToggleGlobal,
+  view,
+  canShowChanges,
+  showTableOfContents,
+  readable,
+  onViewChange,
+  onToggleTableOfContents,
+  onToggleReadable,
+  onWholePlanNote,
   onCopyPlan
 }: {
   title: string
@@ -31,89 +86,105 @@ export function PlanAnnotationHeader({
   round: number
   /** Reviews queued behind this one, so the reviewer knows more is coming. */
   waiting: number
-  viewMode: PlanViewMode
-  editing: boolean
-  onModeChange: (mode: PlanViewMode) => void
-  onToggleEdit: () => void
-  onToggleGlobal: () => void
+  view: PlanReviewView
+  canShowChanges: boolean
+  showTableOfContents: boolean
+  readable: boolean
+  onViewChange: (view: PlanReviewView) => void
+  onToggleTableOfContents: () => void
+  onToggleReadable: () => void
+  onWholePlanNote: () => void
   onCopyPlan: () => void
 }): React.JSX.Element {
-  // Why a second line rather than one long string: what this modal *is* has to read instantly,
-  // and a filename alone never said that. Provenance answers the next question — whose plan, about
-  // what — which matters most when a review appears while you were doing something else.
-  const provenance = [agent, project].filter((part) => part !== null && part.length > 0)
+  // Provenance answers "whose plan, about what", which matters most when a review interrupts.
+  const provenance = [agent, project].filter((part): part is string => Boolean(part))
+  const isRich = view === 'rich'
   return (
-    <DialogHeader className="flex-row items-center gap-3 border-b border-border/60 px-4 py-2.5">
-      <DialogTitle className="flex min-w-0 flex-col gap-0.5">
-        <span className="flex items-center gap-2 text-[13px] font-medium">
-          <span className="shrink-0">Plan review</span>
+    <TooltipProvider delayDuration={300}>
+      <div className="editor-header">
+        <DialogTitle className="flex min-w-0 flex-1 items-center gap-2 text-[12px] font-normal">
+          <span className="shrink-0 font-medium text-foreground">Plan review</span>
           {round > 1 ? (
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
+            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
               round {round}
             </span>
           ) : null}
+          <span className="truncate text-muted-foreground">
+            {[title, ...provenance].join(' · ')}
+          </span>
           {waiting > 0 ? (
-            <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
+            <span className="shrink-0 text-[11px] text-muted-foreground">
               {waiting} more waiting
             </span>
           ) : null}
-        </span>
-        <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-muted-foreground">
-          <span className="truncate">{title}</span>
-          {provenance.map((part) => (
-            <span key={part} className="flex min-w-0 shrink-0 items-center gap-1.5">
-              <span aria-hidden className="text-muted-foreground/50">
-                ·
-              </span>
-              <span className="truncate">{part}</span>
-            </span>
-          ))}
-        </span>
-      </DialogTitle>
-      <div className="ml-auto flex shrink-0 items-center gap-2">
-        <PlanAnnotationViewModes
-          mode={viewMode}
-          editing={editing}
-          onModeChange={onModeChange}
-          onToggleEdit={onToggleEdit}
-        />
-        <span className="h-4 w-px bg-border" />
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 text-xs"
-          disabled={editing}
-          onClick={onToggleGlobal}
+        </DialogTitle>
+        {canShowChanges ? (
+          <EditorViewToggle
+            value={view}
+            modes={['rich', 'changes']}
+            onChange={(next: EditorToggleValue) =>
+              onViewChange(next === 'changes' ? 'changes' : 'rich')
+            }
+            metadataOverride={VIEW_METADATA}
+          />
+        ) : null}
+        <HeaderIconButton
+          label="Table of Contents"
+          pressed={showTableOfContents && isRich}
+          disabled={!isRich}
+          onClick={onToggleTableOfContents}
         >
-          <MessageSquare className="size-3.5" />
-          Global comment
-        </Button>
-        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onCopyPlan}>
-          <Copy className="size-3.5" />
-          Copy plan
-        </Button>
+          <ListTree size={14} />
+        </HeaderIconButton>
+        <HeaderIconButton
+          label={readable ? 'Use full width' : 'Use readable width'}
+          pressed={!readable}
+          disabled={!isRich}
+          onClick={onToggleReadable}
+        >
+          <MoveHorizontal size={14} />
+        </HeaderIconButton>
+        <HeaderIconButton
+          label="Comment on the whole plan"
+          disabled={!isRich}
+          onClick={onWholePlanNote}
+        >
+          <MessageSquarePlus size={14} />
+        </HeaderIconButton>
+        <HeaderIconButton label="Copy plan" onClick={onCopyPlan}>
+          <Copy size={14} />
+        </HeaderIconButton>
       </div>
-    </DialogHeader>
+    </TooltipProvider>
   )
 }
 
 export function PlanAnnotationFooter({
   noteCount,
+  edited,
   onDismiss,
   onApprove,
   onSend
 }: {
   noteCount: number
+  edited: boolean
   onDismiss: () => void
   onApprove: () => void
   onSend: () => void
 }): React.JSX.Element {
+  const hasFeedback = noteCount > 0 || edited
+  const summary = [
+    noteCount > 0 ? `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : null,
+    edited ? 'edited' : null
+  ]
+    .filter(Boolean)
+    .join(' · ')
   return (
-    <div className="flex items-center gap-2 border-t border-border/60 px-4 py-2.5">
+    <div className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-[var(--editor-surface)] px-4 py-2">
       <p className="text-[11px] text-muted-foreground">
-        {noteCount === 0
-          ? 'Select any passage to comment on it'
-          : `${noteCount} ${noteCount === 1 ? 'note' : 'notes'} ready to send`}
+        {hasFeedback
+          ? `${summary}, ready to send`
+          : 'Select text to add a note, or edit the plan directly'}
       </p>
       <div className="ml-auto flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onDismiss}>
@@ -121,9 +192,9 @@ export function PlanAnnotationFooter({
         </Button>
         <Button variant="outline" size="sm" onClick={onApprove}>
           <Check className="size-4" />
-          {noteCount > 0 ? 'Approve with notes' : 'Approve'}
+          {hasFeedback ? 'Approve with notes' : 'Approve'}
         </Button>
-        <Button size="sm" disabled={noteCount === 0} onClick={onSend}>
+        <Button size="sm" disabled={!hasFeedback} onClick={onSend}>
           <Send className="size-4" />
           Send feedback
         </Button>

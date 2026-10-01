@@ -1,12 +1,6 @@
-// Note collection for a plan review, plus the export text the reviewer can inspect before sending.
-//
-// Kept out of the dialog so the anchoring rules are testable without mounting Radix.
+// Note collection for a plan review, and its conversion to what the agent receives.
 
 import type { PlanAnnotation, PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
-
-/** Marks the block a selection landed in. Set by the renderer on every top-level markdown node. */
-export const LINE_START_ATTRIBUTE = 'data-plan-line-start'
-export const LINE_END_ATTRIBUTE = 'data-plan-line-end'
 
 export type DraftNote = PlanAnnotation & { id: string }
 
@@ -14,43 +8,6 @@ export type SelectionAnchor = {
   quote: string
   startLine: number
   endLine: number
-}
-
-function readLine(element: Element | null, attribute: string): number | null {
-  const raw = element?.getAttribute(attribute)
-  const parsed = raw === null || raw === undefined ? Number.NaN : Number.parseInt(raw, 10)
-  return Number.isFinite(parsed) ? parsed : null
-}
-
-/**
- * Resolves the current selection to a quote plus the source lines it came from.
- *
- * Why walk up to the nearest annotated block rather than trusting the selection's own nodes: a
- * selection can start mid-word inside an inline element that carries no position of its own, and
- * `react-markdown` only gives us source positions on the block nodes.
- */
-export function readSelectionAnchor(selection: Selection | null): SelectionAnchor | null {
-  if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
-    return null
-  }
-  const quote = selection.toString().trim()
-  if (quote.length === 0) {
-    return null
-  }
-  const range = selection.getRangeAt(0)
-  const startHost = closestAnnotatedBlock(range.startContainer)
-  const endHost = closestAnnotatedBlock(range.endContainer) ?? startHost
-  const startLine = readLine(startHost, LINE_START_ATTRIBUTE)
-  const endLine = readLine(endHost, LINE_END_ATTRIBUTE) ?? startLine
-  if (startLine === null || endLine === null) {
-    return null
-  }
-  return { quote, startLine, endLine: Math.max(startLine, endLine) }
-}
-
-function closestAnnotatedBlock(node: Node | null): Element | null {
-  const element = node instanceof Element ? node : (node?.parentElement ?? null)
-  return element?.closest(`[${LINE_START_ATTRIBUTE}]`) ?? null
 }
 
 export function createNote(args: {

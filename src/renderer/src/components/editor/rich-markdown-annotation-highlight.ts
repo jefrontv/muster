@@ -12,6 +12,8 @@ type RichMarkdownAnnotationHighlightState = {
 export type RichMarkdownAnnotationHighlightRange = {
   from: number
   to: number
+  /** Extra meaning painted on top of the base note colour; plan review uses it for note kinds. */
+  tone?: 'remove' | 'good'
 }
 
 type RichMarkdownAnnotationHighlightMeta = {
@@ -37,9 +39,13 @@ function createAnnotationDecorations(
       return from === to
         ? null
         : Decoration.inline(from, to, {
-            class: range.active
-              ? 'rich-markdown-annotation-selection rich-markdown-annotation-selection-active'
-              : 'rich-markdown-annotation-selection'
+            class: [
+              'rich-markdown-annotation-selection',
+              range.range.tone ? `rich-markdown-annotation-selection-${range.range.tone}` : null,
+              range.active ? 'rich-markdown-annotation-selection-active' : null
+            ]
+              .filter(Boolean)
+              .join(' ')
           })
     })
     .filter((decoration): decoration is Decoration => decoration !== null)

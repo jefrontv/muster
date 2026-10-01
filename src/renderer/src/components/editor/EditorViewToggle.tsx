@@ -24,7 +24,7 @@ import { translate } from '@/i18n/i18n'
 // distinction. See reviews/changes-view-mode-plan.md.
 export type EditorToggleValue = MarkdownViewMode | 'edit' | 'changes'
 
-type ViewModeMetadata = { label: string; icon: LucideIcon; title?: string }
+export type ViewModeMetadata = { label: string; icon: LucideIcon; title?: string }
 
 const DEFAULT_VIEW_MODE_METADATA: Record<EditorToggleValue, ViewModeMetadata> = {
   source: {
@@ -91,7 +91,7 @@ type EditorViewToggleProps = {
   value: EditorToggleValue
   modes: readonly EditorToggleValue[]
   onChange: (value: EditorToggleValue) => void
-  metadataOverride?: Partial<Record<MarkdownViewMode, ViewModeMetadata>>
+  metadataOverride?: Partial<Record<EditorToggleValue, ViewModeMetadata>>
 }
 
 export default function EditorViewToggle({
@@ -118,13 +118,8 @@ export default function EditorViewToggle({
         }}
       >
         {modes.map((viewMode) => {
-          // Why: metadataOverride is keyed by MarkdownViewMode (source/rich/preview)
-          // because only those slots have language-specific presentation variants
-          // (e.g. CSV's "Table" label on the 'rich' slot). 'edit'/'changes' are
-          // orthogonal toggle values and always use the default metadata.
-          const override = (
-            metadataOverride as Partial<Record<EditorToggleValue, ViewModeMetadata>> | undefined
-          )?.[viewMode]
+          // Why: callers relabel slots for their surface, e.g. CSV's "Table" on 'rich'.
+          const override = metadataOverride?.[viewMode]
           const metadata = override ?? DEFAULT_VIEW_MODE_METADATA[viewMode]
           const Icon = metadata.icon
           const tooltipLabel = metadata.title ?? metadata.label

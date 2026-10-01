@@ -218,6 +218,9 @@
   --git-graph-lane-4: #40b0a6;
   --git-graph-lane-5: #b66dff;
   --annotation-highlight: #f59e0b;
+  /* Plan review note kinds: "remove this" and "this is fine". */
+  --annotation-remove: oklch(0.63 0.21 25);
+  --annotation-good: oklch(0.72 0.18 150);
   --markdown-search-match: #facc15;
   --markdown-search-match-active: #fb923c;
   /* Why: tab-group splits use a dedicated divider — `--border` is too faint on
@@ -310,6 +313,8 @@
   --git-graph-lane-4: #40b0a6;
   --git-graph-lane-5: #b66dff;
   --annotation-highlight: #fbbf24;
+  --annotation-remove: oklch(0.66 0.22 25);
+  --annotation-good: oklch(0.75 0.19 150);
   --markdown-search-match: #facc15;
   --markdown-search-match-active: #fb923c;
   /* Brighter than terminal defaults so the always-visible line clears 3:1 on `--card`. */

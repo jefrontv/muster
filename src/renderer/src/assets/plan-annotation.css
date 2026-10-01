@@ -1,122 +1,165 @@
-/* Inline annotation highlights for the plan review modal.
-   Painted via the CSS Custom Highlight API (plan-annotation-highlights.ts), so these selectors and
-   the names in that file must agree. ::highlight() accepts only colour, background-color,
-   text-decoration and text-shadow — no radius, padding or border — so an annotated passage reads
-   as a marker stripe rather than a chip. */
-
-::highlight(plan-annotation-note) {
-  background-color: color-mix(in srgb, var(--plan-annotation-mark) 38%, transparent);
-  color: inherit;
-}
-
-::highlight(plan-annotation-note-active) {
-  background-color: color-mix(in srgb, var(--plan-annotation-mark) 70%, transparent);
-  color: inherit;
-}
+/* Plan review: the markdown viewer's rich editor and review rail (rich-markdown-editor.css), plus
+   what a plan note has that a file note does not, its kind. */
 
 /* Why line-through as well as red: colour alone does not survive a colour-blind reader or a
-   screenshot in greyscale, and "delete this" is the one instruction that must not be misread. */
-::highlight(plan-annotation-remove) {
-  background-color: color-mix(in srgb, var(--plan-annotation-remove) 34%, transparent);
-  color: inherit;
+   greyscale screenshot, and "delete this" is the one instruction that must not be misread. */
+.rich-markdown-annotation-selection.rich-markdown-annotation-selection-remove {
+  background: color-mix(in srgb, var(--annotation-remove) 24%, transparent);
   text-decoration-line: line-through;
-  text-decoration-color: var(--plan-annotation-remove);
+  text-decoration-color: var(--annotation-remove);
   text-decoration-thickness: 2px;
 }
 
-::highlight(plan-annotation-good) {
-  background-color: color-mix(in srgb, var(--plan-annotation-good) 32%, transparent);
-  color: inherit;
+.rich-markdown-annotation-selection.rich-markdown-annotation-selection-good {
+  background: color-mix(in srgb, var(--annotation-good) 22%, transparent);
 }
 
-:root {
-  --plan-annotation-mark: oklch(0.85 0.16 95);
-  --plan-annotation-remove: oklch(0.63 0.21 25);
-  --plan-annotation-good: oklch(0.72 0.18 150);
+/* The markdown viewer runs full width; a plan defaults to a 760px column with equal space either
+   side. Each side is at least the notes rail (cards plus their gap), so the text never moves when
+   a note lands or the rail is toggled. Padding rather than max-width, so a click in the margin
+   lands in the document. */
+.plan-review-shell.is-readable .rich-markdown-editor,
+.plan-review-shell.is-readable.has-rich-markdown-review-notes .rich-markdown-editor {
+  padding-inline: max(290px, calc((100% - 760px) / 2));
 }
 
-.dark {
-  /* Brighter in dark mode: the same mixes over a dark surface read as mud otherwise. */
-  --plan-annotation-mark: oklch(0.82 0.17 95);
-  --plan-annotation-remove: oklch(0.66 0.22 25);
-  --plan-annotation-good: oklch(0.75 0.19 150);
+/* Too narrow for a rail on both sides: keep the rail's side, give the other back to the text. */
+@container (max-width: 1000px) {
+  .plan-review-shell.is-readable .rich-markdown-editor,
+  .plan-review-shell.is-readable.has-rich-markdown-review-notes .rich-markdown-editor {
+    padding-left: 32px;
+    padding-right: 290px;
+  }
 }
 
-/* The plan sits as a sheet on a dot board: the pattern marks the surface as a review canvas rather
-   than another app panel, while the sheet's own solid background keeps body text off the pattern
-   so it stays readable.
-
-   Every colour is mixed from the theme's own tokens rather than picked by hand, so a custom or
-   light theme gets a canvas that still sits just off its background instead of a grey that only
-   suited the default dark palette. */
-.plan-annotation-canvas {
-  background-color: color-mix(in srgb, var(--muted) 35%, var(--background));
-  /* Dots read as a surface; lines read as a table someone forgot to fill in. */
-  background-image: radial-gradient(
-    circle at center,
-    color-mix(in srgb, var(--muted-foreground) 26%, transparent) 1px,
-    transparent 1.2px
-  );
-  background-size: 22px 22px;
+.plan-review-note-card.is-remove > .orca-diff-comment-card {
+  border-left: 2px solid var(--annotation-remove);
 }
 
-.plan-annotation-sheet {
-  /* Opaque for the same reason as the composer: --card carries alpha in these themes, and the dot
-     board showing through the plan text makes it harder to read. */
-  background-color: #ffffff;
-  background-image: linear-gradient(var(--card), var(--card));
+.plan-review-note-card.is-good > .orca-diff-comment-card {
+  border-left: 2px solid var(--annotation-good);
+}
+
+.plan-review-note-card.is-whole-plan > .orca-diff-comment-card {
+  border-left: 2px solid var(--muted-foreground);
+}
+
+.plan-review-note-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.plan-review-note-attachments > li {
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-size: 10.5px;
 }
 
-/* An opaque surface for panels that float over the plan text.
-
-   Why a solid base under the theme colour: this app's themes give --popover and --card an alpha
-   channel (measured ~0.8), so painting with the token alone leaves the paragraph underneath
-   legible straight through the comment box. The flat colour below guarantees opacity and the theme
-   colour is layered over it, so a custom theme still tints the panel. */
-.plan-annotation-opaque {
-  background-color: #ffffff;
-  background-image: linear-gradient(var(--popover), var(--popover));
+/* No H1-H5 collapse-by-level buttons here: a plan's outline is short enough to scan whole, and
+   the buttons left the panel title clipped to a few characters. */
+.plan-review-layout .markdown-toc-level-controls {
+  display: none;
 }
 
-.dark .plan-annotation-opaque {
-  background-color: #0f0f0f;
+/* The notes count sits in the toolbar row: same 28px height and centre as the toolbar buttons
+   (the markdown viewer floats it 12px down, which reads as dropped below the row here). */
+.plan-review-shell .rich-markdown-review-rail-actions {
+  top: 6px;
 }
 
-/* The editing surface is the rendered document, so it inherits .plan-annotation-document wholesale
-   and only adds what an editable region needs. Any styling that lands here and not there is a
-   difference the reviewer will see the moment they press Edit. */
-.plan-annotation-editable .ProseMirror {
-  min-height: 60vh;
-  outline: none;
+.plan-review-shell .rich-markdown-review-rail-toggle {
+  height: 28px;
 }
 
-.plan-annotation-editable .ProseMirror:focus {
-  outline: none;
+/* Motion: short and eased out, so things arrive where the eye already is rather than travel. */
+@keyframes plan-review-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
 }
 
-.dark .plan-annotation-sheet {
-  background-color: #0d0d0d;
+@keyframes plan-review-fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
-/* The plan document carries the markdown preview's own `.markdown-body` class, so every element —
-   headings, code, tables, lists, links — renders exactly as the same markdown does in the editor's
-   preview pane, in both themes. See markdown-preview.css.
-
-   Only what `.markdown-body` leaves to its scrolling parent lands here: the preview sizes its text
-   on `.markdown-preview`, and this document has no such wrapper. */
-.plan-annotation-document {
-  /* 14px is MarkdownPreview's default editor size — computeEditorFontSize(14, 0). */
-  font-size: 14px;
-  line-height: 1.7;
+@keyframes plan-review-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
 }
 
-/* Reading and focus modes cap the sheet's measure, so a wide table scrolls itself instead of
-   forcing the column wider than the reviewer asked for. */
-.plan-annotation-document table {
-  display: block;
-  overflow-x: auto;
-  width: 100%;
+@keyframes plan-review-heading-glow {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.plan-review-shell .orca-diff-comment-popover {
+  transform-origin: top left;
+  animation: plan-review-pop-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Glides between lines as the pointer moves, instead of blinking from one to the next. */
+.plan-review-gutter-add {
+  transition:
+    top 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 120ms ease,
+    border-color 120ms ease;
+  animation: plan-review-fade-in 120ms ease-out;
+}
+
+/* Cards slide when a new note restacks the ones below it. */
+.plan-review-note-card {
+  transition: top 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: plan-review-fade-in 180ms ease-out;
+}
+
+.plan-review-shell .rich-markdown-annotation-selection {
+  transition: background-color 160ms ease;
+}
+
+.plan-review-layout > .markdown-toc-panel {
+  animation: plan-review-slide-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.plan-review-heading-glow {
+  position: absolute;
+  z-index: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--annotation-highlight) 16%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--annotation-highlight) 28%, transparent);
+  pointer-events: none;
+  animation: plan-review-heading-glow 1200ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-review-shell *,
+  .plan-review-layout > .markdown-toc-panel {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .plan-review-heading-glow {
+    display: none;
+  }
 }
