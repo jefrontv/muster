@@ -39,11 +39,21 @@ export function renderLocalMysqlOptionFile(config: SiteRunConfig): string {
   })
 }
 
-/** `gunzip | mysql` behind pipefail, so a corrupt archive cannot import as a partial database. */
+/**
+ * MariaDB 10.10+ dumps carry `uca1400` collations that MySQL (LocalWP, MAMP) rejects with ERROR 1273.
+ * Mapped to the nearest collation every MySQL 5.7/8.x and MariaDB accepts; `utf8_general_ci` because
+ * MySQL before 8.0.30 has no `utf8mb3_`-prefixed collation names.
+ */
+export const MARIADB_COLLATION_REWRITE =
+  "LC_ALL=C sed -E -e 's/utf8mb4_uca1400(_nopad)?_a[is]_c[is]/utf8mb4_unicode_ci/g' " +
+  "-e 's/utf8mb3_uca1400(_nopad)?_a[is]_c[is]/utf8_general_ci/g'"
+
+/** `gunzip | sed | mysql` behind pipefail, so a corrupt archive cannot import as a partial database. */
 export function buildLocalImportPipeline(paths: ImportCommandPaths, dumpPath: string): string {
   return (
     'set -o pipefail; ' +
-    `gunzip -c ${quoteShellArgument(dumpPath)} | ${quoteShellArgument(paths.mysqlBinary)} ` +
+    `gunzip -c ${quoteShellArgument(dumpPath)} | ${MARIADB_COLLATION_REWRITE} | ` +
+    `${quoteShellArgument(paths.mysqlBinary)} ` +
     `--defaults-extra-file=${quoteShellArgument(paths.optionFilePath)} ` +
     `--database=${quoteShellArgument(paths.dbName)}`
   )

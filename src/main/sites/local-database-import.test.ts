@@ -216,6 +216,33 @@ describe.skipIf(process.platform === 'win32')('buildLocalImportPipeline under a 
     expect(readFileSync(sinkPath, 'utf8')).toBe('CREATE TABLE wp_posts (id INT);\n')
   })
 
+  it('rewrites MariaDB uca1400 collations that MySQL rejects', () => {
+    const dump = [
+      'CREATE TABLE wp_posts (title text CHARACTER SET utf8mb3 COLLATE utf8mb3_uca1400_ai_ci)',
+      ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;',
+      'ALTER TABLE wp_terms CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nopad_as_cs;',
+      ''
+    ].join('\n')
+    writeFileSync(dumpPath, gzipSync(Buffer.from(dump)))
+    expect(runPipeline('acme_local', '0')).toBe(0)
+    const imported = readFileSync(sinkPath, 'utf8')
+    expect(imported).not.toContain('uca1400')
+    expect(imported).toContain('COLLATE utf8_general_ci)')
+    expect(imported).toContain('COLLATE=utf8mb4_unicode_ci;')
+    expect(imported).toContain('COLLATE utf8mb4_unicode_ci;')
+  })
+
+  it('passes non-UTF-8 bytes through the rewrite untouched', () => {
+    const bytes = Buffer.concat([
+      Buffer.from("INSERT INTO t VALUES ('"),
+      Buffer.from([0xff, 0xfe, 0x80]),
+      Buffer.from("');\n")
+    ])
+    writeFileSync(dumpPath, gzipSync(bytes))
+    expect(runPipeline('acme_local', '0')).toBe(0)
+    expect(readFileSync(sinkPath).equals(bytes)).toBe(true)
+  })
+
   it('fails on a truncated archive instead of importing what decompressed', () => {
     const valid = readFileSync(dumpPath)
     writeFileSync(dumpPath, valid.subarray(0, -4))
