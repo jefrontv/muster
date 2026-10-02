@@ -6,6 +6,8 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { NativeChatTimelineRow } from './native-chat-timeline-rows'
+import { NATIVE_CHAT_ROW_ANCHOR_ATTR, nativeChatRowAnchorId } from './native-chat-row-anchor'
+import type { NativeChatVirtualRowLocator } from './use-native-chat-row-anchor'
 import {
   NativeChatTimelineRowView,
   type NativeChatTimelineRowActions
@@ -29,12 +31,18 @@ export function NativeChatVirtualRows({
   rows,
   actions,
   scrollRef,
-  fontScale
+  fontScale,
+  locatorRef,
+  onLayout
 }: {
   rows: readonly NativeChatTimelineRow[]
   actions: NativeChatTimelineRowActions
   scrollRef: RefObject<HTMLDivElement | null>
   fontScale: number
+  /** Filled with a lookup for rows outside the window, for the row anchor. */
+  locatorRef: RefObject<NativeChatVirtualRowLocator | null>
+  /** After every render that may have moved rows (measurements land as re-renders). */
+  onLayout: () => void
 }): React.JSX.Element | null {
   const headRef = useRef<HTMLDivElement | null>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -56,6 +64,19 @@ export function NativeChatVirtualRows({
     scrollMargin,
     getItemKey: (index) => rows[index]?.key ?? index
   })
+  // The row anchor owns corrections: tanstack's own reads a scroll offset cached
+  // at the last scroll event, so it undid wheel ticks and missed rows measured
+  // right after a programmatic scroll.
+  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => false
+  useLayoutEffect(() => {
+    locatorRef.current = (id) => {
+      const head = headRef.current
+      const index = rows.findIndex((row) => nativeChatRowAnchorId(row) === id)
+      const item = index >= 0 ? virtualizer.measurementsCache[index] : undefined
+      return head && item ? head.getBoundingClientRect().top + item.start - scrollMargin : null
+    }
+    onLayout()
+  })
   if (rows.length === 0) {
     return null
   }
@@ -71,6 +92,7 @@ export function NativeChatVirtualRows({
             key={item.key}
             ref={virtualizer.measureElement}
             data-index={item.index}
+            {...{ [NATIVE_CHAT_ROW_ANCHOR_ATTR]: nativeChatRowAnchorId(row) }}
             className="absolute inset-x-0 top-0"
             style={{
               transform: `translateY(${item.start - scrollMargin}px)`,

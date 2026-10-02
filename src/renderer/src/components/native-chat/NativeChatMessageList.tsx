@@ -14,6 +14,8 @@ import { NativeChatWorkingRow } from './NativeChatWorkingRow'
 import { useNativeChatTimeline } from './use-native-chat-timeline'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
 import { NativeChatVirtualRows, nativeChatVirtualSplit } from './NativeChatVirtualRows'
+import { NATIVE_CHAT_ROW_ANCHOR_ATTR, nativeChatRowAnchorId } from './native-chat-row-anchor'
+import { useNativeChatRowAnchor } from './use-native-chat-row-anchor'
 
 /** Start the next page this far before the top of history comes into view. */
 const LOAD_EARLIER_MARGIN_PX = 600
@@ -63,24 +65,23 @@ export function NativeChatMessageList({
     anchorToMessage,
     scrollToEnd,
     maintainAfterRender,
+    getMode,
     onScroll: onAnchoringScroll
   } = anchoring
 
-  // When an older page prepends, the scroll content grows above the viewport.
-  // Capture the pre-render scroll height so the layout effect can restore the
-  // user's position (no jump) instead of letting the browser keep scrollTop.
-  const prependAnchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null)
+  // Prepends, the loading row and windowed-row measurements shift content above
+  // the reader; the row anchor puts it back. Following the end pins the bottom instead.
+  const rowAnchor = useNativeChatRowAnchor({
+    scrollRef,
+    contentRef,
+    isActive: useCallback(() => getMode() !== 'following-end', [getMode])
+  })
+  const { capture: captureRowAnchor, correct: correctRowAnchor } = rowAnchor
 
-  // Shared by the scroll-to-top trigger and the "Load earlier" button so both
-  // paths restore the viewport after the prepend (the button path used to skip
-  // the anchor and jump to the top of the new page).
   const loadEarlierAnchored = useCallback(() => {
-    const el = scrollRef.current
-    if (el) {
-      prependAnchorRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop }
-    }
+    captureRowAnchor()
     loadEarlier()
-  }, [loadEarlier])
+  }, [captureRowAnchor, loadEarlier])
 
   // Older pages load when the reader nears the top, not in a loop on open. The
   // observer is rebuilt after each page so a still-visible sentinel asks again.
@@ -119,7 +120,8 @@ export function NativeChatMessageList({
       return
     }
     onAnchoringScroll()
-  }, [onAnchoringScroll])
+    captureRowAnchor()
+  }, [onAnchoringScroll, captureRowAnchor])
 
   const rowActions = useMemo<NativeChatTimelineRowActions>(
     () => ({
@@ -162,31 +164,19 @@ export function NativeChatMessageList({
     tailUserRef.current = tailUser ?? tailUserRef.current
   }, [messages, sessionId, anchorToMessage, scrollToEnd])
 
-  // Re-assert the active scroll mode when rows change. Layout effect so the
-  // adjustment happens before paint (no flicker). When an older page just
-  // prepended, restore the prior position instead.
-  const wasLoadingEarlierRef = useRef(false)
+  // Before paint: put the anchored row back first, then re-assert the scroll mode.
   useLayoutEffect(() => {
-    const el = scrollRef.current
-    // Consume the anchor only on the commit where the page actually landed
-    // (loadingEarlier flips off) — a live append arriving mid-load, or a load
-    // that never started, must not spend it on the wrong height delta.
-    const pageLanded = wasLoadingEarlierRef.current && !loadingEarlier
-    wasLoadingEarlierRef.current = loadingEarlier
-    if (el && prependAnchorRef.current && pageLanded) {
-      // Preserve the viewport: shift scrollTop by however much taller the content
-      // got, so the message the user was reading stays put.
-      const grew = el.scrollHeight - prependAnchorRef.current.scrollHeight
-      el.scrollTop = prependAnchorRef.current.scrollTop + grew
-      prependAnchorRef.current = null
-      return
-    }
-    if (!loadingEarlier) {
-      // Stale capture from a load that aborted before setting loadingEarlier.
-      prependAnchorRef.current = null
-    }
+    correctRowAnchor()
     maintainAfterRender()
-  }, [rows.length, isWorking, showWorkingRow, loadingEarlier, maintainAfterRender])
+  }, [
+    rows,
+    isWorking,
+    showWorkingRow,
+    loadingEarlier,
+    fontScale,
+    correctRowAnchor,
+    maintainAfterRender
+  ])
 
   return (
     <div className="relative min-h-0 flex-1">
@@ -219,13 +209,22 @@ export function NativeChatMessageList({
             actions={rowActions}
             scrollRef={scrollRef}
             fontScale={fontScale}
+            locatorRef={rowAnchor.locatorRef}
+            onLayout={correctRowAnchor}
           />
           {/* Why: `zoom` scales the transcript's text and layout together, scoped
               here so the rest of the app is untouched (the desktop analog of the
               mobile pinch-zoom; Chromium/Electron only). */}
           <div className="flex flex-col gap-5" style={{ zoom: fontScale }}>
             {tailRows.map((row) => (
-              <NativeChatTimelineRowView key={row.key} row={row} actions={rowActions} />
+              // empty:hidden: a row that renders nothing adds no gap.
+              <div
+                key={row.key}
+                className="empty:hidden"
+                {...{ [NATIVE_CHAT_ROW_ANCHOR_ATTR]: nativeChatRowAnchorId(row) }}
+              >
+                <NativeChatTimelineRowView row={row} actions={rowActions} />
+              </div>
             ))}
             {showWorkingRow ? (
               <NativeChatWorkingRow
