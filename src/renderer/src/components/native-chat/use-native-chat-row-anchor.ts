@@ -11,8 +11,11 @@ import {
   type NativeChatRowBox
 } from './native-chat-row-anchor'
 
-/** Viewport top of a windowed row that is not mounted; null when it is not in the window. */
-export type NativeChatVirtualRowLocator = (id: string) => number | null
+/** Windowed rows with viewport positions, mounted or not. */
+export type NativeChatVirtualRowSource = {
+  has: (id: string) => boolean
+  boxes: () => NativeChatRowBox[]
+}
 
 export function useNativeChatRowAnchor(input: {
   scrollRef: RefObject<HTMLDivElement | null>
@@ -21,11 +24,33 @@ export function useNativeChatRowAnchor(input: {
 }): {
   capture: () => void
   correct: () => void
-  locatorRef: RefObject<NativeChatVirtualRowLocator | null>
+  sourceRef: RefObject<NativeChatVirtualRowSource | null>
 } {
   const { scrollRef, contentRef, isActive } = input
   const anchorsRef = useRef<NativeChatRowAnchor[]>([])
-  const locatorRef = useRef<NativeChatVirtualRowLocator | null>(null)
+  const sourceRef = useRef<NativeChatVirtualRowSource | null>(null)
+
+  /** Every row in document order, content-relative: windowed rows from the virtualizer, the rest from the DOM. */
+  const readBoxes = useCallback((content: HTMLElement): NativeChatRowBox[] => {
+    const origin = content.getBoundingClientRect().top
+    const source = sourceRef.current
+    const boxes: NativeChatRowBox[] = (source?.boxes() ?? []).map((box) => ({
+      id: box.id,
+      top: box.top - origin,
+      bottom: box.bottom - origin
+    }))
+    for (const el of content.querySelectorAll<HTMLElement>(`[${NATIVE_CHAT_ROW_ANCHOR_ATTR}]`)) {
+      const id = el.getAttribute(NATIVE_CHAT_ROW_ANCHOR_ATTR)
+      if (!id || source?.has(id)) {
+        continue
+      }
+      const rect = el.getBoundingClientRect()
+      if (rect.height > 0) {
+        boxes.push({ id, top: rect.top - origin, bottom: rect.bottom - origin })
+      }
+    }
+    return boxes.sort((a, b) => a.top - b.top)
+  }, [])
 
   const capture = useCallback(() => {
     const scroller = scrollRef.current
@@ -33,17 +58,9 @@ export function useNativeChatRowAnchor(input: {
     if (!scroller || !content) {
       return
     }
-    const origin = content.getBoundingClientRect().top
-    const boxes: NativeChatRowBox[] = []
-    for (const el of content.querySelectorAll<HTMLElement>(`[${NATIVE_CHAT_ROW_ANCHOR_ATTR}]`)) {
-      const rect = el.getBoundingClientRect()
-      const id = el.getAttribute(NATIVE_CHAT_ROW_ANCHOR_ATTR)
-      if (id && rect.height > 0) {
-        boxes.push({ id, top: rect.top - origin, bottom: rect.bottom - origin })
-      }
-    }
-    anchorsRef.current = captureRowAnchors(boxes, scroller.getBoundingClientRect().top - origin)
-  }, [contentRef, scrollRef])
+    const viewportTop = scroller.getBoundingClientRect().top - content.getBoundingClientRect().top
+    anchorsRef.current = captureRowAnchors(readBoxes(content), viewportTop)
+  }, [contentRef, readBoxes, scrollRef])
 
   const correct = useCallback(() => {
     const scroller = scrollRef.current
@@ -55,20 +72,14 @@ export function useNativeChatRowAnchor(input: {
       capture()
       return
     }
-    const origin = content.getBoundingClientRect().top
-    const shift = rowAnchorShift(anchorsRef.current, (id) => {
-      const el = content.querySelector<HTMLElement>(
-        `[${NATIVE_CHAT_ROW_ANCHOR_ATTR}="${CSS.escape(id)}"]`
-      )
-      const viewportTop = el ? el.getBoundingClientRect().top : (locatorRef.current?.(id) ?? null)
-      return viewportTop === null ? null : viewportTop - origin
-    })
+    const tops = new Map(readBoxes(content).map((box) => [box.id, box.top]))
+    const shift = rowAnchorShift(anchorsRef.current, (id) => tops.get(id) ?? null)
     if (Math.abs(shift) >= 1) {
       // Live scrollTop: any wheel delta since the capture stays applied.
       scroller.scrollTop += shift
     }
     capture()
-  }, [capture, contentRef, isActive, scrollRef])
+  }, [capture, contentRef, isActive, readBoxes, scrollRef])
 
   useEffect(() => {
     const content = contentRef.current
@@ -80,5 +91,5 @@ export function useNativeChatRowAnchor(input: {
     return () => observer.disconnect()
   }, [contentRef, correct])
 
-  return { capture, correct, locatorRef }
+  return { capture, correct, sourceRef }
 }

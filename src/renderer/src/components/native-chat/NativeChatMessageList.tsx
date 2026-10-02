@@ -209,7 +209,7 @@ export function NativeChatMessageList({
             actions={rowActions}
             scrollRef={scrollRef}
             fontScale={fontScale}
-            locatorRef={rowAnchor.locatorRef}
+            sourceRef={rowAnchor.sourceRef}
             onLayout={correctRowAnchor}
           />
           {/* Why: `zoom` scales the transcript's text and layout together, scoped
