@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { normalizeRuntimePathForComparison } from '../../../../shared/cross-platform-path'
 import {
   dedupeWorktreeCardSubtitle,
   findSiteLocalDomainForWorkspacePath,
@@ -99,6 +100,61 @@ describe('findSiteLocalDomainForWorkspacePath', () => {
     expect(
       findSiteLocalDomainForWorkspacePath('C:\\Users\\me\\Local Sites\\acme\\app\\public', [win])
     ).toBe('acme.local')
+  })
+
+  it('matches the original linear scan, including first-match-wins and blank domains', () => {
+    // The pre-index implementation, kept as the reference.
+    function linearLookup(
+      workspacePath: string,
+      sites: readonly ReturnType<typeof siteSummary>[]
+    ): string | null {
+      const target = normalizeRuntimePathForComparison(workspacePath)
+      if (!target) {
+        return null
+      }
+      for (const { site } of sites) {
+        if (!site.path) {
+          continue
+        }
+        const wpRoot = site.localWpRoot.trim()
+        const matches =
+          normalizeRuntimePathForComparison(site.path) === target ||
+          (wpRoot.length > 0 &&
+            normalizeRuntimePathForComparison(`${site.path}/${wpRoot}`) === target)
+        if (matches) {
+          return site.localDomain.trim() || null
+        }
+      }
+      return null
+    }
+    const sites = [
+      siteSummary({ path: '', localDomain: 'empty.local' }),
+      siteSummary({ path: '/srv/a', localWpRoot: 'app/public', localDomain: '  ' }),
+      siteSummary({ path: '/srv/a', localWpRoot: 'app/public', localDomain: 'a-dup.local' }),
+      siteSummary({ path: '/srv/a/app/public', localDomain: 'nested.local' }),
+      siteSummary({ path: '/srv/b/', localWpRoot: ' app/public ', localDomain: ' b.local ' }),
+      siteSummary({ path: 'C:\\Sites\\c', localWpRoot: 'app/public', localDomain: 'c.local' }),
+      siteSummary({ path: '/srv/d', localDomain: 'd.local' }),
+      siteSummary({ path: '/srv/d', localWpRoot: 'app/public', localDomain: 'd2.local' })
+    ]
+    const probes = [
+      '',
+      '/srv/a',
+      '/srv/a/',
+      '/srv/a/app/public',
+      '/srv/b',
+      '/srv/b/app/public',
+      'C:\\Sites\\c\\app\\public',
+      'c:/sites/c',
+      '/srv/d',
+      '/srv/d/app/public',
+      '/srv/missing'
+    ]
+    for (const probe of probes) {
+      expect(findSiteLocalDomainForWorkspacePath(probe, sites), probe).toBe(
+        linearLookup(probe, sites)
+      )
+    }
   })
 })
 

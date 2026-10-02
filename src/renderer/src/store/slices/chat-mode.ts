@@ -275,6 +275,10 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
 
   setChatThreadLastError: (threadId, message) =>
     set((s) => {
+      // Why: the stream calls this with null on every token; skip the write when nothing changes.
+      if (s.chatThreadLastError[threadId] === (message ?? undefined)) {
+        return s
+      }
       if (message === null) {
         const { [threadId]: _dropped, ...remaining } = s.chatThreadLastError
         return { chatThreadLastError: remaining }

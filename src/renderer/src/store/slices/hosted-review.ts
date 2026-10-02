@@ -35,7 +35,8 @@ type FetchOptions = {
 }
 type CreateHostedReviewStoreInput = CreateHostedReviewInput & { repoId?: string | null }
 
-const CACHE_TTL_MS = 60_000
+// Why: above the 60 s sidebar card poll, so every other tick is a cache hit.
+const CACHE_TTL_MS = 120_000
 const HOSTED_REVIEW_CACHE_MAX = 500
 // Why: the runtime path is bounded by callRuntimeRpc's own timeout; the local
 // Electron path had none, so a hung git/gh subprocess (e.g. a stalled Windows

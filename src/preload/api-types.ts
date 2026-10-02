@@ -1675,6 +1675,11 @@ export type PreloadApi = {
   worktrees: {
     list: (args: { repoId: string }) => Promise<Worktree[]>
     listDetected: (args: { repoId: string }) => Promise<DetectedWorktreeListResult>
+    /** Batched listDetected; `onResult` fires per repo as main finishes it. Local host only. */
+    listDetectedBatch?: (
+      args: { repoIds: string[] },
+      onResult: (result: DetectedWorktreeListResult) => void
+    ) => Promise<DetectedWorktreeListResult[]>
     listAll: () => Promise<Worktree[]>
     create: (args: CreateWorktreeArgs) => Promise<CreateWorktreeResult>
     /** Two-phase progress for a background `create`, correlated by `creationId`. The remote/runtime

@@ -49,7 +49,6 @@ import {
   ContextMenuTrigger
 } from '@/components/ui/context-menu'
 import { useAppStore } from './store'
-import { WORKTREE_REFRESH_CONCURRENCY } from './store/slices/worktrees'
 import { useShallow } from 'zustand/react/shallow'
 import { isRemoteWorkspaceSnapshotApplyInProgress, useIpcEvents } from './hooks/useIpcEvents'
 import { useAutomationDispatchEvents } from './hooks/useAutomationDispatchEvents'
@@ -64,7 +63,6 @@ import {
   useSystemPrefersDark
 } from './components/terminal-pane/use-system-prefers-dark'
 import RightSidebar from './components/right-sidebar'
-import { SkillFreshnessUpdateDialog } from './components/skills/SkillFreshnessUpdateDialog'
 import { TelemetryFirstLaunchSurface } from './components/TelemetryFirstLaunchSurface'
 import { ZoomOverlay } from './components/ZoomOverlay'
 import { onOnboardingReopened } from './components/onboarding/show-onboarding-event'
@@ -154,7 +152,7 @@ import { reconnectSshTargetForRendererStartup } from './startup/ssh-startup-reco
 import { shouldRenderPetOverlay } from './components/pet/pet-overlay-visibility'
 import { applyDocumentTheme } from './lib/document-theme'
 import { getSystemPrefersDark } from './lib/terminal-theme'
-import { publishTerminalViewAttributesAtAppStart } from './components/terminal-pane/terminal-appearance'
+import { publishTerminalViewAttributesAtAppStart } from './components/terminal-pane/terminal-theme-composition'
 import { isEditableTarget } from './lib/editable-target'
 import { getSelectedTextForFileSearch } from './lib/file-search-selection'
 import { useShortcutLabel } from './hooks/useShortcutLabel'
@@ -187,7 +185,6 @@ import {
   toRuntimeExecutionHostId,
   type ExecutionHostId
 } from '../../shared/execution-host'
-import { mapWithConcurrency } from '../../shared/map-with-concurrency'
 import {
   ModifierDoubleTapDetector,
   toModifierDoubleTapEvent
@@ -344,6 +341,12 @@ const WorkspaceCleanupDialog = lazy(
   () => import('./components/workspace-cleanup/WorkspaceCleanupDialog')
 )
 const Terminal = lazy(() => import('./components/Terminal'))
+// Why: it embeds a TerminalPane; a static import pulls xterm into the entry chunk.
+const SkillFreshnessUpdateDialog = lazy(() =>
+  import('./components/skills/SkillFreshnessUpdateDialog').then((m) => ({
+    default: m.SkillFreshnessUpdateDialog
+  }))
+)
 const StatusBar = lazy(() =>
   import('./components/status-bar/StatusBar').then((module) => ({ default: module.StatusBar }))
 )
@@ -461,7 +464,7 @@ function App(): React.JSX.Element {
       fetchFolderWorkspaces: s.fetchFolderWorkspaces,
       fetchFolderWorkspacesForAllHosts: s.fetchFolderWorkspacesForAllHosts,
       fetchAllWorktrees: s.fetchAllWorktrees,
-      fetchWorktrees: s.fetchWorktrees,
+      fetchWorktreesForRepos: s.fetchWorktreesForRepos,
       fetchWorktreeLineage: s.fetchWorktreeLineage,
       fetchOrcaProfiles: s.fetchOrcaProfiles,
       fetchSettings: s.fetchSettings,
@@ -917,10 +920,9 @@ function App(): React.JSX.Element {
               // Why: disconnected SSH repos hydrate from local metadata; only runtime-owned repos use placeholders.
               parseExecutionHostId(getRepoExecutionHostId(repo))?.kind !== 'runtime'
           )
+          // Why: one listing IPC and one store write per frame instead of one of each per repo.
           await timeRendererStartupStep('fetch-hydration-worktrees', () =>
-            mapWithConcurrency(hydrationRepos, WORKTREE_REFRESH_CONCURRENCY, (repo) =>
-              actions.fetchWorktrees(repo.id, { executionHostId: getRepoExecutionHostId(repo) })
-            )
+            actions.fetchWorktreesForRepos(hydrationRepos)
           )
           return sessionRead
         })
@@ -2725,7 +2727,9 @@ function App(): React.JSX.Element {
               surface="overlay"
               compact
             >
-              <SkillFreshnessUpdateDialog />
+              <Suspense fallback={null}>
+                <SkillFreshnessUpdateDialog />
+              </Suspense>
             </RecoverableRenderErrorBoundary>
             <Suspense fallback={null}>
               <RecoverableRenderErrorBoundary

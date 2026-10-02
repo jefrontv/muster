@@ -101,6 +101,8 @@ import {
   isLockedWorktreeRemovalError
 } from '../../../../shared/worktree-removal'
 import { FolderWorkspaceActivityPersistence } from './folder-workspace-activity-persistence'
+import { createWorktreeCommitBatcher, type WorktreeStateReducer } from './worktree-commit-batcher'
+import { startDetectedWorktreeBatch } from './worktree-detected-batch'
 export type { WorktreeSlice, WorktreeDeleteState } from './worktree-helpers'
 
 // Why: old runtime servers only have `worktree.list`; preserve the large-list UI hydration parity used before `worktree.detectedList` existed.
@@ -164,6 +166,44 @@ async function mapReposForWorktreeRefresh<TRepo extends { id: string }, TResult>
   )
 
   return results
+}
+
+type SliceRepo = AppState['repos'][number]
+
+function orderReposActiveFirst<TRepo extends { id: string }>(
+  repos: readonly TRepo[],
+  activeRepoId: string | null | undefined
+): TRepo[] {
+  if (!activeRepoId || !repos.some((repo) => repo.id === activeRepoId)) {
+    return [...repos]
+  }
+  // Why: the workspace the user is looking at fills in first.
+  return [
+    ...repos.filter((repo) => repo.id === activeRepoId),
+    ...repos.filter((repo) => repo.id !== activeRepoId)
+  ]
+}
+
+/**
+ * Batch-list local repos in one IPC. SSH repos keep per-repo calls so an unreachable host can't
+ * hold up local results; runtime-owned repos list over RPC.
+ */
+function startLocalDetectedWorktreeBatch(
+  settings: AppState['settings'],
+  repos: readonly SliceRepo[]
+): (repo: SliceRepo) => Promise<DetectedWorktreeListResult> | undefined {
+  const eligible = repos.filter(
+    (repo) =>
+      !repo.connectionId &&
+      getActiveRuntimeTarget(settingsForKnownRepoOwner(settings, repo)).kind === 'local'
+  )
+  const batch = startDetectedWorktreeBatch(eligible.map((repo) => repo.id))
+  if (!batch) {
+    return () => undefined
+  }
+  // Why: repo ids can repeat across hosts; only the exact eligible owner takes the batch result.
+  const eligibleRepos = new Set(eligible)
+  return (repo) => (eligibleRepos.has(repo) ? batch.get(repo.id) : undefined)
 }
 
 function countTerminalLayoutLeaves(node: TerminalPaneLayoutNode | null | undefined): number {
@@ -2361,6 +2401,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
   },
 
   fetchWorktrees: async (repoId, options) => {
+    const commit = options?.bulk?.commit ?? ((reducer: WorktreeStateReducer) => set(reducer))
     try {
       const ownerState = get()
       const requestStartedWorktrees = ownerState.worktreesByRepo[repoId]
@@ -2382,10 +2423,13 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
         useLocalOwner && ownerSettings?.activeRuntimeEnvironmentId
           ? { ...ownerSettings, activeRuntimeEnvironmentId: null }
           : ownerSettings
-      const detected = await listDetectedWorktreesForRepoCoalesced(settings, repoId, {
-        executionHostId: hostId,
-        requireAuthoritative: options?.requireAuthoritative
-      })
+      const bulkDetected =
+        getActiveRuntimeTarget(settings).kind === 'local' ? options?.bulk?.detected : undefined
+      const detected = await (bulkDetected ??
+        listDetectedWorktreesForRepoCoalesced(settings, repoId, {
+          executionHostId: hostId,
+          requireAuthoritative: options?.requireAuthoritative
+        }))
       if (options?.requireAuthoritative && !detected.authoritative) {
         return false
       }
@@ -2409,7 +2453,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
         worktreeMatchesHost(worktree, hostId, currentMatchOptions)
       )
       if (areWorktreesEqual(currentForHost, worktrees)) {
-        set((s) => {
+        commit((s) => {
           if (!repoHasExecutionHost(s, repoId, hostId, ownerWasMissingAtStart)) {
             return s
           }
@@ -2460,7 +2504,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
 
       // Why: a transient `git worktree list` failure returns []; replacing a known-good list with [] orphans tabsByWorktree state, so keep stale-but-correct data until the next successful refresh.
       if (!detected.authoritative && worktrees.length === 0 && currentForHost.length > 0) {
-        set((s) => {
+        commit((s) => {
           if (!repoHasExecutionHost(s, repoId, hostId, ownerWasMissingAtStart)) {
             return s
           }
@@ -2480,7 +2524,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
         return false
       }
 
-      set((s) => {
+      commit((s) => {
         if (!repoHasExecutionHost(s, repoId, hostId, ownerWasMissingAtStart)) {
           return s
         }
@@ -2520,8 +2564,28 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
     }
   },
 
+  fetchWorktreesForRepos: async (repos) => {
+    const startState = get()
+    const ordered = orderReposActiveFirst(repos, startState.activeRepoId)
+    const batchedDetected = startLocalDetectedWorktreeBatch(startState.settings, ordered)
+    const committer = createWorktreeCommitBatcher(set)
+    try {
+      await mapReposForWorktreeRefresh(ordered, (repo) =>
+        get().fetchWorktrees(repo.id, {
+          executionHostId: getRepoExecutionHostId(repo),
+          bulk: { commit: committer.commit, detected: batchedDetected(repo) }
+        })
+      )
+    } finally {
+      committer.flush()
+    }
+  },
+
   fetchAllWorktrees: async (options) => {
-    const { repos } = get()
+    const startState = get()
+    const repos = orderReposActiveFirst(startState.repos, startState.activeRepoId)
+    const batchedDetected = startLocalDetectedWorktreeBatch(startState.settings, repos)
+    const committer = createWorktreeCommitBatcher(set)
 
     // Why: after the one-shot hydration purge, later calls only refresh cached lists — no IPC double-probe for the per-repo success signal.
     if (get().hasHydratedWorktreePurge) {
@@ -2532,10 +2596,11 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
           const hostId = getRepoExecutionHostId(r)
           const setup = getProjectHostSetupForRepoHost(requestStartedState, r.id, hostId)
           const settings = settingsForKnownRepoOwner(requestStartedState.settings, r)
-          const detected = await listDetectedWorktreesForRepoCoalesced(settings, r.id, {
-            executionHostId: hostId,
-            reuseRecentCompatibilityFailure: true
-          })
+          const detected = await (batchedDetected(r) ??
+            listDetectedWorktreesForRepoCoalesced(settings, r.id, {
+              executionHostId: hostId,
+              reuseRecentCompatibilityFailure: true
+            }))
           let incoming = toVisibleWorktrees(detected, hostId, setup)
           const latestState = get()
           if (repoHasExecutionHost(latestState, r.id, hostId, false)) {
@@ -2553,7 +2618,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
             incoming,
             get().worktreesByRepo[r.id]
           )
-          set((s) => {
+          committer.commit((s) => {
             if (!repoHasExecutionHost(s, r.id, hostId, false)) {
               return s
             }
@@ -2598,6 +2663,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
           console.error(`Failed to fetch worktrees for repo ${r.id}:`, err)
         }
       })
+      committer.flush()
       return
     }
 
@@ -2616,11 +2682,12 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
           const requestStartedWorktrees = requestStartedState.worktreesByRepo[r.id]
           const hostId = getRepoExecutionHostId(r)
           const setup = getProjectHostSetupForRepoHost(requestStartedState, r.id, hostId)
-          const detected = await listDetectedWorktreesForRepoCoalesced(
-            settingsForKnownRepoOwner(requestStartedState.settings, r),
-            r.id,
-            { executionHostId: hostId, reuseRecentCompatibilityFailure: true }
-          )
+          const detected = await (batchedDetected(r) ??
+            listDetectedWorktreesForRepoCoalesced(
+              settingsForKnownRepoOwner(requestStartedState.settings, r),
+              r.id,
+              { executionHostId: hostId, reuseRecentCompatibilityFailure: true }
+            ))
           let incoming = toVisibleWorktrees(detected, hostId, setup)
           const latestState = get()
           if (repoHasExecutionHost(latestState, r.id, hostId, false)) {
@@ -2644,7 +2711,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
             !areWorktreesEqual(currentForHost, list) &&
             !(list.length === 0 && currentForHost.length > 0 && !detected.authoritative)
           ) {
-            set((s) => {
+            committer.commit((s) => {
               if (!repoHasExecutionHost(s, r.id, hostId, false)) {
                 return s
               }
@@ -2668,7 +2735,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
               }
             })
           } else {
-            set((s) => {
+            committer.commit((s) => {
               if (!repoHasExecutionHost(s, r.id, hostId, false)) {
                 return s
               }
@@ -2693,6 +2760,7 @@ export const createWorktreeSlice: StateCreator<AppState, [], [], WorktreeSlice> 
         }
       }
     )
+    committer.flush()
 
     const hasAnyDetectedWorktree = results.some(
       (result) => 'detected' in result && result.ok && result.detected.worktrees.length > 0

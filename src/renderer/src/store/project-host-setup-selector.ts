@@ -19,6 +19,11 @@ const normalizedProjectHostSetupProjectionCache = new WeakMap<
   AppState['repos'],
   WeakMap<Project[], WeakMap<ProjectHostSetup[], ProjectHostSetupProjection>>
 >()
+// Why: the selector runs on every store write; hit this before the O(repos) normalization.
+const stateProjectionCache = new WeakMap<
+  AppState['repos'],
+  WeakMap<Project[], WeakMap<ProjectHostSetup[], ProjectHostSetupProjection>>
+>()
 
 function getCachedProjectHostSetupProjection(repos: AppState['repos']): ProjectHostSetupProjection {
   const cachedProjection = projectHostSetupProjectionCache.get(repos)
@@ -136,47 +141,64 @@ export function getProjectHostSetupProjectionFromState(
   state: Pick<AppState, 'repos'> & Partial<Pick<AppState, 'projects' | 'projectHostSetups'>>
 ): ProjectHostSetupProjection {
   if (state.projects && state.projectHostSetups) {
-    const repoIds = new Set(state.repos.map((repo) => repo.id))
-    const coveredRepoIds = new Set<string>()
-    for (const setup of state.projectHostSetups) {
-      const repoId = typeof setup.repoId === 'string' ? setup.repoId : ''
-      if (repoIds.has(repoId)) {
-        coveredRepoIds.add(repoId)
-      }
-      if (repoIds.has(setup.id)) {
-        coveredRepoIds.add(setup.id)
-      }
+    const projects = state.projects as Project[]
+    const setups = state.projectHostSetups as ProjectHostSetup[]
+    const cachedByProjects = stateProjectionCache.get(state.repos)
+    const cachedBySetups = cachedByProjects?.get(projects)
+    const cachedProjection = cachedBySetups?.get(setups)
+    if (cachedProjection) {
+      return cachedProjection
     }
-    if (state.repos.length > 0 && coveredRepoIds.size < repoIds.size) {
-      return mergeProjectHostSetupProjection(
-        state.repos,
-        state.projects as Project[],
-        state.projectHostSetups as ProjectHostSetup[]
-      )
+    const projection = computeProjectHostSetupProjection(state.repos, projects, setups)
+    const nextCachedByProjects =
+      cachedByProjects ??
+      new WeakMap<Project[], WeakMap<ProjectHostSetup[], ProjectHostSetupProjection>>()
+    const nextCachedBySetups =
+      cachedBySetups ?? new WeakMap<ProjectHostSetup[], ProjectHostSetupProjection>()
+    nextCachedBySetups.set(setups, projection)
+    if (!cachedBySetups) {
+      nextCachedByProjects.set(projects, nextCachedBySetups)
     }
-    const derived = getCachedProjectHostSetupProjection(state.repos)
-    const normalized = normalizeHydratedProjectHostSetupProjection(
-      state.repos,
-      state.projects as Project[],
-      state.projectHostSetups as ProjectHostSetup[],
-      derived
-    )
-    if (normalized.changed) {
-      // Why: this is a zustand selector compared with Object.is, so the merged
-      // result must be reference-stable per (repos, projects, setups) input or
-      // every render returns a fresh object and triggers a re-render storm.
-      return getCachedNormalizedProjectHostSetupProjection(
-        state.repos,
-        state.projects as Project[],
-        state.projectHostSetups as ProjectHostSetup[],
-        derived,
-        normalized
-      )
+    if (!cachedByProjects) {
+      stateProjectionCache.set(state.repos, nextCachedByProjects)
     }
-    return getCachedProvidedProjectHostSetupProjection(
-      state.projects as Project[],
-      state.projectHostSetups as ProjectHostSetup[]
-    )
+    return projection
   }
   return getCachedProjectHostSetupProjection(state.repos)
+}
+
+function computeProjectHostSetupProjection(
+  repos: AppState['repos'],
+  projects: Project[],
+  setups: ProjectHostSetup[]
+): ProjectHostSetupProjection {
+  const repoIds = new Set(repos.map((repo) => repo.id))
+  const coveredRepoIds = new Set<string>()
+  for (const setup of setups) {
+    const repoId = typeof setup.repoId === 'string' ? setup.repoId : ''
+    if (repoIds.has(repoId)) {
+      coveredRepoIds.add(repoId)
+    }
+    if (repoIds.has(setup.id)) {
+      coveredRepoIds.add(setup.id)
+    }
+  }
+  if (repos.length > 0 && coveredRepoIds.size < repoIds.size) {
+    return mergeProjectHostSetupProjection(repos, projects, setups)
+  }
+  const derived = getCachedProjectHostSetupProjection(repos)
+  const normalized = normalizeHydratedProjectHostSetupProjection(repos, projects, setups, derived)
+  if (normalized.changed) {
+    // Why: this is a zustand selector compared with Object.is, so the merged
+    // result must be reference-stable per (repos, projects, setups) input or
+    // every render returns a fresh object and triggers a re-render storm.
+    return getCachedNormalizedProjectHostSetupProjection(
+      repos,
+      projects,
+      setups,
+      derived,
+      normalized
+    )
+  }
+  return getCachedProvidedProjectHostSetupProjection(projects, setups)
 }

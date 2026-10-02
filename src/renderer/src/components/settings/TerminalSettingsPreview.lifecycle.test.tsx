@@ -122,7 +122,7 @@ vi.mock('@/components/terminal-pane/layout-serialization', () => ({
   buildFontFamily: (font: string) => `built:${font}`
 }))
 
-vi.mock('@/components/terminal-pane/terminal-appearance', () => ({
+vi.mock('@/components/terminal-pane/terminal-theme-composition', () => ({
   composeActiveTerminalTheme: () => ({ background: '#111111', foreground: '#eeeeee' })
 }))
 

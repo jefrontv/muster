@@ -40,6 +40,7 @@ import type {
   BaseRefDefaultResult,
   BrowserViewportOverride,
   CustomPet,
+  DetectedWorktreeListResult,
   FsChangedPayload,
   GetRateLimitResult,
   GitHubPRRefreshCandidate,
@@ -690,6 +691,22 @@ const api = {
     list: (args) => ipcRenderer.invoke('worktrees:list', args),
 
     listDetected: (args) => ipcRenderer.invoke('worktrees:listDetected', args),
+
+    listDetectedBatch: (args, onResult) => {
+      const batchId = crypto.randomUUID()
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: { batchId: string; result: DetectedWorktreeListResult }
+      ): void => {
+        if (payload.batchId === batchId) {
+          onResult(payload.result)
+        }
+      }
+      ipcRenderer.on('worktrees:listDetectedBatchResult', listener)
+      return ipcRenderer
+        .invoke('worktrees:listDetectedBatch', { repoIds: args.repoIds, batchId })
+        .finally(() => ipcRenderer.removeListener('worktrees:listDetectedBatchResult', listener))
+    },
 
     listAll: () => ipcRenderer.invoke('worktrees:listAll'),
 

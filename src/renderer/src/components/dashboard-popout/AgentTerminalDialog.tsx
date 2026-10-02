@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { lazy, Suspense, useCallback } from 'react'
 import { SquareArrowOutUpRight, XIcon } from 'lucide-react'
 import { AgentIcon } from '@/lib/agent-catalog'
 import { agentTypeToIconAgent, formatAgentTypeLabel } from '@/lib/agent-status'
@@ -6,8 +6,12 @@ import { agentStateLabel } from '@/components/AgentStateDot'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { DashboardCard } from '../../../../shared/dashboard-snapshot'
-import { AgentTerminalPreview } from './AgentTerminalPreview'
 import { translate } from '@/i18n/i18n'
+
+// Why: the sidebar dashboard imports this dialog statically; keep xterm out of the entry chunk.
+const AgentTerminalPreview = lazy(() =>
+  import('./AgentTerminalPreview').then((m) => ({ default: m.AgentTerminalPreview }))
+)
 
 /** Routing payload for focusing an agent's pane in the main window. */
 export type AgentRevealArgs = {
@@ -94,7 +98,9 @@ export function AgentTerminalDialog({
             </DialogClose>
           </div>
           {card.ptyId ? (
-            <AgentTerminalPreview ptyId={card.ptyId} />
+            <Suspense fallback={null}>
+              <AgentTerminalPreview ptyId={card.ptyId} />
+            </Suspense>
           ) : (
             <div className="px-2.5 pb-2 text-[11px] text-muted-foreground">
               {translate(

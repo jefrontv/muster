@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- keeps all worktree-slice test scenarios in one file for a consistent shared mock store setup. */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { create } from 'zustand'
 import type { AppState } from '../types'
 import type {
@@ -7999,5 +7999,156 @@ describe('pending worktree creation state', () => {
     store.getState().setActiveWorktree(wt.id)
 
     expect(store.getState().activePendingCreationId).toBeNull()
+  })
+})
+
+describe('batched startup worktree refresh', () => {
+  type DetectedBatch = (
+    args: { repoIds: string[] },
+    onResult: (result: DetectedWorktreeListResult) => void
+  ) => Promise<DetectedWorktreeListResult[]>
+  const worktreesApi = mockApi.worktrees as typeof mockApi.worktrees & {
+    listDetectedBatch?: DetectedBatch
+  }
+  const repo = (id: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    path: `/repos/${id}`,
+    displayName: id,
+    badgeColor: '#000',
+    addedAt: 0,
+    ...extra
+  })
+  const detectedFor = (repoId: string) =>
+    makeDetectedResult(repoId, [
+      makeWorktree({ id: `${repoId}::/repos/${repoId}`, repoId, path: `/repos/${repoId}` })
+    ])
+  const nextFrame = () => new Promise((resolve) => setTimeout(resolve, 5))
+
+  function installBatch() {
+    let onResult: (result: DetectedWorktreeListResult) => void = () => {}
+    let finish: (results: DetectedWorktreeListResult[]) => void = () => {}
+    const batch = vi.fn<DetectedBatch>((_args, callback) => {
+      onResult = callback
+      return new Promise<DetectedWorktreeListResult[]>((resolve) => {
+        finish = resolve
+      })
+    })
+    worktreesApi.listDetectedBatch = batch
+    return {
+      batch,
+      emit: (result: DetectedWorktreeListResult) => onResult(result),
+      finish: (results: DetectedWorktreeListResult[]) => finish(results)
+    }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resetRemoteRuntimeMocks()
+  })
+
+  afterEach(() => {
+    delete worktreesApi.listDetectedBatch
+  })
+
+  it('lists local repos in one batch and commits the active repo first, once per frame', async () => {
+    const store = createTestStore()
+    store.setState({
+      repos: [repo('repoA'), repo('repoB'), repo('repoC')],
+      activeRepoId: 'repoC',
+      hasHydratedWorktreePurge: true
+    } as Partial<AppState>)
+    const { batch, emit, finish } = installBatch()
+    const writes = vi.fn()
+    store.subscribe(writes)
+    const startEpoch = store.getState().sortEpoch
+
+    const refresh = store.getState().fetchAllWorktrees()
+    expect(batch).toHaveBeenCalledTimes(1)
+    expect(batch.mock.calls[0][0]).toEqual({ repoIds: ['repoC', 'repoA', 'repoB'] })
+
+    emit(detectedFor('repoC'))
+    await nextFrame()
+    expect(Object.keys(store.getState().worktreesByRepo)).toEqual(['repoC'])
+
+    emit(detectedFor('repoA'))
+    emit(detectedFor('repoB'))
+    finish([detectedFor('repoC'), detectedFor('repoA'), detectedFor('repoB')])
+    await refresh
+
+    expect(Object.keys(store.getState().worktreesByRepo).sort()).toEqual([
+      'repoA',
+      'repoB',
+      'repoC'
+    ])
+    expect(mockApi.worktrees.listDetected).not.toHaveBeenCalled()
+    // One write for the active repo's frame, one for the rest; sortEpoch bumps once per write.
+    expect(writes).toHaveBeenCalledTimes(2)
+    expect(store.getState().sortEpoch).toBe(startEpoch + 2)
+  })
+
+  it('hydrates session repos through one batch and a single store write', async () => {
+    const store = createTestStore()
+    const repos = [repo('repoA'), repo('repoB')]
+    store.setState({ repos } as Partial<AppState>)
+    const { batch } = installBatch()
+    batch.mockImplementationOnce((_args, onResult) => {
+      const results = [detectedFor('repoA'), detectedFor('repoB')]
+      results.forEach((result) => onResult(result))
+      return Promise.resolve(results)
+    })
+    const writes = vi.fn()
+    store.subscribe(writes)
+
+    await store.getState().fetchWorktreesForRepos(repos)
+
+    expect(mockApi.worktrees.listDetected).not.toHaveBeenCalled()
+    expect(store.getState().worktreesByRepo.repoA).toHaveLength(1)
+    expect(store.getState().worktreesByRepo.repoB).toHaveLength(1)
+    expect(writes).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an unreachable SSH repo on its own call so local repos still commit', async () => {
+    const store = createTestStore()
+    store.setState({
+      repos: [repo('repoA'), repo('repoS', { connectionId: 'conn-1' })],
+      hasHydratedWorktreePurge: true
+    } as Partial<AppState>)
+    const { batch, emit, finish } = installBatch()
+    let resolveSsh: (result: DetectedWorktreeListResult) => void = () => {}
+    mockApi.worktrees.listDetected.mockImplementationOnce(
+      () =>
+        new Promise<DetectedWorktreeListResult>((resolve) => {
+          resolveSsh = resolve
+        })
+    )
+
+    const refresh = store.getState().fetchAllWorktrees()
+    expect(batch.mock.calls[0][0]).toEqual({ repoIds: ['repoA'] })
+    emit(detectedFor('repoA'))
+    finish([detectedFor('repoA')])
+    await nextFrame()
+
+    expect(store.getState().worktreesByRepo.repoA).toHaveLength(1)
+    expect(mockApi.worktrees.listDetected).toHaveBeenCalledWith({ repoId: 'repoS' })
+
+    resolveSsh({
+      repoId: 'repoS',
+      authoritative: false,
+      source: 'metadata-fallback',
+      worktrees: []
+    })
+    await refresh
+    expect(store.getState().worktreesByRepo.repoA).toHaveLength(1)
+  })
+
+  it('falls back to per-repo listing when the preload has no batch API', async () => {
+    const store = createTestStore()
+    store.setState({ repos: [repo('repoA')], hasHydratedWorktreePurge: true } as Partial<AppState>)
+    mockApi.worktrees.listDetected.mockResolvedValueOnce(detectedFor('repoA'))
+
+    await store.getState().fetchAllWorktrees()
+
+    expect(mockApi.worktrees.listDetected).toHaveBeenCalledWith({ repoId: 'repoA' })
+    expect(store.getState().worktreesByRepo.repoA).toHaveLength(1)
   })
 })

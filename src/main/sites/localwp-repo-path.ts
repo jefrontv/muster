@@ -166,14 +166,15 @@ export function migrateLocalWpRepoPathIfNeeded(store: Store, repo: Repo): Repo {
     return repo
   }
 
+  // Why: only the LocalWP remap matters here; resolving a git root costs 3 sync git spawns per repo.
+  if (!resolveLocalWpImportProjectPath(repo.path, existsSync).remappedToWordPressRoot) {
+    rememberMigrationCheck(repo)
+    return repo
+  }
   const resolved = resolveLocalProjectImportPath(
     repo.path,
     repo.kind === 'folder' ? 'folder' : 'git'
   )
-  if (!resolved.remappedToWordPressRoot) {
-    rememberMigrationCheck(repo)
-    return repo
-  }
 
   const pathKey = normalizeRuntimePathForComparison(repo.path)
   const nextPathKey = normalizeRuntimePathForComparison(resolved.path)
