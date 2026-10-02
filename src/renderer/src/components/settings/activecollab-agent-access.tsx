@@ -196,7 +196,7 @@ export function ActiveCollabAgentAccessPanel({
               <summary className="cursor-pointer select-none">
                 {translate('auto.components.settings.activecollab.access.details', 'Details')}
               </summary>
-              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-2 font-mono">
+              <pre className="mt-1 max-h-40 overflow-auto scrollbar-sleek whitespace-pre-wrap rounded-md bg-muted/40 p-2 font-mono">
                 {access.output.trim()}
               </pre>
             </details>

@@ -109,17 +109,15 @@ export function mapPipelineStatus(raw: RawPipeline): SitePipelineRun['status'] {
   if (state !== 'COMPLETED') {
     return 'unknown'
   }
-  switch (raw.state?.result?.name?.trim().toUpperCase()) {
-    case 'SUCCESSFUL':
-      return 'success'
-    case 'FAILED':
-    case 'ERROR':
-      return 'failure'
-    case 'STOPPED':
-      return 'stopped'
-    default:
-      return 'unknown'
-  }
+  const result = raw.state?.result?.name?.trim().toUpperCase() ?? ''
+  return COMPLETED_RESULT_STATUS[result] ?? 'unknown'
+}
+
+const COMPLETED_RESULT_STATUS: Record<string, SitePipelineRun['status']> = {
+  SUCCESSFUL: 'success',
+  FAILED: 'failure',
+  ERROR: 'failure',
+  STOPPED: 'stopped'
 }
 
 function epochMs(value: string | null | undefined): number | null {

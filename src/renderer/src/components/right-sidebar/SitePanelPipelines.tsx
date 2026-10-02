@@ -53,7 +53,7 @@ function statusLabel(status: SitePipelineRun['status']): string {
       return translate('auto.components.right.sidebar.SitePanel.pipelineFailed', 'failed')
     case 'stopped':
       return translate('auto.components.right.sidebar.SitePanel.pipelineStopped', 'stopped')
-    default:
+    case 'unknown':
       return translate('auto.components.right.sidebar.SitePanel.pipelineUnknown', 'unknown')
   }
 }
