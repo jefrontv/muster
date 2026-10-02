@@ -4,6 +4,7 @@ import type { SiteSummary } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { siteLocalStackBadge } from './site-local-stack-labels'
 import { formatSitePathForRow } from './site-path-display'
 
 type SiteRowProps = {
@@ -12,14 +13,6 @@ type SiteRowProps = {
   /** Watched roots, so the row can drop the prefix every sibling repeats. */
   roots: readonly string[]
   onSelect: (siteId: string) => void
-}
-
-// Why only the managed stacks: "Plain" is the absence of a local stack, so badging it adds a chip
-// to most rows while telling the user nothing. MAMP and LocalWP change how the site is run.
-const STACK_LABELS: Partial<Record<SiteSummary['site']['localStack'], string>> = {
-  mamp: 'MAMP',
-  localwp: 'LocalWP',
-  'agent-local': 'Agent Local'
 }
 
 export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): React.JSX.Element {
@@ -47,9 +40,9 @@ export function SiteRow({ summary, selected, roots, onSelect }: SiteRowProps): R
           ) : null}
           {site.displayName}
         </span>
-        {STACK_LABELS[site.localStack] ? (
+        {siteLocalStackBadge(site.localStack) ? (
           <Badge variant="secondary" className="shrink-0">
-            {STACK_LABELS[site.localStack]}
+            {siteLocalStackBadge(site.localStack)}
           </Badge>
         ) : null}
       </div>

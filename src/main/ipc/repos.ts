@@ -41,6 +41,7 @@ import { isTuiAgent } from '../../shared/tui-agent-config'
 import { invalidateAuthorizedRootsCache } from './filesystem-auth'
 import type { ChildProcess } from 'node:child_process'
 import { access, mkdir, readdir, rm } from 'node:fs/promises'
+import { withPathMissing } from './repo-path-missing'
 import { gitExecFileAsync, gitSpawn, nonInteractiveGitEnv } from '../git/runner'
 
 /** A ref probe is a metadata round trip; anything slower than this is a network problem, not an answer. */
@@ -1209,7 +1210,7 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
     enrichRepoGitUsernames(store, {
       onChanged: () => notifyReposChanged(mainWindow)
     })
-    return store.getRepos()
+    return withPathMissing(store.getRepos())
   })
 
   ipcMain.handle('projects:list', () => {

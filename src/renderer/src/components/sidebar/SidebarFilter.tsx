@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { CalendarClock, Check, FolderPlus, GitBranch, ListFilter, Moon, Server } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
@@ -50,7 +51,8 @@ const SidebarFilter = React.memo(function SidebarFilter({
   )
   const filterRepoIds = useAppStore((s) => s.filterRepoIds)
   const setFilterRepoIds = useAppStore((s) => s.setFilterRepoIds)
-  const repos = useAppStore((s) => s.repos)
+  // Projects whose folder was deleted are not offered (`repos:list` flags them).
+  const repos = useAppStore(useShallow((s) => s.repos.filter((repo) => !repo.pathMissing)))
   const addRepo = useAppStore((s) => s.addRepo)
 
   const [open, setOpen] = useState(false)

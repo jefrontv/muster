@@ -19,6 +19,9 @@ export type FeatureWallSetupProgressInput = {
   hasSetupScript: boolean
   chatWorkspaceCount?: number
   chatThreadCount?: number
+  siteCount?: number
+  /** True once any agent on this computer has the muster-sites server. */
+  hasSiteTools?: boolean
 }
 
 export type FeatureWallSetupProgress = {
@@ -60,7 +63,9 @@ export function getFeatureWallSetupProgress(
     'task-sources': input.hasConnectedTaskSource,
     'setup-script': input.hasSetupScript,
     'create-first-workspace': (input.chatWorkspaceCount ?? 0) >= 1,
-    'start-first-thread': (input.chatThreadCount ?? 0) >= 1
+    'start-first-thread': (input.chatThreadCount ?? 0) >= 1,
+    'first-site': (input.siteCount ?? 0) >= 1,
+    'site-tools': input.hasSiteTools === true
   }
   const activeSteps = getFeatureWallSetupSteps(mode)
   return {

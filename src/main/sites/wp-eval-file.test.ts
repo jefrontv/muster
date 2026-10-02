@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
 import { SiteRunStepError } from './pipeline-contract'
@@ -10,6 +13,15 @@ import {
 } from './wp-eval-file'
 
 vi.mock('../lib/stream-command', () => ({ streamCommand: vi.fn() }))
+vi.mock('../extensions/binary-probe', () => ({
+  probeBinary: vi.fn(() => ({
+    found: true,
+    path: '/opt/homebrew/bin/ddev',
+    realPath: '/opt/homebrew/bin/ddev',
+    version: null,
+    versionSource: null
+  }))
+}))
 
 const streamCommandMock = vi.mocked(streamCommand)
 
@@ -157,5 +169,50 @@ describe('runRemoteWpEvalFile', () => {
       })
     ).rejects.toThrow(/shell metacharacters/)
     expect(fake.secureFiles).toHaveLength(0)
+  })
+})
+
+function createDdevProject(): string {
+  const root = mkdtempSync(path.join(tmpdir(), 'muster-ddev-'))
+  mkdirSync(path.join(root, '.ddev'))
+  writeFileSync(path.join(root, '.ddev', 'config.yaml'), 'name: acme\ntype: wordpress\n')
+  return root
+}
+
+describe('runLocalWpEvalFile on a DDEV site', () => {
+  it('writes the payload inside the project and passes container paths to `ddev wp`', async () => {
+    const root = createDdevProject()
+    const evalDir = path.join(root, '.ddev', '.muster-eval')
+    let sawFilesDuringRun = false
+    streamCommandMock.mockImplementation(async (_bin, args) => {
+      const [, , , phpPath, jsonPath] = args
+      sawFilesDuringRun =
+        existsSync(path.join(evalDir, path.posix.basename(String(phpPath)))) &&
+        existsSync(path.join(evalDir, path.posix.basename(String(jsonPath))))
+      // The walker writes `<sidecar>.out` beside the sidecar, inside the container.
+      writeFileSync(path.join(evalDir, `${path.posix.basename(String(jsonPath))}.out`), '{"ok":1}')
+      return commandResult()
+    })
+    try {
+      const result = await runLocalWpEvalFile({
+        wpDir: root,
+        php: '<?php echo 1;',
+        sidecar: '{"apply":false}',
+        collectOutputFile: true,
+        localStack: 'ddev'
+      })
+      const [command, args, options] = streamCommandMock.mock.calls[0] ?? []
+      expect(command).toBe('/opt/homebrew/bin/ddev')
+      expect(args?.slice(0, 3)).toEqual(['wp', '--no-color', 'eval-file'])
+      expect(args?.[3]).toMatch(/^\/var\/www\/html\/\.ddev\/\.muster-eval\/muster-eval-.*\.php$/)
+      expect(args?.[4]).toMatch(/^\/var\/www\/html\/\.ddev\/\.muster-eval\/muster-eval-.*\.json$/)
+      expect(options?.cwd).toBe(root)
+      expect(sawFilesDuringRun).toBe(true)
+      expect(result.outputFileContents).toBe('{"ok":1}')
+      expect(result.command).toMatch(/^'?ddev'? '?wp'?/)
+      expect(existsSync(evalDir)).toBe(false)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 })

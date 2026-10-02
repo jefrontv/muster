@@ -23,7 +23,10 @@ export type SiteSetupDoneProps = {
   /** True when an import this run ran replaced the database that LocalWP account lives in. */
   databaseReplaced: boolean
   onClose: () => void
-  onOpenSite: (() => void) | null
+  /** Opens the local address this screen shows. */
+  onOpenSite: ((url: string) => void) | null
+  /** Set for a bare clone: it has no server details, so nothing can pull its database yet. */
+  onAddEnvironment?: (() => void) | null
 }
 
 const VISIBLE_STEP_IDS = SETUP_RUN_STEP_ORDER.filter((id) => id !== 'register')
@@ -64,7 +67,8 @@ export function SiteSetupDone({
   createdLocalWp,
   databaseReplaced,
   onClose,
-  onOpenSite
+  onOpenSite,
+  onAddEnvironment = null
 }: SiteSetupDoneProps): React.JSX.Element {
   const strings = getSiteSetupRunStrings()
   const stepById: Partial<Record<SetupRunStepId, SetupRunStep>> = {}
@@ -143,12 +147,23 @@ export function SiteSetupDone({
         </div>
       ) : null}
 
+      {onAddEnvironment !== null ? (
+        <div className="flex items-center gap-3 rounded-md border border-border px-3 py-2.5">
+          <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+            {strings.addEnvironmentHint}
+          </p>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={onAddEnvironment}>
+            {strings.addEnvironment}
+          </Button>
+        </div>
+      ) : null}
+
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onClose}>
           {strings.close}
         </Button>
-        {onOpenSite !== null ? (
-          <Button variant="default" onClick={onOpenSite}>
+        {onOpenSite !== null && url.length > 0 ? (
+          <Button variant="default" onClick={() => onOpenSite(url)}>
             {strings.openSite.replace('{{domain}}', domain)}
           </Button>
         ) : null}

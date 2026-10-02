@@ -139,6 +139,21 @@ import { initialAgentTabViewModeProps } from '@/lib/native-chat-initial-view-mod
 import { getConnectionIdFromState } from '@/lib/connection-context'
 import { isNativeChatTranscriptLocalReadable } from '@/lib/native-chat-transcript-readability'
 
+/** One site's summary, not the list: the list rebuild spawns git per site. Unknown ids refetch all. */
+async function refreshChangedSite(siteId: string): Promise<void> {
+  const store = useAppStore.getState()
+  if (typeof siteId !== 'string' || !store.sites.some((entry) => entry.site.id === siteId)) {
+    await store.fetchSites()
+    return
+  }
+  const result = await window.api.sites.get(siteId)
+  if (result.ok) {
+    useAppStore.getState().applySiteSummary(result.value)
+  } else {
+    await useAppStore.getState().fetchSites()
+  }
+}
+
 function getShortcutPlatform(): NodeJS.Platform {
   if (navigator.userAgent.includes('Mac')) {
     return 'darwin'
@@ -1311,8 +1326,8 @@ export function useIpcEvents(): void {
     // whole-array write (custom steps, toggles) erases the agent's change.
     if (window.api.sites?.onChanged) {
       unsubs.push(
-        window.api.sites.onChanged(() => {
-          void useAppStore.getState().fetchSites()
+        window.api.sites.onChanged((siteId) => {
+          void refreshChangedSite(siteId)
         })
       )
     }

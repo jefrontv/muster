@@ -81,6 +81,13 @@ export type ExtensionCommandSpec = {
    * a machine where the install went fine, and rerunning the whole install to retry it is absurd.
    */
   setup?: string
+  /** The setup button's label, e.g. "Sign in again". Absent means "Run setup". */
+  setupLabel?: string
+  /**
+   * Programs the commands need, e.g. ["pipx"]. Probed before running, so a missing one gets an
+   * install hint instead of exit code 127. Older builds strip the field and run as before.
+   */
+  requires?: string[]
   /** Executable to probe for installed-state. Defaults to the server binary or the entry id. */
   binary?: string
   /** Argv that prints a version, e.g. ['--version']. Absent means "presence only". */
@@ -196,6 +203,16 @@ const CommandSchema = z
     update: z.string().min(1).max(512).optional(),
     uninstall: z.string().min(1).max(512).optional(),
     setup: z.string().min(1).max(512).optional(),
+    setupLabel: z.string().min(1).max(40).optional(),
+    requires: z
+      .array(
+        z
+          .string()
+          .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/)
+          .max(64)
+      )
+      .max(8)
+      .optional(),
     binary: z.string().min(1).max(128).optional(),
     versionArgs: z.array(z.string().max(64)).max(8).optional()
   })

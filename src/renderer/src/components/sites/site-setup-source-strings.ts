@@ -21,11 +21,11 @@ export const getSiteSetupSourceStrings = createLocalizedCatalog(() => ({
   ),
   destinationRootsHeading: translate(
     'auto.components.sites.SiteSetupSourceScreen.destinationRootsHeading',
-    'Your project folders'
+    'Your site folders'
   ),
   destinationNoRoots: translate(
     'auto.components.sites.SiteSetupSourceScreen.destinationNoRoots',
-    'No project folders are configured yet. Add them in Sites → Folders.'
+    'No site folders are set yet. Add them in Sites → Site folders.'
   ),
   destinationCustom: translate(
     'auto.components.sites.SiteSetupSourceScreen.destinationCustom',
@@ -37,7 +37,7 @@ export const getSiteSetupSourceStrings = createLocalizedCatalog(() => ({
   ),
   chooseFolderFirst: translate(
     'auto.components.sites.SiteSetupSourceScreen.chooseFolderFirst',
-    'Choose a folder first.'
+    'Choose where to clone it, then pick the repository again.'
   ),
   openIntegrationsSettings: translate(
     'auto.components.sites.SiteSetupSourceScreen.openIntegrationsSettings',

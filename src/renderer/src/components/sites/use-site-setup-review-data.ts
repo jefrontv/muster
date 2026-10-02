@@ -12,6 +12,7 @@ import { defaultLocalDomain, repoSlug } from '../../../../shared/site-local-doma
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
 import type { SiteLocalStack } from '../../../../shared/site-types'
 import { readLastLocalStackChoice } from './last-local-stack-choice'
+import { domainForStack } from './site-setup-stack-domain'
 import {
   defaultSetupChoices,
   resolveSetupEnvironment,
@@ -20,6 +21,11 @@ import {
 import type { SiteSetupRequest } from './SiteSetupDialog'
 import type { SiteSetupLinkTarget } from './SiteSetupLinkTargetRows'
 import { useAvailableSiteStacks } from '@/lib/use-available-site-stacks'
+
+export type LinkCloneProblem = {
+  kind: 'no-connector' | 'lookup-failed' | 'not-found'
+  error: string
+}
 
 /** The stack already serving the folder first, then what the user picked last time, then anything installed. */
 function pickDefaultStack(
@@ -40,6 +46,8 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
   const [destinationRoot, setDestinationRoot] = useState('')
   const [linkTarget, setLinkTarget] = useState<SiteSetupLinkTarget | null>(null)
   const [linkCloneUrl, setLinkCloneUrl] = useState('')
+  // Why there is no clone URL, so the hint can name the fix instead of blaming the folder.
+  const [linkCloneProblem, setLinkCloneProblem] = useState<LinkCloneProblem | null>(null)
   const [plan, setPlan] = useState<SiteSetupPlan | null>(null)
   // Re-probed while the review is open: a stack installed mid-review has to appear without the
   // user closing and reopening the dialog.
@@ -79,17 +87,32 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
     const { suggestedCloneUrl, fields } = request.pending
     if (suggestedCloneUrl.length > 0) {
       setLinkCloneUrl(suggestedCloneUrl)
+      setLinkCloneProblem(null)
       return
     }
     if (fields.reponame.length === 0) {
+      setLinkCloneProblem({ kind: 'not-found', error: '' })
       return
     }
     let cancelled = false
     void (async () => {
       const result = await window.api.siteSetup.cloneTargets({ reponame: fields.reponame })
-      if (!cancelled && result.ok) {
-        setLinkCloneUrl(result.value.targets[0]?.cloneUrl ?? '')
+      if (cancelled) {
+        return
       }
+      const url = result.ok ? (result.value.targets[0]?.cloneUrl ?? '') : ''
+      setLinkCloneUrl(url)
+      setLinkCloneProblem(
+        url.length > 0
+          ? null
+          : !result.ok
+            ? { kind: 'lookup-failed', error: result.error }
+            : !result.value.connectorConfigured
+              ? { kind: 'no-connector', error: '' }
+              : result.value.error.length > 0
+                ? { kind: 'lookup-failed', error: result.value.error }
+                : { kind: 'not-found', error: '' }
+      )
     })()
     return () => {
       cancelled = true
@@ -165,6 +188,30 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
     )
   }, [seedKey, availableStacks, plan, planSiteId, repo, request])
 
+  // A stack installed while the review is open (the Serve row's own Install button, or Terminal)
+  // has to become the choice, not wait for the dialog to be reopened.
+  const firstStack = availableStacks?.[0] ?? null
+  useEffect(() => {
+    if (firstStack === null || availableStacks === null) {
+      return
+    }
+    setChoices((current) => {
+      if (!current || current.serve.stack !== null) {
+        return current
+      }
+      const stack = pickDefaultStack(availableStacks, plan?.stack.stack ?? null)
+      return {
+        ...current,
+        serve: {
+          enabled: stack !== null,
+          stack,
+          domain: domainForStack(current.serve.domain, stack)
+        },
+        https: stack !== null
+      }
+    })
+  }, [firstStack, availableStacks, plan])
+
   // Cheap local probe: lets the HTTPS row say "already trusted" and greys it where certs cannot work.
   const certDomain = choices?.serve.domain.trim() ?? ''
   const certStack = choices?.serve.stack ?? null
@@ -185,12 +232,22 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
     }
   }, [certDomain, certStack])
 
+  // Nothing decided the stack for the user, and there is a real choice: ask in the row, not behind
+  // a pencil they have no reason to press.
+  const detectedStack = plan?.stack.stack ?? null
+  const promptStackChoice =
+    (availableStacks?.length ?? 0) > 1 &&
+    !(detectedStack && detectedStack !== 'plain' && availableStacks?.includes(detectedStack)) &&
+    !readLastLocalStackChoice()
+
   return {
+    promptStackChoice,
     destinationRoot,
     setDestinationRoot,
     linkTarget,
     setLinkTarget,
     linkCloneUrl,
+    linkCloneProblem,
     plan,
     availableStacks,
     cert,

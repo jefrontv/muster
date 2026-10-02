@@ -42,13 +42,13 @@ export const stepCopy: Record<StepId, OnboardingStepCopy> = {
     get title() {
       return translate(
         'auto.components.onboarding.OnboardingFlow.siteMcpTitle',
-        'Let agents work on your sites'
+        'Tools for your agents'
       )
     },
     get subtitle() {
       return translate(
         'auto.components.onboarding.OnboardingFlow.siteMcpSubtitle',
-        'Install the muster-sites server into your harnesses so agents can deploy, import, and query databases.'
+        'Let your agents deploy, import and query site databases.'
       )
     }
   },
@@ -104,7 +104,7 @@ export const stepCopy: Record<StepId, OnboardingStepCopy> = {
     get subtitle() {
       return translate(
         'auto.components.onboarding.OnboardingFlow.integrationsSubtitle',
-        'Link GitHub, Bitbucket, and ActiveCollab to:'
+        'Connect the accounts you use. Muster pulls in tasks and pull requests from them.'
       )
     }
   },

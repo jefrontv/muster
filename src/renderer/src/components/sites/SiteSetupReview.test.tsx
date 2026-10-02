@@ -239,7 +239,7 @@ describe('SiteSetupReview', () => {
     expect(latest.import.toggles.wpUploadRewrite).toBe(true)
     expect(latest.import.toggles.wpSearchReplace).toBe(true)
   })
-  it('shows no Import row for a bare clone, which carries no server configuration', async () => {
+  it('says what unlocks import for a bare clone, which carries no server configuration', async () => {
     await render(
       <SiteSetupReview
         source={REPO_SOURCE}
@@ -250,7 +250,44 @@ describe('SiteSetupReview', () => {
         onChange={() => {}}
       />
     )
-    expect(document.body.textContent).not.toContain('Import from production')
+    // The row is shown, unavailable: no environment summary, just what unlocks it.
+    expect(document.body.textContent).not.toContain('From production')
+    expect(document.body.textContent).toContain(
+      'Add the server details after setup to pull the database and files.'
+    )
+  })
+  it('opens the stack choice in the row when several stacks are installed and none was chosen', async () => {
+    await render(
+      <SiteSetupReview
+        source={REPO_SOURCE}
+        plan={null}
+        availableStacks={['agent-local', 'ddev', 'localwp']}
+        cert={null}
+        choices={choices()}
+        onChange={() => {}}
+        promptStackChoice
+      />
+    )
+    expect(document.getElementById('site-setup-serve-editor')).not.toBeNull()
+  })
+  it('offers ways to get a stack when none is installed', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      extensions: { onRunEvent: () => () => {}, runCommand: async () => ({ ok: true }) },
+      shell: { openUrl: async () => {} }
+    }
+    await render(
+      <SiteSetupReview
+        source={REPO_SOURCE}
+        plan={null}
+        availableStacks={[]}
+        cert={null}
+        choices={choices({ serve: { enabled: false, stack: null, domain: 'name.local' } })}
+        onChange={() => {}}
+      />
+    )
+    const labels = [...document.querySelectorAll('button')].map((button) => button.textContent)
+    expect(labels).toContain('Get DDEV')
+    expect(labels).toContain('Get LocalWP')
   })
   it('expands the serve editor in place from the pencil and edits the domain through onChange', async () => {
     const changes: SiteSetupChoices[] = []

@@ -13,6 +13,10 @@ export async function localWpServedScheme(
   config: SiteRunConfig,
   isCertTrusted: (domain: string) => Promise<boolean> = isLocalWpCertTrusted
 ): Promise<'http' | 'https' | undefined> {
+  // DDEV's router always serves HTTPS, from mkcert's root.
+  if (config.site.localStack === 'ddev') {
+    return 'https'
+  }
   if (config.site.localStack !== 'localwp') {
     return undefined
   }

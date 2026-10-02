@@ -1724,6 +1724,7 @@ export const createRepoSlice: StateCreator<AppState, [], [], RepoSlice> = (set, 
         return
       }
       let finalizedHostRepos: Repo[] = []
+      let addedRepos: Repo[] = []
       set((s) => {
         // Why: an in-flight fetch for a just-removed env would re-add purged repos and stick; skip only when the env was tombstoned, not merely unhydrated (#8881).
         if (isRemovedRuntimeHostId(catalog.hostId, s.removedRuntimeEnvironmentIds)) {
@@ -1754,6 +1755,8 @@ export const createRepoSlice: StateCreator<AppState, [], [], RepoSlice> = (set, 
         finalizedHostRepos = prunedRepos.filter(
           (repo) => getRepoExecutionHostId(repo) === result.hostId
         )
+        const previousRepoIds = new Set(s.repos.map((repo) => repo.id))
+        addedRepos = finalizedHostRepos.filter((repo) => !previousRepoIds.has(repo.id))
         return {
           repos: prunedRepos,
           pendingSshRepoReadoptions: reconciliation.pendingReadoptions,
@@ -1769,6 +1772,13 @@ export const createRepoSlice: StateCreator<AppState, [], [], RepoSlice> = (set, 
         }
       })
       scheduleSafeAutoForkSync(get, finalizedHostRepos)
+      // Why: the sidebar's repo-count refetch only runs while it is mounted, so a repo added from
+      // the Sites page (site setup) sat as an unclickable folder row until some later full scan.
+      if (get().startupWorktreeRefreshCompleted) {
+        for (const repo of addedRepos) {
+          void get().fetchWorktrees(repo.id)
+        }
+      }
     } catch (err) {
       localCatalogOutcome = { status: 'rejected', reason: err }
       console.error('Failed to fetch repos:', err)

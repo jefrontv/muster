@@ -13,9 +13,11 @@ import {
   type Site,
   type SiteEnvironment,
   type SiteEnvironmentResolution,
+  type SiteLocalStack,
   type SiteSecretPresence,
   type SiteSummary
 } from '../../../shared/site-types'
+import { resolveSiteWpDir } from '../site-run-config'
 import type { SiteRunPlan } from '../site-run-plan'
 import { canonicalKey, readFieldValues } from './site-mcp-fields'
 
@@ -72,13 +74,34 @@ export function buildEnvironmentSummary(
   }
 }
 
+const LOCAL_PROVIDER_LABEL: Record<SiteLocalStack, string> = {
+  plain: 'none',
+  mamp: 'MAMP',
+  localwp: 'LocalWP',
+  'agent-local': 'Agent Local',
+  ddev: 'DDEV'
+}
+
+/** How this site runs locally, so an agent knows the URL and that DDEV means `ddev wp`. */
+function localView(site: Site): Record<string, unknown> {
+  const domain = site.localDomain.trim()
+  return {
+    provider: LOCAL_PROVIDER_LABEL[site.localStack] ?? site.localStack,
+    local_stack: site.localStack,
+    url: domain ? `https://${domain}` : '',
+    wp_root: resolveSiteWpDir(site),
+    wp_cli: site.localStack === 'ddev' ? 'ddev wp (inside the web container)' : 'wp'
+  }
+}
+
 function siteHeader(summary: SiteSummary): Record<string, unknown> {
   return {
     site: summary.site.displayName,
     site_id: summary.site.id,
     path: summary.site.path,
     path_exists: summary.pathExists,
-    has_config: Object.keys(summary.site.environments).length > 0
+    has_config: Object.keys(summary.site.environments).length > 0,
+    local: localView(summary.site)
   }
 }
 

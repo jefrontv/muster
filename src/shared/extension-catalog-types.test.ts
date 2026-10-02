@@ -55,6 +55,45 @@ describe('parseExtensionCatalog', () => {
     expect(parsed).toBeNull()
   })
 
+  it('keeps requires and setupLabel on a command spec', () => {
+    const parsed = parseExtensionCatalog(
+      catalog([
+        {
+          ...configWriteEntry,
+          install: {
+            method: 'command',
+            command: {
+              install: 'pipx install acme',
+              setup: 'acme login',
+              setupLabel: 'Sign in again',
+              requires: ['pipx']
+            }
+          }
+        }
+      ])
+    )
+    const install = parsed?.entries[0].install
+    expect(install?.method === 'command' ? install.command : null).toMatchObject({
+      setupLabel: 'Sign in again',
+      requires: ['pipx']
+    })
+  })
+
+  it('rejects a requires entry that is not a program name', () => {
+    const parsed = parseExtensionCatalog(
+      catalog([
+        {
+          ...configWriteEntry,
+          install: {
+            method: 'command',
+            command: { install: 'acme', requires: ['pipx; rm -rf /'] }
+          }
+        }
+      ])
+    )
+    expect(parsed).toBeNull()
+  })
+
   it('accepts an https version.json source and rejects a plain-http one', () => {
     const at = (url: string): unknown =>
       parseExtensionCatalog(

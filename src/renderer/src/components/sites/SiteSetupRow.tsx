@@ -4,6 +4,7 @@
 //
 // A pure layout component: it has no opinion on what state means, only how to draw it.
 // 'unavailable' greys the row and swaps the summary for `reason`; 'locked' greys only the control.
+// An unavailable row may still carry `fixes`: the actions that make it available, never greyed.
 
 import type React from 'react'
 import { Children } from 'react'
@@ -20,6 +21,8 @@ export type SiteSetupRowProps = {
   reason?: string
   /** Below the summary, aligned to the text column: inline toggles, log disclosure, radio list. */
   children?: React.ReactNode
+  /** Shown under an unavailable row's reason, at full opacity: what makes the row available. */
+  fixes?: React.ReactNode
 }
 
 export function SiteSetupRowList({
@@ -43,27 +46,40 @@ export function SiteSetupRow({
   control,
   state = 'available',
   reason,
-  children
+  children,
+  fixes
 }: SiteSetupRowProps): React.JSX.Element {
   const unavailable = state === 'unavailable'
   const body = unavailable ? reason : summary
   return (
-    <div
-      className={cn(
-        'grid grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5',
-        unavailable && 'opacity-60'
-      )}
-    >
-      <span className="flex size-4 items-center justify-center text-muted-foreground">{icon}</span>
-      <div className="min-w-0">
+    <div className="grid grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
+      <span
+        className={cn(
+          'flex size-4 items-center justify-center text-muted-foreground',
+          unavailable && 'opacity-60'
+        )}
+      >
+        {icon}
+      </span>
+      <div className={cn('min-w-0', unavailable && 'opacity-60')}>
         <p className="text-sm font-medium leading-5">{title}</p>
-        {body ? <p className="truncate text-xs leading-4 text-muted-foreground">{body}</p> : null}
+        {/* A reason is why the row is off; cut short it explains nothing, so it wraps. */}
+        {body ? (
+          <p
+            className={cn(
+              'text-xs leading-4 text-muted-foreground',
+              unavailable ? 'break-words' : 'truncate'
+            )}
+          >
+            {body}
+          </p>
+        ) : null}
       </div>
       {/* Reserve the column even when empty so summaries line up across rows. */}
       <div
         className={cn(
           'flex min-h-7 items-center justify-end gap-1',
-          state === 'locked' && 'opacity-60'
+          (state === 'locked' || unavailable) && 'opacity-60'
         )}
       >
         {control}
@@ -71,6 +87,9 @@ export function SiteSetupRow({
       {/* Callers pass conditional children; an all-null slot must not leave its padding behind. */}
       {!unavailable && Children.toArray(children).length > 0 ? (
         <div className="col-start-2 col-span-2 space-y-2 pt-2">{children}</div>
+      ) : null}
+      {unavailable && fixes ? (
+        <div className="col-start-2 col-span-2 flex flex-wrap gap-2 pt-2">{fixes}</div>
       ) : null}
     </div>
   )

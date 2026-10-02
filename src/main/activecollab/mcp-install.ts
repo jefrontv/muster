@@ -1,29 +1,23 @@
-// Detects the ActiveCollab MCP server, reports which agents are wired to it, writes the ones the
-// user asked for, and seeds the server's own credential file from the token Muster already holds.
+// Detects the ActiveCollab MCP server and seeds its own credential file from the token Muster
+// already holds. Agent configs are the Extension Hub's to write (extensions/mcp-entry-adapters.ts).
 //
 // Seeding is the point of the whole feature: without it the human authenticates in Muster and then
 // authenticates the agent's MCP separately, and the two can drift onto different instances or
 // accounts. With it, the agent inherits exactly the connection the human is looking at.
 //
-// This module never installs anything. `install.sh` and pipx are the user's to run — we detect,
-// report the exact command, and refuse to spawn a package manager behind their back.
+// This module never installs anything; the hub's install command runs pipx when the user asks.
 
 import { join } from 'node:path'
 import {
-  ACTIVECOLLAB_MCP_AGENTS,
   ACTIVECOLLAB_MCP_BINARY_NAME,
   createDefaultActiveCollabMcpEnv,
-  findActiveCollabMcpAgent,
   type ActiveCollabMcpEnv
-} from './mcp-agents'
+} from './mcp-env'
 import { getActiveCollabCredential } from './credential-store'
 import { isPlainJsonObject } from '../sites/mcp/site-mcp-jsonrpc'
 import {
   ACTIVECOLLAB_MCP_INSTALL_COMMAND,
-  type ActiveCollabMcpAgentId,
-  type ActiveCollabMcpAgentWriteResult,
   type ActiveCollabMcpBinary,
-  type ActiveCollabMcpInstallResult,
   type ActiveCollabMcpSeedResult,
   type ActiveCollabMcpStatus
 } from '../../shared/activecollab-mcp-types'
@@ -107,43 +101,9 @@ export function getActiveCollabMcpStatus(
   const credentialsPath = activeCollabMcpCredentialsPath(env)
   return {
     binary,
-    agents: ACTIVECOLLAB_MCP_AGENTS.map((agent) => ({
-      id: agent.id,
-      label: agent.label,
-      configPath: agent.configPath(env),
-      requiresRunningServer: agent.requiresRunningServer,
-      ...agent.detect(env, binary.path)
-    })),
     credentialsPath,
     credentialsSeeded: env.fs.exists(credentialsPath)
   }
-}
-
-/**
- * Writes config for each requested agent independently: one agent's unparseable config or missing
- * binary must not silently cancel the others, so failures are reported per agent instead of thrown.
- */
-export function installActiveCollabMcpForAgents(
-  agentIds: readonly ActiveCollabMcpAgentId[],
-  env: ActiveCollabMcpEnv = createDefaultActiveCollabMcpEnv()
-): ActiveCollabMcpInstallResult {
-  const binaryPath = detectActiveCollabMcp(env).path
-  const results: ActiveCollabMcpAgentWriteResult[] = agentIds.map((id) => {
-    const agent = findActiveCollabMcpAgent(id)
-    const configPath = agent.configPath(env)
-    try {
-      agent.install(env, binaryPath)
-      return { id, configPath, ok: true }
-    } catch (error) {
-      return {
-        id,
-        configPath,
-        ok: false,
-        error: error instanceof Error ? error.message : String(error)
-      }
-    }
-  })
-  return { results, status: getActiveCollabMcpStatus(env) }
 }
 
 /**
@@ -204,24 +164,18 @@ export function resyncActiveCollabMcpCredentials(
 
 export type ActiveCollabMcpShareResult = {
   credentials: ActiveCollabMcpSeedResult
-  /** Null when the binary is missing — we refuse to write a Claude entry that cannot spawn. */
-  claude: ActiveCollabMcpAgentWriteResult | null
+  /** True when Claude Code should be registered: a credential was minted and the binary exists. */
+  registerClaude: boolean
 }
 
 /**
- * What connect does: mint (or rewrite) the MCP credential from this login, then wire Claude Code
- * when `activecollab-mcp` is already on the machine.
- *
- * Claude is the only agent written unprompted. Codex and Cursor stay on the Settings card. A
- * missing binary is a skip, not an error. This still does not run pipx.
+ * What connect does: mint (or rewrite) the MCP credential from this login, and say whether Claude
+ * Code should be registered now. Claude is the only agent registered unprompted; the caller does
+ * it through the hub so the entry matches what Settings shows. This still does not run pipx.
  */
 export function shareActiveCollabLoginWithMcp(
   env: ActiveCollabMcpEnv = createDefaultActiveCollabMcpEnv()
 ): ActiveCollabMcpShareResult {
   const credentials = seedActiveCollabMcpCredentials(env)
-  if (!credentials.seeded || !detectActiveCollabMcp(env).found) {
-    return { credentials, claude: null }
-  }
-  const installed = installActiveCollabMcpForAgents(['claude-code'], env)
-  return { credentials, claude: installed.results[0] ?? null }
+  return { credentials, registerClaude: credentials.seeded && detectActiveCollabMcp(env).found }
 }

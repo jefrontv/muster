@@ -20,6 +20,11 @@ import {
   resolveExtensionCommand
 } from '../../shared/extension-command-resolution'
 import type { ExtensionCommandRunEvent } from '../../shared/extension-run-types'
+import {
+  commandProgram,
+  describeMissingTool,
+  type ExtensionMissingTool
+} from '../../shared/extension-required-tools'
 import type { ExtensionEntry } from '../../shared/extension-catalog-types'
 import type { HarnessRegistrationMode } from './harness-auto-registration'
 import { stripAnsiEscapes } from '../../shared/strip-ansi-escapes'
@@ -80,6 +85,22 @@ export async function runExtensionCommandForEntry(
     throw new Error('There is no command to run for this extension.')
   }
 
+  // Checked before running so a missing pipx reads as "install pipx", not "exited with code 127".
+  const missingBefore = mode === 'uninstall' ? null : findMissingTool(spec?.requires ?? [])
+  if (missingBefore) {
+    broadcast({ kind: 'started', id, command })
+    broadcast({
+      kind: 'finished',
+      id,
+      code: 127,
+      timedOut: false,
+      installed: false,
+      registeredHarnesses: [],
+      missingTool: describeMissingTool(item.entry.name, missingBefore, process.platform)
+    })
+    return { command, code: 127 }
+  }
+
   const controller = new AbortController()
   activeRun = { id, controller }
   broadcast({ kind: 'started', id, command })
@@ -118,6 +139,12 @@ export async function runExtensionCommandForEntry(
     // Why setup registers nothing: it configures software that is already installed and already
     // wired, so re-running the write would only churn files the user may have edited since.
     const shouldRegister = mode === 'install' && installed && result.code === 0
+    // 127 is the shell's "command not found": name the program rather than the exit code.
+    const missingAfter =
+      result.code === 127 ? findMissingTool(commandProgramList(command, spec?.requires)) : null
+    const missingTool: ExtensionMissingTool | undefined = missingAfter
+      ? describeMissingTool(item.entry.name, missingAfter, process.platform)
+      : undefined
     broadcast({
       kind: 'finished',
       id,
@@ -130,12 +157,22 @@ export async function runExtensionCommandForEntry(
             item.entry,
             resolved?.kind === 'update' ? 'refresh-existing' : 'register-all'
           )
-        : []
+        : [],
+      ...(missingTool ? { missingTool } : {})
     })
     return { command, code: result.code }
   } finally {
     activeRun = null
   }
+}
+
+function findMissingTool(tools: readonly string[]): string | null {
+  return tools.find((tool) => !probeBinary(tool).found) ?? null
+}
+
+function commandProgramList(command: string, requires: readonly string[] = []): string[] {
+  const program = commandProgram(command)
+  return program && !requires.includes(program) ? [...requires, program] : [...requires]
 }
 
 /**

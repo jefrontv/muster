@@ -18,6 +18,7 @@ import { DiscoveredSiteRow } from './DiscoveredSiteRow'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteDetailPanel } from './SiteDetailPanel'
 import { SiteRootsDialog } from './SiteRootsDialog'
+import { SitesEmptyState } from './SitesEmptyState'
 import { SiteRow } from './SiteRow'
 import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
 import type { DiscoveredSiteCandidate } from '../../../../shared/site-discovery-types'
@@ -315,18 +316,22 @@ export default function SitesPage(): React.JSX.Element {
               </p>
             ) : null}
             {!sitesLoading && availableSites.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">
-                {offDiskCount > 0
-                  ? translate(
-                      'auto.components.sites.SitesPage.allMissing',
-                      'All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.',
-                      { count: offDiskCount }
-                    )
-                  : translate(
-                      'auto.components.sites.SitesPage.empty',
-                      'No sites yet. Point Folders at the directory your sites live in, or import an existing ocsites configuration.'
-                    )}
-              </p>
+              offDiskCount > 0 ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">
+                  {translate(
+                    'auto.components.sites.SitesPage.allMissing',
+                    'All {{count}} configured sites are missing their folder. Reconnect the drive and refresh.',
+                    { count: offDiskCount }
+                  )}
+                </p>
+              ) : (
+                <SitesEmptyState
+                  importing={importing}
+                  onNewSite={() => setNewSiteDialogOpen(true)}
+                  onChooseFolders={() => setRootsDialogOpen(true)}
+                  onImport={() => void runImport()}
+                />
+              )
             ) : null}
             {visibleSites.map((summary) => (
               <SiteRow

@@ -213,7 +213,8 @@ export function parseSiteBindUrl(url: unknown): SiteBindUrlParse {
     return { ok: false, error: 'The link does not use the muster:// scheme.' }
   }
   if (split.action.length > 0 && split.action !== SITE_BIND_URL_ACTION) {
-    return { ok: false, error: `Unsupported bind action: ${SITE_BIND_URL_ACTION} is expected.` }
+    // A newer Central can send actions this build does not know; the fix is an update.
+    return { ok: false, error: 'This link needs a newer version of Muster. Check for updates.' }
   }
 
   const values = collectQueryValues(split.query)

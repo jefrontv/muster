@@ -9,14 +9,19 @@
 // is being set up does not replace it; both park in the status bar.
 
 import type React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { SiteSetupDialog } from './SiteSetupDialog'
 import { siteBindApi, usePendingSiteBind } from './use-pending-site-bind'
 
-export function SiteSetupHost(): React.JSX.Element | null {
+export function SiteSetupHost({
+  holdLinks = false
+}: {
+  /** True while onboarding covers the app: a link's dialog would open behind it, so it waits. */
+  holdLinks?: boolean
+} = {}): React.JSX.Element | null {
   const newSiteOpen = useAppStore((s) => s.newSiteDialogOpen)
   const setNewSiteOpen = useAppStore((s) => s.setNewSiteDialogOpen)
   const finishRequest = useAppStore((s) => s.finishSiteSetupRequest)
@@ -36,6 +41,21 @@ export function SiteSetupHost(): React.JSX.Element | null {
     })
   }, [])
 
+  // Once per link: the toast is the only sign it arrived until onboarding closes.
+  const announcedRef = useRef('')
+  useEffect(() => {
+    if (!holdLinks || !pending || announcedRef.current === pending.requestId) {
+      return
+    }
+    announcedRef.current = pending.requestId
+    toast.info(
+      translate(
+        'auto.components.sites.SiteSetupHost.linkHeld',
+        'Site link received. It opens when you finish setup.'
+      )
+    )
+  }, [holdLinks, pending])
+
   const onSiteReady = (siteId: string): void => {
     void fetchSites()
     selectSite(siteId)
@@ -50,7 +70,7 @@ export function SiteSetupHost(): React.JSX.Element | null {
           onSiteReady={onSiteReady}
         />
       ) : null}
-      {pending ? (
+      {pending && !holdLinks ? (
         <SiteSetupDialog
           key={pending.requestId}
           request={{ kind: 'link', pending }}

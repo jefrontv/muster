@@ -24,7 +24,9 @@ function makeProgress(): FeatureWallSetupProgress {
       'task-sources': true,
       'setup-script': false,
       'create-first-workspace': false,
-      'start-first-thread': false
+      'start-first-thread': false,
+      'first-site': true,
+      'site-tools': false
     },
     coreDoneCount: 4,
     coreTotal: 8
@@ -58,7 +60,9 @@ describe('useSettingsSetupGuideProgress', () => {
         'two-worktrees': true,
         browser: true,
         'task-sources': true,
-        'setup-script': true
+        'setup-script': true,
+        'first-site': true,
+        'site-tools': true
       },
       coreDoneCount: 8
     })
@@ -76,7 +80,9 @@ describe('useSettingsSetupGuideProgress', () => {
         'two-worktrees': true,
         browser: false,
         'task-sources': true,
-        'setup-script': true
+        'setup-script': true,
+        'first-site': true,
+        'site-tools': true
       },
       coreDoneCount: 6
     })

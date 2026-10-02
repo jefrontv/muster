@@ -295,6 +295,7 @@ export async function detectLocalWpStack(
     domain: siteId ? await readSiteDomain(host, siteId) : '',
     socketPath: liveSocket ?? '',
     socketReady: liveSocket !== null,
-    phpVersion: siteId ? ((await readSitePhpVersion(host, siteId)) ?? '') : ''
+    phpVersion: siteId ? ((await readSitePhpVersion(host, siteId)) ?? '') : '',
+    ...(hasLocalWpLayout ? { docroot: 'app/public' } : {})
   }
 }

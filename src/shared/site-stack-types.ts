@@ -20,6 +20,16 @@ export type LocalWpStackDetection = {
   socketPath: string
   socketReady: boolean
   phpVersion: string
+  /** Where the site answers, e.g. `https://alchemy.ddev.site:8843`, when the stack says. */
+  url?: string
+  /** Docroot relative to the site folder; '' when the folder itself is the docroot. */
+  docroot?: string
+  /** TCP database endpoint for stacks that use one. Never carries a password. */
+  databaseHost?: string
+  databasePort?: number | null
+  databaseName?: string
+  /** One line about the stack itself worth showing beside the site (e.g. Docker is down). */
+  providerNote?: string
 }
 
 export type LocalWpControlState =

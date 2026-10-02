@@ -17,6 +17,15 @@ import {
 import { runWpSearchReplace } from './wp-search-replace'
 
 vi.mock('../lib/stream-command', () => ({ streamCommand: vi.fn() }))
+vi.mock('../extensions/binary-probe', () => ({
+  probeBinary: vi.fn(() => ({
+    found: true,
+    path: '/opt/homebrew/bin/ddev',
+    realPath: '/opt/homebrew/bin/ddev',
+    version: null,
+    versionSource: null
+  }))
+}))
 
 const streamCommandMock = vi.mocked(streamCommand)
 
@@ -539,5 +548,30 @@ describe('runWpSearchReplace', () => {
     await expect(runWpSearchReplace(context, createConfig(), noLocalWpEnvironment)).rejects.toThrow(
       SiteRunStepError
     )
+  })
+})
+
+describe('runWpSearchReplace on a DDEV site', () => {
+  it('runs through `ddev wp` with --path mapped into the container', async () => {
+    mkdirSync(path.join(wpDir, '.ddev'))
+    writeFileSync(path.join(wpDir, '.ddev', 'config.yaml'), 'name: acme\ntype: wordpress\n')
+    const { context } = createTestContext()
+    await runWpSearchReplace(
+      context,
+      createConfig({ localStack: 'ddev', localDomain: 'acme.ddev.site:8843' }),
+      { ...noLocalWpEnvironment, isCertTrusted: async () => true }
+    )
+    const call = streamCommandMock.mock.calls[0]
+    expect(call?.[0]).toBe('/opt/homebrew/bin/ddev')
+    expect(call?.[1]?.[0]).toBe('wp')
+    expect(call?.[1]).toContain('--path=/var/www/html')
+    expect(call?.[2]?.cwd).toBe(wpDir)
+  })
+
+  it('degrades with a log line when the DDEV project is missing', async () => {
+    const { context, logs } = createTestContext()
+    await runWpSearchReplace(context, createConfig({ localStack: 'ddev' }), noLocalWpEnvironment)
+    expect(streamCommandMock).not.toHaveBeenCalled()
+    expect(logs.some((line) => /No DDEV project/.test(line))).toBe(true)
   })
 })

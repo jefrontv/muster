@@ -24,6 +24,8 @@ import {
   SITE_TEMP_ARCHIVE_NAMES
 } from './remote-file-archive'
 import type { MysqlCredentials } from './wp-config-reader'
+import { syncDdevFiles } from './ddev-file-sync'
+import { prepareWpConfigForDdev, syncWpConfigTablePrefix } from './ddev-wp-config'
 import type { AgentLocalRoutes } from './agent-local-import-steps'
 import { createDefaultSiteImportDependencies } from './pipeline-import-defaults'
 
@@ -101,6 +103,9 @@ export type SiteImportDependencies = {
   verifySiteViaAgentLocal: (context: SiteRunContext, slug: string) => Promise<void>
   /** Overridden only by tests. */
   runCustomSteps?: typeof runCustomSteps
+  /** Overridden only by tests. */
+  syncDdevFiles?: typeof syncDdevFiles
+  prepareWpConfigForDdev?: typeof prepareWpConfigForDdev
 }
 
 export async function runImportPipeline(
@@ -156,6 +161,23 @@ export async function runImportPipeline(
       if (exportFiles) {
         context.throwIfCancelled()
         await importFiles(context, active, session, layout, deps)
+        // Mutagen copies host writes into the container on its own schedule; WP-CLI must see them.
+        if (active.site.localStack === 'ddev') {
+          // base.zip carries the server's wp-config.php, whose DB_HOST the container cannot reach.
+          const prepared = await (deps.prepareWpConfigForDdev ?? prepareWpConfigForDdev)(
+            active.wpDir,
+            active.site.path
+          )
+          if (prepared.action === 'patched') {
+            context.log('wp-config.php from the server now loads DDEV’s database settings.')
+          } else if (prepared.action === 'tracked') {
+            context.log(prepared.message)
+          }
+          const synced = await (deps.syncDdevFiles ?? syncDdevFiles)(active.site.path)
+          if (synced.message) {
+            context.log(synced.message)
+          }
+        }
       }
       if (exportDatabase) {
         context.throwIfCancelled()
@@ -267,6 +289,13 @@ async function importDatabase(
 
   context.throwIfCancelled()
   await deps.importLocalDatabase(context, config, dump.localDumpPath, localDbName)
+  // DDEV's generated wp-config.php falls back to `wp_`; WordPress must read the server's tables.
+  if (config.site.localStack === 'ddev' && credentials.prefix) {
+    const prefixed = await syncWpConfigTablePrefix(config.wpDir, credentials.prefix)
+    if (prefixed === 'updated') {
+      context.log(`wp-config.php table prefix set to ${credentials.prefix} to match the server.`)
+    }
+  }
   context.status('Database imported')
 }
 

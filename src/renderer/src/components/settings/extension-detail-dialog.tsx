@@ -99,7 +99,8 @@ export function ExtensionDetailDialog({
   const removable = extensionUninstallCommand(entry) !== null || state.origin !== undefined
   const harnesses = visibleExtensionHarnesses(state.harnesses)
   const settingSpecs = extensionSettingSpecs(entry)
-  const setupCommand = extensionCommandSpec(entry)?.setup ?? null
+  const commandSpec = extensionCommandSpec(entry)
+  const setupCommand = commandSpec?.setup ?? null
 
   const setEnabled = async (next: boolean): Promise<void> => {
     const result = await window.api.extensions.setEnabled({ id: entry.id, enabled: next })
@@ -113,10 +114,10 @@ export function ExtensionDetailDialog({
   const remove = async (): Promise<void> => {
     const isSkill = state.origin !== undefined
     const confirmed = await confirm({
-      title: translate(
-        'auto.components.extensions.remove_title',
-        'Remove {{name}}?'
-      ).replace('{{name}}', entry.name),
+      title: translate('auto.components.extensions.remove_title', 'Remove {{name}}?').replace(
+        '{{name}}',
+        entry.name
+      ),
       description: isSkill
         ? translate(
             'auto.components.extensions.remove_skill_body',
@@ -124,7 +125,7 @@ export function ExtensionDetailDialog({
           )
         : translate(
             'auto.components.extensions.remove_tool_body',
-            'Muster clears its entry from every harness and removes the program from this machine. Installing it again brings it back.'
+            'Muster removes it from every agent and from this computer. Installing it again brings it back.'
           ),
       confirmLabel: translate('auto.components.extensions.remove_confirm', 'Remove'),
       confirmVariant: 'destructive'
@@ -178,7 +179,8 @@ export function ExtensionDetailDialog({
                     <span aria-hidden> → </span>
                     <span
                       className={cn(
-                        state.status === 'outdated' && 'font-medium text-amber-600 dark:text-amber-400'
+                        state.status === 'outdated' &&
+                          'font-medium text-amber-600 dark:text-amber-400'
                       )}
                     >
                       {state.latestVersion}
@@ -278,7 +280,7 @@ export function ExtensionDetailDialog({
             <p className="text-xs text-muted-foreground">
               {translate(
                 'auto.components.extensions.wire_blocked',
-                'Install the program first. An entry pointing at a server that is not there fails to start on every session.'
+                'Install adds it to every agent on this computer.'
               )}
             </p>
           ) : null}
@@ -295,10 +297,7 @@ export function ExtensionDetailDialog({
           {canDisable ? (
             <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
               <span className="text-xs text-muted-foreground">
-                {translate(
-                  'auto.components.extensions.enabled',
-                  'Available to your agents'
-                )}
+                {translate('auto.components.extensions.enabled', 'Available to your agents')}
               </span>
               <SettingsSwitch
                 checked={enabled}
@@ -348,33 +347,34 @@ export function ExtensionDetailDialog({
             <span />
           )}
           <div className="flex gap-2">
-          {setupCommand && state.installed && !running ? (
-            <Button variant="outline" onClick={() => void run.start('setup')}>
-              <Wrench className="size-3.5" />
-              {translate('auto.components.extensions.action_setup', 'Run setup')}
-            </Button>
-          ) : null}
-          <Button variant="outline" onClick={running ? run.cancel : onClose}>
-            {running
-              ? translate('auto.components.extensions.run_cancel', 'Stop')
-              : translate('auto.components.extensions.close', 'Close')}
-          </Button>
-          {action && !unavailable ? (
-            <Button
-              disabled={running}
-              variant={state.status === 'outdated' ? 'default' : 'outline'}
-              onClick={() => void run.start()}
-            >
-              {running ? <LoaderCircle className="animate-spin" /> : null}
+            {setupCommand && state.installed && !running ? (
+              <Button variant="outline" onClick={() => void run.start('setup')}>
+                <Wrench className="size-3.5" />
+                {commandSpec?.setupLabel ??
+                  translate('auto.components.extensions.action_setup', 'Run setup')}
+              </Button>
+            ) : null}
+            <Button variant="outline" onClick={running ? run.cancel : onClose}>
               {running
-                ? translate('auto.components.extensions.run_running', 'Working…')
-                : run.phase === 'failed'
-                  ? translate('auto.components.extensions.run_retry', 'Try again')
-                  : action.kind === 'update'
-                    ? translate('auto.components.extensions.action_update', 'Update')
-                    : translate('auto.components.extensions.action_install', 'Install')}
+                ? translate('auto.components.extensions.run_cancel', 'Stop')
+                : translate('auto.components.extensions.close', 'Close')}
             </Button>
-          ) : null}
+            {action && !unavailable ? (
+              <Button
+                disabled={running}
+                variant={state.status === 'outdated' ? 'default' : 'outline'}
+                onClick={() => void run.start()}
+              >
+                {running ? <LoaderCircle className="animate-spin" /> : null}
+                {running
+                  ? translate('auto.components.extensions.run_running', 'Working…')
+                  : run.phase === 'failed'
+                    ? translate('auto.components.extensions.run_retry', 'Try again')
+                    : action.kind === 'update'
+                      ? translate('auto.components.extensions.action_update', 'Update')
+                      : translate('auto.components.extensions.action_install', 'Install')}
+              </Button>
+            ) : null}
           </div>
         </DialogFooter>
       </DialogContent>

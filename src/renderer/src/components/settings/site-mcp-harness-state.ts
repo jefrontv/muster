@@ -1,5 +1,5 @@
 // The per-harness copy for the muster-sites MCP install card, kept out of the component so the
-// four states are assertable without a DOM. Mirrors activecollab-mcp-agent-state.ts.
+// four states are assertable without a DOM.
 //
 // There is no binary state here: the server is Muster itself, so the only block on installing is
 // the Site tools capability toggle — the caller passes that reason in.
@@ -39,12 +39,12 @@ function harnessStateCopy(kind: SiteMcpHarnessStateKind): HarnessStateCopy {
       return {
         statusLabel: translate(
           'auto.components.settings.siteMcp.harness_missing_status',
-          'Harness not detected'
+          'Agent not detected'
         ),
         tone: 'neutral',
         detail: translate(
           'auto.components.settings.siteMcp.harness_missing_detail',
-          'Muster did not find this harness on this machine. Installing anyway writes the config file shown below, which the harness picks up once it exists.'
+          'Muster did not find this agent on this computer. Installing anyway writes the config file shown below, which the agent picks up once it exists.'
         ),
         actionLabel: translate(
           'auto.components.settings.siteMcp.harness_missing_action',

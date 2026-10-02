@@ -48,7 +48,7 @@ export function DiscoveredSiteRow({
         {candidate.displayName}
       </span>
       <Badge variant="outline" className="ml-auto shrink-0">
-        {translate('auto.components.sites.DiscoveredSiteRow.notConfigured', 'Not configured')}
+        {translate('auto.components.sites.DiscoveredSiteRow.notConfigured', 'Not set up')}
       </Badge>
     </button>
   )

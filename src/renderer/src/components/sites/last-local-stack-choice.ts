@@ -10,7 +10,7 @@ import type { SiteLocalStack } from '../../../../shared/site-types'
 
 const STORAGE_KEY = 'muster.sites.lastLocalStackChoice'
 
-const REMEMBERABLE: SiteLocalStack[] = ['localwp', 'agent-local']
+const REMEMBERABLE: SiteLocalStack[] = ['localwp', 'agent-local', 'ddev']
 
 export function readLastLocalStackChoice(): SiteLocalStack | null {
   try {

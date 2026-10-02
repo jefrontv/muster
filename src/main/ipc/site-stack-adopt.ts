@@ -5,8 +5,10 @@ import path from 'node:path'
 import type { SiteLocalStack } from '../../shared/site-types'
 import type { Store } from '../persistence'
 import { LOCALWP_DATABASE_PASSWORD, LOCALWP_DATABASE_USER } from '../sites/localwp-host'
+import { findDdevProject } from '../sites/ddev-site-control'
 import { setSiteSecret } from '../sites/site-secret-store'
 import { detectSiteStack } from './site-stack-request'
+import { notifySiteChanged } from './site-change-notifier'
 import { requireSite } from './sites-result'
 
 /**
@@ -18,8 +20,12 @@ export async function adoptServingStack(
   siteId: string
 ): Promise<{ stack: SiteLocalStack; domain: string }> {
   const site = requireSite(store, siteId)
-  const detection = await detectSiteStack(site.path)
-  if (detection.stack !== 'localwp' && detection.stack !== 'agent-local') {
+  const detection = await detectSiteStack(site.path, site.localStack)
+  if (
+    detection.stack !== 'localwp' &&
+    detection.stack !== 'agent-local' &&
+    detection.stack !== 'ddev'
+  ) {
     return { stack: site.localStack, domain: site.localDomain }
   }
   const domain = detection.domain.trim() || site.localDomain
@@ -34,10 +40,49 @@ export async function adoptServingStack(
       dbPort: null
     })
     persistLocalWpDatabasePassword(store, site.id)
+  } else if (detection.stack === 'ddev') {
+    const project = await findDdevProject(site.path)
+    store.updateSite(site.id, {
+      localStack: 'ddev',
+      localDomain: domain,
+      dbSocket: '',
+      dbUser: 'db',
+      ...(project ? { localWpRoot: project.docroot } : {})
+    })
   } else {
     store.updateSite(site.id, { localStack: 'agent-local', localDomain: domain, dbSocket: '' })
   }
+  notifySiteChanged(site.id)
   return { stack: detection.stack, domain }
+}
+
+/**
+ * Records a finished Agent Local or DDEV setup. No password is stored: both hand it out live, so a
+ * copy here would go stale the next time the site is re-provisioned or restarted.
+ */
+export function recordTcpStackSetup(
+  store: Store,
+  siteId: string,
+  stack: 'agent-local' | 'ddev',
+  result: {
+    localWpRoot: string
+    domain: string
+    dbUser: string
+    dbPort: number | null
+    phpVersion: string
+  }
+): void {
+  store.updateSite(siteId, {
+    localStack: stack,
+    localWpRoot: result.localWpRoot,
+    localDomain: result.domain,
+    // Empty socket is what selects the TCP branch downstream; never a placeholder path.
+    dbSocket: '',
+    dbUser: result.dbUser,
+    dbPort: result.dbPort,
+    ...(result.phpVersion ? { phpVersion: result.phpVersion } : {})
+  })
+  notifySiteChanged(siteId)
 }
 
 /**

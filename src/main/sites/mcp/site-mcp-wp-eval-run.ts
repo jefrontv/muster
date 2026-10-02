@@ -39,6 +39,7 @@ export async function runEval(
       maxOutputChars,
       ...options,
       args: extraArgs,
+      localStack: site.localStack,
       ...(dbSocket ? { dbSocket } : {})
     })
     return {

@@ -10,6 +10,7 @@ import {
   type ExtensionCommandRunEvent,
   type ExtensionRunPhase
 } from '../../../shared/extension-run-types'
+import type { ExtensionMissingTool } from '../../../shared/extension-required-tools'
 import { refreshExtensionInventory } from './useExtensionInventory'
 
 /** Trimmed from the front: a long install prints far more than anyone reads, and the tail is why. */
@@ -20,6 +21,8 @@ export type ExtensionRun = {
   command: string | null
   output: string
   error: string | null
+  /** Set when the run stopped because a program it needs is missing. */
+  missingTool: ExtensionMissingTool | null
   /** Agents the install just wired the server into. Empty when there was nothing to wire. */
   registered: string[]
   /** What the current or last run was, so the progress line can name it. */
@@ -34,6 +37,7 @@ export function useExtensionRun(id: string): ExtensionRun {
   const [command, setCommand] = useState<string | null>(null)
   const [output, setOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [missingTool, setMissingTool] = useState<ExtensionMissingTool | null>(null)
   const [registered, setRegistered] = useState<string[]>([])
   const idRef = useRef(id)
   idRef.current = id
@@ -49,11 +53,18 @@ export function useExtensionRun(id: string): ExtensionRun {
         setCommand(event.command)
         setOutput('')
         setRegistered([])
+        setMissingTool(null)
         setPhase('running')
         return
       }
       if (event.kind === 'output') {
         setOutput((previous) => (previous + event.chunk).slice(-MAX_OUTPUT_CHARS))
+        return
+      }
+      if (event.missingTool) {
+        setPhase('failed')
+        setMissingTool(event.missingTool)
+        setError(event.missingTool.message)
         return
       }
       // Why the mode is read from a ref: a setup pass configures software that is already there, so
@@ -85,6 +96,7 @@ export function useExtensionRun(id: string): ExtensionRun {
 
   const start = useCallback(async (next: 'install' | 'setup' = 'install') => {
     setError(null)
+    setMissingTool(null)
     setOutput('')
     setRegistered([])
     setPhase('running')
@@ -105,8 +117,9 @@ export function useExtensionRun(id: string): ExtensionRun {
     setPhase('idle')
     setOutput('')
     setError(null)
+    setMissingTool(null)
     setRegistered([])
   }, [])
 
-  return { phase, command, output, error, registered, mode, start, cancel, reset }
+  return { phase, command, output, error, missingTool, registered, mode, start, cancel, reset }
 }

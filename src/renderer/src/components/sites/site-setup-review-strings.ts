@@ -22,10 +22,25 @@ export const getSiteSetupReviewStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupReview.serveAgentLocal',
     'Serve with Agent Local at {{domain}}'
   ),
+  serveDdev: translate(
+    'auto.components.sites.SiteSetupReview.serveDdev',
+    'Serve with DDEV on {{domain}}'
+  ),
   serveNoStack: translate(
     'auto.components.sites.SiteSetupReview.serveNoStack',
-    'No local stack is installed.'
+    'No local stack is installed. Install one to serve this site.'
   ),
+  installAgentLocal: translate(
+    'auto.components.sites.SiteSetupReview.installAgentLocal',
+    'Install Agent Local'
+  ),
+  installingAgentLocal: translate(
+    'auto.components.sites.SiteSetupReview.installingAgentLocal',
+    'Installing Agent Local…'
+  ),
+  getDdev: translate('auto.components.sites.SiteSetupReview.getDdev', 'Get DDEV'),
+  getLocalWp: translate('auto.components.sites.SiteSetupReview.getLocalWp', 'Get LocalWP'),
+
   serveEditLabel: translate(
     'auto.components.sites.SiteSetupReview.serveEditLabel',
     'Change how this site is served'
@@ -42,6 +57,7 @@ export const getSiteSetupReviewStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupReview.serveStackAgentLocal',
     'Agent Local'
   ),
+  serveStackDdev: translate('auto.components.sites.SiteSetupReview.serveStackDdev', 'DDEV'),
   serveDomainLabel: translate('auto.components.sites.SiteSetupReview.serveDomainLabel', 'Domain'),
   httpsTitle: translate('auto.components.sites.SiteSetupReview.httpsTitle', 'HTTPS'),
   httpsTrust: translate(
@@ -55,6 +71,10 @@ export const getSiteSetupReviewStrings = createLocalizedCatalog(() => ({
   importTitle: translate(
     'auto.components.sites.SiteSetupReview.importTitle',
     'Import from production'
+  ),
+  importAfterClone: translate(
+    'auto.components.sites.SiteSetupReview.importAfterClone',
+    'Add the server details after setup to pull the database and files.'
   ),
   importNoEnvironment: translate(
     'auto.components.sites.SiteSetupReview.importNoEnvironment',

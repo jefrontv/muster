@@ -1,6 +1,10 @@
 import type { Repo, Worktree } from '../../../../shared/types'
 import type { WorktreeGroupBy } from './worktree-list-groups'
 
+function isLocalRepo(repo: Repo): boolean {
+  return !repo.connectionId && (repo.executionHostId ?? 'local') === 'local'
+}
+
 export function getEmptyProjectPlaceholderRepoIds(args: {
   groupBy: WorktreeGroupBy
   repos: readonly Repo[]
@@ -12,6 +16,8 @@ export function getEmptyProjectPlaceholderRepoIds(args: {
    * Showing it as a placeholder painted every project and then removed them one by one.
    */
   hideUnloaded?: boolean
+  /** Local repos keep waiting after the fallback releases remote ones: a local list always arrives. */
+  hideUnloadedLocal?: boolean
   detectedWorktreesByRepo?: Readonly<Record<string, unknown>>
 }): Set<string> {
   if (args.groupBy !== 'repo') {
@@ -22,14 +28,16 @@ export function getEmptyProjectPlaceholderRepoIds(args: {
   const visibleRepoIds = new Set(args.visibleWorktrees.map((worktree) => worktree.repoId))
   const placeholderRepoIds = new Set<string>()
   for (const repo of args.repos) {
-    if (filterSet && !filterSet.has(repo.id)) {
+    // A deleted folder lists no worktrees, which used to paint it as an empty project.
+    if (repo.pathMissing || (filterSet && !filterSet.has(repo.id))) {
       continue
     }
     const loaded =
       args.worktreesByRepo[repo.id] !== undefined ||
       args.detectedWorktreesByRepo?.[repo.id] !== undefined
+    const hideIfUnloaded = args.hideUnloaded || (args.hideUnloadedLocal && isLocalRepo(repo))
     const hasNoWorktrees =
-      (args.worktreesByRepo[repo.id]?.length ?? 0) === 0 && (loaded || !args.hideUnloaded)
+      (args.worktreesByRepo[repo.id]?.length ?? 0) === 0 && (loaded || !hideIfUnloaded)
     // Why: workspace filters hide cards, but must not rewrite the visible
     // membership of a persisted Project Group. #8865
     const isFilteredProjectGroupMember = repo.projectGroupId != null && !visibleRepoIds.has(repo.id)

@@ -10,6 +10,7 @@ import { Check, Copy, LoaderCircle, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import type { ExtensionRun } from '@/hooks/useExtensionRun'
+import { ExtensionMissingToolNotice } from './extension-missing-tool-notice'
 
 function RunOutput({ output }: { output: string }): React.JSX.Element {
   const endRef = useRef<HTMLDivElement>(null)
@@ -59,6 +60,14 @@ export function ExtensionRunPanel({
 }): React.JSX.Element | null {
   if (run.phase === 'idle') {
     return null
+  }
+  if (run.phase === 'failed' && run.missingTool) {
+    return (
+      <ExtensionMissingToolNotice
+        missing={run.missingTool}
+        onCheckAgain={() => void run.start(run.mode)}
+      />
+    )
   }
   const running = run.phase === 'running'
 

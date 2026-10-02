@@ -14,7 +14,7 @@ import { SiteEnvironmentSection } from './SiteEnvironmentSection'
 import { SiteFinishSetupBanner } from './SiteFinishSetupBanner'
 import { SiteStepLibrarySection } from './SiteStepLibrarySection'
 import { SiteSecretField } from './SiteSecretField'
-import { SiteLocalStackControl } from './SiteLocalStackControl'
+import { SiteLocalStackCard } from './SiteLocalStackCard'
 import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
 import { SiteDbSnapshotsSection } from './SiteDbSnapshotsSection'
 import { SiteRunHistory } from './SiteRunHistory'
@@ -104,13 +104,12 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
         ) : null}
       </header>
 
-      <SiteFinishSetupBanner summary={summary} />
+      <SiteFinishSetupBanner summary={summary} onAddEnvironment={() => setAddOpen(true)} />
 
-      <section className="space-y-3" data-contextual-tour-target="sites-detail">
-        <h3 className="text-xs font-medium text-muted-foreground">
-          {translate('auto.components.sites.SiteDetailPanel.localSection', 'Local environment')}
-        </h3>
-        <SiteLocalStackControl summary={summary} />
+      {/* One section: the card draws the heading, stack and live fields; the stored fields follow
+          in the same grid rhythm, so the two read as one form. */}
+      <div className="space-y-3">
+        <SiteLocalStackCard summary={summary} />
         <div className="grid gap-3 sm:grid-cols-2">
           {getLocalFields().map((field) => (
             <Fragment key={field.key}>
@@ -143,7 +142,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
             </Fragment>
           ))}
         </div>
-      </section>
+      </div>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">

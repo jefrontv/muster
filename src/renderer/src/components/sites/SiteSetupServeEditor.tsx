@@ -7,8 +7,21 @@ import type React from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import type { SiteLocalStack } from '../../../../shared/site-types'
+import {
+  DDEV_SITE_SUFFIX,
+  ddevDomainFromName,
+  ddevNameFromValue,
+  normalizeDdevName
+} from './site-setup-domain-rules'
 import { getSiteSetupReviewStrings } from './site-setup-review-strings'
 
 export type SiteSetupServeValue = {
@@ -48,16 +61,23 @@ export function SiteSetupServeEditor({
   stacks,
   value,
   onChange,
-  ruledOut
+  ruledOut,
+  error = ''
 }: {
   stacks: SiteLocalStack[]
   value: SiteSetupServeValue
   onChange: (value: SiteSetupServeValue) => void
   ruledOut: Partial<Record<SiteLocalStack, string>>
+  /** A rule the domain breaks, or the site that already holds it. */
+  error?: string
 }): React.JSX.Element {
   const strings = getSiteSetupReviewStrings()
   const stackLabel = (stack: SiteLocalStack): string =>
-    stack === 'agent-local' ? strings.serveStackAgentLocal : strings.serveStackLocalWp
+    stack === 'agent-local'
+      ? strings.serveStackAgentLocal
+      : stack === 'ddev'
+        ? strings.serveStackDdev
+        : strings.serveStackLocalWp
   const selectedReason = value.stack ? ruledOut[value.stack] : undefined
 
   return (
@@ -65,40 +85,73 @@ export function SiteSetupServeEditor({
       {stacks.length > 1 ? (
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">{strings.serveStackLabel}</Label>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
+          {/* A Select, not a button group: three or four stacks do not fit a row. */}
+          <Select
             value={value.stack ?? undefined}
-            onValueChange={(next) => {
-              if (next) {
-                onChange({ ...value, stack: next as SiteLocalStack })
-              }
-            }}
+            onValueChange={(next) => onChange({ ...value, stack: next as SiteLocalStack })}
           >
-            {stacks.map((stack) => (
-              <ToggleGroupItem
-                key={stack}
-                value={stack}
-                disabled={stack in ruledOut}
-                className="px-2.5 text-xs"
-              >
-                {stackLabel(stack)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+            <SelectTrigger size="sm" className="h-8 w-[160px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {stacks.map((stack) => (
+                <SelectItem
+                  key={stack}
+                  value={stack}
+                  disabled={stack in ruledOut}
+                  className="text-xs"
+                >
+                  {stackLabel(stack)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       ) : null}
       <div className="space-y-1.5">
         <Label htmlFor="site-setup-serve-domain" className="text-xs text-muted-foreground">
           {strings.serveDomainLabel}
         </Label>
-        <Input
-          id="site-setup-serve-domain"
-          className="h-8 font-mono text-xs"
-          value={value.domain}
-          onChange={(event) => onChange({ ...value, domain: event.target.value })}
-        />
+        {value.stack === 'ddev' ? (
+          // DDEV serves <project>.ddev.site: only the project name is the user's to choose.
+          <div
+            className={cn(
+              'flex h-8 items-center rounded-md border border-input bg-transparent font-mono text-xs shadow-xs transition-[color,box-shadow] dark:bg-input/30',
+              'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+              error && 'border-destructive ring-destructive/20 dark:ring-destructive/40'
+            )}
+          >
+            <input
+              id="site-setup-serve-domain"
+              className="h-full min-w-0 flex-1 bg-transparent pl-3 outline-none"
+              value={ddevNameFromValue(value.domain)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'site-setup-serve-domain-error' : undefined}
+              spellCheck={false}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  domain: ddevDomainFromName(normalizeDdevName(event.target.value))
+                })
+              }
+            />
+            <span className="shrink-0 pr-3 text-muted-foreground">{DDEV_SITE_SUFFIX}</span>
+          </div>
+        ) : (
+          <Input
+            id="site-setup-serve-domain"
+            className="h-8 font-mono text-xs"
+            value={value.domain}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? 'site-setup-serve-domain-error' : undefined}
+            onChange={(event) => onChange({ ...value, domain: event.target.value })}
+          />
+        )}
+        {error ? (
+          <p id="site-setup-serve-domain-error" className="text-xs text-destructive">
+            {error}
+          </p>
+        ) : null}
       </div>
       {selectedReason ? (
         <p className="text-xs text-muted-foreground sm:col-span-2">{selectedReason}</p>

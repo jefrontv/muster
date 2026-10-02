@@ -20,6 +20,20 @@ type AgentStepProps = {
   isDetecting: boolean
   yoloPermissions?: boolean
   onYoloPermissionsChange?: (enabled: boolean) => void
+  /** Re-reads which agents are installed, after the user installs one in a terminal. */
+  onCheckAgain?: () => void
+}
+
+function CheckAgainButton({ onClick }: { onClick: () => void }): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      className="inline-flex shrink-0 items-center rounded-md px-2 py-1 font-medium hover:bg-amber-400/20"
+      onClick={onClick}
+    >
+      {translate('auto.components.onboarding.AgentStep.checkAgain', 'Check again')}
+    </button>
+  )
 }
 
 function useAgentGridScrollMaxHeight(
@@ -65,7 +79,8 @@ export function AgentStep({
   detectedSet,
   isDetecting,
   yoloPermissions = true,
-  onYoloPermissionsChange
+  onYoloPermissionsChange,
+  onCheckAgain
 }: AgentStepProps) {
   const agentCatalog = getAgentCatalog()
   const detected = agentCatalog.filter((agent) => detectedSet.has(agent.id))
@@ -112,11 +127,14 @@ export function AgentStep({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
       {!hasDetected && !isDetecting && (
-        <div className="shrink-0 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-200/90">
-          {translate(
-            'auto.components.onboarding.AgentStep.1eee1c7bd8',
-            'No agents detected on your PATH. Pick one to install later, or continue with a blank terminal.'
-          )}
+        <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-200/90">
+          <span>
+            {translate(
+              'auto.components.onboarding.AgentStep.noAgentsFound',
+              'No coding agents found on this computer. Pick one to install later, or continue with a plain terminal.'
+            )}
+          </span>
+          {onCheckAgain ? <CheckAgainButton onClick={onCheckAgain} /> : null}
         </div>
       )}
       {selectedEntry && (
@@ -124,10 +142,11 @@ export function AgentStep({
           <span>
             <span className="font-medium">{selectedEntry.label}</span>{' '}
             {translate(
-              'auto.components.onboarding.AgentStep.69af7e9c1c',
-              "isn't on your PATH yet. Muster will set it as your default and you can install it any time."
+              'auto.components.onboarding.AgentStep.notInstalledYet',
+              "isn't on this computer yet. Muster will set it as your default and you can install it any time."
             )}
           </span>
+          {onCheckAgain ? <CheckAgainButton onClick={onCheckAgain} /> : null}
           <button
             type="button"
             className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-400/40 bg-amber-400/10 px-2 py-1 font-medium text-amber-800 hover:bg-amber-400/20 dark:text-amber-100"

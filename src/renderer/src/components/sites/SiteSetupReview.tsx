@@ -8,7 +8,7 @@
 
 import { Download, Lock, Server } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { repoSlug } from '../../../../shared/site-local-domain'
 import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
@@ -17,8 +17,11 @@ import { Checkbox } from '@/components/ui/checkbox'
 import type { SetupRunStepId, SiteSetupChoices, SiteSetupSource } from './site-setup-choices'
 import { getSiteSetupReviewStrings } from './site-setup-review-strings'
 import { getSiteToggleLabels } from './site-toggle-labels'
+import { joinDisplayPath } from './site-display-path'
+import { SiteSetupNoStackFixes } from './SiteSetupNoStackFixes'
 import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
 import { SiteSetupServeEditToggle, SiteSetupServeEditor } from './SiteSetupServeEditor'
+import { domainForStack } from './site-setup-stack-domain'
 
 /** Written for the user, straight from the run planner's `blockedBy` (site-setup-plan.ts). */
 const IMPORT_BLOCKED_REASON: Record<string, string> = {
@@ -39,7 +42,9 @@ export function SiteSetupReview({
   choices,
   onChange,
   lockedSteps = NO_LOCKED_STEPS,
-  sourceRows
+  sourceRows,
+  promptStackChoice = false,
+  serveDomainError = ''
 }: {
   source: SiteSetupSource
   /** Null for a repo source before checkout: rows then show 'will' phrasing from defaults. */
@@ -52,10 +57,19 @@ export function SiteSetupReview({
   lockedSteps?: SetupRunStepId[]
   /** Rendered in place of the Clone row for a link source (the target radio + credentials rows). */
   sourceRows?: React.ReactNode
+  /** Several stacks and nothing chose one: open the stack choice in the row from the start. */
+  promptStackChoice?: boolean
+  /** A naming rule or clash for the serve domain; it also opens the editor so the reason shows. */
+  serveDomainError?: string
 }): React.JSX.Element {
   const strings = getSiteSetupReviewStrings()
   const toggleLabels = getSiteToggleLabels()
-  const [serveEditing, setServeEditing] = useState(false)
+  const [serveEditing, setServeEditing] = useState(promptStackChoice)
+  useEffect(() => {
+    if (promptStackChoice) {
+      setServeEditing(true)
+    }
+  }, [promptStackChoice])
 
   const stepState = (id: SetupRunStepId): 'available' | 'locked' =>
     lockedSteps.includes(id) ? 'locked' : 'available'
@@ -67,9 +81,11 @@ export function SiteSetupReview({
   const serveSummary =
     choices.serve.stack === 'agent-local'
       ? strings.serveAgentLocal.replace('{{domain}}', serveDomain)
-      : plan?.stack.alreadyLocalWp
-        ? strings.serveAlreadyLocalWp.replace('{{domain}}', serveDomain)
-        : strings.serveCreateLocalWp.replace('{{domain}}', serveDomain)
+      : choices.serve.stack === 'ddev'
+        ? strings.serveDdev.replace('{{domain}}', serveDomain)
+        : plan?.stack.alreadyLocalWp
+          ? strings.serveAlreadyLocalWp.replace('{{domain}}', serveDomain)
+          : strings.serveCreateLocalWp.replace('{{domain}}', serveDomain)
 
   // Nothing is ruled out on WordPress presence: Agent Local attaches a bare repo against an empty
   // database, which is what the no-WordPress block used to deny.
@@ -97,8 +113,8 @@ export function SiteSetupReview({
       : ''
   const importCheckboxDisabled = stepState('import') === 'locked'
 
-  // A bare clone carries no server configuration, so there is nothing an import could pull from.
-  const importApplies = source.kind !== 'repo'
+  // A bare clone carries no server configuration, so the row says what unlocks an import instead.
+  const cloneHasNoServer = source.kind === 'repo'
 
   return (
     <SiteSetupRowList>
@@ -107,7 +123,7 @@ export function SiteSetupReview({
           <SiteSetupRow
             icon={<Download className="size-4" />}
             title={strings.cloneTitle}
-            summary={`${source.repo.fullName} → ${source.destinationRoot}/${repoSlug(source.repo.fullName)}`}
+            summary={`${source.repo.fullName} → ${joinDisplayPath(source.destinationRoot, repoSlug(source.repo.fullName))}`}
           />
         ) : null)}
 
@@ -118,6 +134,7 @@ export function SiteSetupReview({
           summary={serveSummary}
           state="unavailable"
           reason={serveReason}
+          fixes={noStackInstalled ? <SiteSetupNoStackFixes /> : undefined}
         />
       ) : (
         <SiteSetupRow
@@ -142,15 +159,23 @@ export function SiteSetupReview({
             </>
           }
         >
-          {serveEditing && choices.serve.enabled ? (
+          {(serveEditing || serveDomainError) && choices.serve.enabled ? (
             <SiteSetupServeEditor
+              error={serveDomainError}
               stacks={availableStacks}
               value={{ stack: choices.serve.stack, domain: choices.serve.domain }}
               ruledOut={serveRuledOut}
               onChange={(next) =>
                 onChange({
                   ...choices,
-                  serve: { ...choices.serve, stack: next.stack, domain: next.domain }
+                  serve: {
+                    ...choices.serve,
+                    stack: next.stack,
+                    domain:
+                      next.stack !== choices.serve.stack
+                        ? domainForStack(next.domain, next.stack, choices.serve.stack)
+                        : next.domain
+                  }
                 })
               }
             />
@@ -183,13 +208,13 @@ export function SiteSetupReview({
           />
         ))}
 
-      {!importApplies ? null : importBlockedReason ? (
+      {cloneHasNoServer || importBlockedReason ? (
         <SiteSetupRow
           icon={<Download className="size-4" />}
           title={strings.importTitle}
           summary=""
           state="unavailable"
-          reason={importBlockedReason}
+          reason={cloneHasNoServer ? strings.importAfterClone : (importBlockedReason ?? '')}
         />
       ) : (
         <SiteSetupRow

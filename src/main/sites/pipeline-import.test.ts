@@ -347,6 +347,26 @@ describe('runImportPipeline', () => {
     expect(calls.ensureLocalSiteRunning).not.toHaveBeenCalled()
   })
 
+  it('repoints the server wp-config.php at DDEV before syncing files into the container', async () => {
+    const { context } = createTestContext()
+    const order: string[] = []
+    const prepareWpConfigForDdev = vi.fn(async () => {
+      order.push('prepare')
+      return { action: 'patched' as const, deferred: [], backupPath: '' }
+    })
+    const syncDdevFiles = vi.fn(async () => {
+      order.push('sync')
+      return { synced: true, message: '' }
+    })
+    const { deps } = createHarness({ prepareWpConfigForDdev, syncDdevFiles })
+    const config = createConfig({ exportFiles: true }, { localStack: 'ddev' })
+
+    await runImportPipeline(context, config, deps)
+
+    expect(prepareWpConfigForDdev).toHaveBeenCalledWith(config.wpDir, config.site.path)
+    expect(order).toEqual(['prepare', 'sync'])
+  })
+
   it('runs no stage at all when every toggle is off', async () => {
     const { context, statuses } = createTestContext()
     const { deps, order, calls } = createHarness()

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { Server, X } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Badge } from '@/components/ui/badge'
@@ -38,7 +39,8 @@ function projectCommandFilter(_value: string, search: string, keywords?: string[
 const SidebarRepositoryFilterSection = React.memo(function SidebarRepositoryFilterSection() {
   const filterRepoIds = useAppStore((s) => s.filterRepoIds)
   const setFilterRepoIds = useAppStore((s) => s.setFilterRepoIds)
-  const repos = useAppStore((s) => s.repos)
+  // Projects whose folder was deleted are not offered (`repos:list` flags them).
+  const repos = useAppStore(useShallow((s) => s.repos.filter((repo) => !repo.pathMissing)))
 
   const [query, setQuery] = useState('')
   const [highlightedRepoId, setHighlightedRepoId] = useState('')

@@ -260,6 +260,7 @@ export default function OnboardingFlow({
                       isDetecting={flow.isDetectingAgents}
                       yoloPermissions={flow.yoloPermissions}
                       onYoloPermissionsChange={flow.setYoloPermissions}
+                      onCheckAgain={() => void flow.recheckAgents()}
                     />
                   )}
                   {currentStep.id === 'theme' && (
@@ -311,7 +312,16 @@ export default function OnboardingFlow({
                           'auto.components.onboarding.OnboardingFooter.done',
                           'Done'
                         ),
-                        onSecondary: () => void flow.finishWithoutAdding()
+                        onSecondary: () => void flow.finishWithoutAdding(),
+                        ...(flow.defaultView === 'code'
+                          ? {
+                              tertiaryLabel: translate(
+                                'auto.components.onboarding.OnboardingFooter.addProject',
+                                'Add a project instead'
+                              ),
+                              onTertiary: () => void flow.finishWithProject()
+                            }
+                          : {})
                       }
                     : {})}
                 />

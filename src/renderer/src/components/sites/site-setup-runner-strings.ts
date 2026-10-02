@@ -18,6 +18,7 @@ export const getSiteSetupRunnerStrings = createLocalizedCatalog(() => ({
   ),
   localWp: translate('auto.components.sites.SiteSetupRunner.localWp', 'LocalWP'),
   agentLocal: translate('auto.components.sites.SiteSetupRunner.agentLocal', 'Agent Local'),
+  ddev: translate('auto.components.sites.SiteSetupRunner.ddev', 'DDEV'),
   alreadyServing: translate(
     'auto.components.sites.SiteSetupRunner.alreadyServing',
     'Already served by {{stack}} at {{domain}}'

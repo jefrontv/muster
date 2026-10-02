@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
 
-/** Long enough for local repos; short enough that an unreachable SSH host cannot hide a project for good. */
-const STARTUP_LIST_SETTLE_FALLBACK_MS = 10_000
+/** Short enough that an unreachable SSH host cannot hide its projects for long. */
+const REMOTE_SETTLE_FALLBACK_MS = 10_000
+/** Local lists always arrive, but 200+ repos take well over 10s; this only guards a hung git. */
+const LOCAL_SETTLE_FALLBACK_MS = 60_000
 
-/** True once the startup worktree refresh finished, or the fallback ran out, whichever is first. */
-export function useStartupWorktreeListsSettled(): boolean {
+/** Whether startup still hides unloaded remote and local projects; each side has its own fallback. */
+export function useStartupWorktreeListsSettled(): { remote: boolean; local: boolean } {
   const completed = useAppStore((s) => s.startupWorktreeRefreshCompleted)
-  const [timedOut, setTimedOut] = useState(false)
+  const [remoteTimedOut, setRemoteTimedOut] = useState(false)
+  const [localTimedOut, setLocalTimedOut] = useState(false)
   useEffect(() => {
     if (completed) {
       return
     }
-    const timer = setTimeout(() => setTimedOut(true), STARTUP_LIST_SETTLE_FALLBACK_MS)
-    return () => clearTimeout(timer)
+    const remote = setTimeout(() => setRemoteTimedOut(true), REMOTE_SETTLE_FALLBACK_MS)
+    const local = setTimeout(() => setLocalTimedOut(true), LOCAL_SETTLE_FALLBACK_MS)
+    return () => {
+      clearTimeout(remote)
+      clearTimeout(local)
+    }
   }, [completed])
-  return completed || timedOut
+  return { remote: completed || remoteTimedOut, local: completed || localTimedOut }
 }

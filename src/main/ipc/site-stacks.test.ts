@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createEmptySiteEnvironment,
   type Site,
@@ -52,7 +52,12 @@ vi.mock('../sites/local-stack-provider', async (importActual) => {
 })
 
 import type { WebContents } from 'electron'
-import { providerFor, type LocalStackProvider } from '../sites/local-stack-provider'
+import {
+  localStackProviders,
+  providerFor,
+  registerLocalStackProvider,
+  type LocalStackProvider
+} from '../sites/local-stack-provider'
 import { runLocalWpMigration } from '../sites/localwp-migration'
 import { setSiteSecret } from '../sites/site-secret-store'
 import { registerSiteStackHandlers } from './site-stacks'
@@ -138,6 +143,16 @@ async function call<T>(
   return (await handler({ sender }, args)) as SiteResult<T>
 }
 
+// Every start asks the other stacks to free :80/:443; the real agent-local provider would POST
+// /yield to the developer's live daemon and take their Agent Local sites offline for a minute.
+beforeAll(() => {
+  for (const provider of localStackProviders()) {
+    if (provider.releasePrivilegedPorts) {
+      registerLocalStackProvider({ ...provider, releasePrivilegedPorts: async () => true })
+    }
+  }
+})
+
 beforeEach(() => {
   handlers.clear()
   removed.length = 0
@@ -157,6 +172,7 @@ describe('registerSiteStackHandlers', () => {
       'siteStacks:adoptServing',
       'siteStacks:agentLocalStatus',
       'siteStacks:available',
+      'siteStacks:checkDomain',
       'siteStacks:detect',
       'siteStacks:previewMigration',
       'siteStacks:resolveSocket',

@@ -10,6 +10,7 @@ import type React from 'react'
 import { useId } from 'react'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { SettingsSwitch } from '@/components/settings/SettingsFormControls'
 import {
   DropdownMenu,
@@ -42,16 +43,27 @@ export function AddToSidebarButton({
     // butting two bordered halves together would draw a 2px seam. The overlap is used rather than
     // border-r-0 because the variant's own `border` wins the stylesheet order and keeps the edge.
     <div className="flex shrink-0 items-stretch">
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-1.5 rounded-r-none pr-2"
-        disabled={busy}
-        onClick={onAdd}
-      >
-        <FolderPlus className="size-3.5" />
-        {addLabel}
-      </Button>
+      {/* Says how this differs from New site, which sets a site up. */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 rounded-r-none pr-2"
+            disabled={busy}
+            onClick={onAdd}
+          >
+            <FolderPlus className="size-3.5" />
+            {addLabel}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {translate(
+            'auto.components.sites.SitesPage.addToSidebarTooltip',
+            'Show these folders in the sidebar without setting them up'
+          )}
+        </TooltipContent>
+      </Tooltip>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -78,7 +90,7 @@ export function AddToSidebarButton({
               <span className="block text-[11px] leading-snug text-muted-foreground">
                 {translate(
                   'auto.components.sites.SitesPage.autoAddDiscoveredHint',
-                  'New folders found under your site folders become sidebar projects on their own, with no setup.'
+                  'New folders found under your site folders show in the sidebar on their own, with no setup.'
                 )}
               </span>
             </label>

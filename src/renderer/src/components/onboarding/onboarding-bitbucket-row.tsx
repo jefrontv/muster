@@ -49,19 +49,24 @@ export function BitbucketRow(props: { compact?: boolean } = {}): React.JSX.Eleme
   const startConnect = async (): Promise<void> => {
     const api = window.api.bitbucketAuth
     if (!api?.beginOAuth) {
+      console.warn('[onboarding] bitbucketAuth.beginOAuth is missing; restart the dev app.')
       setError(
         translate(
-          'auto.components.onboarding.IntegrationsStep.bitbucketRestart',
-          'Restart the Muster dev app to load Bitbucket OAuth.'
+          'auto.components.onboarding.IntegrationsStep.bitbucketUnavailable',
+          "Bitbucket sign-in isn't available in this build. Update Muster and try again."
         )
       )
       return
     }
     if (credential?.oauthAvailable === false) {
+      // The env var names help a developer, not a user, so they stay in the console.
+      console.warn(
+        '[onboarding] no Bitbucket OAuth consumer: set ORCA_BITBUCKET_OAUTH_CLIENT_ID and ORCA_BITBUCKET_OAUTH_CLIENT_SECRET.'
+      )
       setError(
         translate(
-          'auto.components.settings.BitbucketCredentialDialog.oauthMissing',
-          'This build has no Bitbucket OAuth consumer. Add ORCA_BITBUCKET_OAUTH_CLIENT_ID and ORCA_BITBUCKET_OAUTH_CLIENT_SECRET, then restart.'
+          'auto.components.onboarding.IntegrationsStep.bitbucketUnavailable',
+          "Bitbucket sign-in isn't available in this build. Update Muster and try again."
         )
       )
       return

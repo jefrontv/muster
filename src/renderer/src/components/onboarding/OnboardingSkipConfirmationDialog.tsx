@@ -19,7 +19,7 @@ export const ONBOARDING_SKIP_CONFIRMATION_COPY = {
   get description() {
     return translate(
       'auto.components.onboarding.OnboardingSkipConfirmationDialog.skipDescription',
-      "You can set all of this up later in Settings, but this screen won't come back."
+      'You can set this up later in Settings, or replay it from Help.'
     )
   },
   skipLabel: 'Skip',

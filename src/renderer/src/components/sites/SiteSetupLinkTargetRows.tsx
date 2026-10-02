@@ -1,6 +1,6 @@
 // Replaces the Clone row on Review for a link source. A link names a repository but not a folder,
-// so the user picks one of: an existing checkout on disk, a fresh clone into the projects root, or
-// a folder they choose themselves. The second row keeps the link's SSH details visible but the
+// so the user picks one of: an existing checkout on disk, a fresh clone into the projects root, a
+// clone into a folder they choose, or an existing checkout they point at. The second row keeps the link's SSH details visible but the
 // full field table collapsed: the one real question on this screen is the folder.
 //
 // The options are a selectable list in the row's own style (check mark, name first, path muted
@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { getSiteBindFieldLabels, getSiteBindStrings } from './site-bind-strings'
+import { joinDisplayPath } from './site-display-path'
+import type { LinkCloneProblem } from './use-site-setup-review-data'
 import { SiteSetupRow } from './SiteSetupRow'
 
 export type SiteSetupLinkTarget =
@@ -30,6 +32,9 @@ type SiteSetupLinkTargetRowsProps = {
   cloneUrl: string
   value: SiteSetupLinkTarget | null
   onChange: (next: SiteSetupLinkTarget) => void
+  /** Why `cloneUrl` is empty; null while it resolves or when it resolved. */
+  cloneProblem?: LinkCloneProblem | null
+  onOpenIntegrations?: () => void
 }
 
 /** Display order; `liveDomainProtocol` is folded into `liveDomain`, so it is not listed. */
@@ -133,13 +138,17 @@ export function SiteSetupLinkTargetRows({
   primaryRoot,
   cloneUrl,
   value,
-  onChange
+  onChange,
+  cloneProblem = null,
+  onOpenIntegrations
 }: SiteSetupLinkTargetRowsProps): React.JSX.Element {
   const strings = getSiteBindStrings()
   const candidates = pending.candidates.filter((candidate) => candidate.exists)
   const staleCount = pending.candidates.length - candidates.length
-  const cloneTarget = `${primaryRoot}/${repoSlug(pending.fields.reponame)}`
-  const normalise = (folder: string): string => folder.replace(/[\\/]+$/, '').toLowerCase()
+  const cloneTarget = joinDisplayPath(primaryRoot, repoSlug(pending.fields.reponame))
+  // Separators unified so a Windows checkout (C:\Sites\flex) matches the joined clone target.
+  const normalise = (folder: string): string =>
+    folder.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
   // A clone into a folder that is already a checkout would fail on a non-empty directory - and the
   // checkout itself is already on offer above, so the option would only duplicate it.
   const cloneTargetTaken = candidates.some(
@@ -149,6 +158,7 @@ export function SiteSetupLinkTargetRows({
   const hasKnownTarget = candidates.length > 0 || canCloneIntoRoot
   const customSelected =
     value?.kind === 'existing' && !candidates.some((candidate) => candidate.path === value.path)
+  const customCloneSelected = value?.kind === 'clone' && value.root !== primaryRoot
 
   const visibleFields = SUMMARY_FIELDS.filter((key) => summaryValue(pending.fields, key).length > 0)
   const credentialParts = [
@@ -165,6 +175,23 @@ export function SiteSetupLinkTargetRows({
       onChange({ kind: 'existing', path })
     }
   }
+
+  // A parent folder: the clone lands in <folder>/<repo>, the same shape as the projects root.
+  const pickCloneFolder = async (): Promise<void> => {
+    const path = await window.api.repos.pickDirectory()
+    if (path) {
+      onChange({ kind: 'clone', root: path })
+    }
+  }
+
+  const cloneProblemText =
+    cloneProblem?.kind === 'no-connector'
+      ? strings.cloneNoConnector
+      : cloneProblem?.kind === 'lookup-failed'
+        ? strings.cloneLookupFailed.replace('{{error}}', cloneProblem.error)
+        : cloneProblem?.kind === 'not-found'
+          ? strings.cloneNotFound
+          : null
 
   return (
     <>
@@ -191,10 +218,29 @@ export function SiteSetupLinkTargetRows({
           ))}
           {canCloneIntoRoot ? (
             <TargetOption
-              selected={value?.kind === 'clone'}
+              selected={value?.kind === 'clone' && value.root === primaryRoot}
               onSelect={() => onChange({ kind: 'clone', root: primaryRoot })}
               name={strings.cloneOption.replace('{{repo}}', pending.fields.reponame)}
               detail={`→ ${abbreviateHome(cloneTarget)}`}
+            />
+          ) : null}
+          {cloneUrl.length > 0 ? (
+            <TargetOption
+              selected={customCloneSelected}
+              onSelect={() => void pickCloneFolder()}
+              icon={
+                customCloneSelected ? (
+                  <Check className="size-3.5" aria-hidden />
+                ) : (
+                  <FolderOpen className="size-3.5 text-muted-foreground" aria-hidden />
+                )
+              }
+              name={strings.cloneIntoFolder}
+              detail={
+                customCloneSelected && value?.kind === 'clone'
+                  ? `→ ${abbreviateHome(joinDisplayPath(value.root, repoSlug(pending.fields.reponame)))}`
+                  : undefined
+              }
             />
           ) : null}
           <TargetOption
@@ -217,6 +263,18 @@ export function SiteSetupLinkTargetRows({
             }
           />
         </div>
+        {cloneProblemText ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="min-w-0 flex-1 text-xs break-words text-muted-foreground">
+              {cloneProblemText}
+            </p>
+            {cloneProblem?.kind === 'no-connector' && onOpenIntegrations ? (
+              <Button variant="outline" size="xs" onClick={onOpenIntegrations}>
+                {strings.openIntegrations}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         {staleCount > 0 ? (
           <p className="text-xs text-muted-foreground">
             {(staleCount === 1 ? strings.staleRecords : strings.staleRecordsPlural).replace(

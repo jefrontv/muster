@@ -7,29 +7,25 @@
 // The whole surface is macOS-only. Non-darwin callers get a structured "unsupported" value rather
 // than an error, so the renderer can render a disabled state instead of an alert.
 
-import path from 'node:path'
 import { readAgentLocalDaemonStatus } from '../sites/agent-local-import-api'
 import type { AgentLocalDaemonStatus } from '../../shared/site-stack-types'
 import { ipcMain } from 'electron'
-import { createEmptySiteEnvironment } from '../../shared/site-types'
 import type { SiteLocalStack } from '../../shared/site-types'
 import type { Store } from '../persistence'
-import { importLocalDatabase } from '../sites/local-database-import'
 import {
   planAgentLocalMigration,
   resolveAgentLocalDocroot,
   runAgentLocalMigration
 } from '../sites/agent-local-migration'
 import { setAgentLocalSiteDomain } from '../sites/agent-local-site-control'
+import path from 'node:path'
+import { previewDdevSetup, runDdevSetup } from '../sites/ddev-project-setup'
+import { findLocalDomainClash, type LocalDomainClash } from '../sites/local-domain-availability'
+import { notifySiteChanged } from './site-change-notifier'
 import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
 import { startStackWithPortHandover } from '../sites/local-stack-port-handover'
 import { currentSocketIfRunning } from '../sites/localwp-detection'
-import {
-  createLocalWpHost,
-  isLocalWpSupported,
-  LOCALWP_DATABASE_PASSWORD,
-  LOCALWP_DATABASE_USER
-} from '../sites/localwp-host'
+import { createLocalWpHost, isLocalWpSupported, LOCALWP_DATABASE_USER } from '../sites/localwp-host'
 import type { LocalWpMigrationPlan } from '../sites/localwp-migration-plan'
 import {
   previewLocalWpMigration,
@@ -37,7 +33,6 @@ import {
   type LocalWpMigrationResult
 } from '../sites/localwp-migration'
 import type { LocalWpControlOutcome } from '../sites/localwp-site-control'
-import type { SiteRunConfig, SiteRunContext } from '../sites/pipeline-contract'
 import {
   buildMigrationRequest,
   detectSiteStack,
@@ -46,8 +41,13 @@ import {
   readTargetStack,
   requireId
 } from './site-stack-request'
+import { importMigratedDatabase } from './localwp-migrated-database-import'
 import { createMigrationProgressForwarder } from './site-stack-progress'
-import { adoptServingStack, persistLocalWpDatabasePassword } from './site-stack-adopt'
+import {
+  adoptServingStack,
+  persistLocalWpDatabasePassword,
+  recordTcpStackSetup
+} from './site-stack-adopt'
 import { failure, requireSite, type SiteResult } from './sites-result'
 
 const SITE_STACK_CHANNELS = [
@@ -58,13 +58,18 @@ const SITE_STACK_CHANNELS = [
   'siteStacks:adoptServing',
   'siteStacks:resolveSocket',
   'siteStacks:available',
+  'siteStacks:checkDomain',
   'siteStacks:agentLocalStatus',
   'siteStacks:previewMigration',
   'siteStacks:runMigration'
 ] as const
 
-/** The stacks a user can be offered. `plain` is the absence of one and is never a choice. */
-const OFFERABLE_STACKS: SiteLocalStack[] = ['localwp', 'agent-local']
+/**
+ * The stacks a user can be offered, in recommendation order: the first installed one is the
+ * default when nothing is detected or remembered. Agent Local first because it is efront's own
+ * stack and installs from the hub; LocalWP last. `plain` is never a choice.
+ */
+const OFFERABLE_STACKS: SiteLocalStack[] = ['agent-local', 'ddev', 'localwp']
 
 /**
  * Strips the live database password before an outcome crosses the bridge.
@@ -87,7 +92,7 @@ export function registerSiteStackHandlers(store: Store): void {
   ipcMain.handle('siteStacks:detect', async (_event, siteId: unknown) => {
     try {
       const site = requireSite(store, requireId(siteId))
-      return { ok: true, value: await detectSiteStack(site.path) }
+      return { ok: true, value: await detectSiteStack(site.path, site.localStack) }
     } catch (error) {
       return failure(error)
     }
@@ -129,6 +134,7 @@ export function registerSiteStackHandlers(store: Store): void {
         // cause of "Can't connect to local MySQL". The password is deliberately NOT persisted — it
         // is fetched live when a run needs it.
         persistResolvedTransport(store, site, outcome)
+        notifySiteChanged(site.id)
         return { ok: true, value: withoutStackSecrets(outcome) }
       } catch (error) {
         return failure(error)
@@ -182,6 +188,7 @@ export function registerSiteStackHandlers(store: Store): void {
         // localDomain, and leaving it on the old value would point them at a domain nothing serves.
         if (outcome.ok) {
           store.updateSite(site.id, { localDomain: domain })
+          notifySiteChanged(site.id)
         }
         return { ok: true, value: withoutStackSecrets(outcome) }
       } catch (error) {
@@ -209,6 +216,26 @@ export function registerSiteStackHandlers(store: Store): void {
 
   // Which stacks this machine can actually run. The renderer offers only these, so a user without
   // agent-local never sees an option that would fail, and one without Local is not stuck with it.
+  ipcMain.handle(
+    'siteStacks:checkDomain',
+    async (_event, args: unknown): Promise<SiteResult<LocalDomainClash | null>> => {
+      try {
+        const sitePath = readField(args, 'sitePath')
+        const domain = readField(args, 'domain')
+        const stack = readTargetStack(args)
+        if (typeof sitePath !== 'string' || !path.isAbsolute(sitePath)) {
+          throw new TypeError('sitePath must be an absolute path')
+        }
+        if (typeof domain !== 'string') {
+          throw new TypeError('domain must be a string')
+        }
+        return { ok: true, value: await findLocalDomainClash({ sitePath, stack, domain }) }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
+
   ipcMain.handle('siteStacks:available', async (): Promise<SiteResult<SiteLocalStack[]>> => {
     try {
       const checks = await Promise.all(
@@ -232,6 +259,15 @@ export function registerSiteStackHandlers(store: Store): void {
       try {
         const stack = readTargetStack(args)
         const request = buildMigrationRequest(store, args, stack)
+        if (stack === 'ddev') {
+          const site = requireSite(store, requireId(readField(args, 'siteId')))
+          return {
+            ok: true,
+            value: await previewDdevSetup(request, {
+              docroot: resolveAgentLocalDocroot(site.path, site.localWpRoot)
+            })
+          }
+        }
         if (stack === 'agent-local') {
           // The same docroot runMigration hands over, so the gate and the action agree about which
           // folder has to contain WordPress.
@@ -263,6 +299,18 @@ export function registerSiteStackHandlers(store: Store): void {
         const onStatus = createMigrationProgressForwarder(event.sender, site.id, [
           request.adminPassword
         ])
+        if (stack === 'ddev') {
+          const result = await runDdevSetup(request, {
+            docroot: resolveAgentLocalDocroot(site.path, site.localWpRoot),
+            skipCoreDownload: readField(args, 'skipCoreDownload') === true,
+            ...(site.phpVersion ? { phpVersion: site.phpVersion } : {}),
+            onStatus
+          })
+          if (result.ok) {
+            recordTcpStackSetup(store, site.id, 'ddev', result)
+          }
+          return { ok: true, value: result }
+        }
         if (stack === 'agent-local') {
           const result = await runAgentLocalMigration(request, {
             onStatus,
@@ -271,18 +319,7 @@ export function registerSiteStackHandlers(store: Store): void {
             sourcePath: resolveAgentLocalDocroot(site.path, site.localWpRoot)
           })
           if (result.ok) {
-            store.updateSite(site.id, {
-              localStack: 'agent-local',
-              localWpRoot: result.localWpRoot,
-              localDomain: result.domain,
-              // Empty socket is what selects the TCP branch downstream; never a placeholder path.
-              dbSocket: '',
-              dbUser: result.dbUser,
-              dbPort: result.dbPort,
-              ...(result.phpVersion ? { phpVersion: result.phpVersion } : {})
-            })
-            // No password is stored: agent-local mints it and hands it out on demand, so a copy here
-            // would only go stale the next time the site is re-provisioned.
+            recordTcpStackSetup(store, site.id, 'agent-local', result)
           }
           return { ok: true, value: result }
         }
@@ -299,6 +336,7 @@ export function registerSiteStackHandlers(store: Store): void {
             dbUser: LOCALWP_DATABASE_USER,
             dbPort: null
           })
+          notifySiteChanged(site.id)
           persistLocalWpDatabasePassword(store, site.id)
         }
         return { ok: true, value: result }
@@ -307,41 +345,4 @@ export function registerSiteStackHandlers(store: Store): void {
       }
     }
   )
-}
-
-/**
- * Imports the pre-migration dump into Local's MySQL over the new socket.
- *
- * As in ocsites (tui_deploy:3133), the import authenticates as root over the per-site socket, not
- * with the credentials from the migrated wp-config.php: the dump was taken from the OLD server and
- * Local owns the accounts on the new one.
- */
-async function importMigratedDatabase(
-  store: Store,
-  siteId: string,
-  options: { dumpPath: string; databaseName: string; socketPath: string }
-): Promise<void> {
-  const site = requireSite(store, siteId)
-  const controller = new AbortController()
-  const context: SiteRunContext = {
-    signal: controller.signal,
-    log: () => {},
-    status: () => {},
-    progress: () => {},
-    throwIfCancelled: () => {}
-  }
-  const config: SiteRunConfig = {
-    site: { ...site, dbSocket: options.socketPath, dbUser: LOCALWP_DATABASE_USER, dbPort: null },
-    environmentName: site.activeEnvironment,
-    // A local DB import needs no remote target; keep the field type-honest for the shared config.
-    environment:
-      site.environments[site.activeEnvironment] ??
-      Object.values(site.environments)[0] ??
-      createEmptySiteEnvironment(),
-    group: 'import',
-    wpDir: path.join(site.path, 'app', 'public'),
-    sshPassword: '',
-    dbPassword: LOCALWP_DATABASE_PASSWORD
-  }
-  await importLocalDatabase(context, config, options.dumpPath, options.databaseName)
 }

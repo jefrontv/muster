@@ -8,6 +8,7 @@ import type { Site } from '../../shared/site-types'
 import { startStackWithPortHandover } from './local-stack-port-handover'
 // Side-effect import: the agent-local provider registers itself with the registry on load.
 import './agent-local-site-control'
+import './ddev-site-control'
 import { SiteRunStepError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
 
 export const LOCAL_STACK_STEP = 'ensure-local-stack-running'

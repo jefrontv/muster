@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  FEATURE_WALL_LEGACY_CODE_SETUP_STEPS,
   FEATURE_WALL_SETUP_STEPS,
   type FeatureWallSetupStepId
 } from '../../../../shared/feature-wall-setup-steps'
@@ -18,7 +19,7 @@ import {
 
 function makePreBrowserDoneStepState(): Partial<Record<FeatureWallSetupStepId, boolean>> {
   return Object.fromEntries(
-    FEATURE_WALL_SETUP_STEPS.map((step) => [step.id, step.id !== 'browser'])
+    FEATURE_WALL_LEGACY_CODE_SETUP_STEPS.map((step) => [step.id, step.id !== 'browser'])
   ) as Partial<Record<FeatureWallSetupStepId, boolean>>
 }
 
@@ -35,7 +36,9 @@ function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): Featur
       'task-sources': false,
       'setup-script': false,
       'create-first-workspace': false,
-      'start-first-thread': false
+      'start-first-thread': false,
+      'first-site': false,
+      'site-tools': false
     },
     coreDoneCount: 0,
     coreTotal: FEATURE_WALL_SETUP_STEPS.length,

@@ -43,7 +43,7 @@ describe('OnboardingFlow', () => {
     expect(html).not.toContain('Set up Muster for agents')
     expect(html).not.toContain('Explore Muster')
     expect(html).not.toContain('Take the tour')
-    expect(html).toContain('Add your first project')
+    expect(html).toContain('Set up your first site')
     expect(html).toContain('Done')
     expect(html).not.toContain('Point Muster at some code')
   })
@@ -175,7 +175,7 @@ describe('OnboardingFlow', () => {
       onOnboardingChange: vi.fn()
     })
 
-    expect(html).toContain('Let agents work on your sites')
+    expect(html).toContain('Tools for your agents')
     expect(html).toContain('6 of 7')
   })
 
@@ -192,7 +192,7 @@ describe('OnboardingFlow', () => {
       onOnboardingChange: vi.fn()
     })
 
-    expect(html).not.toContain('Let agents work on your sites')
+    expect(html).not.toContain('Tools for your agents')
     expect(html).not.toContain('muster-sites')
     expect(html).toContain('Set up notifications')
   })
@@ -251,7 +251,7 @@ describe('OnboardingFlow', () => {
     })
 
     expect(html).toContain('Set up notifications')
-    expect(html).toContain('Add your first project')
+    expect(html).toContain('Set up your first site')
     expect(html).toContain('Done')
     expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Connect your task sources')
@@ -276,7 +276,7 @@ describe('OnboardingFlow', () => {
     expect(html).toContain('Set up notifications')
     expect(html).toContain('Add first workspace')
     expect(html).toContain('Done')
-    expect(html).not.toContain('Add your first project')
+    expect(html).not.toContain('Set up your first site')
   })
 
   it('shows only GitHub on the task setup page when the GitHub CLI is missing', () => {
@@ -297,7 +297,9 @@ describe('OnboardingFlow', () => {
     })
 
     expect(html).toContain('Connect your sources')
-    expect(html).toContain('Link GitHub, Bitbucket, and ActiveCollab to:')
+    expect(html).toContain(
+      'Connect the accounts you use. Muster pulls in tasks and pull requests from them.'
+    )
     expect(html).toContain('GitHub')
     expect(html).toContain('ActiveCollab')
     expect(html).not.toContain('Linear')
@@ -326,7 +328,7 @@ describe('OnboardingFlow', () => {
   it('renders concise skip confirmation copy', () => {
     expect(ONBOARDING_SKIP_CONFIRMATION_COPY).toEqual({
       title: 'Skip onboarding?',
-      description: "You can set all of this up later in Settings, but this screen won't come back.",
+      description: 'You can set this up later in Settings, or replay it from Help.',
       skipLabel: 'Skip',
       keepGoingLabel: 'No, keep going'
     })

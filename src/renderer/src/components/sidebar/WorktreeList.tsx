@@ -5904,7 +5904,9 @@ const WorktreeList = React.memo(function WorktreeList({
     [detectedWorktreesByRepo, filterRepoIds, visibleReposForRows]
   )
   const worktreeListsSettled = useStartupWorktreeListsSettled()
-  const hideUnloadedProjects = !showSleepingWorkspaces && !worktreeListsSettled
+  const hideUnloadedRemote = !showSleepingWorkspaces && !worktreeListsSettled.remote
+  const hideUnloadedLocal = !showSleepingWorkspaces && !worktreeListsSettled.local
+  const hideUnloadedProjects = hideUnloadedRemote || hideUnloadedLocal
   const placeholderRepoIds = useMemo(() => {
     return getEmptyProjectPlaceholderRepoIds({
       groupBy,
@@ -5912,14 +5914,16 @@ const WorktreeList = React.memo(function WorktreeList({
       worktreesByRepo,
       visibleWorktrees,
       filterRepoIds,
-      hideUnloaded: hideUnloadedProjects,
+      hideUnloaded: hideUnloadedRemote,
+      hideUnloadedLocal,
       detectedWorktreesByRepo
     })
   }, [
     detectedWorktreesByRepo,
     filterRepoIds,
     groupBy,
-    hideUnloadedProjects,
+    hideUnloadedLocal,
+    hideUnloadedRemote,
     visibleReposForRows,
     visibleWorktrees,
     worktreesByRepo

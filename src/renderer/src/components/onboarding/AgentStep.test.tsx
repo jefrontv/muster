@@ -5,6 +5,24 @@ import { AgentStep } from './AgentStep'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 describe('AgentStep', () => {
+  it('offers Check again when no agent is found on this computer', () => {
+    const html = renderToStaticMarkup(
+      <TooltipProvider>
+        <AgentStep
+          selectedAgent={null}
+          onSelect={vi.fn()}
+          detectedSet={new Set()}
+          isDetecting={false}
+          onCheckAgain={vi.fn()}
+        />
+      </TooltipProvider>
+    )
+
+    expect(html).toContain('No coding agents found on this computer.')
+    expect(html).toContain('Check again')
+    expect(html).not.toContain('PATH')
+  })
+
   it('shows the collapsed fallback agents summary', () => {
     const html = renderToStaticMarkup(
       <TooltipProvider>

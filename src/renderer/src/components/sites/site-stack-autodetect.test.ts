@@ -74,3 +74,29 @@ describe('siteStackAutodetectPatch', () => {
     ).toBeNull()
   })
 })
+
+describe('siteStackAutodetectPatch DDEV docroot', () => {
+  it('moves a stale LocalWP root onto the docroot DDEV reports', () => {
+    expect(
+      siteStackAutodetectPatch(
+        { localStack: 'ddev', localDomain: 'ta.ddev.site:8843', localWpRoot: 'app/public' },
+        { stack: 'ddev', domain: 'ta.ddev.site:8843', docroot: '' }
+      )
+    ).toEqual({ localWpRoot: '' })
+  })
+
+  it('leaves a matching root alone and never touches other stacks', () => {
+    expect(
+      siteStackAutodetectPatch(
+        { localStack: 'ddev', localDomain: 'ta.ddev.site:8843', localWpRoot: '/web/' },
+        { stack: 'ddev', domain: 'ta.ddev.site:8843', docroot: 'web' }
+      )
+    ).toBeNull()
+    expect(
+      siteStackAutodetectPatch(
+        { localStack: 'localwp', localDomain: 'a.local', localWpRoot: 'app/public' },
+        { stack: 'localwp', domain: 'a.local', docroot: '' }
+      )
+    ).toBeNull()
+  })
+})

@@ -24,6 +24,7 @@ import type {
   ActiveCollabConnectionStatus
 } from '../../shared/activecollab-types'
 import { connectActiveCollab } from '../activecollab/auth'
+import { registerActiveCollabMcpWithClaude } from '../activecollab/mcp-claude-registration'
 import { shareActiveCollabLoginWithMcp } from '../activecollab/mcp-install'
 import {
   clearActiveCollabCredential,
@@ -141,7 +142,8 @@ export function acStatus(): Promise<ActiveCollabResult<ActiveCollabConnectionSta
 }
 
 export async function acConnect(
-  args: unknown
+  args: unknown,
+  store?: Store
 ): Promise<ActiveCollabResult<ActiveCollabConnection>> {
   try {
     const input = record(args)
@@ -171,7 +173,12 @@ export async function acConnect(
     // so the agent cannot stay on a previous account. Best-effort: a disk or keychain problem
     // here is not a sign-in failure.
     try {
-      shareActiveCollabLoginWithMcp()
+      const shared = shareActiveCollabLoginWithMcp()
+      if (shared.registerClaude && store) {
+        void registerActiveCollabMcpWithClaude(store).catch((error: unknown) => {
+          console.warn('[activecollab] could not register the MCP with Claude Code:', error)
+        })
+      }
     } catch (error) {
       console.warn('[activecollab] could not share this login with the MCP:', error)
     }
@@ -200,7 +207,7 @@ export function registerActiveCollabHandlers(store: Store): void {
   }
 
   ipcMain.handle('activecollab:status', async () => acStatus())
-  ipcMain.handle('activecollab:connect', async (_event, args: unknown) => acConnect(args))
+  ipcMain.handle('activecollab:connect', async (_event, args: unknown) => acConnect(args, store))
   ipcMain.handle('activecollab:disconnect', async () => acDisconnect())
   ipcMain.handle('activecollab:listAssignedTasks', async (_event, args?: unknown) =>
     acListAssignedTasks(args)

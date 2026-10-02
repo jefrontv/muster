@@ -10,7 +10,13 @@
 // crafted argument a single argument there.
 
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
+import type { SiteLocalStack } from '../../shared/site-types'
 import type { WpCliResult, WpCliSafetyVerdict } from '../../shared/site-tool-types'
+import {
+  buildLocalWpCliSpawn,
+  ddevWpCliSpawnError,
+  type LocalWpCliSpawn
+} from './local-wp-cli-command'
 import { createLocalWpHost } from './localwp-host'
 import { buildLocalWpWpEnv } from './localwp-wp-cli-environment'
 import {
@@ -166,6 +172,8 @@ export type LocalWpCliRequest = WpCliRequest & {
   cwd: string
   /** LocalWP per-site socket. When set, WP-CLI runs under Local's PHP so it can reach the socket. */
   dbSocket?: string
+  /** The site's stack; 'ddev' runs `ddev wp` in the container. Absent means the host `wp`. */
+  localStack?: SiteLocalStack
 }
 
 /** Resolves LocalWP's PHP/socket environment; injected so tests need no Local.app. */
@@ -200,15 +208,27 @@ export async function runLocalWpCli(
   const args = [...request.args]
   const socketPath = request.dbSocket?.trim() ?? ''
   const localWpEnv = socketPath.length > 0 ? await resolveLocalWpEnv(socketPath) : null
-  let result: StreamCommandResult
+  const localStack = request.localStack ?? 'plain'
+  let spawn: LocalWpCliSpawn
   try {
-    result = await streamCommand(WP_BINARY, args, {
-      cwd: request.cwd,
+    spawn = buildLocalWpCliSpawn({
+      localStack,
+      wpDir: request.cwd,
+      args,
       env: {
         ...(localWpEnv ?? process.env),
         // A benign PHP warning from a messy wp-config must not be read as command output.
         WP_CLI_PHP_ARGS: '-d error_reporting=E_ERROR -d display_errors=0'
-      },
+      }
+    })
+  } catch (error) {
+    throw new SiteRunStepError(WP_CLI_STEP, error instanceof Error ? error.message : String(error))
+  }
+  let result: StreamCommandResult
+  try {
+    result = await streamCommand(spawn.command, spawn.args, {
+      cwd: spawn.cwd,
+      env: spawn.env,
       timeoutMs: clampTimeout(request.timeoutMs),
       ...(request.signal ? { signal: request.signal } : {})
     })
@@ -219,10 +239,12 @@ export async function runLocalWpCli(
     const detail = error instanceof Error ? error.message : String(error)
     throw new SiteRunStepError(
       WP_CLI_STEP,
-      `WP-CLI (\`wp\`) could not be run in ${request.cwd}: ${detail}`
+      localStack === 'ddev'
+        ? ddevWpCliSpawnError(spawn.cwd, detail)
+        : `WP-CLI (\`wp\`) could not be run in ${request.cwd}: ${detail}`
     )
   }
-  return finish('local', null, verdict, buildLocalCommandLine(args), result)
+  return finish('local', null, verdict, buildLocalCommandLine(localStack, args), result)
 }
 
 export type RemoteWpCliRequest = WpCliRequest & {
@@ -264,8 +286,9 @@ export function buildRemoteWpCliCommand(rootPath: string, args: readonly string[
 }
 
 /** Purely for display and audit: what a shell would have needed to reproduce the local run. */
-function buildLocalCommandLine(args: readonly string[]): string {
-  return [WP_BINARY, ...args].map(quoteShellArgument).join(' ')
+function buildLocalCommandLine(localStack: SiteLocalStack, args: readonly string[]): string {
+  const prefix = localStack === 'ddev' ? ['ddev', WP_BINARY] : [WP_BINARY]
+  return [...prefix, ...args].map(quoteShellArgument).join(' ')
 }
 
 function finish(

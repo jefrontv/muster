@@ -8,6 +8,8 @@ export type FeatureWallSetupStepId =
   | 'setup-script'
   | 'create-first-workspace'
   | 'start-first-thread'
+  | 'first-site'
+  | 'site-tools'
 
 /** Which checklist the user is working through: code (worktrees) or chat (threads). */
 export type FeatureWallSetupMode = 'code' | 'chat'
@@ -79,6 +81,21 @@ const ADD_TWO_REPOS_STEP: FeatureWallSetupStep = {
     'Bring your key repos into Muster so you can start agent work without hunting for folders.'
 }
 
+const FIRST_SITE_STEP: FeatureWallSetupStep = {
+  id: 'first-site',
+  name: 'Set up your first site',
+  subtitle: 'Set up your first site',
+  description:
+    'Clone a site from its repository or open a site link from Central. Muster serves it locally and can pull its database and files.'
+}
+
+const SITE_TOOLS_STEP: FeatureWallSetupStep = {
+  id: 'site-tools',
+  name: 'Give your agents site tools',
+  subtitle: 'Give your agents site tools',
+  description: 'Let your agents deploy, import and query site databases.'
+}
+
 const CREATE_FIRST_WORKSPACE_STEP: FeatureWallSetupStep = {
   id: 'create-first-workspace',
   name: 'Create your first workspace',
@@ -95,7 +112,19 @@ const START_FIRST_THREAD_STEP: FeatureWallSetupStep = {
     'Threads are conversations with your agent. Describe what you need and it works while you watch.'
 }
 
+// Muster's Code-mode checklist: sites and site tools in place of Orca's worktree and repo steps.
 export const FEATURE_WALL_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
+  BROWSER_STEP,
+  FIRST_SITE_STEP,
+  SITE_TOOLS_STEP,
+  NOTIFICATIONS_STEP,
+  DEFAULT_AGENT_STEP,
+  TASK_SOURCES_STEP,
+  SETUP_SCRIPT_STEP
+] as const
+
+/** The checklist before the browser milestone; only the one-off browser migration reads it. */
+export const FEATURE_WALL_LEGACY_CODE_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
   TWO_WORKTREES_STEP,
   BROWSER_STEP,
   NOTIFICATIONS_STEP,
@@ -113,8 +142,11 @@ export const FEATURE_WALL_CHAT_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
   DEFAULT_AGENT_STEP
 ] as const
 
+// Every id ever shipped, so persisted step ids from older builds still validate.
 export const FEATURE_WALL_SETUP_STEP_IDS = [
   ...FEATURE_WALL_SETUP_STEPS,
+  TWO_WORKTREES_STEP,
+  ADD_TWO_REPOS_STEP,
   CREATE_FIRST_WORKSPACE_STEP,
   START_FIRST_THREAD_STEP
 ].map((step) => step.id)

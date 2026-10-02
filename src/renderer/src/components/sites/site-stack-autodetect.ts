@@ -11,23 +11,47 @@ import type { SiteLocalStack } from '../../../../shared/site-types'
 export type SiteStackAutodetectPatch = {
   localStack?: SiteLocalStack
   localDomain?: string
+  localWpRoot?: string
 }
 
+const trimSlashes = (value: string): string => value.replace(/^[/\\]+|[/\\]+$/g, '')
+
 export function siteStackAutodetectPatch(
-  site: { localStack: SiteLocalStack; localDomain: string },
-  detection: { stack: SiteLocalStack; domain: string }
+  site: { localStack: SiteLocalStack; localDomain: string; localWpRoot?: string },
+  detection: { stack: SiteLocalStack; domain: string; docroot?: string }
 ): SiteStackAutodetectPatch | null {
   if (detection.stack === 'plain') {
     return null
   }
   const domain = detection.domain.trim()
   if (site.localStack === 'plain' && site.localDomain.trim() === '') {
-    return domain
-      ? { localStack: detection.stack, localDomain: domain }
-      : { localStack: detection.stack }
+    return {
+      localStack: detection.stack,
+      ...(domain ? { localDomain: domain } : {}),
+      ...ddevRootPatch(detection, site.localWpRoot)
+    }
   }
-  if (site.localStack === detection.stack && domain && site.localDomain !== domain) {
-    return { localDomain: domain }
+  if (site.localStack !== detection.stack) {
+    return null
   }
-  return null
+  const patch: SiteStackAutodetectPatch = {
+    ...(domain && site.localDomain !== domain ? { localDomain: domain } : {}),
+    ...ddevRootPatch(detection, site.localWpRoot)
+  }
+  return Object.keys(patch).length > 0 ? patch : null
+}
+
+/**
+ * DDEV names its docroot, and WP-CLI, eval-file and imports all run in path + localWpRoot. A site
+ * moved off LocalWP kept `app/public`, so every MCP WP-CLI call failed in a folder that is gone.
+ */
+function ddevRootPatch(
+  detection: { stack: SiteLocalStack; docroot?: string },
+  current = ''
+): { localWpRoot?: string } {
+  if (detection.stack !== 'ddev' || detection.docroot === undefined) {
+    return {}
+  }
+  const docroot = trimSlashes(detection.docroot)
+  return trimSlashes(current) === docroot ? {} : { localWpRoot: docroot }
 }

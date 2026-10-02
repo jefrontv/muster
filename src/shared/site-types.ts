@@ -87,14 +87,15 @@ export type SiteCustomStepOrigin =
   | { kind: 'copied'; fromSiteId: string }
   | { kind: 'library'; libraryId: string }
 
-export type SiteLocalStack = 'plain' | 'mamp' | 'localwp' | 'agent-local'
+export type SiteLocalStack = 'plain' | 'mamp' | 'localwp' | 'agent-local' | 'ddev'
 
 /** Every stack a site can be set to, for validation and pickers. */
 export const SITE_LOCAL_STACKS: readonly SiteLocalStack[] = [
   'plain',
   'mamp',
   'localwp',
-  'agent-local'
+  'agent-local',
+  'ddev'
 ]
 
 export const DEFAULT_SITE_ENVIRONMENT_NAME = 'main'

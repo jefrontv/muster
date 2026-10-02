@@ -24,7 +24,7 @@ vi.mock('./SiteRunConsole', () => ({
 vi.mock('./SiteRunHistory', () => ({ SiteRunHistory: () => null }))
 // Snapshots reach for the confirmation-dialog context, which only exists under the app shell.
 vi.mock('./SiteDbSnapshotsSection', () => ({ SiteDbSnapshotsSection: () => null }))
-vi.mock('./SiteLocalStackControl', () => ({ SiteLocalStackControl: () => null }))
+vi.mock('./SiteLocalStackCard', () => ({ SiteLocalStackCard: () => null }))
 
 const storeMocks = vi.hoisted(() => ({
   sites: [],

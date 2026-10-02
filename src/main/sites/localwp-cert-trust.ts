@@ -46,8 +46,9 @@ const POLL_INTERVAL_MS = 1_000
 
 const SECURITY_BINARY = 'security'
 
+// Not "only on macOS, where LocalWP runs": LocalWP runs on Windows and Linux too.
 const UNSUPPORTED_PLATFORM =
-  'Trusting the local HTTPS certificate is only available on macOS, where LocalWP runs.'
+  "Trusting the local HTTPS certificate from Muster isn't supported on this system yet."
 
 const NO_DOMAIN =
   'This site has no local domain yet, so there is no HTTPS certificate to trust. ' +

@@ -13,7 +13,8 @@ export function SiteMcpHarnessRow({
   notice,
   blockedReason,
   boundElsewhere = false,
-  onInstall
+  onInstall,
+  compact = false
 }: {
   harness: SiteMcpHarnessStatus
   busy: boolean
@@ -23,6 +24,8 @@ export function SiteMcpHarnessRow({
   /** Another harness has a current entry, so an unconfigured one here is optional. */
   boundElsewhere?: boolean
   onInstall: () => void
+  /** Onboarding: the config advice moves to the pill's tooltip and the path is hidden. */
+  compact?: boolean
 }): React.JSX.Element {
   const state = describeSiteMcpHarness(harness, blockedReason, boundElsewhere)
   const rowClass = useIntegrationSubordinateRowClass('space-y-2')
@@ -33,15 +36,21 @@ export function SiteMcpHarnessRow({
         <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
           {harness.label}
         </p>
-        <IntegrationStatusPill tone={state.tone}>{state.statusLabel}</IntegrationStatusPill>
+        <span title={compact ? `${state.detail}\n${harness.configPath}` : undefined}>
+          <IntegrationStatusPill tone={state.tone}>{state.statusLabel}</IntegrationStatusPill>
+        </span>
       </div>
-      <p className="text-xs text-muted-foreground">{state.detail}</p>
-      <p
-        className="truncate font-mono text-[11px] text-muted-foreground/80"
-        title={harness.configPath}
-      >
-        {harness.configPath}
-      </p>
+      {compact ? null : (
+        <>
+          <p className="text-xs text-muted-foreground">{state.detail}</p>
+          <p
+            className="truncate font-mono text-[11px] text-muted-foreground/80"
+            title={harness.configPath}
+          >
+            {harness.configPath}
+          </p>
+        </>
+      )}
       {harness.error ? (
         <p role="alert" className="text-xs break-words text-destructive">
           {harness.error}

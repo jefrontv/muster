@@ -16,6 +16,7 @@ import type { Site, SiteRunGroup } from '../../shared/site-types'
 import { providerFor } from './local-stack-provider'
 // Side-effect import: the agent-local provider registers itself with the registry on load.
 import './agent-local-site-control'
+import './ddev-site-control'
 import { SiteRunStepError, type SiteRunConfig } from './pipeline-contract'
 import { getSiteSecret } from './site-secret-store'
 

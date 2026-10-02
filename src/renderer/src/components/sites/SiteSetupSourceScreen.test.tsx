@@ -108,7 +108,7 @@ describe('SiteSetupSourceScreen', () => {
     expect(onPick).toHaveBeenCalledWith(REPO)
   })
 
-  it('refuses the pick and shows the guard when no destination is configured', async () => {
+  it('asks for a folder on a repo click with no destination, and stays put if cancelled', async () => {
     Reflect.set(globalThis.window, 'api', {
       siteCloneSources: {
         providers: vi.fn().mockResolvedValue({ ok: true, value: [BITBUCKET] }),
@@ -145,10 +145,52 @@ describe('SiteSetupSourceScreen', () => {
     const repoButton = Array.from(document.body.querySelectorAll('button')).find((el) =>
       el.textContent?.includes('efront_au/flex')
     )
-    act(() => repoButton?.click())
+    await act(async () => repoButton?.click())
+    await flush()
 
+    expect(window.api.shell.pickDirectory).toHaveBeenCalledTimes(1)
     expect(onPick).not.toHaveBeenCalled()
-    expect(document.body.textContent).toContain('Choose a folder first.')
+    expect(document.body.textContent).toContain(
+      'Choose where to clone it, then pick the repository again.'
+    )
+  })
+
+  it('continues with the picked folder when there was no destination', async () => {
+    const pickDirectory = vi.fn().mockResolvedValue('/Users/tester/Sites')
+    Reflect.set(globalThis.window, 'api', {
+      siteCloneSources: {
+        providers: vi.fn().mockResolvedValue({ ok: true, value: [BITBUCKET] }),
+        repos: vi.fn().mockResolvedValue({
+          ok: true,
+          value: { repos: [REPO], error: '', truncated: false, searchesRemotely: true }
+        })
+      },
+      shell: { pickDirectory },
+      ui: { writeClipboardText: vi.fn() }
+    })
+    const onPick = vi.fn()
+    const onDestinationChange = vi.fn()
+    await act(async () => {
+      root?.render(
+        <TooltipProvider>
+          <SiteSetupSourceScreen
+            destinationRoot=""
+            onDestinationChange={onDestinationChange}
+            onPick={onPick}
+            onCancel={() => {}}
+          />
+        </TooltipProvider>
+      )
+    })
+    await flush()
+    const repoButton = Array.from(document.body.querySelectorAll('button')).find((el) =>
+      el.textContent?.includes('efront_au/flex')
+    )
+    await act(async () => repoButton?.click())
+    await flush()
+
+    expect(onDestinationChange).toHaveBeenCalledWith('/Users/tester/Sites')
+    expect(onPick).toHaveBeenCalledWith(REPO)
   })
 
   it('shows the reason and a Copy command button for an unconfigured GitHub', async () => {
@@ -288,7 +330,11 @@ describe('SiteSetupLinkTargetRows', () => {
       )
     })
     const options = [...document.body.querySelectorAll<HTMLButtonElement>('[role=radio]')]
-    expect(options.some((option) => (option.textContent ?? '').startsWith('Clone '))).toBe(false)
-    expect(options).toHaveLength(2)
+    // The projects-root clone is withheld; picking another parent folder stays on offer.
+    expect(options.some((option) => (option.textContent ?? '').startsWith('Clone efront'))).toBe(
+      false
+    )
+    expect(options.map((option) => option.textContent)).toContain('Clone into a folder…')
+    expect(options).toHaveLength(3)
   })
 })

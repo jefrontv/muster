@@ -1,16 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SiteResult } from '../../shared/site-types'
 import type {
-  ActiveCollabMcpInstallResult,
   ActiveCollabMcpSeedResult,
   ActiveCollabMcpStatus
 } from '../../shared/activecollab-mcp-types'
 
-const { handlers, removed, statusMock, installMock, seedMock } = vi.hoisted(() => ({
+const { handlers, removed, statusMock, seedMock } = vi.hoisted(() => ({
   handlers: new Map<string, (event: unknown, args?: unknown) => unknown>(),
   removed: [] as string[],
   statusMock: vi.fn(),
-  installMock: vi.fn(),
   seedMock: vi.fn()
 }))
 
@@ -29,14 +27,12 @@ vi.mock('electron', () => ({
 // and mocking them keeps this one from touching any config path at all.
 vi.mock('../activecollab/mcp-install', () => ({
   getActiveCollabMcpStatus: statusMock,
-  installActiveCollabMcpForAgents: installMock,
   seedActiveCollabMcpCredentials: seedMock
 }))
 
 import { registerActiveCollabMcpHandlers } from './activecollab-mcp'
 
 const STATUS = { binary: { found: true } } as unknown as ActiveCollabMcpStatus
-const INSTALLED = { results: [] } as unknown as ActiveCollabMcpInstallResult
 const SEEDED: ActiveCollabMcpSeedResult = { seeded: false, reason: 'nothing to seed' }
 
 function invoke<T>(channel: string, args?: unknown): SiteResult<T> {
@@ -58,10 +54,8 @@ beforeEach(() => {
   handlers.clear()
   removed.length = 0
   statusMock.mockReset()
-  installMock.mockReset()
   seedMock.mockReset()
   statusMock.mockReturnValue(STATUS)
-  installMock.mockReturnValue(INSTALLED)
   seedMock.mockReturnValue(SEEDED)
   registerActiveCollabMcpHandlers()
 })
@@ -73,9 +67,9 @@ describe('registerActiveCollabMcpHandlers', () => {
       'activecollabMcp:install',
       'activecollabMcp:seedCredentials'
     ])
+    // The retired per-agent install is cleared but never answered again.
     expect([...handlers.keys()]).toEqual([
       'activecollabMcp:status',
-      'activecollabMcp:install',
       'activecollabMcp:seedCredentials'
     ])
   })
@@ -93,67 +87,6 @@ describe('registerActiveCollabMcpHandlers', () => {
     })
 
     expect(expectError(invoke('activecollabMcp:status'))).toBe('userData unreadable')
-  })
-})
-
-describe('activecollabMcp:install validation', () => {
-  it('passes through the known agent ids', () => {
-    const result = invoke<ActiveCollabMcpInstallResult>('activecollabMcp:install', {
-      agentIds: ['codex', 'cursor']
-    })
-
-    expect(result).toEqual({ ok: true, value: INSTALLED })
-    expect(installMock).toHaveBeenCalledWith(['codex', 'cursor'])
-  })
-
-  it('collapses duplicates so one agent cannot be written twice', () => {
-    invoke('activecollabMcp:install', { agentIds: ['codex', 'codex'] })
-
-    expect(installMock).toHaveBeenCalledWith(['codex'])
-  })
-
-  it('rejects an unknown agent id at the boundary', () => {
-    expect(expectError(invoke('activecollabMcp:install', { agentIds: ['vscode'] }))).toBe(
-      'Unknown MCP agent id: vscode.'
-    )
-    expect(installMock).not.toHaveBeenCalled()
-  })
-
-  it('rejects a non-string agent id without stringifying a hostile value', () => {
-    expect(expectError(invoke('activecollabMcp:install', { agentIds: [{ id: 'codex' }] }))).toBe(
-      'Unknown MCP agent id: object.'
-    )
-    expect(installMock).not.toHaveBeenCalled()
-  })
-
-  it('rejects a missing or empty agent list', () => {
-    for (const args of [undefined, {}, { agentIds: [] }, { agentIds: 'codex' }]) {
-      expect(expectError(invoke('activecollabMcp:install', args))).toMatch(
-        /requires a non-empty agentIds array/
-      )
-    }
-    expect(installMock).not.toHaveBeenCalled()
-  })
-
-  it('rejects a list longer than the number of agents that exist', () => {
-    expect(
-      expectError(
-        invoke('activecollabMcp:install', {
-          agentIds: ['codex', 'codex', 'codex', 'codex']
-        })
-      )
-    ).toMatch(/more agent ids than agents exist/)
-    expect(installMock).not.toHaveBeenCalled()
-  })
-
-  it('reports a writer failure as a value', () => {
-    installMock.mockImplementation(() => {
-      throw new Error('home directory is read-only')
-    })
-
-    expect(expectError(invoke('activecollabMcp:install', { agentIds: ['codex'] }))).toBe(
-      'home directory is read-only'
-    )
   })
 })
 

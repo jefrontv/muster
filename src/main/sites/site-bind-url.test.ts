@@ -56,7 +56,7 @@ describe('parseSiteBindUrl scheme and action', () => {
     })
     expect(parseSiteBindUrl(`muster://deploy?${MINIMUM}`)).toEqual({
       ok: false,
-      error: 'Unsupported bind action: configure is expected.'
+      error: 'This link needs a newer version of Muster. Check for updates.'
     })
   })
 

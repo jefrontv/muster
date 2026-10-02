@@ -44,6 +44,7 @@ const IMPORT_BLOCKED_REASON: Record<SiteRunBlockedReason, string> = {
 // itself explain the same no-op the same way.
 const ALREADY_LOCALWP_REASON = 'This project is already a LocalWP site.'
 const ALREADY_AGENT_LOCAL_REASON = 'This project is already an Agent Local site.'
+const ALREADY_DDEV_REASON = 'This project is already a DDEV project.'
 
 export type SiteSetupPlanInput = {
   siteId: string
@@ -70,7 +71,7 @@ export async function buildSiteSetupPlan(
   const [detection, clone, installed] = await Promise.all([
     // Every stack, not just LocalWP: asking only LocalWP reported a folder agent-local already
     // serves as unmanaged, so the wizard offered to set up a site that was already set up.
-    detectSiteStack(site.path),
+    detectSiteStack(site.path, site.localStack),
     resolveCloneTargets(input.reponame),
     installedStacks()
   ])
@@ -136,7 +137,8 @@ function buildStackReadiness(
 ): SiteSetupStackReadiness {
   // Managed by either stack: the certificate stage needs to know which one so it asks that stack
   // about the domain rather than always asking LocalWP.
-  const managedStack = detection.stack === 'localwp' || detection.stack === 'agent-local'
+  const managedStack =
+    detection.stack === 'localwp' || detection.stack === 'agent-local' || detection.stack === 'ddev'
   const alreadyLocalWp = managedStack
   return {
     supported: detection.supported,
@@ -167,7 +169,9 @@ function buildStackReadiness(
       : alreadyLocalWp
         ? detection.stack === 'agent-local'
           ? ALREADY_AGENT_LOCAL_REASON
-          : ALREADY_LOCALWP_REASON
+          : detection.stack === 'ddev'
+            ? ALREADY_DDEV_REASON
+            : ALREADY_LOCALWP_REASON
         : ''
   }
 }

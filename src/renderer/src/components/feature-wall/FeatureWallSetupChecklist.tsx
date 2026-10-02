@@ -23,6 +23,7 @@ import {
 } from './FeatureWallSetupStepVisuals'
 import { AgentStep } from '../onboarding/AgentStep'
 import { NotificationStep } from '../onboarding/NotificationStep'
+import { OnboardingSiteMcpStep } from '../onboarding/onboarding-site-mcp-step'
 import { useAppStore } from '@/store'
 import type { TuiAgent } from '../../../../shared/types'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
@@ -155,6 +156,16 @@ function SelectedStepAction(props: FeatureWallSetupChecklistProps): React.JSX.El
   if (activeStep.id === 'setup-script') {
     return <SetupScriptAction />
   }
+  if (activeStep.id === 'first-site') {
+    return <FirstSiteAction done={activeDone} />
+  }
+  if (activeStep.id === 'site-tools') {
+    return (
+      <div className="max-w-3xl">
+        <OnboardingSiteMcpStep />
+      </div>
+    )
+  }
   if (activeStep.id === 'create-first-workspace') {
     return <ChatWorkspaceCreateAction done={activeDone} />
   }
@@ -175,6 +186,30 @@ function SelectedStepVisual(props: { stepId: FeatureWallSetupStepId }): React.JS
     return <SetupBrowserVisual />
   }
   return null
+}
+
+function FirstSiteAction(props: { done: boolean }): React.JSX.Element | null {
+  const closeModal = useAppStore((s) => s.closeModal)
+  const openSitesPage = useAppStore((s) => s.openSitesPage)
+  const setNewSiteDialogOpen = useAppStore((s) => s.setNewSiteDialogOpen)
+  if (props.done) {
+    return null
+  }
+  return (
+    <Button
+      type="button"
+      size="sm"
+      className="w-fit gap-2"
+      onClick={() => {
+        closeModal()
+        openSitesPage()
+        setNewSiteDialogOpen(true)
+      }}
+    >
+      <ArrowUpRight className="size-3.5" />
+      {translate('auto.components.feature.wall.FeatureWallSetupChecklist.new_site', 'New site')}
+    </Button>
+  )
 }
 
 function DefaultAgentAction(): React.JSX.Element {

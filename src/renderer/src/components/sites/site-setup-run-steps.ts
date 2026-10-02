@@ -187,7 +187,8 @@ export async function runServe(ctx: StepContext): Promise<void> {
   const strings = getSiteSetupRunnerStrings()
   const stack = choices.serve.stack
   const domain = choices.serve.domain.trim()
-  const stackLabel = stack === 'agent-local' ? strings.agentLocal : strings.localWp
+  const stackLabel =
+    stack === 'agent-local' ? strings.agentLocal : stack === 'ddev' ? strings.ddev : strings.localWp
   ctx.patchStep('serve', { state: 'running' })
   const offProgress = ctx.api.siteStacks.onMigrationProgress((event) => {
     if (event.siteId === ctx.state().siteId) {
@@ -229,7 +230,8 @@ export async function runServe(ctx: StepContext): Promise<void> {
       domain,
       adminEmail: LOCALWP_ADMIN_EMAIL,
       adminPassword: LOCALWP_ADMIN_PASSWORD,
-      stack
+      stack,
+      skipCoreDownload: ctx.choices.import.enabled && ctx.choices.import.toggles.exportFiles
     }
     // Preview right before mutating: it is the call that names a conflicting site, an unusable
     // domain, or a non-empty app/public.

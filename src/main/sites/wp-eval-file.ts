@@ -5,10 +5,13 @@
 // and quoteShellArgument so nothing on the remote command line can break out of a token.
 
 import { randomUUID } from 'node:crypto'
-import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rmdir, stat, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
+import type { SiteLocalStack } from '../../shared/site-types'
+import { evalFileNames, localEvalFiles } from './local-eval-file-paths'
+import { buildLocalWpCliSpawn, ddevWpCliSpawnError } from './local-wp-cli-command'
 import { createLocalWpHost } from './localwp-host'
 import { buildLocalWpWpEnv } from './localwp-wp-cli-environment'
 import {
@@ -174,13 +177,20 @@ async function collectRemoteOutputFile(
   }
 }
 
-function evalFileNames(): { phpName: string; jsonName: string } {
-  const id = randomUUID()
-  return { phpName: `muster-eval-${id}.php`, jsonName: `muster-eval-${id}.json` }
+/** Setup failures (no DDEV binary or project) become this step's error, not a crash. */
+function asEvalStepError<T>(build: () => T): T {
+  try {
+    return build()
+  } catch (error) {
+    throw new SiteRunStepError(
+      WP_EVAL_FILE_STEP,
+      error instanceof Error ? error.message : String(error)
+    )
+  }
 }
 
 export async function runLocalWpEvalFile(
-  request: WpEvalFileRequest & { wpDir: string; dbSocket?: string },
+  request: WpEvalFileRequest & { wpDir: string; dbSocket?: string; localStack?: SiteLocalStack },
   resolveLocalWpEnv: LocalWpEnvResolver = (socketPath) =>
     buildLocalWpWpEnv(createLocalWpHost(), socketPath)
 ): Promise<WpEvalFileResult> {
@@ -192,33 +202,44 @@ export async function runLocalWpEvalFile(
     request.maxPhpBytes,
     request.maxSidecarBytes
   )
-  const { phpName, jsonName } = evalFileNames()
-  const phpPath = path.join(tmpdir(), phpName)
-  const jsonPath = path.join(tmpdir(), jsonName)
+  const localStack = request.localStack ?? 'plain'
+  const files = asEvalStepError(() => localEvalFiles(localStack, request.wpDir))
   const written: string[] = []
-  const spawnArgs = ['--no-color', 'eval-file', phpPath]
+  const cliArgs = ['--no-color', 'eval-file', files.cliPhpPath]
   if (request.sidecar !== undefined) {
-    spawnArgs.push(jsonPath)
+    cliArgs.push(files.cliJsonPath)
   }
-  spawnArgs.push(...extra)
-  const command = [WP_BINARY, ...spawnArgs].map(quoteShellArgument).join(' ')
+  cliArgs.push(...extra)
+  const prefix = localStack === 'ddev' ? ['ddev', WP_BINARY] : [WP_BINARY]
+  const command = [...prefix, ...cliArgs].map(quoteShellArgument).join(' ')
   try {
-    await writeFile(phpPath, request.php, { encoding: 'utf8', mode: 0o600 })
-    written.push(phpPath)
+    if (files.ownedDir) {
+      await mkdir(files.ownedDir, { recursive: true, mode: 0o700 })
+    }
+    await writeFile(files.phpPath, request.php, { encoding: 'utf8', mode: 0o600 })
+    written.push(files.phpPath)
     if (request.sidecar !== undefined) {
-      await writeFile(jsonPath, request.sidecar, { encoding: 'utf8', mode: 0o600 })
-      written.push(jsonPath)
+      await writeFile(files.jsonPath, request.sidecar, { encoding: 'utf8', mode: 0o600 })
+      written.push(files.jsonPath)
     }
     const socketPath = request.dbSocket?.trim() ?? ''
     const localWpEnv = socketPath.length > 0 ? await resolveLocalWpEnv(socketPath) : null
-    let result: StreamCommandResult
-    try {
-      result = await streamCommand(WP_BINARY, spawnArgs, {
-        cwd: request.wpDir,
+    const spawn = asEvalStepError(() =>
+      buildLocalWpCliSpawn({
+        localStack,
+        wpDir: request.wpDir,
+        args: cliArgs,
         env: {
           ...(localWpEnv ?? process.env),
           WP_CLI_PHP_ARGS: '-d error_reporting=E_ERROR -d display_errors=0'
-        },
+        }
+      })
+    )
+    let result: StreamCommandResult
+    try {
+      result = await streamCommand(spawn.command, spawn.args, {
+        cwd: spawn.cwd,
+        env: spawn.env,
         timeoutMs: clampTimeout(request.timeoutMs),
         ...(request.signal ? { signal: request.signal } : {})
       })
@@ -229,18 +250,25 @@ export async function runLocalWpEvalFile(
       const detail = error instanceof Error ? error.message : String(error)
       throw new SiteRunStepError(
         WP_EVAL_FILE_STEP,
-        `WP-CLI (\`wp\`) could not be run in ${request.wpDir}: ${detail}`
+        localStack === 'ddev'
+          ? ddevWpCliSpawnError(spawn.cwd, detail)
+          : `WP-CLI (\`wp\`) could not be run in ${request.wpDir}: ${detail}`
       )
     }
     const finished = finish(command, result, request.maxOutputChars)
     if (!request.collectOutputFile) {
       return finished
     }
-    written.push(`${jsonPath}.out`)
-    const outputFileContents = await collectLocalOutputFile(jsonPath)
+    // The walker writes `<sidecar>.out` beside the sidecar; for DDEV that is ownedDir.
+    written.push(`${files.jsonPath}.out`)
+    const outputFileContents = await collectLocalOutputFile(files.jsonPath)
     return outputFileContents === undefined ? finished : { ...finished, outputFileContents }
   } finally {
     await Promise.all(written.map((file) => unlink(file).catch(() => undefined)))
+    if (files.ownedDir) {
+      // rmdir only removes an empty folder, so a concurrent run's files are left alone.
+      await rmdir(files.ownedDir).catch(() => undefined)
+    }
   }
 }
 

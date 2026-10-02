@@ -18,6 +18,8 @@ import '../sites/agent-local-site-control'
 import { failure, requireSite, type SiteResult } from './sites-result'
 import { createSenderScopedRequestCancellations } from './sender-scoped-request-cancellation'
 import { createMigrationProgressForwarder } from './site-stack-progress'
+// Side-effect import: the DDEV provider registers itself with the registry on load.
+import '../sites/ddev-site-control'
 
 const LOCALWP_CERT_CHANNELS = [
   'localwpCert:status',
@@ -141,7 +143,8 @@ function requireDomain(value: unknown): string {
   if (typeof value !== 'string') {
     throw new TypeError('domain must be a string')
   }
-  const domain = value.trim()
+  // A DDEV site records its router port (`site.ddev.site:8843`); a certificate covers the host only.
+  const domain = value.trim().replace(/:\d{1,5}$/, '')
   if (domain.length === 0 || domain.length > MAX_DOMAIN_LENGTH) {
     throw new TypeError(
       `domain must be a non-empty string of at most ${MAX_DOMAIN_LENGTH} characters`

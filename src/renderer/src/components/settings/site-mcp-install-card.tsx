@@ -34,7 +34,7 @@ export function SiteMcpInstallCard({ enabled }: { enabled: boolean }): React.JSX
       name={translate('auto.components.settings.siteMcp.card_name', 'muster-sites MCP')}
       description={translate(
         'auto.components.settings.siteMcp.card_description',
-        'Register the built-in site MCP server with your coding harnesses so agents can run deploys, imports, and database queries.'
+        'Add the built-in site MCP server to your coding agents so they can run deploys, imports, and database queries.'
       )}
       checking={!mcp.checked}
       statusTone={mcp.loadError || needSetup ? 'attention' : 'connected'}

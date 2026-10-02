@@ -51,10 +51,11 @@ export function GitHubRow(props: { compact?: boolean } = {}): React.JSX.Element 
                   {translate('auto.components.onboarding.IntegrationsStep.c91a5782f1', 'Connected')}
                 </IntegrationStatusPill>
               ) : state === 'not-installed' ? (
-                <IntegrationStatusPill tone="attention">
+                // Neutral, not attention: most efront sites are on Bitbucket, so no gh is fine.
+                <IntegrationStatusPill tone="neutral">
                   {translate(
-                    'auto.components.onboarding.IntegrationsStep.5c115cb713',
-                    'CLI not installed'
+                    'auto.components.onboarding.IntegrationsStep.githubOptional',
+                    'Optional'
                   )}
                 </IntegrationStatusPill>
               ) : state === 'not-authenticated' ? (
@@ -71,10 +72,15 @@ export function GitHubRow(props: { compact?: boolean } = {}): React.JSX.Element 
               )}
             </div>
             <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-              {translate(
-                'auto.components.onboarding.IntegrationsStep.50db38cf4b',
-                'Pull requests, issues, and check status.'
-              )}
+              {state === 'not-installed'
+                ? translate(
+                    'auto.components.onboarding.IntegrationsStep.githubOnlyForGithub',
+                    'Only needed for GitHub repositories: pull requests, issues, and check status.'
+                  )
+                : translate(
+                    'auto.components.onboarding.IntegrationsStep.50db38cf4b',
+                    'Pull requests, issues, and check status.'
+                  )}
             </p>
           </div>
         </div>
@@ -223,13 +229,6 @@ function OcsitesImportRow(): React.JSX.Element | null {
   )
 }
 
-const CAPABILITIES = [
-  'Pull ActiveCollab tasks into Muster and start work straight from one',
-  'Open GitHub and Bitbucket pull requests, reviews, and CI checks in-app',
-  "Start a workspace pre-loaded with a task's title and context",
-  'See task and review status on every workspace'
-] as const
-
 export function IntegrationsStep(): React.JSX.Element {
   const refreshPreflightStatus = useAppStore((s) => s.refreshPreflightStatus)
 
@@ -239,19 +238,11 @@ export function IntegrationsStep(): React.JSX.Element {
 
   return (
     <div className="space-y-6">
-      <ul className="-mt-6 space-y-1.5 text-[14px] leading-relaxed text-muted-foreground">
-        {CAPABILITIES.map((line) => (
-          <li key={line} className="flex gap-2.5">
-            <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
-            <span>{line}</span>
-          </li>
-        ))}
-      </ul>
-
+      {/* The accounts efront uses most come first; GitHub is optional and last. */}
       <div className="space-y-3">
-        <GitHubRow />
-        <BitbucketRow />
         <ActiveCollabRow />
+        <BitbucketRow />
+        <GitHubRow />
         <OcsitesImportRow />
       </div>
     </div>

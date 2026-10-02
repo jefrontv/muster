@@ -110,6 +110,21 @@ function resolveAnswerNests(match: AgentLocalSiteMatch, sitePath: string): boole
   )
 }
 
+/** Every site the daemon knows, without starting it; null when it does not answer. */
+export async function listAgentLocalSites(
+  host: AgentLocalHost = createAgentLocalHost()
+): Promise<AgentLocalSiteMatch[] | null> {
+  const response = await host.request('GET', '/sites')
+  if (!response.ok || !Array.isArray(response.data)) {
+    return null
+  }
+  return response.data
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => entry !== null)
+    .map(toSiteMatch)
+    .filter((entry): entry is AgentLocalSiteMatch => entry !== null)
+}
+
 export async function resolveAgentLocalSite(
   site: LocalStackSiteRef,
   options: AgentLocalResolveOptions = {}

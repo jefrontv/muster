@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
 import { SiteRunStepError } from './pipeline-contract'
@@ -12,6 +15,15 @@ import {
 } from './wp-cli-runner'
 
 vi.mock('../lib/stream-command', () => ({ streamCommand: vi.fn() }))
+vi.mock('../extensions/binary-probe', () => ({
+  probeBinary: vi.fn(() => ({
+    found: true,
+    path: '/opt/homebrew/bin/ddev',
+    realPath: '/opt/homebrew/bin/ddev',
+    version: null,
+    versionSource: null
+  }))
+}))
 
 const streamCommandMock = vi.mocked(streamCommand)
 
@@ -316,5 +328,67 @@ describe('runLocalWpCli', () => {
       timeoutMs: 10
     })
     expect(streamCommandMock.mock.calls[1][2]?.timeoutMs).toBe(5_000)
+  })
+})
+
+function createDdevProject(): string {
+  const root = mkdtempSync(path.join(tmpdir(), 'muster-ddev-'))
+  mkdirSync(path.join(root, '.ddev'))
+  writeFileSync(path.join(root, '.ddev', 'config.yaml'), 'name: acme\ntype: wordpress\n')
+  return root
+}
+
+describe('runLocalWpCli on a DDEV site', () => {
+  it('runs `ddev wp` from the project root and shows that command', async () => {
+    const root = createDdevProject()
+    try {
+      const result = await runLocalWpCli({
+        cwd: path.join(root, 'app', 'public'),
+        args: ['option', 'get', 'home'],
+        allowWrites: false,
+        localStack: 'ddev'
+      })
+      const [command, args, options] = streamCommandMock.mock.calls[0] ?? []
+      expect(command).toBe('/opt/homebrew/bin/ddev')
+      expect(args).toEqual(['wp', 'option', 'get', 'home'])
+      expect(options?.cwd).toBe(root)
+      expect(options?.env?.WP_CLI_PHP_ARGS).toContain('display_errors=0')
+      expect(result.command).toMatch(/^'?ddev'? '?wp'? '?option'?/)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('still refuses a write without opt-in before spawning anything', async () => {
+    const root = createDdevProject()
+    try {
+      const result = await runLocalWpCli({
+        cwd: root,
+        args: ['option', 'update', 'home', 'x'],
+        allowWrites: false,
+        localStack: 'ddev'
+      })
+      expect(result.blocked).toBe(true)
+      expect(streamCommandMock).not.toHaveBeenCalled()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('names Docker and the project when `ddev wp` cannot be spawned', async () => {
+    const root = createDdevProject()
+    streamCommandMock.mockRejectedValue(new Error('spawn ddev ENOENT'))
+    try {
+      await expect(
+        runLocalWpCli({
+          cwd: root,
+          args: ['core', 'version'],
+          allowWrites: false,
+          localStack: 'ddev'
+        })
+      ).rejects.toThrow(/`ddev wp` could not be run in .*Is Docker running/)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 })

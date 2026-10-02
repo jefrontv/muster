@@ -25,18 +25,19 @@ afterEach(() => {
 
 describe('setup guide step completion telemetry', () => {
   it('uses setup-first ordering for setup-guide open first-incomplete telemetry', () => {
-    expect(getSetupGuideTelemetryFirstIncompleteStepId(createProgress({}))).toBe('notifications')
+    expect(getSetupGuideTelemetryFirstIncompleteStepId(createProgress({}))).toBe('first-site')
     expect(
       getSetupGuideTelemetryFirstIncompleteStepId(
         createProgress({
+          'first-site': true,
+          'site-tools': true,
           notifications: true,
           'default-agent': true,
           'task-sources': true,
-          'setup-script': true,
-          'add-two-repos': true
+          'setup-script': true
         })
       )
-    ).toBe('two-worktrees')
+    ).toBe('browser')
     expect(
       getSetupGuideTelemetryFirstIncompleteStepId(
         createProgress(

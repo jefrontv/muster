@@ -18,7 +18,6 @@ import { useSiteRun } from '@/components/sites/use-site-run'
 import { RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
 import { openSiteInSitesPage } from './site-panel-open-in-sites'
 import {
-  InfoRow,
   RunStatusDot,
   SectionCard,
   SectionHeading,
@@ -27,7 +26,7 @@ import {
 import { useSiteForActiveProject } from './use-site-for-active-project'
 import { SitePanelEnvironmentSection } from './site-panel-environment-section'
 import { SitePanelRunOutput } from './site-panel-run-output'
-import { SitePanelWpCliSection } from './site-panel-wp-cli'
+import { SiteLocalStackCard } from '../sites/SiteLocalStackCard'
 import { SitePanelPipelines } from './SitePanelPipelines'
 import { useSitePipelines } from './use-site-pipelines'
 
@@ -290,32 +289,7 @@ export function SitePanelContent({
         </Tooltip>
       </header>
 
-      <SectionCard>
-        <SectionHeading>
-          {translate('auto.components.right.sidebar.SitePanel.localSection', 'Local')}
-        </SectionHeading>
-        <InfoRow
-          label={translate('auto.components.right.sidebar.SitePanel.localDomain', 'Local domain')}
-          value={site.localDomain || '—'}
-          mono
-        />
-        <InfoRow
-          label={translate(
-            'auto.components.right.sidebar.SitePanel.localWpRoot',
-            'WordPress subpath'
-          )}
-          value={site.localWpRoot || '—'}
-          mono
-        />
-        <InfoRow
-          label={translate('auto.components.right.sidebar.SitePanel.dbSocket', 'DB socket')}
-          value={
-            site.dbSocket.length > 0
-              ? translate('auto.components.right.sidebar.SitePanel.dbSocketSet', 'Set')
-              : '—'
-          }
-        />
-      </SectionCard>
+      <SiteLocalStackCard summary={summary} compact />
 
       <SectionCard>
         <SitePanelEnvironmentSection
@@ -329,16 +303,6 @@ export function SitePanelContent({
           onStepsChanged={onStepsChanged}
         />
       </SectionCard>
-
-      {noEnvironmentReason === null ? (
-        <SectionCard>
-          <SitePanelWpCliSection
-            siteId={site.id}
-            targetName={targetName ?? null}
-            disabledReason={noEnvironmentReason}
-          />
-        </SectionCard>
-      ) : null}
 
       {/* Output only: the Import/Deploy actions live with their step toggles above. The section
           disappears while idle so the panel carries no empty chrome. */}

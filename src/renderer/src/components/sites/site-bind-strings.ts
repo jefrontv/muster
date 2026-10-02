@@ -7,7 +7,7 @@ import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 export const getSiteBindStrings = createLocalizedCatalog(() => ({
   chooseFolder: translate(
     'auto.components.sites.SiteBindDialog.chooseFolder',
-    'Which local folder should this bind to?'
+    'Where should this site live on your computer?'
   ),
   folderTitle: translate('auto.components.sites.SiteBindDialog.folderTitle', 'Folder'),
   credentialsTitle: translate(
@@ -21,7 +21,27 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
   cloneOption: translate('auto.components.sites.SiteBindDialog.cloneOption', 'Clone {{repo}}'),
   chooseAnother: translate(
     'auto.components.sites.SiteBindDialog.chooseAnother',
-    'Choose another folder…'
+    'Use an existing checkout…'
+  ),
+  cloneIntoFolder: translate(
+    'auto.components.sites.SiteBindDialog.cloneIntoFolder',
+    'Clone into a folder…'
+  ),
+  cloneNoConnector: translate(
+    'auto.components.sites.SiteBindDialog.cloneNoConnector',
+    'Connect Bitbucket to clone this repository.'
+  ),
+  cloneNotFound: translate(
+    'auto.components.sites.SiteBindDialog.cloneNotFound',
+    'Muster could not find this repository to clone it. Use an existing checkout instead.'
+  ),
+  cloneLookupFailed: translate(
+    'auto.components.sites.SiteBindDialog.cloneLookupFailed',
+    'Muster could not look up this repository: {{error}}'
+  ),
+  openIntegrations: translate(
+    'auto.components.sites.SiteBindDialog.openIntegrations',
+    'Open Integrations'
   ),
   allFields: translate(
     'auto.components.sites.SiteBindDialog.allFields',

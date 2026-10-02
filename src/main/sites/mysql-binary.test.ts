@@ -8,6 +8,7 @@ import {
   findMysqlBinary,
   homebrewMysqlDirectories,
   localWpMysqlDirectories,
+  mysqlInstallRemedy,
   mysqlSearchDirectories,
   redactPassword,
   renderMysqlOptionFile,
@@ -196,7 +197,7 @@ describe('resolveMysqlBinary', () => {
     expect(thrown).toBeInstanceOf(SiteRunStepError)
     expect((thrown as SiteRunStepError).step).toBe('mysql-binary')
     expect((thrown as Error).message).toBe(
-      'Could not find the mysql binary. Install the MySQL client (`brew install mysql-client`) or add its bin directory to PATH.'
+      `Could not find the mysql binary. ${mysqlInstallRemedy()}`
     )
   })
 
@@ -288,5 +289,13 @@ describe('redactPassword', () => {
 
   it('leaves the text alone when there is no password to redact', () => {
     expect(redactPassword('connection refused', '')).toBe('connection refused')
+  })
+})
+
+describe('mysqlInstallRemedy', () => {
+  it('names Homebrew only on macOS', () => {
+    expect(mysqlInstallRemedy('darwin')).toContain('brew install mysql-client')
+    expect(mysqlInstallRemedy('win32')).not.toContain('brew')
+    expect(mysqlInstallRemedy('linux')).not.toContain('brew')
   })
 })

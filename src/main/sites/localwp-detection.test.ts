@@ -261,7 +261,8 @@ describe('stack detection', () => {
       domain: 'acme.local',
       socketPath: SOCKET,
       socketReady: true,
-      phpVersion: '8.3.0'
+      phpVersion: '8.3.0',
+      docroot: 'app/public'
     })
   })
 

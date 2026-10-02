@@ -1,4 +1,4 @@
-// Status + actions for the ActiveCollab MCP install card.
+// Server status and the credential-file action for ActiveCollab agent access.
 //
 // The `checked` flag flips even when the read fails, mirroring
 // use-integration-provider-status-refresh: a broken status call must show an error, never an
@@ -7,13 +7,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
-import {
-  ACTIVECOLLAB_MCP_SERVER_KEY,
-  type ActiveCollabMcpAgentId,
-  type ActiveCollabMcpStatus
-} from '../../../../shared/activecollab-mcp-types'
+import type { ActiveCollabMcpStatus } from '../../../../shared/activecollab-mcp-types'
 
-export type ActiveCollabMcpActionScope = ActiveCollabMcpAgentId | 'credentials'
+export type ActiveCollabMcpActionScope = 'credentials'
 
 export type ActiveCollabMcpNotice = {
   scope: ActiveCollabMcpActionScope
@@ -28,7 +24,6 @@ export type ActiveCollabMcpController = {
   busy: ActiveCollabMcpActionScope | null
   notice: ActiveCollabMcpNotice | null
   refresh: () => Promise<void>
-  install: (agentId: ActiveCollabMcpAgentId) => Promise<void>
   seedCredentials: () => Promise<void>
 }
 
@@ -98,42 +93,6 @@ export function useActiveCollabMcpStatus(): ActiveCollabMcpController {
     [mountedRef]
   )
 
-  const install = useCallback(
-    async (agentId: ActiveCollabMcpAgentId): Promise<void> => {
-      await run(agentId, async (): Promise<ActiveCollabMcpNotice> => {
-        const result = await window.api.activecollabMcp.install({ agentIds: [agentId] })
-        if (!result.ok) {
-          return { scope: agentId, tone: 'error', message: result.error }
-        }
-        // The write already happened, partial failure included, so the card re-reads either way.
-        await refresh()
-        const written = result.value.results.find((entry) => entry.id === agentId)
-        if (!written || !written.ok) {
-          return {
-            scope: agentId,
-            tone: 'error',
-            message:
-              written?.error ??
-              translate(
-                'auto.components.settings.activecollab.mcp.install_failed',
-                'The agent config was not written.'
-              )
-          }
-        }
-        return {
-          scope: agentId,
-          tone: 'success',
-          message: translate(
-            'auto.components.settings.activecollab.mcp.install_ok',
-            'Wrote the "{{value0}}" entry to {{value1}}.',
-            { value0: ACTIVECOLLAB_MCP_SERVER_KEY, value1: written.configPath }
-          )
-        }
-      })
-    },
-    [refresh, run]
-  )
-
   const seedCredentials = useCallback(async (): Promise<void> => {
     await run('credentials', async (): Promise<ActiveCollabMcpNotice> => {
       const result = await window.api.activecollabMcp.seedCredentials()
@@ -157,5 +116,5 @@ export function useActiveCollabMcpStatus(): ActiveCollabMcpController {
     })
   }, [refresh, run])
 
-  return { status, checked, loadError, busy, notice, refresh, install, seedCredentials }
+  return { status, checked, loadError, busy, notice, refresh, seedCredentials }
 }

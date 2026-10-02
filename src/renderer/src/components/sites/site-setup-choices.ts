@@ -13,6 +13,7 @@ import {
   type SiteImportToggleKey,
   type SiteLocalStack
 } from '../../../../shared/site-types'
+import { domainForStack } from './site-setup-stack-domain'
 
 /** Where the site comes from. Decides which steps the run has and what `register` writes. */
 export type SiteSetupSource =
@@ -125,7 +126,7 @@ export function defaultSetupChoices(args: {
     serve: {
       enabled: stackAvailable && args.stack !== null,
       stack: args.stack,
-      domain: args.domain
+      domain: domainForStack(args.domain, args.stack)
     },
     https: stackAvailable && args.stack !== null && args.certSupported,
     import: {

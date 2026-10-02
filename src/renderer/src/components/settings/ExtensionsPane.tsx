@@ -91,7 +91,7 @@ export function ExtensionsPane(): React.JSX.Element {
       <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
         {translate(
           'auto.components.settings.extensions.intro',
-          'Muster checks what each of your coding harnesses has installed on this machine, and what version has been published.'
+          'Muster checks what each of your coding agents has installed on this computer, and what version has been published.'
         )}
       </p>
 
@@ -177,10 +177,7 @@ export function ExtensionsPane(): React.JSX.Element {
               size="icon-sm"
               className="shrink-0"
               disabled={loading}
-              aria-label={translate(
-                'auto.components.settings.extensions.refresh',
-                'Check again'
-              )}
+              aria-label={translate('auto.components.settings.extensions.refresh', 'Check again')}
               onClick={() => void refresh(true)}
             >
               <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
@@ -224,10 +221,7 @@ export function ExtensionsPane(): React.JSX.Element {
               ? translate('auto.components.settings.extensions.empty_loading', 'Checking')
               : filter.query || filter.status !== 'all'
                 ? translate('auto.components.settings.extensions.empty_filtered', 'No matches')
-                : translate(
-                    'auto.components.settings.extensions.empty_tab',
-                    'Nothing here yet'
-                  )}
+                : translate('auto.components.settings.extensions.empty_tab', 'Nothing here yet')}
           </p>
           <p className="max-w-xs text-xs text-muted-foreground">
             {filter.query || filter.status !== 'all'

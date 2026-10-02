@@ -76,6 +76,10 @@ vi.mock('../activecollab/task-snapshot-store', () => ({
 
 // Not a courtesy stub: the real one resolves the REAL home directory, so connecting in this suite
 // would rewrite the developer's own ~/.activecollab-mcp/credentials.json with fixture values.
+// The real one scans and writes agent configs under the developer's home directory.
+vi.mock('../activecollab/mcp-claude-registration', () => ({
+  registerActiveCollabMcpWithClaude: vi.fn(async () => {})
+}))
 vi.mock('../activecollab/mcp-install', () => ({
   shareActiveCollabLoginWithMcp: seedMcpMock
 }))

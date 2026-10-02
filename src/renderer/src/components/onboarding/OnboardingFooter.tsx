@@ -16,6 +16,9 @@ type OnboardingFooterProps = {
   onPrimary: () => void
   secondaryLabel?: string
   onSecondary?: () => void
+  /** Left-hand text action on a step without the skip link, e.g. "Add a project instead". */
+  tertiaryLabel?: string
+  onTertiary?: () => void
 }
 
 export function OnboardingFooter({
@@ -31,7 +34,9 @@ export function OnboardingFooter({
   shortcutModifierLabel,
   onPrimary,
   secondaryLabel,
-  onSecondary
+  onSecondary,
+  tertiaryLabel,
+  onTertiary
 }: OnboardingFooterProps): React.JSX.Element {
   return (
     <footer className="mt-6 flex flex-none items-center justify-between border-t border-border pt-5">
@@ -47,9 +52,18 @@ export function OnboardingFooter({
                 'Skip to workspace setup'
               )
             : translate(
-                'auto.components.onboarding.OnboardingFooter.111d3f8d92',
-                'Skip to project setup'
+                'auto.components.onboarding.OnboardingFooter.skipToSiteSetup',
+                'Skip to site setup'
               )}
+        </button>
+      ) : tertiaryLabel && onTertiary ? (
+        <button
+          type="button"
+          className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={Boolean(busyLabel)}
+          onClick={onTertiary}
+        >
+          {tertiaryLabel}
         </button>
       ) : (
         <span />

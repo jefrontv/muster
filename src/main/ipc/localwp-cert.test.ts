@@ -84,6 +84,11 @@ describe('registerLocalWpCertHandlers', () => {
     expect(getLocalWpCertStatus).toHaveBeenCalledWith('117pacific.local')
   })
 
+  it('drops the router port a DDEV domain carries', async () => {
+    await call('localwpCert:status', { domain: 'mooneevalleypark.ddev.site:8843' })
+    expect(getLocalWpCertStatus).toHaveBeenCalledWith('mooneevalleypark.ddev.site')
+  })
+
   it('starts the site then trusts when asked to ensure a missing certificate', async () => {
     expect(await call('localwpCert:ensure', { domain: 'ebes.local', siteId: 'site-1' })).toEqual({
       ok: true,

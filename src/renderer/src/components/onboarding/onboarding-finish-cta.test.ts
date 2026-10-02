@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   setActiveView: vi.fn(),
   setChatWorkspaceCreateOpen: vi.fn(),
   openModal: vi.fn(),
+  openSitesPage: vi.fn(),
+  setNewSiteDialogOpen: vi.fn(),
   activeView: 'terminal' as string
 }))
 
@@ -17,7 +19,9 @@ vi.mock('@/store', () => ({
       closeChatPage: mocks.closeChatPage,
       setActiveView: mocks.setActiveView,
       setChatWorkspaceCreateOpen: mocks.setChatWorkspaceCreateOpen,
-      openModal: mocks.openModal
+      openModal: mocks.openModal,
+      openSitesPage: mocks.openSitesPage,
+      setNewSiteDialogOpen: mocks.setNewSiteDialogOpen
     })
   }
 }))
@@ -29,14 +33,14 @@ import {
 } from './onboarding-finish-cta'
 
 describe('onboarding finish CTA', () => {
-  it('asks Chat Mode users to add a workspace and Code Mode users to add a project', () => {
+  it('asks Chat Mode users to add a workspace and Code Mode users to set up a site', () => {
     expect(onboardingFinishCtaLabel('chat')).toBe('Add first workspace')
-    expect(onboardingFinishCtaLabel('code')).toBe('Add your first project')
+    expect(onboardingFinishCtaLabel('code')).toBe('Set up your first site')
     expect(onboardingFinishBusyLabel('chat')).toBe('Opening Add Workspace...')
-    expect(onboardingFinishBusyLabel('code')).toBe('Opening Add Project...')
+    expect(onboardingFinishBusyLabel('code')).toBe('Opening New site...')
   })
 
-  it('opens the Chat workspace dialog for Chat Mode and Add Project for Code Mode', () => {
+  it('opens the Chat workspace dialog for Chat Mode and New site for Code Mode', () => {
     openOnboardingFinishSurface('chat')
     expect(mocks.openChatPage).toHaveBeenCalled()
     expect(mocks.setChatWorkspaceCreateOpen).toHaveBeenCalledWith(true)
@@ -45,7 +49,9 @@ describe('onboarding finish CTA', () => {
     mocks.openChatPage.mockClear()
     mocks.setChatWorkspaceCreateOpen.mockClear()
     openOnboardingFinishSurface('code')
-    expect(mocks.openModal).toHaveBeenCalledWith('add-repo')
+    expect(mocks.openSitesPage).toHaveBeenCalled()
+    expect(mocks.setNewSiteDialogOpen).toHaveBeenCalledWith(true)
+    expect(mocks.openModal).not.toHaveBeenCalled()
     expect(mocks.setChatWorkspaceCreateOpen).not.toHaveBeenCalled()
   })
 })

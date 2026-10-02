@@ -17,7 +17,11 @@ import { translate } from '@/i18n/i18n'
 import { resolveAgentPermissionModeSummary } from '../../../../shared/tui-agent-permissions'
 import { isWindowsUserAgent } from '@/components/terminal-pane/pane-helpers'
 import { buildWindowsTerminalSnapshotPayload } from './windows-terminal-onboarding-telemetry'
-import { onboardingFinishBusyLabel, openOnboardingFinishSurface } from './onboarding-finish-cta'
+import {
+  onboardingFinishBusyLabel,
+  openOnboardingFinishSurface,
+  openOnboardingProjectSurface
+} from './onboarding-finish-cta'
 import {
   applyOnboardingDefaultView,
   resolveOnboardingDefaultView,
@@ -39,10 +43,10 @@ function shouldSkipIntegrationsStep(
   activeCollabConfigured: boolean
 ): boolean {
   // Why the extra clauses: the step also hosts Bitbucket, ActiveCollab, and the one-click
-  // ocsites import, so it stays visible while any of those still has something to do.
+  // ocsites import, so it stays visible while any of those still has something to do. GitHub is
+  // optional, so a missing gh no longer brings the step back on every replay.
   return (
-    status?.gh.installed === true &&
-    status.bitbucket?.configured === true &&
+    status?.bitbucket?.configured === true &&
     activeCollabConfigured &&
     status.ocsites?.detected !== true
   )
@@ -645,6 +649,31 @@ export function useOnboardingFlow(
     [busyLabel, closeWith, currentStep.id, persistCurrentStep, trackCurrentStepCompleted]
   )
 
+  // Code mode's secondary finish: a project rather than a site, for folders that are not sites.
+  const finishWithProject = useCallback(async () => {
+    if (nextInFlightRef.current || busyLabel || currentStep.id !== 'notifications') {
+      return
+    }
+    nextInFlightRef.current = true
+    try {
+      const result = await persistCurrentStep()
+      if (!result.ok) {
+        return
+      }
+      trackCurrentStepCompleted('button')
+      setBusyLabel(
+        translate('auto.components.onboarding.use.onboarding.flow.finishing', 'Finishing...')
+      )
+      const closed = await closeWith('completed', {}, ONBOARDING_FINAL_STEP, 'add_project_modal')
+      if (closed) {
+        openOnboardingProjectSurface()
+      }
+    } finally {
+      setBusyLabel(null)
+      nextInFlightRef.current = false
+    }
+  }, [busyLabel, closeWith, currentStep.id, persistCurrentStep, trackCurrentStepCompleted])
+
   const skipToRepo = useCallback(async () => {
     if (busyLabel) {
       return
@@ -792,8 +821,10 @@ export function useOnboardingFlow(
     error,
     detectedSet,
     isDetectingAgents,
+    recheckAgents: refreshDetectedAgents,
     next,
     finishWithoutAdding,
+    finishWithProject,
     skipToRepo,
     dismissOnboarding,
     back,

@@ -57,7 +57,9 @@ function makeProgress(overrides: Partial<FeatureWallSetupProgress> = {}): Featur
       'task-sources': false,
       'setup-script': false,
       'create-first-workspace': false,
-      'start-first-thread': false
+      'start-first-thread': false,
+      'first-site': false,
+      'site-tools': false
     },
     coreDoneCount: 0,
     coreTotal: 8,
@@ -78,7 +80,9 @@ function makeAllDoneProgress(
       'task-sources': true,
       'setup-script': true,
       'create-first-workspace': true,
-      'start-first-thread': true
+      'start-first-thread': true,
+      'first-site': true,
+      'site-tools': true
     },
     coreDoneCount: 8,
     coreTotal: 8,

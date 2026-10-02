@@ -9250,7 +9250,22 @@
             "setup_terminal_label": "ActiveCollab MCP setup terminal",
             "setup_tab_title": "ActiveCollab MCP setup",
             "setup_running": "Press Enter to run setup, then answer its prompts here. This card refreshes when setup exits.",
-            "run_setup_install": "Opens a terminal with pipx install. Press Enter to run it."
+            "run_setup_install": "Opens a terminal with pipx install. Press Enter to run it.",
+            "advanced_setup_title": "Runs the server’s own setup wizard in a terminal.",
+            "advanced_setup": "Advanced setup"
+          },
+          "access": {
+            "working": "Setting up…",
+            "add_more": "Add to {{count}} more agents",
+            "give": "Give my agents access",
+            "help": "Installs the ActiveCollab server and adds it to every agent on this computer.",
+            "added": "Added",
+            "outdated": "Needs update",
+            "not_added": "Not added yet",
+            "remove": "Remove from {{harness}}",
+            "details": "Details",
+            "local_only": "Agents on this computer only. Agents in SSH workspaces don’t get this server.",
+            "add_one": "Add to 1 more agent"
           }
         },
         "ActiveCollabNotificationSection": {
@@ -9391,8 +9406,8 @@
           }
         },
         "siteMcp": {
-          "harness_missing_status": "Harness not detected",
-          "harness_missing_detail": "Muster did not find this harness on this machine. Installing anyway writes the config file shown below, which the harness picks up once it exists.",
+          "harness_missing_status": "Agent not detected",
+          "harness_missing_detail": "Muster did not find this agent on this computer. Installing anyway writes the config file shown below, which the agent picks up once it exists.",
           "harness_missing_action": "Install anyway",
           "harness_unconfigured_status": "Not configured by Muster",
           "harness_unconfigured_detail": "Muster has not written its \"muster-sites\" entry here. If you already added a site MCP server under a different key, Muster cannot see it — open the config below before installing so you do not end up with two.",
@@ -9405,7 +9420,7 @@
           "harness_current_action": "Rewrite entry",
           "install_blocked_disabled": "Site tools are switched off above, so agents would not be allowed to call this server anyway. Turn them on to install.",
           "card_name": "muster-sites MCP",
-          "card_description": "Register the built-in site MCP server with your coding harnesses so agents can run deploys, imports, and database queries.",
+          "card_description": "Add the built-in site MCP server to your coding agents so they can run deploys, imports, and database queries.",
           "status_unavailable": "Status unavailable",
           "status_setup": "Setup needed",
           "status_current": "Up to date",
@@ -9426,7 +9441,7 @@
         "extensions": {
           "tab_tools": "Tools",
           "tab_skills": "Skills",
-          "intro": "Muster checks what each of your coding harnesses has installed on this machine, and what version has been published.",
+          "intro": "Muster checks what each of your coding agents has installed on this computer, and what version has been published.",
           "master_auto_update": "Update extensions automatically",
           "master_auto_update_hint": "Applies at launch, for extensions that can update without asking you anything. Sets the default for what you install next; the switch on each extension wins.",
           "tabs_label": "Extension kind",
@@ -9448,7 +9463,7 @@
             "autoUpdateTitle": "Automatic extension updates",
             "autoUpdateDescription": "Let Muster apply updates for eligible extensions at launch instead of prompting each time.",
             "activecollabTitle": "ActiveCollab MCP",
-            "activecollabDescription": "Install or update the ActiveCollab MCP server and register it with your harnesses.",
+            "activecollabDescription": "Install or update the ActiveCollab MCP server and add it to your agents.",
             "acfTitle": "ACF JSON MCP",
             "acfDescription": "Install or update the ACF field-group MCP server for WordPress projects.",
             "agentLocalTitle": "Agent Local",
@@ -10894,7 +10909,10 @@
           "showMoreAgents": "{{value0}} 件の agents をさらに表示→",
           "yoloPermissionsLabel": "Yolo / Dangerously skip permissions",
           "yoloPermissionsInfo": "Agent permission info",
-          "yoloPermissionsTooltip": "Agents run commands without asking each time. Faster, but they can change or delete files unprompted. Leave off if you're unsure."
+          "yoloPermissionsTooltip": "Agents run commands without asking each time. Faster, but they can change or delete files unprompted. Leave off if you're unsure.",
+          "checkAgain": "Check again",
+          "noAgentsFound": "No coding agents found on this computer. Pick one to install later, or continue with a plain terminal.",
+          "notInstalledYet": "isn't on this computer yet. Muster will set it as your default and you can install it any time."
         },
         "FeatureSetupChecklist": {
           "77f74946f5": "Agents は相互にメッセージを送信し、タスクを実行し、引き継ぎを調整できます。",
@@ -10958,7 +10976,10 @@
           "bitbucket": "Bitbucket",
           "bitbucketNotConnected": "Not connected",
           "bitbucketCancel": "Cancel",
-          "bitbucketConnect": "Connect"
+          "bitbucketConnect": "Connect",
+          "githubOptional": "Optional",
+          "githubOnlyForGithub": "Only needed for GitHub repositories: pull requests, issues, and check status.",
+          "bitbucketUnavailable": "Bitbucket sign-in isn't available in this build. Update Muster and try again."
         },
         "NotificationStep": {
           "3bede04483": "テスト通知を送信する",
@@ -11005,13 +11026,13 @@
           "defaultViewTitle": "How do you want to start?",
           "defaultViewSubtitle": "Chat is a conversation desk. Code is worktrees and terminals. Switch any time from the sidebar.",
           "integrationsTitle": "Connect your sources",
-          "integrationsSubtitle": "Link GitHub, Bitbucket, and ActiveCollab to:",
+          "integrationsSubtitle": "Connect the accounts you use. Muster pulls in tasks and pull requests from them.",
           "siteSourcesTitle": "Point Muster at your sites",
           "siteSourcesSubtitle": "Pick the folders your sites live in. Muster watches them and can add new ones to the sidebar for you.",
           "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
           "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.",
-          "siteMcpTitle": "Let agents work on your sites",
-          "siteMcpSubtitle": "Install the muster-sites server into your harnesses so agents can deploy, import, and query databases."
+          "siteMcpTitle": "Tools for your agents",
+          "siteMcpSubtitle": "Let your agents deploy, import and query site databases."
         },
         "welcome": {
           "eyebrow": "Welcome to",
@@ -11030,14 +11051,16 @@
           "ba58547306": "戻る",
           "111d3f8d92": "プロジェクトのセットアップにスキップ",
           "done": "完了",
-          "skipToWorkspaceSetup": "Skip to workspace setup"
+          "skipToWorkspaceSetup": "Skip to workspace setup",
+          "addProject": "Add a project instead",
+          "skipToSiteSetup": "Skip to site setup"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "terminal を起動しています..."
         },
         "OnboardingSkipConfirmationDialog": {
           "e4726b2d50": "オンボーディングをスキップしますか?",
-          "skipDescription": "You can set all of this up later in Settings, but this screen won't come back."
+          "skipDescription": "You can set this up later in Settings, or replay it from Help."
         },
         "OnboardingTourStep": {
           "3f9586c043": "ツアーに参加する",
@@ -11132,10 +11155,29 @@
           "status_ready": "Installed",
           "status_setup": "Setup needed",
           "description": "Muster ships an MCP server that lets your agents run deploys and imports, query databases, and read site config. Install it into the harnesses you use. You can change this later in Settings.",
-          "checking": "Checking your harnesses…",
+          "checking": "Checking your agents…",
           "retry": "Try again",
-          "no_harnesses": "No coding harnesses found yet. Install one and Muster can register the server from Settings later.",
-          "project_note": "Project-level installs happen on their own: Muster keeps a muster-sites entry in each site project’s .mcp.json."
+          "no_harnesses": "No coding agents found yet. Install one and Muster can add site tools to it from Settings later.",
+          "project_note": "Project-level installs happen on their own: Muster keeps a muster-sites entry in each site project’s .mcp.json.",
+          "all_ready": "Every agent on this computer has site tools.",
+          "install_hint": "Adds site tools to every agent on this computer.",
+          "install_all": "Install for all my agents",
+          "added": "Added",
+          "not_added": "Not added yet",
+          "choose_agents": "Choose agents"
+        },
+        "finish": {
+          "firstSite": "Set up your first site",
+          "openingNewSite": "Opening New site..."
+        },
+        "RecommendedTools": {
+          "title": "Recommended tools",
+          "description": "efront’s own tools for your agents. Each one is in Settings > Extensions afterwards.",
+          "installing": "Installing…",
+          "install": "Install recommended",
+          "installed": "Installed",
+          "not_installed": "Not installed",
+          "failed": "Could not install {{names}}. Open Settings > Extensions to see why."
         }
       },
       "new": {
@@ -11596,7 +11638,8 @@
             "b1f1981c5e": "タスクを参照",
             "0235b268b2": "まだ終わっていない",
             "13294d3405": "完了",
-            "open_integrations_settings": "Open Integrations settings"
+            "open_integrations_settings": "Open Integrations settings",
+            "new_site": "New site"
           },
           "FeatureWallSetupWorkflowActions": {
             "486c2f4d8d": "まず git プロジェクトを追加してから、その repos のセットアップ スクリプトを構成します。",
@@ -13677,10 +13720,15 @@
           "folders": "Folders",
           "addToSidebarOptions": "Add to sidebar options",
           "autoAddDiscovered": "Add new sites automatically",
-          "autoAddDiscoveredHint": "New folders found under your site folders become sidebar projects on their own, with no setup.",
+          "autoAddDiscoveredHint": "New folders found under your site folders show in the sidebar on their own, with no setup.",
           "sidebarUpToDate": "Already up to date — every site folder is in the sidebar.",
           "moreActions": "More site actions",
-          "foldersMenu": "Site folders…"
+          "foldersMenu": "Site folders…",
+          "addToSidebarTooltip": "Show these folders in the sidebar without setting them up",
+          "emptyTitle": "No sites yet.",
+          "emptyNewSite": "New site from a repository",
+          "emptyFolders": "Choose site folders",
+          "emptyLink": "Or open a site link from Central."
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
@@ -13691,7 +13739,7 @@
           "cancel": "Cancel"
         },
         "SiteBindDialog": {
-          "chooseFolder": "Which local folder should this bind to?",
+          "chooseFolder": "Where should this site live on your computer?",
           "noCandidates": "No local checkout matches this repository yet.",
           "passwordNotice": "The link carries an SSH password. It is stored in your OS keychain and never shown again.",
           "noPasswordNotice": "The link carries no password, so no credential will be stored.",
@@ -13712,8 +13760,13 @@
           "credentialsTitle": "Credentials",
           "existingCheckout": "Existing checkout",
           "cloneOption": "Clone {{repo}}",
-          "chooseAnother": "Choose another folder…",
-          "allFields": "All fields from the link ({{count}})"
+          "chooseAnother": "Use an existing checkout…",
+          "allFields": "All fields from the link ({{count}})",
+          "cloneIntoFolder": "Clone into a folder…",
+          "cloneNoConnector": "Connect Bitbucket to clone this repository.",
+          "cloneNotFound": "Muster could not find this repository to clone it. Use an existing checkout instead.",
+          "cloneLookupFailed": "Muster could not look up this repository: {{error}}",
+          "openIntegrations": "Open Integrations"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -13737,7 +13790,7 @@
           "notAuthorized": "Could not open the run log."
         },
         "DiscoveredSiteRow": {
-          "notConfigured": "Not configured"
+          "notConfigured": "Not set up"
         },
         "CloneSource": {
           "trigger": "New site",
@@ -13830,7 +13883,7 @@
           "stepRegister": "Register site",
           "runningClone": "Cloning…",
           "runningServe": "Creating local site…",
-          "runningHttps": "Trusting certificate… (macOS may ask for your password)",
+          "runningHttps": "Trusting certificate… Your computer may ask for your password.",
           "runningImport": "Importing…",
           "cancel": "Cancel",
           "cannotCancel": "Can't be cancelled while running",
@@ -13849,7 +13902,9 @@
           "skipped": "Skipped",
           "localAddress": "Local address",
           "adminEmail": "Email",
-          "adminPassword": "Password"
+          "adminPassword": "Password",
+          "addEnvironment": "Add environment",
+          "addEnvironmentHint": "Add the server details to pull the database and files."
         },
         "SiteDbSnapshots": {
           "created": "Snapshot saved.",
@@ -13879,10 +13934,12 @@
           "certNotTrusted": "The certificate is still not trusted",
           "imported": "Imported from {{environment}}",
           "importFailed": "The import failed",
-          "cancelled": "Cancelled"
+          "cancelled": "Cancelled",
+          "ddev": "DDEV"
         },
         "SiteSetupHost": {
-          "linkRejected": "Link not accepted"
+          "linkRejected": "Link not accepted",
+          "linkHeld": "Site link received. It opens when you finish setup."
         },
         "SiteSetupMinimizeButton": {
           "minimize": "Minimize — keep this running in the status bar"
@@ -13893,7 +13950,7 @@
           "serveCreateLocalWp": "Create a LocalWP site at {{domain}}",
           "serveAlreadyLocalWp": "Already a LocalWP site at {{domain}}",
           "serveAgentLocal": "Serve with Agent Local at {{domain}}",
-          "serveNoStack": "No local stack is installed.",
+          "serveNoStack": "No local stack is installed. Install one to serve this site.",
           "serveEditLabel": "Change how this site is served",
           "serveStackLabel": "Local stack",
           "serveStackLocalWp": "LocalWP",
@@ -13905,27 +13962,40 @@
           "httpsAlreadyTrusted": "Certificate for {{domain}} is already trusted",
           "importTitle": "Import from production",
           "importNoEnvironment": "No environment is configured for this site yet.",
-          "importFrom": "From {{environment}}"
+          "importFrom": "From {{environment}}",
+          "serveDdev": "Serve with DDEV on {{domain}}",
+          "serveStackDdev": "DDEV",
+          "installAgentLocal": "Install Agent Local",
+          "installingAgentLocal": "Installing Agent Local…",
+          "getDdev": "Get DDEV",
+          "getLocalWp": "Get LocalWP",
+          "importAfterClone": "Add the server details after setup to pull the database and files."
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",
           "destinationPlaceholder": "Choose a folder",
           "destinationEditLabel": "Change the destination folder",
-          "chooseFolderFirst": "Choose a folder first.",
+          "chooseFolderFirst": "Choose where to clone it, then pick the repository again.",
           "openIntegrationsSettings": "Open Settings → Integrations",
           "copyCommand": "Copy command",
           "copyCommandCopiedToast": "Copied",
           "cancel": "Cancel",
           "providerGroupLabel": "Repository host",
-          "destinationRootsHeading": "Your project folders",
-          "destinationNoRoots": "No project folders are configured yet. Add them in Sites → Folders.",
-          "destinationCustom": "Choose another folder…"
+          "destinationRootsHeading": "Your site folders",
+          "destinationNoRoots": "No site folders are set yet. Add them in Sites → Site folders.",
+          "destinationCustom": "Choose another folder…",
+          "installGh": "Install gh",
+          "signInGithub": "Sign in to GitHub",
+          "signInGithubHint": "Press Enter to run GitHub CLI sign-in. Your repositories appear here once it finishes."
         },
         "SiteFinishSetupBanner": {
           "title": "Setup isn't finished",
           "noStack": "Nothing is serving this folder locally.",
           "noCert": "The HTTPS certificate for {{domain}} is not trusted yet.",
-          "action": "Finish setup"
+          "action": "Finish setup",
+          "noStackInstalled": "Nothing can serve this site yet. Install a local stack to run it.",
+          "noEnvironment": "Add the server details to pull the database and files.",
+          "addEnvironment": "Add environment"
         },
         "SiteSetupDialog": {
           "sourceTitle": "New site",
@@ -13952,6 +14022,55 @@
           "stageImport": "Importing",
           "stageDone": "Ready",
           "stageFailed": "Needs attention"
+        },
+        "SiteLocalStackCard": {
+          "pillRunning": "Running",
+          "pillStopped": "Stopped",
+          "pillStarting": "Starting…",
+          "pillStopping": "Stopping…",
+          "pillNotSetUp": "Not set up",
+          "pillUnavailable": "Unavailable",
+          "databaseSocket": "socket",
+          "alreadyServing": "{{stack}} is already serving this folder.",
+          "provider": "Provider",
+          "heading": "Local",
+          "noneHint": "Muster doesn’t manage a local stack for this site.",
+          "site": "Site",
+          "php": "PHP",
+          "docroot": "Docroot",
+          "database": "Database",
+          "stop": "Stop",
+          "start": "Start",
+          "restart": "Restart",
+          "more": "More actions",
+          "changeDomain": "Change domain",
+          "trustHttps": "Trust HTTPS certificate",
+          "recheck": "Re-check status",
+          "revealFolder": "Reveal folder",
+          "domain": "Local domain",
+          "apply": "Apply",
+          "setupHint": "{{stack}} doesn’t serve this folder yet. Setting it up keeps the files where they are.",
+          "settingUp": "Setting up…",
+          "setUpWith": "Set up with {{stack}}",
+          "detected": "{{stack}} serves this folder.",
+          "switchToIt": "Switch to it",
+          "dockerDown": "Docker isn’t running.",
+          "startDocker": "Start Docker",
+          "agentLocalVersion": "Agent Local {{version}}",
+          "agentLocalUpdate": "{{latest}} available",
+          "agentLocalOldForImport": "imports use Muster’s own tools until 0.32.2",
+          "stackNone": "None",
+          "dockerDownStart": "Docker isn’t running. Start brings it up first.",
+          "notServingShort": "Not set up yet",
+          "setUp": "Set up"
+        },
+        "siteSetupDomainRules": {
+          "nameRequired": "Enter a project name.",
+          "nameTooLong": "Use at most {{max}} characters.",
+          "nameCharacters": "Use letters, digits and hyphens, not starting or ending with a hyphen."
+        },
+        "useServeDomainCheck": {
+          "clash": "{{domain}} is already used by {{name}} ({{path}}). Choose another."
         }
       },
       "activecollab": {
@@ -14447,7 +14566,7 @@
         "auto_update": "Update automatically",
         "remove_title": "Remove {{name}}?",
         "remove_skill_body": "Muster moves the skill folder to the Trash. You can put it back from there.",
-        "remove_tool_body": "Muster clears its entry from every harness and removes the program from this machine. Installing it again brings it back.",
+        "remove_tool_body": "Muster removes it from every agent and from this computer. Installing it again brings it back.",
         "remove_confirm": "Remove",
         "removed": "{{name}} removed",
         "copied": "Command copied",
@@ -14466,7 +14585,7 @@
         "harnesses_title": "Registered with",
         "harnesses_hint": "Installing registers every agent on this machine. Remove any you do not want it in.",
         "externally_managed": "These point at a copy Muster did not install. Installing replaces them.",
-        "wire_blocked": "Install the program first. An entry pointing at a server that is not there fails to start on every session.",
+        "wire_blocked": "Install adds it to every agent on this computer.",
         "enabled": "Available to your agents",
         "enabled_aria": "Available to your agents — {{name}}",
         "auto_update_blocked": "Updates stay manual here: {{reason}}",
@@ -14483,7 +14602,12 @@
         "run_setup": "Setting up…",
         "setting_saved": "Saved",
         "setting_plaintext": "Stored in your agent config files, in the clear.",
-        "setting_save": "Save"
+        "setting_save": "Save",
+        "missing_tool": {
+          "copy": "Copy",
+          "get": "Get {{tool}}",
+          "check_again": "Check again"
+        }
       },
       "BitbucketReconnectDialog": {
         "refreshRejected": "Bitbucket が保存済みのサインインの更新を拒否しました。アクセスが取り消されたか、サインインの有効期限が切れた可能性があります。",

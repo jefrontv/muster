@@ -25,16 +25,28 @@ function readBinding<T>(read: () => unknown): T | undefined {
 export const electronApp = readBinding<App>(() => app)
 export const electronSafeStorage = readBinding<SafeStorage>(() => safeStorage)
 
+/** A packaged MCP runs from app.asar(.unpacked); a shim anywhere else is a source checkout's build. */
+function isSourceCheckoutRun(entry: string = process.argv[1] ?? ''): boolean {
+  return entry.length > 0 && !/app\.asar/.test(entry)
+}
+
 /**
  * The userData directory when `app` is unavailable. MUST resolve to the same directory Electron
  * gives the GUI ('Muster' comes from the app name); the MCP server reads the GUI's store with it.
+ * A dev build's GUI moves to `muster-dev` (configureDevUserDataPath), so its MCP must follow, or
+ * it serves the installed app's sites to an agent that asked the dev build.
  */
-export function nodeFallbackUserDataDir(): string {
+export function nodeFallbackUserDataDir(entry?: string): string {
+  const dev = isSourceCheckoutRun(entry)
+  if (dev && process.env.ORCA_DEV_USER_DATA_PATH) {
+    return process.env.ORCA_DEV_USER_DATA_PATH
+  }
+  const name = dev ? 'muster-dev' : 'Muster'
   if (process.platform === 'darwin') {
-    return join(homedir(), 'Library', 'Application Support', 'Muster')
+    return join(homedir(), 'Library', 'Application Support', name)
   }
   if (process.platform === 'win32' && process.env.APPDATA) {
-    return join(process.env.APPDATA, 'Muster')
+    return join(process.env.APPDATA, name)
   }
-  return join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), 'Muster')
+  return join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), name)
 }

@@ -1,31 +1,14 @@
-// Wire types for the one-click "install the ActiveCollab MCP into my agents" flow.
+// Wire types for the ActiveCollab MCP server's status and credential file.
 //
 // In shared/ rather than beside the handlers because the preload type surface is compiled into the
 // browser project while the implementation reaches into node:fs — same split as site-mcp-types.ts.
 //
-// The agent ids are a const tuple rather than a bare union: the IPC boundary validates against the
-// runtime array, so adding an agent cannot leave the validator behind.
+// Which agents have the server is the Extension Hub's inventory, not this module's.
 
 import type { SiteResult } from './site-types'
 
-/** The key Muster owns inside every agent config. Nothing else under mcpServers is ours to touch. */
-export const ACTIVECOLLAB_MCP_SERVER_KEY = 'activecollab'
-
 /** The documented install route. Published on PyPI — no Bitbucket SSH key required. */
 export const ACTIVECOLLAB_MCP_INSTALL_COMMAND = 'pipx install activecollab-mcp'
-
-/** The daemon's loopback endpoint. HTTP clients hold an inert entry until it is running. */
-export const ACTIVECOLLAB_MCP_HTTP_URL = 'http://127.0.0.1:8787/mcp'
-
-export const ACTIVECOLLAB_MCP_AGENT_IDS = ['claude-code', 'codex', 'cursor'] as const
-
-export type ActiveCollabMcpAgentId = (typeof ACTIVECOLLAB_MCP_AGENT_IDS)[number]
-
-export function isActiveCollabMcpAgentId(value: unknown): value is ActiveCollabMcpAgentId {
-  return (
-    typeof value === 'string' && (ACTIVECOLLAB_MCP_AGENT_IDS as readonly string[]).includes(value)
-  )
-}
 
 export type ActiveCollabMcpBinarySource = 'path' | 'pipx'
 
@@ -40,39 +23,10 @@ export type ActiveCollabMcpBinary = {
   installHint: string
 }
 
-export type ActiveCollabMcpAgentStatus = {
-  id: ActiveCollabMcpAgentId
-  label: string
-  configPath: string
-  /** The agent itself looks installed for this user, config entry or not. */
-  present: boolean
-  configured: boolean
-  /** True when the stored entry already matches what Muster would write now. */
-  current: boolean
-  /** Cursor speaks HTTP, so its entry does nothing until the MCP daemon is running. */
-  requiresRunningServer: boolean
-  /** Set when the config exists but could not be read, so the UI explains rather than retries. */
-  error?: string
-}
-
 export type ActiveCollabMcpStatus = {
   binary: ActiveCollabMcpBinary
-  agents: ActiveCollabMcpAgentStatus[]
   credentialsPath: string
   credentialsSeeded: boolean
-}
-
-/** One entry per requested agent, so a partial failure is visible instead of aborting the batch. */
-export type ActiveCollabMcpAgentWriteResult = {
-  id: ActiveCollabMcpAgentId
-  configPath: string
-  ok: boolean
-  error?: string
-}
-
-export type ActiveCollabMcpInstallResult = {
-  results: ActiveCollabMcpAgentWriteResult[]
-  status: ActiveCollabMcpStatus
 }
 
 /**
@@ -85,8 +39,5 @@ export type ActiveCollabMcpSeedResult =
 
 export type ActiveCollabMcpApi = {
   status: () => Promise<SiteResult<ActiveCollabMcpStatus>>
-  install: (args: {
-    agentIds: ActiveCollabMcpAgentId[]
-  }) => Promise<SiteResult<ActiveCollabMcpInstallResult>>
   seedCredentials: () => Promise<SiteResult<ActiveCollabMcpSeedResult>>
 }

@@ -39,10 +39,21 @@ export const FALLBACK_MYSQL_DIRECTORIES = [
   '/Applications/MAMP/Library/bin'
 ]
 
-// Names mysql-client because that is the formula a WordPress user usually has: it is keg-only, so
-// it satisfies this check without ever landing on PATH.
-const INSTALL_REMEDY =
-  'Install the MySQL client (`brew install mysql-client`) or add its bin directory to PATH.'
+/**
+ * Per platform, so Windows and Linux are not told to run Homebrew. On macOS it names mysql-client
+ * because that is the formula a WordPress user usually has: keg-only, found here without PATH.
+ */
+export function mysqlInstallRemedy(platform: string = process.platform): string {
+  if (platform === 'darwin') {
+    return 'Install the MySQL client (`brew install mysql-client`) or add its bin directory to PATH.'
+  }
+  if (platform === 'win32') {
+    return 'Install the MySQL client from dev.mysql.com/downloads, or add its bin folder to PATH.'
+  }
+  return 'Install the MySQL client with your package manager (for example `sudo apt install mysql-client`), or add its bin directory to PATH.'
+}
+
+const INSTALL_REMEDY = mysqlInstallRemedy()
 
 /**
  * Homebrew roots where a keg-only formula parks its own bin dir, newest macOS layout first.

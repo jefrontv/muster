@@ -982,6 +982,7 @@ const api = {
     start: (siteId) => ipcRenderer.invoke('siteStacks:start', siteId),
     stop: (siteId) => ipcRenderer.invoke('siteStacks:stop', siteId),
     available: () => ipcRenderer.invoke('siteStacks:available'),
+    checkDomain: (args) => ipcRenderer.invoke('siteStacks:checkDomain', args),
     agentLocalStatus: () => ipcRenderer.invoke('siteStacks:agentLocalStatus'),
     previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
     runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args),
@@ -1066,7 +1067,6 @@ const api = {
 
   activecollabMcp: {
     status: () => ipcRenderer.invoke('activecollabMcp:status'),
-    install: (args) => ipcRenderer.invoke('activecollabMcp:install', args),
     seedCredentials: () => ipcRenderer.invoke('activecollabMcp:seedCredentials')
   } satisfies PreloadApi['activecollabMcp'],
 

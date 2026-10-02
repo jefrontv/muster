@@ -309,7 +309,8 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
   const revealSidebarRow = useAppStore((s) => s.revealSidebarRow)
   const worktreesByRepo = useAppStore((s) => s.worktreesByRepo)
   const allWorktrees = useAllWorktrees()
-  const repos = useAppStore((s) => s.repos)
+  // Projects whose folder was deleted are not offered (`repos:list` flags them).
+  const repos = useAppStore(useShallow((s) => s.repos.filter((repo) => !repo.pathMissing)))
   const projectGroups = useAppStore((s) => s.projectGroups)
   const projects = useAppStore((s) => s.projects)
   const projectHostSetups = useAppStore((s) => s.projectHostSetups)

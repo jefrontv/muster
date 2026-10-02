@@ -3,6 +3,8 @@
 // Local ignores env: the checkout is not an environment. Remote is the deploy guard —
 // unmatched branch refuses unless env= or confirm=true.
 
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import type { Site } from '../../../shared/site-types'
 import type { RemoteLayout, SiteRunConfig, SiteSshSession } from '../pipeline-contract'
 import { resolveRemoteLayout } from '../remote-wordpress-layout'
@@ -63,11 +65,20 @@ export function resolveMcpLocalWp(
   args: ToolArguments
 ): { site: Site; wpDir: string; dbSocket: string } {
   const site = resolveMcpSite(context, readString(args, 'site'))
-  return {
-    site,
-    wpDir: resolveSiteWpDir(site),
-    dbSocket: site.dbSocket
+  const wpDir = resolveSiteWpDir(site)
+  // Node reports a missing cwd as `spawn wp ENOENT`, which reads as "WP-CLI is not installed".
+  // Only when the site folder exists: a missing checkout already has its own message.
+  if (wpDir !== site.path && existsSync(site.path) && !existsSync(wpDir)) {
+    const atRoot = existsSync(path.join(site.path, 'wp-load.php'))
+    const fix = atRoot
+      ? `WordPress is at the site folder itself: set localWpRoot to '' with set_deployment_fields.`
+      : `Set localWpRoot (relative to ${site.path}) with set_deployment_fields.`
+    throw new SiteMcpToolError(
+      `WordPress root ${wpDir} does not exist, so WP-CLI has nowhere to run. ${fix}`,
+      { site_path: site.path, local_wp_root: site.localWpRoot, local_stack: site.localStack }
+    )
   }
+  return { site, wpDir, dbSocket: site.dbSocket }
 }
 
 export async function openMcpRemoteWp(

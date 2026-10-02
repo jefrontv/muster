@@ -31,6 +31,20 @@ const worktree: Worktree = {
 }
 
 describe('getEmptyProjectPlaceholderRepoIds', () => {
+  it('never paints a project whose folder was deleted', () => {
+    expect(
+      Array.from(
+        getEmptyProjectPlaceholderRepoIds({
+          groupBy: 'repo',
+          repos: [{ ...repo, pathMissing: true }],
+          worktreesByRepo: { [repo.id]: [] },
+          visibleWorktrees: [],
+          filterRepoIds: []
+        })
+      )
+    ).toEqual([])
+  })
+
   it('returns empty repo placeholders in repo grouping without project groups', () => {
     expect(
       Array.from(
@@ -69,6 +83,21 @@ describe('getEmptyProjectPlaceholderRepoIds', () => {
       detectedWorktreesByRepo: { [repo.id]: [] }
     })
     expect(Array.from(ids)).toEqual([repo.id])
+  })
+
+  it('keeps hiding unloaded local repos after the remote fallback releases SSH ones', () => {
+    const sshRepo: Repo = { ...repo, id: 'repo-ssh', connectionId: 'ssh-1' }
+    const ids = getEmptyProjectPlaceholderRepoIds({
+      groupBy: 'repo',
+      repos: [repo, sshRepo],
+      worktreesByRepo: {},
+      visibleWorktrees: [],
+      filterRepoIds: [],
+      hideUnloaded: false,
+      hideUnloadedLocal: true,
+      detectedWorktreesByRepo: {}
+    })
+    expect(Array.from(ids)).toEqual([sshRepo.id])
   })
 
   it('treats missing worktreesByRepo keys as empty for the current render', () => {

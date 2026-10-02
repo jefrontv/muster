@@ -1032,6 +1032,12 @@ export type SiteStacksApi = {
   stop: (siteId: string) => Promise<SiteResult<LocalWpControlOutcome>>
   /** The managed stacks installed and answering on this machine, for offering a choice. */
   available: () => Promise<SiteResult<SiteLocalStack[]>>
+  /** Another local site that already answers for this domain; null when it is free. */
+  checkDomain: (args: {
+    sitePath: string
+    stack: SiteLocalStack
+    domain: string
+  }) => Promise<SiteResult<{ stack: SiteLocalStack; name: string; path: string } | null>>
   agentLocalStatus: () => Promise<SiteResult<AgentLocalDaemonStatus>>
   previewMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationPlan>>
   /** Destructive: show the preview and take an explicit confirmation before calling this. */
@@ -1062,6 +1068,8 @@ export type LocalWpMigrationArgs = {
   force?: boolean
   /** Which stack to migrate onto. Omitted means LocalWP. */
   stack?: SiteLocalStack
+  /** DDEV only: the import that follows pulls server files, which bring core with them. */
+  skipCoreDownload?: boolean
 }
 
 /**

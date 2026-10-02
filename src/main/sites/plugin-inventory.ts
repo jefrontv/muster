@@ -18,6 +18,7 @@ import type {
 } from '../../shared/site-tool-types'
 import { quoteShellArgument, type RemoteLayout, type SiteSshSession } from './pipeline-contract'
 import { parsePluginHeader } from './remote-plugin-slug'
+import type { SiteLocalStack } from '../../shared/site-types'
 import { runLocalWpCli, runRemoteWpCli, type LocalWpEnvResolver } from './wp-cli-runner'
 
 const WP_PLUGIN_LIST_ARGS = [
@@ -69,7 +70,8 @@ export async function readLocalPluginInventory(
   wpDir: string,
   contentDir: string,
   dbSocket: string,
-  resolveLocalWpEnv?: LocalWpEnvResolver
+  resolveLocalWpEnv?: LocalWpEnvResolver,
+  localStack?: SiteLocalStack
 ): Promise<PluginInventory> {
   try {
     const result = await runLocalWpCli(
@@ -78,6 +80,7 @@ export async function readLocalPluginInventory(
         args: [...WP_PLUGIN_LIST_ARGS],
         allowWrites: false,
         timeoutMs: PLUGIN_LIST_TIMEOUT_MS,
+        ...(localStack ? { localStack } : {}),
         ...(dbSocket ? { dbSocket } : {})
       },
       resolveLocalWpEnv

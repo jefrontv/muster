@@ -49,6 +49,7 @@ async function runLocal(
     args: argv,
     allowWrites,
     timeoutMs,
+    localStack: site.localStack,
     ...(dbSocket ? { dbSocket } : {})
   })
   return {

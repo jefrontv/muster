@@ -292,6 +292,8 @@ export type Repo = {
   sourceControlAi?: RepoSourceControlAiOverrides
   /** Transitional source for ProjectHostSetup.setupMethod while Repo remains compatibility storage. */
   projectHostSetupMethod?: RepoProjectHostSetupMethod
+  /** Set by `repos:list` when a local repo's folder no longer exists; never persisted. */
+  pathMissing?: boolean
 }
 
 export type ProjectGroupCreatedFrom = 'manual' | 'folder-scan' | 'migration'

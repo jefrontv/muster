@@ -45,7 +45,8 @@ export async function comparePlugins(
       config.wpDir,
       localContentDir,
       config.site.dbSocket,
-      resolveLocalWpEnv
+      resolveLocalWpEnv,
+      config.site.localStack
     ),
     readRemotePluginInventory(session, layout, config.environmentName)
   ])

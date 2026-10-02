@@ -18,6 +18,7 @@ import {
 } from '../feature-wall/feature-wall-setup-progress'
 import { deriveActiveCollabConnectionState } from '../settings/activecollab-connection-state'
 import { useSetupGuideBrowserMilestoneProgress } from './setup-guide-browser-milestone-progress'
+import { useSiteToolsInstalled } from './use-site-tools-installed'
 import {
   getCurrentSetupScriptProbeState,
   getSetupGuideProgressReady,
@@ -41,6 +42,8 @@ export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureW
   const chatWorkspaceCount = useAppStore((s) => s.chatWorkspaces.length)
   const chatThreadCount = useAppStore((s) => s.chatThreads.length)
   const chatModeHydrated = useAppStore((s) => s.chatModeHydrated)
+  const siteCount = useAppStore((s) => s.sites.length)
+  const hasSiteTools = useSiteToolsInstalled(shouldRefreshCoreState && setupMode === 'code')
   const activeCollabStatus = useAppStore((s) => s.activeCollabStatus)
   const activeCollabStatusChecked = useAppStore((s) => s.activeCollabStatusChecked)
   const activeCollabStatusContextKey = useAppStore((s) => s.activeCollabStatusContextKey)
@@ -175,7 +178,9 @@ export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureW
         worktreesByRepo,
         hasSetupScript: currentSetupScriptProbe.hasSetupScript,
         chatWorkspaceCount,
-        chatThreadCount
+        chatThreadCount,
+        siteCount,
+        hasSiteTools
       }),
     [
       ready,
@@ -187,6 +192,8 @@ export function useSetupGuideProgress(shouldRefreshCoreState: boolean): FeatureW
       setupMode,
       chatWorkspaceCount,
       chatThreadCount,
+      siteCount,
+      hasSiteTools,
       settings,
       worktreesByRepo
     ]

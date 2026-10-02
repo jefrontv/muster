@@ -13,6 +13,7 @@
 //    the site's work_dir — a repo root 404s. resolveAgentLocalSite therefore matches downwards from
 //    the site path over `GET /sites`. See resolveAgentLocalSite for the ordering.
 
+import path from 'node:path'
 import type { LocalWpStackDetection } from '../../shared/site-stack-types'
 import { probeBinary } from '../extensions/binary-probe'
 import { isCommandOnPath } from '../ipc/preflight-command-exec'
@@ -321,7 +322,13 @@ export async function detectAgentLocalStack(
     // Always TCP; socketReady mirrors "the site is up" so callers reading it stay meaningful.
     socketPath: '',
     socketReady: match.running,
-    phpVersion: match.phpVersion
+    phpVersion: match.phpVersion,
+    url: match.domain ? `https://${match.domain}` : '',
+    docroot: match.wpDir ? path.relative(sitePath, match.wpDir).split(path.sep).join('/') : '',
+    databaseHost: '127.0.0.1',
+    databasePort: AGENT_LOCAL_DATABASE_PORT,
+    // The daemon grants each site's user rights on `al_<slug>` only.
+    databaseName: `al_${match.slug}`
   }
 }
 

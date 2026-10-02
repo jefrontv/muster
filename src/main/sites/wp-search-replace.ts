@@ -5,27 +5,25 @@
 // rewritten across every table. Doing the config first matters — WP-CLI bootstraps the site's
 // wp-config, so a config still pointing at the production database would rewrite the wrong rows.
 
-import { readFile, stat, writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { streamCommand, type StreamCommandResult } from '../lib/stream-command'
 import { localWpServedScheme } from './localwp-served-scheme'
 import { createLocalWpHost } from './localwp-host'
 import { buildLocalWpWpEnv } from './localwp-wp-cli-environment'
-import {
-  SiteRunCancelledError,
-  type SiteRunConfig,
-  type SiteRunContext,
-  SiteRunStepError
-} from './pipeline-contract'
+import { type SiteRunConfig, type SiteRunContext, SiteRunStepError } from './pipeline-contract'
 import { buildDomainRewritePairs, type DomainRewritePair } from './wp-domain-rewrite-pairs'
+import {
+  hasWordPressCore,
+  resolveCliPath,
+  resolveWpCliPath,
+  resolveWpEnvironment,
+  runWpCli,
+  type LocalWpEnvironmentResolver
+} from './wp-search-replace-cli'
+
+export type { LocalWpEnvironmentResolver }
 
 const STEP = 'wp-search-replace'
-const WP_BINARY = 'wp'
-
-/** Resolves LocalWP's PHP/socket environment; injected so tests need no Local.app. */
-export type LocalWpEnvironmentResolver = (
-  socketPath: string
-) => Promise<Record<string, string> | null>
 
 const resolveLocalWpEnvironmentDefault: LocalWpEnvironmentResolver = (socketPath) =>
   buildLocalWpWpEnv(createLocalWpHost(), socketPath)
@@ -71,6 +69,10 @@ export async function runWpSearchReplace(
     )
     return
   }
+  const cliPath = resolveCliPath(context, config, abspath)
+  if (cliPath === null) {
+    return
+  }
   const environment = await resolveWpEnvironment(
     context,
     config,
@@ -87,7 +89,7 @@ export async function runWpSearchReplace(
     const result = await runWpCli(
       context,
       config,
-      searchReplaceArgs(pair, abspath),
+      searchReplaceArgs(pair, cliPath),
       environment,
       timeoutMs
     )
@@ -130,35 +132,6 @@ function searchReplaceArgs(pair: DomainRewritePair, abspath: string): string[] {
     '--skip-packages',
     `--path=${abspath}`
   ]
-}
-
-/** Null when WP-CLI could not be run at all — logged as a degrade, not an import failure. */
-async function runWpCli(
-  context: SiteRunContext,
-  config: SiteRunConfig,
-  args: string[],
-  env: NodeJS.ProcessEnv,
-  timeoutMs: number
-): Promise<StreamCommandResult | null> {
-  try {
-    return await streamCommand(WP_BINARY, args, {
-      cwd: config.wpDir,
-      env,
-      signal: context.signal,
-      timeoutMs
-    })
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new SiteRunCancelledError()
-    }
-    // Degrade rather than fail the whole import: the database is already in place, only the
-    // domain rewrite is missing, and the user can finish it by hand.
-    const detail = error instanceof Error ? error.message : String(error)
-    context.log(
-      `⚠ Skipping WP Search and Replace: WP-CLI (\`wp\`) could not be run — install WP-CLI and re-run the import, or run it manually in ${config.wpDir}. (${detail})`
-    )
-    return null
-  }
 }
 
 /** `replacements` is null when the pass printed no countable Success line. */
@@ -210,52 +183,6 @@ function reportSearchReplaceTotal(
       ? 'WP Search and Replace completed'
       : `WP Search and Replace: Made ${replacements} replacement(s).`
   context.log(ignoredWarnings ? `${summary} (ignored PHP warnings from wp-config).` : summary)
-}
-
-/**
- * ABSPATH for WP-CLI's `--path`. Standard installs keep core at wpDir; Bedrock keeps it at
- * wpDir/wp with wp-config.php one level up, which WP-CLI still finds by walking upwards.
- */
-async function resolveWpCliPath(wpDir: string): Promise<string> {
-  try {
-    await stat(path.join(wpDir, 'wp', 'wp-load.php'))
-    return path.join(wpDir, 'wp')
-  } catch {
-    return wpDir
-  }
-}
-
-/** wp-load.php is what WP-CLI itself looks for when it reports "not a WordPress installation". */
-async function hasWordPressCore(abspath: string): Promise<boolean> {
-  try {
-    await stat(path.join(abspath, 'wp-load.php'))
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function resolveWpEnvironment(
-  context: SiteRunContext,
-  config: SiteRunConfig,
-  resolveLocalWpEnvironment: LocalWpEnvironmentResolver
-): Promise<NodeJS.ProcessEnv> {
-  let localWpEnvironment: Record<string, string> | null = null
-  if (config.site.dbSocket) {
-    // The system `wp` runs system PHP, which knows nothing about Local's per-site MySQL socket.
-    localWpEnvironment = await resolveLocalWpEnvironment(config.site.dbSocket)
-    context.log(
-      localWpEnvironment
-        ? 'Using LocalWP PHP environment for WP-CLI…'
-        : 'LocalWP env not found — falling back to system WP-CLI…'
-    )
-  }
-  return {
-    ...(localWpEnvironment ?? process.env),
-    // WP-CLI bootstraps the site's wp-config; a benign PHP warning on stderr would otherwise
-    // abort an otherwise-fine search-replace. Real errors still surface.
-    WP_CLI_PHP_ARGS: '-d error_reporting=E_ERROR -d display_errors=0'
-  }
 }
 
 /** Escapes for a PHP single-quoted string, then substitutes the whole `define(...)` call. */
@@ -311,6 +238,11 @@ async function writeLocalWpConfig(
   config: SiteRunConfig,
   scheme: 'http' | 'https'
 ): Promise<void> {
+  // DDEV's own include sets the DB constants inside the container; a host 127.0.0.1:<port> here
+  // would point the container at itself.
+  if (config.site.localStack === 'ddev') {
+    return
+  }
   const wpConfigPath = path.join(config.wpDir, 'wp-config.php')
   let contents: string
   try {

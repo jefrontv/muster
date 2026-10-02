@@ -22,6 +22,7 @@ import { createSiteRunService, type SiteRunService } from '../sites/site-run-ser
 import { buildSiteSummary } from '../sites/site-summary'
 import { isSiteEnvironmentName } from './sites-payload-validation'
 import { failure, requireSite } from './sites-result'
+import { notifySiteChanged } from './site-change-notifier'
 
 const SITE_RUN_CHANNELS = [
   'siteRuns:start',
@@ -79,9 +80,18 @@ export function registerSiteRunHandlers(
   // remounted panel both keep receiving without the run knowing who is listening.
   const subscribers = new Set<WebContents>()
   const baseDir = join(app.getPath('userData'), SITE_RUNS_DIR_NAME)
+  // A finished run can rewrite the site record (stack transport, domain), so the window refetches it.
+  const runSites = new Map<string, string>()
   const runs = createSiteRunService({
     baseDir,
     emit: (event: SiteRunEvent) => {
+      if (event.type === 'status' && event.status !== 'running') {
+        const siteId = runSites.get(event.runId)
+        runSites.delete(event.runId)
+        if (siteId) {
+          notifySiteChanged(siteId)
+        }
+      }
       for (const sender of subscribers) {
         if (sender.isDestroyed()) {
           subscribers.delete(sender)
@@ -112,18 +122,17 @@ export function registerSiteRunHandlers(
       if (!environment) {
         return { ok: false, error: `Site has no environment to target: ${site.displayName}` }
       }
-      return {
-        ok: true,
-        value: runs.start({
-          ...(args.runId ? { runId: args.runId } : {}),
-          siteId: site.id,
-          siteName: site.displayName,
-          group: args.group,
-          environment,
-          branch: summary.branch,
-          job: createJob(site, environment, args.group)
-        })
-      }
+      const started = runs.start({
+        ...(args.runId ? { runId: args.runId } : {}),
+        siteId: site.id,
+        siteName: site.displayName,
+        group: args.group,
+        environment,
+        branch: summary.branch,
+        job: createJob(site, environment, args.group)
+      })
+      runSites.set(started.id, site.id)
+      return { ok: true, value: started }
     } catch (error) {
       return failure(error)
     }

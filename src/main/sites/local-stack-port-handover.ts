@@ -39,7 +39,12 @@ export async function releasePrivilegedPortsForOtherStacks(
   onStatus?: (message: string) => void
 ): Promise<void> {
   const others = localStackProviders().filter(
-    (provider) => provider.id !== target && provider.releasePrivilegedPorts
+    (provider) =>
+      provider.id !== target &&
+      provider.releasePrivilegedPorts &&
+      // DDEV's router binds 127.0.0.1 and agent-local's 127.0.0.2, so they never contend; a yield
+      // here would take every Agent Local site offline for nothing.
+      !(target === 'ddev' && provider.id === 'agent-local')
   )
   await Promise.all(
     others.map(async (provider) => {

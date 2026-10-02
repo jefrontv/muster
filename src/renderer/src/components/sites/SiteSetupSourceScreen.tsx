@@ -8,7 +8,6 @@
 import { AlertTriangle, Check, FolderOpen, Loader2, Lock } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { abbreviateHome, describeFolder } from '../../../../shared/folder-display'
 import type {
   CloneSourceProvider,
@@ -24,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { getSiteSetupSourceStrings } from './site-setup-source-strings'
+import { SiteSetupGithubSignIn } from './SiteSetupGithubSignIn'
 
 type SiteSetupSourceScreenProps = {
   /** The configured sites directory. Empty means the user has not chosen one yet. */
@@ -52,8 +52,6 @@ function matchesQuery(repo: CloneSourceRepo, query: string): boolean {
   )
 }
 
-const GH_AUTH_LOGIN_COMMAND = 'gh auth login'
-
 export function SiteSetupSourceScreen({
   destinationRoot,
   onDestinationChange,
@@ -67,6 +65,8 @@ export function SiteSetupSourceScreen({
   const openSettingsPage = useAppStore((state) => state.openSettingsPage)
 
   const [providers, setProviders] = useState<CloneSourceProvider[]>([])
+  // Bumped after an in-dialog sign-in so the provider list is read again.
+  const [providersRevision, setProvidersRevision] = useState(0)
   const [active, setActive] = useState<CloneSourceProviderId | null>(null)
   const [repos, setRepos] = useState<CloneSourceRepo[]>([])
   const [listError, setListError] = useState('')
@@ -112,7 +112,7 @@ export function SiteSetupSourceScreen({
     return () => {
       disposed = true
     }
-  }, [])
+  }, [providersRevision])
 
   useEffect(() => {
     const term = query.trim()
@@ -181,16 +181,24 @@ export function SiteSetupSourceScreen({
     }
   }, [destinationRoot, chooseDestination])
 
+  // No destination yet: ask for one now and carry on, rather than refusing the click and only
+  // then revealing the requirement. Cancelling the picker leaves the user on this screen.
   const handleRowClick = useCallback(
-    (repo: CloneSourceRepo) => {
-      if (destinationRoot.length === 0) {
+    async (repo: CloneSourceRepo) => {
+      if (destinationRoot.length > 0) {
+        onPick(repo)
+        return
+      }
+      const path = await window.api.shell.pickDirectory({ defaultPath: undefined })
+      if (!path) {
         setFolderError(true)
         setDestinationOpen(true)
         return
       }
+      chooseDestination(path)
       onPick(repo)
     },
-    [destinationRoot, onPick]
+    [destinationRoot, onPick, chooseDestination]
   )
 
   const openIntegrations = useCallback(() => {
@@ -199,11 +207,6 @@ export function SiteSetupSourceScreen({
     openSettingsPage()
     onCancel()
   }, [onCancel, openSettingsPage, openSettingsTarget, setSettingsSearchQuery])
-
-  const copyGhAuthCommand = useCallback(() => {
-    void window.api.ui.writeClipboardText(GH_AUTH_LOGIN_COMMAND)
-    toast.success(sourceStrings.copyCommandCopiedToast)
-  }, [sourceStrings.copyCommandCopiedToast])
 
   const activeProvider = providers.find((provider) => provider.id === active) ?? null
   const typedQuery = query.trim()
@@ -348,9 +351,7 @@ export function SiteSetupSourceScreen({
             </Button>
           ) : null}
           {activeProvider.id === 'github' ? (
-            <Button size="sm" variant="ghost" onClick={copyGhAuthCommand}>
-              {sourceStrings.copyCommand}
-            </Button>
+            <SiteSetupGithubSignIn onSignedIn={() => setProvidersRevision((value) => value + 1)} />
           ) : null}
         </div>
       ) : activeProvider ? (
@@ -382,7 +383,7 @@ export function SiteSetupSourceScreen({
               <button
                 key={`${repo.provider}:${repo.fullName}`}
                 type="button"
-                onClick={() => handleRowClick(repo)}
+                onClick={() => void handleRowClick(repo)}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent"
               >
                 {repo.isPrivate ? <Lock className="size-3 shrink-0 text-muted-foreground" /> : null}

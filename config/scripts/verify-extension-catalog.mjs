@@ -65,6 +65,32 @@ for (const entry of parsed.entries) {
       fail(`entry ${entry.id} allows auto-update but has no command to run`)
     }
   }
+  // Optional, so builds older than these fields keep reading the catalog; the shape still has to
+  // hold for the builds that do read them.
+  const spec = entry.install?.command ?? entry.install?.provision
+  if (spec?.requires !== undefined) {
+    if (
+      !Array.isArray(spec.requires) ||
+      spec.requires.length > 8 ||
+      !spec.requires.every(
+        (tool) => typeof tool === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(tool)
+      )
+    ) {
+      fail(`entry ${entry.id} has a requires list that is not up to 8 program names`)
+    }
+  }
+  if (spec?.setupLabel !== undefined) {
+    if (
+      typeof spec.setupLabel !== 'string' ||
+      spec.setupLabel.length === 0 ||
+      spec.setupLabel.length > 40
+    ) {
+      fail(`entry ${entry.id} has a setupLabel that is not 1 to 40 characters`)
+    }
+    if (!spec.setup) {
+      fail(`entry ${entry.id} labels a setup command it does not have`)
+    }
+  }
   if (entry.autoUpdate?.supported === false && !entry.autoUpdate.reason) {
     fail(`entry ${entry.id} refuses auto-update without saying why`)
   }

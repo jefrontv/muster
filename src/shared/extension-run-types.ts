@@ -3,6 +3,8 @@
 // A tagged union rather than a status object, because the renderer appends output as it arrives and
 // there is no sensible "current output" snapshot to poll for.
 
+import type { ExtensionMissingTool } from './extension-required-tools'
+
 export type ExtensionCommandRunEvent =
   | { kind: 'started'; id: string; command: string }
   | { kind: 'output'; id: string; chunk: string }
@@ -19,6 +21,8 @@ export type ExtensionCommandRunEvent =
       installed: boolean
       /** Labels of the agents the install registered the server with, for the dialog to name. */
       registeredHarnesses: string[]
+      /** Set when a program the command needs is missing; the command may not have run at all. */
+      missingTool?: ExtensionMissingTool
     }
 
 export type ExtensionRunPhase = 'idle' | 'running' | 'succeeded' | 'failed'
@@ -51,11 +55,7 @@ export function summarizeExtensionRunError(output: string): string | null {
 export const EXTENSION_RUN_PRODUCED_NOTHING =
   'The command finished without errors, but the program still is not on this machine. It may have failed to build.'
 
-export function describeExtensionRunFailure(
-  code: number,
-  timedOut: boolean,
-  output = ''
-): string {
+export function describeExtensionRunFailure(code: number, timedOut: boolean, output = ''): string {
   if (timedOut) {
     return 'The command ran past its time limit and was stopped.'
   }

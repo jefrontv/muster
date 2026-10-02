@@ -10,12 +10,16 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 
-type Reason = 'no-stack' | 'no-cert'
+// Most urgent first: nothing serving the folder beats an untrusted cert beats a missing server.
+type Reason = 'no-stack' | 'no-stack-installed' | 'no-cert' | 'no-environment'
 
 export function SiteFinishSetupBanner({
-  summary
+  summary,
+  onAddEnvironment
 }: {
   summary: SiteSummary
+  /** Opens the add-environment dialog; the banner's action for a site with no server details. */
+  onAddEnvironment?: () => void
 }): React.JSX.Element | null {
   const { site } = summary
   const openFinish = useAppStore((s) => s.setFinishSiteSetupRequest)
@@ -23,6 +27,8 @@ export function SiteFinishSetupBanner({
   // to may not have changed in a way the deps below can see (a trusted cert is OS state).
   const setupOpenFor = useAppStore((s) => s.finishSiteSetupRequest?.siteId ?? '')
   const [reason, setReason] = useState<Reason | null>(null)
+  // A boolean, not the callback: a new closure each render must not re-run the probe.
+  const canAddEnvironment = onAddEnvironment !== undefined
 
   useEffect(() => {
     let cancelled = false
@@ -37,23 +43,37 @@ export function SiteFinishSetupBanner({
       }
       // Readiness, not the stage word: the planner reports 'pending' for a folder nothing serves.
       const { stack } = plan.value
-      if (stack.supported && stack.stack === 'plain' && stack.alternatives.length > 0) {
-        setReason('no-stack')
+      if (stack.supported && stack.stack === 'plain') {
+        setReason(stack.alternatives.length > 0 ? 'no-stack' : 'no-stack-installed')
         return
       }
       const domain = site.localDomain.trim()
-      if (domain.length === 0 || site.localStack === 'plain') {
-        return
+      if (domain.length > 0 && site.localStack !== 'plain') {
+        const cert = await window.api.localwpCert?.status({ domain, stack: site.localStack })
+        if (cancelled) {
+          return
+        }
+        if (cert?.ok && cert.value.supported && !cert.value.trusted) {
+          setReason('no-cert')
+          return
+        }
       }
-      const cert = await window.api.localwpCert?.status({ domain, stack: site.localStack })
-      if (!cancelled && cert?.ok && cert.value.supported && !cert.value.trusted) {
-        setReason('no-cert')
+      if (Object.keys(site.environments).length === 0 && canAddEnvironment) {
+        setReason('no-environment')
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [site.id, site.localDomain, site.localStack, summary.pathExists, setupOpenFor])
+  }, [
+    site.id,
+    site.localDomain,
+    site.localStack,
+    site.environments,
+    summary.pathExists,
+    setupOpenFor,
+    canAddEnvironment
+  ])
 
   if (!reason) {
     return null
@@ -71,19 +91,38 @@ export function SiteFinishSetupBanner({
                 'auto.components.sites.SiteFinishSetupBanner.noStack',
                 'Nothing is serving this folder locally.'
               )
-            : translate(
-                'auto.components.sites.SiteFinishSetupBanner.noCert',
-                'The HTTPS certificate for {{domain}} is not trusted yet.'
-              ).replace('{{domain}}', site.localDomain)}
+            : reason === 'no-stack-installed'
+              ? translate(
+                  'auto.components.sites.SiteFinishSetupBanner.noStackInstalled',
+                  'Nothing can serve this site yet. Install a local stack to run it.'
+                )
+              : reason === 'no-environment'
+                ? translate(
+                    'auto.components.sites.SiteFinishSetupBanner.noEnvironment',
+                    'Add the server details to pull the database and files.'
+                  )
+                : translate(
+                    'auto.components.sites.SiteFinishSetupBanner.noCert',
+                    'The HTTPS certificate for {{domain}} is not trusted yet.'
+                  ).replace('{{domain}}', site.localDomain)}
         </p>
       </div>
       <Button
         size="sm"
         variant="outline"
         className="shrink-0"
-        onClick={() => openFinish({ siteId: site.id, label: site.displayName })}
+        onClick={() =>
+          reason === 'no-environment' && onAddEnvironment
+            ? onAddEnvironment()
+            : openFinish({ siteId: site.id, label: site.displayName })
+        }
       >
-        {translate('auto.components.sites.SiteFinishSetupBanner.action', 'Finish setup')}
+        {reason === 'no-environment'
+          ? translate(
+              'auto.components.sites.SiteFinishSetupBanner.addEnvironment',
+              'Add environment'
+            )
+          : translate('auto.components.sites.SiteFinishSetupBanner.action', 'Finish setup')}
       </Button>
     </div>
   )

@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 import type { SiteRunEvent } from '../../../../shared/site-run-types'
 import type { SiteSummary } from '../../../../shared/site-types'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { resetSiteStackStatusForTests } from '../sites/use-site-stack-status'
 import { SitePanelContent } from './SitePanel'
 
 const confirmMock = vi.hoisted(() => vi.fn())
@@ -121,7 +122,29 @@ function installApi(runs: unknown[] = []): void {
       }
     },
     notifications: { dispatch: vi.fn().mockResolvedValue(undefined) },
-    sites: { upsertEnvironment: upsertEnvironmentMock }
+    sites: { upsertEnvironment: upsertEnvironmentMock, onChanged: () => () => {} },
+    // The Local card asks the stack what it serves; a running LocalWP site here.
+    siteStacks: {
+      detect: vi.fn().mockResolvedValue({
+        ok: true,
+        value: {
+          supported: true,
+          reason: '',
+          stack: 'localwp',
+          appRunning: true,
+          registered: true,
+          siteId: 'local-1',
+          domain: 'acme.local',
+          socketPath: '/tmp/mysql.sock',
+          socketReady: true,
+          phpVersion: '8.2',
+          docroot: 'app/public'
+        }
+      }),
+      available: vi.fn().mockResolvedValue({ ok: true, value: ['localwp'] }),
+      agentLocalStatus: vi.fn().mockResolvedValue({ ok: false, error: 'n/a' })
+    },
+    shell: { openUrl: vi.fn(), openInFileManager: vi.fn() }
   })
 }
 
@@ -163,6 +186,7 @@ afterEach(() => {
   container?.remove()
   root = null
   container = null
+  resetSiteStackStatusForTests()
 })
 
 describe('SitePanelContent', () => {

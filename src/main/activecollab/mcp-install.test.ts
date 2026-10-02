@@ -22,14 +22,13 @@ const { getCredentialMock } = vi.hoisted(() => ({
 // keeps this suite hermetic while leaving the seeding logic itself under test.
 vi.mock('./credential-store', () => ({ getActiveCollabCredential: getCredentialMock }))
 
-import { createDefaultActiveCollabMcpEnv, type ActiveCollabMcpEnv } from './mcp-agents'
+import { createDefaultActiveCollabMcpEnv, type ActiveCollabMcpEnv } from './mcp-env'
 import { createNodeActiveCollabMcpFs } from './mcp-config-io'
 import {
   ACTIVECOLLAB_MCP_INSTALL_COMMAND,
   activeCollabMcpCredentialsPath,
   detectActiveCollabMcp,
   getActiveCollabMcpStatus,
-  installActiveCollabMcpForAgents,
   resyncActiveCollabMcpCredentials,
   seedActiveCollabMcpCredentials,
   shareActiveCollabLoginWithMcp
@@ -156,80 +155,20 @@ describe('detectActiveCollabMcp', () => {
 })
 
 describe('getActiveCollabMcpStatus', () => {
-  it('reports the binary and every agent in one object', () => {
+  it('reports the binary and the credential file in one object', () => {
     writeExecutable(join(binDir, 'activecollab-mcp'))
-    mkdirSync(join(home, '.codex'), { recursive: true })
 
     const status = getActiveCollabMcpStatus(env)
 
     expect(status.binary.found).toBe(true)
-    expect(status.agents.map((entry) => entry.id)).toEqual(['claude-code', 'codex', 'cursor'])
-    expect(status.agents.map((entry) => entry.present)).toEqual([false, true, false])
-    expect(status.agents.every((entry) => !entry.configured)).toBe(true)
     expect(status.credentialsPath).toBe(join(home, '.activecollab-mcp', 'credentials.json'))
     expect(status.credentialsSeeded).toBe(false)
-  })
-
-  it('surfaces the labels and HTTP caveat the UI renders', () => {
-    const cursor = getActiveCollabMcpStatus(env).agents.find((entry) => entry.id === 'cursor')
-
-    expect(cursor).toMatchObject({ label: 'Cursor', requiresRunningServer: true })
   })
 
   it('reports credentials as seeded once the file exists', () => {
     write('.activecollab-mcp/credentials.json', '{}')
 
     expect(getActiveCollabMcpStatus(env).credentialsSeeded).toBe(true)
-  })
-})
-
-describe('installActiveCollabMcpForAgents', () => {
-  beforeEach(() => {
-    writeExecutable(join(binDir, 'activecollab-mcp'))
-  })
-
-  it('writes every requested agent and reports the config paths', () => {
-    const result = installActiveCollabMcpForAgents(['claude-code', 'codex', 'cursor'], env)
-
-    expect(result.results).toEqual([
-      { id: 'claude-code', configPath: join(home, '.claude.json'), ok: true },
-      { id: 'codex', configPath: join(home, '.codex', 'config.toml'), ok: true },
-      { id: 'cursor', configPath: join(home, '.cursor', 'mcp.json'), ok: true }
-    ])
-    expect(result.status.agents.every((entry) => entry.configured && entry.current)).toBe(true)
-  })
-
-  it('touches only the agents asked for', () => {
-    installActiveCollabMcpForAgents(['codex'], env)
-
-    expect(existsSync(join(home, '.claude.json'))).toBe(false)
-    expect(existsSync(join(home, '.cursor', 'mcp.json'))).toBe(false)
-    expect(existsSync(join(home, '.codex', 'config.toml'))).toBe(true)
-  })
-
-  it('keeps a partial failure visible instead of aborting the batch', () => {
-    write('.claude.json', '{ broken')
-
-    const result = installActiveCollabMcpForAgents(['claude-code', 'cursor'], env)
-
-    expect(result.results[0]).toMatchObject({
-      id: 'claude-code',
-      ok: false,
-      error: expect.stringContaining('not valid JSON')
-    })
-    expect(result.results[1]).toMatchObject({ id: 'cursor', ok: true })
-    expect(existsSync(join(home, '.cursor', 'mcp.json'))).toBe(true)
-  })
-})
-
-describe('installActiveCollabMcpForAgents without the binary', () => {
-  it('fails the stdio agents and still wires the HTTP one', () => {
-    const result = installActiveCollabMcpForAgents(['claude-code', 'codex', 'cursor'], env)
-
-    expect(result.results.map((entry) => entry.ok)).toEqual([false, false, true])
-    expect(result.results[0].error).toMatch(/was not found/)
-    expect(result.results[1].error).toMatch(/was not found/)
-    expect(result.status.binary.installHint).toContain(ACTIVECOLLAB_MCP_INSTALL_COMMAND)
   })
 })
 
@@ -343,26 +282,16 @@ describe('resyncActiveCollabMcpCredentials', () => {
 })
 
 describe('shareActiveCollabLoginWithMcp', () => {
-  it('seeds the credential and wires Claude when the binary is already installed', () => {
+  it('seeds the credential and asks for Claude when the binary is already installed', () => {
     writeExecutable(join(binDir, 'activecollab-mcp'))
     getCredentialMock.mockReturnValue(CREDENTIAL)
 
     const result = shareActiveCollabLoginWithMcp(env)
 
     expect(result.credentials).toMatchObject({ seeded: true, issuedFor: 'ada@efront.com.au' })
-    expect(result.claude).toEqual({
-      id: 'claude-code',
-      configPath: join(home, '.claude.json'),
-      ok: true
-    })
-    expect(existsSync(join(home, '.claude.json'))).toBe(true)
-    expect(existsSync(join(home, '.codex', 'config.toml'))).toBe(false)
-    expect(existsSync(join(home, '.cursor', 'mcp.json'))).toBe(false)
-    expect(JSON.parse(readFileSync(join(home, '.claude.json'), 'utf8'))).toMatchObject({
-      mcpServers: {
-        activecollab: { type: 'stdio', command: 'activecollab-mcp', args: ['--stdio'] }
-      }
-    })
+    expect(result.registerClaude).toBe(true)
+    // The hub writes agent configs; this module writes only the credential file.
+    expect(existsSync(join(home, '.claude.json'))).toBe(false)
   })
 
   it('seeds the credential and skips Claude when the binary is missing', () => {
@@ -371,33 +300,15 @@ describe('shareActiveCollabLoginWithMcp', () => {
     const result = shareActiveCollabLoginWithMcp(env)
 
     expect(result.credentials).toMatchObject({ seeded: true })
-    expect(result.claude).toBeNull()
-    expect(existsSync(join(home, '.claude.json'))).toBe(false)
+    expect(result.registerClaude).toBe(false)
   })
 
-  it('does not write Claude when there is nothing to seed', () => {
+  it('does not ask for Claude when there is nothing to seed', () => {
     writeExecutable(join(binDir, 'activecollab-mcp'))
 
     const result = shareActiveCollabLoginWithMcp(env)
 
     expect(result.credentials).toMatchObject({ seeded: false })
-    expect(result.claude).toBeNull()
-    expect(existsSync(join(home, '.claude.json'))).toBe(false)
-  })
-
-  it('keeps the seed when Claude config is unparseable', () => {
-    writeExecutable(join(binDir, 'activecollab-mcp'))
-    write('.claude.json', '{ broken')
-    getCredentialMock.mockReturnValue(CREDENTIAL)
-
-    const result = shareActiveCollabLoginWithMcp(env)
-
-    expect(result.credentials).toMatchObject({ seeded: true })
-    expect(result.claude).toMatchObject({
-      id: 'claude-code',
-      ok: false,
-      error: expect.stringContaining('not valid JSON')
-    })
-    expect(readSeededCredentials().api_key).toBe('ac-token-secret')
+    expect(result.registerClaude).toBe(false)
   })
 })

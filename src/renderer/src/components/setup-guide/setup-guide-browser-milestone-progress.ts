@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useAppStore } from '@/store'
 import {
-  FEATURE_WALL_SETUP_STEPS,
+  FEATURE_WALL_LEGACY_CODE_SETUP_STEPS,
   FEATURE_WALL_SETUP_STEP_IDS,
   getFeatureWallSetupSteps,
   type FeatureWallSetupStepId
@@ -58,7 +58,9 @@ export function shouldMarkBrowserMilestoneLegacyComplete(input: {
   // included the now-removed split-terminal milestone.
   return (
     input.historicalSplitTerminalDone &&
-    FEATURE_WALL_SETUP_STEPS.every((step) => step.id === 'browser' || input.stepDone[step.id])
+    FEATURE_WALL_LEGACY_CODE_SETUP_STEPS.every(
+      (step) => step.id === 'browser' || input.stepDone[step.id]
+    )
   )
 }
 

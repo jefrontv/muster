@@ -92,6 +92,7 @@ export function registerSiteToolDiagnosticHandlers(store: Store): void {
               args: cliArgs,
               allowWrites,
               timeoutMs,
+              localStack: target.site.localStack,
               ...(target.site.dbSocket ? { dbSocket: target.site.dbSocket } : {})
             })
           }

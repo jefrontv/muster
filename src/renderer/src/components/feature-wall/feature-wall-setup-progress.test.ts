@@ -37,40 +37,42 @@ function makeWorktree(
 }
 
 describe('getFeatureWallSetupProgress', () => {
-  it('tracks Add 2 projects from durable git repo count', () => {
-    expect(getFeatureWallSetupProgress(makeInput({ gitRepoCount: 1 })).stepDone).toMatchObject({
-      'add-two-repos': false
+  it('tracks the site steps from the site count and the site tools probe', () => {
+    expect(getFeatureWallSetupProgress(makeInput()).stepDone).toMatchObject({
+      'first-site': false,
+      'site-tools': false
     })
 
-    const progress = getFeatureWallSetupProgress(makeInput({ gitRepoCount: 2 }))
+    const progress = getFeatureWallSetupProgress(makeInput({ siteCount: 1, hasSiteTools: true }))
 
-    expect(progress.stepDone['add-two-repos']).toBe(true)
+    expect(progress.stepDone['first-site']).toBe(true)
+    expect(progress.stepDone['site-tools']).toBe(true)
     expect(progress.coreTotal).toBe(7)
   })
 
   it('preserves the durable setup step definition order', () => {
     expect(getFeatureWallSetupSteps().map((step) => step.id)).toEqual([
-      'two-worktrees',
       'browser',
+      'first-site',
+      'site-tools',
       'notifications',
       'default-agent',
       'task-sources',
-      'setup-script',
-      'add-two-repos'
+      'setup-script'
     ])
   })
 
   it('groups setup guide steps into Parallel work and Setup sections', () => {
     expect(getFeatureWallSetupStepsForSection('parallel-work').map((step) => step.id)).toEqual([
-      'two-worktrees',
       'browser'
     ])
     expect(getFeatureWallSetupStepsForSection('setup').map((step) => step.id)).toEqual([
+      'first-site',
+      'site-tools',
       'notifications',
       'default-agent',
       'task-sources',
-      'setup-script',
-      'add-two-repos'
+      'setup-script'
     ])
   })
 
@@ -96,11 +98,12 @@ describe('getFeatureWallSetupProgress', () => {
         } as never,
         hasConnectedTaskSource: true,
         hasSetupScript: true,
-        gitRepoCount: 2
+        siteCount: 1,
+        hasSiteTools: true
       })
     )
 
-    expect(getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)).toBe('two-worktrees')
+    expect(getFirstIncompleteFeatureWallSetupStepId(progress.stepDone)).toBe('browser')
   })
 
   it('does not include the removed split-terminal step in active progress', () => {
@@ -131,7 +134,8 @@ describe('getFeatureWallSetupProgress', () => {
         },
         hasConnectedTaskSource: true,
         hasSetupScript: true,
-        gitRepoCount: 2
+        siteCount: 1,
+        hasSiteTools: true
       })
     )
 

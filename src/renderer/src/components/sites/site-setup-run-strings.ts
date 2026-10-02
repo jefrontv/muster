@@ -29,6 +29,8 @@ export type SiteSetupRunStrings = {
   copied: string
   close: string
   openSite: string
+  addEnvironment: string
+  addEnvironmentHint: string
   skipped: string
   localAddress: string
   adminEmail: string
@@ -51,7 +53,7 @@ export const getSiteSetupRunStrings = createLocalizedCatalog<SiteSetupRunStrings
   // this line the row simply looks stuck while that dialog waits behind Muster.
   runningHttps: translate(
     'auto.components.sites.SiteSetupRun.runningHttps',
-    'Trusting certificate… (macOS may ask for your password)'
+    'Trusting certificate… Your computer may ask for your password.'
   ),
   runningImport: translate('auto.components.sites.SiteSetupRun.runningImport', 'Importing…'),
   cancel: translate('auto.components.sites.SiteSetupRun.cancel', 'Cancel'),
@@ -80,6 +82,11 @@ export const getSiteSetupRunStrings = createLocalizedCatalog<SiteSetupRunStrings
   copied: translate('auto.components.sites.SiteSetupRun.copied', 'Copied'),
   close: translate('auto.components.sites.SiteSetupRun.close', 'Close'),
   openSite: translate('auto.components.sites.SiteSetupRun.openSite', 'Open {{domain}}'),
+  addEnvironment: translate('auto.components.sites.SiteSetupRun.addEnvironment', 'Add environment'),
+  addEnvironmentHint: translate(
+    'auto.components.sites.SiteSetupRun.addEnvironmentHint',
+    'Add the server details to pull the database and files.'
+  ),
   skipped: translate('auto.components.sites.SiteSetupRun.skipped', 'Skipped'),
   localAddress: translate('auto.components.sites.SiteSetupRun.localAddress', 'Local address'),
   adminEmail: translate('auto.components.sites.SiteSetupRun.adminEmail', 'Email'),

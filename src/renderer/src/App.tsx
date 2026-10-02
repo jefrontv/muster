@@ -2741,7 +2741,7 @@ function App(): React.JSX.Element {
         {/* Inside TooltipProvider, not after it: the setup dialog carries a tooltip (the minimize
             control), and a Radix tooltip outside its provider throws and takes the shell down.
             App-wide so a minimized clone or import survives leaving the Sites page. */}
-        <SiteSetupHost />
+        <SiteSetupHost holdLinks={shouldRenderOnboarding} />
         {/* App-wide, not inside a view: an agent in any terminal can ask for a plan review. */}
         <PlanAnnotationDialog />
       </TooltipProvider>

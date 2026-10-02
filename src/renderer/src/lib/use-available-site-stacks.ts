@@ -18,6 +18,13 @@ import { installWindowVisibilityInterval } from './window-visibility-interval'
 /** The trigger is a person installing software; a slow poll still catches it and costs nothing. */
 const POLL_INTERVAL_MS = 30_000
 
+const STACKS_CHANGED_EVENT = 'muster:site-stacks-changed'
+
+/** Re-probes every mounted chooser now, e.g. right after an in-app stack install finished. */
+export function refreshAvailableSiteStacks(): void {
+  window.dispatchEvent(new Event(STACKS_CHANGED_EVENT))
+}
+
 export function useAvailableSiteStacks(): SiteLocalStack[] | null {
   const [stacks, setStacks] = useState<SiteLocalStack[] | null>(null)
 
@@ -58,6 +65,7 @@ export function useAvailableSiteStacks(): SiteLocalStack[] | null {
     }
 
     window.addEventListener('focus', probe)
+    window.addEventListener(STACKS_CHANGED_EVENT, probe)
     // Runs once on install and again on becoming visible, so this is also the mount probe.
     const stopPolling = installWindowVisibilityInterval({
       run: probe,
@@ -67,6 +75,7 @@ export function useAvailableSiteStacks(): SiteLocalStack[] | null {
     return () => {
       disposed = true
       window.removeEventListener('focus', probe)
+      window.removeEventListener(STACKS_CHANGED_EVENT, probe)
       stopPolling()
     }
   }, [])

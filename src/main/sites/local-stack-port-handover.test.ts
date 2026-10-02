@@ -110,3 +110,13 @@ describe('privileged port handover', () => {
     expect(status).not.toHaveBeenCalled()
   })
 })
+
+describe('DDEV and agent-local', () => {
+  it('starting a DDEV site does not ask agent-local to yield', async () => {
+    const yieldPorts = vi.fn().mockResolvedValue(true)
+    install(stub('agent-local', { releasePrivilegedPorts: yieldPorts }))
+    install(stub('ddev'))
+    await startStackWithPortHandover({ path: '/site', localStack: 'ddev' })
+    expect(yieldPorts).not.toHaveBeenCalled()
+  })
+})

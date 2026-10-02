@@ -16,6 +16,7 @@ import type { PendingSiteBind } from '../../../../shared/site-bind-types'
 import type { CloneSourceRepo } from '../../../../shared/site-clone-source-types'
 import { repoSlug } from '../../../../shared/site-local-domain'
 import { Button } from '@/components/ui/button'
+import { useAppStore } from '@/store'
 import {
   Dialog,
   DialogContent,
@@ -30,10 +31,12 @@ import { SiteSetupDone } from './SiteSetupDone'
 import { SiteSetupLinkTargetRows } from './SiteSetupLinkTargetRows'
 import { SiteSetupMinimizeButton } from './SiteSetupMinimizeButton'
 import { SiteSetupReview } from './SiteSetupReview'
+import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
 import { SiteSetupRun } from './SiteSetupRun'
 import { SiteSetupSourceScreen } from './SiteSetupSourceScreen'
 import { useMinimizedSiteSetup } from './use-minimized-site-setup'
 import { useSiteSetupReviewData } from './use-site-setup-review-data'
+import { useServeDomainCheck } from './use-serve-domain-check'
 import { useSiteSetupRunner } from './use-site-setup-runner'
 
 export type SiteSetupRequest =
@@ -66,12 +69,18 @@ export function SiteSetupDialog({
     linkTarget,
     setLinkTarget,
     linkCloneUrl,
+    linkCloneProblem,
     plan,
     availableStacks,
     cert,
     choices,
-    setChoices
+    setChoices,
+    promptStackChoice
   } = useSiteSetupReviewData(request, repo)
+  const [addEnvironmentOpen, setAddEnvironmentOpen] = useState(false)
+  const setSettingsSearchQuery = useAppStore((state) => state.setSettingsSearchQuery)
+  const openSettingsTarget = useAppStore((state) => state.openSettingsTarget)
+  const openSettingsPage = useAppStore((state) => state.openSettingsPage)
 
   const label =
     request.kind === 'repo'
@@ -150,6 +159,15 @@ export function SiteSetupDialog({
     }
   }
 
+  // Minimised, not dismissed: the link's details stay in the status bar while the user connects
+  // Bitbucket, and restoring it re-resolves the clone URL.
+  const openIntegrations = (): void => {
+    setSettingsSearchQuery('')
+    openSettingsTarget({ pane: 'integrations', repoId: null })
+    openSettingsPage()
+    minimize()
+  }
+
   const start = (): void => {
     const built = source()
     if (!built || !choices) {
@@ -172,8 +190,16 @@ export function SiteSetupDialog({
     onClose(started ? 'finished' : 'dismissed')
   }
 
+  const serveDomainError = useServeDomainCheck({
+    source: source(),
+    stack: choices?.serve.stack ?? null,
+    domain: choices?.serve.domain ?? '',
+    enabled: choices?.serve.enabled === true && !lockedSteps.includes('serve')
+  })
+
   const canStart =
     choices !== null &&
+    serveDomainError === '' &&
     (request.kind !== 'repo' || repo !== null) &&
     (request.kind !== 'link' ||
       (linkTarget !== null && (linkTarget.kind === 'existing' || linkCloneUrl.length > 0)))
@@ -261,6 +287,8 @@ export function SiteSetupDialog({
                   choices={choices}
                   onChange={setChoices}
                   lockedSteps={lockedSteps}
+                  promptStackChoice={promptStackChoice}
+                  serveDomainError={serveDomainError}
                   sourceRows={
                     request.kind === 'link' ? (
                       <SiteSetupLinkTargetRows
@@ -269,6 +297,8 @@ export function SiteSetupDialog({
                         cloneUrl={linkCloneUrl}
                         value={linkTarget}
                         onChange={setLinkTarget}
+                        cloneProblem={linkCloneProblem}
+                        onOpenIntegrations={openIntegrations}
                       />
                     ) : undefined
                   }
@@ -293,9 +323,12 @@ export function SiteSetupDialog({
                   {strings.cancel}
                 </Button>
               )}
-              <Button disabled={!canStart} onClick={start}>
-                {snapshot.phase === 'failed' ? strings.retry : strings.setUp}
-              </Button>
+              {/* A disabled button gets no pointer events, so the reason sits on its wrapper. */}
+              <span title={serveDomainError || undefined}>
+                <Button disabled={!canStart} onClick={start}>
+                  {snapshot.phase === 'failed' ? strings.retry : strings.setUp}
+                </Button>
+              </span>
             </DialogFooter>
           </>
         ) : null}
@@ -322,7 +355,22 @@ export function SiteSetupDialog({
             createdLocalWp={snapshot.createdLocalWp}
             databaseReplaced={snapshot.databaseReplaced}
             onClose={() => onClose('finished')}
-            onOpenSite={null}
+            onOpenSite={(url) => void window.api.shell.openUrl(url)}
+            onAddEnvironment={
+              request.kind === 'repo' && snapshot.siteId.length > 0
+                ? () => setAddEnvironmentOpen(true)
+                : null
+            }
+          />
+        ) : null}
+        {snapshot.siteId.length > 0 ? (
+          <AddSiteEnvironmentDialog
+            open={addEnvironmentOpen}
+            onOpenChange={setAddEnvironmentOpen}
+            siteId={snapshot.siteId}
+            environmentNames={[]}
+            defaultSource=""
+            onCreated={() => setAddEnvironmentOpen(false)}
           />
         ) : null}
 
