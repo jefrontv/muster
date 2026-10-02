@@ -118,6 +118,11 @@ describe('describeToolActivity: reads and searches', () => {
     expect(describeToolActivity(read, ok(), 'chat').detail).toBe('none')
   })
 
+  it('treats the macOS /private realpath as inside the working folder', () => {
+    const read = call('Read', { file_path: '/private/var/site/inc/a.php' })
+    expect(describeToolActivity(read, ok(), 'code', { cwd: '/var/site' }).object).toBe('inc/a.php')
+  })
+
   it('Grep/Glob: pattern and match count in Code, "Searched the project" in Chat', () => {
     const grep = call('Grep', { pattern: 'add_action', path: `${cwd}/inc` })
     const found = ok('Found 3 files\n/a.php\n/b.php\n/c.php')

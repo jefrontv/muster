@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '../../store'
 import type { NativeChatSession } from '../../../../shared/native-chat-types'
 import { useNativeChatLiveSession } from './use-native-chat-live-session'
+import { useStableSessionMessages } from './native-chat-message-identity'
 import { selectNativeChatViewState } from './native-chat-view-state'
 import { NativeChatMessageList } from './NativeChatMessageList'
 import type { NativeChatComposerHandle } from './NativeChatComposer'
@@ -150,13 +151,10 @@ function NativeChatResolvedView({
   const runtimeEnvironmentId = useAppStore((s) =>
     selectNativeChatRuntimeEnvironmentId(s, terminalTabId)
   )
-  const session = useNativeChatLiveSession({
-    paneKey,
-    agent,
-    sessionId,
-    transcriptPath,
-    runtimeEnvironmentId
-  })
+  // A page load rebuilds every message; unchanged ones keep their object so memoized rows skip.
+  const session = useStableSessionMessages(
+    useNativeChatLiveSession({ paneKey, agent, sessionId, transcriptPath, runtimeEnvironmentId })
+  )
   // The live-session merge reconciles hooks with replayable transcript turn
   // boundaries; all working consumers must use that one lifecycle decision.
   const liveWorking = session.status === 'working'

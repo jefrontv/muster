@@ -30,12 +30,16 @@ export function relativeToolPath(path: string, cwd: string | null | undefined): 
   if (!cwd) {
     return path
   }
-  const base = cwd.replace(/[\\/]+$/, '')
-  if (path === base) {
-    return pathFileName(path)
-  }
-  if (path.startsWith(`${base}/`) || path.startsWith(`${base}\\`)) {
-    return path.slice(base.length + 1)
+  const trimmed = cwd.replace(/[\\/]+$/, '')
+  // macOS: the CLI reports realpaths, so /var and /tmp arrive as /private/var, /private/tmp.
+  const bases = trimmed.startsWith('/private/') ? [trimmed] : [trimmed, `/private${trimmed}`]
+  for (const base of bases) {
+    if (path === base) {
+      return pathFileName(path)
+    }
+    if (path.startsWith(`${base}/`) || path.startsWith(`${base}\\`)) {
+      return path.slice(base.length + 1)
+    }
   }
   return path
 }

@@ -13,6 +13,10 @@ import {
 import { NativeChatWorkingRow } from './NativeChatWorkingRow'
 import { useNativeChatTimeline } from './use-native-chat-timeline'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
+import { NativeChatVirtualRows, nativeChatVirtualSplit } from './NativeChatVirtualRows'
+
+/** Start the next page this far before the top of history comes into view. */
+const LOAD_EARLIER_MARGIN_PX = 600
 
 export function NativeChatMessageList({
   session,
@@ -42,6 +46,7 @@ export function NativeChatMessageList({
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const spacerRef = useRef<HTMLDivElement | null>(null)
+  const topSentinelRef = useRef<HTMLDivElement | null>(null)
 
   const { hasMore, loadingEarlier, loadEarlier, sessionId } = session
 
@@ -77,14 +82,36 @@ export function NativeChatMessageList({
     loadEarlier()
   }, [loadEarlier])
 
-  // The transcript shows the whole conversation: keep pulling older pages until
-  // the history is exhausted, rather than making the user ask for each one. The
-  // paging itself stays — it is what keeps a huge transcript off the first paint.
+  // Older pages load when the reader nears the top, not in a loop on open. The
+  // observer is rebuilt after each page so a still-visible sentinel asks again.
   useEffect(() => {
-    if (hasMore && !loadingEarlier) {
-      loadEarlierAnchored()
+    const sentinel = topSentinelRef.current
+    const root = scrollRef.current
+    if (
+      !hasMore ||
+      loadingEarlier ||
+      !sentinel ||
+      !root ||
+      typeof IntersectionObserver !== 'function'
+    ) {
+      return
     }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect()
+          loadEarlierAnchored()
+        }
+      },
+      { root, rootMargin: `${LOAD_EARLIER_MARGIN_PX}px 0px 0px 0px` }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
   }, [hasMore, loadingEarlier, loadEarlierAnchored])
+
+  const split = nativeChatVirtualSplit(rows.length)
+  const headRows = useMemo(() => rows.slice(0, split), [rows, split])
+  const tailRows = split > 0 ? rows.slice(split) : rows
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
@@ -174,27 +201,39 @@ export function NativeChatMessageList({
       >
         <div
           ref={contentRef}
-          // Why: same max width as the composer column; horizontal inset comes
-          // from the scroll container so content aligns with the composer field.
-          className="mx-auto flex w-full max-w-3xl flex-col gap-5"
-          // Why: `zoom` scales the chat transcript's text and layout together,
-          // scoped to this container so the rest of the app is untouched. It's
-          // the desktop analog of the mobile pinch-zoom (Chromium/Electron only).
-          // overflow-anchor is ours to manage — the browser's native anchoring
-          // fights the three-mode scroll model.
-          style={{ zoom: fontScale, overflowAnchor: 'none' }}
+          // Why: same max width as the composer column (scaled with the zoom);
+          // horizontal inset comes from the scroll container so content aligns
+          // with the composer field. overflow-anchor is ours to manage — the
+          // browser's native anchoring fights the three-mode scroll model.
+          className="mx-auto w-full"
+          style={{ maxWidth: `${48 * fontScale}rem`, overflowAnchor: 'none' }}
         >
+          <div ref={topSentinelRef} aria-hidden className="h-px w-full" />
           {hasMore && loadingEarlier ? (
             <div className="flex justify-center py-1 text-xs text-muted-foreground">
               {translate('components.native-chat.loadingEarlier', 'Loading…')}
             </div>
           ) : null}
-          {rows.map((row) => (
-            <NativeChatTimelineRowView key={row.key} row={row} actions={rowActions} />
-          ))}
-          {showWorkingRow ? (
-            <NativeChatWorkingRow workingSince={workingSince} activeStepLabel={workingStepLabel} />
-          ) : null}
+          <NativeChatVirtualRows
+            rows={headRows}
+            actions={rowActions}
+            scrollRef={scrollRef}
+            fontScale={fontScale}
+          />
+          {/* Why: `zoom` scales the transcript's text and layout together, scoped
+              here so the rest of the app is untouched (the desktop analog of the
+              mobile pinch-zoom; Chromium/Electron only). */}
+          <div className="flex flex-col gap-5" style={{ zoom: fontScale }}>
+            {tailRows.map((row) => (
+              <NativeChatTimelineRowView key={row.key} row={row} actions={rowActions} />
+            ))}
+            {showWorkingRow ? (
+              <NativeChatWorkingRow
+                workingSince={workingSince}
+                activeStepLabel={workingStepLabel}
+              />
+            ) : null}
+          </div>
           {/* Reserved end space while a new turn is anchored; height is written
               imperatively by the anchoring hook. */}
           <div ref={spacerRef} aria-hidden className="w-full shrink-0" />
