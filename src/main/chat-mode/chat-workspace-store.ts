@@ -196,6 +196,7 @@ export class ChatWorkspaceStore {
         | 'activeCollabTask'
         | 'archived'
         | 'pinned'
+        | 'showTechnicalDetails'
       >
     >
   ): ChatThread | null {

@@ -168,7 +168,7 @@ describe('installChatThreadStreamEvents', () => {
     const stop = installChatThreadStreamEvents()
 
     listener?.({ kind: 'exit', threadId: 't1', code: 1, error: 'fatal: bad --model' })
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', 'fatal: bad --model')
+    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', null)
     // The thread keeps its history; the end is recorded for the notice above the composer.
     expect(storeState.setChatThreadSessionEnd).toHaveBeenCalledWith('t1', {
       failed: false,

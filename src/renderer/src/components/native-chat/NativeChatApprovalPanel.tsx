@@ -2,8 +2,12 @@
 // a header describing the oldest queued request, plus the footer actions row that
 // replaces the normal composer actions while a request is showing.
 
-import { ChevronDown, ShieldAlert } from 'lucide-react'
+import { ChevronDown, ChevronRight, ShieldAlert } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { describeToolApproval } from '../../../../shared/native-chat-tool-approval'
+import { useNativeChatSurface } from './native-chat-surface-context'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { formatToolInput, humanizeToolName, toolFilePath } from './native-chat-tool-summary'
+import { humanizeToolName } from './native-chat-tool-summary'
 import type {
   NativeChatPermissionBehavior,
   NativeChatPermissionRequest
@@ -29,58 +33,51 @@ export type NativeChatComposerApproval = {
   cancelTurn: () => void
 }
 
-/** Tool-aware rendering: the command/path the user actually judges, with the
- *  model's own description as the caption — raw JSON only as a last resort. */
-export function approvalRequestDetail(input: unknown): {
-  caption: string | null
-  code: string | null
-} {
-  if (input && typeof input === 'object') {
-    const value = input as Record<string, unknown>
-    const description = typeof value.description === 'string' ? value.description : null
-    const command = value.command ?? value.cmd ?? value.query ?? value.pattern
-    if (typeof command === 'string' && command.length > 0) {
-      return { caption: description, code: command }
-    }
-    const path = toolFilePath(input)
-    if (path) {
-      return { caption: description, code: path }
-    }
-  }
-  const fallback = formatToolInput(input)
-  return { caption: null, code: fallback.length > 0 ? fallback : null }
-}
-
+/** Asked as a question ("Allow Claude to change header.php?"). Chat mode keeps
+ *  the command or path behind Details; Code mode shows it. */
 export function NativeChatApprovalPanel({
   approval
 }: {
   approval: NativeChatComposerApproval
 }): React.JSX.Element {
   const { request, count } = approval
-  const detail = approvalRequestDetail(request.input)
+  const { surface } = useNativeChatSurface()
+  const detail = describeToolApproval(request.toolName, request.input, surface, translate)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const showCode = detail.code !== null && (!detail.detailsCollapsed || detailsOpen)
   return (
     <div className="px-3 pt-2.5 pb-1">
       <div className="flex items-center gap-2">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-amber-500/15">
-          <ShieldAlert className="size-3.5 text-amber-500" />
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--status-attention)_15%,transparent)]">
+          <ShieldAlert className="size-3.5 text-status-attention" />
         </span>
-        <span className="text-sm font-medium">{humanizeToolName(request.toolName)}</span>
-        <span className="text-xs text-muted-foreground">
-          {translate('auto.components.native-chat.approval.wants', 'wants to run')}
-        </span>
+        <span className="min-w-0 text-sm font-medium">{detail.title}</span>
         {count > 1 ? (
           <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
             1/{count}
           </span>
         ) : null}
       </div>
-      {detail.code ? (
+      {detail.caption ? (
+        <p className="mt-1.5 text-xs text-muted-foreground">{detail.caption}</p>
+      ) : null}
+      {detail.code !== null && detail.detailsCollapsed ? (
+        <button
+          type="button"
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen((open) => !open)}
+          className="mt-1.5 flex items-center gap-0.5 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ChevronRight
+            className={cn('size-3.5 transition-transform', detailsOpen && 'rotate-90')}
+          />
+          {translate('components.native-chat.reply.details', 'Details')}
+        </button>
+      ) : null}
+      {showCode ? (
         <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/50 px-2.5 py-2 font-mono text-xs leading-relaxed text-foreground scrollbar-sleek">
           {detail.code}
         </pre>
-      ) : null}
-      {detail.caption ? (
-        <p className="mt-1.5 text-xs text-muted-foreground">{detail.caption}</p>
       ) : null}
     </div>
   )

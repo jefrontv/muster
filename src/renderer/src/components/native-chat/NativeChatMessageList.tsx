@@ -1,32 +1,18 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { ArrowDown } from 'lucide-react'
 import type { CommentMarkdownLinkClickHandler } from '@/components/sidebar/CommentMarkdown'
 import { translate } from '@/i18n/i18n'
 import type { NativeChatLiveSession } from './use-native-chat-live-session'
-import { orderNativeChatMessages } from './native-chat-message-grouping'
-import { stripNoiseMessages } from './native-chat-noise'
-import { foldToolMessages } from './native-chat-tool-fold'
-import { buildNativeChatTimelineRows } from './native-chat-timeline-rows'
 import { nativeChatMessageText } from './native-chat-turn-folds'
 import { useNativeChatScrollAnchoring } from './use-native-chat-scroll-anchoring'
 import { NATIVE_CHAT_SCROLL_CONTAINER_ATTR } from './use-native-chat-toggle-scroll-compensation'
-import { NativeChatMessageRow } from './NativeChatMessageRow'
-import { NativeChatTurnFoldRow, NativeChatLiveToolToggleRow } from './NativeChatTurnFoldRow'
-import { NativeChatChangedFilesRow } from './NativeChatChangedFilesRow'
-import { NativeChatTurnPlanRow } from './NativeChatTurnPlanRow'
-import { nativeChatPlanActiveLabel } from './native-chat-turn-plan'
+import {
+  NativeChatTimelineRowView,
+  type NativeChatTimelineRowActions
+} from './NativeChatTimelineRowView'
 import { NativeChatWorkingRow } from './NativeChatWorkingRow'
+import { useNativeChatTimeline } from './use-native-chat-timeline'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
-
-function toggled(set: ReadonlySet<string>, id: string): Set<string> {
-  const next = new Set(set)
-  if (next.has(id)) {
-    next.delete(id)
-  } else {
-    next.add(id)
-  }
-  return next
-}
 
 export function NativeChatMessageList({
   session,
@@ -35,7 +21,9 @@ export function NativeChatMessageList({
   onLinkClick,
   allowFileUriLinks = false,
   failedDeliveryMessageIds,
-  workingSince = null
+  workingSince = null,
+  lastError = null,
+  onRetry
 }: {
   session: NativeChatLiveSession
   isWorking: boolean
@@ -46,6 +34,10 @@ export function NativeChatMessageList({
   failedDeliveryMessageIds?: ReadonlySet<string>
   /** Epoch ms the current working state began (drives "Working for {t}"). */
   workingSince?: number | null
+  /** The last turn's failure, shown inline at its end. */
+  lastError?: string | null
+  /** Resend a turn's prompt; null means the latest. */
+  onRetry?: (replyMessageId: string | null) => void
 }): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -53,90 +45,19 @@ export function NativeChatMessageList({
 
   const { hasMore, loadingEarlier, loadEarlier, sessionId } = session
 
-  // Strip harness noise (task-notifications, system reminders, slash-command
-  // envelopes) before folding so they don't render as the user's own bubbles —
-  // matching the mobile chat. Then fold each turn's tool activity into the
-  // assistant message it belongs to, ordered stably, so a turn's tools collapse
-  // under one run.
-  const messages = useMemo(
-    () => foldToolMessages(orderNativeChatMessages(stripNoiseMessages(session.messages))),
-    [session.messages]
-  )
+  const { messages, rows, toggle, workingStepLabel } = useNativeChatTimeline({
+    rawMessages: session.messages,
+    isWorking,
+    lastError
+  })
   const showWorkingRow =
     isWorking && !messages.some((message) => message.id === NATIVE_CHAT_STREAMING_ID)
-  // Only the newest message can hold a call the agent is still waiting on; an
-  // unanswered call further back was interrupted, not left running.
-  const liveMessageId = messages.at(-1)?.id ?? null
-
-  // Settled turns the user re-opened / running turns with tool overflow shown.
-  const [expandedTurnIds, setExpandedTurnIds] = useState<ReadonlySet<string>>(new Set())
-  const [expandedPlanTurnIds, setExpandedPlanTurnIds] = useState<ReadonlySet<string>>(new Set())
-  const [expandedChangedFileTurnIds, setExpandedChangedFileTurnIds] = useState<ReadonlySet<string>>(
-    new Set()
-  )
-  const [expandedLiveToolTurnIds, setExpandedLiveToolTurnIds] = useState<ReadonlySet<string>>(
-    new Set()
-  )
-  const rows = useMemo(
-    () =>
-      buildNativeChatTimelineRows({
-        messages,
-        isWorking,
-        expandedTurnIds,
-        expandedLiveToolTurnIds,
-        expandedPlanTurnIds,
-        expandedChangedFileTurnIds
-      }),
-    [
-      messages,
-      isWorking,
-      expandedTurnIds,
-      expandedLiveToolTurnIds,
-      expandedPlanTurnIds,
-      expandedChangedFileTurnIds
-    ]
-  )
-
-  // The running turn is the last one, so its plan row is the last plan row.
-  const workingStepLabel = useMemo(() => {
-    if (!isWorking) {
-      return null
-    }
-    for (let index = rows.length - 1; index >= 0; index -= 1) {
-      const row = rows[index]
-      if (row.kind === 'turn-plan') {
-        return nativeChatPlanActiveLabel(row.plan)
-      }
-    }
-    return null
-  }, [rows, isWorking])
-
-  // An interrupt that lands while this list is mounted leaves its turn
-  // expanded (the user just stopped it — hiding the evidence reads as loss);
-  // interrupted turns from history stay collapsed like any settled turn.
-  const seenInterruptedTurnIdsRef = useRef<Set<string> | null>(null)
-  useEffect(() => {
-    const interrupted = rows.flatMap((row) =>
-      row.kind === 'turn-fold' && row.interrupted ? [row.turnId] : []
-    )
-    const seen = seenInterruptedTurnIdsRef.current
-    if (seen === null) {
-      seenInterruptedTurnIdsRef.current = new Set(interrupted)
-      return
-    }
-    const fresh = interrupted.filter((turnId) => !seen.has(turnId))
-    if (fresh.length > 0) {
-      fresh.forEach((turnId) => seen.add(turnId))
-      setExpandedTurnIds((prev) => new Set([...prev, ...fresh]))
-    }
-  }, [rows])
 
   const anchoring = useNativeChatScrollAnchoring({ scrollRef, contentRef, spacerRef, isWorking })
   const {
     anchorToMessage,
     scrollToEnd,
     maintainAfterRender,
-    breakToFreeScrolling,
     onScroll: onAnchoringScroll
   } = anchoring
 
@@ -173,20 +94,15 @@ export function NativeChatMessageList({
     onAnchoringScroll()
   }, [onAnchoringScroll])
 
-  // Align a single message's top to the top of the scroll viewport.
-  const scrollMessageToTop = useCallback(
-    (el: HTMLElement) => {
-      const container = scrollRef.current
-      if (!container) {
-        return
-      }
-      // Detach synchronously so an in-place streaming growth can't re-pin to
-      // the bottom mid-flight and fight this deliberate scroll.
-      breakToFreeScrolling()
-      const delta = el.getBoundingClientRect().top - container.getBoundingClientRect().top
-      container.scrollTo({ top: container.scrollTop + delta, behavior: 'smooth' })
-    },
-    [breakToFreeScrolling]
+  const rowActions = useMemo<NativeChatTimelineRowActions>(
+    () => ({
+      onToggle: toggle,
+      onLinkClick,
+      allowFileUriLinks,
+      ...(failedDeliveryMessageIds ? { failedDeliveryMessageIds } : {}),
+      ...(onRetry ? { onRetry } : {})
+    }),
+    [toggle, onLinkClick, allowFileUriLinks, failedDeliveryMessageIds, onRetry]
   )
 
   // Enter anchoring when a user message lands at the tail (real send or
@@ -273,49 +189,9 @@ export function NativeChatMessageList({
               {translate('components.native-chat.loadingEarlier', 'Loading…')}
             </div>
           ) : null}
-          {rows.map((row) =>
-            row.kind === 'message' ? (
-              <NativeChatMessageRow
-                key={row.message.id}
-                message={row.message}
-                suppressTools={row.suppressTools}
-                onScrollMessageToTop={scrollMessageToTop}
-                onLinkClick={onLinkClick}
-                allowFileUriLinks={allowFileUriLinks}
-                deliveryFailed={failedDeliveryMessageIds?.has(row.message.id) === true}
-                toolsLive={isWorking && row.message.id === liveMessageId}
-              />
-            ) : row.kind === 'turn-fold' ? (
-              <NativeChatTurnFoldRow
-                key={`turn-fold:${row.turnId}`}
-                durationMs={row.durationMs}
-                interrupted={row.interrupted}
-                expanded={row.expanded}
-                onToggle={() => setExpandedTurnIds((prev) => toggled(prev, row.turnId))}
-              />
-            ) : row.kind === 'turn-changed-files' ? (
-              <NativeChatChangedFilesRow
-                key={`changed-files:${row.turnId}`}
-                changed={row.changed}
-                expanded={row.expanded}
-                onToggle={() => setExpandedChangedFileTurnIds((prev) => toggled(prev, row.turnId))}
-              />
-            ) : row.kind === 'turn-plan' ? (
-              <NativeChatTurnPlanRow
-                key={`turn-plan:${row.turnId}`}
-                plan={row.plan}
-                expanded={row.expanded}
-                onToggle={() => setExpandedPlanTurnIds((prev) => toggled(prev, row.turnId))}
-              />
-            ) : (
-              <NativeChatLiveToolToggleRow
-                key={`live-tools:${row.turnId}`}
-                hiddenCount={row.hiddenCount}
-                expanded={row.expanded}
-                onToggle={() => setExpandedLiveToolTurnIds((prev) => toggled(prev, row.turnId))}
-              />
-            )
-          )}
+          {rows.map((row) => (
+            <NativeChatTimelineRowView key={row.key} row={row} actions={rowActions} />
+          ))}
           {showWorkingRow ? (
             <NativeChatWorkingRow workingSince={workingSince} activeStepLabel={workingStepLabel} />
           ) : null}

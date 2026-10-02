@@ -242,9 +242,9 @@ export function installChatThreadStreamEvents(): () => void {
           failed: false,
           message: event.error ?? null
         })
-        // The stderr tail is the only account of why the CLI died; the ended
-        // view reads it from the same slot the turn-failure banner uses.
-        store.setChatThreadLastError(event.threadId, event.error ?? null)
+        // The stderr tail is the only account of why the CLI died; the ended notice carries it,
+        // so it must not also read as the last turn's failure.
+        store.setChatThreadLastError(event.threadId, null)
         cancelSealClear(event.threadId)
         store.clearChatThreadStreamingText(event.threadId)
         store.clearChatThreadPermissionRequests(event.threadId)

@@ -85,6 +85,8 @@ export type ChatThread = {
   pinned?: boolean
   /** Hidden from the main list; reachable from the sidebar's Archived section. */
   archived?: boolean
+  /** Draw this thread the way Code mode does (diffs, commands, paths). */
+  showTechnicalDetails?: boolean
 }
 
 export type ChatModeState = {

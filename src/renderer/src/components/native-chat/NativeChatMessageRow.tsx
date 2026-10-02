@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { ArrowUp, FileText } from 'lucide-react'
+import { FileText, RotateCcw } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
 } from '@/components/sidebar/CommentMarkdown'
@@ -25,7 +26,6 @@ import {
 } from './native-chat-file-reference-display'
 import { parseActiveCollabTaskReferences } from './native-chat-activecollab-references'
 import { NativeChatTaskChip } from './NativeChatTaskChip'
-import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
 
@@ -82,63 +82,69 @@ function ImageAttachmentRefs({
   )
 }
 
-/** Inline controls for an agent message (mobile AgentControls parity): copy the
- *  message's prose, and scroll so this message's top aligns to the viewport top.
- *  Reveals on hover / keyboard focus like the prior copy affordance. */
-function AgentControls({
+/** Copy and Retry under a finished reply, as claude.ai places them: always on
+ *  the newest reply, on hover for older ones. */
+function ReplyActions({
   markdown,
   getHtml,
-  onScrollToTop,
-  className
+  onRetry,
+  visibility
 }: {
   markdown: string
   getHtml?: () => string | null
-  onScrollToTop: () => void
-  className?: string
+  onRetry?: () => void
+  visibility: 'always' | 'hover'
 }): React.JSX.Element {
   return (
-    <div className={cn('flex items-center gap-1', className)}>
+    <div
+      className={cn(
+        'mt-1.5 flex items-center gap-0.5',
+        visibility === 'hover' &&
+          'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100'
+      )}
+    >
       <NativeChatCopyButton text={markdown} getHtml={getHtml} />
-      <button
-        type="button"
-        onClick={onScrollToTop}
-        aria-label={translate(
-          'components.native-chat.scrollMessageToTop',
-          'Scroll this message to top'
-        )}
-        title={translate('components.native-chat.scrollMessageToTop', 'Scroll this message to top')}
-        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ArrowUp className="size-3.5" />
-      </button>
+      {onRetry ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onRetry}
+              aria-label={translate('components.native-chat.reply.retry', 'Retry')}
+              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <RotateCcw className="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            {translate('components.native-chat.reply.retry', 'Retry')}
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
     </div>
   )
 }
 
-/** One message: its prose first, then a collapsible run folding all of the
- *  turn's tool activity. Monochrome per STYLEGUIDE: user prompts read as a
- *  lifted card, assistant prose as body copy, reasoning de-emphasized. */
+/** One message's prose. Tool activity lives in the turn's work log, never here.
+ *  Monochrome per STYLEGUIDE: user prompts read as a lifted card, assistant
+ *  prose as body copy. */
 // Memoized so a streaming tick re-renders only the row whose message object
 // changed — without this every delta re-parses every message's markdown.
 export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   message,
-  onScrollMessageToTop,
   onLinkClick,
   allowFileUriLinks = false,
   deliveryFailed = false,
-  suppressTools = false,
-  toolsLive = false
+  replyActions = 'none',
+  onRetry
 }: {
   message: NativeChatMessage
-  /** Align this message's top to the top of the scroll viewport. */
-  onScrollMessageToTop: (el: HTMLElement) => void
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
   deliveryFailed?: boolean
-  /** Live tool-call collapse: hide this row's tool run, keep its prose. */
-  suppressTools?: boolean
-  /** This row's tool run belongs to the turn in flight, so unanswered calls spin. */
-  toolsLive?: boolean
+  /** Copy/Retry under a finished reply: always on the newest, on hover for older. */
+  replyActions?: 'always' | 'hover' | 'none'
+  onRetry?: () => void
 }): React.JSX.Element | null {
   const rowRef = useRef<HTMLDivElement | null>(null)
   // Rendered-markup source for the copy button's text/html clipboard flavor.
@@ -146,7 +152,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   // Long user prompts start collapsed; per-row state so expanding one row
   // doesn't reflow its neighbors.
   const [userMessageExpanded, setUserMessageExpanded] = useState(false)
-  const { prose, tools } = useMemo(() => splitNativeChatBlocks(message.blocks), [message.blocks])
+  const { prose } = useMemo(() => splitNativeChatBlocks(message.blocks), [message.blocks])
   const markdown = proseToMarkdown(prose)
   const hasImages = prose.some((block) => block.type === 'image-ref')
   const isUser = message.role === 'user'
@@ -154,18 +160,12 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   const isSystem = message.role === 'system'
   const isStreaming = message.id === NATIVE_CHAT_STREAMING_ID
 
-  const scrollToTop = useCallback(() => {
-    if (rowRef.current) {
-      onScrollMessageToTop(rowRef.current)
-    }
-  }, [onScrollMessageToTop])
-
   const getProseHtml = useCallback(() => proseRef.current?.innerHTML ?? null, [])
 
   // Skip rows with nothing renderable so the transcript shows no empty/ghost
   // bubble.
   // After all hooks, so hook order stays unconditional.
-  if (markdown.length === 0 && !hasImages && (tools.length === 0 || suppressTools)) {
+  if (markdown.length === 0 && !hasImages) {
     return null
   }
 
@@ -279,10 +279,9 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
     )
   }
 
-  // Plain assistant prose is the copyable unit; reasoning/system asides stay
-  // chrome-free. The controls reveal on hover (and on keyboard focus-within) —
-  // withheld while this is the live streaming bubble (its text is unsettled).
-  const showControls = !isReasoning && !isSystem && !isStreaming && markdown.length > 0
+  // A finished reply is the copyable unit; system asides and the live bubble stay chrome-free.
+  const showControls =
+    replyActions !== 'none' && !isReasoning && !isSystem && !isStreaming && markdown.length > 0
 
   return (
     <div
@@ -295,14 +294,6 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         isSystem && 'text-xs text-muted-foreground'
       )}
     >
-      {showControls ? (
-        <AgentControls
-          markdown={markdown}
-          getHtml={getProseHtml}
-          onScrollToTop={scrollToTop}
-          className="absolute -top-8 right-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-        />
-      ) : null}
       <ImageAttachmentRefs blocks={prose} />
       {markdown ? (
         <CommentMarkdown
@@ -315,8 +306,13 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
           codeBlockActions
         />
       ) : null}
-      {tools.length > 0 && !suppressTools ? (
-        <NativeChatToolRun blocks={tools} live={toolsLive} />
+      {showControls ? (
+        <ReplyActions
+          markdown={markdown}
+          getHtml={getProseHtml}
+          onRetry={onRetry}
+          visibility={replyActions === 'always' ? 'always' : 'hover'}
+        />
       ) : null}
     </div>
   )

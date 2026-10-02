@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { NativeChatSurface } from '../../../../shared/native-chat-tool-activity-types'
 import type { TuiAgent } from '../../../../shared/types'
 import type { NativeChatContextMenuActions } from './use-native-chat-context-menu'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
@@ -44,6 +45,8 @@ export type NativeChatTransport = {
     behavior: NativeChatPermissionBehavior,
     message?: string
   ) => void
+  /** The last turn's failure, shown inline at the end of that turn. */
+  lastError?: string | null
   /** True while the session auto-approves every tool (full access). */
   fullAccess?: boolean
   /** Turn full access on/off for the session. */
@@ -78,4 +81,10 @@ export type NativeChatViewProps = {
   activeCollabProjectId?: number | null
   /** One line above the composer for session state (starting, ended, missing folder). */
   composerNotice?: ReactNode
+  /** Audience: Chat mode reads as plain sentences, Code mode as diffs and commands. */
+  surface?: NativeChatSurface
+  /** Chat mode only: draw this thread the way Code mode does. */
+  showTechnicalDetails?: boolean
+  /** Folder paths show relative to (the workspace's), when there is no worktree. */
+  workingDirectory?: string | null
 }

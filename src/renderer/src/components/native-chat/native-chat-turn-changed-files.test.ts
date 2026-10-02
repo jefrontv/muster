@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { NativeChatBlock, NativeChatMessage } from '../../../../shared/native-chat-types'
+import type { NativeChatToolResultBlock } from '../../../../shared/native-chat-types'
+import { describeToolActivity } from '../../../../shared/native-chat-tool-activity'
 import {
   deriveNativeChatTurnChangedFiles,
   selectChangedFilePreview,
@@ -7,21 +8,22 @@ import {
   type NativeChatChangedFile
 } from './native-chat-turn-changed-files'
 
-function msg(id: string, blocks: NativeChatBlock[]): NativeChatMessage {
-  return { id, role: 'assistant', blocks, timestamp: null, source: 'transcript' }
-}
-
-const edit = (path: string, oldText: string, newText: string): NativeChatBlock => ({
-  type: 'tool-call',
-  name: 'Edit',
-  input: { file_path: path, old_string: oldText, new_string: newText }
+const patched = (additions: number, deletions: number): NativeChatToolResultBlock => ({
+  type: 'tool-result',
+  output: 'ok',
+  detail: { patch: [], additions, deletions }
 })
 
-const write = (path: string, content: string): NativeChatBlock => ({
-  type: 'tool-call',
-  name: 'Write',
-  input: { file_path: path, content }
-})
+const edit = (path: string, result?: NativeChatToolResultBlock) =>
+  describeToolActivity(
+    {
+      type: 'tool-call',
+      name: 'Edit',
+      input: { file_path: path, old_string: 'a', new_string: 'b' }
+    },
+    result,
+    'code'
+  )
 
 const file = (path: string, additions: number, deletions: number): NativeChatChangedFile => ({
   path,
@@ -31,46 +33,28 @@ const file = (path: string, additions: number, deletions: number): NativeChatCha
 
 describe('deriveNativeChatTurnChangedFiles', () => {
   it('is null for a turn that changed nothing', () => {
-    expect(deriveNativeChatTurnChangedFiles([msg('a1', [{ type: 'text', text: 'hi' }])])).toBeNull()
+    const read = describeToolActivity(
+      { type: 'tool-call', name: 'Read', input: { file_path: 'x.ts' } },
+      undefined,
+      'code'
+    )
+    expect(deriveNativeChatTurnChangedFiles([read])).toBeNull()
   })
 
-  it('counts additions and deletions per file', () => {
+  it('uses the structured patch counts, summing repeat edits to one file', () => {
     const changed = deriveNativeChatTurnChangedFiles([
-      msg('a1', [edit('src/a.ts', 'one\ntwo', 'one\ntwo\nthree')])
+      edit('src/a.ts', patched(1, 1)),
+      edit('src/a.ts', patched(4, 2)),
+      edit('src/b.ts', patched(3, 0))
     ])
-    expect(changed?.files).toEqual([{ path: 'src/a.ts', additions: 3, deletions: 2 }])
-  })
-
-  it('sums repeat edits to the same file into one row', () => {
-    const changed = deriveNativeChatTurnChangedFiles([
-      msg('a1', [edit('src/a.ts', 'x', 'y')]),
-      msg('a2', [edit('src/a.ts', 'p', 'q')])
-    ])
-    expect(changed?.files).toHaveLength(1)
-    expect(changed?.files[0]).toEqual({ path: 'src/a.ts', additions: 2, deletions: 2 })
-  })
-
-  it('treats a new-file write as additions only', () => {
-    const changed = deriveNativeChatTurnChangedFiles([msg('a1', [write('src/new.ts', 'a\nb\nc')])])
-    expect(changed?.files[0]).toEqual({ path: 'src/new.ts', additions: 3, deletions: 0 })
-  })
-
-  it('ignores tools that do not edit files', () => {
-    const read: NativeChatBlock = { type: 'tool-call', name: 'Read', input: { file_path: 'x.ts' } }
-    expect(deriveNativeChatTurnChangedFiles([msg('a1', [read])])).toBeNull()
-  })
-
-  it('totals across every file', () => {
-    const changed = deriveNativeChatTurnChangedFiles([
-      msg('a1', [edit('a.ts', 'x', 'y\nz'), edit('b.ts', 'p\nq', 'r')])
-    ])
-    expect(changed?.totalAdditions).toBe(3)
+    expect(changed?.files).toEqual([file('src/a.ts', 5, 3), file('src/b.ts', 3, 0)])
+    expect(changed?.totalAdditions).toBe(8)
     expect(changed?.totalDeletions).toBe(3)
   })
 
-  it('counts a trailing newline as a terminator, not an extra line', () => {
-    const changed = deriveNativeChatTurnChangedFiles([msg('a1', [write('a.ts', 'one\ntwo\n')])])
-    expect(changed?.files[0]?.additions).toBe(2)
+  it('skips failed edits, which changed nothing', () => {
+    const failed: NativeChatToolResultBlock = { type: 'tool-result', output: 'no', isError: true }
+    expect(deriveNativeChatTurnChangedFiles([edit('a.ts', failed)])).toBeNull()
   })
 })
 

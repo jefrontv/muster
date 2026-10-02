@@ -7,7 +7,7 @@ import {
 } from '../../../../shared/native-chat-types'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
 import {
-  deriveNativeChatTurnFolds,
+  deriveNativeChatTurnStates,
   groupNativeChatTurns,
   isTurnBoundaryUserMessage,
   nativeChatMessageText
@@ -71,173 +71,48 @@ describe('groupNativeChatTurns', () => {
   })
 })
 
-describe('deriveNativeChatTurnFolds', () => {
-  const foldable = [
+describe('deriveNativeChatTurnStates', () => {
+  const turn = [
     msg('u1', 'user', 'one', { timestamp: 1_000 }),
     msg('r1', 'reasoning', 'thinking', { timestamp: 2_000 }),
-    msg('a1', 'assistant', 'progress', { timestamp: 3_000 }),
     msg('a2', 'assistant', 'final', { timestamp: 10_000 })
   ]
+  const states = (messages: NativeChatMessage[], isWorking: boolean) =>
+    deriveNativeChatTurnStates({ turns: groupNativeChatTurns(messages), isWorking })
 
-  it('folds a settled turn behind its machinery, keeping interim prose visible', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [...foldable, msg('u2', 'user', 'two', { timestamp: 20_000 })],
-      isWorking: true
-    })
-    const fold = folds.get('u1')
-    expect(fold).toBeDefined()
-    // 'a1' carries prose ("progress") — it stays in the flow; only the
-    // reasoning row folds. Hiding assistant text read as answers vanishing.
-    expect([...fold!.hiddenMessageIds].sort()).toEqual(['r1'])
-    expect(fold!.durationMs).toBe(8_000)
-    expect(fold!.interrupted).toBe(false)
+  it('settles every turn but the live last one, measuring post-prompt duration', () => {
+    const result = states([...turn, msg('u2', 'user', 'two', { timestamp: 20_000 })], true)
+    expect(result.get('u1')).toEqual({ settled: true, durationMs: 8_000, interrupted: false })
+    expect(result.get('u2')?.settled).toBe(false)
   })
 
-  it('folds text-less assistant rows (pure tool calls) with the machinery', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', 'one', { timestamp: 1_000 }),
-        {
-          id: 't1',
-          role: 'assistant' as const,
-          blocks: [{ type: 'tool-call' as const, name: 'Bash', input: {} }],
-          timestamp: 2_000,
-          source: 'transcript' as const
-        },
-        msg('a2', 'assistant', 'final', { timestamp: 3_000 })
-      ],
-      isWorking: false
-    })
-    expect([...(folds.get('u1')?.hiddenMessageIds ?? [])]).toEqual(['t1'])
+  it('keeps the last turn live while working or streaming', () => {
+    expect(states(turn, true).get('u1')?.settled).toBe(false)
+    const streaming = [...turn, msg(NATIVE_CHAT_STREAMING_ID, 'assistant', 'live')]
+    expect(states(streaming, false).get('u1')?.settled).toBe(false)
+    expect(states(turn, false).get('u1')?.settled).toBe(true)
   })
 
-  it('never folds the running turn', () => {
-    expect(deriveNativeChatTurnFolds({ messages: foldable, isWorking: true }).size).toBe(0)
-  })
-
-  it('never folds a turn holding the streaming bubble', () => {
-    const messages = [...foldable, msg(NATIVE_CHAT_STREAMING_ID, 'assistant', 'live')]
-    expect(deriveNativeChatTurnFolds({ messages, isWorking: false }).size).toBe(0)
-  })
-
-  it('folds the last turn once settled (not working, no streaming)', () => {
-    const folds = deriveNativeChatTurnFolds({ messages: foldable, isWorking: false })
-    expect(folds.get('u1')).toBeDefined()
-  })
-
-  it('skips turns holding only user + final assistant', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', 'one', { timestamp: 1_000 }),
-        msg('a1', 'assistant', 'final', { timestamp: 2_000 })
-      ],
-      isWorking: false
-    })
-    expect(folds.size).toBe(0)
-  })
-
-  it('never folds the boundary-less lead group', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('s1', 'system', 'a'),
-        msg('s2', 'system', 'b'),
-        msg('a1', 'assistant', 'reply'),
-        msg('u1', 'user', 'next', { timestamp: 5_000 })
-      ],
-      isWorking: true
-    })
-    expect(folds.has('lead')).toBe(false)
-  })
-
-  it('marks interrupted turns and drops the raw interrupt row', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
+  it('marks interrupted turns, timing them to the interrupt', () => {
+    const result = states(
+      [
         msg('u1', 'user', 'one', { timestamp: 1_000 }),
         msg('a1', 'assistant', 'partial', { timestamp: 2_000 }),
         msg('i1', 'system', NATIVE_CHAT_INTERRUPTED_STATUS_TEXT, { timestamp: 13_000 })
       ],
-      isWorking: false
-    })
-    const fold = folds.get('u1')
-    expect(fold?.interrupted).toBe(true)
-    expect(fold?.droppedMessageIds.has('i1')).toBe(true)
-    expect(fold?.hiddenMessageIds.has('i1')).toBe(false)
-    // Duration runs to the interrupt itself: 13s − 2s.
-    expect(fold?.durationMs).toBe(11_000)
-  })
-
-  it('never hides user-role rows (queued echoes glued onto a settled turn)', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', 'one', { timestamp: 1_000 }),
-        msg('r1', 'reasoning', 'thinking', { timestamp: 2_000 }),
-        msg('a1', 'assistant', 'final', { timestamp: 3_000 }),
-        msg('pending:1', 'user', 'queued', { source: 'scrape', timestamp: 4_000 })
-      ],
-      isWorking: false
-    })
-    const fold = folds.get('u1')
-    expect(fold?.hiddenMessageIds.has('pending:1')).toBe(false)
+      false
+    )
+    expect(result.get('u1')).toEqual({ settled: true, durationMs: 11_000, interrupted: true })
   })
 
   it('reports a null duration when timestamps are missing', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', 'one'),
-        msg('r1', 'reasoning', 'thinking'),
-        msg('a1', 'assistant', 'final'),
-        msg('u2', 'user', 'two')
-      ],
-      isWorking: true
-    })
-    expect(folds.get('u1')?.durationMs).toBeNull()
+    const result = states([msg('u1', 'user', 'one'), msg('a1', 'assistant', 'final')], false)
+    expect(result.get('u1')?.durationMs).toBeNull()
   })
 })
 
 describe('nativeChatMessageText', () => {
   it('joins and trims text blocks', () => {
     expect(nativeChatMessageText(msg('u1', 'user', '  hi  '))).toBe('hi')
-  })
-})
-
-describe('slash-command turns keep their feedback visible', () => {
-  it('leaves the trailing system line outside the fold when no assistant reply exists', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', '/foobar', { timestamp: 1 }),
-        msg('r1', 'reasoning', 'thinking', { timestamp: 2 }),
-        msg('s1', 'system', 'Unknown command: /foobar', { timestamp: 3 })
-      ],
-      isWorking: false
-    })
-    const fold = folds.get('u1')
-    expect(fold?.hiddenMessageIds.has('s1')).toBe(false)
-    expect(fold?.hiddenMessageIds.has('r1')).toBe(true)
-  })
-
-  it('still folds system rows when an assistant reply closes the turn', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', 'hi', { timestamp: 1 }),
-        msg('s1', 'system', 'Conversation compacted', { timestamp: 2 }),
-        msg('a1', 'assistant', 'done', { timestamp: 3 })
-      ],
-      isWorking: false
-    })
-    expect(folds.get('u1')?.hiddenMessageIds.has('s1')).toBe(true)
-  })
-
-  it('never surfaces the interrupt status row as the visible tail', () => {
-    const folds = deriveNativeChatTurnFolds({
-      messages: [
-        msg('u1', 'user', '/x', { timestamp: 1 }),
-        msg('r1', 'reasoning', 'thinking', { timestamp: 2 }),
-        msg('i1', 'system', NATIVE_CHAT_INTERRUPTED_STATUS_TEXT, { timestamp: 3 })
-      ],
-      isWorking: false
-    })
-    const fold = folds.get('u1')
-    expect(fold?.droppedMessageIds.has('i1')).toBe(true)
-    expect(fold?.interrupted).toBe(true)
   })
 })

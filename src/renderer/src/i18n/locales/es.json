@@ -14642,7 +14642,17 @@
       "approval": {
         "title": "¿Permitir {{value0}}?",
         "allow": "Permitir",
-        "deny": "Denegar"
+        "deny": "Denegar",
+        "useService": "Allow Claude to use {{service}}?",
+        "changeFile": "Allow Claude to change {{file}}?",
+        "changeFiles": "Allow Claude to change files?",
+        "runCommand": "Allow Claude to run a command?",
+        "readFile": "Allow Claude to read {{file}}?",
+        "readFiles": "Allow Claude to read files?",
+        "readSite": "Allow Claude to read {{site}}?",
+        "aWebPage": "a web page",
+        "searchWeb": "Allow Claude to search the web?",
+        "useTool": "Allow Claude to use {{tool}}?"
       },
       "launchPromptNotDelivered": "No entregado — revisa la terminal",
       "changedFiles": {
@@ -14672,6 +14682,75 @@
         "copied": "Copied",
         "copy": "Copy code",
         "actions": "Code block actions"
+      },
+      "reply": {
+        "details": "Details",
+        "retry": "Retry"
+      },
+      "diff": {
+        "truncated": "Diff shortened"
+      },
+      "detail": {
+        "noOutput": "No output",
+        "outputShortened": "Output shortened",
+        "showAll": "Show all {{count}} lines"
+      },
+      "activity": {
+        "thought": "Thought",
+        "read": "Read",
+        "fetched": "Fetched",
+        "readingPage": "Reading {{site}}",
+        "searchedWeb": "Searched the web",
+        "searchingWeb": "Searching the web",
+        "askedHelper": "Asked a helper to",
+        "askedHelperPlain": "Asked a helper",
+        "askingHelper": "Asking a helper to {{task}}",
+        "askingHelperPlain": "Asking a helper",
+        "askedYou": "Asked you a question",
+        "waitingForYou": "Waiting for your answer",
+        "proposedPlan": "Proposed a plan",
+        "planning": "Planning",
+        "usedSkill": "Used the {{skill}} skill",
+        "usingSkill": "Using a skill",
+        "usedTool": "Used {{tool}}",
+        "working": "Working",
+        "aFile": "a file",
+        "created": "Created",
+        "updated": "Updated",
+        "updatingFile": "Updating {{file}}",
+        "edited": "Edited",
+        "editingFile": "Editing {{file}}",
+        "ranCommand": "Ran a command",
+        "runningCommand": "Running a command",
+        "ran": "Ran",
+        "interrupted": "interrupted",
+        "lineRange": "lines {{from}}–{{to}}",
+        "readingFile": "Reading {{file}}",
+        "searchingProject": "Searching the project",
+        "searchedProject": "Searched the project",
+        "searched": "Searched",
+        "listed": "Listed",
+        "mcpCheckedTask": "Checked {{server}} task #{{id}}",
+        "mcpChecked": "Checked {{server}}",
+        "mcpUpdatedTask": "Updated {{server}} task #{{id}}",
+        "mcpUpdated": "Updated {{server}}",
+        "mcpUsed": "Used {{server}}",
+        "mcpLive": "Checking {{server}}",
+        "toolResult": "Tool result",
+        "failed": "failed"
+      },
+      "workSummary": {
+        "failedOne": "1 step didn't work",
+        "failedMany": "{{count}} steps didn't work",
+        "lookedOneTitle": "Looked through 1 file",
+        "lookedManyTitle": "Looked through {{count}} files",
+        "exploredOne": "Explored 1 file",
+        "exploredMany": "Explored {{count}} files"
+      },
+      "changes": {
+        "changedMany": "Changed {{count}} files",
+        "nameList": "{{rest}} and {{last}}",
+        "changed": "Changed {{files}}"
       }
     },
     "tab": {
@@ -14734,6 +14813,9 @@
         "title": "This workspace's folder is missing",
         "locate": "Locate folder",
         "remove": "Remove folder"
+      },
+      "thread": {
+        "showTechnicalDetails": "Show technical details"
       }
     }
   },

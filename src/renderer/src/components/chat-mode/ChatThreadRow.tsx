@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
@@ -289,6 +290,17 @@ export function ChatThreadRow({
           <DropdownMenuItem onSelect={() => void regenerateChatThreadTitle(thread.id)}>
             {translate('auto.components.chat.sidebar.regenerateTitle', 'Regenerate title')}
           </DropdownMenuItem>
+          <DropdownMenuCheckboxItem
+            checked={thread.showTechnicalDetails === true}
+            onCheckedChange={(checked) =>
+              void updateChatThread(thread.id, { showTechnicalDetails: checked === true })
+            }
+          >
+            {translate(
+              'components.chat-mode.thread.showTechnicalDetails',
+              'Show technical details'
+            )}
+          </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={() =>

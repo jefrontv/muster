@@ -5,9 +5,11 @@ import type {
   NativeChatRole
 } from '../../../../shared/native-chat-types'
 import { NATIVE_CHAT_INTERRUPTED_STATUS_TEXT } from '../../../../shared/native-chat-types'
+import type { NativeChatSurface } from '../../../../shared/native-chat-tool-activity-types'
 import {
   buildNativeChatTimelineRows,
-  deriveNativeChatLiveToolCollapse
+  nativeChatWorkLogPresentation,
+  type NativeChatTimelineRow
 } from './native-chat-timeline-rows'
 
 function msg(
@@ -20,273 +22,139 @@ function msg(
 }
 
 const text = (value: string): NativeChatBlock => ({ type: 'text', text: value })
-const tool = (name: string): NativeChatBlock => ({ type: 'tool-call', name, input: {} })
-
-const none: ReadonlySet<string> = new Set()
-
-describe('deriveNativeChatLiveToolCollapse', () => {
-  it('is null with one or fewer tool-run rows', () => {
-    expect(deriveNativeChatLiveToolCollapse([msg('a1', 'assistant', [tool('Read')])])).toBeNull()
-  })
-  it('hides all but the most recent tool-run row', () => {
-    const collapse = deriveNativeChatLiveToolCollapse([
-      msg('a1', 'assistant', [tool('Read')]),
-      msg('r1', 'reasoning', [text('thinking')]),
-      msg('a2', 'assistant', [tool('Edit')]),
-      msg('a3', 'assistant', [text('prose'), tool('Bash')])
-    ])
-    expect(collapse?.hiddenCount).toBe(2)
-    expect([...collapse!.hiddenToolMessageIds].sort()).toEqual(['a1', 'a2'])
-    expect(collapse?.latestToolMessageId).toBe('a3')
-  })
+const call = (name: string, id: string, input: unknown = {}): NativeChatBlock => ({
+  type: 'tool-call',
+  name,
+  input,
+  id
+})
+const result = (id: string, output = 'ok'): NativeChatBlock => ({
+  type: 'tool-result',
+  output,
+  toolUseId: id
 })
 
-describe('buildNativeChatTimelineRows', () => {
-  it('renders a running turn as plain message rows', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [msg('u1', 'user', [text('hi')]), msg('a1', 'assistant', [text('reply')])],
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
-    })
-    expect(rows.map((row) => row.kind)).toEqual(['message', 'message'])
+const shape = (rows: NativeChatTimelineRow[]): string[] =>
+  rows.map((row) => (row.kind === 'message' ? `message:${row.message.id}` : row.kind))
+
+// A turn that narrates, works, narrates again, then answers.
+const turn = [
+  msg('u1', 'user', [text('fix the header')], 1_000),
+  msg('a1', 'assistant', [text('Let me check the template'), call('Read', 't1')], 2_000),
+  msg('tr1', 'tool', [result('t1')], 3_000),
+  msg('a2', 'assistant', [text('Found it, editing'), call('Bash', 't2', { command: 'ls' })], 4_000),
+  msg('tr2', 'tool', [result('t2')], 5_000),
+  msg('a3', 'assistant', [text('Done.')], 9_000)
+]
+
+function build(isWorking: boolean, surface: NativeChatSurface = 'chat') {
+  return buildNativeChatTimelineRows({ messages: turn, isWorking, surface })
+}
+
+describe('one visibility rule for live and settled turns', () => {
+  it('keeps every prose row and one work log in the same place, live or settled', () => {
+    const expected = ['message:u1', 'message:a1', 'work-log', 'message:a2', 'message:a3']
+    expect(shape(build(true))).toEqual(expected)
+    // The turn landing must not add or remove rows (no growth, no jump).
+    expect(shape(build(false))).toEqual(expected)
   })
 
-  it('folds a settled turn: user row, fold row, final assistant row', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('one')], 1_000),
-        msg('r1', 'reasoning', [text('thinking')], 2_000),
-        msg('a1', 'assistant', [text('final')], 9_000)
-      ],
-      isWorking: false,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
-    })
-    expect(
-      rows.map((row) => (row.kind === 'message' ? `message:${row.message.id}` : row.kind))
-    ).toEqual(['message:u1', 'turn-fold', 'message:a1'])
-    const fold = rows[1]
-    expect(fold.kind === 'turn-fold' && fold.durationMs).toBe(7_000)
+  it('gathers every call of the turn into that one log', () => {
+    const log = build(false).find((row) => row.kind === 'work-log')
+    expect(log?.kind === 'work-log' && log.work.activities.map((a) => a.group)).toEqual([
+      'read',
+      'command'
+    ])
   })
 
-  it('reveals the intermediate rows when the turn is expanded', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('one')], 1_000),
-        msg('r1', 'reasoning', [text('thinking')], 2_000),
-        msg('a1', 'assistant', [text('final')], 9_000)
-      ],
-      isWorking: false,
-      expandedTurnIds: new Set(['u1']),
-      expandedLiveToolTurnIds: none
-    })
-    expect(
-      rows.map((row) => (row.kind === 'message' ? `message:${row.message.id}` : row.kind))
-    ).toEqual(['message:u1', 'turn-fold', 'message:r1', 'message:a1'])
-  })
-
-  it('always drops the raw interrupt row, expanded or not', () => {
-    const messages = [
-      msg('u1', 'user', [text('one')], 1_000),
-      msg('a1', 'assistant', [text('partial')], 2_000),
-      msg('i1', 'system', [text(NATIVE_CHAT_INTERRUPTED_STATUS_TEXT)], 3_000)
-    ]
-    for (const expandedTurnIds of [none, new Set(['u1'])]) {
-      const rows = buildNativeChatTimelineRows({
-        messages,
-        isWorking: false,
-        expandedTurnIds,
-        expandedLiveToolTurnIds: none
-      })
-      expect(rows.some((row) => row.kind === 'message' && row.message.id === 'i1')).toBe(false)
-      const fold = rows.find((row) => row.kind === 'turn-fold')
-      expect(fold?.kind === 'turn-fold' && fold.interrupted).toBe(true)
+  it('presents the log by surface: Chat live is the status line, Code live is open', () => {
+    expect(nativeChatWorkLogPresentation({ surface: 'chat', live: true, toggled: false })).toBe(
+      'hidden'
+    )
+    expect(nativeChatWorkLogPresentation({ surface: 'code', live: true, toggled: false })).toBe(
+      'open'
+    )
+    for (const surface of ['chat', 'code'] as const) {
+      expect(nativeChatWorkLogPresentation({ surface, live: false, toggled: false })).toBe(
+        'collapsed'
+      )
+      expect(nativeChatWorkLogPresentation({ surface, live: false, toggled: true })).toBe('open')
     }
   })
 
-  it('collapses earlier tool runs of the running turn behind a toggle row', () => {
+  it('tracks live and settled flips apart', () => {
     const rows = buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('go')]),
-        msg('a1', 'assistant', [text('step one'), tool('Read')]),
-        msg('r1', 'reasoning', [text('thinking')]),
-        msg('a2', 'assistant', [tool('Edit')])
-      ],
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
+      messages: turn,
+      isWorking: false,
+      surface: 'code',
+      toggles: { workLogs: new Set(['u1:live']) }
     })
-    expect(
-      rows.map((row) =>
-        row.kind === 'message'
-          ? `${row.message.id}${row.suppressTools ? ':suppressed' : ''}`
-          : row.kind
-      )
-    ).toEqual(['u1', 'a1:suppressed', 'r1', 'live-tool-toggle', 'a2'])
-    const toggle = rows.find((row) => row.kind === 'live-tool-toggle')
-    expect(toggle?.kind === 'live-tool-toggle' && toggle.hiddenCount).toBe(1)
-  })
-
-  it('reveals all tool runs when the live toggle is expanded', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('go')]),
-        msg('a1', 'assistant', [tool('Read')]),
-        msg('a2', 'assistant', [text('x'), tool('Edit')])
-      ],
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: new Set(['u1'])
+    expect(rows.find((row) => row.kind === 'work-log')).toMatchObject({
+      presentation: 'collapsed'
     })
-    expect(rows.some((row) => row.kind === 'message' && row.suppressTools)).toBe(false)
-    const toggle = rows.find((row) => row.kind === 'live-tool-toggle')
-    expect(toggle?.kind === 'live-tool-toggle' && toggle.expanded).toBe(true)
   })
 
-  it('does not apply the live tool collapse to settled turns', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('one')], 1_000),
-        msg('a1', 'assistant', [tool('Read')], 2_000),
-        msg('a2', 'assistant', [text('final'), tool('Edit')], 3_000),
-        msg('u2', 'user', [text('two')], 9_000)
-      ],
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
-    })
-    expect(rows.some((row) => row.kind === 'live-tool-toggle')).toBe(false)
-    // a1 hides behind the settled turn's fold instead.
-    expect(rows.some((row) => row.kind === 'turn-fold')).toBe(true)
-  })
-})
-
-describe('buildNativeChatTimelineRows — turn plan', () => {
-  const todo = (steps: unknown): NativeChatBlock => ({
-    type: 'tool-call',
-    name: 'TodoWrite',
-    input: { todos: steps }
-  })
-  const STEPS = [
-    { content: 'Read the file', status: 'completed' },
-    { content: 'Add the parser', status: 'in_progress' }
-  ]
-
-  it('anchors the plan under the prompt of a running turn', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('go')]),
-        msg('a1', 'assistant', [todo(STEPS)]),
-        msg('a2', 'assistant', [text('working')])
-      ],
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
-    })
-    expect(rows[0]).toMatchObject({ kind: 'message', message: { id: 'u1' } })
-    expect(rows[1]).toMatchObject({ kind: 'turn-plan', turnId: expect.any(String) })
-  })
-
-  it('keeps the plan visible after the turn folds', () => {
-    // The fold hides the turn's middle; the plan is the only record of what the
-    // agent set out to do, so it has to outlive it.
+  it('never renders thinking or the raw interrupt line as prose', () => {
     const rows = buildNativeChatTimelineRows({
       messages: [
         msg('u1', 'user', [text('go')], 1_000),
-        msg('a1', 'assistant', [todo(STEPS)], 2_000),
-        msg('a2', 'assistant', [text('done')], 3_000),
-        msg('u2', 'user', [text('next')], 4_000)
+        msg('r1', 'reasoning', [text('pondering')], 2_000),
+        msg('a1', 'assistant', [text('partial')], 3_000),
+        msg('i1', 'system', [text(NATIVE_CHAT_INTERRUPTED_STATUS_TEXT)], 4_000)
       ],
       isWorking: false,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
+      surface: 'code'
     })
-    const plans = rows.filter((row) => row.kind === 'turn-plan')
-    expect(plans).toHaveLength(1)
-    // The TodoWrite message itself is folded away, but the plan row is not.
-    expect(rows.some((row) => row.kind === 'message' && row.message.id === 'a1')).toBe(false)
+    expect(shape(rows)).toEqual(['message:u1', 'work-log', 'message:a1'])
+    expect(rows[1]).toMatchObject({ kind: 'work-log', interrupted: true })
   })
 
-  it('emits no plan row for a turn without one', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: [msg('u1', 'user', [text('go')]), msg('a1', 'assistant', [text('hi')])],
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
-    })
-    expect(rows.some((row) => row.kind === 'turn-plan')).toBe(false)
-  })
-
-  it('marks the plan expanded when the user opened it', () => {
-    const messages = [msg('u1', 'user', [text('go')]), msg('a1', 'assistant', [todo(STEPS)])]
-    const rows = buildNativeChatTimelineRows({
-      messages,
-      isWorking: true,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none,
-      expandedPlanTurnIds: new Set(['u1'])
-    })
-    const plan = rows.find((row) => row.kind === 'turn-plan')
-    expect(plan).toMatchObject({ expanded: true })
+  it('puts Copy and Retry on the final reply of settled turns only', () => {
+    const settled = build(false).filter((row) => row.kind === 'message' && row.showReplyActions)
+    expect(settled.map((row) => row.kind === 'message' && row.message.id)).toEqual(['a3'])
+    expect(settled[0]).toMatchObject({ isLatestReply: true })
+    expect(build(true).some((row) => row.kind === 'message' && row.showReplyActions)).toBe(false)
   })
 })
 
-describe('buildNativeChatTimelineRows — changed files', () => {
-  const edit = (path: string, oldText: string, newText: string): NativeChatBlock => ({
+describe('turn plan, changes card and error', () => {
+  const todo: NativeChatBlock = {
     type: 'tool-call',
-    name: 'Edit',
-    input: { file_path: path, old_string: oldText, new_string: newText }
-  })
-
-  function settledTurnWithEdit(expandedChangedFileTurnIds?: ReadonlySet<string>) {
-    return buildNativeChatTimelineRows({
-      messages: [
-        msg('u1', 'user', [text('fix it')], 1_000),
-        msg('a1', 'assistant', [edit('src/a.ts', 'x', 'y')], 2_000),
-        msg('a2', 'assistant', [text('done')], 3_000),
-        msg('u2', 'user', [text('next')], 4_000),
-        msg('a3', 'assistant', [text('ok')], 5_000)
-      ],
-      isWorking: false,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none,
-      ...(expandedChangedFileTurnIds ? { expandedChangedFileTurnIds } : {})
-    })
+    name: 'TodoWrite',
+    input: { todos: [{ content: 'Add the parser', status: 'in_progress' }] }
   }
 
-  it('summarises the turn even though the fold hid the edit', () => {
-    const rows = settledTurnWithEdit()
-    const card = rows.find((row) => row.kind === 'turn-changed-files')
-    expect(card).toBeDefined()
-    expect(rows.some((row) => row.kind === 'message' && row.message.id === 'a1')).toBe(false)
+  it('anchors the plan under the prompt and keeps TodoWrite out of the work log', () => {
+    const rows = buildNativeChatTimelineRows({
+      messages: [msg('u1', 'user', [text('go')]), msg('a1', 'assistant', [todo])],
+      isWorking: true,
+      surface: 'code'
+    })
+    expect(shape(rows)).toEqual(['message:u1', 'turn-plan'])
   })
 
-  it('leaves an older turn collapsed', () => {
-    // The edit is in the first of two turns, so it is not the latest.
-    const card = settledTurnWithEdit().find((row) => row.kind === 'turn-changed-files')
-    expect(card).toMatchObject({ expanded: false })
-  })
-
-  it('lets the user toggle a card away from its default', () => {
-    // Regression: an OR here made an auto-expanded card impossible to collapse.
-    const card = settledTurnWithEdit(new Set(['u1'])).find(
-      (row) => row.kind === 'turn-changed-files'
-    )
-    expect(card).toMatchObject({ expanded: true })
-  })
-
-  it('emits nothing for a turn that changed no files', () => {
+  it('adds the changes card after a settled turn that edited files', () => {
+    const edit = call('Edit', 'e1', { file_path: '/repo/a.ts', old_string: 'x', new_string: 'y' })
     const rows = buildNativeChatTimelineRows({
       messages: [
-        msg('u1', 'user', [text('hi')], 1_000),
-        msg('a1', 'assistant', [text('hello')], 2_000),
-        msg('u2', 'user', [text('next')], 3_000)
+        msg('u1', 'user', [text('fix')], 1_000),
+        msg('a1', 'assistant', [edit], 2_000),
+        msg('tr', 'tool', [result('e1')], 3_000),
+        msg('a2', 'assistant', [text('done')], 4_000)
       ],
       isWorking: false,
-      expandedTurnIds: none,
-      expandedLiveToolTurnIds: none
+      surface: 'code'
     })
-    expect(rows.some((row) => row.kind === 'turn-changed-files')).toBe(false)
+    expect(shape(rows)).toEqual(['message:u1', 'work-log', 'message:a2', 'turn-changed-files'])
+  })
+
+  it('shows the last turn error inline at its end', () => {
+    const rows = buildNativeChatTimelineRows({
+      messages: turn,
+      isWorking: false,
+      surface: 'chat',
+      lastError: 'error_max_turns'
+    })
+    expect(rows.at(-1)).toMatchObject({ kind: 'turn-error', message: 'error_max_turns' })
   })
 })

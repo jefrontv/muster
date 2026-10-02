@@ -34,6 +34,7 @@ export function useChatThreadTransport({
       s.settings?.nativeChatPermissionMode === 'full' || s.chatThreadFullAccess[thread.id] === true
   )
   const permissionRequests = useAppStore((s) => s.chatThreadPermissionRequests[thread.id])
+  const lastError = useAppStore((s) => s.chatThreadLastError[thread.id] ?? null)
 
   // Resume already has the conversation; a new thread injects the brief once.
   const briefInjectedRef = useRef(thread.claudeSessionId !== null)
@@ -134,7 +135,8 @@ export function useChatThreadTransport({
       ...(permissionRequests && permissionRequests.length > 0 ? { permissionRequests } : {}),
       respondPermission,
       fullAccess,
-      setFullAccess
+      setFullAccess,
+      lastError
     }),
     [
       send,
@@ -147,7 +149,8 @@ export function useChatThreadTransport({
       permissionRequests,
       respondPermission,
       fullAccess,
-      setFullAccess
+      setFullAccess,
+      lastError
     ]
   )
   return { transport, send }

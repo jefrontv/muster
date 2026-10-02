@@ -88,6 +88,7 @@ export type ChatModeSlice = ChatThreadPermissionSlice &
           | 'activeCollabTask'
           | 'archived'
           | 'pinned'
+          | 'showTechnicalDetails'
         >
       >
     ) => Promise<void>

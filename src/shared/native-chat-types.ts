@@ -40,6 +40,37 @@ export type NativeChatToolCallBlock = {
   type: 'tool-call'
   name: string
   input: unknown
+  /** Provider tool_use id; pairs the call with its result when present. */
+  id?: string
+}
+
+/** One hunk of the CLI's structured patch (`toolUseResult.structuredPatch`). */
+export type NativeChatPatchHunk = {
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  /** Unified-diff lines with their ' ', '-' or '+' prefix. */
+  lines: string[]
+}
+
+/** A web page a lookup used, for source rows. */
+export type NativeChatToolSource = { url: string; title: string | null }
+
+/** Typed extras the CLI records next to a tool result. Bounded; never the whole
+ *  original file (`originalFile`), which can be megabytes. */
+export type NativeChatToolResultDetail = {
+  patch?: NativeChatPatchHunk[]
+  additions?: number
+  deletions?: number
+  /** A Write that created the file; its content is the single added hunk. */
+  created?: boolean
+  stdout?: string
+  stderr?: string
+  interrupted?: boolean
+  /** Some text above was cut (head and tail kept). */
+  truncated?: boolean
+  sources?: NativeChatToolSource[]
 }
 
 /** The result returned to the agent for a prior tool call. */
@@ -47,6 +78,9 @@ export type NativeChatToolResultBlock = {
   type: 'tool-result'
   output: string
   isError?: boolean
+  /** The tool_use id this answers, when the provider records it. */
+  toolUseId?: string
+  detail?: NativeChatToolResultDetail
 }
 
 /** A reference to an image, by local path or remote URL. Exactly the field

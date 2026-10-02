@@ -1,42 +1,36 @@
-import { ChevronDown, ChevronRight, FileDiff } from 'lucide-react'
+// What a settled turn changed on disk. Code mode: a card of relative paths with
+// real line counts, each opening the file. Chat mode: one plain line with file
+// names only ("Changed header.php and style.css").
+
+import { ChevronRight, FileDiff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { relativeToolPath } from '../../../../shared/native-chat-tool-input-fields'
+import { describeChangedFilesLine } from '../../../../shared/native-chat-work-summary'
 import {
   selectChangedFilePreview,
-  type NativeChatChangedFile,
   type NativeChatTurnChangedFiles
 } from './native-chat-turn-changed-files'
+import { useNativeChatSurface } from './native-chat-surface-context'
 import { useNativeChatToggleScrollCompensation } from './use-native-chat-toggle-scroll-compensation'
+import { NativeChatLineCounts } from './NativeChatWorkRow'
 
-/** Path as `dir/…/name`, keeping the filename whole — the end matters most. */
-function shortPath(path: string): string {
-  const parts = path.replace(/^\.?\//, '').split('/')
-  if (parts.length <= 2) {
-    return parts.join('/')
-  }
-  return `${parts[0]}/…/${parts.at(-1)}`
-}
-
-function LineCounts({ file }: { file: NativeChatChangedFile }): React.JSX.Element {
+function ChatChangesLine({ changed }: { changed: NativeChatTurnChangedFiles }): React.JSX.Element {
+  const line = describeChangedFilesLine(
+    changed.files.map((file) => file.path),
+    translate
+  )
   return (
-    <span className="shrink-0 tabular-nums">
-      {file.additions > 0 ? (
-        <span className="text-emerald-600 dark:text-emerald-400">+{file.additions}</span>
-      ) : null}
-      {file.additions > 0 && file.deletions > 0 ? ' ' : null}
-      {file.deletions > 0 ? (
-        <span className="text-rose-600 dark:text-rose-400">−{file.deletions}</span>
-      ) : null}
-    </span>
+    <p
+      className="flex items-center gap-1.5 text-xs text-muted-foreground"
+      title={line.names.length > 3 ? line.names.join(', ') : undefined}
+    >
+      <FileDiff className="size-3.5 shrink-0" />
+      <span className="min-w-0 truncate">{line.text}</span>
+    </p>
   )
 }
 
-/**
- * What a turn changed on disk, summarised once the turn is done.
- *
- * The turn fold hides every intermediate message, inline diffs included, so
- * without this a settled turn leaves no trace of which files it touched.
- */
 export function NativeChatChangedFilesRow({
   changed,
   expanded,
@@ -46,13 +40,15 @@ export function NativeChatChangedFilesRow({
   expanded: boolean
   onToggle: () => void
 }): React.JSX.Element {
+  const { surface, cwd, openFile } = useNativeChatSurface()
   const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(expanded)
-  const Chevron = expanded ? ChevronDown : ChevronRight
+  if (surface === 'chat') {
+    return <ChatChangesLine changed={changed} />
+  }
   const count = changed.files.length
   const preview = selectChangedFilePreview(changed.files)
-
   return (
-    <div ref={elementRef} className="my-1">
+    <div ref={elementRef} className="rounded-md border border-border/60">
       <button
         type="button"
         aria-expanded={expanded}
@@ -60,9 +56,11 @@ export function NativeChatChangedFilesRow({
           captureBeforeToggle()
           onToggle()
         }}
-        className="flex w-full items-center gap-1.5 rounded-md border border-border/60 bg-muted/20 px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Chevron className="size-3.5 shrink-0" />
+        <ChevronRight
+          className={cn('size-3.5 shrink-0 transition-transform', expanded && 'rotate-90')}
+        />
         <FileDiff className="size-3.5 shrink-0" />
         <span className="shrink-0 font-medium text-foreground">
           {count === 1
@@ -71,35 +69,30 @@ export function NativeChatChangedFilesRow({
                 count
               })}
         </span>
-        {!expanded ? (
-          <span className="min-w-0 flex-1 truncate text-muted-foreground/80">
-            {preview.map((file) => shortPath(file.path)).join(', ')}
-            {count > preview.length ? ` +${count - preview.length}` : ''}
-          </span>
-        ) : (
-          <span className="flex-1" />
-        )}
-        <LineCounts
-          file={{
-            path: '',
-            additions: changed.totalAdditions,
-            deletions: changed.totalDeletions
-          }}
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground/80">
+          {expanded
+            ? ''
+            : `${preview.map((file) => relativeToolPath(file.path, cwd)).join(', ')}${count > preview.length ? ` +${count - preview.length}` : ''}`}
+        </span>
+        <NativeChatLineCounts
+          additions={changed.totalAdditions}
+          deletions={changed.totalDeletions}
         />
       </button>
       {expanded ? (
-        <ul className="mt-1 space-y-0.5 border-l border-border/40 pl-3">
+        <ul className="border-t border-border/60 px-2 py-1">
           {changed.files.map((file) => (
             <li key={file.path} className="flex items-center gap-2 text-xs">
-              <span
-                className={cn(
-                  'min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground'
-                )}
+              <button
+                type="button"
+                disabled={!openFile}
+                onClick={() => openFile?.(file.path)}
+                className="min-w-0 flex-1 truncate rounded-sm text-left font-mono text-[11px] text-muted-foreground transition-colors enabled:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 title={file.path}
               >
-                {file.path}
-              </span>
-              <LineCounts file={file} />
+                {relativeToolPath(file.path, cwd)}
+              </button>
+              <NativeChatLineCounts additions={file.additions} deletions={file.deletions} />
             </li>
           ))}
         </ul>

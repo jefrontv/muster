@@ -16,7 +16,6 @@ import { ensureChatThreadSession } from '@/lib/chat-thread-session-ensure'
 import { useAppStore } from '@/store'
 import NativeChatView from '@/components/native-chat/NativeChatView'
 import { seedTaskAttachmentsForTab } from '@/components/native-chat/use-native-chat-task-attachments'
-import { ChatThreadErrorBanner } from './ChatThreadErrorBanner'
 import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
 import {
   ChatThreadEndedNotice,
@@ -74,7 +73,6 @@ export function ChatThreadView({
   workspace: ChatWorkspace | null
 }): React.JSX.Element {
   const updateChatThread = useAppStore((s) => s.updateChatThread)
-  const lastError = useAppStore((s) => s.chatThreadLastError[thread.id] ?? null)
   // Stable for the app run: the view mounts before a process exists and every launch reuses it.
   const identity = chatThreadPaneIdentity(thread.id)
   const { transport, send } = useChatThreadTransport({ thread, workspace })
@@ -150,7 +148,6 @@ export function ChatThreadView({
           taskId={thread.activeCollabTask.taskId}
         />
       ) : null}
-      <ChatThreadErrorBanner threadId={thread.id} message={lastError} />
       <NativeChatView
         terminalTabId={identity.tabId}
         paneKey={identity.paneKey}
@@ -166,6 +163,9 @@ export function ChatThreadView({
           workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
         }
         composerNotice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
+        surface="chat"
+        showTechnicalDetails={thread.showTechnicalDetails === true}
+        workingDirectory={workspace?.directories[0] ?? null}
       />
     </div>
   )

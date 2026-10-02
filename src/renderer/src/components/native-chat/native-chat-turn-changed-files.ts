@@ -6,17 +6,12 @@
 // there is no file signal left at all. For a Chat-mode user, "what did it
 // actually change" is the question the transcript stops answering.
 //
-// Everything here reads from the tool-call blocks the renderer already holds —
-// no git, no checkpoints, no main-process work.
+// Everything here reads from the work log's activities — no git, no
+// checkpoints, no main-process work.
 
-import {
-  changedLineCountsFromToolCall,
-  type NativeChatChangedLineCounts
-} from '../../../../shared/native-chat-diff'
-import { toolFilePath } from '../../../../shared/native-chat-tool-summary'
-import { isToolCallBlock, type NativeChatMessage } from '../../../../shared/native-chat-types'
+import type { NativeChatToolActivity } from '../../../../shared/native-chat-tool-activity-types'
 
-export type NativeChatChangedFile = NativeChatChangedLineCounts & { path: string }
+export type NativeChatChangedFile = { path: string; additions: number; deletions: number }
 
 export type NativeChatTurnChangedFiles = {
   files: readonly NativeChatChangedFile[]
@@ -30,33 +25,24 @@ export const CHANGED_FILES_AUTO_EXPAND_MAX_LINES = 200
 /** Collapsed rows show at most this many paths. */
 export const CHANGED_FILES_PREVIEW_COUNT = 3
 
-/** One entry per path, in first-touched order, with edits to the same file summed. */
+/** One entry per path, first-touched order, from the work log's own edit
+ *  activities; counts are the structured patch's, failed edits changed nothing. */
 export function deriveNativeChatTurnChangedFiles(
-  messages: readonly NativeChatMessage[]
+  activities: readonly NativeChatToolActivity[]
 ): NativeChatTurnChangedFiles | null {
   const byPath = new Map<string, NativeChatChangedFile>()
-  for (const message of messages) {
-    for (const block of message.blocks) {
-      if (!isToolCallBlock(block)) {
-        continue
-      }
-      const counts = changedLineCountsFromToolCall(block.name, block.input)
-      if (counts === null) {
-        continue
-      }
-      const path = toolFilePath(block.input)
-      if (path === null) {
-        continue
-      }
-      const existing = byPath.get(path)
-      if (existing === undefined) {
-        byPath.set(path, { path, ...counts })
-        continue
-      }
-      // A turn commonly edits the same file several times; one row per file.
-      existing.additions += counts.additions
-      existing.deletions += counts.deletions
+  for (const activity of activities) {
+    if (activity.group !== 'edit' || activity.failed || activity.path === null) {
+      continue
     }
+    const existing = byPath.get(activity.path) ?? {
+      path: activity.path,
+      additions: 0,
+      deletions: 0
+    }
+    existing.additions += activity.additions ?? 0
+    existing.deletions += activity.deletions ?? 0
+    byPath.set(activity.path, existing)
   }
   if (byPath.size === 0) {
     return null

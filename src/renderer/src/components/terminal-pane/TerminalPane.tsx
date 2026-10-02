@@ -2882,6 +2882,7 @@ export default function TerminalPane({
             // --background the terminal's alpha, which would show the buffer through.
             <div className="absolute inset-0 z-10 flex min-h-0 min-w-0 bg-[var(--background-solid)]">
               <NativeChatView
+                surface="code"
                 terminalTabId={tabId}
                 paneKey={makePaneKey(tabId, chatPane.leafId)}
                 targetPtyId={chatPanePtyId}

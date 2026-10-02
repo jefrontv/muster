@@ -14,6 +14,7 @@ import {
 import { unwrapChatWorkspaceUserTurn } from '../../shared/chat-workspace-site-info'
 import { claudeContentBlocks, claudeThinkingText } from './transcript-record-blocks'
 import { claudeInterruptedMessageId } from './transcript-turn-markers'
+import { toolUseResultDetail } from './transcript-tool-use-result'
 
 /** Raw text of a user record whose content is a plain string or a single text block. */
 function claudeUserRecordText(message: Record<string, unknown> | null): string | null {
@@ -164,9 +165,12 @@ export function decodeClaudeTranscriptLine(
   const isInjectedUserTurn =
     role === 'user' &&
     (record.isMeta === true || record.isSynthetic === true || record.isCompactSummary === true)
-  const blocks = isInjectedUserTurn
-    ? decodedBlocks.filter((block) => block.type === 'tool-result')
-    : decodedBlocks
+  const blocks = withToolUseResultDetail(
+    isInjectedUserTurn
+      ? decodedBlocks.filter((block) => block.type === 'tool-result')
+      : decodedBlocks,
+    record.toolUseResult ?? record.tool_use_result
+  )
   if (blocks.length === 0) {
     return null
   }
@@ -178,6 +182,19 @@ export function decodeClaudeTranscriptLine(
     timestamp,
     source: 'transcript'
   }
+}
+
+/** The record-level `toolUseResult` belongs to its single tool result; ambiguous with several. */
+function withToolUseResultDetail(
+  blocks: NativeChatBlock[],
+  toolUseResult: unknown
+): NativeChatBlock[] {
+  const results = blocks.filter((block) => block.type === 'tool-result')
+  const detail = results.length === 1 ? toolUseResultDetail(toolUseResult) : undefined
+  if (!detail) {
+    return blocks
+  }
+  return blocks.map((block) => (block.type === 'tool-result' ? { ...block, detail } : block))
 }
 
 /** A thinking-only assistant record as a reasoning message; never answer prose. */

@@ -1,7 +1,6 @@
-// Turn grouping + fold derivation for the native chat timeline (T3 parity).
-// A turn opens at a real user message; once settled, everything between the
-// user message and the final assistant reply collapses behind a
-// "Worked for {duration}" row. Pure so the rules are unit-testable.
+// Turn grouping for the native chat timeline. A turn opens at a real user
+// message; its work log header reads the turn's state (settled, duration,
+// interrupted). Pure so the rules are unit-testable.
 
 import {
   isTextBlock,
@@ -18,18 +17,6 @@ export type NativeChatTurn = {
   userMessage: NativeChatMessage | null
   /** All of the turn's messages in timeline order (user message included). */
   messages: NativeChatMessage[]
-}
-
-export type NativeChatTurnFold = {
-  turnId: string
-  /** Rows hidden while the fold is collapsed. */
-  hiddenMessageIds: ReadonlySet<string>
-  /** Rows never rendered (the raw interrupt row — the fold label carries it). */
-  droppedMessageIds: ReadonlySet<string>
-  /** Last-message timestamp minus first-post-user timestamp; null when the
-   *  turn has too few timestamps to measure. */
-  durationMs: number | null
-  interrupted: boolean
 }
 
 /** Concatenated text of a message's text blocks, trimmed. */
@@ -96,73 +83,32 @@ function turnDurationMs(turn: NativeChatTurn): number | null {
   return Math.max(0, last - first)
 }
 
-/**
- * Derive the fold for each settled turn, keyed by turn id. A fold exists when
- * the turn holds machinery beyond its user message and prose (or ended via
- * interruption — the fold row then carries the stop). User-role rows (queued
- * echoes glued onto a settled turn) and interim assistant prose never hide —
- * only reasoning, tool runs, and non-final system rows collapse.
- */
-export function deriveNativeChatTurnFolds(input: {
-  messages: readonly NativeChatMessage[]
-  isWorking: boolean
-}): Map<string, NativeChatTurnFold> {
-  const turns = groupNativeChatTurns(input.messages)
-  const hasStreamingMessage = input.messages.some(
-    (message) => message.id === NATIVE_CHAT_STREAMING_ID
-  )
-  const lastSettled = isLastTurnSettled({ isWorking: input.isWorking, hasStreamingMessage })
+/** How a turn ended, for its work log header. */
+export type NativeChatTurnState = {
+  settled: boolean
+  /** Last-message timestamp minus first-post-user timestamp; null when unmeasurable. */
+  durationMs: number | null
+  interrupted: boolean
+}
 
-  const folds = new Map<string, NativeChatTurnFold>()
-  for (const [index, turn] of turns.entries()) {
-    const settled = index < turns.length - 1 || lastSettled
-    if (!settled || !turn.userMessage) {
-      continue
-    }
-    const finalAssistant = turn.messages.findLast((message) => message.role === 'assistant') ?? null
-    // A turn with no assistant reply (a slash command) ends in its feedback
-    // line — keep the trailing system row visible so the outcome isn't folded
-    // away with the machinery.
-    const finalVisible =
-      finalAssistant ??
-      turn.messages.findLast(
-        (message) => message.role === 'system' && !isInterruptStatusMessage(message)
-      ) ??
-      null
-    const dropped = new Set<string>()
-    const hidden = new Set<string>()
-    let interrupted = false
-    for (const message of turn.messages) {
-      if (message === turn.userMessage || message === finalVisible) {
-        continue
-      }
-      if (isInterruptStatusMessage(message)) {
-        interrupted = true
-        dropped.add(message.id)
-        continue
-      }
-      if (message.role === 'user') {
-        continue
-      }
-      // Interim assistant prose is part of the conversation's flow ("Found
-      // GeistMono, not GhostMono — installing") — folding it read as the agent's
-      // answers vanishing. Only machinery folds: reasoning, tool runs, and
-      // assistant rows that carry no text.
-      if (message.role === 'assistant' && nativeChatMessageText(message).length > 0) {
-        continue
-      }
-      hidden.add(message.id)
-    }
-    if (hidden.size === 0 && !interrupted) {
-      continue
-    }
-    folds.set(turn.id, {
-      turnId: turn.id,
-      hiddenMessageIds: hidden,
-      droppedMessageIds: dropped,
+/** Settledness for every turn: all but the last, and the last once the agent stopped. */
+export function deriveNativeChatTurnStates(input: {
+  turns: readonly NativeChatTurn[]
+  isWorking: boolean
+}): Map<string, NativeChatTurnState> {
+  const lastSettled = isLastTurnSettled({
+    isWorking: input.isWorking,
+    hasStreamingMessage:
+      input.turns.at(-1)?.messages.some((message) => message.id === NATIVE_CHAT_STREAMING_ID) ===
+      true
+  })
+  const states = new Map<string, NativeChatTurnState>()
+  input.turns.forEach((turn, index) => {
+    states.set(turn.id, {
+      settled: index < input.turns.length - 1 || lastSettled,
       durationMs: turnDurationMs(turn),
-      interrupted
+      interrupted: turn.messages.some(isInterruptStatusMessage)
     })
-  }
-  return folds
+  })
+  return states
 }

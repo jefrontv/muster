@@ -11,7 +11,12 @@ const SKIP_PATH_PARTS = new Set(['.git', 'dist', 'node_modules', 'out', '__snaps
 const LOCALIZATION_FUNCTION_NAMES = new Set(['t', 'translate', 'translateMain'])
 const PLACEHOLDER_RE = /\{\{[^}]+\}\}/g
 const LOCALES_RELATIVE_DIR = path.join('src', 'renderer', 'src', 'i18n', 'locales')
-const SOURCE_RELATIVE_ROOTS = [path.join('src', 'renderer', 'src'), path.join('src', 'main')]
+// src/shared holds pure copy (tool activity sentences) that takes translate() injected.
+const SOURCE_RELATIVE_ROOTS = [
+  path.join('src', 'renderer', 'src'),
+  path.join('src', 'main'),
+  path.join('src', 'shared')
+]
 
 function normalizePath(root, filePath) {
   return path.relative(root, filePath).split(path.sep).join('/')

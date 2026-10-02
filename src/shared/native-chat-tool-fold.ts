@@ -40,37 +40,43 @@ export type NativeChatToolPair = {
   result?: NativeChatToolResultBlock
 }
 
-/** Pair calls and results by FIFO ordinal because transcript blocks carry no tool ids. */
+/** Pair calls and results by tool_use id, falling back to FIFO order for blocks
+ *  without ids (older transcripts, other agents). */
 export function pairToolBlocks(
   blocks: readonly NativeChatBlock[],
   limit = Infinity
 ): NativeChatToolPair[] {
   const pairs: NativeChatToolPair[] = []
-  const callSlots: (number | null)[] = []
-  let resultOrdinal = 0
+  // One queue entry per call, in call order; `slot` is null past the limit.
+  const queue: { slot: number | null; answered: boolean; id?: string }[] = []
+  const byId = new Map<string, (typeof queue)[number]>()
   for (const block of blocks) {
     if (block.type === 'tool-call') {
-      if (pairs.length < limit) {
-        callSlots.push(pairs.length)
-        pairs.push({ call: block })
-      } else {
-        callSlots.push(null)
+      const slot = pairs.length < limit ? pairs.push({ call: block }) - 1 : null
+      const entry = { slot, answered: false, ...(block.id ? { id: block.id } : {}) }
+      queue.push(entry)
+      if (block.id) {
+        byId.set(block.id, entry)
       }
       continue
     }
     if (block.type !== 'tool-result') {
       continue
     }
-    const slot = callSlots[resultOrdinal]
-    if (slot === undefined) {
+    const byIdEntry = block.toolUseId ? byId.get(block.toolUseId) : undefined
+    const entry =
+      byIdEntry && !byIdEntry.answered
+        ? byIdEntry
+        : queue.find((candidate) => !candidate.answered && (!block.toolUseId || !candidate.id))
+    if (!entry) {
       if (pairs.length < limit) {
         pairs.push({ result: block })
       }
-    } else {
-      resultOrdinal += 1
-      if (slot !== null) {
-        pairs[slot]!.result = block
-      }
+      continue
+    }
+    entry.answered = true
+    if (entry.slot !== null) {
+      pairs[entry.slot]!.result = block
     }
   }
   return pairs

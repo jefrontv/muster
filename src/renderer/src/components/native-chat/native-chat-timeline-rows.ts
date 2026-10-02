@@ -1,16 +1,21 @@
-// Flattens the ordered message array into the rows the timeline renders:
-// message rows, settled-turn fold rows, and the running turn's live tool-call
-// collapse toggle (T3 MAX_VISIBLE_WORK_LOG_ENTRIES = 1). Pure derivation; the
-// list owns the expand state.
+// Flattens the ordered message array into the rows the timeline renders. One
+// visibility rule for live and settled turns: prose always shows, all tool
+// activity lives in the turn's single work log, and the plan, changes card and
+// error hang off the turn. Pure derivation; the list owns the toggle state.
 
 import {
-  isToolCallBlock,
-  isToolResultBlock,
+  isImageRefBlock,
+  isTextBlock,
   type NativeChatMessage
 } from '../../../../shared/native-chat-types'
+import type {
+  NativeChatSurface,
+  NativeChatTranslate
+} from '../../../../shared/native-chat-tool-activity-types'
 import {
-  deriveNativeChatTurnFolds,
+  deriveNativeChatTurnStates,
   groupNativeChatTurns,
+  isInterruptStatusMessage,
   type NativeChatTurn
 } from './native-chat-turn-folds'
 import { deriveNativeChatTurnPlan, type NativeChatTurnPlan } from './native-chat-turn-plan'
@@ -19,177 +24,214 @@ import {
   shouldAutoExpandChangedFiles,
   type NativeChatTurnChangedFiles
 } from './native-chat-turn-changed-files'
+import {
+  deriveNativeChatTurnWork,
+  messageHasWork,
+  type NativeChatTurnWork
+} from './native-chat-turn-work'
 
-/** Within the running turn, only the most recent tool-run row stays visible. */
-export const NATIVE_CHAT_MAX_VISIBLE_LIVE_TOOL_RUNS = 1
+/** hidden: Chat mode's live turn (the status line speaks for it); collapsed: header only. */
+export type NativeChatWorkLogPresentation = 'hidden' | 'collapsed' | 'open'
 
 export type NativeChatTimelineRow =
   | {
       kind: 'message'
+      key: string
       message: NativeChatMessage
-      /** True hides this row's tool run (its prose still renders) — the live
-       *  tool-call collapse within the running turn. */
-      suppressTools: boolean
+      /** The newest assistant reply in the thread: its actions show without hover. */
+      isLatestReply: boolean
+      /** Final assistant reply of a settled turn: gets Copy and Retry. */
+      showReplyActions: boolean
     }
   | {
-      kind: 'turn-fold'
+      kind: 'work-log'
+      key: string
       turnId: string
+      work: NativeChatTurnWork
+      live: boolean
+      presentation: NativeChatWorkLogPresentation
       durationMs: number | null
       interrupted: boolean
-      expanded: boolean
     }
-  | { kind: 'live-tool-toggle'; turnId: string; hiddenCount: number; expanded: boolean }
   | {
       kind: 'turn-changed-files'
+      key: string
       turnId: string
       changed: NativeChatTurnChangedFiles
       expanded: boolean
     }
-  | {
-      kind: 'turn-plan'
-      turnId: string
-      plan: NativeChatTurnPlan
-      /** Plan rows survive the fold, so settled turns keep their checklist. */
-      expanded: boolean
+  | { kind: 'turn-plan'; key: string; turnId: string; plan: NativeChatTurnPlan; expanded: boolean }
+  | { kind: 'turn-error'; key: string; turnId: string; message: string }
+
+export type NativeChatTimelineToggles = {
+  /** Work logs the user flipped from their default (open live in Code, folded when settled). */
+  workLogs?: ReadonlySet<string>
+  plans?: ReadonlySet<string>
+  changedFiles?: ReadonlySet<string>
+}
+
+/** Live and settled flips are tracked apart, so collapsing a live log never opens it on settle. */
+export function nativeChatWorkLogToggleKey(turnId: string, live: boolean): string {
+  return live ? `${turnId}:live` : turnId
+}
+
+/** The single rule both live and settled turns follow. */
+export function nativeChatWorkLogPresentation(input: {
+  surface: NativeChatSurface
+  live: boolean
+  toggled: boolean
+}): NativeChatWorkLogPresentation {
+  if (input.live) {
+    if (input.surface === 'chat') {
+      return 'hidden'
     }
-
-function hasToolBlocks(message: NativeChatMessage): boolean {
-  return message.blocks.some((block) => isToolCallBlock(block) || isToolResultBlock(block))
-}
-
-export type NativeChatLiveToolCollapse = {
-  /** Earlier tool-run rows whose tool activity hides while collapsed. */
-  hiddenToolMessageIds: ReadonlySet<string>
-  /** The row the toggle sits above (the most recent tool-run row). */
-  latestToolMessageId: string
-  hiddenCount: number
-}
-
-/** Collapse plan for a running turn's tool-run rows; null when one or fewer. */
-export function deriveNativeChatLiveToolCollapse(
-  turnMessages: readonly NativeChatMessage[]
-): NativeChatLiveToolCollapse | null {
-  const toolMessages = turnMessages.filter(hasToolBlocks)
-  if (toolMessages.length <= NATIVE_CHAT_MAX_VISIBLE_LIVE_TOOL_RUNS) {
-    return null
+    return input.toggled ? 'collapsed' : 'open'
   }
-  const hidden = toolMessages.slice(0, -NATIVE_CHAT_MAX_VISIBLE_LIVE_TOOL_RUNS)
-  return {
-    hiddenToolMessageIds: new Set(hidden.map((message) => message.id)),
-    latestToolMessageId: toolMessages.at(-1)!.id,
-    // The label says "tool calls", so count calls, not the messages holding them.
-    hiddenCount: hidden.reduce(
-      (count, message) => count + message.blocks.filter(isToolCallBlock).length,
-      0
-    )
-  }
+  return input.toggled ? 'open' : 'collapsed'
 }
 
-function pushRunningTurnRows(
+function hasProse(message: NativeChatMessage): boolean {
+  return message.blocks.some(
+    (block) => (isTextBlock(block) && block.text.trim() !== '') || isImageRefBlock(block)
+  )
+}
+
+/** Rows the message itself draws: never reasoning or the raw interrupt line. */
+function rendersAsMessage(message: NativeChatMessage): boolean {
+  if (message.role === 'reasoning' || isInterruptStatusMessage(message)) {
+    return false
+  }
+  return message.role === 'user' || hasProse(message)
+}
+
+type TurnContext = {
+  turn: NativeChatTurn
+  live: boolean
+  durationMs: number | null
+  interrupted: boolean
+  isLastTurn: boolean
+}
+
+function pushTurnRows(
   rows: NativeChatTimelineRow[],
-  turn: NativeChatTurn,
-  expanded: boolean,
-  planExpanded: boolean
+  context: TurnContext,
+  input: Parameters<typeof buildNativeChatTimelineRows>[0]
 ): void {
-  const collapse = deriveNativeChatLiveToolCollapse(turn.messages)
-  const plan = deriveNativeChatTurnPlan(turn.messages)
-  for (const message of turn.messages) {
-    if (collapse && message.id === collapse.latestToolMessageId) {
-      rows.push({
-        kind: 'live-tool-toggle',
+  const { turn, live } = context
+  const toggles = input.toggles ?? {}
+  const work = deriveNativeChatTurnWork(turn.messages, {
+    surface: input.surface,
+    live,
+    ...(input.t ? { t: input.t } : {}),
+    cwd: input.cwd ?? null
+  })
+  const hasLog = work.entries.length > 0 || work.events.length > 0 || context.interrupted
+  const workRow: NativeChatTimelineRow | null = hasLog
+    ? {
+        kind: 'work-log',
+        key: `work:${turn.id}`,
         turnId: turn.id,
-        hiddenCount: collapse.hiddenCount,
-        expanded
+        work,
+        live,
+        presentation: nativeChatWorkLogPresentation({
+          surface: input.surface,
+          live,
+          toggled: toggles.workLogs?.has(nativeChatWorkLogToggleKey(turn.id, live)) === true
+        }),
+        durationMs: context.durationMs,
+        interrupted: context.interrupted
+      }
+    : null
+  const plan = deriveNativeChatTurnPlan(turn.messages)
+  const finalReply = live
+    ? null
+    : (turn.messages.findLast((message) => message.role === 'assistant' && hasProse(message)) ??
+      null)
+  let workPlaced = workRow === null
+  for (const message of turn.messages) {
+    if (rendersAsMessage(message)) {
+      rows.push({
+        kind: 'message',
+        key: message.id,
+        message,
+        isLatestReply: false,
+        showReplyActions: message === finalReply
       })
     }
-    rows.push({
-      kind: 'message',
-      message,
-      suppressTools: !expanded && collapse !== null && collapse.hiddenToolMessageIds.has(message.id)
-    })
     // Directly under the prompt, so progress reads before the work does.
     if (plan !== null && message === turn.userMessage) {
-      rows.push({ kind: 'turn-plan', turnId: turn.id, plan, expanded: planExpanded })
+      rows.push({
+        kind: 'turn-plan',
+        key: `plan:${turn.id}`,
+        turnId: turn.id,
+        plan,
+        expanded: toggles.plans?.has(turn.id) === true
+      })
     }
+    // At the turn's first piece of work, after any prose that led into it.
+    if (!workPlaced && messageHasWork(message)) {
+      rows.push(workRow!)
+      workPlaced = true
+    }
+  }
+  if (!workPlaced) {
+    rows.push(workRow!)
+  }
+  const changed = live ? null : deriveNativeChatTurnChangedFiles(work.activities)
+  if (changed) {
+    rows.push({
+      kind: 'turn-changed-files',
+      key: `changes:${turn.id}`,
+      turnId: turn.id,
+      changed,
+      // XOR: the set records a user flip away from whichever default applies.
+      expanded:
+        shouldAutoExpandChangedFiles({ changed, isLatestTurn: context.isLastTurn }) !==
+        (toggles.changedFiles?.has(turn.id) === true)
+    })
+  }
+  if (context.isLastTurn && !live && input.lastError) {
+    rows.push({
+      kind: 'turn-error',
+      key: `error:${turn.id}`,
+      turnId: turn.id,
+      message: input.lastError
+    })
   }
 }
 
 export function buildNativeChatTimelineRows(input: {
   messages: readonly NativeChatMessage[]
   isWorking: boolean
-  /** Settled turns the user re-opened (fold expanded in place). */
-  expandedTurnIds: ReadonlySet<string>
-  /** Running turns whose earlier tool runs the user revealed. */
-  expandedLiveToolTurnIds: ReadonlySet<string>
-  /** Turns whose plan checklist the user opened out. */
-  expandedPlanTurnIds?: ReadonlySet<string>
-  /** Turns whose changed-files card the user opened out. */
-  expandedChangedFileTurnIds?: ReadonlySet<string>
+  surface: NativeChatSurface
+  t?: NativeChatTranslate
+  cwd?: string | null
+  toggles?: NativeChatTimelineToggles
+  /** The last turn's failure, rendered inline at its end. */
+  lastError?: string | null
 }): NativeChatTimelineRow[] {
   const turns = groupNativeChatTurns(input.messages)
-  const folds = deriveNativeChatTurnFolds({ messages: input.messages, isWorking: input.isWorking })
-  const expandedPlans = input.expandedPlanTurnIds ?? new Set<string>()
-  const expandedChangedFiles = input.expandedChangedFileTurnIds ?? new Set<string>()
-
+  const states = deriveNativeChatTurnStates({ turns, isWorking: input.isWorking })
   const rows: NativeChatTimelineRow[] = []
-  for (const turn of turns) {
-    const fold = folds.get(turn.id)
-    if (!fold) {
-      pushRunningTurnRows(
-        rows,
+  turns.forEach((turn, index) => {
+    const state = states.get(turn.id)
+    pushTurnRows(
+      rows,
+      {
         turn,
-        input.expandedLiveToolTurnIds.has(turn.id),
-        expandedPlans.has(turn.id)
-      )
-      continue
-    }
-    const expanded = input.expandedTurnIds.has(turn.id)
-    // Why the plan survives the fold: it is the turn's outcome checklist, and
-    // folding it away leaves a settled turn with no record of what was done.
-    const plan = deriveNativeChatTurnPlan(turn.messages)
-    const changed = deriveNativeChatTurnChangedFiles(turn.messages)
-    for (const message of turn.messages) {
-      if (fold.droppedMessageIds.has(message.id)) {
-        continue
-      }
-      if (!expanded && fold.hiddenMessageIds.has(message.id)) {
-        continue
-      }
-      rows.push({ kind: 'message', message, suppressTools: false })
-      // After the turn's last message, so it reads as the outcome of the work
-      // rather than an interruption partway through it.
-      if (changed !== null && message === turn.messages.at(-1)) {
-        rows.push({
-          kind: 'turn-changed-files',
-          turnId: turn.id,
-          changed,
-          // XOR, not OR: the set records that the user toggled this card, so a
-          // click flips whichever default the auto rule chose. An OR would make
-          // an auto-expanded card impossible to collapse.
-          expanded:
-            shouldAutoExpandChangedFiles({ changed, isLatestTurn: turn === turns.at(-1) }) !==
-            expandedChangedFiles.has(turn.id)
-        })
-      }
-      // The fold row anchors right under the turn's user message.
-      if (message === turn.userMessage) {
-        rows.push({
-          kind: 'turn-fold',
-          turnId: turn.id,
-          durationMs: fold.durationMs,
-          interrupted: fold.interrupted,
-          expanded
-        })
-        if (plan !== null) {
-          rows.push({
-            kind: 'turn-plan',
-            turnId: turn.id,
-            plan,
-            expanded: expandedPlans.has(turn.id)
-          })
-        }
-      }
-    }
+        live: state?.settled !== true,
+        durationMs: state?.durationMs ?? null,
+        interrupted: state?.interrupted === true,
+        isLastTurn: index === turns.length - 1
+      },
+      input
+    )
+  })
+  const latest = rows.findLast(
+    (row) => row.kind === 'message' && row.message.role === 'assistant' && row.showReplyActions
+  )
+  if (latest?.kind === 'message') {
+    latest.isLatestReply = true
   }
   return rows
 }
