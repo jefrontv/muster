@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { TuiAgent } from '../../../../shared/types'
 import type { NativeChatContextMenuActions } from './use-native-chat-context-menu'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
@@ -21,6 +22,8 @@ export type NativeChatTransport = {
   /** Deliver one user turn (optionally with image attachments as base64
    *  content blocks); resolves false when the stream is gone. */
   send: (text: string, imagePaths?: string[]) => Promise<boolean>
+  /** Start the process ahead of a send (composer focus), so the first token comes sooner. */
+  prewarm?: () => void
   /** Token-streamed assistant text for the in-flight turn, or null. */
   streamingText: string | null
   /** True once the in-flight message completed (typewriter sprints to the end). */
@@ -73,4 +76,6 @@ export type NativeChatViewProps = {
   fallbackProviderSession?: { id: string; transcriptPath?: string | null } | null
   /** Bound AC project of the hosting chat workspace (task picker bias). */
   activeCollabProjectId?: number | null
+  /** One line above the composer for session state (starting, ended, missing folder). */
+  composerNotice?: ReactNode
 }

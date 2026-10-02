@@ -2,7 +2,7 @@
 // missing folder), so the transcript above it never gives way to a full-page state.
 
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FolderMinus, FolderOpen, FolderX, Loader2, RotateCcw, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -54,7 +54,18 @@ function NoticeRow({
   )
 }
 
-export function ChatThreadStartingNotice(): React.JSX.Element {
+/** A fast local start shows nothing; only a slow boot (cold CLI, SSH) earns the line. */
+const STARTING_NOTICE_DELAY_MS = 800
+
+export function ChatThreadStartingNotice(): React.JSX.Element | null {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), STARTING_NOTICE_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
+  if (!visible) {
+    return null
+  }
   return (
     <NoticeRow
       icon={<Loader2 className="size-3.5 animate-spin" />}

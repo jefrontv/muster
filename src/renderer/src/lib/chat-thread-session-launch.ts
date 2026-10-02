@@ -23,7 +23,6 @@ import {
 import { resolveNativeChatSessionOptionDefaults } from '../../../shared/native-chat-session-option-defaults'
 import { resolveAgentSessionOptionLaunch } from '../../../shared/agent-session-option-launch'
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
-import { makePaneKey } from '../../../shared/stable-pane-id'
 import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import type { AgentProviderSessionMetadata } from '../../../shared/agent-session-resume'
 import type { SessionOptionValue } from '../../../shared/native-chat-session-options'
@@ -31,6 +30,7 @@ import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
 import { buildChatWorkspaceAgentBrief } from '../../../shared/chat-workspace-site-info'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import { ChatThreadFolderMissingError } from './chat-thread-folder-missing'
+import { chatThreadPaneIdentity } from './chat-thread-pane-identity'
 
 /** Headless stream transport flags; the CLI reads turns on stdin and writes
  *  NDJSON (with partial deltas) on stdout. `--permission-prompt-tool stdio`
@@ -159,9 +159,8 @@ export async function launchChatThreadSession(args: {
     ? resumeOptionLaunch?.appliedValues
     : startupPlan.sessionOptions
 
-  const tabId = createBrowserUuid()
-  const leafId = createBrowserUuid()
-  const paneKey = makePaneKey(tabId, leafId)
+  // Same pane for every launch of this thread, so the open view never remounts.
+  const { tabId, leafId, paneKey } = chatThreadPaneIdentity(thread.id)
   const launchToken = createBrowserUuid()
   const launchRegistration = { agentType: agent, launchToken, tabId, leafId }
   store.registerAgentLaunchConfig(paneKey, startupPlan.launchConfig, launchRegistration)

@@ -16,8 +16,23 @@ const state = {
 }
 
 vi.mock('@/store', () => ({ useAppStore: { getState: () => state } }))
-vi.mock('@/lib/chat-thread-session-launch', () => ({
-  launchChatThreadSession: (...args: unknown[]) => launchChatThreadSession(...args)
+// Stands in for the real ensure: launch, record the session, swallow failures as null.
+vi.mock('@/lib/chat-thread-session-ensure', () => ({
+  ensureChatThreadSession: async (threadId: string) => {
+    const launched = threadId === thread.id ? thread : { id: threadId, workspaceId: 'w2' }
+    try {
+      const result = await launchChatThreadSession({
+        thread: launched,
+        workspace: state.chatWorkspaces.find((w) => w.id === launched.workspaceId) ?? null
+      })
+      if (result) {
+        setChatThreadSession(threadId, result)
+      }
+      return result ?? null
+    } catch {
+      return null
+    }
+  }
 }))
 
 const { useChatDraftPrewarm } = await import('./use-chat-draft-prewarm')

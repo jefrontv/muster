@@ -15,7 +15,13 @@ import {
   type ChatThreadPermissionSlice
 } from './chat-thread-permission-state'
 
+import {
+  createChatThreadLifecycleSlice,
+  type ChatThreadLifecycleSlice
+} from './chat-thread-lifecycle-state'
+
 export type { ChatThreadPermissionRequest } from './chat-thread-permission-state'
+export type { ChatThreadSessionEnd } from './chat-thread-lifecycle-state'
 
 /** A live stream-json session for a thread. Runtime-only — never persisted. */
 export type ChatThreadSession = {
@@ -27,75 +33,76 @@ export type ChatThreadSession = {
   appliedSessionOptions?: Record<string, SessionOptionValue>
 }
 
-export type ChatModeSlice = ChatThreadPermissionSlice & {
-  chatWorkspaces: ChatWorkspace[]
-  chatThreads: ChatThread[]
-  chatModeHydrated: boolean
-  activeChatWorkspaceId: string | null
-  activeChatThreadId: string | null
-  chatThreadSessions: Record<string, ChatThreadSession>
-  /** In-flight assistant text per thread, accumulated from stream deltas.
-   *  `sealed` marks a completed message kept visible until the transcript
-   *  catches up — clearing it eagerly flashes a gap before the real turn lands. */
-  chatThreadStreamingText: Record<string, { text: string; sealed: boolean }>
-  /** Current model's context window per thread, reported by the CLI's result
-   *  records — drives the composer's context meter max. */
-  chatThreadContextWindow: Record<string, number>
-  /** Last failed turn's message, per thread. Cleared when the thread runs again. */
-  chatThreadLastError: Record<string, string>
-  /** Draft-first landing: the hero's text, sent once the thread's session is up. */
-  chatThreadFirstMessage: Record<string, string>
-  /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
-  chatTasksOpen: boolean
-  setChatTasksOpen: (open: boolean) => void
-  /** Create-workspace dialog. Store-owned so onboarding can open it after Chat Mode lands. */
-  chatWorkspaceCreateOpen: boolean
-  setChatWorkspaceCreateOpen: (open: boolean) => void
-  hydrateChatMode: () => Promise<void>
-  setActiveChatWorkspace: (id: string | null) => void
-  setActiveChatThread: (id: string | null) => void
-  createChatWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
-  updateChatWorkspace: (id: string, patch: ChatWorkspacePatch) => Promise<void>
-  deleteChatWorkspace: (id: string) => Promise<void>
-  createChatThread: (
-    workspaceId: string | null,
-    title?: string,
-    /** activate: false creates the thread without selecting it (draft pre-warm). */
-    options?: { activate?: boolean }
-  ) => Promise<ChatThread | null>
-  updateChatThread: (
-    id: string,
-    patch: Partial<
-      Pick<
-        ChatThread,
-        | 'title'
-        | 'autoTitle'
-        | 'titleGenerated'
-        | 'claudeSessionId'
-        | 'transcriptPath'
-        | 'lastActivityAt'
-        | 'lastVisitedAt'
-        | 'lastCompletedAt'
-        | 'contextWindow'
-        | 'sortOrder'
-        | 'activeCollabTask'
-        | 'archived'
-        | 'pinned'
+export type ChatModeSlice = ChatThreadPermissionSlice &
+  ChatThreadLifecycleSlice & {
+    chatWorkspaces: ChatWorkspace[]
+    chatThreads: ChatThread[]
+    chatModeHydrated: boolean
+    activeChatWorkspaceId: string | null
+    activeChatThreadId: string | null
+    chatThreadSessions: Record<string, ChatThreadSession>
+    /** In-flight assistant text per thread, accumulated from stream deltas.
+     *  `sealed` marks a completed message kept visible until the transcript
+     *  catches up — clearing it eagerly flashes a gap before the real turn lands. */
+    chatThreadStreamingText: Record<string, { text: string; sealed: boolean }>
+    /** Current model's context window per thread, reported by the CLI's result
+     *  records — drives the composer's context meter max. */
+    chatThreadContextWindow: Record<string, number>
+    /** Last failed turn's message, per thread. Cleared when the thread runs again. */
+    chatThreadLastError: Record<string, string>
+    /** Draft-first landing: the hero's text, sent once the thread's session is up. */
+    chatThreadFirstMessage: Record<string, string>
+    /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
+    chatTasksOpen: boolean
+    setChatTasksOpen: (open: boolean) => void
+    /** Create-workspace dialog. Store-owned so onboarding can open it after Chat Mode lands. */
+    chatWorkspaceCreateOpen: boolean
+    setChatWorkspaceCreateOpen: (open: boolean) => void
+    hydrateChatMode: () => Promise<void>
+    setActiveChatWorkspace: (id: string | null) => void
+    setActiveChatThread: (id: string | null) => void
+    createChatWorkspace: (args: { name: string; directories: string[] }) => Promise<ChatWorkspace>
+    updateChatWorkspace: (id: string, patch: ChatWorkspacePatch) => Promise<void>
+    deleteChatWorkspace: (id: string) => Promise<void>
+    createChatThread: (
+      workspaceId: string | null,
+      title?: string,
+      /** activate: false creates the thread without selecting it (draft pre-warm). */
+      options?: { activate?: boolean }
+    ) => Promise<ChatThread | null>
+    updateChatThread: (
+      id: string,
+      patch: Partial<
+        Pick<
+          ChatThread,
+          | 'title'
+          | 'autoTitle'
+          | 'titleGenerated'
+          | 'claudeSessionId'
+          | 'transcriptPath'
+          | 'lastActivityAt'
+          | 'lastVisitedAt'
+          | 'lastCompletedAt'
+          | 'contextWindow'
+          | 'sortOrder'
+          | 'activeCollabTask'
+          | 'archived'
+          | 'pinned'
+        >
       >
-    >
-  ) => Promise<void>
-  deleteChatThread: (id: string) => Promise<void>
-  /** Delete every thread in one scope: null = standalone chats, id = one workspace's chats. */
-  deleteChatThreadsInScope: (workspaceId: string | null) => Promise<void>
-  setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
-  setChatThreadContextWindow: (threadId: string, contextWindow: number) => void
-  setChatThreadLastError: (threadId: string, message: string | null) => void
-  setChatThreadFirstMessage: (threadId: string, text: string) => void
-  clearChatThreadFirstMessage: (threadId: string) => void
-  appendChatThreadStreamingText: (threadId: string, text: string) => void
-  sealChatThreadStreamingText: (threadId: string) => void
-  clearChatThreadStreamingText: (threadId: string) => void
-}
+    ) => Promise<void>
+    deleteChatThread: (id: string) => Promise<void>
+    /** Delete every thread in one scope: null = standalone chats, id = one workspace's chats. */
+    deleteChatThreadsInScope: (workspaceId: string | null) => Promise<void>
+    setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
+    setChatThreadContextWindow: (threadId: string, contextWindow: number) => void
+    setChatThreadLastError: (threadId: string, message: string | null) => void
+    setChatThreadFirstMessage: (threadId: string, text: string) => void
+    clearChatThreadFirstMessage: (threadId: string) => void
+    appendChatThreadStreamingText: (threadId: string, text: string) => void
+    sealChatThreadStreamingText: (threadId: string) => void
+    clearChatThreadStreamingText: (threadId: string) => void
+  }
 
 function omitThreadIds<T>(record: Record<string, T>, ids: ReadonlySet<string>): Record<string, T> {
   return Object.fromEntries(Object.entries(record).filter(([id]) => !ids.has(id)))
@@ -112,7 +119,10 @@ function withoutChatThreadRuntime(s: AppState, ids: ReadonlySet<string>): Partia
     chatThreadFirstMessage: omitThreadIds(s.chatThreadFirstMessage, ids),
     chatThreadContextWindow: omitThreadIds(s.chatThreadContextWindow, ids),
     chatThreadLastError: omitThreadIds(s.chatThreadLastError, ids),
-    chatThreadFullAccess: omitThreadIds(s.chatThreadFullAccess, ids)
+    chatThreadFullAccess: omitThreadIds(s.chatThreadFullAccess, ids),
+    chatThreadLaunching: omitThreadIds(s.chatThreadLaunching, ids),
+    chatThreadSessionEnds: omitThreadIds(s.chatThreadSessionEnds, ids),
+    chatThreadSessionTouchedAt: omitThreadIds(s.chatThreadSessionTouchedAt, ids)
   }
 }
 
@@ -122,6 +132,7 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   api
 ) => ({
   ...createChatThreadPermissionSlice(set, get, api),
+  ...createChatThreadLifecycleSlice(set, get, api),
   chatWorkspaces: [],
   chatThreads: [],
   chatModeHydrated: false,

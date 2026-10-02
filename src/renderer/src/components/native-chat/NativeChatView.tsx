@@ -62,7 +62,8 @@ export default function NativeChatView({
   contextMenuActions,
   transport,
   fallbackProviderSession,
-  activeCollabProjectId
+  activeCollabProjectId,
+  composerNotice
 }: NativeChatViewProps): React.JSX.Element {
   // Select only this tab's status entry (shallow-compared) so an unrelated
   // pane's status tick doesn't re-render this view or re-run the resolution.
@@ -100,6 +101,7 @@ export default function NativeChatView({
           contextMenuActions={contextMenuActions}
           transport={transport ?? null}
           activeCollabProjectId={activeCollabProjectId ?? null}
+          composerNotice={composerNotice ?? null}
         />
       )}
     </NativeChatSessionGate>
@@ -118,7 +120,8 @@ function NativeChatResolvedView({
   readTerminalScreen,
   contextMenuActions,
   transport,
-  activeCollabProjectId
+  activeCollabProjectId,
+  composerNotice
 }: {
   paneKey: string
   draftScopeKey: string | null
@@ -132,6 +135,7 @@ function NativeChatResolvedView({
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
   transport: NativeChatTransport | null
   activeCollabProjectId: number | null
+  composerNotice: React.ReactNode
 }): React.JSX.Element {
   // Primitive owner selection (no useShallow): routes the pane's read/subscribe to
   // the remote runtime host for a runtime-owned pane; null keeps the local path.
@@ -430,6 +434,7 @@ function NativeChatResolvedView({
           />
         )}
       </div>
+      {composerNotice ? <div className="shrink-0 px-3 sm:px-4">{composerNotice}</div> : null}
       <NativeChatViewInput
         paneKey={paneKey}
         draftScopeKey={draftScopeKey}
@@ -452,6 +457,7 @@ function NativeChatResolvedView({
         readTerminalScreen={readTerminalScreen}
         runtimeEnvironmentId={runtimeEnvironmentId}
         activeCollabProjectId={activeCollabProjectId}
+        onComposerFocus={transport?.prewarm}
       />
       {contextMenu.menu}
     </div>

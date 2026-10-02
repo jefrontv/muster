@@ -32,7 +32,8 @@ export function NativeChatViewInput({
   onSwitchToTerminal,
   readTerminalScreen,
   runtimeEnvironmentId,
-  activeCollabProjectId
+  activeCollabProjectId,
+  onComposerFocus
 }: {
   paneKey: string
   draftScopeKey: string | null
@@ -55,11 +56,20 @@ export function NativeChatViewInput({
   readTerminalScreen?: () => string | null
   runtimeEnvironmentId: string | null
   activeCollabProjectId: number | null
+  /** Composer textarea gained focus (stream threads prewarm their process). */
+  onComposerFocus?: () => void
 }): React.JSX.Element {
   const streamAsk = streamAskPermissionRequest(transport?.permissionRequests?.[0])
   const [streamAskActive, setStreamAskActive] = useState(false)
   return (
-    <>
+    <div
+      className="shrink-0"
+      onFocusCapture={(event) => {
+        if (event.target instanceof HTMLTextAreaElement) {
+          onComposerFocus?.()
+        }
+      }}
+    >
       <NativeChatInteractiveCard
         paneKey={paneKey}
         send={interactiveSend}
@@ -107,6 +117,6 @@ export function NativeChatViewInput({
           activeCollabProjectId={activeCollabProjectId}
         />
       )}
-    </>
+    </div>
   )
 }

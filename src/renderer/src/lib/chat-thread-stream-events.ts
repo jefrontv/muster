@@ -142,6 +142,7 @@ export function installChatThreadStreamEvents(): () => void {
         if (settlingPaneKey) {
           store.settleAgentStatusWorking(settlingPaneKey, now)
         }
+        store.touchChatThreadSession(event.threadId, now)
         void generateChatThreadTitleAfterFirstTurn(event.threadId)
         // Main decodes the failure but nothing used to read it, so a failed
         // turn looked exactly like a successful one.
@@ -230,11 +231,17 @@ export function installChatThreadStreamEvents(): () => void {
       }
       case 'exit': {
         // Only unexpected deaths arrive here (intentional stops are silent);
-        // dropping the session record flips ChatThreadView to its resume state.
+        // the thread keeps its history and shows a one-line notice with Resume.
         const session = store.chatThreadSessions[event.threadId]
         if (session) {
           store.clearAgentLaunchConfig(session.paneKey)
+          // The pane outlives the process now, so a mid-turn death must not leave it "Working".
+          store.settleAgentStatusWorking(session.paneKey, Date.now())
         }
+        store.setChatThreadSessionEnd(event.threadId, {
+          failed: false,
+          message: event.error ?? null
+        })
         // The stderr tail is the only account of why the CLI died; the ended
         // view reads it from the same slot the turn-failure banner uses.
         store.setChatThreadLastError(event.threadId, event.error ?? null)

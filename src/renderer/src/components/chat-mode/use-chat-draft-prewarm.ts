@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
-import { launchChatThreadSession } from '@/lib/chat-thread-session-launch'
+import { ensureChatThreadSession } from '@/lib/chat-thread-session-ensure'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
 
 export type ChatDraftPrewarm = {
@@ -95,10 +95,9 @@ export function useChatDraftPrewarm(input: {
           void useAppStore.getState().deleteChatThread(thread.id)
           return
         }
-        const result = await launchChatThreadSession({ thread, workspace: workspace ?? null })
-        if (result) {
-          // Recorded even when stale: deleteChatThread only stops streams it knows about.
-          useAppStore.getState().setChatThreadSession(thread.id, result)
+        // Records the session even when stale: deleteChatThread only stops streams it knows about.
+        if (!(await ensureChatThreadSession(thread.id))) {
+          throw new Error('warm-up failed')
         }
         if (stale()) {
           discardedStale = true

@@ -21,6 +21,8 @@ const storeState = vi.hoisted(() => ({
   setChatThreadContextWindow: vi.fn(),
   setChatThreadLastError: vi.fn(),
   settleAgentStatusWorking: vi.fn(),
+  touchChatThreadSession: vi.fn(),
+  setChatThreadSessionEnd: vi.fn(),
   updateChatThread: vi.fn(async (_id: string, _updates: Record<string, unknown>) => undefined)
 }))
 
@@ -167,6 +169,11 @@ describe('installChatThreadStreamEvents', () => {
 
     listener?.({ kind: 'exit', threadId: 't1', code: 1, error: 'fatal: bad --model' })
     expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', 'fatal: bad --model')
+    // The thread keeps its history; the end is recorded for the notice above the composer.
+    expect(storeState.setChatThreadSessionEnd).toHaveBeenCalledWith('t1', {
+      failed: false,
+      message: 'fatal: bad --model'
+    })
 
     listener?.({ kind: 'exit', threadId: 't2', code: 0 })
     expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t2', null)
