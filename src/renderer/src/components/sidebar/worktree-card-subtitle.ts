@@ -36,31 +36,54 @@ export function pathLooksLikeAppPublicRoot(workspacePath: string): boolean {
   return /(^|\/)app\/public$/.test(normalizeRuntimePathForComparison(workspacePath))
 }
 
+type SiteIdentityEntry = { site: SiteIdentitySource }
+
+// Why: every card's store selector runs this on every write; index once per `sites` identity.
+const siteLocalDomainIndexCache = new WeakMap<
+  readonly SiteIdentityEntry[],
+  Map<string, string | null>
+>()
+
+function getSiteLocalDomainIndex(sites: readonly SiteIdentityEntry[]): Map<string, string | null> {
+  const cached = siteLocalDomainIndexCache.get(sites)
+  if (cached) {
+    return cached
+  }
+  const index = new Map<string, string | null>()
+  const add = (key: string, domain: string | null): void => {
+    // First site wins, matching the original in-order scan.
+    if (!index.has(key)) {
+      index.set(key, domain)
+    }
+  }
+  for (const { site } of sites) {
+    if (!site.path) {
+      continue
+    }
+    const domain = site.localDomain.trim() || null
+    add(normalizeRuntimePathForComparison(site.path), domain)
+    const wpRoot = site.localWpRoot.trim()
+    if (wpRoot.length > 0) {
+      add(normalizeRuntimePathForComparison(`${site.path}/${wpRoot}`), domain)
+    }
+  }
+  siteLocalDomainIndexCache.set(sites, index)
+  return index
+}
+
 /**
  * Resolve the Site record owning `workspacePath` — the site checkout itself, or its LocalWP
  * WordPress root (`<site.path>/<site.localWpRoot>`) — and return that site's local domain.
  */
 export function findSiteLocalDomainForWorkspacePath(
   workspacePath: string,
-  sites: readonly { site: SiteIdentitySource }[]
+  sites: readonly SiteIdentityEntry[]
 ): string | null {
   const target = normalizeRuntimePathForComparison(workspacePath)
   if (!target) {
     return null
   }
-  for (const { site } of sites) {
-    if (!site.path) {
-      continue
-    }
-    const wpRoot = site.localWpRoot.trim()
-    const matches =
-      normalizeRuntimePathForComparison(site.path) === target ||
-      (wpRoot.length > 0 && normalizeRuntimePathForComparison(`${site.path}/${wpRoot}`) === target)
-    if (matches) {
-      return site.localDomain.trim() || null
-    }
-  }
-  return null
+  return getSiteLocalDomainIndex(sites).get(target) ?? null
 }
 
 /**

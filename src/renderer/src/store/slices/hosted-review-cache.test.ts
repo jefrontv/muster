@@ -124,7 +124,7 @@ describe('hosted review cache revalidation', () => {
         linkedGitHubPR: 42
       })
     ).resolves.toEqual(review)
-    vi.setSystemTime(60_001)
+    vi.setSystemTime(120_001)
     await expect(
       store.getState().fetchHostedReviewForBranch('/repo', 'feature/pr', {
         linkedGitHubPR: 42,
@@ -173,7 +173,7 @@ describe('hosted review cache revalidation', () => {
     await expect(store.getState().fetchHostedReviewForBranch('/repo', 'feature/pr')).resolves.toBe(
       review
     )
-    vi.setSystemTime(60_001)
+    vi.setSystemTime(120_001)
     await expect(
       store.getState().fetchHostedReviewForBranch('/repo', 'feature/pr', {
         linkedGitHubPR: 42,

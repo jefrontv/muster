@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type * as RepoModule from '../git/repo'
 import { FOLDER_WORKSPACE_INSTANCE_SEPARATOR } from '../../shared/worktree-id'
 import {
   migrateLocalWpRepoPathIfNeeded,
@@ -13,6 +14,15 @@ import {
   rewriteWorkspaceSessionWorktreePath
 } from './localwp-repo-path'
 import { getDefaultWorkspaceSession } from '../../shared/constants'
+
+const repoProbe = vi.hoisted(() => ({ isGitRepo: vi.fn(), getGitRepoRoot: vi.fn() }))
+
+vi.mock('../git/repo', async (importOriginal) => {
+  const actual = await importOriginal<typeof RepoModule>()
+  repoProbe.isGitRepo.mockImplementation(actual.isGitRepo)
+  repoProbe.getGitRepoRoot.mockImplementation(actual.getGitRepoRoot)
+  return { ...actual, isGitRepo: repoProbe.isGitRepo, getGitRepoRoot: repoProbe.getGitRepoRoot }
+})
 
 const tempRoots: string[] = []
 
@@ -251,6 +261,33 @@ describe('migrateLocalWpRepoPathIfNeeded', () => {
       'repo-late-wp',
       expect.objectContaining({ path: appPublic, kind: 'folder' })
     )
+  })
+
+  it('makes no git calls for a git repo that is not a LocalWP shell', async () => {
+    const root = await makeTempRoot()
+    execFileSync('git', ['init'], { cwd: root, stdio: 'ignore' })
+    repoProbe.isGitRepo.mockClear()
+    repoProbe.getGitRepoRoot.mockClear()
+    const updateRepo = vi.fn()
+    const store = {
+      getAllWorktreeMeta: () => ({}),
+      setWorktreeMeta: vi.fn(),
+      removeWorktreeMeta: vi.fn(),
+      updateRepo
+    }
+    const repo = {
+      id: 'repo-plain-git',
+      path: root,
+      displayName: 'plain',
+      badgeColor: '#000',
+      addedAt: 0,
+      kind: 'git' as const
+    }
+
+    expect(migrateLocalWpRepoPathIfNeeded(store as never, repo)).toBe(repo)
+    expect(repoProbe.isGitRepo).not.toHaveBeenCalled()
+    expect(repoProbe.getGitRepoRoot).not.toHaveBeenCalled()
+    expect(updateRepo).not.toHaveBeenCalled()
   })
 })
 

@@ -124,6 +124,8 @@ module.exports = {
     '!Casks{,/**/*}',
     '!{AGENTS.md,CLAUDE.md,DEVELOPING.md,bundle-size-progress.md}',
     '!out/**/*.test.js',
+    // Why: renderer maps are 'hidden' for decoding crash stacks offline, not for shipping.
+    '!out/renderer/**/*.map',
     // Why: `pnpm dev` stages a full dev Muster.app here (~275MB); it has no runtime consumer.
     '!out/electron-dev{,/**/*}',
     '!electron.vite.config.{js,ts,mjs,cjs}',

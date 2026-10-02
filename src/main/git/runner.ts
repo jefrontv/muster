@@ -43,6 +43,7 @@ import { UNTRANSLATED_GIT_OUTPUT_ENV } from '../../shared/git-output-locale'
 import { endSubprocessStdin } from '../../shared/subprocess-stdin-write'
 // Re-exported for existing importers; lightweight consumers should import from './exec-error' to avoid this heavy module.
 import { extractExecError, parseRetryAfterMs } from './exec-error'
+import { noteLocalGitSpawnFailure, resolveLocalGitBinary } from './darwin-git-binary'
 export { extractExecError, parseRetryAfterMs }
 
 // ─── Core resolution ────────────────────────────────────────────────
@@ -205,7 +206,7 @@ function resolveCommand(
   options: { useWslLoginShell?: boolean } = {}
 ): ResolvedCommand {
   if (process.platform !== 'win32') {
-    return { binary: command, args, cwd, wsl: null }
+    return { binary: command === 'git' ? resolveLocalGitBinary() : command, args, cwd, wsl: null }
   }
 
   // Why: global gh callers (rate_limit, listAccessibleProjects) have no cwd to derive a distro from; a distro hint still routes through wsl.exe.
@@ -859,6 +860,7 @@ export async function gitExecFileAsync(
           signal: options.signal
         })
       } catch (error) {
+        noteLocalGitSpawnFailure(resolved.binary, error)
         if (options.useConfiguredSshCommandForNetwork && error && typeof error === 'object') {
           Object.assign(error, { gitSshPolicyMode: policy.mode })
         }
@@ -924,13 +926,18 @@ export async function gitExecFileAsyncBuffer(
   const resolved = resolveCommand('git', args, options.cwd, options.wslDistro, {
     useWslLoginShell: Boolean(options.wslDistro)
   })
-  const { stdout } = (await execFileCapture(resolved.binary, resolved.args, {
-    cwd: resolved.cwd,
-    encoding: 'buffer',
-    maxBuffer: options.maxBuffer,
-    env: untranslatedGitOutputEnv()
-  })) as { stdout: Buffer }
-  return { stdout }
+  try {
+    const { stdout } = (await execFileCapture(resolved.binary, resolved.args, {
+      cwd: resolved.cwd,
+      encoding: 'buffer',
+      maxBuffer: options.maxBuffer,
+      env: untranslatedGitOutputEnv()
+    })) as { stdout: Buffer }
+    return { stdout }
+  } catch (error) {
+    noteLocalGitSpawnFailure(resolved.binary, error)
+    throw error
+  }
 }
 
 /** Result of a streamed git command; `stoppedEarly` is true when onStdout asked to stop before the child exited. */
@@ -1103,6 +1110,9 @@ export function gitExecFileSync(
       stdio: options.stdio ?? ['pipe', 'pipe', 'pipe'],
       timeout: options.timeout ?? GIT_EXEC_SYNC_TIMEOUT_MS
     }) as string
+  } catch (error) {
+    noteLocalGitSpawnFailure(resolved.binary, error)
+    throw error
   } finally {
     // Sync exec blocks the main thread for its whole duration — the cost issue #7576 flags.
     recordSubprocessSpawn(resolved.binary, resolved.args, performance.now() - spawnStartedAt)

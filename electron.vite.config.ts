@@ -287,6 +287,9 @@ export default defineConfig({
     build: {
       // Why: gzip sizing is a report-only pass that costs seconds per release build.
       reportCompressedSize: false,
+      // Why: electron-vite leaves the renderer unminified (10 MB entry); maps stay out of the bundle refs.
+      minify: 'esbuild',
+      sourcemap: 'hidden',
       // Why: the pop-out dashboard is a second top-level window with its own
       // React root. It gets its own HTML entry so it can boot independently of
       // the main window while reusing the same preload/window.api. `index` must

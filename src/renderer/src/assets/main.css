@@ -2608,11 +2608,12 @@
 
 /* Why: an agent that finished or needs input pulses until the user opens its workspace, which
    clears unread. The circle stays solid; an SVG halo behind it grows from the circle's own centre
-   (fill-box origin) and fades, the familiar "live" pulse. */
+   (fill-box origin) and fades, the familiar "live" pulse. Three pulses then hold the faded end
+   frame: an infinite CSS animation per unread card costs steady renderer CPU. */
 .sidebar-attention-halo {
   transform-box: fill-box;
   transform-origin: center;
-  animation: sidebar-attention-halo 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: sidebar-attention-halo 1.6s cubic-bezier(0, 0, 0.2, 1) 3 forwards;
 }
 
 @keyframes sidebar-attention-halo {
