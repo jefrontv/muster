@@ -104,10 +104,12 @@ export function installChatThreadStreamEvents(): () => void {
     switch (event.kind) {
       case 'init': {
         const thread = store.chatThreads.find((t) => t.id === event.threadId)
-        if (thread && thread.claudeSessionId !== event.sessionId) {
+        const modelChanged = event.model !== undefined && thread?.reportedModel !== event.model
+        if (thread && (thread.claudeSessionId !== event.sessionId || modelChanged)) {
           void store.updateChatThread(event.threadId, {
             claudeSessionId: event.sessionId,
-            lastActivityAt: Date.now()
+            lastActivityAt: Date.now(),
+            ...(event.model !== undefined ? { reportedModel: event.model } : {})
           })
         }
         break

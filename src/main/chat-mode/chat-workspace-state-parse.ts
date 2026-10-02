@@ -92,6 +92,9 @@ function normalizeThread(raw: unknown, workspaceIds: Set<string>): ChatThread | 
     ...(typeof raw.contextWindow === 'number' && raw.contextWindow > 0
       ? { contextWindow: raw.contextWindow }
       : {}),
+    ...(typeof raw.reportedModel === 'string' && raw.reportedModel !== ''
+      ? { reportedModel: raw.reportedModel }
+      : {}),
     ...(typeof raw.sortOrder === 'number' && Number.isFinite(raw.sortOrder)
       ? { sortOrder: raw.sortOrder }
       : {}),

@@ -892,6 +892,7 @@ const api = {
     deleteThread: (id) => ipcRenderer.invoke('chatMode:deleteThread', id),
     searchThreadContent: (args) => ipcRenderer.invoke('chatMode:searchThreadContent', args),
     getGreetingName: () => ipcRenderer.invoke('chatMode:getGreetingName'),
+    getClaudeSettingsEffort: () => ipcRenderer.invoke('chatMode:getClaudeSettingsEffort'),
     onExternalChange: (callback) => {
       const listener = (): void => callback()
       ipcRenderer.on('chatMode:externalChange', listener)

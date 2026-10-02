@@ -14585,7 +14585,18 @@
         "skillScopePlugin": "插件",
         "skillsLoaded": "技能已加载",
         "noCommands": "没有匹配的命令",
-        "reply": "Reply…"
+        "reply": "Reply…",
+        "accessLevelValue": "Tool access: {{value}}",
+        "voiceTyping": "Voice typing",
+        "voiceNeedsModel": "Voice typing needs a speech model",
+        "voiceSetUp": "Set up",
+        "modelAndOptions": "Model and effort",
+        "addMenu": "Add files and more",
+        "attachItem": "Attach a file",
+        "defaultModel": "Default",
+        "defaultEffort": "Default",
+        "effortFromSettings": "From your Claude settings",
+        "effortCliDefault": "Claude's default effort for this model"
       },
       "tool": {
         "running": "正在运行…",
@@ -14807,7 +14818,9 @@
         "maxBudget": "This reply reached its spending limit."
       },
       "hero": {
-        "placeholder": "How can I help you today?"
+        "placeholder": "How can I help you today?",
+        "greetingNoName": "Hey there",
+        "workspaceChip": "Workspace: {{name}}"
       },
       "folderMissing": {
         "title": "This workspace's folder is missing",

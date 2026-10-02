@@ -76,6 +76,8 @@ export type ChatThread = {
   /** Model's context window (tokens) from the CLI's last result record;
    *  persisted so the meter is right before the first turn of a new app run. */
   contextWindow?: number
+  /** Model id from the stream's `system/init` record; names the composer pill. */
+  reportedModel?: string
   /** Manual sidebar position (drag-drop); absent rows key on -createdAt. */
   sortOrder?: number
   /** Linked ActiveCollab task; drives the thread header strip + row badge. */

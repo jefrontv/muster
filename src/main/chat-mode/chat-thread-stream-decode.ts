@@ -65,7 +65,12 @@ export function mapChatThreadStreamRecord(
       if (record.subtype !== 'init' || typeof record.session_id !== 'string') {
         return null
       }
-      return { threadId, kind: 'init', sessionId: record.session_id }
+      return {
+        threadId,
+        kind: 'init',
+        sessionId: record.session_id,
+        ...(typeof record.model === 'string' && record.model !== '' ? { model: record.model } : {})
+      }
     }
     case 'stream_event': {
       if (fromSubagent) {

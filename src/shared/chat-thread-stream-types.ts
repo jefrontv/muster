@@ -3,7 +3,7 @@
 // the transcript file stays the authoritative message source.
 
 export type ChatThreadStreamEvent =
-  | { threadId: string; kind: 'init'; sessionId: string }
+  | { threadId: string; kind: 'init'; sessionId: string; model?: string }
   | { threadId: string; kind: 'delta'; text: string }
   | { threadId: string; kind: 'message-final' }
   | {

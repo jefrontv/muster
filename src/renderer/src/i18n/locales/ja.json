@@ -14585,7 +14585,18 @@
         "skillScopePlugin": "プラグイン",
         "skillsLoaded": "スキルを読み込みました",
         "noCommands": "一致するコマンドがありません",
-        "reply": "Reply…"
+        "reply": "Reply…",
+        "accessLevelValue": "Tool access: {{value}}",
+        "voiceTyping": "Voice typing",
+        "voiceNeedsModel": "Voice typing needs a speech model",
+        "voiceSetUp": "Set up",
+        "modelAndOptions": "Model and effort",
+        "addMenu": "Add files and more",
+        "attachItem": "Attach a file",
+        "defaultModel": "Default",
+        "defaultEffort": "Default",
+        "effortFromSettings": "From your Claude settings",
+        "effortCliDefault": "Claude's default effort for this model"
       },
       "tool": {
         "running": "実行中…",
@@ -14807,7 +14818,9 @@
         "maxBudget": "This reply reached its spending limit."
       },
       "hero": {
-        "placeholder": "How can I help you today?"
+        "placeholder": "How can I help you today?",
+        "greetingNoName": "Hey there",
+        "workspaceChip": "Workspace: {{name}}"
       },
       "folderMissing": {
         "title": "This workspace's folder is missing",

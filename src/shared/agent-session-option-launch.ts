@@ -10,7 +10,9 @@ export type ResolvedSessionOptionLaunch = {
 export function resolveAgentSessionOptionLaunch(
   agent: AgentType,
   values: Record<string, SessionOptionValue> | null | undefined,
-  trailingAgentArgs: readonly string[] = []
+  trailingAgentArgs: readonly string[] = [],
+  /** Emit flags only for values actually given, never catalog defaults (chat threads). */
+  options: { pickedOnly?: boolean } = {}
 ): ResolvedSessionOptionLaunch {
   const catalog = getAgentSessionOptionCatalog(agent)
   const modelId = typeof values?.model === 'string' ? values.model : null
@@ -53,6 +55,9 @@ export function resolveAgentSessionOptionLaunch(
       continue
     }
     if (!option.apply.launchArgs) {
+      continue
+    }
+    if (options.pickedOnly && values[option.id] === undefined) {
       continue
     }
     args.push(...option.apply.launchArgs(value))

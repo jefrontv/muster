@@ -87,4 +87,6 @@ export type NativeChatViewProps = {
   showTechnicalDetails?: boolean
   /** Folder paths show relative to (the workspace's), when there is no worktree. */
   workingDirectory?: string | null
+  /** Model id the session reported at init; names the composer's model pill. */
+  reportedModel?: string | null
 }

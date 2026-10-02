@@ -1,31 +1,25 @@
-// Draft-first landing for the chat surface: a centered hero headline with a
-// workspace picker plus a composer-styled textarea. No thread exists until the
-// prompt is submitted — then a thread is created and the text becomes its first
-// message (delivered by ChatThreadView once the session is up).
+// Draft-first landing for the chat surface: a greeting over the same composer the
+// thread uses (workspace chip, + menu, model/effort, mic). No thread exists until
+// the prompt is submitted — then a thread is created and the text, with any staged
+// files as references, becomes its first message (delivered by ChatThreadView).
 
-import { ChevronDown, FolderPlus } from 'lucide-react'
+import { FileText, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/i18n'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/store'
+import { basename } from '@/lib/path'
+import { formatNativeChatFileReference } from '../native-chat/native-chat-composer-target'
+import { useNativeChatFileAttachmentActions } from '../native-chat/use-native-chat-file-attachment-actions'
+import { useNativeChatPromptStash } from '../native-chat/use-native-chat-prompt-stash'
+import { useNativeChatDictation } from '../native-chat/use-native-chat-dictation'
+import { NATIVE_FILE_DROP_TARGET } from '../../../../shared/native-file-drop'
 import { getVerifiedNativeChatCommands } from '../../../../shared/native-chat-agent-profiles'
 import { NativeChatPickerMenu } from '../native-chat/NativeChatAutocompleteMenus'
 import { useNativeChatPickerState } from '../native-chat/use-native-chat-picker-state'
 import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
 import { ChatModeHeroTaskShortcuts } from './ChatModeHeroTaskShortcuts'
 import { useChatDraftPrewarm } from './use-chat-draft-prewarm'
-
-/** Radio value for the standalone (no-workspace) chat option. */
-const STANDALONE = ''
 
 /** Fetched once per app run; undefined = not asked yet (distinct from "no name"). */
 let greetingNameCache: string | null | undefined
@@ -76,6 +70,15 @@ export function ChatModeDraftHero({
   const [activeSuggestion, setActiveSuggestion] = useState(0)
   // Boots the agent while the draft is still being typed; submit adopts it.
   const prewarm = useChatDraftPrewarm({ draft: text, workspaceId: selectedWorkspaceId })
+  // Staged until the thread exists; they ride the first message as @ references.
+  const [stagedPaths, setStagedPaths] = useState<string[]>([])
+  const stagePaths = useCallback(
+    (paths: string[]) => setStagedPaths((prev) => [...new Set([...prev, ...paths])]),
+    []
+  )
+  const { pickAttachment } = useNativeChatFileAttachmentActions(stagePaths)
+  const stash = useNativeChatPromptStash({ draft: text, setDraft: setText, setCaret, textareaRef })
+  const dictation = useNativeChatDictation(textareaRef)
 
   // Same slash-command/skill picker as the thread composer. New threads always
   // launch Claude, and the draft has no pane yet, so skills scan the home roots.
@@ -113,7 +116,8 @@ export function ChatModeDraftHero({
   const selectedWorkspace = workspaces.find((w) => w.id === selectedWorkspaceId) ?? null
 
   const submit = async (): Promise<void> => {
-    const prompt = text.trim()
+    const references = stagedPaths.map(formatNativeChatFileReference).join(' ')
+    const prompt = [text.trim(), references].filter(Boolean).join('\n')
     if (prompt === '' || submitting) {
       return
     }
@@ -131,6 +135,7 @@ export function ChatModeDraftHero({
       }
       // Delivered (and echoed) by ChatThreadView once the session launches.
       setChatThreadFirstMessage(thread.id, prompt)
+      setStagedPaths([])
     } finally {
       setSubmitting(false)
     }
@@ -138,61 +143,17 @@ export function ChatModeDraftHero({
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
-      <div className="flex w-full flex-col gap-1.5">
-        {greetingName ? (
-          <p className="mx-auto w-full max-w-2xl text-center text-2xl font-normal tracking-tight text-muted-foreground sm:text-3xl">
-            {translate('auto.components.chat.hero.greeting', 'Hey, {{value0}}', {
+      <h1 className="mx-auto w-full max-w-3xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
+        {greetingName
+          ? translate('auto.components.chat.hero.greeting', 'Hey, {{value0}}', {
               value0: greetingName
-            })}
-          </p>
-        ) : null}
-        <h1 className="mx-auto w-full max-w-4xl text-center text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
-          {translate('auto.components.chat.hero.headlinePrefix', 'What should we work on in')}{' '}
-          <span className="whitespace-nowrap">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <span
-                  className="cursor-pointer border-b border-dotted border-foreground/60 text-foreground outline-none transition-colors hover:border-foreground/80 focus:outline-none focus-visible:outline-none"
-                  title={selectedWorkspace?.name}
-                >
-                  {selectedWorkspace?.name ??
-                    translate('auto.components.chat.hero.noWorkspace', 'a new chat')}
-                  <ChevronDown className="ml-1 inline size-4 align-baseline text-muted-foreground" />
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="center"
-                className="scrollbar-sleek max-h-80 w-64 overflow-y-auto"
-              >
-                <DropdownMenuRadioGroup
-                  value={selectedWorkspace?.id ?? STANDALONE}
-                  onValueChange={(value) =>
-                    setSelectedWorkspaceId(value === STANDALONE ? null : value)
-                  }
-                >
-                  {workspaces.map((workspace) => (
-                    <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
-                      <span className="min-w-0 truncate">{workspace.name}</span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                  <DropdownMenuRadioItem value={STANDALONE}>
-                    {translate('auto.components.chat.hero.standalone', 'No workspace')}
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={onCreateWorkspace}>
-                  <FolderPlus className="size-4" />
-                  {translate('auto.components.chat.hero.newWorkspace', 'New workspace…')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            ?
-          </span>
-        </h1>
-      </div>
+            })
+          : translate('components.chat-mode.hero.greetingNoName', 'Hey there')}
+      </h1>
       <div
-        className="relative w-full max-w-3xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40"
+        className="relative w-full max-w-3xl rounded-lg border border-border bg-muted/50 p-1.5 shadow-xs dark:bg-input/40"
         data-contextual-tour-target="chat-thread-composer"
+        data-native-file-drop-target={NATIVE_FILE_DROP_TARGET.composer}
       >
         {pickerOpen ? (
           <NativeChatPickerMenu
@@ -202,6 +163,31 @@ export function ChatModeDraftHero({
             onChoose={picker.completeItem}
             onRetry={picker.retrySkills}
           />
+        ) : null}
+        {stagedPaths.length > 0 ? (
+          <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+            {stagedPaths.map((path) => (
+              <div
+                key={path}
+                className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground"
+                title={path}
+              >
+                <FileText className="size-3.5 shrink-0" />
+                <span className="max-w-56 truncate">{basename(path)}</span>
+                <button
+                  type="button"
+                  onClick={() => setStagedPaths((prev) => prev.filter((p) => p !== path))}
+                  aria-label={translate(
+                    'components.native-chat.composer.removeAttachment',
+                    'Remove attachment'
+                  )}
+                  className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+          </div>
         ) : null}
         <textarea
           ref={textareaRef}
@@ -262,6 +248,9 @@ export function ChatModeDraftHero({
                 return
               }
             }
+            if (stash.handleKeyDown(e)) {
+              return
+            }
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
               void submit()
@@ -270,8 +259,15 @@ export function ChatModeDraftHero({
           className="scrollbar-sleek field-sizing-content max-h-64 min-h-16 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-20"
         />
         <ChatModeDraftHeroControls
-          sendDisabled={text.trim() === '' || submitting}
+          sendDisabled={(text.trim() === '' && stagedPaths.length === 0) || submitting}
           onSend={() => void submit()}
+          stash={stash}
+          onAttach={pickAttachment}
+          dictation={dictation}
+          workspaces={workspaces}
+          selectedWorkspace={selectedWorkspace}
+          onSelectWorkspace={setSelectedWorkspaceId}
+          onCreateWorkspace={onCreateWorkspace}
         />
       </div>
       <ChatModeHeroTaskShortcuts />

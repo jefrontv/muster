@@ -121,14 +121,13 @@ export async function launchChatThreadSession(args: {
           ...(thread.transcriptPath ? { transcriptPath: thread.transcriptPath } : {})
         }
       : null
-  // Why: the resume plan builder takes no sessionOptions, so model/effort flags
-  // ride agentArgs for resumed streams; appliedValues still feed the pickers.
-  const resumeOptionLaunch = resumeSession
-    ? resolveAgentSessionOptionLaunch(agent, sessionOptions)
-    : null
-  const resumeOptionArgs = (resumeOptionLaunch?.args ?? [])
-    .map((arg) => quoteStartupArg(arg, shell))
-    .join(' ')
+  // Model/effort flags ride agentArgs on both paths. pickedOnly: an effort the
+  // user never chose is left to the CLI, so the composer's label stays honest.
+  const optionLaunch = resolveAgentSessionOptionLaunch(agent, sessionOptions, [], {
+    pickedOnly: true
+  })
+  const optionArgs = optionLaunch.args.map((arg) => quoteStartupArg(arg, shell)).join(' ')
+  const launchAgentArgs = [optionArgs, agentArgs].filter((part) => part.length > 0).join(' ')
   const startupPlan: AgentStartupPlan | null = resumeSession
     ? buildAgentResumeStartupPlan({
         agent,
@@ -136,7 +135,7 @@ export async function launchChatThreadSession(args: {
         cmdOverrides,
         platform: CLIENT_PLATFORM,
         shell: startupShell,
-        agentArgs: [resumeOptionArgs, agentArgs].filter((part) => part.length > 0).join(' '),
+        agentArgs: launchAgentArgs,
         agentEnv,
         isRemote: false
       })
@@ -144,20 +143,17 @@ export async function launchChatThreadSession(args: {
         agent,
         prompt: '',
         cmdOverrides,
-        agentArgs,
+        agentArgs: launchAgentArgs,
         agentEnv,
         platform: CLIENT_PLATFORM,
         shell: startupShell,
         isRemote: false,
-        allowEmptyPromptLaunch: true,
-        ...(sessionOptions ? { sessionOptions } : {})
+        allowEmptyPromptLaunch: true
       })
   if (!startupPlan) {
     return null
   }
-  const appliedSessionOptions = resumeSession
-    ? resumeOptionLaunch?.appliedValues
-    : startupPlan.sessionOptions
+  const appliedSessionOptions = optionLaunch.appliedValues
 
   // Same pane for every launch of this thread, so the open view never remounts.
   const { tabId, leafId, paneKey } = chatThreadPaneIdentity(thread.id)

@@ -172,7 +172,7 @@ const fast: SessionOptionDescriptor = {
 afterEach(() => cleanup())
 
 describe('NativeChatSessionOptionPickers', () => {
-  it('renders model and joined option labels, and hides an empty options pill', () => {
+  it('reads as one trigger: model, then the muted effort', () => {
     const { rerender } = render(
       <NativeChatSessionOptionPickers
         surface={surface}
@@ -180,89 +180,75 @@ describe('NativeChatSessionOptionPickers', () => {
         isWorking={false}
       />
     )
-    expect(screen.getByRole('button', { name: 'Model Opus 4.8' }).textContent).toContain('Opus 4.8')
-    expect(screen.getByRole('button', { name: 'Model Opus 4.8' }).textContent).not.toContain(
-      'Model:'
-    )
-    expect(screen.getByRole('button', { name: 'Effort High · Fast' }).textContent).toContain(
-      'High · Fast'
-    )
-    // Model before effort, as claude.ai reads.
-    expect(
-      screen
-        .getByRole('button', { name: 'Model Opus 4.8' })
-        .compareDocumentPosition(screen.getByRole('button', { name: 'Effort High · Fast' })) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).not.toBe(0)
+    const trigger = screen.getByRole('button', { name: 'Model and effort Opus 4.8 High · Fast' })
+    expect(trigger.textContent).toBe('Opus 4.8High · Fast')
+    expect(screen.getAllByRole('button', { name: /^Model/ })).toHaveLength(1)
 
     rerender(
       <NativeChatSessionOptionPickers surface={surface} snapshot={[model()]} isWorking={false} />
     )
-    expect(screen.queryByRole('button', { name: /Effort/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Model Opus 4.8' })).not.toBeNull()
   })
 
-  it('names a lone unknown effort control explicitly', () => {
+  it('names the reported model over the pick', () => {
     render(
       <NativeChatSessionOptionPickers
         surface={surface}
-        snapshot={[
-          model(),
-          { ...effort, kind: { ...effort.kind, currentValue: undefined }, valueSource: 'unknown' }
-        ]}
+        snapshot={[model(), effort]}
+        isWorking={false}
+        reportedModel="claude-opus-5-5"
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Model and effort Opus 5.5 High' })).not.toBeNull()
+  })
+
+  it('never claims an effort the CLI was not given', () => {
+    const unknownEffort: SessionOptionDescriptor = {
+      ...effort,
+      kind: { ...effort.kind, currentValue: undefined },
+      valueSource: 'unknown'
+    }
+    const { rerender } = render(
+      <NativeChatSessionOptionPickers
+        surface={surface}
+        snapshot={[model(), unknownEffort]}
         isWorking={false}
       />
     )
+    expect(screen.getByRole('button', { name: 'Model and effort Opus 4.8' })).not.toBeNull()
 
-    expect(screen.getByRole('button', { name: 'Effort' }).textContent).toContain('Effort')
+    // A chat thread names Claude's own default instead.
+    rerender(
+      <NativeChatSessionOptionPickers
+        surface={surface}
+        snapshot={[model({ valueSource: 'unknown' }), unknownEffort]}
+        isWorking={false}
+        chatThread
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Model and effort Default Default' })).not.toBeNull()
   })
 
-  it('disables both picker triggers while the agent is working', () => {
+  it('disables the trigger while the agent is working', () => {
     render(
       <NativeChatSessionOptionPickers surface={surface} snapshot={[model(), effort]} isWorking />
     )
     expect(
       screen
-        .getByRole('button', { name: 'Model Opus 4.8' })
-        .parentElement?.getAttribute('data-disabled')
-    ).toBe('true')
-    expect(
-      screen
-        .getByRole('button', { name: 'Effort High' })
+        .getByRole('button', { name: 'Model and effort Opus 4.8 High' })
         .parentElement?.getAttribute('data-disabled')
     ).toBe('true')
   })
 
-  it('does not duplicate titles for unknown values or misname generic controls', () => {
-    const { rerender } = render(
+  it('shows "Model" for an unknown model outside chat threads', () => {
+    render(
       <NativeChatSessionOptionPickers
         surface={surface}
-        snapshot={[
-          model({
-            kind: { type: 'select', choices: [] },
-            valueSource: 'unknown'
-          }),
-          { ...effort, kind: { ...effort.kind, currentValue: undefined }, valueSource: 'unknown' }
-        ]}
+        snapshot={[model({ kind: { type: 'select', choices: [] }, valueSource: 'unknown' })]}
         isWorking={false}
       />
     )
-    expect(screen.getByRole('button', { name: 'Model' }).textContent).toContain('Model')
-    expect(screen.getByRole('button', { name: 'Model' }).textContent).not.toContain('Model: Model')
-    expect(screen.getByRole('button', { name: 'Effort' }).textContent).not.toContain(
-      'Effort: Effort'
-    )
-
-    rerender(
-      <NativeChatSessionOptionPickers
-        surface={surface}
-        snapshot={[model(), fast]}
-        isWorking={false}
-      />
-    )
-    expect(screen.getByRole('button', { name: 'Session options Fast' }).textContent).toContain(
-      'Fast'
-    )
-    expect(screen.queryByRole('button', { name: /^Effort/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Model Model' }).textContent).toBe('Model')
   })
 
   it('shows the unconfirmed hint for dispatched values', () => {

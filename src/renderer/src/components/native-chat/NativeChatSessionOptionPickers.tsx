@@ -20,13 +20,15 @@ import type {
   SessionOptionValue
 } from '../../../../shared/native-chat-session-options'
 import {
-  nativeChatModelPillLabel,
-  nativeChatOptionsPillLabel,
-  nativeChatOptionsPillTitle,
+  nativeChatEffortPillText,
+  nativeChatModelChoiceLabel,
+  nativeChatModelDisplayLabel,
   nativeChatSessionChoiceLabel,
   nativeChatSessionOptionDisabledReason,
   nativeChatSessionOptionLabel
 } from './native-chat-session-option-labels'
+import { useClaudeModelSightings } from './claude-model-sightings'
+import { useClaudeSettingsEffortLevel } from './claude-settings-effort-level'
 
 export type NativeChatSessionOptionPickersProps = {
   surface: SessionOptionsSurface | null
@@ -41,6 +43,10 @@ export type NativeChatSessionOptionPickersProps = {
    */
   openPicker?: string | null
   onOpenPickerChange?: (picker: string | null) => void
+  /** A chat-mode thread or the chat hero: unknown values read as Claude's defaults. */
+  chatThread?: boolean
+  /** Model id the session reported at init. */
+  reportedModel?: string | null
 }
 
 const CATEGORY_ORDER: Record<string, number> = {
@@ -80,21 +86,21 @@ function PickerTooltipContent(props: {
 }
 
 function PickerTrigger(props: {
-  label: string
+  modelLabel: string
+  effortLabel: string | null
   tooltipLabel: string
+  hint: string | null
   disabled: boolean
   disabledReason?: string | null
   dispatched: boolean
 }): React.JSX.Element {
-  // Why: value-only visible text must still include the category in the
-  // accessible name (WCAG 2.5.3 Label in Name / voice control).
-  const accessibleName =
-    props.label === props.tooltipLabel
-      ? props.tooltipLabel
-      : translate('components.native-chat.composer.pillAccessibleName', '{{value0}} {{value1}}', {
-          value0: props.tooltipLabel,
-          value1: props.label
-        })
+  const visible = [props.modelLabel, props.effortLabel].filter(Boolean).join(' ')
+  // Why: the accessible name must contain the visible text (WCAG 2.5.3 Label in Name).
+  const accessibleName = translate(
+    'components.native-chat.composer.pillAccessibleName',
+    '{{value0}} {{value1}}',
+    { value0: props.tooltipLabel, value1: visible }
+  )
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -104,16 +110,19 @@ function PickerTrigger(props: {
             variant="ghost"
             size="xs"
             aria-label={accessibleName}
-            className="max-w-48 text-muted-foreground"
+            className="max-w-56 gap-1 text-foreground/90"
           >
-            <span className="truncate">{props.label}</span>
-            <ChevronDown className="size-3" />
+            <span className="truncate">{props.modelLabel}</span>
+            {props.effortLabel ? (
+              <span className="truncate text-muted-foreground">{props.effortLabel}</span>
+            ) : null}
+            <ChevronDown className="size-3 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={4}>
         <PickerTooltipContent
-          label={props.tooltipLabel}
+          label={props.hint ? `${props.tooltipLabel} · ${props.hint}` : props.tooltipLabel}
           disabledReason={props.disabledReason}
           dispatched={props.dispatched}
         />
@@ -138,8 +147,10 @@ function DescriptorMenuRows(props: {
   pending: boolean
   setValue: (value: SessionOptionValue) => void
   invokeAction: () => void
+  choiceLabel?: (choice: { value: string; label: string; description?: string }) => string
 }): React.JSX.Element {
   const { descriptor, pending, setValue, invokeAction } = props
+  const choiceLabel = props.choiceLabel ?? nativeChatSessionChoiceLabel
   // Why: flip-only without a baseline is an action — never claim On/Off.
   if (descriptor.action?.type === 'toggle-command') {
     return (
@@ -202,10 +213,7 @@ function DescriptorMenuRows(props: {
           value={choice.value}
           disabled={!descriptor.settable || pending}
         >
-          <ChoiceBody
-            label={nativeChatSessionChoiceLabel(choice)}
-            description={choice.description}
-          />
+          <ChoiceBody label={choiceLabel(choice)} description={choice.description} />
         </DropdownMenuRadioItem>
       ))}
     </DropdownMenuRadioGroup>
@@ -233,14 +241,20 @@ function NativeChatSessionOptionPickersInner({
   snapshot,
   isWorking,
   openPicker,
-  onOpenPickerChange
+  onOpenPickerChange,
+  chatThread = false,
+  reportedModel = null
 }: NativeChatSessionOptionPickersProps): React.JSX.Element | null {
   const [pendingId, setPendingId] = useState<string | null>(null)
+  const latestSighting = useClaudeModelSightings()
+  const settingsEffort = useClaudeSettingsEffortLevel(chatThread)
   // Uncontrolled when no slot is supplied, so a caller that does not care keeps the old behaviour.
-  const menuProps = (id: string): { open?: boolean; onOpenChange?: (open: boolean) => void } =>
-    onOpenPickerChange
-      ? { open: openPicker === id, onOpenChange: (open) => onOpenPickerChange(open ? id : null) }
-      : {}
+  const menuProps: { open?: boolean; onOpenChange?: (open: boolean) => void } = onOpenPickerChange
+    ? {
+        open: openPicker === 'model',
+        onOpenChange: (open) => onOpenPickerChange(open ? 'model' : null)
+      }
+    : {}
   const model = snapshot.find((descriptor) => descriptor.category === 'model')
   const options = sortedOptions(snapshot)
   if (!surface || !model) {
@@ -254,68 +268,61 @@ function NativeChatSessionOptionPickersInner({
     runSurfaceCall(descriptor.id, setPendingId, () => surface.invokeAction(descriptor.id))
   }
 
+  const naming = { reportedModel, latestSighting, chatThread }
+  const effortPill = nativeChatEffortPillText(options, { chatThread, settingsEffort })
   const modelReason = nativeChatSessionOptionDisabledReason(model.disabledReason)
-  const modelTooltip = translate('components.native-chat.composer.model', 'Model')
-  const optionsTooltip = nativeChatOptionsPillTitle(options)
-  const optionsReason =
-    options.length > 0 && options.every((descriptor) => !descriptor.settable)
-      ? nativeChatSessionOptionDisabledReason(options[0]?.disabledReason)
-      : null
+  const tooltip =
+    options.length > 0
+      ? translate('components.native-chat.composer.modelAndOptions', 'Model and effort')
+      : translate('components.native-chat.composer.model', 'Model')
 
   return (
-    <div className="flex min-w-0 items-center gap-0.5">
-      <DropdownMenu {...menuProps('model')}>
-        <PickerTrigger
-          label={nativeChatModelPillLabel(model)}
-          tooltipLabel={modelTooltip}
-          disabled={isWorking || pendingId !== null}
-          disabledReason={modelReason}
-          dispatched={model.valueSource === 'dispatched'}
+    <DropdownMenu {...menuProps}>
+      <PickerTrigger
+        modelLabel={nativeChatModelDisplayLabel(model, naming)}
+        effortLabel={effortPill?.text ?? null}
+        tooltipLabel={tooltip}
+        hint={effortPill?.hint ?? null}
+        disabled={isWorking || pendingId !== null}
+        disabledReason={modelReason && !model.settable ? modelReason : null}
+        dispatched={snapshot.some((descriptor) => descriptor.valueSource === 'dispatched')}
+      />
+      <DropdownMenuContent align="end" side="top" className="w-64">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          {translate('components.native-chat.composer.model', 'Model')}
+        </DropdownMenuLabel>
+        {modelReason && !model.settable ? (
+          <DropdownMenuLabel className="font-normal">{modelReason}</DropdownMenuLabel>
+        ) : null}
+        <DescriptorMenuRows
+          descriptor={model}
+          pending={pendingId !== null}
+          setValue={(value) => setOption(model, value)}
+          invokeAction={() => invokeAction(model)}
+          choiceLabel={(choice) => nativeChatModelChoiceLabel(choice, naming)}
         />
-        <DropdownMenuContent align="start" className="w-64">
-          {modelReason && !model.settable ? (
-            <DropdownMenuLabel className="font-normal">{modelReason}</DropdownMenuLabel>
-          ) : null}
-          <DescriptorMenuRows
-            descriptor={model}
-            pending={pendingId !== null}
-            setValue={(value) => setOption(model, value)}
-            invokeAction={() => invokeAction(model)}
-          />
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {options.length > 0 ? (
-        <DropdownMenu {...menuProps('options')}>
-          <PickerTrigger
-            label={nativeChatOptionsPillLabel(options)}
-            tooltipLabel={optionsTooltip}
-            disabled={isWorking || pendingId !== null}
-            disabledReason={optionsReason}
-            dispatched={options.some((descriptor) => descriptor.valueSource === 'dispatched')}
-          />
-          <DropdownMenuContent align="start" className="w-60">
-            {options.map((descriptor, index) => {
-              const reason = nativeChatSessionOptionDisabledReason(descriptor.disabledReason)
-              return (
-                <div key={descriptor.id}>
-                  {index > 0 ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuLabel>{nativeChatSessionOptionLabel(descriptor)}</DropdownMenuLabel>
-                  {reason && !descriptor.settable ? (
-                    <DropdownMenuLabel className="font-normal">{reason}</DropdownMenuLabel>
-                  ) : null}
-                  <DescriptorMenuRows
-                    descriptor={descriptor}
-                    pending={pendingId !== null}
-                    setValue={(value) => setOption(descriptor, value)}
-                    invokeAction={() => invokeAction(descriptor)}
-                  />
-                </div>
-              )
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
-    </div>
+        {options.map((descriptor) => {
+          const reason = nativeChatSessionOptionDisabledReason(descriptor.disabledReason)
+          return (
+            <div key={descriptor.id}>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                {nativeChatSessionOptionLabel(descriptor)}
+              </DropdownMenuLabel>
+              {reason && !descriptor.settable ? (
+                <DropdownMenuLabel className="font-normal">{reason}</DropdownMenuLabel>
+              ) : null}
+              <DescriptorMenuRows
+                descriptor={descriptor}
+                pending={pendingId !== null}
+                setValue={(value) => setOption(descriptor, value)}
+                invokeAction={() => invokeAction(descriptor)}
+              />
+            </div>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

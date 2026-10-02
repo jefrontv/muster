@@ -44,3 +44,19 @@ describe('mapChatThreadStreamRecord result window', () => {
     expect(event).toMatchObject({ kind: 'turn-complete', contextWindow: 1_000_000 })
   })
 })
+
+describe('mapChatThreadStreamRecord init', () => {
+  it('carries the session model so the composer can name it', () => {
+    expect(
+      mapChatThreadStreamRecord('t1', {
+        type: 'system',
+        subtype: 'init',
+        session_id: 's1',
+        model: 'claude-opus-5-5'
+      })
+    ).toEqual({ threadId: 't1', kind: 'init', sessionId: 's1', model: 'claude-opus-5-5' })
+    expect(
+      mapChatThreadStreamRecord('t1', { type: 'system', subtype: 'init', session_id: 's1' })
+    ).toEqual({ threadId: 't1', kind: 'init', sessionId: 's1' })
+  })
+})

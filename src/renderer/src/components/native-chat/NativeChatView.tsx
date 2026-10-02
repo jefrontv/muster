@@ -57,7 +57,8 @@ export default function NativeChatView({
   composerNotice,
   surface = 'code',
   showTechnicalDetails = false,
-  workingDirectory = null
+  workingDirectory = null,
+  reportedModel = null
 }: NativeChatViewProps): React.JSX.Element {
   // Select only this tab's status entry (shallow-compared) so an unrelated
   // pane's status tick doesn't re-render this view or re-run the resolution.
@@ -98,7 +99,9 @@ export default function NativeChatView({
           composerNotice={composerNotice ?? null}
           // Technical details give one Chat thread Code mode's rendering.
           surface={surface === 'chat' && showTechnicalDetails ? 'code' : surface}
+          chatThread={surface === 'chat'}
           workingDirectory={workingDirectory}
+          reportedModel={reportedModel}
         />
       )}
     </NativeChatSessionGate>
@@ -120,7 +123,9 @@ function NativeChatResolvedView({
   activeCollabProjectId,
   composerNotice,
   surface,
-  workingDirectory
+  chatThread,
+  workingDirectory,
+  reportedModel
 }: {
   paneKey: string
   draftScopeKey: string | null
@@ -136,7 +141,9 @@ function NativeChatResolvedView({
   activeCollabProjectId: number | null
   composerNotice: React.ReactNode
   surface: NativeChatSurface
+  chatThread: boolean
   workingDirectory: string | null
+  reportedModel: string | null
 }): React.JSX.Element {
   // Primitive owner selection (no useShallow): routes the pane's read/subscribe to
   // the remote runtime host for a runtime-owned pane; null keeps the local path.
@@ -303,7 +310,13 @@ function NativeChatResolvedView({
     interactiveSend.cancel()
   }, [interactiveSend, pendingScope, setPending])
   const nativeChatFileLinkClick = useNativeChatFileLinkClick(fileLinkContext)
-  const surfaceValue = useNativeChatSurfaceValue({ surface, workingDirectory, fileLinkContext })
+  const surfaceValue = useNativeChatSurfaceValue({
+    surface,
+    chatThread,
+    workingDirectory,
+    fileLinkContext,
+    reportedModel
+  })
   const retry = useNativeChatRetry({
     messages: session.messages,
     transport,

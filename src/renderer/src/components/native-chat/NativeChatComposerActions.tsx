@@ -1,13 +1,4 @@
-import {
-  ArrowUp,
-  Check,
-  ChevronDown,
-  Mic,
-  Plus,
-  ShieldAlert,
-  ShieldQuestion,
-  Square
-} from 'lucide-react'
+import { ArrowUp, Check, ChevronDown, ShieldAlert, ShieldQuestion, Square } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,22 +17,25 @@ import { NativeChatSessionOptionPickers } from './NativeChatSessionOptionPickers
 import { NativeChatStashMenu } from './NativeChatStashMenu'
 import { NativeChatTaskPickerMenu } from './NativeChatTaskPickerMenu'
 import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
-import { NativeChatContextWindowMeter } from './NativeChatContextWindowMeter'
+import {
+  CONTEXT_WINDOW_MAX_TOKENS,
+  NativeChatContextWindowMeter
+} from './NativeChatContextWindowMeter'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
+import { NativeChatMicButton } from './NativeChatMicButton'
+import { useNativeChatSurface } from './native-chat-surface-context'
+import type { NativeChatDictation } from './use-native-chat-dictation'
+
+/** The donut stays out of the way until half the window is used. */
+export const CONTEXT_METER_MIN_FRACTION = 0.5
 
 export type NativeChatComposerActionsProps = {
   attachDisabled: boolean
   dictationDisabled: boolean
-  /** False = voice not set up; the mic routes to settings and says so. */
-  dictationConfigured?: boolean
+  dictation: NativeChatDictation
   sendDisabled: boolean
   isWorking: boolean
-  isDictating: boolean
-  isDictationHoldMode: boolean
   onAttach: () => void
-  onDictationToggle: () => void
-  onDictationHoldStart: () => void
-  onDictationHoldEnd: () => void
   onSend: () => void
   onStop?: () => void
   sessionOptionsSurface: SessionOptionsSurface | null
@@ -60,15 +54,10 @@ export type NativeChatComposerActionsProps = {
 export function NativeChatComposerActions({
   attachDisabled,
   dictationDisabled,
-  dictationConfigured = true,
+  dictation,
   sendDisabled,
   isWorking,
-  isDictating,
-  isDictationHoldMode,
   onAttach,
-  onDictationToggle,
-  onDictationHoldStart,
-  onDictationHoldEnd,
   onSend,
   onStop,
   sessionOptionsSurface,
@@ -84,36 +73,19 @@ export function NativeChatComposerActions({
   // One slot for every picker on this bar (thought level / model / access), so opening one closes
   // whichever was open instead of stacking a second panel over it.
   const [openPicker, setOpenPicker] = React.useState<string | null>(null)
-  const dictationLabel = !dictationConfigured
-    ? translate(
-        'auto.components.native-chat.composer.setUpDictation',
-        'Set up voice dictation in Settings'
-      )
-    : isDictating
-      ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
-      : translate('components.native-chat.composer.startDictation', 'Start dictation')
+  const { chatThread, reportedModel } = useNativeChatSurface()
+  const showMeter =
+    contextUsedTokens !== null &&
+    contextUsedTokens /
+      Math.max(contextMaxTokens ?? CONTEXT_WINDOW_MAX_TOKENS, contextUsedTokens) >=
+      CONTEXT_METER_MIN_FRACTION
+  const accessLabel = fullAccess
+    ? translate('auto.components.native-chat.composer.fullAccess', 'Full access')
+    : translate('auto.components.native-chat.composer.askFirst', 'Ask first')
   return (
     <div className="flex w-full items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={translate('components.native-chat.composer.attach', 'Attach file')}
-              disabled={attachDisabled}
-              onClick={onAttach}
-              className="pointer-coarse:size-11"
-            >
-              <Plus className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
-            {translate('components.native-chat.composer.attach', 'Attach file')}
-          </TooltipContent>
-        </Tooltip>
-        <NativeChatStashMenu stash={stash} />
+        <NativeChatStashMenu stash={stash} attachDisabled={attachDisabled} onAttach={onAttach} />
         {onAttachTask ? (
           <NativeChatTaskPickerMenu
             onAttachTask={onAttachTask}
@@ -121,45 +93,54 @@ export function NativeChatComposerActions({
           />
         ) : null}
       </div>
-      <div className="ml-auto flex items-center gap-1.5">
-        {/* Why: keep session controls beside the actions they affect; the
-        model trigger is ordered last so it sits directly next to dictation. */}
+      <div className="ml-auto flex items-center gap-1">
         <NativeChatSessionOptionPickers
           surface={sessionOptionsSurface}
           snapshot={sessionOptionsSnapshot}
           isWorking={isWorking}
           openPicker={openPicker}
           onOpenPickerChange={setOpenPicker}
+          chatThread={chatThread}
+          reportedModel={reportedModel}
         />
         {onSetFullAccess ? (
           <DropdownMenu
             open={openPicker === 'access'}
             onOpenChange={(open) => setOpenPicker(open ? 'access' : null)}
           >
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label={translate(
-                  'auto.components.native-chat.composer.accessLevel',
-                  'Tool access level'
-                )}
-                className={
-                  fullAccess
-                    ? 'flex h-7 items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 pl-2.5 pr-2 text-xs font-medium text-amber-500 transition-colors hover:bg-amber-500/20'
-                    : 'flex h-7 items-center gap-1.5 rounded-full border border-border/70 pl-2.5 pr-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground'
-                }
-              >
-                {fullAccess ? (
-                  <ShieldAlert className="size-3.5" />
-                ) : (
-                  <ShieldQuestion className="size-3.5" />
-                )}
-                {fullAccess
-                  ? translate('auto.components.native-chat.composer.fullAccess', 'Full access')
-                  : translate('auto.components.native-chat.composer.askFirst', 'Ask first')}
-                <ChevronDown className="size-3 text-muted-foreground/70" />
-              </button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  {/* Quiet icon while tools ask first; the label only shows when Full access is on. */}
+                  <button
+                    type="button"
+                    aria-label={translate(
+                      'components.native-chat.composer.accessLevelValue',
+                      'Tool access: {{value}}',
+                      { value: accessLabel }
+                    )}
+                    className={
+                      fullAccess
+                        ? 'flex h-7 items-center gap-1.5 rounded-md border border-border bg-accent pl-2 pr-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent/80'
+                        : 'flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground'
+                    }
+                  >
+                    {fullAccess ? (
+                      <>
+                        <ShieldAlert className="size-3.5 text-destructive" />
+                        {accessLabel}
+                        <ChevronDown className="size-3 opacity-70" />
+                      </>
+                    ) : (
+                      <ShieldQuestion className="size-4" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={4}>
+                {accessLabel}
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end" side="top">
               <DropdownMenuItem onSelect={() => onSetFullAccess(false)}>
                 <Check className={fullAccess ? 'size-4 opacity-0' : 'size-4'} />
@@ -195,56 +176,22 @@ export function NativeChatComposerActions({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-        {contextUsedTokens !== null ? (
+        {showMeter && contextUsedTokens !== null ? (
           <NativeChatContextWindowMeter
             usedTokens={contextUsedTokens}
             maxTokens={contextMaxTokens}
           />
         ) : null}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant={isDictating ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              aria-label={dictationLabel}
-              disabled={dictationDisabled}
-              onClick={isDictationHoldMode ? undefined : onDictationToggle}
-              onPointerDown={(event) => {
-                if (!isDictationHoldMode || dictationDisabled) {
-                  return
-                }
-                event.preventDefault()
-                onDictationHoldStart()
-              }}
-              onPointerUp={() => {
-                if (isDictationHoldMode && !dictationDisabled) {
-                  onDictationHoldEnd()
-                }
-              }}
-              onPointerCancel={() => {
-                if (isDictationHoldMode && !dictationDisabled) {
-                  onDictationHoldEnd()
-                }
-              }}
-              onPointerLeave={(event) => {
-                if (isDictationHoldMode && event.buttons === 1 && !dictationDisabled) {
-                  onDictationHoldEnd()
-                }
-              }}
-              className="pointer-coarse:size-11"
-            >
-              {isDictating ? (
-                <Square className="size-3.5 fill-current" />
-              ) : (
-                <Mic className="size-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
-            {dictationLabel}
-          </TooltipContent>
-        </Tooltip>
+        <NativeChatMicButton
+          configured={dictation.configured}
+          isDictating={dictation.isDictating}
+          isHoldMode={dictation.isHoldMode}
+          disabled={dictationDisabled}
+          onToggle={dictation.toggle}
+          onHoldStart={dictation.holdStart}
+          onHoldEnd={dictation.holdEnd}
+          onSetUp={dictation.openSetup}
+        />
         <Button
           type="button"
           aria-label={

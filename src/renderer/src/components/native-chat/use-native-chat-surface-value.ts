@@ -9,10 +9,14 @@ import type { NativeChatSurfaceContextValue } from './native-chat-surface-contex
 
 export function useNativeChatSurfaceValue(input: {
   surface: NativeChatSurface
+  chatThread?: boolean
   workingDirectory: string | null
   fileLinkContext: NativeChatFileLinkContext | null
+  reportedModel?: string | null
 }): NativeChatSurfaceContextValue {
   const { surface, workingDirectory, fileLinkContext } = input
+  const chatThread = input.chatThread === true
+  const reportedModel = input.reportedModel ?? null
   return useMemo(
     () => ({
       surface,
@@ -24,8 +28,10 @@ export function useNativeChatSurfaceValue(input: {
               worktreePath: fileLinkContext.worktreePath,
               runtimeEnvironmentId: fileLinkContext.runtimeEnvironmentId
             })
-        : null
+        : null,
+      chatThread,
+      reportedModel
     }),
-    [surface, workingDirectory, fileLinkContext]
+    [surface, workingDirectory, fileLinkContext, chatThread, reportedModel]
   )
 }

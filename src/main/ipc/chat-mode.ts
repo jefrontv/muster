@@ -5,6 +5,7 @@
 import { app, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { getChatGreetingName } from '../chat-mode/chat-greeting-name'
+import { readClaudeSettingsEffortLevel } from '../chat-mode/claude-settings-effort'
 import {
   initChatThreadSearchIndex,
   pruneChatThreadSearchIndex,
@@ -197,6 +198,7 @@ export function registerChatModeHandlers(): void {
         lastVisitedAt?: unknown
         lastCompletedAt?: unknown
         contextWindow?: unknown
+        reportedModel?: unknown
         sortOrder?: unknown
         activeCollabTask?: unknown
         archived?: unknown
@@ -225,6 +227,9 @@ export function registerChatModeHandlers(): void {
           : {}),
         ...(typeof patch?.contextWindow === 'number' && patch.contextWindow > 0
           ? { contextWindow: patch.contextWindow }
+          : {}),
+        ...(typeof patch?.reportedModel === 'string' && patch.reportedModel.length <= 200
+          ? { reportedModel: patch.reportedModel }
           : {}),
         ...(typeof patch?.sortOrder === 'number' && Number.isFinite(patch.sortOrder)
           ? { sortOrder: patch.sortOrder }
@@ -274,5 +279,10 @@ export function registerChatModeHandlers(): void {
   ipcMain.handle(
     'chatMode:getGreetingName',
     async (): Promise<string | null> => getChatGreetingName()
+  )
+
+  ipcMain.handle(
+    'chatMode:getClaudeSettingsEffort',
+    async (): Promise<string | null> => readClaudeSettingsEffortLevel()
   )
 }

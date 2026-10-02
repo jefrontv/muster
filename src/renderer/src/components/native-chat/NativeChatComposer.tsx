@@ -1,5 +1,4 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { useAppStore } from '../../store'
 import { getSettingsForAgentTabRuntimeOwner } from '@/lib/agent-paste-draft'
 import { getVerifiedNativeChatCommands } from '../../../../shared/native-chat-agent-profiles'
 import {
@@ -19,7 +18,7 @@ import { useNativeChatComposerKeyDown } from './use-native-chat-composer-keydown
 import { useNativeChatSendLifecycle } from './use-native-chat-send-lifecycle'
 import { useNativeChatSessionOptions } from './use-native-chat-session-options'
 import { useNativeChatFileAttachmentActions } from './use-native-chat-file-attachment-actions'
-import { useNativeChatDictationActions } from './use-native-chat-dictation-actions'
+import { useNativeChatDictation } from './use-native-chat-dictation'
 import { useNativeChatSessionOptionCommand } from './use-native-chat-session-option-command'
 import { useNativeChatPickerState } from './use-native-chat-picker-state'
 import { useNativeChatPickerCommandDispatch } from './use-native-chat-picker-command-dispatch'
@@ -89,7 +88,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     const [history, setHistory] = useState<HistoryState>(EMPTY_HISTORY)
     const [activeSuggestion, setActiveSuggestion] = useState(0)
     const [notice, setNotice] = useState<string | null>(null)
-    const [dictationPressed, setDictationPressed] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const isComposingRef = useRef(false)
     const { cancelPendingSends, trackPendingSend } = useNativeChatSendLifecycle(
@@ -97,22 +95,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       targetPtyId,
       onOptimisticSendCanceled
     )
-    const dictationState = useAppStore((store) => store.dictationState)
-    const voiceSettings = useAppStore((store) => store.settings?.voice)
-    const isDictationHoldMode = voiceSettings?.dictationMode === 'hold'
-    // Unconfigured ≠ disabled: the mic stays clickable and routes to the voice
-    // settings section, instead of silently doing nothing.
-    const dictationConfigured = voiceSettings?.enabled === true && !!voiceSettings.sttModel
-    const openVoiceSettings = useCallback(() => {
-      const store = useAppStore.getState()
-      store.openSettingsPage()
-      store.setSettingsSearchQuery('voice')
-    }, [])
-    const isDictating =
-      dictationPressed ||
-      dictationState === 'starting' ||
-      dictationState === 'listening' ||
-      dictationState === 'stopping'
+    // Unconfigured ≠ disabled: the mic stays visible and explains what it needs.
+    const dictation = useNativeChatDictation(textareaRef)
 
     // Place the caret at the end of the (possibly restored) draft when the
     // composer is reused for a different pane. Adjusted during render (matching
@@ -228,8 +212,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     )
 
     const { pickAttachment } = useNativeChatFileAttachmentActions(attachExternalPaths)
-    const { toggleDictation, startHoldDictation, stopHoldDictation } =
-      useNativeChatDictationActions({ textareaRef, setDictationPressed })
     const { dispatch: dispatchSessionOptionCommand, isDispatching: isDispatchingSessionOption } =
       useNativeChatSessionOptionCommand({
         agent,
@@ -387,9 +369,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         isWorking={isWorking}
         attachDisabled={disabled}
         dictationDisabled={false}
-        dictationConfigured={dictationConfigured}
-        isDictating={isDictating}
-        isDictationHoldMode={isDictationHoldMode}
+        dictation={dictation}
         onDraftChange={(value, element) => {
           setDraft(value)
           setHistory((prev) => ({ entries: prev.entries, index: null }))
@@ -429,9 +409,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         taskAttachments={taskAttachments}
         onRemoveTaskAttachment={removeTaskAttachment}
         onAttach={pickAttachment}
-        onDictationToggle={dictationConfigured ? toggleDictation : openVoiceSettings}
-        onDictationHoldStart={dictationConfigured ? startHoldDictation : openVoiceSettings}
-        onDictationHoldEnd={dictationConfigured ? stopHoldDictation : () => undefined}
         onSend={send}
         onStop={interrupt}
         sessionOptionsSurface={sessionOptionsSurface}

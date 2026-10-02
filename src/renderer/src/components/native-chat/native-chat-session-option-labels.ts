@@ -4,6 +4,8 @@ import type {
   SessionOptionSelectChoice
 } from '../../../../shared/native-chat-session-options'
 import { translate } from '@/i18n/i18n'
+import { claudeModelDisplayName } from '../../../../shared/claude-model-name'
+import { resolveChatEffortLabel } from '../../../../shared/chat-effort-label'
 
 export function nativeChatSessionOptionLabel(descriptor: SessionOptionDescriptor): string {
   switch (descriptor.id) {
@@ -88,10 +90,8 @@ export function nativeChatOptionsPillTitle(
     : translate('components.native-chat.composer.sessionOptions', 'Session options')
 }
 
-export function nativeChatOptionsPillLabel(
-  descriptors: readonly SessionOptionDescriptor[]
-): string {
-  const effort = descriptors.find((descriptor) => descriptor.id === 'effort')
+/** Value labels of the options whose value is known ("High", "Fast"). */
+function optionValueLabels(descriptors: readonly SessionOptionDescriptor[]): string[] {
   const labels: string[] = []
   for (const descriptor of descriptors) {
     if (descriptor.valueSource === 'unknown') {
@@ -117,6 +117,14 @@ export function nativeChatOptionsPillLabel(
       )
     }
   }
+  return labels
+}
+
+export function nativeChatOptionsPillLabel(
+  descriptors: readonly SessionOptionDescriptor[]
+): string {
+  const effort = descriptors.find((descriptor) => descriptor.id === 'effort')
+  const labels = optionValueLabels(descriptors)
   // Why: value-only pill (no "Effort:" prefix) — category lives on the tooltip.
   if (labels.length > 0) {
     return labels.join(' · ')
@@ -125,4 +133,104 @@ export function nativeChatOptionsPillLabel(
     return nativeChatSessionOptionLabel(effort)
   }
   return translate('components.native-chat.composer.options', 'Options')
+}
+
+export type NativeChatModelNaming = {
+  /** Model id the session reported at init. */
+  reportedModel?: string | null
+  latestSighting?: (family: string) => string | null
+  /** Chat threads name an unknown model "Default" (the CLI's own pick). */
+  chatThread?: boolean
+}
+
+const HAS_VERSION = /\d/
+
+/** A model menu row: "Opus 5.5" from the newest sighting, else the catalog label. */
+export function nativeChatModelChoiceLabel(
+  choice: SessionOptionSelectChoice,
+  naming: NativeChatModelNaming = {}
+): string {
+  const catalog = nativeChatSessionChoiceLabel(choice)
+  const display = claudeModelDisplayName({
+    picked: choice.value,
+    latestSighting: naming.latestSighting
+  })
+  if (!display || (!HAS_VERSION.test(display) && HAS_VERSION.test(catalog))) {
+    return catalog
+  }
+  return display
+}
+
+/** The pill's model name: the reported model, then the pick, never a raw unknown id. */
+export function nativeChatModelDisplayLabel(
+  descriptor: SessionOptionDescriptor,
+  naming: NativeChatModelNaming = {}
+): string {
+  const picked =
+    descriptor.valueSource !== 'unknown' && descriptor.kind.type === 'select'
+      ? (descriptor.kind.currentValue ?? null)
+      : null
+  if (naming.reportedModel) {
+    const reported = claudeModelDisplayName({ picked, reported: naming.reportedModel })
+    if (reported) {
+      return reported
+    }
+  }
+  if (picked && descriptor.kind.type === 'select') {
+    return nativeChatModelChoiceLabel(
+      descriptor.kind.choices.find((choice) => choice.value === picked) ?? {
+        value: picked,
+        label: picked
+      },
+      naming
+    )
+  }
+  return naming.chatThread
+    ? translate('components.native-chat.composer.defaultModel', 'Default')
+    : nativeChatModelPillLabel(descriptor)
+}
+
+export type NativeChatEffortPillText = {
+  text: string
+  /** Tooltip naming where a value Muster did not set came from. */
+  hint: string | null
+}
+
+/**
+ * The muted text after the model name ("Medium · Fast"). Chat threads fall back to
+ * the Claude settings effort, then "Default"; other panes show only known values.
+ */
+export function nativeChatEffortPillText(
+  descriptors: readonly SessionOptionDescriptor[],
+  options: { chatThread?: boolean; settingsEffort?: string | null } = {}
+): NativeChatEffortPillText | null {
+  const effort = descriptors.find((descriptor) => descriptor.id === 'effort')
+  const parts = optionValueLabels(descriptors)
+  if (!options.chatThread || !effort || effort.valueSource !== 'unknown') {
+    return parts.length > 0 ? { text: parts.join(' · '), hint: null } : null
+  }
+  const label = resolveChatEffortLabel({ applied: null, settings: options.settingsEffort })
+  const choices = effort.kind.type === 'select' ? effort.kind.choices : []
+  const effortText =
+    label.value === null
+      ? translate('components.native-chat.composer.defaultEffort', 'Default')
+      : nativeChatSessionChoiceLabel(
+          choices.find((choice) => choice.value === label.value) ?? {
+            value: label.value,
+            label: label.value
+          }
+        )
+  return {
+    text: [effortText, ...parts].join(' · '),
+    hint:
+      label.source === 'settings'
+        ? translate(
+            'components.native-chat.composer.effortFromSettings',
+            'From your Claude settings'
+          )
+        : translate(
+            'components.native-chat.composer.effortCliDefault',
+            "Claude's default effort for this model"
+          )
+  }
 }

@@ -192,6 +192,7 @@ export class ChatWorkspaceStore {
         | 'lastVisitedAt'
         | 'lastCompletedAt'
         | 'contextWindow'
+        | 'reportedModel'
         | 'sortOrder'
         | 'activeCollabTask'
         | 'archived'

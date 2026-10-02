@@ -955,9 +955,12 @@ export type ChatModeApi = {
         | 'lastVisitedAt'
         | 'lastCompletedAt'
         | 'contextWindow'
+        | 'reportedModel'
         | 'sortOrder'
         | 'activeCollabTask'
         | 'archived'
+        | 'pinned'
+        | 'showTechnicalDetails'
       >
     >
   ) => Promise<ChatThread | null>
@@ -966,6 +969,8 @@ export type ChatModeApi = {
   searchThreadContent: (args: ChatThreadSearchRequest) => Promise<ChatThreadSearchResponse>
   /** First name for the hero greeting (git identity, then OS account); null hides it. */
   getGreetingName: () => Promise<string | null>
+  /** `effortLevel` from the local Claude settings.json; null when unset. */
+  getClaudeSettingsEffort?: () => Promise<string | null>
   /** Fires when main mutated the chat store outside this window's IPC (muster MCP tools). */
   onExternalChange: (callback: () => void) => () => void
 }

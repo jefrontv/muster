@@ -1,133 +1,143 @@
-// The hero composer's footer controls: model + effort pickers that edit the
-// persisted chat defaults (which the thread launcher reads), and the send
-// button. No session exists yet, so picks persist instead of dispatching.
+// The hero composer's footer, laid out like the thread composer's: + menu and the
+// workspace chip on the left; the model/effort trigger, mic and send on the right.
 
-import { ArrowUp, ChevronDown } from 'lucide-react'
+import { ArrowUp, ChevronDown, Folder, FolderPlus } from 'lucide-react'
 import type React from 'react'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import {
-  catalogDefaultModel,
-  findCatalogModel,
-  findCatalogOption,
-  getAgentSessionOptionCatalog
-} from '../../../../shared/agent-session-option-catalog'
-import {
-  resolveNativeChatSessionOptionDefaults,
-  updateNativeChatSessionOptionDefaults
-} from '../../../../shared/native-chat-session-option-defaults'
-import { useAppStore } from '@/store'
-import { useClaudeCatalogModelsWithLearned } from '../native-chat/claude-learned-models'
+import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
+import { NativeChatSessionOptionPickers } from '../native-chat/NativeChatSessionOptionPickers'
+import { NativeChatStashMenu } from '../native-chat/NativeChatStashMenu'
+import { NativeChatMicButton } from '../native-chat/NativeChatMicButton'
+import type { NativeChatPromptStash } from '../native-chat/use-native-chat-prompt-stash'
+import type { NativeChatDictation } from '../native-chat/use-native-chat-dictation'
+import { useChatDraftSessionOptions } from './chat-draft-session-options'
 
-function PickerTrigger({ label }: { label: string }): React.JSX.Element {
+/** Radio value for the standalone (no-workspace) chat option. */
+const STANDALONE = ''
+
+function WorkspaceChip({
+  workspaces,
+  selected,
+  onSelect,
+  onCreateWorkspace
+}: {
+  workspaces: readonly ChatWorkspace[]
+  selected: ChatWorkspace | null
+  onSelect: (id: string | null) => void
+  onCreateWorkspace: () => void
+}): React.JSX.Element {
+  const name = selected?.name ?? translate('auto.components.chat.hero.standalone', 'No workspace')
   return (
-    <DropdownMenuTrigger className="flex items-center gap-0.5 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      {label}
-      <ChevronDown className="size-3" />
-    </DropdownMenuTrigger>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          aria-label={translate('components.chat-mode.hero.workspaceChip', 'Workspace: {{name}}', {
+            name
+          })}
+          className="max-w-48 gap-1 text-muted-foreground"
+        >
+          <Folder className="size-3.5 shrink-0" />
+          <span className="truncate">{name}</span>
+          <ChevronDown className="size-3 shrink-0" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="scrollbar-sleek max-h-80 w-64 overflow-y-auto">
+        <DropdownMenuRadioGroup
+          value={selected?.id ?? STANDALONE}
+          onValueChange={(value) => onSelect(value === STANDALONE ? null : value)}
+        >
+          {workspaces.map((workspace) => (
+            <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
+              <span className="min-w-0 truncate">{workspace.name}</span>
+            </DropdownMenuRadioItem>
+          ))}
+          <DropdownMenuRadioItem value={STANDALONE}>
+            {translate('auto.components.chat.hero.standalone', 'No workspace')}
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onCreateWorkspace}>
+          <FolderPlus className="size-4" />
+          {translate('auto.components.chat.hero.newWorkspace', 'New workspace…')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
 export function ChatModeDraftHeroControls({
   sendDisabled,
-  onSend
+  onSend,
+  stash,
+  onAttach,
+  dictation,
+  workspaces,
+  selectedWorkspace,
+  onSelectWorkspace,
+  onCreateWorkspace
 }: {
   sendDisabled: boolean
   onSend: () => void
+  stash: NativeChatPromptStash
+  onAttach: () => void
+  dictation: NativeChatDictation
+  workspaces: readonly ChatWorkspace[]
+  selectedWorkspace: ChatWorkspace | null
+  onSelectWorkspace: (id: string | null) => void
+  onCreateWorkspace: () => void
 }): React.JSX.Element {
-  const persisted = useAppStore((s) => s.settings?.nativeChatSessionOptions)
-  const updateSettings = useAppStore((s) => s.updateSettings)
-  const catalog = getAgentSessionOptionCatalog('claude')
-  // Static families plus any learned from observed model ids (new releases).
-  const models = useClaudeCatalogModelsWithLearned()
-  const defaults = resolveNativeChatSessionOptionDefaults(persisted, 'claude')
-  const selectedModelId =
-    (typeof defaults?.model === 'string' ? defaults.model : undefined) ??
-    (catalog ? catalogDefaultModel(catalog)?.id : undefined)
-  const model =
-    catalog && selectedModelId
-      ? findCatalogModel({ ...catalog, models }, selectedModelId)
-      : undefined
-  const effortOption = findCatalogOption(model, 'effort')
-  const effortChoices = effortOption?.kind.type === 'select' ? effortOption.kind.choices : []
-  const effortValue =
-    (typeof defaults?.effort === 'string' ? defaults.effort : undefined) ??
-    (effortOption?.kind.type === 'select' ? effortOption.kind.defaultValue : undefined)
-
-  const persistPick = (modelId: string, optionId: string, value: string): void => {
-    void updateSettings({
-      nativeChatSessionOptions: updateNativeChatSessionOptionDefaults({
-        persisted,
-        agent: 'claude',
-        modelId,
-        optionId,
-        value
-      })
-    })
-  }
-
+  const options = useChatDraftSessionOptions()
   return (
-    <div className="flex items-center justify-between gap-2 px-1 pb-0.5">
+    <div className="flex w-full items-center justify-between gap-2 pt-0.5">
       <div className="flex min-w-0 items-center gap-0.5">
-        {catalog ? (
-          <DropdownMenu>
-            <PickerTrigger
-              label={model?.label ?? translate('auto.components.chat.hero.modelPicker', 'Model')}
-            />
-            <DropdownMenuContent align="start">
-              <DropdownMenuRadioGroup
-                value={selectedModelId ?? ''}
-                onValueChange={(value) => persistPick(value, 'model', value)}
-              >
-                {models.map((candidate) => (
-                  <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
-                    {candidate.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-        {effortChoices.length > 0 && selectedModelId ? (
-          <DropdownMenu>
-            <PickerTrigger
-              label={
-                effortChoices.find((choice) => choice.value === effortValue)?.label ??
-                translate('auto.components.chat.hero.effortPicker', 'Effort')
-              }
-            />
-            <DropdownMenuContent align="start">
-              <DropdownMenuRadioGroup
-                value={typeof effortValue === 'string' ? effortValue : ''}
-                onValueChange={(value) => persistPick(selectedModelId, 'effort', value)}
-              >
-                {effortChoices.map((choice) => (
-                  <DropdownMenuRadioItem key={choice.value} value={choice.value}>
-                    {choice.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
+        <NativeChatStashMenu stash={stash} attachDisabled={false} onAttach={onAttach} />
+        <WorkspaceChip
+          workspaces={workspaces}
+          selected={selectedWorkspace}
+          onSelect={onSelectWorkspace}
+          onCreateWorkspace={onCreateWorkspace}
+        />
       </div>
-      <Button
-        type="button"
-        aria-label={translate('auto.components.chat.hero.send', 'Start the chat')}
-        disabled={sendDisabled}
-        onClick={onSend}
-        size="icon"
-        className="size-8 rounded-full"
-      >
-        <ArrowUp className="size-4" />
-      </Button>
+      <div className="ml-auto flex items-center gap-1">
+        <NativeChatSessionOptionPickers
+          surface={options.surface}
+          snapshot={options.snapshot}
+          isWorking={false}
+          chatThread
+        />
+        <NativeChatMicButton
+          configured={dictation.configured}
+          isDictating={dictation.isDictating}
+          isHoldMode={dictation.isHoldMode}
+          onToggle={dictation.toggle}
+          onHoldStart={dictation.holdStart}
+          onHoldEnd={dictation.holdEnd}
+          onSetUp={dictation.openSetup}
+        />
+        <Button
+          type="button"
+          aria-label={translate('auto.components.chat.hero.send', 'Start the chat')}
+          disabled={sendDisabled}
+          onClick={onSend}
+          size="icon"
+          className="ml-0.5 size-8 rounded-full pointer-coarse:size-10"
+        >
+          <ArrowUp className="size-4" />
+        </Button>
+      </div>
     </div>
   )
 }

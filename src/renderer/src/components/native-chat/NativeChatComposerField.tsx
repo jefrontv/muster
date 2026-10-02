@@ -12,6 +12,7 @@ import { basename } from '@/lib/path'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import type { ComposerAutocomplete, NativeChatPickerItem } from './native-chat-composer-state'
 import { NativeChatMentionHint, NativeChatPickerMenu } from './NativeChatAutocompleteMenus'
+import type { NativeChatDictation } from './use-native-chat-dictation'
 import { NativeChatComposerActions } from './NativeChatComposerActions'
 import {
   NativeChatApprovalActions,
@@ -43,10 +44,7 @@ export type NativeChatComposerFieldProps = {
   isWorking: boolean
   attachDisabled: boolean
   dictationDisabled: boolean
-  /** False = voice not set up; the mic routes to settings and says so. */
-  dictationConfigured?: boolean
-  isDictating: boolean
-  isDictationHoldMode: boolean
+  dictation: NativeChatDictation
   onDraftChange: (value: string, element: HTMLTextAreaElement) => void
   onTextareaSelect: (element: HTMLTextAreaElement) => void
   onKeyDown: KeyboardEventHandler<HTMLTextAreaElement>
@@ -62,9 +60,6 @@ export type NativeChatComposerFieldProps = {
   taskAttachments?: readonly NativeChatTaskAttachment[]
   onRemoveTaskAttachment?: (taskId: number) => void
   onAttach: () => void
-  onDictationToggle: () => void
-  onDictationHoldStart: () => void
-  onDictationHoldEnd: () => void
   onSend: () => void
   onStop?: () => void
   sessionOptionsSurface: SessionOptionsSurface | null
@@ -103,9 +98,7 @@ export function NativeChatComposerField({
   isWorking,
   attachDisabled,
   dictationDisabled,
-  dictationConfigured,
-  isDictating,
-  isDictationHoldMode,
+  dictation,
   onDraftChange,
   onTextareaSelect,
   onKeyDown,
@@ -121,9 +114,6 @@ export function NativeChatComposerField({
   taskAttachments = NO_TASK_ATTACHMENTS,
   onRemoveTaskAttachment,
   onAttach,
-  onDictationToggle,
-  onDictationHoldStart,
-  onDictationHoldEnd,
   onSend,
   onStop,
   sessionOptionsSurface,
@@ -288,15 +278,10 @@ export function NativeChatComposerField({
                 <NativeChatComposerActions
                   attachDisabled={attachDisabled}
                   dictationDisabled={dictationDisabled}
-                  dictationConfigured={dictationConfigured}
+                  dictation={dictation}
                   sendDisabled={sendButtonDisabled}
                   isWorking={isWorking}
-                  isDictating={isDictating}
-                  isDictationHoldMode={isDictationHoldMode}
                   onAttach={onAttach}
-                  onDictationToggle={onDictationToggle}
-                  onDictationHoldStart={onDictationHoldStart}
-                  onDictationHoldEnd={onDictationHoldEnd}
                   onSend={onSend}
                   onStop={onStop}
                   sessionOptionsSurface={sessionOptionsSurface}

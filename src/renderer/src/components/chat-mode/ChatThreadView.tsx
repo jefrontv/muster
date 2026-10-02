@@ -166,6 +166,7 @@ export function ChatThreadView({
         surface="chat"
         showTechnicalDetails={thread.showTechnicalDetails === true}
         workingDirectory={workspace?.directories[0] ?? null}
+        reportedModel={thread.reportedModel ?? null}
       />
     </div>
   )

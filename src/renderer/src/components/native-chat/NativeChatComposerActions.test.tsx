@@ -37,6 +37,17 @@ vi.mock('./NativeChatStashMenu', () => ({
 
 import { NativeChatComposerActions } from './NativeChatComposerActions'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
+import type { NativeChatDictation } from './use-native-chat-dictation'
+
+const dictation = (configured: boolean): NativeChatDictation => ({
+  configured,
+  isDictating: false,
+  isHoldMode: false,
+  toggle: vi.fn(),
+  holdStart: vi.fn(),
+  holdEnd: vi.fn(),
+  openSetup: vi.fn()
+})
 
 const stubStash: NativeChatPromptStash = {
   entries: [],
@@ -51,30 +62,45 @@ const stubStash: NativeChatPromptStash = {
 
 afterEach(() => cleanup())
 
-describe('NativeChatComposerActions', () => {
-  it('places session option pickers immediately beside dictation', () => {
-    render(
-      <NativeChatComposerActions
-        attachDisabled={false}
-        dictationDisabled={false}
-        sendDisabled={false}
-        isWorking={false}
-        isDictating={false}
-        isDictationHoldMode={false}
-        onAttach={vi.fn()}
-        onDictationToggle={vi.fn()}
-        onDictationHoldStart={vi.fn()}
-        onDictationHoldEnd={vi.fn()}
-        onSend={vi.fn()}
-        sessionOptionsSurface={null}
-        sessionOptionsSnapshot={[]}
-        stash={stubStash}
-        contextUsedTokens={null}
-      />
-    )
+function renderActions(
+  overrides: Partial<React.ComponentProps<typeof NativeChatComposerActions>> = {}
+): void {
+  render(
+    <NativeChatComposerActions
+      attachDisabled={false}
+      dictationDisabled={false}
+      dictation={dictation(true)}
+      sendDisabled={false}
+      isWorking={false}
+      onAttach={vi.fn()}
+      onSend={vi.fn()}
+      sessionOptionsSurface={null}
+      sessionOptionsSnapshot={[]}
+      stash={stubStash}
+      contextUsedTokens={null}
+      {...overrides}
+    />
+  )
+}
 
+describe('NativeChatComposerActions', () => {
+  it('places the model and effort trigger immediately beside dictation', () => {
+    renderActions()
     const pickers = screen.getByTestId('session-option-pickers')
-    const dictation = screen.getByRole('button', { name: 'Start dictation' })
-    expect(pickers.nextElementSibling).toBe(dictation)
+    const mic = screen.getByRole('button', { name: 'Start dictation' })
+    expect(pickers.nextElementSibling).toBe(mic)
+  })
+
+  it('keeps the mic visible without a speech model', () => {
+    renderActions({ dictation: dictation(false) })
+    expect(screen.getByRole('button', { name: 'Voice typing' })).not.toBeNull()
+  })
+
+  it('shows the context donut only past half the window', () => {
+    renderActions({ contextUsedTokens: 40_000, contextMaxTokens: 200_000 })
+    expect(screen.queryByRole('img')).toBeNull()
+    cleanup()
+    renderActions({ contextUsedTokens: 120_000, contextMaxTokens: 200_000 })
+    expect(screen.getByRole('img')).not.toBeNull()
   })
 })
