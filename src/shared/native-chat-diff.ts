@@ -95,7 +95,8 @@ export function diffFromText(
   text: string,
   maxLines = DEFAULT_MAX_DIFF_LINES
 ): NativeChatDiffLine[] | null {
-  if (text.length === 0) {
+  // Only real diffs: any markdown list would otherwise read as deleted lines.
+  if (!/^(diff |--- |@@)/.test(text)) {
     return null
   }
   const bounded = toLines(text, maxLines)

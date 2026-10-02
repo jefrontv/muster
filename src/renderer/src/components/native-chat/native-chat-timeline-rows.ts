@@ -77,7 +77,11 @@ export function deriveNativeChatLiveToolCollapse(
   return {
     hiddenToolMessageIds: new Set(hidden.map((message) => message.id)),
     latestToolMessageId: toolMessages.at(-1)!.id,
-    hiddenCount: hidden.length
+    // The label says "tool calls", so count calls, not the messages holding them.
+    hiddenCount: hidden.reduce(
+      (count, message) => count + message.blocks.filter(isToolCallBlock).length,
+      0
+    )
   }
 }
 

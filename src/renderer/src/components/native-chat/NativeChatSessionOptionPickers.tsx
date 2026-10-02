@@ -264,6 +264,26 @@ function NativeChatSessionOptionPickersInner({
 
   return (
     <div className="flex min-w-0 items-center gap-0.5">
+      <DropdownMenu {...menuProps('model')}>
+        <PickerTrigger
+          label={nativeChatModelPillLabel(model)}
+          tooltipLabel={modelTooltip}
+          disabled={isWorking || pendingId !== null}
+          disabledReason={modelReason}
+          dispatched={model.valueSource === 'dispatched'}
+        />
+        <DropdownMenuContent align="start" className="w-64">
+          {modelReason && !model.settable ? (
+            <DropdownMenuLabel className="font-normal">{modelReason}</DropdownMenuLabel>
+          ) : null}
+          <DescriptorMenuRows
+            descriptor={model}
+            pending={pendingId !== null}
+            setValue={(value) => setOption(model, value)}
+            invokeAction={() => invokeAction(model)}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
       {options.length > 0 ? (
         <DropdownMenu {...menuProps('options')}>
           <PickerTrigger
@@ -295,26 +315,6 @@ function NativeChatSessionOptionPickersInner({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
-      <DropdownMenu {...menuProps('model')}>
-        <PickerTrigger
-          label={nativeChatModelPillLabel(model)}
-          tooltipLabel={modelTooltip}
-          disabled={isWorking || pendingId !== null}
-          disabledReason={modelReason}
-          dispatched={model.valueSource === 'dispatched'}
-        />
-        <DropdownMenuContent align="start" className="w-64">
-          {modelReason && !model.settable ? (
-            <DropdownMenuLabel className="font-normal">{modelReason}</DropdownMenuLabel>
-          ) : null}
-          <DescriptorMenuRows
-            descriptor={model}
-            pending={pendingId !== null}
-            setValue={(value) => setOption(model, value)}
-            invokeAction={() => invokeAction(model)}
-          />
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   )
 }

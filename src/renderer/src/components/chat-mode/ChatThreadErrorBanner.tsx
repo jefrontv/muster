@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
+import { chatThreadTurnErrorCopy } from './chat-thread-turn-error-copy'
 
 export function ChatThreadErrorBanner({
   threadId,
@@ -27,6 +28,7 @@ export function ChatThreadErrorBanner({
   if (dismissedKey === key) {
     return null
   }
+  const copy = chatThreadTurnErrorCopy(message)
 
   return (
     <div
@@ -35,13 +37,16 @@ export function ChatThreadErrorBanner({
     >
       <AlertTriangle className="mt-[2px] size-3.5 shrink-0 text-destructive" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-destructive">
-          {translate('components.chat-mode.turnError.title', "That didn't finish")}
-        </p>
+        <p className="text-xs font-medium text-destructive">{copy.summary}</p>
         {/* Clamped: some CLI failures are a wall of text. */}
-        <p className="line-clamp-3 break-words text-xs text-muted-foreground" title={message}>
-          {message}
-        </p>
+        {copy.details && copy.details !== copy.summary ? (
+          <p
+            className="line-clamp-3 break-words text-xs text-muted-foreground"
+            title={copy.details}
+          >
+            {copy.details}
+          </p>
+        ) : null}
       </div>
       <Button
         variant="ghost"

@@ -19,7 +19,6 @@ describe('NativeChatToolRun deck', () => {
     render(
       <NativeChatToolRun
         blocks={[call('Read', 0), call('Grep', 1), call('Edit', 2), call('Bash', 3)]}
-        expandSignal={false}
       />
     )
     const deck = screen.getByRole('button', { name: 'Show tool calls' })
@@ -33,7 +32,7 @@ describe('NativeChatToolRun deck', () => {
   })
 
   it('single call renders one card, no count badge', () => {
-    render(<NativeChatToolRun blocks={[call('Read', 0)]} expandSignal={false} />)
+    render(<NativeChatToolRun blocks={[call('Read', 0)]} />)
     const deck = screen.getByRole('button', { name: 'Show tool calls' })
     expect(deck.childElementCount).toBe(1)
     expect(deck).not.toHaveTextContent('×1')
@@ -41,7 +40,7 @@ describe('NativeChatToolRun deck', () => {
   })
 
   it('clicking the deck expands to the detailed list', () => {
-    render(<NativeChatToolRun blocks={[call('Read', 0), call('Edit', 1)]} expandSignal={false} />)
+    render(<NativeChatToolRun blocks={[call('Read', 0), call('Edit', 1)]} />)
     fireEvent.click(screen.getByRole('button', { name: 'Show tool calls' }))
     // Deck gone; the pill header + per-call lines take over.
     expect(screen.queryByRole('button', { name: 'Show tool calls' })).toBeNull()
@@ -51,34 +50,29 @@ describe('NativeChatToolRun deck', () => {
 
 describe('NativeChatToolRun call progress', () => {
   it('spins the front card while the newest call is unanswered', () => {
-    render(<NativeChatToolRun blocks={[call('Read', 0)]} expandSignal={false} live />)
+    render(<NativeChatToolRun blocks={[call('Read', 0)]} live />)
     expect(screen.getByLabelText('Running')).toBeInTheDocument()
   })
 
   it('stops spinning once the result pairs with the call', () => {
-    render(<NativeChatToolRun blocks={[call('Read', 0), result()]} expandSignal={false} live />)
+    render(<NativeChatToolRun blocks={[call('Read', 0), result()]} live />)
     expect(screen.queryByLabelText('Running')).toBeNull()
   })
 
   it('pairs FIFO, so an earlier answered call does not settle a later one', () => {
     // One result for two calls: the second is the one still out.
-    render(
-      <NativeChatToolRun
-        blocks={[call('Read', 0), result(), call('Edit', 1)]}
-        expandSignal={false}
-        live
-      />
-    )
+    render(<NativeChatToolRun blocks={[call('Read', 0), result(), call('Edit', 1)]} live />)
     expect(screen.getByLabelText('Running')).toBeInTheDocument()
   })
 
   it('never spins in a settled turn, where a missing result means interrupted', () => {
-    render(<NativeChatToolRun blocks={[call('Read', 0)]} expandSignal={false} />)
+    render(<NativeChatToolRun blocks={[call('Read', 0)]} />)
     expect(screen.queryByLabelText('Running')).toBeNull()
   })
 
   it('spins the expanded pill while any of its calls is out', () => {
-    render(<NativeChatToolRun blocks={[call('Read', 0), call('Edit', 1)]} expandSignal live />)
+    render(<NativeChatToolRun blocks={[call('Read', 0), call('Edit', 1)]} live />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show tool calls' }))
     expect(screen.getByText('2 tool calls')).toBeInTheDocument()
     expect(screen.getByLabelText('Running')).toBeInTheDocument()
   })

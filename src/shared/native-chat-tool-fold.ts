@@ -91,3 +91,19 @@ export function splitNativeChatBlocks(blocks: readonly NativeChatBlock[]): {
   }
   return { prose, tools }
 }
+
+const PLAN_TOOL_NAMES = new Set(['TodoWrite'])
+
+/** Drops TodoWrite calls and their results; the plan checklist already shows them. */
+export function withoutPlanTools(blocks: readonly NativeChatBlock[]): NativeChatBlock[] {
+  const hidden = new Set<NativeChatBlock>()
+  for (const pair of pairToolBlocks(blocks)) {
+    if (pair.call && PLAN_TOOL_NAMES.has(pair.call.name)) {
+      hidden.add(pair.call)
+      if (pair.result) {
+        hidden.add(pair.result)
+      }
+    }
+  }
+  return hidden.size === 0 ? [...blocks] : blocks.filter((block) => !hidden.has(block))
+}

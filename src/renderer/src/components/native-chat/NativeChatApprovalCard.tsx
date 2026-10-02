@@ -20,7 +20,7 @@ export function NativeChatApprovalCard({
 }: NativeChatApprovalCardProps): React.JSX.Element {
   return (
     <div className="shrink-0 bg-background">
-      <div className="mx-auto w-full max-w-4xl px-3 pt-2 pb-1 sm:px-4">
+      <div className="mx-auto w-full max-w-3xl px-3 pt-2 pb-1 sm:px-4">
         <div className="flex w-full flex-col gap-2 rounded-lg border border-input bg-card px-4 py-3 shadow-xs">
           <div className="flex items-start gap-2">
             <ShieldQuestion className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

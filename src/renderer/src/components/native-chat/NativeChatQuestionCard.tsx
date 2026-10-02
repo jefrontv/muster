@@ -124,7 +124,7 @@ export function NativeChatQuestionCard({
     // composer's width and padding, rendered as the "ask" dialog card directly
     // above the text input. Its free-text row is the answer input.
     <div className="shrink-0 bg-background" aria-busy={isSubmitting}>
-      <div className="mx-auto w-full max-w-4xl px-3 pt-2 pb-4 sm:px-4">
+      <div className="mx-auto w-full max-w-3xl px-3 pt-2 pb-4 sm:px-4">
         {total > 1 ? (
           <div className="mb-2 flex gap-1 overflow-x-auto pb-1 scrollbar-sleek">
             {prompt.questions.map((qq, i) => (

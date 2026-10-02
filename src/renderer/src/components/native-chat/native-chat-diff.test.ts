@@ -51,6 +51,11 @@ describe('diffFromText', () => {
     expect(diffFromText('+only one add line')).toBeNull()
   })
 
+  it('does not read a markdown bullet list as deletions', () => {
+    expect(diffFromText('Plugins:\n- akismet\n- yoast\n- woocommerce')).toBeNull()
+    expect(diffFromText('- one\n- two')).toBeNull()
+  })
+
   it('returns null for empty input', () => {
     expect(diffFromText('')).toBeNull()
   })

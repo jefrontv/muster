@@ -31,7 +31,6 @@ function toggled(set: ReadonlySet<string>, id: string): Set<string> {
 export function NativeChatMessageList({
   session,
   isWorking,
-  expandSignal,
   fontScale,
   onLinkClick,
   allowFileUriLinks = false,
@@ -40,8 +39,6 @@ export function NativeChatMessageList({
 }: {
   session: NativeChatLiveSession
   isWorking: boolean
-  /** Toolbar-driven desired open state for every tool run; each flip re-syncs. */
-  expandSignal: boolean
   /** Chat-only text multiplier (1 = default), driven by the zoom shortcuts. */
   fontScale: number
   onLinkClick?: CommentMarkdownLinkClickHandler
@@ -263,7 +260,7 @@ export function NativeChatMessageList({
           ref={contentRef}
           // Why: same max width as the composer column; horizontal inset comes
           // from the scroll container so content aligns with the composer field.
-          className="mx-auto flex w-full max-w-4xl flex-col gap-5"
+          className="mx-auto flex w-full max-w-3xl flex-col gap-5"
           // Why: `zoom` scales the chat transcript's text and layout together,
           // scoped to this container so the rest of the app is untouched. It's
           // the desktop analog of the mobile pinch-zoom (Chromium/Electron only).
@@ -281,7 +278,6 @@ export function NativeChatMessageList({
               <NativeChatMessageRow
                 key={row.message.id}
                 message={row.message}
-                expandSignal={expandSignal}
                 suppressTools={row.suppressTools}
                 onScrollMessageToTop={scrollMessageToTop}
                 onLinkClick={onLinkClick}

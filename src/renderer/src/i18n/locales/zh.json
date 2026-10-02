@@ -14584,7 +14584,8 @@
         "skillScopeBuiltIn": "内置",
         "skillScopePlugin": "插件",
         "skillsLoaded": "技能已加载",
-        "noCommands": "没有匹配的命令"
+        "noCommands": "没有匹配的命令",
+        "reply": "Reply…"
       },
       "tool": {
         "running": "正在运行…",
@@ -14721,7 +14722,18 @@
     "chat-mode": {
       "turnError": {
         "title": "That didn't finish",
-        "dismiss": "Dismiss"
+        "dismiss": "Dismiss",
+        "maxTurns": "Claude hit its step limit for this reply.",
+        "duringExecution": "Something went wrong while running.",
+        "maxBudget": "This reply reached its spending limit."
+      },
+      "hero": {
+        "placeholder": "How can I help you today?"
+      },
+      "folderMissing": {
+        "title": "This workspace's folder is missing",
+        "locate": "Locate folder",
+        "remove": "Remove folder"
       }
     }
   },

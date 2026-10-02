@@ -160,7 +160,10 @@ export function ChatModeDraftHero({
                   <ChevronDown className="ml-1 inline size-4 align-baseline text-muted-foreground" />
                 </span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="scrollbar-sleek max-h-80 w-64 overflow-y-auto">
+              <DropdownMenuContent
+                align="center"
+                className="scrollbar-sleek max-h-80 w-64 overflow-y-auto"
+              >
                 <DropdownMenuRadioGroup
                   value={selectedWorkspace?.id ?? STANDALONE}
                   onValueChange={(value) =>
@@ -188,7 +191,7 @@ export function ChatModeDraftHero({
         </h1>
       </div>
       <div
-        className="relative w-full max-w-2xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40"
+        className="relative w-full max-w-3xl rounded-xl border border-border bg-muted/50 p-1.5 shadow-xs backdrop-blur dark:bg-input/40"
         data-contextual-tour-target="chat-thread-composer"
       >
         {pickerOpen ? (
@@ -209,7 +212,10 @@ export function ChatModeDraftHero({
           role="combobox"
           aria-expanded={pickerOpen}
           aria-controls={pickerOpen ? picker.listboxId : undefined}
-          placeholder={translate('auto.components.chat.hero.placeholder', 'Ask anything…')}
+          placeholder={translate(
+            'components.chat-mode.hero.placeholder',
+            'How can I help you today?'
+          )}
           onChange={(e) => {
             setText(e.target.value)
             const nextCaret = e.target.selectionStart ?? e.target.value.length

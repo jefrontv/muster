@@ -414,7 +414,6 @@ function NativeChatResolvedView({
           <NativeChatMessageList
             session={sessionWithPending}
             isWorking={isWorking}
-            expandSignal={false}
             fontScale={fontScale.scale}
             onLinkClick={nativeChatFileLinkClick}
             allowFileUriLinks={fileLinkContext !== null}

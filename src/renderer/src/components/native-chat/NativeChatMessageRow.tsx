@@ -122,7 +122,6 @@ function AgentControls({
 // changed — without this every delta re-parses every message's markdown.
 export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   message,
-  expandSignal,
   onScrollMessageToTop,
   onLinkClick,
   allowFileUriLinks = false,
@@ -131,7 +130,6 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   toolsLive = false
 }: {
   message: NativeChatMessage
-  expandSignal: boolean
   /** Align this message's top to the top of the scroll viewport. */
   onScrollMessageToTop: (el: HTMLElement) => void
   onLinkClick?: CommentMarkdownLinkClickHandler
@@ -318,7 +316,7 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         />
       ) : null}
       {tools.length > 0 && !suppressTools ? (
-        <NativeChatToolRun blocks={tools} expandSignal={expandSignal} live={toolsLive} />
+        <NativeChatToolRun blocks={tools} live={toolsLive} />
       ) : null}
     </div>
   )

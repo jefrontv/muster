@@ -12,7 +12,7 @@ import {
   timestampMs
 } from '../ai-vault/session-scanner-values'
 import { unwrapChatWorkspaceUserTurn } from '../../shared/chat-workspace-site-info'
-import { claudeContentBlocks } from './transcript-record-blocks'
+import { claudeContentBlocks, claudeThinkingText } from './transcript-record-blocks'
 import { claudeInterruptedMessageId } from './transcript-turn-markers'
 
 /** Raw text of a user record whose content is a plain string or a single text block. */
@@ -149,13 +149,15 @@ export function decodeClaudeTranscriptLine(
     }
   }
   const message = asRecord(record.message)
-  const decodedBlocks = claudeContentBlocks(message?.content).map((block) =>
+  const decodedBlocks = claudeContentBlocks(message?.content, { dropThinking: true }).map((block) =>
     role === 'user' && block.type === 'text'
       ? { ...block, text: unwrapChatWorkspaceUserTurn(block.text) }
       : block
   )
   if (decodedBlocks.length === 0) {
-    return null
+    return role === 'assistant'
+      ? claudeReasoningMessage(record, message, fallbackId, timestamp)
+      : null
   }
   // Why: Claude structurally marks injected turns, but tool-result records are
   // genuine output and must remain visible even when the containing turn is meta.
@@ -178,8 +180,26 @@ export function decodeClaudeTranscriptLine(
   }
 }
 
-// Claude marks reasoning via `thinking` content blocks; when a message is made
-// up solely of reasoning, surface it as a reasoning-role message.
+/** A thinking-only assistant record as a reasoning message; never answer prose. */
+function claudeReasoningMessage(
+  record: Record<string, unknown>,
+  message: Record<string, unknown> | null,
+  fallbackId: string,
+  timestamp: number | null
+): NativeChatMessage | null {
+  const text = claudeThinkingText(message?.content)
+  if (text === '') {
+    return null
+  }
+  return {
+    id: extractString(record.uuid) ?? extractString(message?.id) ?? fallbackId,
+    role: 'reasoning',
+    blocks: [{ type: 'text', text }],
+    timestamp,
+    source: 'transcript'
+  }
+}
+
 function claudeMessageRole(
   role: 'user' | 'assistant',
   blocks: NativeChatBlock[]

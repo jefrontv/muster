@@ -39,8 +39,32 @@ export function toolResultOutput(value: unknown): string {
   return parts.join('\n')
 }
 
+export type ClaudeContentBlockOptions = {
+  /** Claude decodes thinking into its own reasoning message instead of prose. */
+  dropThinking?: boolean
+}
+
+/** Joined text of a content array's `thinking` blocks ('' when none carry text). */
+export function claudeThinkingText(content: unknown): string {
+  if (!Array.isArray(content)) {
+    return ''
+  }
+  return content
+    .map((item) => {
+      const record = asRecord(item)
+      return record?.type === 'thinking'
+        ? (extractString(record.thinking) ?? extractString(record.text) ?? '')
+        : ''
+    })
+    .filter((text) => text.trim() !== '')
+    .join('\n\n')
+}
+
 /** Build the blocks for one Claude content array (string or block[]). */
-export function claudeContentBlocks(content: unknown): NativeChatBlock[] {
+export function claudeContentBlocks(
+  content: unknown,
+  options: ClaudeContentBlockOptions = {}
+): NativeChatBlock[] {
   if (typeof content === 'string') {
     const text = content.trim()
     return text ? [{ type: 'text', text: content }] : []
@@ -57,7 +81,7 @@ export function claudeContentBlocks(content: unknown): NativeChatBlock[] {
       continue
     }
     const record = asRecord(item)
-    if (!record) {
+    if (!record || (options.dropThinking && record.type === 'thinking')) {
       continue
     }
     const block = claudeContentBlock(record)

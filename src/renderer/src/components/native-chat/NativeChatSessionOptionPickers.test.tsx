@@ -187,10 +187,11 @@ describe('NativeChatSessionOptionPickers', () => {
     expect(screen.getByRole('button', { name: 'Effort High · Fast' }).textContent).toContain(
       'High · Fast'
     )
+    // Model before effort, as claude.ai reads.
     expect(
       screen
-        .getByRole('button', { name: 'Effort High · Fast' })
-        .compareDocumentPosition(screen.getByRole('button', { name: 'Model Opus 4.8' })) &
+        .getByRole('button', { name: 'Model Opus 4.8' })
+        .compareDocumentPosition(screen.getByRole('button', { name: 'Effort High · Fast' })) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).not.toBe(0)
 

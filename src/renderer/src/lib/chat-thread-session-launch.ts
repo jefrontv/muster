@@ -30,6 +30,7 @@ import type { SessionOptionValue } from '../../../shared/native-chat-session-opt
 import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
 import { buildChatWorkspaceAgentBrief } from '../../../shared/chat-workspace-site-info'
 import { createBrowserUuid } from '@/lib/browser-uuid'
+import { ChatThreadFolderMissingError } from './chat-thread-folder-missing'
 
 /** Headless stream transport flags; the CLI reads turns on stdin and writes
  *  NDJSON (with partial deltas) on stdout. `--permission-prompt-tool stdio`
@@ -181,6 +182,10 @@ export async function launchChatThreadSession(args: {
       ...(workspaceBrief ? { appendSystemPrompt: workspaceBrief } : {})
     })
     if (!result.ok) {
+      // Checked in main at spawn time: no renderer round trip sits in front of every launch.
+      if (result.reason === 'folder-missing' && primaryDirectory) {
+        throw new ChatThreadFolderMissingError(primaryDirectory)
+      }
       throw new Error(result.error ?? 'The chat session could not be started.')
     }
   } catch (error) {

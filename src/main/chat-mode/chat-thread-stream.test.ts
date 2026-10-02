@@ -236,6 +236,20 @@ describe('startChatThreadStream', () => {
     stopAllChatThreadStreams()
   })
 
+  it.skipIf(process.platform === 'win32')(
+    'refuses a missing workspace folder instead of spawning into ENOENT',
+    () => {
+      const spawn = vi.fn()
+      const { sender } = createSender()
+      const result = startChatThreadStream(
+        { threadId: 't1', command: 'claude -p', cwd: join(tmpdir(), 'muster-gone-folder'), sender },
+        { spawn, hookEnv: () => ({}) }
+      )
+      expect(result).toMatchObject({ ok: false, reason: 'folder-missing' })
+      expect(spawn).not.toHaveBeenCalled()
+    }
+  )
+
   it('streams decoded stdout records to the sender and reports exit with stderr tail', () => {
     const child = createFakeChild()
     const { sent, sender } = createSender()

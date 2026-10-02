@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ChevronRight, CircleCheck, MessageSquareText } from 'lucide-react'
 import {
   activeCollabToolEvent,
@@ -25,19 +25,15 @@ import {
 } from './native-chat-tool-summary'
 import { NativeChatDiffView } from './NativeChatDiffView'
 import { NativeChatToolStatusIcon } from './NativeChatToolStatusIcon'
-import { pairToolBlocks } from '../../../../shared/native-chat-tool-fold'
+import { pairToolBlocks, withoutPlanTools } from '../../../../shared/native-chat-tool-fold'
 
 const MAX_TOOL_RESULT_CHARS = 4000
 
 /** A single inline tool line — `▸ ToolName  preview` — that expands in place to
- *  show the call's diff/input or the result's body. Tool calls read as flat
- *  lines in the conversation rather than boxed blocks (mobile parity). Lines only
- *  mount while the parent run is open, so each starts expanded (opening the run
- *  reveals every line at once) and is then individually collapsible. */
+ *  show the call's diff/input or the result's body. */
 function ToolLine({ block }: { block: NativeChatBlock }): React.JSX.Element | null {
-  // Why: tool results (MCP JSON payloads especially) are working material, not
-  // conversation — keep them behind the preview until asked for.
-  const [expanded, setExpanded] = useState(() => !isToolResultBlock(block))
+  // Collapsed: opening a run must not dump every diff and JSON input at once.
+  const [expanded, setExpanded] = useState(false)
   const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(expanded)
 
   let name: string
@@ -270,23 +266,19 @@ function ToolCallDeck({
 }
 
 /** A run of a message's tool calls/results, collapsed to a one-line summary that
- *  expands to the individual inline tool lines. `expandSignal` lets the global
- *  toolbar toggle drive every run at once while still allowing per-run override. */
+ *  expands to the individual inline tool lines. */
 export function NativeChatToolRun({
-  blocks,
-  expandSignal,
+  blocks: allBlocks,
   live = false
 }: {
   blocks: NativeChatBlock[]
-  /** Toolbar-driven desired open state. Each change re-syncs this run's state. */
-  expandSignal: boolean
   /** This run belongs to the turn currently in flight, so a result-less call is
    *  still out. In a settled turn the same gap means interrupted, not running. */
   live?: boolean
 }): React.JSX.Element {
-  const [open, setOpen] = useState(expandSignal)
-  // Re-sync when the global toolbar toggle flips.
-  useEffect(() => setOpen(expandSignal), [expandSignal])
+  const [open, setOpen] = useState(false)
+  // TodoWrite already renders as the turn's plan checklist.
+  const blocks = withoutPlanTools(allBlocks)
   const { elementRef, captureBeforeToggle } = useNativeChatToggleScrollCompensation(open)
 
   // AC writes surface as task-event chips; the wrench pill covers the rest.

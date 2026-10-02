@@ -5,6 +5,7 @@
 import { useAppStore } from '@/store'
 import {
   catalogDefaultModel,
+  findCatalogModel,
   getAgentSessionOptionCatalog,
   type AgentSessionOptionCatalog
 } from '../../../shared/agent-session-option-catalog'
@@ -39,6 +40,29 @@ export function parseChatThreadSessionOptionCommand(
     }
   }
   return null
+}
+
+/** A model switch keeps that model's saved values, else carries over the ones it supports. */
+export function modelSwitchValues(
+  catalog: AgentSessionOptionCatalog,
+  modelId: string,
+  current: Record<string, SessionOptionValue>,
+  saved: Record<string, SessionOptionValue> | undefined
+): Record<string, SessionOptionValue> {
+  const next: Record<string, SessionOptionValue> = { model: modelId }
+  const model = findCatalogModel(catalog, modelId)
+  for (const option of model?.options ?? []) {
+    const value = saved?.[option.id] ?? current[option.id]
+    if (value === undefined || !option.apply.launchArgs) {
+      continue
+    }
+    const kind = option.kind
+    if (kind.type === 'select' && !kind.choices.some((choice) => choice.value === value)) {
+      continue
+    }
+    next[option.id] = value
+  }
+  return next
 }
 
 export async function dispatchChatThreadSessionOption(args: {
@@ -76,7 +100,12 @@ export async function dispatchChatThreadSessionOption(args: {
   // a non-model change needs a model id for its launch flag to be emitted.
   const next: Record<string, SessionOptionValue> =
     parsed.optionId === 'model'
-      ? { model: parsed.value }
+      ? modelSwitchValues(
+          catalog,
+          parsed.value,
+          current,
+          store.settings?.nativeChatSessionOptions?.[thread.agent]?.valuesByModel?.[parsed.value]
+        )
       : {
           model:
             typeof current.model === 'string'

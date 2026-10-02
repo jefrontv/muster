@@ -21,6 +21,7 @@ import {
   resolveNativeChatModelDiscoveryContext
 } from './native-chat-session-option-discovery'
 import { readClaudeSessionOptionsFromTerminalScreen } from './claude-terminal-session-options'
+import { getAgentSessionOptionCatalog } from '../../../../shared/agent-session-option-catalog'
 
 const EMPTY_SNAPSHOT: SessionOptionDescriptor[] = []
 const subscribeEmpty = (): (() => void) => () => {}
@@ -39,6 +40,24 @@ function readLaunchAppliedSessionOptions(
     }
   }
   return null
+}
+
+/** A headless stream changes options by relaunching, so flip-only toggles (fast mode) can't apply. */
+export function withoutUnlaunchableOptions(
+  agent: AgentType,
+  snapshot: SessionOptionDescriptor[]
+): SessionOptionDescriptor[] {
+  const catalog = getAgentSessionOptionCatalog(agent)
+  if (!catalog) {
+    return snapshot
+  }
+  const unlaunchable = new Set(
+    catalog.models.flatMap((model) =>
+      model.options.filter((option) => !option.apply.launchArgs).map((option) => option.id)
+    )
+  )
+  const filtered = snapshot.filter((descriptor) => !unlaunchable.has(descriptor.id))
+  return filtered.length === snapshot.length ? snapshot : filtered
 }
 
 export function useNativeChatSessionOptions(args: {
@@ -178,10 +197,15 @@ export function useNativeChatSessionOptions(args: {
     return unsubscribe
   }, [agent, discoveryContext, surface])
 
-  const snapshot = useSyncExternalStore(
+  const rawSnapshot = useSyncExternalStore(
     surface?.subscribe ?? subscribeEmpty,
     surface?.getSnapshot ?? getEmptySnapshot,
     surface?.getSnapshot ?? getEmptySnapshot
+  )
+  const headless = hasTransport && !targetPtyId
+  const snapshot = useMemo(
+    () => (headless ? withoutUnlaunchableOptions(agent, rawSnapshot) : rawSnapshot),
+    [agent, headless, rawSnapshot]
   )
   return { surface, snapshot }
 }

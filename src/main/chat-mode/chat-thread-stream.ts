@@ -5,8 +5,12 @@
 
 import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process'
 import { buildChatThreadStreamSpawnPlan } from './chat-thread-stream-spawn-plan'
+import { chatThreadStreamPreflightFailure } from './chat-thread-stream-preflight'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
-import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
+import type {
+  ChatThreadStreamEvent,
+  ChatThreadStreamStartResult
+} from '../../shared/chat-thread-stream-types'
 import { createChatThreadStreamDecoder, resultModelWindows } from './chat-thread-stream-decode'
 import { recordClaudeModelSighting } from './claude-model-registry'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
@@ -24,35 +28,16 @@ import {
   type ChatStreamImageRead
 } from './chat-thread-stream-user-content'
 import { buildPermissionControlResponse } from './chat-thread-permission-response'
+import type { ChatThreadStreamDeps, ChatThreadStreamSender } from './chat-thread-stream-deps'
+
+export type {
+  ChatThreadStreamDeps,
+  ChatThreadStreamSender,
+  ChatThreadStreamSpawn
+} from './chat-thread-stream-deps'
 
 const STDERR_TAIL_LIMIT = 4_096
 const STOP_KILL_GRACE_MS = 1_500
-
-export type ChatThreadStreamSender = {
-  send: (channel: string, payload: ChatThreadStreamEvent) => void
-  isDestroyed: () => boolean
-}
-
-export type ChatThreadStreamSpawn = (
-  command: string,
-  args: string[],
-  options: { cwd?: string; env: NodeJS.ProcessEnv }
-) => ChildProcess
-
-export type ChatThreadStreamDeps = {
-  spawn?: ChatThreadStreamSpawn
-  /** Live hook-server coordinates (ORCA_AGENT_HOOK_*), same source as PTY spawns. */
-  hookEnv?: () => Record<string, string>
-  /** Chat-connector MCP coordinates: register mints the thread's bearer token
-   *  before spawn, revoke retires it on stop/close (token-matched, so a stale
-   *  child's late close can't kill a relaunch's fresh token). */
-  mcp?: {
-    register: (threadId: string) => { url: string; token: string } | null
-    revoke: (threadId: string, token: string) => void
-  }
-  /** What a login shell would contribute; null means spawn one instead. */
-  loginShellEnv?: () => Record<string, string> | null
-}
 
 type StreamEntry = {
   child: ChildProcess
@@ -93,12 +78,11 @@ export function startChatThreadStream(
     sender: ChatThreadStreamSender
   },
   deps: ChatThreadStreamDeps = {}
-): { ok: boolean; error?: string } {
+): ChatThreadStreamStartResult {
   const { threadId, cwd, env, sender } = args
-  if (process.platform === 'win32') {
-    // Command quoting is built for a POSIX shell; a clean error beats a
-    // mis-quoted cmd.exe launch. Windows support lands with its own shell plan.
-    return { ok: false, error: 'Chat threads are not supported on Windows yet.' }
+  const preflightFailure = chatThreadStreamPreflightFailure(cwd)
+  if (preflightFailure) {
+    return preflightFailure
   }
   // Replace semantics: a relaunch for the same thread supersedes the old child.
   // Must run before the MCP register/write below so the old session's cleanup

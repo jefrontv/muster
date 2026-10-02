@@ -23,6 +23,9 @@ import NativeChatView, { type NativeChatTransport } from '@/components/native-ch
 import { seedTaskAttachmentsForTab } from '@/components/native-chat/use-native-chat-task-attachments'
 import { ChatThreadErrorBanner } from './ChatThreadErrorBanner'
 import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
+import { ChatThreadFolderMissingNotice } from './ChatThreadNotice'
+import { useMissingFolder } from './use-missing-folder'
+import { ChatThreadFolderMissingError } from '@/lib/chat-thread-folder-missing'
 import type { NativeChatPermissionBehavior } from '@/components/native-chat/native-chat-view-types'
 
 type LaunchState = 'starting' | 'running' | 'exited' | 'failed'
@@ -50,6 +53,10 @@ export function ChatThreadView({
   )
   const [launchState, setLaunchState] = useState<LaunchState>(session ? 'running' : 'starting')
   const [error, setError] = useState<string | null>(null)
+  // Checked on open (not before every launch), so the notice shows before anything spawns.
+  const watchedMissingFolder = useMissingFolder(workspace?.directories[0] ?? null)
+  const [launchMissingFolder, setLaunchMissingFolder] = useState<string | null>(null)
+  const missingFolder = watchedMissingFolder ?? launchMissingFolder
   const launchingRef = useRef(false)
   // Why: hook callbacks outlive a thread switch; write to the thread they launched for.
   const threadIdRef = useRef(thread.id)
@@ -96,6 +103,9 @@ export function ChatThreadView({
       .catch((launchError: unknown) => {
         if (threadIdRef.current === launchedForThreadId) {
           setLaunchState('failed')
+          setLaunchMissingFolder(
+            launchError instanceof ChatThreadFolderMissingError ? launchError.folder : null
+          )
           setError(launchError instanceof Error ? launchError.message : String(launchError))
         }
       })
@@ -298,6 +308,21 @@ export function ChatThreadView({
           activeCollabProjectId={
             workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
           }
+        />
+      </div>
+    )
+  }
+
+  if (missingFolder) {
+    return (
+      <div className="flex h-full flex-col justify-end p-4">
+        <ChatThreadFolderMissingNotice
+          folder={missingFolder}
+          workspace={workspace}
+          onResolved={() => {
+            setLaunchMissingFolder(null)
+            setLaunchState('starting')
+          }}
         />
       </div>
     )

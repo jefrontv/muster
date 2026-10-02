@@ -47,6 +47,11 @@ export type ChatThreadStreamStartArgs = {
   appendSystemPrompt?: string
 }
 
-export type ChatThreadStreamStartResult = { ok: boolean; error?: string }
+export type ChatThreadStreamStartResult = {
+  ok: boolean
+  error?: string
+  /** The workspace folder is gone; the thread offers to locate or remove it. */
+  reason?: 'folder-missing'
+}
 
 export const CHAT_THREAD_STREAM_EVENT_CHANNEL = 'chatThreadStream:event'

@@ -1,6 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import type { NativeChatMessage } from '../../../../shared/native-chat-types'
-import { foldToolMessages, splitNativeChatBlocks } from './native-chat-tool-fold'
+import { foldToolMessages, splitNativeChatBlocks, withoutPlanTools } from './native-chat-tool-fold'
+import type { NativeChatBlock } from '../../../../shared/native-chat-types'
+
+describe('withoutPlanTools', () => {
+  it('drops TodoWrite calls and their paired results, keeping other tools in order', () => {
+    const blocks: NativeChatBlock[] = [
+      { type: 'tool-call', name: 'TodoWrite', input: { todos: [] } },
+      { type: 'tool-call', name: 'Read', input: { file_path: '/a' } },
+      { type: 'tool-result', output: 'todos updated' },
+      { type: 'tool-result', output: 'file body' }
+    ]
+    expect(withoutPlanTools(blocks)).toEqual([blocks[1], blocks[3]])
+  })
+})
 
 function msg(
   overrides: Partial<NativeChatMessage> & Pick<NativeChatMessage, 'id'>
