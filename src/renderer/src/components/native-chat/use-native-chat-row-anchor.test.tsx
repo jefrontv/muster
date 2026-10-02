@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { NATIVE_CHAT_ROW_ANCHOR_ATTR } from './native-chat-row-anchor'
 import {
   useNativeChatRowAnchor,
-  type NativeChatVirtualRowLocator
+  type NativeChatVirtualRowSource
 } from './use-native-chat-row-anchor'
 
 // A scroller at viewport y=0 holding rows stacked by height; layout is modelled
@@ -123,16 +123,32 @@ describe('useNativeChatRowAnchor', () => {
     expect(list.scrollTop).toBe(950)
   })
 
-  it('locates a windowed row through the virtual locator', () => {
-    const list = mount(rowsOf('r', 10, 100))
-    list.scrollTo(450)
+  it('anchors on windowed rows that are not mounted, not on rows below them', () => {
+    // Only the tail (t*) is in the DOM; the windowed head (w*) lives in the virtualizer.
+    const head = rowsOf('w', 30, 100)
+    const list = mount(rowsOf('t', 5, 100).map((row) => ({ ...row })))
+    let headTop = 0
+    let headRows = head
+    const source: NativeChatVirtualRowSource = {
+      has: (id) => id.startsWith('w'),
+      boxes: () => {
+        let top = headTop - list.scrollTop
+        return headRows.map((row) => {
+          const box = { id: row.id, top, bottom: top + row.height }
+          top += row.height
+          return box
+        })
+      }
+    }
+    ;(list.api().sourceRef as RefObject<NativeChatVirtualRowSource | null>).current = source
+    list.scrollTo(1450)
     act(() => list.api().capture())
-    list.setRows(rowsOf('r', 10, 100).filter((row) => row.id !== 'r4' && row.id !== 'r5'))
-    // r4 is out of the DOM; the virtualizer says it now sits 300px lower.
-    const locator: NativeChatVirtualRowLocator = (id) => (id === 'r4' ? 700 - list.scrollTop : null)
-    ;(list.api().locatorRef as RefObject<NativeChatVirtualRowLocator | null>).current = locator
+    list.scrollTo(1050)
+    // A 2000px page lands above the windowed rows.
+    headRows = [...rowsOf('n', 20, 100), ...head]
+    headTop = 0
     act(() => list.api().correct())
-    expect(list.scrollTop).toBe(750)
+    expect(list.scrollTop).toBe(1050 + 2000)
   })
 
   it('leaves scrolling alone while following the end', () => {

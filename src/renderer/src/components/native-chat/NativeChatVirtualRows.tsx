@@ -7,7 +7,7 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { NativeChatTimelineRow } from './native-chat-timeline-rows'
 import { NATIVE_CHAT_ROW_ANCHOR_ATTR, nativeChatRowAnchorId } from './native-chat-row-anchor'
-import type { NativeChatVirtualRowLocator } from './use-native-chat-row-anchor'
+import type { NativeChatVirtualRowSource } from './use-native-chat-row-anchor'
 import {
   NativeChatTimelineRowView,
   type NativeChatTimelineRowActions
@@ -32,15 +32,15 @@ export function NativeChatVirtualRows({
   actions,
   scrollRef,
   fontScale,
-  locatorRef,
+  sourceRef,
   onLayout
 }: {
   rows: readonly NativeChatTimelineRow[]
   actions: NativeChatTimelineRowActions
   scrollRef: RefObject<HTMLDivElement | null>
   fontScale: number
-  /** Filled with a lookup for rows outside the window, for the row anchor. */
-  locatorRef: RefObject<NativeChatVirtualRowLocator | null>
+  /** Filled with every windowed row's position, mounted or not, for the row anchor. */
+  sourceRef: RefObject<NativeChatVirtualRowSource | null>
   /** After every render that may have moved rows (measurements land as re-renders). */
   onLayout: () => void
 }): React.JSX.Element | null {
@@ -69,11 +69,25 @@ export function NativeChatVirtualRows({
   // right after a programmatic scroll.
   virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => false
   useLayoutEffect(() => {
-    locatorRef.current = (id) => {
-      const head = headRef.current
-      const index = rows.findIndex((row) => nativeChatRowAnchorId(row) === id)
-      const item = index >= 0 ? virtualizer.measurementsCache[index] : undefined
-      return head && item ? head.getBoundingClientRect().top + item.start - scrollMargin : null
+    // Positions come from the virtualizer, which is what places the mounted rows
+    // too, so rows outside the window can be anchored and the anchor never falls
+    // through to rows below an unrendered stretch.
+    const ids = rows.map(nativeChatRowAnchorId)
+    const known = new Set(ids)
+    const items = virtualizer.measurementsCache
+    sourceRef.current = {
+      has: (id) => known.has(id),
+      boxes: () => {
+        const head = headRef.current
+        if (!head) {
+          return []
+        }
+        const origin = head.getBoundingClientRect().top - scrollMargin
+        return ids.flatMap((id, index) => {
+          const item = items[index]
+          return item ? [{ id, top: origin + item.start, bottom: origin + item.end }] : []
+        })
+      }
     }
     onLayout()
   })
