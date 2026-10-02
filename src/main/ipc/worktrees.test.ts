@@ -2343,6 +2343,49 @@ describe('registerWorktreeHandlers', () => {
     })
   })
 
+  it('batch-lists detected worktrees, streaming each result and falling back for unreachable SSH', async () => {
+    const localRepo = {
+      id: 'repo-1',
+      path: '/workspace/repo',
+      displayName: 'repo',
+      badgeColor: '#000',
+      addedAt: 0
+    }
+    const sshRepo = { ...localRepo, id: 'repo-ssh', path: '/srv/repo', connectionId: 'conn-1' }
+    store.getRepo.mockImplementation((repoId: string) =>
+      repoId === 'repo-1' ? localRepo : repoId === 'repo-ssh' ? sshRepo : undefined
+    )
+    store.getAllWorktreeMeta.mockReturnValue({})
+    // Unreachable SSH host: no live provider for the connection.
+    getSshGitProviderMock.mockReturnValue(undefined)
+    listWorktreesMock.mockResolvedValue([
+      {
+        path: '/workspace/repo',
+        head: 'abc',
+        branch: 'refs/heads/main',
+        isBare: false,
+        isMainWorktree: true
+      }
+    ])
+    const sender = { send: vi.fn(), isDestroyed: () => false }
+
+    const results = (await handlers['worktrees:listDetectedBatch'](
+      { sender },
+      { repoIds: ['repo-1', 'repo-ssh', 'repo-missing'], batchId: 'batch-1' }
+    )) as { repoId: string; authoritative: boolean; source: string }[]
+
+    expect(results.map((r) => [r.repoId, r.authoritative, r.source])).toEqual([
+      ['repo-1', true, 'git'],
+      ['repo-ssh', false, 'metadata-fallback'],
+      ['repo-missing', false, 'metadata-fallback']
+    ])
+    expect(sender.send).toHaveBeenCalledTimes(3)
+    expect(sender.send).toHaveBeenCalledWith('worktrees:listDetectedBatchResult', {
+      batchId: 'batch-1',
+      result: expect.objectContaining({ repoId: 'repo-1', authoritative: true })
+    })
+  })
+
   it('hydrates detected worktrees with instance-validated legacy lineage after an update', async () => {
     const parentPath = '/workspace/assigned-issues'
     const childPath = '/workspace/issue-9276-nested-ssh-runtime-routing'

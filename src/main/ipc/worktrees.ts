@@ -988,6 +988,84 @@ function buildDisconnectedDetectedWorktrees(
   return projectResolvedWorktreeLineage(detected, store.getAllWorktreeLineage?.() ?? {})
 }
 
+async function listDetectedWorktreesForRepoId(
+  store: Store,
+  repoId: string
+): Promise<DetectedWorktreeListResult> {
+  const repo = store.getRepo(repoId)
+  if (!repo) {
+    return {
+      repoId,
+      authoritative: false,
+      source: 'metadata-fallback',
+      worktrees: []
+    }
+  }
+  const sshWorktreeMetaIndex = repo.connectionId
+    ? createSshWorktreeMetaIndex(Object.entries(store.getAllWorktreeMeta()))
+    : new Map()
+
+  try {
+    let gitWorktrees: GitWorktreeInfo[]
+    let freshScan = true
+    if (isFolderRepo(repo)) {
+      return {
+        repoId: repo.id,
+        authoritative: true,
+        source: 'git',
+        worktrees: projectResolvedWorktreeLineage(
+          buildFolderDetectedWorktrees(store, repo),
+          store.getAllWorktreeLineage?.() ?? {}
+        )
+      }
+    } else if (repo.connectionId) {
+      const provider = getSshGitProvider(repo.connectionId)
+      if (!provider) {
+        const worktrees = listDisconnectedSshWorktrees(store, repo, sshWorktreeMetaIndex)
+        return {
+          repoId: repo.id,
+          authoritative: false,
+          source: 'metadata-fallback',
+          worktrees: buildDisconnectedDetectedWorktrees(store, repo, worktrees)
+        }
+      }
+      gitWorktrees = await provider.listWorktrees(repo.path)
+    } else {
+      const scan = await listDetectedGitWorktrees(store, repo)
+      gitWorktrees = scan.gitWorktrees
+      freshScan = scan.fresh
+    }
+    if (freshScan) {
+      rememberLocalWorktreeRoots(store, repo, gitWorktrees)
+      pruneLineageForMissingRepoWorktrees(store, repo, gitWorktrees)
+    }
+    loggedWorktreeListFailures.delete(`${repo.id}:${repo.path}`)
+    return {
+      repoId: repo.id,
+      authoritative: true,
+      source: 'git',
+      worktrees: buildDetectedGitWorktrees(store, repo, gitWorktrees)
+    }
+  } catch (err) {
+    warnOnce(
+      loggedWorktreeListFailures,
+      `${repo.id}:${repo.path}`,
+      `[worktrees] failed to list detected worktrees for repo "${repo.displayName}" (${repo.id}) at ${repo.path}`,
+      err
+    )
+    if (repo.connectionId) {
+      const worktrees = listDisconnectedSshWorktrees(store, repo, sshWorktreeMetaIndex)
+      return {
+        repoId: repo.id,
+        authoritative: false,
+        source: 'metadata-fallback',
+        worktrees: buildDisconnectedDetectedWorktrees(store, repo, worktrees)
+      }
+    }
+    return { repoId: repo.id, authoritative: false, source: 'metadata-fallback', worktrees: [] }
+  }
+}
+
 export function registerWorktreeHandlers(
   mainWindow: BrowserWindow,
   store: Store,
@@ -997,6 +1075,7 @@ export function registerWorktreeHandlers(
   ipcMain.removeHandler('worktrees:listAll')
   ipcMain.removeHandler('worktrees:list')
   ipcMain.removeHandler('worktrees:listDetected')
+  ipcMain.removeHandler('worktrees:listDetectedBatch')
   ipcMain.removeHandler('worktrees:create')
   ipcMain.removeHandler('worktrees:prefetchCreateBase')
   ipcMain.removeHandler('worktrees:resolvePrBase')
@@ -1156,79 +1235,33 @@ export function registerWorktreeHandlers(
 
   ipcMain.handle(
     'worktrees:listDetected',
-    async (_event, args: { repoId: string }): Promise<DetectedWorktreeListResult> => {
-      const repo = store.getRepo(args.repoId)
-      if (!repo) {
-        return {
-          repoId: args.repoId,
-          authoritative: false,
-          source: 'metadata-fallback',
-          worktrees: []
-        }
-      }
-      const sshWorktreeMetaIndex = repo.connectionId
-        ? createSshWorktreeMetaIndex(Object.entries(store.getAllWorktreeMeta()))
-        : new Map()
+    async (_event, args: { repoId: string }): Promise<DetectedWorktreeListResult> =>
+      listDetectedWorktreesForRepoId(store, args.repoId)
+  )
 
-      try {
-        let gitWorktrees: GitWorktreeInfo[]
-        let freshScan = true
-        if (isFolderRepo(repo)) {
-          return {
-            repoId: repo.id,
-            authoritative: true,
-            source: 'git',
-            worktrees: projectResolvedWorktreeLineage(
-              buildFolderDetectedWorktrees(store, repo),
-              store.getAllWorktreeLineage?.() ?? {}
-            )
-          }
-        } else if (repo.connectionId) {
-          const provider = getSshGitProvider(repo.connectionId)
-          if (!provider) {
-            const worktrees = listDisconnectedSshWorktrees(store, repo, sshWorktreeMetaIndex)
-            return {
-              repoId: repo.id,
-              authoritative: false,
-              source: 'metadata-fallback',
-              worktrees: buildDisconnectedDetectedWorktrees(store, repo, worktrees)
-            }
-          }
-          gitWorktrees = await provider.listWorktrees(repo.path)
-        } else {
-          const scan = await listDetectedGitWorktrees(store, repo)
-          gitWorktrees = scan.gitWorktrees
-          freshScan = scan.fresh
+  // Why: one round trip for the startup scan instead of one per repo; each result streams back as
+  // it lands so the sidebar still fills progressively and a slow repo holds only its own slot.
+  ipcMain.handle(
+    'worktrees:listDetectedBatch',
+    async (
+      event,
+      args: { repoIds: string[]; batchId?: string }
+    ): Promise<DetectedWorktreeListResult[]> => {
+      const repoIds = Array.isArray(args?.repoIds)
+        ? args.repoIds.filter((id): id is string => typeof id === 'string')
+        : []
+      return mapWithConcurrency(repoIds, WORKTREE_LIST_ALL_CONCURRENCY, async (repoId) => {
+        let result: DetectedWorktreeListResult
+        try {
+          result = await listDetectedWorktreesForRepoId(store, repoId)
+        } catch {
+          result = { repoId, authoritative: false, source: 'metadata-fallback', worktrees: [] }
         }
-        if (freshScan) {
-          rememberLocalWorktreeRoots(store, repo, gitWorktrees)
-          pruneLineageForMissingRepoWorktrees(store, repo, gitWorktrees)
+        if (args?.batchId && !event.sender.isDestroyed()) {
+          event.sender.send('worktrees:listDetectedBatchResult', { batchId: args.batchId, result })
         }
-        loggedWorktreeListFailures.delete(`${repo.id}:${repo.path}`)
-        return {
-          repoId: repo.id,
-          authoritative: true,
-          source: 'git',
-          worktrees: buildDetectedGitWorktrees(store, repo, gitWorktrees)
-        }
-      } catch (err) {
-        warnOnce(
-          loggedWorktreeListFailures,
-          `${repo.id}:${repo.path}`,
-          `[worktrees] failed to list detected worktrees for repo "${repo.displayName}" (${repo.id}) at ${repo.path}`,
-          err
-        )
-        if (repo.connectionId) {
-          const worktrees = listDisconnectedSshWorktrees(store, repo, sshWorktreeMetaIndex)
-          return {
-            repoId: repo.id,
-            authoritative: false,
-            source: 'metadata-fallback',
-            worktrees: buildDisconnectedDetectedWorktrees(store, repo, worktrees)
-          }
-        }
-        return { repoId: repo.id, authoritative: false, source: 'metadata-fallback', worktrees: [] }
-      }
+        return result
+      })
     }
   )
 

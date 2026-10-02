@@ -19,7 +19,7 @@ import {
   type TerminalImeNativeTextForwarder
 } from '@/components/terminal-pane/terminal-ime-native-text-forwarder'
 import { getMacNativeTextInputSourceTracker } from '@/components/terminal-pane/terminal-ime-input-source'
-import { composeActiveTerminalTheme } from '@/components/terminal-pane/terminal-appearance'
+import { composeActiveTerminalTheme } from '@/components/terminal-pane/terminal-theme-composition'
 import { resolveTerminalMinimumContrastRatio } from '@/lib/terminal-contrast-correction'
 import { useSystemPrefersDark } from '@/components/terminal-pane/use-system-prefers-dark'
 import { translate } from '@/i18n/i18n'

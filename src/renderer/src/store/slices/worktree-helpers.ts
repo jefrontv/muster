@@ -7,6 +7,7 @@ import type {
   ForceDeleteWorktreeBranchResult,
   GitPushTarget,
   RemoveWorktreeResult,
+  Repo,
   SetupDecision,
   TuiAgent,
   WorkspaceCreateTelemetrySource,
@@ -23,6 +24,7 @@ import type {
 import type { WorktreeForceDeleteReason } from '../../../../shared/worktree-removal'
 import type { TerminalGitHubPRLink } from '../../../../shared/terminal-github-pr-link-detector'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
+import type { WorktreeStateReducer } from './worktree-commit-batcher'
 import type {
   PendingWorktreeCreation,
   WorktreeCreationPhase
@@ -126,8 +128,15 @@ export type WorktreeSlice = {
       requireAuthoritative?: boolean
       executionHostId?: ExecutionHostId
       forceLocalOwner?: boolean
+      /** Internal: set by fetchWorktreesForRepos to share one listing IPC and frame-batched commits. */
+      bulk?: {
+        commit: (reducer: WorktreeStateReducer) => void
+        detected?: Promise<DetectedWorktreeListResult>
+      }
     }
   ) => Promise<boolean>
+  /** Refresh many repos with one listing IPC and one store write per frame, active repo first. */
+  fetchWorktreesForRepos: (repos: readonly Repo[]) => Promise<void>
   fetchAllWorktrees: (options?: { hydrationPurge?: 'allow' | 'defer' }) => Promise<void>
   fetchWorktreeLineage: (options?: { forceLocalOwner?: boolean }) => Promise<void>
   updateWorktreeLineage: (
