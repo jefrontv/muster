@@ -11,7 +11,25 @@
     "../src/main/ipc/worktree-linked-work-item-metadata.ts",
     "../src/main/ipc/worktree-metadata-merge.ts",
     "../src/main/ipc/worktree-path-comparison.ts",
-    "../src/main/wsl.ts"
+    "../src/main/wsl.ts",
+    "../src/main/ai-vault/session-scanner-discovery.ts",
+    "../src/main/ai-vault/session-scanner-text-normalization.ts",
+    "../src/main/ai-vault/session-scanner-token-values.ts",
+    "../src/main/ai-vault/session-scanner-types.ts",
+    "../src/main/ai-vault/session-scanner-values.ts",
+    "../src/main/chat-mode/chat-thread-stream-decode.ts",
+    "../src/main/codex/codex-home-paths.ts",
+    "../src/main/native-chat/session-file-resolver.ts",
+    "../src/main/native-chat/transcript-fallback-id.ts",
+    "../src/main/native-chat/transcript-line-decoders-claude.ts",
+    "../src/main/native-chat/transcript-line-decoders-codex.ts",
+    "../src/main/native-chat/transcript-line-decoders-grok.ts",
+    "../src/main/native-chat/transcript-line-decoders.ts",
+    "../src/main/native-chat/transcript-reader.ts",
+    "../src/main/native-chat/transcript-record-blocks.ts",
+    "../src/main/native-chat/transcript-stream-lines.ts",
+    "../src/main/native-chat/transcript-tool-use-result.ts",
+    "../src/main/native-chat/transcript-turn-markers.ts"
   ],
   "compilerOptions": {
     "paths": {
