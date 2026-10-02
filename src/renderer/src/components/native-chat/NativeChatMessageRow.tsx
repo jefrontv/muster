@@ -28,6 +28,9 @@ import { parseActiveCollabTaskReferences } from './native-chat-activecollab-refe
 import { NativeChatTaskChip } from './NativeChatTaskChip'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
+import { useNativeChatTypewriter } from './use-native-chat-typewriter'
+import { closeOpenCodeFence } from './native-chat-typewriter'
+import { useCodeThemeClass } from './NativeChatHighlightedCode'
 
 function proseToMarkdown(blocks: NativeChatBlock[]): string {
   return blocks
@@ -159,6 +162,10 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   const isReasoning = message.role === 'reasoning'
   const isSystem = message.role === 'system'
   const isStreaming = message.id === NATIVE_CHAT_STREAMING_ID
+  // Word-paced reveal while streaming; an open fence is closed so code renders as code.
+  const revealed = useNativeChatTypewriter(isStreaming ? markdown : null, false)
+  const shownMarkdown = isStreaming ? closeOpenCodeFence(revealed ?? '') : markdown
+  const codeThemeClass = useCodeThemeClass()
 
   const getProseHtml = useCallback(() => proseRef.current?.innerHTML ?? null, [])
 
@@ -295,15 +302,16 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
       )}
     >
       <ImageAttachmentRefs blocks={prose} />
-      {markdown ? (
+      {shownMarkdown ? (
         <CommentMarkdown
           ref={proseRef}
-          content={markdown}
+          content={shownMarkdown}
           variant="document"
-          className="text-sm"
+          className={cn('text-sm', codeThemeClass)}
           onLinkClick={onLinkClick}
           allowFileUriLinks={allowFileUriLinks}
           codeBlockActions
+          chat
         />
       ) : null}
       {showControls ? (

@@ -148,11 +148,14 @@ function pushTurnRows(
     : (turn.messages.findLast((message) => message.role === 'assistant' && hasProse(message)) ??
       null)
   let workPlaced = workRow === null
+  // Replies key by their slot in the turn, so the transcript message that lands
+  // replaces the streaming bubble in place instead of remounting the row.
+  let replySlot = 0
   for (const message of turn.messages) {
     if (rendersAsMessage(message)) {
       rows.push({
         kind: 'message',
-        key: message.id,
+        key: message.role === 'assistant' ? `reply:${turn.id}:${replySlot++}` : message.id,
         message,
         isLatestReply: false,
         showReplyActions: message === finalReply

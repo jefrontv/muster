@@ -1,9 +1,12 @@
-// rAF driver for the typewriter reveal. State updates are bounded to the one
-// memoized streaming row, so a 60fps reveal re-renders exactly one markdown
-// tree — the same isolation the delta path already relies on.
+// Interval driver for the typewriter reveal: one word-boundary step per tick, so
+// the streaming row re-parses its markdown ~25 times a second, not every frame.
 
 import { useEffect, useRef, useState } from 'react'
-import { nextTypewriterCount, typewriterNeedsReset } from './native-chat-typewriter'
+import {
+  nextTypewriterReveal,
+  typewriterNeedsReset,
+  TYPEWRITER_TICK_MS
+} from './native-chat-typewriter'
 
 function prefersReducedMotion(): boolean {
   return (
@@ -40,22 +43,20 @@ export function useNativeChatTypewriter(target: string | null, settled: boolean)
     if (displayedRef.current >= target.length) {
       return
     }
-    let frame = 0
     let last = performance.now()
-    const tick = (now: number): void => {
-      const dt = now - last
+    const timer = window.setInterval(() => {
+      const now = performance.now()
+      const next = nextTypewriterReveal(target, displayedRef.current, now - last, settled)
       last = now
-      const next = nextTypewriterCount(displayedRef.current, target.length, dt, settled)
       if (next !== displayedRef.current) {
         displayedRef.current = next
         setDisplayed(next)
       }
-      if (next < target.length) {
-        frame = requestAnimationFrame(tick)
+      if (next >= target.length) {
+        window.clearInterval(timer)
       }
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
+    }, TYPEWRITER_TICK_MS)
+    return () => window.clearInterval(timer)
   }, [target, settled])
 
   if (target === null) {

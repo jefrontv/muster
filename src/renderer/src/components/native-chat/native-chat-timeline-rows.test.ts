@@ -115,6 +115,21 @@ describe('one visibility rule for live and settled turns', () => {
     expect(settled[0]).toMatchObject({ isLatestReply: true })
     expect(build(true).some((row) => row.kind === 'message' && row.showReplyActions)).toBe(false)
   })
+
+  it('keys the streaming reply and the landed reply alike, so it updates in place', () => {
+    const head = turn.slice(0, 5)
+    const streaming = buildNativeChatTimelineRows({
+      messages: [...head, msg('streaming', 'assistant', [text('Do')])],
+      isWorking: true,
+      surface: 'chat'
+    })
+    const landed = buildNativeChatTimelineRows({
+      messages: turn,
+      isWorking: false,
+      surface: 'chat'
+    })
+    expect(streaming.map((row) => row.key)).toEqual(landed.map((row) => row.key))
+  })
 })
 
 describe('turn plan, changes card and error', () => {

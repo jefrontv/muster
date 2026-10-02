@@ -3,6 +3,7 @@ import Markdown, { defaultUrlTransform } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import rehypeRaw from 'rehype-raw'
+import rehypeHighlight from 'rehype-highlight'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import { cn } from '@/lib/utils'
 import {
@@ -188,6 +189,11 @@ const commentMarkdownSanitizeSchema = {
 // `<br />`). Parse it, then sanitize immediately before React renders it.
 const rehypePlugins: MarkdownPlugins = [rehypeRaw, [rehypeSanitize, commentMarkdownSanitizeSchema]]
 
+// Chat replies: model prose wraps single newlines as soft breaks, and code gets
+// syntax colour. Highlight runs after sanitize so its spans need no whitelisting.
+const chatRemarkPlugins = [remarkGfm]
+const chatRehypePlugins: MarkdownPlugins = [...rehypePlugins, rehypeHighlight]
+
 // Why: ActiveCollab bodies carry mentions and callouts as `class`, which the schema above strips.
 // The pre-sanitise transform consumes those classes and re-emits two attribute-free tags, so the
 // widening is exactly two element names — never `class` itself.
@@ -207,6 +213,8 @@ type CommentMarkdownProps = React.ComponentPropsWithoutRef<'div'> & {
   codeBlockActions?: boolean
   /** Opts a provider body into the ActiveCollab mention/callout/inline-image handling. */
   activeCollabHtml?: ActiveCollabHtmlOptions | null
+  /** Agent chat replies: no hard line breaks, highlighted code blocks. */
+  chat?: boolean
 }
 
 // Why forwardRef + rest props: Radix's HoverCardTrigger asChild merges a ref
@@ -223,6 +231,7 @@ const CommentMarkdown = React.memo(
       allowFileUriLinks = false,
       codeBlockActions = false,
       activeCollabHtml,
+      chat = false,
       ...rest
     },
     ref
@@ -242,10 +251,10 @@ const CommentMarkdown = React.memo(
             : compactCommentMarkdownComponents
       return usesActiveCollabHtml ? { ...base, ...activeCollabMarkdownComponents } : base
     }, [variant, onLinkClick, codeBlockActions, usesActiveCollabHtml])
-    const activeRemarkPlugins = React.useMemo(
-      () => (githubRepo ? [...remarkPlugins, remarkGitHubReferences(githubRepo)] : remarkPlugins),
-      [githubRepo]
-    )
+    const activeRemarkPlugins = React.useMemo(() => {
+      const base = chat ? chatRemarkPlugins : remarkPlugins
+      return githubRepo ? [...base, remarkGitHubReferences(githubRepo)] : base
+    }, [githubRepo, chat])
     const activeRehypePlugins = React.useMemo(
       () =>
         usesActiveCollabHtml
@@ -254,8 +263,10 @@ const CommentMarkdown = React.memo(
               rehypeActiveCollabHtml({ instanceUrl: activeCollabInstanceUrl }),
               [rehypeSanitize, activeCollabSanitizeSchema]
             ] as MarkdownPlugins)
-          : rehypePlugins,
-      [usesActiveCollabHtml, activeCollabInstanceUrl]
+          : chat
+            ? chatRehypePlugins
+            : rehypePlugins,
+      [usesActiveCollabHtml, activeCollabInstanceUrl, chat]
     )
 
     return (
