@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: repo IPC is centralized so SSH routing, clone lifecycle, and store persistence stay behind one audited boundary. */
+import { createCloneProgressTracker } from './git-clone-progress'
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { dialog, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
@@ -673,25 +674,21 @@ const completedNestedRepoScans = new Map<string, CompletedNestedRepoScan>()
 const MAX_COMPLETED_NESTED_SCAN_RESULTS = 50
 const GIT_AVAILABILITY_TIMEOUT_MS = 1500
 
-function emitCloneProgressFromText(mainWindow: BrowserWindow, text: string): void {
+function emitCloneProgress(
+  mainWindow: BrowserWindow,
+  tracker: ReturnType<typeof createCloneProgressTracker>,
+  text: string
+): void {
   if (mainWindow.isDestroyed()) {
     return
   }
-  for (const raw of text.split(/[\r\n]+/)) {
-    const line = raw.trim()
-    if (!line) {
-      continue
-    }
-    const match = line.match(/^([\w\s]+):\s+(\d+)%/)
-    if (match) {
-      mainWindow.webContents.send('repos:clone-progress', {
-        phase: match[1].trim(),
-        percent: Number.parseInt(match[2], 10)
-      })
-    }
-    // Every stderr line, not just the ones carrying a percent: git spends minutes on
-    // "Enumerating objects" / "Compressing objects" with no percentage, and a silent
-    // spinner reads as stuck on a large repo.
+  const { lines, updates } = tracker.push(text)
+  for (const update of updates) {
+    mainWindow.webContents.send('repos:clone-progress', update)
+  }
+  // Every stderr line, not just the ones carrying a percent: git spends minutes on
+  // "Enumerating objects" with no percentage, and a silent spinner reads as stuck on a large repo.
+  for (const line of lines) {
     mainWindow.webContents.send('repos:clone-log', { line })
   }
 }
@@ -2315,12 +2312,11 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
 
           let stderrTail = ''
           let settled = false
+          const progress = createCloneProgressTracker()
           proc.stderr!.on('data', (chunk: Buffer) => {
             const text = chunk.toString()
             stderrTail = (stderrTail + text).slice(-4096)
-
-            // Why: git progress lines use \r to overwrite in-place; parse fragments the same as SSH clone.
-            emitCloneProgressFromText(mainWindow, text)
+            emitCloneProgress(mainWindow, progress, text)
           })
 
           const finishClone = async (
