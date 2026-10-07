@@ -1,5 +1,6 @@
-// Newest concrete model id seen per Claude family, so an alias pick ("opus") can
-// read "Opus 5.5" before the session reports its model. Fetched once per app run.
+// The concrete model behind each Claude alias, so a pick ("haiku") reads "Haiku 5.5" before the
+// session reports its model. The CLI's own list wins; the newest id seen in transcripts is the
+// fallback when the CLI can't be asked. Fetched once per app run.
 
 import { useEffect, useState } from 'react'
 import { latestClaudeSightings } from '../../../../shared/claude-model-name'
@@ -10,16 +11,29 @@ const NONE: Sightings = () => null
 let cached: Sightings | null = null
 let pending: Promise<Sightings> | null = null
 
-function loadSightings(): Promise<Sightings> {
-  pending ??= (async () => {
-    try {
-      const list = window.api?.nativeChat?.learnedClaudeModels
-      cached = typeof list === 'function' ? latestClaudeSightings(await list()) : NONE
-    } catch {
-      cached = NONE
+async function readSightings(): Promise<Sightings> {
+  const nativeChat = window.api?.nativeChat
+  const [learned, cli] = await Promise.all([
+    nativeChat?.learnedClaudeModels?.().catch(() => ({})) ?? Promise.resolve({}),
+    nativeChat?.claudeCliModels?.().catch(() => []) ?? Promise.resolve([])
+  ])
+  const seen = latestClaudeSightings(learned)
+  const resolved = new Map<string, string>()
+  for (const model of cli) {
+    if (model.resolvedModel) {
+      resolved.set(model.value, model.resolvedModel)
     }
-    return cached
-  })()
+  }
+  return (family) => resolved.get(family) ?? seen(family)
+}
+
+function loadSightings(): Promise<Sightings> {
+  pending ??= readSightings()
+    .catch(() => NONE)
+    .then((next) => {
+      cached = next
+      return next
+    })
   return pending
 }
 

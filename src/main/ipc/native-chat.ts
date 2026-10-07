@@ -17,6 +17,7 @@ import {
   recordClaudeModelSighting
 } from '../chat-mode/claude-model-registry'
 import type { ReadTranscriptResult } from '../native-chat/transcript-reader'
+import { getClaudeCliModels } from '../chat-mode/claude-cli-models'
 import {
   subscribeNativeChatTranscript,
   readNativeChatTranscriptTail,
@@ -343,6 +344,7 @@ export function registerNativeChatHandlers(): void {
     typeof path === 'string' && path !== '' ? readImageDataUrl(path) : null
   )
   ipcMain.handle('nativeChat:learnedClaudeModels', () => getLearnedClaudeModels())
+  ipcMain.handle('nativeChat:claudeCliModels', () => getClaudeCliModels())
   ipcMain.on('nativeChat:subscribe', (event, args: NativeChatSubscribeArgs) => {
     void handleSubscribe(event, args)
   })

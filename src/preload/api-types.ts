@@ -1383,6 +1383,10 @@ export type NativeChatApi = {
   learnedClaudeModels?: () => Promise<
     Record<string, { contextWindow?: number; lastSeenAt: number }>
   >
+  /** The Claude CLI's own model list: what each alias resolves to today. Empty when unreachable. */
+  claudeCliModels?: () => Promise<
+    { value: string; resolvedModel: string | null; displayName: string | null }[]
+  >
   /** Local image file → data URL for composer/message thumbnails; null when
    *  unsupported, oversized, or unreadable. */
   readImageDataUrl: (path: string) => Promise<string | null>

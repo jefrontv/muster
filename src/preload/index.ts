@@ -4435,6 +4435,9 @@ const api = {
     learnedClaudeModels: (): Promise<
       Record<string, { contextWindow?: number; lastSeenAt: number }>
     > => ipcRenderer.invoke('nativeChat:learnedClaudeModels'),
+    claudeCliModels: (): Promise<
+      { value: string; resolvedModel: string | null; displayName: string | null }[]
+    > => ipcRenderer.invoke('nativeChat:claudeCliModels'),
     readImageDataUrl: (path: string): Promise<string | null> =>
       ipcRenderer.invoke('nativeChat:readImageDataUrl', path)
   },
