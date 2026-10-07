@@ -51,6 +51,8 @@ export type ExtensionInventoryEnv = {
     path: string,
     versionArgs: readonly string[] | undefined
   ) => Promise<string | null>
+  /** A Claude Code plugin marketplace's installed state, from Claude's own records. */
+  readClaudeMarketplace: (name: string) => { installed: boolean; version: string | null }
   autoUpdate: ExtensionAutoUpdatePreferences
 }
 
@@ -154,10 +156,31 @@ async function buildState(
 
   if (entry.install.method === 'bundled-skill') {
     const skill = await inspectSkill(entry as never, env)
-    return { ...base, ...skill, installedVersion: null, latestVersion: null, binaryPath: null, harnesses: [] }
+    return {
+      ...base,
+      ...skill,
+      installedVersion: null,
+      latestVersion: null,
+      binaryPath: null,
+      harnesses: []
+    }
   }
 
-  const command = entry.install.method === 'command' ? entry.install.command : entry.install.provision
+  const command =
+    entry.install.method === 'command' ? entry.install.command : entry.install.provision
+  if (command?.claudeMarketplace) {
+    const marketplace = env.readClaudeMarketplace(command.claudeMarketplace)
+    const latestVersion = await resolveLatest(entry, env)
+    return {
+      ...base,
+      installed: marketplace.installed,
+      installedVersion: marketplace.version,
+      latestVersion,
+      status: versionStatus(marketplace.installed, marketplace.version, latestVersion),
+      binaryPath: null,
+      harnesses: []
+    }
+  }
   const binaryName = command?.binary ?? entry.id
   const binary = command ? env.probeBinary(binaryName) : null
   const agentLocalVersion =

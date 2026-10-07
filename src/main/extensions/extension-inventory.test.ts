@@ -23,6 +23,7 @@ function env(overrides: Partial<ExtensionInventoryEnv> = {}): ExtensionInventory
     skillStatus: async () => null,
     readAgentLocal: async () => ({ version: null, latest: null }),
     readVersionByCommand: async () => null,
+    readClaudeMarketplace: () => ({ installed: false, version: null }),
     autoUpdate: { master: false, entries: {} },
     ...overrides
   }
@@ -69,7 +70,11 @@ describe('inventoryExtensions', () => {
     const state = await stateOf(commandEntry, {
       probeBinary: foundAt('/usr/bin/acme', '0.9.0')
     })
-    expect(state).toMatchObject({ status: 'outdated', installedVersion: '0.9.0', latestVersion: '1.0.0' })
+    expect(state).toMatchObject({
+      status: 'outdated',
+      installedVersion: '0.9.0',
+      latestVersion: '1.0.0'
+    })
   })
 
   it('prefers a probed version over the catalog floor', async () => {
@@ -122,14 +127,21 @@ describe('inventoryExtensions', () => {
         ...commandEntry,
         id: 'agent-local',
         latest: { source: 'agent-local-daemon' },
-        install: { method: 'command', command: { update: 'agent-local update', binary: 'agent-local' } }
+        install: {
+          method: 'command',
+          command: { update: 'agent-local update', binary: 'agent-local' }
+        }
       },
       {
         probeBinary: foundAt('/usr/local/bin/agent-local', null),
         readAgentLocal: async () => ({ version: '0.34.1', latest: '0.35.0' })
       }
     )
-    expect(state).toMatchObject({ installedVersion: '0.34.1', latestVersion: '0.35.0', status: 'outdated' })
+    expect(state).toMatchObject({
+      installedVersion: '0.34.1',
+      latestVersion: '0.35.0',
+      status: 'outdated'
+    })
   })
 
   it('reports an absent Agent Local as not installed, with nothing to update', async () => {
@@ -264,8 +276,20 @@ describe('eligibleExtensionAutoUpdates', () => {
         autoUpdate: { master: true, entries: {} },
         probeBinary: (binary) =>
           binary === 'acme'
-            ? { found: true, path: '/usr/bin/acme', realPath: '/usr/bin/acme', version: '0.1.0', versionSource: 'pipx' }
-            : { found: true, path: '/usr/bin/x', realPath: '/usr/bin/x', version: '1.0.0', versionSource: 'pipx' }
+            ? {
+                found: true,
+                path: '/usr/bin/acme',
+                realPath: '/usr/bin/acme',
+                version: '0.1.0',
+                versionSource: 'pipx'
+              }
+            : {
+                found: true,
+                path: '/usr/bin/x',
+                realPath: '/usr/bin/x',
+                version: '1.0.0',
+                versionSource: 'pipx'
+              }
       })
     )
 
@@ -340,11 +364,7 @@ describe('an extension already set up outside Muster', () => {
 })
 
 describe('visibleExtensionHarnesses', () => {
-  const row = (
-    id: string,
-    present: boolean,
-    configured = false
-  ): ExtensionHarnessState => ({
+  const row = (id: string, present: boolean, configured = false): ExtensionHarnessState => ({
     id: id as ExtensionHarnessState['id'],
     label: id,
     configPath: `/home/dev/.${id}`,
@@ -366,5 +386,46 @@ describe('visibleExtensionHarnesses', () => {
   it('keeps every agent when they are all installed', () => {
     const visible = visibleExtensionHarnesses([row('omp', true), row('pi', true)])
     expect(visible).toHaveLength(2)
+  })
+})
+
+describe('claude plugin marketplace entries', () => {
+  const marketplaceEntry: ExtensionEntry = {
+    id: 'efront-agent-skills',
+    kind: 'skill',
+    name: 'efront Agent Skills',
+    description: 'Team skills.',
+    keywords: [],
+    version: '1.1.0',
+    install: {
+      method: 'command',
+      command: {
+        install: 'claude plugin marketplace add git@example:skills.git',
+        claudeMarketplace: 'efront-agent-skills'
+      }
+    },
+    latest: { source: 'pinned' }
+  }
+  const catalog = (entry: ExtensionEntry): ExtensionCatalog => ({
+    schemaVersion: 1,
+    updatedAt: '2026-10-08',
+    entries: [entry]
+  })
+
+  it('reads installed state from Claude, not a binary', async () => {
+    const [item] = await inventoryExtensions(
+      catalog(marketplaceEntry),
+      env({ readClaudeMarketplace: () => ({ installed: true, version: '1.1.0' }) })
+    )
+    expect(item?.state).toMatchObject({
+      installed: true,
+      installedVersion: '1.1.0',
+      status: 'current'
+    })
+  })
+
+  it('shows not installed when Claude has no such marketplace', async () => {
+    const [item] = await inventoryExtensions(catalog(marketplaceEntry), env())
+    expect(item?.state).toMatchObject({ installed: false, status: 'not-installed' })
   })
 })

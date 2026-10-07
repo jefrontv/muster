@@ -205,7 +205,7 @@
       "kind": "mcp",
       "name": "Context7",
       "description": "Current documentation for any library, pulled into your agent's context on demand.",
-      "about": "Ask for a library and Context7 fetches that version\u2019s real documentation and code examples instead of letting the model recall an API that may have changed. Two tools: one resolves a library name to an id, the other returns docs for it. Add the line \"Always use Context7 when I need library or API documentation\" to your agent\u2019s rules and it will reach for this on its own.",
+      "about": "Ask for a library and Context7 fetches that version’s real documentation and code examples instead of letting the model recall an API that may have changed. Two tools: one resolves a library name to an id, the other returns docs for it. Add the line \"Always use Context7 when I need library or API documentation\" to your agent’s rules and it will reach for this on its own.",
       "keywords": ["docs", "documentation", "library", "api", "context7", "mcp"],
       "version": "4.1.1",
       "install": {
@@ -325,6 +325,37 @@
         "reason": "Updating re-registers the plugin in every agent harness, so it runs only when you ask."
       },
       "homepage": "https://memory.tools.efront.dev/admin"
+    },
+    {
+      "id": "efront-agent-skills",
+      "kind": "skill",
+      "name": "efront Agent Skills",
+      "description": "The team's Claude Code skills: WordPress theme conventions, PDF reports, site audits and client write-ups.",
+      "about": "Adds efront's skills marketplace from Bitbucket to Claude Code and installs every skill in it: the efront WordPress theme conventions, branded PDF reports, technical site audits, the staging index audit, plain-language client explainers and the humanizer writing style. Needs SSH access to the efront_au Bitbucket workspace. Restart Claude Code afterwards so the skills load. Claude Code only; other agents don't read Claude plugins.",
+      "keywords": ["skills", "efront", "wordpress", "claude", "marketplace", "plugins"],
+      "version": "1.1.0",
+      "install": {
+        "method": "command",
+        "command": {
+          "install": "claude plugin marketplace add git@bitbucket.org:efront_au/efront-agent-skills.git && for p in efront-wordpress-theme efront-pdf-report efront-site-audit efront-staging-index-audit efront-client-explainer humanizer; do claude plugin install \"$p@efront-agent-skills\" || exit 1; done",
+          "update": "claude plugin marketplace update efront-agent-skills && for p in efront-wordpress-theme efront-pdf-report efront-site-audit efront-staging-index-audit efront-client-explainer humanizer; do claude plugin install \"$p@efront-agent-skills\" && claude plugin update \"$p@efront-agent-skills\" || exit 1; done",
+          "uninstall": "for p in efront-wordpress-theme efront-pdf-report efront-site-audit efront-staging-index-audit efront-client-explainer humanizer; do claude plugin uninstall \"$p@efront-agent-skills\"; done; claude plugin marketplace remove efront-agent-skills",
+          "requires": ["claude", "git"],
+          "claudeMarketplace": "efront-agent-skills"
+        }
+      },
+      "latest": {
+        "source": "pinned"
+      },
+      "access": {
+        "kind": "git-ssh",
+        "remote": "git@bitbucket.org:efront_au/efront-agent-skills.git"
+      },
+      "autoUpdate": {
+        "supported": true
+      },
+      "homepage": "https://bitbucket.org/efront_au/efront-agent-skills",
+      "minAppVersion": "1.15.3"
     }
   ]
 }

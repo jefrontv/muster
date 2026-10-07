@@ -7,6 +7,7 @@
 // Muster and a terminal could otherwise start a dozen overlapping scans, each shelling out to git
 // and hitting two registries. Callers share one in-flight scan instead.
 
+import { probeClaudeMarketplace } from './claude-marketplace-probe'
 import { app } from 'electron'
 import type { Store } from '../persistence'
 import type { ExtensionInventory } from '../../shared/extension-state-types'
@@ -88,10 +89,7 @@ async function readDiscoveredSkills(
       resolveSkillDiscoveryTarget(undefined),
       store.getRepos()
     )
-    return discoveredSkillEntries(
-      discovery,
-      new Set(catalogEntries.map(({ entry }) => entry.id))
-    )
+    return discoveredSkillEntries(discovery, new Set(catalogEntries.map(({ entry }) => entry.id)))
   } catch {
     return []
   }
@@ -108,7 +106,10 @@ async function scan(store: Store, force: boolean): Promise<ExtensionInventory> {
     probeBinary: (binary) => probeBinary(binary),
     readHarnessStates: (server, binaryPath, entry) =>
       readExtensionMcpHarnessStates(
-        applyExtensionSettingValues(server, declaredSettingValues(entry, readExtensionSettingValues(settings, entry.id))),
+        applyExtensionSettingValues(
+          server,
+          declaredSettingValues(entry, readExtensionSettingValues(settings, entry.id))
+        ),
         binaryPath
       ),
     probeLatest: (spec) => probeLatestVersion(spec),
@@ -116,6 +117,7 @@ async function scan(store: Store, force: boolean): Promise<ExtensionInventory> {
     skillStatus: async (skill) => skillStatus(skill),
     readAgentLocal: async () => agentLocal,
     readVersionByCommand: (path, versionArgs) => readVersionByCommand(path, versionArgs),
+    readClaudeMarketplace: (name) => probeClaudeMarketplace(name),
     autoUpdate: readExtensionAutoUpdate(settings)
   })
 
@@ -146,10 +148,7 @@ export function readExtensionInventory(
   return request
 }
 
-export function findCatalogEntry(
-  inventory: ExtensionInventory,
-  id: string
-): ExtensionEntry | null {
+export function findCatalogEntry(inventory: ExtensionInventory, id: string): ExtensionEntry | null {
   return inventory.entries.find(({ entry }) => entry.id === id)?.entry ?? null
 }
 

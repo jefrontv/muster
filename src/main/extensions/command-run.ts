@@ -34,6 +34,7 @@ import {
   resolveExtensionServer
 } from './extension-service'
 import { probeBinary } from './binary-probe'
+import { probeClaudeMarketplace } from './claude-marketplace-probe'
 import { readExtensionMcpHarnessStates } from './mcp-entry-adapters'
 import { registerExtensionHarnesses } from './harness-auto-registration'
 
@@ -135,7 +136,12 @@ export async function runExtensionCommandForEntry(
     // Why re-probe rather than trust the exit code: `npm install -g` from a git remote exits 0 even
     // when the package never builds, leaving a bin symlink pointing at nothing.
     const binary = spec?.binary ?? item.entry.id
-    const installed = mode === 'uninstall' ? false : probeBinary(binary).found
+    const installed =
+      mode === 'uninstall'
+        ? false
+        : spec?.claudeMarketplace
+          ? probeClaudeMarketplace(spec.claudeMarketplace).installed
+          : probeBinary(binary).found
     // Why setup registers nothing: it configures software that is already installed and already
     // wired, so re-running the write would only churn files the user may have edited since.
     const shouldRegister = mode === 'install' && installed && result.code === 0

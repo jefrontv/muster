@@ -92,6 +92,12 @@ export type ExtensionCommandSpec = {
   binary?: string
   /** Argv that prints a version, e.g. ['--version']. Absent means "presence only". */
   versionArgs?: string[]
+  /**
+   * A Claude Code plugin marketplace this command adds. Installed-state and version come from
+   * Claude's own plugin records instead of a binary, since a marketplace has none. Older builds
+   * strip the field and probe `binary`, which misses, so they show it as not installed.
+   */
+  claudeMarketplace?: string
 }
 
 /**
@@ -214,7 +220,12 @@ const CommandSchema = z
       .max(8)
       .optional(),
     binary: z.string().min(1).max(128).optional(),
-    versionArgs: z.array(z.string().max(64)).max(8).optional()
+    versionArgs: z.array(z.string().max(64)).max(8).optional(),
+    claudeMarketplace: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9-]*$/)
+      .max(64)
+      .optional()
   })
   // Why: a spec with neither command describes no action at all, and would render a button that
   // cannot do anything.
