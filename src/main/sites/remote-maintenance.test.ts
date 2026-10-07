@@ -186,7 +186,10 @@ describe('pullRemoteGitChanges', () => {
 
     await pullRemoteGitChanges(context, createConfig({ rootPath: 'public_html' }), session)
 
-    expect(commands).toEqual([`cd 'public_html' && [ -d .git ]`, `cd 'public_html' && git pull`])
+    expect(commands).toEqual([
+      `cd 'public_html' && [ -d .git ]`,
+      `cd 'public_html' && git pull --ff-only`
+    ])
     expect(stages).toEqual(['Pulling latest changes on the server'])
   })
 
@@ -231,6 +234,19 @@ describe('pullRemoteGitChanges', () => {
 
     await expect(pullRemoteGitChanges(context, createConfig(), session)).rejects.toThrowError(
       'git pull failed'
+    )
+  })
+
+  it('names the cause when the server has its own commits', async () => {
+    const { context } = createRecordingContext()
+    const { session } = createFakeSession((command) =>
+      command.includes('git pull')
+        ? { code: 128, stderr: 'fatal: Not possible to fast-forward, aborting.' }
+        : {}
+    )
+
+    await expect(pullRemoteGitChanges(context, createConfig(), session)).rejects.toThrowError(
+      /has commits that aren't on the remote branch/
     )
   })
 

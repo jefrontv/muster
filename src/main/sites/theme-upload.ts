@@ -49,18 +49,28 @@ export async function zipThemeDist(
   }
 }
 
-/** Every value here comes from user config, so all of them are quoted. */
+/**
+ * Extracts beside the live dist and swaps it in, so a failed unzip leaves the old theme serving.
+ * The live folder is missing only between two renames; if the second fails the old one goes back.
+ * Every value here comes from user config, so all of them are quoted.
+ */
 export function buildRemoteExtractCommand(paths: ThemeDeployPaths): string {
   const parent = quoteShellArgument(paths.remoteDistParent)
   const archive = quoteShellArgument(paths.remoteZipName)
-  const basename = quoteShellArgument(paths.distBasename)
+  const live = quoteShellArgument(paths.distBasename)
+  const next = quoteShellArgument(`${paths.distBasename}.muster-new`)
+  const previous = quoteShellArgument(`${paths.distBasename}.muster-old`)
   return [
     `cd ${parent}`,
-    `rm -rf ${basename}`,
-    `unzip -o ${archive} -d ${basename}`,
-    `rm ${archive}`,
-    `find ${basename} -type d -exec chmod 755 {} +`,
-    `find ${basename} -type f -exec chmod 644 {} +`
+    // Leftovers from an interrupted deploy.
+    `rm -rf ${next} ${previous}`,
+    `unzip -o ${archive} -d ${next}`,
+    `find ${next} -type d -exec chmod 755 {} +`,
+    `find ${next} -type f -exec chmod 644 {} +`,
+    `{ [ ! -e ${live} ] || mv ${live} ${previous}; }`,
+    `{ mv ${next} ${live} || { [ ! -e ${previous} ] || mv ${previous} ${live}; exit 1; }; }`,
+    `rm -rf ${previous}`,
+    `rm ${archive}`
   ].join(' && ')
 }
 
@@ -93,7 +103,7 @@ export async function uploadThemeDist(
 
   context.throwIfCancelled()
   context.status('Extracting theme dist on the server')
-  // No deadline: the old dist is already gone, so a killed unzip would leave a broken live theme.
+  // No deadline: a killed command between the two renames would leave the theme without a dist.
   const result = await session.exec(buildRemoteExtractCommand(paths), { timeoutMs: 0 })
   // ocsites treats any stderr here as fatal: a partial extract leaves a broken theme live.
   const stderr = result.stderr.trim()

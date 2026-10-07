@@ -40,7 +40,11 @@ export function buildRemoteDumpCommand(
 ): string {
   const pipeline =
     'set -o pipefail; ' +
+    // --single-transaction: one consistent snapshot without locking a live site's tables.
+    // --quick streams rows instead of buffering whole tables; --no-tablespaces avoids the PROCESS
+    // privilege MySQL 8.0.21+ demands, which shared hosts rarely grant.
     `mysqldump --defaults-extra-file=${quoteShellArgument(optionFilePath)} ` +
+    '--single-transaction --quick --no-tablespaces ' +
     `${quoteShellArgument(dbName)} | gzip > ${quoteShellArgument(remoteDumpPath)}`
   // bash, not sh: pipefail is not POSIX and Debian's dash aborts the whole command on it.
   return `bash -c ${quoteShellArgument(pipeline)}`

@@ -67,11 +67,18 @@ export async function pullRemoteGitChanges(
     throw new SiteRunStepError(GIT_PULL_STEP, `Not a Git repository: ${rootPath}`)
   }
 
-  // git writes progress to stderr, so only the exit status decides success here. No deadline
-  // either: a killed pull can leave the remote index locked mid-merge.
-  const result = await session.exec(`cd ${root} && git pull`, { timeoutMs: 0 })
+  // --ff-only: a commit made on the server must stop the deploy, not become a merge commit on a
+  // live site. git writes progress to stderr, so only the exit status decides success. No
+  // deadline either: a killed pull can leave the remote index locked.
+  const result = await session.exec(`cd ${root} && git pull --ff-only`, { timeoutMs: 0 })
   if (result.code !== 0) {
-    throw new SiteRunStepError(GIT_PULL_STEP, result.stderr.trim() || 'git pull failed')
+    const stderr = result.stderr.trim()
+    throw new SiteRunStepError(
+      GIT_PULL_STEP,
+      /not possible to fast-forward|diverg/i.test(stderr)
+        ? `The server's checkout at ${rootPath} has commits that aren't on the remote branch, so it can't fast-forward. Nothing was changed. Check the server with \`git log\` and resolve it there.\n${stderr}`
+        : stderr || 'git pull failed'
+    )
   }
   const stdout = result.stdout.trim()
   if (stdout) {

@@ -139,11 +139,14 @@ describe('buildRemoteExtractCommand', () => {
       })
     ).toBe(
       `cd 'public_html/wp-content/themes/acme-theme/assets' && ` +
-        `rm -rf 'dist' && ` +
-        `unzip -o 'acme-theme_dist.zip' -d 'dist' && ` +
-        `rm 'acme-theme_dist.zip' && ` +
-        `find 'dist' -type d -exec chmod 755 {} + && ` +
-        `find 'dist' -type f -exec chmod 644 {} +`
+        `rm -rf 'dist.muster-new' 'dist.muster-old' && ` +
+        `unzip -o 'acme-theme_dist.zip' -d 'dist.muster-new' && ` +
+        `find 'dist.muster-new' -type d -exec chmod 755 {} + && ` +
+        `find 'dist.muster-new' -type f -exec chmod 644 {} + && ` +
+        `{ [ ! -e 'dist' ] || mv 'dist' 'dist.muster-old'; } && ` +
+        `{ mv 'dist.muster-new' 'dist' || { [ ! -e 'dist.muster-old' ] || mv 'dist.muster-old' 'dist'; exit 1; }; } && ` +
+        `rm -rf 'dist.muster-old' && ` +
+        `rm 'acme-theme_dist.zip'`
     )
   })
 
@@ -157,8 +160,8 @@ describe('buildRemoteExtractCommand', () => {
     })
 
     expect(command).toContain(`cd 'public_html/o'\\''brien'`)
-    expect(command).toContain(`rm -rf 'di'\\''st'`)
-    expect(command).toContain(`unzip -o 'o'\\''brien_dist.zip' -d 'di'\\''st'`)
+    expect(command).toContain(`mv 'di'\\''st.muster-new' 'di'\\''st'`)
+    expect(command).toContain(`unzip -o 'o'\\''brien_dist.zip' -d 'di'\\''st.muster-new'`)
     // The raw values must never appear unescaped, or the remote shell would end the quoted word.
     expect(command).not.toContain("o'brien")
     expect(command).not.toContain("di'st")

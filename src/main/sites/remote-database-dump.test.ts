@@ -213,6 +213,14 @@ describe.skipIf(process.platform === 'win32')('buildRemoteDumpCommand under a re
     expect(existsSync(join(shellDir, 'db.sql.gz'))).toBe(true)
   })
 
+  it('dumps one consistent snapshot without table locks', () => {
+    expect(runGeneratedCommand('acme', '0').status).toBe(0)
+    const args = gunzipSync(readFileSync(join(shellDir, 'db.sql.gz'))).toString('utf8')
+    expect(args).toContain('ARG:--single-transaction')
+    expect(args).toContain('ARG:--quick')
+    expect(args).toContain('ARG:--no-tablespaces')
+  })
+
   it('succeeds when mysqldump succeeds', () => {
     expect(runGeneratedCommand('acme', '0').status).toBe(0)
   })
