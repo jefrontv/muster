@@ -111,6 +111,38 @@ function decodeClaudeSystemRecord(
   return null
 }
 
+/**
+ * A message the user sent while Claude was mid-turn. Claude records it as a `queued_command`
+ * attachment at the point it was handed to the model, not as a user record, so without this the
+ * turn is invisible: the optimistic echo never reconciles and stays pinned at the end of the list.
+ */
+function decodeClaudeQueuedPrompt(
+  record: Record<string, unknown>,
+  fallbackId: string
+): NativeChatMessage | null {
+  const attachment = asRecord(record.attachment)
+  if (attachment?.type !== 'queued_command') {
+    return null
+  }
+  // Other modes (task notifications, bash) are harness traffic, not something the user typed.
+  if (attachment.commandMode !== undefined && attachment.commandMode !== 'prompt') {
+    return null
+  }
+  const blocks = claudeContentBlocks(attachment.prompt, { dropThinking: true }).map((block) =>
+    block.type === 'text' ? { ...block, text: unwrapChatWorkspaceUserTurn(block.text) } : block
+  )
+  if (blocks.length === 0) {
+    return null
+  }
+  return {
+    id: extractString(record.uuid) ?? fallbackId,
+    role: 'user',
+    blocks,
+    timestamp: parseTimestamp(record.timestamp) ?? parseTimestamp(attachment.timestamp),
+    source: 'transcript'
+  }
+}
+
 export function decodeClaudeTranscriptLine(
   line: string,
   fallbackId: string
@@ -122,6 +154,9 @@ export function decodeClaudeTranscriptLine(
   const role = record.type
   if (role === 'system') {
     return decodeClaudeSystemRecord(record, fallbackId)
+  }
+  if (role === 'attachment') {
+    return decodeClaudeQueuedPrompt(record, fallbackId)
   }
   if (role !== 'user' && role !== 'assistant') {
     return null
