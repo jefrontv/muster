@@ -10,6 +10,7 @@ import {
   shouldClearBranchCompareForMissingBase,
   shouldRefreshBranchCompareForRemoteStatus,
   shouldRefreshBranchCompareForStatusHead,
+  shouldRefreshGitHistoryForStatusHead,
   shouldShowCompareSummary
 } from './SourceControl'
 import type { GitBranchCompareSummary, GitUpstreamStatus } from '../../../../shared/types'
@@ -421,6 +422,37 @@ describe('SourceControl compare summary', () => {
         { baseRef: 'origin/main', statusHead: 'new-head', worktreeId: 'wt-1' }
       )
     ).toBe(true)
+  })
+
+  it('refreshes commit history when an outside commit moves the status head', () => {
+    expect(
+      shouldRefreshGitHistoryForStatusHead(
+        { baseRef: null, statusHead: 'old-head', worktreeId: 'wt-1' },
+        { baseRef: null, statusHead: 'new-head', worktreeId: 'wt-1' }
+      )
+    ).toBe(true)
+  })
+
+  it('does not refresh commit history for the first loaded head or a worktree switch', () => {
+    expect(
+      shouldRefreshGitHistoryForStatusHead(null, {
+        baseRef: 'origin/main',
+        statusHead: 'head',
+        worktreeId: 'wt-1'
+      })
+    ).toBe(false)
+    expect(
+      shouldRefreshGitHistoryForStatusHead(
+        { baseRef: 'origin/main', statusHead: null, worktreeId: 'wt-1' },
+        { baseRef: 'origin/main', statusHead: 'head', worktreeId: 'wt-1' }
+      )
+    ).toBe(false)
+    expect(
+      shouldRefreshGitHistoryForStatusHead(
+        { baseRef: 'origin/main', statusHead: 'old-head', worktreeId: 'wt-1' },
+        { baseRef: 'origin/main', statusHead: 'new-head', worktreeId: 'wt-2' }
+      )
+    ).toBe(false)
   })
 
   it('does not refresh branch compare for initial, unknown, or unrelated status heads', () => {

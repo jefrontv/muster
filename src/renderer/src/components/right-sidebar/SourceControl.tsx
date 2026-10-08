@@ -4807,6 +4807,7 @@ function SourceControlInner(): React.JSX.Element {
   const refreshBranchCompareRef = useRef<() => Promise<void>>(async () => {})
   const branchCompareStatusHeadRef = useRef<BranchCompareStatusHeadSnapshot | null>(null)
   const branchCompareRemoteStatusRef = useRef<BranchCompareRemoteStatusSnapshot | null>(null)
+  const gitHistoryStatusHeadRef = useRef<GitHistoryStatusHeadSnapshot | null>(null)
 
   const runBranchCompare = useCallback(async () => {
     if (!activeWorktreeId || !worktreePath || !compareBaseRef || isFolder) {
@@ -5065,6 +5066,37 @@ function SourceControlInner(): React.JSX.Element {
     isGitHistoryExpanded,
     isGitHistoryVisible,
     worktreePath
+  ])
+
+  useEffect(() => {
+    if (!activeWorktreeId || isFolder) {
+      gitHistoryStatusHeadRef.current = null
+      return
+    }
+    const current = {
+      baseRef: compareBaseRef ?? null,
+      statusHead: activeGitStatusHead,
+      worktreeId: activeWorktreeId
+    }
+    const previous = gitHistoryStatusHeadRef.current
+    gitHistoryStatusHeadRef.current = current
+    // Why: commits from agents or the terminal only surface as a new status HEAD; the load effect above owns mount and expand.
+    if (
+      isBranchVisible &&
+      isGitHistoryExpanded &&
+      isGitHistoryVisible &&
+      shouldRefreshGitHistoryForStatusHead(previous, current)
+    ) {
+      void refreshGitHistoryRef.current()
+    }
+  }, [
+    activeGitStatusHead,
+    activeWorktreeId,
+    compareBaseRef,
+    isBranchVisible,
+    isFolder,
+    isGitHistoryExpanded,
+    isGitHistoryVisible
   ])
 
   useEffect(() => {
@@ -6951,6 +6983,27 @@ type BranchCompareStatusHeadSnapshot = {
   baseRef: string
   statusHead: string | null
   worktreeId: string
+}
+
+type GitHistoryStatusHeadSnapshot = {
+  baseRef: string | null
+  statusHead: string | null
+  worktreeId: string
+}
+
+// Why: a null previous head means status hadn't loaded yet, so the first real head isn't a new commit.
+export function shouldRefreshGitHistoryForStatusHead(
+  previous: GitHistoryStatusHeadSnapshot | null,
+  current: GitHistoryStatusHeadSnapshot
+): boolean {
+  return (
+    previous !== null &&
+    previous.statusHead !== null &&
+    current.statusHead !== null &&
+    previous.worktreeId === current.worktreeId &&
+    previous.baseRef === current.baseRef &&
+    previous.statusHead !== current.statusHead
+  )
 }
 
 type BranchCompareRemoteStatusSnapshot = {
