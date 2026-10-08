@@ -206,6 +206,7 @@ import {
   isBehindOnlyUpstream,
   shouldForcePushWithLeaseForUpstream
 } from '../../../../shared/git-upstream-status'
+import { resolveForcePushConfirmation } from './source-control-force-push-confirmation'
 import type {
   DiffComment,
   GitBranchChangeEntry,
@@ -2745,24 +2746,35 @@ function SourceControlInner(): React.JSX.Element {
     worktreePath
   ])
 
+  const confirmForcePush = useCallback(async (): Promise<boolean> => {
+    const confirmation = resolveForcePushConfirmation(remoteStatusForActions ?? remoteStatus)
+    return confirmation ? confirmAction(confirmation) : true
+  }, [confirmAction, remoteStatus, remoteStatusForActions])
+
+  const runConfirmedForcePush = useCallback(async (): Promise<void> => {
+    if (await confirmForcePush()) {
+      await runRemoteAction('force_push')
+    }
+  }, [confirmForcePush, runRemoteAction])
+
   // Why: commit first and run the follow-up remote op only if handleCommit succeeded, so we never push a commit the user didn't land.
   const runCompoundCommitAction = useCallback(
     async (remoteKind: 'push' | 'sync'): Promise<void> => {
+      // Why: "Commit & Force Push" maps to remoteKind 'push', so route to force_push when the upstream shape requires lease force (kind 'push' no longer auto-upgrades).
+      const forcePush =
+        remoteKind === 'push' &&
+        shouldForcePushWithLeaseForUpstream(remoteStatusForActions ?? remoteStatus)
+      // Why: confirm before committing so cancelling leaves nothing half-done.
+      if (forcePush && !(await confirmForcePush())) {
+        return
+      }
       const ok = await handleCommit()
       if (!ok) {
         return
       }
-      // Why: "Commit & Force Push" maps to remoteKind 'push', so route to force_push when the upstream shape requires lease force (kind 'push' no longer auto-upgrades).
-      if (
-        remoteKind === 'push' &&
-        shouldForcePushWithLeaseForUpstream(remoteStatusForActions ?? remoteStatus)
-      ) {
-        await runRemoteAction('force_push')
-        return
-      }
-      await runRemoteAction(remoteKind)
+      await runRemoteAction(forcePush ? 'force_push' : remoteKind)
     },
-    [handleCommit, remoteStatus, remoteStatusForActions, runRemoteAction]
+    [confirmForcePush, handleCommit, remoteStatus, remoteStatusForActions, runRemoteAction]
   )
 
   const handlePullRequestCreated = useCallback(
@@ -4392,8 +4404,10 @@ function SourceControlInner(): React.JSX.Element {
         case 'push_create_pr':
           void runCreatePrIntent()
           return
-        case 'push':
         case 'force_push':
+          void runConfirmedForcePush()
+          return
+        case 'push':
         case 'pull':
         case 'fast_forward':
         case 'sync':
@@ -4412,6 +4426,7 @@ function SourceControlInner(): React.JSX.Element {
       isCreatingPr,
       isCreatePrIntentInFlight,
       prGenerating,
+      runConfirmedForcePush,
       runCreatePrIntent,
       runCompoundCommitAction,
       runRemoteAction

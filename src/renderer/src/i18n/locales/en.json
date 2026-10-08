@@ -10024,7 +10024,14 @@
             "b8c2e1a904": "{{value0}} → {{value1}}",
             "a4e93c21d7": "Current branch: {{value0}}",
             "c7d4e2f801": "Change base ref: {{value0}}",
-            "f3a1b8c204": "upstream"
+            "f3a1b8c204": "upstream",
+            "forcePushConfirm": {
+              "title": "Force push and replace remote commits?",
+              "description_one": "{{value0}} has 1 commit that isn't on your branch. Force pushing deletes it from the remote.",
+              "description_other": "{{value0}} has {{value1}} commits that aren't on your branch. Force pushing deletes them from the remote.",
+              "remoteBranch": "The remote branch",
+              "confirm": "Force Push"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Could not start the selected agent.",

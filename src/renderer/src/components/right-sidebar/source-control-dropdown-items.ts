@@ -339,7 +339,12 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
                 ? forcePushTitle
                 : formatManualForcePushTitle(pushLabelCount, behind, upstreamStatus?.upstreamName),
     // Why: same target-safety gate as Push — force-with-lease to a wrong review head is worse than blocking; stays available without an upstream.
-    disabled: globalBusy || publishBlockedByDetachedHead || pushBlockedByOpenHostedReviewTarget
+    disabled:
+      globalBusy ||
+      publishBlockedByDetachedHead ||
+      pushBlockedByOpenHostedReviewTarget ||
+      (!upstreamLoading && hasUpstream && pushLabelCount === 0),
+    variant: 'destructive'
   }
 
   const pullItem: DropdownItem = {
@@ -552,7 +557,6 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     undoCommitItem,
     { kind: 'separator' },
     pushItem,
-    forcePushItem,
     createPRItem,
     pushCreatePRItem,
     pullItem,
@@ -560,7 +564,8 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     syncItem,
     rebaseItem,
     fetchItem,
-    publishItem
+    publishItem,
+    forcePushItem
   ]
   if (conflictOperation === 'merge' || conflictOperation === 'rebase') {
     const isRebase = conflictOperation === 'rebase'

@@ -10001,7 +10001,14 @@
             "b8c2e1a904": "{{value0}} → {{value1}}",
             "a4e93c21d7": "Rama actual: {{value0}}",
             "c7d4e2f801": "Cambiar ref base: {{value0}}",
-            "f3a1b8c204": "upstream"
+            "f3a1b8c204": "upstream",
+            "forcePushConfirm": {
+              "title": "¿Hacer force push y reemplazar los commits remotos?",
+              "description_one": "{{value0}} tiene 1 commit que no está en tu rama. Hacer force push lo elimina del remoto.",
+              "description_other": "{{value0}} tiene {{value1}} commits que no están en tu rama. Hacer force push los elimina del remoto.",
+              "remoteBranch": "La rama remota",
+              "confirm": "Force Push"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "No se pudo iniciar el agente seleccionado.",

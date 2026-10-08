@@ -10001,7 +10001,14 @@
             "b8c2e1a904": "{{value0}} → {{value1}}",
             "a4e93c21d7": "当前分支：{{value0}}",
             "c7d4e2f801": "更改基引用：{{value0}}",
-            "f3a1b8c204": "upstream"
+            "f3a1b8c204": "upstream",
+            "forcePushConfirm": {
+              "title": "强制推送并替换远程提交？",
+              "description_one": "{{value0}} 有 1 个提交不在你的分支上。强制推送会将其从远程删除。",
+              "description_other": "{{value0}} 有 {{value1}} 个提交不在你的分支上。强制推送会将它们从远程删除。",
+              "remoteBranch": "远程分支",
+              "confirm": "强制推送"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "无法启动选定的智能体。",

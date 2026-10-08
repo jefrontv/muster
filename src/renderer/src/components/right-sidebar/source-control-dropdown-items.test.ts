@@ -43,7 +43,6 @@ describe('resolveDropdownItems', () => {
       'undo_commit',
       'separator',
       'push',
-      'force_push',
       'create_pr',
       'push_create_pr',
       'pull',
@@ -51,7 +50,8 @@ describe('resolveDropdownItems', () => {
       'sync',
       'rebase_base',
       'fetch',
-      'publish'
+      'publish',
+      'force_push'
     ])
   })
 
@@ -260,7 +260,7 @@ describe('resolveDropdownItems', () => {
     expect(byKind.pull.label).toBe('Pull')
     expect(byKind.sync.label).toBe('Sync')
     expect(byKind.push.disabled).toBe(false)
-    expect(byKind.force_push.disabled).toBe(false)
+    expect(byKind.force_push.disabled).toBe(true)
     expect(byKind.pull.disabled).toBe(false)
     expect(byKind.fast_forward.disabled).toBe(false)
     expect(byKind.sync.disabled).toBe(false)

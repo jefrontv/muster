@@ -10001,7 +10001,14 @@
             "b8c2e1a904": "{{value0}} → {{value1}}",
             "a4e93c21d7": "현재 브랜치: {{value0}}",
             "c7d4e2f801": "베이스 ref 변경: {{value0}}",
-            "f3a1b8c204": "upstream"
+            "f3a1b8c204": "upstream",
+            "forcePushConfirm": {
+              "title": "강제 푸시하고 원격 커밋을 교체할까요?",
+              "description_one": "{{value0}}에 내 브랜치에 없는 커밋이 1개 있습니다. 강제 푸시하면 원격에서 삭제됩니다.",
+              "description_other": "{{value0}}에 내 브랜치에 없는 커밋이 {{value1}}개 있습니다. 강제 푸시하면 원격에서 삭제됩니다.",
+              "remoteBranch": "원격 브랜치",
+              "confirm": "강제 푸시"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "선택한 agent를 시작할 수 없습니다.",
