@@ -11,6 +11,8 @@ import {
   buildGitHistoryViewModels
 } from '../../../../shared/git-history-graph'
 import { GitHistoryRow } from './GitHistoryRow'
+import { GitHistoryPipelineStatus } from './GitHistoryPipelineStatus'
+import type { CommitPipelineRun } from '../../../../shared/commit-pipelines'
 import { GitHistoryCommitFiles, type GitHistoryCommitFilesState } from './GitHistoryCommitFiles'
 import {
   GitHistoryCommitContextMenu,
@@ -48,7 +50,8 @@ export function GitHistoryPanel({
   onOpenCommit,
   onLoadCommitFiles,
   onOpenCommitFile,
-  onCommitAction
+  onCommitAction,
+  pipelineRunsBySha
 }: {
   state: GitHistoryPanelState
   collapsed: boolean
@@ -62,6 +65,8 @@ export function GitHistoryPanel({
     event?: SourceControlRowOpenEvent
   ) => void
   onCommitAction?: (action: GitHistoryCommitAction, item: GitHistoryItem) => void
+  /** Null hides the CI column entirely (no provider, signed out, no scope). */
+  pipelineRunsBySha?: Readonly<Record<string, CommitPipelineRun>> | null
 }): React.JSX.Element | null {
   const result = state.result
   const viewModels = useMemo(() => {
@@ -81,6 +86,9 @@ export function GitHistoryPanel({
   }, [result])
 
   const loading = state.status === 'loading' || state.status === 'refreshing'
+  // Why: a repo with no runs for any listed commit should not reserve an empty column.
+  const pipelineRuns =
+    pipelineRunsBySha && Object.keys(pipelineRunsBySha).length > 0 ? pipelineRunsBySha : null
   const count = result?.items.length ?? 0
   const [panelHeight, setPanelHeight] = useState(DEFAULT_GIT_HISTORY_PANEL_HEIGHT)
   const resizeSessionRef = useRef<GitHistoryResizeSession | null>(null)
@@ -355,6 +363,13 @@ export function GitHistoryPanel({
                 preserveRefIds={result?.baseRef ? [result.baseRef.id] : undefined}
                 onOpenCommit={onOpenCommit}
                 onToggleExpand={canExpand ? handleToggleExpand : undefined}
+                pipelineCell={
+                  pipelineRuns ? (
+                    <GitHistoryPipelineStatus
+                      run={isBoundaryNode ? undefined : pipelineRuns[item.id]}
+                    />
+                  ) : undefined
+                }
               />
             )
             return (

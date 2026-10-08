@@ -98,6 +98,7 @@ import type {
 } from '../shared/terminal-custom-themes'
 import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
+import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commit-pipelines'
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type {
   ShellOpenExternalEditorRequest,
@@ -3428,6 +3429,8 @@ const api = {
     history: (
       args: { worktreePath: string; connectionId?: string } & GitHistoryOptions
     ): Promise<GitHistoryResult> => ipcRenderer.invoke('git:history', args),
+    commitPipelines: (args: CommitPipelinesArgs): Promise<CommitPipelinesResult> =>
+      ipcRenderer.invoke('git:commitPipelines', args),
     conflictOperation: (args: { worktreePath: string; connectionId?: string }): Promise<unknown> =>
       ipcRenderer.invoke('git:conflictOperation', args),
     abortMerge: (args: { worktreePath: string; connectionId?: string }): Promise<void> =>

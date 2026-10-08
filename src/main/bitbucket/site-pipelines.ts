@@ -58,11 +58,14 @@ type RawPipelineStep = {
   state?: { name?: string | null; result?: { name?: string | null } | null } | null
 }
 
-export type SitePipelinesDeps = {
+export type BitbucketPipelineRunsDeps = {
+  fetchPipelines?: (repo: BitbucketRepoRef, pageSize: number) => Promise<readonly RawPipeline[]>
+  fetchSteps?: (repo: BitbucketRepoRef, pipelineUuid: string) => Promise<readonly RawPipelineStep[]>
+}
+
+export type SitePipelinesDeps = BitbucketPipelineRunsDeps & {
   resolveRepoRef?: (repoPath: string) => Promise<BitbucketRepoRef | null>
   hasAuth?: () => boolean
-  fetchPipelines?: (repo: BitbucketRepoRef) => Promise<readonly RawPipeline[]>
-  fetchSteps?: (repo: BitbucketRepoRef, pipelineUuid: string) => Promise<readonly RawPipelineStep[]>
 }
 
 /**
@@ -151,11 +154,14 @@ function toRun(raw: RawPipeline, repo: BitbucketRepoRef): SitePipelineRun | null
   }
 }
 
-async function fetchPipelinesFromApi(repo: BitbucketRepoRef): Promise<readonly RawPipeline[]> {
+async function fetchPipelinesFromApi(
+  repo: BitbucketRepoRef,
+  pageSize: number
+): Promise<readonly RawPipeline[]> {
   const encoded = `${encodeURIComponent(repo.workspace)}/${encodeURIComponent(repo.repoSlug)}`
   const data = await bitbucketRequestJson<{ values?: RawPipeline[] }>(
     `/repositories/${encoded}/pipelines`,
-    { searchParams: { pagelen: String(RUN_LIMIT), sort: '-created_on' } },
+    { searchParams: { pagelen: String(pageSize), sort: '-created_on' } },
     true
   )
   return data?.values ?? []
@@ -180,6 +186,56 @@ function isInFlight(status: SitePipelineRun['status']): boolean {
 }
 
 /**
+ * The newest `pageSize` runs for `repo`, newest first, with the newest in-flight run's current step
+ * filled in. Throws on any HTTP failure; callers decide which statuses are permanent.
+ */
+export async function listBitbucketPipelineRuns(
+  repo: BitbucketRepoRef,
+  pageSize: number,
+  deps: BitbucketPipelineRunsDeps = {}
+): Promise<SitePipelineRun[]> {
+  const fetchPipelines = deps.fetchPipelines ?? fetchPipelinesFromApi
+  const fetchSteps = deps.fetchSteps ?? fetchStepsFromApi
+  const raw = await fetchPipelines(repo, pageSize)
+  const runs: SitePipelineRun[] = []
+  const pending: { run: SitePipelineRun; uuid: string }[] = []
+  for (const entry of raw) {
+    const run = toRun(entry, repo)
+    if (!run) {
+      continue
+    }
+    const uuid = entry.uuid?.trim()
+    if (isInFlight(run.status) && uuid) {
+      pending.push({ run, uuid })
+    }
+    runs.push(run)
+  }
+  // The newest run still working, which is not necessarily the newest run: a stuck pipeline can
+  // sit IN_PROGRESS for months while later ones start and finish above it. Only one is enriched
+  // — steps cost an extra call per poll, and a finished run's step list adds nothing.
+  const inFlight = pending[0]
+  if (inFlight) {
+    // A failure here must not lose the run list — the row is still worth showing without it.
+    const steps = await fetchSteps(repo, inFlight.uuid).catch(() => [])
+    Object.assign(inFlight.run, deriveStepProgress(steps))
+  }
+  return runs
+}
+
+/**
+ * Permanent misses are answered, not thrown: retrying a 403 or 404 every minute produces an error
+ * the user cannot act on. Anything else (a 500, a dropped connection) is rethrown so the caller can
+ * keep showing the last good result instead of pretending there are no pipelines.
+ */
+export function toPermanentPipelinesMiss(error: unknown): 'forbidden' | 'not-found' {
+  const permanent = isPermanentlyUnavailable(error)
+  if (permanent) {
+    return permanent
+  }
+  throw error
+}
+
+/**
  * Recent pipeline runs for the checkout at `repoPath`.
  *
  * Every "nothing to show" case is a reason rather than an error: a GitHub-hosted site is not a
@@ -191,8 +247,6 @@ export async function getSitePipelines(
 ): Promise<SitePipelinesResult> {
   const resolveRepoRef = deps.resolveRepoRef ?? ((path: string) => getBitbucketRepoRef(path))
   const hasAuth = deps.hasAuth ?? bitbucketHasAuth
-  const fetchPipelines = deps.fetchPipelines ?? fetchPipelinesFromApi
-  const fetchSteps = deps.fetchSteps ?? fetchStepsFromApi
 
   const repo = await resolveRepoRef(repoPath)
   if (!repo) {
@@ -204,38 +258,9 @@ export async function getSitePipelines(
   }
 
   try {
-    const raw = await fetchPipelines(repo)
-    const runs: SitePipelineRun[] = []
-    const pending: { run: SitePipelineRun; uuid: string }[] = []
-    for (const entry of raw) {
-      const run = toRun(entry, repo)
-      if (!run) {
-        continue
-      }
-      const uuid = entry.uuid?.trim()
-      if (isInFlight(run.status) && uuid) {
-        pending.push({ run, uuid })
-      }
-      runs.push(run)
-    }
-    // The newest run still working, which is not necessarily the newest run: a stuck pipeline can
-    // sit IN_PROGRESS for months while later ones start and finish above it. Only one is enriched
-    // — steps cost an extra call per poll, and a finished run's step list adds nothing.
-    const inFlight = pending[0]
-    if (inFlight) {
-      // A failure here must not lose the run list — the row is still worth showing without it.
-      const steps = await fetchSteps(repo, inFlight.uuid).catch(() => [])
-      Object.assign(inFlight.run, deriveStepProgress(steps))
-    }
+    const runs = await listBitbucketPipelineRuns(repo, RUN_LIMIT, deps)
     return { available: true, runs, workspace: repo.workspace, repoSlug: repo.repoSlug }
   } catch (error) {
-    // Permanent misses are answered, not thrown: retrying a 403 or 404 every minute produces an
-    // error the user cannot act on. Anything else (a 500, a dropped connection) propagates so the
-    // caller can keep showing the last good result instead of pretending there are no pipelines.
-    const permanent = isPermanentlyUnavailable(error)
-    if (permanent) {
-      return { available: false, reason: permanent }
-    }
-    throw error
+    return { available: false, reason: toPermanentPipelinesMiss(error) }
   }
 }

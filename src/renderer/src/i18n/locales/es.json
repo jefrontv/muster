@@ -10851,6 +10851,18 @@
             "copied": "Prompt copied to the clipboard",
             "copy_prompt": "Copy prompt",
             "no_agents": "No agent session is open here."
+          },
+          "GitHistoryPipelineStatus": {
+            "running": "en curso",
+            "queued": "en cola",
+            "paused": "en pausa",
+            "passed": "superado",
+            "failed": "fallido",
+            "stopped": "detenido",
+            "skipped": "omitido",
+            "checksSummary": "Comprobaciones: {{status}}",
+            "pipelineSummary": "Pipeline n.º {{number}}: {{status}}",
+            "openInBrowser": "{{summary}}. Abrir en el navegador"
           }
         }
       },

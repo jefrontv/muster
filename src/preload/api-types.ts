@@ -330,6 +330,7 @@ import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 
 import type { SetupScriptImportCandidate } from '../shared/setup-script-imports'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
+import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commit-pipelines'
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type {
@@ -3211,6 +3212,8 @@ export type PreloadApi = {
     history: (
       args: { worktreePath: string; connectionId?: string } & GitHistoryOptions
     ) => Promise<GitHistoryResult>
+    /** CI status per listed commit; `available: false` means hide the column, not an error. */
+    commitPipelines: (args: CommitPipelinesArgs) => Promise<CommitPipelinesResult>
     conflictOperation: (args: {
       worktreePath: string
       connectionId?: string

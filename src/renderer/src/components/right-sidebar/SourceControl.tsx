@@ -199,6 +199,7 @@ import { getRuntimeRepoBaseRefDefault } from '@/runtime/runtime-repo-client'
 import { stripBaseRef, useCreatePullRequestDialogFields } from './useCreatePullRequestDialogFields'
 import { resolveCreateReviewDraftTitle } from './create-review-draft-title'
 import { GitHistoryPanel, type GitHistoryPanelState } from './GitHistoryPanel'
+import { useCommitPipelines } from './use-commit-pipelines'
 import { useGitHistoryCommitActions } from './useGitHistoryCommitActions'
 import { normalizeHostedReviewHeadRef } from '../../../../shared/hosted-review-refs'
 import {
@@ -1755,6 +1756,14 @@ function SourceControlInner(): React.JSX.Element {
     !normalizedFilter &&
     !fileFilterState.tooLarge &&
     Boolean(activeWorktreeId && worktreePath && !isFolder)
+  const commitPipelineRuns = useCommitPipelines({
+    worktreeId: activeWorktreeId,
+    worktreePath,
+    settings: activeRepoSettings,
+    enabled: isGitHistoryVisible && isGitHistoryExpanded,
+    history: gitHistoryState.result,
+    pushState: remoteStatus
+  })
 
   const filteredGrouped = useMemo(
     () => filterSourceControlGroupedPathEntries(grouped, fileFilterState),
@@ -6240,6 +6249,7 @@ function SourceControlInner(): React.JSX.Element {
                 onLoadCommitFiles={loadCommitFiles}
                 onOpenCommitFile={openCommitFile}
                 onCommitAction={handleCommitAction}
+                pipelineRunsBySha={commitPipelineRuns}
               />
             </div>
           )}

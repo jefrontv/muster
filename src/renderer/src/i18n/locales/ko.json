@@ -10851,6 +10851,18 @@
             "copied": "Prompt copied to the clipboard",
             "copy_prompt": "Copy prompt",
             "no_agents": "No agent session is open here."
+          },
+          "GitHistoryPipelineStatus": {
+            "running": "실행 중",
+            "queued": "대기 중",
+            "paused": "일시 중지됨",
+            "passed": "통과",
+            "failed": "실패",
+            "stopped": "중지됨",
+            "skipped": "건너뜀",
+            "checksSummary": "검사 {{status}}",
+            "pipelineSummary": "파이프라인 #{{number}} {{status}}",
+            "openInBrowser": "{{summary}}. 브라우저에서 열기"
           }
         }
       },

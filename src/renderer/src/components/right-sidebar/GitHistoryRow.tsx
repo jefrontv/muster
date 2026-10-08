@@ -38,6 +38,8 @@ type GitHistoryRowProps = React.HTMLAttributes<HTMLElement> & {
   preserveRefIds?: readonly string[]
   onOpenCommit?: (item: GitHistoryItem) => void
   onToggleExpand?: (item: GitHistoryItem) => void
+  /** Rendered beside the row rather than inside it, since it may hold its own button. */
+  pipelineCell?: React.ReactNode
 }
 
 export const GitHistoryRow = React.forwardRef<HTMLElement, GitHistoryRowProps>(
@@ -48,6 +50,7 @@ export const GitHistoryRow = React.forwardRef<HTMLElement, GitHistoryRowProps>(
       preserveRefIds,
       onOpenCommit,
       onToggleExpand,
+      pipelineCell,
       className,
       ...rootProps
     },
@@ -68,9 +71,12 @@ export const GitHistoryRow = React.forwardRef<HTMLElement, GitHistoryRowProps>(
     const visibleRefs = refs.slice(0, 2)
     const hiddenRefs = refs.slice(2)
     const rowTooltip = item.message || item.subject
+    const hasPipelineCell = pipelineCell !== undefined
     const rowClassName = cn(
       'grid min-h-[26px] w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-1.5 px-3 py-0.5 text-left text-xs transition-colors',
-      isInteractive && 'cursor-pointer hover:bg-accent/40 focus-visible:bg-accent/40',
+      hasPipelineCell && 'flex-1 pr-1.5',
+      isInteractive && 'cursor-pointer focus-visible:bg-accent/40',
+      isInteractive && !hasPipelineCell && 'hover:bg-accent/40',
       !isInteractive && 'cursor-default',
       isBoundaryNode && 'text-muted-foreground',
       className
@@ -124,8 +130,23 @@ export const GitHistoryRow = React.forwardRef<HTMLElement, GitHistoryRowProps>(
       </>
     )
 
+    const withPipelineCell = (row: React.JSX.Element): React.JSX.Element =>
+      hasPipelineCell ? (
+        <div
+          className={cn(
+            'flex w-full min-w-0 items-center pr-3 transition-colors',
+            isInteractive && 'hover:bg-accent/40'
+          )}
+        >
+          {row}
+          {pipelineCell}
+        </div>
+      ) : (
+        row
+      )
+
     if (!isInteractive) {
-      return (
+      return withPipelineCell(
         <div
           {...rootProps}
           ref={ref as React.Ref<HTMLDivElement>}
@@ -146,7 +167,7 @@ export const GitHistoryRow = React.forwardRef<HTMLElement, GitHistoryRowProps>(
       onOpenCommit?.(item)
     }
 
-    return (
+    return withPipelineCell(
       <button
         {...rootProps}
         ref={ref as React.Ref<HTMLButtonElement>}

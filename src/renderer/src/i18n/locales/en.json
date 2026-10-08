@@ -10874,6 +10874,18 @@
             "copied": "Prompt copied to the clipboard",
             "copy_prompt": "Copy prompt",
             "no_agents": "No agent session is open here."
+          },
+          "GitHistoryPipelineStatus": {
+            "running": "running",
+            "queued": "queued",
+            "paused": "paused",
+            "passed": "passed",
+            "failed": "failed",
+            "stopped": "stopped",
+            "skipped": "skipped",
+            "checksSummary": "Checks {{status}}",
+            "pipelineSummary": "Pipeline #{{number}} {{status}}",
+            "openInBrowser": "{{summary}}. Open in browser"
           }
         }
       },

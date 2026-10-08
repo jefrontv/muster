@@ -10851,6 +10851,18 @@
             "copied": "Prompt copied to the clipboard",
             "copy_prompt": "Copy prompt",
             "no_agents": "No agent session is open here."
+          },
+          "GitHistoryPipelineStatus": {
+            "running": "実行中",
+            "queued": "待機中",
+            "paused": "一時停止中",
+            "passed": "成功",
+            "failed": "失敗",
+            "stopped": "停止",
+            "skipped": "スキップ",
+            "checksSummary": "チェック: {{status}}",
+            "pipelineSummary": "パイプライン #{{number}}: {{status}}",
+            "openInBrowser": "{{summary}}。ブラウザで開く"
           }
         }
       },

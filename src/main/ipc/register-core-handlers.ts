@@ -46,6 +46,7 @@ import { registerExtensionHandlers } from './extensions'
 import { runExtensionAutoUpdates } from '../extensions/auto-update-runner'
 import { registerWorkspaceSpaceHandlers } from './workspace-space'
 import { registerSiteHandlers } from './sites'
+import { registerCommitPipelinesHandlers } from './commit-pipelines'
 import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
 import { registerChatModeHandlers } from './chat-mode'
 import { registerChatConnectorHandlers } from './chat-connector'
@@ -247,6 +248,7 @@ export function registerCoreHandlers(
   registerUIHandlers(store)
   registerWorkspaceSpaceHandlers(store)
   registerSiteHandlers(store)
+  registerCommitPipelinesHandlers(store)
   registerSiteRunHandlers(store)
   registerSiteDbSnapshotHandlers(store)
   registerChatModeHandlers()

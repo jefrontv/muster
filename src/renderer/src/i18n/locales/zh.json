@@ -10851,6 +10851,18 @@
             "copied": "Prompt copied to the clipboard",
             "copy_prompt": "Copy prompt",
             "no_agents": "No agent session is open here."
+          },
+          "GitHistoryPipelineStatus": {
+            "running": "运行中",
+            "queued": "排队中",
+            "paused": "已暂停",
+            "passed": "已通过",
+            "failed": "失败",
+            "stopped": "已停止",
+            "skipped": "已跳过",
+            "checksSummary": "检查{{status}}",
+            "pipelineSummary": "流水线 #{{number}} {{status}}",
+            "openInBrowser": "{{summary}}。在浏览器中打开"
           }
         }
       },

@@ -1855,6 +1855,8 @@ function createGitApi(): NonNullable<Partial<PreloadApi>['git']> {
         baseRef
       })
     },
+    // Why: the runtime protocol has no remote-URL read, so the web client cannot name the forge.
+    commitPipelines: async () => ({ available: false, reason: 'unsupported-host' }),
     conflictOperation: async ({ worktreePath }) => {
       const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
       return callRuntimeResult('git.conflictOperation', {
