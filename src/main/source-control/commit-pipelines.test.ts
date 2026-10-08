@@ -31,10 +31,32 @@ describe('getCommitPipelines', () => {
 
   it('hides the column for a remote no supported forge recognises', async () => {
     const result = await getCommitPipelines({ repoPath: '/repo' }, [SHA], {
-      resolveBitbucketRepo: async () => null
+      resolveBitbucketRepo: async () => null,
+      resolveGitHubRepo: async () => null
     })
 
     expect(result).toEqual({ available: false, reason: 'no-provider' })
+  })
+
+  it('falls through to GitHub checks with the WSL options the history read used', async () => {
+    const githubRepo = { owner: 'efront', repo: 'site', host: 'github.com' }
+    const getGitHubChecks = vi.fn(async () => ({ available: true as const, runsBySha: {} }))
+
+    await getCommitPipelines(
+      { repoPath: '/repo', localGitExecOptions: { wslDistro: 'Ubuntu' } },
+      [SHA],
+      {
+        resolveBitbucketRepo: async () => null,
+        resolveGitHubRepo: async () => githubRepo,
+        getGitHubChecks
+      }
+    )
+
+    expect(getGitHubChecks).toHaveBeenCalledWith(
+      { repoPath: '/repo', connectionId: undefined, localGitOptions: { wslDistro: 'Ubuntu' } },
+      githubRepo,
+      [SHA]
+    )
   })
 
   it('spends no API call when there are no commits to look up', async () => {

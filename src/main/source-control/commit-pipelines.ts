@@ -10,6 +10,12 @@ import {
 import { getBitbucketRepoSlug } from '../bitbucket/client'
 import { getBitbucketCommitPipelines } from '../bitbucket/commit-pipelines'
 import type { BitbucketRepoRef } from '../bitbucket/repository-ref'
+import { getRepoSlug } from '../github/client'
+import {
+  getGitHubCommitChecks,
+  type GitHubCommitChecksContext
+} from '../github/commit-check-rollups'
+import type { GitHubApiRepository } from '../github/github-api-repository'
 import type { ForgeProviderRepositoryContext } from './forge-provider'
 
 export type CommitPipelinesDeps = {
@@ -18,6 +24,14 @@ export type CommitPipelinesDeps = {
   ) => Promise<BitbucketRepoRef | null>
   getBitbucketPipelines?: (
     repo: BitbucketRepoRef,
+    shas: readonly string[]
+  ) => Promise<CommitPipelinesResult>
+  resolveGitHubRepo?: (
+    context: ForgeProviderRepositoryContext
+  ) => Promise<GitHubApiRepository | null>
+  getGitHubChecks?: (
+    context: GitHubCommitChecksContext,
+    repo: GitHubApiRepository,
     shas: readonly string[]
   ) => Promise<CommitPipelinesResult>
 }
@@ -47,6 +61,20 @@ function resolveBitbucketRepoFromContext(
   return getBitbucketRepoSlug(context.repoPath, context.connectionId, context)
 }
 
+function resolveGitHubRepoFromContext(
+  context: ForgeProviderRepositoryContext
+): Promise<GitHubApiRepository | null> {
+  return getRepoSlug(context.repoPath, context.connectionId, context)
+}
+
+// Why: nothing on screen yet still answers "available" so the column does not flicker away.
+function lookupUnlessEmpty(
+  shas: readonly string[],
+  lookup: () => Promise<CommitPipelinesResult>
+): Promise<CommitPipelinesResult> {
+  return shas.length === 0 ? Promise.resolve({ available: true, runsBySha: {} }) : lookup()
+}
+
 export async function getCommitPipelines(
   context: ForgeProviderRepositoryContext,
   shas: readonly string[],
@@ -54,13 +82,22 @@ export async function getCommitPipelines(
 ): Promise<CommitPipelinesResult> {
   const resolveBitbucketRepo = deps.resolveBitbucketRepo ?? resolveBitbucketRepoFromContext
   const getBitbucketPipelines = deps.getBitbucketPipelines ?? getBitbucketCommitPipelines
+  const resolveGitHubRepo = deps.resolveGitHubRepo ?? resolveGitHubRepoFromContext
+  const getGitHubChecks = deps.getGitHubChecks ?? getGitHubCommitChecks
 
+  // Why: Bitbucket first; it is almost every efront repo and its check is a local URL parse.
   const bitbucketRepo = await resolveBitbucketRepo(context)
   if (bitbucketRepo) {
-    // Why: nothing on screen yet still answers "available" so the column does not flicker away.
-    return shas.length === 0
-      ? { available: true, runsBySha: {} }
-      : getBitbucketPipelines(bitbucketRepo, shas)
+    return lookupUnlessEmpty(shas, () => getBitbucketPipelines(bitbucketRepo, shas))
+  }
+  const githubRepo = await resolveGitHubRepo(context)
+  if (githubRepo) {
+    const githubContext = {
+      repoPath: context.repoPath,
+      connectionId: context.connectionId,
+      localGitOptions: context.localGitExecOptions
+    }
+    return lookupUnlessEmpty(shas, () => getGitHubChecks(githubContext, githubRepo, shas))
   }
   return { available: false, reason: 'no-provider' }
 }
