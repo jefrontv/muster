@@ -12,6 +12,17 @@ import { validateGitPushTarget } from './push-target-validation'
 import { gitExecFileAsync } from './runner'
 import { runWithGitReadCacheInvalidation } from './status'
 
+// Why: without the flag runner pins GIT_SSH_COMMAND, which overrides a repo's core.sshCommand (e.g. per-repo deploy keys).
+function networkGitOptions(
+  worktreePath: string,
+  options: GitRuntimeOptions
+): ReturnType<typeof gitOptionsForWorktree> & { useConfiguredSshCommandForNetwork: true } {
+  return {
+    ...gitOptionsForWorktree(worktreePath, options),
+    useConfiguredSshCommandForNetwork: true
+  }
+}
+
 async function getConfiguredPushTarget(
   worktreePath: string,
   options: GitRuntimeOptions = {}
@@ -205,7 +216,7 @@ export async function gitPush(
       '--set-upstream',
       ...(target ? [target.remote, target.refspec] : ['origin', 'HEAD'])
     ]
-    await gitExecFileAsync(args, gitOptionsForWorktree(worktreePath, options))
+    await gitExecFileAsync(args, networkGitOptions(worktreePath, options))
   } catch (error) {
     throw new Error(normalizeGitErrorMessage(error, 'push'))
   }
@@ -222,7 +233,7 @@ async function gitPullWithArgs(
       const target = await validateGitPushTarget(worktreePath, pushTarget, options)
       await gitExecFileAsync(
         ['pull', ...effectiveArgs, target.remoteName, target.branchName],
-        gitOptionsForWorktree(worktreePath, options)
+        networkGitOptions(worktreePath, options)
       )
       return
     }
@@ -234,12 +245,12 @@ async function gitPullWithArgs(
       // target origin/<branch>. Pull the same effective branch the UI reports.
       await gitExecFileAsync(
         ['pull', ...effectiveArgs, upstream.remoteName, upstream.branchName],
-        gitOptionsForWorktree(worktreePath, options)
+        networkGitOptions(worktreePath, options)
       )
       return
     }
 
-    await gitExecFileAsync(['pull', ...effectiveArgs], gitOptionsForWorktree(worktreePath, options))
+    await gitExecFileAsync(['pull', ...effectiveArgs], networkGitOptions(worktreePath, options))
   }
 
   try {
@@ -285,7 +296,7 @@ export async function gitPullRebaseFromBase(
       )
       await gitExecFileAsync(
         ['pull', '--rebase', source.remoteName, source.branchName],
-        gitOptionsForWorktree(worktreePath, options)
+        networkGitOptions(worktreePath, options)
       )
     } catch (error) {
       throw new Error(normalizeGitErrorMessage(error, 'pull'))
@@ -303,11 +314,11 @@ export async function gitFetch(
       const target = await validateGitPushTarget(worktreePath, pushTarget, options)
       await gitExecFileAsync(
         ['fetch', '--prune', target.remoteName],
-        gitOptionsForWorktree(worktreePath, options)
+        networkGitOptions(worktreePath, options)
       )
       return
     }
-    await gitExecFileAsync(['fetch', '--prune'], gitOptionsForWorktree(worktreePath, options))
+    await gitExecFileAsync(['fetch', '--prune'], networkGitOptions(worktreePath, options))
   } catch (error) {
     throw new Error(normalizeGitErrorMessage(error, 'fetch'))
   }
