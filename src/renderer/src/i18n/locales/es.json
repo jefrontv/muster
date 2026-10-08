@@ -10008,6 +10008,11 @@
               "description_other": "{{value0}} tiene {{value1}} commits que no están en tu rama. Hacer force push los elimina del remoto.",
               "remoteBranch": "La rama remota",
               "confirm": "Force Push"
+            },
+            "indexWriteFailed": {
+              "stage": "No se pudieron agregar los cambios al stage",
+              "unstage": "No se pudieron quitar los cambios del stage",
+              "discard": "No se pudieron descartar los cambios"
             }
           },
           "SourceControlAgentActionDialog": {

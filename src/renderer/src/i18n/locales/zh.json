@@ -10008,6 +10008,11 @@
               "description_other": "{{value0}} 有 {{value1}} 个提交不在你的分支上。强制推送会将它们从远程删除。",
               "remoteBranch": "远程分支",
               "confirm": "强制推送"
+            },
+            "indexWriteFailed": {
+              "stage": "无法暂存更改",
+              "unstage": "无法取消暂存更改",
+              "discard": "无法放弃更改"
             }
           },
           "SourceControlAgentActionDialog": {

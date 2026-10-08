@@ -10008,6 +10008,11 @@
               "description_other": "{{value0}}에 내 브랜치에 없는 커밋이 {{value1}}개 있습니다. 강제 푸시하면 원격에서 삭제됩니다.",
               "remoteBranch": "원격 브랜치",
               "confirm": "강제 푸시"
+            },
+            "indexWriteFailed": {
+              "stage": "변경 사항을 스테이징하지 못했습니다",
+              "unstage": "변경 사항을 언스테이지하지 못했습니다",
+              "discard": "변경 사항을 버리지 못했습니다"
             }
           },
           "SourceControlAgentActionDialog": {

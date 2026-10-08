@@ -10031,6 +10031,11 @@
               "description_other": "{{value0}} has {{value1}} commits that aren't on your branch. Force pushing deletes them from the remote.",
               "remoteBranch": "The remote branch",
               "confirm": "Force Push"
+            },
+            "indexWriteFailed": {
+              "stage": "Couldn't stage changes",
+              "unstage": "Couldn't unstage changes",
+              "discard": "Couldn't discard changes"
             }
           },
           "SourceControlAgentActionDialog": {

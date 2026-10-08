@@ -207,6 +207,8 @@ import {
   shouldForcePushWithLeaseForUpstream
 } from '../../../../shared/git-upstream-status'
 import { resolveForcePushConfirmation } from './source-control-force-push-confirmation'
+import { enqueueGitIndexWrite } from './git-index-write-queue'
+import { toastIndexWriteFailure } from './source-control-index-write-toast'
 import type {
   DiffComment,
   GitBranchChangeEntry,
@@ -3870,7 +3872,9 @@ function SourceControlInner(): React.JSX.Element {
         }
         setIsExecutingBulk(true)
         try {
-          await bulkStageRuntimeGitPaths(operationTarget, stagePaths)
+          await enqueueGitIndexWrite(operationTarget.worktreeId, () =>
+            bulkStageRuntimeGitPaths(operationTarget, stagePaths)
+          )
         } finally {
           setIsExecutingBulk(false)
         }
@@ -4600,19 +4604,23 @@ function SourceControlInner(): React.JSX.Element {
     setIsExecutingBulk(true)
     try {
       const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-      await bulkStageRuntimeGitPaths(
-        {
-          // Why: route staging by the repo OWNER host, not the focused runtime.
-          settings: activeRepoSettings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId
-        },
-        bulkStagePaths
+      await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+        bulkStageRuntimeGitPaths(
+          {
+            // Why: route staging by the repo OWNER host, not the focused runtime.
+            settings: activeRepoSettings,
+            worktreeId: activeWorktreeId,
+            worktreePath,
+            connectionId
+          },
+          bulkStagePaths
+        )
       )
-      await refreshActiveGitStatusAfterMutation()
       clearSelection()
+    } catch (error) {
+      toastIndexWriteFailure('stage', error)
     } finally {
+      await refreshActiveGitStatusAfterMutation()
       setIsExecutingBulk(false)
     }
   }, [
@@ -4631,19 +4639,23 @@ function SourceControlInner(): React.JSX.Element {
     setIsExecutingBulk(true)
     try {
       const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-      await bulkUnstageRuntimeGitPaths(
-        {
-          // Why: route unstaging by the repo OWNER host, not the focused runtime.
-          settings: activeRepoSettings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId
-        },
-        bulkUnstagePaths
+      await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+        bulkUnstageRuntimeGitPaths(
+          {
+            // Why: route unstaging by the repo OWNER host, not the focused runtime.
+            settings: activeRepoSettings,
+            worktreeId: activeWorktreeId,
+            worktreePath,
+            connectionId
+          },
+          bulkUnstagePaths
+        )
       )
-      await refreshActiveGitStatusAfterMutation()
       clearSelection()
+    } catch (error) {
+      toastIndexWriteFailure('unstage', error)
     } finally {
+      await refreshActiveGitStatusAfterMutation()
       setIsExecutingBulk(false)
     }
   }, [
@@ -4663,19 +4675,23 @@ function SourceControlInner(): React.JSX.Element {
       setIsExecutingBulk(true)
       try {
         const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-        await bulkStageRuntimeGitPaths(
-          {
-            // Why: route staging by the repo OWNER host, not the focused runtime.
-            settings: activeRepoSettings,
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            connectionId
-          },
-          [...paths]
+        await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+          bulkStageRuntimeGitPaths(
+            {
+              // Why: route staging by the repo OWNER host, not the focused runtime.
+              settings: activeRepoSettings,
+              worktreeId: activeWorktreeId,
+              worktreePath,
+              connectionId
+            },
+            [...paths]
+          )
         )
-        await refreshActiveGitStatusAfterMutation()
         clearSelection()
+      } catch (error) {
+        toastIndexWriteFailure('stage', error)
       } finally {
+        await refreshActiveGitStatusAfterMutation()
         setIsExecutingBulk(false)
       }
     },
@@ -4697,19 +4713,23 @@ function SourceControlInner(): React.JSX.Element {
       setIsExecutingBulk(true)
       try {
         const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-        await bulkUnstageRuntimeGitPaths(
-          {
-            // Why: route unstaging by the repo OWNER host, not the focused runtime.
-            settings: activeRepoSettings,
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            connectionId
-          },
-          [...paths]
+        await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+          bulkUnstageRuntimeGitPaths(
+            {
+              // Why: route unstaging by the repo OWNER host, not the focused runtime.
+              settings: activeRepoSettings,
+              worktreeId: activeWorktreeId,
+              worktreePath,
+              connectionId
+            },
+            [...paths]
+          )
         )
-        await refreshActiveGitStatusAfterMutation()
         clearSelection()
+      } catch (error) {
+        toastIndexWriteFailure('unstage', error)
       } finally {
+        await refreshActiveGitStatusAfterMutation()
         setIsExecutingBulk(false)
       }
     },
@@ -4738,19 +4758,23 @@ function SourceControlInner(): React.JSX.Element {
     setIsExecutingBulk(true)
     try {
       const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-      await bulkStageRuntimeGitPaths(
-        {
-          // Why: route staging by the repo OWNER host, not the focused runtime.
-          settings: activeRepoSettings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId
-        },
-        filePaths
+      await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+        bulkStageRuntimeGitPaths(
+          {
+            // Why: route staging by the repo OWNER host, not the focused runtime.
+            settings: activeRepoSettings,
+            worktreeId: activeWorktreeId,
+            worktreePath,
+            connectionId
+          },
+          filePaths
+        )
       )
-      await refreshActiveGitStatusAfterMutation()
       clearSelection()
+    } catch (error) {
+      toastIndexWriteFailure('stage', error)
     } finally {
+      await refreshActiveGitStatusAfterMutation()
       setIsExecutingBulk(false)
     }
   }, [
@@ -5287,19 +5311,22 @@ function SourceControlInner(): React.JSX.Element {
       }
       try {
         const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-        await stageRuntimeGitPath(
-          {
-            // Why: route staging by the repo OWNER host, not the focused runtime.
-            settings: activeRepoSettings,
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            connectionId
-          },
-          filePath
+        await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+          stageRuntimeGitPath(
+            {
+              // Why: route staging by the repo OWNER host, not the focused runtime.
+              settings: activeRepoSettings,
+              worktreeId: activeWorktreeId,
+              worktreePath,
+              connectionId
+            },
+            filePath
+          )
         )
+      } catch (error) {
+        toastIndexWriteFailure('stage', error)
+      } finally {
         await refreshActiveGitStatusAfterMutation()
-      } catch {
-        // git operation failed silently
       }
     },
     [activeRepoSettings, worktreePath, activeWorktreeId, refreshActiveGitStatusAfterMutation]
@@ -5312,25 +5339,28 @@ function SourceControlInner(): React.JSX.Element {
       }
       try {
         const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-        await unstageRuntimeGitPath(
-          {
-            // Why: route unstaging by the repo OWNER host, not the focused runtime.
-            settings: activeRepoSettings,
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            connectionId
-          },
-          filePath
+        await enqueueGitIndexWrite(activeWorktreeId ?? worktreePath, () =>
+          unstageRuntimeGitPath(
+            {
+              // Why: route unstaging by the repo OWNER host, not the focused runtime.
+              settings: activeRepoSettings,
+              worktreeId: activeWorktreeId,
+              worktreePath,
+              connectionId
+            },
+            filePath
+          )
         )
+      } catch (error) {
+        toastIndexWriteFailure('unstage', error)
+      } finally {
         await refreshActiveGitStatusAfterMutation()
-      } catch {
-        // git operation failed silently
       }
     },
     [activeRepoSettings, worktreePath, activeWorktreeId, refreshActiveGitStatusAfterMutation]
   )
 
-  // Why: discardSingle throws so bulk callers can aggregate failures into one toast; handleDiscard swallows for per-row fire-and-forget.
+  // Why: discardSingle throws so bulk callers can aggregate failures into one toast; handleDiscard toasts per row.
   const discardSingle = useCallback(
     async (filePath: string) => {
       if (!worktreePath || !activeWorktreeId) {
@@ -5346,15 +5376,17 @@ function SourceControlInner(): React.JSX.Element {
         runtimeEnvironmentId
       })
       const connectionId = getConnectionId(activeWorktreeId ?? null) ?? undefined
-      await discardRuntimeGitPath(
-        {
-          // Why: route the discard by the repo OWNER host, not the focused runtime.
-          settings: activeRepoSettings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId
-        },
-        filePath
+      await enqueueGitIndexWrite(activeWorktreeId, () =>
+        discardRuntimeGitPath(
+          {
+            // Why: route the discard by the repo OWNER host, not the focused runtime.
+            settings: activeRepoSettings,
+            worktreeId: activeWorktreeId,
+            worktreePath,
+            connectionId
+          },
+          filePath
+        )
       )
       notifyEditorExternalFileChange({
         worktreeId: activeWorktreeId,
@@ -5385,15 +5417,17 @@ function SourceControlInner(): React.JSX.Element {
         )
       )
       const connectionId = getConnectionId(activeWorktreeId) ?? undefined
-      await bulkDiscardRuntimeGitPaths(
-        {
-          // Why: route the discard by the repo OWNER host, not the focused runtime.
-          settings: activeRepoSettings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId
-        },
-        filePaths
+      await enqueueGitIndexWrite(activeWorktreeId, () =>
+        bulkDiscardRuntimeGitPaths(
+          {
+            // Why: route the discard by the repo OWNER host, not the focused runtime.
+            settings: activeRepoSettings,
+            worktreeId: activeWorktreeId,
+            worktreePath,
+            connectionId
+          },
+          filePaths
+        )
       )
       for (const relativePath of filePaths) {
         notifyEditorExternalFileChange({
@@ -5411,9 +5445,10 @@ function SourceControlInner(): React.JSX.Element {
     async (filePath: string) => {
       try {
         await discardSingle(filePath)
+      } catch (error) {
+        toastIndexWriteFailure('discard', error)
+      } finally {
         await refreshActiveGitStatusAfterMutation()
-      } catch {
-        // Why: per-row discard is fire-and-forget; bulk callers use discardSingle directly to aggregate failures into one toast.
       }
     },
     [discardSingle, refreshActiveGitStatusAfterMutation]
@@ -5437,15 +5472,17 @@ function SourceControlInner(): React.JSX.Element {
         const errors: unknown[] = []
         const result = await runDiscardAllForArea(area, paths, {
           bulkUnstage: (filePaths) =>
-            bulkUnstageRuntimeGitPaths(
-              {
-                // Why: route unstaging by the repo OWNER host, not the focused runtime.
-                settings: activeRepoSettings,
-                worktreeId: activeWorktreeId,
-                worktreePath,
-                connectionId
-              },
-              filePaths
+            enqueueGitIndexWrite(activeWorktreeId, () =>
+              bulkUnstageRuntimeGitPaths(
+                {
+                  // Why: route unstaging by the repo OWNER host, not the focused runtime.
+                  settings: activeRepoSettings,
+                  worktreeId: activeWorktreeId,
+                  worktreePath,
+                  connectionId
+                },
+                filePaths
+              )
             ),
           discardMany,
           discardOne: discardSingle,
@@ -5487,10 +5524,10 @@ function SourceControlInner(): React.JSX.Element {
           )
         }
         if (!result.aborted) {
-          await refreshActiveGitStatusAfterMutation()
           clearSelection()
         }
       } finally {
+        await refreshActiveGitStatusAfterMutation()
         setIsExecutingBulk(false)
       }
     },

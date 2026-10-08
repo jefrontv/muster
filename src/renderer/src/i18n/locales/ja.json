@@ -10008,6 +10008,11 @@
               "description_other": "{{value0}} には、このブランチにないコミットが {{value1}} 件あります。強制プッシュするとリモートから削除されます。",
               "remoteBranch": "リモートブランチ",
               "confirm": "フォースプッシュ"
+            },
+            "indexWriteFailed": {
+              "stage": "変更をステージできませんでした",
+              "unstage": "変更をアンステージできませんでした",
+              "discard": "変更を破棄できませんでした"
             }
           },
           "SourceControlAgentActionDialog": {
