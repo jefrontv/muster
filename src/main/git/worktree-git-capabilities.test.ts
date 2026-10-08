@@ -11,7 +11,7 @@ vi.mock('./runner', () => ({
 }))
 
 import { clearGitCapabilityStateForTests } from './git-capability-state'
-import { listWorktrees } from './worktree'
+import { listWorktrees, readGitCommonDir } from './worktree'
 
 const WORKTREE_LIST_OUTPUT = `worktree /repo
 HEAD abc123
@@ -134,5 +134,21 @@ describe('worktree Git capabilities', () => {
       ['rev-parse', '--path-format=absolute', '--show-toplevel', '--git-common-dir'],
       ['rev-parse', '--show-toplevel', '--git-common-dir']
     ])
+  })
+
+  it('resolves the common dir when old Git echoes --path-format', async () => {
+    gitExecFileAsyncMock.mockResolvedValue({ stdout: '--path-format=absolute\n.git\n', stderr: '' })
+
+    await expect(readGitCommonDir('/repo')).resolves.toBe('/repo/.git')
+  })
+
+  it('falls back to plain --git-common-dir when --path-format is rejected', async () => {
+    gitExecFileAsyncMock.mockImplementation((args: string[]) =>
+      args.includes('--path-format=absolute')
+        ? Promise.reject(new Error("error: unknown option `path-format=absolute'"))
+        : Promise.resolve({ stdout: '../main/.git\n', stderr: '' })
+    )
+
+    await expect(readGitCommonDir('/repo/linked')).resolves.toBe('/repo/main/.git')
   })
 })

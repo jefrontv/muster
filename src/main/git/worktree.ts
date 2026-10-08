@@ -434,6 +434,48 @@ async function readRepoLocation(
   }
 }
 
+// Why: Git < 2.31 ignores --path-format, so share the capability fallback and resolve relative output ourselves.
+export async function readGitCommonDir(
+  repoPath: string,
+  options: GitWorktreeExecOptions = {}
+): Promise<string | undefined> {
+  const wslRepo = parseWslUncPath(repoPath)
+  const resolveBasePath = wslRepo ? wslRepo.linuxPath : repoPath
+  const capabilities = getLocalGitCapabilityCache({ cwd: repoPath, wslDistro: options.wslDistro })
+  const parse = (stdout: string): string | undefined => {
+    const line = stdout
+      .split('\n')
+      .map((entry) => (entry.endsWith('\r') ? entry.slice(0, -1) : entry))
+      .findLast((entry) => entry.length > 0 && !entry.startsWith('-'))
+    return line ? resolveRevParsePath(resolveBasePath, line) : undefined
+  }
+  try {
+    return await capabilities.runWithFallback(
+      'rev-parse-path-format',
+      async () => {
+        const { stdout } = await gitExecFileAsync(
+          ['rev-parse', '--path-format=absolute', '--git-common-dir'],
+          gitExecOptions(repoPath, options)
+        )
+        if (hasUnsupportedRevParsePathFormatEcho(stdout)) {
+          capabilities.rememberUnsupported('rev-parse-path-format')
+        }
+        return parse(stdout)
+      },
+      async () => {
+        const { stdout } = await gitExecFileAsync(
+          ['rev-parse', '--git-common-dir'],
+          gitExecOptions(repoPath, options)
+        )
+        return parse(stdout)
+      },
+      isUnsupportedRevParsePathFormatError
+    )
+  } catch {
+    return undefined
+  }
+}
+
 async function normalizeMainWorktreePath(
   repoPath: string,
   worktrees: GitWorktreeInfo[],

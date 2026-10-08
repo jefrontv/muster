@@ -37,6 +37,7 @@ import {
   listWorktreesStrict,
   removeWorktree
 } from '../git/worktree'
+import type { readGitCommonDir } from '../git/worktree'
 import * as gitRunner from '../git/runner'
 import {
   WORKTREE_PROCESS_SWEEP_TIMEOUT_MS,
@@ -396,7 +397,10 @@ const {
   }
 })
 
-vi.mock('../git/worktree', () => ({
+vi.mock('../git/worktree', async (importOriginal) => ({
+  // Why: real implementation so fetch-key tests keep exercising the rev-parse runner spies.
+  readGitCommonDir: (await importOriginal<{ readGitCommonDir: typeof readGitCommonDir }>())
+    .readGitCommonDir,
   listWorktrees: vi.fn().mockResolvedValue(MOCK_GIT_WORKTREES),
   listWorktreesStrict: vi.fn().mockResolvedValue(MOCK_GIT_WORKTREES),
   assertWorktreeCleanForRemoval: vi.fn().mockResolvedValue(undefined),

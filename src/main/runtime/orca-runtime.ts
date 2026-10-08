@@ -811,6 +811,7 @@ import {
   addSparseWorktree,
   assertWorktreeCleanForRemoval,
   forceDeleteLocalBranch,
+  readGitCommonDir,
   removeWorktree
 } from '../git/worktree'
 import type { AddWorktreeOptions, AddWorktreeResult } from '../git/worktree'
@@ -19874,18 +19875,10 @@ export class OrcaRuntimeService {
       return cached
     }
     let resolved = cacheKey
-    try {
-      const { stdout } = await gitExecFileAsync(
-        ['rev-parse', '--path-format=absolute', '--git-common-dir'],
-        { cwd: repoPath, ...gitOptions }
-      )
-      const commonDir = stdout.trim()
-      if (commonDir) {
-        resolved = `${runtimeKey}::${commonDir}::${remote}`
-      }
-    } catch {
-      // Fall through to the caller-provided path. The fetch still runs from
-      // repoPath; this key only controls cache sharing.
+    // Why: an undefined common dir falls through to the caller's path; the fetch still runs from repoPath.
+    const commonDir = await readGitCommonDir(repoPath, gitOptions)
+    if (commonDir) {
+      resolved = `${runtimeKey}::${commonDir}::${remote}`
     }
     setBoundedMapEntry(this.canonicalFetchKeyCache, cacheKey, resolved, REMOTE_FETCH_CACHE_MAX)
     return resolved
