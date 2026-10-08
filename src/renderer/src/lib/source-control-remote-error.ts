@@ -6,6 +6,8 @@ import {
   isPushHookFailure,
   summarizePushFailure
 } from '../../../shared/source-control-push-failure'
+import { isPlainGitFailureMessage } from '../../../shared/git-failure-detail'
+import { translate } from '@/i18n/i18n'
 
 const REMOTE_OPERATION_FAILED_MESSAGE = 'Remote operation failed'
 const REMOTE_OPERATION_DETAIL_MAX_LENGTH = 200
@@ -42,6 +44,26 @@ function extractPublishFailureDetail(message: string): string | null {
   }
 
   return remoteDetail
+}
+
+// Why: callers append ". Check your…", so a detail ending in "." would read "failed.. Check".
+function extractRemoteFailureDetail(message: string): string | null {
+  return extractPublishFailureDetail(message)?.replace(/\.+$/, '') ?? null
+}
+
+// Why: main/relay already turn auth, lock and rejection failures into one plain sentence; show it rather than a generic hint.
+function plainFailureMessage(operationLabel: string, message: string): string | null {
+  let tail = ''
+  for (const rawLine of iterateRemoteErrorLines(message)) {
+    const line = rawLine.trim()
+    if (line) {
+      tail = line
+    }
+  }
+  if (!isPlainGitFailureMessage(tail)) {
+    return null
+  }
+  return `${operationLabel} failed. ${truncateDetail(stripCredentialsFromMessage(tail))}`
 }
 
 function* iterateRemoteErrorLines(message: string): Generator<string> {
@@ -115,6 +137,7 @@ export function isSyncPushStageError(error: unknown): boolean {
 const UNCONCLUDED_MERGE_ERROR_PATTERN =
   /unmerged files|needs merge|you have not concluded your merge/i
 const FRESH_MERGE_CONFLICT_ERROR_PATTERN = /automatic merge failed|CONFLICT \(|fix conflicts/i
+const REBASE_CONFLICT_ERROR_PATTERN = /continue the rebase|could not apply/i
 
 export function resolveRemoteOperationErrorMessage(
   error: unknown,
@@ -136,6 +159,18 @@ export function resolveRemoteOperationErrorMessage(
   if (FRESH_MERGE_CONFLICT_ERROR_PATTERN.test(error.message)) {
     if (options?.isRebase) {
       return 'Rebase stopped with conflicts. Resolve them in Source Control, then continue the rebase.'
+    }
+    // Why: a pull with pull.rebase=true stops mid-rebase; "commit the merge" would be the wrong next step.
+    if (REBASE_CONFLICT_ERROR_PATTERN.test(error.message)) {
+      return options?.isSync
+        ? translate(
+            'auto.lib.source.control.remote.error.372294bf82',
+            'Sync stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase.'
+          )
+        : translate(
+            'auto.lib.source.control.remote.error.da1703f0b9',
+            'Pull stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase.'
+          )
     }
     return options?.isSync
       ? 'Sync stopped with merge conflicts. Resolve them in Source Control, then commit the merge.'
@@ -252,41 +287,53 @@ export function resolveRemoteOperationErrorMessage(
   if (options?.publish) {
     // Why: publish failures often bubble up as raw wrapped git/IPC payloads; this
     // keeps the toast human-readable while preserving the actionable fatal reason.
-    const detail = extractPublishFailureDetail(error.message)
+    const detail = extractRemoteFailureDetail(error.message)
     if (detail) {
       return `Publish Branch failed. ${detail}. Check your remote access and try again.`
     }
 
-    return 'Publish Branch failed. Check your remote access and try again.'
+    return (
+      plainFailureMessage('Publish Branch', error.message) ??
+      'Publish Branch failed. Check your remote access and try again.'
+    )
   }
 
   if (options?.isSync) {
     // Why: the user invoked Sync — surface "Sync failed" rather than leaking
     // the inner-step name ("Push failed"). Detail extraction matches push so
     // auth / protected-branch reasons stay actionable.
-    const detail = extractPublishFailureDetail(error.message)
+    const detail = extractRemoteFailureDetail(error.message)
     if (detail) {
       return `Sync failed. ${detail}. Check your remote access and try again.`
     }
-    return 'Sync failed. Check your connection and try again.'
+    return (
+      plainFailureMessage('Sync', error.message) ??
+      'Sync failed. Check your connection and try again.'
+    )
   }
 
   if (options?.isForcePush) {
-    const detail = extractPublishFailureDetail(error.message)
+    const detail = extractRemoteFailureDetail(error.message)
     if (detail) {
       return `Force Push failed. ${detail}. Check your remote access and try again.`
     }
-    return 'Force Push failed. Check your connection and try again.'
+    return (
+      plainFailureMessage('Force Push', error.message) ??
+      'Force Push failed. Check your connection and try again.'
+    )
   }
 
   if (options?.isPush) {
     // Why: surfacing fatal/remote lines from git is more actionable than a generic
     // connection message for auth errors, protected branches, etc.
-    const detail = extractPublishFailureDetail(error.message)
+    const detail = extractRemoteFailureDetail(error.message)
     if (detail) {
       return `Push failed. ${detail}. Check your remote access and try again.`
     }
-    return 'Push failed. Check your connection and try again.'
+    return (
+      plainFailureMessage('Push', error.message) ??
+      'Push failed. Check your connection and try again.'
+    )
   }
 
   if (options?.isFetch) {

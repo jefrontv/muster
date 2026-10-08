@@ -1,3 +1,10 @@
+import {
+  describeGitAccessFailure,
+  describeGitConflictFailure,
+  describeGitLockFailure,
+  describeRemotePushRejection,
+  gitErrorOutputText
+} from './git-failure-detail'
 import { isPushHookFailure } from './source-control-push-failure'
 
 // Why: strip `user:password@` on any scheme, but a lone `user@` only on HTTP(S) — SSH's git@host user-info is required, so stripping breaks the URL.
@@ -123,6 +130,12 @@ export function normalizeGitErrorMessage(error: unknown, operation?: GitRemoteOp
 
   // Why: scrub credentials up-front so every downstream branch operates on already-redacted text.
   const raw = stripCredentialsFromMessage(error.message)
+  const output = stripCredentialsFromMessage(gitErrorOutputText(error))
+
+  const lockFailure = describeGitLockFailure(output)
+  if (lockFailure) {
+    return lockFailure
+  }
 
   const submodulePushFailureDetail = formatSubmodulePushFailureDetail(raw)
   if ((operation === 'push' || operation === undefined) && submodulePushFailureDetail) {
@@ -142,12 +155,36 @@ export function normalizeGitErrorMessage(error: unknown, operation?: GitRemoteOp
     return raw.trim()
   }
 
+  if (operation === 'pull' || operation === undefined) {
+    const conflictFailure = describeGitConflictFailure(output)
+    if (conflictFailure) {
+      return conflictFailure
+    }
+  }
+
   if (raw.includes('could not read Username') || raw.includes('Authentication failed')) {
     return 'Authentication failed. Check your remote credentials.'
   }
 
-  if (raw.includes('Could not resolve host') || raw.includes('Network is unreachable')) {
+  if (operation === 'push' || operation === undefined) {
+    const remoteRejection = describeRemotePushRejection(output)
+    if (remoteRejection) {
+      return remoteRejection
+    }
+  }
+
+  if (
+    raw.includes('Could not resolve host') ||
+    raw.includes('Network is unreachable') ||
+    raw.includes('ssh: connect to host')
+  ) {
     return 'Network error. Check your connection.'
+  }
+
+  // Why: after the network check — SSH DNS/connect failures also end in "Could not read from remote repository".
+  const accessFailure = describeGitAccessFailure(output)
+  if (accessFailure) {
+    return accessFailure
   }
 
   if (raw.includes('no tracking information') || raw.includes('no upstream')) {

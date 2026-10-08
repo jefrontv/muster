@@ -491,6 +491,12 @@
             "plan": {
               "dc480d5897": "La entrada del comando está vacía."
             }
+          },
+          "remote": {
+            "error": {
+              "da1703f0b9": "Pull se detuvo por conflictos de rebase. Resuélvelos en Control de código fuente y luego continúa el rebase.",
+              "372294bf82": "La sincronización se detuvo por conflictos de rebase. Resuélvelos en Control de código fuente y luego continúa el rebase."
+            }
           }
         }
       },

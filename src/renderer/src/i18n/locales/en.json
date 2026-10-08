@@ -514,6 +514,12 @@
             "plan": {
               "dc480d5897": "Command input is empty."
             }
+          },
+          "remote": {
+            "error": {
+              "da1703f0b9": "Pull stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase.",
+              "372294bf82": "Sync stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase."
+            }
           }
         }
       },

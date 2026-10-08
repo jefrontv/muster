@@ -60,9 +60,142 @@ describe('normalizeGitErrorMessage', () => {
       ].join('\n')
     )
 
-    expect(normalizeGitErrorMessage(error, 'push')).toBe(
-      "error: failed to push some refs to 'origin'"
+    expect(normalizeGitErrorMessage(error, 'push')).toBe('remote: eslint failed in hosted checks')
+  })
+
+  it('keeps the GitLab protected-branch reason instead of the generic push tail', () => {
+    const error = new Error(
+      [
+        'Command failed: git push --set-upstream origin HEAD',
+        'remote: GitLab: You are not allowed to push code to protected branches on this project.',
+        'To gitlab.com:acme/site.git',
+        ' ! [remote rejected] main -> main (pre-receive hook declined)',
+        "error: failed to push some refs to 'gitlab.com:acme/site.git'"
+      ].join('\n')
     )
+
+    expect(normalizeGitErrorMessage(error, 'push')).toBe(
+      'remote: GitLab: You are not allowed to push code to protected branches on this project.'
+    )
+  })
+
+  it('skips GitHub progress and banner lines when picking the remote reason', () => {
+    const error = new Error(
+      [
+        'Command failed: git push origin main',
+        'remote: Resolving deltas: 100% (2/2), done.',
+        'remote: error: GH006: Protected branch update failed for refs/heads/main.',
+        'To github.com:acme/site.git',
+        ' ! [remote rejected] main -> main (protected branch hook declined)',
+        "error: failed to push some refs to 'github.com:acme/site.git'"
+      ].join('\n')
+    )
+
+    expect(normalizeGitErrorMessage(error, 'push')).toBe(
+      'remote: GH006: Protected branch update failed for refs/heads/main.'
+    )
+  })
+
+  it('falls back to the bracketed rejection reason when the remote prints no detail', () => {
+    const error = new Error(
+      [
+        'Command failed: git push origin main',
+        ' ! [remote rejected] main -> main (pre-receive hook declined)',
+        "error: failed to push some refs to 'bitbucket.org:acme/site.git'"
+      ].join('\n')
+    )
+
+    expect(normalizeGitErrorMessage(error, 'push')).toBe(
+      'The remote rejected the push (pre-receive hook declined).'
+    )
+  })
+
+  it('reports merge conflicts that git prints on stdout instead of the fetch tail line', () => {
+    const error = Object.assign(
+      new Error(
+        'Command failed: git pull\nFrom bitbucket.org:acme/site\n   300cde9..d0d667e  main       -> origin/main'
+      ),
+      {
+        stdout:
+          'Auto-merging style.css\nCONFLICT (content): Merge conflict in style.css\n' +
+          'Automatic merge failed; fix conflicts and then commit the result.\n'
+      }
+    )
+
+    expect(normalizeGitErrorMessage(error, 'pull')).toBe(
+      'Automatic merge failed; fix conflicts and then commit the result.'
+    )
+  })
+
+  it('reports rebase conflicts from pull --rebase', () => {
+    const error = Object.assign(
+      new Error(
+        'Command failed: git pull --rebase origin main\n' +
+          'error: could not apply 1a2b3c4... tweak header\n' +
+          'hint: Resolve all conflicts manually, mark them as resolved with'
+      ),
+      { stdout: 'CONFLICT (content): Merge conflict in header.php\n' }
+    )
+
+    expect(normalizeGitErrorMessage(error, 'pull')).toBe(
+      'Rebase stopped with conflicts; fix conflicts and then continue the rebase.'
+    )
+  })
+
+  it('reports Git 2.25 am-backend rebase conflicts', () => {
+    const error = new Error(
+      'Command failed: git pull --rebase\nerror: Failed to merge in the changes.\n' +
+        'Patch failed at 0001 tweak header\n' +
+        'Resolve all conflicts manually, mark them as resolved with "git add/rm <conflicted_files>"'
+    )
+
+    expect(normalizeGitErrorMessage(error, 'pull')).toBe(
+      'Rebase stopped with conflicts; fix conflicts and then continue the rebase.'
+    )
+  })
+
+  it('explains an SSH key rejection instead of the "repository exists" tail', () => {
+    const error = new Error(
+      'Command failed: git push\ngit@bitbucket.org: Permission denied (publickey).\n' +
+        'fatal: Could not read from remote repository.\n\n' +
+        'Please make sure you have the correct access rights\nand the repository exists.'
+    )
+
+    expect(normalizeGitErrorMessage(error, 'push')).toBe(
+      'SSH key rejected. Check that your SSH key is added to your Git host account and has access to this repository.'
+    )
+  })
+
+  it('explains SSH host key verification failures', () => {
+    const error = new Error(
+      'Command failed: git fetch --prune\nHost key verification failed.\n' +
+        'fatal: Could not read from remote repository.\n\nand the repository exists.'
+    )
+
+    expect(normalizeGitErrorMessage(error, 'fetch')).toMatch(/^SSH host key verification failed/)
+  })
+
+  it('treats an SSH connect failure as a network error, not an access error', () => {
+    const error = new Error(
+      'Command failed: git fetch\nssh: connect to host gitlab.com port 22: Operation timed out\n' +
+        'fatal: Could not read from remote repository.\n\nand the repository exists.'
+    )
+
+    expect(normalizeGitErrorMessage(error, 'fetch')).toBe('Network error. Check your connection.')
+  })
+
+  it('explains a stale index.lock without leaking the local path', () => {
+    const error = new Error(
+      "Command failed: git pull\nfatal: Unable to create '/Users/me/site/.git/index.lock': File exists.\n\n" +
+        'Another git process seems to be running in this repository.\n' +
+        'remove the file manually to continue.'
+    )
+
+    const message = normalizeGitErrorMessage(error, 'pull')
+    expect(message).toBe(
+      'Another Git process is using this repository. Wait for it to finish, or delete the stale index.lock file if none is running.'
+    )
+    expect(message).not.toContain('/Users/me')
   })
 
   it('explains how to configure a pull policy for divergent branches', () => {

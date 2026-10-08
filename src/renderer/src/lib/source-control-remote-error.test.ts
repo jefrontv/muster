@@ -69,7 +69,7 @@ describe('source-control remote error formatting', () => {
     )
 
     expect(resolveRemoteOperationErrorMessage(protectedError, { isPush: true })).toBe(
-      'Push failed. error: GH006 protected branch update failed.. Check your remote access and try again.'
+      'Push failed. error: GH006 protected branch update failed. Check your remote access and try again.'
     )
     expect(resolveRemoteOperationErrorMessage(preReceiveError, { isPush: true })).toBe(
       'Push failed. pre-receive hook declined. Check your remote access and try again.'
@@ -82,6 +82,49 @@ describe('source-control remote error formatting', () => {
     )
     expect(resolveRemoteOperationErrorMessage(submoduleError, { isPush: true })).toBe(
       "Push failed. Submodule 'deps/lib' could not be pushed. Resolve the submodule push error, then try again."
+    )
+  })
+
+  it('shows the main-process plain sentence instead of a generic connection hint', () => {
+    const sshError = new Error(
+      'SSH key rejected. Check that your SSH key is added to your Git host account and has access to this repository.'
+    )
+
+    expect(resolveRemoteOperationErrorMessage(sshError, { isPush: true })).toBe(
+      'Push failed. SSH key rejected. Check that your SSH key is added to your Git host account and has access to this repository.'
+    )
+    expect(
+      resolveRemoteOperationErrorMessage(new Error("error: failed to push some refs to 'x'"), {
+        isPush: true
+      })
+    ).toBe('Push failed. Check your connection and try again.')
+  })
+
+  it('surfaces the kept remote line for a protected-branch rejection', () => {
+    const error = new Error(
+      'remote: GitLab: You are not allowed to push code to protected branches on this project.'
+    )
+
+    expect(resolveRemoteOperationErrorMessage(error, { isPush: true })).toBe(
+      'Push failed. GitLab: You are not allowed to push code to protected branches on this project. Check your remote access and try again.'
+    )
+  })
+
+  it('maps normalized pull conflicts to merge or rebase guidance', () => {
+    expect(
+      resolveRemoteOperationErrorMessage(
+        new Error('Automatic merge failed; fix conflicts and then commit the result.')
+      )
+    ).toBe(
+      'Pull stopped with merge conflicts. Resolve them in Source Control, then commit the merge.'
+    )
+    expect(
+      resolveRemoteOperationErrorMessage(
+        new Error('Rebase stopped with conflicts; fix conflicts and then continue the rebase.'),
+        { isSync: true }
+      )
+    ).toBe(
+      'Sync stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase.'
     )
   })
 
