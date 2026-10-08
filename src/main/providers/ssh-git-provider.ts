@@ -33,6 +33,7 @@ import {
 } from '../git/max-buffer-overflow'
 import { InFlightPromiseDedupe, stableInFlightKey } from '../../shared/in-flight-promise-dedupe'
 import { gitExecMutatesRepository } from '../../shared/git-exec-mutation'
+import { GIT_MUTATION_TIMEOUT_MS } from '../../shared/git-mutation-timeout'
 import { GitStatusReadLeaseOwner } from '../git/git-status-read-lease-owner'
 
 type NonInteractiveExecQueueEntry = {
@@ -211,10 +212,11 @@ export class SshGitProvider implements IGitProvider {
   ): Promise<{ success: boolean; error?: string }> {
     return this.runWithGitReadInvalidation(
       async () =>
-        (await this.mux.request('git.commit', {
-          worktreePath,
-          message
-        })) as { success: boolean; error?: string }
+        (await this.mux.request(
+          'git.commit',
+          { worktreePath, message },
+          { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+        )) as { success: boolean; error?: string }
     )
   }
 
@@ -538,39 +540,56 @@ export class SshGitProvider implements IGitProvider {
     options: { forceWithLease?: boolean } = {}
   ): Promise<void> {
     await this.runWithGitReadInvalidation(async () => {
-      await this.mux.request('git.push', {
-        worktreePath,
-        publish,
-        pushTarget,
-        ...(options.forceWithLease === true ? { forceWithLease: true } : {})
-      })
+      await this.mux.request(
+        'git.push',
+        {
+          worktreePath,
+          publish,
+          pushTarget,
+          ...(options.forceWithLease === true ? { forceWithLease: true } : {})
+        },
+        { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+      )
     })
   }
 
   async pullBranch(worktreePath: string, pushTarget?: GitPushTarget): Promise<void> {
     await this.runWithGitReadInvalidation(async () => {
-      await this.mux.request('git.pull', { worktreePath, ...(pushTarget ? { pushTarget } : {}) })
+      await this.mux.request(
+        'git.pull',
+        { worktreePath, ...(pushTarget ? { pushTarget } : {}) },
+        { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+      )
     })
   }
 
   async fastForwardBranch(worktreePath: string, pushTarget?: GitPushTarget): Promise<void> {
     await this.runWithGitReadInvalidation(async () => {
-      await this.mux.request('git.fastForward', {
-        worktreePath,
-        ...(pushTarget ? { pushTarget } : {})
-      })
+      await this.mux.request(
+        'git.fastForward',
+        { worktreePath, ...(pushTarget ? { pushTarget } : {}) },
+        { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+      )
     })
   }
 
   async rebaseFromBase(worktreePath: string, baseRef: string): Promise<void> {
     await this.runWithGitReadInvalidation(async () => {
-      await this.mux.request('git.rebaseFromBase', { worktreePath, baseRef })
+      await this.mux.request(
+        'git.rebaseFromBase',
+        { worktreePath, baseRef },
+        { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+      )
     })
   }
 
   async fetchRemote(worktreePath: string, pushTarget?: GitPushTarget): Promise<void> {
     await this.runWithGitReadInvalidation(async () => {
-      await this.mux.request('git.fetch', { worktreePath, ...(pushTarget ? { pushTarget } : {}) })
+      await this.mux.request(
+        'git.fetch',
+        { worktreePath, ...(pushTarget ? { pushTarget } : {}) },
+        { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+      )
     })
   }
 
@@ -580,10 +599,11 @@ export class SshGitProvider implements IGitProvider {
   ): Promise<GitForkSyncResult> {
     return this.runWithGitReadInvalidation(
       async () =>
-        (await this.mux.request('git.forkSync', {
-          worktreePath,
-          ...(expectedUpstream ? { expectedUpstream } : {})
-        })) as GitForkSyncResult
+        (await this.mux.request(
+          'git.forkSync',
+          { worktreePath, ...(expectedUpstream ? { expectedUpstream } : {}) },
+          { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+        )) as GitForkSyncResult
     )
   }
 

@@ -22,6 +22,7 @@ import {
   type RuntimeEnvironmentCallRequest
 } from './runtime-compatibility-test-fixture'
 import { clearRuntimeCompatibilityCacheForTests } from './runtime-rpc-client'
+import { GIT_MUTATION_TIMEOUT_MS } from '../../../shared/git-mutation-timeout'
 
 const gitStatus = vi.fn()
 const gitCancelStatus = vi.fn()
@@ -570,7 +571,7 @@ describe('runtime git client', () => {
       selector: 'env-1',
       method: 'git.commit',
       params: { worktree: 'id:wt-1', message: 'feat: test' },
-      timeoutMs: 30_000
+      timeoutMs: GIT_MUTATION_TIMEOUT_MS
     })
     expect(runtimeEnvironmentCall).toHaveBeenNthCalledWith(4, {
       selector: 'env-1',
@@ -592,7 +593,7 @@ describe('runtime git client', () => {
         publish: true,
         pushTarget: { remoteName: 'origin', branchName: 'feature' }
       },
-      timeoutMs: 30_000
+      timeoutMs: GIT_MUTATION_TIMEOUT_MS
     })
     expect(runtimeEnvironmentCall).toHaveBeenNthCalledWith(7, {
       selector: 'env-1',
@@ -601,7 +602,7 @@ describe('runtime git client', () => {
         worktree: 'id:wt-1',
         pushTarget: { remoteName: 'fork', branchName: 'feature' }
       },
-      timeoutMs: 30_000
+      timeoutMs: GIT_MUTATION_TIMEOUT_MS
     })
     expect(runtimeEnvironmentCall).toHaveBeenNthCalledWith(8, {
       selector: 'env-1',
@@ -610,13 +611,13 @@ describe('runtime git client', () => {
         worktree: 'id:wt-1',
         pushTarget: { remoteName: 'fork', branchName: 'feature' }
       },
-      timeoutMs: 30_000
+      timeoutMs: GIT_MUTATION_TIMEOUT_MS
     })
     expect(runtimeEnvironmentCall).toHaveBeenNthCalledWith(9, {
       selector: 'env-1',
       method: 'git.rebaseFromBase',
       params: { worktree: 'id:wt-1', baseRef: 'origin/main' },
-      timeoutMs: 30_000
+      timeoutMs: GIT_MUTATION_TIMEOUT_MS
     })
   })
 

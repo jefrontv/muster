@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: this suite covers the SSH git provider's one-RPC-per-method contract; splitting it would duplicate the shared mux fixture. */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { SshGitProvider } from './ssh-git-provider'
+import { GIT_MUTATION_TIMEOUT_MS } from '../../shared/git-mutation-timeout'
 
 type MockMultiplexer = {
   request: ReturnType<typeof vi.fn>
@@ -198,10 +199,14 @@ describe('SshGitProvider', () => {
 
     const result = await provider.commit('/home/user/repo', 'feat: add source control commit')
 
-    expect(mux.request).toHaveBeenCalledWith('git.commit', {
-      worktreePath: '/home/user/repo',
-      message: 'feat: add source control commit'
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.commit',
+      {
+        worktreePath: '/home/user/repo',
+        message: 'feat: add source control commit'
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
     expect(result).toEqual(commitResult)
   })
 
@@ -710,32 +715,44 @@ describe('SshGitProvider', () => {
       remoteName: 'pr-fork-orca',
       branchName: 'contributor/fix'
     })
-    expect(mux.request).toHaveBeenCalledWith('git.push', {
-      worktreePath: '/home/user/repo',
-      publish: true,
-      pushTarget: {
-        remoteName: 'pr-fork-orca',
-        branchName: 'contributor/fix'
-      }
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.push',
+      {
+        worktreePath: '/home/user/repo',
+        publish: true,
+        pushTarget: {
+          remoteName: 'pr-fork-orca',
+          branchName: 'contributor/fix'
+        }
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('pushBranch forwards force-with-lease mode', async () => {
     await provider.pushBranch('/home/user/repo', false, undefined, { forceWithLease: true })
 
-    expect(mux.request).toHaveBeenCalledWith('git.push', {
-      worktreePath: '/home/user/repo',
-      publish: false,
-      pushTarget: undefined,
-      forceWithLease: true
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.push',
+      {
+        worktreePath: '/home/user/repo',
+        publish: false,
+        pushTarget: undefined,
+        forceWithLease: true
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('pullBranch sends git.pull request', async () => {
     await provider.pullBranch('/home/user/repo')
-    expect(mux.request).toHaveBeenCalledWith('git.pull', {
-      worktreePath: '/home/user/repo'
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.pull',
+      {
+        worktreePath: '/home/user/repo'
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('pullBranch forwards an explicit push target', async () => {
@@ -743,17 +760,25 @@ describe('SshGitProvider', () => {
 
     await provider.pullBranch('/home/user/repo', pushTarget)
 
-    expect(mux.request).toHaveBeenCalledWith('git.pull', {
-      worktreePath: '/home/user/repo',
-      pushTarget
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.pull',
+      {
+        worktreePath: '/home/user/repo',
+        pushTarget
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('fastForwardBranch sends git.fastForward request', async () => {
     await provider.fastForwardBranch('/home/user/repo')
-    expect(mux.request).toHaveBeenCalledWith('git.fastForward', {
-      worktreePath: '/home/user/repo'
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.fastForward',
+      {
+        worktreePath: '/home/user/repo'
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('fastForwardBranch forwards an explicit push target', async () => {
@@ -761,26 +786,38 @@ describe('SshGitProvider', () => {
 
     await provider.fastForwardBranch('/home/user/repo', pushTarget)
 
-    expect(mux.request).toHaveBeenCalledWith('git.fastForward', {
-      worktreePath: '/home/user/repo',
-      pushTarget
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.fastForward',
+      {
+        worktreePath: '/home/user/repo',
+        pushTarget
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('rebaseFromBase sends git.rebaseFromBase request', async () => {
     await provider.rebaseFromBase('/home/user/repo', 'upstream/main')
 
-    expect(mux.request).toHaveBeenCalledWith('git.rebaseFromBase', {
-      worktreePath: '/home/user/repo',
-      baseRef: 'upstream/main'
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.rebaseFromBase',
+      {
+        worktreePath: '/home/user/repo',
+        baseRef: 'upstream/main'
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('fetchRemote sends git.fetch request', async () => {
     await provider.fetchRemote('/home/user/repo')
-    expect(mux.request).toHaveBeenCalledWith('git.fetch', {
-      worktreePath: '/home/user/repo'
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.fetch',
+      {
+        worktreePath: '/home/user/repo'
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('fetchRemote forwards an explicit push target', async () => {
@@ -788,10 +825,14 @@ describe('SshGitProvider', () => {
 
     await provider.fetchRemote('/home/user/repo', pushTarget)
 
-    expect(mux.request).toHaveBeenCalledWith('git.fetch', {
-      worktreePath: '/home/user/repo',
-      pushTarget
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.fetch',
+      {
+        worktreePath: '/home/user/repo',
+        pushTarget
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
   })
 
   it('syncForkDefaultBranch sends git.forkSync request', async () => {
@@ -808,10 +849,14 @@ describe('SshGitProvider', () => {
     const expectedUpstream = { owner: 'stablyai', repo: 'orca' }
     const result = await provider.syncForkDefaultBranch('/home/user/repo', expectedUpstream)
 
-    expect(mux.request).toHaveBeenCalledWith('git.forkSync', {
-      worktreePath: '/home/user/repo',
-      expectedUpstream
-    })
+    expect(mux.request).toHaveBeenCalledWith(
+      'git.forkSync',
+      {
+        worktreePath: '/home/user/repo',
+        expectedUpstream
+      },
+      { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+    )
     expect(result).toEqual(syncResult)
   })
 

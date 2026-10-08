@@ -24,6 +24,7 @@ import { getCommitMessageModelDiscoveryHostKeyForScope } from '../../../shared/c
 import type { GitHistoryOptions, GitHistoryResult } from '../../../shared/git-history'
 import type { GitUndoLastCommitResult } from '../../../shared/git-undo-last-commit'
 import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
+import { GIT_MUTATION_TIMEOUT_MS } from '../../../shared/git-mutation-timeout'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
 import { toRuntimeWorktreeSelector } from './runtime-worktree-selector'
 import { withIpcErrorPrefixStripped } from '@/lib/ipc-error'
@@ -469,7 +470,7 @@ export async function fetchRuntimeGit(
       worktree: toRuntimeWorktreeSelector(context.worktreeId),
       ...(pushTarget ? { pushTarget } : {})
     },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
@@ -492,7 +493,7 @@ export async function syncRuntimeGitForkDefaultBranch(
       worktree: toRuntimeWorktreeSelector(context.worktreeId),
       expectedUpstream
     },
-    { timeoutMs: 60_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
@@ -516,7 +517,7 @@ export async function pullRuntimeGit(
       worktree: toRuntimeWorktreeSelector(context.worktreeId),
       ...(pushTarget ? { pushTarget } : {})
     },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
@@ -540,7 +541,7 @@ export async function fastForwardRuntimeGit(
       worktree: toRuntimeWorktreeSelector(context.worktreeId),
       ...(pushTarget ? { pushTarget } : {})
     },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
@@ -561,7 +562,7 @@ export async function rebaseRuntimeGitFromBase(
     target,
     'git.rebaseFromBase',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId), baseRef },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
@@ -589,7 +590,7 @@ export async function pushRuntimeGit(
       ...(args.pushTarget !== undefined ? { pushTarget: args.pushTarget } : {}),
       ...(args.forceWithLease !== undefined ? { forceWithLease: args.forceWithLease } : {})
     },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
@@ -663,7 +664,7 @@ export async function commitRuntimeGit(
     target,
     'git.commit',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId), message },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 

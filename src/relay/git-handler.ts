@@ -208,7 +208,7 @@ export class GitHandler {
     )
     this.dispatcher.onRequest('git.checkIgnored', (p) => this.checkIgnored(p))
     this.dispatcher.onRequest('git.history', (p) => this.history(p))
-    this.dispatcher.onRequest('git.commit', (p) => this.commit(p))
+    this.dispatcher.onRequest('git.commit', (p, context) => this.commit(p, context))
     this.dispatcher.onRequest('git.diff', (p, context) => this.getDiff(p, context))
     this.dispatcher.onRequest('git.stage', (p) => this.stage(p))
     this.dispatcher.onRequest('git.unstage', (p) => this.unstage(p))
@@ -225,7 +225,7 @@ export class GitHandler {
     this.dispatcher.onRequest('git.branchCompare', (p) => this.branchCompare(p))
     this.dispatcher.onRequest('git.commitCompare', (p) => this.commitCompare(p))
     this.dispatcher.onRequest('git.upstreamStatus', (p) => this.upstreamStatus(p))
-    this.dispatcher.onRequest('git.fetch', (p) => this.fetch(p))
+    this.dispatcher.onRequest('git.fetch', (p, context) => this.fetch(p, context))
     this.dispatcher.onRequest('git.forkSync', (p, context) => this.forkSync(p, context))
     this.dispatcher.onRequest('git.fetchRemoteTrackingRef', (p) => this.fetchRemoteTrackingRef(p))
     this.dispatcher.onRequest('git.fetchGitHubPullRequestHead', (p) =>
@@ -242,10 +242,10 @@ export class GitHandler {
     this.dispatcher.onRequest('git.fetchGitLabMergeRequestHeadRef', (p) =>
       this.fetchGitLabMergeRequestHead(p)
     )
-    this.dispatcher.onRequest('git.push', (p) => this.push(p))
-    this.dispatcher.onRequest('git.pull', (p) => this.pull(p))
-    this.dispatcher.onRequest('git.fastForward', (p) => this.fastForward(p))
-    this.dispatcher.onRequest('git.rebaseFromBase', (p) => this.rebaseFromBase(p))
+    this.dispatcher.onRequest('git.push', (p, context) => this.push(p, context))
+    this.dispatcher.onRequest('git.pull', (p, context) => this.pull(p, context))
+    this.dispatcher.onRequest('git.fastForward', (p, context) => this.fastForward(p, context))
+    this.dispatcher.onRequest('git.rebaseFromBase', (p, context) => this.rebaseFromBase(p, context))
     this.dispatcher.onRequest('git.branchDiff', (p, context) => this.branchDiff(p, context))
     this.dispatcher.onRequest('git.commitDiff', (p, context) => this.commitDiff(p, context))
     this.dispatcher.onRequest('git.listWorktrees', (p, context) => this.listWorktrees(p, context))
@@ -344,6 +344,12 @@ export class GitHandler {
     }
     const { stdout, stderr } = await execFileAsync('git', args, execOptions)
     return { stdout: String(stdout), stderr: String(stderr) }
+  }
+
+  // Why: mutations can outlive slow hooks; bind them to the request so rpc.cancel stops git, and never wait on a credential prompt.
+  private mutationGit(context?: RequestContext): GitExec {
+    return (args, cwd, opts) =>
+      this.git(args, cwd, { ...opts, signal: context?.signal, nonInteractive: true })
   }
 
   private async gitBuffer(args: string[], cwd: string): Promise<Buffer> {
@@ -514,13 +520,14 @@ export class GitHandler {
   }
 
   private async commit(
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
+    context?: RequestContext
   ): Promise<{ success: boolean; error?: string }> {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
     const message = params.message as string
     try {
-      return await commitChangesRelay(this.git.bind(this), worktreePath, message)
+      return await commitChangesRelay(this.mutationGit(context), worktreePath, message)
     } finally {
       this.clearGitMutationReadCaches()
     }
@@ -861,19 +868,20 @@ export class GitHandler {
     }
   }
 
-  private async fetch(params: Record<string, unknown>) {
+  private async fetch(params: Record<string, unknown>, context?: RequestContext) {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
+    const git = this.mutationGit(context)
     try {
       try {
         if (params.pushTarget !== undefined) {
           assertGitPushTargetShape(params.pushTarget)
           const pushTarget = params.pushTarget as GitPushTarget
-          await this.git(['check-ref-format', '--branch', pushTarget.branchName], worktreePath)
-          await this.git(['fetch', '--prune', pushTarget.remoteName], worktreePath)
+          await git(['check-ref-format', '--branch', pushTarget.branchName], worktreePath)
+          await git(['fetch', '--prune', pushTarget.remoteName], worktreePath)
           return
         }
-        await this.git(['fetch', '--prune'], worktreePath)
+        await git(['fetch', '--prune'], worktreePath)
       } catch (error) {
         // Why: normalize like local gitFetch so SSH users get actionable messages, not raw stderr (may embed credentials).
         throw new Error(normalizeGitErrorMessage(error, 'fetch'))
@@ -1061,25 +1069,22 @@ export class GitHandler {
     }
   }
 
-  private async push(params: Record<string, unknown>) {
+  private async push(params: Record<string, unknown>, context?: RequestContext) {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
+    const git = this.mutationGit(context)
     // Why: mirror src/main/git/remote.ts — push to a configured upstream when present so SSH worktrees with non-origin targets aren't repointed.
     void params.publish
     try {
       try {
-        const target = await resolveRelayPushTarget(
-          this.git.bind(this),
-          worktreePath,
-          params.pushTarget
-        )
+        const target = await resolveRelayPushTarget(git, worktreePath, params.pushTarget)
         const args = [
           'push',
           ...(params.forceWithLease === true ? ['--force-with-lease'] : []),
           '--set-upstream',
           ...(target ? [target.remote, target.refspec] : ['origin', 'HEAD'])
         ]
-        await this.git(args, worktreePath)
+        await git(args, worktreePath)
       } catch (error) {
         // Why: mirror local gitPush normalization so SSH users get "non-fast-forward / pull first" guidance instead of raw git stderr.
         throw new Error(normalizeGitErrorMessage(error, 'push'))
@@ -1089,30 +1094,35 @@ export class GitHandler {
     }
   }
 
-  private async pullWithArgs(params: Record<string, unknown>, pullArgs: string[]) {
+  private async pullWithArgs(
+    params: Record<string, unknown>,
+    pullArgs: string[],
+    context?: RequestContext
+  ) {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
+    const git = this.mutationGit(context)
     const runPull = async (effectiveArgs: string[]): Promise<void> => {
       if (params.pushTarget !== undefined) {
         assertGitPushTargetShape(params.pushTarget)
         const pushTarget = params.pushTarget as GitPushTarget
-        await this.git(['check-ref-format', '--branch', pushTarget.branchName], worktreePath)
-        await this.git(
+        await git(['check-ref-format', '--branch', pushTarget.branchName], worktreePath)
+        await git(
           ['pull', ...effectiveArgs, pushTarget.remoteName, pushTarget.branchName],
           worktreePath
         )
         return
       }
-      const upstream = await resolveEffectiveGitUpstream((args) => this.git(args, worktreePath))
+      const upstream = await resolveEffectiveGitUpstream((args) => git(args, worktreePath))
       if (upstream && !upstream.isConfiguredUpstream) {
         // Why: legacy Orca branches may track origin/main while pushes target origin/<branch>; pull the same effective branch the UI reports.
-        await this.git(
+        await git(
           ['pull', ...effectiveArgs, upstream.remoteName, upstream.branchName],
           worktreePath
         )
         return
       }
-      await this.git(['pull', ...effectiveArgs], worktreePath)
+      await git(['pull', ...effectiveArgs], worktreePath)
     }
 
     try {
@@ -1127,26 +1137,27 @@ export class GitHandler {
     }
   }
 
-  private async pull(params: Record<string, unknown>) {
+  private async pull(params: Record<string, unknown>, context?: RequestContext) {
     // Why: plain `git pull` honors the user's merge/rebase/ff policy; with none, Git's policy error is normalized with setup guidance.
-    await this.pullWithArgs(params, [])
+    await this.pullWithArgs(params, [], context)
   }
 
-  private async fastForward(params: Record<string, unknown>) {
-    await this.pullWithArgs(params, ['--ff-only'])
+  private async fastForward(params: Record<string, unknown>, context?: RequestContext) {
+    await this.pullWithArgs(params, ['--ff-only'], context)
   }
 
-  private async rebaseFromBase(params: Record<string, unknown>) {
+  private async rebaseFromBase(params: Record<string, unknown>, context?: RequestContext) {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
     const baseRef = params.baseRef as string
+    const git = this.mutationGit(context)
     try {
       try {
         const source = await resolveGitRemoteRebaseSource(
-          ((args) => this.git(args, worktreePath)) as GitCommandRunner,
+          ((args) => git(args, worktreePath)) as GitCommandRunner,
           baseRef
         )
-        await this.git(['pull', '--rebase', source.remoteName, source.branchName], worktreePath)
+        await git(['pull', '--rebase', source.remoteName, source.branchName], worktreePath)
       } catch (error) {
         throw new Error(normalizeGitErrorMessage(error, 'pull'))
       }
