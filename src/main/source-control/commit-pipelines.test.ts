@@ -32,6 +32,7 @@ describe('getCommitPipelines', () => {
   it('hides the column for a remote no supported forge recognises', async () => {
     const result = await getCommitPipelines({ repoPath: '/repo' }, [SHA], {
       resolveBitbucketRepo: async () => null,
+      resolveGitLabProject: async () => null,
       resolveGitHubRepo: async () => null
     })
 
@@ -47,6 +48,7 @@ describe('getCommitPipelines', () => {
       [SHA],
       {
         resolveBitbucketRepo: async () => null,
+        resolveGitLabProject: async () => null,
         resolveGitHubRepo: async () => githubRepo,
         getGitHubChecks
       }
@@ -57,6 +59,26 @@ describe('getCommitPipelines', () => {
       githubRepo,
       [SHA]
     )
+  })
+
+  it('routes a GitLab origin to the pipelines list before probing GitHub', async () => {
+    const project = { host: 'gitlab.com', path: 'efront/site' }
+    const getGitLabPipelines = vi.fn(async () => ({ available: true as const, runsBySha: {} }))
+    const resolveGitHubRepo = vi.fn(async () => null)
+
+    await getCommitPipelines({ repoPath: '/repo', connectionId: 'ssh-1' }, [SHA], {
+      resolveBitbucketRepo: async () => null,
+      resolveGitLabProject: async () => project,
+      getGitLabPipelines,
+      resolveGitHubRepo
+    })
+
+    expect(getGitLabPipelines).toHaveBeenCalledWith(
+      { repoPath: '/repo', connectionId: 'ssh-1', localGitOptions: undefined },
+      project,
+      [SHA]
+    )
+    expect(resolveGitHubRepo).not.toHaveBeenCalled()
   })
 
   it('spends no API call when there are no commits to look up', async () => {

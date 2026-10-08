@@ -16,6 +16,12 @@ import {
   type GitHubCommitChecksContext
 } from '../github/commit-check-rollups'
 import type { GitHubApiRepository } from '../github/github-api-repository'
+import { getProjectSlug } from '../gitlab/client'
+import {
+  getGitLabCommitPipelines,
+  type GitLabCommitPipelinesContext
+} from '../gitlab/commit-pipelines'
+import type { ProjectRef } from '../gitlab/gl-utils'
 import type { ForgeProviderRepositoryContext } from './forge-provider'
 
 export type CommitPipelinesDeps = {
@@ -24,6 +30,12 @@ export type CommitPipelinesDeps = {
   ) => Promise<BitbucketRepoRef | null>
   getBitbucketPipelines?: (
     repo: BitbucketRepoRef,
+    shas: readonly string[]
+  ) => Promise<CommitPipelinesResult>
+  resolveGitLabProject?: (context: ForgeProviderRepositoryContext) => Promise<ProjectRef | null>
+  getGitLabPipelines?: (
+    context: GitLabCommitPipelinesContext,
+    project: ProjectRef,
     shas: readonly string[]
   ) => Promise<CommitPipelinesResult>
   resolveGitHubRepo?: (
@@ -61,6 +73,12 @@ function resolveBitbucketRepoFromContext(
   return getBitbucketRepoSlug(context.repoPath, context.connectionId, context)
 }
 
+function resolveGitLabProjectFromContext(
+  context: ForgeProviderRepositoryContext
+): Promise<ProjectRef | null> {
+  return getProjectSlug(context.repoPath, context.connectionId, context)
+}
+
 function resolveGitHubRepoFromContext(
   context: ForgeProviderRepositoryContext
 ): Promise<GitHubApiRepository | null> {
@@ -82,6 +100,8 @@ export async function getCommitPipelines(
 ): Promise<CommitPipelinesResult> {
   const resolveBitbucketRepo = deps.resolveBitbucketRepo ?? resolveBitbucketRepoFromContext
   const getBitbucketPipelines = deps.getBitbucketPipelines ?? getBitbucketCommitPipelines
+  const resolveGitLabProject = deps.resolveGitLabProject ?? resolveGitLabProjectFromContext
+  const getGitLabPipelines = deps.getGitLabPipelines ?? getGitLabCommitPipelines
   const resolveGitHubRepo = deps.resolveGitHubRepo ?? resolveGitHubRepoFromContext
   const getGitHubChecks = deps.getGitHubChecks ?? getGitHubCommitChecks
 
@@ -90,14 +110,20 @@ export async function getCommitPipelines(
   if (bitbucketRepo) {
     return lookupUnlessEmpty(shas, () => getBitbucketPipelines(bitbucketRepo, shas))
   }
+  const cliContext = {
+    repoPath: context.repoPath,
+    connectionId: context.connectionId,
+    localGitOptions: context.localGitExecOptions
+  }
+  // Why: GitLab before GitHub, the same order forge detection uses for hosted review, so a
+  // self-hosted GitLab is never claimed by a GitHub Enterprise probe.
+  const gitlabProject = await resolveGitLabProject(context)
+  if (gitlabProject) {
+    return lookupUnlessEmpty(shas, () => getGitLabPipelines(cliContext, gitlabProject, shas))
+  }
   const githubRepo = await resolveGitHubRepo(context)
   if (githubRepo) {
-    const githubContext = {
-      repoPath: context.repoPath,
-      connectionId: context.connectionId,
-      localGitOptions: context.localGitExecOptions
-    }
-    return lookupUnlessEmpty(shas, () => getGitHubChecks(githubContext, githubRepo, shas))
+    return lookupUnlessEmpty(shas, () => getGitHubChecks(cliContext, githubRepo, shas))
   }
   return { available: false, reason: 'no-provider' }
 }

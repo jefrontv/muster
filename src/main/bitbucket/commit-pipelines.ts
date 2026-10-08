@@ -3,10 +3,11 @@
 // One pipelines list call per refresh (plus one steps call while something runs), matched to
 // commits by full hash here in main. Commit build statuses are no use: see site-pipelines.ts.
 
-import type {
-  CommitPipelineRun,
-  CommitPipelineStatus,
-  CommitPipelinesResult
+import {
+  latestRunPerCommit,
+  type CommitPipelineRun,
+  type CommitPipelineStatus,
+  type CommitPipelinesResult
 } from '../../shared/commit-pipelines'
 import type { SitePipelineRun } from '../../shared/site-types'
 import { bitbucketHasAuth } from './bitbucket-http'
@@ -55,19 +56,10 @@ export function matchPipelineRunsToCommits(
   runs: readonly SitePipelineRun[],
   shas: readonly string[]
 ): Record<string, CommitPipelineRun> {
-  const wanted = new Map(shas.map((sha) => [sha.toLowerCase(), sha]))
-  const runsBySha: Record<string, CommitPipelineRun> = {}
-  for (const run of runs) {
-    const sha = run.commitSha ? wanted.get(run.commitSha.toLowerCase()) : undefined
-    if (!sha || runsBySha[sha]) {
-      continue
-    }
-    const mapped = toCommitPipelineRun(run)
-    if (mapped) {
-      runsBySha[sha] = mapped
-    }
-  }
-  return runsBySha
+  return latestRunPerCommit(
+    runs.map((run) => ({ sha: run.commitSha, run: toCommitPipelineRun(run) })),
+    shas
+  )
 }
 
 const inFlightByRepo = new Map<string, Promise<SitePipelineRun[]>>()

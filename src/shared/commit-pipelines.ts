@@ -54,3 +54,22 @@ export const COMMIT_PIPELINES_MAX_SHAS = 50
 export function isCommitPipelineInFlight(status: CommitPipelineStatus): boolean {
   return status === 'running' || status === 'pending'
 }
+
+/**
+ * First mappable run per requested commit, matched by full hash. `runs` must be newest first, as
+ * the pipelines list endpoints return them, so "first" is "latest".
+ */
+export function latestRunPerCommit(
+  runs: readonly { sha: string | null; run: CommitPipelineRun | null }[],
+  shas: readonly string[]
+): Record<string, CommitPipelineRun> {
+  const wanted = new Map(shas.map((sha) => [sha.toLowerCase(), sha]))
+  const runsBySha: Record<string, CommitPipelineRun> = {}
+  for (const { sha: runSha, run } of runs) {
+    const sha = runSha ? wanted.get(runSha.toLowerCase()) : undefined
+    if (sha && run && !runsBySha[sha]) {
+      runsBySha[sha] = run
+    }
+  }
+  return runsBySha
+}
