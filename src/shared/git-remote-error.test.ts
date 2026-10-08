@@ -4,6 +4,7 @@ import {
   isDivergentPullReconciliationError,
   isNoUpstreamError,
   MERGE_RECONCILIATION_PULL_ARGS,
+  normalizeGitAbortErrorMessage,
   normalizeGitErrorMessage,
   pullArgsSpecifyReconciliation,
   runPullWithDivergenceFallback
@@ -226,6 +227,34 @@ describe('normalizeGitErrorMessage', () => {
         (separator instanceof RegExp && separator.source === '\\r?\\n')
     )
     expect(usedLineSplit).toBe(false)
+  })
+})
+
+describe('normalizeGitAbortErrorMessage', () => {
+  it('explains a missing merge instead of echoing the command', () => {
+    const error = new Error(
+      'Command failed: git merge --abort\nfatal: There is no merge to abort (MERGE_HEAD missing).'
+    )
+
+    expect(normalizeGitAbortErrorMessage(error, 'merge')).toBe(
+      'No merge is in progress. Refresh Source Control and try again.'
+    )
+  })
+
+  it('maps an index.lock failure to the lock guidance', () => {
+    const error = new Error(
+      "Command failed: git rebase --abort\nfatal: Unable to create '/r/.git/index.lock': File exists."
+    )
+
+    expect(normalizeGitAbortErrorMessage(error, 'rebase')).toMatch(
+      /^Another Git process is using this repository/
+    )
+  })
+
+  it('falls back to a plain sentence when git printed nothing', () => {
+    expect(
+      normalizeGitAbortErrorMessage(new Error('Command failed: git rebase --abort'), 'rebase')
+    ).toBe('Could not abort the rebase.')
   })
 })
 

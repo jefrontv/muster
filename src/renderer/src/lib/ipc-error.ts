@@ -10,3 +10,38 @@ export function extractIpcErrorMessage(err: unknown, fallback: string): string {
   const match = err.message.match(/Error invoking remote method '[^']*': (?:Error: )?(.+)/)
   return match ? match[1] : err.message
 }
+
+const IPC_ERROR_PREFIX_PATTERN = /^Error invoking remote method '[^']*': (?:[A-Za-z]*Error: )?/
+
+// Why: keeps every line after the prefix (push hook output is multi-line) and the original error identity.
+export function stripIpcErrorPrefix<T>(error: T): T {
+  if (error instanceof Error && IPC_ERROR_PREFIX_PATTERN.test(error.message)) {
+    error.message = error.message.replace(IPC_ERROR_PREFIX_PATTERN, '')
+  }
+  return error
+}
+
+/** Wraps an IPC API object so every rejected call throws without Electron's prefix. */
+export function withIpcErrorPrefixStripped<T extends object>(api: T): T {
+  return new Proxy(api, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver)
+      if (typeof value !== 'function') {
+        return value
+      }
+      return (...args: unknown[]) => {
+        let result: unknown
+        try {
+          result = value.apply(target, args)
+        } catch (error) {
+          throw stripIpcErrorPrefix(error)
+        }
+        return result instanceof Promise
+          ? result.catch((error: unknown) => {
+              throw stripIpcErrorPrefix(error)
+            })
+          : result
+      }
+    }
+  })
+}

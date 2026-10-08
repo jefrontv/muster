@@ -50,6 +50,7 @@ import { resolveRelayPushTarget } from './git-handler-push-target'
 import {
   isExecKilledError,
   isNoUpstreamError,
+  normalizeGitAbortErrorMessage,
   normalizeGitErrorMessage,
   runPullWithDivergenceFallback
 } from '../shared/git-remote-error'
@@ -575,6 +576,8 @@ export class GitHandler {
     const worktreePath = params.worktreePath as string
     try {
       await this.git(['merge', '--abort'], worktreePath)
+    } catch (error) {
+      throw new Error(normalizeGitAbortErrorMessage(error, 'merge'))
     } finally {
       this.clearGitMutationReadCaches()
     }
@@ -585,6 +588,8 @@ export class GitHandler {
     const worktreePath = params.worktreePath as string
     try {
       await this.git(['rebase', '--abort'], worktreePath)
+    } catch (error) {
+      throw new Error(normalizeGitAbortErrorMessage(error, 'rebase'))
     } finally {
       this.clearGitMutationReadCaches()
     }

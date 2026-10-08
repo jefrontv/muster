@@ -3768,8 +3768,9 @@ describe('createEditorSlice remote branch actions', () => {
     )
     gitPushMock.mockRejectedValueOnce(pushError)
 
+    // Why: the runtime git client strips Electron's IPC prefix before the store sees the error.
     await expect(store.getState().pushBranch('wt-1', '/repo', false)).rejects.toThrow(
-      pushError.message
+      /^Submodule 'find-cmux-followers' has remote changes\./
     )
 
     expect(toastErrorMock).toHaveBeenCalledWith(

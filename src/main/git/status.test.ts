@@ -2015,6 +2015,16 @@ describe('abortRebase', () => {
 
     expect(gitExecFileAsyncMock).toHaveBeenCalledWith(['rebase', '--abort'], { cwd: '/repo' })
   })
+
+  it('drops the "Command failed" wrapper from abort failures', async () => {
+    gitExecFileAsyncMock.mockRejectedValueOnce(
+      new Error('Command failed: git rebase --abort\nerror: could not detach HEAD')
+    )
+
+    await expect(abortRebase('/repo')).rejects.toThrow(
+      /^Could not abort the rebase\. Could not detach HEAD$/
+    )
+  })
 })
 
 describe('getStagedCommitContext', () => {

@@ -53,6 +53,7 @@ import type { GitRuntimeOptions } from './git-runtime-options'
 import { gitOptionsForWorktree } from './git-runtime-options'
 import { GitStatusReadLeaseOwner } from './git-status-read-lease-owner'
 import { parseGitRevListFirstParentOid } from '../../shared/git-rev-list-output'
+import { normalizeGitAbortErrorMessage } from '../../shared/git-remote-error'
 import {
   undoLastCommitWithGit,
   type GitUndoLastCommitResult
@@ -989,18 +990,26 @@ export async function abortMerge(
   worktreePath: string,
   options: GitRuntimeOptions = {}
 ): Promise<void> {
-  await runWithGitReadCacheInvalidation(() =>
-    gitExecFileAsync(['merge', '--abort'], gitOptionsForWorktree(worktreePath, options))
-  )
+  await runWithGitReadCacheInvalidation(async () => {
+    try {
+      await gitExecFileAsync(['merge', '--abort'], gitOptionsForWorktree(worktreePath, options))
+    } catch (error) {
+      throw new Error(normalizeGitAbortErrorMessage(error, 'merge'))
+    }
+  })
 }
 
 export async function abortRebase(
   worktreePath: string,
   options: GitRuntimeOptions = {}
 ): Promise<void> {
-  await runWithGitReadCacheInvalidation(() =>
-    gitExecFileAsync(['rebase', '--abort'], gitOptionsForWorktree(worktreePath, options))
-  )
+  await runWithGitReadCacheInvalidation(async () => {
+    try {
+      await gitExecFileAsync(['rebase', '--abort'], gitOptionsForWorktree(worktreePath, options))
+    } catch (error) {
+      throw new Error(normalizeGitAbortErrorMessage(error, 'rebase'))
+    }
+  })
 }
 
 export async function undoLastCommit(

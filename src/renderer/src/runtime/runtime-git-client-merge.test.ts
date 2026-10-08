@@ -45,6 +45,22 @@ describe('runtime git client merge operations', () => {
     expect(runtimeEnvironmentCall).not.toHaveBeenCalled()
   })
 
+  it("strips Electron's IPC prefix from local git failures", async () => {
+    gitAbortRebase.mockRejectedValue(
+      new Error(
+        "Error invoking remote method 'git:abortRebase': Error: No rebase is in progress. Refresh Source Control and try again."
+      )
+    )
+
+    await expect(
+      abortRuntimeGitRebase({
+        settings: { activeRuntimeEnvironmentId: null },
+        worktreeId: 'wt-1',
+        worktreePath: '/repo'
+      })
+    ).rejects.toThrow(/^No rebase is in progress\. Refresh Source Control and try again\.$/)
+  })
+
   it('routes abort merge through the active runtime', async () => {
     runtimeEnvironmentCall.mockResolvedValue({
       id: 'rpc-1',
