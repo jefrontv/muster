@@ -143,6 +143,10 @@ import { resolveEntryContextMenuActions } from './source-control-entry-context-m
 import { useCommitMessageFocusRequest } from './source-control-commit-message-focus'
 import { resolveCommitMessagePlaceholder } from './source-control-commit-message-placeholder'
 import {
+  resolveDropdownRowHint,
+  shouldShowDropdownRowTooltip
+} from './source-control-dropdown-row-hint'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -6751,7 +6755,7 @@ export function CommitArea({
   } else if (hasMessage) {
     generateTooltip = 'Clear the message to regenerate.'
   } else if (!aiAgentConfigured) {
-    generateTooltip = 'Pick an agent in Settings -> Git -> Source Control AI.'
+    generateTooltip = 'Pick an agent in Settings > Git > Source Control AI.'
   }
   const isGenerateDisabled =
     isGenerating || isCommitting || stagedCount === 0 || hasMessage || hasUnresolvedConflicts
@@ -6759,49 +6763,55 @@ export function CommitArea({
     'auto.components.right.sidebar.SourceControl.cc199ccc5f',
     'More commit and remote actions'
   )
-  const moreActionsLabel = translate(
-    'auto.components.right.sidebar.SourceControl.4d6e1fd7f3',
-    'More actions'
+  const isDropdownBusy = isCommitting || isCreatingPr || isRemoteOperationActive
+  const generateFallbackTooltip = translate(
+    'auto.components.right.sidebar.SourceControl.b16b8f0e4b',
+    'Generate commit message'
   )
   const dropdownMenuContent = (
     <DropdownMenuContent align="end" className="min-w-[14rem]">
-      {dropdownItems.map((entry, index) =>
-        entry.kind === 'separator' ? (
-          <DropdownMenuSeparator key={`sep-${index}`} />
-        ) : (
-          <Tooltip key={entry.kind}>
-            <TooltipTrigger asChild>
-              <div className="block">
-                <DropdownMenuItem
-                  disabled={entry.disabled}
-                  title={entry.title}
-                  variant={entry.variant}
-                  className="w-full"
-                  onSelect={(event) => {
-                    if (entry.disabled) {
-                      event.preventDefault()
-                      return
-                    }
-                    onDropdownAction(entry.kind)
-                  }}
-                >
-                  <span className="flex min-w-0 flex-col">
-                    <span>{entry.label}</span>
-                    {entry.hint ? (
-                      <span className="truncate text-[10px] text-muted-foreground">
-                        {entry.hint}
-                      </span>
-                    ) : null}
+      {dropdownItems.map((entry, index) => {
+        if (entry.kind === 'separator') {
+          return <DropdownMenuSeparator key={`sep-${index}`} />
+        }
+        const inlineHint = resolveDropdownRowHint(entry, isDropdownBusy)
+        const row = (
+          <div className="block">
+            <DropdownMenuItem
+              disabled={entry.disabled}
+              variant={entry.variant}
+              className="w-full"
+              onSelect={(event) => {
+                if (entry.disabled) {
+                  event.preventDefault()
+                  return
+                }
+                onDropdownAction(entry.kind)
+              }}
+            >
+              <span className="flex min-w-0 flex-col">
+                <span>{entry.label}</span>
+                {inlineHint ? (
+                  <span className="max-w-60 text-[10px] leading-4 text-muted-foreground">
+                    {inlineHint}
                   </span>
-                </DropdownMenuItem>
-              </div>
-            </TooltipTrigger>
+                ) : null}
+              </span>
+            </DropdownMenuItem>
+          </div>
+        )
+        if (!shouldShowDropdownRowTooltip(entry, inlineHint)) {
+          return <React.Fragment key={entry.kind}>{row}</React.Fragment>
+        }
+        return (
+          <Tooltip key={entry.kind}>
+            <TooltipTrigger asChild>{row}</TooltipTrigger>
             <TooltipContent side="left" sideOffset={8} className="max-w-72">
               {entry.title}
             </TooltipContent>
           </Tooltip>
         )
-      )}
+      })}
     </DropdownMenuContent>
   )
 
@@ -6835,10 +6845,6 @@ export function CommitArea({
                   <button
                     type="button"
                     onClick={() => onCancelGenerate()}
-                    title={translate(
-                      'auto.components.right.sidebar.SourceControl.527e130b6f',
-                      'Stop generating'
-                    )}
                     aria-label={translate(
                       'auto.components.right.sidebar.SourceControl.ddc1fbd690',
                       'Stop generating commit message'
@@ -6869,13 +6875,6 @@ export function CommitArea({
                       }
                       onGenerate()
                     }}
-                    title={
-                      generateTooltip ??
-                      translate(
-                        'auto.components.right.sidebar.SourceControl.b16b8f0e4b',
-                        'ai commit msg'
-                      )
-                    }
                     aria-label={translate(
                       'auto.components.right.sidebar.SourceControl.461575b9bc',
                       'Generate commit message with AI'
@@ -6890,11 +6889,7 @@ export function CommitArea({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="left" sideOffset={6}>
-                  {generateTooltip ??
-                    translate(
-                      'auto.components.right.sidebar.SourceControl.b16b8f0e4b',
-                      'ai commit msg'
-                    )}
+                  {generateTooltip ?? generateFallbackTooltip}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -6916,7 +6911,6 @@ export function CommitArea({
                   disabled={primaryAction.disabled}
                   onClick={() => onPrimaryAction()}
                   className="w-full rounded-r-none px-3 text-[11px]"
-                  title={primaryAction.title}
                 >
                   {showSpinner ? (
                     <Loader2 className="size-3.5 animate-spin" />
@@ -6949,7 +6943,6 @@ export function CommitArea({
                         primaryAction.disabled && 'opacity-50'
                       )}
                       aria-label={moreCommitAndRemoteActionsLabel}
-                      title={moreActionsLabel}
                     >
                       {showChevronSpinner ? (
                         <Loader2 className="size-3.5 animate-spin" />

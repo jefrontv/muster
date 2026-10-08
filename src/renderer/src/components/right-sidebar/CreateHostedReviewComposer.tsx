@@ -24,6 +24,10 @@ import { translate } from '@/i18n/i18n'
 import type { HostedReviewProvider } from '../../../../shared/hosted-review'
 import { stripBaseRef } from './useCreatePullRequestDialogFields'
 import type { DropdownActionKind, DropdownEntry } from './source-control-dropdown-items'
+import {
+  resolveDropdownRowHint,
+  shouldShowDropdownRowTooltip
+} from './source-control-dropdown-row-hint'
 import { CreateHostedReviewComposerFields } from './CreateHostedReviewComposerFields'
 import {
   RIGHT_SIDEBAR_MORPHING_PRIMARY_BUTTON_CLASS,
@@ -301,14 +305,18 @@ export function CreateHostedReviewComposer({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[14rem]">
-                {effectiveDropdownItems.map((entry, index) =>
-                  entry.kind === 'separator' ? (
-                    <DropdownMenuSeparator key={`sep-${index}`} />
-                  ) : (
+                {effectiveDropdownItems.map((entry, index) => {
+                  if (entry.kind === 'separator') {
+                    return <DropdownMenuSeparator key={`sep-${index}`} />
+                  }
+                  const inlineHint = resolveDropdownRowHint(entry, isCreating || generating)
+                  return (
                     <DropdownMenuItem
                       key={entry.kind}
                       disabled={entry.disabled}
-                      title={entry.title}
+                      title={
+                        shouldShowDropdownRowTooltip(entry, inlineHint) ? entry.title : undefined
+                      }
                       variant={entry.variant}
                       onSelect={(event) => {
                         if (entry.disabled) {
@@ -320,15 +328,15 @@ export function CreateHostedReviewComposer({
                     >
                       <span className="flex min-w-0 flex-col">
                         <span>{entry.label}</span>
-                        {entry.hint ? (
-                          <span className="truncate text-[10px] text-muted-foreground">
-                            {entry.hint}
+                        {inlineHint ? (
+                          <span className="max-w-60 text-[10px] leading-4 text-muted-foreground">
+                            {inlineHint}
                           </span>
                         ) : null}
                       </span>
                     </DropdownMenuItem>
                   )
-                )}
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}

@@ -104,7 +104,7 @@ describe('CommitArea AI generation', () => {
 
     const button = buttonByLabel(markup, 'Generate commit message with AI')
     expect(hasDisabledAttribute(button)).toBe(false)
-    expect(button).toContain('title="ai commit msg"')
+    expect(button).not.toContain('title=')
   })
 
   it('disables AI generation when the textarea already has user text', () => {
@@ -115,7 +115,7 @@ describe('CommitArea AI generation', () => {
 
     const button = buttonByLabel(markup, 'Generate commit message with AI')
     expect(button).toContain('aria-disabled="true"')
-    expect(button).toContain('title="Clear the message to regenerate."')
+    expect(button).not.toContain('title=')
   })
 
   it('keeps AI generation discoverable when the configured agent needs attention', () => {
@@ -151,7 +151,7 @@ describe('CommitArea AI generation', () => {
 
     const button = buttonByLabel(markup, 'Generate commit message with AI')
     expect(hasDisabledAttribute(button)).toBe(false)
-    expect(button).toContain('title="Pick an agent in Settings -&gt; Git -&gt; Source Control AI."')
+    expect(button).not.toContain('title=')
   })
 
   it('turns the generating icon into a stop affordance', () => {
@@ -164,7 +164,7 @@ describe('CommitArea AI generation', () => {
     })
 
     const button = buttonByLabel(markup, 'Stop generating commit message')
-    expect(button).toContain('title="Stop generating"')
+    expect(button).not.toContain('title=')
     expect(button).toContain('lucide-refresh-cw')
     expect(button).toContain('lucide-square')
   })
@@ -213,7 +213,7 @@ describe('CommitArea AI generation', () => {
 
     expect(markup).not.toContain('aria-label="Commit message"')
     expect(markup).not.toContain('aria-label="Generate commit message with AI"')
-    expect(markup).toContain('Nothing to commit')
+    expect(markup).toMatch(/<button\b[^>]*data-slot="button"[\s\S]*?Commit<\/button>/)
     expect(markup).toContain('aria-label="More commit and remote actions"')
   })
 })
