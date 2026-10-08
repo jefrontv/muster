@@ -330,6 +330,7 @@ import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 
 import type { SetupScriptImportCandidate } from '../shared/setup-script-imports'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
+import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type {
   EphemeralVmRecipeDoctorResult,
@@ -3216,6 +3217,10 @@ export type PreloadApi = {
     }) => Promise<GitConflictOperation>
     abortMerge: (args: { worktreePath: string; connectionId?: string }) => Promise<void>
     abortRebase: (args: { worktreePath: string; connectionId?: string }) => Promise<void>
+    undoLastCommit: (args: {
+      worktreePath: string
+      connectionId?: string
+    }) => Promise<GitUndoLastCommitResult>
     diff: (args: {
       worktreePath: string
       filePath: string

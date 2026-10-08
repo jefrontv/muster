@@ -10439,7 +10439,9 @@
                   "226b85a3a7": "fetch",
                   "323bb614aa": "提交并同步",
                   "2b8e6595fd": "提交",
-                  "04d709801d": "从远程获取但不合并"
+                  "04d709801d": "从远程获取但不合并",
+                  "undo_last_commit": "撤销上次提交",
+                  "undo_last_commit_failed": "撤销提交失败"
                 }
               },
               "primary": {
@@ -10487,6 +10489,14 @@
                   "f0c6e2a581": "此分支尚未准备好创建 {{value0}}。",
                   "8f9a0b1c2d": "没有可提交的内容。分支已是最新状态。",
                   "h3i4j5k607": "正在检查此分支是否可以创建 {{value0}}…"
+                }
+              },
+              "undo": {
+                "commit": {
+                  "confirm_title": "撤销已推送的提交？",
+                  "confirm_description": "此提交已在 {{value0}} 上。撤销只会更改你的本地分支，下次推送需要使用 Force Push。",
+                  "confirm_label": "撤销提交",
+                  "remote_fallback": "远程"
                 }
               }
             }

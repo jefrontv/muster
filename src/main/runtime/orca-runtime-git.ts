@@ -19,6 +19,7 @@ import type {
 import type { CommitMessageDraftContext } from '../../shared/commit-message-generation'
 import { getCommitMessageModelDiscoveryHostKey } from '../../shared/commit-message-host-key'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
+import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import {
   mergeLegacyCommitMessageAiIntoSourceControlAi,
   type ResolvedSourceControlAiGenerationParams
@@ -30,6 +31,7 @@ import { getRemoteCommitUrl, getRemoteFileUrl } from '../git/repo'
 import {
   abortMerge,
   abortRebase,
+  undoLastCommit,
   bulkDiscardChanges,
   bulkStageFiles,
   bulkUnstageFiles,
@@ -314,6 +316,18 @@ export class RuntimeGitCommands {
     }
     await abortRebase(target.worktree.path, localGitOptionsForTarget(target))
     return { ok: true }
+  }
+
+  async undoRuntimeGitLastCommit(worktreeSelector: string): Promise<GitUndoLastCommitResult> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    const provider = target.connectionId ? getSshGitProvider(target.connectionId) : null
+    if (target.connectionId) {
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.undoLastCommit(target.worktree.path)
+    }
+    return undoLastCommit(target.worktree.path, localGitOptionsForTarget(target))
   }
 
   async checkoutRuntimeGitBranch(

@@ -17,6 +17,7 @@ import type {
   SearchOptions,
   SearchResult
 } from '../../shared/types'
+import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { PtyStartupIngressIntent } from '../../shared/pty-startup-ingress'
 import type { CommitMessageDraftContext } from '../../shared/commit-message-generation'
@@ -318,6 +319,7 @@ export type IGitProvider = {
   detectConflictOperation(worktreePath: string): Promise<GitConflictOperation>
   abortMerge(worktreePath: string): Promise<void>
   abortRebase(worktreePath: string): Promise<void>
+  undoLastCommit(worktreePath: string): Promise<GitUndoLastCommitResult>
   checkoutBranch(worktreePath: string, branch: string): Promise<void>
   listLocalBranches(worktreePath: string): Promise<{ current: string | null; branches: string[] }>
   getBranchCompare(worktreePath: string, baseRef: string): Promise<GitBranchCompareResult>

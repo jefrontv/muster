@@ -18,6 +18,7 @@ import type {
   GitWorktreeInfo,
   RemoveWorktreeResult
 } from '../../shared/types'
+import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import { buildHostedRemoteCommitUrl, buildHostedRemoteFileUrl } from '../git/hosted-remote-url'
 import { JsonRpcErrorCode } from '../ssh/relay-protocol'
@@ -480,6 +481,15 @@ export class SshGitProvider implements IGitProvider {
     await this.runWithGitReadInvalidation(async () => {
       await this.mux.request('git.abortRebase', { worktreePath })
     })
+  }
+
+  async undoLastCommit(worktreePath: string): Promise<GitUndoLastCommitResult> {
+    return this.runWithGitReadInvalidation(
+      async () =>
+        (await this.mux.request('git.undoLastCommit', {
+          worktreePath
+        })) as GitUndoLastCommitResult
+    )
   }
 
   async checkoutBranch(worktreePath: string, branch: string): Promise<void> {

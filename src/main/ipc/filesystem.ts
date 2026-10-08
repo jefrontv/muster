@@ -28,6 +28,7 @@ import type {
   Repo,
   TuiAgent
 } from '../../shared/types'
+import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { SshMutationExpectation } from '../../shared/ssh-types'
 import { assertSshMutationExpectation } from '../ssh/ssh-connection-generation'
@@ -44,6 +45,7 @@ import {
   getSubmoduleStatus,
   abortMerge,
   abortRebase,
+  undoLastCommit,
   detectConflictOperation,
   getDiff,
   commitChanges,
@@ -1304,6 +1306,29 @@ export function registerFilesystemHandlers(
         worktreePath
       )
       await abortRebase(worktreePath, gitOptions)
+    }
+  )
+
+  ipcMain.handle(
+    'git:undoLastCommit',
+    async (
+      _event,
+      args: { worktreePath: string; connectionId?: string }
+    ): Promise<GitUndoLastCommitResult> => {
+      if (args.connectionId) {
+        const provider = getSshGitProvider(args.connectionId)
+        if (!provider) {
+          throw new Error(`No git provider for connection "${args.connectionId}"`)
+        }
+        return provider.undoLastCommit(args.worktreePath)
+      }
+      const worktreePath = await resolveRegisteredWorktreePath(args.worktreePath, store)
+      const gitOptions = getLocalGitOptionsForRegisteredWorktree(
+        store,
+        args.worktreePath,
+        worktreePath
+      )
+      return undoLastCommit(worktreePath, gitOptions)
     }
   )
 

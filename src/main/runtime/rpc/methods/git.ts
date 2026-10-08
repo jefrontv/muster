@@ -147,6 +147,11 @@ export const GIT_METHODS: RpcMethod[] = [
     handler: async (params, { runtime }) => runtime.abortRuntimeGitRebase(params.worktree)
   }),
   defineMethod({
+    name: 'git.undoLastCommit',
+    params: WorktreeSelector,
+    handler: async (params, { runtime }) => runtime.undoRuntimeGitLastCommit(params.worktree)
+  }),
+  defineMethod({
     name: 'git.checkout',
     params: GitCheckout,
     handler: async (params, { runtime }) =>

@@ -22,6 +22,7 @@ import type { HostedReviewProvider } from '../../../shared/hosted-review'
 import type { ResolvedSourceControlAiGenerationParams } from '../../../shared/source-control-ai'
 import { getCommitMessageModelDiscoveryHostKeyForScope } from '../../../shared/commit-message-host-key'
 import type { GitHistoryOptions, GitHistoryResult } from '../../../shared/git-history'
+import type { GitUndoLastCommitResult } from '../../../shared/git-undo-last-commit'
 import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
 import { toRuntimeWorktreeSelector } from './runtime-worktree-selector'
@@ -332,6 +333,24 @@ export async function abortRuntimeGitRebase(context: RuntimeGitContext): Promise
   await callRuntimeRpc(
     target,
     'git.abortRebase',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
+    { timeoutMs: 30_000 }
+  )
+}
+
+export async function undoRuntimeGitLastCommit(
+  context: RuntimeGitContext
+): Promise<GitUndoLastCommitResult> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return window.api.git.undoLastCommit({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId
+    })
+  }
+  return callRuntimeRpc<GitUndoLastCommitResult>(
+    target,
+    'git.undoLastCommit',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
     { timeoutMs: 30_000 }
   )

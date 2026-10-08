@@ -168,10 +168,15 @@ import {
   requestEditorSaveQuiesce
 } from '@/components/editor/editor-autosave'
 import { getConnectionId } from '@/lib/connection-context'
+import {
+  resolveRestoredCommitMessage,
+  resolveUndoCommitConfirmation
+} from './source-control-undo-commit'
 import { getRepoOwnerRoutedSettings } from '@/lib/repo-runtime-owner'
 import {
   abortRuntimeGitMerge,
   abortRuntimeGitRebase,
+  undoRuntimeGitLastCommit,
   bulkDiscardRuntimeGitPaths,
   bulkStageRuntimeGitPaths,
   bulkUnstageRuntimeGitPaths,
@@ -2675,6 +2680,62 @@ function SourceControlInner(): React.JSX.Element {
     [handleAbortMerge, handleAbortRebase]
   )
 
+  const handleUndoLastCommit = useCallback(async (): Promise<void> => {
+    if (!activeWorktreeId || !worktreePath || isAbortingOperation) {
+      return
+    }
+    const confirmation = resolveUndoCommitConfirmation(remoteStatusForActions)
+    if (confirmation) {
+      const confirmed = await confirmAction({ ...confirmation, confirmVariant: 'destructive' })
+      if (!confirmed) {
+        return
+      }
+    }
+
+    const worktreeId = activeWorktreeId
+    // Why: shares the abort in-flight flag, which already locks the whole dropdown.
+    setAbortOperationInFlightByWorktree((prev) => ({ ...prev, [worktreeId]: true }))
+    try {
+      const { message } = await undoRuntimeGitLastCommit({
+        settings: activeRepoSettings,
+        worktreeId,
+        worktreePath,
+        connectionId: getConnectionId(worktreeId) ?? undefined
+      })
+      updateCommitDrafts((drafts) =>
+        writeCommitDraftForWorktree(
+          drafts,
+          worktreeId,
+          resolveRestoredCommitMessage(readCommitDraftForWorktree(drafts, worktreeId), message)
+        )
+      )
+    } catch (error) {
+      toast.error(
+        translate(
+          'auto.components.right.sidebar.source.control.dropdown.items.undo_last_commit_failed',
+          'Undo commit failed'
+        ),
+        { description: error instanceof Error ? error.message : String(error) }
+      )
+    } finally {
+      setAbortOperationInFlightByWorktree((prev) => ({ ...prev, [worktreeId]: false }))
+      refreshSourceControlAfterRemoteAction({
+        refreshGitStatus: refreshActiveGitStatusAfterMutation,
+        refreshBranchCompare: refreshBranchCompareRef.current,
+        refreshGitHistory: refreshGitHistoryRef.current
+      })
+    }
+  }, [
+    activeRepoSettings,
+    activeWorktreeId,
+    confirmAction,
+    isAbortingOperation,
+    refreshActiveGitStatusAfterMutation,
+    remoteStatusForActions,
+    updateCommitDrafts,
+    worktreePath
+  ])
+
   // Why: commit first and run the follow-up remote op only if handleCommit succeeded, so we never push a commit the user didn't land.
   const runCompoundCommitAction = useCallback(
     async (remoteKind: 'push' | 'sync'): Promise<void> => {
@@ -4260,7 +4321,8 @@ function SourceControlInner(): React.JSX.Element {
           branchSummary?.status === 'ready' ? (branchSummary.commitsAhead ?? 0) : undefined,
         hasCurrentBranch: Boolean(branchName),
         canPushLinkedReviewWithoutUpstream: canUseHostedReviewPushTarget,
-        rebaseBaseRef: effectiveBaseRef
+        rebaseBaseRef: effectiveBaseRef,
+        hasHeadCommit: activeGitStatusHead !== '(initial)'
       }),
     [
       commitMessage,
@@ -4284,6 +4346,7 @@ function SourceControlInner(): React.JSX.Element {
       branchSummary?.status,
       branchName,
       effectiveBaseRef,
+      activeGitStatusHead,
       remoteStatusForActions,
       unresolvedConflicts.length
     ]
@@ -4311,6 +4374,9 @@ function SourceControlInner(): React.JSX.Element {
         case 'abort_rebase':
           void handleAbortRebase()
           return
+        case 'undo_commit':
+          void handleUndoLastCommit()
+          return
         case 'create_pr':
           void handleCreatePullRequest()
           return
@@ -4333,6 +4399,7 @@ function SourceControlInner(): React.JSX.Element {
       handleCreatePullRequest,
       handleAbortMerge,
       handleAbortRebase,
+      handleUndoLastCommit,
       isCreatingPr,
       isCreatePrIntentInFlight,
       prGenerating,

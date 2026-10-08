@@ -40,6 +40,7 @@ describe('resolveDropdownItems', () => {
       'commit',
       'commit_push',
       'commit_sync',
+      'undo_commit',
       'separator',
       'push',
       'force_push',

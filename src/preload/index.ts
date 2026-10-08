@@ -98,6 +98,7 @@ import type {
 } from '../shared/terminal-custom-themes'
 import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
+import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
@@ -3433,6 +3434,10 @@ const api = {
       ipcRenderer.invoke('git:abortMerge', args),
     abortRebase: (args: { worktreePath: string; connectionId?: string }): Promise<void> =>
       ipcRenderer.invoke('git:abortRebase', args),
+    undoLastCommit: (args: {
+      worktreePath: string
+      connectionId?: string
+    }): Promise<GitUndoLastCommitResult> => ipcRenderer.invoke('git:undoLastCommit', args),
     diff: (args: {
       worktreePath: string
       filePath: string

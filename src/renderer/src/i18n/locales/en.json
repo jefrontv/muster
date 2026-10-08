@@ -10462,7 +10462,9 @@
                   "226b85a3a7": "Fetch",
                   "323bb614aa": "Commit & Sync",
                   "2b8e6595fd": "Commit",
-                  "04d709801d": "Fetch from remote without merging"
+                  "04d709801d": "Fetch from remote without merging",
+                  "undo_last_commit": "Undo Last Commit",
+                  "undo_last_commit_failed": "Undo commit failed"
                 }
               },
               "primary": {
@@ -10510,6 +10512,14 @@
                   "f0c6e2a581": "This branch is not ready for a {{value0}} yet.",
                   "8f9a0b1c2d": "Nothing to commit. Branch is up to date.",
                   "h3i4j5k607": "Checking whether this branch can create a {{value0}}…"
+                }
+              },
+              "undo": {
+                "commit": {
+                  "confirm_title": "Undo a pushed commit?",
+                  "confirm_description": "This commit is already on {{value0}}. Undoing it only changes your local branch, and your next push will need Force Push.",
+                  "confirm_label": "Undo Commit",
+                  "remote_fallback": "the remote"
                 }
               }
             }

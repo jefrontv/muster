@@ -20,12 +20,15 @@ export type DropdownActionInputs = PrimaryActionInputs & {
   conflictOperation?: GitConflictOperation
   isPullRequestOperationActive?: boolean
   rebaseBaseRef?: string | null
+  // Why: false only once status confirms an unborn branch; unknown (loading) stays true and the backend guards it.
+  hasHeadCommit?: boolean
 }
 
 export type DropdownActionKind =
   | 'commit'
   | 'commit_push'
   | 'commit_sync'
+  | 'undo_commit'
   | 'abort_merge'
   | 'abort_rebase'
   | 'create_pr'
@@ -139,7 +142,8 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     hasCurrentBranch = true,
     canPushLinkedReviewWithoutUpstream = false,
     rebaseBaseRef,
-    isPullRequestOperationActive = false
+    isPullRequestOperationActive = false,
+    hasHeadCommit = true
   } = inputs
 
   const hasStaged = stagedCount > 0
@@ -277,6 +281,21 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
       publishBlockedByDetachedHead ||
       shouldForcePushWithLease ||
       commitDisabledReason !== null
+  }
+
+  const operationInProgress = conflictOperation !== 'unknown'
+  const undoCommitItem: DropdownItem = {
+    kind: 'undo_commit',
+    label: translate(
+      'auto.components.right.sidebar.source.control.dropdown.items.undo_last_commit',
+      'Undo Last Commit'
+    ),
+    title: !hasHeadCommit
+      ? 'No commits to undo'
+      : operationInProgress
+        ? `Finish or abort the ${conflictOperation} first`
+        : 'Undo the last commit and keep its changes staged',
+    disabled: globalBusy || !hasHeadCommit || operationInProgress
   }
 
   const pushItem: DropdownItem = {
@@ -530,6 +549,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     commitItem,
     commitPushItem,
     commitSyncItem,
+    undoCommitItem,
     { kind: 'separator' },
     pushItem,
     forcePushItem,

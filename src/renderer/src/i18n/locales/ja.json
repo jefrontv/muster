@@ -10439,7 +10439,9 @@
                   "226b85a3a7": "フェッチ",
                   "323bb614aa": "Commit と同期",
                   "2b8e6595fd": "Commit",
-                  "04d709801d": "Fetch from remote without merging"
+                  "04d709801d": "Fetch from remote without merging",
+                  "undo_last_commit": "最後の Commit を取り消す",
+                  "undo_last_commit_failed": "Commit の取り消しに失敗しました"
                 }
               },
               "primary": {
@@ -10487,6 +10489,14 @@
                   "f0c6e2a581": "This branch is not ready for a {{value0}} yet.",
                   "8f9a0b1c2d": "コミットするものがありません。ブランチは最新です。",
                   "h3i4j5k607": "Checking whether this branch can create a {{value0}}…"
+                }
+              },
+              "undo": {
+                "commit": {
+                  "confirm_title": "プッシュ済みの Commit を取り消しますか？",
+                  "confirm_description": "この Commit はすでに {{value0}} にあります。取り消してもローカルブランチだけが変わり、次回のプッシュには Force Push が必要です。",
+                  "confirm_label": "Commit を取り消す",
+                  "remote_fallback": "リモート"
                 }
               }
             }

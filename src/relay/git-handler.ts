@@ -11,6 +11,7 @@ import {
   parseWorktreeList
 } from './git-handler-utils'
 import { parseNumstat } from '../shared/git-uncommitted-line-stats'
+import { undoLastCommitWithGit } from '../shared/git-undo-last-commit'
 import {
   computeDiff,
   branchCompare as branchCompareOp,
@@ -214,6 +215,7 @@ export class GitHandler {
     this.dispatcher.onRequest('git.bulkUnstage', (p) => this.bulkUnstage(p))
     this.dispatcher.onRequest('git.abortMerge', (p) => this.abortMerge(p))
     this.dispatcher.onRequest('git.abortRebase', (p) => this.abortRebase(p))
+    this.dispatcher.onRequest('git.undoLastCommit', (p) => this.undoLastCommit(p))
     this.dispatcher.onRequest('git.checkout', (p) => this.checkout(p))
     this.dispatcher.onRequest('git.localBranches', (p) => this.localBranches(p))
     this.dispatcher.onRequest('git.discard', (p) => this.discard(p))
@@ -583,6 +585,16 @@ export class GitHandler {
     const worktreePath = params.worktreePath as string
     try {
       await this.git(['rebase', '--abort'], worktreePath)
+    } finally {
+      this.clearGitMutationReadCaches()
+    }
+  }
+
+  private async undoLastCommit(params: Record<string, unknown>) {
+    this.clearGitMutationReadCaches()
+    const worktreePath = params.worktreePath as string
+    try {
+      return await undoLastCommitWithGit((args) => this.git(args, worktreePath))
     } finally {
       this.clearGitMutationReadCaches()
     }

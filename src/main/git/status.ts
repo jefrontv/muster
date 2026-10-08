@@ -54,6 +54,10 @@ import { gitOptionsForWorktree } from './git-runtime-options'
 import { GitStatusReadLeaseOwner } from './git-status-read-lease-owner'
 import { parseGitRevListFirstParentOid } from '../../shared/git-rev-list-output'
 import {
+  undoLastCommitWithGit,
+  type GitUndoLastCommitResult
+} from '../../shared/git-undo-last-commit'
+import {
   beginGitStatusLineStatsCacheWrite,
   clearGitStatusLineStatsCache,
   clearGitStatusLineStatsCacheKey,
@@ -996,6 +1000,17 @@ export async function abortRebase(
 ): Promise<void> {
   await runWithGitReadCacheInvalidation(() =>
     gitExecFileAsync(['rebase', '--abort'], gitOptionsForWorktree(worktreePath, options))
+  )
+}
+
+export async function undoLastCommit(
+  worktreePath: string,
+  options: GitRuntimeOptions = {}
+): Promise<GitUndoLastCommitResult> {
+  return runWithGitReadCacheInvalidation(() =>
+    undoLastCommitWithGit((args) =>
+      gitExecFileAsync(args, gitOptionsForWorktree(worktreePath, options))
+    )
   )
 }
 
