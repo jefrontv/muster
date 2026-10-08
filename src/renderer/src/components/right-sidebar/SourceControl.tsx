@@ -140,6 +140,8 @@ import { describeForkPushTarget } from './fork-push-target-label'
 import { toast } from 'sonner'
 import { SourceControlEntryContextMenu } from './source-control-entry-context-menu'
 import { resolveEntryContextMenuActions } from './source-control-entry-context-menu-actions'
+import { useCommitMessageFocusRequest } from './source-control-commit-message-focus'
+import { resolveCommitMessagePlaceholder } from './source-control-commit-message-placeholder'
 import {
   Dialog,
   DialogContent,
@@ -5962,6 +5964,7 @@ function SourceControlInner(): React.JSX.Element {
                 connectionId={activeConnectionId}
                 repoId={activeRepo?.id ?? null}
                 launchPlatform={activeSourceControlLaunchPlatform}
+                branchName={branchName}
                 commitMessage={commitMessage}
                 commitError={commitError}
                 commitFailureRecoveryPrompt={commitFailureRecoveryPrompt}
@@ -6596,6 +6599,7 @@ type CommitAreaProps = {
   connectionId?: string | null
   repoId?: string | null
   launchPlatform?: NodeJS.Platform
+  branchName?: string | null
   commitMessage: string
   commitError: string | null
   commitFailureRecoveryPrompt: string | null
@@ -6642,6 +6646,7 @@ export function CommitArea({
   connectionId,
   repoId,
   launchPlatform,
+  branchName,
   commitMessage,
   commitError,
   commitFailureRecoveryPrompt,
@@ -6721,6 +6726,8 @@ export function CommitArea({
     isRemoteOperationActive,
     isPullRequestOperationActive: isCreatingPr
   })
+  const commitMessageRef = useRef<HTMLTextAreaElement>(null)
+  useCommitMessageFocusRequest(commitMessageRef, showComposer && !isCommitMessageDisabled)
   const describedBy = [
     commitError ? 'commit-area-error' : null,
     pushRecovery ? 'commit-area-push-error' : null,
@@ -6803,14 +6810,12 @@ export function CommitArea({
       {showComposer ? (
         <div className="relative">
           <textarea
+            ref={commitMessageRef}
             rows={rows}
             value={commitMessage}
             disabled={isCommitMessageDisabled}
             onChange={(e) => onCommitMessageChange(e.target.value)}
-            placeholder={translate(
-              'auto.components.right.sidebar.SourceControl.0d0a8359d3',
-              'Message'
-            )}
+            placeholder={resolveCommitMessagePlaceholder(branchName)}
             aria-label={translate(
               'auto.components.right.sidebar.SourceControl.b94112eb9e',
               'Commit message'

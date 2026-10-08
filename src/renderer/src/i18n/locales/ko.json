@@ -10019,7 +10019,8 @@
               "stage": "변경 사항을 스테이징하지 못했습니다",
               "unstage": "변경 사항을 언스테이지하지 못했습니다",
               "discard": "변경 사항을 버리지 못했습니다"
-            }
+            },
+            "commitMessagePlaceholder": "메시지 ({{shortcut}}로 {{branch}}에 커밋)"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "선택한 agent를 시작할 수 없습니다.",

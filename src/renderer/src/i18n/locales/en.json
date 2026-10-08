@@ -10042,7 +10042,8 @@
               "stage": "Couldn't stage changes",
               "unstage": "Couldn't unstage changes",
               "discard": "Couldn't discard changes"
-            }
+            },
+            "commitMessagePlaceholder": "Message ({{shortcut}} to commit on {{branch}})"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Could not start the selected agent.",

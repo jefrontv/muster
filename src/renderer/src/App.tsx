@@ -92,6 +92,7 @@ import { ConfirmationDialogProvider } from './components/confirmation-dialog'
 import { LinkRoutingPreferenceDialogProvider } from './components/link-routing-preference-dialog'
 import RecentTabSwitcher from './components/tab-bar/RecentTabSwitcher'
 import { useGitStatusPolling } from './components/right-sidebar/useGitStatusPolling'
+import { requestCommitMessageFocus } from './components/right-sidebar/source-control-commit-message-focus'
 import { useEditorExternalWatch } from './hooks/useEditorExternalWatch'
 import { useSiteRootsRefresh } from './lib/use-site-roots-refresh'
 import { useAutoAckViewedAgent } from './hooks/useAutoAckViewedAgent'
@@ -1828,6 +1829,7 @@ function App(): React.JSX.Element {
         notifyTerminalCapture('sidebar.sourceControl.toggle')
         actions.setRightSidebarTab('source-control')
         actions.setRightSidebarOpen(true)
+        requestCommitMessageFocus()
         return
       }
 

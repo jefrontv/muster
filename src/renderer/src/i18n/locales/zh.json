@@ -10019,7 +10019,8 @@
               "stage": "无法暂存更改",
               "unstage": "无法取消暂存更改",
               "discard": "无法放弃更改"
-            }
+            },
+            "commitMessagePlaceholder": "信息（按 {{shortcut}} 提交到 {{branch}}）"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "无法启动选定的智能体。",
