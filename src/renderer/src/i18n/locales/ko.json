@@ -10516,6 +10516,21 @@
                   "confirm_label": "Commit 실행 취소",
                   "remote_fallback": "원격"
                 }
+              },
+              "open": {
+                "review": {
+                  "in": {
+                    "browser": {
+                      "label": "브라우저에서 PR 열기",
+                      "title": "원격 저장소에서 새 PR 페이지 열기",
+                      "existing": "PR이 이미 있습니다",
+                      "checking": "브랜치 상태 확인 중…",
+                      "noBranch": "먼저 브랜치를 체크아웃하세요",
+                      "unpublished": "먼저 브랜치를 게시하세요",
+                      "noLink": "이 원격 저장소에는 PR 링크가 없습니다"
+                    }
+                  }
+                }
               }
             }
           },

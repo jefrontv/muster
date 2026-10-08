@@ -10516,6 +10516,21 @@
                   "confirm_label": "Commit を取り消す",
                   "remote_fallback": "リモート"
                 }
+              },
+              "open": {
+                "review": {
+                  "in": {
+                    "browser": {
+                      "label": "ブラウザで PR を開く",
+                      "title": "リモートで新しい PR の作成ページを開く",
+                      "existing": "PR はすでに存在します",
+                      "checking": "ブランチの状態を確認中…",
+                      "noBranch": "先にブランチをチェックアウトしてください",
+                      "unpublished": "先にブランチを公開してください",
+                      "noLink": "このリモートには PR のリンクがありません"
+                    }
+                  }
+                }
               }
             }
           },

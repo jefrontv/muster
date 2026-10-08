@@ -10539,6 +10539,21 @@
                   "confirm_label": "Undo Commit",
                   "remote_fallback": "the remote"
                 }
+              },
+              "open": {
+                "review": {
+                  "in": {
+                    "browser": {
+                      "label": "Open Pull Request in Browser",
+                      "title": "Open the new pull request page on the remote",
+                      "existing": "A pull request already exists",
+                      "checking": "Checking branch status…",
+                      "noBranch": "Check out a branch first",
+                      "unpublished": "Publish Branch first",
+                      "noLink": "No pull request link for this remote"
+                    }
+                  }
+                }
               }
             }
           },

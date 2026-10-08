@@ -15,6 +15,7 @@ import {
   canClickBlockedCreateReviewReason,
   resolveHostedReviewAuthInstruction
 } from './source-control-create-review-blocked-action'
+import { resolveOpenReviewInBrowserItem } from './source-control-open-review-in-browser-item'
 
 export type DropdownActionInputs = PrimaryActionInputs & {
   conflictOperation?: GitConflictOperation
@@ -22,6 +23,7 @@ export type DropdownActionInputs = PrimaryActionInputs & {
   rebaseBaseRef?: string | null
   // Why: false only once status confirms an unborn branch; unknown (loading) stays true and the backend guards it.
   hasHeadCommit?: boolean
+  manualReviewUrl?: string | null
 }
 
 export type DropdownActionKind =
@@ -33,6 +35,7 @@ export type DropdownActionKind =
   | 'abort_rebase'
   | 'create_pr'
   | 'push_create_pr'
+  | 'open_review_in_browser'
   | 'push'
   | 'force_push'
   | 'pull'
@@ -143,7 +146,8 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     canPushLinkedReviewWithoutUpstream = false,
     rebaseBaseRef,
     isPullRequestOperationActive = false,
-    hasHeadCommit = true
+    hasHeadCommit = true,
+    manualReviewUrl
   } = inputs
 
   const hasStaged = stagedCount > 0
@@ -550,6 +554,21 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     disabled: !canPushAndCreate
   }
 
+  // Why: a known provider without in-app creation swaps both review rows for one browser link; unknown (loading) keeps the stable shape.
+  const hostedReviewEntries: DropdownItem[] =
+    hostedReviewCreation && !supportsHostedReviewCreation(hostedReviewCreation.provider)
+      ? [
+          resolveOpenReviewInBrowserItem({
+            manualReviewUrl,
+            globalBusy,
+            upstreamLoading,
+            hasUpstream,
+            hasCurrentBranch,
+            hasOpenHostedReview
+          })
+        ]
+      : [createPRItem, pushCreatePRItem]
+
   const entries: DropdownEntry[] = [
     commitItem,
     commitPushItem,
@@ -557,8 +576,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     undoCommitItem,
     { kind: 'separator' },
     pushItem,
-    createPRItem,
-    pushCreatePRItem,
+    ...hostedReviewEntries,
     pullItem,
     fastForwardItem,
     syncItem,

@@ -10516,6 +10516,21 @@
                   "confirm_label": "撤销提交",
                   "remote_fallback": "远程"
                 }
+              },
+              "open": {
+                "review": {
+                  "in": {
+                    "browser": {
+                      "label": "在浏览器中打开 PR",
+                      "title": "在远程仓库打开新建 PR 页面",
+                      "existing": "PR 已存在",
+                      "checking": "正在检查分支状态…",
+                      "noBranch": "请先检出一个分支",
+                      "unpublished": "请先发布分支",
+                      "noLink": "此远程仓库没有 PR 链接"
+                    }
+                  }
+                }
               }
             }
           },

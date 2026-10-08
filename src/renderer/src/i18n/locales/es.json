@@ -10516,6 +10516,21 @@
                   "confirm_label": "Deshacer commit",
                   "remote_fallback": "el remoto"
                 }
+              },
+              "open": {
+                "review": {
+                  "in": {
+                    "browser": {
+                      "label": "Abrir pull request en el navegador",
+                      "title": "Abrir la página de nueva pull request en el remoto",
+                      "existing": "Ya existe una pull request",
+                      "checking": "Comprobando el estado de la rama…",
+                      "noBranch": "Primero cambia a una rama",
+                      "unpublished": "Primero publica la rama",
+                      "noLink": "No hay enlace de pull request para este remoto"
+                    }
+                  }
+                }
               }
             }
           },

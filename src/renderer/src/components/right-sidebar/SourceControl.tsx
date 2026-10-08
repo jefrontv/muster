@@ -4360,10 +4360,12 @@ function SourceControlInner(): React.JSX.Element {
         hasCurrentBranch: Boolean(branchName),
         canPushLinkedReviewWithoutUpstream: canUseHostedReviewPushTarget,
         rebaseBaseRef: effectiveBaseRef,
-        hasHeadCommit: activeGitStatusHead !== '(initial)'
+        hasHeadCommit: activeGitStatusHead !== '(initial)',
+        manualReviewUrl
       }),
     [
       commitMessage,
+      manualReviewUrl,
       grouped.staged.length,
       hasStageableChanges,
       hasUnstagedChanges,
@@ -4415,6 +4417,11 @@ function SourceControlInner(): React.JSX.Element {
         case 'undo_commit':
           void handleUndoLastCommit()
           return
+        case 'open_review_in_browser':
+          if (manualReviewUrl) {
+            void window.api.shell.openUrl(manualReviewUrl)
+          }
+          return
         case 'create_pr':
           void handleCreatePullRequest()
           return
@@ -4442,6 +4449,7 @@ function SourceControlInner(): React.JSX.Element {
       handleUndoLastCommit,
       isCreatingPr,
       isCreatePrIntentInFlight,
+      manualReviewUrl,
       prGenerating,
       runConfirmedForcePush,
       runCreatePrIntent,
