@@ -9799,7 +9799,13 @@
             "3596b9668d": "Copy Path"
           },
           "SourceControlEntryContextMenu": {
-            "a1f2c8d901": "View"
+            "openChanges": "Open Changes",
+            "openFile": "Open File",
+            "stageChanges": "Stage Changes",
+            "unstageChanges": "Unstage Changes",
+            "discardChanges": "Discard Changes",
+            "restoreFile": "Restore File",
+            "deleteFile": "Delete File"
           },
           "SourceControl": {
             "1406954883": "Clear all notes...",

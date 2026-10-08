@@ -139,6 +139,7 @@ import {
 import { describeForkPushTarget } from './fork-push-target-label'
 import { toast } from 'sonner'
 import { SourceControlEntryContextMenu } from './source-control-entry-context-menu'
+import { resolveEntryContextMenuActions } from './source-control-entry-context-menu-actions'
 import {
   Dialog,
   DialogContent,
@@ -4559,6 +4560,28 @@ function SourceControlInner(): React.JSX.Element {
     ]
   )
 
+  // Why: the context menu's Open File shows the working copy, so reset any markdown tab left in the Changes view.
+  const handleOpenWorkingFile = useCallback(
+    (relativePath: string) => {
+      if (!activeWorktreeId || !worktreePath) {
+        return
+      }
+      const filePath = joinPath(worktreePath, relativePath)
+      openFile(
+        {
+          filePath,
+          relativePath,
+          worktreeId: activeWorktreeId,
+          language: detectLanguage(relativePath),
+          mode: 'edit'
+        },
+        { focusEditor: true }
+      )
+      setEditorViewMode(filePath, 'edit')
+    },
+    [activeWorktreeId, worktreePath, openFile, setEditorViewMode]
+  )
+
   const { selectedKeys, handleSelect, handleContextMenu, clearSelection } =
     useSourceControlSelection({
       flatEntries: visibleSelectionEntries,
@@ -6173,6 +6196,7 @@ function SourceControlInner(): React.JSX.Element {
                                 onRevealInExplorer={revealInExplorer}
                                 connectionId={activeConnectionId}
                                 onOpen={handleOpenDiff}
+                                onOpenFile={handleOpenWorkingFile}
                                 onStage={handleStage}
                                 onUnstage={handleUnstage}
                                 onDiscard={requestDiscardEntry}
@@ -6228,6 +6252,7 @@ function SourceControlInner(): React.JSX.Element {
                                 onRevealInExplorer={revealInExplorer}
                                 connectionId={activeConnectionId}
                                 onOpen={handleOpenDiff}
+                                onOpenFile={handleOpenWorkingFile}
                                 onStage={handleStage}
                                 onUnstage={handleUnstage}
                                 onDiscard={requestDiscardEntry}
@@ -6314,6 +6339,7 @@ function SourceControlInner(): React.JSX.Element {
                           onRevealInExplorer={revealInExplorer}
                           connectionId={activeConnectionId}
                           onOpen={(event) => openCommittedDiff(node.entry, event)}
+                          onOpenFile={handleOpenWorkingFile}
                           commentCount={diffCommentCountByPath.get(node.entry.path) ?? 0}
                           showPathHint={false}
                         />
@@ -6334,6 +6360,7 @@ function SourceControlInner(): React.JSX.Element {
                         onRevealInExplorer={revealInExplorer}
                         connectionId={activeConnectionId}
                         onOpen={(event) => openCommittedDiff(entry, event)}
+                        onOpenFile={handleOpenWorkingFile}
                         commentCount={diffCommentCountByPath.get(entry.path) ?? 0}
                       />
                     )}
@@ -8005,6 +8032,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
   onRevealInExplorer,
   connectionId,
   onOpen,
+  onOpenFile,
   onStage,
   onUnstage,
   onDiscard,
@@ -8024,6 +8052,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
   onRevealInExplorer: (worktreeId: string, absolutePath: string) => void
   connectionId?: string | null
   onOpen: (entry: GitStatusEntry, event?: SourceControlRowOpenEvent) => void
+  onOpenFile: (relativePath: string) => void
   onStage: (filePath: string) => Promise<void>
   onUnstage: (filePath: string) => Promise<void>
   onDiscard: (entry: GitStatusEntry) => void
@@ -8047,13 +8076,32 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
   const canStage = canStageStatusEntry(entry)
   // Why: a submodule-internal staged row is read-only from the parent worktree, so don't offer Unstage (mirrors bulk unstage).
   const canUnstage = canUnstageStatusEntry(entry)
+  const menuActions = resolveEntryContextMenuActions(entry)
 
   return (
     <SourceControlEntryContextMenu
       currentWorktreeId={currentWorktreeId}
       absolutePath={joinPath(worktreePath, entry.path)}
+      relativePath={entry.path}
       connectionId={connectionId}
       onView={() => onOpen(entry)}
+      onOpenFile={menuActions.canOpenFile ? () => onOpenFile(entry.path) : undefined}
+      indexAction={
+        menuActions.indexAction
+          ? {
+              kind: menuActions.indexAction,
+              onSelect: () =>
+                void (menuActions.indexAction === 'stage'
+                  ? onStage(entry.path)
+                  : onUnstage(entry.path))
+            }
+          : null
+      }
+      discardAction={
+        menuActions.discardAction
+          ? { kind: menuActions.discardAction, onSelect: () => onDiscard(entry) }
+          : null
+      }
       onRevealInExplorer={onRevealInExplorer}
       onOpenChange={(open) => {
         if (open && onContextMenu) {
@@ -8279,6 +8327,7 @@ function BranchEntryRow({
   onRevealInExplorer,
   connectionId,
   onOpen,
+  onOpenFile,
   commentCount,
   showPathHint = true
 }: {
@@ -8289,6 +8338,7 @@ function BranchEntryRow({
   onRevealInExplorer: (worktreeId: string, absolutePath: string) => void
   connectionId?: string | null
   onOpen: (event?: SourceControlRowOpenEvent) => void
+  onOpenFile: (relativePath: string) => void
   commentCount: number
   showPathHint?: boolean
 }): React.JSX.Element {
@@ -8301,8 +8351,10 @@ function BranchEntryRow({
     <SourceControlEntryContextMenu
       currentWorktreeId={currentWorktreeId}
       absolutePath={joinPath(worktreePath, entry.path)}
+      relativePath={entry.path}
       connectionId={connectionId}
       onView={() => onOpen()}
+      onOpenFile={entry.status === 'deleted' ? undefined : () => onOpenFile(entry.path)}
       onRevealInExplorer={onRevealInExplorer}
     >
       <div

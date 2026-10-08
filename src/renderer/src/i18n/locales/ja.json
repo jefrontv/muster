@@ -9776,7 +9776,13 @@
             "3596b9668d": "パスのコピー"
           },
           "SourceControlEntryContextMenu": {
-            "a1f2c8d901": "表示"
+            "openChanges": "変更を開く",
+            "openFile": "ファイルを開く",
+            "stageChanges": "変更をステージ",
+            "unstageChanges": "変更のステージを解除",
+            "discardChanges": "変更を破棄",
+            "restoreFile": "ファイルを復元",
+            "deleteFile": "ファイルを削除"
           },
           "SourceControl": {
             "1406954883": "すべてのメモをクリアします...",

@@ -1,5 +1,15 @@
 import React, { useCallback } from 'react'
-import { Copy, ExternalLink, Eye, FolderOpen } from 'lucide-react'
+import {
+  Copy,
+  ExternalLink,
+  FileDiff,
+  FileText,
+  FolderOpen,
+  Minus,
+  Plus,
+  Trash,
+  Undo2
+} from 'lucide-react'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -20,12 +30,22 @@ import {
   openOpenInAppsSettings,
   openWorktreePath
 } from '@/components/sidebar/WorktreeOpenInMenu'
+import {
+  getEntryContextMenuDiscardLabel,
+  getEntryContextMenuIndexLabel,
+  type EntryContextMenuDiscardAction,
+  type EntryContextMenuIndexAction
+} from './source-control-entry-context-menu-actions'
 
 type SourceControlEntryContextMenuProps = {
   currentWorktreeId: string
   absolutePath?: string
+  relativePath?: string
   connectionId?: string | null
   onView?: () => void
+  onOpenFile?: () => void
+  indexAction?: { kind: EntryContextMenuIndexAction; onSelect: () => void } | null
+  discardAction?: { kind: EntryContextMenuDiscardAction; onSelect: () => void } | null
   onRevealInExplorer: (worktreeId: string, absolutePath: string) => void
   onOpenChange?: (open: boolean) => void
   children: React.ReactNode
@@ -34,8 +54,12 @@ type SourceControlEntryContextMenuProps = {
 export function SourceControlEntryContextMenu({
   currentWorktreeId,
   absolutePath,
+  relativePath,
   connectionId,
   onView,
+  onOpenFile,
+  indexAction,
+  discardAction,
   onRevealInExplorer,
   onOpenChange,
   children
@@ -54,6 +78,13 @@ export function SourceControlEntryContextMenu({
     }
     void window.api.ui.writeClipboardText(absolutePath)
   }, [absolutePath])
+
+  const handleCopyRelativePath = useCallback(() => {
+    if (!relativePath) {
+      return
+    }
+    void window.api.ui.writeClipboardText(relativePath)
+  }, [relativePath])
 
   const handleRevealInOrcaExplorer = useCallback(() => {
     if (!absolutePath) {
@@ -82,16 +113,55 @@ export function SourceControlEntryContextMenu({
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-52">
         <ContextMenuItem onSelect={onView} disabled={!onView}>
-          <Eye className="size-3.5" />
+          <FileDiff className="size-3.5" />
           {translate(
-            'auto.components.right.sidebar.SourceControlEntryContextMenu.a1f2c8d901',
-            'View'
+            'auto.components.right.sidebar.SourceControlEntryContextMenu.openChanges',
+            'Open Changes'
           )}
         </ContextMenuItem>
+        <ContextMenuItem onSelect={onOpenFile} disabled={!onOpenFile}>
+          <FileText className="size-3.5" />
+          {translate(
+            'auto.components.right.sidebar.SourceControlEntryContextMenu.openFile',
+            'Open File'
+          )}
+        </ContextMenuItem>
+        {indexAction || discardAction ? (
+          <>
+            <ContextMenuSeparator />
+            {indexAction ? (
+              <ContextMenuItem onSelect={indexAction.onSelect}>
+                {indexAction.kind === 'stage' ? (
+                  <Plus className="size-3.5" />
+                ) : (
+                  <Minus className="size-3.5" />
+                )}
+                {getEntryContextMenuIndexLabel(indexAction.kind)}
+              </ContextMenuItem>
+            ) : null}
+            {discardAction ? (
+              <ContextMenuItem onSelect={discardAction.onSelect}>
+                {discardAction.kind === 'delete' ? (
+                  <Trash className="size-3.5" />
+                ) : (
+                  <Undo2 className="size-3.5" />
+                )}
+                {getEntryContextMenuDiscardLabel(discardAction.kind)}
+              </ContextMenuItem>
+            ) : null}
+          </>
+        ) : null}
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={handleCopyPath} disabled={!absolutePath}>
           <Copy className="size-3.5" />
           {translate('auto.components.right.sidebar.FileExplorerRow.b5d436aa30', 'Copy Path')}
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={handleCopyRelativePath} disabled={!relativePath}>
+          <Copy className="size-3.5" />
+          {translate(
+            'auto.components.right.sidebar.FileExplorerRow.66a29dde82',
+            'Copy Relative Path'
+          )}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuSub>

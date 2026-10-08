@@ -9776,7 +9776,13 @@
             "3596b9668d": "경로 복사"
           },
           "SourceControlEntryContextMenu": {
-            "a1f2c8d901": "보기"
+            "openChanges": "변경 사항 열기",
+            "openFile": "파일 열기",
+            "stageChanges": "변경 사항 스테이징",
+            "unstageChanges": "변경 사항 스테이징 취소",
+            "discardChanges": "변경 사항 취소",
+            "restoreFile": "파일 복원",
+            "deleteFile": "파일 삭제"
           },
           "SourceControl": {
             "1406954883": "모든 메모 지우기...",

@@ -9776,7 +9776,13 @@
             "3596b9668d": "复制路径"
           },
           "SourceControlEntryContextMenu": {
-            "a1f2c8d901": "查看"
+            "openChanges": "打开更改",
+            "openFile": "打开文件",
+            "stageChanges": "暂存更改",
+            "unstageChanges": "取消暂存更改",
+            "discardChanges": "放弃更改",
+            "restoreFile": "恢复文件",
+            "deleteFile": "删除文件"
           },
           "SourceControl": {
             "1406954883": "清除所有笔记...",

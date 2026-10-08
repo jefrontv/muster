@@ -9776,7 +9776,13 @@
             "3596b9668d": "Copiar ruta"
           },
           "SourceControlEntryContextMenu": {
-            "a1f2c8d901": "Ver"
+            "openChanges": "Abrir cambios",
+            "openFile": "Abrir archivo",
+            "stageChanges": "Agregar cambios al stage",
+            "unstageChanges": "Quitar cambios del stage",
+            "discardChanges": "Descartar cambios",
+            "restoreFile": "Restaurar archivo",
+            "deleteFile": "Eliminar archivo"
           },
           "SourceControl": {
             "1406954883": "Borrar todas las notas...",
