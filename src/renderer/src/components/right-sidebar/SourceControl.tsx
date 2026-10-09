@@ -117,6 +117,23 @@ import {
   type SourceControlSectionArea
 } from './source-control-section-order'
 import { SourceControlVirtualFileList } from './source-control-virtual-file-list'
+import {
+  buildSourceControlTreeRows,
+  getSourceControlTreeSectionRowId
+} from './source-control-tree-rows'
+import {
+  createSourceControlSelectionRowActions,
+  type SourceControlSelectionRowActions
+} from './source-control-selection-row-actions'
+import {
+  createSourceControlTreeRowCommands,
+  type SourceControlTreeRowAction
+} from './source-control-tree-row-commands'
+import { SourceControlKeyboardTree } from './source-control-keyboard-tree'
+import {
+  useSourceControlTreeKeyboard,
+  type SourceControlTreeItemProps
+} from './use-source-control-tree-keyboard'
 import { selectReviewCacheData, selectReviewCacheEntry } from './review-cache-entry-selection'
 import {
   buildActiveOpenFileSignature,
@@ -5656,6 +5673,99 @@ function SourceControlInner(): React.JSX.Element {
     void handleRevertAllInArea(pending.area, pending.paths)
   }, [handleDiscard, handleRevertAllInArea, pendingDiscard])
 
+  const selectionRowActions = useMemo(
+    () =>
+      createSourceControlSelectionRowActions(selectedEntries, {
+        stage: handleStage,
+        unstage: handleUnstage,
+        stagePaths: handleStageAllPaths,
+        unstagePaths: handleUnstagePaths,
+        discardEntry: requestDiscardEntry,
+        discardPaths: requestDiscardAllInArea
+      }),
+    [
+      selectedEntries,
+      handleStage,
+      handleUnstage,
+      handleStageAllPaths,
+      handleUnstagePaths,
+      requestDiscardEntry,
+      requestDiscardAllInArea
+    ]
+  )
+  const sourceControlTreeRows = useMemo(
+    () =>
+      buildSourceControlTreeRows({
+        viewMode: sourceControlViewMode,
+        sections: SOURCE_CONTROL_AREAS.some((area) => filteredGrouped[area].length > 0)
+          ? displaySections.map((section) => {
+              const label =
+                section.id === 'conflicts' ? CONFLICTS_SECTION_LABEL : SECTION_LABELS[section.area]
+              return {
+                id: section.id,
+                label: translate(label.key, label.fallback),
+                count: section.items.length,
+                collapsed: collapsedSections.has(section.id),
+                treeRows: visibleTreeRowsBySection[section.id] ?? [],
+                listRows: visibleListRowsBySection[section.id] ?? []
+              }
+            })
+          : [],
+        branch:
+          branchSummary?.status === 'ready' && filteredBranchEntries.length > 0
+            ? {
+                id: 'branch',
+                label: translate(
+                  'auto.components.right.sidebar.SourceControl.d7ae61269b',
+                  'Committed on Branch'
+                ),
+                count: filteredBranchEntries.length,
+                collapsed: collapsedSections.has('branch'),
+                treeRows: visibleBranchTreeRows,
+                entries: filteredBranchEntries
+              }
+            : null,
+        collapsedTreeDirs,
+        expandedSubmoduleKeys
+      }),
+    [
+      branchSummary?.status,
+      collapsedSections,
+      collapsedTreeDirs,
+      displaySections,
+      expandedSubmoduleKeys,
+      filteredBranchEntries,
+      filteredGrouped,
+      sourceControlViewMode,
+      visibleBranchTreeRows,
+      visibleListRowsBySection,
+      visibleTreeRowsBySection
+    ]
+  )
+  const sourceControlTreeCommands = useMemo(
+    () =>
+      createSourceControlTreeRowCommands({
+        toggleSection,
+        toggleTreeDir,
+        toggleSubmodule,
+        openDiff: handleOpenDiff,
+        openCommittedDiff,
+        rowActions: selectionRowActions
+      }),
+    [
+      toggleSection,
+      toggleTreeDir,
+      toggleSubmodule,
+      handleOpenDiff,
+      openCommittedDiff,
+      selectionRowActions
+    ]
+  )
+  const treeKeyboard = useSourceControlTreeKeyboard(
+    sourceControlTreeRows,
+    sourceControlTreeCommands
+  )
+
   if (!activeWorktree || !activeRepo || !worktreePath) {
     return (
       <div className="flex items-center justify-center h-full text-xs text-muted-foreground px-4 text-center">
@@ -6039,367 +6149,404 @@ function SourceControlInner(): React.JSX.Element {
               />
             ))}
 
-          {hasFilteredUncommittedEntries && (
-            <>
-              {displaySections.map((section) => {
-                const { area, id, items } = section
-                const isCollapsed = collapsedSections.has(id)
-                // Why: bulk stage/unstage act on the *unfiltered* group; the +/- hides while filtering to avoid acting on more than what's shown.
-                // Why: visibility and execution resolve paths via the same eligibility rules, so the button never shows for a set the handler would filter to empty.
-                const actionSection = unfilteredDisplaySectionsById.get(id) ?? section
-                const actionItems = actionSection.items
-                const stageAllPaths = actionItems
-                  .filter(isStageableStatusEntry)
-                  .map((entry) => entry.path)
-                const unstageAllPaths = getUnstageAllPaths(actionItems)
-                const discardAllPaths = getDiscardAllPaths(actionItems, area)
-                const canStageAll = !normalizedFilter && stageAllPaths.length > 0
-                const canUnstageAll = !normalizedFilter && unstageAllPaths.length > 0
-                const canRevertAll = !normalizedFilter && discardAllPaths.length > 0
-                const sectionLabel =
-                  id === 'conflicts' ? CONFLICTS_SECTION_LABEL : SECTION_LABELS[area]
-                const sectionViewAction = getSourceControlSectionViewAction(actionSection)
-                return (
-                  <div key={id}>
-                    <SectionHeader
-                      label={translate(sectionLabel.key, sectionLabel.fallback)}
-                      count={items.length}
-                      conflictCount={
-                        items.filter((entry) => entry.conflictStatus === 'unresolved').length
-                      }
-                      isCollapsed={isCollapsed}
-                      onToggle={() => toggleSection(id)}
-                      actions={
-                        <>
-                          {/* Why: bulk actions are hover-only, but forced visible on no-hover pointers (touch/SSH; see AGENTS.md "SSH Use Case"). One wrapper so focusing any action reveals all three (else keyboard tabs into an invisible stop). */}
-                          <div className="flex items-center can-hover:opacity-0 transition-opacity group-hover/section:opacity-100 focus-within:opacity-100">
-                            {canRevertAll && (
-                              <ActionButton
-                                icon={area === 'untracked' ? Trash : Undo2}
-                                // Why: for untracked files, discard deletes outright (rm -rf), so label the destructive variant explicitly.
-                                title={
-                                  area === 'untracked'
-                                    ? translate(
-                                        'auto.components.right.sidebar.SourceControl.2f609a2e7c',
-                                        'Delete all untracked'
-                                      )
-                                    : translate(
-                                        'auto.components.right.sidebar.SourceControl.ce41708855',
-                                        'Discard all'
-                                      )
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  requestDiscardAllInArea(area, discardAllPaths)
-                                }}
-                                disabled={isExecutingBulk}
-                              />
-                            )}
-                            {canStageAll && (
-                              <ActionButton
-                                icon={Plus}
-                                title={translate(
-                                  'auto.components.right.sidebar.SourceControl.24d2598eff',
-                                  'Stage all'
-                                )}
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  void handleStageAllPaths(stageAllPaths)
-                                }}
-                                disabled={isExecutingBulk}
-                              />
-                            )}
-                            {canUnstageAll && (
-                              <ActionButton
-                                icon={Minus}
-                                title={translate(
-                                  'auto.components.right.sidebar.SourceControl.9339382454',
-                                  'Unstage all'
-                                )}
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  void handleUnstagePaths(unstageAllPaths)
-                                }}
-                                disabled={isExecutingBulk}
-                              />
-                            )}
-                          </div>
-                          {sectionViewAction ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className={
-                                items.some((entry) => entry.conflictStatus === 'unresolved')
-                                  ? 'h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground'
-                                  : 'h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground'
-                              }
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (!activeWorktreeId || !worktreePath) {
-                                  return
-                                }
-                                if (sectionViewAction.kind === 'conflict-review') {
-                                  openConflictReview(
-                                    activeWorktreeId,
-                                    worktreePath,
-                                    sectionViewAction.entries,
-                                    'live-summary'
-                                  )
-                                } else {
-                                  openAllDiffs(
-                                    activeWorktreeId,
-                                    worktreePath,
-                                    undefined,
-                                    sectionViewAction.area,
-                                    sectionViewAction.entries
-                                  )
-                                }
-                              }}
-                            >
-                              {translate(
-                                'auto.components.right.sidebar.SourceControl.48db37cca9',
-                                'View all'
-                              )}
-                            </Button>
-                          ) : null}
-                        </>
-                      }
-                    />
-                    {!isCollapsed &&
-                      (sourceControlViewMode === 'tree' ? (
-                        <SourceControlVirtualFileList
-                          rows={visibleTreeRowsBySection[id] ?? []}
-                          scrollElement={fileListScrollElement}
-                          getRowKey={(node) => node.key}
-                          renderRow={(node) => {
-                            if (node.type === 'submodule-placeholder') {
-                              return (
-                                <SubmodulePlaceholderRow
-                                  key={node.key}
-                                  depth={node.depth}
-                                  state={node.state}
-                                  message={node.message}
-                                />
-                              )
-                            }
-                            if (node.type === 'directory') {
-                              return (
-                                <SourceControlTreeDirectoryRow
-                                  key={node.key}
-                                  node={node}
-                                  actionPaths={getSourceControlDirectoryActionPaths(node)}
-                                  hideBulkActions={Boolean(normalizedFilter)}
-                                  isExecutingBulk={isExecutingBulk}
-                                  isCollapsed={collapsedTreeDirs.has(node.key)}
-                                  onToggle={() => toggleTreeDir(node.key)}
-                                  onRequestDiscardPaths={(discardArea, paths) =>
-                                    setPendingDiscard({
-                                      kind: 'area',
-                                      area: discardArea,
-                                      paths
-                                    })
+          <SourceControlKeyboardTree
+            keyboard={treeKeyboard}
+            label={translate(
+              'auto.components.right.sidebar.SourceControlTree.label',
+              'Changed files'
+            )}
+          >
+            {hasFilteredUncommittedEntries && (
+              <>
+                {displaySections.map((section) => {
+                  const { area, id, items } = section
+                  const isCollapsed = collapsedSections.has(id)
+                  // Why: bulk stage/unstage act on the *unfiltered* group; the +/- hides while filtering to avoid acting on more than what's shown.
+                  // Why: visibility and execution resolve paths via the same eligibility rules, so the button never shows for a set the handler would filter to empty.
+                  const actionSection = unfilteredDisplaySectionsById.get(id) ?? section
+                  const actionItems = actionSection.items
+                  const stageAllPaths = actionItems
+                    .filter(isStageableStatusEntry)
+                    .map((entry) => entry.path)
+                  const unstageAllPaths = getUnstageAllPaths(actionItems)
+                  const discardAllPaths = getDiscardAllPaths(actionItems, area)
+                  const canStageAll = !normalizedFilter && stageAllPaths.length > 0
+                  const canUnstageAll = !normalizedFilter && unstageAllPaths.length > 0
+                  const canRevertAll = !normalizedFilter && discardAllPaths.length > 0
+                  const sectionLabel =
+                    id === 'conflicts' ? CONFLICTS_SECTION_LABEL : SECTION_LABELS[area]
+                  const sectionViewAction = getSourceControlSectionViewAction(actionSection)
+                  return (
+                    <div key={id}>
+                      <SectionHeader
+                        label={translate(sectionLabel.key, sectionLabel.fallback)}
+                        count={items.length}
+                        conflictCount={
+                          items.filter((entry) => entry.conflictStatus === 'unresolved').length
+                        }
+                        isCollapsed={isCollapsed}
+                        onToggle={() => toggleSection(id)}
+                        treeItem={treeKeyboard.getTreeItemProps(
+                          getSourceControlTreeSectionRowId(id)
+                        )}
+                        actions={
+                          <>
+                            {/* Why: bulk actions are hover-only, but forced visible on no-hover pointers (touch/SSH; see AGENTS.md "SSH Use Case"). One wrapper so focusing any action reveals all three (else keyboard tabs into an invisible stop). */}
+                            <div className="flex items-center can-hover:opacity-0 transition-opacity group-hover/section:opacity-100 focus-within:opacity-100">
+                              {canRevertAll && (
+                                <ActionButton
+                                  icon={area === 'untracked' ? Trash : Undo2}
+                                  rowAction="discard"
+                                  // Why: for untracked files, discard deletes outright (rm -rf), so label the destructive variant explicitly.
+                                  title={
+                                    area === 'untracked'
+                                      ? translate(
+                                          'auto.components.right.sidebar.SourceControl.2f609a2e7c',
+                                          'Delete all untracked'
+                                        )
+                                      : translate(
+                                          'auto.components.right.sidebar.SourceControl.ce41708855',
+                                          'Discard all'
+                                        )
                                   }
-                                  onStagePaths={handleStageAllPaths}
-                                  onUnstagePaths={handleUnstagePaths}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    requestDiscardAllInArea(area, discardAllPaths)
+                                  }}
+                                  disabled={isExecutingBulk}
                                 />
-                              )
-                            }
-                            const submoduleExpansion = isExpandableSubmoduleEntry(node.entry)
-                              ? {
-                                  isExpanded: expandedSubmoduleKeys.has(
-                                    getSubmoduleExpansionKey(node.entry)
-                                  ),
-                                  onToggle: () => toggleSubmodule(node.entry)
+                              )}
+                              {canStageAll && (
+                                <ActionButton
+                                  icon={Plus}
+                                  rowAction="stage"
+                                  title={translate(
+                                    'auto.components.right.sidebar.SourceControl.24d2598eff',
+                                    'Stage all'
+                                  )}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    void handleStageAllPaths(stageAllPaths)
+                                  }}
+                                  disabled={isExecutingBulk}
+                                />
+                              )}
+                              {canUnstageAll && (
+                                <ActionButton
+                                  icon={Minus}
+                                  rowAction="unstage"
+                                  title={translate(
+                                    'auto.components.right.sidebar.SourceControl.9339382454',
+                                    'Unstage all'
+                                  )}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    void handleUnstagePaths(unstageAllPaths)
+                                  }}
+                                  disabled={isExecutingBulk}
+                                />
+                              )}
+                            </div>
+                            {sectionViewAction ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                tabIndex={-1}
+                                data-source-control-row-action="view-all"
+                                className={
+                                  items.some((entry) => entry.conflictStatus === 'unresolved')
+                                    ? 'h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground'
+                                    : 'h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground'
                                 }
-                              : undefined
-                            return (
-                              <UncommittedEntryRow
-                                key={node.key}
-                                entryKey={node.key}
-                                entry={node.entry}
-                                currentWorktreeId={currentWorktreeId}
-                                worktreePath={worktreePath}
-                                depth={node.depth}
-                                selected={selectedKeySet.has(node.key)}
-                                isOpenFile={activeOpenRowKeys.has(node.key)}
-                                onSelect={handleSelect}
-                                onContextMenu={handleContextMenu}
-                                onRevealInExplorer={revealInExplorer}
-                                connectionId={activeConnectionId}
-                                onOpen={handleOpenDiff}
-                                onOpenFile={handleOpenWorkingFile}
-                                onStage={handleStage}
-                                onUnstage={handleUnstage}
-                                onDiscard={requestDiscardEntry}
-                                commentCount={diffCommentCountByPath.get(node.entry.path) ?? 0}
-                                showPathHint={false}
-                                submoduleExpansion={submoduleExpansion}
-                              />
-                            )
-                          }}
-                        />
-                      ) : (
-                        <SourceControlVirtualFileList
-                          rows={visibleListRowsBySection[id] ?? []}
-                          scrollElement={fileListScrollElement}
-                          getRowKey={(row) =>
-                            row.type === 'submodule-placeholder'
-                              ? row.key
-                              : `${row.entry.area}::${row.entry.path}`
-                          }
-                          renderRow={(row) => {
-                            if (row.type === 'submodule-placeholder') {
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (!activeWorktreeId || !worktreePath) {
+                                    return
+                                  }
+                                  if (sectionViewAction.kind === 'conflict-review') {
+                                    openConflictReview(
+                                      activeWorktreeId,
+                                      worktreePath,
+                                      sectionViewAction.entries,
+                                      'live-summary'
+                                    )
+                                  } else {
+                                    openAllDiffs(
+                                      activeWorktreeId,
+                                      worktreePath,
+                                      undefined,
+                                      sectionViewAction.area,
+                                      sectionViewAction.entries
+                                    )
+                                  }
+                                }}
+                              >
+                                {translate(
+                                  'auto.components.right.sidebar.SourceControl.48db37cca9',
+                                  'View all'
+                                )}
+                              </Button>
+                            ) : null}
+                          </>
+                        }
+                      />
+                      {!isCollapsed &&
+                        (sourceControlViewMode === 'tree' ? (
+                          <SourceControlVirtualFileList
+                            rows={visibleTreeRowsBySection[id] ?? []}
+                            scrollElement={fileListScrollElement}
+                            getRowKey={(node) => node.key}
+                            renderRow={(node) => {
+                              if (node.type === 'submodule-placeholder') {
+                                return (
+                                  <SubmodulePlaceholderRow
+                                    key={node.key}
+                                    treeItem={treeKeyboard.getTreeItemProps(node.key)}
+                                    depth={node.depth}
+                                    state={node.state}
+                                    message={node.message}
+                                  />
+                                )
+                              }
+                              if (node.type === 'directory') {
+                                return (
+                                  <SourceControlTreeDirectoryRow
+                                    key={node.key}
+                                    treeItem={treeKeyboard.getTreeItemProps(node.key)}
+                                    node={node}
+                                    actionPaths={getSourceControlDirectoryActionPaths(node)}
+                                    hideBulkActions={Boolean(normalizedFilter)}
+                                    isExecutingBulk={isExecutingBulk}
+                                    isCollapsed={collapsedTreeDirs.has(node.key)}
+                                    onToggle={() => toggleTreeDir(node.key)}
+                                    onRequestDiscardPaths={(discardArea, paths) =>
+                                      setPendingDiscard({
+                                        kind: 'area',
+                                        area: discardArea,
+                                        paths
+                                      })
+                                    }
+                                    onStagePaths={handleStageAllPaths}
+                                    onUnstagePaths={handleUnstagePaths}
+                                  />
+                                )
+                              }
+                              const submoduleExpansion = isExpandableSubmoduleEntry(node.entry)
+                                ? {
+                                    isExpanded: expandedSubmoduleKeys.has(
+                                      getSubmoduleExpansionKey(node.entry)
+                                    ),
+                                    onToggle: () => toggleSubmodule(node.entry)
+                                  }
+                                : undefined
                               return (
-                                <SubmodulePlaceholderRow
-                                  key={row.key}
-                                  depth={row.depth}
-                                  state={row.state}
-                                  message={row.message}
+                                <UncommittedEntryRow
+                                  key={node.key}
+                                  entryKey={node.key}
+                                  entry={node.entry}
+                                  currentWorktreeId={currentWorktreeId}
+                                  worktreePath={worktreePath}
+                                  depth={node.depth}
+                                  selected={selectedKeySet.has(node.key)}
+                                  isOpenFile={activeOpenRowKeys.has(node.key)}
+                                  treeItem={treeKeyboard.getTreeItemProps(
+                                    node.key,
+                                    selectedKeySet.has(node.key) || activeOpenRowKeys.has(node.key)
+                                  )}
+                                  selectionActions={selectionRowActions}
+                                  onSelect={handleSelect}
+                                  onContextMenu={handleContextMenu}
+                                  onRevealInExplorer={revealInExplorer}
+                                  connectionId={activeConnectionId}
+                                  onOpen={handleOpenDiff}
+                                  onOpenFile={handleOpenWorkingFile}
+                                  onStage={handleStage}
+                                  onUnstage={handleUnstage}
+                                  onDiscard={requestDiscardEntry}
+                                  commentCount={diffCommentCountByPath.get(node.entry.path) ?? 0}
+                                  showPathHint={false}
+                                  submoduleExpansion={submoduleExpansion}
                                 />
                               )
+                            }}
+                          />
+                        ) : (
+                          <SourceControlVirtualFileList
+                            rows={visibleListRowsBySection[id] ?? []}
+                            scrollElement={fileListScrollElement}
+                            getRowKey={(row) =>
+                              row.type === 'submodule-placeholder'
+                                ? row.key
+                                : `${row.entry.area}::${row.entry.path}`
                             }
-                            const entry = row.entry
-                            const key = `${entry.area}::${entry.path}`
-                            const submoduleExpansion = isExpandableSubmoduleEntry(entry)
-                              ? {
-                                  isExpanded: expandedSubmoduleKeys.has(
-                                    getSubmoduleExpansionKey(entry)
-                                  ),
-                                  onToggle: () => toggleSubmodule(entry)
-                                }
-                              : undefined
-                            return (
-                              <UncommittedEntryRow
-                                key={key}
-                                entryKey={key}
-                                entry={entry}
-                                currentWorktreeId={currentWorktreeId}
-                                worktreePath={worktreePath}
-                                depth={entry.submoduleRoot ? 1 : 0}
-                                selected={selectedKeySet.has(key)}
-                                isOpenFile={activeOpenRowKeys.has(key)}
-                                onSelect={handleSelect}
-                                onContextMenu={handleContextMenu}
-                                onRevealInExplorer={revealInExplorer}
-                                connectionId={activeConnectionId}
-                                onOpen={handleOpenDiff}
-                                onOpenFile={handleOpenWorkingFile}
-                                onStage={handleStage}
-                                onUnstage={handleUnstage}
-                                onDiscard={requestDiscardEntry}
-                                commentCount={diffCommentCountByPath.get(entry.path) ?? 0}
-                                submoduleExpansion={submoduleExpansion}
-                              />
-                            )
-                          }}
-                        />
-                      ))}
-                  </div>
-                )
-              })}
-            </>
-          )}
+                            renderRow={(row) => {
+                              if (row.type === 'submodule-placeholder') {
+                                return (
+                                  <SubmodulePlaceholderRow
+                                    key={row.key}
+                                    treeItem={treeKeyboard.getTreeItemProps(row.key)}
+                                    depth={row.depth}
+                                    state={row.state}
+                                    message={row.message}
+                                  />
+                                )
+                              }
+                              const entry = row.entry
+                              const key = `${entry.area}::${entry.path}`
+                              const submoduleExpansion = isExpandableSubmoduleEntry(entry)
+                                ? {
+                                    isExpanded: expandedSubmoduleKeys.has(
+                                      getSubmoduleExpansionKey(entry)
+                                    ),
+                                    onToggle: () => toggleSubmodule(entry)
+                                  }
+                                : undefined
+                              return (
+                                <UncommittedEntryRow
+                                  key={key}
+                                  entryKey={key}
+                                  entry={entry}
+                                  currentWorktreeId={currentWorktreeId}
+                                  worktreePath={worktreePath}
+                                  depth={entry.submoduleRoot ? 1 : 0}
+                                  selected={selectedKeySet.has(key)}
+                                  isOpenFile={activeOpenRowKeys.has(key)}
+                                  treeItem={treeKeyboard.getTreeItemProps(
+                                    key,
+                                    selectedKeySet.has(key) || activeOpenRowKeys.has(key)
+                                  )}
+                                  selectionActions={selectionRowActions}
+                                  onSelect={handleSelect}
+                                  onContextMenu={handleContextMenu}
+                                  onRevealInExplorer={revealInExplorer}
+                                  connectionId={activeConnectionId}
+                                  onOpen={handleOpenDiff}
+                                  onOpenFile={handleOpenWorkingFile}
+                                  onStage={handleStage}
+                                  onUnstage={handleUnstage}
+                                  onDiscard={requestDiscardEntry}
+                                  commentCount={diffCommentCountByPath.get(entry.path) ?? 0}
+                                  submoduleExpansion={submoduleExpansion}
+                                />
+                              )
+                            }}
+                          />
+                        ))}
+                    </div>
+                  )
+                })}
+              </>
+            )}
 
-          {shouldShowSourceControlCompareUnavailableCard(
-            branchSummary,
-            hasUncommittedEntries,
-            branchEntries.length > 0,
-            Boolean(normalizedFilter)
-          ) && branchSummary ? (
-            <CompareUnavailable
-              summary={branchSummary}
-              onChangeBaseRef={() => setBaseRefDialogOpen(true)}
-              onRetry={() => void refreshBranchCompare()}
-            />
-          ) : null}
-
-          {branchSummary?.status === 'ready' && hasFilteredBranchEntries && (
-            <div>
-              <SectionHeader
-                label={translate(
-                  'auto.components.right.sidebar.SourceControl.d7ae61269b',
-                  'Committed on Branch'
-                )}
-                count={filteredBranchEntries.length}
-                isCollapsed={collapsedSections.has('branch')}
-                onToggle={() => toggleSection('branch')}
-                actions={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (activeWorktreeId && worktreePath && branchSummary) {
-                        openBranchAllDiffs(activeWorktreeId, worktreePath, branchSummary)
-                      }
-                    }}
-                  >
-                    {translate(
-                      'auto.components.right.sidebar.SourceControl.48db37cca9',
-                      'View all'
-                    )}
-                  </Button>
-                }
+            {shouldShowSourceControlCompareUnavailableCard(
+              branchSummary,
+              hasUncommittedEntries,
+              branchEntries.length > 0,
+              Boolean(normalizedFilter)
+            ) && branchSummary ? (
+              <CompareUnavailable
+                summary={branchSummary}
+                onChangeBaseRef={() => setBaseRefDialogOpen(true)}
+                onRetry={() => void refreshBranchCompare()}
               />
-              {!collapsedSections.has('branch') &&
-                (sourceControlViewMode === 'tree' ? (
-                  <SourceControlVirtualFileList
-                    rows={visibleBranchTreeRows}
-                    scrollElement={fileListScrollElement}
-                    getRowKey={(node) => node.key}
-                    renderRow={(node) => {
-                      if (node.type === 'directory') {
+            ) : null}
+
+            {branchSummary?.status === 'ready' && hasFilteredBranchEntries && (
+              <div>
+                <SectionHeader
+                  label={translate(
+                    'auto.components.right.sidebar.SourceControl.d7ae61269b',
+                    'Committed on Branch'
+                  )}
+                  count={filteredBranchEntries.length}
+                  isCollapsed={collapsedSections.has('branch')}
+                  onToggle={() => toggleSection('branch')}
+                  treeItem={treeKeyboard.getTreeItemProps(
+                    getSourceControlTreeSectionRowId('branch')
+                  )}
+                  actions={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      tabIndex={-1}
+                      data-source-control-row-action="view-all"
+                      className="h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (activeWorktreeId && worktreePath && branchSummary) {
+                          openBranchAllDiffs(activeWorktreeId, worktreePath, branchSummary)
+                        }
+                      }}
+                    >
+                      {translate(
+                        'auto.components.right.sidebar.SourceControl.48db37cca9',
+                        'View all'
+                      )}
+                    </Button>
+                  }
+                />
+                {!collapsedSections.has('branch') &&
+                  (sourceControlViewMode === 'tree' ? (
+                    <SourceControlVirtualFileList
+                      rows={visibleBranchTreeRows}
+                      scrollElement={fileListScrollElement}
+                      getRowKey={(node) => node.key}
+                      renderRow={(node) => {
+                        if (node.type === 'directory') {
+                          return (
+                            <SourceControlBranchTreeDirectoryRow
+                              key={node.key}
+                              treeItem={treeKeyboard.getTreeItemProps(node.key)}
+                              node={node}
+                              isCollapsed={collapsedTreeDirs.has(node.key)}
+                              onToggle={() => toggleTreeDir(node.key)}
+                            />
+                          )
+                        }
                         return (
-                          <SourceControlBranchTreeDirectoryRow
+                          <BranchEntryRow
                             key={node.key}
-                            node={node}
-                            isCollapsed={collapsedTreeDirs.has(node.key)}
-                            onToggle={() => toggleTreeDir(node.key)}
+                            treeItem={treeKeyboard.getTreeItemProps(node.key)}
+                            entry={node.entry}
+                            currentWorktreeId={currentWorktreeId}
+                            worktreePath={worktreePath}
+                            depth={node.depth}
+                            onRevealInExplorer={revealInExplorer}
+                            connectionId={activeConnectionId}
+                            onOpen={(event) => openCommittedDiff(node.entry, event)}
+                            onOpenFile={handleOpenWorkingFile}
+                            commentCount={diffCommentCountByPath.get(node.entry.path) ?? 0}
+                            showPathHint={false}
                           />
                         )
-                      }
-                      return (
+                      }}
+                    />
+                  ) : (
+                    <SourceControlVirtualFileList
+                      rows={filteredBranchEntries}
+                      scrollElement={fileListScrollElement}
+                      getRowKey={(entry) => `branch:${entry.path}`}
+                      renderRow={(entry) => (
                         <BranchEntryRow
-                          key={node.key}
-                          entry={node.entry}
+                          key={`branch:${entry.path}`}
+                          treeItem={treeKeyboard.getTreeItemProps(`branch:${entry.path}`)}
+                          entry={entry}
                           currentWorktreeId={currentWorktreeId}
                           worktreePath={worktreePath}
-                          depth={node.depth}
                           onRevealInExplorer={revealInExplorer}
                           connectionId={activeConnectionId}
-                          onOpen={(event) => openCommittedDiff(node.entry, event)}
+                          onOpen={(event) => openCommittedDiff(entry, event)}
                           onOpenFile={handleOpenWorkingFile}
-                          commentCount={diffCommentCountByPath.get(node.entry.path) ?? 0}
-                          showPathHint={false}
+                          commentCount={diffCommentCountByPath.get(entry.path) ?? 0}
                         />
-                      )
-                    }}
-                  />
-                ) : (
-                  <SourceControlVirtualFileList
-                    rows={filteredBranchEntries}
-                    scrollElement={fileListScrollElement}
-                    getRowKey={(entry) => `branch:${entry.path}`}
-                    renderRow={(entry) => (
-                      <BranchEntryRow
-                        key={`branch:${entry.path}`}
-                        entry={entry}
-                        currentWorktreeId={currentWorktreeId}
-                        worktreePath={worktreePath}
-                        onRevealInExplorer={revealInExplorer}
-                        connectionId={activeConnectionId}
-                        onOpen={(event) => openCommittedDiff(entry, event)}
-                        onOpenFile={handleOpenWorkingFile}
-                        commentCount={diffCommentCountByPath.get(entry.path) ?? 0}
-                      />
-                    )}
-                  />
-                ))}
-            </div>
-          )}
+                      )}
+                    />
+                  ))}
+              </div>
+            )}
+          </SourceControlKeyboardTree>
 
           {isGitHistoryVisible && (
             // Why: the graph is reference context, so keep it docked at the bottom as the pane scrolls.
@@ -7360,7 +7507,8 @@ function SectionHeader({
   conflictCount = 0,
   isCollapsed,
   onToggle,
-  actions
+  actions,
+  treeItem
 }: {
   label: string
   count: number
@@ -7368,13 +7516,19 @@ function SectionHeader({
   isCollapsed: boolean
   onToggle: () => void
   actions?: React.ReactNode
+  treeItem?: SourceControlTreeItemProps
 }): React.JSX.Element {
   // Why: shared rounded container so the hover background spans the whole row instead of clipping around the label.
   return (
     <div className="pl-1 pr-3 pt-3 pb-1">
-      <div className="group/section flex items-center rounded-md pr-1 hover:bg-accent hover:text-accent-foreground">
+      <div
+        {...treeItem}
+        className="group/section flex items-center rounded-md pr-1 hover:bg-accent hover:text-accent-foreground"
+      >
         <button
           type="button"
+          tabIndex={treeItem ? -1 : undefined}
+          aria-expanded={!isCollapsed}
           className="flex flex-1 items-center gap-1 px-0.5 py-0.5 text-left text-[11px] font-semibold uppercase tracking-wider text-foreground/70 group-hover/section:text-accent-foreground"
           onClick={onToggle}
         >
@@ -7846,7 +8000,8 @@ function SourceControlTreeDirectoryRow({
   onToggle,
   onRequestDiscardPaths,
   onStagePaths,
-  onUnstagePaths
+  onUnstagePaths,
+  treeItem
 }: {
   node: SourceControlTreeDirectoryNode
   actionPaths: SourceControlDirectoryActionPaths
@@ -7857,6 +8012,7 @@ function SourceControlTreeDirectoryRow({
   onRequestDiscardPaths: (area: DiscardAllArea, paths: readonly string[]) => void
   onStagePaths: (paths: readonly string[]) => Promise<void>
   onUnstagePaths: (paths: readonly string[]) => Promise<void>
+  treeItem?: SourceControlTreeItemProps
 }): React.JSX.Element {
   // Why: filtered tree nodes only contain visible descendants, so folder-wide bulk labels would overpromise on the subset.
   const canStage = !hideBulkActions && actionPaths.stagePaths.length > 0
@@ -7865,6 +8021,7 @@ function SourceControlTreeDirectoryRow({
 
   return (
     <div
+      {...treeItem}
       className="group relative flex w-full items-center gap-1 pr-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
       style={{
         paddingLeft: `${node.depth * SOURCE_CONTROL_TREE_INDENT_PX + SOURCE_CONTROL_TREE_DIRECTORY_PADDING_PX}px`
@@ -7872,6 +8029,7 @@ function SourceControlTreeDirectoryRow({
     >
       <button
         type="button"
+        tabIndex={treeItem ? -1 : undefined}
         className="flex min-w-0 flex-1 items-center gap-1 text-left"
         onClick={onToggle}
         aria-expanded={!isCollapsed}
@@ -7894,6 +8052,7 @@ function SourceControlTreeDirectoryRow({
           {canDiscard && (
             <ActionButton
               icon={node.area === 'untracked' ? Trash : Undo2}
+              rowAction="discard"
               title={
                 node.area === 'untracked'
                   ? translate(
@@ -7915,6 +8074,7 @@ function SourceControlTreeDirectoryRow({
           {canStage && (
             <ActionButton
               icon={Plus}
+              rowAction="stage"
               title={translate(
                 'auto.components.right.sidebar.SourceControl.bfe9011a0e',
                 'Stage folder'
@@ -7929,6 +8089,7 @@ function SourceControlTreeDirectoryRow({
           {canUnstage && (
             <ActionButton
               icon={Minus}
+              rowAction="unstage"
               title={translate(
                 'auto.components.right.sidebar.SourceControl.ab31221779',
                 'Unstage folder'
@@ -7949,14 +8110,17 @@ function SourceControlTreeDirectoryRow({
 function SourceControlBranchTreeDirectoryRow({
   node,
   isCollapsed,
-  onToggle
+  onToggle,
+  treeItem
 }: {
   node: BranchSourceControlTreeDirectoryNode
   isCollapsed: boolean
   onToggle: () => void
+  treeItem?: SourceControlTreeItemProps
 }): React.JSX.Element {
   return (
     <div
+      {...treeItem}
       className="group relative flex w-full items-center gap-1 pr-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
       style={{
         paddingLeft: `${node.depth * SOURCE_CONTROL_TREE_INDENT_PX + SOURCE_CONTROL_TREE_DIRECTORY_PADDING_PX}px`
@@ -7964,6 +8128,7 @@ function SourceControlBranchTreeDirectoryRow({
     >
       <button
         type="button"
+        tabIndex={treeItem ? -1 : undefined}
         className="flex min-w-0 flex-1 items-center gap-1 text-left"
         onClick={onToggle}
         aria-expanded={!isCollapsed}
@@ -8010,11 +8175,13 @@ function DiffLineCounts({
 function SubmodulePlaceholderRow({
   depth,
   state,
-  message
+  message,
+  treeItem
 }: {
   depth: number
   state: 'loading' | 'empty' | 'error' | 'truncated'
   message?: string
+  treeItem?: SourceControlTreeItemProps
 }): React.JSX.Element {
   const fallback =
     state === 'error'
@@ -8029,6 +8196,7 @@ function SubmodulePlaceholderRow({
           : SUBMODULE_LOADING_LABEL
   return (
     <div
+      {...treeItem}
       className={cn(
         'flex items-center gap-1 pr-3 py-1 text-[11px]',
         state === 'error' ? 'text-destructive' : 'text-muted-foreground'
@@ -8062,7 +8230,9 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
   onDiscard,
   commentCount,
   showPathHint = true,
-  submoduleExpansion
+  submoduleExpansion,
+  treeItem,
+  selectionActions
 }: {
   entryKey: string
   entry: GitStatusEntry
@@ -8084,6 +8254,9 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
   showPathHint?: boolean
   // When set, the row is a dirty submodule: clicking toggles lazy expansion instead of opening an uninformative gitlink diff.
   submoduleExpansion?: { isExpanded: boolean; onToggle: () => void }
+  treeItem?: SourceControlTreeItemProps
+  // Why: menu Stage/Unstage/Discard act on the whole multi-selection when this row is in it.
+  selectionActions?: SourceControlSelectionRowActions
 }): React.JSX.Element {
   const FileIcon = getFileTypeIcon(entry.path)
   const fileName = basename(entry.path)
@@ -8115,15 +8288,21 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
           ? {
               kind: menuActions.indexAction,
               onSelect: () =>
-                void (menuActions.indexAction === 'stage'
-                  ? onStage(entry.path)
-                  : onUnstage(entry.path))
+                selectionActions
+                  ? selectionActions.index(entryKey, entry)
+                  : void (menuActions.indexAction === 'stage'
+                      ? onStage(entry.path)
+                      : onUnstage(entry.path))
             }
           : null
       }
       discardAction={
         menuActions.discardAction
-          ? { kind: menuActions.discardAction, onSelect: () => onDiscard(entry) }
+          ? {
+              kind: menuActions.discardAction,
+              onSelect: () =>
+                selectionActions ? selectionActions.discard(entryKey, entry) : onDiscard(entry)
+            }
           : null
       }
       onRevealInExplorer={onRevealInExplorer}
@@ -8134,6 +8313,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
       }}
     >
       <div
+        {...treeItem}
         data-testid="source-control-entry"
         data-source-control-path={entry.path}
         data-source-control-area={entry.area}
@@ -8239,6 +8419,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
           {canDiscard && (
             <ActionButton
               icon={entry.area === 'untracked' ? Trash : Undo2}
+              rowAction="discard"
               title={
                 entry.area === 'untracked'
                   ? translate(
@@ -8264,6 +8445,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
           {canStage && (
             <ActionButton
               icon={Plus}
+              rowAction="stage"
               title={translate('auto.components.right.sidebar.SourceControl.8cde1a2fb0', 'Stage')}
               onClick={(event) => {
                 event.stopPropagation()
@@ -8274,6 +8456,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
           {canUnstage && (
             <ActionButton
               icon={Minus}
+              rowAction="unstage"
               title={translate('auto.components.right.sidebar.SourceControl.df5040e3c3', 'Unstage')}
               onClick={(event) => {
                 event.stopPropagation()
@@ -8353,7 +8536,8 @@ function BranchEntryRow({
   onOpen,
   onOpenFile,
   commentCount,
-  showPathHint = true
+  showPathHint = true,
+  treeItem
 }: {
   entry: GitBranchChangeEntry
   currentWorktreeId: string
@@ -8365,6 +8549,7 @@ function BranchEntryRow({
   onOpenFile: (relativePath: string) => void
   commentCount: number
   showPathHint?: boolean
+  treeItem?: SourceControlTreeItemProps
 }): React.JSX.Element {
   const FileIcon = getFileTypeIcon(entry.path)
   const fileName = basename(entry.path)
@@ -8382,6 +8567,7 @@ function BranchEntryRow({
       onRevealInExplorer={onRevealInExplorer}
     >
       <div
+        {...treeItem}
         className="group flex cursor-pointer items-center gap-1 pr-3 py-1 transition-colors hover:bg-accent/40"
         style={{
           paddingLeft: `${depth * SOURCE_CONTROL_TREE_INDENT_PX + SOURCE_CONTROL_TREE_FILE_PADDING_PX}px`
@@ -8446,12 +8632,15 @@ export function ActionButton({
   icon: Icon,
   title,
   onClick,
-  disabled
+  disabled,
+  rowAction
 }: {
   icon: React.ComponentType<{ className?: string }>
   title: string
   onClick: (event: React.MouseEvent) => void
   disabled?: boolean
+  // Why: marks a tree-row button; tree keys trigger it, so it leaves the Tab order.
+  rowAction?: SourceControlTreeRowAction
 }): React.JSX.Element {
   // Why: use Radix Tooltip (not native title) to match sidebar chrome.
   // Why (no local TooltipProvider): reuse App.tsx's single one so Radix's adjacent-trigger delay-skip handoff still works.
@@ -8469,6 +8658,8 @@ export function ActionButton({
           )}
           aria-label={title}
           aria-disabled={disabled}
+          tabIndex={rowAction ? -1 : undefined}
+          data-source-control-row-action={rowAction}
           onClick={(event) => {
             if (disabled) {
               event.preventDefault()

@@ -10932,6 +10932,23 @@
             "checksSummary": "Checks {{status}}",
             "pipelineSummary": "Pipeline #{{number}} {{status}}",
             "openInBrowser": "{{summary}}. Open in browser"
+          },
+          "SourceControlTree": {
+            "statusModified": "modified",
+            "statusAdded": "added",
+            "statusDeleted": "deleted",
+            "statusRenamed": "renamed",
+            "statusUntracked": "untracked",
+            "statusCopied": "copied",
+            "sectionStaged": "staged",
+            "sectionUnstaged": "unstaged",
+            "sectionUntracked": "untracked",
+            "sectionConflicts": "conflict",
+            "sectionBranch": "committed on branch",
+            "fileLabel": "{{name}}, {{status}}, {{section}}",
+            "sectionOneFile": "{{label}}, 1 file",
+            "sectionFiles": "{{label}}, {{count}} files",
+            "label": "Changed files"
           }
         }
       },

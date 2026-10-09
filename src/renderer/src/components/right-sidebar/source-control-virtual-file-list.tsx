@@ -1,5 +1,6 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { SourceControlTreeRowScrollContext } from './source-control-tree-contexts'
 
 // Why: below this count plain rows keep the DOM identical to the
 // pre-virtualization markup (natural flow, no absolute positioning), so small
@@ -134,6 +135,31 @@ export function SourceControlVirtualFileList<TRow>({
       return row === undefined ? index : getRowKey(row)
     }
   })
+
+  const rowScroller = useContext(SourceControlTreeRowScrollContext)
+  const rowLookupRef = useRef({ rows, getRowKey })
+  useLayoutEffect(() => {
+    rowLookupRef.current = { rows, getRowKey }
+  }, [rows, getRowKey])
+
+  // Why: keyboard moves can target a row outside the mounted window; scrolling
+  // the virtualizer to it mounts the row so the tree can focus it.
+  useEffect(() => {
+    if (!rowScroller || !virtualize) {
+      return
+    }
+    return rowScroller.register({
+      scrollToRow: (id) => {
+        const lookup = rowLookupRef.current
+        const index = lookup.rows.findIndex((row) => lookup.getRowKey(row) === id)
+        if (index === -1) {
+          return false
+        }
+        virtualizer.scrollToIndex(index, { align: 'auto' })
+        return true
+      }
+    })
+  }, [rowScroller, virtualize, virtualizer])
 
   if (!virtualize) {
     return <>{rows.map((row) => renderRow(row))}</>

@@ -10909,6 +10909,23 @@
             "checksSummary": "Comprobaciones: {{status}}",
             "pipelineSummary": "Pipeline n.º {{number}}: {{status}}",
             "openInBrowser": "{{summary}}. Abrir en el navegador"
+          },
+          "SourceControlTree": {
+            "statusModified": "modificado",
+            "statusAdded": "añadido",
+            "statusDeleted": "eliminado",
+            "statusRenamed": "renombrado",
+            "statusUntracked": "sin seguimiento",
+            "statusCopied": "copiado",
+            "sectionStaged": "preparado",
+            "sectionUnstaged": "sin preparar",
+            "sectionUntracked": "sin seguimiento",
+            "sectionConflicts": "conflicto",
+            "sectionBranch": "confirmado en la rama",
+            "fileLabel": "{{name}}, {{status}}, {{section}}",
+            "sectionOneFile": "{{label}}, 1 archivo",
+            "sectionFiles": "{{label}}, {{count}} archivos",
+            "label": "Archivos modificados"
           }
         }
       },

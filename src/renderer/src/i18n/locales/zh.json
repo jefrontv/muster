@@ -10909,6 +10909,23 @@
             "checksSummary": "检查{{status}}",
             "pipelineSummary": "流水线 #{{number}} {{status}}",
             "openInBrowser": "{{summary}}。在浏览器中打开"
+          },
+          "SourceControlTree": {
+            "statusModified": "已修改",
+            "statusAdded": "已添加",
+            "statusDeleted": "已删除",
+            "statusRenamed": "已重命名",
+            "statusUntracked": "未跟踪",
+            "statusCopied": "已复制",
+            "sectionStaged": "已暂存",
+            "sectionUnstaged": "未暂存",
+            "sectionUntracked": "未跟踪",
+            "sectionConflicts": "冲突",
+            "sectionBranch": "已提交到分支",
+            "fileLabel": "{{name}}，{{status}}，{{section}}",
+            "sectionOneFile": "{{label}}，1 个文件",
+            "sectionFiles": "{{label}}，{{count}} 个文件",
+            "label": "已更改的文件"
           }
         }
       },

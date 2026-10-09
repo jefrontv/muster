@@ -10909,6 +10909,23 @@
             "checksSummary": "チェック: {{status}}",
             "pipelineSummary": "パイプライン #{{number}}: {{status}}",
             "openInBrowser": "{{summary}}。ブラウザで開く"
+          },
+          "SourceControlTree": {
+            "statusModified": "変更",
+            "statusAdded": "追加",
+            "statusDeleted": "削除",
+            "statusRenamed": "名前変更",
+            "statusUntracked": "未追跡",
+            "statusCopied": "コピー",
+            "sectionStaged": "ステージ済み",
+            "sectionUnstaged": "未ステージ",
+            "sectionUntracked": "未追跡",
+            "sectionConflicts": "競合",
+            "sectionBranch": "ブランチにコミット済み",
+            "fileLabel": "{{name}}、{{status}}、{{section}}",
+            "sectionOneFile": "{{label}}、1 ファイル",
+            "sectionFiles": "{{label}}、{{count}} ファイル",
+            "label": "変更されたファイル"
           }
         }
       },

@@ -10909,6 +10909,23 @@
             "checksSummary": "검사 {{status}}",
             "pipelineSummary": "파이프라인 #{{number}} {{status}}",
             "openInBrowser": "{{summary}}. 브라우저에서 열기"
+          },
+          "SourceControlTree": {
+            "statusModified": "수정됨",
+            "statusAdded": "추가됨",
+            "statusDeleted": "삭제됨",
+            "statusRenamed": "이름 변경됨",
+            "statusUntracked": "추적되지 않음",
+            "statusCopied": "복사됨",
+            "sectionStaged": "스테이징됨",
+            "sectionUnstaged": "스테이징되지 않음",
+            "sectionUntracked": "추적되지 않음",
+            "sectionConflicts": "충돌",
+            "sectionBranch": "브랜치에 커밋됨",
+            "fileLabel": "{{name}}, {{status}}, {{section}}",
+            "sectionOneFile": "{{label}}, 파일 1개",
+            "sectionFiles": "{{label}}, 파일 {{count}}개",
+            "label": "변경된 파일"
           }
         }
       },
