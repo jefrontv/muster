@@ -27,6 +27,8 @@ export type PrimaryAction = {
   label: string
   title: string
   disabled: boolean
+  // Why: set only when the primary stages every change before committing (nothing staged yet).
+  commitAll?: true
 }
 
 export type PrimaryActionInputs = {
@@ -61,6 +63,7 @@ export type PrimaryActionInputs = {
   // Why: eligibility is fetched asynchronously; keep the header anchor visible
   // while the request is in flight instead of flashing it in after ~1s.
   isHostedReviewCreationLoading?: boolean
+  commitAllFileCount?: number
 }
 
 export const PRIMARY_LABEL_BY_KIND: Record<Exclude<PrimaryActionKind, 'commit'>, string> = {

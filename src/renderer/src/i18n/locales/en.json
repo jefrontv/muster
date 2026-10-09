@@ -10546,7 +10546,10 @@
                   "e9b5d1f470": "Check out a branch before creating a {{value0}}.",
                   "f0c6e2a581": "This branch is not ready for a {{value0}} yet.",
                   "8f9a0b1c2d": "Nothing to commit. Branch is up to date.",
-                  "h3i4j5k607": "Checking whether this branch can create a {{value0}}…"
+                  "h3i4j5k607": "Checking whether this branch can create a {{value0}}…",
+                  "commitAll": "Commit All",
+                  "stageAndCommitOne": "Stage and commit 1 file",
+                  "stageAndCommitMany": "Stage and commit {{value0}} files"
                 }
               },
               "undo": {

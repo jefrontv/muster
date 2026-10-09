@@ -40,12 +40,8 @@ export function canSubmitCommit(inputs: CommitEligibilityInputs): boolean {
   return !isCommitGloballyBusy(inputs) && resolveCommitDisabledReason(inputs) === null
 }
 
-// Why: the message field stays editable when the only blocker is an empty
-// message; every other commit-disabled reason or in-flight op locks typing.
+// Why: typing never needs anything staged (Commit All stages on submit); only a
+// commit in flight locks the box so its submitted text can't drift mid-write.
 export function isCommitMessageFieldDisabled(inputs: CommitEligibilityInputs): boolean {
-  if (isCommitGloballyBusy(inputs)) {
-    return true
-  }
-  const commitDisabledReason = resolveCommitDisabledReason(inputs)
-  return commitDisabledReason !== null && commitDisabledReason !== COMMIT_MESSAGE_REQUIRED_REASON
+  return inputs.isCommitting || (inputs.isPullRequestOperationActive ?? false)
 }

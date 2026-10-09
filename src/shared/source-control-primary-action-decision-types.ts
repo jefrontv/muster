@@ -31,6 +31,7 @@ export type SourceControlPrimaryActionTitleIntent =
   | 'resolve_conflicts_before_commit'
   | 'prepare_review'
   | 'commit_staged_changes'
+  | 'stage_and_commit_all'
   | 'enter_commit_message'
   | 'stage_all_changes'
   | 'stage_file_to_commit'
@@ -51,7 +52,7 @@ export type SourceControlPrimaryActionTitleIntent =
 export type SourceControlPrimaryActionDecision = {
   kind: SourceControlPrimaryActionKind
   disabled: boolean
-  labelIntent: SourceControlPrimaryActionKind | 'force_push'
+  labelIntent: SourceControlPrimaryActionKind | 'force_push' | 'commit_all'
   titleIntent: SourceControlPrimaryActionTitleIntent
   count?: number
   ahead?: number
@@ -79,4 +80,6 @@ export type SourceControlPrimaryActionDecisionInputs = {
   canPushLinkedReviewWithoutUpstream?: boolean
   isPrIntentInFlight?: boolean
   isHostedReviewCreationLoading?: boolean
+  // Why: desktop-only opt-in; how many files Commit All would stage when nothing is staged yet.
+  commitAllFileCount?: number
 }

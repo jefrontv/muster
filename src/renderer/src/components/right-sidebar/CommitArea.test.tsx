@@ -275,16 +275,16 @@ describe('CommitArea', () => {
     expect(hasDisabledAttribute(textarea(markup))).toBe(true)
   })
 
-  it('disables the textarea when no files are staged', () => {
+  it('keeps the textarea enabled when no files are staged', () => {
     expect(hasDisabledAttribute(textarea(renderCommitArea(baseProps({ stagedCount: 0 }))))).toBe(
-      true
+      false
     )
   })
 
-  it('disables the textarea when unresolved conflicts exist', () => {
+  it('keeps the textarea enabled when unresolved conflicts exist', () => {
     expect(
       hasDisabledAttribute(textarea(renderCommitArea(baseProps({ hasUnresolvedConflicts: true }))))
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it('keeps the textarea enabled when staged files need a commit message', () => {

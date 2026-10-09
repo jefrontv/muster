@@ -41,14 +41,14 @@ describe('source-control-commit-eligibility', () => {
     expect(isCommitMessageFieldDisabled(inputs)).toBe(false)
   })
 
-  it('disables the message field when nothing is staged', () => {
-    const inputs = baseInputs({ stagedCount: 0 })
-    expect(isCommitMessageFieldDisabled(inputs)).toBe(true)
+  it('keeps the message field enabled when nothing is staged or conflicts exist', () => {
+    expect(isCommitMessageFieldDisabled(baseInputs({ stagedCount: 0 }))).toBe(false)
+    expect(isCommitMessageFieldDisabled(baseInputs({ hasUnresolvedConflicts: true }))).toBe(false)
   })
 
-  it('disables the message field while commit or remote work is in flight', () => {
+  it('disables the message field only while a commit is in flight', () => {
     expect(isCommitMessageFieldDisabled(baseInputs({ isCommitting: true }))).toBe(true)
-    expect(isCommitMessageFieldDisabled(baseInputs({ isRemoteOperationActive: true }))).toBe(true)
+    expect(isCommitMessageFieldDisabled(baseInputs({ isRemoteOperationActive: true }))).toBe(false)
     expect(isCommitMessageFieldDisabled(baseInputs({ isPullRequestOperationActive: true }))).toBe(
       true
     )

@@ -34,7 +34,8 @@ export function resolveSourceControlPrimaryActionDecision(
     hasCurrentBranch = true,
     canPushLinkedReviewWithoutUpstream = false,
     isPrIntentInFlight = false,
-    isHostedReviewCreationLoading = false
+    isHostedReviewCreationLoading = false,
+    commitAllFileCount = 0
   } = inputs
 
   if (isPrIntentInFlight) {
@@ -107,6 +108,16 @@ export function resolveSourceControlPrimaryActionDecision(
       labelIntent: 'commit',
       titleIntent: 'enter_commit_message',
       disabled: true
+    }
+  }
+
+  if (!hasStaged && hasMessage && hasStageableChanges && commitAllFileCount > 0) {
+    return {
+      kind: 'commit',
+      labelIntent: 'commit_all',
+      titleIntent: 'stage_and_commit_all',
+      disabled: false,
+      count: commitAllFileCount
     }
   }
 

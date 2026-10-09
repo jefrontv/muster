@@ -63,12 +63,13 @@ function toRendererPrimaryAction(
   decision: SourceControlPrimaryActionDecision,
   inputs: PrimaryActionInputs
 ): PrimaryAction {
-  return {
+  const action: PrimaryAction = {
     kind: decision.kind,
     label: resolvePrimaryActionLabel(decision, inputs),
     title: resolvePrimaryActionTitle(decision, inputs),
     disabled: decision.disabled
   }
+  return decision.labelIntent === 'commit_all' ? { ...action, commitAll: true } : action
 }
 
 function resolvePrimaryActionLabel(
@@ -96,6 +97,11 @@ function resolvePrimaryActionLabel(
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.ed93b4f14f',
         'Commit'
+      )
+    case 'commit_all':
+      return translate(
+        'auto.components.right.sidebar.source.control.primary.action.commitAll',
+        'Commit All'
       )
     case 'stage':
       return translate(
@@ -183,6 +189,17 @@ function resolvePrimaryActionTitle(
         'auto.components.right.sidebar.source.control.primary.action.ab41fb926b',
         'Commit staged changes'
       )
+    case 'stage_and_commit_all':
+      return decision.count === 1
+        ? translate(
+            'auto.components.right.sidebar.source.control.primary.action.stageAndCommitOne',
+            'Stage and commit 1 file'
+          )
+        : translate(
+            'auto.components.right.sidebar.source.control.primary.action.stageAndCommitMany',
+            'Stage and commit {{value0}} files',
+            { value0: decision.count ?? 0 }
+          )
     case 'enter_commit_message':
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.f01f16d77f',

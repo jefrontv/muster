@@ -74,7 +74,6 @@ import { BulkActionBar } from './BulkActionBar'
 import { useSourceControlSelection, type FlatEntry } from './useSourceControlSelection'
 import {
   getDiscardAllPaths,
-  getStageAllPaths,
   getUnstageAllPaths,
   isStageableStatusEntry,
   isSubmoduleWorktreeOnlyChange,
@@ -236,6 +235,7 @@ import {
 } from '../../../../shared/git-upstream-status'
 import { resolveForcePushConfirmation } from './source-control-force-push-confirmation'
 import { enqueueGitIndexWrite } from './git-index-write-queue'
+import { resolveCommitAllPaths } from './source-control-commit-all'
 import { toastIndexWriteFailure } from './source-control-index-write-toast'
 import type {
   DiffComment,
@@ -2091,6 +2091,7 @@ function SourceControlInner(): React.JSX.Element {
         skipStagedSnapshotCheck?: boolean
         skipActiveConflictCheck?: boolean
         target?: SourceControlOperationTarget
+        stagePathsFirst?: readonly string[]
       }
     ): Promise<boolean> => {
       const target =
@@ -2108,9 +2109,12 @@ function SourceControlInner(): React.JSX.Element {
         return false
       }
       const message = (messageOverride ?? commitMessage).trim()
+      const stagePathsFirst = options?.stagePathsFirst ?? []
       if (
         !message ||
-        (!options?.skipStagedSnapshotCheck && grouped.staged.length === 0) ||
+        (!options?.skipStagedSnapshotCheck &&
+          stagePathsFirst.length === 0 &&
+          grouped.staged.length === 0) ||
         (!options?.skipActiveConflictCheck && unresolvedConflicts.length > 0)
       ) {
         return false
@@ -2126,18 +2130,25 @@ function SourceControlInner(): React.JSX.Element {
       const readStatusHead = (): string | null =>
         useAppStore.getState().gitStatusHeadByWorktree?.[target.worktreeId] ?? null
       const statusHeadBeforeCommit = readStatusHead()
+      const gitContext = {
+        // Why: route the commit by the repo OWNER host, not the focused runtime.
+        settings: target.settings,
+        worktreeId: target.worktreeId,
+        worktreePath: target.worktreePath,
+        connectionId: target.connectionId
+      }
       try {
-        const commitResult = await commitRuntimeGit(
-          {
-            // Why: route the commit by the repo OWNER host, not the focused runtime.
-            settings: target.settings,
-            worktreeId: target.worktreeId,
-            worktreePath: target.worktreePath,
-            connectionId: target.connectionId
-          },
-          message
-        )
+        // Why: one queued index write covers stage + commit so a concurrent stage can't hit index.lock.
+        const commitResult = await enqueueGitIndexWrite(target.worktreeId, async () => {
+          if (stagePathsFirst.length > 0) {
+            await bulkStageRuntimeGitPaths(gitContext, [...stagePathsFirst])
+          }
+          return commitRuntimeGit(gitContext, message)
+        })
         if (!commitResult.success) {
+          if (stagePathsFirst.length > 0 && !options?.target) {
+            void refreshActiveGitStatusAfterMutation()
+          }
           setCommitErrorForWorktree(target.worktreeId, commitResult.error ?? 'Commit failed')
           return false
         }
@@ -2175,6 +2186,9 @@ function SourceControlInner(): React.JSX.Element {
           target.worktreeId,
           error instanceof Error ? error.message : 'Commit failed'
         )
+        if (stagePathsFirst.length > 0 && !options?.target) {
+          void refreshActiveGitStatusAfterMutation()
+        }
         return false
       } finally {
         setCommitInFlightByWorktree((prev) => ({ ...prev, [target.worktreeId]: false }))
@@ -4257,6 +4271,11 @@ function SourceControlInner(): React.JSX.Element {
     return grouped.staged.some((entry) => unstagedPaths.has(entry.path))
   }, [grouped.staged, grouped.unstaged])
 
+  const commitAllPaths = useMemo(
+    () => resolveCommitAllPaths(grouped.unstaged, grouped.untracked),
+    [grouped.unstaged, grouped.untracked]
+  )
+
   const primaryAction: PrimaryAction = useMemo(() => {
     return resolveCommitAreaPrimaryAction({
       stagedCount: grouped.staged.length,
@@ -4276,9 +4295,11 @@ function SourceControlInner(): React.JSX.Element {
         branchSummary?.status === 'ready' ? (branchSummary.commitsAhead ?? 0) : undefined,
       hasCurrentBranch: Boolean(branchName),
       canPushLinkedReviewWithoutUpstream: canUseHostedReviewPushTarget,
-      isPrIntentInFlight: isCreatePrIntentInFlight
+      isPrIntentInFlight: isCreatePrIntentInFlight,
+      commitAllFileCount: commitAllPaths.length
     })
   }, [
+    commitAllPaths.length,
     commitMessage,
     grouped.staged.length,
     hasStageableChanges,
@@ -4827,10 +4848,7 @@ function SourceControlInner(): React.JSX.Element {
     if (!worktreePath || isExecutingBulk) {
       return
     }
-    const filePaths = [
-      ...getStageAllPaths(grouped.unstaged, 'unstaged'),
-      ...getStageAllPaths(grouped.untracked, 'untracked')
-    ]
+    const filePaths = commitAllPaths
     if (filePaths.length === 0) {
       return
     }
@@ -4860,7 +4878,7 @@ function SourceControlInner(): React.JSX.Element {
     activeRepoSettings,
     worktreePath,
     isExecutingBulk,
-    grouped,
+    commitAllPaths,
     activeWorktreeId,
     clearSelection,
     refreshActiveGitStatusAfterMutation
@@ -4881,6 +4899,12 @@ function SourceControlInner(): React.JSX.Element {
         )
         return
       case 'commit':
+        if (!primaryAction.commitAll) {
+          handleActionInvoke('commit')
+        } else if (!prGenerating && !isCreatingPr && !isCreatePrIntentInFlight) {
+          void handleCommit(undefined, { stagePathsFirst: commitAllPaths })
+        }
+        return
       case 'pull':
       case 'sync':
       case 'publish':
@@ -4891,8 +4915,14 @@ function SourceControlInner(): React.JSX.Element {
         void runCreatePrIntent()
     }
   }, [
+    commitAllPaths,
     handleActionInvoke,
+    handleCommit,
     handleStageAllPrimary,
+    isCreatePrIntentInFlight,
+    isCreatingPr,
+    prGenerating,
+    primaryAction.commitAll,
     primaryAction.kind,
     remoteStatus,
     remoteStatusForActions,
