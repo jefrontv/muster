@@ -7,6 +7,7 @@ import type { RefObject } from 'react'
 import { NativeChatComposer, type NativeChatComposerHandle } from './NativeChatComposer'
 import { NativeChatInteractiveCard } from './NativeChatInteractiveCard'
 import { NativeChatStreamAskCard, streamAskPermissionRequest } from './NativeChatStreamAskCard'
+import { NativeChatQueueStrip } from './NativeChatQueueStrip'
 import type { NativeChatInteractiveSend } from './use-native-chat-interactive-send'
 import type { NativeChatTransport } from './native-chat-view-types'
 import type { NativeChatSession } from '../../../../shared/native-chat-types'
@@ -86,6 +87,15 @@ export function NativeChatViewInput({
           onRespond={transport.respondPermission}
           onActiveChange={setStreamAskActive}
           answerInputRef={questionAnswerInputRef}
+        />
+      ) : null}
+      {transport?.messageQueue && !questionActive && !streamAskActive ? (
+        <NativeChatQueueStrip
+          queue={transport.messageQueue}
+          composerHasDraft={() => composerRef.current?.hasDraft() ?? false}
+          restoreToComposer={(text, imagePaths) =>
+            composerRef.current?.restoreDraft(text, imagePaths)
+          }
         />
       ) : null}
       {questionActive || streamAskActive ? null : (

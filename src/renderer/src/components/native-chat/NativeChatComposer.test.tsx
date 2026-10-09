@@ -268,7 +268,7 @@ describe('NativeChatComposer', () => {
   })
 
   it('sends slash commands through the stream transport verbatim', async () => {
-    const transportSend = vi.fn().mockResolvedValue(true)
+    const transportSend = vi.fn().mockResolvedValue('sent')
     mocks.draftValue = '/init'
     render(
       <NativeChatComposer
@@ -287,7 +287,7 @@ describe('NativeChatComposer', () => {
 
     // The headless CLI owns slash handling (runs known/custom commands, answers
     // "Unknown command" otherwise) — the composer must not block or rewrite it.
-    expect(transportSend).toHaveBeenCalledWith('/init', undefined)
+    expect(transportSend).toHaveBeenCalledWith('/init', undefined, 'auto')
   })
 
   it('passes no approval to the field without a pending permission request', () => {

@@ -359,13 +359,15 @@ describe('startChatThreadStream', () => {
       { threadId: 't1', command: 'claude -p', sender },
       { spawn: () => child, hookEnv: () => ({}) }
     )
-    await expect(sendChatThreadStreamMessage('t1', 'hello')).resolves.toBe(true)
+    await expect(sendChatThreadStreamMessage('t1', 'hello')).resolves.toBe('sent')
     const written = child.stdin.read() as Buffer
     expect(JSON.parse(written.toString().trim())).toEqual({
       type: 'user',
-      message: { role: 'user', content: [{ type: 'text', text: 'hello' }] }
+      uuid: expect.any(String),
+      message: { role: 'user', content: [{ type: 'text', text: 'hello' }] },
+      parent_tool_use_id: null
     })
-    await expect(sendChatThreadStreamMessage('missing', 'hello')).resolves.toBe(false)
+    await expect(sendChatThreadStreamMessage('missing', 'hello')).resolves.toBe('failed')
     child.emit('close', 0)
   })
 
@@ -382,7 +384,7 @@ describe('startChatThreadStream', () => {
       { spawn: () => child, hookEnv: () => ({}) }
     )
     try {
-      await expect(sendChatThreadStreamMessage('t1', 'look', [png, notes])).resolves.toBe(true)
+      await expect(sendChatThreadStreamMessage('t1', 'look', [png, notes])).resolves.toBe('sent')
       expect(sent).toEqual([{ threadId: 't1', kind: 'attachments-skipped', paths: [notes] }])
       const written = JSON.parse((child.stdin.read() as Buffer).toString().trim())
       expect(written.message.content.map((block: { type: string }) => block.type)).toEqual([
@@ -436,7 +438,7 @@ describe('startChatThreadStream', () => {
     )
     stopChatThreadStream('t1')
     stopChatThreadStream('t1')
-    await expect(sendChatThreadStreamMessage('t1', 'late')).resolves.toBe(false)
+    await expect(sendChatThreadStreamMessage('t1', 'late')).resolves.toBe('failed')
     child.emit('close', 0)
     expect(sent).toEqual([])
     expect(chatThreadStreamCountForTests()).toBe(0)

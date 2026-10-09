@@ -6,10 +6,14 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react'
 import type { AgentType } from '../../../../shared/agent-status-types'
 import { emitNativeChatMessageSent } from '@/lib/native-chat-telemetry'
 import { pushHistory, type HistoryState } from './native-chat-composer-state'
+import type { NativeChatTransport } from './native-chat-view-types'
+import type { ChatThreadSendMode } from '../../../../shared/chat-thread-stream-types'
 
 export function useNativeChatTransportSend(args: {
   agent: AgentType
-  transportSend: ((text: string, imagePaths?: string[]) => Promise<boolean>) | undefined
+  transportSend: NativeChatTransport['send'] | undefined
+  /** A turn is running: the send lands in the queue strip, not as a thread bubble. */
+  isWorking: boolean
   onOptimisticSend?: (text: string, imagePaths?: string[]) => string | undefined
   onOptimisticSendCanceled?: (pendingId: string) => void
   setHistory: Dispatch<SetStateAction<HistoryState>>
@@ -17,10 +21,11 @@ export function useNativeChatTransportSend(args: {
   setCaret: Dispatch<SetStateAction<number>>
   clearSkillOrigin: () => void
   setNotice: Dispatch<SetStateAction<string | null>>
-}): (text: string, imagePaths?: string[]) => void {
+}): (text: string, imagePaths?: string[], mode?: ChatThreadSendMode) => void {
   const {
     agent,
     transportSend,
+    isWorking,
     onOptimisticSend,
     onOptimisticSendCanceled,
     setHistory,
@@ -30,16 +35,19 @@ export function useNativeChatTransportSend(args: {
     setNotice
   } = args
   return useCallback(
-    (text: string, imagePaths?: string[]) => {
+    (text: string, imagePaths?: string[], mode: ChatThreadSendMode = 'auto') => {
       if (!transportSend) {
         return
       }
-      const pendingId = onOptimisticSend?.(text, imagePaths)
-      void transportSend(text, imagePaths).then((delivered) => {
-        if (!delivered && pendingId) {
-          // Why: the stream died between render and send; a stuck queued
-          // bubble would claim delivery that never happened.
+      // Mid-turn sends show in the queue strip; only a new turn gets a thread bubble.
+      const pendingId = isWorking ? undefined : onOptimisticSend?.(text, imagePaths)
+      void transportSend(text, imagePaths, mode).then((outcome) => {
+        if (outcome !== 'sent' && pendingId) {
+          // Why: main queued it (the turn was still running) or the stream died;
+          // either way a thread bubble would claim a turn that hasn't started.
           onOptimisticSendCanceled?.(pendingId)
+        } else if (outcome === 'sent' && !pendingId) {
+          onOptimisticSend?.(text, imagePaths)
         }
       })
       emitNativeChatMessageSent({ agent, runtime: 'local' })
@@ -52,6 +60,7 @@ export function useNativeChatTransportSend(args: {
     [
       agent,
       clearSkillOrigin,
+      isWorking,
       onOptimisticSend,
       onOptimisticSendCanceled,
       setCaret,

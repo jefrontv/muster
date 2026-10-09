@@ -121,6 +121,7 @@ function withoutChatThreadRuntime(s: AppState, ids: ReadonlySet<string>): Partia
     chatThreadFirstMessage: omitThreadIds(s.chatThreadFirstMessage, ids),
     chatThreadContextWindow: omitThreadIds(s.chatThreadContextWindow, ids),
     chatThreadLastError: omitThreadIds(s.chatThreadLastError, ids),
+    chatThreadMessageQueues: omitThreadIds(s.chatThreadMessageQueues, ids),
     chatThreadFullAccess: omitThreadIds(s.chatThreadFullAccess, ids),
     chatThreadLaunching: omitThreadIds(s.chatThreadLaunching, ids),
     chatThreadSessionEnds: omitThreadIds(s.chatThreadSessionEnds, ids),
@@ -289,8 +290,10 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   setChatThreadSession: (threadId, session) =>
     set((s) => {
       if (session === null) {
+        // The queue lives on the process; a stopped session has none.
         const { [threadId]: _dropped, ...remaining } = s.chatThreadSessions
-        return { chatThreadSessions: remaining }
+        const { [threadId]: _queue, ...queues } = s.chatThreadMessageQueues
+        return { chatThreadSessions: remaining, chatThreadMessageQueues: queues }
       }
       return { chatThreadSessions: { ...s.chatThreadSessions, [threadId]: session } }
     }),

@@ -53,6 +53,7 @@ import type { OrcaProfilesSlice } from './slices/orca-profiles'
 import type { NewIssueDraftSlice } from './slices/new-issue-draft'
 import type { RemoteServerUpdatesSlice } from './slices/remote-server-updates'
 import type { ChatModeSlice } from './slices/chat-mode'
+import type { ChatThreadMessageQueueSlice } from './slices/chat-thread-message-queue-state'
 
 export type AppState = RepoSlice &
   SparsePresetsSlice &
@@ -102,4 +103,5 @@ export type AppState = RepoSlice &
   OrcaProfilesSlice &
   NewIssueDraftSlice &
   RemoteServerUpdatesSlice &
-  ChatModeSlice
+  ChatModeSlice &
+  ChatThreadMessageQueueSlice

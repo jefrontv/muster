@@ -14867,7 +14867,8 @@
         "defaultModel": "Default",
         "defaultEffort": "Default",
         "effortFromSettings": "From your Claude settings",
-        "effortCliDefault": "Claude's default effort for this model"
+        "effortCliDefault": "Claude's default effort for this model",
+        "queue": "メッセージをキューに追加（{{shortcut}} で今すぐ指示）"
       },
       "tool": {
         "running": "実行中…",
@@ -15033,6 +15034,25 @@
         "changedMany": "Changed {{count}} files",
         "nameList": "{{rest}} and {{last}}",
         "changed": "Changed {{files}}"
+      },
+      "queue": {
+        "label": "キュー内のメッセージ",
+        "title": "キュー",
+        "paused": "停止後に一時停止中",
+        "sendNext": "次を送信",
+        "steer": "今すぐ指示",
+        "steerTooltip": "今すぐ送信します。エージェントは次のステップで読み取ります。",
+        "steerAria": "今すぐ指示: {{text}}",
+        "edit": "編集",
+        "editAria": "編集: {{text}}",
+        "remove": "削除",
+        "removeAria": "削除: {{text}}",
+        "steering": "指示を送信中…",
+        "sending": "送信中…",
+        "imageCount": "{{count}} 件の画像を添付",
+        "replaceDraft": "下書きを置き換えますか？",
+        "replace": "置き換える",
+        "cancel": "キャンセル"
       }
     },
     "tab": {

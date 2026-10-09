@@ -151,6 +151,7 @@ import { createOrcaProfilesSlice } from './orca-profiles'
 import { createNewIssueDraftSlice } from './new-issue-draft'
 import { createRemoteServerUpdatesSlice } from './remote-server-updates'
 import { createChatModeSlice } from './chat-mode'
+import { createChatThreadMessageQueueSlice } from './chat-thread-message-queue-state'
 
 function createTestStore() {
   return create<AppState>()((...a) => ({
@@ -199,7 +200,8 @@ function createTestStore() {
     ...createOrcaProfilesSlice(...a),
     ...createNewIssueDraftSlice(...a),
     ...createRemoteServerUpdatesSlice(...a),
-    ...createChatModeSlice(...a)
+    ...createChatModeSlice(...a),
+    ...createChatThreadMessageQueueSlice(...a)
   }))
 }
 

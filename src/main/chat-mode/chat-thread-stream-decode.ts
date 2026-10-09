@@ -52,6 +52,17 @@ function resultContextWindow(record: StreamRecord): number | null {
   return best?.contextWindow ?? null
 }
 
+/** The uuid of a top-level user message the CLI just handed to the model
+ *  (--replay-user-messages echoes each stdin message at delivery). */
+export function replayedUserMessageId(record: StreamRecord): string | null {
+  if (record.type !== 'user' || record.isReplay !== true || typeof record.uuid !== 'string') {
+    return null
+  }
+  return typeof record.parent_tool_use_id === 'string' && record.parent_tool_use_id !== ''
+    ? null
+    : record.uuid
+}
+
 /** Map one parsed stream-json record to a renderer event, or null to drop it. */
 export function mapChatThreadStreamRecord(
   threadId: string,

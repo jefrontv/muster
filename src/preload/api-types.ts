@@ -50,6 +50,9 @@ import type {
 import type {
   ChatThreadPermissionResponseArgs,
   ChatThreadStreamEvent,
+  ChatThreadMessageQueueSnapshot,
+  ChatThreadSendMode,
+  ChatThreadSendOutcome,
   ChatThreadStreamStartArgs,
   ChatThreadStreamStartResult
 } from '../shared/chat-thread-stream-types'
@@ -1007,7 +1010,13 @@ export type PlanAnnotationApi = {
  *  the authoritative message source. */
 export type ChatThreadStreamApi = {
   start: (args: ChatThreadStreamStartArgs) => Promise<ChatThreadStreamStartResult>
-  send: (threadId: string, text: string, imagePaths?: string[]) => Promise<boolean>
+  /** Busy thread: auto holds the message in main's queue; steer hands it to the running turn. */
+  send: (
+    threadId: string,
+    text: string,
+    imagePaths?: string[],
+    mode?: ChatThreadSendMode
+  ) => Promise<ChatThreadSendOutcome>
   /** Answer a pending can_use_tool control request (Approve/Decline). */
   respondPermission: (args: ChatThreadPermissionResponseArgs) => Promise<boolean>
   /** Interrupt the in-flight turn over the stream's control protocol. */
@@ -1018,6 +1027,12 @@ export type ChatThreadStreamApi = {
   pendingPermissions: () => Promise<
     { threadId: string; requestId: string; toolName: string; input: unknown }[]
   >
+  steerQueued: (threadId: string, messageId: string) => Promise<boolean>
+  removeQueued: (threadId: string, messageId: string) => Promise<boolean>
+  /** Resume a queue that Stop paused. */
+  sendNextQueued: (threadId: string) => Promise<boolean>
+  /** Live queues, for a renderer that reloaded while messages were held. */
+  queues: () => Promise<{ threadId: string; queue: ChatThreadMessageQueueSnapshot }[]>
   onEvent: (callback: (event: ChatThreadStreamEvent) => void) => () => void
 }
 

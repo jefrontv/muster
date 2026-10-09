@@ -3,7 +3,11 @@
 // `chatThreadStream:event` on the starting window's webContents.
 
 import { ipcMain } from 'electron'
-import type { ChatThreadStreamStartResult } from '../../shared/chat-thread-stream-types'
+import type {
+  ChatThreadMessageQueueSnapshot,
+  ChatThreadSendOutcome,
+  ChatThreadStreamStartResult
+} from '../../shared/chat-thread-stream-types'
 import { agentHookServer } from '../agent-hooks/server'
 import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
 import type { Store } from '../persistence'
@@ -11,10 +15,14 @@ import { chatConnectorMcpForStream } from './chat-connector'
 import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
 import {
   interruptChatThreadStream,
+  listChatThreadMessageQueues,
   listPendingChatThreadPermissionRequests,
+  removeChatThreadQueuedMessage,
   respondChatThreadPermission,
   sendChatThreadStreamMessage,
+  sendNextChatThreadQueuedMessage,
   startChatThreadStream,
+  steerChatThreadQueuedMessage,
   stopChatThreadStream
 } from '../chat-mode/chat-thread-stream'
 
@@ -24,7 +32,11 @@ const CHANNELS = [
   'chatThreadStream:respondPermission',
   'chatThreadStream:interrupt',
   'chatThreadStream:stop',
-  'chatThreadStream:pendingPermissions'
+  'chatThreadStream:pendingPermissions',
+  'chatThreadStream:steerQueued',
+  'chatThreadStream:removeQueued',
+  'chatThreadStream:sendNextQueued',
+  'chatThreadStream:queues'
 ] as const
 
 function asString(value: unknown, field: string): string {
@@ -110,15 +122,49 @@ export function registerChatThreadStreamHandlers(store: Store): void {
 
   ipcMain.handle(
     'chatThreadStream:send',
-    async (_event, threadId: unknown, text: unknown, imagePaths: unknown): Promise<boolean> =>
+    async (
+      _event,
+      threadId: unknown,
+      text: unknown,
+      imagePaths: unknown,
+      mode: unknown
+    ): Promise<ChatThreadSendOutcome> =>
       sendChatThreadStreamMessage(
         asString(threadId, 'threadId'),
         // Empty text is valid for an images-only send.
         typeof text === 'string' ? text : '',
         Array.isArray(imagePaths)
           ? imagePaths.filter((path): path is string => typeof path === 'string')
-          : undefined
+          : undefined,
+        mode === 'steer' ? 'steer' : 'auto'
       )
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:steerQueued',
+    async (_event, threadId: unknown, messageId: unknown): Promise<boolean> =>
+      steerChatThreadQueuedMessage(asString(threadId, 'threadId'), asString(messageId, 'messageId'))
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:removeQueued',
+    async (_event, threadId: unknown, messageId: unknown): Promise<boolean> =>
+      removeChatThreadQueuedMessage(
+        asString(threadId, 'threadId'),
+        asString(messageId, 'messageId')
+      )
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:sendNextQueued',
+    async (_event, threadId: unknown): Promise<boolean> =>
+      sendNextChatThreadQueuedMessage(asString(threadId, 'threadId'))
+  )
+
+  ipcMain.handle(
+    'chatThreadStream:queues',
+    async (): Promise<{ threadId: string; queue: ChatThreadMessageQueueSnapshot }[]> =>
+      listChatThreadMessageQueues()
   )
 
   ipcMain.handle(

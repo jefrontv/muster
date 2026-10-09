@@ -2,7 +2,8 @@ import type { AgentType } from '../../../../shared/agent-status-types'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
 import type {
   NativeChatPermissionBehavior,
-  NativeChatPermissionRequest
+  NativeChatPermissionRequest,
+  NativeChatTransport
 } from './native-chat-view-types'
 
 export type NativeChatComposerProps = {
@@ -18,7 +19,7 @@ export type NativeChatComposerProps = {
   targetPtyId: string | null
   agent: AgentType
   /** Stream-transport send; when set, composer text bypasses the PTY entirely. */
-  transportSend?: (text: string) => Promise<boolean>
+  transportSend?: NativeChatTransport['send']
   /** Stream-transport session-option dispatch (relaunch with new launch flags). */
   transportDispatchOption?: NativeChatSessionOptionDispatchCommand
   /** Stream-transport interrupt; Stop sends this instead of a PTY ESC byte. */
@@ -69,4 +70,7 @@ export type NativeChatComposerHandle = {
   }) => void
   /** Pastes clipboard content when no DOM paste event is available. */
   pasteFromClipboard: () => void
+  hasDraft: () => boolean
+  /** Replaces the draft and image chips (a queued message pulled back for editing). */
+  restoreDraft: (text: string, imagePaths: string[]) => void
 }

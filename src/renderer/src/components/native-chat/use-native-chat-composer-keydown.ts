@@ -1,4 +1,5 @@
 import { useCallback, type Dispatch, type KeyboardEventHandler, type SetStateAction } from 'react'
+import { isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
 import {
   recallNext,
   recallPrevious,
@@ -17,7 +18,8 @@ export type UseNativeChatComposerKeyDownArgs = {
   dispatchPickerCommand: (item: Extract<NativeChatPickerItem, { kind: 'command' }>) => void
   dismissPicker: (triggerKey: string) => void
   interrupt: () => void
-  send: () => void
+  /** steer: Cmd/Ctrl+Enter, which hands the message to a running turn. */
+  send: (options?: { steer?: boolean }) => void
   setActiveSuggestion: Dispatch<SetStateAction<number>>
   setDraft: Dispatch<SetStateAction<string>>
   setCaret: Dispatch<SetStateAction<number>>
@@ -87,7 +89,7 @@ export function useNativeChatComposerKeyDown({
       }
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault()
-        send()
+        send({ steer: isScreenSubmitShortcut(event) })
         return
       }
       if (event.key === 'ArrowUp' && (draft === '' || history.index !== null)) {

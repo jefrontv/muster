@@ -11,7 +11,12 @@ import type {
   ChatThreadStreamEvent,
   ChatThreadStreamStartResult
 } from '../../shared/chat-thread-stream-types'
-import { createChatThreadStreamDecoder, resultModelWindows } from './chat-thread-stream-decode'
+import {
+  createChatThreadStreamDecoder,
+  replayedUserMessageId,
+  resultModelWindows
+} from './chat-thread-stream-decode'
+import { createChatThreadMessageQueue } from './chat-thread-message-queue'
 import { recordClaudeModelSighting } from './claude-model-registry'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
 import {
@@ -22,43 +27,28 @@ import {
   commandWithMcpConfigFile,
   removeChatThreadMcpConfigFile
 } from './chat-thread-stream-mcp-config'
-import {
-  buildChatStreamUserContent,
-  readChatStreamImages,
-  type ChatStreamImageRead
-} from './chat-thread-stream-user-content'
 import { buildPermissionControlResponse } from './chat-thread-permission-response'
 import type { ChatThreadStreamDeps, ChatThreadStreamSender } from './chat-thread-stream-deps'
+import { registry, writeStdinLine, type StreamEntry } from './chat-thread-stream-registry'
+import { writeUserMessage } from './chat-thread-stream-actions'
 
 export type {
   ChatThreadStreamDeps,
   ChatThreadStreamSender,
   ChatThreadStreamSpawn
 } from './chat-thread-stream-deps'
+export {
+  listChatThreadMessageQueues,
+  listPendingChatThreadPermissionRequests,
+  removeChatThreadQueuedMessage,
+  respondChatThreadPermission,
+  sendChatThreadStreamMessage,
+  sendNextChatThreadQueuedMessage,
+  steerChatThreadQueuedMessage
+} from './chat-thread-stream-actions'
 
 const STDERR_TAIL_LIMIT = 4_096
 const STOP_KILL_GRACE_MS = 1_500
-
-type StreamEntry = {
-  child: ChildProcess
-  /** True once the renderer asked for the stop; suppresses every later event (exit included) so a
-   *  stopped or superseded child never races the thread's next session. */
-  stopping: boolean
-  killTimer: ReturnType<typeof setTimeout> | null
-  /** can_use_tool requests awaiting a renderer verdict, by request id. The input
-   *  is kept so an allow without updatedInput echoes it back; the tool name so a
-   *  reloaded renderer can rebuild the prompt. Entries are denied on stop so the
-   *  CLI never hangs on an unanswerable question. */
-  pendingPermissionRequests: Map<string, { toolName: string; input: unknown }>
-  /** Outgoing control_request id counter (interrupts) — unique per child. */
-  controlRequestCounter: number
-  /** Revokes the muster MCP token and deletes the per-thread tmp files; runs once. */
-  cleanup: (() => void) | null
-  /** Renderer-facing event sink for this child (coalesced, pending-permission aware). */
-  emit: (event: ChatThreadStreamEvent) => void
-}
-
-const registry = new Map<string, StreamEntry>()
 
 function defaultSpawn(
   command: string,
@@ -128,7 +118,11 @@ export function startChatThreadStream(
     pendingPermissionRequests: new Map(),
     controlRequestCounter: 0,
     cleanup,
-    emit: () => undefined
+    emit: () => undefined,
+    queue: createChatThreadMessageQueue({
+      write: (message, priority) => writeUserMessage(entry, threadId, message, priority),
+      onChange: (queue) => entry.emit({ threadId, kind: 'queue-changed', queue })
+    })
   }
   registry.set(threadId, entry)
 
@@ -155,12 +149,19 @@ export function startChatThreadStream(
       entry.pendingPermissionRequests.delete(event.requestId)
     }
     emitter.emit(event)
+    if (event.kind === 'turn-complete') {
+      entry.queue.noteTurnComplete()
+    }
   }
   const emit = entry.emit
   const decoder = createChatThreadStreamDecoder(threadId, emit, (record) => {
     // Learn every model the CLI reports so new models adapt without a release.
     for (const entry of resultModelWindows(record)) {
       void recordClaudeModelSighting({ model: entry.model, contextWindow: entry.contextWindow })
+    }
+    const deliveredId = replayedUserMessageId(record)
+    if (deliveredId) {
+      entry.queue.noteDelivered(deliveredId)
     }
   })
   let stderrTail = ''
@@ -194,104 +195,18 @@ export function startChatThreadStream(
   return { ok: true }
 }
 
-function writeStdinLine(entry: StreamEntry, payload: unknown): boolean {
-  const stdin = entry.child.stdin
-  if (entry.stopping || !stdin || stdin.destroyed || !stdin.writable) {
-    return false
-  }
-  try {
-    stdin.write(`${JSON.stringify(payload)}\n`)
-  } catch {
-    return false
-  }
-  return true
-}
-
-export async function sendChatThreadStreamMessage(
-  threadId: string,
-  text: string,
-  imagePaths?: readonly string[]
-): Promise<boolean> {
-  if (!registry.has(threadId)) {
-    return false
-  }
-  const { images, skipped }: ChatStreamImageRead = imagePaths?.length
-    ? await readChatStreamImages(imagePaths)
-    : { images: [], skipped: [] }
-  // Re-check: the child can die during the file reads.
-  const entry = registry.get(threadId)
-  if (!entry) {
-    return false
-  }
-  if (skipped.length > 0) {
-    entry.emit({ threadId, kind: 'attachments-skipped', paths: skipped })
-  }
-  const content = buildChatStreamUserContent(text, images)
-  if (content.length === 0) {
-    return false
-  }
-  return writeStdinLine(entry, {
-    type: 'user',
-    message: { role: 'user', content }
-  })
-}
-
-export function respondChatThreadPermission(args: {
-  threadId: string
-  requestId: string
-  behavior: 'allow' | 'deny'
-  message?: string
-  updatedInput?: unknown
-}): boolean {
-  const entry = registry.get(args.threadId)
-  if (!entry) {
-    return false
-  }
-  // A stale request_id (turn already interrupted) is written anyway; the CLI
-  // tolerates unknown ids silently (verified against 2.1.224).
-  const originalInput = entry.pendingPermissionRequests.get(args.requestId)?.input
-  entry.pendingPermissionRequests.delete(args.requestId)
-  return writeStdinLine(
-    entry,
-    buildPermissionControlResponse({
-      ...args,
-      updatedInput: args.updatedInput ?? originalInput
-    })
-  )
-}
-
 export function interruptChatThreadStream(threadId: string): boolean {
   const entry = registry.get(threadId)
   if (!entry) {
     return false
   }
   entry.controlRequestCounter += 1
+  entry.queue.noteInterruptRequested()
   return writeStdinLine(entry, {
     type: 'control_request',
     request_id: `req_${entry.controlRequestCounter}`,
     request: { subtype: 'interrupt' }
   })
-}
-
-/** Every can_use_tool question still awaiting a verdict, across live threads.
- *  A renderer that reloaded mid-question has no record of it, and the CLI blocks
- *  until someone answers — so the renderer re-reads them on mount. */
-export function listPendingChatThreadPermissionRequests(): {
-  threadId: string
-  requestId: string
-  toolName: string
-  input: unknown
-}[] {
-  const pending: { threadId: string; requestId: string; toolName: string; input: unknown }[] = []
-  for (const [threadId, entry] of registry) {
-    if (entry.stopping) {
-      continue
-    }
-    for (const [requestId, request] of entry.pendingPermissionRequests) {
-      pending.push({ threadId, requestId, toolName: request.toolName, input: request.input })
-    }
-  }
-  return pending
 }
 
 export function stopChatThreadStream(threadId: string): void {

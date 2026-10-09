@@ -14890,7 +14890,8 @@
         "defaultModel": "Default",
         "defaultEffort": "Default",
         "effortFromSettings": "From your Claude settings",
-        "effortCliDefault": "Claude's default effort for this model"
+        "effortCliDefault": "Claude's default effort for this model",
+        "queue": "Queue a message ({{shortcut}} to steer)"
       },
       "tool": {
         "running": "Running…",
@@ -15056,6 +15057,25 @@
         "changedMany": "Changed {{count}} files",
         "nameList": "{{rest}} and {{last}}",
         "changed": "Changed {{files}}"
+      },
+      "queue": {
+        "label": "Queued messages",
+        "title": "Queued",
+        "paused": "Paused after Stop",
+        "sendNext": "Send next",
+        "steer": "Steer",
+        "steerTooltip": "Send now. The agent reads it at its next step.",
+        "steerAria": "Steer: {{text}}",
+        "edit": "Edit",
+        "editAria": "Edit: {{text}}",
+        "remove": "Remove",
+        "removeAria": "Remove: {{text}}",
+        "steering": "Steering…",
+        "sending": "Sending…",
+        "imageCount": "{{count}} images attached",
+        "replaceDraft": "Replace your draft?",
+        "replace": "Replace",
+        "cancel": "Cancel"
       }
     },
     "tab": {

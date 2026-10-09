@@ -42,6 +42,8 @@ export type NativeChatComposerFieldProps = {
   fileAttachments: readonly NativeChatComposerImageAttachment[]
   sendButtonDisabled: boolean
   isWorking: boolean
+  /** Stream transport: a send while working is queued rather than typed into a TUI. */
+  hasTransport?: boolean
   attachDisabled: boolean
   dictationDisabled: boolean
   dictation: NativeChatDictation
@@ -96,6 +98,7 @@ export function NativeChatComposerField({
   fileAttachments,
   sendButtonDisabled,
   isWorking,
+  hasTransport = false,
   attachDisabled,
   dictationDisabled,
   dictation,
@@ -262,7 +265,11 @@ export function NativeChatComposerField({
                   ? `${pickerListboxId}-option-${Math.min(activeSuggestion, autocomplete.items.length - 1)}`
                   : undefined
               }
-              placeholder={nativeChatComposerPlaceholder(hasPty, canSend)}
+              placeholder={nativeChatComposerPlaceholder(
+                hasPty,
+                canSend,
+                hasTransport && isWorking
+              )}
               // Why: coarse-pointer min-height follows the app's touch target convention.
               // field-sizing grows the box with the draft between min/max; past
               // max-height it scrolls, and scrollbar-sleek keeps that gutter quiet.

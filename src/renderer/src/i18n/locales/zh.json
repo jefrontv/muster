@@ -14867,7 +14867,8 @@
         "defaultModel": "Default",
         "defaultEffort": "Default",
         "effortFromSettings": "From your Claude settings",
-        "effortCliDefault": "Claude's default effort for this model"
+        "effortCliDefault": "Claude's default effort for this model",
+        "queue": "将消息加入队列（{{shortcut}} 立即引导）"
       },
       "tool": {
         "running": "正在运行…",
@@ -15033,6 +15034,25 @@
         "changedMany": "Changed {{count}} files",
         "nameList": "{{rest}} and {{last}}",
         "changed": "Changed {{files}}"
+      },
+      "queue": {
+        "label": "排队的消息",
+        "title": "排队中",
+        "paused": "停止后已暂停",
+        "sendNext": "发送下一条",
+        "steer": "立即引导",
+        "steerTooltip": "立即发送。代理会在下一步读取。",
+        "steerAria": "立即引导：{{text}}",
+        "edit": "编辑",
+        "editAria": "编辑：{{text}}",
+        "remove": "移除",
+        "removeAria": "移除：{{text}}",
+        "steering": "正在引导…",
+        "sending": "正在发送…",
+        "imageCount": "已附加 {{count}} 张图片",
+        "replaceDraft": "替换你的草稿？",
+        "replace": "替换",
+        "cancel": "取消"
       }
     },
     "tab": {

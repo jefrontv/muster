@@ -55,6 +55,7 @@ beforeEach(() => {
       notifications: { dispatch: vi.fn(async () => ({ delivered: true })) },
       chatThreadStream: {
         pendingPermissions,
+        queues: vi.fn(async () => []),
         onEvent: (cb: (event: Record<string, unknown>) => void) => {
           listener = cb
           return unsubscribe

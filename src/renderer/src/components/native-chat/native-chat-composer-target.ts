@@ -1,4 +1,5 @@
 import { translate } from '@/i18n/i18n'
+import { getScreenSubmitShortcutLabel } from '@/lib/screen-submit-shortcut'
 import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
 import type { getSettingsForAgentTabRuntimeOwner } from '@/lib/agent-paste-draft'
 
@@ -11,7 +12,12 @@ export type NativeChatResolvedTarget = {
  *  pathological clipboard can't stall the round-trip. */
 export const NATIVE_CHAT_CONTEXT_PASTE_MAX_BYTES = 16 * 1024 * 1024
 
-export function nativeChatComposerPlaceholder(hasPty: boolean, canSend: boolean): string {
+/** queueing: a stream thread mid-turn, where Enter queues and Cmd/Ctrl+Enter steers. */
+export function nativeChatComposerPlaceholder(
+  hasPty: boolean,
+  canSend: boolean,
+  queueing = false
+): string {
   if (!hasPty) {
     return translate(
       'components.native-chat.composer.noPty',
@@ -20,6 +26,13 @@ export function nativeChatComposerPlaceholder(hasPty: boolean, canSend: boolean)
   }
   if (!canSend) {
     return translate('components.native-chat.composer.locked', 'Input is held by another device.')
+  }
+  if (queueing) {
+    return translate(
+      'components.native-chat.composer.queue',
+      'Queue a message ({{shortcut}} to steer)',
+      { shortcut: getScreenSubmitShortcutLabel() }
+    )
   }
   return translate('components.native-chat.composer.reply', 'Reply…')
 }

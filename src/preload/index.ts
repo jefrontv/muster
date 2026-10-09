@@ -962,12 +962,18 @@ const api = {
 
   chatThreadStream: {
     start: (args) => ipcRenderer.invoke('chatThreadStream:start', args),
-    send: (threadId, text, imagePaths) =>
-      ipcRenderer.invoke('chatThreadStream:send', threadId, text, imagePaths),
+    send: (threadId, text, imagePaths, mode) =>
+      ipcRenderer.invoke('chatThreadStream:send', threadId, text, imagePaths, mode),
     respondPermission: (args) => ipcRenderer.invoke('chatThreadStream:respondPermission', args),
     interrupt: (threadId) => ipcRenderer.invoke('chatThreadStream:interrupt', threadId),
     stop: (threadId) => ipcRenderer.invoke('chatThreadStream:stop', threadId),
     pendingPermissions: () => ipcRenderer.invoke('chatThreadStream:pendingPermissions'),
+    steerQueued: (threadId, messageId) =>
+      ipcRenderer.invoke('chatThreadStream:steerQueued', threadId, messageId),
+    removeQueued: (threadId, messageId) =>
+      ipcRenderer.invoke('chatThreadStream:removeQueued', threadId, messageId),
+    sendNextQueued: (threadId) => ipcRenderer.invoke('chatThreadStream:sendNextQueued', threadId),
+    queues: () => ipcRenderer.invoke('chatThreadStream:queues'),
     onEvent: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

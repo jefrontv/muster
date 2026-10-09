@@ -14867,7 +14867,8 @@
         "defaultModel": "Default",
         "defaultEffort": "Default",
         "effortFromSettings": "From your Claude settings",
-        "effortCliDefault": "Claude's default effort for this model"
+        "effortCliDefault": "Claude's default effort for this model",
+        "queue": "Pon un mensaje en cola ({{shortcut}} para redirigir)"
       },
       "tool": {
         "running": "Ejecutando…",
@@ -15033,6 +15034,25 @@
         "changedMany": "Changed {{count}} files",
         "nameList": "{{rest}} and {{last}}",
         "changed": "Changed {{files}}"
+      },
+      "queue": {
+        "label": "Mensajes en cola",
+        "title": "En cola",
+        "paused": "En pausa tras Detener",
+        "sendNext": "Enviar siguiente",
+        "steer": "Redirigir",
+        "steerTooltip": "Enviar ahora. El agente lo lee en su siguiente paso.",
+        "steerAria": "Redirigir: {{text}}",
+        "edit": "Editar",
+        "editAria": "Editar: {{text}}",
+        "remove": "Quitar",
+        "removeAria": "Quitar: {{text}}",
+        "steering": "Redirigiendo…",
+        "sending": "Enviando…",
+        "imageCount": "{{count}} imágenes adjuntas",
+        "replaceDraft": "¿Reemplazar tu borrador?",
+        "replace": "Reemplazar",
+        "cancel": "Cancelar"
       }
     },
     "tab": {

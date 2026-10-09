@@ -14,7 +14,14 @@ import { useAppStore } from '@/store'
 import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-option-relaunch'
 import { ensureChatThreadSession } from '@/lib/chat-thread-session-ensure'
 import type { NativeChatTransport } from '@/components/native-chat/NativeChatView'
-import type { NativeChatPermissionBehavior } from '@/components/native-chat/native-chat-view-types'
+import type {
+  NativeChatMessageQueue,
+  NativeChatPermissionBehavior
+} from '@/components/native-chat/native-chat-view-types'
+import type {
+  ChatThreadSendMode,
+  ChatThreadSendOutcome
+} from '../../../../shared/chat-thread-stream-types'
 
 export function useChatThreadTransport({
   thread,
@@ -35,13 +42,18 @@ export function useChatThreadTransport({
   )
   const permissionRequests = useAppStore((s) => s.chatThreadPermissionRequests[thread.id])
   const lastError = useAppStore((s) => s.chatThreadLastError[thread.id] ?? null)
+  const queueSnapshot = useAppStore((s) => s.chatThreadMessageQueues[thread.id])
 
   // Resume already has the conversation; a new thread injects the brief once.
   const briefInjectedRef = useRef(thread.claudeSessionId !== null)
   const send = useCallback(
-    async (text: string, imagePaths?: string[]): Promise<boolean> => {
+    async (
+      text: string,
+      imagePaths?: string[],
+      mode: ChatThreadSendMode = 'auto'
+    ): Promise<ChatThreadSendOutcome> => {
       if (!(await ensureChatThreadSession(thread.id))) {
-        return false
+        return 'failed'
       }
       let payload = text
       if (!briefInjectedRef.current) {
@@ -56,9 +68,22 @@ export function useChatThreadTransport({
         void updateChatThread(thread.id, { title: derived, autoTitle: derived })
       }
       useAppStore.getState().touchChatThreadSession(thread.id)
-      return window.api.chatThreadStream.send(thread.id, payload, imagePaths)
+      return window.api.chatThreadStream.send(thread.id, payload, imagePaths, mode)
     },
     [thread.id, thread.title, updateChatThread, workspace]
+  )
+  const messageQueue = useMemo<NativeChatMessageQueue | undefined>(
+    () =>
+      queueSnapshot
+        ? {
+            items: queueSnapshot.items,
+            paused: queueSnapshot.paused,
+            steer: (id) => void window.api.chatThreadStream.steerQueued(thread.id, id),
+            remove: (id) => void window.api.chatThreadStream.removeQueued(thread.id, id),
+            sendNext: () => void window.api.chatThreadStream.sendNextQueued(thread.id)
+          }
+        : undefined,
+    [queueSnapshot, thread.id]
   )
   const prewarm = useCallback(() => {
     void ensureChatThreadSession(thread.id)
@@ -136,7 +161,8 @@ export function useChatThreadTransport({
       respondPermission,
       fullAccess,
       setFullAccess,
-      lastError
+      lastError,
+      ...(messageQueue ? { messageQueue } : {})
     }),
     [
       send,
@@ -150,7 +176,8 @@ export function useChatThreadTransport({
       respondPermission,
       fullAccess,
       setFullAccess,
-      lastError
+      lastError,
+      messageQueue
     ]
   )
   return { transport, send }

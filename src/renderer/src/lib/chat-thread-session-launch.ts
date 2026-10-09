@@ -38,9 +38,11 @@ import { chatThreadPaneIdentity } from './chat-thread-pane-identity'
  *  emit can_use_tool control_requests instead of silently denying.
  *  `--permission-mode manual` overrides a user-level "auto" default whose
  *  classifier denies risky tools outright — manual asks, so the question
- *  reaches the composer's approval card instead of a silent denial. */
+ *  reaches the composer's approval card instead of a silent denial.
+ *  `--replay-user-messages` echoes each stdin message (with its uuid) when the
+ *  model receives it, which retires steered messages from the queue strip. */
 const CLAUDE_STREAM_FLAGS =
-  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages --permission-mode manual --permission-prompt-tool stdio'
+  '-p --verbose --input-format stream-json --output-format stream-json --include-partial-messages --replay-user-messages --permission-mode manual --permission-prompt-tool stdio'
 
 export type ChatThreadLaunchResult = {
   tabId: string

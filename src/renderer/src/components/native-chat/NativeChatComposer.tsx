@@ -24,6 +24,7 @@ import { useNativeChatPickerState } from './use-native-chat-picker-state'
 import { useNativeChatPickerCommandDispatch } from './use-native-chat-picker-command-dispatch'
 import { useNativeChatTransportSend } from './use-native-chat-transport-send'
 import { useNativeChatTypedInsertion } from './use-native-chat-typed-insertion'
+import { useNativeChatDraftRestore } from './use-native-chat-draft-restore'
 import { useNativeChatComposerSend } from './use-native-chat-composer-send'
 import { useNativeChatPromptStash } from './use-native-chat-prompt-stash'
 import { useNativeChatTaskAttachments } from './use-native-chat-task-attachments'
@@ -153,6 +154,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     const {
       imageAttachments,
       fileAttachments,
+      appendImageAttachments,
       attachResolvedPaths,
       clearImageAttachments,
       removeImageAttachment,
@@ -205,10 +207,27 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       setNotice
     })
 
+    const { hasDraft, restoreDraft } = useNativeChatDraftRestore({
+      draft,
+      imageAttachmentCount: imageAttachments.length,
+      setDraft,
+      setCaret,
+      clearImageAttachments,
+      appendImageAttachments,
+      focus
+    })
+
     useImperativeHandle(
       ref,
-      () => ({ focus, insertTypedText, handlePasteEvent: handlePaste, pasteFromClipboard }),
-      [focus, insertTypedText, handlePaste, pasteFromClipboard]
+      () => ({
+        focus,
+        insertTypedText,
+        handlePasteEvent: handlePaste,
+        pasteFromClipboard,
+        hasDraft,
+        restoreDraft
+      }),
+      [focus, insertTypedText, handlePaste, pasteFromClipboard, hasDraft, restoreDraft]
     )
 
     const { pickAttachment } = useNativeChatFileAttachmentActions(attachExternalPaths)
@@ -237,6 +256,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     const sendViaTransport = useNativeChatTransportSend({
       agent,
       transportSend,
+      isWorking,
       onOptimisticSend,
       onOptimisticSendCanceled,
       setHistory,
@@ -367,6 +387,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         fileAttachments={fileAttachments}
         sendButtonDisabled={sendButtonDisabled}
         isWorking={isWorking}
+        hasTransport={hasTransport}
         attachDisabled={disabled}
         dictationDisabled={false}
         dictation={dictation}

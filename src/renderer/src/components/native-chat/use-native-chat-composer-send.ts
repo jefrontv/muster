@@ -22,6 +22,7 @@ import type { NativeChatPtySessionOptionsSurface } from './native-chat-pty-sessi
 import type { AgentType } from '../../../../shared/agent-status-types'
 import { formatActiveCollabTaskReference } from './native-chat-activecollab-references'
 import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
+import type { ChatThreadSendMode } from '../../../../shared/chat-thread-stream-types'
 
 // Why: a plain ESC byte is what the agent TUIs read as the interrupt key over a
 // PTY (matching how xterm forwards Escape). The richer interrupt-intent
@@ -44,7 +45,7 @@ export type UseNativeChatComposerSendArgs = {
   isDispatchingSessionOption: boolean
   classifySend: (text: string) => NativeChatSendClassification
   resolveTarget: () => NativeChatResolvedTarget | null
-  sendViaTransport: (text: string, imagePaths?: string[]) => void
+  sendViaTransport: (text: string, imagePaths?: string[], mode?: ChatThreadSendMode) => void
   cancelPendingSends: () => void
   trackPendingSend: (handle: NativeChatSendHandle, pendingId?: string) => void
   transportInterrupt?: () => Promise<boolean>
@@ -61,7 +62,7 @@ export type UseNativeChatComposerSendArgs = {
 }
 
 export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): {
-  send: () => void
+  send: (options?: { steer?: boolean }) => void
   interrupt: () => void
 } {
   const {
@@ -93,121 +94,128 @@ export function useNativeChatComposerSend(args: UseNativeChatComposerSendArgs): 
     setNotice
   } = args
 
-  const send = useCallback(() => {
-    // File and task chips become references appended after the typed text, so
-    // the agent can read them while the composer shows clean chips instead.
-    const fileReferences = fileAttachmentPaths.map(formatNativeChatFileReference).join(' ')
-    const taskReferences = taskAttachments.map(formatActiveCollabTaskReference).join('\n')
-    const references = [fileReferences, taskReferences].filter(Boolean).join('\n')
-    const text = references ? `${draft.trimEnd()}${draft.trim() ? '\n' : ''}${references}` : draft
-    const imagePaths = imageAttachmentPaths
-    if ((text.trim() === '' && imagePaths.length === 0) || disabled) {
-      return
-    }
-    // Why: block a normal send while a session-option command (e.g. /model) is
-    // still writing its body+delayed-Enter to the same pty, so the two write
-    // sequences can't interleave on one input line.
-    if (isDispatchingSessionOption) {
-      return
-    }
-    if (hasTransport) {
-      // Stream transport: plain user turns (with optional images as base64
-      // content blocks).
-      if (classifySend(text) !== 'chat') {
-        // The headless CLI runs slash text itself — built-ins, custom commands,
-        // and a graceful "Unknown command: /x" for the rest — so the draft goes
-        // through verbatim. Reference trailers are withheld (they would read as
-        // command arguments); chips stay staged for the next prose turn.
-        sendViaTransport(draft)
+  const send = useCallback(
+    (options?: { steer?: boolean }) => {
+      // File and task chips become references appended after the typed text, so
+      // the agent can read them while the composer shows clean chips instead.
+      const fileReferences = fileAttachmentPaths.map(formatNativeChatFileReference).join(' ')
+      const taskReferences = taskAttachments.map(formatActiveCollabTaskReference).join('\n')
+      const references = [fileReferences, taskReferences].filter(Boolean).join('\n')
+      const text = references ? `${draft.trimEnd()}${draft.trim() ? '\n' : ''}${references}` : draft
+      const imagePaths = imageAttachmentPaths
+      if ((text.trim() === '' && imagePaths.length === 0) || disabled) {
         return
       }
-      // Base64 image blocks carry no filesystem identity — append each image's
-      // path as a note line so the agent can act on the file, not just see it.
-      const textWithImageNotes =
-        imagePaths.length > 0
-          ? `${text.trimEnd()}\n${imagePaths.map(formatNativeChatImagePathNote).join('\n')}`
-          : text
-      sendViaTransport(textWithImageNotes, imagePaths.length > 0 ? imagePaths : undefined)
+      // Why: block a normal send while a session-option command (e.g. /model) is
+      // still writing its body+delayed-Enter to the same pty, so the two write
+      // sequences can't interleave on one input line.
+      if (isDispatchingSessionOption) {
+        return
+      }
+      if (hasTransport) {
+        // Stream transport: plain user turns (with optional images as base64
+        // content blocks).
+        if (classifySend(text) !== 'chat') {
+          // The headless CLI runs slash text itself — built-ins, custom commands,
+          // and a graceful "Unknown command: /x" for the rest — so the draft goes
+          // through verbatim. Reference trailers are withheld (they would read as
+          // command arguments); chips stay staged for the next prose turn.
+          sendViaTransport(draft)
+          return
+        }
+        // Base64 image blocks carry no filesystem identity — append each image's
+        // path as a note line so the agent can act on the file, not just see it.
+        const textWithImageNotes =
+          imagePaths.length > 0
+            ? `${text.trimEnd()}\n${imagePaths.map(formatNativeChatImagePathNote).join('\n')}`
+            : text
+        sendViaTransport(
+          textWithImageNotes,
+          imagePaths.length > 0 ? imagePaths : undefined,
+          options?.steer ? 'steer' : 'auto'
+        )
+        clearImageAttachments()
+        clearTaskAttachments()
+        return
+      }
+      const target = resolveTarget()
+      if (!target) {
+        return
+      }
+      const classification = classifySend(text)
+      let pendingHandle: NativeChatSendHandle | null = null
+      // Why: image attachments take the attachment send path even for a
+      // command/unknown send, otherwise `clearImageAttachments()` below drops
+      // them silently when the text starts with the agent's slash/skill prefix.
+      if (classification !== 'chat' && imagePaths.length === 0) {
+        pendingHandle = sendNativeChatMessage(target.settings, target.ptyId, text)
+      } else if (imagePaths.length > 0) {
+        pendingHandle = sendNativeChatMessageWithImageAttachments(
+          target.settings,
+          target.ptyId,
+          text,
+          imagePaths
+        )
+      } else if (text.trim().length > 0) {
+        pendingHandle = sendNativeChatMessage(target.settings, target.ptyId, text)
+      } else {
+        submitNativeChatPrompt(target.settings, target.ptyId)
+      }
+      if (classification !== 'chat') {
+        if (pendingHandle) {
+          trackPendingSend(pendingHandle)
+        }
+        // Why: only verified catalog commands can truthfully claim they ran or
+        // mutate session-option state; unknown slash-like text has no such proof.
+        if (classification === 'command') {
+          onSlashCommand?.(text.trim())
+          sessionOptionsSurface?.recordOutgoingCommand(text.trim())
+        }
+      } else {
+        const pendingId = onOptimisticSend?.(text, imagePaths)
+        if (pendingHandle) {
+          trackPendingSend(pendingHandle, pendingId)
+        }
+      }
+      // Why: U10 telemetry — record adoption + local-vs-remote runtime split. The
+      // agent prop is the loose AgentType; the emitter narrows unknowns to 'other'.
+      emitNativeChatMessageSent({
+        agent,
+        runtime: nativeChatComposerTargetIsRemote(target.ptyId) ? 'remote' : 'local'
+      })
+      setHistory((prev) => pushHistory(prev, text))
+      setDraft('')
+      setCaret(0)
+      clearSkillOrigin()
       clearImageAttachments()
       clearTaskAttachments()
-      return
-    }
-    const target = resolveTarget()
-    if (!target) {
-      return
-    }
-    const classification = classifySend(text)
-    let pendingHandle: NativeChatSendHandle | null = null
-    // Why: image attachments take the attachment send path even for a
-    // command/unknown send, otherwise `clearImageAttachments()` below drops
-    // them silently when the text starts with the agent's slash/skill prefix.
-    if (classification !== 'chat' && imagePaths.length === 0) {
-      pendingHandle = sendNativeChatMessage(target.settings, target.ptyId, text)
-    } else if (imagePaths.length > 0) {
-      pendingHandle = sendNativeChatMessageWithImageAttachments(
-        target.settings,
-        target.ptyId,
-        text,
-        imagePaths
-      )
-    } else if (text.trim().length > 0) {
-      pendingHandle = sendNativeChatMessage(target.settings, target.ptyId, text)
-    } else {
-      submitNativeChatPrompt(target.settings, target.ptyId)
-    }
-    if (classification !== 'chat') {
-      if (pendingHandle) {
-        trackPendingSend(pendingHandle)
-      }
-      // Why: only verified catalog commands can truthfully claim they ran or
-      // mutate session-option state; unknown slash-like text has no such proof.
-      if (classification === 'command') {
-        onSlashCommand?.(text.trim())
-        sessionOptionsSurface?.recordOutgoingCommand(text.trim())
-      }
-    } else {
-      const pendingId = onOptimisticSend?.(text, imagePaths)
-      if (pendingHandle) {
-        trackPendingSend(pendingHandle, pendingId)
-      }
-    }
-    // Why: U10 telemetry — record adoption + local-vs-remote runtime split. The
-    // agent prop is the loose AgentType; the emitter narrows unknowns to 'other'.
-    emitNativeChatMessageSent({
+      setNotice(null)
+    },
+    [
       agent,
-      runtime: nativeChatComposerTargetIsRemote(target.ptyId) ? 'remote' : 'local'
-    })
-    setHistory((prev) => pushHistory(prev, text))
-    setDraft('')
-    setCaret(0)
-    clearSkillOrigin()
-    clearImageAttachments()
-    clearTaskAttachments()
-    setNotice(null)
-  }, [
-    agent,
-    classifySend,
-    clearSkillOrigin,
-    clearImageAttachments,
-    draft,
-    imageAttachmentPaths,
-    fileAttachmentPaths,
-    taskAttachments,
-    clearTaskAttachments,
-    disabled,
-    hasTransport,
-    isDispatchingSessionOption,
-    resolveTarget,
-    onOptimisticSend,
-    onSlashCommand,
-    sendViaTransport,
-    sessionOptionsSurface,
-    trackPendingSend,
-    setCaret,
-    setDraft,
-    setHistory,
-    setNotice
-  ])
+      classifySend,
+      clearSkillOrigin,
+      clearImageAttachments,
+      draft,
+      imageAttachmentPaths,
+      fileAttachmentPaths,
+      taskAttachments,
+      clearTaskAttachments,
+      disabled,
+      hasTransport,
+      isDispatchingSessionOption,
+      resolveTarget,
+      onOptimisticSend,
+      onSlashCommand,
+      sendViaTransport,
+      sessionOptionsSurface,
+      trackPendingSend,
+      setCaret,
+      setDraft,
+      setHistory,
+      setNotice
+    ]
+  )
 
   const interrupt = useCallback(() => {
     cancelPendingSends()

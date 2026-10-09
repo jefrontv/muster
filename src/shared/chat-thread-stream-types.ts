@@ -26,6 +26,33 @@ export type ChatThreadStreamEvent =
   /** Attachments dropped from a send (unsupported type, over the size cap, unreadable). */
   | { threadId: string; kind: 'attachments-skipped'; paths: string[] }
   | { threadId: string; kind: 'exit'; code: number | null; error?: string }
+  /** Messages held or in flight while the agent works; the full queue each time. */
+  | { threadId: string; kind: 'queue-changed'; queue: ChatThreadMessageQueueSnapshot }
+
+/** queued: held by Muster until the turn ends. sending/steering: written to the
+ *  CLI, waiting for it to hand the message to the model. */
+export type ChatThreadQueuedMessageState = 'queued' | 'sending' | 'steering'
+
+export type ChatThreadQueuedMessage = {
+  /** Also the CLI message uuid, which the CLI echoes back on delivery. */
+  id: string
+  text: string
+  imagePaths?: string[]
+  queuedAt: number
+  state: ChatThreadQueuedMessageState
+}
+
+export type ChatThreadMessageQueueSnapshot = {
+  items: ChatThreadQueuedMessage[]
+  /** Set after a Stop: held messages wait for an explicit send instead of draining. */
+  paused: boolean
+}
+
+/** sent: written as a normal turn. queued: held until the turn ends.
+ *  steered: written mid-turn for the model's next step. */
+export type ChatThreadSendOutcome = 'sent' | 'queued' | 'steered' | 'failed'
+
+export type ChatThreadSendMode = 'auto' | 'steer'
 
 export type ChatThreadPermissionResponseArgs = {
   threadId: string

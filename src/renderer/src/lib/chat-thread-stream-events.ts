@@ -99,6 +99,17 @@ export function installChatThreadStreamEvents(): () => void {
     })
     .catch(() => undefined)
 
+  // Same for messages main is holding behind a running turn.
+  void window.api.chatThreadStream
+    .queues()
+    .then((queues) => {
+      const store = useAppStore.getState()
+      for (const { threadId, queue } of queues) {
+        store.setChatThreadMessageQueue(threadId, queue)
+      }
+    })
+    .catch(() => undefined)
+
   const unsubscribe = window.api.chatThreadStream.onEvent((event) => {
     const store = useAppStore.getState()
     switch (event.kind) {
@@ -216,6 +227,9 @@ export function installChatThreadStreamEvents(): () => void {
         break
       case 'permission-cancel':
         store.removeChatThreadPermissionRequest(event.threadId, event.requestId)
+        break
+      case 'queue-changed':
+        store.setChatThreadMessageQueue(event.threadId, event.queue)
         break
       case 'attachments-skipped': {
         // Main dropped these before the turn went out; the turn itself still

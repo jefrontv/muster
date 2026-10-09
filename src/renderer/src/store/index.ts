@@ -46,6 +46,7 @@ import { createOrcaProfilesSlice } from './slices/orca-profiles'
 import { createNewIssueDraftSlice } from './slices/new-issue-draft'
 import { createRemoteServerUpdatesSlice } from './slices/remote-server-updates'
 import { createChatModeSlice } from './slices/chat-mode'
+import { createChatThreadMessageQueueSlice } from './slices/chat-thread-message-queue-state'
 import { e2eConfig } from '@/lib/e2e-config'
 import type { createWebRuntimeSessionTerminal } from '@/runtime/web-runtime-session'
 import { registerHttpLinkStoreAccessor } from '@/lib/http-link-routing'
@@ -100,7 +101,8 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createOrcaProfilesSlice(...a),
   ...createNewIssueDraftSlice(...a),
   ...createRemoteServerUpdatesSlice(...a),
-  ...createChatModeSlice(...a)
+  ...createChatModeSlice(...a),
+  ...createChatThreadMessageQueueSlice(...a)
 }))
 
 registerHttpLinkStoreAccessor(() => useAppStore.getState())

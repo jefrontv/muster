@@ -3,6 +3,11 @@ import type { NativeChatSurface } from '../../../../shared/native-chat-tool-acti
 import type { TuiAgent } from '../../../../shared/types'
 import type { NativeChatContextMenuActions } from './use-native-chat-context-menu'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
+import type {
+  ChatThreadQueuedMessage,
+  ChatThreadSendMode,
+  ChatThreadSendOutcome
+} from '../../../../shared/chat-thread-stream-types'
 
 /** A pending can_use_tool question surfaced by the stream transport. */
 export type NativeChatPermissionRequest = {
@@ -16,13 +21,30 @@ export type NativeChatPermissionRequest = {
  *  switches the session to full access (every later request auto-approves). */
 export type NativeChatPermissionBehavior = 'allow' | 'allow-always' | 'allow-all' | 'deny'
 
+/** Messages held behind a running turn, with the actions the queue strip offers. */
+export type NativeChatMessageQueue = {
+  items: ChatThreadQueuedMessage[]
+  /** Stop paused the queue; held messages wait for sendNext. */
+  paused: boolean
+  steer: (id: string) => void
+  remove: (id: string) => void
+  sendNext: () => void
+}
+
 /** Non-PTY message transport (chat-mode's headless stream-json child). When
  *  present it replaces the PTY send path; PTY-only affordances (interrupt ESC,
  *  attachments) degrade gracefully. */
 export type NativeChatTransport = {
   /** Deliver one user turn (optionally with image attachments as base64
-   *  content blocks); resolves false when the stream is gone. */
-  send: (text: string, imagePaths?: string[]) => Promise<boolean>
+   *  content blocks). While a turn runs, auto holds it in the queue and steer
+   *  hands it to the running turn; resolves 'failed' when the stream is gone. */
+  send: (
+    text: string,
+    imagePaths?: string[],
+    mode?: ChatThreadSendMode
+  ) => Promise<ChatThreadSendOutcome>
+  /** Absent for PTY chat, which has no queue. */
+  messageQueue?: NativeChatMessageQueue
   /** Start the process ahead of a send (composer focus), so the first token comes sooner. */
   prewarm?: () => void
   /** Token-streamed assistant text for the in-flight turn, or null. */

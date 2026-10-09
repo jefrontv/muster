@@ -125,6 +125,8 @@ export async function dispatchChatThreadSessionOption(args: {
   // The killed turn never completes, so its partial text would prefix the next turn's.
   latestStore.clearChatThreadStreamingText(threadId)
   latestStore.clearChatThreadPermissionRequests(threadId)
+  // Main dropped the stopped process's queue without an event.
+  latestStore.setChatThreadMessageQueue(threadId, null)
   if (previousSession) {
     latestStore.clearAgentLaunchConfig(previousSession.paneKey)
   }
