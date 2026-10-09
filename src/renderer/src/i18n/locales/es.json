@@ -10019,7 +10019,12 @@
               "unstage": "No se pudieron quitar los cambios del stage",
               "discard": "No se pudieron descartar los cambios"
             },
-            "commitMessagePlaceholder": "Mensaje ({{shortcut}} para hacer commit en {{branch}})"
+            "commitMessagePlaceholder": "Mensaje ({{shortcut}} para hacer commit en {{branch}})",
+            "noMatchingFiles": {
+              "heading": "No hay archivos coincidentes",
+              "body": "Ningún archivo modificado coincide con \"{{query}}\"",
+              "clear": "Borrar filtro"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "No se pudo iniciar el agente seleccionado.",

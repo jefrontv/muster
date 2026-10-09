@@ -142,6 +142,7 @@ import { SourceControlEntryContextMenu } from './source-control-entry-context-me
 import { resolveEntryContextMenuActions } from './source-control-entry-context-menu-actions'
 import { useCommitMessageFocusRequest } from './source-control-commit-message-focus'
 import { resolveCommitMessagePlaceholder } from './source-control-commit-message-placeholder'
+import { SourceControlNoMatchingFiles } from './source-control-no-matching-files'
 import {
   resolveDropdownRowHint,
   shouldShowDropdownRowTooltip
@@ -5899,9 +5900,9 @@ function SourceControlInner(): React.JSX.Element {
           )}
 
           {normalizedFilter && !hasFilteredUncommittedEntries && !hasFilteredBranchEntries && (
-            <EmptyState
-              heading="No matching files"
-              supportingText={`No changed files match "${filterQuery}"`}
+            <SourceControlNoMatchingFiles
+              query={filterQuery}
+              onClearFilter={() => setFilterQuery('')}
             />
           )}
 

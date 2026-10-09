@@ -10019,7 +10019,12 @@
               "unstage": "无法取消暂存更改",
               "discard": "无法放弃更改"
             },
-            "commitMessagePlaceholder": "信息（按 {{shortcut}} 提交到 {{branch}}）"
+            "commitMessagePlaceholder": "信息（按 {{shortcut}} 提交到 {{branch}}）",
+            "noMatchingFiles": {
+              "heading": "没有匹配的文件",
+              "body": "没有已更改的文件匹配“{{query}}”",
+              "clear": "清除筛选"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "无法启动选定的智能体。",

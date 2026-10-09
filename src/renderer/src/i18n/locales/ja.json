@@ -10019,7 +10019,12 @@
               "unstage": "変更をアンステージできませんでした",
               "discard": "変更を破棄できませんでした"
             },
-            "commitMessagePlaceholder": "メッセージ（{{shortcut}} で {{branch}} にコミット）"
+            "commitMessagePlaceholder": "メッセージ（{{shortcut}} で {{branch}} にコミット）",
+            "noMatchingFiles": {
+              "heading": "一致するファイルはありません",
+              "body": "「{{query}}」に一致する変更ファイルはありません",
+              "clear": "フィルターをクリア"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "選択した agent を開始できませんでした。",

@@ -10042,7 +10042,12 @@
               "unstage": "Couldn't unstage changes",
               "discard": "Couldn't discard changes"
             },
-            "commitMessagePlaceholder": "Message ({{shortcut}} to commit on {{branch}})"
+            "commitMessagePlaceholder": "Message ({{shortcut}} to commit on {{branch}})",
+            "noMatchingFiles": {
+              "heading": "No matching files",
+              "body": "No changed files match \"{{query}}\"",
+              "clear": "Clear filter"
+            }
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Could not start the selected agent.",
