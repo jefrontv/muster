@@ -258,8 +258,8 @@ export function GitHistoryPanel({
             <span>
               {translate('auto.components.right.sidebar.GitHistoryPanel.d836037d02', 'Commits')}
             </span>
-            {result && <span className="text-[10px] font-medium tabular-nums">{count}</span>}
-            {result?.hasMore && <span className="text-[10px] font-medium">+</span>}
+            {result && <span className="text-[11px] font-medium tabular-nums">{count}</span>}
+            {result?.hasMore && <span className="text-[11px] font-medium">+</span>}
           </button>
           <Tooltip>
             <TooltipTrigger asChild>

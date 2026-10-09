@@ -6812,7 +6812,7 @@ export function CommitArea({
               <span className="flex min-w-0 flex-col">
                 <span>{entry.label}</span>
                 {inlineHint ? (
-                  <span className="max-w-60 text-[10px] leading-4 text-muted-foreground">
+                  <span className="max-w-60 text-[11px] leading-4 text-muted-foreground">
                     {inlineHint}
                   </span>
                 ) : null}
@@ -6920,13 +6920,13 @@ export function CommitArea({
         className={cn(showComposer ? 'mt-1 flex items-stretch gap-1' : 'flex items-stretch gap-1')}
       >
         <div className="flex flex-1 items-stretch">
-          {/* Why: match the Checks hosted-review buttons so action-button shape is consistent across Source Control and Checks. */}
+          {/* Why: the style guide reserves the default variant for a flow's single affirmative action. */}
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="flex flex-1">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   size="xs"
                   disabled={primaryAction.disabled}
                   onClick={() => onPrimaryAction()}
@@ -6955,10 +6955,10 @@ export function CommitArea({
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="default"
                       size="xs"
                       className={cn(
-                        'rounded-l-none border-l border-border px-1.5 shrink-0',
+                        'rounded-l-none border-l border-primary-foreground/20 px-1.5 shrink-0',
                         // Why: mirror the primary's disabled dimming for a unified look, but the chevron stays clickable (its push/fetch/pull stay valid when Commit is disabled).
                         primaryAction.disabled && 'opacity-50'
                       )}
@@ -7369,7 +7369,7 @@ function SectionHeader({
       <div className="group/section flex items-center rounded-md pr-1 hover:bg-accent hover:text-accent-foreground">
         <button
           type="button"
-          className="flex flex-1 items-center gap-1 px-0.5 py-0.5 text-left text-xs font-semibold uppercase tracking-wider text-foreground/70 group-hover/section:text-accent-foreground"
+          className="flex flex-1 items-center gap-1 px-0.5 py-0.5 text-left text-[11px] font-semibold uppercase tracking-wider text-foreground/70 group-hover/section:text-accent-foreground"
           onClick={onToggle}
         >
           <ChevronDown
@@ -8222,7 +8222,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
           <>
             <DiffLineCounts added={entry.added} removed={entry.removed} />
             <span
-              className="w-4 shrink-0 text-center text-[10px] font-bold"
+              className="w-4 shrink-0 text-center text-[11px] font-bold"
               style={{ color: STATUS_COLORS[entry.status] }}
             >
               {STATUS_LABELS[entry.status]}
@@ -8411,7 +8411,7 @@ function BranchEntryRow({
         )}
         <DiffLineCounts added={entry.added} removed={entry.removed} />
         <span
-          className="w-4 shrink-0 text-center text-[10px] font-bold"
+          className="w-4 shrink-0 text-center text-[11px] font-bold"
           style={{ color: STATUS_COLORS[entry.status] }}
         >
           {STATUS_LABELS[entry.status]}
