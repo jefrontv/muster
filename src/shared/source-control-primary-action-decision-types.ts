@@ -68,6 +68,8 @@ export type SourceControlPrimaryActionDecisionInputs = {
   hasPartiallyStagedChanges: boolean
   hasMessage: boolean
   hasUnresolvedConflicts: boolean
+  // Why: with MERGE_HEAD set, Commit concludes the merge even when nothing differs from HEAD.
+  isMergeInProgress?: boolean
   isCommitting: boolean
   isRemoteOperationActive: boolean
   upstreamStatus: GitUpstreamStatus | undefined

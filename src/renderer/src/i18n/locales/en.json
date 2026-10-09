@@ -10589,6 +10589,28 @@
                   "confirm_label": "Amend Commit",
                   "load_failed": "Could not load the last commit message"
                 }
+              },
+              "in_progress": {
+                "skipConfirmTitle": "Skip this commit?",
+                "skipConfirmDescription": "The commit being applied is dropped from the rebased branch, along with any conflict resolutions made for it.",
+                "skipCommit": "Skip Commit",
+                "abortCherryPickTitle": "Abort cherry-pick?",
+                "abortCherryPickDescription": "This cancels the cherry-pick in progress and can discard conflict resolutions made during it.",
+                "abortCherryPick": "Abort cherry-pick",
+                "continueRebaseFailed": "Continue rebase failed",
+                "skipCommitFailed": "Skip commit failed",
+                "continueCherryPickFailed": "Continue cherry-pick failed",
+                "abortCherryPickFailed": "Abort cherry-pick failed",
+                "stoppedOnConflict": "Stopped at another conflict",
+                "stoppedOnConflictDescription": "Resolve and stage the conflicted files, then continue.",
+                "merge": "Merge in progress",
+                "rebase": "Rebase in progress",
+                "cherryPick": "Cherry-pick in progress",
+                "operation": "Operation in progress",
+                "continueRebase": "Continue Rebase",
+                "continue": "Continue",
+                "moreRebaseActions": "More rebase actions",
+                "mergeHint": "Commit to finish the merge, or abort it."
               }
             }
           },

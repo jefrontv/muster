@@ -10566,6 +10566,28 @@
                   "confirm_label": "Commit 수정",
                   "load_failed": "마지막 Commit 메시지를 불러오지 못했습니다"
                 }
+              },
+              "in_progress": {
+                "skipConfirmTitle": "이 커밋을 건너뛸까요?",
+                "skipConfirmDescription": "적용 중인 커밋과 그 커밋에 대해 해결한 충돌 내용이 리베이스된 브랜치에서 제외됩니다.",
+                "skipCommit": "커밋 건너뛰기",
+                "abortCherryPickTitle": "cherry-pick을 중단할까요?",
+                "abortCherryPickDescription": "진행 중인 cherry-pick을 취소하며, 그동안 해결한 충돌 내용이 사라질 수 있습니다.",
+                "abortCherryPick": "cherry-pick 중단",
+                "continueRebaseFailed": "리베이스를 계속하지 못했습니다",
+                "skipCommitFailed": "커밋을 건너뛰지 못했습니다",
+                "continueCherryPickFailed": "cherry-pick을 계속하지 못했습니다",
+                "abortCherryPickFailed": "cherry-pick을 중단하지 못했습니다",
+                "stoppedOnConflict": "다른 충돌에서 멈췄습니다",
+                "stoppedOnConflictDescription": "충돌한 파일을 해결하고 스테이징한 뒤 계속하세요.",
+                "merge": "병합 진행 중",
+                "rebase": "리베이스 진행 중",
+                "cherryPick": "cherry-pick 진행 중",
+                "operation": "작업 진행 중",
+                "continueRebase": "리베이스 계속",
+                "continue": "계속",
+                "moreRebaseActions": "리베이스 작업 더 보기",
+                "mergeHint": "커밋해서 병합을 마치거나 중단하세요."
               }
             }
           },

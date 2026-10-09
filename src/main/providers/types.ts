@@ -19,6 +19,7 @@ import type {
 } from '../../shared/types'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import type { GitCommitOptions, GitLastCommitMessageResult } from '../../shared/git-amend-commit'
+import type { GitWorkingStateProvider } from './git-working-state-provider'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { PtyStartupIngressIntent } from '../../shared/pty-startup-ingress'
 import type { CommitMessageDraftContext } from '../../shared/commit-message-generation'
@@ -385,7 +386,7 @@ export type IGitProvider = {
     worktreePath: string,
     options?: { includeUntracked?: boolean }
   ): Promise<{ clean: boolean; stdout?: string }>
-}
+} & GitWorkingStateProvider
 
 // ─── Provider Registry ──────────────────────────────────────────────
 

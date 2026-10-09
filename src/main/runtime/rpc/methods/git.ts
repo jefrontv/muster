@@ -22,6 +22,7 @@ import {
   GitRebaseFromBase,
   GitRemoteCommitUrl,
   GitRemoteFileUrl,
+  GitSequencerActionParams,
   GitStatusParams,
   GitSubmoduleStatus,
   GitTargetedRemote,
@@ -150,6 +151,17 @@ export const GIT_METHODS: RpcMethod[] = [
     name: 'git.undoLastCommit',
     params: WorktreeSelector,
     handler: async (params, { runtime }) => runtime.undoRuntimeGitLastCommit(params.worktree)
+  }),
+  defineMethod({
+    name: 'git.sequencerAction',
+    params: GitSequencerActionParams,
+    handler: async (params, { runtime }) =>
+      runtime.runRuntimeGitSequencerAction(params.worktree, params.action)
+  }),
+  defineMethod({
+    name: 'git.mergeMessage',
+    params: WorktreeSelector,
+    handler: async (params, { runtime }) => runtime.readRuntimeGitMergeMessage(params.worktree)
   }),
   defineMethod({
     name: 'git.checkout',

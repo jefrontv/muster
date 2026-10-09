@@ -38,6 +38,7 @@ export type PrimaryActionInputs = {
   hasPartiallyStagedChanges: boolean
   hasMessage: boolean
   hasUnresolvedConflicts: boolean
+  isMergeInProgress?: boolean
   isCommitting: boolean
   isRemoteOperationActive: boolean
   upstreamStatus: GitUpstreamStatus | undefined

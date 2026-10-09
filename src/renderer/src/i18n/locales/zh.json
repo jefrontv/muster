@@ -10566,6 +10566,28 @@
                   "confirm_label": "修改提交",
                   "load_failed": "无法载入上一次提交的消息"
                 }
+              },
+              "in_progress": {
+                "skipConfirmTitle": "跳过此提交？",
+                "skipConfirmDescription": "正在应用的提交将从变基后的分支中丢弃，为其所做的冲突解决也会一并丢弃。",
+                "skipCommit": "跳过提交",
+                "abortCherryPickTitle": "中止 cherry-pick？",
+                "abortCherryPickDescription": "这会取消正在进行的 cherry-pick，并可能丢弃期间所做的冲突解决。",
+                "abortCherryPick": "中止 cherry-pick",
+                "continueRebaseFailed": "继续变基失败",
+                "skipCommitFailed": "跳过提交失败",
+                "continueCherryPickFailed": "继续 cherry-pick 失败",
+                "abortCherryPickFailed": "中止 cherry-pick 失败",
+                "stoppedOnConflict": "在另一个冲突处停止",
+                "stoppedOnConflictDescription": "解决冲突文件并暂存后再继续。",
+                "merge": "合并进行中",
+                "rebase": "变基进行中",
+                "cherryPick": "cherry-pick 进行中",
+                "operation": "操作进行中",
+                "continueRebase": "继续变基",
+                "continue": "继续",
+                "moreRebaseActions": "更多变基操作",
+                "mergeHint": "提交以完成合并，或中止合并。"
               }
             }
           },

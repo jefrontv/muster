@@ -10566,6 +10566,28 @@
                   "confirm_label": "Commit を修正",
                   "load_failed": "直前の Commit メッセージを読み込めませんでした"
                 }
+              },
+              "in_progress": {
+                "skipConfirmTitle": "このコミットをスキップしますか？",
+                "skipConfirmDescription": "適用中のコミットは、そのコミット用に行った競合の解決とともにリベース後のブランチから除外されます。",
+                "skipCommit": "コミットをスキップ",
+                "abortCherryPickTitle": "cherry-pick を中止しますか？",
+                "abortCherryPickDescription": "進行中の cherry-pick を取り消します。その間に行った競合の解決が失われる場合があります。",
+                "abortCherryPick": "cherry-pick を中止",
+                "continueRebaseFailed": "リベースを続行できませんでした",
+                "skipCommitFailed": "コミットをスキップできませんでした",
+                "continueCherryPickFailed": "cherry-pick を続行できませんでした",
+                "abortCherryPickFailed": "cherry-pick を中止できませんでした",
+                "stoppedOnConflict": "別の競合で停止しました",
+                "stoppedOnConflictDescription": "競合したファイルを解決してステージしてから続行してください。",
+                "merge": "マージ中",
+                "rebase": "リベース中",
+                "cherryPick": "cherry-pick 中",
+                "operation": "操作の実行中",
+                "continueRebase": "リベースを続行",
+                "continue": "続行",
+                "moreRebaseActions": "その他のリベース操作",
+                "mergeHint": "コミットしてマージを完了するか、中止してください。"
               }
             }
           },

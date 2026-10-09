@@ -48,10 +48,11 @@ describe('SourceControl commit drafts by worktree', () => {
 })
 
 describe('SourceControl conflict resolution state', () => {
-  it('hides commit controls while unresolved conflicts or git operations are live', () => {
+  it('hides commit controls while unresolved conflicts or a rebase/cherry-pick are live', () => {
     expect(shouldRenderCommitArea(1, 'unknown')).toBe(false)
+    expect(shouldRenderCommitArea(1, 'merge')).toBe(false)
     expect(shouldRenderCommitArea(0, 'rebase')).toBe(false)
-    expect(shouldRenderCommitArea(0, 'merge')).toBe(false)
+    expect(shouldRenderCommitArea(0, 'merge')).toBe(true)
     expect(shouldRenderCommitArea(0, 'cherry-pick')).toBe(false)
     expect(shouldRenderCommitArea(0, 'unknown')).toBe(true)
   })

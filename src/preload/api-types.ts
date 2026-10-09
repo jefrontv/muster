@@ -333,6 +333,7 @@ import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
 import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commit-pipelines'
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
+import type { GitSequencerAction, GitSequencerActionResult } from '../shared/git-sequencer-action'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type {
   EphemeralVmRecipeDoctorResult,
@@ -3229,6 +3230,12 @@ export type PreloadApi = {
       worktreePath: string
       connectionId?: string
     }) => Promise<GitLastCommitMessageResult>
+    sequencerAction: (args: {
+      worktreePath: string
+      connectionId?: string
+      action: GitSequencerAction
+    }) => Promise<GitSequencerActionResult>
+    mergeMessage: (args: { worktreePath: string; connectionId?: string }) => Promise<string | null>
     diff: (args: {
       worktreePath: string
       filePath: string

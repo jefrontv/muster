@@ -10566,6 +10566,28 @@
                   "confirm_label": "Enmendar commit",
                   "load_failed": "No se pudo cargar el mensaje del último commit"
                 }
+              },
+              "in_progress": {
+                "skipConfirmTitle": "¿Omitir este commit?",
+                "skipConfirmDescription": "El commit que se está aplicando se elimina de la rama rebasada, junto con las resoluciones de conflictos hechas para él.",
+                "skipCommit": "Omitir commit",
+                "abortCherryPickTitle": "¿Abortar cherry-pick?",
+                "abortCherryPickDescription": "Esto cancela el cherry-pick en curso y puede descartar las resoluciones de conflictos hechas durante él.",
+                "abortCherryPick": "Abortar cherry-pick",
+                "continueRebaseFailed": "No se pudo continuar el rebase",
+                "skipCommitFailed": "No se pudo omitir el commit",
+                "continueCherryPickFailed": "No se pudo continuar el cherry-pick",
+                "abortCherryPickFailed": "No se pudo abortar el cherry-pick",
+                "stoppedOnConflict": "Se detuvo en otro conflicto",
+                "stoppedOnConflictDescription": "Resuelve y prepara los archivos en conflicto y luego continúa.",
+                "merge": "Merge en curso",
+                "rebase": "Rebase en curso",
+                "cherryPick": "Cherry-pick en curso",
+                "operation": "Operación en curso",
+                "continueRebase": "Continuar rebase",
+                "continue": "Continuar",
+                "moreRebaseActions": "Más acciones de rebase",
+                "mergeHint": "Haz commit para terminar el merge, o abórtalo."
               }
             }
           },

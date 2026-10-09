@@ -22,6 +22,7 @@ export type GitExec = (
     signal?: AbortSignal
     stdin?: string
     timeout?: number
+    env?: Readonly<Record<string, string>>
   }
 ) => Promise<{ stdout: string; stderr: string }>
 

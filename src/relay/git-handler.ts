@@ -13,6 +13,7 @@ import {
 import { parseNumstat } from '../shared/git-uncommitted-line-stats'
 import { undoLastCommitWithGit } from '../shared/git-undo-last-commit'
 import { readLastCommitMessageWithGit } from '../shared/git-amend-commit'
+import { readMergeMessageOp, runSequencerActionOp } from './git-handler-sequencer-ops'
 import {
   computeDiff,
   branchCompare as branchCompareOp,
@@ -220,6 +221,10 @@ export class GitHandler {
     this.dispatcher.onRequest('git.abortRebase', (p) => this.abortRebase(p))
     this.dispatcher.onRequest('git.undoLastCommit', (p, context) => this.undoLastCommit(p, context))
     this.dispatcher.onRequest('git.lastCommitMessage', (p) => this.lastCommitMessage(p))
+    this.dispatcher.onRequest('git.sequencerAction', (p, context) =>
+      this.runWithGitReadCacheClear(() => runSequencerActionOp(this.mutationGit(context), p))
+    )
+    this.dispatcher.onRequest('git.mergeMessage', (p) => readMergeMessageOp(p))
     this.dispatcher.onRequest('git.checkout', (p) => this.checkout(p))
     this.dispatcher.onRequest('git.localBranches', (p) => this.localBranches(p))
     this.dispatcher.onRequest('git.discard', (p) => this.discard(p))
@@ -328,12 +333,14 @@ export class GitHandler {
       nonInteractive?: boolean
       stdin?: string
       timeout?: number
+      env?: Readonly<Record<string, string>>
     }
   ): Promise<{ stdout: string; stderr: string }> {
     const env = opts?.nonInteractive ? buildRelayUnattendedGitEnv() : buildRelayGitEnv()
     if (opts?.disableOptionalLocks) {
       env.GIT_OPTIONAL_LOCKS = '0'
     }
+    Object.assign(env, opts?.env)
     const execOptions = {
       cwd: expandTilde(cwd),
       env,

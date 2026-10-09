@@ -1887,6 +1887,19 @@ function createGitApi(): NonNullable<Partial<PreloadApi>['git']> {
         worktree: toRuntimeWorktreeSelector(worktree.id)
       })
     },
+    sequencerAction: async ({ worktreePath, action }) => {
+      const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
+      return callRuntimeResult('git.sequencerAction', {
+        worktree: toRuntimeWorktreeSelector(worktree.id),
+        action
+      })
+    },
+    mergeMessage: async ({ worktreePath }) => {
+      const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
+      return callRuntimeResult('git.mergeMessage', {
+        worktree: toRuntimeWorktreeSelector(worktree.id)
+      })
+    },
     diff: async ({ worktreePath, filePath, staged, compareAgainstHead }) => {
       const file = await resolveRuntimeFilePath(filePath, worktreePath)
       return callRuntimeResult('git.diff', {

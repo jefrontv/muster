@@ -7193,6 +7193,10 @@ export class OrcaRuntimeService {
     this.gitCommands.undoRuntimeGitLastCommit.bind(this.gitCommands)
   readRuntimeGitLastCommitMessage: RuntimeGitCommands['readRuntimeGitLastCommitMessage'] =
     this.gitCommands.readRuntimeGitLastCommitMessage.bind(this.gitCommands)
+  runRuntimeGitSequencerAction: RuntimeGitCommands['runRuntimeGitSequencerAction'] =
+    this.gitCommands.runRuntimeGitSequencerAction.bind(this.gitCommands)
+  readRuntimeGitMergeMessage: RuntimeGitCommands['readRuntimeGitMergeMessage'] =
+    this.gitCommands.readRuntimeGitMergeMessage.bind(this.gitCommands)
   checkoutRuntimeGitBranch: RuntimeGitCommands['checkoutRuntimeGitBranch'] =
     this.gitCommands.checkoutRuntimeGitBranch.bind(this.gitCommands)
   listRuntimeGitLocalBranches: RuntimeGitCommands['listRuntimeGitLocalBranches'] =

@@ -3,12 +3,7 @@ import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { fireEvent, render } from '@testing-library/react'
-import {
-  CommitArea,
-  ConflictSummaryCard,
-  handleSourceControlCommitShortcut,
-  OperationBanner
-} from './SourceControl'
+import { CommitArea, ConflictSummaryCard, handleSourceControlCommitShortcut } from './SourceControl'
 import {
   resolveCommitAreaPrimaryAction,
   type PrimaryActionInputs
@@ -774,36 +769,5 @@ describe('ConflictSummaryCard', () => {
 
     expect(markup).not.toContain('Resolve with AI')
     expect(markup).toContain('Review conflicts')
-  })
-})
-
-describe('OperationBanner', () => {
-  it('shows abort actions for merge and rebase but not cherry-pick', () => {
-    const mergeMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="merge" onAbortOperation={vi.fn()} />
-    )
-    const rebaseMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="rebase" onAbortOperation={vi.fn()} />
-    )
-    const cherryPickMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="cherry-pick" onAbortOperation={vi.fn()} />
-    )
-
-    expect(mergeMarkup).toContain('Abort merge')
-    expect(rebaseMarkup).toContain('Abort rebase')
-    expect(cherryPickMarkup).not.toContain('Abort merge')
-    expect(cherryPickMarkup).not.toContain('Abort rebase')
-  })
-
-  it('renders abort actions with the quiet outline button treatment', () => {
-    const mergeMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="merge" onAbortOperation={vi.fn()} />
-    )
-    const rebaseMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="rebase" onAbortOperation={vi.fn()} />
-    )
-
-    expect(buttonContaining(mergeMarkup, 'Abort merge')).toContain('data-variant="outline"')
-    expect(buttonContaining(rebaseMarkup, 'Abort rebase')).toContain('data-variant="outline"')
   })
 })

@@ -331,6 +331,9 @@ import {
 import { buildSourceControlManualReviewUrlFromContext } from './source-control-manual-review-url'
 import { parseRemoteRepo } from './source-control-remote-repo'
 export { HostedReviewHeaderLink } from './hosted-review-header-chrome'
+import { OperationBanner } from './source-control-operation-banner'
+export { OperationBanner } from './source-control-operation-banner'
+import { useSourceControlInProgressOperation } from './use-source-control-in-progress-operation'
 import {
   createRunningCommitMessageGenerationRecord,
   getCommitMessageGenerationRecordKey,
@@ -734,7 +737,11 @@ export function shouldRenderCommitArea(
   unresolvedConflictCount: number,
   conflictOperation: GitConflictOperation
 ): boolean {
-  return unresolvedConflictCount === 0 && conflictOperation === 'unknown'
+  // Why: a merge is finished by committing; rebase and cherry-pick finish through the banner's Continue.
+  return (
+    unresolvedConflictCount === 0 &&
+    (conflictOperation === 'unknown' || conflictOperation === 'merge')
+  )
 }
 
 export function pickDefaultSourceControlAgent(
@@ -2118,7 +2125,8 @@ function SourceControlInner(): React.JSX.Element {
         (!options?.skipStagedSnapshotCheck &&
           !options?.amend &&
           stagePathsFirst.length === 0 &&
-          grouped.staged.length === 0) ||
+          grouped.staged.length === 0 &&
+          conflictOperation !== 'merge') ||
         (!options?.skipActiveConflictCheck && unresolvedConflicts.length > 0)
       ) {
         return false
@@ -2206,6 +2214,7 @@ function SourceControlInner(): React.JSX.Element {
       beginGitBranchCompareRequest,
       commitMessage,
       compareBaseRef,
+      conflictOperation,
       grouped.staged.length,
       refreshActiveGitStatusAfterMutation,
       setCommitErrorForWorktree,
@@ -2733,6 +2742,38 @@ function SourceControlInner(): React.JSX.Element {
     await handleAbortOperation('rebase')
   }, [handleAbortOperation])
 
+  const setOperationBusyForWorktree = useCallback((worktreeId: string, busy: boolean): void => {
+    setAbortOperationInFlightByWorktree((prev) => ({ ...prev, [worktreeId]: busy }))
+  }, [])
+  const prefillCommitDraftIfEmpty = useCallback(
+    (worktreeId: string, message: string): void => {
+      updateCommitDrafts((drafts) =>
+        readCommitDraftForWorktree(drafts, worktreeId).trim()
+          ? drafts
+          : writeCommitDraftForWorktree(drafts, worktreeId, message)
+      )
+    },
+    [updateCommitDrafts]
+  )
+  const refreshAfterInProgressOperation = useCallback((): void => {
+    refreshSourceControlAfterRemoteAction({
+      refreshGitStatus: refreshActiveGitStatusAfterMutation,
+      refreshBranchCompare: refreshBranchCompareRef.current,
+      refreshGitHistory: refreshGitHistoryRef.current
+    })
+  }, [refreshActiveGitStatusAfterMutation])
+  const { runSequencerAction } = useSourceControlInProgressOperation({
+    worktreeId: activeWorktreeId ?? null,
+    worktreePath: worktreePath ?? null,
+    settings: activeRepoSettings,
+    conflictOperation,
+    isBusy: isAbortingOperation,
+    setBusy: setOperationBusyForWorktree,
+    confirmAction,
+    prefillCommitDraft: prefillCommitDraftIfEmpty,
+    refreshAfterMutation: refreshAfterInProgressOperation
+  })
+
   const handleAbortOperationForConflict = useCallback(
     (operation: GitConflictOperation): void => {
       if (operation === 'merge') {
@@ -2741,9 +2782,13 @@ function SourceControlInner(): React.JSX.Element {
       }
       if (operation === 'rebase') {
         void handleAbortRebase()
+        return
+      }
+      if (operation === 'cherry-pick') {
+        void runSequencerAction('cherry-pick-abort')
       }
     },
-    [handleAbortMerge, handleAbortRebase]
+    [handleAbortMerge, handleAbortRebase, runSequencerAction]
   )
 
   const handleUndoLastCommit = useCallback(async (): Promise<void> => {
@@ -4340,6 +4385,7 @@ function SourceControlInner(): React.JSX.Element {
       hasPartiallyStagedChanges,
       hasMessage: commitMessage.trim().length > 0,
       hasUnresolvedConflicts: unresolvedConflicts.length > 0,
+      isMergeInProgress: conflictOperation === 'merge',
       isCommitting,
       isRemoteOperationActive: isRemoteOperationActive || isAbortingOperation,
       upstreamStatus: remoteStatusForActions,
@@ -4357,6 +4403,7 @@ function SourceControlInner(): React.JSX.Element {
   }, [
     commitAllPaths.length,
     commitMessage,
+    conflictOperation,
     grouped.staged.length,
     hasStageableChanges,
     hasUnstagedChanges,
@@ -4441,6 +4488,7 @@ function SourceControlInner(): React.JSX.Element {
     unresolvedConflicts.length
   ])
   const directCreatePrAction =
+    conflictOperation !== 'merge' &&
     createPrHeaderAction?.kind === 'create_pr' &&
     hostedReviewCreation?.canCreate === true &&
     (!createPrHeaderAction.disabled || isCreatingPr || prGenerating)
@@ -6095,6 +6143,7 @@ function SourceControlInner(): React.JSX.Element {
                 conflictOperation={conflictOperation}
                 isAbortingOperation={isAbortingOperation}
                 onAbortOperation={handleAbortOperationForConflict}
+                onSequencerAction={(action) => void runSequencerAction(action)}
               />
             </div>
           )}
@@ -7885,7 +7934,7 @@ export function ConflictSummaryCard({
           <GitMerge className="size-3.5" />
           {translate('auto.components.right.sidebar.SourceControl.27a50fe970', 'Review conflicts')}
         </Button>
-        {(conflictOperation === 'merge' || conflictOperation === 'rebase') && onAbortOperation ? (
+        {conflictOperation !== 'unknown' && onAbortOperation ? (
           <Button
             type="button"
             // Why: abort is the escape hatch, so use the quiet outline action instead of reading as destructive.
@@ -7898,57 +7947,18 @@ export function ConflictSummaryCard({
             {isAbortingOperation ? <RefreshCw className="size-3.5 animate-spin" /> : null}
             {conflictOperation === 'rebase'
               ? translate('auto.components.right.sidebar.SourceControl.425f138269', 'Abort rebase')
-              : translate('auto.components.right.sidebar.SourceControl.540ca8f78c', 'Abort merge')}
+              : conflictOperation === 'cherry-pick'
+                ? translate(
+                    'auto.components.right.sidebar.source.control.in_progress.abortCherryPick',
+                    'Abort cherry-pick'
+                  )
+                : translate(
+                    'auto.components.right.sidebar.SourceControl.540ca8f78c',
+                    'Abort merge'
+                  )}
           </Button>
         ) : null}
       </div>
-    </div>
-  )
-}
-
-// Why: separate from ConflictSummaryCard because a rebase/merge/cherry-pick can be in progress with no conflicts (between steps, or resolved but pre-continue).
-export function OperationBanner({
-  conflictOperation,
-  isAbortingOperation = false,
-  onAbortOperation
-}: {
-  conflictOperation: GitConflictOperation
-  isAbortingOperation?: boolean
-  onAbortOperation?: (operation: GitConflictOperation) => void
-}): React.JSX.Element {
-  const label =
-    conflictOperation === 'merge'
-      ? 'Merge in progress'
-      : conflictOperation === 'rebase'
-        ? 'Rebase in progress'
-        : conflictOperation === 'cherry-pick'
-          ? 'Cherry-pick in progress'
-          : 'Operation in progress'
-
-  const Icon = conflictOperation === 'rebase' ? GitPullRequestArrow : GitMerge
-
-  return (
-    <div className="rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2">
-      <div className="flex items-center justify-center gap-2">
-        <Icon className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-        <span className="text-xs font-medium text-foreground">{label}</span>
-      </div>
-      {(conflictOperation === 'merge' || conflictOperation === 'rebase') && onAbortOperation ? (
-        <Button
-          type="button"
-          // Why: abort is the escape hatch, so use the quiet outline action instead of reading as destructive.
-          variant="outline"
-          size="sm"
-          className="mt-2 h-7 w-full text-xs"
-          disabled={isAbortingOperation}
-          onClick={() => onAbortOperation(conflictOperation)}
-        >
-          {isAbortingOperation ? <RefreshCw className="size-3.5 animate-spin" /> : null}
-          {conflictOperation === 'rebase'
-            ? translate('auto.components.right.sidebar.SourceControl.425f138269', 'Abort rebase')
-            : translate('auto.components.right.sidebar.SourceControl.540ca8f78c', 'Abort merge')}
-        </Button>
-      ) : null}
     </div>
   )
 }

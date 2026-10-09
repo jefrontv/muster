@@ -24,6 +24,10 @@ import { getCommitMessageModelDiscoveryHostKeyForScope } from '../../../shared/c
 import type { GitHistoryOptions, GitHistoryResult } from '../../../shared/git-history'
 import type { GitUndoLastCommitResult } from '../../../shared/git-undo-last-commit'
 import type { GitCommitOptions, GitLastCommitMessageResult } from '../../../shared/git-amend-commit'
+import type {
+  GitSequencerAction,
+  GitSequencerActionResult
+} from '../../../shared/git-sequencer-action'
 import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
 import { GIT_MUTATION_TIMEOUT_MS } from '../../../shared/git-mutation-timeout'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
@@ -379,6 +383,44 @@ export async function readRuntimeGitLastCommitMessage(
   return callRuntimeRpc<GitLastCommitMessageResult>(
     target,
     'git.lastCommitMessage',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
+    { timeoutMs: 15_000 }
+  )
+}
+
+export async function runRuntimeGitSequencerAction(
+  context: RuntimeGitContext,
+  action: GitSequencerAction
+): Promise<GitSequencerActionResult> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return localGitApi().sequencerAction({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId,
+      action
+    })
+  }
+  return callRuntimeRpc<GitSequencerActionResult>(
+    target,
+    'git.sequencerAction',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId), action },
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+  )
+}
+
+export async function readRuntimeGitMergeMessage(
+  context: RuntimeGitContext
+): Promise<string | null> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return localGitApi().mergeMessage({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId
+    })
+  }
+  return callRuntimeRpc<string | null>(
+    target,
+    'git.mergeMessage',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
     { timeoutMs: 15_000 }
   )

@@ -21,6 +21,11 @@ import { getCommitMessageModelDiscoveryHostKey } from '../../shared/commit-messa
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import type { GitCommitOptions, GitLastCommitMessageResult } from '../../shared/git-amend-commit'
+import type {
+  GitSequencerAction,
+  GitSequencerActionResult
+} from '../../shared/git-sequencer-action'
+import { readPreparedMergeMessage, runGitSequencerAction } from '../git/sequencer'
 import {
   mergeLegacyCommitMessageAiIntoSourceControlAi,
   type ResolvedSourceControlAiGenerationParams
@@ -344,6 +349,33 @@ export class RuntimeGitCommands {
       return provider.readLastCommitMessage(target.worktree.path)
     }
     return readLastCommitMessage(target.worktree.path, localGitOptionsForTarget(target))
+  }
+
+  async runRuntimeGitSequencerAction(
+    worktreeSelector: string,
+    action: GitSequencerAction
+  ): Promise<GitSequencerActionResult> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    if (target.connectionId) {
+      const provider = getSshGitProvider(target.connectionId)
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.runSequencerAction(target.worktree.path, action)
+    }
+    return runGitSequencerAction(target.worktree.path, action, localGitOptionsForTarget(target))
+  }
+
+  async readRuntimeGitMergeMessage(worktreeSelector: string): Promise<string | null> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    if (target.connectionId) {
+      const provider = getSshGitProvider(target.connectionId)
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.readMergeMessage(target.worktree.path)
+    }
+    return readPreparedMergeMessage(target.worktree.path)
   }
 
   async checkoutRuntimeGitBranch(

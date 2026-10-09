@@ -101,6 +101,7 @@ import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
 import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commit-pipelines'
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
+import type { GitSequencerAction, GitSequencerActionResult } from '../shared/git-sequencer-action'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
@@ -3446,6 +3447,13 @@ const api = {
       worktreePath: string
       connectionId?: string
     }): Promise<GitLastCommitMessageResult> => ipcRenderer.invoke('git:lastCommitMessage', args),
+    sequencerAction: (args: {
+      worktreePath: string
+      connectionId?: string
+      action: GitSequencerAction
+    }): Promise<GitSequencerActionResult> => ipcRenderer.invoke('git:sequencerAction', args),
+    mergeMessage: (args: { worktreePath: string; connectionId?: string }): Promise<string | null> =>
+      ipcRenderer.invoke('git:mergeMessage', args),
     diff: (args: {
       worktreePath: string
       filePath: string

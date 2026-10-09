@@ -180,4 +180,24 @@ describe('source-control primary action decision', () => {
       disabled: true
     })
   })
+
+  it('keeps Commit as the action that concludes a merge, even with nothing staged', () => {
+    const merge = {
+      isMergeInProgress: true,
+      upstreamStatus: { hasUpstream: true, ahead: 2, behind: 0 }
+    }
+    expect(resolveSourceControlCommitAreaPrimaryActionDecision(inputs(merge))).toMatchObject({
+      kind: 'commit',
+      titleIntent: 'enter_commit_message',
+      disabled: true
+    })
+    expect(
+      resolveSourceControlCommitAreaPrimaryActionDecision(inputs({ ...merge, hasMessage: true }))
+    ).toMatchObject({ kind: 'commit', disabled: false })
+    expect(
+      resolveSourceControlCommitAreaPrimaryActionDecision(
+        inputs({ ...merge, hasMessage: true, hasUnresolvedConflicts: true })
+      )
+    ).toMatchObject({ kind: 'commit', titleIntent: 'resolve_conflicts_before_commit' })
+  })
 })

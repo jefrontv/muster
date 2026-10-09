@@ -72,6 +72,15 @@ export function resolveSourceControlPrimaryActionDecision(
     }
   }
 
+  if (inputs.isMergeInProgress) {
+    return {
+      kind: 'commit',
+      labelIntent: 'commit',
+      titleIntent: hasMessage ? 'commit_staged_changes' : 'enter_commit_message',
+      disabled: !hasMessage
+    }
+  }
+
   if (
     isHostedReviewCreationLoading &&
     hostedReviewCreation &&

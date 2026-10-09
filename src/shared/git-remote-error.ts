@@ -214,14 +214,24 @@ export function normalizeGitErrorMessage(error: unknown, operation?: GitRemoteOp
   return extractTailLine(raw)
 }
 
-const NOTHING_TO_ABORT_PATTERN = /There is no merge to abort|No rebase in progress/i
+const NOTHING_TO_ABORT_PATTERN =
+  /There is no merge to abort|No rebase in progress|no cherry-pick or revert in progress/i
 const COMMAND_FAILED_LINE_PATTERN = /^Command failed: [^\r\n]*(?:\r?\n|$)/
 const GIT_DIAGNOSTIC_PREFIX_PATTERN = /^(?:fatal|error):\s*/i
 
-// Why: a raw abort failure starts with Node's "Command failed: git rebase --abort" wrapper, which reads as noise in a toast.
+// Why: a raw failure starts with Node's "Command failed: git …" wrapper, which reads as noise in a toast.
+export function appendGitFailureTail(error: Error, fallback: string): string {
+  const message = stripCredentialsFromMessage(error.message).replace(
+    COMMAND_FAILED_LINE_PATTERN,
+    ''
+  )
+  const tail = extractTailLine(message).trim().replace(GIT_DIAGNOSTIC_PREFIX_PATTERN, '')
+  return tail ? `${fallback} ${tail.charAt(0).toUpperCase()}${tail.slice(1)}` : fallback
+}
+
 export function normalizeGitAbortErrorMessage(
   error: unknown,
-  operation: 'merge' | 'rebase'
+  operation: 'merge' | 'rebase' | 'cherry-pick'
 ): string {
   const fallback = `Could not abort the ${operation}.`
   if (!(error instanceof Error)) {
@@ -235,12 +245,7 @@ export function normalizeGitAbortErrorMessage(
   if (NOTHING_TO_ABORT_PATTERN.test(output)) {
     return `No ${operation} is in progress. Refresh Source Control and try again.`
   }
-  const message = stripCredentialsFromMessage(error.message).replace(
-    COMMAND_FAILED_LINE_PATTERN,
-    ''
-  )
-  const tail = extractTailLine(message).trim().replace(GIT_DIAGNOSTIC_PREFIX_PATTERN, '')
-  return tail ? `${fallback} ${tail.charAt(0).toUpperCase()}${tail.slice(1)}` : fallback
+  return appendGitFailureTail(error, fallback)
 }
 
 // Why: require a `fatal:` prefix so wrapped command text or hook/progress output can't spuriously match and mask real failures.

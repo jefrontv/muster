@@ -20,6 +20,10 @@ import type {
 } from '../../shared/types'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
 import type { GitCommitOptions, GitLastCommitMessageResult } from '../../shared/git-amend-commit'
+import type {
+  GitSequencerAction,
+  GitSequencerActionResult
+} from '../../shared/git-sequencer-action'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import { buildHostedRemoteCommitUrl, buildHostedRemoteFileUrl } from '../git/hosted-remote-url'
 import { JsonRpcErrorCode } from '../ssh/relay-protocol'
@@ -503,6 +507,24 @@ export class SshGitProvider implements IGitProvider {
           { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
         )) as GitUndoLastCommitResult
     )
+  }
+
+  async runSequencerAction(
+    worktreePath: string,
+    action: GitSequencerAction
+  ): Promise<GitSequencerActionResult> {
+    return this.runWithGitReadInvalidation(
+      async () =>
+        (await this.mux.request(
+          'git.sequencerAction',
+          { worktreePath, action },
+          { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+        )) as GitSequencerActionResult
+    )
+  }
+
+  async readMergeMessage(worktreePath: string): Promise<string | null> {
+    return (await this.mux.request('git.mergeMessage', { worktreePath })) as string | null
   }
 
   async checkoutBranch(worktreePath: string, branch: string): Promise<void> {
