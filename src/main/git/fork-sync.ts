@@ -8,6 +8,9 @@ import type { GitRuntimeOptions } from './git-runtime-options'
 import { gitOptionsForWorktree } from './git-runtime-options'
 import { gitExecFileAsync } from './runner'
 
+// Why: like remote.ts, network steps must honor the repo's core.sshCommand (e.g. deploy keys); local reads skip that config probe.
+const NETWORK_SUBCOMMANDS = new Set(['fetch', 'ls-remote', 'push'])
+
 export async function gitSyncForkDefaultBranch(
   worktreePath: string,
   expectedUpstream: GitForkSyncExpectedUpstream,
@@ -24,7 +27,8 @@ export async function gitSyncForkDefaultBranch(
         gitExecFileAsync(args, {
           ...gitOptionsForWorktree(worktreePath, options),
           timeout: 60_000,
-          signal
+          signal,
+          ...(NETWORK_SUBCOMMANDS.has(args[0]) ? { useConfiguredSshCommandForNetwork: true } : {})
         }),
       { expectedUpstream }
     )

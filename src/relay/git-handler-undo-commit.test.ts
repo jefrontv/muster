@@ -80,6 +80,23 @@ describe('GitHandler undoLastCommit', () => {
     expect(git(tmpDir, ['diff', '--cached', '--name-only'])).toBe('a.txt')
   })
 
+  it('turns a held ref lock into the plain lock message', async () => {
+    gitInit(tmpDir)
+    writeFileSync(path.join(tmpDir, 'a.txt'), 'one\n')
+    gitCommit(tmpDir, 'first')
+    writeFileSync(path.join(tmpDir, 'b.txt'), 'two\n')
+    gitCommit(tmpDir, 'second')
+    const branch = git(tmpDir, ['branch', '--show-current'])
+    writeFileSync(path.join(tmpDir, '.git', 'refs', 'heads', `${branch}.lock`), '')
+
+    const failure = await dispatcher
+      .callRequest('git.undoLastCommit', { worktreePath: tmpDir })
+      .catch((error: unknown) => error)
+
+    expect((failure as Error).message).toMatch(/^Another Git process is using this repository\./)
+    expect((failure as Error).message).not.toContain('Command failed')
+  })
+
   it('rejects when there are no commits', async () => {
     gitInit(tmpDir)
 
