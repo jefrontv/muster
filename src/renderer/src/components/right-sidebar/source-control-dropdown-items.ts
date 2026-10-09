@@ -562,18 +562,21 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
 
   // Why: a known provider without in-app creation swaps both review rows for one browser link; unknown (loading) keeps the stable shape.
   const hostedReviewEntries: DropdownItem[] =
-    hostedReviewCreation && !supportsHostedReviewCreation(hostedReviewCreation.provider)
-      ? [
-          resolveOpenReviewInBrowserItem({
-            manualReviewUrl,
-            globalBusy,
-            upstreamLoading,
-            hasUpstream,
-            hasCurrentBranch,
-            hasOpenHostedReview
-          })
-        ]
-      : [createPRItem, pushCreatePRItem]
+    hostedReviewCreation?.provider === 'unsupported' && !manualReviewUrl
+      ? // Why: a remote on no known review host can never offer a PR, so hide the row instead of a dead link.
+        []
+      : hostedReviewCreation && !supportsHostedReviewCreation(hostedReviewCreation.provider)
+        ? [
+            resolveOpenReviewInBrowserItem({
+              manualReviewUrl,
+              globalBusy,
+              upstreamLoading,
+              hasUpstream,
+              hasCurrentBranch,
+              hasOpenHostedReview
+            })
+          ]
+        : [createPRItem, pushCreatePRItem]
 
   const abortRows: DropdownItem[] = []
   if (conflictOperation === 'merge' || conflictOperation === 'rebase') {

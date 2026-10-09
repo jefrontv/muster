@@ -100,4 +100,16 @@ describe('open review in browser dropdown row', () => {
       expect(kinds).not.toContain('open_review_in_browser')
     }
   })
+
+  it('hides review rows for a remote on no known review host', () => {
+    const kinds = resolveDropdownItems(
+      inputs({
+        hostedReviewCreation: creation({ provider: 'unsupported' }),
+        manualReviewUrl: null
+      })
+    ).map((entry) => entry.kind)
+    expect(kinds).not.toContain('open_review_in_browser')
+    expect(kinds).not.toContain('create_pr')
+    expect(kinds).not.toContain('push_create_pr')
+  })
 })
