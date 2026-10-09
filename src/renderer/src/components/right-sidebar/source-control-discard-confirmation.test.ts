@@ -71,6 +71,21 @@ describe('getDiscardEntryConfirmationCopy', () => {
 })
 
 describe('getDiscardAreaConfirmationCopy', () => {
+  it('uses count-based copy when discarding part of a section', () => {
+    expect(getDiscardAreaConfirmationCopy('staged', 2, true)).toEqual({
+      title: 'Discard changes in 2 files?',
+      description:
+        'This will unstage and revert these files. Staged new files will be deleted. This cannot be undone.',
+      confirmLabel: 'Discard'
+    })
+    expect(getDiscardAreaConfirmationCopy('unstaged', 1, true).title).toBe(
+      'Discard changes in 1 file?'
+    )
+    expect(getDiscardAreaConfirmationCopy('unstaged', 3, false).title).toBe(
+      'Discard all unstaged changes?'
+    )
+  })
+
   it('uses singular delete copy for one untracked file', () => {
     expect(getDiscardAreaConfirmationCopy('untracked', 1)).toEqual({
       title: 'Delete 1 untracked file?',

@@ -60,10 +60,45 @@ export function getDiscardEntryConfirmationCopy(
   }
 }
 
-export function getDiscardAreaConfirmationCopy(
-  area: DiscardAllArea,
+// Why: a folder or multi-selection discard covers part of a section, so "all" titles would overstate it.
+function getDiscardSubsetConfirmationCopy(
+  area: Exclude<DiscardAllArea, 'untracked'>,
   count: number
 ): DiscardConfirmationCopy {
+  return {
+    title:
+      count === 1
+        ? translate(
+            'auto.components.right.sidebar.source.control.discard.confirmation.subsetTitleOne',
+            'Discard changes in 1 file?'
+          )
+        : translate(
+            'auto.components.right.sidebar.source.control.discard.confirmation.subsetTitle',
+            'Discard changes in {{count}} files?',
+            { count }
+          ),
+    description:
+      area === 'staged'
+        ? translate(
+            'auto.components.right.sidebar.source.control.discard.confirmation.subsetStagedDescription',
+            'This will unstage and revert these files. Staged new files will be deleted. This cannot be undone.'
+          )
+        : translate(
+            'auto.components.right.sidebar.source.control.discard.confirmation.subsetDescription',
+            'This will revert the changes in these files. This cannot be undone.'
+          ),
+    confirmLabel: 'Discard'
+  }
+}
+
+export function getDiscardAreaConfirmationCopy(
+  area: DiscardAllArea,
+  count: number,
+  subset = false
+): DiscardConfirmationCopy {
+  if (subset && area !== 'untracked') {
+    return getDiscardSubsetConfirmationCopy(area, count)
+  }
   switch (area) {
     case 'untracked':
       return {

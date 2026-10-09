@@ -20,7 +20,7 @@ import { translate } from '@/i18n/i18n'
 
 export type PendingDiscardConfirmation =
   | { kind: 'entry'; entry: GitStatusEntry }
-  | { kind: 'area'; area: DiscardAllArea; paths: readonly string[] }
+  | { kind: 'area'; area: DiscardAllArea; paths: readonly string[]; subset?: boolean }
 
 export function focusDiscardDialogConfirmButton(
   event: Event,
@@ -51,7 +51,11 @@ export function SourceControlDiscardDialog({
     if (pendingDiscard.kind === 'entry') {
       return getDiscardEntryConfirmationCopy(pendingDiscard.entry)
     }
-    return getDiscardAreaConfirmationCopy(pendingDiscard.area, pendingDiscard.paths.length)
+    return getDiscardAreaConfirmationCopy(
+      pendingDiscard.area,
+      pendingDiscard.paths.length,
+      pendingDiscard.subset
+    )
   }, [pendingDiscard])
   const PendingDiscardIcon = pendingDiscardCopy?.confirmLabel.startsWith('Delete') ? Trash : Undo2
 

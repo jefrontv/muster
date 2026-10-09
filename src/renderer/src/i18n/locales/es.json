@@ -10450,7 +10450,11 @@
                   "40e9357b2a": "Esto restaurará el archivo desde HEAD y descartará la eliminación. Esto no se puede deshacer.",
                   "5c0bdbc4cb": "¿Restaurar \"{{value0}}\"?",
                   "d97bf697c9": "Esto eliminará permanentemente este archivo. Esto no se puede deshacer.",
-                  "96c772bee9": "¿Eliminar \"{{value0}}\"?"
+                  "96c772bee9": "¿Eliminar \"{{value0}}\"?",
+                  "subsetTitleOne": "¿Descartar los cambios en 1 archivo?",
+                  "subsetTitle": "¿Descartar los cambios en {{count}} archivos?",
+                  "subsetDescription": "Se revertirán los cambios en estos archivos. Esta acción no se puede deshacer.",
+                  "subsetStagedDescription": "Se quitarán del área de preparación y se revertirán estos archivos. Los archivos nuevos preparados se eliminarán. Esta acción no se puede deshacer."
                 },
                 "dialog": {
                   "3bc61dc989": "Cancelar",

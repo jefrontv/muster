@@ -353,7 +353,7 @@ describe('SourceControl changed-files keyboard tree', () => {
     expect(document.body.textContent).toContain('Discard changes to "a.ts"?')
   })
 
-  it('collapses a section with ArrowLeft from its header', () => {
+  it('collapses a section with ArrowLeft and toggles it back with Enter', () => {
     resetState({
       gitStatusByWorktree: { [mocks.activeWorktree.id]: [gitEntry({ path: 'src/a.ts' })] }
     })
@@ -366,6 +366,32 @@ describe('SourceControl changed-files keyboard tree', () => {
     press(header, 'ArrowLeft')
     expect(row('src/a.ts')).toBeNull()
     expect(header.getAttribute('aria-expanded')).toBe('false')
+
+    press(header, 'Enter')
+    expect(header.getAttribute('aria-expanded')).toBe('true')
+    expect(row('src/a.ts')).toBeTruthy()
+    expect(mocks.state.openAllDiffs).not.toHaveBeenCalled()
+  })
+
+  it('titles a partial discard by file count instead of the whole section', () => {
+    resetState({
+      settings: { sourceControlViewMode: 'tree' },
+      gitStatusByWorktree: {
+        [mocks.activeWorktree.id]: [
+          gitEntry({ path: 'src/a.ts' }),
+          gitEntry({ path: 'src/b.ts' }),
+          gitEntry({ path: 'top.ts' })
+        ]
+      }
+    })
+    renderSourceControl()
+
+    const folder = Array.from(tree().querySelectorAll<HTMLElement>('[role="treeitem"]')).find(
+      (item) => item.getAttribute('aria-label') === 'src'
+    )
+    press(focus(folder ?? null), 'Delete')
+    expect(document.body.textContent).toContain('Discard changes in 2 files?')
+    expect(document.body.textContent).not.toContain('Discard all unstaged changes?')
   })
 
   it('stages the whole selection from a selected row', async () => {

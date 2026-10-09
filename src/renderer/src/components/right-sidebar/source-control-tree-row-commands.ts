@@ -2,7 +2,7 @@ import type { GitBranchChangeEntry, GitStatusEntry } from '../../../../shared/ty
 import type { SourceControlTreeRow } from './source-control-tree-rows'
 import type { SourceControlSelectionRowActions } from './source-control-selection-row-actions'
 
-export type SourceControlTreeRowAction = 'stage' | 'unstage' | 'discard' | 'view-all'
+export type SourceControlTreeRowAction = 'stage' | 'unstage' | 'discard'
 
 export const SOURCE_CONTROL_ROW_ACTION_ATTRIBUTE = 'data-source-control-row-action'
 
@@ -53,12 +53,12 @@ export function createSourceControlTreeRowCommands(
     }
   }
   return {
-    open: (row, element) => {
+    open: (row) => {
       if (row.kind === 'branch-file') {
         deps.openCommittedDiff(row.entry)
       } else if (row.kind === 'file' && row.expanded === undefined) {
         deps.openDiff(row.entry)
-      } else if (row.kind !== 'section' || !clickSourceControlTreeRowAction(element, 'view-all')) {
+      } else {
         toggle(row)
       }
     },

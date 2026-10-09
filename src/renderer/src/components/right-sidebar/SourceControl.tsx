@@ -5645,7 +5645,8 @@ function SourceControlInner(): React.JSX.Element {
       if (paths.length === 0) {
         return
       }
-      setPendingDiscard({ kind: 'area', area, paths })
+      const subset = paths.length < getDiscardAllPaths(grouped[area], area).length
+      setPendingDiscard({ kind: 'area', area, paths, subset })
     },
     [activeWorktreeId, grouped, isExecutingBulk, worktreePath]
   )
@@ -6253,7 +6254,6 @@ function SourceControlInner(): React.JSX.Element {
                                 variant="ghost"
                                 size="sm"
                                 tabIndex={-1}
-                                data-source-control-row-action="view-all"
                                 className={
                                   items.some((entry) => entry.conflictStatus === 'unresolved')
                                     ? 'h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground'
@@ -6320,13 +6320,7 @@ function SourceControlInner(): React.JSX.Element {
                                     isExecutingBulk={isExecutingBulk}
                                     isCollapsed={collapsedTreeDirs.has(node.key)}
                                     onToggle={() => toggleTreeDir(node.key)}
-                                    onRequestDiscardPaths={(discardArea, paths) =>
-                                      setPendingDiscard({
-                                        kind: 'area',
-                                        area: discardArea,
-                                        paths
-                                      })
-                                    }
+                                    onRequestDiscardPaths={requestDiscardAllInArea}
                                     onStagePaths={handleStageAllPaths}
                                     onUnstagePaths={handleUnstagePaths}
                                   />
@@ -6471,7 +6465,6 @@ function SourceControlInner(): React.JSX.Element {
                       variant="ghost"
                       size="sm"
                       tabIndex={-1}
-                      data-source-control-row-action="view-all"
                       className="h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation()

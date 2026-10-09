@@ -10450,7 +10450,11 @@
                   "40e9357b2a": "这将从 HEAD 恢复文件并放弃删除。此操作无法撤销。",
                   "5c0bdbc4cb": "恢复“{{value0}}”？",
                   "d97bf697c9": "这将永久删除该文件。此操作无法撤销。",
-                  "96c772bee9": "删除“{{value0}}”？"
+                  "96c772bee9": "删除“{{value0}}”？",
+                  "subsetTitleOne": "放弃 1 个文件中的更改？",
+                  "subsetTitle": "放弃 {{count}} 个文件中的更改？",
+                  "subsetDescription": "这将还原这些文件中的更改。此操作无法撤销。",
+                  "subsetStagedDescription": "这将取消暂存并还原这些文件。已暂存的新文件将被删除。此操作无法撤销。"
                 },
                 "dialog": {
                   "3bc61dc989": "取消",
