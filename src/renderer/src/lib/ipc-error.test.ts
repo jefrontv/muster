@@ -33,4 +33,18 @@ describe('withIpcErrorPrefixStripped', () => {
     await expect(api.ok(1)).resolves.toBe(2)
     await expect(api.fail()).rejects.toThrow(/^SSH key rejected\.$/)
   })
+
+  it('wraps frozen contextBridge-style objects without breaking Proxy invariants', async () => {
+    const api = withIpcErrorPrefixStripped(
+      Object.freeze({
+        branchCompare: async () => 'ok',
+        fail: async () => {
+          throw new Error("Error invoking remote method 'git:history': Error: boom")
+        }
+      })
+    )
+
+    await expect(api.branchCompare()).resolves.toBe('ok')
+    await expect(api.fail()).rejects.toThrow(/^boom$/)
+  })
 })
