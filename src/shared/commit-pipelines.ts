@@ -48,8 +48,11 @@ export type CommitPipelinesArgs = {
   shas: string[]
 }
 
-/** Matches the Commits panel's history limit, so one request covers every listed commit. */
-export const COMMIT_PIPELINES_MAX_SHAS = 50
+/**
+ * The newest commits the Commits panel looks up: its first page plus one "Load more". Bounded so
+ * the GitHub GraphQL query (one alias per sha) stays well under command-line length limits.
+ */
+export const COMMIT_PIPELINES_MAX_SHAS = 100
 
 export function isCommitPipelineInFlight(status: CommitPipelineStatus): boolean {
   return status === 'running' || status === 'pending'

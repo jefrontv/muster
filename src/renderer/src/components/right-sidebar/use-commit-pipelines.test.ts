@@ -2,7 +2,10 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GitHistoryResult } from '../../../../shared/git-history'
-import type { CommitPipelinesResult } from '../../../../shared/commit-pipelines'
+import {
+  COMMIT_PIPELINES_MAX_SHAS,
+  type CommitPipelinesResult
+} from '../../../../shared/commit-pipelines'
 import { useCommitPipelines, type UseCommitPipelinesInput } from './use-commit-pipelines'
 import {
   COMMIT_PIPELINES_AFTER_PUSH_DELAY_MS,
@@ -103,6 +106,25 @@ describe('useCommitPipelines', () => {
       await vi.advanceTimersByTimeAsync(COMMIT_PIPELINES_POLL_MS * 3)
     })
     expect(commitPipelines).toHaveBeenCalledTimes(1)
+  })
+
+  it('looks up newly loaded rows but only the newest capped set', async () => {
+    const commitPipelines = stubApi([passed()])
+    const ids = Array.from({ length: 150 }, (_, index) => index.toString(16).padStart(40, '0'))
+
+    const { rerender } = renderHook((input: UseCommitPipelinesInput) => useCommitPipelines(input), {
+      initialProps: baseInput({ history: history(ids.slice(0, 50)) })
+    })
+    await act(async () => {})
+    rerender(baseInput({ history: history(ids) }))
+    await act(async () => {})
+
+    expect(commitPipelines).toHaveBeenCalledTimes(2)
+    expect(commitPipelines).toHaveBeenLastCalledWith({
+      worktreePath: '/repo',
+      connectionId: undefined,
+      shas: ids.slice(0, COMMIT_PIPELINES_MAX_SHAS)
+    })
   })
 
   it('polls a minute apart while a run is in flight and stops once it finishes', async () => {

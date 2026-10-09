@@ -209,6 +209,8 @@ import { resolveCreateReviewDraftTitle } from './create-review-draft-title'
 import { GitHistoryPanel, type GitHistoryPanelState } from './GitHistoryPanel'
 import { useCommitPipelines } from './use-commit-pipelines'
 import { useGitHistoryCommitActions } from './useGitHistoryCommitActions'
+import { nextGitHistoryLimit } from './git-history-paging'
+import { GIT_HISTORY_DEFAULT_LIMIT } from '../../../../shared/git-history-types'
 import { normalizeHostedReviewHeadRef } from '../../../../shared/hosted-review-refs'
 import {
   isBehindOnlyUpstream,
@@ -1178,6 +1180,8 @@ function SourceControlInner(): React.JSX.Element {
   >({})
   const gitHistoryRequestSeqRef = useRef(0)
   const gitHistoryRequestByWorktreeRef = useRef<Record<string, number>>({})
+  // Why: kept per worktree so background refreshes re-read every page the user loaded.
+  const gitHistoryLimitByWorktreeRef = useRef<Record<string, number>>({})
   const gitHistoryState = activeWorktreeId
     ? (gitHistoryByWorktree[activeWorktreeId] ?? EMPTY_GIT_HISTORY_STATE)
     : EMPTY_GIT_HISTORY_STATE
@@ -2024,6 +2028,7 @@ function SourceControlInner(): React.JSX.Element {
     for (const key of Object.keys(gitHistoryRequestByWorktreeRef.current)) {
       if (!worktreeMap.has(key)) {
         delete gitHistoryRequestByWorktreeRef.current[key]
+        delete gitHistoryLimitByWorktreeRef.current[key]
       }
     }
   }, [updateCommitDrafts, worktreeMap])
@@ -5025,7 +5030,10 @@ function SourceControlInner(): React.JSX.Element {
           worktreePath,
           connectionId
         },
-        { limit: 50, baseRef: compareBaseRef }
+        {
+          limit: gitHistoryLimitByWorktreeRef.current[worktreeId] ?? GIT_HISTORY_DEFAULT_LIMIT,
+          baseRef: compareBaseRef
+        }
       )
       if (gitHistoryRequestByWorktreeRef.current[worktreeId] !== requestId) {
         return
@@ -5059,6 +5067,16 @@ function SourceControlInner(): React.JSX.Element {
 
   const refreshGitHistoryRef = useRef(refreshGitHistory)
   refreshGitHistoryRef.current = refreshGitHistory
+
+  const gitHistoryLoadedLimit = gitHistoryState.result?.limit
+  const loadMoreGitHistory = useCallback((): void => {
+    if (!activeWorktreeId || gitHistoryLoadedLimit === undefined) {
+      return
+    }
+    gitHistoryLimitByWorktreeRef.current[activeWorktreeId] =
+      nextGitHistoryLimit(gitHistoryLoadedLimit)
+    void refreshGitHistory()
+  }, [activeWorktreeId, gitHistoryLoadedLimit, refreshGitHistory])
 
   useEffect(() => {
     if (!activeWorktreeId || !worktreePath || !isBranchVisible || !compareBaseRef || isFolder) {
@@ -6385,6 +6403,7 @@ function SourceControlInner(): React.JSX.Element {
                 collapsed={collapsedSections.has('history')}
                 onToggle={() => toggleSection('history')}
                 onRefresh={() => void refreshGitHistory()}
+                onLoadMore={loadMoreGitHistory}
                 onOpenCommit={(item) => void openHistoryCommitDiff(item)}
                 onLoadCommitFiles={loadCommitFiles}
                 onOpenCommitFile={openCommitFile}

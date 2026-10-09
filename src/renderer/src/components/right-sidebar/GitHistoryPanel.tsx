@@ -20,6 +20,8 @@ import {
 } from './GitHistoryCommitContextMenu'
 import type { SourceControlRowOpenEvent } from './source-control-split-open'
 import { translate } from '@/i18n/i18n'
+import { GitHistoryErrorRow, GitHistoryLoadMoreRow } from './GitHistoryListStatusRows'
+import { canLoadMoreGitHistory } from './git-history-paging'
 
 export type GitHistoryPanelState =
   | { status: 'idle' | 'loading'; result?: GitHistoryResult; error?: string }
@@ -47,6 +49,7 @@ export function GitHistoryPanel({
   collapsed,
   onToggle,
   onRefresh,
+  onLoadMore,
   onOpenCommit,
   onLoadCommitFiles,
   onOpenCommitFile,
@@ -57,6 +60,7 @@ export function GitHistoryPanel({
   collapsed: boolean
   onToggle: () => void
   onRefresh: () => void
+  onLoadMore?: () => void
   onOpenCommit?: (item: GitHistoryItem) => void
   onLoadCommitFiles?: (item: GitHistoryItem) => Promise<GitBranchChangeEntry[]>
   onOpenCommitFile?: (
@@ -315,12 +319,13 @@ export function GitHistoryPanel({
         </div>
       </div>
       {!collapsed && state.status === 'error' && !result && (
-        <div
-          className={cn(expandedBodyClassName, 'px-6 py-2 text-[11px] text-destructive')}
+        <GitHistoryErrorRow
+          error={state.error}
+          loading={loading}
+          className={expandedBodyClassName}
           style={expandedBodyStyle}
-        >
-          {state.error}
-        </div>
+          onRetry={onRefresh}
+        />
       )}
       {!collapsed && (state.status === 'idle' || state.status === 'loading') && !result && (
         <div
@@ -394,6 +399,12 @@ export function GitHistoryPanel({
               </React.Fragment>
             )
           })}
+          {state.status === 'error' && (
+            <GitHistoryErrorRow error={state.error} loading={loading} onRetry={onRefresh} />
+          )}
+          {onLoadMore && state.status !== 'error' && canLoadMoreGitHistory(result) && (
+            <GitHistoryLoadMoreRow loading={loading} onLoadMore={onLoadMore} />
+          )}
         </div>
       )}
     </div>

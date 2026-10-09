@@ -76,4 +76,55 @@ describe('GitHistoryPanel', () => {
     expect(markup).toContain('Fix tab overflow')
     expect(markup).toContain('52ad492')
   })
+
+  it('offers "Load more" only while the host reports more commits', () => {
+    const render = (hasMore: boolean): string =>
+      renderToStaticMarkup(
+        <GitHistoryPanel
+          state={{ status: 'ready', result: { ...makeHistoryResult(), hasMore } }}
+          collapsed={false}
+          onToggle={vi.fn()}
+          onRefresh={vi.fn()}
+          onLoadMore={vi.fn()}
+        />
+      )
+
+    expect(render(true)).toContain('Load more')
+    expect(render(false)).not.toContain('Load more')
+  })
+
+  it('shows a retry action when the first load fails', () => {
+    const markup = renderToStaticMarkup(
+      <GitHistoryPanel
+        state={{ status: 'error', error: 'fatal: not a repository' }}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    )
+
+    expect(markup).toContain('fatal: not a repository')
+    expect(markup).toContain('Retry')
+  })
+
+  it('keeps the list and swaps "Load more" for a retry when a later load fails', () => {
+    const markup = renderToStaticMarkup(
+      <GitHistoryPanel
+        state={{
+          status: 'error',
+          result: { ...makeHistoryResult(), hasMore: true },
+          error: 'timed out'
+        }}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onRefresh={vi.fn()}
+        onLoadMore={vi.fn()}
+      />
+    )
+
+    expect(markup).toContain('Fix tab overflow')
+    expect(markup).toContain('timed out')
+    expect(markup).toContain('Retry')
+    expect(markup).not.toContain('Load more')
+  })
 })

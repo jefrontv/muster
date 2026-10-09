@@ -10,7 +10,11 @@ import { isWindowVisible } from '@/lib/window-visibility-interval'
 import { getActiveRuntimeTarget } from '@/runtime/runtime-client-target'
 import type { GlobalSettings } from '../../../../shared/types'
 import type { GitHistoryResult } from '../../../../shared/git-history'
-import type { CommitPipelineRun, CommitPipelinesResult } from '../../../../shared/commit-pipelines'
+import {
+  COMMIT_PIPELINES_MAX_SHAS,
+  type CommitPipelineRun,
+  type CommitPipelinesResult
+} from '../../../../shared/commit-pipelines'
 import {
   COMMIT_PIPELINES_AFTER_PUSH_DELAY_MS,
   COMMIT_PIPELINES_MIN_REFETCH_MS,
@@ -50,7 +54,11 @@ export function useCommitPipelines(
     return { key: `${connectionId ?? 'local'}\0${worktreePath}`, worktreePath, connectionId }
   }, [enabled, isLocalRuntime, worktreeId, worktreePath])
   const targetKey = target?.key ?? null
-  const shas = useMemo(() => history?.items.map((item) => item.id) ?? [], [history])
+  // Why: "Load more" can list up to 200 commits; only the newest ones are worth a forge lookup.
+  const shas = useMemo(
+    () => history?.items.slice(0, COMMIT_PIPELINES_MAX_SHAS).map((item) => item.id) ?? [],
+    [history]
+  )
   const shasKey = shas.join(',')
 
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)

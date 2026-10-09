@@ -6,10 +6,10 @@ const REPO = { workspace: 'efront_au', repoSlug: 'site' }
 
 describe('normalizeCommitShas', () => {
   it('keeps full hashes only, deduped and capped at the panel size', () => {
-    const many = Array.from({ length: 80 }, (_, index) => index.toString(16).padStart(40, '0'))
+    const many = Array.from({ length: 150 }, (_, index) => index.toString(16).padStart(40, '0'))
 
     expect(normalizeCommitShas([SHA, SHA, 'abc123', 42, null])).toEqual([SHA])
-    expect(normalizeCommitShas(many)).toHaveLength(50)
+    expect(normalizeCommitShas(many)).toHaveLength(100)
     expect(normalizeCommitShas('not-an-array')).toEqual([])
   })
 })
