@@ -14,6 +14,8 @@ import { parseNumstat } from '../shared/git-uncommitted-line-stats'
 import { undoLastCommitWithGit } from '../shared/git-undo-last-commit'
 import { readLastCommitMessageWithGit } from '../shared/git-amend-commit'
 import { readMergeMessageOp, runSequencerActionOp } from './git-handler-sequencer-ops'
+import { resolveDefaultPublishDestination } from '../shared/git-publish-remote'
+import { resolvePublishRemoteOp } from './git-handler-publish-remote-ops'
 import {
   computeDiff,
   branchCompare as branchCompareOp,
@@ -225,6 +227,9 @@ export class GitHandler {
       this.runWithGitReadCacheClear(() => runSequencerActionOp(this.mutationGit(context), p))
     )
     this.dispatcher.onRequest('git.mergeMessage', (p) => readMergeMessageOp(p))
+    this.dispatcher.onRequest('git.publishRemote', (p) =>
+      resolvePublishRemoteOp(this.git.bind(this), p)
+    )
     this.dispatcher.onRequest('git.checkout', (p) => this.checkout(p))
     this.dispatcher.onRequest('git.localBranches', (p) => this.localBranches(p))
     this.dispatcher.onRequest('git.discard', (p) => this.discard(p))
@@ -1095,11 +1100,14 @@ export class GitHandler {
     try {
       try {
         const target = await resolveRelayPushTarget(git, worktreePath, params.pushTarget)
+        const destination = target
+          ? [target.remote, target.refspec]
+          : await resolveDefaultPublishDestination((args) => git(args, worktreePath))
         const args = [
           'push',
           ...(params.forceWithLease === true ? ['--force-with-lease'] : []),
           '--set-upstream',
-          ...(target ? [target.remote, target.refspec] : ['origin', 'HEAD'])
+          ...destination
         ]
         await git(args, worktreePath)
       } catch (error) {

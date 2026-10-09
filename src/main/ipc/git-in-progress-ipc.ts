@@ -11,6 +11,8 @@ import {
   type GitSequencerActionResult
 } from '../../shared/git-sequencer-action'
 import { readPreparedMergeMessage, runGitSequencerAction } from '../git/sequencer'
+import type { GitPublishRemoteResolution } from '../../shared/git-publish-remote'
+import { resolveGitPublishRemote } from '../git/publish-remote'
 
 type WorktreeArgs = { worktreePath: string; connectionId?: string }
 
@@ -31,7 +33,7 @@ async function resolveLocalWorktree(
   return { worktreePath, gitOptions }
 }
 
-// Why: continue/skip/abort of an in-progress rebase or cherry-pick, plus the merge message prefill, kept out of the large filesystem handler file.
+// Why: in-progress operation actions, the merge message prefill and the publish remote lookup, kept out of the large filesystem handler file.
 export function registerGitInProgressOperationHandlers(store: Store): void {
   ipcMain.handle(
     'git:sequencerAction',
@@ -60,4 +62,15 @@ export function registerGitInProgressOperationHandlers(store: Store): void {
     const { worktreePath } = await resolveLocalWorktree(store, args.worktreePath)
     return readPreparedMergeMessage(worktreePath)
   })
+
+  ipcMain.handle(
+    'git:publishRemote',
+    async (_event, args: WorktreeArgs): Promise<GitPublishRemoteResolution> => {
+      if (args.connectionId) {
+        return requireSshGitProvider(args.connectionId).resolvePublishRemote(args.worktreePath)
+      }
+      const { worktreePath, gitOptions } = await resolveLocalWorktree(store, args.worktreePath)
+      return resolveGitPublishRemote(worktreePath, gitOptions)
+    }
+  )
 }

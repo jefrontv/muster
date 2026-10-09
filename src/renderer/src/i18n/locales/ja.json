@@ -10970,6 +10970,14 @@
             "sectionOneFile": "{{label}}、1 ファイル",
             "sectionFiles": "{{label}}、{{count}} ファイル",
             "label": "変更されたファイル"
+          },
+          "publish_remote": {
+            "title": "ブランチを公開",
+            "description": "このリポジトリには複数のリモートがあります。{{value0}} の公開先を選んでください。",
+            "label": "リモート",
+            "placeholder": "リモートを選択",
+            "cancel": "キャンセル",
+            "publish": "公開"
           }
         }
       },

@@ -10970,6 +10970,14 @@
             "sectionOneFile": "{{label}}, 1 archivo",
             "sectionFiles": "{{label}}, {{count}} archivos",
             "label": "Archivos modificados"
+          },
+          "publish_remote": {
+            "title": "Publicar rama",
+            "description": "Este repositorio tiene más de un remoto. Elige dónde publicar {{value0}}.",
+            "label": "Remoto",
+            "placeholder": "Elige un remoto",
+            "cancel": "Cancelar",
+            "publish": "Publicar"
           }
         }
       },

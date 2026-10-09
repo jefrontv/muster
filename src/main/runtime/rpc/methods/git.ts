@@ -164,6 +164,11 @@ export const GIT_METHODS: RpcMethod[] = [
     handler: async (params, { runtime }) => runtime.readRuntimeGitMergeMessage(params.worktree)
   }),
   defineMethod({
+    name: 'git.publishRemote',
+    params: WorktreeSelector,
+    handler: async (params, { runtime }) => runtime.resolveRuntimeGitPublishRemote(params.worktree)
+  }),
+  defineMethod({
     name: 'git.checkout',
     params: GitCheckout,
     handler: async (params, { runtime }) =>

@@ -28,6 +28,7 @@ import type {
   GitSequencerAction,
   GitSequencerActionResult
 } from '../../../shared/git-sequencer-action'
+import type { GitPublishRemoteResolution } from '../../../shared/git-publish-remote'
 import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
 import { GIT_MUTATION_TIMEOUT_MS } from '../../../shared/git-mutation-timeout'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
@@ -421,6 +422,24 @@ export async function readRuntimeGitMergeMessage(
   return callRuntimeRpc<string | null>(
     target,
     'git.mergeMessage',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
+    { timeoutMs: 15_000 }
+  )
+}
+
+export async function resolveRuntimeGitPublishRemote(
+  context: RuntimeGitContext
+): Promise<GitPublishRemoteResolution> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return localGitApi().publishRemote({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId
+    })
+  }
+  return callRuntimeRpc<GitPublishRemoteResolution>(
+    target,
+    'git.publishRemote',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
     { timeoutMs: 15_000 }
   )

@@ -5,6 +5,7 @@ import {
 import { resolveEffectiveGitUpstream } from '../../shared/git-effective-upstream'
 import { gitRefTargetsBranchOnRemote } from '../../shared/git-remote-branch-name'
 import { resolveGitRemoteRebaseSource } from '../../shared/git-rebase-source'
+import { resolveDefaultPublishDestination } from '../../shared/git-publish-remote'
 import type { GitPushTarget } from '../../shared/types'
 import type { GitRuntimeOptions } from './git-runtime-options'
 import { gitOptionsForWorktree } from './git-runtime-options'
@@ -23,7 +24,7 @@ function networkGitOptions(
   }
 }
 
-async function getConfiguredPushTarget(
+export async function getConfiguredPushTarget(
   worktreePath: string,
   options: GitRuntimeOptions = {}
 ): Promise<{ remote: string; refspec: string } | null> {
@@ -210,11 +211,16 @@ export async function gitPush(
     const target = pushTarget
       ? explicitPushTarget(pushTarget)
       : await getConfiguredPushTarget(worktreePath, options)
+    const destination = target
+      ? [target.remote, target.refspec]
+      : await resolveDefaultPublishDestination((args) =>
+          gitExecFileAsync(args, gitOptionsForWorktree(worktreePath, options))
+        )
     const args = [
       'push',
       ...(options.forceWithLease ? ['--force-with-lease'] : []),
       '--set-upstream',
-      ...(target ? [target.remote, target.refspec] : ['origin', 'HEAD'])
+      ...destination
     ]
     await gitExecFileAsync(args, networkGitOptions(worktreePath, options))
   } catch (error) {

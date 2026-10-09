@@ -334,6 +334,8 @@ export { HostedReviewHeaderLink } from './hosted-review-header-chrome'
 import { OperationBanner } from './source-control-operation-banner'
 export { OperationBanner } from './source-control-operation-banner'
 import { useSourceControlInProgressOperation } from './use-source-control-in-progress-operation'
+import { usePublishRemotePicker } from './publish-remote-picker-dialog'
+import { choosePublishPushTarget } from './publish-remote-target'
 import {
   createRunningCommitMessageGenerationRecord,
   getCommitMessageGenerationRecordKey,
@@ -1114,6 +1116,7 @@ function SourceControlInner(): React.JSX.Element {
   >({})
   const isAbortingOperation = abortOperationInFlightByWorktree[activeWorktreeId ?? ''] ?? false
   const confirmAction = useConfirmationDialog()
+  const { pickPublishRemote, publishRemotePicker } = usePublishRemotePicker()
   const isCommitting = commitInFlightByWorktree[activeWorktreeId ?? ''] ?? false
   // Why: per-worktree shape (like commit) so navigating worktrees mid-generation never cancels the in-flight request.
   const generateInFlightRef = useRef<Record<string, boolean>>({})
@@ -2513,12 +2516,21 @@ function SourceControlInner(): React.JSX.Element {
       setRemoteActionErrors((prev) => ({ ...prev, [target.worktreeId]: null }))
       try {
         if (kind === 'publish') {
+          const choice = await choosePublishPushTarget({
+            context: target,
+            pushTarget: target.pushTarget,
+            branchName: failureBranchName,
+            pickPublishRemote
+          })
+          if (choice.kind === 'cancelled') {
+            return { status: 'skipped' }
+          }
           await pushBranch(
             target.worktreeId,
             target.worktreePath,
             true,
             target.connectionId,
-            target.pushTarget,
+            choice.pushTarget,
             { runtimeTargetSettings: target.settings }
           )
           return { status: 'ok' }
@@ -2647,6 +2659,7 @@ function SourceControlInner(): React.JSX.Element {
       grouped.staged,
       grouped.unstaged,
       grouped.untracked,
+      pickPublishRemote,
       pullBranch,
       pushBranch,
       rebaseFromBase,
@@ -6756,6 +6769,7 @@ function SourceControlInner(): React.JSX.Element {
         onCancel={() => setPendingDiscard(null)}
         onConfirm={confirmPendingDiscard}
       />
+      {publishRemotePicker}
 
       <Dialog open={baseRefDialogOpen} onOpenChange={setBaseRefDialogOpen}>
         <DialogContent className="flex max-h-[min(85vh,36rem)] max-w-xl flex-col overflow-hidden">

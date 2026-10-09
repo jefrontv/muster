@@ -24,6 +24,7 @@ import type {
   GitSequencerAction,
   GitSequencerActionResult
 } from '../../shared/git-sequencer-action'
+import type { GitPublishRemoteResolution } from '../../shared/git-publish-remote'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import { buildHostedRemoteCommitUrl, buildHostedRemoteFileUrl } from '../git/hosted-remote-url'
 import { JsonRpcErrorCode } from '../ssh/relay-protocol'
@@ -525,6 +526,12 @@ export class SshGitProvider implements IGitProvider {
 
   async readMergeMessage(worktreePath: string): Promise<string | null> {
     return (await this.mux.request('git.mergeMessage', { worktreePath })) as string | null
+  }
+
+  async resolvePublishRemote(worktreePath: string): Promise<GitPublishRemoteResolution> {
+    return (await this.mux.request('git.publishRemote', {
+      worktreePath
+    })) as GitPublishRemoteResolution
   }
 
   async checkoutBranch(worktreePath: string, branch: string): Promise<void> {

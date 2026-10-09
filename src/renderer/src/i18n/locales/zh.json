@@ -10970,6 +10970,14 @@
             "sectionOneFile": "{{label}}，1 个文件",
             "sectionFiles": "{{label}}，{{count}} 个文件",
             "label": "已更改的文件"
+          },
+          "publish_remote": {
+            "title": "发布分支",
+            "description": "此仓库有多个远程仓库。请选择要将 {{value0}} 发布到哪里。",
+            "label": "远程仓库",
+            "placeholder": "选择远程仓库",
+            "cancel": "取消",
+            "publish": "发布"
           }
         }
       },

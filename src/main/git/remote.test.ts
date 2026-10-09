@@ -9,6 +9,7 @@ vi.mock('./runner', () => ({
 }))
 
 import { gitFastForward, gitFetch, gitPull, gitPullRebaseFromBase, gitPush } from './remote'
+import { PUBLISH_REMOTE_CHOICE_REQUIRED_MESSAGE } from '../../shared/git-publish-remote'
 
 describe('git remote operations', () => {
   beforeEach(() => {
@@ -18,12 +19,45 @@ describe('git remote operations', () => {
   it('pushes to origin when no upstream is configured', async () => {
     gitExecFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
     gitExecFileAsyncMock.mockRejectedValueOnce(Object.assign(new Error('no branch'), { code: 1 }))
+    gitExecFileAsyncMock.mockResolvedValueOnce({ stdout: 'fork\norigin\n', stderr: '' })
+
+    await gitPush('/repo', true)
+
+    expect(gitExecFileAsyncMock).toHaveBeenCalledWith(['remote'], { cwd: '/repo' })
+    expect(gitExecFileAsyncMock).toHaveBeenLastCalledWith(
+      ['push', '--set-upstream', 'origin', 'HEAD'],
+      { cwd: '/repo', useConfiguredSshCommandForNetwork: true }
+    )
+  })
+
+  it('publishes to the only remote when it is not named origin', async () => {
+    gitExecFileAsyncMock.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'symbolic-ref') {
+        throw Object.assign(new Error('no branch'), { code: 1 })
+      }
+      return { stdout: args[0] === 'remote' ? 'upstream\n' : '', stderr: '' }
+    })
 
     await gitPush('/repo', true)
 
     expect(gitExecFileAsyncMock).toHaveBeenLastCalledWith(
-      ['push', '--set-upstream', 'origin', 'HEAD'],
+      ['push', '--set-upstream', 'upstream', 'HEAD'],
       { cwd: '/repo', useConfiguredSshCommandForNetwork: true }
+    )
+  })
+
+  it('asks for a remote instead of guessing when several exist without origin', async () => {
+    gitExecFileAsyncMock.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'symbolic-ref') {
+        throw Object.assign(new Error('no branch'), { code: 1 })
+      }
+      return { stdout: args[0] === 'remote' ? 'fork\nupstream\n' : '', stderr: '' }
+    })
+
+    await expect(gitPush('/repo', true)).rejects.toThrow(PUBLISH_REMOTE_CHOICE_REQUIRED_MESSAGE)
+    expect(gitExecFileAsyncMock).not.toHaveBeenCalledWith(
+      expect.arrayContaining(['push']),
+      expect.anything()
     )
   })
 
@@ -78,6 +112,9 @@ describe('git remote operations', () => {
       }
       if (args[0] === 'config' && args.includes('branch.feature/fix.base')) {
         return { stdout: 'refs/remotes/origin/main\n', stderr: '' }
+      }
+      if (args[0] === 'remote') {
+        return { stdout: 'fork\norigin\n', stderr: '' }
       }
       return { stdout: '', stderr: '' }
     })

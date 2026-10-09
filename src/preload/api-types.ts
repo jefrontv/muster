@@ -334,6 +334,7 @@ import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commi
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
 import type { GitSequencerAction, GitSequencerActionResult } from '../shared/git-sequencer-action'
+import type { GitPublishRemoteResolution } from '../shared/git-publish-remote'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type {
   EphemeralVmRecipeDoctorResult,
@@ -3236,6 +3237,10 @@ export type PreloadApi = {
       action: GitSequencerAction
     }) => Promise<GitSequencerActionResult>
     mergeMessage: (args: { worktreePath: string; connectionId?: string }) => Promise<string | null>
+    publishRemote: (args: {
+      worktreePath: string
+      connectionId?: string
+    }) => Promise<GitPublishRemoteResolution>
     diff: (args: {
       worktreePath: string
       filePath: string

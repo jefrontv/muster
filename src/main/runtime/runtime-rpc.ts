@@ -218,6 +218,7 @@ const MOBILE_RPC_METHOD_ALLOWLIST = new Set([
   'git.lastCommitMessage',
   'git.localBranches',
   'git.mergeMessage',
+  'git.publishRemote',
   'git.pull',
   'git.push',
   'git.rebaseFromBase',

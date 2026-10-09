@@ -26,6 +26,8 @@ import type {
   GitSequencerActionResult
 } from '../../shared/git-sequencer-action'
 import { readPreparedMergeMessage, runGitSequencerAction } from '../git/sequencer'
+import type { GitPublishRemoteResolution } from '../../shared/git-publish-remote'
+import { resolveGitPublishRemote } from '../git/publish-remote'
 import {
   mergeLegacyCommitMessageAiIntoSourceControlAi,
   type ResolvedSourceControlAiGenerationParams
@@ -376,6 +378,20 @@ export class RuntimeGitCommands {
       return provider.readMergeMessage(target.worktree.path)
     }
     return readPreparedMergeMessage(target.worktree.path)
+  }
+
+  async resolveRuntimeGitPublishRemote(
+    worktreeSelector: string
+  ): Promise<GitPublishRemoteResolution> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    if (target.connectionId) {
+      const provider = getSshGitProvider(target.connectionId)
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.resolvePublishRemote(target.worktree.path)
+    }
+    return resolveGitPublishRemote(target.worktree.path, localGitOptionsForTarget(target))
   }
 
   async checkoutRuntimeGitBranch(

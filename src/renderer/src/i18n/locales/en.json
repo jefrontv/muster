@@ -10993,6 +10993,14 @@
             "sectionOneFile": "{{label}}, 1 file",
             "sectionFiles": "{{label}}, {{count}} files",
             "label": "Changed files"
+          },
+          "publish_remote": {
+            "title": "Publish Branch",
+            "description": "This repository has more than one remote. Choose where to publish {{value0}}.",
+            "label": "Remote",
+            "placeholder": "Choose a remote",
+            "cancel": "Cancel",
+            "publish": "Publish"
           }
         }
       },

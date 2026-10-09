@@ -10970,6 +10970,14 @@
             "sectionOneFile": "{{label}}, 파일 1개",
             "sectionFiles": "{{label}}, 파일 {{count}}개",
             "label": "변경된 파일"
+          },
+          "publish_remote": {
+            "title": "브랜치 게시",
+            "description": "이 저장소에는 원격이 여러 개 있습니다. {{value0}}을(를) 게시할 곳을 선택하세요.",
+            "label": "원격",
+            "placeholder": "원격 선택",
+            "cancel": "취소",
+            "publish": "게시"
           }
         }
       },

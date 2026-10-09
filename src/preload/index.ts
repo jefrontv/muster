@@ -102,6 +102,7 @@ import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commi
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
 import type { GitSequencerAction, GitSequencerActionResult } from '../shared/git-sequencer-action'
+import type { GitPublishRemoteResolution } from '../shared/git-publish-remote'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
@@ -3454,6 +3455,10 @@ const api = {
     }): Promise<GitSequencerActionResult> => ipcRenderer.invoke('git:sequencerAction', args),
     mergeMessage: (args: { worktreePath: string; connectionId?: string }): Promise<string | null> =>
       ipcRenderer.invoke('git:mergeMessage', args),
+    publishRemote: (args: {
+      worktreePath: string
+      connectionId?: string
+    }): Promise<GitPublishRemoteResolution> => ipcRenderer.invoke('git:publishRemote', args),
     diff: (args: {
       worktreePath: string
       filePath: string
