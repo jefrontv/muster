@@ -210,6 +210,7 @@ import { GitHistoryPanel, type GitHistoryPanelState } from './GitHistoryPanel'
 import { useCommitPipelines } from './use-commit-pipelines'
 import { useGitHistoryCommitActions } from './useGitHistoryCommitActions'
 import { nextGitHistoryLimit } from './git-history-paging'
+import { shouldRefreshGitHistoryAfterCommit } from './git-history-post-commit-refresh'
 import { GIT_HISTORY_DEFAULT_LIMIT } from '../../../../shared/git-history-types'
 import { normalizeHostedReviewHeadRef } from '../../../../shared/hosted-review-refs'
 import {
@@ -2105,6 +2106,9 @@ function SourceControlInner(): React.JSX.Element {
 
       setCommitInFlightByWorktree((prev) => ({ ...prev, [target.worktreeId]: true }))
       setCommitErrorForWorktree(target.worktreeId, null)
+      const readStatusHead = (): string | null =>
+        useAppStore.getState().gitStatusHeadByWorktree?.[target.worktreeId] ?? null
+      const statusHeadBeforeCommit = readStatusHead()
       try {
         const commitResult = await commitRuntimeGit(
           {
@@ -2131,9 +2135,7 @@ function SourceControlInner(): React.JSX.Element {
           return writeCommitDraftForWorktree(prev, target.worktreeId, '')
         })
         setCommitErrorForWorktree(target.worktreeId, null)
-        if (!options?.target) {
-          void refreshActiveGitStatusAfterMutation()
-        }
+        const statusRefresh = options?.target ? null : refreshActiveGitStatusAfterMutation()
         // Why: flip branchSummary to 'loading' synchronously so "No changes on this branch" doesn't flash before the branchCompare poll lands the commit.
         if (!options?.target && compareBaseRef) {
           beginGitBranchCompareRequest(
@@ -2142,9 +2144,13 @@ function SourceControlInner(): React.JSX.Element {
             compareBaseRef
           )
         }
-        if (!options?.target) {
+        if (statusRefresh) {
           void refreshBranchCompareRef.current()
-          void refreshGitHistoryRef.current()
+          void statusRefresh.then(() => {
+            if (shouldRefreshGitHistoryAfterCommit(statusHeadBeforeCommit, readStatusHead())) {
+              void refreshGitHistoryRef.current()
+            }
+          })
         }
         return true
       } catch (error) {
