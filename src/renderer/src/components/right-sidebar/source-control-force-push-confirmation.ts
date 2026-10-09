@@ -1,4 +1,5 @@
 import type { GitUpstreamStatus } from '../../../../shared/git-status-types'
+import { shouldForcePushWithLeaseForUpstream } from '../../../../shared/git-upstream-status'
 import { translate } from '@/i18n/i18n'
 
 export type ForcePushConfirmation = {
@@ -8,11 +9,11 @@ export type ForcePushConfirmation = {
   confirmVariant: 'destructive'
 }
 
-// Why: force-with-lease still overwrites commits the remote has and the branch lacks, so ask first whenever behind > 0.
+// Why: force-with-lease still overwrites remote-only commits; skip the prompt only when they are older copies of local commits (routine post-rebase push).
 export function resolveForcePushConfirmation(
   status: GitUpstreamStatus | undefined
 ): ForcePushConfirmation | null {
-  if (!status?.hasUpstream || status.behind <= 0) {
+  if (!status?.hasUpstream || status.behind <= 0 || shouldForcePushWithLeaseForUpstream(status)) {
     return null
   }
   const upstream =

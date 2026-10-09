@@ -105,7 +105,7 @@ describe('resolveForcePushConfirmation', () => {
     )
   })
 
-  it('still confirms when the remote commits are patch-equivalent copies', () => {
+  it('skips the confirm when the remote only has older copies of local commits', () => {
     expect(
       resolveForcePushConfirmation({
         hasUpstream: true,
@@ -113,6 +113,18 @@ describe('resolveForcePushConfirmation', () => {
         ahead: 3,
         behind: 3,
         behindCommitsArePatchEquivalent: true
+      })
+    ).toBeNull()
+  })
+
+  it('confirms when the remote has commits that are not copies of local ones', () => {
+    expect(
+      resolveForcePushConfirmation({
+        hasUpstream: true,
+        upstreamName: 'origin/feature',
+        ahead: 3,
+        behind: 3,
+        behindCommitsArePatchEquivalent: false
       })
     ).not.toBeNull()
   })

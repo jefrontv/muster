@@ -4067,6 +4067,18 @@ function SourceControlInner(): React.JSX.Element {
         return
       }
 
+      if (remoteStep === 'force_push') {
+        // Why: same confirm rule as every other force-push entry point.
+        const confirmation = resolveForcePushConfirmation(latestUpstreamStatus)
+        if (confirmation && !(await confirmAction(confirmation))) {
+          setCreatePrIntentNoticeForWorktree(token.worktreeId, null)
+          return
+        }
+        if (abortIfStale()) {
+          return
+        }
+      }
+
       setCreatePrIntentNoticeForWorktree(token.worktreeId, {
         tone: 'muted',
         // Why: keep each translate() key a string literal so the localization-catalog verifier can statically detect it.
@@ -4169,6 +4181,7 @@ function SourceControlInner(): React.JSX.Element {
     activeRepo,
     activeWorktreeId,
     branchName,
+    confirmAction,
     createPrIntentActiveTargetConflicts,
     createPrIntentRunStillOwnsWorktree,
     createHostedReviewForCreatePrIntent,
