@@ -44,8 +44,9 @@ describe('dropdown layout', () => {
     const labels = nodes.map((node) =>
       node.kind === 'submenu' ? `more:${node.items.length}` : node.kind
     )
-    expect(labels.slice(0, 11)).toEqual([
+    expect(labels.slice(0, 12)).toEqual([
       'commit',
+      'commit_amend',
       'commit_push',
       'commit_sync',
       'undo_commit',
@@ -83,9 +84,9 @@ describe('omitPrimaryDuplicateRows', () => {
   it('drops the Commit row when the primary button is Commit', () => {
     const entries = omitPrimaryDuplicateRows(resolveDropdownItems(inputs()), 'commit')
     expect(entries.map((entry) => entry.kind).slice(0, 3)).toEqual([
+      'commit_amend',
       'commit_push',
-      'commit_sync',
-      'undo_commit'
+      'commit_sync'
     ])
   })
 

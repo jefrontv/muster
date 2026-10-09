@@ -10552,6 +10552,20 @@
                     }
                   }
                 }
+              },
+              "amend": {
+                "commit": {
+                  "label": "Commit (Amend)",
+                  "no_commit": "修正できる Commit がありません",
+                  "operation_in_progress": "先に {{value0}} を完了または中止してください",
+                  "resolve_conflicts": "Commit する前に競合を解決してください",
+                  "ready": "直前の Commit をステージ済みの変更とこのメッセージで置き換えます",
+                  "load_message": "直前の Commit メッセージを読み込んで編集し、その後 Amend します",
+                  "confirm_title": "Push 済みの Commit を修正しますか？",
+                  "confirm_description": "この Commit はすでに {{value0}} にあります。修正してもローカルブランチだけが変わり、次回の Push には Force Push が必要になります。",
+                  "confirm_label": "Commit を修正",
+                  "load_failed": "直前の Commit メッセージを読み込めませんでした"
+                }
               }
             }
           },

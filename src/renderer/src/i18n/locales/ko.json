@@ -10552,6 +10552,20 @@
                     }
                   }
                 }
+              },
+              "amend": {
+                "commit": {
+                  "label": "Commit (수정)",
+                  "no_commit": "수정할 Commit이 없습니다",
+                  "operation_in_progress": "먼저 {{value0}}을(를) 완료하거나 중단하세요",
+                  "resolve_conflicts": "Commit하기 전에 충돌을 해결하세요",
+                  "ready": "마지막 Commit을 스테이지된 변경 사항과 이 메시지로 바꿉니다",
+                  "load_message": "마지막 Commit 메시지를 불러와 편집한 뒤 수정합니다",
+                  "confirm_title": "이미 Push된 Commit을 수정할까요?",
+                  "confirm_description": "이 Commit은 이미 {{value0}}에 있습니다. 수정하면 로컬 브랜치만 바뀌며, 다음 Push에는 Force Push가 필요합니다.",
+                  "confirm_label": "Commit 수정",
+                  "load_failed": "마지막 Commit 메시지를 불러오지 못했습니다"
+                }
               }
             }
           },

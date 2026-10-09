@@ -59,6 +59,12 @@ import {
   type GitUndoLastCommitResult
 } from '../../shared/git-undo-last-commit'
 import {
+  buildGitCommitArgs,
+  readLastCommitMessageWithGit,
+  type GitCommitOptions,
+  type GitLastCommitMessageResult
+} from '../../shared/git-amend-commit'
+import {
   beginGitStatusLineStatsCacheWrite,
   clearGitStatusLineStatsCache,
   clearGitStatusLineStatsCacheKey,
@@ -1020,6 +1026,15 @@ export async function undoLastCommit(
     undoLastCommitWithGit((args) =>
       gitExecFileAsync(args, gitOptionsForWorktree(worktreePath, options))
     )
+  )
+}
+
+export async function readLastCommitMessage(
+  worktreePath: string,
+  options: GitRuntimeOptions = {}
+): Promise<GitLastCommitMessageResult> {
+  return readLastCommitMessageWithGit((args) =>
+    gitExecFileAsync(args, gitOptionsForWorktree(worktreePath, options))
   )
 }
 
@@ -2016,11 +2031,15 @@ export async function getStagedCommitContext(
 export async function commitChanges(
   worktreePath: string,
   message: string,
-  options: GitRuntimeOptions = {}
+  options: GitRuntimeOptions = {},
+  commitOptions: GitCommitOptions = {}
 ): Promise<{ success: boolean; error?: string }> {
   invalidateGitReadCaches()
   try {
-    await gitExecFileAsync(['commit', '-m', message], gitOptionsForWorktree(worktreePath, options))
+    await gitExecFileAsync(
+      buildGitCommitArgs(message, commitOptions),
+      gitOptionsForWorktree(worktreePath, options)
+    )
     return { success: true }
   } catch (error) {
     // Why: useful message may be on stderr (hook/GPG failures) or stdout ("nothing to commit"), so try both then message.

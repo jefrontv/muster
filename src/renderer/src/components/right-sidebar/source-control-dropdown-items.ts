@@ -17,6 +17,7 @@ import {
 } from './source-control-create-review-blocked-action'
 import { resolveOpenReviewInBrowserItem } from './source-control-open-review-in-browser-item'
 import { arrangeDropdownEntries } from './source-control-dropdown-layout'
+import { resolveAmendCommitItem } from './source-control-amend-commit'
 
 export type DropdownActionInputs = PrimaryActionInputs & {
   conflictOperation?: GitConflictOperation
@@ -29,6 +30,7 @@ export type DropdownActionInputs = PrimaryActionInputs & {
 
 export type DropdownActionKind =
   | 'commit'
+  | 'commit_amend'
   | 'commit_push'
   | 'commit_sync'
   | 'undo_commit'
@@ -585,7 +587,19 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     })
   }
   const entries = arrangeDropdownEntries({
-    commitRows: [commitItem, commitPushItem, commitSyncItem, undoCommitItem],
+    commitRows: [
+      commitItem,
+      resolveAmendCommitItem({
+        globalBusy,
+        hasHeadCommit,
+        conflictOperation,
+        hasUnresolvedConflicts,
+        hasMessage
+      }),
+      commitPushItem,
+      commitSyncItem,
+      undoCommitItem
+    ],
     remoteRows: [pushItem, pullItem, syncItem, fetchItem],
     moreRows: [fastForwardItem, rebaseItem],
     reviewRows: hostedReviewEntries,

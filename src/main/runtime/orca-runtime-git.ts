@@ -20,6 +20,7 @@ import type { CommitMessageDraftContext } from '../../shared/commit-message-gene
 import { getCommitMessageModelDiscoveryHostKey } from '../../shared/commit-message-host-key'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
+import type { GitCommitOptions, GitLastCommitMessageResult } from '../../shared/git-amend-commit'
 import {
   mergeLegacyCommitMessageAiIntoSourceControlAi,
   type ResolvedSourceControlAiGenerationParams
@@ -32,6 +33,7 @@ import {
   abortMerge,
   abortRebase,
   undoLastCommit,
+  readLastCommitMessage,
   bulkDiscardChanges,
   bulkStageFiles,
   bulkUnstageFiles,
@@ -330,6 +332,20 @@ export class RuntimeGitCommands {
     return undoLastCommit(target.worktree.path, localGitOptionsForTarget(target))
   }
 
+  async readRuntimeGitLastCommitMessage(
+    worktreeSelector: string
+  ): Promise<GitLastCommitMessageResult> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    const provider = target.connectionId ? getSshGitProvider(target.connectionId) : null
+    if (target.connectionId) {
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.readLastCommitMessage(target.worktree.path)
+    }
+    return readLastCommitMessage(target.worktree.path, localGitOptionsForTarget(target))
+  }
+
   async checkoutRuntimeGitBranch(
     worktreeSelector: string,
     branch: string
@@ -610,7 +626,8 @@ export class RuntimeGitCommands {
 
   async commitRuntimeGit(
     worktreeSelector: string,
-    message: string
+    message: string,
+    commitOptions: GitCommitOptions = {}
   ): Promise<{ success: boolean; error?: string }> {
     if (message.trim().length === 0) {
       throw new Error('Commit message is required')
@@ -621,9 +638,14 @@ export class RuntimeGitCommands {
       if (!provider) {
         throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
       }
-      return provider.commit(target.worktree.path, message)
+      return provider.commit(target.worktree.path, message, commitOptions)
     }
-    return commitChanges(target.worktree.path, message, localGitOptionsForTarget(target))
+    return commitChanges(
+      target.worktree.path,
+      message,
+      localGitOptionsForTarget(target),
+      commitOptions
+    )
   }
 
   async generateRuntimeCommitMessage(

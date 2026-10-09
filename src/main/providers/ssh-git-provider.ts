@@ -19,6 +19,7 @@ import type {
   RemoveWorktreeResult
 } from '../../shared/types'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
+import type { GitCommitOptions, GitLastCommitMessageResult } from '../../shared/git-amend-commit'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import { buildHostedRemoteCommitUrl, buildHostedRemoteFileUrl } from '../git/hosted-remote-url'
 import { JsonRpcErrorCode } from '../ssh/relay-protocol'
@@ -208,16 +209,24 @@ export class SshGitProvider implements IGitProvider {
 
   async commit(
     worktreePath: string,
-    message: string
+    message: string,
+    options: GitCommitOptions = {}
   ): Promise<{ success: boolean; error?: string }> {
     return this.runWithGitReadInvalidation(
       async () =>
         (await this.mux.request(
-          'git.commit',
+          // Why: a separate method fails closed on an older relay instead of silently making a new commit.
+          options.amend ? 'git.amendCommit' : 'git.commit',
           { worktreePath, message },
           { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
         )) as { success: boolean; error?: string }
     )
+  }
+
+  async readLastCommitMessage(worktreePath: string): Promise<GitLastCommitMessageResult> {
+    return (await this.mux.request('git.lastCommitMessage', {
+      worktreePath
+    })) as GitLastCommitMessageResult
   }
 
   async getStagedCommitContext(worktreePath: string): Promise<CommitMessageDraftContext | null> {

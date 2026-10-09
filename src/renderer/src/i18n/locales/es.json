@@ -10552,6 +10552,20 @@
                     }
                   }
                 }
+              },
+              "amend": {
+                "commit": {
+                  "label": "Commit (Enmendar)",
+                  "no_commit": "No hay ningún commit para enmendar",
+                  "operation_in_progress": "Termina o cancela primero el {{value0}}",
+                  "resolve_conflicts": "Resuelve los conflictos antes de hacer commit",
+                  "ready": "Reemplaza el último commit con los cambios staged y este mensaje",
+                  "load_message": "Carga el mensaje del último commit para editarlo y luego enmendar",
+                  "confirm_title": "¿Enmendar un commit ya enviado?",
+                  "confirm_description": "Este commit ya está en {{value0}}. Enmendarlo solo cambia tu rama local, y tu próximo push necesitará Force Push.",
+                  "confirm_label": "Enmendar commit",
+                  "load_failed": "No se pudo cargar el mensaje del último commit"
+                }
               }
             }
           },

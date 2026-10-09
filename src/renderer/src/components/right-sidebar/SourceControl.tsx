@@ -155,7 +155,10 @@ import { describeForkPushTarget } from './fork-push-target-label'
 import { toast } from 'sonner'
 import { SourceControlEntryContextMenu } from './source-control-entry-context-menu'
 import { resolveEntryContextMenuActions } from './source-control-entry-context-menu-actions'
-import { useCommitMessageFocusRequest } from './source-control-commit-message-focus'
+import {
+  requestCommitMessageFocus,
+  useCommitMessageFocusRequest
+} from './source-control-commit-message-focus'
 import { resolveCommitMessagePlaceholder } from './source-control-commit-message-placeholder'
 import { SourceControlNoMatchingFiles } from './source-control-no-matching-files'
 import {
@@ -191,11 +194,13 @@ import {
   resolveRestoredCommitMessage,
   resolveUndoCommitConfirmation
 } from './source-control-undo-commit'
+import { resolveAmendCommitConfirmation } from './source-control-amend-commit'
 import { getRepoOwnerRoutedSettings } from '@/lib/repo-runtime-owner'
 import {
   abortRuntimeGitMerge,
   abortRuntimeGitRebase,
   undoRuntimeGitLastCommit,
+  readRuntimeGitLastCommitMessage,
   bulkDiscardRuntimeGitPaths,
   bulkStageRuntimeGitPaths,
   bulkUnstageRuntimeGitPaths,
@@ -2089,6 +2094,7 @@ function SourceControlInner(): React.JSX.Element {
         skipActiveConflictCheck?: boolean
         target?: SourceControlOperationTarget
         stagePathsFirst?: readonly string[]
+        amend?: boolean
       }
     ): Promise<boolean> => {
       const target =
@@ -2110,6 +2116,7 @@ function SourceControlInner(): React.JSX.Element {
       if (
         !message ||
         (!options?.skipStagedSnapshotCheck &&
+          !options?.amend &&
           stagePathsFirst.length === 0 &&
           grouped.staged.length === 0) ||
         (!options?.skipActiveConflictCheck && unresolvedConflicts.length > 0)
@@ -2140,7 +2147,7 @@ function SourceControlInner(): React.JSX.Element {
           if (stagePathsFirst.length > 0) {
             await bulkStageRuntimeGitPaths(gitContext, [...stagePathsFirst])
           }
-          return commitRuntimeGit(gitContext, message)
+          return commitRuntimeGit(gitContext, message, { amend: options?.amend === true })
         })
         if (!commitResult.success) {
           if (stagePathsFirst.length > 0 && !options?.target) {
@@ -2790,6 +2797,58 @@ function SourceControlInner(): React.JSX.Element {
     confirmAction,
     isAbortingOperation,
     refreshActiveGitStatusAfterMutation,
+    remoteStatusForActions,
+    updateCommitDrafts,
+    worktreePath
+  ])
+
+  const handleAmendCommit = useCallback(async (): Promise<void> => {
+    if (!activeWorktreeId || !worktreePath) {
+      return
+    }
+    const worktreeId = activeWorktreeId
+    // Why: an empty box first loads HEAD's message for editing; the next click performs the amend.
+    if (!commitMessage.trim()) {
+      try {
+        const { message } = await readRuntimeGitLastCommitMessage({
+          settings: activeRepoSettings,
+          worktreeId,
+          worktreePath,
+          connectionId: getConnectionId(worktreeId) ?? undefined
+        })
+        updateCommitDrafts((drafts) =>
+          writeCommitDraftForWorktree(
+            drafts,
+            worktreeId,
+            resolveRestoredCommitMessage(readCommitDraftForWorktree(drafts, worktreeId), message)
+          )
+        )
+        requestCommitMessageFocus()
+      } catch (error) {
+        toast.error(
+          translate(
+            'auto.components.right.sidebar.source.control.amend.commit.load_failed',
+            'Could not load the last commit message'
+          ),
+          { description: error instanceof Error ? error.message : String(error) }
+        )
+      }
+      return
+    }
+    const confirmation = resolveAmendCommitConfirmation(remoteStatusForActions)
+    if (confirmation) {
+      const confirmed = await confirmAction({ ...confirmation, confirmVariant: 'destructive' })
+      if (!confirmed) {
+        return
+      }
+    }
+    await handleCommit(undefined, { amend: true })
+  }, [
+    activeRepoSettings,
+    activeWorktreeId,
+    commitMessage,
+    confirmAction,
+    handleCommit,
     remoteStatusForActions,
     updateCommitDrafts,
     worktreePath
@@ -4456,6 +4515,9 @@ function SourceControlInner(): React.JSX.Element {
         case 'commit':
           void handleCommit()
           return
+        case 'commit_amend':
+          void handleAmendCommit()
+          return
         case 'commit_push':
           void runCompoundCommitAction('push')
           return
@@ -4496,6 +4558,7 @@ function SourceControlInner(): React.JSX.Element {
       }
     },
     [
+      handleAmendCommit,
       handleCommit,
       handleCreatePullRequest,
       handleAbortMerge,

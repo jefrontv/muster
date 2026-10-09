@@ -29,6 +29,7 @@ import type {
   TuiAgent
 } from '../../shared/types'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
+import type { GitLastCommitMessageResult } from '../../shared/git-amend-commit'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { SshMutationExpectation } from '../../shared/ssh-types'
 import { assertSshMutationExpectation } from '../ssh/ssh-connection-generation'
@@ -46,6 +47,7 @@ import {
   abortMerge,
   abortRebase,
   undoLastCommit,
+  readLastCommitMessage,
   detectConflictOperation,
   getDiff,
   commitChanges,
@@ -1371,18 +1373,19 @@ export function registerFilesystemHandlers(
     'git:commit',
     async (
       _event,
-      args: { worktreePath: string; message: string; connectionId?: string }
+      args: { worktreePath: string; message: string; connectionId?: string; amend?: boolean }
     ): Promise<{ success: boolean; error?: string }> => {
       // Why: validate at the IPC boundary so the renderer gets a clear error instead of an opaque execFile failure.
       if (typeof args.message !== 'string' || args.message.trim().length === 0) {
         throw new Error('Commit message is required')
       }
+      const commitOptions = { amend: args.amend === true }
       if (args.connectionId) {
         const provider = getSshGitProvider(args.connectionId)
         if (!provider) {
           throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
         }
-        return provider.commit(args.worktreePath, args.message)
+        return provider.commit(args.worktreePath, args.message, commitOptions)
       }
       const worktreePath = await resolveRegisteredWorktreePath(args.worktreePath, store)
       const gitOptions = getLocalGitOptionsForRegisteredWorktree(
@@ -1390,7 +1393,30 @@ export function registerFilesystemHandlers(
         args.worktreePath,
         worktreePath
       )
-      return commitChanges(worktreePath, args.message, gitOptions)
+      return commitChanges(worktreePath, args.message, gitOptions, commitOptions)
+    }
+  )
+
+  ipcMain.handle(
+    'git:lastCommitMessage',
+    async (
+      _event,
+      args: { worktreePath: string; connectionId?: string }
+    ): Promise<GitLastCommitMessageResult> => {
+      if (args.connectionId) {
+        const provider = getSshGitProvider(args.connectionId)
+        if (!provider) {
+          throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+        }
+        return provider.readLastCommitMessage(args.worktreePath)
+      }
+      const worktreePath = await resolveRegisteredWorktreePath(args.worktreePath, store)
+      const gitOptions = getLocalGitOptionsForRegisteredWorktree(
+        store,
+        args.worktreePath,
+        worktreePath
+      )
+      return readLastCommitMessage(worktreePath, gitOptions)
     }
   )
 

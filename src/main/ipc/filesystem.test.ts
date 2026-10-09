@@ -1896,7 +1896,14 @@ describe('registerFilesystemHandlers', () => {
       })
     ).resolves.toEqual({ success: true })
 
-    expect(commitChangesMock).toHaveBeenCalledWith(WORKTREE_FEATURE_PATH, 'feat: ship commit', {})
+    expect(commitChangesMock).toHaveBeenCalledWith(
+      WORKTREE_FEATURE_PATH,
+      'feat: ship commit',
+      {},
+      {
+        amend: false
+      }
+    )
   })
 
   it('returns local commit hook failure payload from git:commit', async () => {
@@ -2709,7 +2716,9 @@ describe('registerFilesystemHandlers', () => {
       })
     ).resolves.toEqual({ success: true })
 
-    expect(sshCommitMock).toHaveBeenCalledWith('/remote/repo', 'feat: remote commit')
+    expect(sshCommitMock).toHaveBeenCalledWith('/remote/repo', 'feat: remote commit', {
+      amend: false
+    })
     expect(commitChangesMock).not.toHaveBeenCalled()
   })
 

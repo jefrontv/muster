@@ -10575,6 +10575,20 @@
                     }
                   }
                 }
+              },
+              "amend": {
+                "commit": {
+                  "label": "Commit (Amend)",
+                  "no_commit": "No commit to amend",
+                  "operation_in_progress": "Finish or abort the {{value0}} first",
+                  "resolve_conflicts": "Resolve conflicts before committing",
+                  "ready": "Replace the last commit with the staged changes and this message",
+                  "load_message": "Load the last commit message to edit, then amend",
+                  "confirm_title": "Amend a pushed commit?",
+                  "confirm_description": "This commit is already on {{value0}}. Amending it only changes your local branch, and your next push will need Force Push.",
+                  "confirm_label": "Amend Commit",
+                  "load_failed": "Could not load the last commit message"
+                }
               }
             }
           },

@@ -18,6 +18,7 @@ import type {
   SearchResult
 } from '../../shared/types'
 import type { GitUndoLastCommitResult } from '../../shared/git-undo-last-commit'
+import type { GitCommitOptions, GitLastCommitMessageResult } from '../../shared/git-amend-commit'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import type { PtyStartupIngressIntent } from '../../shared/pty-startup-ingress'
 import type { CommitMessageDraftContext } from '../../shared/commit-message-generation'
@@ -302,7 +303,12 @@ export type IGitProvider = {
   ): Promise<GitStatusResult>
   checkIgnoredPaths(worktreePath: string, relativePaths: string[]): Promise<string[]>
   getHistory(worktreePath: string, options?: GitHistoryOptions): Promise<GitHistoryResult>
-  commit(worktreePath: string, message: string): Promise<{ success: boolean; error?: string }>
+  commit(
+    worktreePath: string,
+    message: string,
+    options?: GitCommitOptions
+  ): Promise<{ success: boolean; error?: string }>
+  readLastCommitMessage(worktreePath: string): Promise<GitLastCommitMessageResult>
   getStagedCommitContext(worktreePath: string): Promise<CommitMessageDraftContext | null>
   getDiff(
     worktreePath: string,

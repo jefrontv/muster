@@ -1881,6 +1881,12 @@ function createGitApi(): NonNullable<Partial<PreloadApi>['git']> {
         worktree: toRuntimeWorktreeSelector(worktree.id)
       })
     },
+    lastCommitMessage: async ({ worktreePath }) => {
+      const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
+      return callRuntimeResult('git.lastCommitMessage', {
+        worktree: toRuntimeWorktreeSelector(worktree.id)
+      })
+    },
     diff: async ({ worktreePath, filePath, staged, compareAgainstHead }) => {
       const file = await resolveRuntimeFilePath(filePath, worktreePath)
       return callRuntimeResult('git.diff', {
@@ -1977,9 +1983,9 @@ function createGitApi(): NonNullable<Partial<PreloadApi>['git']> {
         oldPath
       })
     },
-    commit: async ({ worktreePath, message }) => {
+    commit: async ({ worktreePath, message, amend }) => {
       const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
-      return callRuntimeResult('git.commit', {
+      return callRuntimeResult(amend ? 'git.amendCommit' : 'git.commit', {
         worktree: toRuntimeWorktreeSelector(worktree.id),
         message
       })

@@ -332,6 +332,7 @@ import type { SetupScriptImportCandidate } from '../shared/setup-script-imports'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
 import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commit-pipelines'
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
+import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type {
   EphemeralVmRecipeDoctorResult,
@@ -3224,6 +3225,10 @@ export type PreloadApi = {
       worktreePath: string
       connectionId?: string
     }) => Promise<GitUndoLastCommitResult>
+    lastCommitMessage: (args: {
+      worktreePath: string
+      connectionId?: string
+    }) => Promise<GitLastCommitMessageResult>
     diff: (args: {
       worktreePath: string
       filePath: string
@@ -3302,6 +3307,7 @@ export type PreloadApi = {
       worktreePath: string
       message: string
       connectionId?: string
+      amend?: boolean
     }) => Promise<{ success: boolean; error?: string }>
     generateCommitMessage: (args: {
       worktreePath: string

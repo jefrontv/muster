@@ -269,6 +269,18 @@ export const GIT_METHODS: RpcMethod[] = [
       runtime.commitRuntimeGit(params.worktree, params.message)
   }),
   defineMethod({
+    // Why: a separate method fails closed on an older runtime instead of silently making a new commit.
+    name: 'git.amendCommit',
+    params: GitCommit,
+    handler: async (params, { runtime }) =>
+      runtime.commitRuntimeGit(params.worktree, params.message, { amend: true })
+  }),
+  defineMethod({
+    name: 'git.lastCommitMessage',
+    params: WorktreeSelector,
+    handler: async (params, { runtime }) => runtime.readRuntimeGitLastCommitMessage(params.worktree)
+  }),
+  defineMethod({
     name: 'git.generateCommitMessage',
     params: GitGenerateCommitMessage,
     handler: async (params, { runtime }) => {

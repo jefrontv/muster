@@ -38,6 +38,7 @@ describe('resolveDropdownItems', () => {
     const kinds = items.map((item) => item.kind)
     expect(kinds).toEqual([
       'commit',
+      'commit_amend',
       'commit_push',
       'commit_sync',
       'undo_commit',

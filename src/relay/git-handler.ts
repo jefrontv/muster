@@ -12,6 +12,7 @@ import {
 } from './git-handler-utils'
 import { parseNumstat } from '../shared/git-uncommitted-line-stats'
 import { undoLastCommitWithGit } from '../shared/git-undo-last-commit'
+import { readLastCommitMessageWithGit } from '../shared/git-amend-commit'
 import {
   computeDiff,
   branchCompare as branchCompareOp,
@@ -209,6 +210,7 @@ export class GitHandler {
     this.dispatcher.onRequest('git.checkIgnored', (p) => this.checkIgnored(p))
     this.dispatcher.onRequest('git.history', (p) => this.history(p))
     this.dispatcher.onRequest('git.commit', (p, context) => this.commit(p, context))
+    this.dispatcher.onRequest('git.amendCommit', (p, context) => this.commit(p, context, true))
     this.dispatcher.onRequest('git.diff', (p, context) => this.getDiff(p, context))
     this.dispatcher.onRequest('git.stage', (p) => this.stage(p))
     this.dispatcher.onRequest('git.unstage', (p) => this.unstage(p))
@@ -217,6 +219,7 @@ export class GitHandler {
     this.dispatcher.onRequest('git.abortMerge', (p) => this.abortMerge(p))
     this.dispatcher.onRequest('git.abortRebase', (p) => this.abortRebase(p))
     this.dispatcher.onRequest('git.undoLastCommit', (p, context) => this.undoLastCommit(p, context))
+    this.dispatcher.onRequest('git.lastCommitMessage', (p) => this.lastCommitMessage(p))
     this.dispatcher.onRequest('git.checkout', (p) => this.checkout(p))
     this.dispatcher.onRequest('git.localBranches', (p) => this.localBranches(p))
     this.dispatcher.onRequest('git.discard', (p) => this.discard(p))
@@ -521,13 +524,14 @@ export class GitHandler {
 
   private async commit(
     params: Record<string, unknown>,
-    context?: RequestContext
+    context?: RequestContext,
+    amend = false
   ): Promise<{ success: boolean; error?: string }> {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
     const message = params.message as string
     try {
-      return await commitChangesRelay(this.mutationGit(context), worktreePath, message)
+      return await commitChangesRelay(this.mutationGit(context), worktreePath, message, { amend })
     } finally {
       this.clearGitMutationReadCaches()
     }
@@ -611,6 +615,11 @@ export class GitHandler {
     } finally {
       this.clearGitMutationReadCaches()
     }
+  }
+
+  private async lastCommitMessage(params: Record<string, unknown>) {
+    const worktreePath = params.worktreePath as string
+    return readLastCommitMessageWithGit((args) => this.git(args, worktreePath))
   }
 
   private async checkout(params: Record<string, unknown>) {

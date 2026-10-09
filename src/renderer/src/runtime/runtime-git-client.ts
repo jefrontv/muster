@@ -23,6 +23,7 @@ import type { ResolvedSourceControlAiGenerationParams } from '../../../shared/so
 import { getCommitMessageModelDiscoveryHostKeyForScope } from '../../../shared/commit-message-host-key'
 import type { GitHistoryOptions, GitHistoryResult } from '../../../shared/git-history'
 import type { GitUndoLastCommitResult } from '../../../shared/git-undo-last-commit'
+import type { GitCommitOptions, GitLastCommitMessageResult } from '../../../shared/git-amend-commit'
 import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
 import { GIT_MUTATION_TIMEOUT_MS } from '../../../shared/git-mutation-timeout'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
@@ -365,6 +366,24 @@ export async function undoRuntimeGitLastCommit(
   )
 }
 
+export async function readRuntimeGitLastCommitMessage(
+  context: RuntimeGitContext
+): Promise<GitLastCommitMessageResult> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return localGitApi().lastCommitMessage({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId
+    })
+  }
+  return callRuntimeRpc<GitLastCommitMessageResult>(
+    target,
+    'git.lastCommitMessage',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
+    { timeoutMs: 15_000 }
+  )
+}
+
 export async function getRuntimeGitDiff(
   context: RuntimeGitContext,
   args: { filePath: string; staged: boolean; compareAgainstHead?: boolean }
@@ -650,19 +669,21 @@ export async function getRuntimeGitCommitDiff(
 
 export async function commitRuntimeGit(
   context: RuntimeGitContext,
-  message: string
+  message: string,
+  options: GitCommitOptions = {}
 ): Promise<{ success: boolean; error?: string }> {
   const target = getActiveRuntimeTarget(context.settings)
   if (target.kind === 'local' || !context.worktreeId) {
     return localGitApi().commit({
       worktreePath: resolveLocalWorktreePath(context),
       message,
-      connectionId: context.connectionId
+      connectionId: context.connectionId,
+      ...(options.amend ? { amend: true } : {})
     })
   }
   return callRuntimeRpc<{ success: boolean; error?: string }>(
     target,
-    'git.commit',
+    options.amend ? 'git.amendCommit' : 'git.commit',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId), message },
     { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )

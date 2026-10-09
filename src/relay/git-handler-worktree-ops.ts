@@ -1,5 +1,6 @@
 import * as path from 'node:path'
 import { resolveWorktreeAddBaseRef } from '../shared/worktree-base-ref'
+import { buildGitCommitArgs, type GitCommitOptions } from '../shared/git-amend-commit'
 import type { GitExec } from './git-handler-ops'
 export { removeWorktreeOp } from './git-handler-worktree-remove'
 export { readRelayWorktreeList } from './git-handler-worktree-list'
@@ -153,7 +154,8 @@ export async function worktreeIsCleanOp(
 export async function commitChangesRelay(
   git: GitExec,
   worktreePath: string,
-  message: string
+  message: string,
+  commitOptions: GitCommitOptions = {}
 ): Promise<{ success: boolean; error?: string }> {
   // Why: defense-in-depth. The IPC handler at src/main/ipc/filesystem.ts validates
   // the message, but a relay caller (future automation, or an SSH client connecting
@@ -164,7 +166,7 @@ export async function commitChangesRelay(
   }
 
   try {
-    await git(['commit', '-m', message], worktreePath)
+    await git(buildGitCommitArgs(message, commitOptions), worktreePath)
     return { success: true }
   } catch (error) {
     // Why: surface whichever channel carries the useful message. Pre-commit/GPG

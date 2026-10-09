@@ -10552,6 +10552,20 @@
                     }
                   }
                 }
+              },
+              "amend": {
+                "commit": {
+                  "label": "提交（修改）",
+                  "no_commit": "没有可修改的提交",
+                  "operation_in_progress": "请先完成或中止 {{value0}}",
+                  "resolve_conflicts": "提交前请先解决冲突",
+                  "ready": "用已暂存的更改和此消息替换上一次提交",
+                  "load_message": "载入上一次提交的消息进行编辑，然后修改提交",
+                  "confirm_title": "修改已推送的提交？",
+                  "confirm_description": "此提交已在 {{value0}} 上。修改它只会更改你的本地分支，下次推送时需要使用 Force Push。",
+                  "confirm_label": "修改提交",
+                  "load_failed": "无法载入上一次提交的消息"
+                }
               }
             }
           },

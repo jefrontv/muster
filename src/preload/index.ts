@@ -100,6 +100,7 @@ import type { EditorThemeImportPreview } from '../shared/vscode-themes'
 import type { GitHistoryOptions, GitHistoryResult } from '../shared/git-history'
 import type { CommitPipelinesArgs, CommitPipelinesResult } from '../shared/commit-pipelines'
 import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
+import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
@@ -3441,6 +3442,10 @@ const api = {
       worktreePath: string
       connectionId?: string
     }): Promise<GitUndoLastCommitResult> => ipcRenderer.invoke('git:undoLastCommit', args),
+    lastCommitMessage: (args: {
+      worktreePath: string
+      connectionId?: string
+    }): Promise<GitLastCommitMessageResult> => ipcRenderer.invoke('git:lastCommitMessage', args),
     diff: (args: {
       worktreePath: string
       filePath: string
@@ -3519,6 +3524,7 @@ const api = {
       worktreePath: string
       message: string
       connectionId?: string
+      amend?: boolean
     }): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke('git:commit', args),
     generateCommitMessage: (args: {
       worktreePath: string
