@@ -27,7 +27,7 @@ function inputs(overrides: Partial<DropdownActionInputs> = {}): DropdownActionIn
 }
 
 describe('resolveDropdownItems', () => {
-  it('renders every row — Commit through Publish — for a staged, tracked, ahead+behind branch', () => {
+  it('renders grouped rows for a staged, tracked, ahead+behind branch', () => {
     const items = resolveDropdownItems(
       inputs({
         stagedCount: 1,
@@ -43,14 +43,15 @@ describe('resolveDropdownItems', () => {
       'undo_commit',
       'separator',
       'push',
+      'pull',
+      'sync',
+      'fetch',
+      'fast_forward',
+      'rebase_base',
+      'separator',
       'create_pr',
       'push_create_pr',
-      'pull',
-      'fast_forward',
-      'sync',
-      'rebase_base',
-      'fetch',
-      'publish',
+      'separator',
       'force_push'
     ])
   })
@@ -121,7 +122,7 @@ describe('resolveDropdownItems', () => {
     expect(byKind.publish.disabled).toBe(true)
   })
 
-  it('disables Publish Branch when branch already has an upstream', () => {
+  it('hides Publish Branch when branch already has an upstream', () => {
     const items = resolveDropdownItems(
       inputs({
         upstreamStatus: { hasUpstream: true, ahead: 0, behind: 0 }
@@ -130,7 +131,7 @@ describe('resolveDropdownItems', () => {
     const byKind = Object.fromEntries(
       items.filter((e) => e.kind !== 'separator').map((e) => [e.kind, e])
     )
-    expect(byKind.publish.disabled).toBe(true)
+    expect(byKind.publish).toBeUndefined()
   })
 
   it('renders counts on action labels when > 0', () => {
@@ -836,7 +837,7 @@ describe('resolveDropdownItems with an unhydrated linked-review push target', ()
     expect(byKind.force_push.disabled).toBe(false)
     expect(byKind.pull.disabled).toBe(false)
     expect(byKind.sync.disabled).toBe(false)
-    expect(byKind.publish.disabled).toBe(true)
+    expect(byKind.publish).toBeUndefined()
   })
 
   it('still blocks Push when the real upstream is an unrelated fork/helper head', () => {

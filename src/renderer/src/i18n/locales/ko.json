@@ -10477,7 +10477,8 @@
                   "04d709801d": "병합하지 않고 원격에서 가져오기(fetch)",
                   "undo_last_commit": "마지막 Commit 실행 취소",
                   "undo_last_commit_failed": "Commit 실행 취소 실패"
-                }
+                },
+                "more": "더 보기"
               },
               "primary": {
                 "action": {

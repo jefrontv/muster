@@ -16,6 +16,7 @@ import {
   resolveHostedReviewAuthInstruction
 } from './source-control-create-review-blocked-action'
 import { resolveOpenReviewInBrowserItem } from './source-control-open-review-in-browser-item'
+import { arrangeDropdownEntries } from './source-control-dropdown-layout'
 
 export type DropdownActionInputs = PrimaryActionInputs & {
   conflictOperation?: GitConflictOperation
@@ -45,6 +46,8 @@ export type DropdownActionKind =
   | 'fetch'
   | 'publish'
 
+export type DropdownSubmenuId = 'more'
+
 export type DropdownItem = {
   kind: DropdownActionKind
   label: string
@@ -52,6 +55,7 @@ export type DropdownItem = {
   disabled: boolean
   hint?: string
   variant?: 'default' | 'destructive'
+  submenu?: DropdownSubmenuId
 }
 
 export type DropdownSeparator = { kind: 'separator' }
@@ -125,8 +129,8 @@ function reviewCopy(
 }
 
 /**
- * Resolve the chevron dropdown items. Every row is always rendered — disabled with a
- * tooltip reason rather than hidden — so the menu shape stays stable across states.
+ * Resolve the chevron dropdown items. Rows that apply but are blocked stay visible with
+ * their reason; rows that can never apply in this state (Publish on a tracked branch) are omitted.
  */
 export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntry[] {
   const {
@@ -569,36 +573,27 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
         ]
       : [createPRItem, pushCreatePRItem]
 
-  const entries: DropdownEntry[] = [
-    commitItem,
-    commitPushItem,
-    commitSyncItem,
-    undoCommitItem,
-    { kind: 'separator' },
-    pushItem,
-    ...hostedReviewEntries,
-    pullItem,
-    fastForwardItem,
-    syncItem,
-    rebaseItem,
-    fetchItem,
-    publishItem,
-    forcePushItem
-  ]
+  const abortRows: DropdownItem[] = []
   if (conflictOperation === 'merge' || conflictOperation === 'rebase') {
     const isRebase = conflictOperation === 'rebase'
-    const label = isRebase ? 'Abort rebase' : 'Abort merge'
-    entries.push(
-      { kind: 'separator' },
-      {
-        kind: isRebase ? 'abort_rebase' : 'abort_merge',
-        label,
-        title: globalBusy ? 'Operation in progress…' : `Abort the ${conflictOperation} in progress`,
-        disabled: globalBusy,
-        variant: 'destructive'
-      }
-    )
+    abortRows.push({
+      kind: isRebase ? 'abort_rebase' : 'abort_merge',
+      label: isRebase ? 'Abort rebase' : 'Abort merge',
+      title: globalBusy ? 'Operation in progress…' : `Abort the ${conflictOperation} in progress`,
+      disabled: globalBusy,
+      variant: 'destructive'
+    })
   }
+  const entries = arrangeDropdownEntries({
+    commitRows: [commitItem, commitPushItem, commitSyncItem, undoCommitItem],
+    remoteRows: [pushItem, pullItem, syncItem, fetchItem],
+    moreRows: [fastForwardItem, rebaseItem],
+    reviewRows: hostedReviewEntries,
+    // Why: unknown upstream (loading) keeps the row so the menu doesn't jump when status lands.
+    publishRow: upstreamLoading || !hasUpstream ? publishItem : null,
+    destructiveRows: [forcePushItem],
+    abortRows
+  })
   if (!isPullRequestOperationActive) {
     return entries
   }

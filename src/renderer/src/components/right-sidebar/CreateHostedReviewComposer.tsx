@@ -11,8 +11,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
@@ -24,10 +22,7 @@ import { translate } from '@/i18n/i18n'
 import type { HostedReviewProvider } from '../../../../shared/hosted-review'
 import { stripBaseRef } from './useCreatePullRequestDialogFields'
 import type { DropdownActionKind, DropdownEntry } from './source-control-dropdown-items'
-import {
-  resolveDropdownRowHint,
-  shouldShowDropdownRowTooltip
-} from './source-control-dropdown-row-hint'
+import { SourceControlDropdownMenuEntries } from './source-control-dropdown-menu-entries'
 import { CreateHostedReviewComposerFields } from './CreateHostedReviewComposerFields'
 import {
   RIGHT_SIDEBAR_MORPHING_PRIMARY_BUTTON_CLASS,
@@ -305,38 +300,12 @@ export function CreateHostedReviewComposer({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[14rem]">
-                {effectiveDropdownItems.map((entry, index) => {
-                  if (entry.kind === 'separator') {
-                    return <DropdownMenuSeparator key={`sep-${index}`} />
-                  }
-                  const inlineHint = resolveDropdownRowHint(entry, isCreating || generating)
-                  return (
-                    <DropdownMenuItem
-                      key={entry.kind}
-                      disabled={entry.disabled}
-                      title={
-                        shouldShowDropdownRowTooltip(entry, inlineHint) ? entry.title : undefined
-                      }
-                      variant={entry.variant}
-                      onSelect={(event) => {
-                        if (entry.disabled) {
-                          event.preventDefault()
-                          return
-                        }
-                        onDropdownAction(entry.kind)
-                      }}
-                    >
-                      <span className="flex min-w-0 flex-col">
-                        <span>{entry.label}</span>
-                        {inlineHint ? (
-                          <span className="max-w-60 text-[10px] leading-4 text-muted-foreground">
-                            {inlineHint}
-                          </span>
-                        ) : null}
-                      </span>
-                    </DropdownMenuItem>
-                  )
-                })}
+                <SourceControlDropdownMenuEntries
+                  entries={effectiveDropdownItems}
+                  isBusy={isCreating || generating}
+                  onAction={onDropdownAction}
+                  reasonDisplay="title"
+                />
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}

@@ -10477,7 +10477,8 @@
                   "04d709801d": "从远程获取但不合并",
                   "undo_last_commit": "撤销上次提交",
                   "undo_last_commit_failed": "撤销提交失败"
-                }
+                },
+                "more": "更多"
               },
               "primary": {
                 "action": {

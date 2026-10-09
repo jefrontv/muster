@@ -32,7 +32,7 @@ function forcePushItem(overrides: Partial<DropdownActionInputs>): DropdownItem {
 }
 
 describe('force push dropdown row', () => {
-  it('sits last in the remote group, after Publish Branch and before abort rows', () => {
+  it('sits in its own group after the review rows and before abort rows', () => {
     const kinds = resolveDropdownItems(
       inputs({
         conflictOperation: 'merge',
@@ -40,7 +40,7 @@ describe('force push dropdown row', () => {
       })
     ).map((entry) => entry.kind)
     const forceIndex = kinds.indexOf('force_push')
-    expect(kinds[forceIndex - 1]).toBe('publish')
+    expect(kinds.slice(forceIndex - 2, forceIndex)).toEqual(['push_create_pr', 'separator'])
     expect(kinds.slice(forceIndex + 1)).toEqual(['separator', 'abort_merge'])
   })
 

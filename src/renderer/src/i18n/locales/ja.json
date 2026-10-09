@@ -10477,7 +10477,8 @@
                   "04d709801d": "Fetch from remote without merging",
                   "undo_last_commit": "最後の Commit を取り消す",
                   "undo_last_commit_failed": "Commit の取り消しに失敗しました"
-                }
+                },
+                "more": "その他"
               },
               "primary": {
                 "action": {

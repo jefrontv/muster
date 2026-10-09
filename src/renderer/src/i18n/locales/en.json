@@ -10500,7 +10500,8 @@
                   "04d709801d": "Fetch from remote without merging",
                   "undo_last_commit": "Undo Last Commit",
                   "undo_last_commit_failed": "Undo commit failed"
-                }
+                },
+                "more": "More"
               },
               "primary": {
                 "action": {

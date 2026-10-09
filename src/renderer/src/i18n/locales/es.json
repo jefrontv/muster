@@ -10477,7 +10477,8 @@
                   "04d709801d": "Fetch del remoto sin hacer merge",
                   "undo_last_commit": "Deshacer último commit",
                   "undo_last_commit_failed": "No se pudo deshacer el commit"
-                }
+                },
+                "more": "Más"
               },
               "primary": {
                 "action": {

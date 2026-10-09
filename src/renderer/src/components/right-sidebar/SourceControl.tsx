@@ -51,7 +51,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import {
@@ -160,10 +159,6 @@ import { useCommitMessageFocusRequest } from './source-control-commit-message-fo
 import { resolveCommitMessagePlaceholder } from './source-control-commit-message-placeholder'
 import { SourceControlNoMatchingFiles } from './source-control-no-matching-files'
 import {
-  resolveDropdownRowHint,
-  shouldShowDropdownRowTooltip
-} from './source-control-dropdown-row-hint'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -236,6 +231,8 @@ import {
 import { resolveForcePushConfirmation } from './source-control-force-push-confirmation'
 import { enqueueGitIndexWrite } from './git-index-write-queue'
 import { resolveCommitAllPaths } from './source-control-commit-all'
+import { omitPrimaryDuplicateRows } from './source-control-dropdown-layout'
+import { SourceControlDropdownMenuEntries } from './source-control-dropdown-menu-entries'
 import { toastIndexWriteFailure } from './source-control-index-write-toast'
 import type {
   DiffComment,
@@ -6960,54 +6957,21 @@ export function CommitArea({
     'More commit and remote actions'
   )
   const isDropdownBusy = isCommitting || isCreatingPr || isRemoteOperationActive
+  const visibleDropdownItems = useMemo(
+    () => omitPrimaryDuplicateRows(dropdownItems, primaryAction.kind),
+    [dropdownItems, primaryAction.kind]
+  )
   const generateFallbackTooltip = translate(
     'auto.components.right.sidebar.SourceControl.b16b8f0e4b',
     'Generate commit message'
   )
   const dropdownMenuContent = (
     <DropdownMenuContent align="end" className="min-w-[14rem]">
-      {dropdownItems.map((entry, index) => {
-        if (entry.kind === 'separator') {
-          return <DropdownMenuSeparator key={`sep-${index}`} />
-        }
-        const inlineHint = resolveDropdownRowHint(entry, isDropdownBusy)
-        const row = (
-          <div className="block">
-            <DropdownMenuItem
-              disabled={entry.disabled}
-              variant={entry.variant}
-              className="w-full"
-              onSelect={(event) => {
-                if (entry.disabled) {
-                  event.preventDefault()
-                  return
-                }
-                onDropdownAction(entry.kind)
-              }}
-            >
-              <span className="flex min-w-0 flex-col">
-                <span>{entry.label}</span>
-                {inlineHint ? (
-                  <span className="max-w-60 text-[11px] leading-4 text-muted-foreground">
-                    {inlineHint}
-                  </span>
-                ) : null}
-              </span>
-            </DropdownMenuItem>
-          </div>
-        )
-        if (!shouldShowDropdownRowTooltip(entry, inlineHint)) {
-          return <React.Fragment key={entry.kind}>{row}</React.Fragment>
-        }
-        return (
-          <Tooltip key={entry.kind}>
-            <TooltipTrigger asChild>{row}</TooltipTrigger>
-            <TooltipContent side="left" sideOffset={8} className="max-w-72">
-              {entry.title}
-            </TooltipContent>
-          </Tooltip>
-        )
-      })}
+      <SourceControlDropdownMenuEntries
+        entries={visibleDropdownItems}
+        isBusy={isDropdownBusy}
+        onAction={onDropdownAction}
+      />
     </DropdownMenuContent>
   )
 

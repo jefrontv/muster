@@ -54,7 +54,7 @@ describe('open review in browser dropdown row', () => {
     expect(kinds).toContain('open_review_in_browser')
     expect(kinds).not.toContain('create_pr')
     expect(kinds).not.toContain('push_create_pr')
-    expect(kinds.indexOf('open_review_in_browser')).toBe(kinds.indexOf('push') + 1)
+    expect(kinds[kinds.indexOf('open_review_in_browser') - 1]).toBe('separator')
   })
 
   it('is enabled with no hint when a review link exists', () => {
