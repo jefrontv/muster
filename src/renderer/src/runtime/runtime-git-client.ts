@@ -351,7 +351,7 @@ export async function undoRuntimeGitLastCommit(
 ): Promise<GitUndoLastCommitResult> {
   const target = getActiveRuntimeTarget(context.settings)
   if (target.kind === 'local' || !context.worktreeId) {
-    return window.api.git.undoLastCommit({
+    return localGitApi().undoLastCommit({
       worktreePath: resolveLocalWorktreePath(context),
       connectionId: context.connectionId
     })
