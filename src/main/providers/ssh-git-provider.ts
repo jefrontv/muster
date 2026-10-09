@@ -488,9 +488,11 @@ export class SshGitProvider implements IGitProvider {
   async undoLastCommit(worktreePath: string): Promise<GitUndoLastCommitResult> {
     return this.runWithGitReadInvalidation(
       async () =>
-        (await this.mux.request('git.undoLastCommit', {
-          worktreePath
-        })) as GitUndoLastCommitResult
+        (await this.mux.request(
+          'git.undoLastCommit',
+          { worktreePath },
+          { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+        )) as GitUndoLastCommitResult
     )
   }
 

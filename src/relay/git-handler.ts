@@ -216,7 +216,7 @@ export class GitHandler {
     this.dispatcher.onRequest('git.bulkUnstage', (p) => this.bulkUnstage(p))
     this.dispatcher.onRequest('git.abortMerge', (p) => this.abortMerge(p))
     this.dispatcher.onRequest('git.abortRebase', (p) => this.abortRebase(p))
-    this.dispatcher.onRequest('git.undoLastCommit', (p) => this.undoLastCommit(p))
+    this.dispatcher.onRequest('git.undoLastCommit', (p, context) => this.undoLastCommit(p, context))
     this.dispatcher.onRequest('git.checkout', (p) => this.checkout(p))
     this.dispatcher.onRequest('git.localBranches', (p) => this.localBranches(p))
     this.dispatcher.onRequest('git.discard', (p) => this.discard(p))
@@ -602,11 +602,12 @@ export class GitHandler {
     }
   }
 
-  private async undoLastCommit(params: Record<string, unknown>) {
+  private async undoLastCommit(params: Record<string, unknown>, context?: RequestContext) {
     this.clearGitMutationReadCaches()
     const worktreePath = params.worktreePath as string
+    const git = this.mutationGit(context)
     try {
-      return await undoLastCommitWithGit((args) => this.git(args, worktreePath))
+      return await undoLastCommitWithGit((args) => git(args, worktreePath))
     } finally {
       this.clearGitMutationReadCaches()
     }

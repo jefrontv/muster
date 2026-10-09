@@ -361,7 +361,7 @@ export async function undoRuntimeGitLastCommit(
     target,
     'git.undoLastCommit',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
-    { timeoutMs: 30_000 }
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
   )
 }
 
