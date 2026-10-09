@@ -10588,6 +10588,16 @@
                 "continue": "続行",
                 "moreRebaseActions": "その他のリベース操作",
                 "mergeHint": "コミットしてマージを完了するか、中止してください。"
+              },
+              "stash": {
+                "stashChanges": "変更をスタッシュ",
+                "popLatest": "最新のスタッシュを取り出す",
+                "popConflicts": "スタッシュを取り出しましたが競合があります",
+                "nothingToStash": "スタッシュするローカル変更はありません",
+                "stashFailed": "スタッシュできませんでした",
+                "popFailed": "スタッシュを取り出せませんでした",
+                "noStashForBranch": "{{value0}} のスタッシュはありません",
+                "detachedHead": "デタッチされた HEAD"
               }
             }
           },

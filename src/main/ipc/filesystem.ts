@@ -103,7 +103,7 @@ import {
 } from './filesystem-auth'
 import { listQuickOpenFiles } from './filesystem-list-files'
 import { registerFilesystemMutationHandlers } from './filesystem-mutations'
-import { registerGitInProgressOperationHandlers } from './git-in-progress-ipc'
+import { registerGitWorkingStateHandlers } from './git-working-state-ipc'
 import { searchWithGitGrep } from './filesystem-search-git'
 import {
   getLocalGitOptionsForRegisteredWorktree,
@@ -1334,7 +1334,7 @@ export function registerFilesystemHandlers(
       return undoLastCommit(worktreePath, gitOptions)
     }
   )
-  registerGitInProgressOperationHandlers(store)
+  registerGitWorkingStateHandlers(store)
 
   ipcMain.handle(
     'git:diff',

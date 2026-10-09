@@ -1906,6 +1906,19 @@ function createGitApi(): NonNullable<Partial<PreloadApi>['git']> {
         worktree: toRuntimeWorktreeSelector(worktree.id)
       })
     },
+    stash: async ({ worktreePath, action }) => {
+      const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
+      return callRuntimeResult('git.stash', {
+        worktree: toRuntimeWorktreeSelector(worktree.id),
+        action
+      })
+    },
+    branchStash: async ({ worktreePath }) => {
+      const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
+      return callRuntimeResult('git.branchStash', {
+        worktree: toRuntimeWorktreeSelector(worktree.id)
+      })
+    },
     diff: async ({ worktreePath, filePath, staged, compareAgainstHead }) => {
       const file = await resolveRuntimeFilePath(filePath, worktreePath)
       return callRuntimeResult('git.diff', {

@@ -335,6 +335,7 @@ import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
 import type { GitSequencerAction, GitSequencerActionResult } from '../shared/git-sequencer-action'
 import type { GitPublishRemoteResolution } from '../shared/git-publish-remote'
+import type { GitBranchStash, GitStashAction, GitStashResult } from '../shared/git-stash'
 import type { PublicKnownRuntimeEnvironment } from '../shared/runtime-environments'
 import type {
   EphemeralVmRecipeDoctorResult,
@@ -3241,6 +3242,12 @@ export type PreloadApi = {
       worktreePath: string
       connectionId?: string
     }) => Promise<GitPublishRemoteResolution>
+    stash: (args: {
+      worktreePath: string
+      connectionId?: string
+      action: GitStashAction
+    }) => Promise<GitStashResult>
+    branchStash: (args: { worktreePath: string; connectionId?: string }) => Promise<GitBranchStash>
     diff: (args: {
       worktreePath: string
       filePath: string

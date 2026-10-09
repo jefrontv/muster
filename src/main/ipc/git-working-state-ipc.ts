@@ -10,9 +10,16 @@ import {
   type GitSequencerAction,
   type GitSequencerActionResult
 } from '../../shared/git-sequencer-action'
+import {
+  isGitStashAction,
+  type GitBranchStash,
+  type GitStashAction,
+  type GitStashResult
+} from '../../shared/git-stash'
 import { readPreparedMergeMessage, runGitSequencerAction } from '../git/sequencer'
 import type { GitPublishRemoteResolution } from '../../shared/git-publish-remote'
 import { resolveGitPublishRemote } from '../git/publish-remote'
+import { readBranchStash, runGitStashAction } from '../git/stash'
 
 type WorktreeArgs = { worktreePath: string; connectionId?: string }
 
@@ -33,8 +40,7 @@ async function resolveLocalWorktree(
   return { worktreePath, gitOptions }
 }
 
-// Why: in-progress operation actions, the merge message prefill and the publish remote lookup, kept out of the large filesystem handler file.
-export function registerGitInProgressOperationHandlers(store: Store): void {
+function registerInProgressOperationHandlers(store: Store): void {
   ipcMain.handle(
     'git:sequencerAction',
     async (
@@ -73,4 +79,37 @@ export function registerGitInProgressOperationHandlers(store: Store): void {
       return resolveGitPublishRemote(worktreePath, gitOptions)
     }
   )
+}
+
+function registerStashHandlers(store: Store): void {
+  ipcMain.handle(
+    'git:stash',
+    async (_event, args: WorktreeArgs & { action: GitStashAction }): Promise<GitStashResult> => {
+      if (!isGitStashAction(args.action)) {
+        throw new Error('Unsupported stash operation.')
+      }
+      if (args.connectionId) {
+        return requireSshGitProvider(args.connectionId).runStashAction(
+          args.worktreePath,
+          args.action
+        )
+      }
+      const { worktreePath, gitOptions } = await resolveLocalWorktree(store, args.worktreePath)
+      return runGitStashAction(worktreePath, args.action, gitOptions)
+    }
+  )
+
+  ipcMain.handle('git:branchStash', async (_event, args: WorktreeArgs): Promise<GitBranchStash> => {
+    if (args.connectionId) {
+      return requireSshGitProvider(args.connectionId).readBranchStash(args.worktreePath)
+    }
+    const { worktreePath, gitOptions } = await resolveLocalWorktree(store, args.worktreePath)
+    return readBranchStash(worktreePath, gitOptions)
+  })
+}
+
+// Why: in-progress operation, publish remote and stash handlers live here to keep the large filesystem handler file from growing.
+export function registerGitWorkingStateHandlers(store: Store): void {
+  registerInProgressOperationHandlers(store)
+  registerStashHandlers(store)
 }

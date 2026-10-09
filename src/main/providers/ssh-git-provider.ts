@@ -25,6 +25,7 @@ import type {
   GitSequencerActionResult
 } from '../../shared/git-sequencer-action'
 import type { GitPublishRemoteResolution } from '../../shared/git-publish-remote'
+import type { GitBranchStash, GitStashAction, GitStashResult } from '../../shared/git-stash'
 import type { GitHistoryOptions, GitHistoryResult } from '../../shared/git-history'
 import { buildHostedRemoteCommitUrl, buildHostedRemoteFileUrl } from '../git/hosted-remote-url'
 import { JsonRpcErrorCode } from '../ssh/relay-protocol'
@@ -532,6 +533,21 @@ export class SshGitProvider implements IGitProvider {
     return (await this.mux.request('git.publishRemote', {
       worktreePath
     })) as GitPublishRemoteResolution
+  }
+
+  async runStashAction(worktreePath: string, action: GitStashAction): Promise<GitStashResult> {
+    return this.runWithGitReadInvalidation(
+      async () =>
+        (await this.mux.request(
+          'git.stash',
+          { worktreePath, action },
+          { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+        )) as GitStashResult
+    )
+  }
+
+  async readBranchStash(worktreePath: string): Promise<GitBranchStash> {
+    return (await this.mux.request('git.branchStash', { worktreePath })) as GitBranchStash
   }
 
   async checkoutBranch(worktreePath: string, branch: string): Promise<void> {

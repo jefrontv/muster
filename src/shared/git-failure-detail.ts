@@ -31,6 +31,8 @@ export const MERGE_CONFLICT_MESSAGE =
   'Automatic merge failed; fix conflicts and then commit the result.'
 export const REBASE_CONFLICT_MESSAGE =
   'Rebase stopped with conflicts; fix conflicts and then continue the rebase.'
+export const STASH_POP_CONFLICT_MESSAGE =
+  'The stash was applied with conflicts; fix conflicts and stage the files. The stash entry was kept.'
 
 function outputText(value: unknown): string {
   if (typeof value === 'string') {

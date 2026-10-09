@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { GIT_SEQUENCER_ACTIONS } from '../../../../shared/git-sequencer-action'
+import { GIT_STASH_ACTIONS } from '../../../../shared/git-stash'
 
 export const WorktreeSelector = z.object({
   worktree: z
@@ -268,4 +269,8 @@ export const GitRemoteCommitUrl = WorktreeSelector.extend({
 
 export const GitSequencerActionParams = WorktreeSelector.extend({
   action: z.enum(GIT_SEQUENCER_ACTIONS)
+})
+
+export const GitStashParams = WorktreeSelector.extend({
+  action: z.enum(GIT_STASH_ACTIONS)
 })

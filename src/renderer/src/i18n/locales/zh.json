@@ -10588,6 +10588,16 @@
                 "continue": "继续",
                 "moreRebaseActions": "更多变基操作",
                 "mergeHint": "提交以完成合并，或中止合并。"
+              },
+              "stash": {
+                "stashChanges": "储藏更改",
+                "popLatest": "弹出最新储藏",
+                "popConflicts": "储藏已弹出，但有冲突",
+                "nothingToStash": "没有可储藏的本地更改",
+                "stashFailed": "储藏失败",
+                "popFailed": "弹出储藏失败",
+                "noStashForBranch": "{{value0}} 没有储藏",
+                "detachedHead": "分离的 HEAD"
               }
             }
           },

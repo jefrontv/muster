@@ -10611,6 +10611,16 @@
                 "continue": "Continue",
                 "moreRebaseActions": "More rebase actions",
                 "mergeHint": "Commit to finish the merge, or abort it."
+              },
+              "stash": {
+                "stashChanges": "Stash Changes",
+                "popLatest": "Pop Latest Stash",
+                "popConflicts": "Stash popped with conflicts",
+                "nothingToStash": "No local changes to stash",
+                "stashFailed": "Stash failed",
+                "popFailed": "Pop stash failed",
+                "noStashForBranch": "No stash for {{value0}}",
+                "detachedHead": "Detached HEAD"
               }
             }
           },

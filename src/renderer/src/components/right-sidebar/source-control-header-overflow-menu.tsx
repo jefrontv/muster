@@ -1,5 +1,14 @@
 import React from 'react'
-import { List, ListTree, MessageSquare, MoreHorizontal, RefreshCw, Settings2 } from 'lucide-react'
+import {
+  ArchiveRestore,
+  Archive,
+  List,
+  ListTree,
+  MessageSquare,
+  MoreHorizontal,
+  RefreshCw,
+  Settings2
+} from 'lucide-react'
 import type { SourceControlViewMode } from '../../../../shared/types'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -11,6 +20,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
+import type { SourceControlStashMenu } from './use-source-control-stash-actions'
 
 export function SourceControlHeaderOverflowMenu({
   sourceControlViewMode,
@@ -20,7 +30,8 @@ export function SourceControlHeaderOverflowMenu({
   onRefreshBranchCompare,
   branchCompareRefreshDisabled,
   diffCommentCount,
-  onExpandNotes
+  onExpandNotes,
+  stashMenu = null
 }: {
   sourceControlViewMode: SourceControlViewMode
   viewModeToggleDisabled: boolean
@@ -30,6 +41,8 @@ export function SourceControlHeaderOverflowMenu({
   branchCompareRefreshDisabled: boolean
   diffCommentCount: number
   onExpandNotes: () => void
+  // null for folder workspaces, which have no stash.
+  stashMenu?: SourceControlStashMenu | null
 }): React.JSX.Element {
   const viewModeLabel =
     sourceControlViewMode === 'tree'
@@ -37,7 +50,13 @@ export function SourceControlHeaderOverflowMenu({
       : translate('auto.components.right.sidebar.SourceControl.b82e9f3c12', 'View as tree')
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) {
+          stashMenu?.onMenuOpen()
+        }
+      }}
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex shrink-0">
@@ -84,6 +103,7 @@ export function SourceControlHeaderOverflowMenu({
             'Refresh branch compare'
           )}
         </DropdownMenuItem>
+        {stashMenu ? <StashMenuItems stashMenu={stashMenu} /> : null}
         {diffCommentCount > 0 ? (
           <>
             <DropdownMenuSeparator />
@@ -98,5 +118,49 @@ export function SourceControlHeaderOverflowMenu({
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+function StashMenuItems({ stashMenu }: { stashMenu: SourceControlStashMenu }): React.JSX.Element {
+  const { canStash, branchStash, disabled, onStash, onPop } = stashMenu
+  const stash = branchStash?.stash ?? null
+  // Why: disabled menu items can't show tooltips, so the reason is inline text.
+  const popDisabledReason = !branchStash
+    ? null
+    : !branchStash.branch
+      ? translate(
+          'auto.components.right.sidebar.source.control.stash.detachedHead',
+          'Detached HEAD'
+        )
+      : !stash
+        ? translate(
+            'auto.components.right.sidebar.source.control.stash.noStashForBranch',
+            'No stash for {{value0}}',
+            { value0: branchStash.branch }
+          )
+        : null
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem disabled={disabled || !canStash} onSelect={onStash}>
+        <Archive className="size-3.5" />
+        {translate(
+          'auto.components.right.sidebar.source.control.stash.stashChanges',
+          'Stash Changes'
+        )}
+      </DropdownMenuItem>
+      <DropdownMenuItem disabled={disabled || !stash} onSelect={onPop} title={stash?.subject}>
+        <ArchiveRestore className="size-3.5" />
+        {translate(
+          'auto.components.right.sidebar.source.control.stash.popLatest',
+          'Pop Latest Stash'
+        )}
+        {popDisabledReason ? (
+          <span className="ml-auto max-w-[120px] truncate pl-2 text-[11px] text-muted-foreground">
+            {popDisabledReason}
+          </span>
+        ) : null}
+      </DropdownMenuItem>
+    </>
   )
 }

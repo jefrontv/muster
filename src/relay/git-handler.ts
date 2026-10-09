@@ -14,6 +14,7 @@ import { parseNumstat } from '../shared/git-uncommitted-line-stats'
 import { undoLastCommitWithGit } from '../shared/git-undo-last-commit'
 import { readLastCommitMessageWithGit } from '../shared/git-amend-commit'
 import { readMergeMessageOp, runSequencerActionOp } from './git-handler-sequencer-ops'
+import { readBranchStashOp, runStashActionOp } from './git-handler-stash-ops'
 import { resolveDefaultPublishDestination } from '../shared/git-publish-remote'
 import { resolvePublishRemoteOp } from './git-handler-publish-remote-ops'
 import {
@@ -230,6 +231,10 @@ export class GitHandler {
     this.dispatcher.onRequest('git.publishRemote', (p) =>
       resolvePublishRemoteOp(this.git.bind(this), p)
     )
+    this.dispatcher.onRequest('git.stash', (p, context) =>
+      this.runWithGitReadCacheClear(() => runStashActionOp(this.mutationGit(context), p))
+    )
+    this.dispatcher.onRequest('git.branchStash', (p) => readBranchStashOp(this.git.bind(this), p))
     this.dispatcher.onRequest('git.checkout', (p) => this.checkout(p))
     this.dispatcher.onRequest('git.localBranches', (p) => this.localBranches(p))
     this.dispatcher.onRequest('git.discard', (p) => this.discard(p))

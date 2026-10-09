@@ -10588,6 +10588,16 @@
                 "continue": "계속",
                 "moreRebaseActions": "리베이스 작업 더 보기",
                 "mergeHint": "커밋해서 병합을 마치거나 중단하세요."
+              },
+              "stash": {
+                "stashChanges": "변경 사항 스태시",
+                "popLatest": "최근 스태시 꺼내기",
+                "popConflicts": "스태시를 꺼냈지만 충돌이 있습니다",
+                "nothingToStash": "스태시할 로컬 변경 사항이 없습니다",
+                "stashFailed": "스태시하지 못했습니다",
+                "popFailed": "스태시를 꺼내지 못했습니다",
+                "noStashForBranch": "{{value0}}의 스태시가 없습니다",
+                "detachedHead": "분리된 HEAD"
               }
             }
           },

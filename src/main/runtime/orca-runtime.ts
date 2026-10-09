@@ -7199,6 +7199,10 @@ export class OrcaRuntimeService {
     this.gitCommands.readRuntimeGitMergeMessage.bind(this.gitCommands)
   resolveRuntimeGitPublishRemote: RuntimeGitCommands['resolveRuntimeGitPublishRemote'] =
     this.gitCommands.resolveRuntimeGitPublishRemote.bind(this.gitCommands)
+  runRuntimeGitStashAction: RuntimeGitCommands['runRuntimeGitStashAction'] =
+    this.gitCommands.runRuntimeGitStashAction.bind(this.gitCommands)
+  readRuntimeGitBranchStash: RuntimeGitCommands['readRuntimeGitBranchStash'] =
+    this.gitCommands.readRuntimeGitBranchStash.bind(this.gitCommands)
   checkoutRuntimeGitBranch: RuntimeGitCommands['checkoutRuntimeGitBranch'] =
     this.gitCommands.checkoutRuntimeGitBranch.bind(this.gitCommands)
   listRuntimeGitLocalBranches: RuntimeGitCommands['listRuntimeGitLocalBranches'] =

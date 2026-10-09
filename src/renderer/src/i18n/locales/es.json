@@ -10588,6 +10588,16 @@
                 "continue": "Continuar",
                 "moreRebaseActions": "Más acciones de rebase",
                 "mergeHint": "Haz commit para terminar el merge, o abórtalo."
+              },
+              "stash": {
+                "stashChanges": "Guardar cambios en stash",
+                "popLatest": "Aplicar el último stash",
+                "popConflicts": "Stash aplicado con conflictos",
+                "nothingToStash": "No hay cambios locales para guardar en stash",
+                "stashFailed": "No se pudo guardar en stash",
+                "popFailed": "No se pudo aplicar el stash",
+                "noStashForBranch": "No hay stash para {{value0}}",
+                "detachedHead": "HEAD desacoplado"
               }
             }
           },

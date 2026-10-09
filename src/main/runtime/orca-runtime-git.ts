@@ -28,6 +28,8 @@ import type {
 import { readPreparedMergeMessage, runGitSequencerAction } from '../git/sequencer'
 import type { GitPublishRemoteResolution } from '../../shared/git-publish-remote'
 import { resolveGitPublishRemote } from '../git/publish-remote'
+import type { GitBranchStash, GitStashAction, GitStashResult } from '../../shared/git-stash'
+import { readBranchStash, runGitStashAction } from '../git/stash'
 import {
   mergeLegacyCommitMessageAiIntoSourceControlAi,
   type ResolvedSourceControlAiGenerationParams
@@ -392,6 +394,33 @@ export class RuntimeGitCommands {
       return provider.resolvePublishRemote(target.worktree.path)
     }
     return resolveGitPublishRemote(target.worktree.path, localGitOptionsForTarget(target))
+  }
+
+  async runRuntimeGitStashAction(
+    worktreeSelector: string,
+    action: GitStashAction
+  ): Promise<GitStashResult> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    if (target.connectionId) {
+      const provider = getSshGitProvider(target.connectionId)
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.runStashAction(target.worktree.path, action)
+    }
+    return runGitStashAction(target.worktree.path, action, localGitOptionsForTarget(target))
+  }
+
+  async readRuntimeGitBranchStash(worktreeSelector: string): Promise<GitBranchStash> {
+    const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
+    if (target.connectionId) {
+      const provider = getSshGitProvider(target.connectionId)
+      if (!provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      return provider.readBranchStash(target.worktree.path)
+    }
+    return readBranchStash(target.worktree.path, localGitOptionsForTarget(target))
   }
 
   async checkoutRuntimeGitBranch(

@@ -334,6 +334,7 @@ export { HostedReviewHeaderLink } from './hosted-review-header-chrome'
 import { OperationBanner } from './source-control-operation-banner'
 export { OperationBanner } from './source-control-operation-banner'
 import { useSourceControlInProgressOperation } from './use-source-control-in-progress-operation'
+import { useSourceControlStashActions } from './use-source-control-stash-actions'
 import { usePublishRemotePicker } from './publish-remote-picker-dialog'
 import { choosePublishPushTarget } from './publish-remote-target'
 import {
@@ -2784,6 +2785,15 @@ function SourceControlInner(): React.JSX.Element {
     setBusy: setOperationBusyForWorktree,
     confirmAction,
     prefillCommitDraft: prefillCommitDraftIfEmpty,
+    refreshAfterMutation: refreshAfterInProgressOperation
+  })
+  const stashMenu = useSourceControlStashActions({
+    worktreeId: activeWorktreeId ?? null,
+    worktreePath: worktreePath ?? null,
+    settings: activeRepoSettings,
+    hasChanges: grouped.staged.length + grouped.unstaged.length + grouped.untracked.length > 0,
+    isBusy: isAbortingOperation,
+    setBusy: setOperationBusyForWorktree,
     refreshAfterMutation: refreshAfterInProgressOperation
   })
 
@@ -5974,6 +5984,7 @@ function SourceControlInner(): React.JSX.Element {
           branchCompareRefreshDisabled={!branchSummary || branchSummary.status === 'loading'}
           diffCommentCount={diffCommentCount}
           onExpandNotes={() => setDiffCommentsExpanded(true)}
+          stashMenu={isFolder ? null : stashMenu}
           branchSummary={branchSummary}
           compareBaseRef={compareBaseRef}
           headDisplay={gitIdentityDisplay}

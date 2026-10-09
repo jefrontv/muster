@@ -23,6 +23,7 @@ import {
   GitRemoteCommitUrl,
   GitRemoteFileUrl,
   GitSequencerActionParams,
+  GitStashParams,
   GitStatusParams,
   GitSubmoduleStatus,
   GitTargetedRemote,
@@ -167,6 +168,17 @@ export const GIT_METHODS: RpcMethod[] = [
     name: 'git.publishRemote',
     params: WorktreeSelector,
     handler: async (params, { runtime }) => runtime.resolveRuntimeGitPublishRemote(params.worktree)
+  }),
+  defineMethod({
+    name: 'git.stash',
+    params: GitStashParams,
+    handler: async (params, { runtime }) =>
+      runtime.runRuntimeGitStashAction(params.worktree, params.action)
+  }),
+  defineMethod({
+    name: 'git.branchStash',
+    params: WorktreeSelector,
+    handler: async (params, { runtime }) => runtime.readRuntimeGitBranchStash(params.worktree)
   }),
   defineMethod({
     name: 'git.checkout',

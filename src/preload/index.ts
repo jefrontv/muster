@@ -103,6 +103,7 @@ import type { GitUndoLastCommitResult } from '../shared/git-undo-last-commit'
 import type { GitLastCommitMessageResult } from '../shared/git-amend-commit'
 import type { GitSequencerAction, GitSequencerActionResult } from '../shared/git-sequencer-action'
 import type { GitPublishRemoteResolution } from '../shared/git-publish-remote'
+import type { GitBranchStash, GitStashAction, GitStashResult } from '../shared/git-stash'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
@@ -3459,6 +3460,13 @@ const api = {
       worktreePath: string
       connectionId?: string
     }): Promise<GitPublishRemoteResolution> => ipcRenderer.invoke('git:publishRemote', args),
+    stash: (args: {
+      worktreePath: string
+      connectionId?: string
+      action: GitStashAction
+    }): Promise<GitStashResult> => ipcRenderer.invoke('git:stash', args),
+    branchStash: (args: { worktreePath: string; connectionId?: string }): Promise<GitBranchStash> =>
+      ipcRenderer.invoke('git:branchStash', args),
     diff: (args: {
       worktreePath: string
       filePath: string

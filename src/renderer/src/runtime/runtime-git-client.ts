@@ -29,6 +29,7 @@ import type {
   GitSequencerActionResult
 } from '../../../shared/git-sequencer-action'
 import type { GitPublishRemoteResolution } from '../../../shared/git-publish-remote'
+import type { GitBranchStash, GitStashAction, GitStashResult } from '../../../shared/git-stash'
 import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree-id'
 import { GIT_MUTATION_TIMEOUT_MS } from '../../../shared/git-mutation-timeout'
 import { callRuntimeRpc, getActiveRuntimeTarget } from './runtime-rpc-client'
@@ -440,6 +441,44 @@ export async function resolveRuntimeGitPublishRemote(
   return callRuntimeRpc<GitPublishRemoteResolution>(
     target,
     'git.publishRemote',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
+    { timeoutMs: 15_000 }
+  )
+}
+
+export async function runRuntimeGitStashAction(
+  context: RuntimeGitContext,
+  action: GitStashAction
+): Promise<GitStashResult> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return localGitApi().stash({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId,
+      action
+    })
+  }
+  return callRuntimeRpc<GitStashResult>(
+    target,
+    'git.stash',
+    { worktree: toRuntimeWorktreeSelector(context.worktreeId), action },
+    { timeoutMs: GIT_MUTATION_TIMEOUT_MS }
+  )
+}
+
+export async function readRuntimeGitBranchStash(
+  context: RuntimeGitContext
+): Promise<GitBranchStash> {
+  const target = getActiveRuntimeTarget(context.settings)
+  if (target.kind === 'local' || !context.worktreeId) {
+    return localGitApi().branchStash({
+      worktreePath: resolveLocalWorktreePath(context),
+      connectionId: context.connectionId
+    })
+  }
+  return callRuntimeRpc<GitBranchStash>(
+    target,
+    'git.branchStash',
     { worktree: toRuntimeWorktreeSelector(context.worktreeId) },
     { timeoutMs: 15_000 }
   )

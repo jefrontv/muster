@@ -16,6 +16,7 @@ import { HostedReviewHeaderLink, HostedReviewIcon } from './hosted-review-header
 import { SourceControlBranchContextRow } from './source-control-branch-context-row'
 import { shouldShowSourceControlBranchContextChrome } from './source-control-branch-context-stats'
 import { SourceControlHeaderOverflowMenu } from './source-control-header-overflow-menu'
+import type { SourceControlStashMenu } from './use-source-control-stash-actions'
 
 type SourceControlHeaderToolbarProps = {
   filterQuery: string
@@ -36,6 +37,7 @@ type SourceControlHeaderToolbarProps = {
   branchCompareRefreshDisabled: boolean
   diffCommentCount: number
   onExpandNotes: () => void
+  stashMenu?: SourceControlStashMenu | null
   branchSummary: GitBranchCompareSummary | null
   compareBaseRef: string | null
   headDisplay?: WorktreeGitIdentityDisplay | null
@@ -118,6 +120,7 @@ function renderOverflowMenu(
     | 'branchCompareRefreshDisabled'
     | 'diffCommentCount'
     | 'onExpandNotes'
+    | 'stashMenu'
   >
 ): React.JSX.Element {
   return <SourceControlHeaderOverflowMenu {...props} />
@@ -142,6 +145,7 @@ export function SourceControlHeaderToolbar({
   branchCompareRefreshDisabled,
   diffCommentCount,
   onExpandNotes,
+  stashMenu = null,
   branchSummary,
   compareBaseRef,
   headDisplay = null,
@@ -159,7 +163,8 @@ export function SourceControlHeaderToolbar({
     onRefreshBranchCompare,
     branchCompareRefreshDisabled,
     diffCommentCount,
-    onExpandNotes
+    onExpandNotes,
+    stashMenu
   }
 
   const expandFilter = useCallback(() => {
