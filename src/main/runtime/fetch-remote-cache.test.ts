@@ -133,10 +133,8 @@ describe('OrcaRuntimeService.fetchRemoteWithCache', () => {
     const first = runtime.fetchRemoteWithCache('/repo/c', 'origin')
     const second = runtime.fetchRemoteWithCache('/repo/c', 'origin')
 
-    // Allow both callers to register before we resolve.
-    await Promise.resolve()
-    await Promise.resolve()
-    expect(fetchCallCount()).toBe(1)
+    // Why: the fetch key lookup awaits a capability probe, so wait for dispatch instead of counting ticks.
+    await vi.waitFor(() => expect(fetchCallCount()).toBe(1))
 
     resolveFetch()
     await Promise.all([first, second])
