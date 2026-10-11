@@ -11,7 +11,7 @@ function subagentRowKey(parentPaneKey: string, subagentId: string): string {
 }
 
 /**
- * Derive indented child rows for the live in-process subagents/teammates a
+ * Derive indented child rows for the running in-process subagents/teammates a
  * pane's agent has spawned (entry.subagents, reported via agent hooks). These
  * children have no PTY or tab of their own: the rows reuse the parent's tab,
  * activate the parent's pane, and link into the existing lineage tree through
@@ -20,21 +20,27 @@ function subagentRowKey(parentPaneKey: string, subagentId: string): string {
 export function buildSubagentChildRows(args: {
   parentEntry: AgentStatusEntry
   tab: TerminalTab
-  /** Freshness of the parent's hook stream. A stale parent means active child
-   *  states are equally stale, so they decay to idle together. */
+  /** Freshness of the parent's hook stream. A stale parent means child states
+   *  are equally stale, so no child rows are shown. */
   parentIsFresh: boolean
 }): DashboardAgentRow[] {
   const subagents = args.parentEntry.subagents
   if (!subagents || subagents.length === 0) {
     return []
   }
-  return subagents.map((subagent) => {
-    const activeState = args.parentIsFresh && subagent.state !== 'idle' ? subagent.state : undefined
-    const state = activeState ?? 'idle'
+  // Why: only running children get a row; finished/idle ones pile up and crowd the card.
+  if (!args.parentIsFresh) {
+    return []
+  }
+  return subagents.flatMap((subagent) => {
+    if (subagent.state === 'idle') {
+      return []
+    }
+    const state = subagent.state
     const startedAt = subagent.startedAt > 0 ? subagent.startedAt : args.parentEntry.stateStartedAt
     const paneKey = subagentRowKey(args.parentEntry.paneKey, subagent.id)
     const entry: AgentStatusEntry = {
-      state: activeState ?? 'done',
+      state,
       prompt: subagent.description ?? subagent.agentType ?? '',
       updatedAt: args.parentEntry.updatedAt,
       stateStartedAt: startedAt,
@@ -51,15 +57,17 @@ export function buildSubagentChildRows(args: {
         parentPaneKey: args.parentEntry.paneKey
       }
     }
-    return {
-      paneKey,
-      entry,
-      tab: args.tab,
-      agentType: subagent.agentType ?? 'unknown',
-      rowSource: 'subagent' as const,
-      state,
-      activationPaneKey: args.parentEntry.paneKey,
-      startedAt
-    }
+    return [
+      {
+        paneKey,
+        entry,
+        tab: args.tab,
+        agentType: subagent.agentType ?? 'unknown',
+        rowSource: 'subagent' as const,
+        state,
+        activationPaneKey: args.parentEntry.paneKey,
+        startedAt
+      }
+    ]
   })
 }

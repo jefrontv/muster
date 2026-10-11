@@ -702,7 +702,7 @@ describe('applyAgentRowLineage', () => {
     expect(ordered[2].lineage).toMatchObject({ depth: 1, childCount: 0 })
   })
 
-  it('derives indented child rows for a live entry with in-process subagents', () => {
+  it('derives indented child rows only for running in-process subagents', () => {
     const entry = makeEntry(PANE_KEY_1, 1000, {
       state: 'working',
       prompt: 'review the PR',
@@ -726,7 +726,7 @@ describe('applyAgentRowLineage', () => {
     })
 
     const children = rows.filter((row) => row.rowSource === 'subagent')
-    expect(children).toHaveLength(2)
+    expect(children).toHaveLength(1)
     expect(children[0]).toMatchObject({
       state: 'working',
       agentType: 'general-purpose',
@@ -735,17 +735,14 @@ describe('applyAgentRowLineage', () => {
       startedAt: 1500
     })
     expect(children[0].entry.prompt).toBe('Review loop')
-    expect(children[1]).toMatchObject({ state: 'idle', agentType: 'code-reviewer' })
-    expect(children[1].entry.prompt).toBe('code-reviewer')
 
     const ordered = applyAgentRowLineage(rows)
     expect(ordered[0].paneKey).toBe(PANE_KEY_1)
-    expect(ordered[0].lineage).toMatchObject({ depth: 0, childCount: 2 })
+    expect(ordered[0].lineage).toMatchObject({ depth: 0, childCount: 1 })
     expect(ordered[1].lineage).toMatchObject({ depth: 1, isFirstSibling: true })
-    expect(ordered[2].lineage).toMatchObject({ depth: 1, isLastSibling: true })
   })
 
-  it('decays working subagent child rows to idle when the parent status is stale', () => {
+  it('hides subagent child rows when the parent status is stale', () => {
     const entry = makeEntry(PANE_KEY_1, 1000, {
       state: 'working',
       subagents: [{ id: 'a1', state: 'working', startedAt: 1000 }]
@@ -757,8 +754,7 @@ describe('applyAgentRowLineage', () => {
       now: 1000 + AGENT_STATUS_STALE_AFTER_MS + 1
     })
 
-    const child = rows.find((row) => row.rowSource === 'subagent')
-    expect(child?.state).toBe('idle')
+    expect(rows.some((row) => row.rowSource === 'subagent')).toBe(false)
   })
 
   it('surfaces a live subagent waiting state', () => {
