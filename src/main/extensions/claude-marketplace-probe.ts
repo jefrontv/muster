@@ -32,6 +32,10 @@ export function probeClaudeMarketplace(
     metadata?: { version?: unknown }
     version?: unknown
   } | null
-  const version = manifest?.metadata?.version ?? manifest?.version
+  // A single-plugin marketplace often versions only its plugin.json.
+  const plugin = readJson(path.join(location, '.claude-plugin', 'plugin.json')) as {
+    version?: unknown
+  } | null
+  const version = manifest?.metadata?.version ?? manifest?.version ?? plugin?.version
   return { installed: true, version: typeof version === 'string' ? version : null }
 }

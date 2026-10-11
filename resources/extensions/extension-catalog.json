@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-01",
+  "updatedAt": "2026-10-12",
   "entries": [
     {
       "id": "activecollab-mcp",
@@ -355,6 +355,33 @@
         "supported": true
       },
       "homepage": "https://bitbucket.org/efront_au/efront-agent-skills",
+      "minAppVersion": "1.15.3"
+    },
+    {
+      "id": "claude-cache-warmer",
+      "kind": "app",
+      "name": "Cache Warmer",
+      "description": "Keeps Claude Code's prompt cache warm during a break, so your next prompt costs less.",
+      "about": "A Claude Code mod by Paul B. Kim. Shortly before the prompt cache expires, it re-sends the conversation's last request with tools denied, so the next prompt reads the cache instead of writing it again. It only refreshes when the expected saving is at least $0.05, shows each refresh's cost and saving above the prompt, and lets you switch the cache lifetime between 5 minutes and 1 hour. Each refresh counts against your Claude plan or API key like any other request. It runs in Claude Code terminal sessions; restart Claude Code after installing. Turn it off with claude plugin disable cache-warmer.",
+      "keywords": ["cache", "prompt-cache", "cost", "claude", "mod", "plugins"],
+      "version": "0.12.3",
+      "install": {
+        "method": "command",
+        "command": {
+          "install": "claude plugin marketplace add paulbkim-dev/claude-code-cache-warmer && claude plugin install cache-warmer@claude-code-cache-warmer",
+          "update": "claude plugin marketplace update claude-code-cache-warmer && claude plugin install cache-warmer@claude-code-cache-warmer && claude plugin update cache-warmer@claude-code-cache-warmer",
+          "uninstall": "claude plugin uninstall cache-warmer@claude-code-cache-warmer; claude plugin marketplace remove claude-code-cache-warmer",
+          "requires": ["claude", "git"],
+          "claudeMarketplace": "claude-code-cache-warmer"
+        }
+      },
+      "latest": {
+        "source": "pinned"
+      },
+      "autoUpdate": {
+        "supported": true
+      },
+      "homepage": "https://github.com/paulbkim-dev/claude-code-cache-warmer",
       "minAppVersion": "1.15.3"
     }
   ]

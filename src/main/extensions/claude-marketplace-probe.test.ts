@@ -34,4 +34,24 @@ describe('probeClaudeMarketplace', () => {
       version: '1.1.0'
     })
   })
+  it('falls back to the plugin manifest version when the marketplace has none', () => {
+    const location = path.join(configDir, 'plugins', 'marketplaces', 'claude-code-cache-warmer')
+    mkdirSync(path.join(location, '.claude-plugin'), { recursive: true })
+    writeFileSync(
+      path.join(configDir, 'plugins', 'known_marketplaces.json'),
+      JSON.stringify({ 'claude-code-cache-warmer': { installLocation: location } })
+    )
+    writeFileSync(
+      path.join(location, '.claude-plugin', 'marketplace.json'),
+      JSON.stringify({ name: 'claude-code-cache-warmer', plugins: [{ name: 'cache-warmer' }] })
+    )
+    writeFileSync(
+      path.join(location, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({ name: 'cache-warmer', version: '0.12.3' })
+    )
+    expect(probeClaudeMarketplace('claude-code-cache-warmer', configDir)).toEqual({
+      installed: true,
+      version: '0.12.3'
+    })
+  })
 })
