@@ -14,6 +14,10 @@ import {
 export { ORCA_OMP_PREFILL_ENV_VAR, ORCA_PI_PREFILL_ENV_VAR } from './prefill-extension-source'
 import { ORCA_PI_EXTENSION_FILE, getPiTitlebarExtensionSource } from './titlebar-extension-source'
 import {
+  ORCA_PI_PLAN_REVIEW_EXTENSION_FILE,
+  getPiPlanReviewExtensionSource
+} from './plan-review-extension-source'
+import {
   isSafeDescendCandidate as sharedIsSafeDescendCandidate,
   safeRemoveOverlay
 } from '../pty/overlay-mirror'
@@ -149,6 +153,10 @@ export class PiTitlebarExtensionService {
     this.writeManagedExtension(
       join(extensionsDir, ORCA_PI_PREFILL_EXTENSION_FILE),
       withOrcaManagedExtensionMarker(getPiPrefillExtensionSource(kind))
+    )
+    this.writeManagedExtension(
+      join(extensionsDir, ORCA_PI_PLAN_REVIEW_EXTENSION_FILE),
+      withOrcaManagedExtensionMarker(getPiPlanReviewExtensionSource(kind))
     )
     const statusExtensionPath = join(extensionsDir, ORCA_PI_AGENT_STATUS_EXTENSION_FILE)
     const statusSource = withOrcaManagedExtensionMarker(getPiAgentStatusExtensionSource(kind))

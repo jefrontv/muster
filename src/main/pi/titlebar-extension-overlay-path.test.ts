@@ -51,6 +51,7 @@ describe('PiTitlebarExtensionService legacy overlay paths', () => {
       expect(existsSync(join(userDataDir, 'pi-agent-overlays'))).toBe(false)
       expect(readdirSync(join(piHome, 'extensions')).sort()).toEqual([
         'orca-agent-status.ts',
+        'orca-plan-review.ts',
         'orca-prefill.ts',
         'orca-titlebar-spinner.ts'
       ])

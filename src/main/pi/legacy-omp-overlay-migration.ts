@@ -3,6 +3,7 @@ import type { Dirent, Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { ORCA_PI_AGENT_STATUS_EXTENSION_FILE } from './agent-status-extension-source'
 import { ORCA_PI_PREFILL_EXTENSION_FILE } from './prefill-extension-source'
+import { ORCA_PI_PLAN_REVIEW_EXTENSION_FILE } from './plan-review-extension-source'
 import { ORCA_PI_EXTENSION_FILE } from './titlebar-extension-source'
 import { isSafeDescendCandidate } from '../pty/overlay-mirror'
 
@@ -14,6 +15,7 @@ const SQLITE_SIDECAR_SUFFIXES = ['-wal', '-shm', '-journal'] as const
 const MANAGED_EXTENSION_FILES = new Set([
   ORCA_PI_EXTENSION_FILE,
   ORCA_PI_PREFILL_EXTENSION_FILE,
+  ORCA_PI_PLAN_REVIEW_EXTENSION_FILE,
   ORCA_PI_AGENT_STATUS_EXTENSION_FILE
 ])
 
