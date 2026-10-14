@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearPlanAnnotationsForTests,
+  clearPlanRoundsForTests,
   listPendingPlanAnnotations,
   PLAN_ANNOTATION_RESULT_RETENTION_MS,
   PLAN_ANNOTATION_TIMEOUT_MS,
@@ -40,6 +41,7 @@ beforeEach(() => {
 
 afterEach(() => {
   clearPlanAnnotationsForTests()
+  clearPlanRoundsForTests()
   setPlanAnnotationSender(null)
   setPlanAnnotationResolvedSender(null)
   vi.useRealTimers()
@@ -256,5 +258,59 @@ describe('queue depth', () => {
     await Promise.resolve()
     expect(depths.at(-1)).toBe(0)
     expect(listPendingPlanAnnotations()).toEqual([])
+  })
+})
+
+describe('round memory', () => {
+  function openAt(planPath: string, content: string) {
+    return openPlanAnnotation({
+      planPath,
+      title: 'plan.md',
+      content,
+      agent: 'omp',
+      project: null
+    })
+  }
+
+  function openInline(content: string) {
+    return openPlanAnnotation({
+      planPath: null,
+      title: 'Plan',
+      content,
+      agent: 'omp',
+      project: null
+    })
+  }
+
+  it('numbers a plan across transports and hands back the previous text', () => {
+    // Why here and not per transport: the MCP tool and the extension both review the same plans,
+    // and a count that restarts at the other door mislabels the modal's round and its diff.
+    const first = openAt('/plans/ship.md', 'first draft')
+    const second = openAt('/plans/ship.md', 'second draft')
+
+    expect(first).toMatchObject({ round: 1 })
+    expect(second).toMatchObject({ round: 2 })
+    expect(listPendingPlanAnnotations().map((request) => request.previousContent)).toEqual([
+      null,
+      'first draft'
+    ])
+  })
+
+  it('counts each plan on its own, and reads an inline plan as a first round every time', () => {
+    expect(openAt('/plans/a.md', 'a')).toMatchObject({ round: 1 })
+    expect(openAt('/plans/b.md', 'b')).toMatchObject({ round: 1 })
+    expect(openInline('one')).toMatchObject({ round: 1 })
+    expect(openInline('two')).toMatchObject({ round: 1 })
+  })
+
+  it('lets a caller that keeps its own count specify the round', () => {
+    const opened = openPlanAnnotation({ ...plan('legacy'), round: 5, previousContent: 'prior' })
+    expect(opened).toMatchObject({ round: 5 })
+    expect(listPendingPlanAnnotations()[0]?.previousContent).toBe('prior')
+  })
+
+  it('reports how many reviews settle before the one just opened', () => {
+    expect(openAt('/plans/ahead.md', 'a')).toMatchObject({ queuedAhead: 0 })
+    expect(openAt('/plans/behind.md', 'b')).toMatchObject({ queuedAhead: 1 })
   })
 })

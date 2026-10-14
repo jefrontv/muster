@@ -5,11 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearSiteMcpClientForTests, rememberSiteMcpClient } from './site-mcp-client-identity'
 import type { PlanAnnotationResult } from '../../../shared/plan-annotation-types'
 import type { SiteMcpContext } from './site-mcp-context'
-import {
-  clearPlanRoundsForTests,
-  formatPlanFeedback,
-  SITE_MCP_PLAN_TOOLS
-} from './site-mcp-plan-tools'
+import { formatPlanFeedback } from '../plan-review-feedback'
+import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
 import { dispatchSiteMcpTool } from './site-mcp-tools'
 
 const tool = SITE_MCP_PLAN_TOOLS[0]!
@@ -18,7 +15,6 @@ let dir: string
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'plan-tool-'))
-  clearPlanRoundsForTests()
 })
 
 afterEach(() => {
@@ -36,7 +32,7 @@ function context(
   } as unknown as SiteMcpContext
 }
 
-const approved = vi.fn(() => Promise.resolve({ requestId: 'r1' }))
+const approved = vi.fn(() => Promise.resolve({ requestId: 'r1', round: 1 }))
 
 describe('annotate_plan', () => {
   it('runs off the dispatch chain, because its latency is a person', () => {
@@ -52,7 +48,7 @@ describe('annotate_plan', () => {
     await tool.run(
       context((request) => {
         seen.push(request)
-        return Promise.resolve({ requestId: 'r1' })
+        return Promise.resolve({ requestId: 'r1', round: 1 })
       }),
       { path }
     )
@@ -93,23 +89,21 @@ describe('annotate_plan', () => {
     expect(outcome.content[0]!.text).toContain('Cannot read plan')
   })
 
-  it('counts rounds per plan and hands back the previous text to diff against', async () => {
+  it('takes its round from the queue instead of counting locally', async () => {
+    // Why: the queue owns round numbers now, so a plan reviewed through another transport cannot
+    // restart the count when the agent comes back through MCP.
     const path = join(dir, 'plan.md')
-    const seen: { round: number; previousContent: string | null }[] = []
+    writeFileSync(path, 'first draft')
+    const seen: { round?: number; previousContent?: string | null }[] = []
     const capture = context((request) => {
       seen.push({ round: request.round, previousContent: request.previousContent })
-      return Promise.resolve({ requestId: 'r1' })
+      return Promise.resolve({ requestId: 'r1', round: 7 })
     })
 
-    writeFileSync(path, 'first draft')
-    await tool.run(capture, { path })
-    writeFileSync(path, 'second draft')
-    await tool.run(capture, { path })
+    const result = (await tool.run(capture, { path })) as { round: number }
 
-    expect(seen).toEqual([
-      { round: 1, previousContent: null },
-      { round: 2, previousContent: 'first draft' }
-    ])
+    expect(seen).toEqual([{ round: undefined, previousContent: undefined }])
+    expect(result.round).toBe(7)
   })
 })
 
@@ -119,7 +113,7 @@ describe('review provenance', () => {
     await tool.run(
       context((request) => {
         seen.push({ agent: request.agent, project: request.project })
-        return Promise.resolve({ requestId: 'r1' })
+        return Promise.resolve({ requestId: 'r1', round: 1 })
       }, sites),
       { content: '# Plan' }
     )

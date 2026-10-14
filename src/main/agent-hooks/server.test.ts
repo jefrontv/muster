@@ -17,6 +17,8 @@ import {
   AgentHookServer,
   agentHookServer,
   CLOSED_AGENT_STATUS_TAB_IDS_MAX,
+  PLAN_REVIEW_COLLECT_PATHNAME,
+  PLAN_REVIEW_OPEN_PATHNAME,
   _internals
 } from './server'
 import {
@@ -7788,5 +7790,138 @@ describe('AgentHookServer closed-tab suppression bound', () => {
     expect(internals.closedAgentStatusTabIds.size).toBe(CLOSED_AGENT_STATUS_TAB_IDS_MAX)
     expect(internals.closedAgentStatusTabIds.has('closed-tab-0')).toBe(false)
     expect(internals.closedAgentStatusTabIds.has(`closed-tab-${total - 1}`)).toBe(true)
+  })
+})
+
+describe('AgentHookServer plan review routes', () => {
+  function postPlanReview(
+    server: AgentHookServer,
+    path: string,
+    body: unknown,
+    token?: string
+  ): Promise<Response> {
+    const env = server.buildPtyEnv()
+    return fetch(`http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Orca-Agent-Hook-Token': token ?? env.ORCA_AGENT_HOOK_TOKEN
+      },
+      body: JSON.stringify(body)
+    })
+  }
+
+  it('answers with JSON, unlike the fire-and-forget status hooks', async () => {
+    const server = new AgentHookServer()
+    const seen: unknown[] = []
+    await server.start({
+      env: 'production',
+      planReview: {
+        open: (body) => {
+          seen.push(body)
+          return Promise.resolve({ ok: true, review_id: 'r1', round: 2 })
+        },
+        collect: () => Promise.resolve({ ok: true, status: 'pending', open_for_seconds: 3 })
+      }
+    })
+    try {
+      const opened = await postPlanReview(server, PLAN_REVIEW_OPEN_PATHNAME, {
+        path: '/tmp/plan.md'
+      })
+      expect(opened.status).toBe(200)
+      await expect(opened.json()).resolves.toEqual({ ok: true, review_id: 'r1', round: 2 })
+      expect(seen).toEqual([{ path: '/tmp/plan.md' }])
+
+      const collected = await postPlanReview(server, PLAN_REVIEW_COLLECT_PATHNAME, {
+        review_id: 'r1'
+      })
+      await expect(collected.json()).resolves.toEqual({
+        ok: true,
+        status: 'pending',
+        open_for_seconds: 3
+      })
+    } finally {
+      server.stop()
+    }
+  })
+
+  it('rejects a request without the hook token', async () => {
+    const server = new AgentHookServer()
+    const open = vi.fn(() => Promise.resolve({ ok: true }))
+    await server.start({
+      env: 'production',
+      planReview: { open, collect: () => Promise.resolve({}) }
+    })
+    try {
+      const response = await postPlanReview(
+        server,
+        PLAN_REVIEW_OPEN_PATHNAME,
+        { path: '/tmp/plan.md' },
+        'wrong'
+      )
+      expect(response.status).toBe(403)
+      expect(open).not.toHaveBeenCalled()
+    } finally {
+      server.stop()
+    }
+  })
+
+  it('answers 404 with no routes wired, rather than a silent success', async () => {
+    const server = new AgentHookServer()
+    await server.start({ env: 'production' })
+    try {
+      const response = await postPlanReview(server, PLAN_REVIEW_OPEN_PATHNAME, {
+        path: '/tmp/plan.md'
+      })
+      expect(response.status).toBe(404)
+      await expect(response.json()).resolves.toEqual({ ok: false, error: 'not-found' })
+    } finally {
+      server.stop()
+    }
+  })
+
+  it('refuses a body that is not JSON', async () => {
+    const server = new AgentHookServer()
+    await server.start({
+      env: 'production',
+      planReview: { open: () => Promise.resolve({ ok: true }), collect: () => Promise.resolve({}) }
+    })
+    try {
+      const env = server.buildPtyEnv()
+      const response = await fetch(
+        `http://127.0.0.1:${env.ORCA_AGENT_HOOK_PORT}${PLAN_REVIEW_OPEN_PATHNAME}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Orca-Agent-Hook-Token': env.ORCA_AGENT_HOOK_TOKEN
+          },
+          body: '{ not json'
+        }
+      )
+      expect(response.status).toBe(400)
+    } finally {
+      server.stop()
+    }
+  })
+
+  it('turns a handler crash into a body an agent can act on', async () => {
+    const server = new AgentHookServer()
+    await server.start({
+      env: 'production',
+      planReview: {
+        open: () => {
+          throw new Error('boom')
+        },
+        collect: () => Promise.resolve({})
+      }
+    })
+    try {
+      const response = await postPlanReview(server, PLAN_REVIEW_OPEN_PATHNAME, {})
+      expect(response.status).toBe(500)
+      await expect(response.json()).resolves.toEqual({ ok: false, error: 'internal' })
+    } finally {
+      server.stop()
+    }
   })
 })

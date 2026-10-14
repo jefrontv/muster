@@ -15,6 +15,7 @@ import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
 import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
+import { handlePlanReviewCollect, handlePlanReviewOpen } from './sites/plan-review-hook'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
 import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
 import { getOrcaCloudAuthConfig } from './orca-profiles/profile-cloud-auth-config'
@@ -821,7 +822,13 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
         env: app.isPackaged ? 'production' : 'development',
         // Why: hooks source this endpoint file at invocation time so old PTY env reaches the current process after restart; dev namespaces it (worktrees share `orca-dev`).
         userDataPath: app.getPath('userData'),
-        endpointNamespace: devAgentHookEndpointNamespace
+        endpointNamespace: devAgentHookEndpointNamespace,
+        // The OMP/PI extension's door into the plan-review queue. The store is optional so the
+        // routes still answer — minus a project label — on a startup where it is not up yet.
+        planReview: {
+          open: (body) => Promise.resolve(handlePlanReviewOpen({ store, body })),
+          collect: (body) => handlePlanReviewCollect({ body })
+        }
       })
       logStartupMilestone('startup-service-done', { service: 'agent-hook-server' })
       // Why here: the site-MCP process must reach the GUI's live store, and this

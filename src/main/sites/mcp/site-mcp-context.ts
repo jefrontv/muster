@@ -12,7 +12,7 @@ import type { SiteEnvironmentPatches } from '../site-environment-patches'
 import type { Site, SiteCustomStep, SiteRunGroup, SiteSummary } from '../../../shared/site-types'
 import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
 import type { AcfStateStore } from '../wp-acf-state-store'
-import type { PlanAnnotationRequest } from '../../../shared/plan-annotation-types'
+import type { PlanAnnotationOpenInput } from '../../../shared/plan-annotation-types'
 import type { PlanReviewOutcome } from './site-mcp-plan-bridge'
 
 /** The subset of Store the tools touch. The real Store satisfies this structurally. */
@@ -122,10 +122,10 @@ export type SiteMcpJsonSchema = {
   additionalProperties: false
 }
 
-/** Opens a plan in the running GUI and returns its review id without waiting for the person. */
+/** Opens a plan in the running GUI and returns its review id and round, without waiting. */
 export type SiteMcpAnnotatePlan = (
-  request: Omit<PlanAnnotationRequest, 'requestId'>
-) => Promise<{ requestId: string }>
+  request: PlanAnnotationOpenInput
+) => Promise<{ requestId: string; round: number }>
 
 /**
  * Collects a verdict, parking for at most `waitMs`.

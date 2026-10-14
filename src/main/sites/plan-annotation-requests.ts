@@ -8,6 +8,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type {
+  PlanAnnotationOpenInput,
   PlanAnnotationRequest,
   PlanAnnotationResult
 } from '../../shared/plan-annotation-types'
@@ -56,6 +57,34 @@ const settled = new Map<
 
 /** Polls currently parked on a review. More than one is normal: an agent may retry. */
 const waiters = new Map<string, Set<Waiter>>()
+
+/**
+ * Rounds and prior text, keyed by absolute plan path.
+ *
+ * Why here and not in a transport: the MCP tool and the agent-hooks routes both review plans, and
+ * one owner keeps the modal's round counter and "changed since last round" diff identical on
+ * either path. Inline plans have no stable key and always read as round 1.
+ *
+ * Why a limit: this used to live in the MCP process, which died with its agent. The GUI does not,
+ * so the memo is bounded and evicts the plan opened longest ago.
+ */
+const roundsByPlanPath = new Map<string, { round: number; content: string }>()
+
+/** Plenty for any one working session; a bound, not a policy. */
+const PLAN_ROUND_MEMORY_LIMIT = 64
+
+function rememberRound(planPath: string, round: number, content: string): void {
+  // Re-insert so insertion order stays "least recently opened first".
+  roundsByPlanPath.delete(planPath)
+  roundsByPlanPath.set(planPath, { round, content })
+  while (roundsByPlanPath.size > PLAN_ROUND_MEMORY_LIMIT) {
+    const oldest = roundsByPlanPath.keys().next().value
+    if (oldest === undefined) {
+      break
+    }
+    roundsByPlanPath.delete(oldest)
+  }
+}
 
 let sendRequest: ((request: PlanAnnotationRequest) => void) | null = null
 let sendResolved: ((requestId: string) => void) | null = null
@@ -165,20 +194,34 @@ function startFront(): void {
  * client's request timeout, and most harnesses cap that around 30 seconds. A review takes minutes,
  * so anything that blocks for its whole duration is dead on arrival. The caller gets an id and
  * collects the verdict with awaitPlanAnnotationResult, in waits it can size to its own ceiling.
+ *
+ * Round counting happens here for the same reason the queue exists: several transports review the
+ * same plans, and a caller cannot be the authority on how many times this plan has been seen.
+ * `queuedAhead` is the number of reviews that settle before this one — what a progress line shows.
  */
 export function openPlanAnnotation(
-  request: Omit<PlanAnnotationRequest, 'requestId'>
-): { requestId: string } | { error: 'no-window' } {
+  input: PlanAnnotationOpenInput
+): { requestId: string; round: number; queuedAhead: number } | { error: 'no-window' } {
   if (!sendRequest) {
     // No window is listening, and there is no headless way to ask a person.
     return { error: 'no-window' }
   }
+  const planPath = input.planPath
+  const prior = planPath === null ? undefined : roundsByPlanPath.get(planPath)
+  const round = input.round ?? (prior ? prior.round + 1 : 1)
+  const previousContent = input.previousContent ?? prior?.content ?? null
+  if (planPath !== null) {
+    rememberRound(planPath, round, input.content)
+  }
   const requestId = randomUUID()
-  queue.set(requestId, { request: { ...request, requestId }, timer: null, openedAt: Date.now() })
+  // Everything already queued settles first (FIFO), so the current depth is what is ahead of us.
+  const queuedAhead = queue.size
+  const request: PlanAnnotationRequest = { ...input, requestId, round, previousContent }
+  queue.set(requestId, { request, timer: null, openedAt: Date.now() })
   startFront()
   // After startFront, so a review that went straight to the front reports a depth of zero.
   notifyQueued()
-  return { requestId }
+  return { requestId, round, queuedAhead }
 }
 
 /**
@@ -251,4 +294,9 @@ export function clearPlanAnnotationsForTests(): void {
     clearTimeout(done.timer)
   }
   settled.clear()
+}
+
+/** Test-only: forget round history so cases do not leak into each other. */
+export function clearPlanRoundsForTests(): void {
+  roundsByPlanPath.clear()
 }

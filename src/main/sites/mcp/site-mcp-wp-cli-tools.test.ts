@@ -72,7 +72,7 @@ function fakeContext(branch: string | null = 'main'): SiteMcpContext {
       findSiteByPath: () => site,
       updateSite: () => site
     },
-    annotatePlan: async () => ({ requestId: 'r1' }),
+    annotatePlan: async () => ({ requestId: 'r1', round: 1 }),
     collectPlanReview: async () => ({ status: 'unknown' as const }),
     updateSite: async () => site,
     summarize,

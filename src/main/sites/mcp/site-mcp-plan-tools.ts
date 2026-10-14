@@ -4,130 +4,12 @@
 // context when the feedback lands, so a revise-and-resubmit loop needs no reconnection. It is also
 // why the tool is `concurrent`: a human-length call must not stall every other sites tool behind it.
 
-import { readFileSync } from 'node:fs'
-import { basename, isAbsolute, resolve } from 'node:path'
-import type { PlanAnnotation, PlanAnnotationResult } from '../../../shared/plan-annotation-types'
-import {
-  readNumber,
-  readRequiredString,
-  readString,
-  SiteMcpToolError,
-  type ToolArguments
-} from './site-mcp-arguments'
+import { formatPlanFeedback } from '../plan-review-feedback'
+import { describePlanProject, loadPlanText, PlanSourceError } from '../plan-review-source'
+import { readNumber, readRequiredString, readString, SiteMcpToolError } from './site-mcp-arguments'
 import { siteMcpClientName } from './site-mcp-client-identity'
 import type { SiteMcpContext, SiteMcpTool } from './site-mcp-context'
 import { objectSchema } from './site-mcp-schemas'
-
-/**
- * What the plan is about, for the review header.
- *
- * The deepest matching site wins, so a worktree nested under a site root resolves to that site
- * rather than to a shorter path that happens to share a prefix. A checkout Muster does not manage
- * is not an error here — the directory name is still more use to a reviewer than nothing.
- */
-function describeProject(context: SiteMcpContext): string | null {
-  const cwd = context.cwd
-  let best: { path: string; name: string } | null = null
-  for (const site of context.store.listSites()) {
-    const root = site.path
-    if (root.length === 0) {
-      continue
-    }
-    const inside = cwd === root || cwd.startsWith(root.endsWith('/') ? root : `${root}/`)
-    if (!inside) {
-      continue
-    }
-    if (best === null || root.length > best.path.length) {
-      best = { path: root, name: site.displayName }
-    }
-  }
-  return best?.name ?? basename(cwd) ?? null
-}
-
-/** Refuses a file that is clearly not a plan before showing a person a wall of binary. */
-const MAX_PLAN_BYTES = 1_000_000
-
-/**
- * Rounds and prior text, keyed by absolute plan path, for the life of this MCP process.
- *
- * Why in-process: one process serves one agent, so this is exactly the scope of "this agent's
- * ongoing review of this plan". An inline plan has no stable key and always reads as round 1.
- */
-const roundsByPlanPath = new Map<string, { round: number; content: string }>()
-
-function loadPlan(
-  context: SiteMcpContext,
-  args: ToolArguments
-): { planPath: string | null; title: string; content: string } {
-  const path = readString(args, 'path')
-  const inline = readString(args, 'content')
-  if (path.length > 0 && inline.length > 0) {
-    throw new SiteMcpToolError("Pass either 'path' or 'content', not both.")
-  }
-  if (path.length === 0 && inline.length === 0) {
-    throw new SiteMcpToolError("Pass 'path' to a markdown file, or 'content' with the plan text.")
-  }
-  if (inline.length > 0) {
-    return { planPath: null, title: 'Plan', content: inline }
-  }
-  const absolute = isAbsolute(path) ? path : resolve(context.cwd, path)
-  let content: string
-  try {
-    content = readFileSync(absolute, 'utf-8')
-  } catch {
-    throw new SiteMcpToolError(`Cannot read plan at ${absolute}.`)
-  }
-  if (content.length > MAX_PLAN_BYTES) {
-    throw new SiteMcpToolError(`Plan at ${absolute} is too large to review.`)
-  }
-  return { planPath: absolute, title: basename(absolute), content }
-}
-
-function describeAnnotation(annotation: PlanAnnotation): string {
-  // Absolute paths: the agent opens the image itself, rather than being handed its bytes.
-  const files = (annotation.attachments ?? []).map((path) => `\n  Attached: ${path}`).join('')
-  if (annotation.kind === 'global') {
-    return `- **General:** ${annotation.body}${files}`
-  }
-  const where =
-    annotation.startLine === annotation.endLine
-      ? `line ${annotation.startLine}`
-      : `lines ${annotation.startLine}-${annotation.endLine}`
-  const head =
-    annotation.kind === 'delete'
-      ? `**Remove** (${where})`
-      : annotation.kind === 'looks_good'
-        ? `**Looks good** (${where})`
-        : `**Comment** (${where})`
-  // The quote is what actually locates the passage after the plan is rewritten; the line is a hint.
-  const quote = annotation.quote.trim()
-  const quoted = quote.length > 0 ? `\n  > ${quote.replace(/\n/g, '\n  > ')}` : ''
-  const body = annotation.body.trim()
-  return `- ${head}${quoted}${body.length > 0 ? `\n  ${body}` : ''}${files}`
-}
-
-/** Renders the result as the markdown the agent reads, so it never has to parse the JSON itself. */
-export function formatPlanFeedback(result: PlanAnnotationResult): string {
-  const lines: string[] = []
-  if (result.annotations.length > 0) {
-    lines.push(...result.annotations.map(describeAnnotation))
-  }
-  if (result.edits) {
-    lines.push(
-      '',
-      result.edits.appliedToDisk
-        ? '**Direct edits — already saved to the plan file, do not re-apply:**'
-        : '**Direct edits — apply these:**',
-      '```diff',
-      result.edits.unifiedDiff.trimEnd(),
-      '```'
-    )
-  }
-  if (lines.length === 0) {
-    return result.decision === 'approved' ? 'Approved with no changes requested.' : 'No feedback.'
-  }
-  return lines.join('\n')
-}
 
 /**
  * Default and ceiling for a single collect.
@@ -192,28 +74,31 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
     // Still concurrent: opening is quick, but it must not queue behind a long collect.
     concurrent: true,
     async run(context, args) {
-      const { planPath, title, content } = loadPlan(context, args)
-      const prior = planPath ? roundsByPlanPath.get(planPath) : undefined
-      const round = (prior?.round ?? 0) + 1
-
-      const opened = await context.annotatePlan({
-        planPath,
-        title,
-        content,
-        agent: siteMcpClientName(),
-        project: describeProject(context),
-        round,
-        previousContent: prior?.content ?? null
-      })
-
-      if (planPath) {
-        roundsByPlanPath.set(planPath, { round, content })
+      let plan: { planPath: string | null; title: string; content: string }
+      try {
+        plan = loadPlanText({
+          path: readString(args, 'path'),
+          content: readString(args, 'content'),
+          cwd: context.cwd
+        })
+      } catch (error) {
+        throw error instanceof PlanSourceError ? new SiteMcpToolError(error.message) : error
       }
+
+      // Why round and previousContent are not sent: the queue counts rounds for every transport,
+      // and a second counter here would restart at 1 the moment another transport opened the plan.
+      const opened = await context.annotatePlan({
+        planPath: plan.planPath,
+        title: plan.title,
+        content: plan.content,
+        agent: siteMcpClientName(),
+        project: describePlanProject(context.cwd, context.store.listSites())
+      })
 
       return {
         review_id: opened.requestId,
-        round,
-        plan_path: planPath,
+        round: opened.round,
+        plan_path: plan.planPath,
         status: 'open',
         next_step: `The plan is on screen. Call collect_plan_review with review_id "${opened.requestId}" to get the verdict. It waits up to ${COLLECT_DEFAULT_SECONDS}s and answers "pending" if the user is still reading — keep calling until it returns a decision.`
       }
@@ -279,8 +164,3 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
     }
   }
 ]
-
-/** Test-only: forget round history so cases do not leak into each other. */
-export function clearPlanRoundsForTests(): void {
-  roundsByPlanPath.clear()
-}

@@ -53,7 +53,7 @@ function createContext(): SiteMcpContext {
   }
   return {
     cwd: '/Sites/acme',
-    annotatePlan: () => Promise.resolve({ requestId: 'r1' }),
+    annotatePlan: () => Promise.resolve({ requestId: 'r1', round: 1 }),
     collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
     updateSite: async () => null,
     openSshSession: async () => ({

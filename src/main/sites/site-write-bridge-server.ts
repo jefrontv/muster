@@ -19,7 +19,7 @@ import {
   type SiteEnvironmentPatches
 } from './site-environment-patches'
 import type {
-  PlanAnnotationRequest,
+  PlanAnnotationOpenInput,
   PlanAnnotationResult
 } from '../../shared/plan-annotation-types'
 
@@ -56,8 +56,8 @@ type StartArgs = {
   }
   /** Opens a review and answers at once with its id. Absent = feature off. */
   onPlanAnnotationRequested?: (
-    request: Omit<PlanAnnotationRequest, 'requestId'>
-  ) => { requestId: string } | { error: 'no-window' }
+    request: PlanAnnotationOpenInput
+  ) => { requestId: string; round: number } | { error: 'no-window' }
   /** Parks for at most waitMs, then reports the verdict or that it is still pending. */
   onPlanAnnotationCollect?: (
     reviewId: string,
@@ -186,16 +186,16 @@ export class SiteWriteBridgeServer {
         }
         // Answered immediately with an id. The verdict is collected on /plan/collect, because an
         // MCP tool call cannot stay open for the minutes a person needs to read a plan.
+        // Round and previousContent are the queue's to decide: several transports review the same
+        // plan, so a caller cannot be the authority on how many times it has been seen.
         reply(
           200,
           open({
             planPath: typeof body.planPath === 'string' ? body.planPath : null,
             title: typeof body.title === 'string' ? body.title : 'Plan',
             content,
-            round: typeof body.round === 'number' ? body.round : 1,
             agent: typeof body.agent === 'string' ? body.agent : null,
-            project: typeof body.project === 'string' ? body.project : null,
-            previousContent: typeof body.previousContent === 'string' ? body.previousContent : null
+            project: typeof body.project === 'string' ? body.project : null
           })
         )
       } catch (error) {

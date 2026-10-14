@@ -74,3 +74,18 @@ export type PlanAnnotationRequest = {
   /** Previous round's content, so the modal can show what changed. Null on round 1. */
   previousContent: string | null
 }
+
+/**
+ * What a caller supplies to open a review.
+ *
+ * `round` and `previousContent` are optional because the queue owns the round counter: the MCP
+ * tool and the agent-hooks routes review the same plan paths, and one owner keeps the numbering
+ * and the round diff honest whichever transport opened the review.
+ */
+export type PlanAnnotationOpenInput = Omit<
+  PlanAnnotationRequest,
+  'requestId' | 'round' | 'previousContent'
+> & {
+  round?: number
+  previousContent?: string | null
+}

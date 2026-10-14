@@ -8,7 +8,10 @@ import {
   siteWriteBridgeFile,
   type SiteWriteBridgeEndpoint
 } from './site-write-bridge-server'
-import type { PlanAnnotationResult } from '../../shared/plan-annotation-types'
+import type {
+  PlanAnnotationOpenInput,
+  PlanAnnotationResult
+} from '../../shared/plan-annotation-types'
 
 function site(overrides: Partial<Site> = {}): Site {
   return {
@@ -192,10 +195,14 @@ describe('plan review route', () => {
     const server = new SiteWriteBridgeServer()
     servers.push(server)
     const gate: { answer: ((result: PlanAnnotationResult) => void) | null } = { answer: null }
+    const seen: PlanAnnotationOpenInput[] = []
     await server.start({
       store: { updateSite: () => null, getSite: () => null },
       userDataPath,
-      onPlanAnnotationRequested: () => ({ requestId: 'review-1' }),
+      onPlanAnnotationRequested: (request) => {
+        seen.push(request)
+        return { requestId: 'review-1', round: 1 }
+      },
       onPlanAnnotationCollect: async () => {
         const { promise, resolve } = Promise.withResolvers<PlanAnnotationResult>()
         gate.answer = resolve
@@ -216,8 +223,16 @@ describe('plan review route', () => {
 
     // Why this must not park: an MCP tool call cannot outlive its client's request timeout, so the
     // open has to answer inside it. Everything slow happens on the collect below.
-    const opened = await call('/plan/annotate', { content: '# Plan', title: 'plan.md', round: 1 })
-    expect(await opened.json()).toEqual({ requestId: 'review-1' })
+    const opened = await call('/plan/annotate', {
+      content: '# Plan',
+      title: 'plan.md',
+      round: 4,
+      previousContent: 'stale'
+    })
+    expect(await opened.json()).toEqual({ requestId: 'review-1', round: 1 })
+    // The queue counts rounds now, so a caller cannot overwrite the number or the diff base.
+    expect(seen[0]).not.toHaveProperty('round')
+    expect(seen[0]).not.toHaveProperty('previousContent')
 
     let settled = false
     const pending = call('/plan/collect', { reviewId: 'review-1', waitMs: 5_000 }).then(
@@ -247,7 +262,7 @@ describe('plan review route', () => {
       userDataPath,
       onPlanAnnotationRequested: () => {
         asked()
-        return { requestId: 'review-1' }
+        return { requestId: 'review-1', round: 1 }
       }
     })
     const endpoint = readEndpoint(userDataPath)
@@ -267,7 +282,7 @@ describe('plan review route', () => {
     await server.start({
       store: { updateSite: () => null, getSite: () => null },
       userDataPath,
-      onPlanAnnotationRequested: () => ({ requestId: 'review-1' })
+      onPlanAnnotationRequested: () => ({ requestId: 'review-1', round: 1 })
     })
     const endpoint = readEndpoint(userDataPath)
     const response = await fetch(`http://127.0.0.1:${endpoint.port}/plan/annotate`, {
@@ -288,7 +303,7 @@ describe('plan review route', () => {
     await server.start({
       store: { updateSite: () => null, getSite: () => null },
       userDataPath,
-      onPlanAnnotationRequested: () => ({ requestId: 'review-1' }),
+      onPlanAnnotationRequested: () => ({ requestId: 'review-1', round: 1 }),
       onPlanAnnotationCollect: async () => ({ status: 'unknown' as const })
     })
     const endpoint = readEndpoint(userDataPath)

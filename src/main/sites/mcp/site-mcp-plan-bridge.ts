@@ -9,12 +9,12 @@
 
 import { readFileSync } from 'node:fs'
 import type {
-  PlanAnnotationRequest,
+  PlanAnnotationOpenInput,
   PlanAnnotationResult
 } from '../../../shared/plan-annotation-types'
 import type { SiteWriteBridgeEndpoint } from '../site-write-bridge-server'
 
-export type PlanBridgeRequest = Omit<PlanAnnotationRequest, 'requestId'>
+export type PlanBridgeRequest = PlanAnnotationOpenInput
 
 export class PlanBridgeUnavailableError extends Error {}
 
@@ -72,22 +72,26 @@ async function post(args: {
   return await response.json()
 }
 
-/** Opens the review and returns its id. Never waits for the person. */
+/** Opens the review and returns its id and round. Never waits for the person. */
 export async function openPlanAnnotationThroughBridge(args: {
   bridgeFile: string
   request: PlanBridgeRequest
   fetchImpl?: typeof fetch
-}): Promise<{ requestId: string }> {
+}): Promise<{ requestId: string; round: number }> {
   const answer = (await post({
     bridgeFile: args.bridgeFile,
     path: '/plan/annotate',
     body: args.request,
     fetchImpl: args.fetchImpl
-  })) as { requestId?: unknown; error?: unknown }
+  })) as { requestId?: unknown; round?: unknown; error?: unknown }
   if (typeof answer.requestId !== 'string') {
     throw new PlanBridgeUnavailableError(NO_GUI)
   }
-  return { requestId: answer.requestId }
+  return {
+    requestId: answer.requestId,
+    // The queue counts rounds; a missing number is a cosmetic fallback, not a lost review.
+    round: typeof answer.round === 'number' ? answer.round : 1
+  }
 }
 
 /** Parks for at most waitMs waiting on the person, then reports whatever is true so far. */

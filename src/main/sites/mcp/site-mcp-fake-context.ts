@@ -164,7 +164,7 @@ export function createFakeContext(
   return {
     cwd: '/Sites/acme/wp-content/themes/acme',
     // The census invokes every tool; a plan review resolves immediately so it never hangs a sweep.
-    annotatePlan: () => Promise.resolve({ requestId: 'r1' }),
+    annotatePlan: () => Promise.resolve({ requestId: 'r1', round: 1 }),
     collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
     updateSite: async (siteId, updates, environmentPatches) => {
       const index = records.findIndex((site) => site.id === siteId)

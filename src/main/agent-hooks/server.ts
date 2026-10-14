@@ -446,6 +446,15 @@ function attachClaudePermissionToolUseId(
   }
 }
 
+/** The two plan-review routes the shipped OMP/PI extension calls. Absent = answered 404. */
+export type PlanReviewRoutes = {
+  open: (body: unknown) => Promise<unknown>
+  collect: (body: unknown) => Promise<unknown>
+}
+
+export const PLAN_REVIEW_OPEN_PATHNAME = '/hook/plan-review/open'
+export const PLAN_REVIEW_COLLECT_PATHNAME = '/hook/plan-review/collect'
+
 export class AgentHookServer {
   private server: ReturnType<typeof createServer> | null = null
   private port = 0
@@ -454,6 +463,9 @@ export class AgentHookServer {
   private env = 'production'
   private onAgentStatus: ((payload: EnrichedAgentHookEventPayload) => void) | null = null
   private onClaudeStatusLine: ((event: ClaudeStatusLineRateLimits) => void) | null = null
+  // Why a field and not an options closure: start() may run before the store exists, and the
+  // routes are answered for the life of the process once set.
+  private planReviewRoutes: PlanReviewRoutes | null = null
   private onPaneStatusCleared: PaneStatusClearListener | null = null
   private statusChangeListeners = new Set<StatusChangeListener>()
   // Why: set via start()'s userDataPath so the class has no direct Electron dependency (mockable in vitest node env).
@@ -1481,10 +1493,45 @@ export class AgentHookServer {
     this.applyNormalizedStatus(event)
   }
 
+  /** One JSON reply shape for the plan-review answers and their transport refusals. */
+  private sendJson(res: ServerResponse, status: number, payload: unknown): void {
+    res.writeHead(status, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(payload))
+  }
+
+  /**
+   * The two plan-review routes, answered with JSON instead of the fire-and-forget 204 the status
+   * hooks use: the caller is a tool that waits on the answer.
+   *
+   * Why it waits in bounded slices: see PLAN_REVIEW_MAX_WAIT_MS — this server drops an idle socket
+   * after five seconds, so the caller polls this route instead of parking one response on a person.
+   */
+  private async answerPlanReview(
+    pathname: string,
+    body: unknown,
+    res: ServerResponse
+  ): Promise<void> {
+    const routes = this.planReviewRoutes
+    if (!routes) {
+      this.sendJson(res, 404, { ok: false, error: 'not-found' })
+      return
+    }
+    try {
+      const payload =
+        pathname === PLAN_REVIEW_OPEN_PATHNAME ? routes.open(body) : routes.collect(body)
+      this.sendJson(res, 200, await payload)
+    } catch {
+      // A refusal is still data an agent can act on; an unhandled throw here ends the socket.
+      this.sendJson(res, 500, { ok: false, error: 'internal' })
+    }
+  }
+
   async start(options?: {
     env?: string
     userDataPath?: string
     endpointNamespace?: string
+    /** The plan-review routes the shipped OMP/PI extension calls. Absent = answered 404. */
+    planReview?: PlanReviewRoutes
   }): Promise<void> {
     if (this.server) {
       return
@@ -1492,6 +1539,9 @@ export class AgentHookServer {
 
     if (options?.env) {
       this.env = options.env
+    }
+    if (options?.planReview) {
+      this.planReviewRoutes = options.planReview
     }
     if (options?.userDataPath) {
       // Why: dev builds share one userData path; namespace per instance while packaged keeps the stable path for PTY reconnect.
@@ -1527,8 +1577,20 @@ export class AgentHookServer {
       })
 
       try {
-        const body = await readRequestBody(req)
         const pathname = new URL(req.url ?? '/', 'http://127.0.0.1').pathname
+        const isPlanReview =
+          pathname === PLAN_REVIEW_OPEN_PATHNAME || pathname === PLAN_REVIEW_COLLECT_PATHNAME
+        let body: unknown
+        try {
+          body = await readRequestBody(req)
+        } catch (error) {
+          if (!isPlanReview) {
+            throw error
+          }
+          // Why not the fail-open 204 below: a waiting extension would read silence as success.
+          this.sendJson(res, 400, { ok: false, error: 'bad-request' })
+          return
+        }
         if (pathname === CLAUDE_STATUSLINE_PATHNAME) {
           const statusLineEvent = parseClaudeStatusLineBody(body)
           if (statusLineEvent) {
@@ -1536,6 +1598,10 @@ export class AgentHookServer {
           }
           res.writeHead(204)
           res.end()
+          return
+        }
+        if (isPlanReview) {
+          await this.answerPlanReview(pathname, body, res)
           return
         }
         const source = resolveHookSource(pathname)
