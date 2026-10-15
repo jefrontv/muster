@@ -234,7 +234,7 @@ export function createFakeSiteMcpContext(options: FakeMcpContextOptions = {}): S
       updateSite: () => site
     },
     ...(options.acfState ? { acfState: options.acfState } : {}),
-    annotatePlan: async () => ({ requestId: 'r1' }),
+    annotatePlan: async () => ({ requestId: 'r1', round: 1 }),
     collectPlanReview: async () => ({ status: 'unknown' as const }),
     updateSite: async () => site,
     summarize,
