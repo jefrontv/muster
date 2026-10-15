@@ -47,6 +47,7 @@ import { shortenExtensionConfigPath } from '../extensions/extension-config-path'
 import { ExtensionHarnessRow } from './extension-harness-row'
 import { ExtensionRunPanel } from './extension-run-panel'
 import { ExtensionSettingFields } from './extension-setting-fields'
+import { ExtensionAgentRuleRow } from './extension-agent-rule-row'
 import { SettingsSwitch } from './SettingsFormControls'
 
 export function ExtensionDetailDialog({
@@ -291,6 +292,13 @@ export function ExtensionDetailDialog({
               specs={settingSpecs}
               stored={settingValues}
               onSave={(values) => onSaveSettings(entry.id, values)}
+            />
+          ) : null}
+
+          {entry.agentRule && state.installed ? (
+            <ExtensionAgentRuleRow
+              entry={{ ...entry, agentRule: entry.agentRule }}
+              active={state.agentRuleActive === true}
             />
           ) : null}
 

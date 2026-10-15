@@ -35,6 +35,7 @@ import {
 import { registerExtensionHarnesses } from '../extensions/harness-auto-registration'
 import { readExtensionMcpHarnessStates } from '../extensions/mcp-entry-adapters'
 import { probeBinary } from '../extensions/binary-probe'
+import { removeAgentRule, writeResolvedAgentRule } from '../extensions/agent-rule-files'
 import { extensionCommandSpec } from '../../shared/extension-command-resolution'
 import {
   prepareExtensionUninstall,
@@ -51,7 +52,8 @@ const CHANNELS = [
   'extensions:setEnabled',
   'extensions:uninstall',
   'extensions:removeSkill',
-  'extensions:refreshHarnesses'
+  'extensions:refreshHarnesses',
+  'extensions:setAgentRule'
 ] as const
 
 function failure<T>(error: unknown): SiteResult<T> {
@@ -59,10 +61,7 @@ function failure<T>(error: unknown): SiteResult<T> {
 }
 
 function readHarnessId(value: unknown): ExtensionHarnessId {
-  if (
-    typeof value !== 'string' ||
-    !(EXTENSION_HARNESS_IDS as readonly string[]).includes(value)
-  ) {
+  if (typeof value !== 'string' || !(EXTENSION_HARNESS_IDS as readonly string[]).includes(value)) {
     throw new TypeError('A known harness id is required.')
   }
   return value as ExtensionHarnessId
@@ -170,6 +169,29 @@ export function registerExtensionHandlers(store: Store): void {
         }
         await runExtensionCommandForEntry(store, id, 'uninstall')
         return { ok: true, value: { command: prepared.command } }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
+
+  // Why the text is looked up here: the renderer names an entry, never what gets written.
+  ipcMain.handle(
+    'extensions:setAgentRule',
+    async (_event, args?: unknown): Promise<SiteResult<ExtensionInventory>> => {
+      try {
+        const input = (args ?? {}) as { id?: unknown; enabled?: unknown }
+        const id = readId(input.id)
+        const entry = findCatalogEntry(await readExtensionInventory(store), id)
+        if (!entry?.agentRule) {
+          throw new Error('That extension has no agent rule.')
+        }
+        if (input.enabled === true) {
+          writeResolvedAgentRule(entry)
+        } else {
+          removeAgentRule(id)
+        }
+        return { ok: true, value: await readExtensionInventory(store) }
       } catch (error) {
         return failure(error)
       }

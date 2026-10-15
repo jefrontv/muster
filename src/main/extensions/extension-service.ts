@@ -37,6 +37,7 @@ import {
 import { discoveredSkillEntries } from './discovered-skill-entries'
 import { readAgentLocalDaemonStatus } from '../sites/agent-local-import-api'
 import { readVersionByCommand } from './binary-version-command'
+import { isAgentRuleActive } from './agent-rule-files'
 
 let pending: Promise<ExtensionInventory> | null = null
 
@@ -121,9 +122,15 @@ async function scan(store: Store, force: boolean): Promise<ExtensionInventory> {
     autoUpdate: readExtensionAutoUpdate(settings)
   })
 
+  const withRules = entries.map((item) =>
+    item.entry.agentRule
+      ? { ...item, state: { ...item.state, agentRuleActive: isAgentRuleActive(item.entry.id) } }
+      : item
+  )
+
   return {
     schemaVersion: 1,
-    entries: [...entries, ...(await readDiscoveredSkills(store, entries))],
+    entries: [...withRules, ...(await readDiscoveredSkills(store, withRules))],
     catalogOrigin: loaded.origin,
     catalogUpdatedAt: loaded.catalog.updatedAt,
     scannedAt: Date.now(),

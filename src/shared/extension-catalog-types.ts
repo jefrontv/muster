@@ -170,7 +170,16 @@ export type ExtensionEntry = {
   autoUpdate?: ExtensionAutoUpdateSpec
   /** Hides a row this build is too old to drive correctly. */
   minAppVersion?: string
+  /**
+   * Rules Muster keeps in the global CLAUDE.md (and Codex's AGENTS.md) for this extension: inline
+   * `text`, or a `file` copied from the entry's Claude marketplace checkout. `onInstall` writes it
+   * after every install or update; otherwise it is a switch in the detail dialog. Older builds strip
+   * the field.
+   */
+  agentRule?: ExtensionAgentRuleSpec
 }
+
+export type ExtensionAgentRuleSpec = { text?: string; file?: string; onInstall: boolean }
 
 export type ExtensionCatalog = {
   schemaVersion: typeof EXTENSION_CATALOG_SCHEMA_VERSION
@@ -291,7 +300,22 @@ export const ExtensionEntrySchema = z.object({
   autoUpdate: z
     .object({ supported: z.boolean(), reason: z.string().max(200).optional() })
     .optional(),
-  minAppVersion: z.string().max(32).optional()
+  minAppVersion: z.string().max(32).optional(),
+  agentRule: z
+    .object({
+      text: z.string().min(1).max(1000).optional(),
+      // Why the shape: it is joined onto a checkout path, so no absolute paths and no `..`.
+      file: z
+        .string()
+        .regex(/^[A-Za-z0-9_-][A-Za-z0-9._-]*(\/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$/)
+        .max(200)
+        .optional(),
+      onInstall: z.boolean()
+    })
+    .refine((rule) => (rule.text === undefined) !== (rule.file === undefined), {
+      message: 'an agent rule needs exactly one of text or file'
+    })
+    .optional()
 }) as z.ZodType<ExtensionEntry>
 
 export const ExtensionCatalogSchema = z.object({

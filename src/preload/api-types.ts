@@ -2859,6 +2859,11 @@ export type PreloadApi = {
     setEnabled: (args: { id: string; enabled: boolean }) => Promise<SiteResult<ExtensionInventory>>
     uninstall: (args: { id: string }) => Promise<SiteResult<{ command: string | null }>>
     removeSkill: (args: { id: string }) => Promise<SiteResult<{ path: string }>>
+    /** Adds or removes the entry's rule in the global agent instruction files. */
+    setAgentRule: (args: {
+      id: string
+      enabled: boolean
+    }) => Promise<SiteResult<ExtensionInventory>>
     /** Returns an unsubscribe function. */
     onRunEvent: (listener: (event: ExtensionCommandRunEvent) => void) => () => void
     installHarness: (args: {

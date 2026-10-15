@@ -15,19 +15,29 @@ function readJson(file: string): unknown {
   }
 }
 
+/** Where Claude keeps a marketplace's checkout, or null when it is not added. */
+export function claudeMarketplaceLocation(
+  name: string,
+  configDir = process.env.CLAUDE_CONFIG_DIR || path.join(homedir(), '.claude')
+): string | null {
+  const known = readJson(path.join(configDir, 'plugins', 'known_marketplaces.json'))
+  const record = (known as Record<string, { installLocation?: unknown }> | null)?.[name]
+  if (!record) {
+    return null
+  }
+  return typeof record.installLocation === 'string'
+    ? record.installLocation
+    : path.join(configDir, 'plugins', 'marketplaces', name)
+}
+
 export function probeClaudeMarketplace(
   name: string,
   configDir = process.env.CLAUDE_CONFIG_DIR || path.join(homedir(), '.claude')
 ): ClaudeMarketplaceProbe {
-  const known = readJson(path.join(configDir, 'plugins', 'known_marketplaces.json'))
-  const record = (known as Record<string, { installLocation?: unknown }> | null)?.[name]
-  if (!record) {
+  const location = claudeMarketplaceLocation(name, configDir)
+  if (!location) {
     return { installed: false, version: null }
   }
-  const location =
-    typeof record.installLocation === 'string'
-      ? record.installLocation
-      : path.join(configDir, 'plugins', 'marketplaces', name)
   const manifest = readJson(path.join(location, '.claude-plugin', 'marketplace.json')) as {
     metadata?: { version?: unknown }
     version?: unknown

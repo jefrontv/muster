@@ -4161,7 +4161,8 @@
           "c4f8e1b72a": "X",
           "setupGuide": "Setup guide",
           "exploreMuster": "Explore Muster",
-          "replayOnboarding": "Replay Onboarding"
+          "replayOnboarding": "Replay Onboarding",
+          "extensions": "Extensions"
         },
         "SidebarToolbar": {
           "87d0064026": "Workspace board moved to the bottom bar",
@@ -14777,7 +14778,9 @@
           "copy": "Copy",
           "get": "Get {{tool}}",
           "check_again": "Check again"
-        }
+        },
+        "agent_rule": "Add to agent rules",
+        "agent_rule_hint": "Keeps this in your global CLAUDE.md and AGENTS.md:"
       },
       "BitbucketReconnectDialog": {
         "refreshRejected": "Bitbucket refused to renew the saved sign-in. Access may have been revoked, or the sign-in expired.",

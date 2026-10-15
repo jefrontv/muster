@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-12",
+  "updatedAt": "2026-10-13",
   "entries": [
     {
       "id": "activecollab-mcp",
@@ -205,7 +205,7 @@
       "kind": "mcp",
       "name": "Context7",
       "description": "Current documentation for any library, pulled into your agent's context on demand.",
-      "about": "Ask for a library and Context7 fetches that version’s real documentation and code examples instead of letting the model recall an API that may have changed. Two tools: one resolves a library name to an id, the other returns docs for it. Add the line \"Always use Context7 when I need library or API documentation\" to your agent’s rules and it will reach for this on its own.",
+      "about": "Ask for a library and Context7 fetches that version’s real documentation and code examples instead of letting the model recall an API that may have changed. Two tools: one resolves a library name to an id, the other returns docs for it. Turn on \"Add to agent rules\" and your agents reach for it on their own.",
       "keywords": ["docs", "documentation", "library", "api", "context7", "mcp"],
       "version": "4.1.1",
       "install": {
@@ -293,7 +293,11 @@
           "help": "Optional. A free key from context7.com/dashboard raises the rate limit.",
           "secret": true
         }
-      ]
+      ],
+      "agentRule": {
+        "text": "Always use Context7 when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.",
+        "onInstall": false
+      }
     },
     {
       "id": "efront-memory",
@@ -383,6 +387,38 @@
       },
       "homepage": "https://github.com/paulbkim-dev/claude-code-cache-warmer",
       "minAppVersion": "1.15.3"
+    },
+    {
+      "id": "context-mode",
+      "kind": "app",
+      "name": "Context Mode",
+      "description": "Keeps large command and file output out of Claude Code's context, and restores session memory after compaction.",
+      "about": "An MCP server and hooks by Mert Koseoğlu. Commands, file reads and web fetches run in a sandbox, and only the findings the agent prints reach the context window. Output can be indexed and searched later, and a session's decisions and tasks survive compaction. Installing it copies the plugin's own routing rules into your global CLAUDE.md (and Codex's AGENTS.md when Codex is installed), and each update refreshes them; uninstalling removes them. Restart Claude Code after installing. Claude Code only. Licensed Elastic-2.0.",
+      "keywords": ["context", "context-window", "sandbox", "mcp", "claude", "plugins", "memory"],
+      "version": "1.0.169",
+      "install": {
+        "method": "command",
+        "command": {
+          "install": "claude plugin marketplace add mksglu/context-mode && claude plugin install context-mode@context-mode",
+          "update": "claude plugin marketplace update context-mode && claude plugin install context-mode@context-mode && claude plugin update context-mode@context-mode",
+          "uninstall": "claude plugin uninstall context-mode@context-mode; claude plugin marketplace remove context-mode",
+          "requires": ["claude", "git"],
+          "claudeMarketplace": "context-mode"
+        }
+      },
+      "latest": {
+        "source": "github-release",
+        "repo": "mksglu/context-mode"
+      },
+      "autoUpdate": {
+        "supported": true
+      },
+      "homepage": "https://github.com/mksglu/context-mode",
+      "minAppVersion": "1.15.6",
+      "agentRule": {
+        "file": "configs/claude-code/CLAUDE.md",
+        "onInstall": true
+      }
     }
   ]
 }

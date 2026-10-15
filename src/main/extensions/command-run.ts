@@ -37,6 +37,7 @@ import { probeBinary } from './binary-probe'
 import { probeClaudeMarketplace } from './claude-marketplace-probe'
 import { readExtensionMcpHarnessStates } from './mcp-entry-adapters'
 import { registerExtensionHarnesses } from './harness-auto-registration'
+import { removeAgentRule, writeResolvedAgentRule } from './agent-rule-files'
 
 const RUN_TIMEOUT_MS = 10 * 60_000
 const MAX_OUTPUT_BYTES = 512 * 1024
@@ -145,6 +146,11 @@ export async function runExtensionCommandForEntry(
     // Why setup registers nothing: it configures software that is already installed and already
     // wired, so re-running the write would only churn files the user may have edited since.
     const shouldRegister = mode === 'install' && installed && result.code === 0
+    if (shouldRegister && item.entry.agentRule?.onInstall) {
+      syncAgentRule(id, (entryId) => writeResolvedAgentRule(item.entry, entryId), 'Added')
+    } else if (mode === 'uninstall' && result.code === 0) {
+      syncAgentRule(id, removeAgentRule, 'Removed')
+    }
     // 127 is the shell's "command not found": name the program rather than the exit code.
     const missingAfter =
       result.code === 127 ? findMissingTool(commandProgramList(command, spec?.requires)) : null
@@ -169,6 +175,21 @@ export async function runExtensionCommandForEntry(
     return { command, code: result.code }
   } finally {
     activeRun = null
+  }
+}
+
+function syncAgentRule(
+  id: string,
+  apply: (entryId: string) => string[],
+  verb: 'Added' | 'Removed'
+): void {
+  try {
+    for (const file of apply(id)) {
+      broadcast({ kind: 'output', id, chunk: `${verb} the agent rule in ${file}\n` })
+    }
+  } catch (error) {
+    console.warn(`[extensions] could not update the agent rule for ${id}:`, error)
+    broadcast({ kind: 'output', id, chunk: `Could not update the agent rule: ${String(error)}\n` })
   }
 }
 

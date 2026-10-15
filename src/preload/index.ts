@@ -2637,6 +2637,11 @@ const api = {
       ipcRenderer.invoke('extensions:uninstall', args),
     removeSkill: (args: { id: string }): Promise<SiteResult<{ path: string }>> =>
       ipcRenderer.invoke('extensions:removeSkill', args),
+    setAgentRule: (args: {
+      id: string
+      enabled: boolean
+    }): Promise<SiteResult<ExtensionInventory>> =>
+      ipcRenderer.invoke('extensions:setAgentRule', args),
     onRunEvent: (listener: (event: ExtensionCommandRunEvent) => void): (() => void) => {
       const handler = (_event: unknown, payload: ExtensionCommandRunEvent): void =>
         listener(payload)

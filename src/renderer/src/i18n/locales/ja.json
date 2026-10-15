@@ -4104,7 +4104,8 @@
           "c4f8e1b72a": "X",
           "setupGuide": "Setup guide",
           "exploreMuster": "Explore Muster",
-          "replayOnboarding": "Replay Onboarding"
+          "replayOnboarding": "Replay Onboarding",
+          "extensions": "Extensions"
         },
         "SidebarToolbar": {
           "19e32d0e5f": "フォルダーピッカーを開いてプロジェクトを追加します",
@@ -14754,7 +14755,9 @@
           "copy": "Copy",
           "get": "Get {{tool}}",
           "check_again": "Check again"
-        }
+        },
+        "agent_rule": "エージェントのルールに追加",
+        "agent_rule_hint": "グローバルの CLAUDE.md と AGENTS.md にこの内容を保持します:"
       },
       "BitbucketReconnectDialog": {
         "refreshRejected": "Bitbucket が保存済みのサインインの更新を拒否しました。アクセスが取り消されたか、サインインの有効期限が切れた可能性があります。",

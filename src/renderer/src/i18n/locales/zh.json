@@ -4104,7 +4104,8 @@
           "c4f8e1b72a": "X",
           "setupGuide": "Setup guide",
           "exploreMuster": "Explore Muster",
-          "replayOnboarding": "Replay Onboarding"
+          "replayOnboarding": "Replay Onboarding",
+          "extensions": "Extensions"
         },
         "SidebarToolbar": {
           "19e32d0e5f": "打开文件夹选择器以添加项目",
@@ -14754,7 +14755,9 @@
           "copy": "Copy",
           "get": "Get {{tool}}",
           "check_again": "Check again"
-        }
+        },
+        "agent_rule": "添加到智能体规则",
+        "agent_rule_hint": "在全局 CLAUDE.md 和 AGENTS.md 中保留以下内容："
       },
       "BitbucketReconnectDialog": {
         "refreshRejected": "Bitbucket 拒绝续订已保存的登录。访问权限可能已被撤销，或登录已过期。",

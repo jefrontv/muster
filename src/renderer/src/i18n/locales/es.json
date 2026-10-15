@@ -4123,7 +4123,8 @@
           "c4f8e1b72a": "X",
           "setupGuide": "Setup guide",
           "exploreMuster": "Explore Muster",
-          "replayOnboarding": "Replay Onboarding"
+          "replayOnboarding": "Replay Onboarding",
+          "extensions": "Extensions"
         },
         "SidebarToolbar": {
           "19e32d0e5f": "Abrir el selector de carpetas para agregar un proyecto",
@@ -14754,7 +14755,9 @@
           "copy": "Copy",
           "get": "Get {{tool}}",
           "check_again": "Check again"
-        }
+        },
+        "agent_rule": "Añadir a las reglas del agente",
+        "agent_rule_hint": "Lo mantiene en tus CLAUDE.md y AGENTS.md globales:"
       },
       "BitbucketReconnectDialog": {
         "refreshRejected": "Bitbucket rechazó renovar el inicio de sesión guardado. Es posible que se haya revocado el acceso o que el inicio de sesión haya caducado.",

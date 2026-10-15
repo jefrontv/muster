@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import {
+  Blocks,
   CircleHelp,
   ExternalLink,
   Github,
@@ -33,6 +34,7 @@ import { useSetupGuideProgress } from '../setup-guide/use-setup-guide-progress'
 import { SidebarFeedbackDialog } from './SidebarFeedbackDialog'
 import { translate } from '@/i18n/i18n'
 import { getUpdateCheckClickOptions, getUpdateCheckHint } from '@/lib/update-check-click-options'
+import { isWebClientLocation } from '@/lib/web-client-location'
 
 const GITHUB_URL = 'https://github.com/jefrontv/muster'
 const NO_UPDATE_CHECK_MODIFIERS = { ctrlKey: false, metaKey: false, shiftKey: false }
@@ -126,6 +128,11 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
     })
   }
 
+  const openExtensionHub = (): void => {
+    openSettingsTarget({ pane: 'extensions', repoId: null })
+    openSettingsPage()
+  }
+
   const openShortcutsSettings = (): void => {
     openSettingsTarget({ pane: 'shortcuts', repoId: null })
     openSettingsPage()
@@ -186,6 +193,31 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
             ) : null}
           </TooltipContent>
         </Tooltip>
+        {isWebClientLocation() ? null : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                type="button"
+                aria-label={translate(
+                  'auto.components.sidebar.SidebarSettingsHelpMenu.extensions',
+                  'Extensions'
+                )}
+                className="text-muted-foreground"
+                onClick={openExtensionHub}
+              >
+                <Blocks className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={4}>
+              {translate(
+                'auto.components.sidebar.SidebarSettingsHelpMenu.extensions',
+                'Extensions'
+              )}
+            </TooltipContent>
+          </Tooltip>
+        )}
         <DropdownMenu modal={false} open={menuOpen} onOpenChange={handleMenuOpenChange}>
           <Tooltip>
             <TooltipTrigger asChild>

@@ -52,6 +52,8 @@ export type ExtensionState = {
    * update itself in that case, so the update command has to be Homebrew's.
    */
   homebrewFormula?: string
+  /** Set for entries with an agent rule: whether it is in the global instruction files. */
+  agentRuleActive?: boolean
 }
 
 /**
