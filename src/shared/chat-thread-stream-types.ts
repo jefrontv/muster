@@ -77,12 +77,14 @@ export type ChatThreadPermissionResponseArgs = {
 
 export type ChatThreadStreamStartArgs = {
   threadId: string
-  /** Full shell command line (agent binary + flags), built by the renderer. */
+  /** POSIX-quoted command line (agent binary + flags), built by the renderer. */
   command: string
   cwd?: string
   env?: Record<string, string>
   /** Written to a temp file and passed as --append-system-prompt-file. */
   appendSystemPrompt?: string
+  /** Adopt the thread's running child, if any, instead of replacing it. */
+  attachIfLive?: boolean
 }
 
 export type ChatThreadStreamStartResult = {
@@ -90,6 +92,8 @@ export type ChatThreadStreamStartResult = {
   error?: string
   /** The workspace folder is gone; the thread offers to locate or remove it. */
   reason?: 'folder-missing'
+  /** An already running child was adopted instead of spawning a new one. */
+  attached?: boolean
 }
 
 export const CHAT_THREAD_STREAM_EVENT_CHANNEL = 'chatThreadStream:event'

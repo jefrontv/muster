@@ -136,6 +136,7 @@ export function startChatThreadStream(
     pendingPermissionRequests: new Map(),
     controlRequestCounter: 0,
     cleanup,
+    sender,
     emit: () => undefined,
     queue: createChatThreadMessageQueue({
       write: (message, priority) => writeUserMessage(entry, threadId, message, priority),
@@ -156,11 +157,11 @@ export function startChatThreadStream(
   }
 
   const send = (event: ChatThreadStreamEvent): void => {
-    if (entry.stopping || sender.isDestroyed()) {
+    if (entry.stopping || entry.sender.isDestroyed()) {
       return
     }
     try {
-      sender.send(CHAT_THREAD_STREAM_EVENT_CHANNEL, event)
+      entry.sender.send(CHAT_THREAD_STREAM_EVENT_CHANNEL, event)
     } catch {
       // A closing window can destroy the sender between the check and the send.
     }
@@ -224,6 +225,16 @@ export function startChatThreadStream(
     }
   })
   return { ok: true }
+}
+
+/** Points a live child's events at `sender` (a reloaded window) so its turn keeps running. */
+export function attachChatThreadStream(threadId: string, sender: ChatThreadStreamSender): boolean {
+  const entry = registry.get(threadId)
+  if (!entry || entry.stopping) {
+    return false
+  }
+  entry.sender = sender
+  return true
 }
 
 export function interruptChatThreadStream(threadId: string): boolean {

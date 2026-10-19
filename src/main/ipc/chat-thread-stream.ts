@@ -22,6 +22,7 @@ import { isClaudeAuthSwitchInProgress } from '../claude-accounts/live-pty-gate'
 import type { CommitMessageAgentEnvironmentResolvers } from '../text-generation/commit-message-agent-environment'
 import { startChatStreamReaper } from '../chat-mode/chat-thread-stream-reaper'
 import {
+  attachChatThreadStream,
   interruptChatThreadStream,
   listChatThreadMessageQueues,
   listPendingChatThreadPermissionRequests,
@@ -116,9 +117,17 @@ export function registerChatThreadStreamHandlers(
         cwd?: unknown
         env?: unknown
         appendSystemPrompt?: unknown
+        attachIfLive?: unknown
       }
     ): Promise<ChatThreadStreamStartResult> => {
       try {
+        // R13: a reloaded window adopts the running child instead of killing its turn.
+        if (
+          args?.attachIfLive === true &&
+          attachChatThreadStream(asString(args?.threadId, 'threadId'), event.sender)
+        ) {
+          return { ok: true, attached: true }
+        }
         const cwd = args?.cwd === undefined ? undefined : asString(args.cwd, 'cwd')
         const env = asEnv(args?.env)
         const appendSystemPrompt =

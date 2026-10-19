@@ -4,6 +4,7 @@
 import type { ChildProcess } from 'node:child_process'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
 import type { ChatThreadMessageQueue } from './chat-thread-message-queue'
+import type { ChatThreadStreamSender } from './chat-thread-stream-deps'
 import type { ChatThreadEngineLink } from './chat-thread-stream-engine'
 
 export type StreamEntry = {
@@ -22,6 +23,8 @@ export type StreamEntry = {
   controlRequestCounter: number
   /** Revokes the muster MCP token and deletes the per-thread tmp files; runs once. */
   cleanup: (() => void) | null
+  /** The window receiving this child's events; a reloaded or new window can take it over. */
+  sender: ChatThreadStreamSender
   /** Renderer-facing event sink for this child (coalesced, pending-permission aware). */
   emit: (event: ChatThreadStreamEvent) => void
   /** Messages sent while a turn runs; drains as turns end. */

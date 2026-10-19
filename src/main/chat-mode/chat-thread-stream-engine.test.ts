@@ -4,6 +4,7 @@ import type { ChildProcess } from 'node:child_process'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ChatEngine } from './engine/chat-engine'
 import {
+  attachChatThreadStream,
   respondChatThreadPermission,
   sendChatThreadStreamMessage,
   startChatThreadStream,
@@ -158,6 +159,49 @@ describe('chat thread stream with the engine attached', () => {
       'First',
       'Then this'
     ])
+  })
+
+  it('keeps the turn and its pending approval through a window reload', async () => {
+    const engine = new ChatEngine()
+    const child = fakeChild()
+    start(engine, child)
+    out(child, { type: 'system', subtype: 'init', session_id: 's1' })
+    expect(await sendChatThreadStreamMessage('t1', 'Fix the header')).toBe('sent')
+    out(child, {
+      type: 'control_request',
+      request_id: 'perm-1',
+      request: { subtype: 'can_use_tool', tool_name: 'Edit', input: { file_path: 'a.css' } }
+    })
+    await vi.waitFor(() => expect(engine.snapshot('t1')?.meta.status).toBe('waiting'))
+
+    // The reloaded window is a new subscriber with no state of its own.
+    const reloaded = { id: 2, send: vi.fn(), isDestroyed: () => false }
+    const snapshot = await engine.subscribe('t1', reloaded)
+    expect(snapshot.turns.at(-1)?.status).toBe('running')
+    expect(snapshot.meta.pending).toMatchObject([{ requestId: 'perm-1', toolName: 'Edit' }])
+
+    const events = { send: vi.fn(), isDestroyed: () => false }
+    expect(attachChatThreadStream('t1', events)).toBe(true)
+    expect(child.kill).not.toHaveBeenCalled()
+    respondChatThreadPermission({ threadId: 't1', requestId: 'perm-1', behavior: 'allow' })
+    out(child, { type: 'result', subtype: 'success', duration_ms: 5, total_cost_usd: 0 })
+    await vi.waitFor(() => expect(engine.snapshot('t1')?.turns.at(-1)?.status).toBe('done'))
+    await vi.waitFor(() =>
+      expect(events.send).toHaveBeenCalledWith(
+        'chatThreadStream:event',
+        expect.objectContaining({ kind: 'turn-complete' })
+      )
+    )
+  })
+
+  it('attaches only to a live child', () => {
+    expect(attachChatThreadStream('nobody', { send: vi.fn(), isDestroyed: () => false })).toBe(
+      false
+    )
+    const engine = new ChatEngine()
+    start(engine, fakeChild())
+    stopChatThreadStream('t1')
+    expect(attachChatThreadStream('t1', { send: vi.fn(), isDestroyed: () => false })).toBe(false)
   })
 
   it('marks the thread stopped on stop and ignores the replaced child closing late', () => {
