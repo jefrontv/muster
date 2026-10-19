@@ -9,6 +9,7 @@ import type {
 } from '../../shared/chat-engine-types'
 import { chatEngine, chatThreadTranscriptPath } from '../chat-mode/engine/chat-engine-singleton'
 import {
+  controlNeedsSettingsRefresh,
   controlRequestFor,
   metaAfterControl,
   parseControlAction
@@ -79,6 +80,9 @@ export function registerChatEngineHandlers(): void {
         const patch = snapshot ? metaAfterControl(parsed, value, snapshot.meta) : null
         if (patch && engine.control(id) === control) {
           engine.updateMeta(id, patch)
+        }
+        if (controlNeedsSettingsRefresh(parsed)) {
+          await engine.refreshAppliedSettings(id, control)
         }
         return { ok: true, value: value ?? null }
       } catch (error) {

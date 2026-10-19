@@ -13,6 +13,7 @@ import { CHAT_ENGINE_PATCH_CHANNEL } from '../../../shared/chat-engine-types'
 import { applyChatEngineRecord } from './chat-engine-apply'
 import { parseChatEngineCapabilities } from './chat-engine-capabilities'
 import { resolvePending } from './chat-engine-apply-control'
+import { appliedSessionSettings } from './chat-engine-control-actions'
 import { ChatEngineControlClient } from './chat-engine-control'
 import { deleteChatEngineSnapshot, writeChatEngineSnapshot } from './chat-engine-persistence'
 import { createChatEngineRestore, type ChatEngineRestore } from './chat-engine-restore'
@@ -110,6 +111,17 @@ export class ChatEngine {
 
   capabilities(threadId: string): ChatEngineCapabilities | null {
     return this.entries.get(threadId)?.capabilities ?? null
+  }
+
+  /** Folds the CLI's applied model and effort into the session; an alias arrives resolved. */
+  async refreshAppliedSettings(threadId: string, control: ChatEngineControlClient): Promise<void> {
+    const response = await control.request('get_settings', {}).catch(() => null)
+    const applied = appliedSessionSettings(response)
+    const entry = this.entries.get(threadId)
+    if (applied && entry?.control === control) {
+      entry.thread.setMeta({ session: { ...entry.thread.getMeta().session, ...applied } })
+      this.schedule(entry)
+    }
   }
 
   ingest(threadId: string, record: Rec): void {

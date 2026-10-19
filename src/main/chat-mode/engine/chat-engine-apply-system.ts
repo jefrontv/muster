@@ -50,6 +50,8 @@ export function applySystemRecord(thread: ChatEngineThread, record: Rec, now: nu
         session: {
           sessionId: asString(record.session_id),
           model: asString(record.model),
+          // init carries no effort; it stays what get_settings last reported.
+          effort: thread.getMeta().session.effort,
           permissionMode:
             mode && PERMISSION_MODES.has(mode as ChatEnginePermissionMode)
               ? (mode as ChatEnginePermissionMode)

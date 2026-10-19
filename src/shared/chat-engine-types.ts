@@ -33,6 +33,8 @@ export type ChatEngineMcpServer = {
 export type ChatEngineSession = {
   sessionId: string | null
   model: string | null
+  /** As applied by the CLI (get_settings), not as last requested. */
+  effort: ChatEngineEffort | null
   permissionMode: ChatEnginePermissionMode | null
   cwd: string | null
   cliVersion: string | null

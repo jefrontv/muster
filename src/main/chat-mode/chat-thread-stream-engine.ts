@@ -31,7 +31,10 @@ export function linkChatThreadToEngine(
   let live = true
   // Must be the child's first stdin line, as the Agent SDK sends it.
   control.request('initialize', options.initialize, INITIALIZE_TIMEOUT_MS).then(
-    (response) => engine.setCapabilities(threadId, control, response),
+    (response) => {
+      engine.setCapabilities(threadId, control, response)
+      void engine.refreshAppliedSettings(threadId, control)
+    },
     (error: unknown) => {
       if (live) {
         console.warn('[chat-engine] initialize failed:', error)

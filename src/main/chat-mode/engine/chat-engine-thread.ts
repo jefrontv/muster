@@ -19,6 +19,7 @@ export function emptyChatEngineMeta(threadId: string): ChatEngineThreadMeta {
     session: {
       sessionId: null,
       model: null,
+      effort: null,
       permissionMode: null,
       cwd: null,
       cliVersion: null,

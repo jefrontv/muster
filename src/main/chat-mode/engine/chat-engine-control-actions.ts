@@ -106,6 +106,26 @@ export function controlRequestFor(action: ChatEngineControlAction): {
   }
 }
 
+/** The model and effort the CLI is actually using, from a `get_settings` answer. */
+export function appliedSessionSettings(
+  response: unknown
+): Partial<Pick<ChatEngineThreadMeta['session'], 'model' | 'effort'>> | null {
+  const applied = asRecord(asRecord(response)?.applied)
+  if (!applied) {
+    return null
+  }
+  const model = asString(applied.model)
+  return {
+    ...(model ? { model } : {}),
+    ...(EFFORTS.has(applied.effort) ? { effort: applied.effort as ChatEngineEffort } : {})
+  }
+}
+
+/** Model and effort answers say only "ok"; the applied values come from get_settings. */
+export function controlNeedsSettingsRefresh(action: ChatEngineControlAction): boolean {
+  return action.action === 'setModel' || action.action === 'setEffort'
+}
+
 export function metaAfterControl(
   action: ChatEngineControlAction,
   response: unknown,

@@ -104,6 +104,35 @@ describe('chat thread stream with the engine attached', () => {
     expect(engine.snapshot('t1')?.turns.map((turn) => turn.user?.text)).toEqual(['Fix the header'])
   })
 
+  it('records the model and effort the CLI applied, which init alone does not carry', async () => {
+    const engine = new ChatEngine()
+    const child = fakeChild()
+    start(engine, child)
+    const answer = (requestId: string, response: unknown) =>
+      out(child, {
+        type: 'control_response',
+        response: { subtype: 'success', request_id: requestId, response }
+      })
+    await vi.waitFor(() => expect(child.lines()).toHaveLength(1))
+    answer('muster_1', { commands: [], models: [] })
+    await vi.waitFor(() =>
+      expect(child.lines()[1]).toMatchObject({
+        request_id: 'muster_2',
+        request: { subtype: 'get_settings' }
+      })
+    )
+    answer('muster_2', { applied: { model: 'claude-haiku-5-5', effort: 'low' } })
+    await vi.waitFor(() =>
+      expect(engine.snapshot('t1')?.meta.session).toMatchObject({
+        model: 'claude-haiku-5-5',
+        effort: 'low'
+      })
+    )
+    out(child, { type: 'system', subtype: 'init', session_id: 's1', model: 'claude-haiku-5-5' })
+    await vi.waitFor(() => expect(engine.snapshot('t1')?.meta.session.sessionId).toBe('s1'))
+    expect(engine.snapshot('t1')?.meta.session.effort).toBe('low')
+  })
+
   it('holds a queued message until the running turn ends', async () => {
     const engine = new ChatEngine()
     const child = fakeChild()
