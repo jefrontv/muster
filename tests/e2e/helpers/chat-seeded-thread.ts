@@ -1,4 +1,4 @@
-// Opens a redesigned chat thread on a synthetic Claude transcript, so visual and perf specs get
+// Opens a chat thread on a synthetic Claude transcript, so visual and perf specs get
 // deterministic history with no model. The transcript goes under the e2e's isolated HOME, where
 // the engine's transcript lookup finds it by session id.
 
@@ -101,12 +101,19 @@ export async function openSeededChatThread(
     path.join(projectDir, `${seed.sessionId}.jsonl`),
     chatTranscriptJsonl(seed.folder, seed.turns)
   )
+  await openChatThread(page, seed)
+}
+
+/** A chat thread on the fake CLI; with a session id it resumes that transcript. */
+export async function openChatThread(
+  page: Page,
+  seed: { folder: string; title: string; workspaceName: string; sessionId?: string }
+): Promise<void> {
   const command = `'${process.execPath}' '${FAKE_CLAUDE}'`
   await page.evaluate(
     async ({ seed, command }) => {
       const settings = await window.api.settings.set({
         experimentalChatMode: true,
-        experimentalChatRedesign: true,
         agentCmdOverrides: { claude: command }
       } as Partial<GlobalSettings>)
       const store = window.__store
@@ -124,7 +131,9 @@ export async function openSeededChatThread(
       if (!thread) {
         throw new Error('Thread not created')
       }
-      await store.getState().updateChatThread(thread.id, { claudeSessionId: seed.sessionId })
+      if (seed.sessionId) {
+        await store.getState().updateChatThread(thread.id, { claudeSessionId: seed.sessionId })
+      }
       store.getState().setActiveChatThread(thread.id)
       store.getState().setActiveView('chat')
     },
