@@ -139,6 +139,8 @@ Rules:
 - The user gets a bubble; the assistant gets bare prose on the page background.
 - `shadow-chat-soft` is the chat version of elevation level 2 (subtle lift), not a fourth level. A chat card that has it takes no `border`.
 - Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It paints the text fill only, so an element inside a shimmering label that sets its own text colour shows the sweep colour instead while running. It has a reduced-motion branch; keep it.
+- The turn's running line is the one accent-coloured shimmer: it sets `--chat-shimmer-highlight` to an accent mix so the sweep stays blue.
+- Chat markdown has its own element renderers (`chat-thread/chat-markdown-elements.tsx`): 14/24 prose, 13/20 tertiary for reasoning. `CommentMarkdown` stays as is for sidebar comments; restyle chat prose there, not in the shared renderer.
 - Chat motion stays at 160ms or less, on `ease-chat`. Colour changes are 100ms.
 - The diff green and the light-mode diff red sit under 4.5:1 on `bg-chat-code`. That follows DSH: the marker, the tint and the `+`/`-` sign carry the meaning, and the text colour only reinforces it. Don't reuse them for text that has no other cue.
 - Keyboard focus in chat is a 2px `ring-chat-accent` on `focus-visible` only.

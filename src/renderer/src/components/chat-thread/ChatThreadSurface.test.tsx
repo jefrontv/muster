@@ -19,8 +19,8 @@ import { ChatThreadSurface } from './ChatThreadSurface'
 import type { ChatToolRow } from './ChatToolRow'
 
 const markdownRenders: string[] = []
-vi.mock('@/components/sidebar/CommentMarkdown', () => ({
-  default: (props: { content: string }): React.JSX.Element => {
+vi.mock('./ChatMarkdownRenderer', () => ({
+  ChatMarkdownRenderer: (props: { content: string }): React.JSX.Element => {
     markdownRenders.push(props.content)
     return <div data-markdown>{props.content}</div>
   }
@@ -101,7 +101,7 @@ function mount(engine: ChatEngine) {
 
 const foldHeader = (element: HTMLElement): HTMLElement => {
   const header = [...element.querySelectorAll('button')].find((button) =>
-    button.textContent?.startsWith('Worked for')
+    button.textContent?.startsWith('Completed in')
   )
   expect(header).toBeDefined()
   return header!

@@ -15189,10 +15189,11 @@
       "imageOne": "1 image",
       "imageMany": "{{count}} images",
       "workingFor": "Working for {{duration}}",
-      "workedFor": "Worked for {{duration}}",
-      "worked": "Steps",
       "turnFailed": "Claude stopped with an error.",
       "turnInterrupted": "Stopped",
+      "turnFailedLabel": "Failed",
+      "completed": "Completed",
+      "completedIn": "Completed in {{duration}}",
       "retry": "Try again",
       "stack": {
         "earlier": "{{count}} earlier steps",

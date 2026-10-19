@@ -11,6 +11,7 @@ import { ChatProcessStack } from './ChatProcessStack'
 import { ChatRowBoundary } from './ChatRowBoundary'
 import { ChatToolGroupRow } from './ChatToolGroupRow'
 import { ChatToolRow } from './ChatToolRow'
+import { reasoningPreview } from './chat-reasoning-preview'
 
 type ItemOf<K extends ChatEngineItem['kind']> = Extract<ChatEngineItem, { kind: K }>
 
@@ -40,49 +41,49 @@ function TextRow({ item }: { item: ItemOf<'text'> }): React.JSX.Element {
   return <ChatMarkdown text={item.text} streaming={item.streaming} />
 }
 
-// First line of the reasoning, so a collapsed row still says what it was about.
-function thinkingSummary(text: string): string {
-  return text
-    .trim()
-    .split('\n', 1)[0]!
-    .replace(/[*_#`]/g, '')
-    .slice(0, 200)
-}
+// Pins the open header (ChatDisclosureRow's button) so a long reasoning body can always be folded.
+const STICKY_OPEN_HEADER =
+  '[&>div>button[aria-expanded=true]]:sticky [&>div>button[aria-expanded=true]]:top-0 [&>div>button[aria-expanded=true]]:z-[6] [&>div>button[aria-expanded=true]]:bg-background'
 
 function ThinkingRow({ item }: { item: ItemOf<'thinking'> }): React.JSX.Element {
-  const summary = thinkingSummary(item.text)
+  const [open, setOpen] = useState(false)
+  const summary = reasoningPreview(item.text, item.streaming)
   return (
-    <Disclosure
-      live={item.streaming}
-      icon={<Brain className="size-3.5" aria-hidden />}
-      label={
-        <>
-          <span className="shrink-0">
-            {item.streaming
-              ? translate('components.chat-thread.thinking', 'Thinking')
-              : translate('components.chat-thread.thought', 'Thought')}
-          </span>
-          {summary && (
-            <>
-              <ChatRowDot />
-              <span
-                className={cn(
-                  'min-w-0 truncate',
-                  // New words arrive into a soft edge rather than a hard cut.
-                  item.streaming && '[mask-image:linear-gradient(to_left,transparent,#000_48px)]'
-                )}
-              >
-                {summary}
-              </span>
-            </>
-          )}
-        </>
-      }
-    >
-      <div className="whitespace-pre-wrap text-[13px] leading-5 text-chat-ink-tertiary">
-        {item.text}
-      </div>
-    </Disclosure>
+    <div className={STICKY_OPEN_HEADER}>
+      <ChatDisclosureRow
+        live={item.streaming}
+        open={open}
+        onOpenChange={setOpen}
+        icon={<Brain className="size-3.5" aria-hidden />}
+        label={
+          <>
+            <span className="shrink-0">
+              {item.streaming
+                ? translate('components.chat-thread.thinking', 'Thinking')
+                : translate('components.chat-thread.thought', 'Thought')}
+            </span>
+            {summary && !open && (
+              <>
+                <ChatRowDot />
+                <span
+                  className={cn(
+                    'min-w-0 overflow-hidden whitespace-nowrap',
+                    // New words arrive into a soft trailing edge instead of an ellipsis.
+                    item.streaming
+                      ? '[mask-image:linear-gradient(to_right,#000_calc(100%-48px),transparent)]'
+                      : 'text-ellipsis'
+                  )}
+                >
+                  {summary}
+                </span>
+              </>
+            )}
+          </>
+        }
+      >
+        <ChatMarkdown text={item.text} streaming={item.streaming} density="compact" />
+      </ChatDisclosureRow>
+    </div>
   )
 }
 
@@ -99,7 +100,7 @@ function AgentRow({ item }: { item: ItemOf<'agent'> }): React.JSX.Element {
       label={
         <span className="min-w-0 truncate">{item.description || item.subagentType || 'Agent'}</span>
       }
-      bodyClassName="ml-[7px] border-l-[0.5px] border-border pl-[15px]"
+      bodyClassName="ml-[7px] border-l-[0.5px] border-chat-line-2 pl-[15px]"
     >
       <ChatItemList items={item.items} />
       {item.summary && (
@@ -128,7 +129,7 @@ function NoticeRow({ item }: { item: ItemOf<'notice'> }): React.JSX.Element {
 function SteerRow({ item }: { item: ItemOf<'steer'> }): React.JSX.Element {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[70%] whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
+      <div className="max-w-[70.2%] whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
         {item.text}
         {!item.delivered && (
           <div className="pt-1 text-xs text-chat-ink-tertiary">

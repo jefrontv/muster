@@ -254,7 +254,7 @@
   /* Chat mode (docs/STYLEGUIDE.md "Chat surface"). One width for transcript, composer and takeovers. */
   --chat-content-width: clamp(680px, 64%, 920px);
   --chat-row-height: 24px;
-  --chat-bubble: #f2f2f3;
+  --chat-bubble: rgb(237 243 254);
   --chat-ink-secondary: #404040;
   --chat-ink-tertiary: #737373;
   /* Placeholders and separators only: under 4.5:1 on white. */
@@ -373,7 +373,7 @@
   /* Brighter than terminal defaults so the always-visible line clears 3:1 on `--card`. */
   --tab-group-split-divider: #71717a;
   --tab-group-split-divider-strong: #a1a1aa;
-  --chat-bubble: #222224;
+  --chat-bubble: rgb(44 44 46);
   --chat-ink-secondary: #d4d4d4;
   --chat-ink-tertiary: #a3a3a3;
   --chat-ink-caption: #737373;

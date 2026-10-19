@@ -1,6 +1,6 @@
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type React from 'react'
-import { ChevronDown, CircleAlert, FileText, Image as ImageIcon, RotateCcw } from 'lucide-react'
+import { CircleAlert, FileText, Image as ImageIcon, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { basename } from '@/lib/path'
 import { cn } from '@/lib/utils'
@@ -12,20 +12,29 @@ import type { ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import { unwrapChatWorkspaceUserTurn } from '../../../../shared/chat-workspace-site-info'
 import { useChatThreadContext } from './chat-thread-context'
 import { ChatItemList } from './ChatItemRows'
+import { FoldHeader, RunningStatus, TurnOutcomeAnnouncement } from './ChatTurnChrome'
 import { chatUserMessageParts, type ChatUserMessageParts } from './chat-user-message-parts'
 import { formatElapsed } from './chat-tool-row-model'
-import { answerText, turnFold } from './chat-turn-layout'
+import { answerText, turnFold, type ChatTurnFold } from './chat-turn-layout'
 import { useChatEngineTurn } from './use-chat-engine-thread'
 
 // Older turns reveal their actions on hover; the latest always shows them. Opacity only, so nothing shifts.
 const actionsClass = (latest: boolean): string =>
   cn(
-    'flex items-center gap-1 transition-opacity duration-75',
+    'flex h-7 items-center gap-2',
     !latest &&
-      '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/turn:opacity-100 [@media(hover:hover)]:focus-within:opacity-100'
+      '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:transition-opacity [@media(hover:hover)]:duration-[80ms] [@media(hover:hover)]:group-hover/turn:opacity-100 [@media(hover:hover)]:focus-within:opacity-100'
   )
 
-const copyClass = 'size-7 text-chat-ink-tertiary'
+const actionButtonClass =
+  'size-7 rounded-[8px] p-1.5 text-chat-ink-tertiary transition-colors duration-100 ease-chat hover:bg-chat-hover hover:text-chat-ink-secondary focus-visible:ring-chat-accent'
+
+// DSH sizes glyphs 15px on the user row and 17px under the reply.
+const userGlyph = '[&_svg]:size-[15px]'
+const replyGlyph = '[&_svg]:size-[17px]'
+
+/** The bubble and its attachments share one width cap; 70.2% of the column is DSH's 525/748. */
+const userStackClass = 'flex min-w-0 max-w-[70.2%] flex-col items-end gap-2'
 
 function UserAttachments(props: { parts: ChatUserMessageParts }): React.JSX.Element | null {
   const { images, files, taskIds } = props.parts
@@ -33,7 +42,7 @@ function UserAttachments(props: { parts: ChatUserMessageParts }): React.JSX.Elem
     return null
   }
   return (
-    <div className="flex max-w-[70%] flex-wrap justify-end gap-1.5">
+    <div className="flex max-w-full flex-wrap justify-end gap-1.5">
       {images.map((path) => (
         <NativeChatImageThumb
           key={path}
@@ -69,73 +78,29 @@ function UserMessage(props: {
   // Images sent without a path note (older sends) can only be counted.
   const uncounted = Math.max(0, user.imageCount - parts.images.length)
   return (
-    <div className="flex flex-col items-end gap-1">
-      <UserAttachments parts={parts} />
-      {(parts.body || uncounted > 0) && (
-        <div className="max-w-[70%] whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
-          {parts.body}
-          {uncounted > 0 && (
-            <div className="flex items-center gap-1 pt-1 text-xs text-chat-ink-tertiary">
-              <ImageIcon className="size-3" aria-hidden />
-              {uncounted === 1
-                ? translate('components.chat-thread.imageOne', '1 image')
-                : translate('components.chat-thread.imageMany', '{{count}} images', {
-                    count: uncounted
-                  })}
-            </div>
-          )}
-        </div>
-      )}
+    <div className="flex flex-col items-end gap-1.5">
+      <div className={userStackClass}>
+        <UserAttachments parts={parts} />
+        {(parts.body || uncounted > 0) && (
+          <div className="max-w-full whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
+            {parts.body}
+            {uncounted > 0 && (
+              <div className="flex items-center gap-1 pt-1 text-xs text-chat-ink-tertiary">
+                <ImageIcon className="size-3" aria-hidden />
+                {uncounted === 1
+                  ? translate('components.chat-thread.imageOne', '1 image')
+                  : translate('components.chat-thread.imageMany', '{{count}} images', {
+                      count: uncounted
+                    })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <div className={actionsClass(props.latest)}>
-        <NativeChatCopyButton text={parts.typed} className={copyClass} />
+        <NativeChatCopyButton text={parts.typed} className={cn(actionButtonClass, userGlyph)} />
       </div>
     </div>
-  )
-}
-
-function useElapsedSeconds(startedAt: number): number {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [])
-  return Math.max(0, Math.floor((now - startedAt) / 1000))
-}
-
-function RunningStatus({ startedAt }: { startedAt: number }): React.JSX.Element {
-  const seconds = useElapsedSeconds(startedAt)
-  return (
-    <div className="chat-shimmer text-[13px] leading-[22px] tabular-nums text-chat-ink-tertiary">
-      {translate('components.chat-thread.workingFor', 'Working for {{duration}}', {
-        duration: formatElapsed(seconds)
-      })}
-    </div>
-  )
-}
-
-function FoldHeader(props: {
-  durationMs: number | null
-  open: boolean
-  onToggle: () => void
-}): React.JSX.Element {
-  const label = props.durationMs
-    ? translate('components.chat-thread.workedFor', 'Worked for {{duration}}', {
-        duration: formatElapsed(props.durationMs / 1000)
-      })
-    : translate('components.chat-thread.worked', 'Steps')
-  return (
-    <button
-      type="button"
-      aria-expanded={props.open}
-      onClick={props.onToggle}
-      className="flex h-[33px] w-full items-center gap-1.5 border-b-[0.5px] border-border pb-2 text-left text-sm tabular-nums text-chat-ink-tertiary transition-colors duration-100 hover:text-chat-ink-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {label}
-      <ChevronDown
-        className={cn('size-3.5 transition-transform duration-100', props.open && 'rotate-180')}
-        aria-hidden
-      />
-    </button>
   )
 }
 
@@ -162,31 +127,42 @@ function TurnError(props: { message: string | null; onRetry?: () => void }): Rea
 function TurnActions(props: {
   turn: ChatEngineTurn
   answer: string
-  showDuration: boolean
+  folded: boolean
   latest: boolean
 }): React.JSX.Element | null {
   const { turn } = props
-  const stopped = turn.status === 'interrupted'
-  const duration = props.showDuration && turn.status === 'done' && Boolean(turn.durationMs)
+  // A folded turn already says "Stopped" and the duration in its header.
+  const stopped = !props.folded && turn.status === 'interrupted'
+  const duration = !props.folded && turn.status === 'done' && Boolean(turn.durationMs)
   if (!props.answer && !stopped && !duration) {
     return null
   }
   return (
-    // -ml-1.5 puts the first glyph, not its button box, on the text edge.
-    <div className={cn('-ml-1.5', actionsClass(props.latest || stopped))}>
-      {props.answer && <NativeChatCopyButton text={props.answer} className={copyClass} />}
+    // mt-1 makes 16px under the reply; -ml-1.5 puts the first glyph, not its box, on the text edge.
+    <div className={cn('-ml-1.5 mt-1', actionsClass(props.latest || stopped))}>
+      {props.answer && (
+        <NativeChatCopyButton text={props.answer} className={cn(actionButtonClass, replyGlyph)} />
+      )}
       {stopped && (
-        <span className="rounded-md bg-accent px-1.5 text-[11px] leading-[18px] text-chat-ink-secondary">
+        <span className="rounded-md bg-chat-hover px-1.5 text-[11px] leading-[18px] text-chat-ink-secondary">
           {translate('components.chat-thread.turnInterrupted', 'Stopped')}
         </span>
       )}
       {duration && (
-        <span className="px-1 text-xs tabular-nums text-chat-ink-tertiary">
+        <span className="px-1 font-mono text-xs tabular-nums text-chat-ink-tertiary">
           {formatElapsed(turn.durationMs! / 1000)}
         </span>
       )}
     </div>
   )
+}
+
+/** Done turns fold; stopped and failed ones get the same header but start open to show what happened. */
+function settledFold(turn: ChatEngineTurn): ChatTurnFold | null {
+  if (turn.status === 'interrupted' || turn.status === 'error') {
+    return turnFold({ ...turn, status: 'done' })
+  }
+  return turnFold(turn)
 }
 
 /** Subscribes to its own turn, so another turn streaming never re-renders it. */
@@ -197,11 +173,13 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
 }): React.JSX.Element | null {
   const turn = useChatEngineTurn(props.threadId, props.turnId)
   const { onRetry } = useChatThreadContext()
-  const [processOpen, setProcessOpen] = useState(false)
+  // null until toggled, so the default follows the outcome.
+  const [processOpen, setProcessOpen] = useState<boolean | null>(null)
   if (!turn) {
     return null
   }
-  const fold = turnFold(turn)
+  const fold = settledFold(turn)
+  const open = processOpen ?? turn.status !== 'done'
   const answer = turn.status === 'running' ? '' : answerText(fold ? fold.answer : turn.items)
   return (
     <section
@@ -212,12 +190,8 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
       {turn.user && <UserMessage user={turn.user} latest={props.latest} />}
       {fold ? (
         <>
-          <FoldHeader
-            durationMs={turn.durationMs}
-            open={processOpen}
-            onToggle={() => setProcessOpen((open) => !open)}
-          />
-          {processOpen && <ChatItemList items={fold.process} />}
+          <FoldHeader turn={turn} open={open} onToggle={() => setProcessOpen(!open)} />
+          {open && <ChatItemList items={fold.process} />}
           <ChatItemList items={fold.answer} />
         </>
       ) : (
@@ -235,7 +209,8 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
           }
         />
       )}
-      <TurnActions turn={turn} answer={answer} showDuration={!fold} latest={props.latest} />
+      <TurnActions turn={turn} answer={answer} folded={Boolean(fold)} latest={props.latest} />
+      {props.latest && <TurnOutcomeAnnouncement turn={turn} />}
     </section>
   )
 })
