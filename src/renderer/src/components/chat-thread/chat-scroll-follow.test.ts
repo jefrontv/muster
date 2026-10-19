@@ -64,6 +64,16 @@ describe('ChatScrollFollow', () => {
     expect(follow.state().following).toBe(false)
   })
 
+  it('stays put after a programmatic jump once released', () => {
+    const p = port()
+    const follow = new ChatScrollFollow(p)
+    follow.release()
+    p.scrollTop = 200
+    follow.onScroll(9_000)
+    expect(p.scrollTop).toBe(200)
+    expect(follow.state()).toEqual({ following: false, away: true })
+  })
+
   it('follows on demand and restores a saved position', () => {
     const p = port()
     const follow = new ChatScrollFollow(p)

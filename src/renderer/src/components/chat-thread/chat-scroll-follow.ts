@@ -68,6 +68,11 @@ export class ChatScrollFollow {
     this.update(true)
   }
 
+  /** Programmatic navigation away from the bottom, such as jumping to an earlier turn. */
+  release(): void {
+    this.update(false)
+  }
+
   /** Restores a saved position the user had scrolled away to. */
   restore(scrollTop: number): void {
     this.port.scrollTop = scrollTop

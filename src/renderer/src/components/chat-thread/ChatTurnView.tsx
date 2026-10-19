@@ -152,6 +152,7 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
   const answer = turn.status === 'running' ? '' : answerText(fold ? fold.answer : turn.items)
   return (
     <section
+      data-turn-id={turn.id}
       className="group/turn flex flex-col gap-3"
       aria-label={turn.user ? unwrapChatWorkspaceUserTurn(turn.user.text).slice(0, 80) : undefined}
     >

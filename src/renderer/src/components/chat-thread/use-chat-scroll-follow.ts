@@ -11,6 +11,7 @@ export function useChatScrollFollow(threadId: string): {
   contentRef: React.RefObject<HTMLDivElement | null>
   state: ChatScrollFollowState
   follow: () => void
+  release: () => void
 } {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -75,7 +76,8 @@ export function useChatScrollFollow(threadId: string): {
   }, [threadId])
 
   const follow = useCallback(() => controllerRef.current?.follow(), [])
-  return { scrollRef, contentRef, state, follow }
+  const release = useCallback(() => controllerRef.current?.release(), [])
+  return { scrollRef, contentRef, state, follow, release }
 }
 
 /** Forces follow when a turn is added: in chat mode only the user's own send adds one. */
