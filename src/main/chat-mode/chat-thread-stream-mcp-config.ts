@@ -1,5 +1,5 @@
-// Writes the per-thread MCP config next to the stream child and appends
-// --mcp-config, mirroring chat-thread-stream-system-prompt's tmp-file pattern.
+// Writes the per-thread MCP config next to the stream child and returns
+// its --mcp-config args, mirroring chat-thread-stream-system-prompt's tmp-file pattern.
 // Deliberately no --strict-mcp-config: the user's own MCP servers keep loading.
 
 import { rmSync, writeFileSync } from 'node:fs'
@@ -12,11 +12,10 @@ function mcpConfigFilePath(threadId: string): string {
   return join(chatStreamFilesDir(MCP_CONFIG_DIR_NAME), `${threadId}.json`)
 }
 
-export function commandWithMcpConfigFile(
-  command: string,
+export function mcpConfigArgs(
   connector: { url: string; token: string },
   threadId: string
-): string {
+): string[] {
   ensureChatStreamFilesDir(MCP_CONFIG_DIR_NAME)
   const file = mcpConfigFilePath(threadId)
   const config = {
@@ -30,8 +29,7 @@ export function commandWithMcpConfigFile(
   }
   // 0600: the file carries the thread's bearer token.
   writeFileSync(file, JSON.stringify(config), { encoding: 'utf8', mode: 0o600 })
-  const quoted = `'${file.replace(/'/g, `'\\''`)}'`
-  return `${command} --mcp-config ${quoted}`
+  return ['--mcp-config', file]
 }
 
 export function removeChatThreadMcpConfigFile(threadId: string): void {

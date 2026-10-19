@@ -7,11 +7,6 @@ import type { ChatThreadStreamStartResult } from '../../shared/chat-thread-strea
 export function chatThreadStreamPreflightFailure(
   cwd: string | undefined
 ): ChatThreadStreamStartResult | null {
-  if (process.platform === 'win32') {
-    // Command quoting is built for a POSIX shell; a clean error beats a
-    // mis-quoted cmd.exe launch. Windows support lands with its own shell plan.
-    return { ok: false, error: 'Chat threads are not supported on Windows yet.' }
-  }
   // A missing cwd makes spawn report the shell itself as ENOENT, which reads as a broken install.
   if (cwd && !existsSync(cwd)) {
     return { ok: false, error: `Folder not found: ${cwd}`, reason: 'folder-missing' }

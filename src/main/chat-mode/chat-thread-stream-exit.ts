@@ -1,17 +1,33 @@
 // Stopping a stream child. stdin EOF lets Claude Code exit and clean up after
 // itself; SIGTERM then SIGKILL go to its process group so Bash-tool children
-// (dev servers, watchers) die with it. A relaunch waits for the old child so two
-// CLIs never write the same session transcript at once.
+// (dev servers, watchers) die with it. Windows has no groups, so the tree goes
+// through taskkill /T instead. A relaunch waits for the old child so two CLIs
+// never write the same session transcript at once.
 
 import type { ChildProcess } from 'node:child_process'
+import { killWithDescendantSweep } from '../pty-descendant-termination'
 
 const TERM_AFTER_MS = 1_500
 const KILL_AFTER_MS = 5_000
 
 const exiting = new Map<string, Promise<void>>()
 
+function killChild(child: ChildProcess, signal: NodeJS.Signals): void {
+  try {
+    child.kill(signal)
+  } catch {
+    // Exited between the check and the signal.
+  }
+}
+
 function signalChild(child: ChildProcess, signal: NodeJS.Signals): void {
-  if (child.pid && process.platform !== 'win32') {
+  if (child.pid && process.platform === 'win32') {
+    void killWithDescendantSweep(child.pid, () => killChild(child, signal), {
+      ownsRoot: () => child.exitCode === null && child.signalCode === null
+    })
+    return
+  }
+  if (child.pid) {
     try {
       // Negative pid: the whole group. Children are spawned detached, so they lead one.
       process.kill(-child.pid, signal)
@@ -20,11 +36,7 @@ function signalChild(child: ChildProcess, signal: NodeJS.Signals): void {
       // Not a group leader, or already gone; fall back to the child alone.
     }
   }
-  try {
-    child.kill(signal)
-  } catch {
-    // Exited between the check and the signal.
-  }
+  killChild(child, signal)
 }
 
 /** Escalates after stdin was closed; `closed` settles when the child is gone. */

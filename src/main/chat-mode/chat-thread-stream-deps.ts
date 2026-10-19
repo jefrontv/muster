@@ -14,7 +14,7 @@ export type ChatThreadStreamSender = {
 export type ChatThreadStreamSpawn = (
   command: string,
   args: string[],
-  options: { cwd?: string; env: NodeJS.ProcessEnv }
+  options: { cwd?: string; env: NodeJS.ProcessEnv; windowsVerbatimArguments?: boolean }
 ) => ChildProcess
 
 export type ChatThreadStreamDeps = {
@@ -36,4 +36,6 @@ export type ChatThreadStreamDeps = {
   claudeAuth?: ClaudeRuntimeAuthPreparation | null
   /** Let the idle reaper stop this child (R14). */
   idleReap?: boolean
+  /** PATH lookup for a direct spawn; null keeps the shell path. */
+  resolveExecutable?: (name: string, env: NodeJS.ProcessEnv) => string | null
 }

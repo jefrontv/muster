@@ -217,6 +217,18 @@ function createFakeChild(): FakeChild {
   return child
 }
 
+/** Captured profile env plus a resolvable binary: the spawn gets argv, not a shell line. */
+const DIRECT_SPAWN = {
+  hookEnv: () => ({}),
+  loginShellEnv: () => ({}),
+  resolveExecutable: () => '/usr/local/bin/claude'
+}
+
+function flagValue(args: readonly string[], flag: string): string | undefined {
+  const index = args.indexOf(flag)
+  return index === -1 ? undefined : args[index + 1]
+}
+
 function createSender(): {
   sent: ChatThreadStreamEvent[]
   sender: {
@@ -398,22 +410,20 @@ describe('startChatThreadStream', () => {
   })
 
   it('removes the workspace brief file on stop and on an unexpected close', () => {
-    const briefFor = (command: string): string | undefined =>
-      /--append-system-prompt-file '([^']+)'/.exec(command)?.[1]
     const stopped = createFakeChild()
     const crashed = createFakeChild()
     const { sender } = createSender()
-    const commands: string[] = []
-    const spawn = (child: FakeChild) => (command: string, args: string[]) => {
-      commands.push(args[1] ?? command)
+    const spawned: string[][] = []
+    const spawn = (child: FakeChild) => (_command: string, args: string[]) => {
+      spawned.push(args)
       return child
     }
 
     startChatThreadStream(
       { threadId: 't-brief-stop', command: 'claude -p', appendSystemPrompt: 'Brief A', sender },
-      { spawn: spawn(stopped), hookEnv: () => ({}) }
+      { spawn: spawn(stopped), ...DIRECT_SPAWN }
     )
-    const stoppedFile = briefFor(commands[0]!)
+    const stoppedFile = flagValue(spawned[0]!, '--append-system-prompt-file')
     expect(readFileSync(stoppedFile!, 'utf8')).toBe('Brief A')
     stopChatThreadStream('t-brief-stop')
     expect(existsSync(stoppedFile!)).toBe(false)
@@ -421,9 +431,9 @@ describe('startChatThreadStream', () => {
 
     startChatThreadStream(
       { threadId: 't-brief-crash', command: 'claude -p', appendSystemPrompt: 'Brief B', sender },
-      { spawn: spawn(crashed), hookEnv: () => ({}) }
+      { spawn: spawn(crashed), ...DIRECT_SPAWN }
     )
-    const crashedFile = briefFor(commands[1]!)
+    const crashedFile = flagValue(spawned[1]!, '--append-system-prompt-file')
     expect(existsSync(crashedFile!)).toBe(true)
     crashed.emit('close', 1)
     expect(existsSync(crashedFile!)).toBe(false)
@@ -592,23 +602,23 @@ describe('startChatThreadStream', () => {
   it('appends --mcp-config with the registered coordinates and cleans up once on stop', () => {
     const child = createFakeChild()
     const { sender } = createSender()
-    let seenCommand = ''
+    let seenArgs: string[] = []
     const revoked: [string, string][] = []
     startChatThreadStream(
       { threadId: 't-mcp-stop', command: 'claude -p', sender },
       {
         spawn: (_cmd, args) => {
-          seenCommand = args[1]
+          seenArgs = args
           return child
         },
-        hookEnv: () => ({}),
+        ...DIRECT_SPAWN,
         mcp: {
           register: () => ({ url: 'http://127.0.0.1:9999/mcp', token: 'tok-1' }),
           revoke: (threadId, token) => revoked.push([threadId, token])
         }
       }
     )
-    const file = /--mcp-config '([^']+)'/.exec(seenCommand)?.[1]
+    const file = flagValue(seenArgs, '--mcp-config')
     expect(file).toBeDefined()
     const config = JSON.parse(readFileSync(file!, 'utf8'))
     expect(config).toEqual({
@@ -621,7 +631,7 @@ describe('startChatThreadStream', () => {
       }
     })
     // The user's other MCP servers must keep loading.
-    expect(seenCommand).not.toContain('--strict-mcp-config')
+    expect(seenArgs).not.toContain('--strict-mcp-config')
     stopChatThreadStream('t-mcp-stop')
     expect(revoked).toEqual([['t-mcp-stop', 'tok-1']])
     expect(existsSync(file!)).toBe(false)
@@ -633,23 +643,23 @@ describe('startChatThreadStream', () => {
   it('cleans up the mcp registration on an unexpected close', () => {
     const child = createFakeChild()
     const { sender } = createSender()
-    let seenCommand = ''
+    let seenArgs: string[] = []
     const revoked: string[] = []
     startChatThreadStream(
       { threadId: 't-mcp-crash', command: 'claude -p', sender },
       {
         spawn: (_cmd, args) => {
-          seenCommand = args[1]
+          seenArgs = args
           return child
         },
-        hookEnv: () => ({}),
+        ...DIRECT_SPAWN,
         mcp: {
           register: () => ({ url: 'http://127.0.0.1:9999/mcp', token: 'tok-2' }),
           revoke: (_threadId, token) => revoked.push(token)
         }
       }
     )
-    const file = /--mcp-config '([^']+)'/.exec(seenCommand)?.[1]
+    const file = flagValue(seenArgs, '--mcp-config')
     expect(existsSync(file!)).toBe(true)
     child.emit('close', 1)
     expect(revoked).toEqual(['tok-2'])

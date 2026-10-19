@@ -1,31 +1,23 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  commandWithAppendedSystemPromptFile,
+  appendedSystemPromptArgs,
   removeChatThreadSystemPromptFile
 } from './chat-thread-stream-system-prompt'
 
-describe('commandWithAppendedSystemPromptFile', () => {
+describe('appendedSystemPromptArgs', () => {
   it('writes the brief and appends the file flag', () => {
-    const command = commandWithAppendedSystemPromptFile(
-      'claude -p',
-      'Primary client email: a@b.co',
-      't-brief-test'
-    )
-    const match = /--append-system-prompt-file '([^']+)'/.exec(command)
-    expect(match?.[1]).toBeTruthy()
-    const file = match![1]!
+    const [flag, file] = appendedSystemPromptArgs('Primary client email: a@b.co', 't-brief-test')
+    expect(flag).toBe('--append-system-prompt-file')
     try {
-      expect(command.startsWith('claude -p --append-system-prompt-file ')).toBe(true)
-      expect(readFileSync(file, 'utf8')).toBe('Primary client email: a@b.co')
+      expect(readFileSync(file!, 'utf8')).toBe('Primary client email: a@b.co')
     } finally {
-      rmSync(file, { force: true })
+      rmSync(file!, { force: true })
     }
   })
 
   it('remove deletes the brief and is idempotent', () => {
-    const command = commandWithAppendedSystemPromptFile('claude -p', 'brief', 't-brief-remove')
-    const file = /--append-system-prompt-file '([^']+)'/.exec(command)![1]!
+    const [, file] = appendedSystemPromptArgs('brief', 't-brief-remove') as [string, string]
     expect(existsSync(file)).toBe(true)
     removeChatThreadSystemPromptFile('t-brief-remove')
     removeChatThreadSystemPromptFile('t-brief-remove')

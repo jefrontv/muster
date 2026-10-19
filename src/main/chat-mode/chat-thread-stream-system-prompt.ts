@@ -13,16 +13,11 @@ function systemPromptFilePath(threadId: string): string {
   return join(chatStreamFilesDir(BRIEF_DIR_NAME), `${threadId}.txt`)
 }
 
-export function commandWithAppendedSystemPromptFile(
-  command: string,
-  prompt: string,
-  threadId: string
-): string {
+export function appendedSystemPromptArgs(prompt: string, threadId: string): string[] {
   ensureChatStreamFilesDir(BRIEF_DIR_NAME)
   const file = systemPromptFilePath(threadId)
   writeFileSync(file, prompt, { encoding: 'utf8', mode: 0o600 })
-  const quoted = `'${file.replace(/'/g, `'\\''`)}'`
-  return `${command} --append-system-prompt-file ${quoted}`
+  return ['--append-system-prompt-file', file]
 }
 
 export function removeChatThreadSystemPromptFile(threadId: string): void {

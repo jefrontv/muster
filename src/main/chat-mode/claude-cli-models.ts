@@ -21,7 +21,7 @@ const CACHE_TTL_MS = 6 * 60 * 60 * 1000
 type SpawnProbe = (
   shell: string,
   args: string[],
-  options: { cwd?: string; env: NodeJS.ProcessEnv }
+  options: { cwd?: string; env: NodeJS.ProcessEnv; windowsVerbatimArguments?: boolean }
 ) => ChildProcess
 
 export function parseClaudeCliModels(response: unknown): ClaudeCliModel[] {
@@ -50,9 +50,13 @@ export function probeClaudeCliModels(
 ): Promise<ClaudeCliModel[]> {
   return new Promise((resolve) => {
     const plan = buildChatThreadStreamSpawnPlan({ command: PROBE_COMMAND })
+    if (!plan.ok) {
+      resolve([])
+      return
+    }
     let child: ChildProcess
     try {
-      child = spawnProbe(plan.shellPath, plan.args, plan.options)
+      child = spawnProbe(plan.file, plan.args, plan.options)
     } catch {
       resolve([])
       return

@@ -19,13 +19,10 @@ import { createChatThreadMessageQueue } from './chat-thread-message-queue'
 import { recordClaudeModelSighting } from './claude-model-registry'
 import { createCoalescingStreamEmitter } from './chat-thread-stream-delta-coalesce'
 import {
-  commandWithAppendedSystemPromptFile,
+  appendedSystemPromptArgs,
   removeChatThreadSystemPromptFile
 } from './chat-thread-stream-system-prompt'
-import {
-  commandWithMcpConfigFile,
-  removeChatThreadMcpConfigFile
-} from './chat-thread-stream-mcp-config'
+import { mcpConfigArgs, removeChatThreadMcpConfigFile } from './chat-thread-stream-mcp-config'
 import { buildPermissionControlResponse } from './chat-thread-permission-response'
 import type { ChatThreadStreamDeps, ChatThreadStreamSender } from './chat-thread-stream-deps'
 import { registry, writeStdinLine, type StreamEntry } from './chat-thread-stream-registry'
@@ -54,10 +51,16 @@ const STDERR_TAIL_LIMIT = 4_096
 function defaultSpawn(
   command: string,
   args: string[],
-  options: { cwd?: string; env: NodeJS.ProcessEnv }
+  options: { cwd?: string; env: NodeJS.ProcessEnv; windowsVerbatimArguments?: boolean }
 ): ChildProcess {
-  // Detached: its own process group, so a stop reaches the tools it started.
-  return nodeSpawn(command, args, { ...options, stdio: ['pipe', 'pipe', 'pipe'], detached: true })
+  return nodeSpawn(command, args, {
+    ...options,
+    stdio: ['pipe', 'pipe', 'pipe'],
+    // POSIX: its own process group, so a stop reaches the tools it started.
+    // Windows has no groups (stop uses taskkill /T) and detached opens a console.
+    detached: process.platform !== 'win32',
+    windowsHide: true
+  })
 }
 
 export function startChatThreadStream(
@@ -81,14 +84,12 @@ export function startChatThreadStream(
   // can't delete the new session's config file or token.
   stopChatThreadStream(threadId)
 
-  const baseCommand = args.appendSystemPrompt
-    ? commandWithAppendedSystemPromptFile(args.command, args.appendSystemPrompt, threadId)
-    : args.command
   const mcp = deps.mcp ?? null
   const mcpRegistration = mcp?.register(threadId) ?? null
-  const command = mcpRegistration
-    ? commandWithMcpConfigFile(baseCommand, mcpRegistration, threadId)
-    : baseCommand
+  const extraArgs = [
+    ...(args.appendSystemPrompt ? appendedSystemPromptArgs(args.appendSystemPrompt, threadId) : []),
+    ...(mcpRegistration ? mcpConfigArgs(mcpRegistration, threadId) : [])
+  ]
   const cleanup = (): void => {
     if (mcp && mcpRegistration) {
       mcp.revoke(threadId, mcpRegistration.token)
@@ -98,7 +99,8 @@ export function startChatThreadStream(
   }
 
   const plan = buildChatThreadStreamSpawnPlan({
-    command,
+    command: args.command,
+    extraArgs,
     ...(cwd ? { cwd } : {}),
     // Checkpointing is what lets the engine rewind a turn's file edits.
     ...(env || deps.engine
@@ -111,12 +113,17 @@ export function startChatThreadStream(
       : {}),
     ...(deps.hookEnv ? { hookEnv: deps.hookEnv } : {}),
     ...(deps.loginShellEnv ? { loginShellEnv: deps.loginShellEnv } : {}),
-    ...(deps.claudeAuth ? { claudeAuth: deps.claudeAuth } : {})
+    ...(deps.claudeAuth ? { claudeAuth: deps.claudeAuth } : {}),
+    ...(deps.resolveExecutable ? { resolveExecutable: deps.resolveExecutable } : {})
   })
+  if (!plan.ok) {
+    cleanup()
+    return { ok: false, error: plan.error }
+  }
   const spawnFn = deps.spawn ?? defaultSpawn
   let child: ChildProcess
   try {
-    child = spawnFn(plan.shellPath, plan.args, plan.options)
+    child = spawnFn(plan.file, plan.args, plan.options)
   } catch (error) {
     cleanup()
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
