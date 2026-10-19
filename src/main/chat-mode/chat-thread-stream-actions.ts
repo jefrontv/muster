@@ -36,7 +36,7 @@ export async function writeUserMessage(
   if (content.length === 0) {
     return false
   }
-  return writeStdinLine(entry, {
+  const written = writeStdinLine(entry, {
     type: 'user',
     // The CLI echoes this uuid back when the model receives the message.
     uuid: message.id,
@@ -44,6 +44,15 @@ export async function writeUserMessage(
     parent_tool_use_id: null,
     ...(priority ? { priority } : {})
   })
+  if (written) {
+    entry.engine?.userMessage({
+      id: message.id,
+      text,
+      imageCount: images.length,
+      steer: priority === 'next'
+    })
+  }
+  return written
 }
 
 /** auto queues behind a running turn; steer hands the message to the running turn. */
@@ -101,6 +110,8 @@ export function respondChatThreadPermission(args: {
   behavior: 'allow' | 'deny'
   message?: string
   updatedInput?: unknown
+  updatedPermissions?: unknown[]
+  interrupt?: boolean
 }): boolean {
   const entry = registry.get(args.threadId)
   if (!entry) {
@@ -110,13 +121,17 @@ export function respondChatThreadPermission(args: {
   // tolerates unknown ids silently (verified against 2.1.224).
   const originalInput = entry.pendingPermissionRequests.get(args.requestId)?.input
   entry.pendingPermissionRequests.delete(args.requestId)
-  return writeStdinLine(
+  const written = writeStdinLine(
     entry,
     buildPermissionControlResponse({
       ...args,
       updatedInput: args.updatedInput ?? originalInput
     })
   )
+  if (written) {
+    entry.engine?.resolved(args.requestId, args.behavior)
+  }
+  return written
 }
 
 /** Every can_use_tool question still awaiting a verdict, across live threads.

@@ -25,7 +25,14 @@ export type ChatThreadStreamEvent =
   | { threadId: string; kind: 'permission-cancel'; requestId: string }
   /** Attachments dropped from a send (unsupported type, over the size cap, unreadable). */
   | { threadId: string; kind: 'attachments-skipped'; paths: string[] }
-  | { threadId: string; kind: 'exit'; code: number | null; error?: string }
+  | {
+      threadId: string
+      kind: 'exit'
+      code: number | null
+      error?: string
+      /** Main stopped an idle session (R14); the next visit resumes it. */
+      reason?: 'idle'
+    }
   /** Messages held or in flight while the agent works; the full queue each time. */
   | { threadId: string; kind: 'queue-changed'; queue: ChatThreadMessageQueueSnapshot }
 
@@ -62,6 +69,10 @@ export type ChatThreadPermissionResponseArgs = {
   message?: string
   /** Allow-time input override; defaults to the request's original input. */
   updatedInput?: unknown
+  /** "Always allow": the permission_suggestions entries the user accepted. */
+  updatedPermissions?: unknown[]
+  /** Deny and end the turn instead of letting Claude try another way. */
+  interrupt?: boolean
 }
 
 export type ChatThreadStreamStartArgs = {

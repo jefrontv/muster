@@ -3,14 +3,14 @@
 // (zsh -lc + tokenize ate those). The brief carries client emails and URLs, so
 // the file is removed with the child rather than left for the OS tmp reaper.
 
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { chatStreamFilesDir, ensureChatStreamFilesDir } from './chat-thread-stream-files'
 
 const BRIEF_DIR_NAME = 'muster-chat-briefs'
 
 function systemPromptFilePath(threadId: string): string {
-  return join(tmpdir(), BRIEF_DIR_NAME, `${threadId}.txt`)
+  return join(chatStreamFilesDir(BRIEF_DIR_NAME), `${threadId}.txt`)
 }
 
 export function commandWithAppendedSystemPromptFile(
@@ -18,7 +18,7 @@ export function commandWithAppendedSystemPromptFile(
   prompt: string,
   threadId: string
 ): string {
-  mkdirSync(join(tmpdir(), BRIEF_DIR_NAME), { recursive: true })
+  ensureChatStreamFilesDir(BRIEF_DIR_NAME)
   const file = systemPromptFilePath(threadId)
   writeFileSync(file, prompt, { encoding: 'utf8', mode: 0o600 })
   const quoted = `'${file.replace(/'/g, `'\\''`)}'`

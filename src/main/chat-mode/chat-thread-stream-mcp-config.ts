@@ -2,14 +2,14 @@
 // --mcp-config, mirroring chat-thread-stream-system-prompt's tmp-file pattern.
 // Deliberately no --strict-mcp-config: the user's own MCP servers keep loading.
 
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { chatStreamFilesDir, ensureChatStreamFilesDir } from './chat-thread-stream-files'
 
 const MCP_CONFIG_DIR_NAME = 'muster-chat-mcp'
 
 function mcpConfigFilePath(threadId: string): string {
-  return join(tmpdir(), MCP_CONFIG_DIR_NAME, `${threadId}.json`)
+  return join(chatStreamFilesDir(MCP_CONFIG_DIR_NAME), `${threadId}.json`)
 }
 
 export function commandWithMcpConfigFile(
@@ -17,7 +17,7 @@ export function commandWithMcpConfigFile(
   connector: { url: string; token: string },
   threadId: string
 ): string {
-  mkdirSync(join(tmpdir(), MCP_CONFIG_DIR_NAME), { recursive: true })
+  ensureChatStreamFilesDir(MCP_CONFIG_DIR_NAME)
   const file = mcpConfigFilePath(threadId)
   const config = {
     mcpServers: {

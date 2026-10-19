@@ -2,7 +2,8 @@
 // route to the per-thread child registry; stream events flow back over
 // `chatThreadStream:event` on the starting window's webContents.
 
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
+import { join } from 'node:path'
 import type {
   ChatThreadMessageQueueSnapshot,
   ChatThreadSendOutcome,
@@ -13,6 +14,13 @@ import { isAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-con
 import type { Store } from '../persistence'
 import { chatConnectorMcpForStream } from './chat-connector'
 import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
+import { chatEngine } from '../chat-mode/engine/chat-engine-singleton'
+import { setChatStreamFilesRoot } from '../chat-mode/chat-thread-stream-files'
+import { hasClaudeAuthEnvConflict } from '../claude-accounts/environment'
+import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
+import { isClaudeAuthSwitchInProgress } from '../claude-accounts/live-pty-gate'
+import type { CommitMessageAgentEnvironmentResolvers } from '../text-generation/commit-message-agent-environment'
+import { startChatStreamReaper } from '../chat-mode/chat-thread-stream-reaper'
 import {
   interruptChatThreadStream,
   listChatThreadMessageQueues,
@@ -23,7 +31,8 @@ import {
   sendNextChatThreadQueuedMessage,
   startChatThreadStream,
   steerChatThreadQueuedMessage,
-  stopChatThreadStream
+  stopChatThreadStream,
+  waitForChatThreadStreamExit
 } from '../chat-mode/chat-thread-stream'
 
 const CHANNELS = [
@@ -62,10 +71,40 @@ function asEnv(value: unknown): Record<string, string> | undefined {
   return env
 }
 
-export function registerChatThreadStreamHandlers(store: Store): void {
+const AUTH_SWITCH_ERROR = 'A Claude account switch is in progress. Try again after it finishes.'
+
+/** Same managed-account preparation as a Claude PTY launch (R12). */
+async function prepareChatClaudeAuth(
+  agentEnv: CommitMessageAgentEnvironmentResolvers | undefined,
+  env: Record<string, string> | undefined
+): Promise<ClaudeRuntimeAuthPreparation | null> {
+  if (isClaudeAuthSwitchInProgress()) {
+    throw new Error(AUTH_SWITCH_ERROR)
+  }
+  const auth = (await agentEnv?.prepareForClaudeLaunch?.()) ?? null
+  if (isClaudeAuthSwitchInProgress()) {
+    throw new Error(AUTH_SWITCH_ERROR)
+  }
+  if (auth?.stripAuthEnv && hasClaudeAuthEnvConflict(env)) {
+    throw new Error(
+      'This chat defines Anthropic auth environment variables. Remove them before using a managed Claude account.'
+    )
+  }
+  return auth
+}
+
+let stopReaper: (() => void) | null = null
+
+export function registerChatThreadStreamHandlers(
+  store: Store,
+  agentEnv?: CommitMessageAgentEnvironmentResolvers
+): void {
   for (const channel of CHANNELS) {
     ipcMain.removeHandler(channel)
   }
+  setChatStreamFilesRoot(join(app.getPath('userData'), 'chat-stream'))
+  stopReaper?.()
+  stopReaper = startChatStreamReaper(chatEngine())
 
   ipcMain.handle(
     'chatThreadStream:start',
@@ -87,9 +126,13 @@ export function registerChatThreadStreamHandlers(store: Store): void {
             ? args.appendSystemPrompt
             : undefined
         const threadId = asString(args?.threadId, 'threadId')
+        const claudeAuth = await prepareChatClaudeAuth(agentEnv, env)
         // In-process muster MCP: a failed connector start degrades to no tools.
         const mcp = await chatConnectorMcpForStream(store)
-        // Checked after the await: a thread deleted mid-launch would get a child nothing can stop.
+        // A relaunch's old child must close first: two CLIs on one session corrupt its transcript.
+        stopChatThreadStream(threadId)
+        await waitForChatThreadStreamExit(threadId)
+        // Checked after the awaits: a thread deleted mid-launch would get a child nothing can stop.
         if (
           !chatStore()
             .getState()
@@ -111,7 +154,11 @@ export function registerChatThreadStreamHandlers(store: Store): void {
             // the user's Claude hooks post status for this child identically.
             hookEnv: () =>
               isAgentStatusHooksEnabled(store.getSettings()) ? agentHookServer.buildPtyEnv() : {},
-            ...(mcp ? { mcp } : {})
+            ...(mcp ? { mcp } : {}),
+            claudeAuth,
+            // Off until the new thread view resumes parked chats; the old view shows them as ended.
+            idleReap: false,
+            engine: { engine: chatEngine(), initialize: {} }
           }
         )
       } catch (error) {
@@ -177,6 +224,8 @@ export function registerChatThreadStreamHandlers(store: Store): void {
         behavior?: unknown
         message?: unknown
         updatedInput?: unknown
+        updatedPermissions?: unknown
+        interrupt?: unknown
       }
     ): Promise<boolean> => {
       const behavior = args?.behavior
@@ -188,7 +237,11 @@ export function registerChatThreadStreamHandlers(store: Store): void {
         requestId: asString(args?.requestId, 'requestId'),
         behavior,
         ...(typeof args?.message === 'string' ? { message: args.message } : {}),
-        ...(args?.updatedInput !== undefined ? { updatedInput: args.updatedInput } : {})
+        ...(args?.updatedInput !== undefined ? { updatedInput: args.updatedInput } : {}),
+        ...(Array.isArray(args?.updatedPermissions)
+          ? { updatedPermissions: args.updatedPermissions }
+          : {}),
+        ...(args?.interrupt === true ? { interrupt: true } : {})
       })
     }
   )

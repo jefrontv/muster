@@ -3,6 +3,8 @@
 
 import { homedir } from 'node:os'
 import { loginShellEnvironmentDelta } from '../startup/login-shell-environment'
+import { applyClaudeEnvPatch } from '../claude-accounts/environment'
+import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 
 // Stale inherited hook coordinates would route this child's hook POSTs to a
 // dead receiver; strip them before injecting the live server's env.
@@ -27,6 +29,7 @@ export function buildChatThreadStreamSpawnPlan(args: {
   hookEnv?: () => Record<string, string>
   /** What a login shell would contribute; null means spawn one instead. */
   loginShellEnv?: () => Record<string, string> | null
+  claudeAuth?: ClaudeRuntimeAuthPreparation
 }): ChatThreadStreamSpawnPlan {
   const { command, cwd, env } = args
   const mergedEnv: NodeJS.ProcessEnv = { ...process.env }
@@ -38,6 +41,12 @@ export function buildChatThreadStreamSpawnPlan(args: {
   // Null means not captured (yet, or at all) — fall back to paying for it.
   const loginEnv = (args.loginShellEnv ?? loginShellEnvironmentDelta)()
   Object.assign(mergedEnv, loginEnv ?? {}, env ?? {}, args.hookEnv?.() ?? {})
+  if (args.claudeAuth) {
+    // Last, so a profile-exported ANTHROPIC_API_KEY cannot override the managed account.
+    applyClaudeEnvPatch(mergedEnv as Record<string, string>, args.claudeAuth.envPatch, {
+      stripAuthEnv: args.claudeAuth.stripAuthEnv
+    })
+  }
 
   return {
     // Same default-shell resolution the local PTY provider uses for POSIX spawns.

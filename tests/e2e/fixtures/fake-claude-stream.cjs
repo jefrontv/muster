@@ -170,7 +170,13 @@ async function userTurn(record) {
       claude_code_version: '0.0.0-fake'
     })
   }
-  out({ type: 'user', uuid: `fake-user-${turn}`, message: record.message, session_id: sessionId })
+  // --replay-user-messages echoes the sender's uuid.
+  out({
+    type: 'user',
+    uuid: record.uuid ?? `fake-user-${turn}`,
+    message: record.message,
+    session_id: sessionId
+  })
   const started = Date.now()
   const messageId = `fake-msg-${turn}`
   out({ type: 'stream_event', event: { type: 'message_start', message: { id: messageId } } })
