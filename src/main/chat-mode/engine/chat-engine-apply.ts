@@ -14,4 +14,5 @@ export function applyChatEngineRecord(thread: ChatEngineThread, record: Rec, now
     applyEventRecord(thread, record, now)
   }
   thread.refreshStatus()
+  thread.noteRecord(now)
 }

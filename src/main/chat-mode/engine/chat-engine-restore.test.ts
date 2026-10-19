@@ -101,6 +101,27 @@ describe('chat engine history', () => {
     expect(snapshot?.meta).toMatchObject({ status: 'idle', pending: [] })
   })
 
+  it('ends a turn with no result at its last record, not at the next send', async () => {
+    const path = join(dir, 'gap.jsonl')
+    const later = '2026-10-01T01:00:00.000Z'
+    await writeFile(
+      path,
+      [
+        { type: 'user', uuid: 'u-1', timestamp: at(0), message: { role: 'user', content: 'Go' } },
+        {
+          type: 'assistant',
+          timestamp: at(9),
+          message: { id: 'm1', content: [{ type: 'text', text: 'Done.' }] }
+        },
+        { type: 'user', uuid: 'u-2', timestamp: later, message: { role: 'user', content: 'Next' } }
+      ]
+        .map((record) => JSON.stringify(record))
+        .join('\n')
+    )
+    const snapshot = await hydrateChatEngineFromTranscript('t-gap', path, 0)
+    expect(snapshot?.turns[0]).toMatchObject({ status: 'done', durationMs: 9_000 })
+  })
+
   it('keeps saved history when the process attaches before anyone subscribes', async () => {
     const earlier = new ChatEngine({ persistDir: () => dir })
     await earlier.subscribe('t2', subscriber(1))

@@ -47,6 +47,8 @@ export class ChatEngineThread {
   private turnCounter = 0
   private dirtyTurnIds = new Set<string>()
   private metaDirty = false
+  /** When the last record landed; a turn closed by the next send ends here, not at the send. */
+  private lastRecordAt: number | null = null
   /** Streaming block index -> item id, keyed by `${parentToolUseId ?? '_'}|${index}`. */
   readonly streamBlocks = new Map<string, string>()
   /** Current streaming message id per parent (subagents stream concurrently). */
@@ -59,6 +61,10 @@ export class ChatEngineThread {
   constructor(threadId: string) {
     this.threadId = threadId
     this.meta = emptyChatEngineMeta(threadId)
+  }
+
+  noteRecord(now: number): void {
+    this.lastRecordAt = now
   }
 
   getMeta(): ChatEngineThreadMeta {
@@ -94,11 +100,13 @@ export class ChatEngineThread {
     // collecting new output but its in-flight tools still settle by id.
     const running = this.runningTurn()
     if (running) {
+      // Resumed history can hold a turn with no result followed by a send days later.
+      const endedAt = Math.max(running.startedAt, Math.min(args.now, this.lastRecordAt ?? args.now))
       this.replaceTurn({
         ...running,
         status: 'done',
-        endedAt: args.now,
-        durationMs: args.now - running.startedAt
+        endedAt,
+        durationMs: endedAt - running.startedAt
       })
     }
     this.setMeta({ suggestions: [], lastError: null })
