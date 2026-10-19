@@ -1,7 +1,6 @@
-// Hosts the native-chat surface for one chat thread. The conversation always
-// renders from the stored transcript; a Claude process starts only when the user
-// sends (or focuses the composer), and session state shows as one line above
-// the composer instead of replacing the transcript.
+// Hosts one chat thread: the engine-drawn transcript with the composer seated
+// under it. A Claude process starts only when the user sends (or focuses the
+// composer), and session state shows as one line above the composer.
 
 import type React from 'react'
 import { useCallback, useEffect, useRef } from 'react'
@@ -14,7 +13,6 @@ import {
 import { chatThreadPaneIdentity } from '@/lib/chat-thread-pane-identity'
 import { ensureChatThreadSession } from '@/lib/chat-thread-session-ensure'
 import { useAppStore } from '@/store'
-import NativeChatView from '@/components/native-chat/NativeChatView'
 import { seedTaskAttachmentsForTab } from '@/components/native-chat/use-native-chat-task-attachments'
 import { ChatThreadComposerSeat } from './ChatThreadComposerSeat'
 import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
@@ -25,7 +23,6 @@ import {
 } from './ChatThreadNotice'
 import { useMissingFolder } from './use-missing-folder'
 import { ChatThreadSurface } from '@/components/chat-thread/ChatThreadSurface'
-import { chatEngineSurfaceEnabled } from '@/components/chat-thread/chat-engine-surface-flag'
 import { useChatThreadTransport } from './use-chat-thread-transport'
 
 function ChatThreadSessionNotice({
@@ -130,18 +127,10 @@ export function ChatThreadView({
       return
     }
     firstMessageSentRef.current = true
-    const store = useAppStore.getState()
-    // Echo the prompt immediately; NativeChatView prunes the launch-prompt echo
-    // once the real transcript user turn lands.
-    store.seedNativeChatLaunchPrompt({
-      tabId: identity.tabId,
-      agent: thread.agent,
-      text: firstMessage,
-      createdAt: Date.now()
-    })
-    store.clearChatThreadFirstMessage(thread.id)
+    // The engine draws the user turn as soon as main accepts the send.
+    useAppStore.getState().clearChatThreadFirstMessage(thread.id)
     void send(firstMessage).catch(() => undefined)
-  }, [firstMessage, identity.tabId, thread.id, thread.agent, send])
+  }, [firstMessage, thread.id, send])
 
   const retry = useCallback((text: string) => void send(text).catch(() => undefined), [send])
   const activeCollabProjectId =
@@ -154,42 +143,21 @@ export function ChatThreadView({
           taskId={thread.activeCollabTask.taskId}
         />
       ) : null}
-      {chatEngineSurfaceEnabled() ? (
-        <div className="min-h-0 flex-1">
-          <ChatThreadSurface
-            threadId={thread.id}
-            onRetry={retry}
-            footer={
-              <ChatThreadComposerSeat
-                thread={thread}
-                transport={transport}
-                workingDirectory={workspace?.directories[0] ?? null}
-                activeCollabProjectId={activeCollabProjectId}
-                notice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
-              />
-            }
-          />
-        </div>
-      ) : (
-        <NativeChatView
-          terminalTabId={identity.tabId}
-          paneKey={identity.paneKey}
-          draftScopeKey={`chat-thread:${thread.id}`}
-          launchAgent={thread.agent}
-          transport={transport}
-          fallbackProviderSession={
-            thread.claudeSessionId !== null
-              ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
-              : null
+      <div className="min-h-0 flex-1">
+        <ChatThreadSurface
+          threadId={thread.id}
+          onRetry={retry}
+          footer={
+            <ChatThreadComposerSeat
+              thread={thread}
+              transport={transport}
+              workingDirectory={workspace?.directories[0] ?? null}
+              activeCollabProjectId={activeCollabProjectId}
+              notice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
+            />
           }
-          activeCollabProjectId={activeCollabProjectId}
-          composerNotice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
-          surface="chat"
-          showTechnicalDetails={thread.showTechnicalDetails === true}
-          workingDirectory={workspace?.directories[0] ?? null}
-          reportedModel={thread.reportedModel ?? null}
         />
-      )}
+      </div>
     </div>
   )
 }
