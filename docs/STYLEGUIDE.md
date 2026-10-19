@@ -106,6 +106,32 @@ Muster uses shadows sparingly. Three levels in practice:
 
 Don't add a fourth level. If something needs more emphasis than "floating," you're probably reaching for the focus `ring` instead.
 
+## Chat surface
+
+Chat mode (`src/renderer/src/components/chat-thread/`) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Code mode's agent chat keeps the app defaults.
+
+| Token                                | Tailwind                   | Use it for                                                                 |
+| ------------------------------------ | -------------------------- | -------------------------------------------------------------------------- |
+| `--chat-content-width`               | `w-(--chat-content-width)` | Transcript column, composer, approval and question cards, turn navigator   |
+| `--chat-row-height`                  | `h-(--chat-row-height)`    | Every process row: tool, reasoning, group, turn fold header                |
+| `--chat-bubble`                      | `bg-chat-bubble`           | The user message bubble only                                               |
+| `--chat-ink-secondary`               | `text-chat-ink-secondary`  | Process rows on hover, list markers, toolbar selects                       |
+| `--chat-ink-tertiary`                | `text-chat-ink-tertiary`   | Process rows at rest, timestamps, durations                                |
+| `--chat-ink-caption`                 | `text-chat-ink-caption`    | Placeholders and separators only (below 4.5:1, never for text people read) |
+| `--radius-chat-bubble` (20px)        | `rounded-chat-bubble`      | User bubble, approval card, question card                                  |
+| `--radius-chat-composer` (28px)      | `rounded-chat-composer`    | The composer card                                                          |
+| `--chat-hairline`                    | `shadow-chat-hairline`     | A 0.5px outline drawn as a shadow, so it never moves layout                |
+| `--chat-hairline` + `--chat-ambient` | `shadow-chat-soft`         | The composer and takeover cards                                            |
+
+Rules:
+
+- Primary ink is `foreground`. Hierarchy comes from the four ink levels, not from weight: nothing in the chat surface goes above `font-medium` except markdown headings and `strong`.
+- Process rows are 13px text, `--chat-row-height` tall, with a 16px icon box. They sit at tertiary ink and rise to secondary on hover. Diff counts stay tertiary until the row is hovered or open.
+- The user gets a bubble; the assistant gets bare prose on the page background.
+- `shadow-chat-soft` is the chat version of elevation level 2 (subtle lift), not a fourth level. A chat card that has it takes no `border`.
+- Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It has a reduced-motion branch; keep it.
+- Chat motion stays at 160ms or less.
+
 ## Components
 
 Use the shadcn primitives in `src/renderer/src/components/ui/` before writing anything custom. The shadcn-style wrappers in this folder follow a consistent pattern:

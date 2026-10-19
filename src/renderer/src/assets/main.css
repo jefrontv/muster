@@ -121,6 +121,14 @@
   --color-git-graph-lane-4: var(--git-graph-lane-4);
   --color-git-graph-lane-5: var(--git-graph-lane-5);
   --color-annotation-highlight: var(--annotation-highlight);
+  --color-chat-bubble: var(--chat-bubble);
+  --color-chat-ink-secondary: var(--chat-ink-secondary);
+  --color-chat-ink-tertiary: var(--chat-ink-tertiary);
+  --color-chat-ink-caption: var(--chat-ink-caption);
+  --radius-chat-bubble: 20px;
+  --radius-chat-composer: 28px;
+  --shadow-chat-hairline: var(--chat-hairline);
+  --shadow-chat-soft: var(--chat-hairline), var(--chat-ambient);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -228,6 +236,17 @@
      meet >=3:1 against `--card`, not only the hover/drag strong state. */
   --tab-group-split-divider: #868690;
   --tab-group-split-divider-strong: #71717a;
+  /* Chat mode (docs/STYLEGUIDE.md "Chat surface"). One width for transcript, composer and takeovers. */
+  --chat-content-width: clamp(680px, 64%, 920px);
+  --chat-row-height: 24px;
+  --chat-bubble: #f2f2f3;
+  --chat-ink-secondary: #404040;
+  --chat-ink-tertiary: #737373;
+  /* Placeholders and separators only: under 4.5:1 on white. */
+  --chat-ink-caption: #a3a3a3;
+  /* Drawn as a shadow so the outline never takes layout space. */
+  --chat-hairline: 0 0 0 0.5px rgb(0 0 0 / 0.12);
+  --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
 }
 
 /* ── Dark Mode ───────────────────────────────────────── */
@@ -320,6 +339,12 @@
   /* Brighter than terminal defaults so the always-visible line clears 3:1 on `--card`. */
   --tab-group-split-divider: #71717a;
   --tab-group-split-divider-strong: #a1a1aa;
+  --chat-bubble: #222224;
+  --chat-ink-secondary: #d4d4d4;
+  --chat-ink-tertiary: #a3a3a3;
+  --chat-ink-caption: #737373;
+  --chat-hairline: 0 0 0 0.5px rgb(255 255 255 / 0.14);
+  --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.24), 0 0 24px rgb(0 0 0 / 0.16);
 }
 
 .linear-priority-bars {
@@ -4007,4 +4032,27 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
   box-shadow:
     inset 0 1px 0 0 color-mix(in srgb, var(--foreground) 5%, transparent),
     0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* Chat running state: a light band sweeps across the label. steps(48) keeps repaints cheap. */
+.chat-shimmer {
+  mask-image: linear-gradient(105deg, #000 40%, rgb(0 0 0 / 0.4) 50%, #000 60%);
+  mask-size: 300% 100%;
+  animation: chat-shimmer 1.5s steps(48) 0.3s infinite;
+}
+
+@keyframes chat-shimmer {
+  from {
+    mask-position: 100% 0;
+  }
+  to {
+    mask-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-shimmer {
+    animation: none;
+    mask-image: none;
+  }
 }
