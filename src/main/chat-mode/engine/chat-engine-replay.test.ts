@@ -55,6 +55,22 @@ describe('chat engine replay of a recorded session', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
 
+  it('shows a streaming Edit its path before the block closes', () => {
+    const engine = new ChatEngine({ now: () => 1_000 })
+    const seen: unknown[] = []
+    for (const step of steps(RECORDS)) {
+      play(engine, step)
+      const edit = engine
+        .snapshot('t')
+        ?.turns.at(-1)
+        ?.items.find((item) => item.kind === 'tool' && item.name === 'Edit')
+      if (edit?.kind === 'tool' && edit.status === 'streaming') {
+        seen.push(edit.input)
+      }
+    }
+    expect(seen.some((input) => (input as { file_path?: string })?.file_path)).toBe(true)
+  })
+
   it('folds partials into one settled turn: read, edit, reply', () => {
     const snapshot = replayAll(RECORDS)!
     expect(snapshot.meta.status).toBe('idle')

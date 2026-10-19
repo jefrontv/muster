@@ -6,6 +6,7 @@ import type { ChatEngineItem } from '../../../shared/chat-engine-types'
 import type { ChatEngineThread } from './chat-engine-thread'
 import { appendItem, findItem } from './chat-engine-tree'
 import { asRecord, type Rec } from './chat-engine-records'
+import { parsePartialJson } from './chat-engine-partial-json'
 
 const AGENT_TOOL_NAMES = new Set(['Agent', 'Task'])
 
@@ -134,10 +135,14 @@ export function applyStreamEvent(thread: ChatEngineThread, record: Rec, now: num
         return
       }
       if (delta.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
-        thread.toolInputJson.set(
-          itemId,
-          (thread.toolInputJson.get(itemId) ?? '') + delta.partial_json
-        )
+        const json = (thread.toolInputJson.get(itemId) ?? '') + delta.partial_json
+        thread.toolInputJson.set(itemId, json)
+        const input = parsePartialJson(json)
+        if (input !== undefined) {
+          thread.updateItemAnywhere(itemId, (item) =>
+            item.kind === 'tool' && item.status === 'streaming' ? { ...item, input } : item
+          )
+        }
         return
       }
       const chunk =
