@@ -1,8 +1,10 @@
-import type {
-  ClipboardEventHandler,
-  CompositionEventHandler,
-  KeyboardEventHandler,
-  RefObject
+import {
+  useEffect,
+  useRef,
+  type ClipboardEventHandler,
+  type CompositionEventHandler,
+  type KeyboardEventHandler,
+  type RefObject
 } from 'react'
 import { FileText, ImageOff, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
@@ -26,6 +28,7 @@ import {
   NativeChatApprovalPanel,
   type NativeChatComposerApproval
 } from './NativeChatApprovalPanel'
+import { NativeChatSeatTakeover } from './NativeChatSeatTakeover'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 import type { NativeChatTaskAttachment } from './use-native-chat-task-attachments'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
@@ -73,7 +76,8 @@ export type NativeChatComposerFieldProps = {
   onStop?: () => void
   sessionOptionsSurface: SessionOptionsSurface | null
   sessionOptionsSnapshot: SessionOptionDescriptor[]
-  /** While set, the editor is disabled and the approval actions own the footer. */
+  /** While set, the editor is disabled and the approval actions own the footer;
+   *  in the seat a takeover card (approval or plan review) replaces the composer. */
   approval: NativeChatComposerApproval | null
   stash: NativeChatPromptStash
   /** Context-window donut input; null hides the meter. */
@@ -138,6 +142,24 @@ export function NativeChatComposerField({
   activeCollabProjectId
 }: NativeChatComposerFieldProps): React.JSX.Element {
   const { seat } = useNativeChatSurface()
+  const focusOnReturnRef = useRef(false)
+  // Plan review's Discuss hands the reply to the composer once the card is gone.
+  useEffect(() => {
+    if (approval === null && focusOnReturnRef.current) {
+      focusOnReturnRef.current = false
+      textareaRef.current?.focus()
+    }
+  }, [approval, textareaRef])
+  if (seat && approval) {
+    return (
+      <NativeChatSeatTakeover
+        approval={approval}
+        onDiscuss={() => {
+          focusOnReturnRef.current = true
+        }}
+      />
+    )
+  }
   return (
     <div className={cn('shrink-0', !seat && 'bg-background')}>
       {/* Extra bottom padding keeps the input box off the window rim. */}

@@ -14924,7 +14924,13 @@
         "send": "提交",
         "next": "下一步",
         "skip": "跳过",
-        "sending": "正在发送…"
+        "sending": "正在发送…",
+        "minimize": "Collapse question",
+        "expand": "Expand question",
+        "previous": "Previous question",
+        "nextQuestion": "Next question",
+        "progress": "{{value0}} / {{value1}}",
+        "unanswered": "Select an option or type an answer."
       },
       "approval": {
         "title": "允许 {{value0}}？",
@@ -14939,7 +14945,9 @@
         "readSite": "Allow Claude to read {{site}}?",
         "aWebPage": "a web page",
         "searchWeb": "Allow Claude to search the web?",
-        "useTool": "Allow Claude to use {{tool}}?"
+        "useTool": "Allow Claude to use {{tool}}?",
+        "waiting": "Waiting for approval",
+        "reject": "Reject"
       },
       "launchPromptNotDelivered": "未送达 — 请检查终端",
       "changedFiles": {
@@ -15057,6 +15065,12 @@
         "replaceDraft": "替换你的草稿？",
         "replace": "替换",
         "cancel": "取消"
+      },
+      "planReview": {
+        "header": "Plan review",
+        "untitled": "Proposed plan",
+        "discuss": "Discuss",
+        "approve": "Approve"
       }
     },
     "tab": {

@@ -110,27 +110,29 @@ Don't add a fourth level. If something needs more emphasis than "floating," you'
 
 The chat surface (`src/renderer/src/components/chat-thread/`, used by Chat mode and by Code mode's agent chat view) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Values follow DeepSeek Harness; see `docs/muster/2026-10-20-chat-dsh-parity-plan.md`.
 
-| Token                                | Tailwind                                                  | Use it for                                                                 |
-| ------------------------------------ | --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `--chat-content-width`               | `w-(--chat-content-width)`                                | Transcript column, composer, approval and question cards, turn navigator   |
-| `--chat-row-height`                  | `h-(--chat-row-height)`                                   | Every process row: tool, reasoning, group, turn fold header                |
-| `--chat-bubble`                      | `bg-chat-bubble`                                          | The user message bubble only                                               |
-| `--chat-ink-secondary`               | `text-chat-ink-secondary`                                 | Process rows on hover, list markers, toolbar selects                       |
-| `--chat-ink-tertiary`                | `text-chat-ink-tertiary`                                  | Process rows at rest, timestamps, durations                                |
-| `--chat-ink-caption`                 | `text-chat-ink-caption`                                   | Placeholders and separators only (below 4.5:1, never for text people read) |
-| `--radius-chat-bubble` (20px)        | `rounded-chat-bubble`                                     | User bubble, approval card, question card                                  |
-| `--radius-chat-composer` (28px)      | `rounded-chat-composer`                                   | The composer card                                                          |
-| `--chat-hairline`                    | `shadow-chat-hairline`                                    | A 0.5px outline drawn as a shadow, so it never moves layout                |
-| `--chat-hairline` + `--chat-ambient` | `shadow-chat-soft`                                        | The composer and takeover cards                                            |
-| `--chat-accent` / `-hover`           | `bg-chat-accent`, `caret-chat-accent`, `text-chat-accent` | Send and Stop, the caret, links, the running label, keyboard focus rings   |
-| `--chat-raised`                      | `bg-chat-raised`                                          | Composer and takeover cards (white in light, lifted grey in dark)          |
-| `--chat-code`                        | `bg-chat-code`                                            | Code blocks, diff cards, expanded tool bodies                              |
-| `--chat-inline-code`                 | `bg-chat-inline-code`                                     | Inline code pills in prose                                                 |
-| `--chat-hover`                       | `bg-chat-hover`                                           | Hover fill on chat buttons, option rows and chips                          |
-| `--chat-line-1` to `--chat-line-4`   | `border-chat-line-2` etc.                                 | Hairlines, faintest first: dividers, rules, outlines, control borders      |
-| `--chat-diff-added` / `-tint`        | `text-chat-diff-added`, `bg-chat-diff-added-tint`         | Added diff lines: text, 3px left marker, 8% tint (12% dark)                |
-| `--chat-diff-deleted` / `-tint`      | `text-chat-diff-deleted`, `bg-chat-diff-deleted-tint`     | Deleted diff lines, and the diff counts on a hovered or open row           |
-| `--ease-chat`                        | `ease-chat`                                               | Every chat transition (folds, chevrons, colour changes)                    |
+| Token                                | Tailwind                                                      | Use it for                                                                                |
+| ------------------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `--chat-content-width`               | `w-(--chat-content-width)`                                    | Transcript column, composer, approval and question cards, turn navigator                  |
+| `--chat-row-height`                  | `h-(--chat-row-height)`                                       | Every process row: tool, reasoning, group, turn fold header                               |
+| `--chat-bubble`                      | `bg-chat-bubble`                                              | The user message bubble only                                                              |
+| `--chat-ink-secondary`               | `text-chat-ink-secondary`                                     | Process rows on hover, list markers, toolbar selects                                      |
+| `--chat-ink-tertiary`                | `text-chat-ink-tertiary`                                      | Process rows at rest, timestamps, durations                                               |
+| `--chat-ink-caption`                 | `text-chat-ink-caption`                                       | Placeholders and separators only (below 4.5:1, never for text people read)                |
+| `--radius-chat-bubble` (20px)        | `rounded-chat-bubble`                                         | User bubble, approval card, question card                                                 |
+| `--radius-chat-composer` (28px)      | `rounded-chat-composer`                                       | The composer card                                                                         |
+| `--chat-hairline`                    | `shadow-chat-hairline`                                        | A 0.5px outline drawn as a shadow, so it never moves layout                               |
+| `--chat-hairline` + `--chat-ambient` | `shadow-chat-soft`                                            | The composer and takeover cards                                                           |
+| `--chat-accent` / `-hover`           | `bg-chat-accent`, `caret-chat-accent`, `text-chat-accent`     | Send and Stop, the caret, links, the running label, keyboard focus rings                  |
+| `--chat-raised`                      | `bg-chat-raised`                                              | Composer and takeover cards (white in light, lifted grey in dark)                         |
+| `--chat-code`                        | `bg-chat-code`                                                | Code blocks, diff cards, expanded tool bodies                                             |
+| `--chat-inline-code`                 | `bg-chat-inline-code`                                         | Inline code pills in prose                                                                |
+| `--chat-hover`                       | `bg-chat-hover`                                               | Hover fill on chat buttons, option rows and chips                                         |
+| `--chat-line-1` to `--chat-line-4`   | `border-chat-line-2` etc.                                     | Hairlines, faintest first: dividers, rules, outlines, control borders                     |
+| `--chat-diff-added` / `-tint`        | `text-chat-diff-added`, `bg-chat-diff-added-tint`             | Added diff lines: text, 3px left marker, 8% tint (12% dark)                               |
+| `--chat-diff-deleted` / `-tint`      | `text-chat-diff-deleted`, `bg-chat-diff-deleted-tint`         | Deleted diff lines, and the diff counts on a hovered or open row                          |
+| `--chat-warn` / `-tint` / `-ink`     | `border-chat-warn`, `bg-chat-warn-tint`, `text-chat-warn-ink` | Approval and plan review: amber border and dot, strip fill, strip text                    |
+| `--chat-panel`                       | `shadow-chat-panel`, `shadow-(--chat-panel)`                  | Takeover cards: hairline plus panel lift; the bordered approval card takes the lift alone |
+| `--ease-chat`                        | `ease-chat`                                                   | Every chat transition (folds, chevrons, colour changes)                                   |
 
 Rules:
 
@@ -150,6 +152,14 @@ Composer (`native-chat/chat-seat-composer-classes.ts`, applied when `NativeChatS
 - The card sits in `CHAT_COMPOSER_COLUMN_CLASS`, the transcript column without its 16px pads, so it is 32px wider than the text. The thread composer and the Chat hero share every class, so change them in that one file.
 - Send and Stop are one `NativeChatSeatSendButton`; only the glyph swaps.
 - Known differences from DSH: the attach circle's fill is `bg-chat-hover` (DSH has an opaque grey with no chat token) and hover stacks a second tint; the queue's Steer is a 28px text pill, not an icon; the model chip truncates the effort and then the name instead of collapsing to an icon; the hero placeholder stays on one line; the mic and task buttons keep their 32px ghost style.
+
+Takeovers (`native-chat/chat-seat-takeover-classes.ts`, seat only): the question, approval and plan review cards replace the composer, inset 16px so they sit at the text column's width.
+
+- Precedence when several are pending: plan review, then question, then approval (`native-chat-takeover-precedence.ts`).
+- Buttons are 36px, radius 12, 14/22. Primary is the ink fill (`bg-foreground`), not the chat accent: the accent stays reserved for Send. Outline is a 0.5px `border-chat-line-3`.
+- `--chat-warn-ink` is darker than the border in light (`rgb(163 85 0)`, 5:1 on the tint) because the border amber is 1.8:1 there. In dark it is the border amber itself (8:1 on the dark tint).
+- The approval card answers Enter (allow) and Esc (reject) while focus is inside it, except in a text field, during IME composition, on key repeat or with a modifier held. It takes focus on arrival only when nothing else holds it.
+- Known differences from DSH: approval keeps a "Cancel turn" text button on the left, since the composer's Stop is hidden under the card; it also keeps the Allow split menu (always allow, full access). The state dot is a plain 6px dot that pulses once answered, not DSH's StateDot. The question card has no wait countdown. Discuss on a plan denies it with a note asking the agent to wait, then focuses the composer. ExitPlanMode is still auto-approved under full access, because that verdict lives in the permission store.
 
 ## Components
 

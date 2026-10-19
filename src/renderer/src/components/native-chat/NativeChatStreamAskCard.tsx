@@ -84,7 +84,7 @@ export function NativeChatStreamAskCard({
   liveRequest: NativeChatPermissionRequest | null
   onRespond: (requestId: string, behavior: NativeChatPermissionBehavior, message?: string) => void
   onActiveChange?: (active: boolean) => void
-  answerInputRef?: RefObject<HTMLInputElement | null>
+  answerInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
 }): React.JSX.Element | null {
   const hookPrompt = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.interactivePrompt ?? null)
   const hookToolName = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.toolName ?? null)

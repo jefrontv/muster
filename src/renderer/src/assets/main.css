@@ -139,11 +139,15 @@
   --color-chat-diff-added-tint: var(--chat-diff-added-tint);
   --color-chat-diff-deleted: var(--chat-diff-deleted);
   --color-chat-diff-deleted-tint: var(--chat-diff-deleted-tint);
+  --color-chat-warn: var(--chat-warn);
+  --color-chat-warn-tint: var(--chat-warn-tint);
+  --color-chat-warn-ink: var(--chat-warn-ink);
   --ease-chat: cubic-bezier(0.4, 0, 0.2, 1);
   --radius-chat-bubble: 20px;
   --radius-chat-composer: 28px;
   --shadow-chat-hairline: var(--chat-hairline);
   --shadow-chat-soft: var(--chat-hairline), var(--chat-ambient);
+  --shadow-chat-panel: var(--chat-hairline), var(--chat-panel);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -280,6 +284,12 @@
   --chat-diff-added-tint: rgb(34 197 94 / 0.08);
   --chat-diff-deleted: rgb(236 19 19);
   --chat-diff-deleted-tint: rgb(236 19 19 / 0.08);
+  /* Approval and plan review takeovers: border, strip tint, strip text (5:1 on the tint). */
+  --chat-warn: rgb(247 173 49);
+  --chat-warn-tint: rgb(254 245 231);
+  --chat-warn-ink: rgb(163 85 0);
+  /* Takeover card elevation, drawn under the hairline. */
+  --chat-panel: 0 3px 8px rgb(0 0 0 / 0.03), 0 0 16px rgb(0 0 0 / 0.02);
   --chat-shimmer-highlight: var(--foreground);
 }
 
@@ -394,6 +404,10 @@
   --chat-diff-added-tint: rgb(34 197 94 / 0.12);
   --chat-diff-deleted: rgb(242 90 90);
   --chat-diff-deleted-tint: rgb(242 90 90 / 0.12);
+  /* Strip text is the border amber here: 8:1 on the dark tint. */
+  --chat-warn: rgb(247 173 49);
+  --chat-warn-tint: rgb(39 36 31);
+  --chat-warn-ink: rgb(247 173 49);
 }
 
 .linear-priority-bars {

@@ -1,9 +1,11 @@
-import { useState, type RefObject } from 'react'
+import type { RefObject } from 'react'
 import { Check, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { AskAnswerSelection, AskPrompt } from './native-chat-interactive-prompt'
 import { useNativeChatSurface } from './native-chat-surface-context'
+import { useNativeChatQuestionAnswers } from './use-native-chat-question-answers'
+import { NativeChatSeatQuestionCard } from './NativeChatSeatQuestionCard'
 
 export type NativeChatQuestionCardProps = {
   prompt: AskPrompt
@@ -14,8 +16,8 @@ export type NativeChatQuestionCardProps = {
   /** Dismiss the prompt (sends Escape to the agent). */
   onCancel: () => void
   /** Exposes the free-text row so pane-level Paste can target it while the
-   *  card replaces the composer. */
-  answerInputRef?: RefObject<HTMLInputElement | null>
+   *  card replaces the composer (a textarea in the seat, an input when docked). */
+  answerInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
 }
 
 /**
@@ -24,6 +26,7 @@ export type NativeChatQuestionCardProps = {
  * option, and an always-present free-text row for a custom answer. Single-select
  * commits on click; multi-select toggles and confirms via the trailing action.
  * Multi-question prompts step through tabs across the top. Neutral shadcn tokens.
+ * In the chat seat it draws NativeChatSeatQuestionCard instead.
  */
 export function NativeChatQuestionCard({
   prompt,
@@ -32,101 +35,26 @@ export function NativeChatQuestionCard({
   onCancel,
   answerInputRef
 }: NativeChatQuestionCardProps): React.JSX.Element {
-  const [index, setIndex] = useState(0)
-  // Keep option identity by index: labels are display text and are not guaranteed
-  // unique, while Claude's selector commits the numbered row (STA-1860).
-  const [selections, setSelections] = useState<number[][]>(() => prompt.questions.map(() => []))
-  const [otherText, setOtherText] = useState<string[]>(() => prompt.questions.map(() => ''))
-
-  const total = prompt.questions.length
-  const isLast = index === total - 1
-  const q = prompt.questions[index]!
-
-  const setOther = (qi: number, value: string): void => {
-    setOtherText((prev) => {
-      const next = [...prev]
-      next[qi] = value
-      return next
-    })
-  }
-
-  // The resolved answer for a question: picked labels plus any typed free-text.
-  const answerFor = (qi: number, sel = selections, oth = otherText): string => {
-    const question = prompt.questions[qi]
-    const picked = (sel[qi] ?? [])
-      .map((optionIndex) => question?.options[optionIndex]?.label ?? '')
-      .filter((label) => label.length > 0)
-    const other = (oth[qi] ?? '').trim()
-    return [...picked, ...(other ? [other] : [])].join(', ')
-  }
-
-  const currentAnswered = answerFor(index).length > 0
-
-  const submitAll = (sel: number[][], oth: string[]): void => {
-    const resolved: AskAnswerSelection[] = prompt.questions.map((_, i) => {
-      return { indices: [...(sel[i] ?? [])], other: (oth[i] ?? '').trim() }
-    })
-    const anyAnswered = resolved.some((s) => s.indices.length > 0 || (s.other ?? '').length > 0)
-    if (anyAnswered) {
-      onAnswer(resolved)
-    }
-  }
-
-  // Advance to the next question, or submit on the last one — always from an
-  // explicit snapshot so a just-committed single-select pick isn't lost to the
-  // async setState.
-  const advanceOrSubmit = (sel: number[][], oth: string[]): void => {
-    if (isLast) {
-      submitAll(sel, oth)
-    } else {
-      setIndex((i) => Math.min(i + 1, total - 1))
-    }
-  }
-
-  // Selecting only highlights the row; submitting is an explicit step via the
-  // trailing Send/Next button. (Auto-submitting on the first click dismissed the
-  // card before the user saw any feedback, which read as "nothing happened".)
-  const pickOption = (optionIndex: number): void => {
-    setSelections((prev) => {
-      const next = prev.map((s) => [...s])
-      const cur = next[index] ?? []
-      if (q.multiSelect) {
-        next[index] = cur.includes(optionIndex)
-          ? cur.filter((pickedIndex) => pickedIndex !== optionIndex)
-          : [...cur, optionIndex].sort((a, b) => a - b)
-      } else {
-        next[index] = cur.includes(optionIndex) ? [] : [optionIndex]
-      }
-      return next
-    })
-  }
-
-  // Trailing action (also fired by Enter). On any non-final question this just
-  // advances — "Next" when answered, "Skip" when not — so skipping one question
-  // never discards answers already given on the others. Only the final question
-  // submits; an explicit Skip click there with nothing answered anywhere
-  // dismisses, but a reflexive Enter in the empty field is a no-op so it can't
-  // throw away the whole prompt.
+  const answers = useNativeChatQuestionAnswers({ prompt, onAnswer, onCancel })
+  const { index, total, isLast, question: q, currentAnswered, confirm, answerFor } = answers
   const { seat } = useNativeChatSurface()
-  const confirm = (fromKeyboard = false): void => {
-    if (!isLast) {
-      advanceOrSubmit(selections, otherText)
-      return
-    }
-    const anyAnswered = prompt.questions.some((_, i) => answerFor(i).length > 0)
-    if (anyAnswered) {
-      submitAll(selections, otherText)
-    } else if (!fromKeyboard) {
-      onCancel()
-    }
+  if (seat) {
+    return (
+      <NativeChatSeatQuestionCard
+        answers={answers}
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        answerInputRef={answerInputRef}
+      />
+    )
   }
 
   return (
     // Part of the composer: docked in the bottom input region, matching the
     // composer's width and padding, rendered as the "ask" dialog card directly
     // above the text input. Its free-text row is the answer input.
-    <div className={cn('shrink-0', !seat && 'bg-background')} aria-busy={isSubmitting}>
-      <div className={cn('w-full', !seat && 'mx-auto max-w-3xl px-3 pt-2 pb-4 sm:px-4')}>
+    <div className="shrink-0 bg-background" aria-busy={isSubmitting}>
+      <div className="mx-auto w-full max-w-3xl px-3 pt-2 pb-4 sm:px-4">
         {total > 1 ? (
           <div className="mb-2 flex gap-1 overflow-x-auto pb-1 scrollbar-sleek">
             {prompt.questions.map((qq, i) => (
@@ -134,7 +62,7 @@ export function NativeChatQuestionCard({
                 key={i}
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => setIndex(i)}
+                onClick={() => answers.setIndex(i)}
                 className={cn(
                   'flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium disabled:pointer-events-none',
                   i === index
@@ -156,14 +84,7 @@ export function NativeChatQuestionCard({
           </div>
         ) : null}
 
-        <div
-          className={cn(
-            'overflow-hidden',
-            seat
-              ? 'rounded-chat-bubble bg-background shadow-chat-soft'
-              : 'rounded-lg border border-input bg-card shadow-xs'
-          )}
-        >
+        <div className="overflow-hidden rounded-lg border border-input bg-card shadow-xs">
           <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
             <p
               className="min-w-0 truncate text-sm font-semibold text-foreground"
@@ -190,9 +111,9 @@ export function NativeChatQuestionCard({
                 badge={String(i + 1)}
                 label={opt.label}
                 description={opt.description}
-                selected={(selections[index] ?? []).includes(i)}
+                selected={(answers.selections[index] ?? []).includes(i)}
                 disabled={isSubmitting}
-                onSelect={() => pickOption(i)}
+                onSelect={() => answers.pickOption(i)}
               />
             ))}
             <div className="flex items-center gap-3 px-3.5 py-2.5">
@@ -200,10 +121,10 @@ export function NativeChatQuestionCard({
                 <Pencil className="size-3.5" />
               </span>
               <input
-                ref={answerInputRef}
+                ref={docked(answerInputRef)}
                 disabled={isSubmitting}
-                value={otherText[index]}
-                onChange={(e) => setOther(index, e.target.value)}
+                value={answers.otherText[index]}
+                onChange={(e) => answers.setOther(index, e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -297,4 +218,11 @@ function OptionRow({
       </span>
     </button>
   )
+}
+
+/** The docked look keeps its single-line input, so narrow the shared ref for it. */
+function docked(
+  ref: RefObject<HTMLInputElement | HTMLTextAreaElement | null> | undefined
+): RefObject<HTMLInputElement | null> | undefined {
+  return ref as RefObject<HTMLInputElement | null> | undefined
 }

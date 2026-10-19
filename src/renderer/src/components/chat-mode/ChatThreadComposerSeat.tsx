@@ -11,10 +11,8 @@ import {
   type NativeChatComposerHandle
 } from '@/components/native-chat/NativeChatComposer'
 import { NativeChatQueueStrip } from '@/components/native-chat/NativeChatQueueStrip'
-import {
-  NativeChatStreamAskCard,
-  streamAskPermissionRequest
-} from '@/components/native-chat/NativeChatStreamAskCard'
+import { NativeChatStreamAskCard } from '@/components/native-chat/NativeChatStreamAskCard'
+import { pickNativeChatTakeover } from '@/components/native-chat/native-chat-takeover-precedence'
 import { NativeChatSurfaceProvider } from '@/components/native-chat/native-chat-surface-context'
 import { useNativeChatSurfaceValue } from '@/components/native-chat/use-native-chat-surface-value'
 import type { NativeChatTransport } from '@/components/native-chat/native-chat-view-types'
@@ -36,7 +34,7 @@ export function ChatThreadComposerSeat(props: {
   const status = useChatEngineMeta(thread.id)?.status
   const isWorking = status === 'working' || status === 'starting'
   const composerRef = useRef<NativeChatComposerHandle>(null)
-  const answerInputRef = useRef<HTMLInputElement>(null)
+  const answerInputRef = useRef<HTMLTextAreaElement>(null)
   const [askActive, setAskActive] = useState(false)
   const surface = useNativeChatSurfaceValue({
     surface: thread.showTechnicalDetails === true ? 'code' : 'chat',
@@ -46,7 +44,9 @@ export function ChatThreadComposerSeat(props: {
     reportedModel: thread.reportedModel ?? null
   })
   const seatSurface = useMemo(() => ({ ...surface, seat: true }), [surface])
-  const ask = streamAskPermissionRequest(transport.permissionRequests?.[0])
+  const takeover = pickNativeChatTakeover(transport.permissionRequests)
+  // Plan review outranks a latched question; the question keeps its state underneath.
+  const planActive = takeover.plan !== null
   return (
     <NativeChatSurfaceProvider value={seatSurface}>
       <div
@@ -59,15 +59,18 @@ export function ChatThreadComposerSeat(props: {
       >
         {props.notice}
         {transport.respondPermission ? (
-          <NativeChatStreamAskCard
-            paneKey={identity.paneKey}
-            liveRequest={ask}
-            onRespond={transport.respondPermission}
-            onActiveChange={setAskActive}
-            answerInputRef={answerInputRef}
-          />
+          <div className={planActive ? 'hidden' : 'contents'}>
+            <NativeChatStreamAskCard
+              paneKey={identity.paneKey}
+              liveRequest={takeover.question}
+              onRespond={transport.respondPermission}
+              onActiveChange={setAskActive}
+              answerInputRef={answerInputRef}
+            />
+          </div>
         ) : null}
-        {transport.messageQueue && !askActive ? (
+        {/* The queue tab belongs to the composer card, so it waits out every takeover. */}
+        {transport.messageQueue && !askActive && takeover.composerRequest === null ? (
           <NativeChatQueueStrip
             queue={transport.messageQueue}
             composerHasDraft={() => composerRef.current?.hasDraft() ?? false}
@@ -76,7 +79,7 @@ export function ChatThreadComposerSeat(props: {
             }
           />
         ) : null}
-        {askActive ? null : (
+        {askActive && !planActive ? null : (
           <NativeChatComposer
             ref={composerRef}
             terminalTabId={identity.tabId}
@@ -93,8 +96,8 @@ export function ChatThreadComposerSeat(props: {
             onOptimisticSend={noOptimisticEcho}
             onOptimisticSendCanceled={noop}
             onSlashCommand={noop}
-            permissionRequest={transport.permissionRequests?.[0] ?? null}
-            permissionRequestCount={transport.permissionRequests?.length ?? 0}
+            permissionRequest={takeover.composerRequest}
+            permissionRequestCount={takeover.composerRequestCount}
             onRespondPermission={transport.respondPermission}
             contextUsageEnabled
             contextMaxTokens={transport.contextWindowTokens}

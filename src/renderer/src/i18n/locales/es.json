@@ -14924,7 +14924,13 @@
         "send": "Enviar",
         "next": "Siguiente",
         "skip": "Omitir",
-        "sending": "Enviando…"
+        "sending": "Enviando…",
+        "minimize": "Collapse question",
+        "expand": "Expand question",
+        "previous": "Previous question",
+        "nextQuestion": "Next question",
+        "progress": "{{value0}} / {{value1}}",
+        "unanswered": "Select an option or type an answer."
       },
       "approval": {
         "title": "¿Permitir {{value0}}?",
@@ -14939,7 +14945,9 @@
         "readSite": "Allow Claude to read {{site}}?",
         "aWebPage": "a web page",
         "searchWeb": "Allow Claude to search the web?",
-        "useTool": "Allow Claude to use {{tool}}?"
+        "useTool": "Allow Claude to use {{tool}}?",
+        "waiting": "Waiting for approval",
+        "reject": "Reject"
       },
       "launchPromptNotDelivered": "No entregado — revisa la terminal",
       "changedFiles": {
@@ -15057,6 +15065,12 @@
         "replaceDraft": "¿Reemplazar tu borrador?",
         "replace": "Reemplazar",
         "cancel": "Cancelar"
+      },
+      "planReview": {
+        "header": "Plan review",
+        "untitled": "Proposed plan",
+        "discuss": "Discuss",
+        "approve": "Approve"
       }
     },
     "tab": {

@@ -45,8 +45,12 @@ export type NativeChatComposerProps = {
   permissionRequest?: NativeChatPermissionRequest | null
   /** Total queued permission requests, for the "1/N" counter. */
   permissionRequestCount?: number
-  /** Answer a pending permission request. */
-  onRespondPermission?: (requestId: string, behavior: NativeChatPermissionBehavior) => void
+  /** Answer a pending permission request; `message` rides along with a denial. */
+  onRespondPermission?: (
+    requestId: string,
+    behavior: NativeChatPermissionBehavior,
+    message?: string
+  ) => void
   /** Enables the context-window donut; off for runtime-owned panes whose
    *  transcript is not on the local disk. */
   contextUsageEnabled?: boolean
