@@ -9,7 +9,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { CHAT_COLUMN_CLASS } from '../chat-thread/ChatThreadSurface'
+import { CHAT_COLUMN_CLASS, CHAT_COMPOSER_COLUMN_CLASS } from '../chat-thread/ChatThreadSurface'
+import {
+  NativeChatSurfaceProvider,
+  type NativeChatSurfaceContextValue
+} from '../native-chat/native-chat-surface-context'
+import {
+  CHAT_SEAT_ATTACHMENTS_CLASS,
+  CHAT_SEAT_CARD_CLASS,
+  CHAT_SEAT_EDITOR_CLASS
+} from '../native-chat/chat-seat-composer-classes'
 import { basename } from '@/lib/path'
 import { formatNativeChatFileReference } from '../native-chat/native-chat-composer-target'
 import { useNativeChatFileAttachmentActions } from '../native-chat/use-native-chat-file-attachment-actions'
@@ -22,6 +31,16 @@ import { useNativeChatPickerState } from '../native-chat/use-native-chat-picker-
 import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
 import { ChatModeHeroTaskShortcuts } from './ChatModeHeroTaskShortcuts'
 import { useChatDraftPrewarm } from './use-chat-draft-prewarm'
+
+/** The hero composer wears the seat's look, so its shared + menu and model chip match the thread's. */
+const HERO_SURFACE: NativeChatSurfaceContextValue = {
+  surface: 'chat',
+  cwd: null,
+  openFile: null,
+  chatThread: true,
+  reportedModel: null,
+  seat: true
+}
 
 /** Fetched once per app run; undefined = not asked yet (distinct from "no name"). */
 let greetingNameCache: string | null | undefined
@@ -158,9 +177,9 @@ export function ChatModeDraftHero({
             })
           : translate('components.chat-mode.hero.greetingNoName', 'Hey there')}
       </h1>
-      <div className={CHAT_COLUMN_CLASS}>
+      <NativeChatSurfaceProvider value={HERO_SURFACE}>
         <div
-          className="relative rounded-chat-composer bg-background p-2 shadow-chat-soft"
+          className={cn(CHAT_COMPOSER_COLUMN_CLASS, CHAT_SEAT_CARD_CLASS)}
           data-contextual-tour-target="chat-thread-composer"
           data-native-file-drop-target={NATIVE_FILE_DROP_TARGET.composer}
         >
@@ -174,7 +193,7 @@ export function ChatModeDraftHero({
             />
           ) : null}
           {stagedPaths.length > 0 ? (
-            <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+            <div className={CHAT_SEAT_ATTACHMENTS_CLASS}>
               {stagedPaths.map((path) => (
                 <div
                   key={path}
@@ -265,7 +284,7 @@ export function ChatModeDraftHero({
                 void submit()
               }
             }}
-            className="scrollbar-sleek field-sizing-content max-h-64 min-h-12 w-full resize-none bg-transparent px-3 py-1 text-sm leading-6 outline-none placeholder:text-chat-ink-caption disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-14"
+            className={cn(CHAT_SEAT_EDITOR_CLASS, 'min-h-[52px]')}
           />
           <ChatModeDraftHeroControls
             sendDisabled={(text.trim() === '' && stagedPaths.length === 0) || submitting}
@@ -279,7 +298,7 @@ export function ChatModeDraftHero({
             onCreateWorkspace={onCreateWorkspace}
           />
         </div>
-      </div>
+      </NativeChatSurfaceProvider>
       <ChatModeHeroTaskShortcuts />
     </div>
   )
