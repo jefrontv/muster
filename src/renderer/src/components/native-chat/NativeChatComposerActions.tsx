@@ -26,6 +26,13 @@ import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 import { NativeChatMicButton } from './NativeChatMicButton'
 import { useNativeChatSurface } from './native-chat-surface-context'
 import type { NativeChatDictation } from './use-native-chat-dictation'
+import { NativeChatSeatSendButton } from './NativeChatSeatSendButton'
+import {
+  CHAT_SEAT_FOCUS_CLASS,
+  CHAT_SEAT_TOOLBAR_LEAD_CLASS,
+  CHAT_SEAT_TOOLBAR_ROW_CLASS,
+  CHAT_SEAT_TOOLBAR_TRAIL_CLASS
+} from './chat-seat-composer-classes'
 
 /** The donut stays out of the way until half the window is used. */
 export const CONTEXT_METER_MIN_FRACTION = 0.5
@@ -83,9 +90,16 @@ export function NativeChatComposerActions({
   const accessLabel = fullAccess
     ? translate('auto.components.native-chat.composer.fullAccess', 'Full access')
     : translate('auto.components.native-chat.composer.askFirst', 'Ask first')
+  const sendLabel = isWorking
+    ? translate('components.native-chat.stop', 'Stop the agent')
+    : translate('components.native-chat.composer.send', 'Send')
   return (
-    <div className="flex w-full items-center justify-between gap-2">
-      <div className="flex min-w-0 items-center gap-0.5">
+    <div
+      className={
+        seat ? CHAT_SEAT_TOOLBAR_ROW_CLASS : 'flex w-full items-center justify-between gap-2'
+      }
+    >
+      <div className={seat ? CHAT_SEAT_TOOLBAR_LEAD_CLASS : 'flex min-w-0 items-center gap-0.5'}>
         <NativeChatStashMenu stash={stash} attachDisabled={attachDisabled} onAttach={onAttach} />
         {onAttachTask ? (
           <NativeChatTaskPickerMenu
@@ -94,7 +108,7 @@ export function NativeChatComposerActions({
           />
         ) : null}
       </div>
-      <div className="ml-auto flex items-center gap-1">
+      <div className={seat ? CHAT_SEAT_TOOLBAR_TRAIL_CLASS : 'ml-auto flex items-center gap-1'}>
         <NativeChatSessionOptionPickers
           surface={sessionOptionsSurface}
           snapshot={sessionOptionsSnapshot}
@@ -120,11 +134,12 @@ export function NativeChatComposerActions({
                       'Tool access: {{value}}',
                       { value: accessLabel }
                     )}
-                    className={
+                    className={cn(
                       fullAccess
                         ? 'flex h-7 items-center gap-1.5 rounded-md border border-border bg-accent pl-2 pr-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent/80'
-                        : 'flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground'
-                    }
+                        : 'flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground',
+                      seat && CHAT_SEAT_FOCUS_CLASS
+                    )}
                   >
                     {fullAccess ? (
                       <>
@@ -193,29 +208,30 @@ export function NativeChatComposerActions({
           onHoldEnd={dictation.holdEnd}
           onSetUp={dictation.openSetup}
         />
-        <Button
-          type="button"
-          aria-label={
-            isWorking
-              ? translate('components.native-chat.stop', 'Stop the agent')
-              : translate('components.native-chat.composer.send', 'Send')
-          }
-          disabled={sendDisabled}
-          onClick={isWorking ? onStop : onSend}
-          // In the seat, Send and Stop are the same 34px circle so swapping them moves nothing.
-          variant={isWorking && !seat ? 'secondary' : 'default'}
-          size="icon"
-          className={cn(
-            'ml-0.5 rounded-full',
-            seat ? 'size-[34px]' : 'size-8 pointer-coarse:size-10'
-          )}
-        >
-          {isWorking ? (
-            <Square className="size-3.5 fill-current" />
-          ) : (
-            <ArrowUp className="size-4" />
-          )}
-        </Button>
+        {seat ? (
+          <NativeChatSeatSendButton
+            stop={isWorking}
+            label={sendLabel}
+            disabled={sendDisabled}
+            onClick={isWorking ? onStop : onSend}
+          />
+        ) : (
+          <Button
+            type="button"
+            aria-label={sendLabel}
+            disabled={sendDisabled}
+            onClick={isWorking ? onStop : onSend}
+            variant={isWorking ? 'secondary' : 'default'}
+            size="icon"
+            className="ml-0.5 size-8 rounded-full pointer-coarse:size-10"
+          >
+            {isWorking ? (
+              <Square className="size-3.5 fill-current" />
+            ) : (
+              <ArrowUp className="size-4" />
+            )}
+          </Button>
+        )}
       </div>
     </div>
   )

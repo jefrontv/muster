@@ -8,6 +8,12 @@ import { FileText, ImageOff, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useNativeChatSurface } from './native-chat-surface-context'
+import {
+  CHAT_SEAT_ATTACHMENTS_CLASS,
+  CHAT_SEAT_CARD_CLASS,
+  CHAT_SEAT_EDITOR_CLASS,
+  CHAT_SEAT_TOOLBAR_CLASS
+} from './chat-seat-composer-classes'
 import { NATIVE_FILE_DROP_TARGET } from '../../../../shared/native-file-drop'
 import { basename } from '@/lib/path'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
@@ -157,20 +163,23 @@ export function NativeChatComposerField({
           ) : null}
           <div
             data-native-file-drop-target={NATIVE_FILE_DROP_TARGET.composer}
-            className={cn(
-              // Why: always-on hairline (token-level border, not focus ring) —
-              // no focus/click border flash. The box is a container, not a
-              // focus target.
+            // Why: always-on hairline (token-level border, not focus ring) — no
+            // focus/click border flash. The box is a container, not a focus target.
+            className={
               seat
-                ? 'rounded-chat-composer bg-background p-2 shadow-chat-soft'
+                ? CHAT_SEAT_CARD_CLASS
                 : 'rounded-lg border border-border p-1.5 shadow-xs bg-muted/50 dark:bg-input/40'
-            )}
+            }
           >
             {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
             {imageAttachments.length > 0 ||
             fileAttachments.length > 0 ||
             taskAttachments.length > 0 ? (
-              <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+              <div
+                className={
+                  seat ? CHAT_SEAT_ATTACHMENTS_CLASS : 'mb-2 flex flex-wrap items-center gap-2 px-1'
+                }
+              >
                 {taskAttachments.map((task) => (
                   <div
                     key={task.taskId}
@@ -277,12 +286,17 @@ export function NativeChatComposerField({
               // field-sizing grows the box with the draft between min/max; past
               // max-height it scrolls, and scrollbar-sleek keeps that gutter quiet.
               className={cn(
-                'scrollbar-sleek field-sizing-content min-h-12 max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none pointer-coarse:min-h-14',
-                'placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50',
-                seat && 'px-3 leading-6 placeholder:text-chat-ink-caption'
+                seat
+                  ? CHAT_SEAT_EDITOR_CLASS
+                  : 'scrollbar-sleek field-sizing-content max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50',
+                seat ? 'min-h-9' : 'min-h-12 pointer-coarse:min-h-14'
               )}
             />
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <div
+              className={
+                seat ? CHAT_SEAT_TOOLBAR_CLASS : 'flex flex-wrap items-center gap-2 pt-0.5'
+              }
+            >
               {approval ? (
                 <NativeChatApprovalActions approval={approval} />
               ) : (
