@@ -15183,7 +15183,8 @@
       "workedFor": "Worked for {{duration}}",
       "worked": "Steps",
       "turnFailed": "Claude stopped with an error.",
-      "turnInterrupted": "Stopped"
+      "turnInterrupted": "Stopped",
+      "retry": "Try again"
     }
   },
   "dashboardPopout": {

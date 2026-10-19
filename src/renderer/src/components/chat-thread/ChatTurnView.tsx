@@ -1,12 +1,18 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import type React from 'react'
-import { ChevronDown, CircleAlert, Image as ImageIcon } from 'lucide-react'
+import { ChevronDown, CircleAlert, FileText, Image as ImageIcon, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { basename } from '@/lib/path'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import { NativeChatCopyButton } from '@/components/native-chat/NativeChatCopyButton'
+import { NativeChatImageThumb } from '@/components/native-chat/NativeChatImageThumb'
+import { NativeChatTaskChip } from '@/components/native-chat/NativeChatTaskChip'
 import type { ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import { unwrapChatWorkspaceUserTurn } from '../../../../shared/chat-workspace-site-info'
+import { useChatThreadContext } from './chat-thread-context'
 import { ChatItemList } from './ChatItemRows'
+import { chatUserMessageParts, type ChatUserMessageParts } from './chat-user-message-parts'
 import { formatElapsed } from './chat-tool-row-model'
 import { answerText, turnFold } from './chat-turn-layout'
 import { useChatEngineTurn } from './use-chat-engine-thread'
@@ -21,30 +27,67 @@ const actionsClass = (latest: boolean): string =>
 
 const copyClass = 'size-7 text-chat-ink-tertiary'
 
+function UserAttachments(props: { parts: ChatUserMessageParts }): React.JSX.Element | null {
+  const { images, files, taskIds } = props.parts
+  if (images.length + files.length + taskIds.length === 0) {
+    return null
+  }
+  return (
+    <div className="flex max-w-[70%] flex-wrap justify-end gap-1.5">
+      {images.map((path) => (
+        <NativeChatImageThumb
+          key={path}
+          path={path}
+          alt={translate('components.native-chat.composer.pastedImageLabel', 'Pasted image')}
+          className="h-auto max-h-60 max-w-full rounded-xl"
+          placeholderClassName="size-24 rounded-xl"
+        />
+      ))}
+      {taskIds.map((taskId) => (
+        <NativeChatTaskChip key={taskId} taskId={taskId} />
+      ))}
+      {files.map((path) => (
+        <div
+          key={path}
+          title={path}
+          className="flex max-w-full items-center gap-1.5 rounded-lg bg-chat-bubble px-2 py-1 text-xs text-chat-ink-secondary"
+        >
+          <FileText className="size-3.5 shrink-0" aria-hidden />
+          <span className="max-w-56 truncate">{basename(path)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function UserMessage(props: {
   user: NonNullable<ChatEngineTurn['user']>
   latest: boolean
 }): React.JSX.Element {
   const { user } = props
-  // The first send carries the workspace brief ahead of what the user typed.
-  const text = unwrapChatWorkspaceUserTurn(user.text)
+  const parts = useMemo(() => chatUserMessageParts(user.text), [user.text])
+  // Images sent without a path note (older sends) can only be counted.
+  const uncounted = Math.max(0, user.imageCount - parts.images.length)
   return (
     <div className="flex flex-col items-end gap-1">
-      <div className="max-w-[70%] whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
-        {text}
-        {user.imageCount > 0 && (
-          <div className="flex items-center gap-1 pt-1 text-xs text-chat-ink-tertiary">
-            <ImageIcon className="size-3" aria-hidden />
-            {user.imageCount === 1
-              ? translate('components.chat-thread.imageOne', '1 image')
-              : translate('components.chat-thread.imageMany', '{{count}} images', {
-                  count: user.imageCount
-                })}
-          </div>
-        )}
-      </div>
+      <UserAttachments parts={parts} />
+      {(parts.body || uncounted > 0) && (
+        <div className="max-w-[70%] whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
+          {parts.body}
+          {uncounted > 0 && (
+            <div className="flex items-center gap-1 pt-1 text-xs text-chat-ink-tertiary">
+              <ImageIcon className="size-3" aria-hidden />
+              {uncounted === 1
+                ? translate('components.chat-thread.imageOne', '1 image')
+                : translate('components.chat-thread.imageMany', '{{count}} images', {
+                    count: uncounted
+                  })}
+            </div>
+          )}
+        </div>
+      )}
       <div className={actionsClass(props.latest)}>
-        <NativeChatCopyButton text={text} className={copyClass} />
+        <NativeChatCopyButton text={parts.typed} className={copyClass} />
       </div>
     </div>
   )
@@ -96,13 +139,22 @@ function FoldHeader(props: {
   )
 }
 
-function TurnError({ message }: { message: string | null }): React.JSX.Element {
+function TurnError(props: { message: string | null; onRetry?: () => void }): React.JSX.Element {
   return (
-    <div role="alert" className="flex items-start gap-2 text-[13px] text-destructive">
-      <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-      <span className="font-medium">
-        {message ?? translate('components.chat-thread.turnFailed', 'Claude stopped with an error.')}
-      </span>
+    <div role="alert" className="flex flex-col items-start gap-1.5">
+      <div className="flex items-start gap-2 text-[13px] text-destructive">
+        <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        <span className="font-medium">
+          {props.message ??
+            translate('components.chat-thread.turnFailed', 'Claude stopped with an error.')}
+        </span>
+      </div>
+      {props.onRetry && (
+        <Button variant="outline" size="xs" onClick={props.onRetry}>
+          <RotateCcw aria-hidden />
+          {translate('components.chat-thread.retry', 'Try again')}
+        </Button>
+      )}
     </div>
   )
 }
@@ -144,6 +196,7 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
   latest: boolean
 }): React.JSX.Element | null {
   const turn = useChatEngineTurn(props.threadId, props.turnId)
+  const { onRetry } = useChatThreadContext()
   const [processOpen, setProcessOpen] = useState(false)
   if (!turn) {
     return null
@@ -171,7 +224,17 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
         <ChatItemList items={turn.items} />
       )}
       {turn.status === 'running' && <RunningStatus startedAt={turn.startedAt} />}
-      {turn.status === 'error' && <TurnError message={turn.errorMessage} />}
+      {turn.status === 'error' && (
+        <TurnError
+          message={turn.errorMessage}
+          // Only the latest: retrying an old failure would answer out of order.
+          onRetry={
+            onRetry && props.latest && turn.user
+              ? () => onRetry(unwrapChatWorkspaceUserTurn(turn.user!.text))
+              : undefined
+          }
+        />
+      )}
       <TurnActions turn={turn} answer={answer} showDuration={!fold} latest={props.latest} />
     </section>
   )

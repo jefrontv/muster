@@ -23,6 +23,10 @@ export function formatNativeChatImagePathNote(path: string): string {
   return `[attached image: ${path}]`
 }
 
+export function nativeChatImagePathNotes(text: string): string[] {
+  return [...text.matchAll(IMAGE_PATH_NOTE_RE)].map((match) => match[0].slice(17, -1))
+}
+
 export function stripNativeChatImagePathNotes(text: string): string {
   if (!text.includes('[attached image: ')) {
     return text

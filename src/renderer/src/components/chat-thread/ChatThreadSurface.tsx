@@ -46,10 +46,11 @@ function BackToBottom(props: { visible: boolean; onClick: () => void }): React.J
 export function ChatThreadSurface(props: {
   threadId: string
   onLinkClick?: CommentMarkdownLinkClickHandler
+  onRetry?: (text: string) => void
   /** The composer; it sits in a sticky seat at the transcript's width. */
   footer?: React.ReactNode
 }): React.JSX.Element {
-  const { threadId, onLinkClick } = props
+  const { threadId, onLinkClick, onRetry } = props
   useRetainChatEngineThread(threadId)
   const loaded = useChatEngineThreadLoaded(threadId)
   const order = useChatEngineTurnOrder(threadId)
@@ -88,8 +89,13 @@ export function ChatThreadSurface(props: {
     }
   }, [jump, paging.visible, scrollRef])
   const context = useMemo<ChatThreadContextValue>(
-    () => ({ threadId, cwd, ...(onLinkClick ? { onLinkClick } : {}) }),
-    [threadId, cwd, onLinkClick]
+    () => ({
+      threadId,
+      cwd,
+      ...(onLinkClick ? { onLinkClick } : {}),
+      ...(onRetry ? { onRetry } : {})
+    }),
+    [threadId, cwd, onLinkClick, onRetry]
   )
   const latest = order.at(-1)
   const busyTurnId = meta?.status === 'working' ? (latest ?? null) : null

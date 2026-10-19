@@ -4,7 +4,7 @@
 // the composer instead of replacing the transcript.
 
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
 import {
   deriveChatThreadTitle,
@@ -143,6 +143,7 @@ export function ChatThreadView({
     void send(firstMessage).catch(() => undefined)
   }, [firstMessage, identity.tabId, thread.id, thread.agent, send])
 
+  const retry = useCallback((text: string) => void send(text).catch(() => undefined), [send])
   const activeCollabProjectId =
     workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
   return (
@@ -157,6 +158,7 @@ export function ChatThreadView({
         <div className="min-h-0 flex-1">
           <ChatThreadSurface
             threadId={thread.id}
+            onRetry={retry}
             footer={
               <ChatThreadComposerSeat
                 thread={thread}

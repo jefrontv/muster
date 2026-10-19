@@ -6,6 +6,8 @@ export type ChatThreadContextValue = {
   /** The chat's folder; tool rows show paths relative to it. */
   cwd: string | null
   onLinkClick?: CommentMarkdownLinkClickHandler
+  /** Resends a failed turn's prompt. */
+  onRetry?: (text: string) => void
 }
 
 export const ChatThreadContext = createContext<ChatThreadContextValue>({
