@@ -23,6 +23,9 @@ import {
 /** The transcript column and everything that shares its width. */
 export const CHAT_COLUMN_CLASS = 'mx-auto w-(--chat-content-width) max-w-full px-4'
 
+/** The composer's column: the transcript column without its 16px pads, kept 8px off narrow edges. */
+export const CHAT_COMPOSER_COLUMN_CLASS = 'mx-auto w-(--chat-content-width) max-w-[calc(100%-16px)]'
+
 function BackToBottom(props: { visible: boolean; onClick: () => void }): React.JSX.Element {
   const label = translate('components.chat-thread.backToBottom', 'Back to latest')
   return (
@@ -34,7 +37,8 @@ function BackToBottom(props: { visible: boolean; onClick: () => void }): React.J
       aria-hidden={!props.visible}
       onClick={props.onClick}
       className={cn(
-        'absolute bottom-full left-1/2 mb-4 flex size-[34px] -translate-x-1/2 items-center justify-center rounded-full bg-background text-chat-ink-secondary shadow-chat-soft transition-opacity duration-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        // right-4 lands on the text column's edge, since the composer column is 16px wider each side.
+        'absolute right-4 bottom-full mb-4 flex size-[34px] items-center justify-center rounded-full bg-chat-raised text-chat-ink-secondary shadow-chat-soft transition-[opacity,color] duration-100 ease-chat hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent',
         !props.visible && 'pointer-events-none opacity-0'
       )}
     >
@@ -161,7 +165,7 @@ export function ChatThreadSurface(props: {
                 <div className="pointer-events-none h-9 bg-gradient-to-b from-transparent to-background" />
               )}
               <div className="bg-background pb-4">
-                <div className={cn(CHAT_COLUMN_CLASS, 'relative')}>
+                <div className={cn(CHAT_COMPOSER_COLUMN_CLASS, 'relative')}>
                   <BackToBottom visible={scroll.state.away} onClick={scroll.follow} />
                   {props.footer}
                 </div>

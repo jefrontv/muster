@@ -140,6 +140,12 @@ Rules:
 - Chat motion stays at 160ms or less, on `ease-chat`. Colour changes are 100ms.
 - Keyboard focus in chat is a 2px `ring-chat-accent` on `focus-visible` only.
 
+Composer (`native-chat/chat-seat-composer-classes.ts`, applied when `NativeChatSurfaceProvider` sets `seat: true`):
+
+- The card sits in `CHAT_COMPOSER_COLUMN_CLASS`, the transcript column without its 16px pads, so it is 32px wider than the text. The thread composer and the Chat hero share every class, so change them in that one file.
+- Send and Stop are one `NativeChatSeatSendButton`; only the glyph swaps.
+- Known differences from DSH: the attach circle's fill is `bg-chat-hover` (DSH has an opaque grey with no chat token) and hover stacks a second tint; the queue's Steer is a 28px text pill, not an icon; the model chip truncates the effort and then the name instead of collapsing to an icon; the hero placeholder stays on one line; the mic and task buttons keep their 32px ghost style.
+
 ## Components
 
 Use the shadcn primitives in `src/renderer/src/components/ui/` before writing anything custom. The shadcn-style wrappers in this folder follow a consistent pattern:
