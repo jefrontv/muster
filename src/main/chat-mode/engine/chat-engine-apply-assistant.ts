@@ -174,11 +174,10 @@ export function applyStreamEvent(thread: ChatEngineThread, record: Rec, now: num
       }
       thread.updateItemAnywhere(itemId, (item) => {
         if (item.kind === 'tool') {
-          return {
-            ...item,
-            ...(input !== undefined ? { input } : {}),
-            status: item.status === 'streaming' ? 'running' : item.status
-          }
+          // Newer CLIs send the final record before this stop; its input wins over the partials.
+          return item.status === 'streaming'
+            ? { ...item, ...(input !== undefined ? { input } : {}), status: 'running' }
+            : item
         }
         return item.kind === 'text' || item.kind === 'thinking'
           ? { ...item, streaming: false }
