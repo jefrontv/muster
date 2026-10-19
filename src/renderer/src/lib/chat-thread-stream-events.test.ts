@@ -19,7 +19,6 @@ const storeState = vi.hoisted(() => ({
   appendChatThreadStreamingText: vi.fn(),
   sealChatThreadStreamingText: vi.fn(),
   setChatThreadContextWindow: vi.fn(),
-  setChatThreadLastError: vi.fn(),
   settleAgentStatusWorking: vi.fn(),
   touchChatThreadSession: vi.fn(),
   setChatThreadSessionEnd: vi.fn(),
@@ -151,33 +150,15 @@ describe('installChatThreadStreamEvents', () => {
     stop()
   })
 
-  it('records the failure when a turn errors', () => {
-    const stop = installChatThreadStreamEvents()
-
-    listener?.({
-      kind: 'turn-complete',
-      threadId: 't1',
-      isError: true,
-      errorMessage: 'Claude hit a rate limit'
-    })
-
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', 'Claude hit a rate limit')
-    stop()
-  })
-
   it('keeps the stderr tail when the stream dies unexpectedly', () => {
     const stop = installChatThreadStreamEvents()
 
     listener?.({ kind: 'exit', threadId: 't1', code: 1, error: 'fatal: bad --model' })
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', null)
     // The thread keeps its history; the end is recorded for the notice above the composer.
     expect(storeState.setChatThreadSessionEnd).toHaveBeenCalledWith('t1', {
       failed: false,
       message: 'fatal: bad --model'
     })
-
-    listener?.({ kind: 'exit', threadId: 't2', code: 0 })
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t2', null)
     stop()
   })
 
@@ -194,37 +175,6 @@ describe('installChatThreadStreamEvents', () => {
       '2 attachment(s) were not sent (unsupported type or over 4 MB).',
       { description: 'notes.txt, huge.png' }
     )
-    expect(storeState.setChatThreadLastError).not.toHaveBeenCalled()
-    stop()
-  })
-
-  it('falls back to generic copy when the CLI reports no message', () => {
-    const stop = installChatThreadStreamEvents()
-
-    listener?.({ kind: 'turn-complete', threadId: 't1', isError: true })
-
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith(
-      't1',
-      expect.stringContaining('error')
-    )
-    stop()
-  })
-
-  it('clears the previous failure once a turn succeeds', () => {
-    const stop = installChatThreadStreamEvents()
-
-    listener?.({ kind: 'turn-complete', threadId: 't1', isError: false })
-
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', null)
-    stop()
-  })
-
-  it("clears the failure on the next turn's first token", () => {
-    const stop = installChatThreadStreamEvents()
-
-    listener?.({ kind: 'delta', threadId: 't1', text: 'hi' })
-
-    expect(storeState.setChatThreadLastError).toHaveBeenCalledWith('t1', null)
     stop()
   })
 

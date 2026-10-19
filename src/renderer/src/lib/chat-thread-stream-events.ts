@@ -26,9 +26,6 @@ import {
  *  never catches up (interrupt, decode gap). */
 const SEAL_CLEAR_MS = 6_000
 
-/** The CLI reports some failures with no message at all. */
-const FALLBACK_TURN_ERROR = 'The agent stopped with an error.'
-
 /** Pending completion banners, so a new turn can retract one before it fires. */
 const pendingCompletionNotifications = new Map<string, () => void>()
 
@@ -127,9 +124,6 @@ export function installChatThreadStreamEvents(): () => void {
       }
       case 'delta':
         cancelSealClear(event.threadId)
-        // First token of a new turn retires the previous turn's failure, so a
-        // stale banner cannot hang over a run that is going fine.
-        store.setChatThreadLastError(event.threadId, null)
         cancelPendingCompletionNotification(event.threadId)
         store.appendChatThreadStreamingText(event.threadId, event.text)
         break
@@ -157,12 +151,6 @@ export function installChatThreadStreamEvents(): () => void {
         }
         store.touchChatThreadSession(event.threadId, now)
         void generateChatThreadTitleAfterFirstTurn(event.threadId)
-        // Main decodes the failure but nothing used to read it, so a failed
-        // turn looked exactly like a successful one.
-        store.setChatThreadLastError(
-          event.threadId,
-          event.isError ? (event.errorMessage ?? FALLBACK_TURN_ERROR) : null
-        )
         // A completion the user is watching (thread active, window focused) is
         // read on arrival — it must not light the sidebar's unread "Done".
         const watched = isChatThreadWatched(store, event.threadId, document.hasFocus())
@@ -258,9 +246,6 @@ export function installChatThreadStreamEvents(): () => void {
           failed: false,
           message: event.error ?? null
         })
-        // The stderr tail is the only account of why the CLI died; the ended notice carries it,
-        // so it must not also read as the last turn's failure.
-        store.setChatThreadLastError(event.threadId, null)
         cancelSealClear(event.threadId)
         store.clearChatThreadStreamingText(event.threadId)
         store.clearChatThreadPermissionRequests(event.threadId)

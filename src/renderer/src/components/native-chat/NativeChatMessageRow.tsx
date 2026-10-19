@@ -1,6 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { FileText, RotateCcw } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { FileText } from 'lucide-react'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
 } from '@/components/sidebar/CommentMarkdown'
@@ -85,17 +84,15 @@ function ImageAttachmentRefs({
   )
 }
 
-/** Copy and Retry under a finished reply, as claude.ai places them: always on
- *  the newest reply, on hover for older ones. */
+/** Copy under a finished reply, as claude.ai places it: always on the newest
+ *  reply, on hover for older ones. */
 function ReplyActions({
   markdown,
   getHtml,
-  onRetry,
   visibility
 }: {
   markdown: string
   getHtml?: () => string | null
-  onRetry?: () => void
   visibility: 'always' | 'hover'
 }): React.JSX.Element {
   return (
@@ -107,23 +104,6 @@ function ReplyActions({
       )}
     >
       <NativeChatCopyButton text={markdown} getHtml={getHtml} />
-      {onRetry ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={onRetry}
-              aria-label={translate('components.native-chat.reply.retry', 'Retry')}
-              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <RotateCcw className="size-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
-            {translate('components.native-chat.reply.retry', 'Retry')}
-          </TooltipContent>
-        </Tooltip>
-      ) : null}
     </div>
   )
 }
@@ -138,16 +118,14 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
   onLinkClick,
   allowFileUriLinks = false,
   deliveryFailed = false,
-  replyActions = 'none',
-  onRetry
+  replyActions = 'none'
 }: {
   message: NativeChatMessage
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
   deliveryFailed?: boolean
-  /** Copy/Retry under a finished reply: always on the newest, on hover for older. */
+  /** Copy under a finished reply: always on the newest, on hover for older. */
   replyActions?: 'always' | 'hover' | 'none'
-  onRetry?: () => void
 }): React.JSX.Element | null {
   const rowRef = useRef<HTMLDivElement | null>(null)
   // Rendered-markup source for the copy button's text/html clipboard flavor.
@@ -318,7 +296,6 @@ export const NativeChatMessageRow = memo(function NativeChatMessageRow({
         <ReplyActions
           markdown={markdown}
           getHtml={getProseHtml}
-          onRetry={onRetry}
           visibility={replyActions === 'always' ? 'always' : 'hover'}
         />
       ) : null}

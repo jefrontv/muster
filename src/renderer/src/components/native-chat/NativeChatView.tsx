@@ -22,7 +22,6 @@ import { writePendingSendCache } from './native-chat-pending'
 import { useNativeChatOptimisticTurns } from './use-native-chat-optimistic-turns'
 import { nativeChatStreamingMessage } from '../../../../shared/native-chat-streaming'
 import { useNativeChatStreamingBubble } from './use-native-chat-streaming-bubble'
-import { useNativeChatTypewriter } from './use-native-chat-typewriter'
 import { useNativeChatRootCapture } from './use-native-chat-root-capture'
 import {
   emptyNativeChatContextMenuActions,
@@ -33,11 +32,9 @@ import { resolveNativeChatFileLinkContext } from './native-chat-file-link'
 import { selectNativeChatRuntimeEnvironmentId } from './native-chat-runtime-owner'
 import { useNativeChatPasteBridge } from './use-native-chat-paste-bridge'
 import { useNativeChatFileLinkClick } from './use-native-chat-file-link-click'
-import type { NativeChatTransport, NativeChatViewProps } from './native-chat-view-types'
-import { useNativeChatRetry } from './use-native-chat-retry'
+import type { NativeChatViewProps } from './native-chat-view-types'
 import { NativeChatSurfaceProvider } from './native-chat-surface-context'
 import { useNativeChatSurfaceValue } from './use-native-chat-surface-value'
-import type { NativeChatSurface } from '../../../../shared/native-chat-tool-activity-types'
 
 export type { NativeChatTransport, NativeChatViewProps } from './native-chat-view-types'
 
@@ -45,21 +42,12 @@ export type { NativeChatTransport, NativeChatViewProps } from './native-chat-vie
 export default function NativeChatView({
   terminalTabId,
   paneKey: preferredPaneKey,
-  draftScopeKey,
   targetPtyId = null,
   launchAgent,
   resolvedAgent,
   onSwitchToTerminal,
   readTerminalScreen,
-  contextMenuActions,
-  transport,
-  fallbackProviderSession,
-  activeCollabProjectId,
-  composerNotice,
-  surface = 'code',
-  showTechnicalDetails = false,
-  workingDirectory = null,
-  reportedModel = null
+  contextMenuActions
 }: NativeChatViewProps): React.JSX.Element {
   // Select only this tab's status entry (shallow-compared) so an unrelated
   // pane's status tick doesn't re-render this view or re-run the resolution.
@@ -81,12 +69,10 @@ export default function NativeChatView({
       resolvedAgent={resolvedAgent}
       agentStatusEntry={agentStatusEntry}
       ptyId={targetPtyId}
-      fallbackProviderSession={fallbackProviderSession ?? null}
     >
       {(resolution) => (
         <NativeChatResolvedView
           paneKey={resolution.paneKey}
-          draftScopeKey={draftScopeKey ?? null}
           agent={resolution.agent}
           sessionId={resolution.sessionId}
           transcriptPath={resolution.transcriptPath}
@@ -95,14 +81,6 @@ export default function NativeChatView({
           onSwitchToTerminal={onSwitchToTerminal}
           readTerminalScreen={readTerminalScreen}
           contextMenuActions={contextMenuActions}
-          transport={transport ?? null}
-          activeCollabProjectId={activeCollabProjectId ?? null}
-          composerNotice={composerNotice ?? null}
-          // Technical details give one Chat thread Code mode's rendering.
-          surface={surface === 'chat' && showTechnicalDetails ? 'code' : surface}
-          chatThread={surface === 'chat'}
-          workingDirectory={workingDirectory}
-          reportedModel={reportedModel}
         />
       )}
     </NativeChatSessionGate>
@@ -111,7 +89,6 @@ export default function NativeChatView({
 
 function NativeChatResolvedView({
   paneKey,
-  draftScopeKey,
   agent,
   sessionId,
   transcriptPath,
@@ -119,17 +96,9 @@ function NativeChatResolvedView({
   terminalTabId,
   onSwitchToTerminal,
   readTerminalScreen,
-  contextMenuActions,
-  transport,
-  activeCollabProjectId,
-  composerNotice,
-  surface,
-  chatThread,
-  workingDirectory,
-  reportedModel
+  contextMenuActions
 }: {
   paneKey: string
-  draftScopeKey: string | null
   agent: NativeChatSession['agent']
   sessionId: string | null
   transcriptPath: string | null
@@ -138,13 +107,6 @@ function NativeChatResolvedView({
   onSwitchToTerminal?: () => void
   readTerminalScreen?: () => string | null
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
-  transport: NativeChatTransport | null
-  activeCollabProjectId: number | null
-  composerNotice: React.ReactNode
-  surface: NativeChatSurface
-  chatThread: boolean
-  workingDirectory: string | null
-  reportedModel: string | null
 }): React.JSX.Element {
   // Primitive owner selection (no useShallow): routes the pane's read/subscribe to
   // the remote runtime host for a runtime-owned pane; null keeps the local path.
@@ -173,8 +135,7 @@ function NativeChatResolvedView({
   const hookInteractivePrompt = useAppStore(
     (s) => s.agentStatusByPaneKey[paneKey]?.interactivePrompt ?? null
   )
-  const awaitingUser =
-    (transport?.permissionRequests?.length ?? 0) > 0 || hookInteractivePrompt !== null
+  const awaitingUser = hookInteractivePrompt !== null
   const canSend = useNativeChatCanSend(targetPtyId)
   // Reuse the verified composer send path for interactive cards and composer
   // stop (Stop sends ESC, the agent-TUI interrupt key).
@@ -229,21 +190,13 @@ function NativeChatResolvedView({
   } = optimistic
   // The streaming preview bubble (if any) sits after the transcript but before
   // the optimistic user echoes — same order mobile uses.
-  const rawStreamingText = useNativeChatStreamingBubble({
+  // No typewriter: hook previews arrive as whole snapshots, where pacing reads as lag.
+  const streamingText = useNativeChatStreamingBubble({
     messages: sessionAfterCommandBoundaries.messages,
     pendingMessages,
     hookPreview,
-    liveWorking,
-    hasTransport: transport !== null,
-    transportStreamingText: transport?.streamingText ?? null
+    liveWorking
   })
-  // Typewriter pacing applies only to transport (token-stream) panes; hook
-  // previews on PTY panes arrive as whole snapshots where pacing reads as lag.
-  const typedStreamingText = useNativeChatTypewriter(
-    transport ? rawStreamingText : null,
-    transport?.streamingSealed === true
-  )
-  const streamingText = transport ? typedStreamingText : rawStreamingText
   const sessionWithPending = useMemo<typeof session>(() => {
     if (pending.length === 0 && !streamingText) {
       return sessionAfterCommandBoundaries
@@ -309,17 +262,9 @@ function NativeChatResolvedView({
   }, [interactiveSend, pendingScope, setPending])
   const nativeChatFileLinkClick = useNativeChatFileLinkClick(fileLinkContext)
   const surfaceValue = useNativeChatSurfaceValue({
-    surface,
-    chatThread,
-    workingDirectory,
-    fileLinkContext,
-    reportedModel
-  })
-  const retry = useNativeChatRetry({
-    messages: session.messages,
-    transport,
-    onOptimisticSend,
-    onOptimisticSendCanceled
+    surface: 'code',
+    workingDirectory: null,
+    fileLinkContext
   })
 
   // Chat-only font zoom via Cmd/Ctrl +/-/0, gated to the live conversation so
@@ -354,8 +299,6 @@ function NativeChatResolvedView({
               onLinkClick={nativeChatFileLinkClick}
               allowFileUriLinks={fileLinkContext !== null}
               failedDeliveryMessageIds={failedLaunchPromptMessageIds}
-              lastError={transport?.lastError ?? null}
-              onRetry={retry}
               // Working-timer start: the hook's state epoch, or during the
               // pre-signal optimistic phase, the moment the send left.
               workingSince={
@@ -368,14 +311,11 @@ function NativeChatResolvedView({
             />
           )}
         </div>
-        {composerNotice ? <div className="shrink-0 px-3 sm:px-4">{composerNotice}</div> : null}
         <NativeChatViewInput
           paneKey={paneKey}
-          draftScopeKey={draftScopeKey}
           terminalTabId={terminalTabId}
           targetPtyId={targetPtyId}
           agent={agent}
-          transport={transport}
           interactiveSend={interactiveSend}
           canSend={canSend}
           isWorking={isWorking}
@@ -390,8 +330,6 @@ function NativeChatResolvedView({
           onSwitchToTerminal={onSwitchToTerminal}
           readTerminalScreen={readTerminalScreen}
           runtimeEnvironmentId={runtimeEnvironmentId}
-          activeCollabProjectId={activeCollabProjectId}
-          onComposerFocus={transport?.prewarm}
         />
         {contextMenu.menu}
       </div>

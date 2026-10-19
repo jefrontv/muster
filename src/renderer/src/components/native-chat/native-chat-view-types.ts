@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react'
-import type { NativeChatSurface } from '../../../../shared/native-chat-tool-activity-types'
 import type { TuiAgent } from '../../../../shared/types'
 import type { NativeChatContextMenuActions } from './use-native-chat-context-menu'
 import type { NativeChatSessionOptionDispatchCommand } from './native-chat-session-option-command-dispatch'
@@ -47,10 +45,6 @@ export type NativeChatTransport = {
   messageQueue?: NativeChatMessageQueue
   /** Start the process ahead of a send (composer focus), so the first token comes sooner. */
   prewarm?: () => void
-  /** Token-streamed assistant text for the in-flight turn, or null. */
-  streamingText: string | null
-  /** True once the in-flight message completed (typewriter sprints to the end). */
-  streamingSealed?: boolean
   /** Current model's context window (tokens), from the CLI's result records. */
   contextWindowTokens?: number
   /** Session-option command dispatch (e.g. "/model …") — restarts the stream
@@ -67,8 +61,6 @@ export type NativeChatTransport = {
     behavior: NativeChatPermissionBehavior,
     message?: string
   ) => void
-  /** The last turn's failure, shown inline at the end of that turn. */
-  lastError?: string | null
   /** True while the session auto-approves every tool (full access). */
   fullAccess?: boolean
   /** Turn full access on/off for the session. */
@@ -76,9 +68,6 @@ export type NativeChatTransport = {
 }
 
 export type NativeChatViewProps = {
-  /** Stable composer draft scope; chat threads pass their thread id so drafts
-   *  survive the relaunch-minted paneKey of a session-option change. */
-  draftScopeKey?: string
   /** The terminal tab hosting the agent. paneKey is `${tabId}:${leafId}`. */
   terminalTabId: string
   /** Specific split leaf this chat surface replaces. */
@@ -94,21 +83,4 @@ export type NativeChatViewProps = {
   /** Current xterm screen reader used to recover agent-reported session state. */
   readTerminalScreen?: () => string | null
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
-  /** Stream transport override; when set the composer sends here, not the PTY. */
-  transport?: NativeChatTransport | null
-  /** Persisted session identity for resumed conversations — renders history
-   *  before the live hook entry reports a providerSession. */
-  fallbackProviderSession?: { id: string; transcriptPath?: string | null } | null
-  /** Bound AC project of the hosting chat workspace (task picker bias). */
-  activeCollabProjectId?: number | null
-  /** One line above the composer for session state (starting, ended, missing folder). */
-  composerNotice?: ReactNode
-  /** Audience: Chat mode reads as plain sentences, Code mode as diffs and commands. */
-  surface?: NativeChatSurface
-  /** Chat mode only: draw this thread the way Code mode does. */
-  showTechnicalDetails?: boolean
-  /** Folder paths show relative to (the workspace's), when there is no worktree. */
-  workingDirectory?: string | null
-  /** Model id the session reported at init; names the composer's model pill. */
-  reportedModel?: string | null
 }

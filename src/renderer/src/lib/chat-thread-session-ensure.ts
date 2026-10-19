@@ -40,8 +40,6 @@ async function launchForThread(threadId: string): Promise<ChatThreadSession | nu
   }
   store.setChatThreadLaunching(threadId, true)
   store.setChatThreadSessionEnd(threadId, null)
-  // A retry starts clean; the previous death's stderr must not outlive it.
-  store.setChatThreadLastError(threadId, null)
   try {
     const result = await launchChatThreadSession({ thread, workspace })
     const latest = useAppStore.getState()

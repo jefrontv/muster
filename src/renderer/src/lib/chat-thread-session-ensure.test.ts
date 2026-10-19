@@ -13,7 +13,6 @@ const state = vi.hoisted(() => ({
   activeChatThreadId: 't1' as string | null,
   setChatThreadLaunching: vi.fn(),
   setChatThreadSessionEnd: vi.fn(),
-  setChatThreadLastError: vi.fn(),
   setChatThreadSession: vi.fn((threadId: string, session: unknown) => {
     if (session) {
       state.chatThreadSessions[threadId] = session as never

@@ -27,9 +27,7 @@ export function NativeChatMessageList({
   onLinkClick,
   allowFileUriLinks = false,
   failedDeliveryMessageIds,
-  workingSince = null,
-  lastError = null,
-  onRetry
+  workingSince = null
 }: {
   session: NativeChatLiveSession
   isWorking: boolean
@@ -40,10 +38,6 @@ export function NativeChatMessageList({
   failedDeliveryMessageIds?: ReadonlySet<string>
   /** Epoch ms the current working state began (drives "Working for {t}"). */
   workingSince?: number | null
-  /** The last turn's failure, shown inline at its end. */
-  lastError?: string | null
-  /** Resend a turn's prompt; null means the latest. */
-  onRetry?: (replyMessageId: string | null) => void
 }): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -54,8 +48,7 @@ export function NativeChatMessageList({
 
   const { messages, rows, toggle, workingStepLabel } = useNativeChatTimeline({
     rawMessages: session.messages,
-    isWorking,
-    lastError
+    isWorking
   })
   const showWorkingRow =
     isWorking && !messages.some((message) => message.id === NATIVE_CHAT_STREAMING_ID)
@@ -128,10 +121,9 @@ export function NativeChatMessageList({
       onToggle: toggle,
       onLinkClick,
       allowFileUriLinks,
-      ...(failedDeliveryMessageIds ? { failedDeliveryMessageIds } : {}),
-      ...(onRetry ? { onRetry } : {})
+      ...(failedDeliveryMessageIds ? { failedDeliveryMessageIds } : {})
     }),
-    [toggle, onLinkClick, allowFileUriLinks, failedDeliveryMessageIds, onRetry]
+    [toggle, onLinkClick, allowFileUriLinks, failedDeliveryMessageIds]
   )
 
   // Enter anchoring when a user message lands at the tail (real send or

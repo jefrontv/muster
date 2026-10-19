@@ -1,4 +1,4 @@
-// The stream transport a chat thread hands NativeChatView. It exists before any
+// The stream transport a chat thread hands its composer. It exists before any
 // CLI process does: a send (or composer focus) starts one on demand, so viewing
 // a thread never spawns Claude.
 
@@ -31,8 +31,6 @@ export function useChatThreadTransport({
   workspace: ChatWorkspace | null
 }): { transport: NativeChatTransport; send: NativeChatTransport['send'] } {
   const updateChatThread = useAppStore((s) => s.updateChatThread)
-  const streamingText = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.text ?? null)
-  const streamingSealed = useAppStore((s) => s.chatThreadStreamingText[thread.id]?.sealed === true)
   const contextWindowTokens = useAppStore(
     (s) => s.chatThreadContextWindow[thread.id] ?? thread.contextWindow
   )
@@ -41,7 +39,6 @@ export function useChatThreadTransport({
       s.settings?.nativeChatPermissionMode === 'full' || s.chatThreadFullAccess[thread.id] === true
   )
   const permissionRequests = useAppStore((s) => s.chatThreadPermissionRequests[thread.id])
-  const lastError = useAppStore((s) => s.chatThreadLastError[thread.id] ?? null)
   const queueSnapshot = useAppStore((s) => s.chatThreadMessageQueues[thread.id])
 
   // Resume already has the conversation; a new thread injects the brief once.
@@ -152,8 +149,6 @@ export function useChatThreadTransport({
     () => ({
       send,
       prewarm,
-      streamingText,
-      streamingSealed,
       dispatchOption,
       interrupt,
       ...(contextWindowTokens !== undefined ? { contextWindowTokens } : {}),
@@ -161,14 +156,11 @@ export function useChatThreadTransport({
       respondPermission,
       fullAccess,
       setFullAccess,
-      lastError,
       ...(messageQueue ? { messageQueue } : {})
     }),
     [
       send,
       prewarm,
-      streamingText,
-      streamingSealed,
       dispatchOption,
       interrupt,
       contextWindowTokens,
@@ -176,7 +168,6 @@ export function useChatThreadTransport({
       respondPermission,
       fullAccess,
       setFullAccess,
-      lastError,
       messageQueue
     ]
   )

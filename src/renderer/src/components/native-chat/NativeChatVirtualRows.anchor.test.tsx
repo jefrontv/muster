@@ -24,7 +24,7 @@ let content: HTMLElement | null = null
 
 const row = (key: string, height: number): NativeChatTimelineRow => {
   heights.set(key, height)
-  return { kind: 'turn-error', key, turnId: key, message: '' } as NativeChatTimelineRow
+  return { kind: 'turn-plan', key, turnId: key } as unknown as NativeChatTimelineRow
 }
 const rowsOf = (prefix: string, count: number, height: number) =>
   Array.from({ length: count }, (_, index) => row(`${prefix}${index}`, height))

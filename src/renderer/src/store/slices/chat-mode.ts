@@ -48,8 +48,6 @@ export type ChatModeSlice = ChatThreadPermissionSlice &
     /** Current model's context window per thread, reported by the CLI's result
      *  records — drives the composer's context meter max. */
     chatThreadContextWindow: Record<string, number>
-    /** Last failed turn's message, per thread. Cleared when the thread runs again. */
-    chatThreadLastError: Record<string, string>
     /** Draft-first landing: the hero's text, sent once the thread's session is up. */
     chatThreadFirstMessage: Record<string, string>
     /** Tasks page shown inside the chat panel — the chat view never leaves for it. */
@@ -98,7 +96,6 @@ export type ChatModeSlice = ChatThreadPermissionSlice &
     deleteChatThreadsInScope: (workspaceId: string | null) => Promise<void>
     setChatThreadSession: (threadId: string, session: ChatThreadSession | null) => void
     setChatThreadContextWindow: (threadId: string, contextWindow: number) => void
-    setChatThreadLastError: (threadId: string, message: string | null) => void
     setChatThreadFirstMessage: (threadId: string, text: string) => void
     clearChatThreadFirstMessage: (threadId: string) => void
     appendChatThreadStreamingText: (threadId: string, text: string) => void
@@ -120,7 +117,6 @@ function withoutChatThreadRuntime(s: AppState, ids: ReadonlySet<string>): Partia
     chatThreadAnsweredPermissions: omitThreadIds(s.chatThreadAnsweredPermissions, ids),
     chatThreadFirstMessage: omitThreadIds(s.chatThreadFirstMessage, ids),
     chatThreadContextWindow: omitThreadIds(s.chatThreadContextWindow, ids),
-    chatThreadLastError: omitThreadIds(s.chatThreadLastError, ids),
     chatThreadMessageQueues: omitThreadIds(s.chatThreadMessageQueues, ids),
     chatThreadFullAccess: omitThreadIds(s.chatThreadFullAccess, ids),
     chatThreadLaunching: omitThreadIds(s.chatThreadLaunching, ids),
@@ -144,7 +140,6 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
   chatThreadSessions: {},
   chatThreadStreamingText: {},
   chatThreadContextWindow: {},
-  chatThreadLastError: {},
   chatThreadFirstMessage: {},
   chatTasksOpen: false,
   chatWorkspaceCreateOpen: false,
@@ -273,19 +268,6 @@ export const createChatModeSlice: StateCreator<AppState, [], [], ChatModeSlice> 
     set((s) => ({
       chatThreadContextWindow: { ...s.chatThreadContextWindow, [threadId]: contextWindow }
     })),
-
-  setChatThreadLastError: (threadId, message) =>
-    set((s) => {
-      // Why: the stream calls this with null on every token; skip the write when nothing changes.
-      if (s.chatThreadLastError[threadId] === (message ?? undefined)) {
-        return s
-      }
-      if (message === null) {
-        const { [threadId]: _dropped, ...remaining } = s.chatThreadLastError
-        return { chatThreadLastError: remaining }
-      }
-      return { chatThreadLastError: { ...s.chatThreadLastError, [threadId]: message } }
-    }),
 
   setChatThreadSession: (threadId, session) =>
     set((s) => {

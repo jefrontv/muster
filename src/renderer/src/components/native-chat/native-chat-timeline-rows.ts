@@ -61,7 +61,6 @@ export type NativeChatTimelineRow =
       expanded: boolean
     }
   | { kind: 'turn-plan'; key: string; turnId: string; plan: NativeChatTurnPlan; expanded: boolean }
-  | { kind: 'turn-error'; key: string; turnId: string; message: string }
 
 export type NativeChatTimelineToggles = {
   /** Work logs the user flipped from their default (open live in Code, folded when settled). */
@@ -193,14 +192,6 @@ function pushTurnRows(
         (toggles.changedFiles?.has(turn.id) === true)
     })
   }
-  if (context.isLastTurn && !live && input.lastError) {
-    rows.push({
-      kind: 'turn-error',
-      key: `error:${turn.id}`,
-      turnId: turn.id,
-      message: input.lastError
-    })
-  }
 }
 
 export function buildNativeChatTimelineRows(input: {
@@ -210,8 +201,6 @@ export function buildNativeChatTimelineRows(input: {
   t?: NativeChatTranslate
   cwd?: string | null
   toggles?: NativeChatTimelineToggles
-  /** The last turn's failure, rendered inline at its end. */
-  lastError?: string | null
 }): NativeChatTimelineRow[] {
   const turns = groupNativeChatTurns(input.messages)
   const states = deriveNativeChatTurnStates({ turns, isWorking: input.isWorking })

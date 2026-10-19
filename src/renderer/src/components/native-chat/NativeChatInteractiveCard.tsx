@@ -25,9 +25,7 @@ export function NativeChatInteractiveCard({
   send,
   canSend,
   onShowingQuestionChange,
-  answerInputRef,
-  suppressApproval = false,
-  suppressQuestion = false
+  answerInputRef
 }: {
   paneKey: string
   send: NativeChatInteractiveSend
@@ -38,11 +36,6 @@ export function NativeChatInteractiveCard({
   /** Forwarded to the question card's free-text row so pane-level Paste keeps
    *  a target while the composer is unmounted. */
   answerInputRef?: React.RefObject<HTMLInputElement | null>
-  /** Stream-transport panes answer approvals in the composer (stdio control
-   *  protocol); the hook-driven card would be a dead duplicate there. */
-  suppressApproval?: boolean
-  /** Stream-json AskUserQuestion is owned by NativeChatStreamAskCard. */
-  suppressQuestion?: boolean
 }): React.JSX.Element | null {
   const interactivePrompt = useAppStore(
     (s) => s.agentStatusByPaneKey[paneKey]?.interactivePrompt ?? null
@@ -93,20 +86,13 @@ export function NativeChatInteractiveCard({
 
   // Tell the view when a question card is up so it can hide the composer (this
   // card supplies its own input). Reset on unmount so the composer comes back.
-  const showingQuestion =
-    card?.kind === 'question' && canSend && !suppressQuestion && cardKey !== dismissedKey
+  const showingQuestion = card?.kind === 'question' && canSend && cardKey !== dismissedKey
   useEffect(() => {
     onShowingQuestionChange?.(showingQuestion)
     return () => onShowingQuestionChange?.(false)
   }, [showingQuestion, onShowingQuestionChange])
 
   if (!card || !canSend || cardKey === dismissedKey) {
-    return null
-  }
-  if (card.kind === 'approval' && suppressApproval) {
-    return null
-  }
-  if (card.kind === 'question' && suppressQuestion) {
     return null
   }
   if (card.kind === 'question') {

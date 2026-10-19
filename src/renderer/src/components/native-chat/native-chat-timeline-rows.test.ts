@@ -162,14 +162,4 @@ describe('turn plan, changes card and error', () => {
     })
     expect(shape(rows)).toEqual(['message:u1', 'work-log', 'message:a2', 'turn-changed-files'])
   })
-
-  it('shows the last turn error inline at its end', () => {
-    const rows = buildNativeChatTimelineRows({
-      messages: turn,
-      isWorking: false,
-      surface: 'chat',
-      lastError: 'error_max_turns'
-    })
-    expect(rows.at(-1)).toMatchObject({ kind: 'turn-error', message: 'error_max_turns' })
-  })
 })

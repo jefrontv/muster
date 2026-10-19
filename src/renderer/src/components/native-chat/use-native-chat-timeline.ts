@@ -29,7 +29,6 @@ function toggled(set: ReadonlySet<string>, id: string): Set<string> {
 export function useNativeChatTimeline(input: {
   rawMessages: readonly NativeChatMessage[]
   isWorking: boolean
-  lastError: string | null
 }): {
   messages: NativeChatMessage[]
   rows: NativeChatTimelineRow[]
@@ -59,10 +58,9 @@ export function useNativeChatTimeline(input: {
         surface,
         t: translate,
         cwd,
-        toggles: { workLogs: toggles.work, plans: toggles.plan, changedFiles: toggles.changes },
-        lastError: input.lastError
+        toggles: { workLogs: toggles.work, plans: toggles.plan, changedFiles: toggles.changes }
       }),
-    [messages, input.isWorking, input.lastError, surface, cwd, toggles]
+    [messages, input.isWorking, surface, cwd, toggles]
   )
 
   // The plan's active step, else the newest call still out, names what is happening now.

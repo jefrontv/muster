@@ -8,7 +8,6 @@ import { NativeChatMessageRow } from './NativeChatMessageRow'
 import { NativeChatWorkLog } from './NativeChatWorkLog'
 import { NativeChatChangedFilesRow } from './NativeChatChangedFilesRow'
 import { NativeChatTurnPlanRow } from './NativeChatTurnPlanRow'
-import { NativeChatTurnErrorRow } from './NativeChatTurnErrorRow'
 
 export type NativeChatRowToggle = (kind: 'work' | 'plan' | 'changes', key: string) => void
 
@@ -17,8 +16,6 @@ export type NativeChatTimelineRowActions = {
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks: boolean
   failedDeliveryMessageIds?: ReadonlySet<string>
-  /** Resend the turn's prompt (Retry under a reply or a failed turn). */
-  onRetry?: (messageId: string | null) => void
 }
 
 export const NativeChatTimelineRowView = memo(function NativeChatTimelineRowView({
@@ -37,7 +34,6 @@ export const NativeChatTimelineRowView = memo(function NativeChatTimelineRowView
           allowFileUriLinks={actions.allowFileUriLinks}
           deliveryFailed={actions.failedDeliveryMessageIds?.has(row.message.id) === true}
           replyActions={row.showReplyActions ? (row.isLatestReply ? 'always' : 'hover') : 'none'}
-          onRetry={actions.onRetry ? () => actions.onRetry?.(row.message.id) : undefined}
         />
       )
     case 'work-log':
@@ -65,13 +61,6 @@ export const NativeChatTimelineRowView = memo(function NativeChatTimelineRowView
           plan={row.plan}
           expanded={row.expanded}
           onToggle={() => actions.onToggle('plan', row.turnId)}
-        />
-      )
-    case 'turn-error':
-      return (
-        <NativeChatTurnErrorRow
-          message={row.message}
-          onRetry={actions.onRetry ? () => actions.onRetry?.(null) : undefined}
         />
       )
   }
