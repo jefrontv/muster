@@ -133,7 +133,7 @@ export function ChatModeDraftHeroControls({
           disabled={sendDisabled}
           onClick={onSend}
           size="icon"
-          className="ml-0.5 size-8 rounded-full pointer-coarse:size-10"
+          className="ml-0.5 size-[34px] rounded-full"
         >
           <ArrowUp className="size-4" />
         </Button>
