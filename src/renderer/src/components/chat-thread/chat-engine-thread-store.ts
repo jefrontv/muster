@@ -62,8 +62,24 @@ function viewFrom(snapshot: ChatEngineSnapshot, prev: ChatEngineThreadView | nul
   }
 }
 
+// Hidden windows (minimised, another Space) get no animation frames; the timer keeps patches landing.
+const HIDDEN_FRAME_FALLBACK_MS = 100
+
+/** The next animation frame, or a short timer when the window is not painting. Runs once. */
+export function scheduleChatEngineFrame(callback: () => void): void {
+  let ran = false
+  const run = (): void => {
+    if (!ran) {
+      ran = true
+      callback()
+    }
+  }
+  requestAnimationFrame(run)
+  setTimeout(run, HIDDEN_FRAME_FALLBACK_MS)
+}
+
 export function createChatEngineThreadStore(deps: StoreDeps): ChatEngineThreadStore {
-  const scheduleFrame = deps.scheduleFrame ?? ((callback) => requestAnimationFrame(callback))
+  const scheduleFrame = deps.scheduleFrame ?? scheduleChatEngineFrame
   const releaseDelayMs = deps.releaseDelayMs ?? 30_000
   const slots = new Map<string, Slot>()
   // Kept apart from slots: child rows subscribe before the surface's retain effect runs.

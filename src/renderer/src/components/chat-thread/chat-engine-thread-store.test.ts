@@ -6,7 +6,11 @@ import type {
   ChatEngineThreadMeta,
   ChatEngineTurn
 } from '../../../../shared/chat-engine-types'
-import { createChatEngineThreadStore, type ChatEngineThreadStore } from './chat-engine-thread-store'
+import {
+  createChatEngineThreadStore,
+  scheduleChatEngineFrame,
+  type ChatEngineThreadStore
+} from './chat-engine-thread-store'
 import { replaceEqualDeep } from './chat-engine-structural-sharing'
 
 const meta = (status: ChatEngineThreadMeta['status'] = 'idle'): ChatEngineThreadMeta => ({
@@ -83,6 +87,25 @@ function harness(initial: ChatEngineSnapshot) {
     nextSnapshot: (snapshot: ChatEngineSnapshot) => snapshots.push(snapshot)
   }
 }
+
+describe('scheduleChatEngineFrame', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  it('still runs once when the window paints no frames', () => {
+    vi.useFakeTimers()
+    const frames: (() => void)[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => frames.push(callback))
+    const callback = vi.fn()
+    scheduleChatEngineFrame(callback)
+    vi.advanceTimersByTime(100)
+    expect(callback).toHaveBeenCalledTimes(1)
+    frames.forEach((frame) => frame())
+    expect(callback).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('replaceEqualDeep', () => {
   it('keeps every unchanged subtree and only rebuilds the changed path', () => {
