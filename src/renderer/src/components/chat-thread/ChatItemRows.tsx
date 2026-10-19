@@ -4,9 +4,10 @@ import { Bot, Brain, CircleAlert, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { ChatEngineItem } from '../../../../shared/chat-engine-types'
-import { chatItemRuns } from './chat-turn-layout'
+import { chatItemBlocks, type ChatItemRun } from './chat-turn-layout'
 import { ChatDisclosureRow, ChatRowDot } from './ChatDisclosureRow'
 import { ChatMarkdown } from './ChatMarkdown'
+import { ChatProcessStack } from './ChatProcessStack'
 import { ChatRowBoundary } from './ChatRowBoundary'
 import { ChatToolGroupRow } from './ChatToolGroupRow'
 import { ChatToolRow } from './ChatToolRow'
@@ -159,14 +160,29 @@ export const ChatItemRow = memo(function ChatItemRow({ item }: { item: ChatEngin
   )
 })
 
+const runKey = (run: ChatItemRun): string => (run.kind === 'group' ? run.id : run.item.id)
+
+function renderRun(run: ChatItemRun): React.ReactNode {
+  return run.kind === 'group' ? (
+    <ChatToolGroupRow key={run.id} items={run.items} />
+  ) : (
+    <ChatItemRow key={run.item.id} item={run.item} />
+  )
+}
+
 export function ChatItemList({ items }: { items: ChatEngineItem[] }): React.JSX.Element {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      {chatItemRuns(items).map((run) =>
-        run.kind === 'group' ? (
-          <ChatToolGroupRow key={run.id} items={run.items} />
+      {chatItemBlocks(items).map((block) =>
+        block.kind === 'stack' ? (
+          <ChatProcessStack
+            key={block.id}
+            runs={block.runs}
+            runKey={runKey}
+            renderRun={renderRun}
+          />
         ) : (
-          <ChatItemRow key={run.item.id} item={run.item} />
+          renderRun(block.run)
         )
       )}
     </div>

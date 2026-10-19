@@ -15184,7 +15184,11 @@
       "worked": "Steps",
       "turnFailed": "Claude stopped with an error.",
       "turnInterrupted": "Stopped",
-      "retry": "Try again"
+      "retry": "Try again",
+      "stack": {
+        "earlier": "{{count}} earlier steps",
+        "showFewer": "Show fewer steps"
+      }
     }
   },
   "dashboardPopout": {

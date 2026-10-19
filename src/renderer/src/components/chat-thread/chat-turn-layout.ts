@@ -1,5 +1,6 @@
 // How a turn's items lay out: runs of quiet tool calls share one group row,
-// and a settled turn folds its process rows under a header above the answer.
+// long runs of one-line steps stack under a height cap, and a settled turn
+// folds its process rows under a header above the answer.
 
 import type { ChatEngineItem, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import type { ChatToolItem } from './chat-tool-input'
@@ -65,6 +66,47 @@ export function chatItemRuns(items: ChatEngineItem[]): ChatItemRun[] {
   }
   flush()
   return runs
+}
+
+/** Rows a long run of steps keeps fully visible; older ones fold under the top edge. */
+export const CHAT_STACK_VISIBLE_ROWS = 5
+
+export type ChatItemBlock =
+  | { kind: 'run'; run: ChatItemRun }
+  | { kind: 'stack'; id: string; runs: ChatItemRun[] }
+
+// One-line rows only: text, edits and questions break a stack.
+function stackable(run: ChatItemRun): boolean {
+  if (run.kind === 'group') {
+    return true
+  }
+  const { item } = run
+  return item.kind === 'thinking' || item.kind === 'agent' || groupable(item)
+}
+
+/** A run of more one-line steps than fit the stack's height becomes one stack, keyed by its first row. */
+export function chatItemBlocks(items: ChatEngineItem[]): ChatItemBlock[] {
+  const blocks: ChatItemBlock[] = []
+  let pending: ChatItemRun[] = []
+  const runId = (run: ChatItemRun): string => (run.kind === 'group' ? run.id : run.item.id)
+  const flush = (): void => {
+    if (pending.length > CHAT_STACK_VISIBLE_ROWS + 1) {
+      blocks.push({ kind: 'stack', id: runId(pending[0]!), runs: pending })
+    } else {
+      blocks.push(...pending.map((run) => ({ kind: 'run' as const, run })))
+    }
+    pending = []
+  }
+  for (const run of chatItemRuns(items)) {
+    if (stackable(run)) {
+      pending.push(run)
+      continue
+    }
+    flush()
+    blocks.push({ kind: 'run', run })
+  }
+  flush()
+  return blocks
 }
 
 export function toolIsLive(item: ChatToolItem): boolean {

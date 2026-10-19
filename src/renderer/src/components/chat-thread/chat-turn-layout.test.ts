@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatEngineItem, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import type { ChatToolItem } from './chat-tool-input'
-import { answerText, chatItemRuns, toolGroupSummary, turnFold } from './chat-turn-layout'
+import {
+  answerText,
+  CHAT_STACK_VISIBLE_ROWS,
+  chatItemBlocks,
+  chatItemRuns,
+  toolGroupSummary,
+  turnFold
+} from './chat-turn-layout'
 
 const tool = (id: string, name: string, status: ChatToolItem['status'] = 'done'): ChatToolItem => ({
   kind: 'tool',
@@ -52,6 +59,43 @@ describe('chatItemRuns', () => {
   it('leaves a lone tool ungrouped and lets edits break a run', () => {
     const runs = chatItemRuns([tool('r1', 'Read'), tool('e1', 'Edit'), tool('r2', 'Read')])
     expect(runs.map((run) => run.kind)).toEqual(['item', 'item', 'item'])
+  })
+})
+
+describe('chatItemBlocks', () => {
+  const thought = (id: string): ChatEngineItem => ({
+    kind: 'thinking',
+    id,
+    text: id,
+    streaming: false
+  })
+  // Thought/Ran pairs never group (thinking breaks a tool run), so each is its own row.
+  const steps = (count: number): ChatEngineItem[] =>
+    Array.from({ length: count }, (_, i) =>
+      i % 2 === 0 ? thought(`t${i}`) : tool(`b${i}`, 'Bash')
+    )
+  const shape = (items: ChatEngineItem[]): string[] =>
+    chatItemBlocks(items).map((block) =>
+      block.kind === 'stack' ? `stack:${block.id}:${block.runs.length}` : 'run'
+    )
+
+  it('stacks a run of one-line steps once it outgrows the visible rows', () => {
+    expect(shape(steps(CHAT_STACK_VISIBLE_ROWS + 1))).toEqual(
+      Array(CHAT_STACK_VISIBLE_ROWS + 1).fill('run')
+    )
+    expect(shape(steps(10))).toEqual(['stack:t0:10'])
+  })
+
+  it('lets text and edits break a stack, and counts a group as one row', () => {
+    const items = [
+      ...steps(8),
+      text('mid'),
+      tool('e1', 'Edit'),
+      tool('r1', 'Read'),
+      tool('g1', 'Grep'),
+      ...steps(2)
+    ]
+    expect(shape(items)).toEqual(['stack:t0:8', 'run', 'run', 'run', 'run', 'run'])
   })
 })
 
