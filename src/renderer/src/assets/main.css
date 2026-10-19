@@ -125,6 +125,17 @@
   --color-chat-ink-secondary: var(--chat-ink-secondary);
   --color-chat-ink-tertiary: var(--chat-ink-tertiary);
   --color-chat-ink-caption: var(--chat-ink-caption);
+  --color-chat-accent: var(--chat-accent);
+  --color-chat-accent-hover: var(--chat-accent-hover);
+  --color-chat-raised: var(--chat-raised);
+  --color-chat-code: var(--chat-code);
+  --color-chat-inline-code: var(--chat-inline-code);
+  --color-chat-hover: var(--chat-hover);
+  --color-chat-line-1: var(--chat-line-1);
+  --color-chat-line-2: var(--chat-line-2);
+  --color-chat-line-3: var(--chat-line-3);
+  --color-chat-line-4: var(--chat-line-4);
+  --ease-chat: cubic-bezier(0.4, 0, 0.2, 1);
   --radius-chat-bubble: 20px;
   --radius-chat-composer: 28px;
   --shadow-chat-hairline: var(--chat-hairline);
@@ -247,6 +258,20 @@
   /* Drawn as a shadow so the outline never takes layout space. */
   --chat-hairline: 0 0 0 0.5px rgb(0 0 0 / 0.12);
   --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
+  /* Send, caret, links and the running label. */
+  --chat-accent: #4176e6;
+  --chat-accent-hover: #7aaaff;
+  /* Composer and takeover cards; only differs from the page in dark. */
+  --chat-raised: #ffffff;
+  --chat-code: #f9fafb;
+  --chat-inline-code: #fafafa;
+  --chat-hover: rgb(38 49 72 / 0.06);
+  /* Hairline steps, faintest first: dividers (1), rules (2), outlines (3), control borders (4). */
+  --chat-line-1: rgb(0 0 0 / 0.04);
+  --chat-line-2: rgb(0 0 0 / 0.1);
+  --chat-line-3: rgb(0 0 0 / 0.12);
+  --chat-line-4: rgb(0 0 0 / 0.16);
+  --chat-shimmer-highlight: var(--foreground);
 }
 
 /* ── Dark Mode ───────────────────────────────────────── */
@@ -344,7 +369,18 @@
   --chat-ink-tertiary: #a3a3a3;
   --chat-ink-caption: #737373;
   --chat-hairline: 0 0 0 0.5px rgb(255 255 255 / 0.14);
-  --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.24), 0 0 24px rgb(0 0 0 / 0.16);
+  /* Same faint ambient as light: in dark the hairline and raised fill do the separating. */
+  --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
+  --chat-accent: #7aaaff;
+  --chat-accent-hover: #4176e6;
+  --chat-raised: #2c2c2e;
+  --chat-code: #1b1b1c;
+  --chat-inline-code: #292929;
+  --chat-hover: rgb(255 255 255 / 0.08);
+  --chat-line-1: rgb(255 255 255 / 0.06);
+  --chat-line-2: rgb(255 255 255 / 0.12);
+  --chat-line-3: rgb(255 255 255 / 0.16);
+  --chat-line-4: rgb(255 255 255 / 0.2);
 }
 
 .linear-priority-bars {
@@ -4034,25 +4070,38 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
     0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
-/* Chat running state: a light band sweeps across the label. steps(48) keeps repaints cheap. */
+/* Chat running state: a higher-contrast band sweeps the label's text, then pauses for a
+   third of the cycle. Text fill only, so icons and dots keep their colour. steps(48)
+   keeps repaints cheap. */
 .chat-shimmer {
-  mask-image: linear-gradient(105deg, #000 40%, rgb(0 0 0 / 0.4) 50%, #000 60%);
-  mask-size: 300% 100%;
+  background-image: linear-gradient(
+    105deg,
+    currentColor 40%,
+    var(--chat-shimmer-highlight) 50%,
+    currentColor 60%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   animation: chat-shimmer 1.5s steps(48) 0.3s infinite;
 }
 
 @keyframes chat-shimmer {
-  from {
-    mask-position: 100% 0;
+  0% {
+    background-position: 100% 0;
   }
-  to {
-    mask-position: 0 0;
+  66.67%,
+  100% {
+    background-position: 0 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .chat-shimmer {
     animation: none;
-    mask-image: none;
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
   }
 }

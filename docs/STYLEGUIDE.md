@@ -108,20 +108,27 @@ Don't add a fourth level. If something needs more emphasis than "floating," you'
 
 ## Chat surface
 
-Chat mode (`src/renderer/src/components/chat-thread/`) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Code mode's agent chat keeps the app defaults.
+The chat surface (`src/renderer/src/components/chat-thread/`, used by Chat mode and by Code mode's agent chat view) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Values follow DeepSeek Harness; see `docs/muster/2026-10-20-chat-dsh-parity-plan.md`.
 
-| Token                                | Tailwind                   | Use it for                                                                 |
-| ------------------------------------ | -------------------------- | -------------------------------------------------------------------------- |
-| `--chat-content-width`               | `w-(--chat-content-width)` | Transcript column, composer, approval and question cards, turn navigator   |
-| `--chat-row-height`                  | `h-(--chat-row-height)`    | Every process row: tool, reasoning, group, turn fold header                |
-| `--chat-bubble`                      | `bg-chat-bubble`           | The user message bubble only                                               |
-| `--chat-ink-secondary`               | `text-chat-ink-secondary`  | Process rows on hover, list markers, toolbar selects                       |
-| `--chat-ink-tertiary`                | `text-chat-ink-tertiary`   | Process rows at rest, timestamps, durations                                |
-| `--chat-ink-caption`                 | `text-chat-ink-caption`    | Placeholders and separators only (below 4.5:1, never for text people read) |
-| `--radius-chat-bubble` (20px)        | `rounded-chat-bubble`      | User bubble, approval card, question card                                  |
-| `--radius-chat-composer` (28px)      | `rounded-chat-composer`    | The composer card                                                          |
-| `--chat-hairline`                    | `shadow-chat-hairline`     | A 0.5px outline drawn as a shadow, so it never moves layout                |
-| `--chat-hairline` + `--chat-ambient` | `shadow-chat-soft`         | The composer and takeover cards                                            |
+| Token                                | Tailwind                                                  | Use it for                                                                 |
+| ------------------------------------ | --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `--chat-content-width`               | `w-(--chat-content-width)`                                | Transcript column, composer, approval and question cards, turn navigator   |
+| `--chat-row-height`                  | `h-(--chat-row-height)`                                   | Every process row: tool, reasoning, group, turn fold header                |
+| `--chat-bubble`                      | `bg-chat-bubble`                                          | The user message bubble only                                               |
+| `--chat-ink-secondary`               | `text-chat-ink-secondary`                                 | Process rows on hover, list markers, toolbar selects                       |
+| `--chat-ink-tertiary`                | `text-chat-ink-tertiary`                                  | Process rows at rest, timestamps, durations                                |
+| `--chat-ink-caption`                 | `text-chat-ink-caption`                                   | Placeholders and separators only (below 4.5:1, never for text people read) |
+| `--radius-chat-bubble` (20px)        | `rounded-chat-bubble`                                     | User bubble, approval card, question card                                  |
+| `--radius-chat-composer` (28px)      | `rounded-chat-composer`                                   | The composer card                                                          |
+| `--chat-hairline`                    | `shadow-chat-hairline`                                    | A 0.5px outline drawn as a shadow, so it never moves layout                |
+| `--chat-hairline` + `--chat-ambient` | `shadow-chat-soft`                                        | The composer and takeover cards                                            |
+| `--chat-accent` / `-hover`           | `bg-chat-accent`, `caret-chat-accent`, `text-chat-accent` | Send and Stop, the caret, links, the running label, keyboard focus rings   |
+| `--chat-raised`                      | `bg-chat-raised`                                          | Composer and takeover cards (white in light, lifted grey in dark)          |
+| `--chat-code`                        | `bg-chat-code`                                            | Code blocks, diff cards, expanded tool bodies                              |
+| `--chat-inline-code`                 | `bg-chat-inline-code`                                     | Inline code pills in prose                                                 |
+| `--chat-hover`                       | `bg-chat-hover`                                           | Hover fill on chat buttons, option rows and chips                          |
+| `--chat-line-1` to `--chat-line-4`   | `border-chat-line-2` etc.                                 | Hairlines, faintest first: dividers, rules, outlines, control borders      |
+| `--ease-chat`                        | `ease-chat`                                               | Every chat transition (folds, chevrons, colour changes)                    |
 
 Rules:
 
@@ -129,8 +136,9 @@ Rules:
 - Process rows are 13px text, `--chat-row-height` tall, with a 16px icon box. They sit at tertiary ink and rise to secondary on hover. Diff counts stay tertiary until the row is hovered or open.
 - The user gets a bubble; the assistant gets bare prose on the page background.
 - `shadow-chat-soft` is the chat version of elevation level 2 (subtle lift), not a fourth level. A chat card that has it takes no `border`.
-- Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It has a reduced-motion branch; keep it.
-- Chat motion stays at 160ms or less.
+- Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It paints the text fill only, so an element inside a shimmering label that sets its own text colour shows the sweep colour instead while running. It has a reduced-motion branch; keep it.
+- Chat motion stays at 160ms or less, on `ease-chat`. Colour changes are 100ms.
+- Keyboard focus in chat is a 2px `ring-chat-accent` on `focus-visible` only.
 
 ## Components
 
