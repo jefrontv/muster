@@ -23,6 +23,9 @@ import {
   ChatThreadStartingNotice
 } from './ChatThreadNotice'
 import { useMissingFolder } from './use-missing-folder'
+import { ChatThreadSurface } from '@/components/chat-thread/ChatThreadSurface'
+import { ChatThreadPlainComposer } from '@/components/chat-thread/ChatThreadPlainComposer'
+import { chatEngineSurfaceEnabled } from '@/components/chat-thread/chat-engine-surface-flag'
 import { useChatThreadTransport } from './use-chat-thread-transport'
 
 function ChatThreadSessionNotice({
@@ -148,26 +151,35 @@ export function ChatThreadView({
           taskId={thread.activeCollabTask.taskId}
         />
       ) : null}
-      <NativeChatView
-        terminalTabId={identity.tabId}
-        paneKey={identity.paneKey}
-        draftScopeKey={`chat-thread:${thread.id}`}
-        launchAgent={thread.agent}
-        transport={transport}
-        fallbackProviderSession={
-          thread.claudeSessionId !== null
-            ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
-            : null
-        }
-        activeCollabProjectId={
-          workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
-        }
-        composerNotice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
-        surface="chat"
-        showTechnicalDetails={thread.showTechnicalDetails === true}
-        workingDirectory={workspace?.directories[0] ?? null}
-        reportedModel={thread.reportedModel ?? null}
-      />
+      {chatEngineSurfaceEnabled() ? (
+        <div className="min-h-0 flex-1">
+          <ChatThreadSurface
+            threadId={thread.id}
+            footer={<ChatThreadPlainComposer onSend={(text) => send(text)} />}
+          />
+        </div>
+      ) : (
+        <NativeChatView
+          terminalTabId={identity.tabId}
+          paneKey={identity.paneKey}
+          draftScopeKey={`chat-thread:${thread.id}`}
+          launchAgent={thread.agent}
+          transport={transport}
+          fallbackProviderSession={
+            thread.claudeSessionId !== null
+              ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
+              : null
+          }
+          activeCollabProjectId={
+            workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
+          }
+          composerNotice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
+          surface="chat"
+          showTechnicalDetails={thread.showTechnicalDetails === true}
+          workingDirectory={workspace?.directories[0] ?? null}
+          reportedModel={thread.reportedModel ?? null}
+        />
+      )}
     </div>
   )
 }

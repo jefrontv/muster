@@ -3,6 +3,7 @@ import type React from 'react'
 import { CircleAlert, Image as ImageIcon } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import type { ChatEngineTurn } from '../../../../shared/chat-engine-types'
+import { unwrapChatWorkspaceUserTurn } from '../../../../shared/chat-workspace-site-info'
 import { ChatItemList } from './ChatItemRows'
 import { formatElapsed } from './chat-tool-row-model'
 import { useChatEngineTurn } from './use-chat-engine-thread'
@@ -11,13 +12,16 @@ function UserMessage({ user }: { user: NonNullable<ChatEngineTurn['user']> }): R
   return (
     <div className="flex justify-end">
       <div className="max-w-[70%] whitespace-pre-wrap break-words rounded-2xl bg-muted px-4 py-2.5 text-sm text-foreground">
-        {user.text}
+        {/* The first send carries the workspace brief ahead of what the user typed. */}
+        {unwrapChatWorkspaceUserTurn(user.text)}
         {user.imageCount > 0 && (
           <div className="flex items-center gap-1 pt-1 text-xs text-muted-foreground">
             <ImageIcon className="size-3" aria-hidden />
-            {translate('components.chat-thread.imageCount', '{{count}} image', {
-              count: user.imageCount
-            })}
+            {user.imageCount === 1
+              ? translate('components.chat-thread.imageOne', '1 image')
+              : translate('components.chat-thread.imageMany', '{{count}} images', {
+                  count: user.imageCount
+                })}
           </div>
         )}
       </div>
@@ -66,7 +70,10 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
     return null
   }
   return (
-    <section className="flex flex-col gap-3" aria-label={turn.user?.text.slice(0, 80)}>
+    <section
+      className="flex flex-col gap-3"
+      aria-label={turn.user ? unwrapChatWorkspaceUserTurn(turn.user.text).slice(0, 80) : undefined}
+    >
       {turn.user && <UserMessage user={turn.user} />}
       <ChatItemList items={turn.items} />
       <TurnEnd turn={turn} />
