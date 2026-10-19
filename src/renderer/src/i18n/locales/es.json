@@ -15147,7 +15147,9 @@
         "browsing": "Fetching pages",
         "browsed": "Fetched pages",
         "using": "Using tools",
-        "used": "Used tools"
+        "used": "Used tools",
+        "searchingWeb": "Searching the web",
+        "searchedWeb": "Searched the web"
       },
       "awaitingApproval": "Needs approval",
       "denied": "Denied",

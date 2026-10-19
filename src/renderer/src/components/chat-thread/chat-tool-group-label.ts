@@ -22,7 +22,11 @@ export function toolCategoryLabel(category: ChatToolCategory, live: boolean): st
       return live
         ? translate('components.chat-thread.group.running', 'Running commands')
         : translate('components.chat-thread.group.ran', 'Ran commands')
-    case 'web':
+    case 'websearch':
+      return live
+        ? translate('components.chat-thread.group.searchingWeb', 'Searching the web')
+        : translate('components.chat-thread.group.searchedWeb', 'Searched the web')
+    case 'fetch':
       return live
         ? translate('components.chat-thread.group.browsing', 'Fetching pages')
         : translate('components.chat-thread.group.browsed', 'Fetched pages')

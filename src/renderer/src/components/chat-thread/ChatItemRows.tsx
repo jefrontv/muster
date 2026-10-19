@@ -41,49 +41,45 @@ function TextRow({ item }: { item: ItemOf<'text'> }): React.JSX.Element {
   return <ChatMarkdown text={item.text} streaming={item.streaming} />
 }
 
-// Pins the open header (ChatDisclosureRow's button) so a long reasoning body can always be folded.
-const STICKY_OPEN_HEADER =
-  '[&>div>button[aria-expanded=true]]:sticky [&>div>button[aria-expanded=true]]:top-0 [&>div>button[aria-expanded=true]]:z-[6] [&>div>button[aria-expanded=true]]:bg-background'
-
 function ThinkingRow({ item }: { item: ItemOf<'thinking'> }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const summary = reasoningPreview(item.text, item.streaming)
   return (
-    <div className={STICKY_OPEN_HEADER}>
-      <ChatDisclosureRow
-        live={item.streaming}
-        open={open}
-        onOpenChange={setOpen}
-        icon={<Brain className="size-3.5" aria-hidden />}
-        label={
-          <>
-            <span className="shrink-0">
-              {item.streaming
-                ? translate('components.chat-thread.thinking', 'Thinking')
-                : translate('components.chat-thread.thought', 'Thought')}
-            </span>
-            {summary && !open && (
-              <>
-                <ChatRowDot />
-                <span
-                  className={cn(
-                    'min-w-0 overflow-hidden whitespace-nowrap',
-                    // New words arrive into a soft trailing edge instead of an ellipsis.
-                    item.streaming
-                      ? '[mask-image:linear-gradient(to_right,#000_calc(100%-48px),transparent)]'
-                      : 'text-ellipsis'
-                  )}
-                >
-                  {summary}
-                </span>
-              </>
-            )}
-          </>
-        }
-      >
-        <ChatMarkdown text={item.text} streaming={item.streaming} density="compact" />
-      </ChatDisclosureRow>
-    </div>
+    <ChatDisclosureRow
+      live={item.streaming}
+      open={open}
+      onOpenChange={setOpen}
+      // Pinned while open so a long reasoning body can always be folded.
+      headerClassName={open ? 'sticky top-0 z-[6] bg-background' : undefined}
+      icon={<Brain className="size-3.5" aria-hidden />}
+      label={
+        <>
+          <span className="shrink-0">
+            {item.streaming
+              ? translate('components.chat-thread.thinking', 'Thinking')
+              : translate('components.chat-thread.thought', 'Thought')}
+          </span>
+          {summary && !open && (
+            <>
+              <ChatRowDot />
+              <span
+                className={cn(
+                  'min-w-0 overflow-hidden whitespace-nowrap',
+                  // New words arrive into a soft trailing edge instead of an ellipsis.
+                  item.streaming
+                    ? '[mask-image:linear-gradient(to_right,#000_calc(100%-48px),transparent)]'
+                    : 'text-ellipsis'
+                )}
+              >
+                {summary}
+              </span>
+            </>
+          )}
+        </>
+      }
+    >
+      <ChatMarkdown text={item.text} streaming={item.streaming} density="compact" />
+    </ChatDisclosureRow>
   )
 }
 

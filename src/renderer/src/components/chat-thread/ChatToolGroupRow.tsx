@@ -14,7 +14,8 @@ const ICONS: Record<ChatToolCategory, LucideIcon> = {
   read: FileText,
   search: Search,
   run: Terminal,
-  web: Globe,
+  fetch: Globe,
+  websearch: Globe,
   other: Wrench
 }
 

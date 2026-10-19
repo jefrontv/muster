@@ -8,7 +8,8 @@ import { scrollFadesOf } from './chat-tool-group-scroll-fades'
 describe('toolCategoryLabel', () => {
   it('uses DSH verbs, live and settled', () => {
     expect(toolCategoryLabel('search', false)).toBe('Searched files')
-    expect(toolCategoryLabel('web', true)).toBe('Fetching pages')
+    expect(toolCategoryLabel('fetch', true)).toBe('Fetching pages')
+    expect(toolCategoryLabel('websearch', false)).toBe('Searched the web')
     expect(toolCategoryLabel('other', false)).toBe('Used tools')
   })
 })

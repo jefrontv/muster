@@ -5,7 +5,7 @@
 import type { ChatEngineItem, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import type { ChatToolItem } from './chat-tool-input'
 
-export type ChatToolCategory = 'read' | 'search' | 'run' | 'web' | 'other'
+export type ChatToolCategory = 'read' | 'search' | 'run' | 'fetch' | 'websearch' | 'other'
 
 export type ChatItemRun =
   | { kind: 'item'; item: ChatEngineItem }
@@ -21,8 +21,8 @@ const CATEGORY: Record<string, ChatToolCategory> = {
   BashOutput: 'run',
   KillShell: 'run',
   KillBash: 'run',
-  WebFetch: 'web',
-  WebSearch: 'web'
+  WebFetch: 'fetch',
+  WebSearch: 'websearch'
 }
 
 // These show their body by default (diffs, plans, questions), so a group would hide them.
