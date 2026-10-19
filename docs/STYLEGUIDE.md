@@ -128,6 +128,8 @@ The chat surface (`src/renderer/src/components/chat-thread/`, used by Chat mode 
 | `--chat-inline-code`                 | `bg-chat-inline-code`                                     | Inline code pills in prose                                                 |
 | `--chat-hover`                       | `bg-chat-hover`                                           | Hover fill on chat buttons, option rows and chips                          |
 | `--chat-line-1` to `--chat-line-4`   | `border-chat-line-2` etc.                                 | Hairlines, faintest first: dividers, rules, outlines, control borders      |
+| `--chat-diff-added` / `-tint`        | `text-chat-diff-added`, `bg-chat-diff-added-tint`         | Added diff lines: text, 3px left marker, 8% tint (12% dark)                |
+| `--chat-diff-deleted` / `-tint`      | `text-chat-diff-deleted`, `bg-chat-diff-deleted-tint`     | Deleted diff lines, and the diff counts on a hovered or open row           |
 | `--ease-chat`                        | `ease-chat`                                               | Every chat transition (folds, chevrons, colour changes)                    |
 
 Rules:
@@ -138,6 +140,7 @@ Rules:
 - `shadow-chat-soft` is the chat version of elevation level 2 (subtle lift), not a fourth level. A chat card that has it takes no `border`.
 - Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It paints the text fill only, so an element inside a shimmering label that sets its own text colour shows the sweep colour instead while running. It has a reduced-motion branch; keep it.
 - Chat motion stays at 160ms or less, on `ease-chat`. Colour changes are 100ms.
+- The diff green and the light-mode diff red sit under 4.5:1 on `bg-chat-code`. That follows DSH: the marker, the tint and the `+`/`-` sign carry the meaning, and the text colour only reinforces it. Don't reuse them for text that has no other cue.
 - Keyboard focus in chat is a 2px `ring-chat-accent` on `focus-visible` only.
 
 Composer (`native-chat/chat-seat-composer-classes.ts`, applied when `NativeChatSurfaceProvider` sets `seat: true`):

@@ -10,7 +10,7 @@ export function ChatQuestionBody({ item }: ChatToolBodyProps): React.JSX.Element
     return null
   }
   return (
-    <div className="space-y-2 text-[13px]">
+    <div className="space-y-2 py-1 pl-[22px] text-[13px]">
       {questions.map((question) => (
         <div key={question.question}>
           <div className="text-foreground">{question.question}</div>

@@ -25,7 +25,7 @@ export function ChatProcessStack<T>(props: {
         aria-expanded={expanded}
         aria-controls={bodyId}
         onClick={() => setExpanded((open) => !open)}
-        className="flex h-(--chat-row-height) items-center gap-1.5 self-start rounded-sm text-[13px] tabular-nums text-chat-ink-tertiary transition-colors duration-100 hover:text-chat-ink-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-(--chat-row-height) items-center gap-1.5 self-start rounded-sm text-[13px] tabular-nums text-chat-ink-tertiary transition-colors duration-100 ease-chat hover:text-chat-ink-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent motion-reduce:transition-none"
       >
         {expanded
           ? translate('components.chat-thread.stack.showFewer', 'Show fewer steps')
@@ -33,7 +33,10 @@ export function ChatProcessStack<T>(props: {
               count: hidden
             })}
         <ChevronDown
-          className={cn('size-3.5 transition-transform duration-100', expanded && 'rotate-180')}
+          className={cn(
+            'size-3.5 transition-transform duration-100 ease-chat motion-reduce:transition-none',
+            expanded && 'rotate-180'
+          )}
           aria-hidden
         />
       </button>

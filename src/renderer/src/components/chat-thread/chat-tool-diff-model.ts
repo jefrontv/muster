@@ -6,18 +6,23 @@ import { diffRows, type DiffRow } from './chat-diff-rows'
 import { lineDiffHunks } from './chat-line-diff-hunks'
 import { inputList, inputRecord, inputText, type ChatToolItem } from './chat-tool-input'
 
-/** Lines a collapsed card shows before "Show N more lines". */
-export const DIFF_PREVIEW_LINES = 9
+/** A folded card keeps this many lines at each end, like DSH's 16-line cap. */
+export const DIFF_FOLD_EDGE_LINES = 8
 
 export const DIFF_TOOL_NAMES = new Set(['Edit', 'MultiEdit', 'Write'])
 
 export type ChatToolDiffModel = {
-  rows: DiffRow[]
+  /** Everything when expanded or short enough; otherwise the rows above the fold. */
+  head: DiffRow[]
+  tail: DiffRow[]
+  /** Every row, for copying. */
+  all: DiffRow[]
   /** Built from the input: line numbers are relative to the snippet, so hide them. */
   live: boolean
   additions: number
   deletions: number
-  hiddenLines: number
+  /** Lines the fold hides when collapsed; zero means the card never folds. */
+  foldedLines: number
 }
 
 function editHunks(oldText: string, newText: string): ChatEnginePatchHunk[] {
@@ -63,20 +68,26 @@ export function toolDiffModel(item: ChatToolItem, expanded: boolean): ChatToolDi
   if (all.length === 0) {
     return null
   }
-  let rows = all
-  let hiddenLines = 0
-  if (!expanded) {
-    const lineIndexes = all.flatMap((row, index) => (row.kind === 'line' ? [index] : []))
-    if (lineIndexes.length > DIFF_PREVIEW_LINES) {
-      rows = all.slice(0, lineIndexes[DIFF_PREVIEW_LINES - 1]! + 1)
-      hiddenLines = lineIndexes.length - DIFF_PREVIEW_LINES
+  const lineIndexes = all.flatMap((row, index) => (row.kind === 'line' ? [index] : []))
+  const foldedLines = Math.max(0, lineIndexes.length - 2 * DIFF_FOLD_EDGE_LINES)
+  let head = all
+  let tail: DiffRow[] = []
+  if (!expanded && foldedLines > 0) {
+    head = all.slice(0, lineIndexes[DIFF_FOLD_EDGE_LINES - 1]! + 1)
+    let tailStart = lineIndexes[lineIndexes.length - DIFF_FOLD_EDGE_LINES]!
+    // Keep the hunk header that introduces the tail's first line.
+    if (all[tailStart - 1]?.kind === 'hunk') {
+      tailStart -= 1
     }
+    tail = all.slice(tailStart)
   }
   return {
-    rows,
+    head,
+    tail,
+    all,
     live,
     additions: item.result?.additions ?? count(all, 'add'),
     deletions: item.result?.deletions ?? count(all, 'del'),
-    hiddenLines
+    foldedLines
   }
 }

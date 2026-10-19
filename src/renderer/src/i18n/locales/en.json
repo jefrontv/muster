@@ -15151,6 +15151,7 @@
     },
     "chat-thread": {
       "showMoreLines": "Show {{count}} more lines",
+      "showFewerLines": "Show fewer lines",
       "thinking": "Thinking",
       "thought": "Thought",
       "steerPending": "Sending",
@@ -15162,19 +15163,27 @@
       "group": {
         "reading": "Reading files",
         "read": "Read files",
-        "searching": "Searching code",
-        "searched": "Searched code",
+        "searching": "Searching files",
+        "searched": "Searched files",
         "running": "Running commands",
         "ran": "Ran commands",
-        "browsing": "Searching the web",
-        "browsed": "Searched the web",
+        "browsing": "Fetching pages",
+        "browsed": "Fetched pages",
         "using": "Using tools",
-        "used": "Used tools",
-        "steps": "{{count}} steps"
+        "used": "Used tools"
       },
       "awaitingApproval": "Needs approval",
       "denied": "Denied",
       "interrupted": "Interrupted",
+      "io": {
+        "in": "IN",
+        "out": "OUT"
+      },
+      "diff": {
+        "copy": "Copy diff",
+        "copied": "Copied",
+        "wrap": "Wrap lines"
+      },
       "jumpToTurn": "Go to message {{number}}",
       "navigator": "Messages",
       "imageOne": "1 image",

@@ -12,7 +12,7 @@ export function ChatTodoBody({ item }: ChatToolBodyProps): React.JSX.Element | n
     return null
   }
   return (
-    <ul className="space-y-0.5 text-[13px]">
+    <ul className="space-y-0.5 py-1 pl-[22px] text-[13px]">
       {todos.map((todo, index) => {
         const Icon = STATUS_ICON[todo.status]
         return (

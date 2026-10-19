@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatEngineToolResult } from '../../../../shared/chat-engine-types'
 import { bashModel } from './chat-bash-model'
-import { DIFF_PREVIEW_LINES, toolDiffModel } from './chat-tool-diff-model'
+import { diffRowsText } from './chat-diff-rows'
+import { DIFF_FOLD_EDGE_LINES, toolDiffModel } from './chat-tool-diff-model'
 import type { ChatToolItem } from './chat-tool-input'
 import { questionModel } from './chat-tool-question-model'
 import { lookupToolRenderer } from './chat-tool-renderer-lookup'
@@ -68,16 +69,38 @@ describe('toolDiffModel', () => {
       ),
       false
     )
-    expect(model).toMatchObject({ live: true, additions: 1, deletions: 1, hiddenLines: 0 })
+    expect(model).toMatchObject({ live: true, additions: 1, deletions: 1, foldedLines: 0 })
   })
 
-  it('caps a collapsed diff and reports what it hid', () => {
+  it('folds a long diff to its first and last 8 lines, reversibly', () => {
     const item = tool('Write', { file_path: '/a.txt', content: lines(20, 'l') }, 'running')
     const collapsed = toolDiffModel(item, false)!
-    expect(collapsed.rows.filter((row) => row.kind === 'line')).toHaveLength(DIFF_PREVIEW_LINES)
-    expect(collapsed.hiddenLines).toBe(20 - DIFF_PREVIEW_LINES)
+    const text = (rows: typeof collapsed.head) =>
+      rows.flatMap((row) => (row.kind === 'line' ? [row.segments[0]!.text] : []))
+    expect(text(collapsed.head)).toEqual(Array.from({ length: 8 }, (_, i) => `l${i}`))
+    expect(text(collapsed.tail)).toEqual(Array.from({ length: 8 }, (_, i) => `l${i + 12}`))
+    expect(collapsed.foldedLines).toBe(20 - 2 * DIFF_FOLD_EDGE_LINES)
     expect(collapsed.additions).toBe(20)
-    expect(toolDiffModel(item, true)!.hiddenLines).toBe(0)
+    const expanded = toolDiffModel(item, true)!
+    expect(text(expanded.head)).toHaveLength(20)
+    expect(expanded.tail).toEqual([])
+    // Still reports the fold so the card can offer to close it again.
+    expect(expanded.foldedLines).toBe(4)
+  })
+
+  it('never folds a diff of 16 lines or fewer', () => {
+    const item = tool('Write', { file_path: '/a.txt', content: lines(16, 'l') }, 'running')
+    const model = toolDiffModel(item, false)!
+    expect(model).toMatchObject({ foldedLines: 0, tail: [] })
+    expect(model.head).toHaveLength(16)
+  })
+
+  it('copies the whole diff with its signs', () => {
+    const model = toolDiffModel(
+      tool('Edit', { old_string: 'a\nb', new_string: 'a\nc' }, 'streaming'),
+      false
+    )!
+    expect(diffRowsText(model.all)).toBe('@@ -1,2 +1,2 @@\n  a\n- b\n+ c')
   })
 
   it('switches to the CLI patch once it answers', () => {
@@ -90,7 +113,7 @@ describe('toolDiffModel', () => {
       false
     )
     expect(model?.live).toBe(false)
-    expect(model?.rows.find((row) => row.kind === 'line')).toMatchObject({ oldNo: 7 })
+    expect(model?.head.find((row) => row.kind === 'line')).toMatchObject({ oldNo: 7 })
   })
 
   it('joins every edit of a MultiEdit and ignores other tools', () => {

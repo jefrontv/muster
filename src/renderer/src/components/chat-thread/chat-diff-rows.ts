@@ -152,3 +152,16 @@ export function diffRows(hunks: ChatEnginePatchHunk[]): DiffRow[] {
   })
   return rows
 }
+
+const SIGN = { add: '+ ', del: '- ', ctx: '  ' } as const
+
+/** The diff as plain text, the way the card draws it. */
+export function diffRowsText(rows: DiffRow[]): string {
+  return rows
+    .map((row) =>
+      row.kind === 'hunk'
+        ? row.header
+        : `${SIGN[row.type]}${row.segments.map((segment) => segment.text).join('')}`
+    )
+    .join('\n')
+}

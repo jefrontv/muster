@@ -35,6 +35,8 @@ export type ChatToolRow = {
   deletions?: number
   exit?: ChatBashExit
   isError: boolean
+  /** A failed call's first error line; replaces the object in the collapsed row. */
+  errorSummary?: string
 }
 
 function firstLine(text: string): string {
@@ -114,6 +116,14 @@ const asking = (item: ChatToolItem, now: string, past: string): string =>
   item.status === 'awaiting-approval' || item.status === 'streaming' ? now : past
 
 export function toolRowModel(item: ChatToolItem, cwd: string | null): ChatToolRow {
+  const row = rowFor(item, cwd)
+  // Bash failures already say how they ended through the exit badge.
+  const failure =
+    item.status === 'error' && item.name !== 'Bash' ? firstLine(item.result?.text ?? '') : ''
+  return failure ? { ...row, errorSummary: failure } : row
+}
+
+function rowFor(item: ChatToolItem, cwd: string | null): ChatToolRow {
   const input = item.input
   const path =
     inputText(input, 'file_path') ?? inputText(input, 'notebook_path') ?? inputText(input, 'path')

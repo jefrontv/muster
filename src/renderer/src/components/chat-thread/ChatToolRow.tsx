@@ -55,8 +55,9 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
   const live = toolIsLive(item)
   const Icon = ICONS[row.icon]
   const status = STATUS_LABEL[item.status]?.()
+  const summary = row.errorSummary ?? row.object
   // Counts stay quiet until the row is engaged.
-  const count = 'shrink-0 font-mono text-[11px] tabular-nums'
+  const count = 'ml-2.5 shrink-0 font-mono text-[11px] tabular-nums'
   return (
     <ChatDisclosureRow
       live={live}
@@ -64,17 +65,19 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
       label={
         <>
           <span className="shrink-0">{row.verb}</span>
-          {row.object && (
+          {summary && (
             <>
               <ChatRowDot />
               <span
                 className={cn(
                   'min-w-0 truncate',
+                  row.isError && 'text-destructive',
                   !row.plainObject &&
-                    'font-mono text-xs underline decoration-dotted decoration-from-font underline-offset-2'
+                    !row.errorSummary &&
+                    'underline decoration-dotted decoration-1 underline-offset-3'
                 )}
               >
-                {row.object}
+                {summary}
               </span>
             </>
           )}
@@ -82,9 +85,7 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
             <span
               className={cn(
                 count,
-                isOpen
-                  ? 'text-[var(--git-decoration-added)]'
-                  : 'group-hover/row:text-[var(--git-decoration-added)]'
+                isOpen ? 'text-chat-diff-added' : 'group-hover/row:text-chat-diff-added'
               )}
             >
               +{row.additions}
@@ -94,26 +95,28 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
             <span
               className={cn(
                 count,
-                isOpen
-                  ? 'text-[var(--git-decoration-deleted)]'
-                  : 'group-hover/row:text-[var(--git-decoration-deleted)]'
+                row.additions !== undefined && 'ml-1.5',
+                isOpen ? 'text-chat-diff-deleted' : 'group-hover/row:text-chat-diff-deleted'
               )}
             >
               -{row.deletions}
             </span>
           )}
           {row.meta.map((fact) => (
-            <span key={fact} className="shrink-0 tabular-nums">
+            <span key={fact} className="ml-2 shrink-0 tabular-nums">
               {fact}
             </span>
           ))}
           {row.exit && !row.exit.ok && (
-            <span className="shrink-0 text-destructive">{row.exit.label}</span>
+            <span className="ml-2 flex shrink-0 items-center gap-[5px] text-destructive">
+              <span className="size-1 shrink-0 rounded-full bg-destructive" aria-hidden />
+              {row.exit.label}
+            </span>
           )}
           {status && (
             <span
               className={cn(
-                'shrink-0',
+                'ml-2 shrink-0',
                 item.status === 'awaiting-approval' && 'text-status-attention'
               )}
             >
@@ -122,6 +125,7 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
           )}
         </>
       }
+      bodyClassName="p-0"
       open={isOpen}
       onOpenChange={setOpen}
     >
