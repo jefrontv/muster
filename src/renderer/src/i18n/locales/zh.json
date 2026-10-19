@@ -14210,7 +14210,8 @@
           "stackNone": "None",
           "dockerDownStart": "Docker isn’t running. Start brings it up first.",
           "notServingShort": "Not set up yet",
-          "setUp": "Set up"
+          "setUp": "Set up",
+          "cancel": "Cancel"
         },
         "siteSetupDomainRules": {
           "nameRequired": "Enter a project name.",
@@ -15124,6 +15125,42 @@
       "thread": {
         "showTechnicalDetails": "Show technical details"
       }
+    },
+    "chat-thread": {
+      "showMoreLines": "Show {{count}} more lines",
+      "thinking": "Thinking",
+      "thought": "Thought",
+      "steerPending": "Sending",
+      "noAnswer": "No answer",
+      "rowFailed": "This step could not be shown.",
+      "backToBottom": "Back to latest",
+      "emptyTitle": "What should we work on?",
+      "loading": "Loading chat",
+      "group": {
+        "reading": "Reading files",
+        "read": "Read files",
+        "searching": "Searching code",
+        "searched": "Searched code",
+        "running": "Running commands",
+        "ran": "Ran commands",
+        "browsing": "Searching the web",
+        "browsed": "Searched the web",
+        "using": "Using tools",
+        "used": "Used tools",
+        "steps": "{{count}} steps"
+      },
+      "awaitingApproval": "Needs approval",
+      "denied": "Denied",
+      "interrupted": "Interrupted",
+      "jumpToTurn": "Go to message {{number}}",
+      "navigator": "Messages",
+      "imageOne": "1 image",
+      "imageMany": "{{count}} images",
+      "workingFor": "Working for {{duration}}",
+      "workedFor": "Worked for {{duration}}",
+      "worked": "Steps",
+      "turnFailed": "Claude stopped with an error.",
+      "turnInterrupted": "Stopped"
     }
   },
   "dashboardPopout": {
