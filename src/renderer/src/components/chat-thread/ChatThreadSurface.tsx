@@ -3,11 +3,13 @@
 
 import { useMemo } from 'react'
 import type React from 'react'
-import { Loader2 } from 'lucide-react'
+import { ArrowDown, Loader2 } from 'lucide-react'
 import type { CommentMarkdownLinkClickHandler } from '@/components/sidebar/CommentMarkdown'
+import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import { ChatThreadContext, type ChatThreadContextValue } from './chat-thread-context'
 import { ChatTurnView } from './ChatTurnView'
+import { useChatScrollFollow, useFollowOnNewTurn } from './use-chat-scroll-follow'
 import {
   useChatEngineMeta,
   useChatEngineThreadLoaded,
@@ -15,10 +17,33 @@ import {
   useRetainChatEngineThread
 } from './use-chat-engine-thread'
 
+/** The transcript column and everything that shares its width. */
+export const CHAT_COLUMN_CLASS = 'mx-auto w-(--chat-content-width) max-w-full px-4'
+
+function BackToBottom(props: { visible: boolean; onClick: () => void }): React.JSX.Element {
+  const label = translate('components.chat-thread.backToBottom', 'Back to latest')
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      tabIndex={props.visible ? 0 : -1}
+      aria-hidden={!props.visible}
+      onClick={props.onClick}
+      className={cn(
+        'absolute bottom-full left-1/2 mb-4 flex size-[34px] -translate-x-1/2 items-center justify-center rounded-full bg-background text-chat-ink-secondary shadow-chat-soft transition-opacity duration-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        !props.visible && 'pointer-events-none opacity-0'
+      )}
+    >
+      <ArrowDown className="size-4" aria-hidden />
+    </button>
+  )
+}
+
 export function ChatThreadSurface(props: {
   threadId: string
   onLinkClick?: CommentMarkdownLinkClickHandler
-  /** Sits below the transcript; the composer seat. */
+  /** The composer; it sits in a sticky seat at the transcript's width. */
   footer?: React.ReactNode
 }): React.JSX.Element {
   const { threadId, onLinkClick } = props
@@ -26,28 +51,56 @@ export function ChatThreadSurface(props: {
   const loaded = useChatEngineThreadLoaded(threadId)
   const order = useChatEngineTurnOrder(threadId)
   const cwd = useChatEngineMeta(threadId)?.session.cwd ?? null
+  const scroll = useChatScrollFollow(threadId)
+  useFollowOnNewTurn(order.length, scroll.follow)
   const context = useMemo<ChatThreadContextValue>(
     () => ({ threadId, cwd, ...(onLinkClick ? { onLinkClick } : {}) }),
     [threadId, cwd, onLinkClick]
   )
+  const latest = order.at(-1)
   return (
     <ChatThreadContext.Provider value={context}>
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-          <div className="mx-auto flex w-[clamp(680px,64%,920px)] max-w-full flex-col gap-6 px-4 py-6">
-            {!loaded ? (
-              <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden />
-                {translate('components.chat-thread.loading', 'Loading chat')}
-              </div>
-            ) : (
-              order.map((turnId) => (
-                <ChatTurnView key={turnId} threadId={threadId} turnId={turnId} />
-              ))
-            )}
+      <div
+        ref={scroll.scrollRef}
+        className="h-full min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
+        tabIndex={-1}
+      >
+        <div className="flex min-h-full flex-col">
+          <div ref={scroll.contentRef} className={cn(CHAT_COLUMN_CLASS, 'flex-1 pb-4 pt-6')}>
+            <div className="flex flex-col gap-6">
+              {!loaded ? (
+                <div className="flex items-center gap-2 text-[13px] text-chat-ink-tertiary">
+                  <Loader2
+                    className="size-3.5 animate-spin motion-reduce:animate-none"
+                    aria-hidden
+                  />
+                  {translate('components.chat-thread.loading', 'Loading chat')}
+                </div>
+              ) : (
+                order.map((turnId) => (
+                  <ChatTurnView
+                    key={turnId}
+                    threadId={threadId}
+                    turnId={turnId}
+                    latest={turnId === latest}
+                  />
+                ))
+              )}
+            </div>
           </div>
+          {props.footer && (
+            <div className="sticky bottom-0 z-10">
+              {/* Fixed height, so text dissolves into the seat at the same rate however tall the composer grows. */}
+              <div className="pointer-events-none h-9 bg-gradient-to-b from-transparent to-background" />
+              <div className="bg-background pb-4">
+                <div className={cn(CHAT_COLUMN_CLASS, 'relative')}>
+                  <BackToBottom visible={scroll.state.away} onClick={scroll.follow} />
+                  {props.footer}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        {props.footer}
       </div>
     </ChatThreadContext.Provider>
   )

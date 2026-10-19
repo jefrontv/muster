@@ -6,7 +6,6 @@ import {
   FileText,
   Globe,
   ListTodo,
-  Loader2,
   MessageCircleQuestion,
   Pencil,
   Plug,
@@ -22,7 +21,8 @@ import type { ChatToolItem } from './chat-tool-input'
 import { toolRowModel, type ChatToolIconKey } from './chat-tool-row-model'
 import { chatToolRenderer } from './chat-tool-registry'
 import { useChatThreadContext } from './chat-thread-context'
-import { ChatDisclosureRow } from './ChatDisclosureRow'
+import { ChatDisclosureRow, ChatRowDot } from './ChatDisclosureRow'
+import { toolIsLive } from './chat-turn-layout'
 
 const ICONS: Record<ChatToolIconKey, LucideIcon> = {
   file: FileText,
@@ -52,41 +52,53 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
   const row = toolRowModel(item, cwd)
   // Follows the default until the user picks, so an error that lands later still opens.
   const isOpen = open ?? renderer.openByDefault(item)
-  const running = item.status === 'streaming' || item.status === 'running'
-  const Icon = running ? Loader2 : ICONS[row.icon]
+  const live = toolIsLive(item)
+  const Icon = ICONS[row.icon]
   const status = STATUS_LABEL[item.status]?.()
+  // Counts stay quiet until the row is engaged.
+  const count = 'shrink-0 font-mono text-[11px] tabular-nums'
   return (
     <ChatDisclosureRow
-      icon={
-        <Icon
-          className={cn(
-            'size-3.5',
-            running && 'animate-spin motion-reduce:animate-none',
-            row.isError && 'text-destructive'
-          )}
-          aria-hidden
-        />
-      }
+      live={live}
+      icon={<Icon className={cn('size-3.5', row.isError && 'text-destructive')} aria-hidden />}
       label={
         <>
           <span className="shrink-0">{row.verb}</span>
           {row.object && (
-            <span
-              className={cn(
-                'min-w-0 truncate text-foreground',
-                !row.plainObject && 'font-mono text-xs'
-              )}
-            >
-              {row.object}
-            </span>
+            <>
+              <ChatRowDot />
+              <span
+                className={cn(
+                  'min-w-0 truncate',
+                  !row.plainObject &&
+                    'font-mono text-xs underline decoration-dotted decoration-from-font underline-offset-2'
+                )}
+              >
+                {row.object}
+              </span>
+            </>
           )}
           {row.additions !== undefined && (
-            <span className="shrink-0 tabular-nums text-[var(--git-decoration-added)]">
+            <span
+              className={cn(
+                count,
+                isOpen
+                  ? 'text-[var(--git-decoration-added)]'
+                  : 'group-hover/row:text-[var(--git-decoration-added)]'
+              )}
+            >
               +{row.additions}
             </span>
           )}
           {row.deletions !== undefined && (
-            <span className="shrink-0 tabular-nums text-[var(--git-decoration-deleted)]">
+            <span
+              className={cn(
+                count,
+                isOpen
+                  ? 'text-[var(--git-decoration-deleted)]'
+                  : 'group-hover/row:text-[var(--git-decoration-deleted)]'
+              )}
+            >
               -{row.deletions}
             </span>
           )}
@@ -98,7 +110,16 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
           {row.exit && !row.exit.ok && (
             <span className="shrink-0 text-destructive">{row.exit.label}</span>
           )}
-          {status && <span className="shrink-0">{status}</span>}
+          {status && (
+            <span
+              className={cn(
+                'shrink-0',
+                item.status === 'awaiting-approval' && 'text-status-attention'
+              )}
+            >
+              {status}
+            </span>
+          )}
         </>
       }
       open={isOpen}

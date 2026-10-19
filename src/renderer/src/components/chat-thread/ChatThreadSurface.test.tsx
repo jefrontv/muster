@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { act, cleanup, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ChatEnginePatch } from '../../../../shared/chat-engine-types'
@@ -99,6 +99,14 @@ function mount(engine: ChatEngine) {
   return { view, settle }
 }
 
+const foldHeader = (element: HTMLElement): HTMLElement => {
+  const header = [...element.querySelectorAll('button')].find((button) =>
+    button.textContent?.startsWith('Worked for')
+  )
+  expect(header).toBeDefined()
+  return header!
+}
+
 // useId values depend on mount order across roots; they are not content.
 const markup = (element: HTMLElement): string =>
   element.innerHTML.replace(/ (id|aria-controls)="[^"]*"/g, '')
@@ -123,9 +131,13 @@ describe('ChatThreadSurface over a recorded session', () => {
       play(live, step)
       await settle()
     }
-    const liveMarkup = markup(view.container)
-    expect(view.container.textContent).toContain('Read')
-    expect(view.container.textContent).toContain('style.css')
+    // The finished turn folds its tool rows under one header above the answer.
+    const disclosures = (): number => view.container.querySelectorAll('[aria-expanded]').length
+    expect(disclosures()).toBe(1)
+    const liveFolded = markup(view.container)
+    fireEvent.click(foldHeader(view.container))
+    expect(disclosures()).toBeGreaterThan(1)
+    const liveOpen = markup(view.container)
     cleanup()
 
     const history = new ChatEngine({ now: () => 1_000 })
@@ -134,7 +146,9 @@ describe('ChatThreadSurface over a recorded session', () => {
     }
     const fresh = mount(history)
     await fresh.settle()
-    expect(markup(fresh.view.container)).toBe(liveMarkup)
+    expect(markup(fresh.view.container)).toBe(liveFolded)
+    fireEvent.click(foldHeader(fresh.view.container))
+    expect(markup(fresh.view.container)).toBe(liveOpen)
   })
 
   it('re-renders only the streaming block when a token lands', async () => {

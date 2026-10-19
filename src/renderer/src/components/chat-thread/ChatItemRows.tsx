@@ -1,12 +1,14 @@
 import { memo, useState } from 'react'
 import type React from 'react'
-import { Bot, Brain, CircleAlert, Info, Loader2 } from 'lucide-react'
+import { Bot, Brain, CircleAlert, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { ChatEngineItem } from '../../../../shared/chat-engine-types'
-import { ChatDisclosureRow } from './ChatDisclosureRow'
+import { chatItemRuns } from './chat-turn-layout'
+import { ChatDisclosureRow, ChatRowDot } from './ChatDisclosureRow'
 import { ChatMarkdown } from './ChatMarkdown'
 import { ChatRowBoundary } from './ChatRowBoundary'
+import { ChatToolGroupRow } from './ChatToolGroupRow'
 import { ChatToolRow } from './ChatToolRow'
 
 type ItemOf<K extends ChatEngineItem['kind']> = Extract<ChatEngineItem, { kind: K }>
@@ -14,15 +16,19 @@ type ItemOf<K extends ChatEngineItem['kind']> = Extract<ChatEngineItem, { kind: 
 function Disclosure(props: {
   icon: React.ReactNode
   label: React.ReactNode
+  live?: boolean
+  bodyClassName?: string
   children: React.ReactNode
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   return (
     <ChatDisclosureRow
       icon={props.icon}
-      label={<span className="min-w-0 truncate">{props.label}</span>}
+      label={props.label}
+      live={props.live}
       open={open}
       onOpenChange={setOpen}
+      bodyClassName={props.bodyClassName}
     >
       {props.children}
     </ChatDisclosureRow>
@@ -33,33 +39,71 @@ function TextRow({ item }: { item: ItemOf<'text'> }): React.JSX.Element {
   return <ChatMarkdown text={item.text} streaming={item.streaming} />
 }
 
+// First line of the reasoning, so a collapsed row still says what it was about.
+function thinkingSummary(text: string): string {
+  return text
+    .trim()
+    .split('\n', 1)[0]!
+    .replace(/[*_#`]/g, '')
+    .slice(0, 200)
+}
+
 function ThinkingRow({ item }: { item: ItemOf<'thinking'> }): React.JSX.Element {
-  const icon = item.streaming ? (
-    <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden />
-  ) : (
-    <Brain className="size-3.5" aria-hidden />
-  )
-  const label = item.streaming
-    ? translate('components.chat-thread.thinking', 'Thinking')
-    : translate('components.chat-thread.thought', 'Thought')
+  const summary = thinkingSummary(item.text)
   return (
-    <Disclosure icon={icon} label={label}>
-      <div className="whitespace-pre-wrap text-[13px] text-muted-foreground">{item.text}</div>
+    <Disclosure
+      live={item.streaming}
+      icon={<Brain className="size-3.5" aria-hidden />}
+      label={
+        <>
+          <span className="shrink-0">
+            {item.streaming
+              ? translate('components.chat-thread.thinking', 'Thinking')
+              : translate('components.chat-thread.thought', 'Thought')}
+          </span>
+          {summary && (
+            <>
+              <ChatRowDot />
+              <span
+                className={cn(
+                  'min-w-0 truncate',
+                  // New words arrive into a soft edge rather than a hard cut.
+                  item.streaming && '[mask-image:linear-gradient(to_left,transparent,#000_48px)]'
+                )}
+              >
+                {summary}
+              </span>
+            </>
+          )}
+        </>
+      }
+    >
+      <div className="whitespace-pre-wrap text-[13px] leading-5 text-chat-ink-tertiary">
+        {item.text}
+      </div>
     </Disclosure>
   )
 }
 
 function AgentRow({ item }: { item: ItemOf<'agent'> }): React.JSX.Element {
-  const icon =
-    item.status === 'running' ? (
-      <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden />
-    ) : (
-      <Bot className={cn('size-3.5', item.status === 'error' && 'text-destructive')} aria-hidden />
-    )
   return (
-    <Disclosure icon={icon} label={item.description || item.subagentType || 'Agent'}>
+    <Disclosure
+      live={item.status === 'running'}
+      icon={
+        <Bot
+          className={cn('size-3.5', item.status === 'error' && 'text-destructive')}
+          aria-hidden
+        />
+      }
+      label={
+        <span className="min-w-0 truncate">{item.description || item.subagentType || 'Agent'}</span>
+      }
+      bodyClassName="ml-[7px] border-l-[0.5px] border-border pl-[15px]"
+    >
       <ChatItemList items={item.items} />
-      {item.summary && <div className="pt-1 text-[13px] text-muted-foreground">{item.summary}</div>}
+      {item.summary && (
+        <div className="pt-1 text-[13px] text-chat-ink-tertiary">{item.summary}</div>
+      )}
     </Disclosure>
   )
 }
@@ -71,7 +115,7 @@ function NoticeRow({ item }: { item: ItemOf<'notice'> }): React.JSX.Element {
       role={item.level === 'error' ? 'alert' : undefined}
       className={cn(
         'flex items-start gap-2 text-[13px]',
-        item.level === 'error' ? 'text-destructive' : 'text-muted-foreground'
+        item.level === 'error' ? 'text-destructive' : 'text-chat-ink-tertiary'
       )}
     >
       <Icon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -83,10 +127,10 @@ function NoticeRow({ item }: { item: ItemOf<'notice'> }): React.JSX.Element {
 function SteerRow({ item }: { item: ItemOf<'steer'> }): React.JSX.Element {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[70%] whitespace-pre-wrap rounded-2xl bg-muted px-4 py-2.5 text-sm text-foreground">
+      <div className="max-w-[70%] whitespace-pre-wrap break-words rounded-chat-bubble bg-chat-bubble px-4 py-2.5 text-sm leading-[22px] text-foreground">
         {item.text}
         {!item.delivered && (
-          <div className="pt-1 text-xs text-muted-foreground">
+          <div className="pt-1 text-xs text-chat-ink-tertiary">
             {translate('components.chat-thread.steerPending', 'Sending')}
           </div>
         )}
@@ -118,9 +162,13 @@ export const ChatItemRow = memo(function ChatItemRow({ item }: { item: ChatEngin
 export function ChatItemList({ items }: { items: ChatEngineItem[] }): React.JSX.Element {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      {items.map((item) => (
-        <ChatItemRow key={item.id} item={item} />
-      ))}
+      {chatItemRuns(items).map((run) =>
+        run.kind === 'group' ? (
+          <ChatToolGroupRow key={run.id} items={run.items} />
+        ) : (
+          <ChatItemRow key={run.item.id} item={run.item} />
+        )
+      )}
     </div>
   )
 }

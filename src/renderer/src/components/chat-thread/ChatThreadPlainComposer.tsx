@@ -29,32 +29,30 @@ export function ChatThreadPlainComposer(props: {
   }
   const label = translate('components.chat-thread.send', 'Send')
   return (
-    <div className="mx-auto w-[clamp(680px,64%,920px)] max-w-full px-4 pb-4">
-      <div className="flex items-end gap-2 rounded-xl border border-border bg-card p-2 shadow-xs">
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault()
-              void submit()
-            }
-          }}
-          rows={2}
-          aria-label={translate('components.chat-thread.message', 'Message')}
-          placeholder={translate('components.chat-thread.placeholder', 'Ask Claude')}
-          className="min-h-10 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
-        />
-        <Button
-          size="icon-sm"
-          aria-label={label}
-          disabled={!text.trim() || sending}
-          onClick={() => void submit()}
-          className="rounded-full"
-        >
-          <ArrowUp />
-        </Button>
-      </div>
+    <div className="flex items-end gap-2 rounded-chat-composer bg-background p-2 pl-3 shadow-chat-soft">
+      <textarea
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault()
+            void submit()
+          }
+        }}
+        rows={2}
+        aria-label={translate('components.chat-thread.message', 'Message')}
+        placeholder={translate('components.chat-thread.placeholder', 'Ask Claude')}
+        className="min-h-10 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
+      />
+      <Button
+        size="icon-sm"
+        aria-label={label}
+        disabled={!text.trim() || sending}
+        onClick={() => void submit()}
+        className="rounded-full"
+      >
+        <ArrowUp />
+      </Button>
     </div>
   )
 }

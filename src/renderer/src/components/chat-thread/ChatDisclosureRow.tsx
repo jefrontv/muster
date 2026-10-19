@@ -9,6 +9,9 @@ export function ChatDisclosureRow(props: {
   label: React.ReactNode
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Shimmers the label while the step runs. */
+  live?: boolean
+  bodyClassName?: string
   children: React.ReactNode
 }): React.JSX.Element {
   const bodyId = useId()
@@ -18,28 +21,39 @@ export function ChatDisclosureRow(props: {
         type="button"
         aria-expanded={props.open}
         aria-controls={props.open ? bodyId : undefined}
+        aria-busy={props.live || undefined}
         onClick={() => props.onOpenChange(!props.open)}
-        className="group flex h-6 w-full min-w-0 items-center gap-2 rounded-sm text-left text-[13px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          'group/row flex h-(--chat-row-height) w-full min-w-0 items-center gap-1.5 rounded-sm text-left text-[13px] text-chat-ink-tertiary transition-colors duration-100 hover:text-chat-ink-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          props.open && 'text-chat-ink-secondary'
+        )}
       >
         <span className="relative flex size-4 shrink-0 items-center justify-center">
-          <span className="flex transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0">
+          <span className="flex transition-opacity duration-100 group-hover/row:opacity-0 group-focus-visible/row:opacity-0">
             {props.icon}
           </span>
           <ChevronRight
             className={cn(
-              'absolute size-3.5 opacity-0 transition-[opacity,transform] group-hover:opacity-100 group-focus-visible:opacity-100',
+              'absolute size-3.5 opacity-0 transition-[opacity,transform] duration-100 group-hover/row:opacity-100 group-focus-visible/row:opacity-100',
               props.open && 'rotate-90'
             )}
             aria-hidden
           />
         </span>
-        {props.label}
+        <span className={cn('flex min-w-0 items-center gap-2', props.live && 'chat-shimmer')}>
+          {props.label}
+        </span>
       </button>
       {props.open && (
-        <div id={bodyId} className="pb-1 pl-6 pt-0.5">
+        <div id={bodyId} className={cn('pb-1 pl-[22px] pt-1', props.bodyClassName)}>
           {props.children}
         </div>
       )}
     </div>
   )
+}
+
+/** The 2px dot DSH puts between a row's title and its summary. */
+export function ChatRowDot(): React.JSX.Element {
+  return <span className="size-0.5 shrink-0 rounded-full bg-current opacity-60" aria-hidden />
 }
