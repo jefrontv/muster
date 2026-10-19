@@ -7,6 +7,7 @@ import { MessageCircle, Code2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 import { translate } from '@/i18n/i18n'
+import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 
@@ -19,7 +20,8 @@ const SLIDE_MS = 200
 let pillSeenOnce = false
 
 export function ChatModeToggle({ mode }: { mode: 'chat' | 'code' }): React.JSX.Element | null {
-  const enabled = useAppStore((s) => s.settings?.experimentalChatMode === true)
+  const enabled =
+    useAppStore((s) => s.settings?.experimentalChatMode === true) && chatModeSupported()
   const openChatPage = useAppStore((s) => s.openChatPage)
   const closeChatPage = useAppStore((s) => s.closeChatPage)
   // Why the owning sidebar's mode, not the live view: on a switch the outgoing sidebar

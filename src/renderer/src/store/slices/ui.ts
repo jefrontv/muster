@@ -7,6 +7,7 @@ import {
 } from '../../../../shared/site-setup-minimize'
 import type { AppState } from '../types'
 import { normalizeRightSidebarRoute } from '../right-sidebar-route'
+import { chatModeSupported } from '@/lib/chat-mode-platform'
 import {
   findPrevLiveNonTaskStackHistoryIndex,
   findPrevLiveWorktreeHistoryIndex
@@ -1462,12 +1463,17 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set((state) => ({
       activeView: state.previousViewBeforeMobile
     })),
-  openChatPage: () =>
+  openChatPage: () => {
+    // Every entry point (toggle, onboarding, IPC, feature wall) comes through here.
+    if (!chatModeSupported()) {
+      return
+    }
     set((state) => ({
       activeView: 'chat',
       previousViewBeforeChat:
         state.activeView === 'chat' ? state.previousViewBeforeChat : state.activeView
-    })),
+    }))
+  },
   closeChatPage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeChat

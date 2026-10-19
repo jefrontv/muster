@@ -130,7 +130,9 @@ describe('OnboardingFlow', () => {
     })
 
     expect(html).toContain('Set Windows terminal defaults')
-    expect(html).toContain('7 of 8')
+    // Default view is skipped: Chat is unavailable on Windows.
+    expect(html).toContain('6 of 7')
+    expect(html).not.toContain('Default View')
   })
 
   it('drops the skipped integrations step from the stepper on Windows', () => {
@@ -155,11 +157,11 @@ describe('OnboardingFlow', () => {
     })
 
     expect(html).toContain('Set Windows terminal defaults')
-    // Why: integrations is skipped (gh already installed), so it is not a
-    // stepper dot at all — the seven real steps are default view, agent, theme,
+    // Why: integrations is skipped (gh already installed) and default view is
+    // skipped (no Chat on Windows), so the six real steps are agent, theme,
     // site folders, site tools, Windows terminal, notifications, and Windows
-    // terminal is the sixth of seven.
-    expect(html).toContain('6 of 7')
+    // terminal is the fifth of six.
+    expect(html).toContain('5 of 6')
     expect(html).not.toContain('Connect your sources')
     expect(html).not.toContain('Integrations')
   })

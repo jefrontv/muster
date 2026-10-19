@@ -16,6 +16,7 @@ import { resolveOnboardingSettingsHydration } from './onboarding-settings-hydrat
 import { translate } from '@/i18n/i18n'
 import { resolveAgentPermissionModeSummary } from '../../../../shared/tui-agent-permissions'
 import { isWindowsUserAgent } from '@/components/terminal-pane/pane-helpers'
+import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { buildWindowsTerminalSnapshotPayload } from './windows-terminal-onboarding-telemetry'
 import {
   onboardingFinishBusyLabel,
@@ -73,6 +74,7 @@ type OnboardingStepSkipOptions = {
   skipSiteSources: boolean
   skipSiteMcp: boolean
   skipWindowsTerminal: boolean
+  skipDefaultView: boolean
 }
 
 function isSkippedStepIndex(index: number, options: OnboardingStepSkipOptions): boolean {
@@ -81,7 +83,8 @@ function isSkippedStepIndex(index: number, options: OnboardingStepSkipOptions): 
     (options.skipIntegrations && step?.id === 'integrations') ||
     (options.skipSiteSources && step?.id === 'site_sources') ||
     (options.skipSiteMcp && step?.id === 'site_mcp') ||
-    (options.skipWindowsTerminal && step?.id === 'windows_terminal')
+    (options.skipWindowsTerminal && step?.id === 'windows_terminal') ||
+    (options.skipDefaultView && step?.id === 'default_view')
   )
 }
 
@@ -223,8 +226,10 @@ export function useOnboardingFlow(
   const activeCollabConfigured = useAppStore.getState().activeCollabStatus.configured
 
   // Declared ahead of the skip options because the site_mcp step is gated on it.
+  // No Chat/Code choice where Chat is unavailable.
+  const skipDefaultView = !chatModeSupported()
   const [defaultView, setDefaultView] = useState<OnboardingDefaultView>(() =>
-    resolveOnboardingDefaultView(useAppStore.getState().activeView)
+    skipDefaultView ? 'code' : resolveOnboardingDefaultView(useAppStore.getState().activeView)
   )
 
   const skipIntegrations = shouldSkipIntegrationsStep(
@@ -235,8 +240,14 @@ export function useOnboardingFlow(
   const skipSiteSources = shouldSkipSiteSourcesStep(defaultView)
   const skipWindowsTerminal = shouldSkipWindowsTerminalStep(isWindowsUserAgent())
   const skipOptions = useMemo(
-    () => ({ skipIntegrations, skipSiteSources, skipSiteMcp, skipWindowsTerminal }),
-    [skipIntegrations, skipSiteSources, skipSiteMcp, skipWindowsTerminal]
+    () => ({
+      skipIntegrations,
+      skipSiteSources,
+      skipSiteMcp,
+      skipWindowsTerminal,
+      skipDefaultView
+    }),
+    [skipIntegrations, skipSiteSources, skipSiteMcp, skipWindowsTerminal, skipDefaultView]
   )
   const remappedLastCompletedStep = remapOpenOnboardingLastCompletedStep(onboarding)
   const initialStep = resolveStepIndex(
