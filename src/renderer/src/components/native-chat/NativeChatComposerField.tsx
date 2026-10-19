@@ -7,6 +7,7 @@ import type {
 import { FileText, ImageOff, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
+import { useNativeChatSurface } from './native-chat-surface-context'
 import { NATIVE_FILE_DROP_TARGET } from '../../../../shared/native-file-drop'
 import { basename } from '@/lib/path'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
@@ -130,11 +131,12 @@ export function NativeChatComposerField({
   onAttachTask,
   activeCollabProjectId
 }: NativeChatComposerFieldProps): React.JSX.Element {
+  const { seat } = useNativeChatSurface()
   return (
-    <div className="shrink-0 bg-background">
+    <div className={cn('shrink-0', !seat && 'bg-background')}>
       {/* Extra bottom padding keeps the input box off the window rim. */}
-      <div className="px-3 pt-2 pb-4 sm:px-4">
-        <div className="relative mx-auto w-full max-w-3xl">
+      <div className={cn(!seat && 'px-3 pt-2 pb-4 sm:px-4')}>
+        <div className={cn('relative w-full', !seat && 'mx-auto max-w-3xl')}>
           {autocomplete.mode === 'slash' || autocomplete.mode === 'skill' ? (
             <NativeChatPickerMenu
               autocomplete={autocomplete}
@@ -159,8 +161,9 @@ export function NativeChatComposerField({
               // Why: always-on hairline (token-level border, not focus ring) —
               // no focus/click border flash. The box is a container, not a
               // focus target.
-              'rounded-lg border border-border p-1.5 shadow-xs',
-              'bg-muted/50 dark:bg-input/40'
+              seat
+                ? 'rounded-chat-composer bg-background p-2 shadow-chat-soft'
+                : 'rounded-lg border border-border p-1.5 shadow-xs bg-muted/50 dark:bg-input/40'
             )}
           >
             {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
@@ -275,7 +278,8 @@ export function NativeChatComposerField({
               // max-height it scrolls, and scrollbar-sleek keeps that gutter quiet.
               className={cn(
                 'scrollbar-sleek field-sizing-content min-h-12 max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none pointer-coarse:min-h-14',
-                'placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50'
+                'placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50',
+                seat && 'px-3 leading-6 placeholder:text-chat-ink-caption'
               )}
             />
             <div className="flex flex-wrap items-center gap-2 pt-0.5">

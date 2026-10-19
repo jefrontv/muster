@@ -16,6 +16,7 @@ import { ensureChatThreadSession } from '@/lib/chat-thread-session-ensure'
 import { useAppStore } from '@/store'
 import NativeChatView from '@/components/native-chat/NativeChatView'
 import { seedTaskAttachmentsForTab } from '@/components/native-chat/use-native-chat-task-attachments'
+import { ChatThreadComposerSeat } from './ChatThreadComposerSeat'
 import { ChatThreadTaskStrip } from './ChatThreadTaskStrip'
 import {
   ChatThreadEndedNotice,
@@ -24,7 +25,6 @@ import {
 } from './ChatThreadNotice'
 import { useMissingFolder } from './use-missing-folder'
 import { ChatThreadSurface } from '@/components/chat-thread/ChatThreadSurface'
-import { ChatThreadPlainComposer } from '@/components/chat-thread/ChatThreadPlainComposer'
 import { chatEngineSurfaceEnabled } from '@/components/chat-thread/chat-engine-surface-flag'
 import { useChatThreadTransport } from './use-chat-thread-transport'
 
@@ -143,6 +143,8 @@ export function ChatThreadView({
     void send(firstMessage).catch(() => undefined)
   }, [firstMessage, identity.tabId, thread.id, thread.agent, send])
 
+  const activeCollabProjectId =
+    workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
   return (
     <div className="flex h-full min-h-0 flex-col">
       {thread.activeCollabTask ? (
@@ -155,7 +157,15 @@ export function ChatThreadView({
         <div className="min-h-0 flex-1">
           <ChatThreadSurface
             threadId={thread.id}
-            footer={<ChatThreadPlainComposer onSend={(text) => send(text)} />}
+            footer={
+              <ChatThreadComposerSeat
+                thread={thread}
+                transport={transport}
+                workingDirectory={workspace?.directories[0] ?? null}
+                activeCollabProjectId={activeCollabProjectId}
+                notice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
+              />
+            }
           />
         </div>
       ) : (
@@ -170,9 +180,7 @@ export function ChatThreadView({
               ? { id: thread.claudeSessionId, transcriptPath: thread.transcriptPath }
               : null
           }
-          activeCollabProjectId={
-            workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
-          }
+          activeCollabProjectId={activeCollabProjectId}
           composerNotice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
           surface="chat"
           showTechnicalDetails={thread.showTechnicalDetails === true}

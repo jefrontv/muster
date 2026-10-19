@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type {
   SessionOptionDescriptor,
@@ -73,7 +74,7 @@ export function NativeChatComposerActions({
   // One slot for every picker on this bar (thought level / model / access), so opening one closes
   // whichever was open instead of stacking a second panel over it.
   const [openPicker, setOpenPicker] = React.useState<string | null>(null)
-  const { chatThread, reportedModel } = useNativeChatSurface()
+  const { chatThread, reportedModel, seat } = useNativeChatSurface()
   const showMeter =
     contextUsedTokens !== null &&
     contextUsedTokens /
@@ -201,9 +202,13 @@ export function NativeChatComposerActions({
           }
           disabled={sendDisabled}
           onClick={isWorking ? onStop : onSend}
-          variant={isWorking ? 'secondary' : 'default'}
+          // In the seat, Send and Stop are the same 34px circle so swapping them moves nothing.
+          variant={isWorking && !seat ? 'secondary' : 'default'}
           size="icon"
-          className="ml-0.5 size-8 rounded-full pointer-coarse:size-10"
+          className={cn(
+            'ml-0.5 rounded-full',
+            seat ? 'size-[34px]' : 'size-8 pointer-coarse:size-10'
+          )}
         >
           {isWorking ? (
             <Square className="size-3.5 fill-current" />
