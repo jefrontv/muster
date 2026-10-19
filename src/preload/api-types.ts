@@ -56,6 +56,13 @@ import type {
   ChatThreadStreamStartArgs,
   ChatThreadStreamStartResult
 } from '../shared/chat-thread-stream-types'
+import type {
+  ChatEngineCapabilities,
+  ChatEngineControlAction,
+  ChatEngineControlResult,
+  ChatEnginePatch,
+  ChatEngineSnapshot
+} from '../shared/chat-engine-types'
 import type { SiteWpCliResult } from '../shared/site-wp-cli-actions'
 import type {
   AgentLocalDaemonStatus,
@@ -1008,6 +1015,18 @@ export type PlanAnnotationApi = {
 /** Chat mode's headless stream-json transport: one child process per thread.
  *  Assistant deltas and lifecycle arrive via onEvent; the transcript file stays
  *  the authoritative message source. */
+export type ChatEngineApi = {
+  /** Current snapshot; patches for the thread follow on onPatch until unsubscribe. */
+  subscribe: (threadId: string) => Promise<ChatEngineSnapshot>
+  unsubscribe: (threadId: string) => Promise<void>
+  /** Commands, models and agents the live process reported; null before it answers. */
+  capabilities: (threadId: string) => Promise<ChatEngineCapabilities | null>
+  control: (threadId: string, action: ChatEngineControlAction) => Promise<ChatEngineControlResult>
+  /** False when the thread's Claude transcript is gone, so `--resume` would fail. */
+  transcriptExists: (threadId: string) => Promise<boolean>
+  onPatch: (callback: (patch: ChatEnginePatch) => void) => () => void
+}
+
 export type ChatThreadStreamApi = {
   start: (args: ChatThreadStreamStartArgs) => Promise<ChatThreadStreamStartResult>
   /** Busy thread: auto holds the message in main's queue; steer hands it to the running turn. */
@@ -1800,6 +1819,7 @@ export type PreloadApi = {
   chatConnector: ChatConnectorApi
   planAnnotation: PlanAnnotationApi
   chatThreadStream: ChatThreadStreamApi
+  chatEngine: ChatEngineApi
   chatThreadTitle: ChatThreadTitleApi
   siteRoots: SiteRootsApi
   siteStacks: SiteStacksApi

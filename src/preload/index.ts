@@ -984,6 +984,22 @@ const api = {
     }
   } satisfies PreloadApi['chatThreadStream'],
 
+  chatEngine: {
+    subscribe: (threadId) => ipcRenderer.invoke('chatEngine:subscribe', threadId),
+    unsubscribe: (threadId) => ipcRenderer.invoke('chatEngine:unsubscribe', threadId),
+    capabilities: (threadId) => ipcRenderer.invoke('chatEngine:capabilities', threadId),
+    control: (threadId, action) => ipcRenderer.invoke('chatEngine:control', threadId, action),
+    transcriptExists: (threadId) => ipcRenderer.invoke('chatEngine:transcriptExists', threadId),
+    onPatch: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: Parameters<typeof callback>[0]
+      ): void => callback(payload)
+      ipcRenderer.on('chatEngine:patch', listener)
+      return () => ipcRenderer.removeListener('chatEngine:patch', listener)
+    }
+  } satisfies PreloadApi['chatEngine'],
+
   chatThreadTitle: {
     generate: (args) => ipcRenderer.invoke('chatThreadTitle:generate', args)
   } satisfies PreloadApi['chatThreadTitle'],
