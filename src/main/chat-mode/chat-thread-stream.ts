@@ -22,7 +22,7 @@ import {
   appendedSystemPromptArgs,
   removeChatThreadSystemPromptFile
 } from './chat-thread-stream-system-prompt'
-import { mcpConfigArgs, removeChatThreadMcpConfigFile } from './chat-thread-stream-mcp-config'
+import { musterMcpServersRequest } from './chat-thread-stream-mcp-config'
 import { buildPermissionControlResponse } from './chat-thread-permission-response'
 import type { ChatThreadStreamDeps, ChatThreadStreamSender } from './chat-thread-stream-deps'
 import { registry, writeStdinLine, type StreamEntry } from './chat-thread-stream-registry'
@@ -80,20 +80,19 @@ export function startChatThreadStream(
     return preflightFailure
   }
   // Replace semantics: a relaunch for the same thread supersedes the old child.
-  // Must run before the MCP register/write below so the old session's cleanup
-  // can't delete the new session's config file or token.
+  // Must run before the MCP register below so the old session's cleanup can't
+  // revoke the new session's token.
   stopChatThreadStream(threadId)
 
   const mcp = deps.mcp ?? null
   const mcpRegistration = mcp?.register(threadId) ?? null
-  const extraArgs = [
-    ...(args.appendSystemPrompt ? appendedSystemPromptArgs(args.appendSystemPrompt, threadId) : []),
-    ...(mcpRegistration ? mcpConfigArgs(mcpRegistration, threadId) : [])
-  ]
+  let mcpAttached = mcpRegistration === null
+  const extraArgs = args.appendSystemPrompt
+    ? appendedSystemPromptArgs(args.appendSystemPrompt, threadId)
+    : []
   const cleanup = (): void => {
     if (mcp && mcpRegistration) {
       mcp.revoke(threadId, mcpRegistration.token)
-      removeChatThreadMcpConfigFile(threadId)
     }
     removeChatThreadSystemPromptFile(threadId)
   }
@@ -186,6 +185,14 @@ export function startChatThreadStream(
   const emit = entry.emit
   const decoder = createChatThreadStreamDecoder(threadId, emit, (record) => {
     entry.lastActivityAt = Date.now()
+    if (!mcpAttached && mcpRegistration && record.type === 'system' && record.subtype === 'init') {
+      mcpAttached = true
+      entry.controlRequestCounter += 1
+      writeStdinLine(
+        entry,
+        musterMcpServersRequest(mcpRegistration, `req_${entry.controlRequestCounter}`)
+      )
+    }
     entry.engine?.observe(record)
     // Learn every model the CLI reports so new models adapt without a release.
     for (const entry of resultModelWindows(record)) {

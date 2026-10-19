@@ -599,7 +599,7 @@ describe('startChatThreadStream', () => {
     child.emit('close', 0)
   })
 
-  it('appends --mcp-config with the registered coordinates and cleans up once on stop', () => {
+  it('attaches the muster server once on init, never as a launch flag, and revokes once on stop', () => {
     const child = createFakeChild()
     const { sender } = createSender()
     let seenArgs: string[] = []
@@ -618,40 +618,44 @@ describe('startChatThreadStream', () => {
         }
       }
     )
-    const file = flagValue(seenArgs, '--mcp-config')
-    expect(file).toBeDefined()
-    const config = JSON.parse(readFileSync(file!, 'utf8'))
-    expect(config).toEqual({
-      mcpServers: {
-        muster: {
-          type: 'http',
-          url: 'http://127.0.0.1:9999/mcp',
-          headers: { Authorization: 'Bearer tok-1' }
+    expect(seenArgs).not.toContain('--mcp-config')
+    expect(seenArgs).not.toContain('--strict-mcp-config')
+    expect(child.stdin.read()).toBeNull()
+    const init = `${JSON.stringify({ type: 'system', subtype: 'init', session_id: 's-1' })}\n`
+    child.stdout.write(init)
+    child.stdout.write(init)
+    const lines = (child.stdin.read() as Buffer).toString().trim().split('\n')
+    expect(lines.map((line) => JSON.parse(line))).toEqual([
+      {
+        type: 'control_request',
+        request_id: 'req_1',
+        request: {
+          subtype: 'mcp_set_servers',
+          servers: {
+            muster: {
+              type: 'http',
+              url: 'http://127.0.0.1:9999/mcp',
+              headers: { Authorization: 'Bearer tok-1' }
+            }
+          }
         }
       }
-    })
-    // The user's other MCP servers must keep loading.
-    expect(seenArgs).not.toContain('--strict-mcp-config')
+    ])
     stopChatThreadStream('t-mcp-stop')
     expect(revoked).toEqual([['t-mcp-stop', 'tok-1']])
-    expect(existsSync(file!)).toBe(false)
     child.emit('close', 0)
     // Close after an intentional stop must not revoke a second time.
     expect(revoked).toHaveLength(1)
   })
 
-  it('cleans up the mcp registration on an unexpected close', () => {
+  it('revokes the mcp registration on an unexpected close', () => {
     const child = createFakeChild()
     const { sender } = createSender()
-    let seenArgs: string[] = []
     const revoked: string[] = []
     startChatThreadStream(
       { threadId: 't-mcp-crash', command: 'claude -p', sender },
       {
-        spawn: (_cmd, args) => {
-          seenArgs = args
-          return child
-        },
+        spawn: () => child,
         ...DIRECT_SPAWN,
         mcp: {
           register: () => ({ url: 'http://127.0.0.1:9999/mcp', token: 'tok-2' }),
@@ -659,11 +663,8 @@ describe('startChatThreadStream', () => {
         }
       }
     )
-    const file = flagValue(seenArgs, '--mcp-config')
-    expect(existsSync(file!)).toBe(true)
     child.emit('close', 1)
     expect(revoked).toEqual(['tok-2'])
-    expect(existsSync(file!)).toBe(false)
   })
 
   it('launches without the flag when the connector has nothing to register', () => {
