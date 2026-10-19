@@ -230,3 +230,9 @@ export function chatEngineThreadStore(): ChatEngineThreadStore {
   defaultStore ??= createChatEngineThreadStore({ api: window.api.chatEngine })
   return defaultStore
 }
+
+/** Tests only: swap the store the hooks read; null restores the default. */
+export function replaceChatEngineThreadStore(store: ChatEngineThreadStore | null): void {
+  defaultStore?.dispose()
+  defaultStore = store
+}
