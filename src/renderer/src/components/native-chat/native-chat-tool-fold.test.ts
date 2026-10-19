@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { NativeChatMessage } from '../../../../shared/native-chat-types'
-import { foldToolMessages, splitNativeChatBlocks, withoutPlanTools } from './native-chat-tool-fold'
+import {
+  foldToolMessages,
+  splitNativeChatBlocks,
+  withoutPlanTools
+} from '../../../../shared/native-chat-tool-fold'
 import type { NativeChatBlock } from '../../../../shared/native-chat-types'
 
 describe('withoutPlanTools', () => {

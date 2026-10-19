@@ -1,6 +1,6 @@
 // End to end without Electron: the fake Claude CLI streams a turn, main's stream
-// decoder and transcript reader turn it into messages, and the work log describes
-// it for both surfaces, as a thread does after the transcript lands.
+// decoder and transcript reader turn it into messages, and Code mode's adapter
+// turns those into the chat-engine turn the thread surface draws.
 
 import { spawn } from 'node:child_process'
 import { mkdtemp, readdir, rm } from 'node:fs/promises'
@@ -11,8 +11,21 @@ import type { ChatThreadStreamEvent } from '../../../../shared/chat-thread-strea
 import { createChatThreadStreamDecoder } from '../../../../main/chat-mode/chat-thread-stream-decode'
 import { readNativeChatTranscript } from '../../../../main/native-chat/transcript-reader'
 import type { NativeChatMessage } from '../../../../shared/native-chat-types'
-import { deriveNativeChatTurnWork } from './native-chat-turn-work'
-import { buildNativeChatTimelineRows } from './native-chat-timeline-rows'
+import { nativeChatEngineTurns } from './native-chat-engine-turns'
+
+function settledTurns(messages: NativeChatMessage[]) {
+  return nativeChatEngineTurns(
+    {
+      agent: 'claude',
+      messages,
+      isWorking: false,
+      awaitingUser: false,
+      failedDeliveryText: 'Not delivered',
+      now: 0
+    },
+    null
+  ).turns
+}
 
 const FIXTURE = resolve(__dirname, '../../../../../tests/e2e/fixtures/fake-claude-stream.cjs')
 
@@ -63,35 +76,22 @@ describe('a fake Claude turn through the decoders', () => {
     expect(events.at(-1)).toMatchObject({ kind: 'turn-complete', isError: false })
   })
 
-  it('reads as plain sentences in Chat mode and as real work in Code mode', async () => {
+  it('maps every tool in the transcript onto the thread registry', async () => {
     const { messages } = await runTurn('fix the header')
-    const chat = deriveNativeChatTurnWork(messages, { surface: 'chat', live: false, cwd: dir })
-    const lines = chat.activities.map((a) => [a.verb, a.object].filter(Boolean).join(' '))
-    expect(lines).toEqual([
-      'Read style.css',
-      'Build the theme',
-      'Searched the web',
-      'Asked a helper to check other headers',
-      'Updated style.css'
-    ])
-    expect(JSON.stringify(chat.activities)).not.toContain('npm run build')
-
-    const code = deriveNativeChatTurnWork(messages, { surface: 'code', live: false, cwd: dir })
-    const edit = code.activities.find((a) => a.group === 'edit')
-    expect(edit).toMatchObject({ object: 'style.css', additions: 1, deletions: 1, detail: 'diff' })
-    expect(code.activities.find((a) => a.group === 'command')).toMatchObject({
-      object: 'npm run build',
-      detail: 'terminal'
+    const [turn] = settledTurns(messages)
+    expect(turn).toMatchObject({ status: 'done', user: { text: 'fix the header' } })
+    const tools = turn!.items.flatMap((item) =>
+      item.kind === 'tool' ? [item.name] : item.kind === 'agent' ? ['agent'] : []
+    )
+    expect(tools).toEqual(['Read', 'Bash', 'WebSearch', 'agent', 'Edit'])
+    const edit = turn!.items.find((item) => item.kind === 'tool' && item.name === 'Edit')
+    expect(edit).toMatchObject({
+      status: 'done',
+      result: { additions: 1, deletions: 1, isError: false }
     })
-    expect(code.activities.find((a) => a.group === 'web')?.sources).toHaveLength(1)
-  })
-
-  it('settles into prose rows, one work log and a changes card', async () => {
-    const { messages } = await runTurn('fix the header')
-    const rows = buildNativeChatTimelineRows({ messages, isWorking: false, surface: 'chat' })
-    expect(rows.filter((row) => row.kind === 'work-log')).toHaveLength(1)
-    expect(rows.some((row) => row.kind === 'turn-changed-files')).toBe(true)
-    expect(rows.filter((row) => row.kind === 'message').length).toBeGreaterThanOrEqual(3)
+    const bash = turn!.items.find((item) => item.kind === 'tool' && item.name === 'Bash')
+    expect(bash).toMatchObject({ input: { command: 'npm run build' }, status: 'done' })
+    expect(turn!.items.some((item) => item.kind === 'text')).toBe(true)
   })
 
   it('ends a failed turn with an error result', async () => {

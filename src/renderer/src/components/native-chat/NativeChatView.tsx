@@ -5,7 +5,8 @@ import type { NativeChatSession } from '../../../../shared/native-chat-types'
 import { useNativeChatLiveSession } from './use-native-chat-live-session'
 import { useStableSessionMessages } from './native-chat-message-identity'
 import { selectNativeChatViewState } from './native-chat-view-state'
-import { NativeChatMessageList } from './NativeChatMessageList'
+import { ChatThreadSurface } from '../chat-thread/ChatThreadSurface'
+import type { ChatEarlierHistory } from '../chat-thread/use-chat-turn-paging'
 import type { NativeChatComposerHandle } from './NativeChatComposer'
 import { NativeChatViewInput } from './NativeChatViewInput'
 import { useNativeChatFontScale } from './use-native-chat-font-scale'
@@ -35,6 +36,10 @@ import { useNativeChatFileLinkClick } from './use-native-chat-file-link-click'
 import type { NativeChatViewProps } from './native-chat-view-types'
 import { NativeChatSurfaceProvider } from './native-chat-surface-context'
 import { useNativeChatSurfaceValue } from './use-native-chat-surface-value'
+import {
+  nativeChatEngineThreadId,
+  useNativeChatEngineThread
+} from './use-native-chat-engine-thread'
 
 export type { NativeChatTransport, NativeChatViewProps } from './native-chat-view-types'
 
@@ -267,12 +272,31 @@ function NativeChatResolvedView({
     fileLinkContext
   })
 
+  // The composer takes the engine surface's seat look, as in Chat mode.
+  const seatSurfaceValue = useMemo(() => ({ ...surfaceValue, seat: true }), [surfaceValue])
+  const threadId = nativeChatEngineThreadId(paneKey)
+  useNativeChatEngineThread({
+    threadId,
+    agent,
+    sessionId,
+    cwd: surfaceValue.cwd,
+    messages: sessionWithPending.messages,
+    isWorking,
+    awaitingUser,
+    failedDeliveryMessageIds: failedLaunchPromptMessageIds
+  })
+  const { hasMore, loadingEarlier, loadEarlier } = session
+  const earlier = useMemo<ChatEarlierHistory>(
+    () => ({ hasMore, loading: loadingEarlier, load: loadEarlier }),
+    [hasMore, loadingEarlier, loadEarlier]
+  )
+
   // Chat-only font zoom via Cmd/Ctrl +/-/0, gated to the live conversation so
   // the chord is inert on the loading/empty/error states and elsewhere.
   const fontScale = useNativeChatFontScale(isConversation)
 
   return (
-    <NativeChatSurfaceProvider value={surfaceValue}>
+    <NativeChatSurfaceProvider value={seatSurfaceValue}>
       <div
         ref={rootRef}
         data-native-chat-root="true"
@@ -284,53 +308,49 @@ function NativeChatResolvedView({
         onContextMenuCapture={contextMenu.onContextMenuCapture}
         className="flex h-full min-h-0 w-full flex-col bg-background focus:outline-none"
       >
-        <div className="flex min-h-0 flex-1 flex-col">
-          {viewState.kind === 'loading' ? (
-            <NativeChatEmptyState kind="loading" />
-          ) : viewState.kind === 'error' ? (
-            <NativeChatEmptyState kind="error" message={viewState.message} />
-          ) : viewState.kind === 'empty' ? (
-            <NativeChatEmptyState kind="empty" agent={agent} />
-          ) : (
-            <NativeChatMessageList
-              session={sessionWithPending}
-              isWorking={isWorking}
-              fontScale={fontScale.scale}
-              onLinkClick={nativeChatFileLinkClick}
-              allowFileUriLinks={fileLinkContext !== null}
-              failedDeliveryMessageIds={failedLaunchPromptMessageIds}
-              // Working-timer start: the hook's state epoch, or during the
-              // pre-signal optimistic phase, the moment the send left.
-              workingSince={
-                liveWorking
-                  ? hookWorkingEpoch
-                  : awaitingSend
-                    ? (pending[0]?.sentAt ?? paneLaunchPrompt?.createdAt ?? null)
-                    : null
-              }
-            />
-          )}
+        {/* `zoom` scales text and layout together, scoped to the chat (Chromium only). */}
+        <div
+          className="min-h-0 flex-1"
+          style={fontScale.scale === 1 ? undefined : { zoom: fontScale.scale }}
+        >
+          <ChatThreadSurface
+            threadId={threadId}
+            onLinkClick={nativeChatFileLinkClick}
+            earlier={earlier}
+            placeholder={
+              viewState.kind === 'loading' || viewState.kind === 'error' ? (
+                <div className="py-16">
+                  <NativeChatEmptyState
+                    kind={viewState.kind}
+                    {...(viewState.kind === 'error' ? { message: viewState.message } : {})}
+                  />
+                </div>
+              ) : undefined
+            }
+            footer={
+              <NativeChatViewInput
+                paneKey={paneKey}
+                terminalTabId={terminalTabId}
+                targetPtyId={targetPtyId}
+                agent={agent}
+                interactiveSend={interactiveSend}
+                canSend={canSend}
+                isWorking={isWorking}
+                questionActive={questionActive}
+                setQuestionActive={setQuestionActive}
+                questionAnswerInputRef={questionAnswerInputRef}
+                composerRef={composerRef}
+                stopAgent={stopAgent}
+                onOptimisticSend={onOptimisticSend}
+                onOptimisticSendCanceled={onOptimisticSendCanceled}
+                onSlashCommand={onSlashCommand}
+                onSwitchToTerminal={onSwitchToTerminal}
+                readTerminalScreen={readTerminalScreen}
+                runtimeEnvironmentId={runtimeEnvironmentId}
+              />
+            }
+          />
         </div>
-        <NativeChatViewInput
-          paneKey={paneKey}
-          terminalTabId={terminalTabId}
-          targetPtyId={targetPtyId}
-          agent={agent}
-          interactiveSend={interactiveSend}
-          canSend={canSend}
-          isWorking={isWorking}
-          questionActive={questionActive}
-          setQuestionActive={setQuestionActive}
-          questionAnswerInputRef={questionAnswerInputRef}
-          composerRef={composerRef}
-          stopAgent={stopAgent}
-          onOptimisticSend={onOptimisticSend}
-          onOptimisticSendCanceled={onOptimisticSendCanceled}
-          onSlashCommand={onSlashCommand}
-          onSwitchToTerminal={onSwitchToTerminal}
-          readTerminalScreen={readTerminalScreen}
-          runtimeEnvironmentId={runtimeEnvironmentId}
-        />
         {contextMenu.menu}
       </div>
     </NativeChatSurfaceProvider>

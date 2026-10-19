@@ -217,4 +217,45 @@ describe('chat engine thread store', () => {
       vi.useRealTimers()
     }
   })
+
+  it('keeps a renderer-owned thread off main and shares unchanged turns', async () => {
+    const h = harness({ version: 1, meta: meta(), turns: [] })
+    store = h.store
+    const listener = vi.fn()
+    h.store.subscribe('t1', listener)
+    h.store.replaceLocal('t1', meta('working'), [turn('a', [text('a#0', 'Hi')])])
+    // Readable in the same pass, so a surface below the writer never draws an empty frame.
+    const first = h.store.read('t1')!
+    expect(first.order).toEqual(['a'])
+    const release = h.store.retain('t1')
+    h.patch({ version: 9, turns: [turn('b')] })
+    h.store.replaceLocal('t1', meta('working'), [
+      turn('a', [text('a#0', 'Hi')]),
+      turn('b', [text('b#0', 'next')])
+    ])
+    h.frame()
+    expect(listener).toHaveBeenCalledOnce()
+    const second = h.store.read('t1')!
+    expect(second.order).toEqual(['a', 'b'])
+    expect(second.turns.get('a')).toBe(first.turns.get('a'))
+    expect(second.meta).toBe(first.meta)
+    await Promise.resolve()
+    expect(h.api.subscribe).not.toHaveBeenCalled()
+    release()
+    expect(h.store.read('t1')).not.toBeNull()
+    h.store.dropLocal('t1')
+    expect(h.store.read('t1')).toBeNull()
+    expect(h.api.unsubscribe).not.toHaveBeenCalled()
+  })
+
+  it('takes over a thread a retain already started loading', async () => {
+    const h = harness({ version: 1, meta: meta(), turns: [turn('main')] })
+    store = h.store
+    h.store.retain('t1')
+    h.store.replaceLocal('t1', meta(), [turn('local')])
+    await vi.waitFor(() => expect(h.api.subscribe).toHaveBeenCalledOnce())
+    await Promise.resolve()
+    h.frame()
+    expect(h.store.read('t1')?.order).toEqual(['local'])
+  })
 })

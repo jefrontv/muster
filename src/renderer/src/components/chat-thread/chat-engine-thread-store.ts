@@ -27,6 +27,8 @@ type Slot = {
   /** Patches that arrived while a (re)subscribe was in flight. */
   early: ChatEnginePatch[] | null
   releaseTimer: ReturnType<typeof setTimeout> | null
+  /** Filled by a renderer adapter (Code mode), never by main. */
+  local: boolean
 }
 
 export type ChatEngineThreadStore = {
@@ -34,6 +36,10 @@ export type ChatEngineThreadStore = {
   retain: (threadId: string) => () => void
   subscribe: (threadId: string, listener: () => void) => () => void
   read: (threadId: string) => ChatEngineThreadView | null
+  /** Sets a renderer-owned thread whole; main is never asked about it. */
+  replaceLocal: (threadId: string, meta: ChatEngineThreadMeta, turns: ChatEngineTurn[]) => void
+  /** Forgets a renderer-owned thread once its view is gone. */
+  dropLocal: (threadId: string) => void
   dispose: () => void
 }
 
@@ -115,7 +121,7 @@ export function createChatEngineThreadStore(deps: StoreDeps): ChatEngineThreadSt
     slot.early = []
     deps.api.subscribe(threadId).then(
       (snapshot) => {
-        if (slots.get(threadId) !== slot) {
+        if (slots.get(threadId) !== slot || slot.local) {
           return
         }
         const early = slot.early ?? []
@@ -168,7 +174,7 @@ export function createChatEngineThreadStore(deps: StoreDeps): ChatEngineThreadSt
   const ensurePatchListener = (): void => {
     stopPatches ??= deps.api.onPatch((patch) => {
       const slot = slots.get(patch.threadId)
-      if (slot) {
+      if (slot && !slot.local) {
         fold(patch.threadId, slot, patch)
       }
     })
@@ -179,7 +185,14 @@ export function createChatEngineThreadStore(deps: StoreDeps): ChatEngineThreadSt
       ensurePatchListener()
       let slot = slots.get(threadId)
       if (!slot) {
-        slot = { snapshot: null, view: null, refs: 0, early: null, releaseTimer: null }
+        slot = {
+          snapshot: null,
+          view: null,
+          refs: 0,
+          early: null,
+          releaseTimer: null,
+          local: false
+        }
         slots.set(threadId, slot)
         load(threadId, slot)
       }
@@ -196,7 +209,7 @@ export function createChatEngineThreadStore(deps: StoreDeps): ChatEngineThreadSt
         }
         released = true
         held.refs -= 1
-        if (held.refs > 0) {
+        if (held.refs > 0 || held.local) {
           return
         }
         held.releaseTimer = setTimeout(() => {
@@ -224,6 +237,38 @@ export function createChatEngineThreadStore(deps: StoreDeps): ChatEngineThreadSt
     },
 
     read: (threadId) => slots.get(threadId)?.view ?? null,
+
+    replaceLocal(threadId, meta, turns) {
+      let slot = slots.get(threadId)
+      if (!slot) {
+        slot = { snapshot: null, view: null, refs: 0, early: null, releaseTimer: null, local: true }
+        slots.set(threadId, slot)
+      }
+      // A retain that got here first started a subscribe; local data wins over it.
+      slot.local = true
+      slot.early = null
+      const current = slot.snapshot
+      slot.snapshot = {
+        version: (current?.version ?? 0) + 1,
+        meta: replaceEqualDeep(current?.meta, meta),
+        turns: shareTurns(current?.turns ?? [], turns)
+      }
+      // The writer renders above the surface, so the surface reads this pass's turns; rows hear next frame.
+      slot.view = viewFrom(slot.snapshot, slot.view)
+      markDirty(threadId)
+    },
+
+    dropLocal(threadId) {
+      const slot = slots.get(threadId)
+      if (!slot?.local) {
+        return
+      }
+      if (slot.releaseTimer) {
+        clearTimeout(slot.releaseTimer)
+      }
+      slots.delete(threadId)
+      markDirty(threadId)
+    },
 
     dispose() {
       stopPatches?.()

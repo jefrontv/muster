@@ -15,10 +15,14 @@ export function anchoredScrollTop(
   return afterScrollHeight - (before.scrollHeight - before.scrollTop)
 }
 
+/** History the store doesn't hold yet, fetched on demand (Code mode's transcript pages). */
+export type ChatEarlierHistory = { hasMore: boolean; loading: boolean; load: () => void }
+
 export function useChatTurnPaging(
   threadId: string,
   order: string[],
-  scrollRef: React.RefObject<HTMLDivElement | null>
+  scrollRef: React.RefObject<HTMLDivElement | null>,
+  earlier?: ChatEarlierHistory
 ): {
   visible: string[]
   hasEarlier: boolean
@@ -35,11 +39,21 @@ export function useChatTurnPaging(
   }, [threadId, count])
 
   const hasEarlier = order.length > count
+  const canFetch = !hasEarlier && earlier?.hasMore === true && !earlier.loading
+  const loadEarlier = earlier?.load
+  // Set while a fetch is out; its turns land at the front of `order`.
+  const fetchAnchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null)
+  const firstTurn = order[0]
 
   useEffect(() => {
     const scroller = scrollRef.current
     const sentinel = sentinelRef.current
-    if (!scroller || !sentinel || !hasEarlier || typeof IntersectionObserver === 'undefined') {
+    if (
+      !scroller ||
+      !sentinel ||
+      !(hasEarlier || canFetch) ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
       return
     }
     const observer = new IntersectionObserver(
@@ -47,14 +61,30 @@ export function useChatTurnPaging(
         if (!entries.some((entry) => entry.isIntersecting)) {
           return
         }
-        anchorRef.current = { scrollHeight: scroller.scrollHeight, scrollTop: scroller.scrollTop }
-        setCount((current) => current + TURN_PAGE)
+        const anchor = { scrollHeight: scroller.scrollHeight, scrollTop: scroller.scrollTop }
+        if (hasEarlier) {
+          anchorRef.current = anchor
+          setCount((current) => current + TURN_PAGE)
+          return
+        }
+        observer.disconnect()
+        fetchAnchorRef.current = anchor
+        loadEarlier?.()
       },
       { root: scroller, rootMargin: `${REVEAL_MARGIN_PX}px 0px 0px 0px` }
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [scrollRef, hasEarlier, count])
+  }, [scrollRef, hasEarlier, canFetch, loadEarlier, count, firstTurn])
+
+  useLayoutEffect(() => {
+    const scroller = scrollRef.current
+    const anchor = fetchAnchorRef.current
+    fetchAnchorRef.current = null
+    if (scroller && anchor) {
+      scroller.scrollTop = anchoredScrollTop(anchor, scroller.scrollHeight)
+    }
+  }, [firstTurn, scrollRef])
 
   useLayoutEffect(() => {
     const scroller = scrollRef.current
@@ -78,5 +108,10 @@ export function useChatTurnPaging(
     [order]
   )
 
-  return { visible: hasEarlier ? order.slice(-count) : order, hasEarlier, sentinelRef, revealTurn }
+  return {
+    visible: hasEarlier ? order.slice(-count) : order,
+    hasEarlier: hasEarlier || canFetch,
+    sentinelRef,
+    revealTurn
+  }
 }

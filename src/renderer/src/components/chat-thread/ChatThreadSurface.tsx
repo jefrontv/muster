@@ -1,5 +1,5 @@
-// Chat mode's thread transcript, drawn from main's chat engine. It replaces
-// NativeChatView for chat threads only; Code mode keeps NativeChatView.
+// The thread transcript both modes draw: Chat mode's from main's chat engine,
+// Code mode's from the terminal agent's transcript through a renderer adapter.
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
@@ -11,7 +11,7 @@ import { ChatThreadContext, type ChatThreadContextValue } from './chat-thread-co
 import { ChatTurnNavigator } from './ChatTurnNavigator'
 import { ChatTurnView } from './ChatTurnView'
 import { useChatActiveTurn } from './use-chat-active-turn'
-import { useChatTurnPaging } from './use-chat-turn-paging'
+import { useChatTurnPaging, type ChatEarlierHistory } from './use-chat-turn-paging'
 import { useChatScrollFollow, useFollowOnNewTurn } from './use-chat-scroll-follow'
 import {
   useChatEngineMeta,
@@ -53,6 +53,10 @@ export function ChatThreadSurface(props: {
   onRetry?: (text: string) => void
   /** The composer; it sits in a sticky seat at the transcript's width. */
   footer?: React.ReactNode
+  /** Drawn instead of the turns (a load error); the composer stays seated. */
+  placeholder?: React.ReactNode
+  /** Older history fetched when the reader nears the top. */
+  earlier?: ChatEarlierHistory
 }): React.JSX.Element {
   const { threadId, onLinkClick, onRetry } = props
   useRetainChatEngineThread(threadId)
@@ -63,7 +67,7 @@ export function ChatThreadSurface(props: {
   const scroll = useChatScrollFollow(threadId)
   useFollowOnNewTurn(order.length, scroll.follow)
   const seatRef = useRef<HTMLDivElement | null>(null)
-  const paging = useChatTurnPaging(threadId, order, scroll.scrollRef)
+  const paging = useChatTurnPaging(threadId, order, scroll.scrollRef, props.earlier)
   const rendered = useMemo(() => new Set(paging.visible), [paging.visible])
   const active = useChatActiveTurn(scroll.scrollRef, seatRef, order)
   const { release, scrollRef } = scroll
@@ -104,7 +108,7 @@ export function ChatThreadSurface(props: {
   const latest = order.at(-1)
   const busyTurnId = meta?.status === 'working' ? (latest ?? null) : null
   // An empty thread centres the composer under one line of type, at the same width as when docked.
-  const hero = loaded && order.length === 0
+  const hero = !props.placeholder && loaded && order.length === 0
   return (
     <ChatThreadContext.Provider value={context}>
       <div
@@ -134,7 +138,9 @@ export function ChatThreadSurface(props: {
           >
             {paging.hasEarlier && <div ref={paging.sentinelRef} aria-hidden className="h-px" />}
             <div className="flex flex-col gap-6">
-              {hero ? (
+              {props.placeholder ? (
+                props.placeholder
+              ) : hero ? (
                 <h2 className="text-center text-[26px] font-medium leading-8 text-foreground">
                   {translate('components.chat-thread.emptyTitle', 'What should we work on?')}
                 </h2>
@@ -159,7 +165,11 @@ export function ChatThreadSurface(props: {
             </div>
           </div>
           {props.footer && (
-            <div ref={seatRef} className={cn(!hero && 'sticky bottom-0 z-10')}>
+            <div
+              ref={seatRef}
+              data-chat-thread-seat="true"
+              className={cn(!hero && 'sticky bottom-0 z-10')}
+            >
               {/* Fixed height, so text dissolves into the seat at the same rate however tall the composer grows. */}
               {!hero && (
                 <div className="pointer-events-none h-9 bg-gradient-to-b from-transparent to-background" />
