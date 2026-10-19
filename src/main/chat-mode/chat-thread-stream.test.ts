@@ -599,7 +599,7 @@ describe('startChatThreadStream', () => {
     child.emit('close', 0)
   })
 
-  it('attaches the muster server once on init, never as a launch flag, and revokes once on stop', () => {
+  it('attaches the muster server once, never as a launch flag, and revokes once on stop', () => {
     const child = createFakeChild()
     const { sender } = createSender()
     let seenArgs: string[] = []

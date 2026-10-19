@@ -22,7 +22,7 @@ import {
   appendedSystemPromptArgs,
   removeChatThreadSystemPromptFile
 } from './chat-thread-stream-system-prompt'
-import { musterMcpServersRequest } from './chat-thread-stream-mcp-config'
+import { createMusterMcpAttach } from './chat-thread-stream-mcp-config'
 import { buildPermissionControlResponse } from './chat-thread-permission-response'
 import type { ChatThreadStreamDeps, ChatThreadStreamSender } from './chat-thread-stream-deps'
 import { registry, writeStdinLine, type StreamEntry } from './chat-thread-stream-registry'
@@ -86,7 +86,6 @@ export function startChatThreadStream(
 
   const mcp = deps.mcp ?? null
   const mcpRegistration = mcp?.register(threadId) ?? null
-  let mcpAttached = mcpRegistration === null
   const extraArgs = args.appendSystemPrompt
     ? appendedSystemPromptArgs(args.appendSystemPrompt, threadId)
     : []
@@ -128,6 +127,15 @@ export function startChatThreadStream(
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 
+  const mcpAttach = createMusterMcpAttach({
+    connector: mcpRegistration,
+    initializeFirst: Boolean(deps.engine),
+    nextRequestId: () => {
+      entry.controlRequestCounter += 1
+      return `req_${entry.controlRequestCounter}`
+    },
+    write: (payload) => writeStdinLine(entry, payload)
+  })
   const entry: StreamEntry = {
     child,
     stopping: false,
@@ -138,7 +146,11 @@ export function startChatThreadStream(
     sender,
     emit: () => undefined,
     queue: createChatThreadMessageQueue({
-      write: (message, priority) => writeUserMessage(entry, threadId, message, priority),
+      // A send that beats the attach waits for it (~0.2s), so turn one sees Muster's tools.
+      write: async (message, priority) => {
+        await mcpAttach.ready
+        return writeUserMessage(entry, threadId, message, priority)
+      },
       onChange: (queue) => {
         entry.engine?.queueChanged(queue)
         entry.emit({ threadId, kind: 'queue-changed', queue })
@@ -185,14 +197,7 @@ export function startChatThreadStream(
   const emit = entry.emit
   const decoder = createChatThreadStreamDecoder(threadId, emit, (record) => {
     entry.lastActivityAt = Date.now()
-    if (!mcpAttached && mcpRegistration && record.type === 'system' && record.subtype === 'init') {
-      mcpAttached = true
-      entry.controlRequestCounter += 1
-      writeStdinLine(
-        entry,
-        musterMcpServersRequest(mcpRegistration, `req_${entry.controlRequestCounter}`)
-      )
-    }
+    mcpAttach.observe(record)
     entry.engine?.observe(record)
     // Learn every model the CLI reports so new models adapt without a release.
     for (const entry of resultModelWindows(record)) {
@@ -215,6 +220,7 @@ export function startChatThreadStream(
     stderrTail = `${stderrTail}\n${error.message}`.slice(-STDERR_TAIL_LIMIT)
   })
   child.on('close', (code) => {
+    mcpAttach.dispose()
     decoder.flush()
     emitter.dispose()
     entry.cleanup?.()
