@@ -58,6 +58,8 @@ export function ChatThreadSurface(props: {
     [threadId, cwd, onLinkClick]
   )
   const latest = order.at(-1)
+  // An empty thread centres the composer under one line of type, at the same width as when docked.
+  const hero = loaded && order.length === 0
   return (
     <ChatThreadContext.Provider value={context}>
       <div
@@ -65,10 +67,17 @@ export function ChatThreadSurface(props: {
         className="h-full min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
         tabIndex={-1}
       >
-        <div className="flex min-h-full flex-col">
-          <div ref={scroll.contentRef} className={cn(CHAT_COLUMN_CLASS, 'flex-1 pb-4 pt-6')}>
+        <div className={cn('flex min-h-full flex-col', hero && 'justify-center pb-8')}>
+          <div
+            ref={scroll.contentRef}
+            className={cn(CHAT_COLUMN_CLASS, hero ? 'pb-6' : 'flex-1 pb-4 pt-6')}
+          >
             <div className="flex flex-col gap-6">
-              {!loaded ? (
+              {hero ? (
+                <h2 className="text-center text-[26px] font-medium leading-8 text-foreground">
+                  {translate('components.chat-thread.emptyTitle', 'What should we work on?')}
+                </h2>
+              ) : !loaded ? (
                 <div className="flex items-center gap-2 text-[13px] text-chat-ink-tertiary">
                   <Loader2
                     className="size-3.5 animate-spin motion-reduce:animate-none"
@@ -89,9 +98,11 @@ export function ChatThreadSurface(props: {
             </div>
           </div>
           {props.footer && (
-            <div className="sticky bottom-0 z-10">
+            <div className={cn(!hero && 'sticky bottom-0 z-10')}>
               {/* Fixed height, so text dissolves into the seat at the same rate however tall the composer grows. */}
-              <div className="pointer-events-none h-9 bg-gradient-to-b from-transparent to-background" />
+              {!hero && (
+                <div className="pointer-events-none h-9 bg-gradient-to-b from-transparent to-background" />
+              )}
               <div className="bg-background pb-4">
                 <div className={cn(CHAT_COLUMN_CLASS, 'relative')}>
                   <BackToBottom visible={scroll.state.away} onClick={scroll.follow} />

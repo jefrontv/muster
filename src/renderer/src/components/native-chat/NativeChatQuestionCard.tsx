@@ -3,6 +3,7 @@ import { Check, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { AskAnswerSelection, AskPrompt } from './native-chat-interactive-prompt'
+import { useNativeChatSurface } from './native-chat-surface-context'
 
 export type NativeChatQuestionCardProps = {
   prompt: AskPrompt
@@ -106,6 +107,7 @@ export function NativeChatQuestionCard({
   // submits; an explicit Skip click there with nothing answered anywhere
   // dismisses, but a reflexive Enter in the empty field is a no-op so it can't
   // throw away the whole prompt.
+  const { seat } = useNativeChatSurface()
   const confirm = (fromKeyboard = false): void => {
     if (!isLast) {
       advanceOrSubmit(selections, otherText)
@@ -123,8 +125,8 @@ export function NativeChatQuestionCard({
     // Part of the composer: docked in the bottom input region, matching the
     // composer's width and padding, rendered as the "ask" dialog card directly
     // above the text input. Its free-text row is the answer input.
-    <div className="shrink-0 bg-background" aria-busy={isSubmitting}>
-      <div className="mx-auto w-full max-w-3xl px-3 pt-2 pb-4 sm:px-4">
+    <div className={cn('shrink-0', !seat && 'bg-background')} aria-busy={isSubmitting}>
+      <div className={cn('w-full', !seat && 'mx-auto max-w-3xl px-3 pt-2 pb-4 sm:px-4')}>
         {total > 1 ? (
           <div className="mb-2 flex gap-1 overflow-x-auto pb-1 scrollbar-sleek">
             {prompt.questions.map((qq, i) => (
@@ -154,7 +156,14 @@ export function NativeChatQuestionCard({
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-lg border border-input bg-card shadow-xs">
+        <div
+          className={cn(
+            'overflow-hidden',
+            seat
+              ? 'rounded-chat-bubble bg-background shadow-chat-soft'
+              : 'rounded-lg border border-input bg-card shadow-xs'
+          )}
+        >
           <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
             <p
               className="min-w-0 truncate text-sm font-semibold text-foreground"
