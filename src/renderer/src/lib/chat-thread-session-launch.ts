@@ -12,7 +12,6 @@ import {
   buildAgentResumeStartupPlan,
   buildAgentStartupPlan,
   quoteStartupArg,
-  resolveStartupShell,
   type AgentStartupPlan
 } from '@/lib/tui-agent-startup'
 import { CLIENT_PLATFORM } from '@/lib/new-workspace'
@@ -23,7 +22,6 @@ import {
 import { resolveNativeChatSessionOptionDefaults } from '../../../shared/native-chat-session-option-defaults'
 import { resolveAgentSessionOptionLaunch } from '../../../shared/agent-session-option-launch'
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
-import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import type { AgentProviderSessionMetadata } from '../../../shared/agent-session-resume'
 import type { SessionOptionValue } from '../../../shared/native-chat-session-options'
 import type { ChatThread, ChatWorkspace } from '../../../shared/chat-mode-types'
@@ -88,12 +86,9 @@ export async function launchChatThreadSession(args: {
   }
 
   const cmdOverrides = store.settings?.agentCmdOverrides ?? {}
-  const startupShell = resolveLocalWindowsAgentStartupShell({
-    platform: CLIENT_PLATFORM,
-    isRemote: false,
-    terminalWindowsShell: store.settings?.terminalWindowsShell
-  })
-  const shell = resolveStartupShell(CLIENT_PLATFORM, startupShell)
+  // POSIX quoting everywhere: main tokenizes this line into argv rather than handing it to a shell.
+  const startupShell = 'posix' as const
+  const shell = startupShell
   // Extra workspace directories become the session's file-access scope.
   const addDirArgs = (workspace?.directories.slice(1) ?? [])
     .map((dir) => `--add-dir ${quoteStartupArg(dir, shell)}`)
