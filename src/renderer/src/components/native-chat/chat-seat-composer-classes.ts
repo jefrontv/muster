@@ -1,25 +1,24 @@
 // The seated composer's look (Chat mode today, Code mode once it adopts `seat`),
 // shared by the thread composer and the empty-state hero so the two never drift.
-// Values follow DSH's InputBar; see docs/muster/2026-10-20-chat-dsh-visual-gap.md §1.
+// Controls follow DSH's InputBar (docs/muster/2026-10-20-chat-dsh-visual-gap.md §1); insets run 12-16px, roomier than DSH's 8px.
 
 /** Keyboard-only focus for every seated control. */
 export const CHAT_SEAT_FOCUS_CLASS =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent'
 
-/** The card: 8px top pad, 12px from editor to toolbar, no ring of its own. */
+/** The card: 12px top pad, 8px from editor to toolbar, no ring of its own. */
 export const CHAT_SEAT_CARD_CLASS =
-  'relative flex flex-col gap-3 rounded-chat-composer bg-chat-raised pt-2 text-sm leading-6 shadow-chat-soft'
+  'relative flex flex-col gap-2 rounded-chat-composer bg-chat-raised pt-3 text-sm leading-6 shadow-chat-soft'
 
-/** Editor without its floor; callers add min-h-9 (docked) or min-h-[52px] (hero). */
+/** Editor without its floor; callers add min-h-12 (docked) or min-h-[64px] (hero). */
 export const CHAT_SEAT_EDITOR_CLASS =
-  'scrollbar-sleek field-sizing-content mr-1 max-h-[336px] w-[calc(100%-4px)] resize-none bg-transparent pt-1 pr-2 pb-0 pl-3.5 text-sm leading-6 text-foreground caret-chat-accent outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap placeholder:text-chat-ink-caption disabled:cursor-not-allowed disabled:opacity-50'
+  'scrollbar-sleek field-sizing-content mr-1 max-h-[336px] w-[calc(100%-4px)] resize-none bg-transparent pt-0.5 pr-3 pb-0 pl-4 text-sm leading-6 text-foreground caret-chat-accent outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap placeholder:text-chat-ink-caption disabled:cursor-not-allowed disabled:opacity-50'
 
 /** Attachment chips above the editor, inset to the editor's text edge. */
-export const CHAT_SEAT_ATTACHMENTS_CLASS = 'flex flex-wrap items-center gap-2 px-3'
+export const CHAT_SEAT_ATTACHMENTS_CLASS = 'flex flex-wrap items-center gap-2 px-4'
 
 /** Toolbar row; a size container so its groups tighten when the card is narrow. */
-export const CHAT_SEAT_TOOLBAR_CLASS =
-  '@container flex flex-wrap items-center gap-2 px-2 pt-0.5 pb-1.5'
+export const CHAT_SEAT_TOOLBAR_CLASS = '@container flex flex-wrap items-center gap-2 px-3 pb-3'
 
 export const CHAT_SEAT_TOOLBAR_ROW_CLASS =
   'flex w-full flex-wrap items-center justify-between gap-3 @max-[560px]:gap-2'

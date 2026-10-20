@@ -284,7 +284,7 @@ export function ChatModeDraftHero({
                 void submit()
               }
             }}
-            className={cn(CHAT_SEAT_EDITOR_CLASS, 'min-h-[52px]')}
+            className={cn(CHAT_SEAT_EDITOR_CLASS, 'min-h-[64px]')}
           />
           <ChatModeDraftHeroControls
             sendDisabled={(text.trim() === '' && stagedPaths.length === 0) || submitting}

@@ -311,7 +311,7 @@ export function NativeChatComposerField({
                 seat
                   ? CHAT_SEAT_EDITOR_CLASS
                   : 'scrollbar-sleek field-sizing-content max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50',
-                seat ? 'min-h-9' : 'min-h-12 pointer-coarse:min-h-14'
+                seat ? 'min-h-12' : 'min-h-12 pointer-coarse:min-h-14'
               )}
             />
             <div
