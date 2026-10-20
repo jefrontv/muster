@@ -9,10 +9,14 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '../../store'
 import type { AgentSubagentSnapshot } from '../../../../shared/agent-status-types'
+import { CHAT_SEAT_TAB_CLASS } from './chat-seat-composer-classes'
 import { formatNativeChatWorkingElapsed } from './native-chat-duration-format'
 
+// A spawned agent rises into the list; going idle fades its colours and swaps the label in.
 const ROW_CLASS =
-  'flex min-h-8 items-center gap-2.5 py-1 pr-3 pl-3 text-[13px] leading-6 [&+&]:shadow-[inset_0_1px_0_var(--chat-line-1)]'
+  'flex min-h-8 items-center gap-2.5 py-1 pr-3 pl-3 text-[13px] leading-6 [&+&]:shadow-[inset_0_1px_0_var(--chat-line-1)] animate-in fade-in-0 slide-in-from-bottom-1 duration-200 motion-reduce:animate-none'
+
+const STATE_SWAP_CLASS = 'animate-in fade-in-0 duration-300 motion-reduce:animate-none'
 
 function useNow(ticking: boolean): number {
   const [now, setNow] = useState(() => Date.now())
@@ -56,14 +60,18 @@ function SubagentRow({
     <li className={ROW_CLASS}>
       <span
         className={cn(
-          'size-1.5 shrink-0 rounded-full',
-          working ? 'bg-chat-accent' : attention ? 'bg-chat-warn' : 'bg-chat-ink-caption'
+          'size-1.5 shrink-0 rounded-full transition-colors duration-300 motion-reduce:transition-none',
+          working
+            ? 'bg-chat-accent motion-safe:animate-pulse'
+            : attention
+              ? 'bg-chat-warn'
+              : 'bg-chat-ink-caption'
         )}
         aria-hidden
       />
       <span
         className={cn(
-          'min-w-0 flex-1 truncate',
+          'min-w-0 flex-1 truncate transition-colors duration-300 motion-reduce:transition-none',
           working ? 'chat-shimmer text-chat-ink-secondary' : 'text-chat-ink-tertiary'
         )}
       >
@@ -73,8 +81,10 @@ function SubagentRow({
         ) : null}
       </span>
       <span
+        key={agent.state}
         className={cn(
           'shrink-0 text-xs tabular-nums',
+          STATE_SWAP_CLASS,
           attention ? 'text-chat-warn' : 'text-chat-ink-caption'
         )}
       >
@@ -96,9 +106,8 @@ export function NativeChatSubagentTab({ paneKey }: { paneKey: string }): React.J
     return null
   }
   return (
-    // Same tab anatomy as the queue: inset 8px, tucked under the composer card.
     <section
-      className="relative isolate mx-2 -mb-[9px] overflow-hidden rounded-t-[16px] bg-chat-raised/60 py-0.5 backdrop-blur-[40px] backdrop-saturate-150 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:border-[0.5px] after:border-b-0 after:border-chat-line-1"
+      className={CHAT_SEAT_TAB_CLASS}
       aria-label={translate('components.native-chat.subagents.label', 'Running agents')}
     >
       <button
@@ -106,10 +115,13 @@ export function NativeChatSubagentTab({ paneKey }: { paneKey: string }): React.J
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-9 w-full items-center gap-2 rounded-t-[16px] px-3 text-left text-[13px] leading-6 text-foreground transition-colors duration-100 ease-chat hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-inset motion-reduce:transition-none"
+        className="flex h-9 w-full items-center gap-2 rounded-t-[18px] px-3 text-left text-[13px] leading-6 text-foreground transition-colors duration-100 ease-chat hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-inset motion-reduce:transition-none"
       >
         <Bot className="size-3.5 shrink-0 text-chat-ink-tertiary" aria-hidden />
-        <span className="min-w-0 flex-1 truncate font-medium">
+        <span
+          key={active > 0 ? 'running' : 'idle'}
+          className={cn('min-w-0 flex-1 truncate font-medium', STATE_SWAP_CLASS)}
+        >
           {active > 0
             ? translate('components.native-chat.subagents.running', '{{count}} agents running', {
                 count: active

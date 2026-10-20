@@ -7,6 +7,7 @@ import { ImageIcon, Loader2, Pencil, X } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type { ChatThreadQueuedMessage } from '../../../../shared/chat-thread-stream-types'
+import { CHAT_SEAT_TAB_CLASS } from './chat-seat-composer-classes'
 import { stripNativeChatImagePathNotes } from './native-chat-file-reference-display'
 import type { NativeChatMessageQueue } from './native-chat-view-types'
 
@@ -196,9 +197,8 @@ export function NativeChatQueueStrip({
     return 'edited'
   }
   return (
-    // A tab inset 8px each side and tucked 3px under the composer card: -mb cancels the seat's 6px gap plus 3.
     <section
-      className="relative isolate mx-2 -mb-[9px] overflow-hidden rounded-t-[16px] bg-chat-raised/60 py-0.5 backdrop-blur-[40px] backdrop-saturate-150 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:border-[0.5px] after:border-b-0 after:border-chat-line-1"
+      className={CHAT_SEAT_TAB_CLASS}
       aria-label={translate('components.native-chat.queue.label', 'Queued messages')}
     >
       <div className="flex h-9 items-center gap-2.5 px-3 py-1">

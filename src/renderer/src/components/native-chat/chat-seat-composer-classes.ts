@@ -10,6 +10,10 @@ export const CHAT_SEAT_FOCUS_CLASS =
 export const CHAT_SEAT_CARD_CLASS =
   'relative flex flex-col gap-2 rounded-chat-composer bg-chat-raised pt-3 text-sm leading-6 shadow-chat-soft'
 
+/** A tab tucked 12px under the card (-mb also cancels the seat's 6px gap), in the card's own surface so the two read as one. */
+export const CHAT_SEAT_TAB_CLASS =
+  'relative isolate mx-4 -mb-[18px] overflow-hidden rounded-t-[18px] bg-chat-raised pb-3 shadow-chat-hairline animate-in fade-in-0 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none'
+
 /** Editor without its floor; callers add min-h-12 (docked) or min-h-[64px] (hero). */
 export const CHAT_SEAT_EDITOR_CLASS =
   'scrollbar-sleek field-sizing-content mr-1 max-h-[336px] w-[calc(100%-4px)] resize-none bg-transparent pt-0.5 pr-3 pb-0 pl-4 text-sm leading-6 text-foreground caret-chat-accent outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap placeholder:text-chat-ink-caption disabled:cursor-not-allowed disabled:opacity-50'

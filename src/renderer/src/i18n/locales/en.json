@@ -15098,7 +15098,9 @@
       "subagents": {
         "label": "Running agents",
         "running": "{{count}} agents running",
+        "running_one": "{{count}} agent running",
         "allIdle": "{{count}} agents idle",
+        "allIdle_one": "{{count}} agent idle",
         "working": "Working",
         "blocked": "Needs approval",
         "waiting": "Waiting",
