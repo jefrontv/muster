@@ -10,6 +10,7 @@ import {
   getPiCompatibleSyntheticAgentLabel,
   isLegacyPiCompatibleTitle
 } from './pi-compatible-synthetic-title'
+import { isClaudeSpinnerTitle } from './claude-title-spinner'
 import type { TuiAgent } from './types'
 
 export const CLAUDE_IDLE = '\u2733' // ✳ (eight-spoked asterisk — Claude Code idle prefix)
@@ -89,7 +90,7 @@ export function isClaudeAgent(title: string): boolean {
   // Why: Claude Code titles are prefixed with status indicators (✳, ". ", "* ",
   // braille spinners) followed by the task description. The task text can
   // legitimately mention other agents, so Claude-specific prefixes must win.
-  if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE) {
+  if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE || isClaudeSpinnerTitle(title)) {
     return true
   }
   // Why: ". " (working) and "* " (idle) are Claude Code title conventions.
@@ -135,6 +136,7 @@ export function getAgentLabel(title: string): string | null {
   if (
     title.startsWith(`${CLAUDE_IDLE} `) ||
     title === CLAUDE_IDLE ||
+    isClaudeSpinnerTitle(title) ||
     title.startsWith('. ') ||
     title.startsWith('* ')
   ) {

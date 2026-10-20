@@ -10,6 +10,7 @@ import {
   isPiAgentTitle,
   titleHasAgentName
 } from './agent-title-core'
+import { isClaudeSpinnerTitle } from './claude-title-spinner'
 import { isOpenCodeNativeTitle } from './opencode-terminal-title'
 import { getPiCompatibleSyntheticAgentLabel } from './pi-compatible-synthetic-title'
 
@@ -25,7 +26,7 @@ export function isClaudeAgent(title: string): boolean {
 
   // Why: Claude title prefixes are stronger than task text, which can mention
   // other agents without changing the owning CLI.
-  if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE) {
+  if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE || isClaudeSpinnerTitle(title)) {
     return true
   }
   if (title.startsWith('. ') || title.startsWith('* ')) {
@@ -57,6 +58,7 @@ export function getAgentLabel(title: string): string | null {
   if (
     title.startsWith(`${CLAUDE_IDLE} `) ||
     title === CLAUDE_IDLE ||
+    isClaudeSpinnerTitle(title) ||
     title.startsWith('. ') ||
     title.startsWith('* ')
   ) {

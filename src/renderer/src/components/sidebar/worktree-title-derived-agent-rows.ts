@@ -1,6 +1,7 @@
 import type { DashboardAgentRow } from '@/components/dashboard/useDashboardData'
 import { formatAgentTypeLabel, isClaudeManagementTitle } from '@/lib/agent-status'
 import { CLAUDE_IDLE, containsBrailleSpinner } from '../../../../shared/agent-title-core'
+import { isClaudeSpinnerTitle } from '../../../../shared/claude-title-spinner'
 import { classifyTitleActivity, resolveTitleActivityLabel } from '@/lib/pane-agent-evidence'
 import { tabHasLivePty } from '@/lib/tab-has-live-pty'
 import type {
@@ -58,7 +59,9 @@ function claudeIdleTopicTitleAgent(
   if (ownerAgentType && ownerAgentType !== 'claude') {
     return null
   }
-  return title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE ? 'claude' : null
+  return title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE || isClaudeSpinnerTitle(title)
+    ? 'claude'
+    : null
 }
 
 export function buildTitleDerivedAgentRows(args: {

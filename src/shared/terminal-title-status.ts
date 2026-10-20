@@ -4,6 +4,7 @@ import {
   HERMES_AGENT_NAME_RE,
   titleHasAnyLegacyAgentName
 } from './agent-name-token-match'
+import { isClaudeSpinnerTitle } from './claude-title-spinner'
 import { getPiCompatibleSyntheticAgentStatus } from './pi-compatible-synthetic-title'
 import {
   CLAUDE_IDLE,
@@ -118,6 +119,9 @@ export function detectAgentStatusFromTitle(title: string): AgentStatus | null {
   // Claude Code uses ✳ idle prefix; check before braille/agent-name since the title is the task description, not "Claude Code".
   if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE) {
     return 'idle'
+  }
+  if (isClaudeSpinnerTitle(title)) {
+    return 'working'
   }
 
   if (isPiTerminalTitle(title)) {

@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  clearWorkingIndicators,
+  createAgentStatusTracker,
   detectAgentStatusFromTitle,
   extractAllOscTitles,
   extractLastOscTitle,
   getAgentLabel,
+  isClaudeAgent,
   isCursorAgentTitle,
   MAX_OSC_TITLE_CHARS,
   MAX_OSC_TITLES_PER_CHUNK,
@@ -242,5 +245,34 @@ describe('Cursor agent title identity', () => {
     undefined
   ])('rejects the non-Cursor title %j', (title) => {
     expect(isCursorAgentTitle(title)).toBe(false)
+  })
+})
+
+describe('Claude quarter-circle spinner titles', () => {
+  it.each(['◐ Fix login', '◓ Fix login', '◑ Fix login', '◒ Fix login'])(
+    'reads %j as a working Claude title',
+    (title) => {
+      expect(detectAgentStatusFromTitle(title)).toBe('working')
+      expect(isClaudeAgent(title)).toBe(true)
+      expect(getAgentLabel(title)).toBe('Claude Code')
+    }
+  )
+
+  it('does not report an exit when an idle Claude starts a turn', () => {
+    const onIdle = vi.fn()
+    const onWorking = vi.fn()
+    const onExited = vi.fn()
+    const tracker = createAgentStatusTracker(onIdle, onWorking, onExited)
+    tracker.handleTitle('✳ Fix login')
+    tracker.handleTitle('◑ Fix login')
+    tracker.handleTitle('◐ Fix login')
+    tracker.handleTitle('✳ Fix login')
+    expect(onExited).not.toHaveBeenCalled()
+    expect(onWorking).toHaveBeenCalledTimes(1)
+    expect(onIdle).toHaveBeenCalledTimes(1)
+  })
+
+  it('strips the frame from a stale exit title', () => {
+    expect(clearWorkingIndicators('◑ Fix login')).toBe('Fix login')
   })
 })

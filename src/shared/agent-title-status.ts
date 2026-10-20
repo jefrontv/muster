@@ -23,13 +23,14 @@ import {
 } from './agent-title-core'
 import type { AgentStatus } from './agent-title-core'
 import { getPiCompatibleSyntheticAgentStatus } from './pi-compatible-synthetic-title'
+import { isClaudeSpinnerTitle, stripClaudeSpinner } from './claude-title-spinner'
 import { isGrokRotatingWorkingTitle } from './terminal-title-agent-type'
 
 /**
  * Strip working-status indicators so stale exit titles stop reporting working.
  */
 export function clearWorkingIndicators(title: string): string {
-  let cleaned = title
+  let cleaned = stripClaudeSpinner(title)
 
   cleaned = cleaned.replace(GEMINI_WORKING, '')
   cleaned = cleaned.replace(GEMINI_SILENT_WORKING, '')
@@ -161,6 +162,9 @@ export function detectAgentStatusFromTitle(title: string): AgentStatus | null {
 
   if (title.startsWith(`${CLAUDE_IDLE} `) || title === CLAUDE_IDLE) {
     return 'idle'
+  }
+  if (isClaudeSpinnerTitle(title)) {
+    return 'working'
   }
   if (isPiTerminalTitle(title)) {
     return 'idle'
