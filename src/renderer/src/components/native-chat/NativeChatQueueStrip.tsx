@@ -7,7 +7,7 @@ import { ImageIcon, Loader2, Pencil, X } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type { ChatThreadQueuedMessage } from '../../../../shared/chat-thread-stream-types'
-import { CHAT_SEAT_TAB_CLASS } from './chat-seat-composer-classes'
+import { CHAT_SEAT_TAB_CLASS, CHAT_SEAT_TAB_ENTER_CLASS } from './chat-seat-composer-classes'
 import { stripNativeChatImagePathNotes } from './native-chat-file-reference-display'
 import type { NativeChatMessageQueue } from './native-chat-view-types'
 
@@ -198,7 +198,7 @@ export function NativeChatQueueStrip({
   }
   return (
     <section
-      className={CHAT_SEAT_TAB_CLASS}
+      className={`${CHAT_SEAT_TAB_CLASS} ${CHAT_SEAT_TAB_ENTER_CLASS}`}
       aria-label={translate('components.native-chat.queue.label', 'Queued messages')}
     >
       <div className="flex h-9 items-center gap-2.5 px-3 py-1">

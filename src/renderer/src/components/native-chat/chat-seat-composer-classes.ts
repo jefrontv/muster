@@ -12,7 +12,11 @@ export const CHAT_SEAT_CARD_CLASS =
 
 /** A tab tucked 12px under the card (-mb also cancels the seat's 6px gap), in the card's own surface so the two read as one. */
 export const CHAT_SEAT_TAB_CLASS =
-  'relative isolate mx-4 -mb-[18px] overflow-hidden rounded-t-[18px] bg-chat-raised pb-3 shadow-chat-hairline animate-in fade-in-0 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none'
+  'relative isolate mx-4 -mb-[18px] overflow-hidden rounded-t-[18px] bg-chat-raised pb-3 shadow-chat-hairline'
+
+/** The tab rising out from behind the card. */
+export const CHAT_SEAT_TAB_ENTER_CLASS =
+  'animate-in fade-in-0 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none'
 
 /** Editor without its floor; callers add min-h-12 (docked) or min-h-[64px] (hero). */
 export const CHAT_SEAT_EDITOR_CLASS =

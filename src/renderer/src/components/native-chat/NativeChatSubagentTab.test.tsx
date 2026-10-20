@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useAppStore } from '../../store'
 import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
@@ -44,5 +44,36 @@ describe('NativeChatSubagentTab', () => {
     expect(screen.getByText(/^1m \d+s$/)).toBeTruthy()
     expect(screen.getByText('Needs approval')).toBeTruthy()
     expect(screen.getByText('Idle')).toBeTruthy()
+  })
+})
+
+describe('NativeChatSubagentTab passes', () => {
+  afterEach(() => {
+    cleanup()
+    useAppStore.setState({ agentStatusByPaneKey: {} })
+  })
+
+  const setPane = (state: AgentStatusEntry['state'], subagents: AgentStatusEntry['subagents']) =>
+    act(() => {
+      useAppStore.setState({
+        agentStatusByPaneKey: { [PANE]: { state, subagents } as AgentStatusEntry }
+      })
+    })
+
+  it('keeps idle agents after the pass and folds them away when the next pass starts', () => {
+    const idle = { id: 'old', description: 'Old helper', state: 'idle' as const, startedAt: 0 }
+    setPane('done', [idle])
+    render(<NativeChatSubagentTab paneKey={PANE} />)
+    const row = (): HTMLElement => screen.getByText('Old helper').closest('li') as HTMLElement
+    expect(row().hasAttribute('inert')).toBe(false)
+
+    const fresh = { id: 'new', description: 'New helper', state: 'working' as const, startedAt: 0 }
+    setPane('working', [idle, fresh])
+    expect(row().hasAttribute('inert')).toBe(true)
+    expect(screen.getByRole('button', { name: /1 agent running/ })).toBeTruthy()
+
+    setPane('working', [idle, { ...fresh, state: 'idle' }])
+    const newRow = screen.getByText('New helper').closest('li') as HTMLElement
+    expect(newRow.hasAttribute('inert')).toBe(false)
   })
 })
