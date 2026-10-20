@@ -26,6 +26,9 @@ export const CHAT_COLUMN_CLASS = 'mx-auto w-(--chat-content-width) max-w-full px
 /** The composer's column: the transcript column without its 16px pads, kept 8px off narrow edges. */
 export const CHAT_COMPOSER_COLUMN_CLASS = 'mx-auto w-(--chat-content-width) max-w-[calc(100%-16px)]'
 
+/** Breathing room above a turn the rail jumps to. */
+const JUMP_TOP_GAP_PX = 16
+
 function BackToBottom(props: { visible: boolean; onClick: () => void }): React.JSX.Element {
   const label = translate('components.chat-thread.backToBottom', 'Back to latest')
   return (
@@ -88,11 +91,17 @@ export function ChatThreadSurface(props: {
     if (!jump) {
       return
     }
-    const section = scrollRef.current?.querySelector(
-      `section[data-turn-id="${CSS.escape(jump.turnId)}"]`
-    )
-    if (section) {
-      section.scrollIntoView({ block: 'start' })
+    const scroller = scrollRef.current
+    const section = scroller?.querySelector(`section[data-turn-id="${CSS.escape(jump.turnId)}"]`)
+    if (scroller && section) {
+      // Not scrollIntoView: it also scrolls clipped ancestors and shoves the whole pane up.
+      const top =
+        section.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop -
+        JUMP_TOP_GAP_PX
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+      scroller.scrollTo({ top: Math.max(0, top), behavior: reduced ? 'auto' : 'smooth' })
       setJump(null)
     }
   }, [jump, paging.visible, scrollRef])
@@ -113,7 +122,7 @@ export function ChatThreadSurface(props: {
     <ChatThreadContext.Provider value={context}>
       <div
         ref={scroll.scrollRef}
-        className="@container h-full min-h-0 overflow-y-auto [overflow-anchor:none] [scrollbar-gutter:stable]"
+        className="@container scrollbar-sleek h-full min-h-0 overflow-y-auto [overflow-anchor:none] [scrollbar-gutter:stable]"
         tabIndex={-1}
       >
         {/* Zero-height sticky slot: the rail centres in the band above the composer. Hidden on narrow columns. */}

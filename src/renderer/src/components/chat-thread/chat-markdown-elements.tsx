@@ -97,7 +97,7 @@ export function chatMarkdownComponents(
       isMermaidFence(className) ? (
         renderMermaidFence(
           children,
-          'my-4 min-w-0 max-w-full overflow-x-auto rounded-2xl bg-chat-code p-4 [&_.mermaid-block]:min-w-0 [&_.mermaid-block_pre]:my-0 [&_.mermaid-block_pre]:font-mono [&_.mermaid-block_pre]:text-[11px]'
+          'scrollbar-sleek my-4 min-w-0 max-w-full overflow-x-auto rounded-2xl bg-chat-code p-4 [&_.mermaid-block]:min-w-0 [&_.mermaid-block_pre]:my-0 [&_.mermaid-block_pre]:font-mono [&_.mermaid-block_pre]:text-[11px]'
         )
       ) : (
         <code
@@ -118,7 +118,7 @@ export function chatMarkdownComponents(
         <ChatMarkdownCodeBlock sticky={density === 'prose'}>{children}</ChatMarkdownCodeBlock>
       ),
     table: ({ children }) => (
-      <div className="my-4 max-w-full overflow-x-auto overscroll-x-contain">
+      <div className="scrollbar-sleek my-4 max-w-full overflow-x-auto overscroll-x-contain">
         {/* Four or more columns keep their natural width and scroll; fewer fill the column. */}
         <table className="w-full border-collapse [&:has(th:nth-child(4))]:w-max">{children}</table>
       </div>

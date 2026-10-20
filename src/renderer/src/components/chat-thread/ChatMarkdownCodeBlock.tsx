@@ -104,7 +104,7 @@ export function ChatMarkdownCodeBlock(props: {
       </div>
       <pre
         className={cn(
-          'm-0 max-w-full overflow-x-auto rounded-b-2xl bg-chat-code p-4 font-mono text-[11px] leading-[19px] text-foreground',
+          'scrollbar-sleek m-0 max-w-full overflow-x-auto rounded-b-2xl bg-chat-code p-4 font-mono text-[11px] leading-[19px] text-foreground',
           '[&>code]:rounded-none [&>code]:border-0 [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-[length:inherit] [&>code]:leading-[inherit]',
           wrapped ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'
         )}
