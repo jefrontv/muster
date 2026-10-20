@@ -4,6 +4,7 @@
 
 import type { ChatEngineThreadMeta, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import { resolveNativeChatTranscriptAgent } from '../../../../shared/native-chat-agent-support'
+import { parseNativeChatCommandEnvelope } from '../../../../shared/native-chat-command-envelope'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
 import { isTextBlock, type NativeChatMessage } from '../../../../shared/native-chat-types'
 import { replaceEqualDeep } from '../chat-thread/chat-engine-structural-sharing'
@@ -40,13 +41,35 @@ const LEAD_TURN_ID = 'lead'
 
 const isOptimistic = (message: NativeChatMessage): boolean => message.source === 'scrape'
 
+const SESSION_OPTION_COMMAND = /^\/(model|effort|fast)(\s|$)/
+
+/** A model, effort or fast-mode switch; the composer chips already show the result. */
+function isSessionOptionCommand(message: NativeChatMessage): boolean {
+  const text = message.blocks
+    .filter(isTextBlock)
+    .map((block) => block.text)
+    .join('')
+    .trim()
+  const envelope = parseNativeChatCommandEnvelope(text)
+  return SESSION_OPTION_COMMAND.test(envelope ? `${envelope.name} ${envelope.args}` : text)
+}
+
 function groupTurns(messages: readonly NativeChatMessage[]): Group[] {
   const groups: Group[] = []
+  // Drops the switch and the CLI's "Set model to…" lines that answer it.
+  let skippingSwitch = false
   for (const message of messages) {
     if (message.role === 'user' && message.id !== NATIVE_CHAT_STREAMING_ID) {
-      groups.push({ id: message.id, user: message, messages: [] })
+      skippingSwitch = isSessionOptionCommand(message)
+      if (!skippingSwitch) {
+        groups.push({ id: message.id, user: message, messages: [] })
+      }
       continue
     }
+    if (skippingSwitch && message.role === 'system') {
+      continue
+    }
+    skippingSwitch = false
     const current = groups.at(-1)
     if (current) {
       current.messages.push(message)

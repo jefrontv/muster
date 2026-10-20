@@ -629,3 +629,32 @@ describe('nativeChatEngineMeta', () => {
     )
   })
 })
+
+describe('nativeChatEngineTurns model switches', () => {
+  const msg = (id: string, role: NativeChatMessage['role'], text: string): NativeChatMessage => ({
+    id,
+    role,
+    blocks: [{ type: 'text', text }],
+    timestamp: T0,
+    source: 'transcript'
+  })
+
+  it('leaves model and effort switches, and their confirmations, out of the thread', () => {
+    const { turns } = build({
+      messages: [
+        msg('m1', 'user', '/model haiku'),
+        msg('m2', 'system', 'Set model to `Haiku 5.5` and saved as your default for new sessions'),
+        msg('m3', 'user', '<command-name>/effort</command-name><command-args>low</command-args>'),
+        msg('m4', 'user', 'hi'),
+        msg('m5', 'assistant', 'Hello')
+      ]
+    })
+    expect(turns.map((turn) => turn.user?.text)).toEqual(['hi'])
+    expect(turns[0]!.items.map((item) => item.kind)).toEqual(['text'])
+  })
+
+  it('keeps a prompt that only mentions a model', () => {
+    const { turns } = build({ messages: [msg('m1', 'user', '/modelling notes please')] })
+    expect(turns).toHaveLength(1)
+  })
+})
