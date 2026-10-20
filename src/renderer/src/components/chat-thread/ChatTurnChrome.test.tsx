@@ -36,6 +36,6 @@ describe('turn outcome', () => {
     expect(status.getAttribute('aria-live')).toBe('polite')
     expect(status.textContent).toBe('')
     rerender(<TurnOutcomeAnnouncement turn={{ status: 'done', durationMs: 3_000 }} />)
-    expect(status.textContent).toBe('Completed in 3.0s')
+    expect(status.textContent).toBe('Completed in 3s')
   })
 })

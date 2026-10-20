@@ -52,15 +52,13 @@ function domainOf(url: string): string {
   }
 }
 
+/** Whole seconds only; tenths read as noise next to a ticking timer. */
 export function formatElapsed(seconds: number): string {
-  if (seconds < 10) {
-    return `${seconds.toFixed(1)}s`
+  const total = Math.round(seconds)
+  if (total < 60) {
+    return `${total}s`
   }
-  if (seconds < 60) {
-    return `${Math.round(seconds)}s`
-  }
-  const minutes = Math.floor(seconds / 60)
-  return `${minutes}m ${String(Math.round(seconds % 60)).padStart(2, '0')}s`
+  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, '0')}s`
 }
 
 /** MCP tool names are mcp__<server>__<tool>; plugin servers carry a plugin_ prefix. */
