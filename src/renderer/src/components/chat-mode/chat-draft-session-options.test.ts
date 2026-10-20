@@ -25,7 +25,8 @@ describe('chatDraftSessionOptionSnapshot', () => {
   })
 
   it('has no effort row for a model without one', () => {
-    const snapshot = chatDraftSessionOptionSnapshot(models, { claude: { model: 'haiku' } })
+    const plain = [...models, { id: 'plain', label: 'Plain', options: [] }]
+    const snapshot = chatDraftSessionOptionSnapshot(plain, { claude: { model: 'plain' } })
     expect(snapshot.map((d) => d.id)).toEqual(['model'])
   })
 })

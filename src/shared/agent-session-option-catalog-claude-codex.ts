@@ -104,7 +104,8 @@ export const CLAUDE_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
     {
       id: 'haiku',
       label: 'Haiku',
-      options: []
+      // Haiku 5.5 takes every effort level; a host still on Haiku 4.5 just warns on --effort.
+      options: [claudeEffort(true)]
     }
   ],
   modelApply: {

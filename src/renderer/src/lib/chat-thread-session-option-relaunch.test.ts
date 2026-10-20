@@ -19,8 +19,13 @@ describe('modelSwitchValues', () => {
 
   it('drops options the target model lacks, and flip-only toggles', () => {
     expect(
-      modelSwitchValues(catalog, 'haiku', { model: 'opus', effort: 'high' }, undefined)
-    ).toEqual({ model: 'haiku' })
+      modelSwitchValues(
+        catalog,
+        'haiku',
+        { model: 'opus', effort: 'high', fastMode: false },
+        undefined
+      )
+    ).toEqual({ model: 'haiku', effort: 'high' })
     expect(
       modelSwitchValues(catalog, 'opus', { model: 'sonnet', fastMode: true }, undefined)
     ).toEqual({ model: 'opus' })
