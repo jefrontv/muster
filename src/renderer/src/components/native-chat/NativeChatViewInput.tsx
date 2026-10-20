@@ -1,10 +1,11 @@
-// Bottom input region of NativeChatView: live question/approval card or the
-// composer.
+// Bottom input region of NativeChatView: live question/approval card, or the
+// running-agents tab over the composer.
 
 import type React from 'react'
 import type { RefObject } from 'react'
 import { NativeChatComposer, type NativeChatComposerHandle } from './NativeChatComposer'
 import { NativeChatInteractiveCard } from './NativeChatInteractiveCard'
+import { NativeChatSubagentTab } from './NativeChatSubagentTab'
 import type { NativeChatInteractiveSend } from './use-native-chat-interactive-send'
 import type { NativeChatSession } from '../../../../shared/native-chat-types'
 
@@ -48,7 +49,7 @@ export function NativeChatViewInput({
   runtimeEnvironmentId: string | null
 }): React.JSX.Element {
   return (
-    <div className="shrink-0">
+    <div className="flex shrink-0 flex-col gap-1.5">
       <NativeChatInteractiveCard
         paneKey={paneKey}
         send={interactiveSend}
@@ -56,6 +57,7 @@ export function NativeChatViewInput({
         onShowingQuestionChange={setQuestionActive}
         answerInputRef={questionAnswerInputRef}
       />
+      {questionActive ? null : <NativeChatSubagentTab paneKey={paneKey} />}
       {questionActive ? null : (
         <NativeChatComposer
           ref={composerRef}

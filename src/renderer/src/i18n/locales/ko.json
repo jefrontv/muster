@@ -15071,6 +15071,16 @@
         "untitled": "Proposed plan",
         "discuss": "Discuss",
         "approve": "Approve"
+      },
+      "subagents": {
+        "label": "Running agents",
+        "running": "{{count}} agents running",
+        "allIdle": "{{count}} agents idle",
+        "working": "Working",
+        "blocked": "Needs approval",
+        "waiting": "Waiting",
+        "idle": "Idle",
+        "unnamed": "Agent"
       }
     },
     "tab": {

@@ -11,6 +11,7 @@ import {
   type NativeChatComposerHandle
 } from '@/components/native-chat/NativeChatComposer'
 import { NativeChatQueueStrip } from '@/components/native-chat/NativeChatQueueStrip'
+import { NativeChatSubagentTab } from '@/components/native-chat/NativeChatSubagentTab'
 import { NativeChatStreamAskCard } from '@/components/native-chat/NativeChatStreamAskCard'
 import { pickNativeChatTakeover } from '@/components/native-chat/native-chat-takeover-precedence'
 import { NativeChatSurfaceProvider } from '@/components/native-chat/native-chat-surface-context'
@@ -68,6 +69,9 @@ export function ChatThreadComposerSeat(props: {
               answerInputRef={answerInputRef}
             />
           </div>
+        ) : null}
+        {!askActive && takeover.composerRequest === null ? (
+          <NativeChatSubagentTab paneKey={identity.paneKey} />
         ) : null}
         {/* The queue tab belongs to the composer card, so it waits out every takeover. */}
         {transport.messageQueue && !askActive && takeover.composerRequest === null ? (
