@@ -13,6 +13,8 @@ export function ChatDisclosureRow(props: {
   live?: boolean
   headerClassName?: string
   bodyClassName?: string
+  /** Renders the body while closed too; the row then toggles how much of it shows. */
+  alwaysShowBody?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
   const bodyId = useId()
@@ -21,7 +23,7 @@ export function ChatDisclosureRow(props: {
       <button
         type="button"
         aria-expanded={props.open}
-        aria-controls={props.open ? bodyId : undefined}
+        aria-controls={props.open || props.alwaysShowBody ? bodyId : undefined}
         aria-busy={props.live || undefined}
         onClick={() => props.onOpenChange(!props.open)}
         className={cn(
@@ -49,7 +51,7 @@ export function ChatDisclosureRow(props: {
           {props.label}
         </span>
       </button>
-      {props.open && (
+      {(props.open || props.alwaysShowBody) && (
         <div id={bodyId} className={cn('pb-1 pl-[22px] pt-1', props.bodyClassName)}>
           {props.children}
         </div>

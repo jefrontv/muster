@@ -15173,7 +15173,8 @@
         "using": "Using tools",
         "used": "Used tools",
         "searchingWeb": "Searching the web",
-        "searchedWeb": "Searched the web"
+        "searchedWeb": "Searched the web",
+        "calls": "{{count}} calls"
       },
       "awaitingApproval": "Needs approval",
       "denied": "Denied",
