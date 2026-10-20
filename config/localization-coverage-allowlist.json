@@ -48,5 +48,12 @@
     "text": "admin",
     "dynamic": false,
     "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/chat-mode/chat-thread-auto-title.ts",
+    "kind": "object-property:error",
+    "text": "chat title generation failed",
+    "dynamic": false,
+    "count": 2
   }
 ]

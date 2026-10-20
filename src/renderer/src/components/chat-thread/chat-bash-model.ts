@@ -1,6 +1,7 @@
 // What a Bash call ran and how it ended. A non-zero exit is an error unless the
 // CLI explained the code (grep's "no matches" exits 1 and is not a failure).
 
+import { translate } from '@/i18n/i18n'
 import { inputRecord, inputText, type ChatToolItem } from './chat-tool-input'
 
 export type ChatBashExit = { code: number | null; label: string; ok: boolean }
@@ -26,18 +27,30 @@ function exitOf(item: ChatToolItem, background: boolean): ChatBashExit | null {
     return null
   }
   if (result.interrupted) {
-    return { code: null, label: 'interrupted', ok: false }
+    return {
+      code: null,
+      label: translate('components.chat-thread.bash.interrupted', 'interrupted'),
+      ok: false
+    }
   }
   const code = exitCodeOf(result.text)
   if (result.exitInterpretation) {
     return { code, label: result.exitInterpretation, ok: item.status !== 'error' }
   }
   if (code !== null && code !== 0) {
-    return { code, label: `exit ${code}`, ok: false }
+    return {
+      code,
+      label: translate('components.chat-thread.bash.exit', 'exit {{code}}', { code }),
+      ok: false
+    }
   }
   return item.status === 'error'
-    ? { code, label: 'failed', ok: false }
-    : { code: 0, label: 'exit 0', ok: true }
+    ? { code, label: translate('components.chat-thread.bash.failed', 'failed'), ok: false }
+    : {
+        code: 0,
+        label: translate('components.chat-thread.bash.exit', 'exit {{code}}', { code: 0 }),
+        ok: true
+      }
 }
 
 export function bashModel(item: ChatToolItem): ChatBashModel {

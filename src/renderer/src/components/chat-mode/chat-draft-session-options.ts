@@ -3,6 +3,7 @@
 // chat defaults the thread launcher reads, and an unpicked value stays unknown.
 
 import { useMemo } from 'react'
+import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import {
   catalogDefaultModel,
@@ -34,7 +35,7 @@ export function chatDraftSessionOptionSnapshot(
   const snapshot: SessionOptionDescriptor[] = [
     {
       id: 'model',
-      label: 'Model',
+      label: translate('components.chat-mode.draftOptions.model', 'Model'),
       category: 'model',
       kind: {
         type: 'select',

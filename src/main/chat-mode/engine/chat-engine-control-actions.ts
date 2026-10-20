@@ -167,7 +167,13 @@ export function metaAfterControl(
           }
         : null
     }
-    default:
+    case 'setEffort':
+    case 'interrupt':
+    case 'stopTask':
+    case 'rewind':
+    case 'mcpReconnect':
+    case 'mcpToggle':
+    case 'fileSuggestions':
       return null
   }
 }

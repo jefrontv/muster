@@ -45,7 +45,7 @@ function stateLabel(state: AgentSubagentSnapshot['state']): string {
       return translate('components.native-chat.subagents.waiting', 'Waiting')
     case 'idle':
       return translate('components.native-chat.subagents.idle', 'Idle')
-    default:
+    case 'working':
       return translate('components.native-chat.subagents.working', 'Working')
   }
 }

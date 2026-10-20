@@ -94,7 +94,8 @@ export function settleItems(
           item.status === 'running' ? (toolStatus === 'done' ? 'done' : 'stopped') : item.status
         return { ...item, status, items: nested }
       }
-      default:
+      case 'notice':
+      case 'steer':
         return item
     }
   })

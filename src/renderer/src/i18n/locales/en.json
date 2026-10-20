@@ -15173,6 +15173,9 @@
       },
       "thread": {
         "showTechnicalDetails": "Show technical details"
+      },
+      "draftOptions": {
+        "model": "Model"
       }
     },
     "chat-thread": {
@@ -15227,6 +15230,11 @@
       "stack": {
         "earlier": "{{count}} earlier steps",
         "showFewer": "Show fewer steps"
+      },
+      "bash": {
+        "interrupted": "interrupted",
+        "failed": "failed",
+        "exit": "exit {{code}}"
       }
     }
   },

@@ -119,7 +119,7 @@ export function ChatTurnNavigator(props: {
       <div
         ref={railRef}
         onScroll={(event) => setRailTop(event.currentTarget.scrollTop)}
-        className="h-full overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="scrollbar-none h-full overflow-y-auto overscroll-contain"
       >
         <div className="relative" style={{ height: order.length * TICK_PX }}>
           {ticks}
