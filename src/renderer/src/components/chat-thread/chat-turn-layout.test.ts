@@ -7,6 +7,7 @@ import {
   chatItemBlocks,
   chatItemRuns,
   toolGroupSummary,
+  foldKeepsVisible,
   turnFold
 } from './chat-turn-layout'
 
@@ -127,6 +128,17 @@ describe('turnFold', () => {
     expect(turnFold(turn([tool('r1', 'Read'), text('a')], 'interrupted'))).toBeNull()
     expect(turnFold(turn([text('a')]))).toBeNull()
     expect(turnFold(turn([tool('r1', 'Read')]))).toBeNull()
+  })
+
+  it('does not fold a turn whose earlier items are all prose', () => {
+    expect(turnFold(turn([text('a'), text('b')]))).toBeNull()
+  })
+
+  it('keeps replies and steers visible while steps fold', () => {
+    const fold = turnFold(
+      turn([tool('r1', 'Read'), text('flower'), tool('s1', 'SendMessage'), text('answer')])
+    )
+    expect(fold?.process.filter(foldKeepsVisible).map((item) => item.id)).toEqual(['flower'])
   })
 })
 

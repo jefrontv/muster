@@ -15,7 +15,7 @@ import { ChatItemList } from './ChatItemRows'
 import { FoldHeader, RunningStatus, TurnOutcomeAnnouncement } from './ChatTurnChrome'
 import { chatUserMessageParts, type ChatUserMessageParts } from './chat-user-message-parts'
 import { formatElapsed } from './chat-tool-row-model'
-import { answerText, turnFold, type ChatTurnFold } from './chat-turn-layout'
+import { answerText, foldKeepsVisible, turnFold, type ChatTurnFold } from './chat-turn-layout'
 import { useChatEngineTurn } from './use-chat-engine-thread'
 
 // Older turns reveal their actions on hover; the latest always shows them. Opacity only, so nothing shifts.
@@ -191,7 +191,8 @@ export const ChatTurnView = memo(function ChatTurnView(props: {
       {fold ? (
         <>
           <FoldHeader turn={turn} open={open} onToggle={() => setProcessOpen(!open)} />
-          {open && <ChatItemList items={fold.process} />}
+          {/* Closed hides the steps only; earlier replies stay readable. */}
+          <ChatItemList items={open ? fold.process : fold.process.filter(foldKeepsVisible)} />
           <ChatItemList items={fold.answer} />
         </>
       ) : (

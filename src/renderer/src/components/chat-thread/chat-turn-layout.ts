@@ -1,6 +1,6 @@
 // How a turn's items lay out: runs of quiet tool calls share one group row,
 // long runs of one-line steps stack under a height cap, and a settled turn
-// folds its process rows under a header above the answer.
+// folds its steps under a header while its prose stays in view.
 
 import type { ChatEngineItem, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import type { ChatToolItem } from './chat-tool-input'
@@ -142,7 +142,12 @@ export type ChatTurnFold = {
   answer: ChatEngineItem[]
 }
 
-/** Only a cleanly finished turn folds; stopped and failed turns stay open to show what happened. */
+/** What a folded turn still shows: replies and steers are messages, not steps. */
+export function foldKeepsVisible(item: ChatEngineItem): boolean {
+  return item.kind === 'text' || item.kind === 'steer'
+}
+
+/** Only a cleanly finished turn with steps before its answer folds; stopped and failed turns stay open. */
 export function turnFold(turn: ChatEngineTurn): ChatTurnFold | null {
   if (turn.status !== 'done') {
     return null
@@ -151,7 +156,11 @@ export function turnFold(turn: ChatEngineTurn): ChatTurnFold | null {
   if (lastText <= 0) {
     return null
   }
-  return { process: turn.items.slice(0, lastText), answer: turn.items.slice(lastText) }
+  const process = turn.items.slice(0, lastText)
+  if (process.every(foldKeepsVisible)) {
+    return null
+  }
+  return { process, answer: turn.items.slice(lastText) }
 }
 
 /** The answer text people copy: every text item after the fold point. */
