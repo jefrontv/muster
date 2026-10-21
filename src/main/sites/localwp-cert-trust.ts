@@ -3,15 +3,20 @@
 //
 // LocalWP issues a per-site TLS certificate under
 // ~/Library/Application Support/Local/run/router/nginx/certs/<domain>.crt. Trusting it — so
-// https://<domain> loads without a browser warning — imports it into the user's login keychain
-// and adds trust-root settings there. The login keychain is writable by its owner and macOS reads
-// it during TLS trust evaluation, so this needs no root.
+// https://<domain> loads without a browser warning — imports it into the *login* keychain and adds
+// trust-root settings there. macOS consults per-user trust settings during TLS evaluation, which is
+// what the browser sees, and the write needs no root.
 //
-// It is not prompt-free, though. A per-user trust write is gated by the OS: `man security` for
-// add-trusted-cert says "When modifying per-user Trust Settings, user authentication is required
-// via an authentication dialog". Choosing the login keychain over the system one swaps an admin
-// prompt for a user-authentication prompt; it does not remove one. That dialog is the reason the
-// trust call gets a human-scale deadline while the keychain write keeps a machine-scale one.
+// The System keychain was tried instead and does not work on macOS 26: `security add-trusted-cert
+// -d -r trustRoot -k /Library/Keychains/System.keychain`, run as root through osascript's admin
+// dialog, imports the certificate and then fails the setting with `SecTrustSettingsSetTrustSettings
+// … lacks entitlement modify-anchor-certificates`. It leaves the certificate in the System keychain
+// untrusted *and* drops the login-keychain trust the certificate already had. Do not retry it:
+// LocalWP's site page reads the admin domain, so it keeps offering Trust for a certificate that
+// already works in the browser, and that mismatch is not fixable from here.
+//
+// Not prompt-free either way: a per-user trust write is gated by a macOS authentication dialog,
+// which is why that call gets a human-scale deadline while the keychain write keeps a machine one.
 //
 // macOS only by construction: `security` and the login keychain do not exist elsewhere, so every
 // entry point answers "unsupported" off darwin instead of spawning anything.
@@ -40,6 +45,13 @@ const KEYCHAIN_TIMEOUT_MS = 30_000
  * its own dialog (AGENT_LOCAL_TRUST_PROMPT_TIMEOUT_MS in agent-local-cert.ts).
  */
 const TRUST_PROMPT_TIMEOUT_MS = 5 * 60_000
+
+/**
+ * A zero exit is the write being *accepted*, not applied: macOS commits per-user trust settings
+ * seconds later (measured on macOS 26: requested 16:47:27.137, committed 16:47:32.353, with the
+ * check in between reading stale state and failing a write that had landed).
+ */
+const TRUST_CONFIRM_TIMEOUT_MS = 15_000
 
 const DEFAULT_WAIT_TIMEOUT_MS = 20_000
 const POLL_INTERVAL_MS = 1_000
@@ -281,6 +293,18 @@ export async function waitForLocalWpCert(
   return resolved.fileExists(certPath)
 }
 
+// Polls the evaluator until the write shows up: a timeout is an outcome, as in `waitForLocalWpCert`.
+async function waitForCertTrusted(certPath: string, deps: LocalWpCertDeps): Promise<boolean> {
+  const deadline = deps.now() + TRUST_CONFIRM_TIMEOUT_MS
+  while (deps.now() < deadline) {
+    if (await isCertTrusted(certPath, deps)) {
+      return true
+    }
+    await deps.sleep(POLL_INTERVAL_MS)
+  }
+  return isCertTrusted(certPath, deps)
+}
+
 export async function trustLocalWpCert(
   domain: string,
   options: {
@@ -304,25 +328,11 @@ export async function trustLocalWpCert(
 
   options.onStatus?.(`Trusting the ${trimmed} certificate…`)
 
-  // The user's own keychain, never the system one: writing here is what keeps this free of sudo and
-  // of an *admin* prompt. It is not prompt-free — a per-user trust write is gated by a macOS
-  // authentication dialog, which is why the trust call below gets a human-scale budget.
   const keychain = path.join(os.homedir(), 'Library', 'Keychains', 'login.keychain-db')
-
-  // Importing is idempotent and fails once the certificate is already in the keychain, which is the
-  // common case on a retry. Its exit code says nothing about trust, so add-trusted-cert decides —
-  // but it does say whether the item reached the keychain, which is a fact the failure prose needs.
-  let imported = false
   try {
-    const importResult = await resolved.run(
-      SECURITY_BINARY,
-      ['import', certPath, '-k', keychain],
-      KEYCHAIN_TIMEOUT_MS
-    )
-    imported = importResult.code === 0
+    await resolved.run(SECURITY_BINARY, ['import', certPath, '-k', keychain], KEYCHAIN_TIMEOUT_MS)
   } catch {
-    // A spawn failure is not evidence either way: the item may already be there from an earlier run.
-    // Left false, and the keychain itself is asked below.
+    // Importing is idempotent and its exit code says nothing about trust; add-trusted-cert decides.
   }
 
   // Do NOT pass -p. Restricting the setting to a single policy omits the Result Type, the trust is
@@ -339,64 +349,31 @@ export async function trustLocalWpCert(
   }
 
   if (result.code === 0) {
-    return {
-      ok: true,
-      message:
-        `Trusted the ${trimmed} certificate — https://${trimmed} will now load ` +
-        'without a warning.'
-    }
+    // Accepted, not applied — and each sentence below is rendered to a person.
+    return (await waitForCertTrusted(certPath, resolved))
+      ? {
+          ok: true,
+          message: `Trusted the ${trimmed} certificate — https://${trimmed} will now load without a warning.`
+        }
+      : {
+          ok: false,
+          message: `macOS accepted the ${trimmed} certificate but has not applied the trust setting yet. Trust it in LocalWP, then press "Change and retry".`
+        }
   }
 
-  const whereabouts = await certificateWhereabouts(trimmed, keychain, imported, resolved)
-
-  // A deadline is not a refusal: the dialog was still waiting, so `security` was never told no. Say
-  // that plainly and name the control that runs it again — "Change and retry" on the run screen
-  // (site-setup-run-strings.ts) — never "timed out after Nms", which describes the implementation.
+  // A deadline is not a refusal: the dialog was still waiting, so nobody was told no. Name the
+  // control that runs it again — "Change and retry" on the run screen — never "timed out after Nms".
   if (result.timedOut) {
     return {
       ok: false,
       message:
         `macOS was still waiting for your password, so the ${trimmed} certificate is not trusted ` +
-        `yet. ${whereabouts} Choose "Change and retry" when you are ready.`
+        'yet. Choose "Change and retry" when you are ready.'
     }
   }
 
   const detail = (result.stderr.trim() || result.stdout.trim()).split('\n')[0]?.trim() ?? ''
-  return { ok: false, message: `trust failed: ${detail || 'unknown error'} — ${whereabouts}` }
-}
-
-/**
- * Where the certificate actually is, asked only when the trust write did not land. `import`'s own
- * exit code cannot answer it: a retry legitimately fails with "already exists" while the item sits
- * in the keychain. `find-certificate -c` matches the common name LocalWP writes — the domain — so
- * its exit code is the presence fact rather than an inference; `imported` is the fallback for the
- * case where the probe could not run at all. The prose never claims a location it cannot see.
- */
-async function certificateWhereabouts(
-  domain: string,
-  keychain: string,
-  imported: boolean,
-  deps: LocalWpCertDeps
-): Promise<string> {
-  let found: boolean | null = null
-  try {
-    const result = await deps.run(
-      SECURITY_BINARY,
-      ['find-certificate', '-c', domain, keychain],
-      VERIFY_TIMEOUT_MS
-    )
-    found = result.code === 0
-  } catch {
-    // A probe that could not run answers nothing; the import's own exit code is what is left.
-  }
-  const present = found ?? (imported ? true : null)
-  if (present === true) {
-    return 'The certificate itself is already in your keychain; only the trust setting is missing.'
-  }
-  if (present === false) {
-    return 'The certificate did not reach your keychain.'
-  }
-  return 'Whether it reached your keychain could not be confirmed.'
+  return { ok: false, message: `trust failed: ${detail || 'unknown error'}` }
 }
 
 async function isCertTrusted(certPath: string, deps: LocalWpCertDeps): Promise<boolean> {

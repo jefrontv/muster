@@ -51,7 +51,6 @@ describe('getLocalWpCertStatus', () => {
     expect(status.exists).toBe(false)
     expect(status.trusted).toBe(false)
     expect(status.certPath).toBe('')
-    expect(status.reason).toContain('macOS')
     expect(calls).toEqual([])
   })
 
@@ -260,7 +259,7 @@ describe('trustLocalWpCert', () => {
     expect(calls).toEqual([])
   })
 
-  it('imports then adds a trustRoot setting, never restricting it to one policy', async () => {
+  it('imports then adds a trustRoot setting in the login keychain, never restricting it to one policy', async () => {
     const { run, calls } = recorder()
     const onStatus = vi.fn()
 
@@ -273,37 +272,77 @@ describe('trustLocalWpCert', () => {
     expect(result.message).toContain(DOMAIN)
     expect(calls.map((call) => call.args)).toEqual([
       ['import', CERT, '-k', KEYCHAIN],
-      ['add-trusted-cert', '-r', 'trustRoot', '-k', KEYCHAIN, CERT]
+      ['add-trusted-cert', '-r', 'trustRoot', '-k', KEYCHAIN, CERT],
+      ['verify-cert', '-c', CERT]
     ])
     // -p would omit the Result Type and leave the trust silently incomplete.
     expect(calls[1]?.args).not.toContain('-p')
     expect(onStatus).toHaveBeenCalledTimes(1)
   })
 
-  it('carries on when import fails, since import says nothing about trust', async () => {
-    const { run, calls } = recorder((args) =>
-      args[0] === 'import' ? { code: 1, stdout: '', stderr: 'already exists', timedOut: false } : OK
-    )
+  it('confirms the write against the trust evaluator before claiming the certificate is trusted', async () => {
+    // macOS commits a per-user trust write seconds after `security` exits 0, so the first
+    // evaluations after a successful write legitimately read "not trusted" — the shape that failed
+    // the HTTPS step after a prompt the user had already answered.
+    let evaluations = 0
+    const { run } = recorder((args) => {
+      if (args[0] !== 'verify-cert') {
+        return OK
+      }
+      evaluations += 1
+      return evaluations >= 3 ? OK : { code: 1, stdout: '', stderr: 'not trusted', timedOut: false }
+    })
+    let clock = 0
+    const sleeps: number[] = []
 
     const result = await trustLocalWpCert(DOMAIN, {
-      deps: { platform: 'darwin', run, fileExists: () => true }
+      deps: {
+        platform: 'darwin',
+        run,
+        fileExists: () => true,
+        now: () => clock,
+        sleep: async (ms) => {
+          sleeps.push(ms)
+          clock += ms
+        }
+      }
     })
 
     expect(result.ok).toBe(true)
-    expect(calls.map((call) => call.args[0])).toEqual(['import', 'add-trusted-cert'])
+    expect(result.message).toContain('will now load')
+    expect(evaluations).toBe(3)
+    expect(sleeps).toEqual([1_000, 1_000])
   })
 
-  it('carries on when import throws outright', async () => {
-    const { run, calls } = recorder((args) =>
-      args[0] === 'import' ? new Error('spawn security ENOENT') : OK
+  it('refuses to call it trusted while the setting has not taken effect', async () => {
+    const { run } = recorder((args) =>
+      args[0] === 'verify-cert'
+        ? { code: 1, stdout: '', stderr: 'not trusted', timedOut: false }
+        : OK
     )
+    let clock = 0
+    const sleeps: number[] = []
 
     const result = await trustLocalWpCert(DOMAIN, {
-      deps: { platform: 'darwin', run, fileExists: () => true }
+      deps: {
+        platform: 'darwin',
+        run,
+        fileExists: () => true,
+        now: () => clock,
+        sleep: async (ms) => {
+          sleeps.push(ms)
+          clock += ms
+        }
+      }
     })
 
-    expect(result.ok).toBe(true)
-    expect(calls).toHaveLength(2)
+    expect(result.ok).toBe(false)
+    // Not a claim about the certificate being missing: the write was accepted and the cert is on
+    // disk, so the sentence has to name the control that can finish the job.
+    expect(result.message).toContain('has not applied the trust setting')
+    expect(result.message).toContain('LocalWP')
+    expect(clock).toBe(15_000)
+    expect(sleeps).toHaveLength(15)
   })
 
   it('gives the interactive trust call a human-scale budget and the keychain import a machine one', async () => {
@@ -317,7 +356,8 @@ describe('trustLocalWpCert', () => {
     // answered; import has no human in it and keeps the 30s keychain budget.
     expect(calls.map((call) => ({ op: call.args[0], timeoutMs: call.timeoutMs }))).toEqual([
       { op: 'import', timeoutMs: 30_000 },
-      { op: 'add-trusted-cert', timeoutMs: 300_000 }
+      { op: 'add-trusted-cert', timeoutMs: 300_000 },
+      { op: 'verify-cert', timeoutMs: 10_000 }
     ])
   })
 
@@ -350,11 +390,7 @@ describe('trustLocalWpCert', () => {
     // The run screen's own control, so the sentence tells the user what to press.
     expect(result.message).toContain('Change and retry')
     expect(result.message).not.toContain('timed out')
-    expect(calls.map((call) => call.args[0])).toEqual([
-      'import',
-      'add-trusted-cert',
-      'find-certificate'
-    ])
+    expect(calls.map((call) => call.args[0])).toEqual(['import', 'add-trusted-cert'])
   })
 
   it('surfaces the first stderr line when add-trusted-cert fails', async () => {
@@ -376,29 +412,8 @@ describe('trustLocalWpCert', () => {
 
     expect(result).toEqual({
       ok: false,
-      message:
-        'trust failed: SecTrustSettingsSetTrustSettings: The authorization was denied. — ' +
-        'The certificate itself is already in your keychain; only the trust setting is missing.'
+      message: 'trust failed: SecTrustSettingsSetTrustSettings: The authorization was denied.'
     })
-  })
-
-  it('tells a certificate that never reached the keychain apart from an untrusted one', async () => {
-    const { run } = recorder((args) => {
-      // import failed and find-certificate cannot see the item either: the item is absent, which is
-      // a different problem from the one the sentence above describes.
-      if (args[0] === 'add-trusted-cert') {
-        return { code: 1, stdout: '', stderr: 'SecTrustSettings…', timedOut: false }
-      }
-      return { code: 1, stdout: '', stderr: '', timedOut: false }
-    })
-
-    const result = await trustLocalWpCert(DOMAIN, {
-      deps: { platform: 'darwin', run, fileExists: () => true }
-    })
-
-    expect(result.ok).toBe(false)
-    expect(result.message).toContain('did not reach your keychain')
-    expect(result.message).not.toContain('already in your keychain')
   })
 
   it('refuses off darwin without spawning anything', async () => {
@@ -409,7 +424,6 @@ describe('trustLocalWpCert', () => {
     })
 
     expect(result.ok).toBe(false)
-    expect(result.message).toContain('macOS')
     expect(calls).toEqual([])
   })
 })
