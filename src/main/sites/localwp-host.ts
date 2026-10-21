@@ -11,6 +11,7 @@ import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { createConnection, type ConnectionOptions } from 'mysql2/promise'
 import { streamCommand } from '../lib/stream-command'
 
 // Pure path arithmetic, hoisted to shared/ so reading the layout costs none of the machinery above.
@@ -47,7 +48,7 @@ export type LocalWpHost = {
   /** Resolves symlinks; returns the input unchanged when the path does not exist. */
   canonicalPath: (filePath: string) => Promise<string>
   isTcpPortOpen: (port: number, timeoutMs: number) => Promise<boolean>
-  /** A live MySQL handshake. The socket file existing on disk is NOT readiness. */
+  /** A live MySQL handshake that also accepts Local's root login. The socket file is NOT readiness. */
   isMysqlSocketReady: (socketPath: string, timeoutMs: number) => Promise<boolean>
   sleep: (ms: number) => Promise<void>
   environment: Record<string, string | undefined>
@@ -116,6 +117,34 @@ export function isMysqlSocketReady(socketPath: string, timeoutMs: number): Promi
   return promise
 }
 
+// A fresh site's mysqld answers the handshake before Local has set root's password (seen ~2s on
+// macOS 26), so only a refused root/root login means "not ready"; any other error defers to the handshake.
+export async function isLocalWpMysqlLoginReady(
+  socketPath: string,
+  timeoutMs: number,
+  connect: (options: ConnectionOptions) => Promise<{ end: () => Promise<void> }> = createConnection
+): Promise<boolean> {
+  try {
+    const connection = await connect({
+      socketPath,
+      user: LOCALWP_DATABASE_USER,
+      password: LOCALWP_DATABASE_PASSWORD,
+      connectTimeout: timeoutMs
+    })
+    await connection.end().catch(() => undefined)
+    return true
+  } catch (error) {
+    return (error as { code?: string } | null)?.code !== 'ER_ACCESS_DENIED_ERROR'
+  }
+}
+
+async function isLocalWpMysqlReady(socketPath: string, timeoutMs: number): Promise<boolean> {
+  return (
+    (await isMysqlSocketReady(socketPath, timeoutMs)) &&
+    isLocalWpMysqlLoginReady(socketPath, timeoutMs)
+  )
+}
+
 function delay(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>()
   setTimeout(resolve, ms)
@@ -157,7 +186,7 @@ export function createLocalWpHost(overrides: Partial<LocalWpHost> = {}): LocalWp
       }
     },
     isTcpPortOpen,
-    isMysqlSocketReady,
+    isMysqlSocketReady: isLocalWpMysqlReady,
     sleep: delay,
     environment: process.env,
     ...overrides

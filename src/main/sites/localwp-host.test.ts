@@ -7,7 +7,7 @@ import { mkdtemp, rm, chmod } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { isMysqlSocketReady } from './localwp-host'
+import { isLocalWpMysqlLoginReady, isMysqlSocketReady } from './localwp-host'
 
 const PROBE_TIMEOUT_MS = 300
 
@@ -59,5 +59,33 @@ describe('isMysqlSocketReady', () => {
     const socketPath = await listeningSocket(true)
     await chmod(socketPath, 0o000)
     expect(await isMysqlSocketReady(socketPath, PROBE_TIMEOUT_MS)).toBe(true)
+  })
+})
+
+describe('isLocalWpMysqlLoginReady', () => {
+  const refusing = (code: string) => async () => {
+    throw Object.assign(new Error(code), { code })
+  }
+
+  it("logs in with Local's root/root over the socket", async () => {
+    const seen: unknown[] = []
+    const ready = await isLocalWpMysqlLoginReady('/run/mysqld.sock', 300, async (options) => {
+      seen.push(options)
+      return { end: async () => undefined }
+    })
+    expect(ready).toBe(true)
+    expect(seen).toEqual([
+      { socketPath: '/run/mysqld.sock', user: 'root', password: 'root', connectTimeout: 300 }
+    ])
+  })
+
+  it('is not ready while Local has not set the root password yet', async () => {
+    expect(await isLocalWpMysqlLoginReady('/s', 300, refusing('ER_ACCESS_DENIED_ERROR'))).toBe(
+      false
+    )
+  })
+
+  it('defers to the handshake on any other failure', async () => {
+    expect(await isLocalWpMysqlLoginReady('/s', 300, refusing('EACCES'))).toBe(true)
   })
 })
