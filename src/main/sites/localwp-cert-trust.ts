@@ -44,7 +44,7 @@ const KEYCHAIN_TIMEOUT_MS = 30_000
  * Five minutes before giving up on them, the same budget the agent-local CLI fallback allows for
  * its own dialog (AGENT_LOCAL_TRUST_PROMPT_TIMEOUT_MS in agent-local-cert.ts).
  */
-const TRUST_PROMPT_TIMEOUT_MS = 5 * 60_000
+export const TRUST_PROMPT_TIMEOUT_MS = 5 * 60_000
 
 /**
  * A zero exit is the write being *accepted*, not applied: macOS commits per-user trust settings
@@ -294,7 +294,10 @@ export async function waitForLocalWpCert(
 }
 
 // Polls the evaluator until the write shows up: a timeout is an outcome, as in `waitForLocalWpCert`.
-async function waitForCertTrusted(certPath: string, deps: LocalWpCertDeps): Promise<boolean> {
+export async function waitForCertTrusted(
+  certPath: string,
+  deps: LocalWpCertDeps
+): Promise<boolean> {
   const deadline = deps.now() + TRUST_CONFIRM_TIMEOUT_MS
   while (deps.now() < deadline) {
     if (await isCertTrusted(certPath, deps)) {
@@ -376,7 +379,7 @@ export async function trustLocalWpCert(
   return { ok: false, message: `trust failed: ${detail || 'unknown error'}` }
 }
 
-async function isCertTrusted(certPath: string, deps: LocalWpCertDeps): Promise<boolean> {
+export async function isCertTrusted(certPath: string, deps: LocalWpCertDeps): Promise<boolean> {
   try {
     const result = await deps.run(
       SECURITY_BINARY,

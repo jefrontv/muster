@@ -26,6 +26,14 @@ vi.mock('electron', () => ({
 // domain validation, and the tagged-union wrapping.
 vi.mock('../sites/localwp-cert-trust', () => ({ getLocalWpCertStatus, trustLocalWpCert }))
 vi.mock('../sites/localwp-cert-ensure', () => ({ ensureLocalWpHttpsCert }))
+vi.mock('../sites/localwp-signing-cert', () => ({
+  createSigningCertDeps: () => ({}),
+  certFingerprint: async () => 'B5F0',
+  isInSystemKeychain: async () => false
+}))
+vi.mock('../sites/localwp-signing-cert-install', () => ({
+  installSigningCertForLocalWpSite: vi.fn()
+}))
 
 import { registerLocalWpCertHandlers } from './localwp-cert'
 
@@ -79,7 +87,7 @@ describe('registerLocalWpCertHandlers', () => {
   it('passes the trimmed domain through and wraps the status in a tagged result', async () => {
     expect(await call('localwpCert:status', { domain: '  117pacific.local  ' })).toEqual({
       ok: true,
-      value: STATUS
+      value: { ...STATUS, inSystemKeychain: false }
     })
     expect(getLocalWpCertStatus).toHaveBeenCalledWith('117pacific.local')
   })
@@ -98,7 +106,8 @@ describe('registerLocalWpCertHandlers', () => {
     // minutes, so the wizard's HTTPS row has to be able to say so. Without a token there is no
     // signal in the options, and the request cannot be cancelled.
     expect(ensureLocalWpHttpsCert).toHaveBeenCalledWith('ebes.local', '/Sites/ebes', {
-      onStatus: expect.any(Function)
+      onStatus: expect.any(Function),
+      installSigningCert: expect.any(Function)
     })
   })
 

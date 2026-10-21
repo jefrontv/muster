@@ -77,6 +77,12 @@ export async function ensureLocalWpHttpsCert(
     signal?: AbortSignal
     certDeps?: Partial<LocalWpCertDeps>
     deps?: Partial<LocalWpCertEnsureDeps>
+    /** Tried before trusting Local's own certificate; any failure falls back to that. */
+    installSigningCert?: (
+      domain: string,
+      sitePath: string,
+      options: { onStatus?: (message: string) => void; signal?: AbortSignal }
+    ) => Promise<LocalWpCertTrustResult>
   } = {}
 ): Promise<LocalWpCertTrustResult> {
   const trimmed = domain.trim()
@@ -155,5 +161,16 @@ export async function ensureLocalWpHttpsCert(
   }
 
   // Unreachable without a passing ownership check above.
+  if (options.installSigningCert) {
+    const signed = await options.installSigningCert(trimmed, sitePath, {
+      onStatus: options.onStatus,
+      ...(options.signal ? { signal: options.signal } : {})
+    })
+    if (signed.ok) {
+      return signed
+    }
+    options.onStatus?.(`Muster's signing certificate was not used: ${signed.message}`)
+    options.onStatus?.("Trusting LocalWP's own certificate instead…")
+  }
   return deps.trust(trimmed, { onStatus: options.onStatus, deps: options.certDeps })
 }

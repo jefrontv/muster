@@ -18,6 +18,8 @@ export type LocalWpCertStatus = {
   exists: boolean
   /** Passes `security verify-cert`, i.e. the browser will not warn. */
   trusted: boolean
+  /** LocalWP only: false means Local's site page still offers its own Trust button. */
+  inSystemKeychain?: boolean
   /**
    * User-facing prose explaining what is missing and what to do about it, distinct per case.
    * '' only when the certificate exists and is already trusted.

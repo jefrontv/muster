@@ -17,6 +17,8 @@ import type {
 import type { LocalWpCertStatus, LocalWpCertTrustResult } from '../../shared/localwp-cert-types'
 import { getLocalWpCertStatus, trustLocalWpCert } from './localwp-cert-trust'
 import { ensureLocalWpHttpsCert } from './localwp-cert-ensure'
+import { certFingerprint, createSigningCertDeps, isInSystemKeychain } from './localwp-signing-cert'
+import { installSigningCertForLocalWpSite } from './localwp-signing-cert-install'
 import { currentSocketIfRunning, detectLocalWpStack } from './localwp-detection'
 import {
   createLocalWpHost,
@@ -101,6 +103,20 @@ export function localStackSkip(state: LocalWpControlState, message: string): Loc
   return { ok: true, socketPath: '', state, message }
 }
 
+// Kept out of localwp-cert-trust.ts, which the signing-cert module itself imports.
+async function localWpCertStatusWithSystemKeychain(domain: string): Promise<LocalWpCertStatus> {
+  const status = await getLocalWpCertStatus(domain)
+  if (!status.exists) {
+    return status
+  }
+  const deps = createSigningCertDeps()
+  const fingerprint = await certFingerprint(status.certPath, deps)
+  return {
+    ...status,
+    inSystemKeychain: fingerprint !== null && (await isInSystemKeychain(fingerprint, deps))
+  }
+}
+
 const localWpProvider: LocalStackProvider = {
   id: 'localwp',
   // Any Mac passed before, so LocalWP was the default pick with nothing installed to serve it.
@@ -124,10 +140,14 @@ const localWpProvider: LocalStackProvider = {
       database: ''
     }
   },
-  certStatus: getLocalWpCertStatus,
+  certStatus: localWpCertStatusWithSystemKeychain,
   certTrust: trustLocalWpCert,
   certEnsure: (domain, site, onStatus, signal) =>
-    ensureLocalWpHttpsCert(domain, site.path, { onStatus, ...(signal ? { signal } : {}) })
+    ensureLocalWpHttpsCert(domain, site.path, {
+      onStatus,
+      ...(signal ? { signal } : {}),
+      installSigningCert: installSigningCertForLocalWpSite
+    })
 }
 
 /**

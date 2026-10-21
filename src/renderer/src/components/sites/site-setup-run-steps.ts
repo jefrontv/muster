@@ -288,7 +288,8 @@ export async function runHttps(ctx: StepContext): Promise<void> {
     ctx.skip('https', status.value.reason)
     return
   }
-  if (status.value.trusted) {
+  // Trusted but missing from the System keychain still runs `ensure`, so LocalWP's Trust button goes.
+  if (status.value.trusted && status.value.inSystemKeychain !== false) {
     done()
     return
   }
