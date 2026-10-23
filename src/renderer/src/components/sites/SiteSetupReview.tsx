@@ -22,6 +22,7 @@ import { SiteSetupNoStackFixes } from './SiteSetupNoStackFixes'
 import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
 import { SiteSetupServeEditToggle, SiteSetupServeEditor } from './SiteSetupServeEditor'
 import { domainForStack } from './site-setup-stack-domain'
+import { useAgentLocalSuffix } from './use-agent-local-suffix'
 
 /** Written for the user, straight from the run planner's `blockedBy` (site-setup-plan.ts). */
 const IMPORT_BLOCKED_REASON: Record<string, string> = {
@@ -62,6 +63,7 @@ export function SiteSetupReview({
   /** A naming rule or clash for the serve domain; it also opens the editor so the reason shows. */
   serveDomainError?: string
 }): React.JSX.Element {
+  const agentLocalSuffix = useAgentLocalSuffix()
   const strings = getSiteSetupReviewStrings()
   const toggleLabels = getSiteToggleLabels()
   const [serveEditing, setServeEditing] = useState(promptStackChoice)
@@ -173,7 +175,12 @@ export function SiteSetupReview({
                     stack: next.stack,
                     domain:
                       next.stack !== choices.serve.stack
-                        ? domainForStack(next.domain, next.stack, choices.serve.stack)
+                        ? domainForStack(
+                            next.domain,
+                            next.stack,
+                            choices.serve.stack,
+                            agentLocalSuffix ?? null
+                          )
                         : next.domain
                   }
                 })

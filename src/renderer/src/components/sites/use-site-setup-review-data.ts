@@ -21,6 +21,7 @@ import {
 import type { SiteSetupRequest } from './SiteSetupDialog'
 import type { SiteSetupLinkTarget } from './SiteSetupLinkTargetRows'
 import { useAvailableSiteStacks } from '@/lib/use-available-site-stacks'
+import { useAgentLocalSuffix } from './use-agent-local-suffix'
 
 export type LinkCloneProblem = {
   kind: 'no-connector' | 'lookup-failed' | 'not-found'
@@ -52,6 +53,7 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
   // Re-probed while the review is open: a stack installed mid-review has to appear without the
   // user closing and reopening the dialog.
   const availableStacks = useAvailableSiteStacks()
+  const agentLocalSuffix = useAgentLocalSuffix()
   const [cert, setCert] = useState<LocalWpCertStatus | null>(null)
   const [choices, setChoices] = useState<SiteSetupChoices | null>(null)
 
@@ -155,7 +157,12 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
   const seedKey = `${planSiteId}|${repo?.fullName ?? ''}|${availableStacks === null ? '' : 'stacks'}`
   const seededRef = useRef('')
   useEffect(() => {
-    if (availableStacks === null || seededRef.current === seedKey) {
+    // Wait for agent-local's suffix too, or a seeded `.local` default would stick.
+    if (
+      availableStacks === null ||
+      agentLocalSuffix === undefined ||
+      seededRef.current === seedKey
+    ) {
       return
     }
     if (planSiteId.length > 0 && plan === null) {
@@ -183,10 +190,11 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
         stack: pickDefaultStack(availableStacks, plan?.stack.stack ?? null),
         certSupported: true,
         environment,
-        importFromSource: request.kind === 'link'
+        importFromSource: request.kind === 'link',
+        agentLocalSuffix
       })
     )
-  }, [seedKey, availableStacks, plan, planSiteId, repo, request])
+  }, [seedKey, availableStacks, agentLocalSuffix, plan, planSiteId, repo, request])
 
   // A stack installed while the review is open (the Serve row's own Install button, or Terminal)
   // has to become the choice, not wait for the dialog to be reopened.
@@ -205,12 +213,12 @@ export function useSiteSetupReviewData(request: SiteSetupRequest, repo: CloneSou
         serve: {
           enabled: stack !== null,
           stack,
-          domain: domainForStack(current.serve.domain, stack)
+          domain: domainForStack(current.serve.domain, stack, null, agentLocalSuffix ?? null)
         },
         https: stack !== null
       }
     })
-  }, [firstStack, availableStacks, plan])
+  }, [firstStack, availableStacks, agentLocalSuffix, plan])
 
   // Cheap local probe: lets the HTTPS row say "already trusted" and greys it where certs cannot work.
   const certDomain = choices?.serve.domain.trim() ?? ''

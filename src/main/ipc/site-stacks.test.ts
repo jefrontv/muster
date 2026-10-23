@@ -171,6 +171,7 @@ describe('registerSiteStackHandlers', () => {
     expect([...handlers.keys()].sort()).toEqual([
       'siteStacks:adoptServing',
       'siteStacks:agentLocalStatus',
+      'siteStacks:agentLocalSuffix',
       'siteStacks:available',
       'siteStacks:checkDomain',
       'siteStacks:detect',

@@ -8,6 +8,7 @@
 // than an error, so the renderer can render a disabled state instead of an alert.
 
 import { readAgentLocalDaemonStatus } from '../sites/agent-local-import-api'
+import { registerAgentLocalSuffixHandler } from './site-stacks-agent-local-suffix'
 import type { AgentLocalDaemonStatus } from '../../shared/site-stack-types'
 import { ipcMain } from 'electron'
 import type { SiteLocalStack } from '../../shared/site-types'
@@ -213,6 +214,8 @@ export function registerSiteStackHandlers(store: Store): void {
       value: await readAgentLocalDaemonStatus({ startDaemon: false })
     })
   )
+
+  registerAgentLocalSuffixHandler()
 
   // Which stacks this machine can actually run. The renderer offers only these, so a user without
   // agent-local never sees an option that would fail, and one without Local is not stuck with it.
