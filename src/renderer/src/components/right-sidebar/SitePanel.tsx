@@ -2,7 +2,7 @@
 // configuration with quick Import/Deploy actions. The full editing surface stays on the Sites
 // page; this panel answers "what would a run do right now" without leaving the workspace.
 
-import { ArrowUpRight } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SiteRun, SiteRunLogLine } from '../../../../shared/site-run-types'
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { useSiteRun } from '@/components/sites/use-site-run'
 import { RUN_STATUS_TONE } from '@/components/sites/site-run-history-format'
 import { openSiteInSitesPage } from './site-panel-open-in-sites'
+import { SiteEditDialog } from './SiteEditDialog'
 import {
   RunStatusDot,
   SectionCard,
@@ -55,6 +56,7 @@ export function SitePanelContent({
     [applySiteSummary]
   )
   const confirm = useConfirmationDialog()
+  const [editOpen, setEditOpen] = useState(false)
   const [recentRuns, setRecentRuns] = useState<SiteRun[]>([])
   // The newest running run this panel is NOT streaming in-process — an agent started it through
   // the muster-sites MCP server. Its on-disk log is tailed below so it reads like a button run.
@@ -258,10 +260,7 @@ export function SitePanelContent({
       : null)
 
   const tailLines = lines.length > SIDEBAR_LOG_TAIL ? lines.slice(-SIDEBAR_LOG_TAIL) : lines
-  const openInSitesLabel = translate(
-    'auto.components.right.sidebar.SitePanel.openInSites',
-    'Open in Sites'
-  )
+  const editSiteLabel = translate('auto.components.right.sidebar.SitePanel.editSite', 'Edit site')
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto scrollbar-sleek p-3">
@@ -277,17 +276,24 @@ export function SitePanelContent({
             <Button
               variant="ghost"
               size="icon-xs"
-              aria-label={openInSitesLabel}
-              onClick={onOpenInSites}
+              aria-label={editSiteLabel}
+              onClick={() => setEditOpen(true)}
             >
-              <ArrowUpRight className="size-3.5" />
+              <Pencil className="size-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
-            {openInSitesLabel}
+            {editSiteLabel}
           </TooltipContent>
         </Tooltip>
       </header>
+
+      <SiteEditDialog
+        summary={summary}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onOpenInSites={onOpenInSites}
+      />
 
       <SiteLocalStackCard summary={summary} compact />
 
