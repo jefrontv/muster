@@ -2240,7 +2240,10 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
 
   ipcMain.handle(
     'repos:clone',
-    async (_event, args: { url: string; destination: string; branch?: string }): Promise<Repo> => {
+    async (
+      _event,
+      args: { url: string; destination: string; branch?: string; blobless?: boolean }
+    ): Promise<Repo> => {
       // Why: derive the repo folder name from the URL's last segment, matching default git clone behavior.
       const clonePath = deriveValidatedClonePath(args)
       const clonePathKey = getClonePathComparisonKey(clonePath)
@@ -2273,6 +2276,9 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
         const branchArgs = (await remoteBranchExists(args.url, requestedBranch))
           ? ['--branch', requestedBranch]
           : []
+        // Why: history of deleted assets dominates site repos; git >= 2.19 (below the 2.25 baseline),
+        // and a server without partial-clone support just warns and sends everything.
+        const filterArgs = args.blobless === true ? ['--filter=blob:none'] : []
 
         // Why: spawn (not execFile) avoids the maxBuffer limit — clone progress on stderr can exceed Node's 1 MB default.
         // Why: --progress forces git to emit progress even when stderr isn't a TTY.
@@ -2282,12 +2288,15 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
           // Why: '--' isolates the URL so a malicious URL can't be read as git flags (command injection).
           let proc: ReturnType<typeof gitSpawn>
           try {
-            proc = gitSpawn(['clone', '--progress', ...branchArgs, '--', args.url, clonePath], {
-              cwd: args.destination,
-              // Why: without this, an auth-needing clone pops Git Credential Manager's OAuth window on Windows, unclosable in a restricted env (issue #7652).
-              env: nonInteractiveGitEnv(),
-              stdio: ['ignore', 'ignore', 'pipe']
-            })
+            proc = gitSpawn(
+              ['clone', '--progress', ...branchArgs, ...filterArgs, '--', args.url, clonePath],
+              {
+                cwd: args.destination,
+                // Why: without this, an auth-needing clone pops Git Credential Manager's OAuth window on Windows, unclosable in a restricted env (issue #7652).
+                env: nonInteractiveGitEnv(),
+                stdio: ['ignore', 'ignore', 'pipe']
+              }
+            )
           } catch (err) {
             void cleanupClaimedCloneTarget(clonePath, claimedTarget).finally(() => {
               const message = err instanceof Error ? err.message : String(err)

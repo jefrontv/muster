@@ -176,6 +176,7 @@ describe('createSiteSetupRunner', () => {
       'runMigration',
       'cert.status'
     ])
+    expect(api.repos.clone).toHaveBeenCalledWith(expect.objectContaining({ blobless: true }))
     const snapshot = runner.snapshot()
     expect(snapshot.phase).toBe('done')
     expect(snapshot.siteId).toBe('site-1')

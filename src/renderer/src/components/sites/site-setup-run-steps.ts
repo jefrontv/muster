@@ -68,7 +68,9 @@ export async function runClone(ctx: StepContext): Promise<void> {
     const repo = await ctx.api.repos.clone({
       url: target.url,
       destination: target.destination,
-      ...(target.branch ? { branch: target.branch } : {})
+      ...(target.branch ? { branch: target.branch } : {}),
+      // A site checkout needs today's files, not every image ever committed and deleted.
+      blobless: true
     })
     ctx.patch({ path: repo.path })
     ctx.patchStep('clone', {

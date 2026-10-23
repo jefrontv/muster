@@ -1079,6 +1079,8 @@ export type SiteStacksApi = {
     domain: string
   }) => Promise<SiteResult<{ stack: SiteLocalStack; name: string; path: string } | null>>
   agentLocalStatus: () => Promise<SiteResult<AgentLocalDaemonStatus>>
+  /** Null when agent-local is not installed or its daemon is down. */
+  agentLocalSuffix: () => Promise<SiteResult<string | null>>
   previewMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationPlan>>
   /** Destructive: show the preview and take an explicit confirmation before calling this. */
   runMigration: (args: LocalWpMigrationArgs) => Promise<SiteResult<LocalWpMigrationResult>>
@@ -1571,8 +1573,14 @@ export type PreloadApi = {
     pickFolder: () => Promise<string | null>
     pickFolders: () => Promise<string[]>
     pickDirectory: () => Promise<string | null>
-    /** `branch` checks out that branch when the remote has it; otherwise the default is used. */
-    clone: (args: { url: string; destination: string; branch?: string }) => Promise<Repo>
+    /** `branch` checks out that branch when the remote has it; otherwise the default is used.
+     *  `blobless` fetches old file versions on demand rather than up front. */
+    clone: (args: {
+      url: string
+      destination: string
+      branch?: string
+      blobless?: boolean
+    }) => Promise<Repo>
     cloneRemote: (args: { connectionId: string; url: string; destination: string }) => Promise<Repo>
     createRemote: (args: {
       connectionId: string

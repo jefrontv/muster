@@ -1029,6 +1029,7 @@ const api = {
     available: () => ipcRenderer.invoke('siteStacks:available'),
     checkDomain: (args) => ipcRenderer.invoke('siteStacks:checkDomain', args),
     agentLocalStatus: () => ipcRenderer.invoke('siteStacks:agentLocalStatus'),
+    agentLocalSuffix: () => ipcRenderer.invoke('siteStacks:agentLocalSuffix'),
     previewMigration: (args) => ipcRenderer.invoke('siteStacks:previewMigration', args),
     runMigration: (args) => ipcRenderer.invoke('siteStacks:runMigration', args),
     setDomain: (args) => ipcRenderer.invoke('siteStacks:setDomain', args),

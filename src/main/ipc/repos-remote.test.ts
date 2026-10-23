@@ -2100,6 +2100,28 @@ describe('repos:add + repos:clone', () => {
     expect(result).toHaveProperty('externalWorktreeVisibility', 'hide')
   })
 
+  it('adds --filter=blob:none to repos:clone only when blobless is asked for', async () => {
+    const cloneArgv = (): string[] =>
+      (gitSpawnMock.mock.calls.at(-1)?.[0] as string[] | undefined) ?? []
+
+    await handlers.get('repos:clone')!(null, {
+      url: 'https://example.com/full.git',
+      destination: await createTempRoot()
+    })
+    expect(cloneArgv()).not.toContain('--filter=blob:none')
+
+    await handlers.get('repos:clone')!(null, {
+      url: 'https://example.com/site.git',
+      destination: await createTempRoot(),
+      blobless: true
+    })
+    const argv = cloneArgv()
+    expect(argv[0]).toBe('clone')
+    // Before '--', so git reads it as an option rather than part of the URL.
+    expect(argv.indexOf('--filter=blob:none')).toBeLessThan(argv.indexOf('--'))
+    expect(argv).toContain('--filter=blob:none')
+  })
+
   it('drops a same-path negative submodule cache before a local clone', async () => {
     const destination = await createTempRoot()
     const clonePath = join(destination, 'orca')
