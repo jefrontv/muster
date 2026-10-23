@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { FolderOpen, Globe, Monitor, Plus } from 'lucide-react'
+import { FolderOpen, Globe, Link, Monitor, Plus } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 
 export type AddRepoLocalStartActionHandlers = {
@@ -7,13 +7,15 @@ export type AddRepoLocalStartActionHandlers = {
   onOpenCloneStep: () => void
   onOpenRemoteStep: () => void
   onOpenCreateStep: () => void
+  /** Local only: site setup clones and serves on this machine. */
+  onOpenSiteSetup?: () => void
   showRemoteAction?: boolean
   canCreateProject?: boolean
   browseHostKind?: 'local' | 'ssh' | 'runtime'
 }
 
 export type AddRepoLocalStartAction = {
-  kind: 'browse' | 'clone' | 'remote' | 'create'
+  kind: 'browse' | 'site' | 'clone' | 'remote' | 'create'
   icon: ComponentType<{ className?: string }>
   title: string
   description: string
@@ -27,6 +29,7 @@ export function getAddRepoLocalStartActions({
   onOpenCloneStep,
   onOpenRemoteStep,
   onOpenCreateStep,
+  onOpenSiteSetup,
   showRemoteAction = true,
   canCreateProject = true,
   browseHostKind = 'local'
@@ -78,9 +81,25 @@ export function getAddRepoLocalStartActions({
     ),
     onClick: onOpenRemoteStep
   }
+  const site =
+    onOpenSiteSetup && browseHostKind === 'local'
+      ? {
+          kind: 'site' as const,
+          icon: Globe,
+          title: translate(
+            'auto.components.sidebar.add.repo.local.start.actions.addSite',
+            'Add site'
+          ),
+          description: translate(
+            'auto.components.sidebar.add.repo.local.start.actions.addSiteDescription',
+            'Clone a site from Bitbucket or GitHub and serve it locally'
+          ),
+          onClick: onOpenSiteSetup
+        }
+      : null
   const clone = {
     kind: 'clone' as const,
-    icon: Globe,
+    icon: Link,
     title: translate(
       'auto.components.sidebar.add.repo.local.start.actions.7edb8ebe24',
       'Clone from URL'
@@ -111,11 +130,12 @@ export function getAddRepoLocalStartActions({
     onClick: onOpenCreateStep
   }
 
-  const secondaryActions = showRemoteAction
+  const hostActions = showRemoteAction
     ? isSshLikely
       ? [remote, clone, create]
       : [clone, remote, create]
     : [clone, create]
+  const secondaryActions = site ? [site, ...hostActions] : hostActions
 
   return { primaryAction, secondaryActions }
 }

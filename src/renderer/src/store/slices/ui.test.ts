@@ -3009,38 +3009,7 @@ describe('createUISlice contextual tours', () => {
     expect(store.getState().activeContextualTourStepIndex).toBe(2)
   })
 
-  it('advances the active split step when the split command interaction is recorded', () => {
-    const setMock = vi.fn(() => Promise.resolve())
-    vi.stubGlobal('window', {
-      api: {
-        ui: {
-          set: setMock
-        }
-      }
-    })
-    const store = createUIStore()
-    stubContextualTourTargets([
-      '[data-contextual-tour-target="terminal-pane-split-target"], [data-contextual-tour-target="workspace-agent-terminal-tip"]',
-      '[data-contextual-tour-target="workspace-create-control"]'
-    ])
-    store.getState().hydratePersistedUI(makeAutoTourEligibleUI())
-    setMock.mockClear()
-    store
-      .getState()
-      .requestContextualTour('workspace-agent-sessions', 'setup_guide_parallel_work', false, {
-        force: true
-      })
-
-    store.getState().recordFeatureInteraction('terminal-pane-split')
-
-    expect(store.getState().activeContextualTourId).toBe('workspace-agent-sessions')
-    expect(store.getState().activeContextualTourStepIndex).toBe(1)
-    expect(store.getState().featureInteractions['terminal-pane-split']).toMatchObject({
-      interactionCount: 1
-    })
-  })
-
-  it('opens the sidebar and advances the split step when the create-worktree target is hidden', () => {
+  it('completes the split tour when the split command interaction is recorded', () => {
     const setMock = vi.fn(() => Promise.resolve())
     vi.stubGlobal('window', {
       api: {
@@ -3053,8 +3022,8 @@ describe('createUISlice contextual tours', () => {
     stubContextualTourTargets([
       '[data-contextual-tour-target="terminal-pane-split-target"], [data-contextual-tour-target="workspace-agent-terminal-tip"]'
     ])
-    store.setState({ sidebarOpen: false })
     store.getState().hydratePersistedUI(makeAutoTourEligibleUI())
+    setMock.mockClear()
     store
       .getState()
       .requestContextualTour('workspace-agent-sessions', 'setup_guide_parallel_work', false, {
@@ -3063,11 +3032,11 @@ describe('createUISlice contextual tours', () => {
 
     store.getState().recordFeatureInteraction('terminal-pane-split')
 
-    expect(store.getState().sidebarOpen).toBe(true)
-    expect(store.getState().activeContextualTourId).toBe('workspace-agent-sessions')
-    expect(store.getState().activeContextualTourStepIndex).toBe(1)
-    expect(store.getState().contextualToursSeenIds).toEqual([])
-    expect(store.getState().lastCompletedContextualTourId).toBeNull()
+    expect(store.getState().activeContextualTourId).toBeNull()
+    expect(store.getState().lastCompletedContextualTourId).toBe('workspace-agent-sessions')
+    expect(store.getState().featureInteractions['terminal-pane-split']).toMatchObject({
+      interactionCount: 1
+    })
   })
 
   it('marks the active contextual tour suppressed when its owning source disables', () => {

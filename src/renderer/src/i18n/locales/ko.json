@@ -1076,7 +1076,8 @@
         "0d0ace8861": "GitHub에서 별표 주기",
         "ec43b38ba7": "GitHub에 별표 표시됨",
         "157bb5ecbb": "GitHub 열기",
-        "preflightDismiss": "닫기"
+        "preflightDismiss": "닫기",
+        "addNewSite": "Add new site"
       },
       "LinearIssueMarkdownDescriptionEditor": {
         "d9c47069ef": "Markdown",
@@ -4467,7 +4468,9 @@
                   "sshCreateUnavailable": "아직 SSH 호스트에서는 사용할 수 없습니다.",
                   "sshBrowseTitle": "SSH 호스트에서 프로젝트 열기",
                   "sshBrowseDescription": "이 SSH 호스트의 기존 Git 리포지토리 또는 폴더",
-                  "runtimeBrowseDescription": "이 호스트의 기존 Git 리포지토리 또는 폴더"
+                  "runtimeBrowseDescription": "이 호스트의 기존 Git 리포지토리 또는 폴더",
+                  "addSite": "Add site",
+                  "addSiteDescription": "Clone a site from Bitbucket or GitHub and serve it locally"
                 }
               }
             }
@@ -10888,6 +10891,7 @@
             "noEnvironmentReason": "No environment is configured for this site.",
             "noImportSteps": "No import steps are enabled for this environment.",
             "noDeploySteps": "No deploy steps are enabled for this environment.",
+            "editSite": "Edit site",
             "openInSites": "Open in Sites",
             "localSection": "Local",
             "localDomain": "Local domain",
@@ -14043,7 +14047,8 @@
           "copy": "Copy",
           "copied": "Copied",
           "close": "Close",
-          "openSite": "Open {{domain}}",
+          "openProject": "Open project",
+          "openProjectFailed": "Could not open the project",
           "logToggle": "Log ({{count}})",
           "waiting": "Waiting",
           "notRun": "Not run",

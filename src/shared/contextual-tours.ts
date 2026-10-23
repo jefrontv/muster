@@ -83,14 +83,6 @@ export const CONTEXTUAL_TOURS = [
         preferredPlacement: 'bottom',
         primaryAction: { kind: 'split-terminal-pane', label: 'Split terminal' },
         advanceOnFeatureInteraction: 'terminal-pane-split'
-      },
-      {
-        title: 'Start another task in parallel',
-        body: 'Each worktree gets its own branch, so parallel work stays separate.',
-        targetSelector: '[data-contextual-tour-target="workspace-create-control"]',
-        preferredPlacement: 'right',
-        targetPulse: true,
-        hidePrimaryAction: true
       }
     ]
   },

@@ -215,7 +215,7 @@ function mergeContextualTourSeenIds(
 function getContextualTourProgressionForFeatureInteraction(
   state: AppState,
   id: FeatureInteractionId
-): 'advance' | 'complete' | 'reveal-sidebar-and-advance' | null {
+): 'advance' | 'complete' | null {
   if (!state.activeContextualTourId) {
     return null
   }
@@ -231,14 +231,6 @@ function getContextualTourProgressionForFeatureInteraction(
   })
   if (nextStepIndex !== null) {
     return 'advance'
-  }
-  if (
-    state.activeContextualTourId === 'workspace-agent-sessions' &&
-    state.activeContextualTourStepIndex === 0 &&
-    id === 'terminal-pane-split' &&
-    !state.sidebarOpen
-  ) {
-    return 'reveal-sidebar-and-advance'
   }
   return 'complete'
 }
@@ -1601,14 +1593,6 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
             })
           : window.api.ui.set({ featureInteractions: next })
         persistPromise = persist.catch(console.error)
-      }
-      if (tourProgression === 'reveal-sidebar-and-advance') {
-        // Why: split can fire from keyboard/menu with the sidebar closed, but the next tour target lives in the sidebar.
-        return {
-          featureInteractions: next,
-          sidebarOpen: true,
-          activeContextualTourStepIndex: s.activeContextualTourStepIndex + 1
-        }
       }
       return { featureInteractions: next }
     })

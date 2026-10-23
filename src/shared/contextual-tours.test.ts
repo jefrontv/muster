@@ -39,17 +39,13 @@ describe('contextual tour definitions', () => {
     }
   })
 
-  it('defines the workspace agent sessions value tour as split then create-worktree', () => {
+  it('defines the workspace agent sessions value tour as the split step only', () => {
     const tour = CONTEXTUAL_TOURS.find((entry) => entry.id === 'workspace-agent-sessions') as
       | ContextualTour
       | undefined
 
-    // Two steps only: tasks and orchestration education lives in their own
-    // page tours, so the in-app tour ends after the worktree CTA.
-    expect(tour?.steps.map((step) => step.title)).toEqual([
-      'Split a terminal pane',
-      'Start another task in parallel'
-    ])
+    // The sidebar has no new-worktree button to point a second step at.
+    expect(tour?.steps.map((step) => step.title)).toEqual(['Split a terminal pane'])
     // The opening step teaches the split gesture and offers the convenience button.
     expect(tour?.steps[0]).toMatchObject({
       requiredForStart: true,
@@ -60,15 +56,6 @@ describe('contextual tour definitions', () => {
     expect(tour?.steps[0]?.targetSelector).toContain('terminal-pane-split-target')
     expect(tour?.steps[0]?.targetSelector).not.toContain('terminal-split-control')
     expect(tour?.steps[0]?.secondaryAction).toBeUndefined()
-    // The closing step anchors on the real new-worktree button; the pulse makes
-    // that button the CTA instead of duplicating it inside the panel.
-    expect(tour?.steps[1]).toMatchObject({
-      targetPulse: true,
-      hidePrimaryAction: true
-    })
-    expect(tour?.steps[1]?.targetSelector).toContain('workspace-create-control')
-    expect(tour?.steps[1]?.primaryAction).toBeUndefined()
-    expect(tour?.steps[1]?.secondaryAction).toBeUndefined()
   })
 
   it('points the workspace board tour at the board center and done lane', () => {

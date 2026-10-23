@@ -1,11 +1,9 @@
 import React from 'react'
-import { FolderPlus, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import SidebarWorkspaceOptionsMenu from './SidebarWorkspaceOptionsMenu'
-import { useShortcutLabel } from '@/hooks/useShortcutLabel'
-import { openWorkspaceCreationComposerWithTourHandoff } from '../contextual-tours/workspace-creation-tour-handoff'
 import { translate } from '@/i18n/i18n'
 
 type SidebarHeaderProps = {
@@ -16,9 +14,7 @@ const SidebarHeader = React.memo(function SidebarHeader({
   onWorkspaceBoardMenuOpenChange
 }: SidebarHeaderProps) {
   const openModal = useAppStore((s) => s.openModal)
-  const newWorktreeShortcutLabel = useShortcutLabel('workspace.create')
   const groupBy = useAppStore((s) => s.groupBy)
-  const canCreateWorkspace = useAppStore((s) => s.repos.length > 0)
   const sidebarTitle = groupBy === 'repo' ? 'Projects' : 'Workspaces'
 
   return (
@@ -49,43 +45,13 @@ const SidebarHeader = React.memo(function SidebarHeader({
               )}
               onClick={() => openModal('add-repo')}
             >
-              <FolderPlus className="size-3.5" />
+              <Plus className="size-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={6}>
             {translate('auto.components.sidebar.SidebarHeader.25a95899c9', 'Add Project')}
           </TooltipContent>
         </Tooltip>
-
-        {canCreateWorkspace ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => {
-                  // Why: the parallel-work tour must click the real sidebar
-                  // control so it can hand off to the workspace-creation tour.
-                  openWorkspaceCreationComposerWithTourHandoff()
-                }}
-                aria-label={translate(
-                  'auto.components.sidebar.SidebarHeader.92154beb7e',
-                  'New workspace'
-                )}
-                data-contextual-tour-target="workspace-create-control"
-              >
-                <Plus className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={6}>
-              {translate(
-                'auto.components.sidebar.SidebarHeader.ca6f729da2',
-                'New workspace ({{value0}})',
-                { value0: newWorktreeShortcutLabel }
-              )}
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
       </div>
     </div>
   )

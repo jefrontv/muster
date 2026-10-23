@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ExternalLink, FolderPlus, GitBranchPlus, X } from 'lucide-react'
+import { AlertTriangle, ExternalLink, FolderPlus, Globe, X } from 'lucide-react'
 import { useAppStore } from '../store'
-import { isGitRepoKind } from '../../../shared/repo-kind'
 import type { Repo } from '../../../shared/types'
 import {
   dismissPreflightIssue,
@@ -12,6 +11,7 @@ import { ShortcutKeyCombo } from './ShortcutKeyCombo'
 import { useShortcutKeyDetails, type ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import logo from '../../../../resources/logo.svg'
 import { translate } from '@/i18n/i18n'
+import { cn } from '@/lib/utils'
 import {
   getLandingPreflightIssues,
   hasGitHubBackedProject,
@@ -108,9 +108,9 @@ function PreflightBanner({
 export default function Landing(): React.JSX.Element {
   const repos = useAppStore((s) => s.repos)
   const openModal = useAppStore((s) => s.openModal)
+  const setNewSiteDialogOpen = useAppStore((s) => s.setNewSiteDialogOpen)
+  const sidebarOpen = useAppStore((s) => s.sidebarOpen)
 
-  const createTargetLabel =
-    repos.length > 0 && repos.every((repo) => isGitRepoKind(repo)) ? 'Worktree' : 'Workspace'
   const canCreateWorktree = repos.length > 0
   const hasGitHubProject = useMemo(() => hasGitHubBackedProject(repos), [repos])
 
@@ -183,15 +183,21 @@ export default function Landing(): React.JSX.Element {
       {
         id: 'create',
         shortcut: createWorktreeShortcut,
-        action: `Create ${createTargetLabel.toLowerCase()}`
+        action: translate('auto.components.Landing.addNewSite', 'Add new site')
       },
       { id: 'up', shortcut: previousWorktreeShortcut, action: 'Move up workspace' },
       { id: 'down', shortcut: nextWorktreeShortcut, action: 'Move down workspace' }
     ]
-  }, [createTargetLabel, createWorktreeShortcut, nextWorktreeShortcut, previousWorktreeShortcut])
+  }, [createWorktreeShortcut, nextWorktreeShortcut, previousWorktreeShortcut])
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-background">
+    // Why: the workbench draws the sidebar seam in workspace view; this full-bleed panel covers it.
+    <div
+      className={cn(
+        'absolute inset-0 flex items-center justify-center bg-background',
+        sidebarOpen && 'border-l border-border'
+      )}
+    >
       <div className="w-full max-w-lg px-6">
         <div className="flex flex-col items-center gap-4 py-8">
           <div
@@ -229,18 +235,11 @@ export default function Landing(): React.JSX.Element {
             </button>
 
             <button
-              className="inline-flex items-center gap-1.5 bg-secondary/70 border border-border/80 text-foreground font-medium text-sm px-4 py-2 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed enabled:cursor-pointer enabled:hover:bg-accent"
-              disabled={!canCreateWorktree}
-              title={
-                !canCreateWorktree
-                  ? translate('auto.components.Landing.f05d237049', 'Add a project first')
-                  : undefined
-              }
-              onClick={() => openModal('new-workspace-composer', { telemetrySource: 'unknown' })}
+              className="inline-flex items-center gap-1.5 bg-secondary/70 border border-border/80 text-foreground font-medium text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
+              onClick={() => setNewSiteDialogOpen(true)}
             >
-              <GitBranchPlus className="size-3.5" />
-              {translate('auto.components.Landing.76a95f7f47', 'Create')}{' '}
-              {createTargetLabel.toLowerCase()}
+              <Globe className="size-3.5" />
+              {translate('auto.components.Landing.addNewSite', 'Add new site')}
             </button>
           </div>
 

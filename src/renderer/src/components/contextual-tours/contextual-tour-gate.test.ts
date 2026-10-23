@@ -337,27 +337,14 @@ describe('contextual tour gate', () => {
     expect(getContextualTourOutcomeStepTotal([])).toBe(1)
   })
 
-  it('advances the workspace-agent-sessions tour from split to the create-worktree step', () => {
+  it('ends the workspace-agent-sessions tour after the split step', () => {
     const tour = getContextualTour('workspace-agent-sessions')
     const targetExists = (): boolean => true
-    const visibleStepIndexes = getVisibleContextualTourStepIndexes(tour, targetExists)
 
-    expect(tour.steps.map((step) => step.title)).toEqual([
-      'Split a terminal pane',
-      'Start another task in parallel'
-    ])
-    expect(visibleStepIndexes).toEqual([0, 1])
+    expect(getVisibleContextualTourStepIndexes(tour, targetExists)).toEqual([0])
     expect(
-      getNextVisibleContextualTourStepIndex({
-        tour,
-        currentStepIndex: 0,
-        targetExists
-      })
-    ).toBe(1)
-    expect(getContextualTourStepProgress({ visibleStepIndexes, stepIndex: 1 })).toEqual({
-      current: 2,
-      total: 2
-    })
+      getNextVisibleContextualTourStepIndex({ tour, currentStepIndex: 0, targetExists })
+    ).toBeNull()
   })
 
   it('hides the browser cookie step until the Import Cookies menu row is measurable', () => {
@@ -378,21 +365,5 @@ describe('contextual tour gate', () => {
       current: 2,
       total: 2
     })
-  })
-
-  it('cancels the workspace-agent-sessions tour when the new-worktree button is absent', () => {
-    const tour = getContextualTour('workspace-agent-sessions')
-    // Only the split step's target is present; the create-worktree button is not.
-    const targetExists = (selector: string): boolean => selector === tour.steps[0]!.targetSelector
-    const visibleStepIndexes = getVisibleContextualTourStepIndexes(tour, targetExists)
-
-    expect(visibleStepIndexes).toEqual([0])
-    expect(
-      getNextVisibleContextualTourStepIndex({
-        tour,
-        currentStepIndex: 0,
-        targetExists
-      })
-    ).toBeNull()
   })
 })

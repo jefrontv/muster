@@ -1076,7 +1076,8 @@
         "0d0ace8861": "GitHub でスターを付ける",
         "ec43b38ba7": "GitHub でスター済み",
         "157bb5ecbb": "GitHub を開く",
-        "preflightDismiss": "閉じる"
+        "preflightDismiss": "閉じる",
+        "addNewSite": "Add new site"
       },
       "LinearIssueMarkdownDescriptionEditor": {
         "d9c47069ef": "Markdown",
@@ -4467,7 +4468,9 @@
                   "sshCreateUnavailable": "Not available for SSH hosts yet",
                   "sshBrowseTitle": "Open project on SSH host",
                   "sshBrowseDescription": "Existing Git repository or folder on this SSH host",
-                  "runtimeBrowseDescription": "Existing Git repository or folder on this host"
+                  "runtimeBrowseDescription": "Existing Git repository or folder on this host",
+                  "addSite": "Add site",
+                  "addSiteDescription": "Clone a site from Bitbucket or GitHub and serve it locally"
                 }
               }
             }
@@ -10888,6 +10891,7 @@
             "noEnvironmentReason": "No environment is configured for this site.",
             "noImportSteps": "No import steps are enabled for this environment.",
             "noDeploySteps": "No deploy steps are enabled for this environment.",
+            "editSite": "Edit site",
             "openInSites": "Open in Sites",
             "localSection": "Local",
             "localDomain": "Local domain",
@@ -14043,7 +14047,8 @@
           "copy": "Copy",
           "copied": "Copied",
           "close": "Close",
-          "openSite": "Open {{domain}}",
+          "openProject": "Open project",
+          "openProjectFailed": "Could not open the project",
           "logToggle": "Log ({{count}})",
           "waiting": "Waiting",
           "notRun": "Not run",

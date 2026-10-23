@@ -708,13 +708,22 @@ export function buildNewWorkspaceShortcutModalData(
   }
 }
 
+/** Cmd+N adds a site, except on an open Linear issue, where it still starts that issue's workspace. */
 export function openNewWorkspaceFromShortcut(
-  state: Pick<AppState, 'activeModal' | 'activeView' | 'taskPageData' | 'openModal'>
+  state: Pick<
+    AppState,
+    'activeModal' | 'activeView' | 'taskPageData' | 'openModal' | 'setNewSiteDialogOpen'
+  >
 ): void {
   if (state.activeModal === 'new-workspace-composer') {
     return
   }
-  state.openModal('new-workspace-composer', buildNewWorkspaceShortcutModalData(state))
+  const data = buildNewWorkspaceShortcutModalData(state)
+  if (data.linkedWorkItem) {
+    state.openModal('new-workspace-composer', data)
+    return
+  }
+  state.setNewSiteDialogOpen(true)
 }
 
 export function resolveBrowserSessionTabTarget(

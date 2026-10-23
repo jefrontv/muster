@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react'
+import { openNewSiteSetup } from '../sites/open-site-project'
 import { useAppStore } from '@/store'
 import { useRemoteRepo } from './AddRepoSteps'
 import { useCreateRepo } from './useCreateRepo'
@@ -366,6 +367,7 @@ const AddRepoDialog = React.memo(function AddRepoDialog({
           setCreateError(null)
           setStep('create')
         }}
+        onOpenSiteSetup={() => openNewSiteSetup(closeModal)}
         onOpenRemoteStep={handleOpenRemoteStep}
         onStopNestedScan={handleStopNestedScan}
         onServerPathChange={setServerPath}

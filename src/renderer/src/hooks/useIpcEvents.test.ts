@@ -796,19 +796,20 @@ describe('buildNewWorkspaceShortcutModalData', () => {
 })
 
 describe('openNewWorkspaceFromShortcut', () => {
-  it('opens the composer even when no project has been added yet', () => {
+  it('opens Add new site rather than the workspace composer', () => {
     const openModal = vi.fn()
+    const setNewSiteDialogOpen = vi.fn()
 
     openNewWorkspaceFromShortcut({
       activeModal: 'none',
       activeView: 'terminal',
       taskPageData: {},
-      openModal
+      openModal,
+      setNewSiteDialogOpen
     } as never)
 
-    expect(openModal).toHaveBeenCalledWith('new-workspace-composer', {
-      telemetrySource: 'shortcut'
-    })
+    expect(setNewSiteDialogOpen).toHaveBeenCalledWith(true)
+    expect(openModal).not.toHaveBeenCalled()
   })
 
   it('does not reopen the composer when it is already active', () => {

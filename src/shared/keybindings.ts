@@ -270,10 +270,10 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'workspace.create',
-    title: 'Create worktree',
+    title: 'Add new site',
     group: 'Global',
     scope: 'global',
-    searchKeywords: ['shortcut', 'global', 'worktree', 'create', 'new workspace'],
+    searchKeywords: ['shortcut', 'global', 'site', 'add', 'new site', 'clone'],
     defaultBindings: platformBindings(['Mod+N', 'Mod+Shift+N'])
   },
   {
