@@ -23,8 +23,8 @@ export type SiteSetupDoneProps = {
   /** True when an import this run ran replaced the database that LocalWP account lives in. */
   databaseReplaced: boolean
   onClose: () => void
-  /** Opens the local address this screen shows. */
-  onOpenSite: ((url: string) => void) | null
+  /** Opens the site's folder as a project in Muster. */
+  onOpenProject: (() => void) | null
   /** Set for a bare clone: it has no server details, so nothing can pull its database yet. */
   onAddEnvironment?: (() => void) | null
 }
@@ -67,7 +67,7 @@ export function SiteSetupDone({
   createdLocalWp,
   databaseReplaced,
   onClose,
-  onOpenSite,
+  onOpenProject,
   onAddEnvironment = null
 }: SiteSetupDoneProps): React.JSX.Element {
   const strings = getSiteSetupRunStrings()
@@ -162,9 +162,9 @@ export function SiteSetupDone({
         <Button variant="outline" onClick={onClose}>
           {strings.close}
         </Button>
-        {onOpenSite !== null && url.length > 0 ? (
-          <Button variant="default" onClick={() => onOpenSite(url)}>
-            {strings.openSite.replace('{{domain}}', domain)}
+        {onOpenProject !== null ? (
+          <Button variant="default" onClick={onOpenProject}>
+            {strings.openProject}
           </Button>
         ) : null}
       </div>

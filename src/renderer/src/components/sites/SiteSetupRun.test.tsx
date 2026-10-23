@@ -194,7 +194,7 @@ describe('SiteSetupDone', () => {
             createdLocalWp={props.createdLocalWp}
             databaseReplaced={props.databaseReplaced}
             onClose={() => {}}
-            onOpenSite={null}
+            onOpenProject={null}
           />
         </TooltipProvider>
       )

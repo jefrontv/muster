@@ -28,6 +28,7 @@ import {
 import { getSiteSetupDialogStrings } from './site-setup-dialog-strings'
 import type { SetupRunStepId, SiteSetupSource } from './site-setup-choices'
 import { SiteSetupDone } from './SiteSetupDone'
+import { openSiteProject } from './open-site-project'
 import { SiteSetupLinkTargetRows } from './SiteSetupLinkTargetRows'
 import { SiteSetupMinimizeButton } from './SiteSetupMinimizeButton'
 import { SiteSetupReview } from './SiteSetupReview'
@@ -355,7 +356,16 @@ export function SiteSetupDialog({
             createdLocalWp={snapshot.createdLocalWp}
             databaseReplaced={snapshot.databaseReplaced}
             onClose={() => onClose('finished')}
-            onOpenSite={(url) => void window.api.shell.openUrl(url)}
+            onOpenProject={
+              snapshot.path.length > 0
+                ? () =>
+                    void openSiteProject(snapshot.path).then((opened) => {
+                      if (opened) {
+                        onClose('finished')
+                      }
+                    })
+                : null
+            }
             onAddEnvironment={
               request.kind === 'repo' && snapshot.siteId.length > 0
                 ? () => setAddEnvironmentOpen(true)

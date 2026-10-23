@@ -16,8 +16,8 @@ afterEach(() => {
 })
 
 describe('SiteSetupDone', () => {
-  it('opens the local address it shows', () => {
-    const onOpenSite = vi.fn()
+  it('opens the site as a project', () => {
+    const onOpenProject = vi.fn()
     render(
       <SiteSetupDone
         steps={[step('serve', 'done'), step('https', 'done')]}
@@ -26,14 +26,14 @@ describe('SiteSetupDone', () => {
         createdLocalWp={false}
         databaseReplaced={false}
         onClose={() => {}}
-        onOpenSite={onOpenSite}
+        onOpenProject={onOpenProject}
       />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Open flex.local' }))
-    expect(onOpenSite).toHaveBeenCalledWith('https://flex.local')
+    fireEvent.click(screen.getByRole('button', { name: 'Open project' }))
+    expect(onOpenProject).toHaveBeenCalledTimes(1)
   })
 
-  it('offers Add environment after a bare clone, and no Open button without an address', () => {
+  it('offers Add environment after a bare clone, and no Open button without a folder', () => {
     const onAddEnvironment = vi.fn()
     render(
       <SiteSetupDone
@@ -43,7 +43,7 @@ describe('SiteSetupDone', () => {
         createdLocalWp={false}
         databaseReplaced={false}
         onClose={() => {}}
-        onOpenSite={() => {}}
+        onOpenProject={null}
         onAddEnvironment={onAddEnvironment}
       />
     )

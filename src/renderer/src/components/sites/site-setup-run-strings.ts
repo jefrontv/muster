@@ -28,7 +28,7 @@ export type SiteSetupRunStrings = {
   copy: string
   copied: string
   close: string
-  openSite: string
+  openProject: string
   addEnvironment: string
   addEnvironmentHint: string
   skipped: string
@@ -81,7 +81,7 @@ export const getSiteSetupRunStrings = createLocalizedCatalog<SiteSetupRunStrings
   copy: translate('auto.components.sites.SiteSetupRun.copy', 'Copy'),
   copied: translate('auto.components.sites.SiteSetupRun.copied', 'Copied'),
   close: translate('auto.components.sites.SiteSetupRun.close', 'Close'),
-  openSite: translate('auto.components.sites.SiteSetupRun.openSite', 'Open {{domain}}'),
+  openProject: translate('auto.components.sites.SiteSetupRun.openProject', 'Open project'),
   addEnvironment: translate('auto.components.sites.SiteSetupRun.addEnvironment', 'Add environment'),
   addEnvironmentHint: translate(
     'auto.components.sites.SiteSetupRun.addEnvironmentHint',
