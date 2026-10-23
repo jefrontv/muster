@@ -125,7 +125,13 @@ export function pickBitbucketCloneUrl(links: unknown): string {
   const entries = Array.isArray(links) ? links.map(asRecord) : []
   const byName = (name: string): string =>
     asText(entries.find((entry) => asText(entry.name) === name)?.href)
-  return byName('ssh') || byName('https') || asText(entries[0]?.href)
+  const ssh = byName('ssh')
+  // The API now hands out ssh.bitbucket.org, which known_hosts rarely has; clone runs BatchMode, so
+  // an unknown host fails outright. Same key as bitbucket.org, which users already trust.
+  if (ssh) {
+    return ssh.replace(/^((?:ssh:\/\/)?[^@/]+@)ssh\.bitbucket\.org(?=[:/])/i, '$1bitbucket.org')
+  }
+  return byName('https') || asText(entries[0]?.href)
 }
 
 function pageSize(body: unknown): number {

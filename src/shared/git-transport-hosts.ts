@@ -8,6 +8,7 @@ const GIT_TRANSPORT_HOSTNAMES = new Set([
   'gitlab.com',
   'altssh.gitlab.com',
   'bitbucket.org',
+  'ssh.bitbucket.org',
   'altssh.bitbucket.org',
   'ssh.dev.azure.com',
   'vs-ssh.visualstudio.com',

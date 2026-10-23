@@ -157,6 +157,12 @@ describe('clone URL preference', () => {
         { name: 'ssh', href: 'git@bitbucket.org:w/r.git' }
       ])
     ).toBe('git@bitbucket.org:w/r.git')
+    expect(pickBitbucketCloneUrl([{ name: 'ssh', href: 'git@ssh.bitbucket.org:w/r.git' }])).toBe(
+      'git@bitbucket.org:w/r.git'
+    )
+    expect(
+      pickBitbucketCloneUrl([{ name: 'ssh', href: 'ssh://git@ssh.bitbucket.org/w/r.git' }])
+    ).toBe('ssh://git@bitbucket.org/w/r.git')
     expect(pickBitbucketCloneUrl([{ name: 'https', href: 'https://bitbucket.org/w/r.git' }])).toBe(
       'https://bitbucket.org/w/r.git'
     )
