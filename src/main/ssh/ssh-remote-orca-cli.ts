@@ -32,11 +32,11 @@ export type { RemoteOrcaCliRequest, RemoteOrcaCliResult } from './ssh-remote-cli
 // cannot host. Everything else routes through the full host CLI.
 const HOST_INTERACTIVE_COMMANDS: Record<string, string> = {
   serve:
-    'orca serve starts a foreground headless Muster server and cannot run through the SSH relay bridge. Run it directly on the machine that should host Muster.',
+    'muster serve starts a foreground headless Muster server and cannot run through the SSH relay bridge. Run it directly on the machine that should host Muster.',
   'claude-teams':
-    'orca claude-teams starts an interactive Claude Code session and cannot run through the SSH relay bridge. Run it in a terminal on the Muster host machine.',
+    'muster claude-teams starts an interactive Claude Code session and cannot run through the SSH relay bridge. Run it in a terminal on the Muster host machine.',
   'agent-teams-tmux':
-    'orca agent-teams-tmux is a tmux pane shim for the Muster host machine and cannot run through the SSH relay bridge.'
+    'muster agent-teams-tmux is a tmux pane shim for the Muster host machine and cannot run through the SSH relay bridge.'
 }
 
 export async function runRemoteOrcaCli(

@@ -486,6 +486,7 @@ describe('SshPtyProvider', () => {
           PATH: '/home/user/.orca-relay/bin:/usr/bin',
           ORCA_TERMINAL_HANDLE: 'term_ssh',
           [POWERLEVEL10K_WIZARD_DISABLE_ENV]: 'true',
+          ORCA_CLI_COMMAND: 'muster',
           ORCA_REMOTE_CLI_BIN_DIR: '/home/user/.orca-relay/bin',
           ORCA_RELAY_DIR: '/home/user/.orca-relay/relay-v1',
           ORCA_RELAY_NODE_PATH: '/usr/bin/node',
@@ -516,6 +517,7 @@ describe('SshPtyProvider', () => {
         env: {
           ORCA_TERMINAL_HANDLE: 'term_ssh',
           [POWERLEVEL10K_WIZARD_DISABLE_ENV]: 'true',
+          ORCA_CLI_COMMAND: 'muster',
           ORCA_REMOTE_CLI_BIN_DIR: '/home/user/.orca-relay/bin',
           ORCA_RELAY_DIR: '/home/user/.orca-relay/relay-v1',
           ORCA_RELAY_NODE_PATH: '/usr/bin/node',
@@ -547,6 +549,7 @@ describe('SshPtyProvider', () => {
         env: {
           Path: 'C:/Users/me/.orca-relay/bin;C:/Windows/System32;C:/Tools',
           [POWERLEVEL10K_WIZARD_DISABLE_ENV]: 'true',
+          ORCA_CLI_COMMAND: 'muster',
           ORCA_REMOTE_CLI_BIN_DIR: 'C:/Users/me/.orca-relay/bin',
           ORCA_RELAY_DIR: 'C:/Users/me/.orca-remote/relay-v1',
           ORCA_RELAY_NODE_PATH: 'C:/Program Files/nodejs/node.exe',

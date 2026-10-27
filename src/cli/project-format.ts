@@ -6,10 +6,15 @@ import type {
   ProjectHostSetupResult,
   ProjectHostSetupUpdateResult
 } from '../shared/types'
+import { isCliStyleEnabled } from './cli-style'
+import { styledProjectList } from './styled-lists'
 
 export function formatProjectList(result: { projects: Project[] }): string {
   if (result.projects.length === 0) {
     return 'No projects found.'
+  }
+  if (isCliStyleEnabled()) {
+    return styledProjectList(result)
   }
   return result.projects
     .map((project) => {

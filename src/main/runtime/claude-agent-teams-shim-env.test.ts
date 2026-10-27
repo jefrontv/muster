@@ -28,7 +28,7 @@ describe('claude agent teams shim env', () => {
   it('builds native shim env only for direct Claude commands', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-agent-teams-cli-'))
     roots.push(root)
-    const cliName = process.platform === 'win32' ? 'orca-dev.cmd' : 'orca-dev'
+    const cliName = process.platform === 'win32' ? 'muster-dev.cmd' : 'muster-dev'
     const cliPath = join(root, cliName)
     await writeFile(cliPath, '#!/usr/bin/env sh\n', 'utf8')
     if (process.platform !== 'win32') {
@@ -79,7 +79,7 @@ describe('claude agent teams shim env', () => {
   it('resolves the dev CLI wrapper for the tmux callback binary', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-agent-teams-cli-'))
     roots.push(root)
-    const cliName = process.platform === 'win32' ? 'orca-dev.cmd' : 'orca-dev'
+    const cliName = process.platform === 'win32' ? 'muster-dev.cmd' : 'muster-dev'
     const cliPath = join(root, cliName)
     await writeFile(cliPath, '#!/usr/bin/env sh\n', 'utf8')
     if (process.platform !== 'win32') {

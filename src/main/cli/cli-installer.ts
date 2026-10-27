@@ -26,10 +26,11 @@ import {
 } from './windows-user-path-registry'
 
 const execFileAsync = promisify(execFile)
-const DEFAULT_MAC_COMMAND_PATH = '/usr/local/bin/orca'
-const DEV_COMMAND_NAME = 'orca-dev'
-const LINUX_COMMAND_NAME = 'orca-ide'
-const LEGACY_LINUX_COMMAND_NAME = 'orca'
+const COMMAND_NAME = 'muster'
+const DEFAULT_MAC_COMMAND_PATH = `/usr/local/bin/${COMMAND_NAME}`
+const DEV_COMMAND_NAME = 'muster-dev'
+// Why: pre-rename command names; reclaimed only when they point into a Muster launcher or nowhere.
+const LEGACY_COMMAND_NAMES = ['orca', 'orca-ide', 'orca-dev']
 const DEV_LAUNCHER_DIR = ['cli', 'bin']
 const WINDOWS_PATH_WRITE_TIMEOUT_MS = 5_000
 
@@ -86,8 +87,7 @@ export class CliInstaller {
       // Why: development builds must not claim the production shell command.
       return DEV_COMMAND_NAME
     }
-    // Why: packaged Linux uses `orca-ide` to avoid shadowing GNOME Orca's /usr/bin/orca.
-    return this.platform === 'linux' ? LINUX_COMMAND_NAME : 'orca'
+    return COMMAND_NAME
   }
 
   constructor(options: CliInstallerOptions = {}) {
@@ -109,7 +109,7 @@ export class CliInstaller {
     const candidateMacPath = options.defaultMacCommandPath ?? DEFAULT_MAC_COMMAND_PATH
     this.macCommandPath = existsSync(dirname(candidateMacPath))
       ? candidateMacPath
-      : join(this.homePath, '.local', 'bin', 'orca')
+      : join(this.homePath, '.local', 'bin', COMMAND_NAME)
     this.privilegedRunner = options.privilegedRunner ?? runMacPrivilegedCommand
     this.userPathReader = options.userPathReader ?? readWindowsUserPathRegistry
     this.userPathMutationReader =
@@ -179,24 +179,27 @@ export class CliInstaller {
     return this.withPathInfo(baseStatus, pathDirectory, pathProbe)
   }
 
-  async install(): Promise<CliInstallStatus> {
+  async install(options: { replace?: boolean } = {}): Promise<CliInstallStatus> {
     const status = await this.getStatus()
     if (!status.supported || !status.commandPath || !status.launcherPath || !status.installMethod) {
       throw new Error(status.detail ?? 'CLI registration is unavailable on this build.')
     }
-    if (status.state === 'conflict') {
+    if (status.state === 'conflict' && !options.replace) {
       throw new Error(`Refusing to replace non-Muster command at ${status.commandPath}.`)
+    }
+    if (status.state === 'conflict' && (await lstat(status.commandPath)).isDirectory()) {
+      throw new Error(`Refusing to replace the folder at ${status.commandPath}.`)
     }
 
     // eslint-disable-next-line unicorn/prefer-ternary -- Why: the install path performs async side effects and is easier to audit as an explicit branch than as an awaited ternary.
     if (status.installMethod === 'symlink') {
       await this.installSymlink(status)
-      await this.removeLegacyLinuxCommandIfManaged(status.launcherPath)
+      await this.removeLegacyCommands(status.launcherPath)
     } else if (this.isLinuxAppImage()) {
       await this.installAppImageWrapper(status.commandPath, status.launcherPath)
-      await this.removeLegacyLinuxCommandIfManaged(status.launcherPath)
+      await this.removeLegacyCommands(status.launcherPath)
     } else if (this.isWindowsPackagedBundledCommand(status.commandPath, status.launcherPath)) {
-      // Why: packaged Windows already ships resources/bin/orca.exe; registration only owns the PATH entry.
+      // Why: packaged Windows already ships resources/bin/muster.exe; registration only owns the PATH entry.
     } else {
       // Why: the Windows wrapper dir is user-writable (%LOCALAPPDATA%), so mkdir here can't hit EACCES.
       await mkdir(dirname(status.commandPath), { recursive: true })
@@ -217,7 +220,7 @@ export class CliInstaller {
       return status
     }
     if (status.state === 'not_installed') {
-      await this.removeLegacyLinuxCommandIfManaged(status.launcherPath)
+      await this.removeLegacyCommands(status.launcherPath)
       if (this.platform === 'win32') {
         await this.removeWindowsPathEntry(dirname(status.commandPath))
         return this.getStatus()
@@ -233,7 +236,7 @@ export class CliInstaller {
 
     if (status.installMethod === 'symlink') {
       await this.removeSymlink(status.commandPath)
-      await this.removeLegacyLinuxCommandIfManaged(status.launcherPath)
+      await this.removeLegacyCommands(status.launcherPath)
     } else if (this.isWindowsPackagedBundledCommand(status.commandPath, status.launcherPath)) {
       await this.removeWindowsPathEntry(dirname(status.commandPath))
     } else {
@@ -307,7 +310,7 @@ export class CliInstaller {
       const status = await this.inspectSymlink(commandPath, launcherPath)
       if (status.state !== 'not_installed') {
         if (reachedDefaultCommandPath && !isDefaultCommandPath && status.state === 'conflict') {
-          // Why: a non-Orca command after an empty default slot can be shadowed by installing there; no user file replaced.
+          // Why: a non-Muster command after an empty default slot can be shadowed by installing there; no user file replaced.
           continue
         }
         // Why: PATH lookup is first-match-wins; return the command the shell will actually run, preserving shadowing conflicts.
@@ -355,8 +358,7 @@ export class CliInstaller {
 
     if (this.platform === 'linux') {
       // Why: Linux lacks a privileged global command flow; ~/.local/bin is the least-surprising user-scoped dir.
-      // Why `orca-ide`: GNOME Orca ships /usr/bin/orca, so avoid shadowing that screen reader.
-      return join(this.homePath, '.local', 'bin', LINUX_COMMAND_NAME)
+      return join(this.homePath, '.local', 'bin', COMMAND_NAME)
     }
 
     if (this.platform === 'win32') {
@@ -391,11 +393,13 @@ export class CliInstaller {
   }
 
   private async installSymlink(status: CliInstallStatus): Promise<void> {
+    const legacyPaths = await this.findReclaimableLegacyCommands(status.launcherPath as string)
     try {
       if (status.state === 'installed') {
         return
       }
-      if (status.state === 'stale') {
+      // Why: install() only lets a conflict through when the user confirmed Replace.
+      if (status.state === 'stale' || status.state === 'conflict') {
         await unlink(status.commandPath as string)
       }
       // Why: mkdir stays here (not install()) so an EACCES falls into the privileged-runner catch below.
@@ -407,8 +411,10 @@ export class CliInstaller {
       }
 
       // Why: fall back to an elevated shell to place the /usr/local/bin symlink (VS Code-style) when direct write is denied.
+      // Why: fold legacy-link cleanup into the same elevated shell so the user sees one prompt.
+      const legacyCleanup = legacyPaths.map((path) => `rm -f ${quoteShell(path)} && `).join('')
       await this.privilegedRunner(
-        `mkdir -p ${quoteShell(dirname(status.commandPath as string))} && ` +
+        `${legacyCleanup}mkdir -p ${quoteShell(dirname(status.commandPath as string))} && ` +
           `ln -sfn ${quoteShell(status.launcherPath as string)} ${quoteShell(status.commandPath as string)}`
       )
     }
@@ -427,53 +433,77 @@ export class CliInstaller {
     }
   }
 
-  private async removeLegacyLinuxCommandIfManaged(launcherPath: string | null): Promise<void> {
-    if (this.platform !== 'linux' || this.commandPathOverride || !launcherPath) {
-      return
+  /** Pre-rename commands (`orca`, `orca-ide`, `orca-dev`) that are safe to delete. */
+  private async findReclaimableLegacyCommands(launcherPath: string): Promise<string[]> {
+    if (this.commandPathOverride || (this.platform !== 'darwin' && this.platform !== 'linux')) {
+      return []
     }
-
-    const legacyCommandPath = join(this.homePath, '.local', 'bin', LEGACY_LINUX_COMMAND_NAME)
-    try {
-      const stats = await lstat(legacyCommandPath)
-      if (!stats.isSymbolicLink()) {
-        return
+    const dirs = uniquePathEntries(this.platform, [
+      ...(this.platform === 'darwin' ? [dirname(DEFAULT_MAC_COMMAND_PATH)] : []),
+      dirname(this.macCommandPath),
+      join(this.homePath, '.local', 'bin')
+    ])
+    const reclaimable: string[] = []
+    for (const dir of dirs) {
+      for (const name of LEGACY_COMMAND_NAMES) {
+        const legacyPath = join(dir, name)
+        if (await this.isReclaimableLegacyCommand(legacyPath, launcherPath)) {
+          reclaimable.push(legacyPath)
+        }
       }
-
-      const currentTarget = await readlink(legacyCommandPath)
-      const resolvedCurrentTarget = resolve(dirname(legacyCommandPath), currentTarget)
-      if (!this.isManagedLegacyLinuxTarget(resolvedCurrentTarget, launcherPath)) {
-        return
-      }
-
-      // Why: after the Linux command rename, the old `orca` symlink would keep shadowing GNOME Orca.
-      await unlink(legacyCommandPath)
-    } catch (error) {
-      if (isMissingError(error)) {
-        return
-      }
-      throw error
     }
+    return reclaimable
   }
 
-  private isManagedLegacyLinuxTarget(resolvedTarget: string, launcherPath: string): boolean {
-    const legacyLauncherPath = resolve(dirname(launcherPath), LEGACY_LINUX_COMMAND_NAME)
-    if (resolvedTarget === legacyLauncherPath) {
-      return true
-    }
-
-    if (basename(resolvedTarget) !== LEGACY_LINUX_COMMAND_NAME) {
+  private async isReclaimableLegacyCommand(
+    legacyPath: string,
+    launcherPath: string
+  ): Promise<boolean> {
+    let stats: Awaited<ReturnType<typeof lstat>>
+    try {
+      stats = await lstat(legacyPath)
+    } catch {
       return false
     }
-
-    const devLauncherDir = resolve(this.userDataPath, ...DEV_LAUNCHER_DIR)
-    const devRelative = relative(devLauncherDir, resolvedTarget)
-    if (devRelative && !devRelative.startsWith('..') && !isAbsolute(devRelative)) {
+    if (stats.isFile()) {
+      const content = await readFile(legacyPath, 'utf8').catch(() => '')
+      return isMusterOwnedLauncherScript(content)
+    }
+    if (!stats.isSymbolicLink()) {
+      return false
+    }
+    const target = resolve(dirname(legacyPath), await readlink(legacyPath))
+    // Why: a dangling link is broken whatever it pointed at; a live link into another app (e.g. a real Orca.app) is not ours.
+    if (!existsSync(target)) {
       return true
     }
+    if (resolve(target) === resolve(launcherPath)) {
+      return true
+    }
+    const devLauncherDir = resolve(this.userDataPath, ...DEV_LAUNCHER_DIR)
+    if (
+      isPathInsideOrEqual(devLauncherDir, target) ||
+      isPathInsideOrEqual(resolve(`${resolve(this.userDataPath)}-dev`, ...DEV_LAUNCHER_DIR), target)
+    ) {
+      return true
+    }
+    return /(?:^|[/\\])muster[^/\\]*(?:\.app[/\\]Contents[/\\]Resources|[/\\]resources)[/\\]bin[/\\][^/\\]+$/i.test(
+      target
+    )
+  }
 
-    // Why: AppImage upgrades can strand a legacy symlink into a now-gone FUSE mount that isn't a sibling of the stable path.
-    // Muster packages bin/muster; older builds used bin/orca.
-    return /(?:^|[/\\])resources[/\\]bin[/\\](orca|muster)$/.test(resolvedTarget)
+  /** Best-effort: never prompts for elevation, so a root-owned legacy link stays until the next install. */
+  private async removeLegacyCommands(launcherPath: string | null): Promise<void> {
+    if (!launcherPath) {
+      return
+    }
+    for (const legacyPath of await this.findReclaimableLegacyCommands(launcherPath)) {
+      await unlink(legacyPath).catch((error: unknown) => {
+        if (!isMissingError(error) && !isPermissionError(error)) {
+          throw error
+        }
+      })
+    }
   }
 
   private async installWindowsWrapper(commandPath: string, launcherPath: string): Promise<void> {
@@ -622,7 +652,7 @@ export class CliInstaller {
     }
 
     if (this.platform === 'darwin') {
-      // Why: reclaim symlinks to an older Orca.app launcher, but never replace arbitrary user-owned symlinks.
+      // Why: reclaim symlinks to an older app-bundle launcher, but never replace arbitrary user-owned symlinks.
       return /(?:^|[/\\])[^/\\]+\.app[/\\]Contents[/\\]Resources[/\\]bin[/\\][^/\\]+$/.test(
         resolvedTarget
       )
@@ -647,7 +677,7 @@ export class CliInstaller {
     const siblingDevUserDataPath = `${packagedUserDataPath}-dev`
     const siblingDevLauncherDir = resolve(siblingDevUserDataPath, ...DEV_LAUNCHER_DIR)
 
-    // Why: dev builds generate launchers under the sibling `*-dev` profile; packaged Orca must reclaim that command.
+    // Why: dev builds generate launchers under the sibling `*-dev` profile; packaged Muster must reclaim that command.
     return (
       basename(siblingDevUserDataPath) === `${basename(packagedUserDataPath)}-dev` &&
       isPathInsideOrEqual(siblingDevLauncherDir, resolvedTarget)
@@ -938,8 +968,8 @@ async function ensureDevLauncher(args: {
     mode: args.platform === 'win32' ? undefined : 0o755
   })
   if (args.commandName === DEV_COMMAND_NAME && args.platform !== 'win32') {
-    // Why: dev PTYs prepend this dir to PATH, so keep a local `orca` alias without claiming the global command.
-    await writeFile(join(dirname(launcherPath), 'orca'), content, {
+    // Why: dev PTYs prepend this dir to PATH, so keep a local `muster` alias without claiming the global command.
+    await writeFile(join(dirname(launcherPath), COMMAND_NAME), content, {
       encoding: 'utf8',
       mode: 0o755
     })
@@ -1014,10 +1044,19 @@ function extractManagedUnixLauncherTarget(content: string): string | null {
     return null
   }
 
-  // Why: only Orca's compiled CLI entrypoints count as managed; arbitrary Electron-launching scripts stay conflicts.
+  // Why: only Muster's compiled CLI entrypoints count as managed; arbitrary Electron-launching scripts stay conflicts.
   return /(?:^|[/\\])(?:out|app\.asar\.unpacked[/\\]out)[/\\]cli[/\\]index\.js$/.test(cliPath)
     ? cliPath
     : null
+}
+
+// Why: plain-file launchers Muster wrote under an old name (AppImage wrapper, serve dispatcher, dev launcher).
+function isMusterOwnedLauncherScript(content: string): boolean {
+  return (
+    content.includes('Muster AppImage runtime did not set APPDIR') ||
+    content.includes('# orca-serve-bare-orca-dispatcher') ||
+    extractManagedUnixLauncherTarget(content) !== null
+  )
 }
 
 function extractShellAssignment(content: string, name: string): string | null {
@@ -1217,20 +1256,12 @@ export function getBundledLauncherPath(
   platform: NodeJS.Platform,
   resourcesPath: string
 ): string | null {
-  if (platform === 'darwin') {
-    // Why: electron-builder packs resources/darwin/bin/muster → Resources/bin/muster.
-    // Prefer that; fall back to bin/orca for older packages that still shipped the Orca name.
-    const musterPath = join(resourcesPath, 'bin', 'muster')
-    if (existsSync(musterPath)) {
-      return musterPath
-    }
-    return join(resourcesPath, 'bin', 'orca')
-  }
-  if (platform === 'linux') {
-    return join(resourcesPath, 'bin', LINUX_COMMAND_NAME)
+  // Why: electron-builder packs resources/<platform>/bin/muster(.exe) → Resources/bin.
+  if (platform === 'darwin' || platform === 'linux') {
+    return join(resourcesPath, 'bin', COMMAND_NAME)
   }
   if (platform === 'win32') {
-    return join(resourcesPath, 'bin', 'orca.exe')
+    return join(resourcesPath, 'bin', `${COMMAND_NAME}.exe`)
   }
   return null
 }

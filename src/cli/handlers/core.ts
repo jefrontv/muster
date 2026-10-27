@@ -3,9 +3,19 @@ import type { CommandHandler } from '../dispatch'
 import { formatCliStatus, formatStatus, printResult } from '../format'
 import { RuntimeClientError, serveOrcaApp } from '../runtime-client'
 import { stripElectronRunAsNode } from '../runtime/launch'
+import type { RuntimeWorkspaceOpenPathResult } from '../../shared/runtime-types'
+import { startSpinner } from '../cli-style'
+import { getOptionalStringFlag } from '../flags'
+import {
+  ensureMusterWindow,
+  expandHomePath,
+  formatWorkspaceOpenPath,
+  waitForRuntimeGraphReady
+} from '../open-path-command'
+import { resolveRepoPathArgument } from '../repo-path-arguments'
 
 function envRecord(): Record<string, string> {
-  // Why: the `orca` launcher runs Orca's Electron binary as Node, so this CLI
+  // Why: the `muster` launcher runs Orca's Electron binary as Node, so this CLI
   // process carries ELECTRON_RUN_AS_NODE=1. Strip it before it reaches the
   // spawned `claude` (and any nested Electron it launches), which would
   // otherwise be forced into headless plain-Node mode.
@@ -69,7 +79,7 @@ export const CORE_HANDLERS: Record<string, CommandHandler> = {
     if (!paneKey) {
       throw new RuntimeClientError(
         'invalid_environment',
-        'orca claude-teams must be run inside a Muster terminal.'
+        'muster claude-teams must be run inside a Muster terminal.'
       )
     }
     const response = await client.call<{ launch: { env: Record<string, string> } }>(
@@ -87,9 +97,28 @@ export const CORE_HANDLERS: Record<string, CommandHandler> = {
       rawArgs ?? []
     )
   },
-  open: async ({ client, json }) => {
-    const result = await client.openOrca()
-    printResult(result, json, formatCliStatus)
+  open: async ({ flags, client, cwd, json }) => {
+    const rawPath = getOptionalStringFlag(flags, 'path')
+    const spinner = json ? null : startSpinner(rawPath ? 'Opening in Muster' : 'Starting Muster')
+    try {
+      if (rawPath === undefined) {
+        const status = await client.openOrca()
+        spinner?.stop()
+        printResult(status, json, formatCliStatus)
+        return
+      }
+      await ensureMusterWindow(client)
+      await waitForRuntimeGraphReady(client)
+      const callerWorktreeId = process.env.ORCA_WORKTREE_ID
+      const result = await client.call<RuntimeWorkspaceOpenPathResult>('workspace.openPath', {
+        path: resolveRepoPathArgument(expandHomePath(rawPath), cwd, client.isRemote, 'Remote open'),
+        ...(callerWorktreeId && !client.isRemote ? { callerWorktreeId } : {})
+      })
+      spinner?.stop()
+      printResult(result, json, formatWorkspaceOpenPath)
+    } finally {
+      spinner?.stop()
+    }
   },
   serve: async ({ flags, json }) => {
     if (flags.get('no-pairing') === true && flags.get('mobile-pairing') === true) {

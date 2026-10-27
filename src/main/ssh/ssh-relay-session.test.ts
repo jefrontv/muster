@@ -440,7 +440,7 @@ describe('SshRelaySession', () => {
     expect(vi.mocked(execCommand).mock.calls[0]?.[1]).toContain('powershell.exe')
     expect(vi.mocked(execCommand).mock.calls[0]?.[2]).toEqual({ wrapCommand: false })
     expect(mockConn.writeFile).toHaveBeenCalledWith(
-      'C:/Users/me/.orca-relay/bin/orca-launcher.cs',
+      'C:/Users/me/.orca-relay/bin/muster-launcher.cs',
       expect.stringContaining('ProcessStartInfo'),
       { hostPlatform: getRemoteHostPlatform('win32-x64') }
     )

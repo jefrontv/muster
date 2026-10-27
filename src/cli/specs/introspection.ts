@@ -5,11 +5,11 @@ export const INTROSPECTION_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['agent-context'],
     summary: 'Print the machine-readable command schema for agents',
-    usage: 'orca agent-context [--json]',
+    usage: 'muster agent-context [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
     notes: [
       'Pure local read of the command registry — works without a running Muster app, so it is safe over SSH and in headless contexts.'
     ],
-    examples: ['orca agent-context --json']
+    examples: ['muster agent-context --json']
   }
 ]

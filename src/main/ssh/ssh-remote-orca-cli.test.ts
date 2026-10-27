@@ -450,7 +450,7 @@ describe('runRemoteOrcaCli', () => {
     )
 
     expect(result.exitCode).toBe(1)
-    expect(result.stderr).toContain('orca serve')
+    expect(result.stderr).toContain('muster serve')
     expect(result.stderr).toContain('SSH relay bridge')
     expect(spawn).not.toHaveBeenCalled()
   })

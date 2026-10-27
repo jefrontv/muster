@@ -305,7 +305,7 @@ function throwNoActiveSenderTerminal(): never {
 }
 
 function isDevCliInvocation(): boolean {
-  return process.env.ORCA_USER_DATA_PATH?.includes('orca-dev') ?? false
+  return process.env.ORCA_USER_DATA_PATH?.includes('muster-dev') ?? false
 }
 
 function getOptionalPositiveIntegerValueFlag(

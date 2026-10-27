@@ -31,7 +31,7 @@ function isUsableIPv6Address(address: string): boolean {
 // connectable from a mobile device. We enumerate all non-internal IPv4 and
 // (non-link-local) IPv6 addresses so the user can choose which one to advertise
 // in the QR code (e.g. LAN vs Tailscale). IPv6 must be included so pairing works
-// on IPv6-only hosts (e.g. a headless `orca serve` reachable only over IPv6),
+// on IPv6-only hosts (e.g. a headless `muster serve` reachable only over IPv6),
 // where an IPv4-only scan returns nothing and the UI reports "no interfaces".
 function getNetworkInterfaces(): NetworkInterface[] {
   const result: NetworkInterface[] = []

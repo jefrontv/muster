@@ -11,6 +11,13 @@ import type {
   RuntimeWorktreeRecord
 } from '../shared/runtime-types'
 import type { MemorySnapshot, WorktreeMemory } from '../shared/types'
+import { isCliStyleEnabled } from './cli-style'
+import {
+  styledAutomationList,
+  styledRepoList,
+  styledWorktreeList,
+  styledWorktreePs
+} from './styled-lists'
 
 export function formatMemorySnapshot(snapshot: MemorySnapshot): string {
   const topWorktrees = [...snapshot.worktrees].sort((a, b) => b.memory - a.memory).slice(0, 10)
@@ -106,6 +113,9 @@ export function formatWorktreePs(result: RuntimeWorktreePsResult): string {
   if (result.worktrees.length === 0) {
     return 'No worktrees found.'
   }
+  if (isCliStyleEnabled()) {
+    return styledWorktreePs(result)
+  }
   const body = result.worktrees
     .map(
       (worktree) =>
@@ -120,6 +130,9 @@ export function formatWorktreePs(result: RuntimeWorktreePsResult): string {
 export function formatRepoList(result: RuntimeRepoList): string {
   if (result.repos.length === 0) {
     return 'No repos found.'
+  }
+  if (isCliStyleEnabled()) {
+    return styledRepoList(result)
   }
   return result.repos.map((repo) => `${repo.id}  ${repo.displayName}  ${repo.path}`).join('\n')
 }
@@ -143,6 +156,9 @@ export function formatRepoRefs(result: RuntimeRepoSearchRefs): string {
 export function formatWorktreeList(result: RuntimeWorktreeListResult): string {
   if (result.worktrees.length === 0) {
     return 'No worktrees found.'
+  }
+  if (isCliStyleEnabled()) {
+    return styledWorktreeList(result)
   }
   const body = result.worktrees
     .map((worktree) => {
@@ -168,6 +184,9 @@ export function formatWorktreeShow(result: { worktree: RuntimeWorktreeRecord }):
 export function formatAutomationList(result: { automations: Automation[] }): string {
   if (result.automations.length === 0) {
     return 'No automations found.'
+  }
+  if (isCliStyleEnabled()) {
+    return styledAutomationList(result)
   }
   return result.automations
     .map((automation) => {

@@ -978,6 +978,10 @@ export function useIpcEvents(): void {
         // Why: local CLI worktree events carry local ids; runtime activation comes via the remote stream, allowed separately.
         return
       }
+      // Why: `muster open <path>` can import a repo and activate it before repos:changed lands.
+      if (!(useAppStore.getState().repos ?? []).some((repo) => repo.id === repoId)) {
+        await useAppStore.getState().fetchRepos()
+      }
       const existedBeforeFetch = Boolean(useAppStore.getState().getKnownWorktreeById(worktreeId))
       // Why: fetch first so activation can resolve the CLI-created worktree; it arrived from main, not yet in renderer state.
       await useAppStore.getState().fetchWorktrees(repoId)
@@ -2206,7 +2210,7 @@ export function useIpcEvents(): void {
       })
     )
 
-    // Why: `orca tab switch --focus` must NOT call setActiveWorktree — a global focus from one agent's parallel-worktree switch would steal the user's view.
+    // Why: `muster tab switch --focus` must NOT call setActiveWorktree — a global focus from one agent's parallel-worktree switch would steal the user's view.
     // focusBrowserTabInWorktree updates per-worktree state in place; globals flip only when the user is already on the targeted worktree.
     unsubs.push(
       window.api.browser.onPaneFocus(({ worktreeId, browserPageId }) => {

@@ -5,7 +5,7 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['skills', 'list'],
     summary: 'List version-matched skill guides bundled with this Muster CLI',
-    usage: 'orca skills list [--json]',
+    usage: 'muster skills list [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
     notes: [
       'Reads bundled guide metadata locally without contacting the Muster runtime.',
@@ -16,7 +16,7 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     path: ['skills', 'get'],
     aliases: [['skills', 'show']],
     summary: 'Print a version-matched skill guide as Markdown',
-    usage: 'orca skills get <topic> [--full] [--json]',
+    usage: 'muster skills get <topic> [--full] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'topic', 'full'],
     positionalArgs: ['topic'],
     notes: [
@@ -24,6 +24,6 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
       'Use --full to include bundled reference documents when the guide provides them.',
       'Use --json for a deterministic object containing canonical topic metadata and content.'
     ],
-    examples: ['orca skills get orca-cli', 'orca skills get orca-linear --full']
+    examples: ['muster skills get orca-cli', 'muster skills get orca-linear --full']
   }
 ]

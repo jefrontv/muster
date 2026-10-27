@@ -6,7 +6,7 @@ export const SERVE_COMMAND_SPECS: CommandSpec[] = [
     path: ['serve'],
     summary: 'Start a Muster runtime server without opening a desktop window',
     usage:
-      'orca serve [--port <port>] [--pairing-address <host>] [--mobile-pairing] [--no-pairing] [--project-root <path>] [--recipe-json] [--json]',
+      'muster serve [--port <port>] [--pairing-address <host>] [--mobile-pairing] [--no-pairing] [--project-root <path>] [--recipe-json] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'port',
@@ -24,11 +24,11 @@ export const SERVE_COMMAND_SPECS: CommandSpec[] = [
       'When the web client bundle is available, the server also prints a browser URL with the pairing data embedded.'
     ],
     examples: [
-      'orca serve',
-      'orca serve --json',
-      'orca serve --project-root /workspace/repo --pairing-address wss://sandbox.example.com --recipe-json',
-      'orca serve --port 6768 --pairing-address 100.64.1.20',
-      'orca serve --pairing-address 100.64.1.20 --mobile-pairing'
+      'muster serve',
+      'muster serve --json',
+      'muster serve --project-root /workspace/repo --pairing-address wss://sandbox.example.com --recipe-json',
+      'muster serve --port 6768 --pairing-address 100.64.1.20',
+      'muster serve --pairing-address 100.64.1.20 --mobile-pairing'
     ]
   }
 ]

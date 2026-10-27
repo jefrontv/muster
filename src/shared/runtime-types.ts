@@ -46,6 +46,13 @@ export type { RuntimeMarkdownReadTabResult, RuntimeMarkdownSaveTabResult }
 
 export type RuntimeGraphStatus = 'ready' | 'reloading' | 'unavailable'
 
+export type RuntimeWorkspaceOpenPathResult = {
+  outcome: 'focused' | 'imported'
+  kind: 'git' | 'folder'
+  repo: { id: string; displayName: string; path: string }
+  worktree: { id: string; displayName: string; path: string }
+}
+
 export type RuntimeDesktopWindowStatus = 'available' | 'openable' | 'initializing' | 'blocked'
 
 // Why: headless serve still owns one runtime graph, but zero can never collide

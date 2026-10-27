@@ -6,7 +6,7 @@ export const VM_COMMAND_SPECS: CommandSpec[] = [
     path: ['vm', 'recipe', 'doctor'],
     summary: 'Validate a per-workspace environment recipe without provisioning by default',
     usage:
-      'orca vm recipe doctor <recipe-id> [--repo-path <path>] [--provision|--connect] [--json]',
+      'muster vm recipe doctor <recipe-id> [--repo-path <path>] [--provision|--connect] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'recipe-id', 'repo-path', 'provision', 'connect'],
     positionalArgs: ['recipe-id'],
     notes: [
@@ -15,9 +15,9 @@ export const VM_COMMAND_SPECS: CommandSpec[] = [
       'Use --provision or --connect to run the recipe, validate its result, and run cleanup when configured.'
     ],
     examples: [
-      'orca vm recipe doctor cloud-sandbox',
-      'orca vm recipe doctor cloud-sandbox --repo-path /path/to/repo --json',
-      'orca vm recipe doctor cloud-sandbox --provision --json'
+      'muster vm recipe doctor cloud-sandbox',
+      'muster vm recipe doctor cloud-sandbox --repo-path /path/to/repo --json',
+      'muster vm recipe doctor cloud-sandbox --provision --json'
     ]
   }
 ]

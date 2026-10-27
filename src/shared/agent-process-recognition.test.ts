@@ -199,17 +199,19 @@ describe('agent process recognition', () => {
   })
 
   it('recognizes only the agent subcommand of the generic Muster CLI', () => {
-    expect(recognizeAgentProcessFromCommandLine('orca claude-teams')).toEqual({
+    expect(recognizeAgentProcessFromCommandLine('muster claude-teams')).toEqual({
       agent: 'claude-agent-teams',
-      processName: 'orca'
+      processName: 'muster'
     })
-    expect(recognizeAgentProcessFromCommandLine('orca status')).toBeNull()
-    expect(recognizeAgentProcessFromCommandLine('orca-dev terminal list')).toBeNull()
-    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/orca claude-teams')).toEqual({
-      agent: 'claude-agent-teams',
-      processName: 'orca'
-    })
-    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/orca status')).toBeNull()
+    expect(recognizeAgentProcessFromCommandLine('muster status')).toBeNull()
+    expect(recognizeAgentProcessFromCommandLine('muster-dev terminal list')).toBeNull()
+    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/muster claude-teams')).toEqual(
+      {
+        agent: 'claude-agent-teams',
+        processName: 'muster'
+      }
+    )
+    expect(recognizeAgentProcessFromCommandLine('node /usr/local/bin/muster status')).toBeNull()
   })
 
   it('recognizes the versioned Cursor Node wrapper without accepting generic agent processes', () => {
@@ -233,7 +235,7 @@ describe('agent process recognition', () => {
   it('does not classify prompt text as a wrapped agent command', () => {
     expect(
       recognizeAgentProcessFromCommandLine(
-        'node /tmp/not-an-agent.js "compare opencode vs orca in Gemini CLI"'
+        'node /tmp/not-an-agent.js "compare opencode vs muster in Gemini CLI"'
       )
     ).toBeNull()
     expect(recognizeAgentProcessFromCommandLine(String.raw`node C:\tmp\not-an-agent.js`)).toBeNull()

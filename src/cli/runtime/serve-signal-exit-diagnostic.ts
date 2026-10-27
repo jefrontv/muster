@@ -23,7 +23,7 @@ export function serveSignalExitError(
     'Muster serve aborted with SIGABRT on macOS. This most often happens at application startup, when the process cannot register with the macOS window server, which is common in restricted or sandboxed environments, SSH sessions without a GUI login, and CI.',
     {
       nextSteps: [
-        'Re-run `orca serve` outside a sandboxed or restricted environment, with a macOS desktop login active.',
+        'Re-run `muster serve` outside a sandboxed or restricted environment, with a macOS desktop login active.',
         `Look for a crash report at ${MAC_CRASH_REPORT_GLOB}.`
       ]
     }

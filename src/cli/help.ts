@@ -2,15 +2,19 @@
 import type { CommandSpec } from './args'
 import { findCommandSpec, isCommandGroup, supportsBrowserPageFlag } from './args'
 import { unknownCommandData } from './command-suggestion'
+import { styleHelpText } from './help-style'
 
-const ROOT_HELP_TEXT = `orca
+const ROOT_HELP_TEXT = `muster
 
-Usage: orca <command> [options]
+Usage: muster <command> [options]
 
 Startup:
-  open                      Launch Muster and wait for the runtime to be reachable
+  open [path]               Launch Muster, or open a folder as a project
   serve                     Start a headless Muster runtime server
   status                    Show app/runtime/graph readiness
+
+Plan Review:
+  annotate                  Open a markdown plan for review in Muster and wait for the decision
 
 Diagnostics:
   diagnostics memory        Collect a memory snapshot for Muster and managed terminals
@@ -105,52 +109,53 @@ Linear:
   linear                    Read Linear ticket context for agents
 
 Common Commands:
-  orca open [--json]
-  orca serve [--port <port>] [--pairing-address <host>] [--mobile-pairing] [--no-pairing] [--project-root <path>] [--recipe-json] [--json]
-  orca status [--json]
-  orca diagnostics memory [--json]
-  orca agent-context [--json]
-  orca environment add --name <name> --pairing-code <code> [--json]
-  orca environment list [--json]
-  orca environment show --environment <selector> [--json]
-  orca environment rm --environment <selector> [--json]
-  orca worktree list [--repo <selector>] [--limit <n>] [--json]
-  orca worktree create --name <name> [--repo <selector>|--project <id> [--host <host-id>]|--project-host-setup <id>] [--agent <id>] [--prompt <text>] [--setup run|skip|inherit] [--base-branch <ref>] [--issue <number>] [--linear-issue <identifier-or-url>] [--comment <text>] [--parent-worktree <selector>] [--no-parent] [--run-hooks] [--activate] [--json]
-  orca worktree show --worktree <selector> [--json]
-  orca worktree current [--json]
-  orca worktree set --worktree <selector> [--display-name <name>] [--issue <number|null>] [--linear-issue <identifier-or-url|null>] [--comment <text>] [--workspace-status <id>] [--parent-worktree <selector>|--no-parent] [--json]
-  orca worktree rm --worktree <selector> [--force] [--run-hooks] [--json]
-  orca worktree ps [--limit <n>] [--json]
-  orca file open <path> [--worktree <selector>] [--json]
-  orca file diff <path> [--staged] [--worktree <selector>] [--json]
-  orca file open-changed [--mode edit|diff|both] [--worktree <selector>] [--json]
-  orca terminal list [--worktree <selector>] [--limit <n>] [--json]
-  orca terminal show [--terminal <handle>] [--json]
-  orca terminal read [--terminal <handle>] [--cursor <n>] [--limit <n>] [--json]
-  orca terminal send [--terminal <handle>] [--text <text>] [--enter] [--interrupt] [--json]
-  orca terminal wait [--terminal <handle>] --for exit|tui-idle [--timeout-ms <ms>] [--json]
-  orca terminal stop --worktree <selector> [--json]
-  orca terminal create [--worktree <selector>] [--title <name>] [--command <text>] [--focus] [--json]
-  orca terminal split [--terminal <handle>] [--direction horizontal|vertical] [--json]
-  orca terminal switch [--terminal <handle>] [--json]
-  orca terminal close [--terminal <handle>] [--tab] [--json]
-  orca project list [--json]
-  orca project setups [--project <id>] [--host <host-id>] [--json]
-  orca project setup-existing-folder --project <id> --host <host-id> --path <path> [--kind git|folder] [--display-name <name>] [--json]
-  orca project setup-clone --project <id> --host <host-id> --url <clone-url> --destination <path> [--display-name <name>] [--json]
-  orca project setup-create --project <id> --host <host-id> [--setup-id <id>] [--path <path>] [--kind git|folder] [--display-name <name>] [--worktree-base-path <path>] [--git-username <name>] [--state ready|not-set-up|setting-up|error|unsupported] [--method imported-existing-folder|cloned|provisioned] [--json]
-  orca project setup-update --setup <setup-id> [--display-name <name>] [--path <path>] [--worktree-base-path <path>] [--git-username <name>] [--kind git|folder] [--state ready|not-set-up|setting-up|error|unsupported] [--method legacy-repo|imported-existing-folder|cloned|provisioned] [--json]
-  orca project setup-delete --setup <setup-id> [--json]
-  orca repo list [--json]
-  orca repo add --path <path> [--json]
-  orca repo show --repo <selector> [--json]
-  orca repo set-base-ref --repo <selector> --ref <ref> [--json]
-  orca repo search-refs --repo <selector> --query <text> [--limit <n>] [--json]
+  muster open [path] [--json]
+  muster serve [--port <port>] [--pairing-address <host>] [--mobile-pairing] [--no-pairing] [--project-root <path>] [--recipe-json] [--json]
+  muster status [--json]
+  muster annotate <path> [--timeout <seconds>] [--detach] [--json]
+  muster diagnostics memory [--json]
+  muster agent-context [--json]
+  muster environment add --name <name> --pairing-code <code> [--json]
+  muster environment list [--json]
+  muster environment show --environment <selector> [--json]
+  muster environment rm --environment <selector> [--json]
+  muster worktree list [--repo <selector>] [--limit <n>] [--json]
+  muster worktree create --name <name> [--repo <selector>|--project <id> [--host <host-id>]|--project-host-setup <id>] [--agent <id>] [--prompt <text>] [--setup run|skip|inherit] [--base-branch <ref>] [--issue <number>] [--linear-issue <identifier-or-url>] [--comment <text>] [--parent-worktree <selector>] [--no-parent] [--run-hooks] [--activate] [--json]
+  muster worktree show --worktree <selector> [--json]
+  muster worktree current [--json]
+  muster worktree set --worktree <selector> [--display-name <name>] [--issue <number|null>] [--linear-issue <identifier-or-url|null>] [--comment <text>] [--workspace-status <id>] [--parent-worktree <selector>|--no-parent] [--json]
+  muster worktree rm --worktree <selector> [--force] [--run-hooks] [--json]
+  muster worktree ps [--limit <n>] [--json]
+  muster file open <path> [--worktree <selector>] [--json]
+  muster file diff <path> [--staged] [--worktree <selector>] [--json]
+  muster file open-changed [--mode edit|diff|both] [--worktree <selector>] [--json]
+  muster terminal list [--worktree <selector>] [--limit <n>] [--json]
+  muster terminal show [--terminal <handle>] [--json]
+  muster terminal read [--terminal <handle>] [--cursor <n>] [--limit <n>] [--json]
+  muster terminal send [--terminal <handle>] [--text <text>] [--enter] [--interrupt] [--json]
+  muster terminal wait [--terminal <handle>] --for exit|tui-idle [--timeout-ms <ms>] [--json]
+  muster terminal stop --worktree <selector> [--json]
+  muster terminal create [--worktree <selector>] [--title <name>] [--command <text>] [--focus] [--json]
+  muster terminal split [--terminal <handle>] [--direction horizontal|vertical] [--json]
+  muster terminal switch [--terminal <handle>] [--json]
+  muster terminal close [--terminal <handle>] [--tab] [--json]
+  muster project list [--json]
+  muster project setups [--project <id>] [--host <host-id>] [--json]
+  muster project setup-existing-folder --project <id> --host <host-id> --path <path> [--kind git|folder] [--display-name <name>] [--json]
+  muster project setup-clone --project <id> --host <host-id> --url <clone-url> --destination <path> [--display-name <name>] [--json]
+  muster project setup-create --project <id> --host <host-id> [--setup-id <id>] [--path <path>] [--kind git|folder] [--display-name <name>] [--worktree-base-path <path>] [--git-username <name>] [--state ready|not-set-up|setting-up|error|unsupported] [--method imported-existing-folder|cloned|provisioned] [--json]
+  muster project setup-update --setup <setup-id> [--display-name <name>] [--path <path>] [--worktree-base-path <path>] [--git-username <name>] [--kind git|folder] [--state ready|not-set-up|setting-up|error|unsupported] [--method legacy-repo|imported-existing-folder|cloned|provisioned] [--json]
+  muster project setup-delete --setup <setup-id> [--json]
+  muster repo list [--json]
+  muster repo add --path <path> [--json]
+  muster repo show --repo <selector> [--json]
+  muster repo set-base-ref --repo <selector> --ref <ref> [--json]
+  muster repo search-refs --repo <selector> --query <text> [--limit <n>] [--json]
 
 Selectors:
   --repo <selector>         Registered repo selector such as id:<id>, name:<name>, or path:<path>
   --worktree <selector>     Worktree selector such as id:<repo-id>::<path>, name:<displayName>, branch:<branch>, issue:<number>, path:<path>, or active/current
-  --terminal <handle>       Runtime-issued terminal handle returned by \`orca terminal list --json\`
+  --terminal <handle>       Runtime-issued terminal handle returned by \`muster terminal list --json\`
   --parent-worktree <selector> Parent worktree selector such as id:<repo-id>::<path>, branch:<branch>, issue:<number>, path:<path>, or active/current
   --no-parent               Force no parent lineage for unrelated worktree creation/update
 
@@ -170,45 +175,46 @@ Output Options:
   --help                    Show this help message
 
 Behavior:
-  Most commands require a running Muster runtime. If Muster is not open yet, run \`orca open\` first.
+  Most commands require a running Muster runtime. If Muster is not open yet, run \`muster open\` first.
   Remote runtime access can also be supplied with ORCA_PAIRING_CODE or ORCA_ENVIRONMENT.
   Use selectors for discovery and handles for repeated live terminal operations.
 
 Agent Sessions And Worktrees:
   \`worktree create --agent\` creates a new checkout with an agent.
   To start a fresh agent in the current worktree, use:
-    orca terminal create --worktree active --command "codex"
+    muster terminal create --worktree active --command "codex"
 
 Examples:
-  $ orca open
-  $ orca status --json
-  $ orca diagnostics memory --json
-  $ orca repo list
-  $ orca worktree create --name agent-task --agent codex --prompt "hi"
-  $ orca worktree create --repo name:orca --name cli-test-1 --issue 273
-  $ orca worktree create --repo name:orca --name linear-task --linear-issue https://linear.app/stably/issue/STA-335/test-issue
-  $ orca worktree create --name linear-task --linear-issue STA-335
-  $ orca worktree show --worktree branch:Jinwoo-H/cli
-  $ orca worktree current
-  $ orca worktree set --worktree active --comment "waiting on review"
-  $ orca worktree set --worktree active --linear-issue null
-  $ orca worktree ps --limit 10
-  $ orca file open-changed --mode diff
-  $ orca file open src/App.tsx
-  $ orca terminal create --worktree active --command "codex"
-  $ orca terminal list --worktree path:/Users/me/orca/workspaces/orca/cli-test-1 --json
-  $ orca terminal send --terminal term_123 --text "hi" --enter
-  $ orca terminal wait --terminal term_123 --for exit --timeout-ms 60000 --json`
+  $ muster open
+  $ muster .
+  $ muster status --json
+  $ muster diagnostics memory --json
+  $ muster repo list
+  $ muster worktree create --name agent-task --agent codex --prompt "hi"
+  $ muster worktree create --repo name:muster --name cli-test-1 --issue 273
+  $ muster worktree create --repo name:muster --name linear-task --linear-issue https://linear.app/stably/issue/STA-335/test-issue
+  $ muster worktree create --name linear-task --linear-issue STA-335
+  $ muster worktree show --worktree branch:Jinwoo-H/cli
+  $ muster worktree current
+  $ muster worktree set --worktree active --comment "waiting on review"
+  $ muster worktree set --worktree active --linear-issue null
+  $ muster worktree ps --limit 10
+  $ muster file open-changed --mode diff
+  $ muster file open src/App.tsx
+  $ muster terminal create --worktree active --command "codex"
+  $ muster terminal list --worktree path:/Users/me/orca/workspaces/orca/cli-test-1 --json
+  $ muster terminal send --terminal term_123 --text "hi" --enter
+  $ muster terminal wait --terminal term_123 --for exit --timeout-ms 60000 --json`
 
 export function printHelp(specs: CommandSpec[], commandPath: string[] = []): void {
   const exactSpec = findCommandSpec(specs, commandPath)
   if (exactSpec) {
-    console.log(formatCommandHelp(exactSpec))
+    console.log(styleHelpText(formatCommandHelp(exactSpec)))
     return
   }
 
   if (isCommandGroup(commandPath)) {
-    console.log(formatGroupHelp(specs, commandPath[0]))
+    console.log(styleHelpText(formatGroupHelp(specs, commandPath[0])))
     return
   }
 
@@ -218,11 +224,11 @@ export function printHelp(specs: CommandSpec[], commandPath: string[] = []): voi
     console.log(`Unknown command: ${commandPath.join(' ')}${recovery ? `\n${recovery}` : ''}\n`)
   }
 
-  console.log(ROOT_HELP_TEXT)
+  console.log(styleHelpText(ROOT_HELP_TEXT))
 }
 
 export function formatCommandHelp(spec: CommandSpec): string {
-  const lines = [`orca ${spec.path.join(' ')}`, '', `Usage: ${spec.usage}`, '', spec.summary]
+  const lines = [`muster ${spec.path.join(' ')}`, '', `Usage: ${spec.usage}`, '', spec.summary]
   const displayedFlags =
     spec.argumentMode === 'passthrough'
       ? []
@@ -256,11 +262,17 @@ export function formatCommandHelp(spec: CommandSpec): string {
 
 export function formatGroupHelp(specs: CommandSpec[], group: string): string {
   const groupSpecs = specs.filter((spec) => spec.path[0] === group)
-  const lines = [`orca ${group}`, '', `Usage: orca ${group} <command> [options]`, '', 'Commands:']
+  const lines = [
+    `muster ${group}`,
+    '',
+    `Usage: muster ${group} <command> [options]`,
+    '',
+    'Commands:'
+  ]
   for (const spec of groupSpecs) {
     lines.push(`  ${spec.path.slice(1).join(' ').padEnd(18)} ${spec.summary}`)
   }
-  lines.push('', `Run \`orca ${group} <command> --help\` for command-specific usage.`)
+  lines.push('', `Run \`muster ${group} <command> --help\` for command-specific usage.`)
   return lines.join('\n')
 }
 
@@ -382,6 +394,9 @@ export function formatFlagHelp(flag: string): string {
     'report-path': '--report-path <path>  Report path to include in orchestration payload JSON',
     phase: '--phase <text>        Worker phase to include in orchestration payload JSON',
     'timeout-ms': '--timeout-ms <ms>     Maximum wait time before timing out',
+    timeout: '--timeout <seconds>    Maximum wait for a decision (default 540)',
+    resume: '--resume <review-id>  Wait on a review opened earlier',
+    detach: '--detach               Open the review and exit without waiting',
     worktree:
       '--worktree <selector>  Worktree selector such as id:<repo-id>::<path>, name:<displayName>, branch:<branch>, issue:<number>, path:<path>, or active/current',
     workspace: '--workspace <selector> Existing worktree selector for automation runs',

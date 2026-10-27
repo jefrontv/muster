@@ -4843,7 +4843,7 @@
           "pairingCode": "ペアリングコード",
           "pairingCodePlaceholder": "orca://pair?code=...",
           "pairingHelpPrefix": "サーバーで実行",
-          "pairingCommand": "orca serve --pairing-address <host>",
+          "pairingCommand": "muster serve --pairing-address <host>",
           "pairingHelpSuffix": "し、表示されたペアリング URL を貼り付けます。",
           "sshImportAlreadySynced": "~/.ssh/config はすでに同期されています。",
           "sshImportSynced": "{{value0}} ホスト{{value1}} を同期しました。",
@@ -6322,7 +6322,7 @@
           "9a3758d983": "保存されたサーバーはありません。",
           "9bee6bbeeb": "サーバーの追加",
           "55fcc964cd": "をサーバーで実行し、出力されたペアリング URL を貼り付けます。",
-          "960e901ae4": "orca serve --pairing-address <host>",
+          "960e901ae4": "muster serve --pairing-address <host>",
           "163671f7b5": "実行",
           "c3d772c514": "orca://pair?code=...",
           "9bc9b83474": "ペアリングコード",
@@ -7071,7 +7071,7 @@
           "e49688f67f": "`{{value0}}` を WSL に登録しますか?",
           "61ac55278e": "WSL から {{value0}} を削除しますか?",
           "e2b0ee267f": "古い",
-          "7aa456a460": "WSL 内の~/.local/binに「orca-ide」を登録します。",
+          "7aa456a460": "WSL 内の~/.local/binに「muster」を登録します。",
           "0307677bb9": "WSL CLI 登録を確認しています..."
         },
         "accounts": {
@@ -7748,7 +7748,9 @@
             "e61157e926": "エディターのワードラップ",
             "005be5c699": "水平スクロールを使わずに、ファイルエディターで長い行を折り返します。",
             "editorFontFamily": "Editor Font Family",
-            "editorFontFamilyDesc": "Font used by file editors and diff views. Leave empty to follow the terminal font."
+            "editorFontFamilyDesc": "Font used by file editors and diff views. Leave empty to follow the terminal font.",
+            "shellCommand": "Shell Command",
+            "shellCommandDescription": "Install the muster command to open projects and control Muster from a terminal."
           }
         },
         "git": {
@@ -9503,6 +9505,20 @@
           "use_for_terminal": "Use its colours for the terminal too",
           "cancel": "Cancel",
           "confirm": "Import {{count}}"
+        },
+        "GeneralShellCommandSection": {
+          "checking": "Checking…",
+          "conflict": "Another `{{value0}}` command is installed at {{value1}}.",
+          "notOnPath": "Installed, but {{value0}} is not on your PATH.",
+          "remove": "Remove",
+          "replace": "Replace…",
+          "install": "Install",
+          "title": "Shell Command",
+          "label": "Run Muster from a terminal",
+          "replaceTitle": "Replace the existing `{{value0}}` command?",
+          "replaceDescription": "Muster deletes {{value0}} and links its own command there. This cannot be undone.",
+          "cancel": "Cancel",
+          "replaceConfirm": "Replace"
         }
       },
       "right": {

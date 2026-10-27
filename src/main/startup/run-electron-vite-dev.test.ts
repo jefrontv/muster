@@ -273,8 +273,8 @@ describe('run-electron-vite-dev', () => {
       })
 
       const trackedPids = trackPidFile(pidFile)
-      const devWrapper = readFileSync(join(userDataPath, 'cli', 'bin', 'orca-dev'), 'utf8')
-      const publicAliasWrapper = readFileSync(join(userDataPath, 'cli', 'bin', 'orca'), 'utf8')
+      const devWrapper = readFileSync(join(userDataPath, 'cli', 'bin', 'muster-dev'), 'utf8')
+      const publicAliasWrapper = readFileSync(join(userDataPath, 'cli', 'bin', 'muster'), 'utf8')
       expect(publicAliasWrapper).toBe(devWrapper)
       expect(publicAliasWrapper).toContain('ORCA_USER_DATA_PATH')
       expect(publicAliasWrapper).toContain('out/cli/index.js')

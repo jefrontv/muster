@@ -527,8 +527,8 @@ describe('preflight', () => {
       if (command !== 'which') {
         throw new Error(`unexpected command ${String(command)}`)
       }
-      if (String(args[0]) === 'orca') {
-        return { stdout: '/Applications/Muster.app/Contents/MacOS/orca\n' }
+      if (String(args[0]) === 'muster') {
+        return { stdout: '/Applications/Muster.app/Contents/MacOS/muster\n' }
       }
       throw new Error('not found')
     })
@@ -544,8 +544,8 @@ describe('preflight', () => {
       if (String(args[0]) === 'claude') {
         return { stdout: '/Users/test/.local/bin/claude\n' }
       }
-      if (String(args[0]) === 'orca') {
-        return { stdout: '/Applications/Muster.app/Contents/MacOS/orca\n' }
+      if (String(args[0]) === 'muster') {
+        return { stdout: '/Applications/Muster.app/Contents/MacOS/muster\n' }
       }
       throw new Error('not found')
     })
@@ -565,8 +565,8 @@ describe('preflight', () => {
       if (String(args[0]) === 'claude') {
         return { stdout: '/mock/windows/npm/claude.cmd\n' }
       }
-      if (String(args[0]) === 'orca') {
-        return { stdout: '/mock/windows/programs/orca.cmd\n' }
+      if (String(args[0]) === 'muster') {
+        return { stdout: '/mock/windows/programs/muster.cmd\n' }
       }
       throw new Error('not found')
     })
@@ -726,8 +726,8 @@ describe('preflight', () => {
         throw new Error(`unexpected command ${String(command)}`)
       }
       const script = String(args[5])
-      expect(script).not.toContain("'orca'")
-      expect(script).not.toContain("'orca-dev'")
+      expect(script).not.toContain("'muster'")
+      expect(script).not.toContain("'muster-dev'")
       expect(script).not.toContain("'orca-ide'")
       if (script.includes("'claude'")) {
         return { stdout: '__ORCA_AGENT_PATH__claude\t/home/test/.local/bin/claude\n' }

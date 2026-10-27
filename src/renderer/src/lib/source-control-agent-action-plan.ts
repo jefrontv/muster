@@ -40,8 +40,8 @@ export function planSourceControlAgentActionLaunch(args: {
   sessionOptions?: Record<string, SessionOptionValue>
   platform?: NodeJS.Platform
   terminalWindowsShell?: string | null
-  /** Why: SSH remotes deploy the CLI shim as plain `orca`, so the Linux-only
-   * `orca-ide` rename must not be applied for remote launches. */
+  /** Why: SSH remotes deploy the CLI shim as plain `muster`, so local platform
+   * command overrides must not be applied for remote launches. */
   isRemote?: boolean
 }): SourceControlLaunchPlanResult {
   const agent = args.agent

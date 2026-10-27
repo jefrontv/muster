@@ -152,7 +152,7 @@ function createWindowsLauncherCompileCommand(
   launcherFileName: string,
   launcherPath: string,
   sourcePath: string,
-  legacyShimPath: string
+  legacyPaths: readonly string[]
 ): string {
   // Why: legacy csc.exe mis-parses space-bearing absolute paths handed to it by
   // Windows PowerShell 5.1's native-argument quoting, so compile from the bin
@@ -177,9 +177,12 @@ function createWindowsLauncherCompileCommand(
       `& $compiler ${compilerArgs}`,
       'if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }',
       `if (-not (Test-Path -LiteralPath ${powerShellLiteral(launcherPath)} -PathType Leaf)) { Write-Error 'The Muster SSH CLI launcher compiler produced no executable.'; exit 1 }`,
-      // Why: remove the legacy %* bridge only after a successful compile, so a
-      // host missing csc.exe keeps its existing CLI (orca.exe shadows orca.cmd).
-      `Remove-Item -LiteralPath ${powerShellLiteral(legacyShimPath)} -Force -ErrorAction SilentlyContinue`,
+      // Why: remove the pre-rename launchers only after a successful compile, so a
+      // host missing csc.exe keeps its existing CLI.
+      ...legacyPaths.map(
+        (path) =>
+          `Remove-Item -LiteralPath ${powerShellLiteral(path)} -Force -ErrorAction SilentlyContinue`
+      ),
       `Remove-Item -LiteralPath ${powerShellLiteral(sourcePath)} -Force`
     ].join('; ')
   )
@@ -187,11 +190,13 @@ function createWindowsLauncherCompileCommand(
 
 export function createRemoteCliInstallPlan(env: RemoteCliInstallEnv): RemoteCliInstallPlan {
   if (isWindowsRemoteHost(env.hostPlatform)) {
-    const launcherFileName = 'orca.exe'
-    const sourceFileName = 'orca-launcher.cs'
+    const launcherFileName = 'muster.exe'
+    const sourceFileName = 'muster-launcher.cs'
     const launcherPath = joinRemotePath(env.hostPlatform, env.binDir, launcherFileName)
     const sourcePath = joinRemotePath(env.hostPlatform, env.binDir, sourceFileName)
-    const legacyShimPath = joinRemotePath(env.hostPlatform, env.binDir, 'orca.cmd')
+    const legacyPaths = ['orca.exe', 'orca.cmd'].map((name) =>
+      joinRemotePath(env.hostPlatform, env.binDir, name)
+    )
     const binDir = joinRemotePath(env.hostPlatform, env.binDir)
     return {
       launcherPath,
@@ -205,13 +210,15 @@ export function createRemoteCliInstallPlan(env: RemoteCliInstallEnv): RemoteCliI
           launcherFileName,
           launcherPath,
           sourcePath,
-          legacyShimPath
+          legacyPaths
         )
       ]
     }
   }
 
-  const launcherPath = joinRemotePath(env.hostPlatform, env.binDir, 'orca')
+  const launcherPath = joinRemotePath(env.hostPlatform, env.binDir, 'muster')
+  // Why: binDir is Muster-private, so the pre-rename launcher is always ours to delete.
+  const legacyLauncherPath = joinRemotePath(env.hostPlatform, env.binDir, 'orca')
   return {
     launcherPath,
     files: [
@@ -233,6 +240,6 @@ export function createRemoteCliInstallPlan(env: RemoteCliInstallEnv): RemoteCliI
       }
     ],
     // Surface chmod failures: a non-executable launcher must fail install loudly, not silently.
-    postWriteCommands: [`chmod +x ${quoteSh(launcherPath)}`]
+    postWriteCommands: [`chmod +x ${quoteSh(launcherPath)}`, `rm -f ${quoteSh(legacyLauncherPath)}`]
   }
 }

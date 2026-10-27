@@ -18,7 +18,8 @@ import {
   WorktreeResolvePrBase,
   WorktreeSelector,
   WorktreeSet,
-  WorktreeSortOrder
+  WorktreeSortOrder,
+  WorkspaceOpenPath
 } from './worktree-schemas'
 
 export const WORKTREE_METHODS: RpcMethod[] = [
@@ -71,6 +72,15 @@ export const WORKTREE_METHODS: RpcMethod[] = [
           notifyClients: params.notifyClients,
           clientKind
         })
+      })
+  }),
+  defineMethod({
+    name: 'workspace.openPath',
+    params: WorkspaceOpenPath,
+    handler: async (params, { runtime }) =>
+      runtime.openWorkspacePath({
+        path: params.path,
+        ...(params.callerWorktreeId ? { callerWorktreeId: params.callerWorktreeId } : {})
       })
   }),
   defineMethod({

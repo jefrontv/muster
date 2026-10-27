@@ -10,6 +10,7 @@ import type {
   RuntimeTerminalSplit,
   RuntimeTerminalWait
 } from '../../shared/runtime-types'
+import { startSpinner } from '../cli-style'
 import type { CommandHandler } from '../dispatch'
 import { shouldUseRendererBackedInteractiveTerminal } from '../codex-command-classification'
 import {
@@ -97,17 +98,16 @@ export const TERMINAL_HANDLERS: Record<string, CommandHandler> = {
   },
   'terminal wait': async ({ flags, client, cwd, json }) => {
     const timeoutMs = getOptionalPositiveIntegerFlag(flags, 'timeout-ms')
-    const result = await client.call<{ wait: RuntimeTerminalWait }>(
-      'terminal.wait',
-      {
-        terminal: await getTerminalHandle(flags, cwd, client),
-        for: getRequiredStringFlag(flags, 'for'),
-        timeoutMs
-      },
-      {
-        timeoutMs: timeoutMs ? timeoutMs + 5000 : DEFAULT_TERMINAL_WAIT_RPC_TIMEOUT_MS
-      }
-    )
+    const terminal = await getTerminalHandle(flags, cwd, client)
+    const condition = getRequiredStringFlag(flags, 'for')
+    const spinner = json ? null : startSpinner(`Waiting for ${condition}`)
+    const result = await client
+      .call<{ wait: RuntimeTerminalWait }>(
+        'terminal.wait',
+        { terminal, for: condition, timeoutMs },
+        { timeoutMs: timeoutMs ? timeoutMs + 5000 : DEFAULT_TERMINAL_WAIT_RPC_TIMEOUT_MS }
+      )
+      .finally(() => spinner?.stop())
     printResult(result, json, formatTerminalWait)
     if (result.result.wait.satisfied === false) {
       // Why: callers commonly chain `terminal wait && terminal send`; a

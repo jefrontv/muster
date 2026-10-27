@@ -21,8 +21,9 @@ import {
 
 const MANAGED_MARKER = getWslLauncherMarker()
 const BRIDGE_MANAGED_MARKER = getWslBridgeMarker()
-const WSL_COMMAND_NAME = 'orca-ide'
-const LEGACY_WSL_COMMAND_NAME = 'orca'
+const WSL_COMMAND_NAME = 'muster'
+// Why: newest first, so repair adopts the most recent pre-rename registration.
+const LEGACY_WSL_COMMAND_NAMES = ['orca-ide', 'orca']
 const WSL_COMMAND_TIMEOUT_MS = 10_000
 
 function normalizeManagedScriptContent(content: string): string {
@@ -169,16 +170,18 @@ export class WslCliInstaller {
       return { changed: true, managed: true, status: await this.install(status) }
     }
 
-    const legacyCommandPath = status.commandPath
-      ? `${getPosixDirname(status.commandPath)}/${LEGACY_WSL_COMMAND_NAME}`
-      : null
-    if (!legacyCommandPath || !this.distro) {
+    if (!status.commandPath || !this.distro) {
       return { changed: false, managed: status.state === 'installed', status }
     }
 
-    const legacyContent = await this.readCommandFile(this.distro, legacyCommandPath)
-    const legacyManaged =
-      typeof legacyContent === 'string' && legacyContent.includes(MANAGED_MARKER)
+    let legacyManaged = false
+    for (const legacyCommandPath of legacyCommandPathsFor(status.commandPath)) {
+      const legacyContent = await this.readCommandFile(this.distro, legacyCommandPath)
+      if (typeof legacyContent === 'string' && legacyContent.includes(MANAGED_MARKER)) {
+        legacyManaged = true
+        break
+      }
+    }
     if (!legacyManaged) {
       return { changed: false, managed: status.state === 'installed', status }
     }
@@ -220,9 +223,6 @@ export class WslCliInstaller {
         buildRegistrationLockPrelude(status.commandPath),
         `command_tmp=${quoteShell(`${status.commandPath}.tmp`)}.$$`,
         `bridge_path=${quoteShell(getBridgePathFromCommandPath(status.commandPath))}`,
-        `legacy_command_path=${quoteShell(
-          `${getPosixDirname(status.commandPath)}/${LEGACY_WSL_COMMAND_NAME}`
-        )}`,
         'bridge_tmp="${bridge_path}.tmp.$$"',
         'bridge_backup="${bridge_tmp}.backup"',
         'bridge_had_original=0',
@@ -262,9 +262,10 @@ export class WslCliInstaller {
         `mv -f "$command_tmp" ${quoteShell(status.commandPath)}`,
         'committed=1',
         'rm -f "$bridge_backup"',
-        // Why: the command was renamed to avoid GNOME Orca; remove only the
-        // old Orca-managed WSL wrapper after the replacement has committed.
-        buildManagedLegacyRemoveCommand('"$legacy_command_path"'),
+        // Why: remove only the old Muster-managed wrappers, after the replacement has committed.
+        ...legacyCommandPathsFor(status.commandPath).map((path) =>
+          buildManagedLegacyRemoveCommand(quoteShell(path))
+        ),
         'trap - EXIT'
       ].join('\n')
     )
@@ -276,15 +277,16 @@ export class WslCliInstaller {
     if (!status.supported || !status.commandPath) {
       return status
     }
-    const legacyCommandPath = `${getPosixDirname(status.commandPath)}/${LEGACY_WSL_COMMAND_NAME}`
+    const legacyCommandPaths = legacyCommandPathsFor(status.commandPath)
     if (status.state === 'not_installed') {
-      // Why: a managed legacy `orca` left behind would later be re-adopted by
+      // Why: a managed legacy command left behind would later be re-adopted by
       // startup reconciliation as opt-in proof, silently undoing this removal.
       await this.run(
         this.distro as string,
-        ['set -euo pipefail', buildManagedLegacyRemoveCommand(quoteShell(legacyCommandPath))].join(
-          '\n'
-        )
+        [
+          'set -euo pipefail',
+          ...legacyCommandPaths.map((path) => buildManagedLegacyRemoveCommand(quoteShell(path)))
+        ].join('\n')
       )
       return status
     }
@@ -294,7 +296,7 @@ export class WslCliInstaller {
 
     await this.run(
       this.distro as string,
-      buildSafeRemoveCommand(status.commandPath, legacyCommandPath)
+      buildSafeRemoveCommand(status.commandPath, legacyCommandPaths)
     )
     return this.getStatus()
   }
@@ -357,7 +359,6 @@ export class WslCliInstaller {
     }
 
     const pathDirectory = `${home}/.local/bin`
-    // Why: matches the Linux CLI rename to `orca-ide` (avoids GNOME Orca conflict).
     const commandPath = `${pathDirectory}/${WSL_COMMAND_NAME}`
     const pathConfigured =
       (
@@ -512,4 +513,8 @@ export const _internals = {
   buildWslLauncher,
   getBridgePathFromCommandPath,
   parseManagedLauncherTarget
+}
+
+function legacyCommandPathsFor(commandPath: string): string[] {
+  return LEGACY_WSL_COMMAND_NAMES.map((name) => `${getPosixDirname(commandPath)}/${name}`)
 }

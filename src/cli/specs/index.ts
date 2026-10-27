@@ -12,9 +12,11 @@ import { INTROSPECTION_COMMAND_SPECS } from './introspection'
 import { LINEAR_COMMAND_SPECS } from './linear'
 import { VM_COMMAND_SPECS } from './vm'
 import { SKILL_COMMAND_SPECS } from './skills'
+import { PLAN_REVIEW_COMMAND_SPECS } from './plan-review'
 
 export const COMMAND_SPECS: CommandSpec[] = [
   ...CORE_COMMAND_SPECS,
+  ...PLAN_REVIEW_COMMAND_SPECS,
   ...PROJECT_COMMAND_SPECS,
   ...FILE_COMMAND_SPECS,
   ...AUTOMATION_COMMAND_SPECS,

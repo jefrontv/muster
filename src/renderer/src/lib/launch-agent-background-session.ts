@@ -71,8 +71,8 @@ export async function launchAgentBackgroundSession(
         repo.connectionId ? undefined : getLocalProjectExecutionRuntimeContext(store, worktreeId)
       )
     : CLIENT_PLATFORM
-  // Why: SSH remotes deploy the CLI shim as plain `orca`, so the Linux-only
-  // `orca-ide` rename must not be applied for remote launches.
+  // Why: SSH remotes deploy the CLI shim as plain `muster`, so local platform
+  // command overrides must not be applied for remote launches.
   const isRemote = repo ? repoIsRemote(repo) : false
   const startupShell = resolveLocalWindowsAgentStartupShell({
     platform: launchPlatform,

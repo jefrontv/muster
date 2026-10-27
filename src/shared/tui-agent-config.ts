@@ -1,5 +1,5 @@
 import type { TuiAgent } from './types'
-import { getOrcaCliCommandNameForPlatform } from './orca-cli-command-name'
+import { getCliCommandNameForPlatform } from './cli-command-name'
 
 export type AgentPromptInjectionMode =
   | 'argv'
@@ -53,17 +53,16 @@ export const TUI_AGENT_CONFIG: Record<TuiAgent, TuiAgentConfig> = {
     draftPromptFlag: '--prefill'
   },
   'claude-agent-teams': {
-    // Why: an Orca-provided launch mode, not a separate binary; detection follows the Orca CLI.
-    detectCmd: 'orca',
-    detectCmdAliases: ['orca-dev', 'orca-ide'],
-    // Why: require Claude too so fresh installs (Orca shim always present) don't report Agent Teams without an agent CLI.
+    // Why: a Muster-provided launch mode, not a separate binary; detection follows the Muster CLI.
+    detectCmd: 'muster',
+    detectCmdAliases: ['muster-dev'],
+    // Why: require Claude too so fresh installs (Muster shim always present) don't report Agent Teams without an agent CLI.
     detectRequiredCommands: ['claude'],
     // Why: Windows/WSL use Claude's in-process Agent Teams fallback, not this Orca native-pane/tmux-shim wrapper.
     detectUnsupportedRuntimes: ['win32', 'wsl'],
-    launchCmd: 'orca claude-teams',
+    launchCmd: 'muster claude-teams',
     launchCmdByPlatform: {
-      linux: `${getOrcaCliCommandNameForPlatform('linux')} claude-teams`,
-      win32: `${getOrcaCliCommandNameForPlatform('win32')} claude-teams`
+      win32: `${getCliCommandNameForPlatform('win32')} claude-teams`
     },
     expectedProcess: 'claude',
     promptInjectionMode: 'stdin-after-start'
@@ -308,7 +307,7 @@ export function getTuiAgentLaunchCommand(
   platform: NodeJS.Platform,
   opts?: { isRemote?: boolean }
 ): string {
-  // Why: local-only orca-ide rename (avoids GNOME Orca clash) must not leak to Linux remotes, whose relay shim is always `orca`.
+  // Why: platform overrides describe the local host; Linux remotes always run the plain relay shim.
   if (opts?.isRemote && platform === 'linux') {
     return config.launchCmd
   }

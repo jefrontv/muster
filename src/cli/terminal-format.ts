@@ -14,10 +14,15 @@ import type {
   RuntimeTerminalSplit,
   RuntimeTerminalWait
 } from '../shared/runtime-types'
+import { isCliStyleEnabled } from './cli-style'
+import { styledTerminalList } from './styled-lists'
 
 export function formatTerminalList(result: RuntimeTerminalListResult): string {
   if (result.terminals.length === 0) {
     return 'No live terminals.'
+  }
+  if (isCliStyleEnabled()) {
+    return styledTerminalList(result)
   }
   const body = result.terminals
     .map(

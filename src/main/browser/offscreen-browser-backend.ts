@@ -6,7 +6,7 @@ import type { BrowserBackend, BrowserBackendCreateTab } from './browser-backend'
 import type { BrowserManager } from './browser-manager'
 import { browserSessionRegistry } from './browser-session-registry'
 
-// Why: headless orca serve has no renderer window to host a <webview>, so each
+// Why: headless muster serve has no renderer window to host a <webview>, so each
 // browser page is backed by a main-process offscreen BrowserWindow. The window
 // is never shown — it exists only so its WebContents can be driven over CDP and
 // streamed via the existing screencast path. Verified on macOS and on headless

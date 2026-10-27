@@ -255,7 +255,6 @@ import { KeybindingService } from './keybindings/keybinding-service'
 import { applyElectronProxySettings } from './network/proxy-settings'
 import { preserveAgentAuthBeforeRestart } from './agent-auth-restart-preservation'
 import { CliInstaller } from './cli/cli-installer'
-import { installLinuxBareOrcaDispatcher } from './cli/linux-bare-orca-dispatcher'
 import { reconcileManagedWslCliRegistrations } from './cli/wsl-cli-registration-reconciliation'
 
 let mainWindow: BrowserWindow | null = null
@@ -745,7 +744,7 @@ if (hasSingleInstanceLock) {
 
 // Why: when another process holds the lock we've already quit; skip file-writing side effects so this transient process never touches userData.
 if (hasSingleInstanceLock) {
-  // Why: couple to dev-parent only for electron-vite desktop runs; `orca serve`'s parent (CLI shim/background shell) isn't the intended server lifetime.
+  // Why: couple to dev-parent only for electron-vite desktop runs; `muster serve`'s parent (CLI shim/background shell) isn't the intended server lifetime.
   const shouldCoupleToDevParent = is.dev && !isServeMode
   installDevParentDisconnectQuit(shouldCoupleToDevParent)
   installDevParentWatchdog(shouldCoupleToDevParent)
@@ -2428,7 +2427,7 @@ app.whenReady().then(async () => {
     ...(serveOptions?.wsPort !== undefined
       ? {
           wsPort: serveOptions.wsPort,
-          // Why: only explicit `orca serve --port` overrides a stale STA-1511 fallback (issue #8535); default/dev stay fallback-first for pairing stability.
+          // Why: only explicit `muster serve --port` overrides a stale STA-1511 fallback (issue #8535); default/dev stay fallback-first for pairing stability.
           preferPinnedWsPort: true
         }
       : {}),
@@ -2500,28 +2499,11 @@ app.whenReady().then(async () => {
           }
         }).install()
         console.log(
-          `[serve] orca CLI install: ${cliStatus.state}${cliStatus.commandPath ? ` (${cliStatus.commandPath})` : ''}`
+          `[serve] muster CLI install: ${cliStatus.state}${cliStatus.commandPath ? ` (${cliStatus.commandPath})` : ''}`
         )
       } catch (error) {
         console.warn(
-          '[serve] orca CLI install skipped:',
-          error instanceof Error ? error.message : String(error)
-        )
-      }
-    }
-    // Why: Linux CLI installs as `orca-ide`, but the Claude Team launcher invokes bare `orca`; drop a ~/.local/bin dispatcher (ahead of /usr/bin) so it resolves. Best-effort.
-    if (process.platform === 'linux' && app.isPackaged && process.resourcesPath) {
-      try {
-        const dispatcher = await installLinuxBareOrcaDispatcher({
-          resourcesPath: process.resourcesPath
-        })
-        console.log(
-          `[serve] bare orca dispatcher ${dispatcher.state}: ${dispatcher.dispatcherPath}` +
-            `${dispatcher.target ? ` -> ${dispatcher.target}` : ''}`
-        )
-      } catch (error) {
-        console.warn(
-          '[serve] bare orca dispatcher install skipped:',
+          '[serve] muster CLI install skipped:',
           error instanceof Error ? error.message : String(error)
         )
       }

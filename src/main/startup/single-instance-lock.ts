@@ -14,7 +14,7 @@ export const SINGLE_INSTANCE_LOCK_BYPASS_MESSAGE =
  * `agent-hooks/endpoint.env` (hook port + token for cursor-agent/claude/codex
  * scripts). Without a single-instance lock, every AppImage/.app double-click
  * boots a fresh Electron main that clobbers both files. When the most recent
- * instance quits, metadata points at a dead pid and `orca status` reports
+ * instance quits, metadata points at a dead pid and `muster status` reports
  * `stale_bootstrap` even though the original process is still running.
  *
  * This helper centralises the lock gate so it is testable in isolation and

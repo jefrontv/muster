@@ -101,7 +101,7 @@ process.on('SIGINT', () => stopChild('SIGINT'))
 process.on('SIGTERM', () => stopChild('SIGTERM'))
 
 /**
- * Parses wrapper flags and forwards everything else to `orca serve`.
+ * Parses wrapper flags and forwards everything else to `muster serve`.
  */
 function parseArgs(args) {
   const serveArgs = []
@@ -125,7 +125,7 @@ function parseArgs(args) {
  * Prints script usage without touching the dev profile or starting the server.
  */
 function printHelp() {
-  console.log(`Usage: node config/scripts/serve-headless-fresh-profile-pairing.mjs [--keep] [orca serve flags]
+  console.log(`Usage: node config/scripts/serve-headless-fresh-profile-pairing.mjs [--keep] [muster serve flags]
 
 Starts orca-dev serve --json with a fresh isolated userData profile, ensures Electron's dev runtime is usable, and prints the pairing URL.
 

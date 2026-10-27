@@ -16,6 +16,7 @@ import { INTROSPECTION_HANDLERS } from './handlers/introspection'
 import { LINEAR_HANDLERS } from './handlers/linear'
 import { VM_HANDLERS } from './handlers/vm'
 import { SKILL_HANDLERS } from './handlers/skills'
+import { PLAN_REVIEW_HANDLERS } from './handlers/plan-review'
 
 export type HandlerContext = {
   flags: Map<string, string | boolean>
@@ -31,6 +32,7 @@ function buildHandlers(): Map<string, CommandHandler> {
   const table = new Map<string, CommandHandler>()
   const groups = [
     CORE_HANDLERS,
+    PLAN_REVIEW_HANDLERS,
     AUTOMATION_HANDLERS,
     PROJECT_HANDLERS,
     REPO_HANDLERS,

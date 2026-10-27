@@ -24,7 +24,7 @@ for candidate in muster orca Orca; do
 done
 
 if [ -z "$ELECTRON" ]; then
-	echo "Unable to locate the Orca executable next to $RESOURCES_DIR" >&2
+	echo "Unable to locate the Muster executable next to $RESOURCES_DIR" >&2
 	exit 1
 fi
 

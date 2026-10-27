@@ -556,12 +556,12 @@ function deferHeadlessServeInstall(phase: 'download' | 'install', version: strin
       { phase, version: version || null },
       {
         level: 'warn',
-        message: 'Update install deferred while hosting orca serve'
+        message: 'Update install deferred while hosting muster serve'
       }
     )
   }
   sendErrorStatus(
-    'This orca serve process was not started by an update-capable supervisor. Keep it running and update Muster through its service manager.',
+    'This muster serve process was not started by an update-capable supervisor. Keep it running and update Muster through its service manager.',
     true
   )
   return true

@@ -261,8 +261,9 @@ export async function addLocalRepoFromPath(
   return { repo, alreadyExisted: false }
 }
 
-async function addRemoteRepoFromPath(
-  store: Store,
+export async function addRemoteRepoFromPath(
+  // Why: the runtime's narrowed store also calls this for `muster open <path>` on SSH hosts.
+  store: Pick<Store, 'getRepos' | 'addRepo'> & Partial<Pick<Store, 'getSshTarget'>>,
   args: {
     connectionId: string
     remotePath: string
@@ -325,7 +326,7 @@ async function addRemoteRepoFromPath(
   const folderName = getRemoteRepoFolderName(resolvedPath)
   let displayName = args.displayName || folderName
   if (!args.displayName && (args.remotePath === '~' || args.remotePath === '~/')) {
-    const sshTarget = store.getSshTarget(args.connectionId)
+    const sshTarget = store.getSshTarget?.(args.connectionId)
     if (sshTarget) {
       displayName = sshTarget.label
     }

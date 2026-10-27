@@ -4843,7 +4843,7 @@
           "pairingCode": "配对码",
           "pairingCodePlaceholder": "orca://pair?code=...",
           "pairingHelpPrefix": "在服务器上运行",
-          "pairingCommand": "orca serve --pairing-address <host>",
+          "pairingCommand": "muster serve --pairing-address <host>",
           "pairingHelpSuffix": "，然后粘贴打印出的配对 URL。",
           "sshImportAlreadySynced": "~/.ssh/config 已同步。",
           "sshImportSynced": "已同步 {{value0}} 个主机{{value1}}。",
@@ -6285,7 +6285,7 @@
           "9a3758d983": "没有保存的服务器。",
           "9bee6bbeeb": "添加服务器",
           "55fcc964cd": "在服务器上运行，并粘贴输出的配对 URL。",
-          "960e901ae4": "orca serve --pairing-address <host>",
+          "960e901ae4": "muster serve --pairing-address <host>",
           "163671f7b5": "运行",
           "c3d772c514": "orca://pair?code=...",
           "9bc9b83474": "配对码",
@@ -7034,7 +7034,7 @@
           "e49688f67f": "在 WSL 中注册 `{{value0}}`？",
           "61ac55278e": "从 WSL 中删除“{{value0}}”？",
           "e2b0ee267f": "陈旧",
-          "7aa456a460": "在 WSL 内的 ~/.local/bin 中注册 `orca-ide`。",
+          "7aa456a460": "在 WSL 内的 ~/.local/bin 中注册 `muster`。",
           "0307677bb9": "正在检查 WSL CLI 注册..."
         },
         "accounts": {
@@ -7711,7 +7711,9 @@
             "e61157e926": "编辑器自动换行",
             "005be5c699": "在文件编辑器中自动换行长行，而无需水平滚动。",
             "editorFontFamily": "Editor Font Family",
-            "editorFontFamilyDesc": "Font used by file editors and diff views. Leave empty to follow the terminal font."
+            "editorFontFamilyDesc": "Font used by file editors and diff views. Leave empty to follow the terminal font.",
+            "shellCommand": "Shell Command",
+            "shellCommandDescription": "Install the muster command to open projects and control Muster from a terminal."
           }
         },
         "git": {
@@ -9503,6 +9505,20 @@
           "use_for_terminal": "Use its colours for the terminal too",
           "cancel": "Cancel",
           "confirm": "Import {{count}}"
+        },
+        "GeneralShellCommandSection": {
+          "checking": "Checking…",
+          "conflict": "Another `{{value0}}` command is installed at {{value1}}.",
+          "notOnPath": "Installed, but {{value0}} is not on your PATH.",
+          "remove": "Remove",
+          "replace": "Replace…",
+          "install": "Install",
+          "title": "Shell Command",
+          "label": "Run Muster from a terminal",
+          "replaceTitle": "Replace the existing `{{value0}}` command?",
+          "replaceDescription": "Muster deletes {{value0}} and links its own command there. This cannot be undone.",
+          "cancel": "Cancel",
+          "replaceConfirm": "Replace"
         }
       },
       "right": {
@@ -12057,7 +12073,7 @@
           "FeatureTipsModal": {
             "53905bd076": "开发预览：打开技能设置终端。",
             "1da82af45b": "Muster CLI 需要注意",
-            "ce13a742d0": "在 PATH 中注册了 `orca`。",
+            "ce13a742d0": "在 PATH 中注册了 `muster`。",
             "d1a86c7eb5": "打开“设置”以完成 CLI 设置。"
           },
           "CmdJPaletteFeatureTipVisual": {

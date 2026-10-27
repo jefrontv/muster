@@ -136,6 +136,25 @@ export const getGeneralUpdateSearchEntries = createLocalizedCatalog(() => [
   }
 ])
 
+export const getGeneralShellCommandSearchEntries = createLocalizedCatalog(() => [
+  {
+    title: translate('auto.components.settings.general.search.shellCommand', 'Shell Command'),
+    description: translate(
+      'auto.components.settings.general.search.shellCommandDescription',
+      'Install the muster command to open projects and control Muster from a terminal.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.general.search.shellCommandCli', 'cli'),
+      ...translateSearchKeyword('auto.components.settings.general.search.shellCommandPath', 'path'),
+      ...translateSearchKeyword(
+        'auto.components.settings.general.search.shellCommandTerminal',
+        'terminal'
+      ),
+      'muster'
+    ]
+  }
+])
+
 export const getGeneralAgentSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate('auto.components.settings.general.search.db11502270', 'Default Agent'),
@@ -178,6 +197,7 @@ export function getGeneralPaneSearchEntries(
     ...getConfirmationsSearchEntries(),
     ...(options.includeProjectRuntime === false ? [] : getGeneralProjectRuntimeSearchEntries()),
     ...getGeneralEditorSearchEntries(),
+    ...getGeneralShellCommandSearchEntries(),
     ...getGeneralUpdateSearchEntries()
   ]
 }

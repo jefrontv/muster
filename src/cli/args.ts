@@ -33,6 +33,7 @@ export const BOOLEAN_FLAGS = new Set([
   'comments',
   'connect',
   'current',
+  'detach',
   'dry-run',
   'enter',
   'focus',

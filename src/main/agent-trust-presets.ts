@@ -157,7 +157,7 @@ function canonicalize(p: string): string {
   // Why: macOS reports `/tmp/x` and `/private/tmp/x` as the same inode, but
   // both Cursor and Copilot's trust comparators run realpath() before the
   // string compare. Mirror that so a worktree under a symlinked parent
-  // (orca caches realpath()'d worktree paths) matches the agent's lookup.
+  // (muster caches realpath()'d worktree paths) matches the agent's lookup.
   try {
     if (existsSync(p)) {
       return realpathSync.native(p)

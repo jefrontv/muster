@@ -35,7 +35,7 @@ them in order:
 
 Then the **per-workspace contract** (create/suspend/resume/destroy) runs fast (§8).
 
-**The one branch that shapes everything — connection mode:** **Muster-server** (`create` runs `orca serve`
+**The one branch that shapes everything — connection mode:** **Muster-server** (`create` runs `muster serve`
 in the env and emits a `pairingCode`; §7c/§7f) vs **SSH** (`create` runs no server and emits a
 `connection.type:"ssh"` block Muster dials into; §7g/§7h). Settle this first — it changes the `create`
 output shape and half the templates.
@@ -58,7 +58,7 @@ a long time, or need the user at the keyboard. Never create a Muster workspace o
 2. **Interview the user up front** — gather these choices and confirm them back before scaffolding
    anything. Don't pick for them (§11); don't guess.
    - **Connection mode:** how Muster attaches to the environment — an **Muster server** (the VM runs
-     `orca serve` and Muster pairs over its pairing URL; worked example §7f) or **SSH** (Muster connects to
+     `muster serve` and Muster pairs over its pairing URL; worked example §7f) or **SSH** (Muster connects to
      the host over SSH; §7g). This decides the recipe's connection shape, so settle it first.
    - **Provider:** Vercel Sandbox, Fly, Modal, an existing SSH host, … For non-obvious providers, also
      ask scope/project/region and plan limits (§2). Then **read that provider's CLI/SDK docs** (or
@@ -88,10 +88,10 @@ a long time, or need the user at the keyboard. Never create a Muster workspace o
    until that `orca.yaml` change is committed and merged to the project's primary branch. Tell the user
    this up front: `doctor`/`--provision` validate the scripts from the working copy on any branch, but
    creating a workspace from the recipe in the picker needs it on primary.
-8. **Dry-run doctor** — `orca vm recipe doctor <recipe-id> --repo-path <repo> --json` (free, static; §9).
+8. **Dry-run doctor** — `muster vm recipe doctor <recipe-id> --repo-path <repo> --json` (free, static; §9).
    Fix every failure before going live.
 9. **[CHECKPOINT] Live self-test** — get the user's OK once, then run
-   `orca vm recipe doctor <recipe-id> --provision --json` as a loop: it runs create → validates →
+   `muster vm recipe doctor <recipe-id> --provision --json` as a loop: it runs create → validates →
    destroys, and on failure returns a full transcript. Read it, fix the scripts, and re-run yourself until
    it passes (§9). Spends cloud money; the one approval covers the loop.
 10. **[CHECKPOINT] Optional workspace test** — only if asked: create a workspace via the picker, then
@@ -270,25 +270,25 @@ set -euo pipefail
 # 1. boot sandbox from snapshotId with a published port; capture the public URL → pairing address
 #    (an externally reachable wss:// URL); trap: remove sandbox on error
 # 2. remote exec: ensure repo at desired commit; rebuild only if commit changed (cache marker)
-# 3. remote exec: start orca serve in the background and read the recipe JSON it writes (see below)
+# 3. remote exec: start muster serve in the background and read the recipe JSON it writes (see below)
 # 4. print serve's JSON to stdout, optionally enriched with userData:
 #    { schemaVersion:1, pairingCode, projectRoot, userData:{ provider, resourceId:name, snapshotId } }
 ```
 
-**The exact `orca serve` invocation and its output (verified — do not improvise the flags).** Inside the
+**The exact `muster serve` invocation and its output (verified — do not improvise the flags).** Inside the
 VM, run:
 
 ```bash
-orca serve \
+muster serve \
   --port "$PORT" \
   --project-root "$ABS_REPO_PATH_ON_REMOTE" \
   --pairing-address "$EXTERNAL_WSS_URL" \
   --recipe-json
 ```
 
-**Binary name:** in a VM built from source (the Phase-2 flow), run it as `pnpm exec orca-dev serve …`
-from the repo root — `orca-dev` is the in-repo entrypoint and is what the §7f example uses. Plain
-`orca serve …` is the same command when the built CLI is installed on the VM's PATH. The flags/output
+**Binary name:** in a VM built from source (the Phase-2 flow), run it as `pnpm exec muster-dev serve …`
+from the repo root — `muster-dev` is the in-repo entrypoint and is what the §7f example uses. Plain
+`muster serve …` is the same command when the built CLI is installed on the VM's PATH. The flags/output
 are identical either way.
 
 There is **no `--host` flag**. `--project-root` must be an absolute directory on the remote. With
@@ -296,7 +296,7 @@ There is **no `--host` flag**. `--project-root` must be an absolute directory on
 keeps serving:
 
 ```json
-{ "schemaVersion": 1, "pairingCode": "<orca pairing URL>", "projectRoot": "<the --project-root you passed>" }
+{ "schemaVersion": 1, "pairingCode": "<muster pairing URL>", "projectRoot": "<the --project-root you passed>" }
 ```
 
 `pairingCode` is the pairing URL, already pointing at whatever you passed as `--pairing-address` — so set
@@ -402,11 +402,11 @@ vercel sandbox exec "$name" "${vercel_args[@]}" --timeout 20m \
       node config/scripts/run-electron-vite-build.mjs --config config/electron-vite.vm-serve.config.ts && \
       printf "%s" "$c" > .orca-built; }' >&2
 
-# 3. (remote) start orca serve in the background, writing recipe JSON to a file; poll until it parses
+# 3. (remote) start muster serve in the background, writing recipe JSON to a file; poll until it parses
 recipe_json="$(vercel sandbox exec "$name" "${vercel_args[@]}" --timeout 60s \
   --env "ORCA_PORT=$port" --env "ORCA_PROJECT_ROOT=$project_root" --env "ORCA_PAIRING_ADDRESS=$pairing_ws" \
   -- bash -lc 'set -euo pipefail; cd "$ORCA_PROJECT_ROOT"; rm -f /tmp/orca-recipe.json /tmp/orca-serve.log; \
-    nohup pnpm exec orca-dev serve --port "$ORCA_PORT" --project-root "$ORCA_PROJECT_ROOT" \
+    nohup pnpm exec muster-dev serve --port "$ORCA_PORT" --project-root "$ORCA_PROJECT_ROOT" \
       --pairing-address "$ORCA_PAIRING_ADDRESS" --recipe-json >/tmp/orca-recipe.json 2>/tmp/orca-serve.log </dev/null & \
     pid=$!; for _ in $(seq 1 80); do \
       node -e "JSON.parse(require(\"node:fs\").readFileSync(\"/tmp/orca-recipe.json\",\"utf8\"))" >/dev/null 2>&1 && { cat /tmp/orca-recipe.json; exit 0; }; \
@@ -428,7 +428,7 @@ pairing URL). If the user chose **SSH** in the §1 interview, use §7g instead.
 
 SSH mode is **fundamentally different from §7c/§7f**, not a relabeling of them:
 
-- **`create` does NOT run `orca serve` and does NOT emit a `pairingCode`.** Muster itself connects to the
+- **`create` does NOT run `muster serve` and does NOT emit a `pairingCode`.** Muster itself connects to the
   host over its SSH relay, brings up the git + filesystem providers, and imports the repo. The script's
   only job is to make the host ready and **print SSH connection details** Muster will dial.
 - The result uses a `connection` block with `type: "ssh"` and a `target`, **not** the flat
@@ -458,7 +458,7 @@ SSH mode is **fundamentally different from §7c/§7f**, not a relabeling of them
 `label`, `host`, `port`, `username` are required; the rest are optional — omit any you don't need.
 
 **Networking → which `target` fields to set** (how *your desktop* reaches the box — there is no
-`orca serve` URL in SSH mode):
+`muster serve` URL in SSH mode):
 
 - Public IP / DNS, or a Tailscale/VPN address → `host`; SSH port → `port` (usually 22).
 - Key auth → `identityFile` (add `identitiesOnly: true` if the agent has many keys).
@@ -487,7 +487,7 @@ ssh_opts=(-p "$ssh_port"); [ -n "$identity_file" ] && ssh_opts+=(-i "$identity_f
 # non-interactive create. Pre-add the key (or set the option) so it can't block.
 ssh-keyscan -p "$ssh_port" "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
 
-# 1. ensure the repo is present and at the right commit on the host (NO orca serve here)
+# 1. ensure the repo is present and at the right commit on the host (NO muster serve here)
 ssh "${ssh_opts[@]}" "$ssh_target" \
   "GH_TOKEN='$gh_token' GIT_TERMINAL_PROMPT=0 bash -lc '
      set -euo pipefail
@@ -495,7 +495,7 @@ ssh "${ssh_opts[@]}" "$ssh_target" \
      cd \"$project_root\" && git fetch origin \"$repo_ref\" && git checkout -B \"$repo_ref\" FETCH_HEAD
    '" >&2
 
-# 2. print the SSH connection block (NO pairingCode, NO orca serve). host/port/username tell Muster's
+# 2. print the SSH connection block (NO pairingCode, NO muster serve). host/port/username tell Muster's
 #    relay how to dial in; identityFile/jumpHost/proxyCommand/portForwards are emitted when set.
 node -e 'const [host,port,user,idf,jh,pc,root]=process.argv.slice(1);
   const target={ label:"per-workspace-host", host, port:Number(port), username:user };
@@ -511,7 +511,7 @@ sleep/wake/delete — that's separate from these scripts.)
 
 If the SSH host is instead an **ephemeral/snapshot-capable VM** (your hypervisor, or a cloud VM with
 image support), keep the §7f Phase-2/3 base-image model for provisioning, but still emit the
-`connection.type:"ssh"` block above instead of starting `orca serve`.
+`connection.type:"ssh"` block above instead of starting `muster serve`.
 
 ### 7h. Worked example — local Docker SSH (SSH connection mode)
 
@@ -596,7 +596,7 @@ environmentRecipes:
 `create` runs **locally from the repo root** and prints **one** JSON object to stdout. Its shape depends
 on the connection mode chosen in §1:
 
-**Muster-server mode** — boot the env, start `orca serve` in it, and print serve's result:
+**Muster-server mode** — boot the env, start `muster serve` in it, and print serve's result:
 
 ```json
 {
@@ -607,10 +607,10 @@ on the connection mode chosen in §1:
 }
 ```
 
-Here `pairingCode` (from `orca serve --recipe-json`) and `projectRoot` are required; `schemaVersion` (`1`)
+Here `pairingCode` (from `muster serve --recipe-json`) and `projectRoot` are required; `schemaVersion` (`1`)
 and `userData` are optional.
 
-**SSH mode** — do **not** run `orca serve`; print the `connection.type:"ssh"` block instead (full shape +
+**SSH mode** — do **not** run `muster serve`; print the `connection.type:"ssh"` block instead (full shape +
 worked script in §7g). `pairingCode` is **not** used in SSH mode.
 
 Lifecycle hooks (all run locally):
@@ -620,7 +620,7 @@ Lifecycle hooks (all run locally):
 - `resume`: optional. Wake; reads payload on stdin and **prints fresh recipe JSON** (pairing may change).
 - `destroy`: optional unless `destroy: none`. Delete/cleanup; reads payload on stdin.
 
-Start Muster remotely with `orca serve --port "$PORT" --project-root "$ABS_ROOT" --pairing-address
+Start Muster remotely with `muster serve --port "$PORT" --project-root "$ABS_ROOT" --pairing-address
 "$EXTERNAL_WSS_URL" --recipe-json` (exact flags + output in §7c). Set `--pairing-address` to the
 externally reachable address so the emitted `pairingCode` is reachable; tunneling/port mapping is the
 script's job.
@@ -636,14 +636,14 @@ Validate in two stages — the cheap dry run first, then the live self-test.
 
 ### Dry run (free, non-destructive) — always do this first
 
-`orca vm recipe doctor <recipe-id> --repo-path <repo> --json` validates **static wiring only** — it does
+`muster vm recipe doctor <recipe-id> --repo-path <repo> --json` validates **static wiring only** — it does
 **not** boot anything. It checks: local-host execution (v1), repo path, recipe id exists,
 create/destroy/suspend/resume command paths resolve, suspend/resume are paired, and each script is
 executable (POSIX exec bit; skipped on Windows). Fix every failure here before spending any cloud money.
 
 ### Live self-test (`--provision`) — diagnose and iterate yourself
 
-`orca vm recipe doctor <recipe-id> --repo-path <repo> --provision --json` actually runs the recipe end
+`muster vm recipe doctor <recipe-id> --repo-path <repo> --provision --json` actually runs the recipe end
 to end: it executes `create`, validates the returned recipe JSON, then runs `destroy` to **tear the
 environment back down** (so the test leaves nothing running, as long as `destroy` works). It spends real
 cloud money, so get the user's OK **once** before starting — that one approval covers the whole loop

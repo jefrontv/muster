@@ -2763,7 +2763,7 @@ export type PreloadApi = {
   }
   cli: {
     getInstallStatus: () => Promise<CliInstallStatus>
-    install: () => Promise<CliInstallStatus>
+    install: (args?: { replace?: boolean }) => Promise<CliInstallStatus>
     remove: () => Promise<CliInstallStatus>
     getWslInstallStatus: (args?: { distro?: string | null }) => Promise<CliInstallStatus>
     installWsl: (args?: { distro?: string | null }) => Promise<CliInstallStatus>

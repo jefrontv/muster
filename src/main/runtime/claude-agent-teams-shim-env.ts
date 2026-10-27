@@ -8,7 +8,7 @@ import {
   isDirectClaudeCommand,
   type ClaudeAgentTeamsMode
 } from '../../shared/claude-agent-teams-tmux-compat'
-import { getOrcaCliCommandNameForPlatform } from '../../shared/orca-cli-command-name'
+import { getCliCommandNameForPlatform } from '../../shared/cli-command-name'
 
 export type ClaudeAgentTeamsLaunchPlan = {
   command: string
@@ -62,9 +62,12 @@ export function resolveClaudeAgentTeamsShimBin(
     return bundled
   }
   return (
-    findExecutableOnPath(process.platform === 'win32' ? 'orca-dev.cmd' : 'orca-dev', env.PATH) ??
-    findExecutableOnPath(getOrcaCliCommandNameForPlatform(process.platform), env.PATH) ??
-    getOrcaCliCommandNameForPlatform(process.platform)
+    findExecutableOnPath(
+      process.platform === 'win32' ? 'muster-dev.cmd' : 'muster-dev',
+      env.PATH
+    ) ??
+    findExecutableOnPath(getCliCommandNameForPlatform(process.platform), env.PATH) ??
+    getCliCommandNameForPlatform(process.platform)
   )
 }
 
@@ -76,14 +79,11 @@ function bundledLauncherPath(): string | null {
   if (!process.resourcesPath) {
     return null
   }
-  if (process.platform === 'darwin') {
-    return join(process.resourcesPath, 'bin', 'orca')
-  }
-  if (process.platform === 'linux') {
-    return join(process.resourcesPath, 'bin', 'orca-ide')
+  if (process.platform === 'darwin' || process.platform === 'linux') {
+    return join(process.resourcesPath, 'bin', 'muster')
   }
   if (process.platform === 'win32') {
-    return join(process.resourcesPath, 'bin', 'orca.exe')
+    return join(process.resourcesPath, 'bin', 'muster.exe')
   }
   return null
 }
@@ -117,7 +117,7 @@ function unixShimScript(): string {
   return [
     '#!/usr/bin/env sh',
     'set -eu',
-    `exec "\${ORCA_AGENT_TEAMS_SHIM_BIN:-${getOrcaCliCommandNameForPlatform(process.platform)}}" agent-teams-tmux "$@"`,
+    `exec "\${ORCA_AGENT_TEAMS_SHIM_BIN:-${getCliCommandNameForPlatform(process.platform)}}" agent-teams-tmux "$@"`,
     ''
   ].join('\n')
 }
@@ -127,7 +127,7 @@ function windowsShimScript(): string {
     '@echo off',
     'setlocal',
     'if "%ORCA_AGENT_TEAMS_SHIM_BIN%"=="" (',
-    `  set "ORCA_AGENT_TEAMS_SHIM_BIN=${getOrcaCliCommandNameForPlatform(process.platform)}"`,
+    `  set "ORCA_AGENT_TEAMS_SHIM_BIN=${getCliCommandNameForPlatform(process.platform)}"`,
     ')',
     '"%ORCA_AGENT_TEAMS_SHIM_BIN%" agent-teams-tmux %*',
     ''

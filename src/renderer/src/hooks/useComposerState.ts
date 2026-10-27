@@ -754,7 +754,7 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
         )
     return getAgentLaunchPlatformForRepo(selectedRepo, projectRuntime)
   }, [activeRepoId, projects, repos, selectedRepo, settings, worktreesByRepo])
-  // Why: SSH remotes deploy the CLI shim as plain `orca`, so the Linux-only `orca-ide` rename must not apply to remote launch commands.
+  // Why: SSH remotes deploy the CLI shim as plain `muster`, so local platform command overrides must not apply to remote launches.
   const selectedRepoIsRemote = selectedRepo ? repoIsRemote(selectedRepo) : false
   const selectedRepoStartupShell = resolveLocalWindowsAgentStartupShell({
     platform: selectedRepoAgentLaunchPlatform,

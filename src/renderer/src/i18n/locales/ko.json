@@ -4843,7 +4843,7 @@
           "pairingCode": "페어링 코드",
           "pairingCodePlaceholder": "orca://pair?code=...",
           "pairingHelpPrefix": "서버에서 실행",
-          "pairingCommand": "orca serve --pairing-address <host>",
+          "pairingCommand": "muster serve --pairing-address <host>",
           "pairingHelpSuffix": "한 다음 출력된 페어링 URL을 붙여넣으세요.",
           "sshImportAlreadySynced": "~/.ssh/config가 이미 동기화되어 있습니다.",
           "sshImportSynced": "{{value0}} 호스트{{value1}}을(를) 동기화했습니다.",
@@ -6285,7 +6285,7 @@
           "9a3758d983": "저장된 서버가 없습니다.",
           "9bee6bbeeb": "서버 추가",
           "55fcc964cd": "을(를) 서버에서 실행하고 출력된 페어링 URL을 붙여넣으세요.",
-          "960e901ae4": "orca serve --pairing-address <host>",
+          "960e901ae4": "muster serve --pairing-address <host>",
           "163671f7b5": "실행",
           "c3d772c514": "orca://pair?code=...",
           "9bc9b83474": "페어링 코드",
@@ -7034,7 +7034,7 @@
           "e49688f67f": "WSL에 `{{value0}}`을(를) 등록하시겠습니까?",
           "61ac55278e": "WSL에서 `{{value0}}`을(를) 제거하시겠습니까?",
           "e2b0ee267f": "오래됨",
-          "7aa456a460": "WSL 내부의 ~/.local/bin에 `orca-ide`를 등록합니다.",
+          "7aa456a460": "WSL 내부의 ~/.local/bin에 `muster`를 등록합니다.",
           "0307677bb9": "WSL CLI 등록 확인 중..."
         },
         "accounts": {
@@ -7711,7 +7711,9 @@
             "e61157e926": "편집기 자동 줄 바꿈",
             "005be5c699": "가로 스크롤 대신 파일 편집기에서 긴 줄을 자동으로 줄 바꿈합니다.",
             "editorFontFamily": "Editor Font Family",
-            "editorFontFamilyDesc": "Font used by file editors and diff views. Leave empty to follow the terminal font."
+            "editorFontFamilyDesc": "Font used by file editors and diff views. Leave empty to follow the terminal font.",
+            "shellCommand": "Shell Command",
+            "shellCommandDescription": "Install the muster command to open projects and control Muster from a terminal."
           }
         },
         "git": {
@@ -9503,6 +9505,20 @@
           "use_for_terminal": "Use its colours for the terminal too",
           "cancel": "Cancel",
           "confirm": "Import {{count}}"
+        },
+        "GeneralShellCommandSection": {
+          "checking": "Checking…",
+          "conflict": "Another `{{value0}}` command is installed at {{value1}}.",
+          "notOnPath": "Installed, but {{value0}} is not on your PATH.",
+          "remove": "Remove",
+          "replace": "Replace…",
+          "install": "Install",
+          "title": "Shell Command",
+          "label": "Run Muster from a terminal",
+          "replaceTitle": "Replace the existing `{{value0}}` command?",
+          "replaceDescription": "Muster deletes {{value0}} and links its own command there. This cannot be undone.",
+          "cancel": "Cancel",
+          "replaceConfirm": "Replace"
         }
       },
       "right": {
@@ -12057,7 +12073,7 @@
           "FeatureTipsModal": {
             "53905bd076": "개발 미리보기: 스킬 설정 terminal 열기.",
             "1da82af45b": "Muster CLI에 주의가 필요합니다",
-            "ce13a742d0": "PATH에 'orca'를 등록했습니다.",
+            "ce13a742d0": "PATH에 'muster'를 등록했습니다.",
             "d1a86c7eb5": "설정을 열어 CLI 설정을 완료하세요."
           },
           "CmdJPaletteFeatureTipVisual": {

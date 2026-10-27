@@ -56,7 +56,7 @@ type OrcaRuntimeRpcServerOptions = {
   platform?: NodeJS.Platform
   enableWebSocket?: boolean
   wsPort?: number
-  // Why: true when the caller pinned a port (`orca serve --port`) so bind order prefers it over a stale STA-1511 fallback (#8535).
+  // Why: true when the caller pinned a port (`muster serve --port`) so bind order prefers it over a stale STA-1511 fallback (#8535).
   preferPinnedWsPort?: boolean
   webClientRoot?: string
   // Why: test-only overrides for the two constants below; production must not pass these (defaults set by §3.1).

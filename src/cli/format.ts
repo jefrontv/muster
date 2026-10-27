@@ -1,6 +1,7 @@
 import type { CliStatusResult } from '../shared/runtime-types'
 import type { RuntimeRpcFailure, RuntimeRpcSuccess } from './runtime-client'
 import { RuntimeClientError, RuntimeRpcFailureError } from './runtime-client'
+import { glyph, isCliStyleEnabled, keyValueBlock, statusLine, tone } from './cli-style'
 
 export {
   formatBrowserProfileList,
@@ -65,7 +66,7 @@ export function printResult<TResult>(
 export function formatCliError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   if (error instanceof RuntimeClientError && error.code === 'runtime_unavailable') {
-    return `${message}\nOrca is not running. Run 'orca open' first.`
+    return `${message}\nMuster is not running. Run 'muster open' first.`
   }
   if (error instanceof RuntimeClientError) {
     const nextSteps = nextStepsFromData(error.data)
@@ -77,7 +78,7 @@ export function formatCliError(error: unknown): string {
     error instanceof RuntimeRpcFailureError &&
     error.response.error.code === 'runtime_unavailable'
   ) {
-    return `${message}\nOrca is not running. Run 'orca open' first.`
+    return `${message}\nMuster is not running. Run 'muster open' first.`
   }
   if (error instanceof RuntimeRpcFailureError) {
     return formatMessageWithNextSteps(message, nextStepsFromData(error.response.error.data))
@@ -105,8 +106,20 @@ export function reportCliError(error: unknown, json: boolean): void {
       console.log(JSON.stringify(response, null, 2))
     }
   } else {
-    console.error(formatCliError(error))
+    console.error(
+      isCliStyleEnabled(process.stderr) ? formatStyledCliError(error) : formatCliError(error)
+    )
   }
+}
+
+function formatStyledCliError(error: unknown): string {
+  const [message, ...details] = formatCliError(error).split('\n')
+  const lines = [statusLine('failure', message, process.stderr)]
+  for (const detail of details) {
+    const step = detail.startsWith('Next step: ') ? detail.slice('Next step: '.length) : detail
+    lines.push(`  ${tone('muted', glyph('pointer'), process.stderr)} ${step}`)
+  }
+  return lines.join('\n')
 }
 
 function formatMessageWithNextSteps(message: string, nextSteps: readonly string[]): string {
@@ -130,6 +143,9 @@ function nextStepsFromData(data: unknown): string[] {
 }
 
 export function formatCliStatus(status: CliStatusResult): string {
+  if (isCliStyleEnabled()) {
+    return formatStyledCliStatus(status)
+  }
   return [
     `appRunning: ${status.app.running}`,
     `pid: ${status.app.pid ?? 'none'}`,
@@ -143,4 +159,23 @@ export function formatCliStatus(status: CliStatusResult): string {
 
 export function formatStatus(status: CliStatusResult): string {
   return formatCliStatus(status)
+}
+
+function formatStyledCliStatus(status: CliStatusResult): string {
+  const ready = status.runtime.reachable && status.graph.state === 'ready'
+  const headline = !status.app.running
+    ? statusLine('failure', 'Muster is not running')
+    : ready
+      ? statusLine('success', 'Muster is running')
+      : statusLine('warning', `Muster is starting (${status.graph.state})`)
+  return [
+    headline,
+    keyValueBlock([
+      ['pid', String(status.app.pid ?? 'none')],
+      ['window', status.app.desktopWindowStatus ?? 'unknown'],
+      ['runtime', `${status.runtime.state}${status.runtime.reachable ? '' : ' (unreachable)'}`],
+      ['runtime id', status.runtime.runtimeId ?? 'none'],
+      ['projects', status.graph.state]
+    ])
+  ].join('\n')
 }

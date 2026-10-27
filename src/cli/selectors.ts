@@ -134,7 +134,7 @@ export async function getBrowserWorktreeSelector(
 
 // Why: mirrors browser's implicit active-tab targeting. When --terminal is
 // omitted, resolve the active terminal in the current worktree so commands
-// like `orca terminal send --text "hello" --enter` Just Work.
+// like `muster terminal send --text "hello" --enter` Just Work.
 export async function getTerminalHandle(
   flags: Map<string, string | boolean>,
   cwd: string,

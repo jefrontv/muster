@@ -95,7 +95,7 @@ import {
   applyTerminalAttributionEnv,
   resolveAttributionShellFamily
 } from '../attribution/terminal-attribution'
-import { ensureLinuxTerminalOrcaCliShimDir } from '../cli/linux-terminal-orca-cli-shim'
+import { ensureLinuxTerminalCliShimDir } from '../cli/linux-terminal-cli-shim'
 import { registerPty, unregisterPty } from '../memory/pty-registry'
 import { advertisedUrlWatcher } from '../ports/advertised-url-watcher'
 import { track } from '../telemetry/client'
@@ -1168,31 +1168,36 @@ export function buildPtyHostEnv(
     stripInheritedOrcaCodexHomeOverride(baseEnv)
   }
 
-  // Why: WSL shells need the managed userData root for shell-ready wrappers; dev-mode terminals need the same export so `orca` targets the live dev instance.
+  // Why: WSL shells need the managed userData root for shell-ready wrappers; dev-mode terminals need the same export so `muster` targets the live dev instance.
   if (opts.isWsl) {
     baseEnv.ORCA_USER_DATA_PATH = opts.userDataPath
-    // Why: managed WSL registration uses `orca-ide`; exposing that literal scopes agent guidance to WSL without a bare-orca shim.
-    baseEnv.ORCA_CLI_COMMAND = opts.isPackaged ? 'orca-ide' : 'orca-dev'
-  } else {
-    if (!opts.isPackaged) {
-      baseEnv.ORCA_USER_DATA_PATH ??= opts.userDataPath
-    }
-    delete baseEnv.ORCA_CLI_COMMAND
+  } else if (!opts.isPackaged) {
+    baseEnv.ORCA_USER_DATA_PATH ??= opts.userDataPath
   }
-  // Why: dev mode needs the launcher PATH override so `orca` resolves to the dev build instead of the production binary at /usr/local/bin/orca.
+  // Why: installed upstream skill stubs default to `orca`; this variable is how they find `muster`.
+  baseEnv.ORCA_CLI_COMMAND = opts.isPackaged ? 'muster' : 'muster-dev'
+  // Why: dev mode needs the launcher PATH override so `muster` resolves to the dev build instead of the production binary at /usr/local/bin/muster.
   if (!opts.isPackaged) {
     const devCliBin = join(opts.userDataPath, 'cli', 'bin')
     const inheritedPath = readInheritedPath(baseEnv)
     // Why: an empty PATH segment resolves as `.` in some shells (commands run from cwd); avoid a trailing delimiter.
     baseEnv.PATH = inheritedPath ? `${devCliBin}${delimiter}${inheritedPath}` : devCliBin
-  } else if (process.platform === 'linux') {
-    // Why: bare-`orca` shim scoped to Orca PTYs — Linux CLI installs as `orca-ide` to avoid shadowing GNOME's /usr/bin/orca screen reader (stablyai/orca#7904).
-    const shimDir = ensureLinuxTerminalOrcaCliShimDir({ userDataPath: opts.userDataPath })
-    if (shimDir) {
+  } else {
+    // Why: agents in Muster PTYs call `muster` even when the shell command was never registered.
+    const cliDir =
+      process.platform === 'linux'
+        ? ensureLinuxTerminalCliShimDir({ userDataPath: opts.userDataPath })
+        : (process.platform === 'darwin' || (process.platform === 'win32' && !opts.isWsl)) &&
+            process.resourcesPath
+          ? join(process.resourcesPath, 'bin')
+          : null
+    if (cliDir) {
       const inheritedEntries = readInheritedPath(baseEnv)
         .split(delimiter)
-        .filter((entry) => entry.length > 0 && entry !== shimDir)
-      baseEnv.PATH = [shimDir, ...inheritedEntries].join(delimiter)
+        .filter((entry) => entry.length > 0 && entry !== cliDir)
+      // Why: Windows env names are case-insensitive; a leftover `Path` beside `PATH` makes the winner undefined.
+      delete baseEnv.Path
+      baseEnv.PATH = [cliDir, ...inheritedEntries].join(delimiter)
     }
   }
 
@@ -5701,7 +5706,7 @@ export function registerHeadlessPtyRuntime(
   store?: Store,
   prepareCodexSessionResume?: PrepareCodexSessionResume
 ): void {
-  // Why: headless `orca serve` has no renderer window but still needs the same PTY handlers so remote clients can drive terminals.
+  // Why: headless `muster serve` has no renderer window but still needs the same PTY handlers so remote clients can drive terminals.
   const headlessWindow = {
     isDestroyed: () => true,
     webContents: {

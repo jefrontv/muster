@@ -36,9 +36,9 @@ describe('SSH remote Muster CLI launcher', () => {
   it('compiles a native Windows launcher without a cmd.exe argument bridge', () => {
     const plan = windowsInstallPlan()
 
-    expect(plan.launcherPath).toBe('C:/Users/me user/.orca-relay/bin/orca.exe')
+    expect(plan.launcherPath).toBe('C:/Users/me user/.orca-relay/bin/muster.exe')
     expect(plan.files).toHaveLength(1)
-    expect(plan.files[0]?.path).toBe('C:/Users/me user/.orca-relay/bin/orca-launcher.cs')
+    expect(plan.files[0]?.path).toBe('C:/Users/me user/.orca-relay/bin/muster-launcher.cs')
     expect(plan.files[0]?.contents).toContain('ProcessStartInfo')
     expect(plan.files[0]?.contents).toContain('"--orca-cli"')
     expect(plan.files[0]?.contents).toContain("value[index] == '\"'")
@@ -54,12 +54,12 @@ describe('SSH remote Muster CLI launcher', () => {
     expect(compileScript).toContain(
       "Set-Location -ErrorAction Stop -LiteralPath 'C:/Users/me user/.orca-relay/bin'"
     )
-    expect(compileScript).toContain('/out:orca.exe')
-    expect(compileScript).toContain('C:/Users/me user/.orca-relay/bin/orca-launcher.cs')
+    expect(compileScript).toContain('/out:muster.exe')
+    expect(compileScript).toContain('C:/Users/me user/.orca-relay/bin/muster-launcher.cs')
     expect(compileScript).toContain('C:/Users/me user/.orca-relay/bin/orca.cmd')
   })
 
-  it('removes the legacy orca.cmd only after every compile guard has passed', () => {
+  it('removes the legacy orca launchers only after every compile guard has passed', () => {
     const script = decodePowerShellCommand(windowsInstallPlan().postWriteCommands[0] ?? '')
     const legacyShimRemoval =
       "Remove-Item -LiteralPath 'C:/Users/me user/.orca-relay/bin/orca.cmd' -Force -ErrorAction SilentlyContinue"
@@ -68,7 +68,7 @@ describe('SSH remote Muster CLI launcher', () => {
     const guards = [
       "if (-not $compiler) { Write-Error 'Unable to find the .NET Framework C# compiler required for the Muster SSH CLI launcher.'; exit 1 }",
       'if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }',
-      "if (-not (Test-Path -LiteralPath 'C:/Users/me user/.orca-relay/bin/orca.exe' -PathType Leaf))"
+      "if (-not (Test-Path -LiteralPath 'C:/Users/me user/.orca-relay/bin/muster.exe' -PathType Leaf))"
     ]
     expect(script).toContain(legacyShimRemoval)
     for (const guard of guards) {
@@ -202,10 +202,10 @@ describe('SSH remote Muster CLI launcher', () => {
       hostPlatform: getRemoteHostPlatform('linux-x64')
     })
 
-    expect(plan.launcherPath).toBe('/home/me/.orca-relay/bin/orca')
+    expect(plan.launcherPath).toBe('/home/me/.orca-relay/bin/muster')
     expect(plan.files).toEqual([
       expect.objectContaining({
-        path: '/home/me/.orca-relay/bin/orca',
+        path: '/home/me/.orca-relay/bin/muster',
         contents: expect.stringContaining('--orca-cli "$@"')
       })
     ])

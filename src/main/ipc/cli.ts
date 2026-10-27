@@ -48,7 +48,7 @@ async function hydrateLocalShellPathForCli(force = false): Promise<void> {
   if (process.platform === 'win32') {
     return
   }
-  // Why: CLI registration must match `which orca` in the user's terminal, not
+  // Why: CLI registration must match `which muster` in the user's terminal, not
   // the sparse PATH a GUI-launched Electron process inherited from launchd.
   const hydration = await hydrateShellPath(force ? { force: true } : undefined)
   if (hydration.ok) {
@@ -62,10 +62,13 @@ export function registerCliHandlers(): void {
     return new CliInstaller().getStatus()
   })
 
-  ipcMain.handle('cli:install', async (): Promise<CliInstallStatus> => {
-    await hydrateLocalShellPathForCli(true)
-    return new CliInstaller().install()
-  })
+  ipcMain.handle(
+    'cli:install',
+    async (_event, args?: { replace?: boolean }): Promise<CliInstallStatus> => {
+      await hydrateLocalShellPathForCli(true)
+      return new CliInstaller().install({ replace: args?.replace === true })
+    }
+  )
 
   ipcMain.handle('cli:remove', async (): Promise<CliInstallStatus> => {
     await hydrateLocalShellPathForCli()

@@ -19,6 +19,8 @@ export function buildSshPtySpawnEnv(args: {
           : args.remoteCliBridgeEnv.binDir
     }
     merged.ORCA_REMOTE_CLI_BIN_DIR = args.remoteCliBridgeEnv.binDir
+    // Why: installed upstream skill stubs resolve the CLI name from this variable.
+    merged.ORCA_CLI_COMMAND = 'muster'
     merged.ORCA_RELAY_DIR = args.remoteCliBridgeEnv.relayDir
     merged.ORCA_RELAY_NODE_PATH = args.remoteCliBridgeEnv.nodePath
     merged.ORCA_RELAY_SOCKET_PATH = args.remoteCliBridgeEnv.sockPath

@@ -11,6 +11,7 @@ import {
 import { dispatch } from './dispatch'
 import { reportCliError } from './format'
 import { printHelp } from './help'
+import { rewriteBarePathInvocation } from './open-path-command'
 import { RuntimeClient } from './runtime-client'
 import { COMMAND_SPECS } from './specs'
 
@@ -18,6 +19,7 @@ export { COMMAND_SPECS } from './specs'
 export { buildCurrentWorktreeSelector, normalizeWorktreeSelector } from './selectors'
 
 const COMMAND_PATHS = COMMAND_SPECS.flatMap((spec) => specPaths(spec))
+const TOP_LEVEL_COMMANDS = new Set(COMMAND_PATHS.map((path) => path[0]))
 
 function shouldIgnoreRemoteSelection(commandPath: string[]): boolean {
   return (
@@ -50,7 +52,10 @@ export async function main(
     await runClaudeTeams(argv.slice(1), cwd)
     return
   }
-  const parsed = normalizeCommandPositionals(COMMAND_SPECS, parseArgs(argv, COMMAND_PATHS))
+  const parsed = normalizeCommandPositionals(
+    COMMAND_SPECS,
+    parseArgs(rewriteBarePathInvocation(argv, cwd, TOP_LEVEL_COMMANDS), COMMAND_PATHS)
+  )
   const helpPath = resolveHelpPath(parsed)
   if (helpPath !== null) {
     printHelp(COMMAND_SPECS, helpPath)
@@ -109,7 +114,7 @@ export async function main(
 
 async function runClaudeTeams(argv: string[], cwd: string): Promise<void> {
   try {
-    // Why: everything after `orca claude-teams` belongs to Claude Code, not
+    // Why: everything after `muster claude-teams` belongs to Claude Code, not
     // Orca's own flag parser, so new Claude flags work without Orca changes.
     const client = new RuntimeClient(undefined, undefined, null, null)
     await dispatch(['claude-teams'], {

@@ -375,7 +375,7 @@ describe('electron-builder config', () => {
       const root = await mkdtemp(join(tmpdir(), 'orca-electron-builder-config-'))
       try {
         const resourcesDir = join(root, 'linux-unpacked', 'resources')
-        const launcherPath = join(resourcesDir, 'bin', 'orca-ide')
+        const launcherPath = join(resourcesDir, 'bin', 'muster')
         await mkdir(join(resourcesDir, 'bin'), { recursive: true })
         await mkdir(join(resourcesDir, 'node_modules', 'zod', 'src'), { recursive: true })
         // Why: afterPack now fails hard when the unpacked daemon entry is

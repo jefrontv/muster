@@ -1,7 +1,7 @@
 // Why: the SSH relay shim (`~/.orca-relay/bin/orca`) forwards CLI invocations
 // to the host app. Instead of re-implementing every command in a hand-rolled
 // switch (the cause of "Unsupported SSH Orca CLI command", #7716), the host
-// runs the real bundled `orca` CLI entry in Electron node mode — the same
+// runs the real bundled `muster` CLI entry in Electron node mode — the same
 // entry the local shell command uses — so remote invocations get the full
 // command surface (orchestration, worktree, terminal, ...) by construction.
 import { app } from 'electron'
@@ -249,7 +249,7 @@ class CappedOutputCollector {
 
   toString(): string {
     const text = Buffer.concat(this.chunks).toString('utf8')
-    return this.truncated ? `${text}\n[orca ssh cli] output truncated\n` : text
+    return this.truncated ? `${text}\n[muster ssh cli] output truncated\n` : text
   }
 }
 

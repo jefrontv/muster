@@ -850,7 +850,7 @@ export function RuntimeEnvironmentsPane({
                   <span className="font-mono">
                     {translate(
                       'auto.components.settings.RuntimeEnvironmentsPane.960e901ae4',
-                      'orca serve --pairing-address <host>'
+                      'muster serve --pairing-address <host>'
                     )}
                   </span>{' '}
                   {translate(

@@ -9,6 +9,7 @@ import {
   OptionalFiniteNumber,
   OptionalPlainString,
   OptionalString,
+  requiredString,
   TriStateLinkedIssue
 } from '../schemas'
 
@@ -59,6 +60,11 @@ export const WorktreeSelector = z.object({
 export const WorktreeActivate = WorktreeSelector.extend({
   notifyClients: OptionalBoolean,
   navigation: z.enum(RUNTIME_NAVIGATION_TARGETS).optional()
+})
+
+export const WorkspaceOpenPath = z.object({
+  path: requiredString('Missing path'),
+  callerWorktreeId: OptionalString
 })
 
 export const WorktreeCreate = z

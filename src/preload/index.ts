@@ -2324,7 +2324,8 @@ const api = {
 
   cli: {
     getInstallStatus: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:getInstallStatus'),
-    install: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:install'),
+    install: (args?: { replace?: boolean }): Promise<CliInstallStatus> =>
+      ipcRenderer.invoke('cli:install', args),
     remove: (): Promise<CliInstallStatus> => ipcRenderer.invoke('cli:remove'),
     getWslInstallStatus: (args?: { distro?: string | null }): Promise<CliInstallStatus> =>
       ipcRenderer.invoke('cli:getWslInstallStatus', args),

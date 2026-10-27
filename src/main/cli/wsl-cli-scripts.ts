@@ -72,9 +72,9 @@ exit $exitCode
 }
 
 export function getBridgePathFromCommandPath(commandPath: string): string {
-  // Why: both the current Linux command and the legacy pre-rename command
-  // share one WSL bridge under ~/.local/share/orca.
-  return `${commandPath.replace(/\/\.local\/bin\/(?:orca|orca-ide)$/, '/.local/share/orca')}/orca-wsl-bridge.ps1`
+  // Why: the current command and the pre-rename commands share one WSL bridge
+  // under ~/.local/share/orca.
+  return `${commandPath.replace(/\/\.local\/bin\/(?:muster|orca|orca-ide)$/, '/.local/share/orca')}/orca-wsl-bridge.ps1`
 }
 
 export function buildSafeReplaceGuard(path: string, managedMarker: string): string {
@@ -104,12 +104,15 @@ export function buildRegistrationLockPrelude(commandPath: string): string {
 }
 
 export function buildManagedLegacyRemoveCommand(quotedLegacyCommandPath: string): string {
-  // Why: remove only the Orca-managed pre-rename wrapper; user-owned `orca`
+  // Why: remove only the Muster-managed pre-rename wrapper; user-owned `orca`
   // commands and symlinks must survive.
   return `if [ ! -L ${quotedLegacyCommandPath} ] && [ -f ${quotedLegacyCommandPath} ] && grep -Fq ${quoteShell(MANAGED_MARKER)} ${quotedLegacyCommandPath}; then rm -f ${quotedLegacyCommandPath}; fi`
 }
 
-export function buildSafeRemoveCommand(commandPath: string, legacyCommandPath?: string): string {
+export function buildSafeRemoveCommand(
+  commandPath: string,
+  legacyCommandPaths: readonly string[] = []
+): string {
   const bridgePath = getBridgePathFromCommandPath(commandPath)
   return [
     'set -euo pipefail',
@@ -117,9 +120,9 @@ export function buildSafeRemoveCommand(commandPath: string, legacyCommandPath?: 
     buildSafeReplaceGuard(commandPath, MANAGED_MARKER),
     buildSafeReplaceGuard(bridgePath, BRIDGE_MANAGED_MARKER),
     `rm -f ${quoteShell(commandPath)} ${quoteShell(bridgePath)}`,
-    // Why: leaving a managed legacy `orca` behind lets startup reconciliation
+    // Why: leaving a managed legacy command behind lets startup reconciliation
     // re-adopt it as opt-in proof and silently undo this removal.
-    ...(legacyCommandPath ? [buildManagedLegacyRemoveCommand(quoteShell(legacyCommandPath))] : [])
+    ...legacyCommandPaths.map((path) => buildManagedLegacyRemoveCommand(quoteShell(path)))
   ].join('\n')
 }
 

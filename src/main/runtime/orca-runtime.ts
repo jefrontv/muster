@@ -477,7 +477,14 @@ import {
 } from '../../shared/claude-agent-teams-tmux-compat'
 import { joinWorktreeRelativePath } from './runtime-relative-paths'
 import { collectMemorySnapshot } from '../memory/collector'
-import { BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { addRemoteRepoFromPath } from '../ipc/repos'
+import { safelyRevealWindow } from '../window/focus-existing-window'
+import {
+  findDeepestWorkspaceForPath,
+  resolveLocalOpenPath,
+  type RuntimeWorkspaceOpenPathResult
+} from './workspace-open-path'
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
 import type { BrowserBackend } from '../browser/browser-backend'
 import { BrowserError } from '../browser/cdp-bridge'
@@ -600,7 +607,6 @@ import {
 } from '../project-runtime-git-options'
 import { resolveLocalProjectRuntimeForWorktreeId } from '../local-project-runtime-resolution'
 import type { ProjectExecutionRuntimeResolution } from '../../shared/project-execution-runtime'
-import { resolveTerminalOrchestrationCliCommand } from './orchestration/cli-command'
 import {
   getLocalWorktreePathAccess,
   removeLocalWorktreePath,
@@ -1616,7 +1622,7 @@ function createTerminalRevealWarning(handle: string, error?: unknown): string {
       : ''
   return [
     `Terminal ${handle} is running, but Muster could not make it discoverable.${reason}`,
-    `Run \`orca terminal focus --terminal ${handle}\` to reveal and focus it.`
+    `Run \`muster terminal focus --terminal ${handle}\` to reveal and focus it.`
   ].join(' ')
 }
 
@@ -2392,7 +2398,7 @@ class WorktreeIdRequiresFullPathError extends Error {
 
   constructor() {
     super(
-      'Worktree id selectors must use the full <repo-id>::<path> value. Use the id from `orca worktree list --json`, or target by path:<path>, branch:<branch>, or issue:<number>.'
+      'Worktree id selectors must use the full <repo-id>::<path> value. Use the id from `muster worktree list --json`, or target by path:<path>, branch:<branch>, or issue:<number>.'
     )
   }
 }
@@ -3016,7 +3022,7 @@ export class OrcaRuntimeService {
       getAgentStatusSnapshot?: () => AgentStatusIpcPayload[]
       // Why: codex-home paths for the Agent Session History scan must be sourced
       // here, not via the window-only registerCoreHandlers path — that path never
-      // runs under `orca serve`, so remote/SSH hosts would silently drop
+      // runs under `muster serve`, so remote/SSH hosts would silently drop
       // managed-Codex sessions. The runtime ctor runs in BOTH window and serve.
       getAdditionalAiVaultCodexHomePaths?: () => readonly string[]
       prepareAiVaultSessionResume?: (
@@ -3043,7 +3049,7 @@ export class OrcaRuntimeService {
     this.getAgentStatusSnapshotFn = deps?.getAgentStatusSnapshot ?? null
     // Why: configure the shared AiVault scan cache from a serve-mode-reachable
     // seam so the aiVault.listSessions RPC includes managed-Codex + WSL sessions
-    // even on headless `orca serve` hosts where registerCoreHandlers never runs.
+    // even on headless `muster serve` hosts where registerCoreHandlers never runs.
     if (deps?.getAdditionalAiVaultCodexHomePaths) {
       configureAiVaultSessionSources({
         getAdditionalCodexHomePaths: deps.getAdditionalAiVaultCodexHomePaths
@@ -3571,7 +3577,7 @@ export class OrcaRuntimeService {
       liveLeafCount: this.leaves.size,
       runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
       minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
-      // Why: headless orca serve cannot create/stream BrowserViews, so clients
+      // Why: headless muster serve cannot create/stream BrowserViews, so clients
       // must not treat browser panes as supported just because runtime RPC is up.
       capabilities,
       hostPlatform: process.platform,
@@ -9921,27 +9927,6 @@ export class OrcaRuntimeService {
       : undefined
   }
 
-  getTerminalOrchestrationCliCommand(handle: string): 'orca' | 'orca-ide' {
-    let pty: RuntimePtyWorktreeRecord | null = null
-    try {
-      const ptyId = this.resolveLeafForHandle(handle)?.ptyId
-      pty = ptyId ? (this.ptysById.get(ptyId) ?? null) : null
-    } catch {
-      return 'orca'
-    }
-    if (!pty) {
-      return 'orca'
-    }
-    return resolveTerminalOrchestrationCliCommand({
-      connectionId: pty.connectionId,
-      isWsl: pty.isWsl,
-      worktreeId: pty.worktreeId,
-      projectRuntime: this.store
-        ? resolveLocalProjectRuntimeForWorktreeId(this.requireStore(), pty.worktreeId)
-        : undefined
-    })
-  }
-
   hasRecentTerminalOutputPath(handle: string, pathText: string, absolutePath: string): boolean {
     // Why: safety net for any query path that never saw a mobile onReady —
     // lazily backfill so the answer matches pre-gate behavior.
@@ -15673,7 +15658,7 @@ export class OrcaRuntimeService {
 
   async addRepo(
     path: string,
-    kind: 'git' | 'folder' = 'git',
+    requestedKind: 'git' | 'folder' | 'auto' = 'git',
     executionHostId?: ExecutionHostId | null
   ): Promise<Repo> {
     if (!this.store) {
@@ -15681,9 +15666,10 @@ export class OrcaRuntimeService {
     }
     if (!isAbsolute(path)) {
       // Why: remote clients may run in a different cwd than the server. Require
-      // server-side repo paths to be explicit so `orca serve` cwd is irrelevant.
+      // server-side repo paths to be explicit so `muster serve` cwd is irrelevant.
       throw new Error('Project path must be an absolute path')
     }
+    const kind = requestedKind === 'auto' ? (isGitRepo(path) ? 'git' : 'folder') : requestedKind
     // Why: same LocalWP app/public remapping as addLocalRepoFromPath.
     const resolved = resolveLocalProjectImportPath(path, kind === 'folder' ? 'folder' : 'git')
     if (kind === 'git' && (resolved.kind !== 'git' || !isGitRepo(resolved.path))) {
@@ -17967,7 +17953,7 @@ export class OrcaRuntimeService {
     worktreeId: string
     activated: boolean
     /** Mobile-scoped slept-agent wake outcome. `unsupported-headless` means no
-     *  renderer holds the sleeping records (headless `orca serve`), so nothing
+     *  renderer holds the sleeping records (headless `muster serve`), so nothing
      *  woke — clients must not present the worktree's agents as resumed. */
     sleepingAgentWake: 'requested' | 'unsupported-headless' | 'not-applicable'
   }> {
@@ -18034,6 +18020,99 @@ export class OrcaRuntimeService {
       }
     }
     return { repoId: repo.id, worktreeId: worktree.id, activated: true, sleepingAgentWake }
+  }
+
+  async openWorkspacePath(args: {
+    path: string
+    callerWorktreeId?: string
+  }): Promise<RuntimeWorkspaceOpenPathResult> {
+    this.assertGraphReady()
+    const store = this.requireStore()
+    if (!isAbsolute(args.path)) {
+      throw new Error('Project path must be an absolute path')
+    }
+    // Why: a CLI inside an SSH workspace terminal names a path on that host, not this machine.
+    const callerRepo = args.callerWorktreeId
+      ? await this.resolveWorktreeSelector(`id:${args.callerWorktreeId}`)
+          .then((worktree) => store.getRepo(worktree.repoId) ?? null)
+          .catch(() => null)
+      : null
+    const connectionId = callerRepo?.connectionId ?? null
+    const hostId = connectionId ? toSshExecutionHostId(connectionId) : LOCAL_EXECUTION_HOST_ID
+    const targetPaths = connectionId ? [args.path] : [resolveLocalOpenPath(args.path), args.path]
+
+    const findWorkspace = async (repoId?: string) => {
+      const worktrees = (await this.listResolvedWorktrees()).filter((worktree) => {
+        const repo = store.getRepo(worktree.repoId)
+        return (
+          repo !== undefined &&
+          (repoId ? worktree.repoId === repoId : getRepoExecutionHostId(repo) === hostId)
+        )
+      })
+      return findDeepestWorkspaceForPath(worktrees, targetPaths) ?? (repoId ? worktrees[0] : null)
+    }
+
+    let outcome: RuntimeWorkspaceOpenPathResult['outcome'] = 'focused'
+    let worktree = await findWorkspace()
+    if (!worktree) {
+      outcome = 'imported'
+      const repo = connectionId
+        ? await this.addRemoteRepoForOpenPath(connectionId, args.path)
+        : await this.addRepo(targetPaths[0], 'auto')
+      worktree = await findWorkspace(repo.id)
+      if (!worktree) {
+        throw new Error(`Added ${repo.path}, but Muster found no workspace to open in it.`)
+      }
+    }
+    const repo = store.getRepo(worktree.repoId)
+    if (!repo) {
+      throw new Error('repo_not_found')
+    }
+    await this.activateManagedWorktree(`id:${worktree.id}`)
+    this.revealAuthoritativeWindow()
+    return {
+      outcome,
+      kind: repo.kind === 'folder' ? 'folder' : 'git',
+      repo: { id: repo.id, displayName: repo.displayName, path: repo.path },
+      worktree: { id: worktree.id, displayName: worktree.displayName, path: worktree.path }
+    }
+  }
+
+  private async addRemoteRepoForOpenPath(connectionId: string, remotePath: string): Promise<Repo> {
+    const store = this.requireStore()
+    const stat = await getSshFilesystemProvider(connectionId)
+      ?.stat(remotePath)
+      .catch(() => null)
+    if (stat && stat.type !== 'directory') {
+      throw new Error(`Not a folder: ${remotePath}`)
+    }
+    if (stat === null) {
+      throw new Error(`No such folder: ${remotePath}`)
+    }
+    let result = await addRemoteRepoFromPath(store, { connectionId, remotePath, kind: 'git' })
+    if ('error' in result && result.error.startsWith('Not a valid git repository')) {
+      result = await addRemoteRepoFromPath(store, { connectionId, remotePath, kind: 'folder' })
+    }
+    if ('error' in result) {
+      throw new Error(result.error)
+    }
+    this.invalidateResolvedWorktreeCache()
+    this.invalidateWorktreeScanCacheForRepo(result.repo.id)
+    this.notifyReposChanged()
+    return result.repo
+  }
+
+  private revealAuthoritativeWindow(): void {
+    const window = this.getAvailableAuthoritativeWindow()
+    if (!window) {
+      return
+    }
+    try {
+      app.focus({ steal: true })
+    } catch {
+      // Best-effort; the window reveal below may still bring Muster forward.
+    }
+    safelyRevealWindow(window)
   }
 
   private async buildStartupForDraft(
@@ -19394,7 +19473,7 @@ export class OrcaRuntimeService {
       try {
         // Why: automation startup must not depend on a renderer TerminalPane
         // mounting. Runtime-spawned PTYs run immediately and the UI adopts the
-        // session later, matching `orca terminal create` background semantics.
+        // session later, matching `muster terminal create` background semantics.
         const startupTrustAgent = effectiveDraftPaste?.agent ?? effectiveCreatedWithAgent
         if (startupTrustAgent) {
           this.markLocalWorkspaceTrustedForAgent(startupTrustAgent, worktreePath)
@@ -21955,7 +22034,7 @@ export class OrcaRuntimeService {
       worktreeSelector !== undefined &&
       (Boolean(opts.agentSessionClaim) ||
         (!requiresRendererFocus && opts.rendererBacked !== true) ||
-        // Why: `orca serve` exposes the local runtime without a renderer
+        // Why: `muster serve` exposes the local runtime without a renderer
         // window. Renderer-backed and focus-requested creates are preferred on
         // the renderer, but with no window a background spawn is the only
         // usable path — otherwise getAuthoritativeWindow() below throws and the
@@ -22774,7 +22853,7 @@ export class OrcaRuntimeService {
     }
     // Why: mobile may be iOS while the shell host is Windows/macOS/Linux or SSH Linux; quote for the host shell.
     const platform = this.getAgentLaunchPlatformForWorkspace(workspace)
-    // Why: SSH runs the CLI through the relay shim (plain `orca`), so the Linux-only `orca-ide` rename must not apply.
+    // Why: SSH runs the CLI through the relay shim (plain `muster`), so local platform command overrides must not apply.
     const isRemote = workspace.repo ? repoIsRemote(workspace.repo) : repoIsRemote(workspace)
     const queuedShell = resolveLocalWindowsAgentStartupShell({
       platform,
@@ -28451,7 +28530,7 @@ export class OrcaRuntimeService {
             'Linear may have applied the state change, but Muster could not confirm it.',
             {
               nextSteps: [
-                `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the current state before retrying.`
+                `Run \`muster linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the current state before retrying.`
               ],
               ...(cause ? { cause } : {})
             }
@@ -28499,7 +28578,7 @@ export class OrcaRuntimeService {
             'Linear may have applied the relation change, but Muster could not confirm it.',
             {
               nextSteps: [
-                `Run \`orca linear issue ${target.issue.identifier} --relations --workspace ${target.workspaceId} --json\` before retrying.`
+                `Run \`muster linear issue ${target.issue.identifier} --relations --workspace ${target.workspaceId} --json\` before retrying.`
               ],
               ...(cause ? { cause } : {})
             }
@@ -28578,7 +28657,7 @@ export class OrcaRuntimeService {
               'Linear may have applied the issue save, but Muster could not confirm it.',
               {
                 nextSteps: [
-                  `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` before retrying.`
+                  `Run \`muster linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` before retrying.`
                 ],
                 ...(cause ? { cause } : {})
               }
@@ -28627,7 +28706,7 @@ export class OrcaRuntimeService {
             'Linear may have applied the task update, but Muster could not confirm it.',
             {
               nextSteps: [
-                `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the updated field before retrying.`
+                `Run \`muster linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the updated field before retrying.`
               ],
               ...(cause ? { cause } : {})
             }
@@ -29290,7 +29369,7 @@ export class OrcaRuntimeService {
             name: project.name,
             teams: project.teams
           })),
-          nextSteps: ['Run `orca linear project list --query <name> --json` and retry by id.']
+          nextSteps: ['Run `muster linear project list --query <name> --json` and retry by id.']
         }
       )
     }
@@ -29303,7 +29382,7 @@ export class OrcaRuntimeService {
         name: project.name,
         teams: project.teams
       })),
-      nextSteps: ['Run `orca linear project list --query <name> --json` and retry by id.']
+      nextSteps: ['Run `muster linear project list --query <name> --json` and retry by id.']
     })
   }
 
@@ -29429,7 +29508,7 @@ export class OrcaRuntimeService {
           : `Multiple labels exactly matched "${input}".`,
         {
           labels: labels.map((label) => ({ id: label.id, name: label.name })),
-          nextSteps: ['Run `orca linear team labels --team <key-or-id> --json` and retry by id.']
+          nextSteps: ['Run `muster linear team labels --team <key-or-id> --json` and retry by id.']
         }
       )
     })
@@ -29565,7 +29644,9 @@ export class OrcaRuntimeService {
           'linear_invalid_parent',
           'The reply target is not a comment on this issue.',
           {
-            nextSteps: ['Run `orca linear issue <id> --comments --json` to list valid comment ids.']
+            nextSteps: [
+              'Run `muster linear issue <id> --comments --json` to list valid comment ids.'
+            ]
           }
         )
       }
@@ -29946,7 +30027,7 @@ export class OrcaRuntimeService {
     }
     if (!teamInput) {
       throw linearError('linear_team_required', 'Pass --team or create under a parent issue.', {
-        nextSteps: ['Run `orca linear create --team <key> ...` or use --parent-current.']
+        nextSteps: ['Run `muster linear create --team <key> ...` or use --parent-current.']
       })
     }
 
@@ -30132,7 +30213,7 @@ export class OrcaRuntimeService {
     const pinned =
       verb === 'create'
         ? [
-            'orca linear create',
+            'muster linear create',
             `--workspace=${this.commandToken(workspaceId, 'WORKSPACE_ID')}`,
             `--write-id=${this.commandToken(writeId, 'WRITE_ID')}`,
             '--title TITLE_HERE',
@@ -30146,7 +30227,7 @@ export class OrcaRuntimeService {
             ).concat(this.linearCreateFieldRetryTokens(extra.createFields))
           ].join(' ')
         : [
-            `orca linear ${verb === 'attach' ? 'attach' : 'comment add'}`,
+            `muster linear ${verb === 'attach' ? 'attach' : 'comment add'}`,
             this.commandToken(target?.issue.identifier ?? '', 'ISSUE_ID'),
             `--workspace=${this.commandToken(workspaceId, 'WORKSPACE_ID')}`,
             `--write-id=${this.commandToken(writeId, 'WRITE_ID')}`,

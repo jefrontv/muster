@@ -1365,24 +1365,8 @@ describe('orchestration RPC methods', () => {
 
       expect(send).toHaveBeenCalledWith(
         'term_a',
-        expect.stringContaining('orca-dev orchestration send')
+        expect.stringContaining('muster-dev orchestration send')
       )
-    })
-
-    it('uses the target pane CLI command for the returned preamble', async () => {
-      setup()
-      const task = db.createTask({ spec: 'work' })
-      vi.spyOn(runtime, 'getTerminalOrchestrationCliCommand').mockReturnValue('orca-ide')
-
-      const result = (await call('orchestration.dispatch', {
-        task: task.id,
-        to: 'term_wsl',
-        returnPreamble: true
-      })) as { preamble: string }
-
-      expect(runtime.getTerminalOrchestrationCliCommand).toHaveBeenCalledWith('term_wsl')
-      expect(result.preamble).toContain('orca-ide orchestration send')
-      expect(result.preamble).not.toMatch(/(^|\s)orca orchestration/m)
     })
 
     it('injects preamble through the agent prompt path instead of raw terminal send', async () => {

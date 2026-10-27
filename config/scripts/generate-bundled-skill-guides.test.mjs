@@ -138,12 +138,11 @@ describe('bundled skill guide generator', () => {
       const source = await readFile(path.join(projectDir, 'skill-guides', `${name}.md`), 'utf8')
 
       expect(source).toContain('ORCA_CLI_COMMAND')
-      expect(source).toContain('orca-dev')
-      expect(source).toContain('orca-ide')
+      expect(source).toContain('muster-dev')
       expect(source).toContain('PowerShell')
       expect(source).toContain('cmd.exe')
       expect(source).toMatch(/^ORCA .+--json$/mu)
-      // Why: bare command lines can launch GNOME Orca, while shell variables make
+      // Why: the ORCA placeholder keeps one guide valid across shells; shell variables make
       // the same guide unusable from PowerShell and cmd.exe.
       expect(source).not.toMatch(/^orca /mu)
       expect(source).not.toMatch(/\$ORCA(?:_|\b)/u)

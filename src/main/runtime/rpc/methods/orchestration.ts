@@ -468,10 +468,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
           taskSpec: task.spec,
           coordinatorHandle: params.from ?? 'coordinator',
           workerHandle: params.to ?? 'worker',
-          devMode: params.devMode,
-          ...(params.to
-            ? { cliCommand: runtime.getTerminalOrchestrationCliCommand(params.to) }
-            : {})
+          devMode: params.devMode
         })
         return { dispatch: null, injected: false, dryRun: true, preamble }
       }
@@ -510,8 +507,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
         taskSpec: task.spec,
         coordinatorHandle: params.from ?? 'coordinator',
         workerHandle: to,
-        devMode: params.devMode,
-        cliCommand: runtime.getTerminalOrchestrationCliCommand(to)
+        devMode: params.devMode
       })
 
       let injected = false
@@ -557,8 +553,7 @@ export const ORCHESTRATION_METHODS: RpcMethod[] = [
           taskSpec: task.spec,
           coordinatorHandle: params.from ?? 'coordinator',
           workerHandle,
-          devMode: params.devMode,
-          ...(ctx ? { cliCommand: runtime.getTerminalOrchestrationCliCommand(workerHandle) } : {})
+          devMode: params.devMode
         })
         return { dispatch: ctx ?? null, preamble }
       }

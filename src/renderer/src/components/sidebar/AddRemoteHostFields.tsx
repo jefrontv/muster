@@ -176,7 +176,7 @@ export function RemoteServerFields({
           <span className="font-mono">
             {translate(
               'auto.components.sidebar.AddRemoteHostDialog.pairingCommand',
-              'orca serve --pairing-address <host>'
+              'muster serve --pairing-address <host>'
             )}
           </span>{' '}
           {translate(

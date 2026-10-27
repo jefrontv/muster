@@ -184,7 +184,7 @@ export async function runOnboardingFeatureSetup(
     }
   }
 
-  // Why: shell PATH registration (`orca` in /usr/local/bin) was gutted — skip
+  // Why: shell PATH registration (`muster` in /usr/local/bin) was gutted — skip
   // install prompts so onboarding never fails on a missing launcher binary.
   skillCommandsCopied = await copySkillCommands(selection, deps, warnings)
 

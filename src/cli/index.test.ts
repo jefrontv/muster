@@ -11,7 +11,9 @@ const {
   getDefaultUserDataPathMock,
   addEnvironmentFromPairingCodeMock,
   listEnvironmentsMock,
-  spawnMock
+  spawnMock,
+  openOrcaMock,
+  getCliStatusMock
 } = vi.hoisted(() => ({
   callMock: vi.fn(),
   runtimeClientConstructorMock: vi.fn(),
@@ -19,15 +21,17 @@ const {
   getDefaultUserDataPathMock: vi.fn(() => '/tmp/orca-user-data'),
   addEnvironmentFromPairingCodeMock: vi.fn(),
   listEnvironmentsMock: vi.fn(),
-  spawnMock: vi.fn()
+  spawnMock: vi.fn(),
+  openOrcaMock: vi.fn(),
+  getCliStatusMock: vi.fn()
 }))
 
 vi.mock('./runtime-client', () => {
   class RuntimeClient {
     readonly isRemote: boolean
     call = callMock
-    getCliStatus = vi.fn()
-    openOrca = vi.fn()
+    getCliStatus = getCliStatusMock
+    openOrca = openOrcaMock
 
     constructor(
       _userDataPath?: string,
@@ -226,6 +230,66 @@ describe('command aliases dispatch to the canonical handler', () => {
   })
 })
 
+describe('muster open <path>', () => {
+  let logSpy: ReturnType<typeof vi.spyOn>
+  const previousWorktreeId = process.env.ORCA_WORKTREE_ID
+
+  beforeEach(() => {
+    callMock.mockReset()
+    openOrcaMock.mockReset().mockResolvedValue(okFixture('req_open', { app: {} }))
+    getCliStatusMock.mockReset().mockResolvedValue(
+      okFixture('req_status', {
+        app: { desktopWindowStatus: 'available' },
+        graph: { state: 'ready' }
+      })
+    )
+    callMock.mockResolvedValue(
+      okFixture('req_path', {
+        outcome: 'focused',
+        kind: 'git',
+        repo: { id: 'r1', displayName: 'site', path: '/tmp/site' },
+        worktree: { id: 'r1::/tmp/site', displayName: 'site', path: '/tmp/site' }
+      })
+    )
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    delete process.env.ORCA_WORKTREE_ID
+  })
+
+  afterEach(() => {
+    logSpy.mockRestore()
+    if (previousWorktreeId === undefined) {
+      delete process.env.ORCA_WORKTREE_ID
+    } else {
+      process.env.ORCA_WORKTREE_ID = previousWorktreeId
+    }
+    process.exitCode = 0
+  })
+
+  it('treats `muster .` as open with the cwd and passes the calling worktree', async () => {
+    process.env.ORCA_WORKTREE_ID = 'r1::/tmp/site'
+
+    await main(['.'], '/tmp/site')
+
+    expect(callMock).toHaveBeenCalledWith('workspace.openPath', {
+      path: path.resolve('/tmp/site'),
+      callerWorktreeId: 'r1::/tmp/site'
+    })
+    expect(logSpy.mock.calls.flat().join('\n')).toContain('Opened site')
+  })
+
+  it('does not relaunch Muster for a path when a window is already open', async () => {
+    await main(['.'], '/tmp/site')
+    expect(openOrcaMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps plain `muster open` as launch only', async () => {
+    await main(['open'], '/tmp/site')
+
+    expect(openOrcaMock).toHaveBeenCalled()
+    expect(callMock).not.toHaveBeenCalled()
+  })
+})
+
 describe('unknown command surfaces a suggestion', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>
 
@@ -245,7 +309,7 @@ describe('unknown command surfaces a suggestion', () => {
     expect(process.exitCode).toBe(1)
     const stderr = errorSpy.mock.calls.map((call) => String(call[0])).join('\n')
     expect(stderr).toContain('Unknown command: worktree remov')
-    expect(stderr).toContain('orca worktree')
+    expect(stderr).toContain('muster worktree')
   })
 
   it('reports a mistyped pre-command flag without swallowing the command', async () => {
@@ -304,7 +368,7 @@ describe('unknown help command surfaces a suggestion', () => {
     await main(argv, '/tmp/repo')
 
     expect(process.exitCode).toBe(1)
-    expect(logSpy.mock.calls.flat().join('\n')).toContain('Did you mean: orca worktree')
+    expect(logSpy.mock.calls.flat().join('\n')).toContain('Did you mean: muster worktree')
     logSpy.mockRestore()
     process.exitCode = 0
   })
@@ -342,7 +406,7 @@ describe('orca root help', () => {
       '`worktree create --agent` creates a new checkout with an agent.'
     )
     expect(logSpy.mock.calls[0][0]).toContain(
-      'orca terminal create --worktree active --command "codex"'
+      'muster terminal create --worktree active --command "codex"'
     )
     expect(callMock).not.toHaveBeenCalled()
   })
@@ -362,7 +426,7 @@ describe('orca root help', () => {
     await main(['linear', '--help'], '/tmp/repo')
 
     const groupHelp = String(logSpy.mock.calls[0][0])
-    expect(groupHelp).toContain('orca linear')
+    expect(groupHelp).toContain('muster linear')
     expect(groupHelp).toContain('issue')
     expect(groupHelp).toContain('search')
     expect(groupHelp).not.toContain('--comments')
@@ -372,7 +436,7 @@ describe('orca root help', () => {
     await main(['linear', 'issue', '--help'], '/tmp/repo')
 
     const issueHelp = String(logSpy.mock.calls[0][0])
-    expect(issueHelp).toContain('orca linear issue [<id>]')
+    expect(issueHelp).toContain('muster linear issue [<id>]')
     expect(issueHelp).toContain('--comments             Include threaded Linear comments')
     expect(issueHelp).toContain('--attachments          Include attachment metadata and URLs')
     expect(issueHelp).toContain('--activity             Include issue field-change history')
@@ -383,7 +447,7 @@ describe('orca root help', () => {
     await main(['linear', 'search', '--help'], '/tmp/repo')
 
     const searchHelp = String(logSpy.mock.calls[0][0])
-    expect(searchHelp).toContain('orca linear search <query>')
+    expect(searchHelp).toContain('muster linear search <query>')
     expect(searchHelp).toContain('--workspace <id|all>  Connected Linear workspace id, or all')
     expect(searchHelp).toContain('--query <text>        Text to search across Linear issues')
 
@@ -474,7 +538,7 @@ describe('orca root help', () => {
 
     expect(String(logSpy.mock.calls[0][0])).toContain('This creates a new checkout.')
     expect(String(logSpy.mock.calls[0][0])).toContain(
-      'orca terminal create --worktree active --command "codex"'
+      'muster terminal create --worktree active --command "codex"'
     )
 
     logSpy.mockClear()
@@ -483,7 +547,7 @@ describe('orca root help', () => {
     const terminalHelp = String(logSpy.mock.calls[0][0])
     expect(terminalHelp).toContain('Use this, not worktree create')
     expect(terminalHelp).toContain(
-      'orca terminal create --worktree active --command "codex" --json'
+      'muster terminal create --worktree active --command "codex" --json'
     )
     expect(callMock).not.toHaveBeenCalled()
   })
@@ -3551,7 +3615,7 @@ describe('orca cli worktree awareness', () => {
 
   it('passes dev mode to injected orchestration dispatches', async () => {
     process.env.ORCA_TERMINAL_HANDLE = 'term_sender'
-    process.env.ORCA_USER_DATA_PATH = '/tmp/orca-dev'
+    process.env.ORCA_USER_DATA_PATH = '/tmp/muster-dev'
     callMock.mockResolvedValueOnce({
       id: 'req_dispatch',
       ok: true,

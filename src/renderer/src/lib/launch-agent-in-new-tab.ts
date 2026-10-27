@@ -95,7 +95,7 @@ export function launchAgentInNewTab(args: LaunchAgentInNewTabArgs): LaunchAgentI
           repo.connectionId ? undefined : getLocalProjectExecutionRuntimeContext(store, worktreeId)
         )
       : CLIENT_PLATFORM)
-  // Why: SSH remotes deploy the shim as plain `orca`, so skip the Linux-only `orca-ide` rename for remote launches.
+  // Why: SSH remotes deploy the shim as plain `muster`, so skip local platform command overrides for remote launches.
   const isRemote = repo ? repoIsRemote(repo) : false
   const queuedShell = resolveLocalWindowsAgentStartupShell({
     platform: resolvedLaunchPlatform,

@@ -3,12 +3,14 @@ import type { GlobalSettings } from '../../../../shared/types'
 import { useAppStore } from '../../store'
 import { Separator } from '../ui/separator'
 import { GeneralEditorSettingsSection } from './GeneralEditorSettingsSection'
+import { GeneralShellCommandSection } from './GeneralShellCommandSection'
 import { GeneralUpdateSettingsSection } from './GeneralUpdateSettingsSection'
 import { GeneralWorkspaceSettingsSection } from './GeneralWorkspaceSettingsSection'
 import {
   getGeneralEditorSearchEntries,
   getGeneralNavigationSearchEntries,
   getGeneralPaneSearchEntries,
+  getGeneralShellCommandSearchEntries,
   getGeneralUpdateSearchEntries,
   getGeneralWorkspaceSearchEntries
 } from './general-search'
@@ -166,6 +168,9 @@ export function GeneralPane({
         fontSuggestions={fontSuggestions}
         onRequestFontSuggestions={onRequestFontSuggestions}
       />
+    ) : null,
+    matchesSettingsSearch(searchQuery, getGeneralShellCommandSearchEntries()) ? (
+      <GeneralShellCommandSection key="shell-command" />
     ) : null,
     matchesSettingsSearch(searchQuery, getGeneralUpdateSearchEntries()) ? (
       <GeneralUpdateSettingsSection key="updates" />

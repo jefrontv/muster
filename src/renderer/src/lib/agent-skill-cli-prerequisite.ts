@@ -15,7 +15,7 @@ export const CLI_PREREQUISITE_REGISTRATION_TOAST_DESCRIPTION = ''
 function syntheticCliAvailableStatus(): CliInstallStatus {
   return {
     platform: process.platform,
-    commandName: 'orca',
+    commandName: 'muster',
     commandPath: null,
     pathDirectory: null,
     pathConfigured: true,
