@@ -25,6 +25,7 @@ import {
 } from './PlanAnnotationChrome'
 import { PlanReviewEditor } from './PlanReviewEditor'
 import { usePlanReviewQueue } from './use-plan-review-queue'
+import { restoreFocusAfterReview } from './plan-review-focus-return'
 import { unifiedPlanDiff } from './plan-annotation-diff'
 import {
   clearDraft,
@@ -160,8 +161,13 @@ function PlanReviewSession({
             setShowTableOfContents(false)
           }
         }}
+        data-plan-review-dialog=""
         // Focusing the first header button on open would pop its tooltip over the toolbar.
         onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          restoreFocusAfterReview()
+        }}
         // A click outside must not end the review either.
         onInteractOutside={(event) => event.preventDefault()}
         // Readable width is a centred window sized to the plan; full width takes the whole app for

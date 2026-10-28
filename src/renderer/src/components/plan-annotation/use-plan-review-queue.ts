@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { PlanAnnotationRequest } from '../../../../shared/plan-annotation-types'
+import { rememberFocusBeforeReview } from './plan-review-focus-return'
 
 export function usePlanReviewQueue(): {
   current: PlanAnnotationRequest | null
@@ -27,7 +28,11 @@ export function usePlanReviewQueue(): {
   useEffect(() => window.api.planAnnotation.onQueued((count) => setQueued(count)), [])
 
   useEffect(
-    () => window.api.planAnnotation.onRequest((request) => setQueue((q) => [...q, request])),
+    () =>
+      window.api.planAnnotation.onRequest((request) => {
+        rememberFocusBeforeReview()
+        setQueue((q) => [...q, request])
+      }),
     []
   )
 
@@ -47,6 +52,9 @@ export function usePlanReviewQueue(): {
     void window.api.planAnnotation
       .listPending()
       .then((pending) => {
+        if (pending.length > 0) {
+          rememberFocusBeforeReview()
+        }
         setQueue((q) => [
           ...q,
           ...pending.filter((p) => !q.some((entry) => entry.requestId === p.requestId))
