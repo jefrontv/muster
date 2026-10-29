@@ -16,7 +16,9 @@ function settings(overrides = {}) {
 
 describe('resolveLeftSidebarStyleVariables', () => {
   it('leaves the default sidebar token surface untouched', () => {
-    expect(resolveLeftSidebarStyleVariables(settings(), true)).toBeUndefined()
+    expect(
+      resolveLeftSidebarStyleVariables(settings({ leftSidebarAppearanceMode: 'default' }), true)
+    ).toBeUndefined()
   })
 
   it('matches terminal background, foreground, and scoped text tokens', () => {

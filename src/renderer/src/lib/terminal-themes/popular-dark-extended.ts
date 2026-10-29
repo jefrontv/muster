@@ -7,7 +7,8 @@ export const POPULAR_DARK_EXTENDED_TERMINAL_THEMES: TerminalThemeMap = {
     foreground: '#eeece2',
     cursor: '#d97757',
     cursorAccent: '#262624',
-    selectionBackground: '#4a453d',
+    // Why this light: selected text must stay visible over Claude's #3e4451 instruction blocks.
+    selectionBackground: '#7a7265',
     selectionForeground: '#faf9f5',
     black: '#1f1e1d',
     red: '#d06a57',

@@ -410,7 +410,7 @@ describe('applyTerminalAppearance theme assignment', () => {
   // gate by the composed theme's background luminance (either theme slot can hold either kind of theme).
   it('keeps xterm contrast correction on light themes', () => {
     const pane = makePane(1)
-    const settings = getDefaultSettings('/tmp')
+    const settings = { ...getDefaultSettings('/tmp'), terminalUseSeparateLightTheme: true }
 
     apply(pane, { ...settings, theme: 'light' })
 
@@ -430,7 +430,7 @@ describe('applyTerminalAppearance theme assignment', () => {
 
   it('re-gates contrast correction when the theme flips live', () => {
     const pane = makePane(1)
-    const settings = getDefaultSettings('/tmp')
+    const settings = { ...getDefaultSettings('/tmp'), terminalUseSeparateLightTheme: true }
 
     apply(pane, { ...settings, theme: 'light' })
     expect(pane.terminal.options.minimumContrastRatio).toBe(4.5)

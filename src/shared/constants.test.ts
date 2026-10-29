@@ -32,13 +32,15 @@ describe('getDefaultSettings', () => {
     expect(getDefaultSettings('/tmp').autoRenameBranchFromWorkDefaultedOn).toBe(true)
   })
 
-  it('uses a block terminal cursor by default for new settings', () => {
-    expect(getDefaultSettings('/tmp').terminalCursorStyle).toBe('block')
+  it('uses a bar terminal cursor in the terminal text colour by default for new settings', () => {
+    expect(getDefaultSettings('/tmp').terminalCursorStyle).toBe('bar')
+    expect(getDefaultSettings('/tmp').terminalCursorUseThemeColor).toBe(false)
     expect(getDefaultSettings('/tmp').terminalCursorStyleDefaultedToBlock).toBe(true)
   })
 
-  it('enables separate light terminal theme by default', () => {
-    expect(getDefaultSettings('/tmp').terminalUseSeparateLightTheme).toBe(true)
+  it('keeps Claude Dark in light mode by default', () => {
+    expect(getDefaultSettings('/tmp').terminalThemeDark).toBe('Claude Dark')
+    expect(getDefaultSettings('/tmp').terminalUseSeparateLightTheme).toBe(false)
   })
 
   it('keeps inactive terminal panes readable by default', () => {

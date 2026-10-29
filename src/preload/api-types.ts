@@ -2882,6 +2882,8 @@ export type PreloadApi = {
       mode?: 'install' | 'setup'
     }) => Promise<SiteResult<{ command: string; code: number }>>
     cancelCommand: () => Promise<SiteResult<null>>
+    /** Copies the hub's auto-update switch to Claude Code for these entries; no ids means the master switch. */
+    syncClaudeAutoUpdate: (args: { ids?: string[] }) => Promise<SiteResult<null>>
     /** Rewrites the entries this extension already has, after its stored values changed. */
     refreshHarnesses: (args: { id: string }) => Promise<SiteResult<ExtensionInventory>>
     setEnabled: (args: { id: string; enabled: boolean }) => Promise<SiteResult<ExtensionInventory>>

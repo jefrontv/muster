@@ -40,7 +40,10 @@ export function useExtensionPreferences(): ExtensionPreferences {
   // from these settings, so re-reading before the write lands would show the previous answer.
   const setMaster = useCallback(
     async (enabled: boolean) => {
-      await updateSettings({ extensionAutoUpdate: setExtensionAutoUpdateMaster(autoUpdate, enabled) })
+      await updateSettings({
+        extensionAutoUpdate: setExtensionAutoUpdateMaster(autoUpdate, enabled)
+      })
+      await window.api.extensions.syncClaudeAutoUpdate({}).catch(() => undefined)
       await refreshExtensionInventory(false)
     },
     [autoUpdate, updateSettings]
@@ -51,6 +54,7 @@ export function useExtensionPreferences(): ExtensionPreferences {
       await updateSettings({
         extensionAutoUpdate: setExtensionAutoUpdateEntry(autoUpdate, id, enabled)
       })
+      await window.api.extensions.syncClaudeAutoUpdate({ ids: [id] }).catch(() => undefined)
       await refreshExtensionInventory(false)
     },
     [autoUpdate, updateSettings]

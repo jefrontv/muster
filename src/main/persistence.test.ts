@@ -713,7 +713,7 @@ describe('Store', () => {
     expect(settings.localAccountRuntime).toBe('auto')
     expect(settings.localAccountRuntimeDefaultedToAutoForAllUsers).toBe(true)
     expect(settings.terminalTuiScrollSensitivityDefaultedToOne).toBe(true)
-    expect(settings.terminalUseSeparateLightTheme).toBe(true)
+    expect(settings.terminalUseSeparateLightTheme).toBe(false)
     expect(settings.rightSidebarOpenByDefault).toBe(true)
     expect(settings.showTasksButton).toBe(true)
     expect(settings.showAutomationsButton).toBe(true)

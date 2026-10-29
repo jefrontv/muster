@@ -10,6 +10,7 @@ import {
   recordRendererCrashBreadcrumb
 } from './lib/crash-diagnostics'
 import { applyDocumentTheme } from './lib/document-theme'
+import { preloadBundledTerminalFont } from './lib/bundled-terminal-font'
 import { shouldEnableReactGrab } from './lib/react-grab-dev-gate'
 import { I18nProvider } from './i18n/I18nProvider'
 import { translate } from './i18n/i18n'
@@ -53,11 +54,13 @@ function RendererRoot(): React.JSX.Element {
   )
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <I18nProvider>
-      <RendererRoot />
-    </I18nProvider>
-  </StrictMode>
-)
-recordRendererCrashBreadcrumb('renderer_bootstrap_rendered')
+void preloadBundledTerminalFont().then(() => {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <I18nProvider>
+        <RendererRoot />
+      </I18nProvider>
+    </StrictMode>
+  )
+  recordRendererCrashBreadcrumb('renderer_bootstrap_rendered')
+})

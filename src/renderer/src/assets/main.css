@@ -16,8 +16,33 @@
   font-display: swap;
 }
 
+/* Bundled default terminal font; three static weights cover the 500 default and 700 bold. */
 @font-face {
-  font-family: 'Orca Nerd Font Symbols';
+  font-family: 'GeistMono Nerd Font Mono';
+  src: url('./fonts/GeistMonoNerdFontMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'GeistMono Nerd Font Mono';
+  src: url('./fonts/GeistMonoNerdFontMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'GeistMono Nerd Font Mono';
+  src: url('./fonts/GeistMonoNerdFontMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Muster Nerd Font Symbols';
   src: url('./fonts/SymbolsNerdFontMono-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;

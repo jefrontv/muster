@@ -12,6 +12,7 @@
 // instead. Writing them here left the renderer's copy stale, so a switch the user flipped snapped
 // back and a dismissed card never went away.
 
+import { syncClaudeMarketplaceAutoUpdates } from '../extensions/claude-marketplace-auto-update'
 import { ipcMain } from 'electron'
 import type { Store } from '../persistence'
 import type { SiteResult } from '../../shared/site-types'
@@ -53,7 +54,8 @@ const CHANNELS = [
   'extensions:uninstall',
   'extensions:removeSkill',
   'extensions:refreshHarnesses',
-  'extensions:setAgentRule'
+  'extensions:setAgentRule',
+  'extensions:syncClaudeAutoUpdate'
 ] as const
 
 function failure<T>(error: unknown): SiteResult<T> {
@@ -242,6 +244,23 @@ export function registerExtensionHandlers(store: Store): void {
           })
         }
         return { ok: true, value: await readExtensionInventory(store, { force: false }) }
+      } catch (error) {
+        return failure(error)
+      }
+    }
+  )
+
+  // Why no values in the payload: main reads the saved switch state, so the renderer only says which changed.
+  ipcMain.handle(
+    'extensions:syncClaudeAutoUpdate',
+    async (_event, args?: unknown): Promise<SiteResult<null>> => {
+      try {
+        const ids = (args as { ids?: unknown } | undefined)?.ids
+        const scope = Array.isArray(ids)
+          ? ids.filter((id): id is string => typeof id === 'string')
+          : 'master'
+        await syncClaudeMarketplaceAutoUpdates(store, scope)
+        return { ok: true, value: null }
       } catch (error) {
         return failure(error)
       }

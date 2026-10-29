@@ -17,6 +17,7 @@ import {
   saveStoredWebRuntimeEnvironment
 } from './web-runtime-environment'
 import { installWebPreloadApi } from './web-preload-api'
+import { preloadBundledTerminalFont } from '../lib/bundled-terminal-font'
 import { I18nProvider } from '../i18n/I18nProvider'
 import { translate } from '../i18n/i18n'
 
@@ -89,8 +90,10 @@ function WebRootBoundary(): React.JSX.Element {
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <I18nProvider>
-    <WebRootBoundary />
-  </I18nProvider>
-)
+void preloadBundledTerminalFont().then(() => {
+  ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+    <I18nProvider>
+      <WebRootBoundary />
+    </I18nProvider>
+  )
+})

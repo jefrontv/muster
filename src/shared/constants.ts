@@ -49,13 +49,16 @@ export {
 
 export const SCHEMA_VERSION = 1
 export const DEFAULT_APP_FONT_FAMILY = 'Geist'
+// Bundled in the renderer (assets/fonts), so it is the same on every platform.
+export const DEFAULT_TERMINAL_FONT_FAMILY = 'GeistMono Nerd Font Mono'
+export const DEFAULT_TERMINAL_THEME_DARK = 'Claude Dark'
 // Sleeping workspaces are shown by default so a cold start lists every known workspace.
 // Both forms exist because profiles persisted the negative key first; they must always
 // stay each other's inverse. Users who want a tight "active only" list can enable Hide sleeping.
 export const DEFAULT_SHOW_SLEEPING_WORKSPACES = true
 export const DEFAULT_HIDE_SLEEPING_WORKSPACES = false
 export const DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE: AgentActivityDisplayMode = 'compact'
-export const DEFAULT_TERMINAL_INACTIVE_PANE_OPACITY = 0.9
+export const DEFAULT_TERMINAL_INACTIVE_PANE_OPACITY = 0.8
 
 export function normalizeAgentActivityDisplayMode(value: unknown): AgentActivityDisplayMode {
   return value === 'full' || value === 'compact' ? value : DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE
@@ -83,18 +86,6 @@ export const BROWSER_FAMILY_LABELS: Record<string, string> = {
   firefox: 'Firefox',
   safari: 'Safari',
   manual: 'File'
-}
-
-// Why: only the initial value shown in Settings; buildFontFamily() adds the real cross-platform fallback chain.
-function defaultTerminalFontFamily(): string {
-  const platform = typeof process !== 'undefined' ? process.platform : ''
-  if (platform === 'win32') {
-    return 'Cascadia Mono'
-  }
-  if (platform === 'linux') {
-    return 'DejaVu Sans Mono'
-  }
-  return 'SF Mono' // macOS default
 }
 
 export const getDefaultPrimarySelectionMiddleClickPaste = (
@@ -198,7 +189,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     branchPrefixCustom: '',
     enableGitHubAttribution: false,
     theme: 'system',
-    leftSidebarAppearanceMode: 'default',
+    leftSidebarAppearanceMode: 'match-terminal',
     leftSidebarTintColor: DEFAULT_LEFT_SIDEBAR_TINT_COLOR,
     leftSidebarTintOpacity: DEFAULT_LEFT_SIDEBAR_TINT_OPACITY,
     uiLanguage: UI_LANGUAGE_SYSTEM,
@@ -218,7 +209,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     primarySelectionMiddleClickPasteDefaultedForTerminalDefaults:
       getDefaultPrimarySelectionMiddleClickPaste(),
     terminalFontSize: 14,
-    terminalFontFamily: defaultTerminalFontFamily(),
+    terminalFontFamily: DEFAULT_TERMINAL_FONT_FAMILY,
     terminalFontWeight: DEFAULT_TERMINAL_FONT_WEIGHT,
     terminalLineHeight: 1,
     terminalScrollSensitivity: 1.15,
@@ -229,12 +220,14 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     terminalGpuAcceleration: 'auto',
     // Why 'auto': enable ligatures only for known ligature fonts, never forced. Resolver in shared/terminal-ligatures.ts.
     terminalLigatures: 'auto',
-    terminalCursorStyle: 'block',
+    terminalCursorStyle: 'bar',
     terminalCursorStyleDefaultedToBlock: true,
     terminalCursorBlink: true,
-    terminalThemeDark: 'Ghostty Default Style Dark',
+    // Why off: reverse video keeps the cursor the text colour, matching the shipped Claude Dark look.
+    terminalCursorUseThemeColor: false,
+    terminalThemeDark: DEFAULT_TERMINAL_THEME_DARK,
     terminalDividerColorDark: '#3f3f46',
-    terminalUseSeparateLightTheme: true,
+    terminalUseSeparateLightTheme: false,
     terminalThemeLight: 'Builtin Tango Light',
     terminalCustomThemes: [],
     terminalDividerColorLight: '#d4d4d8',

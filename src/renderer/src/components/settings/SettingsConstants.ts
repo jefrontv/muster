@@ -1,5 +1,9 @@
 import type { OrcaHooks } from '../../../../shared/types'
-import { DEFAULT_APP_FONT_FAMILY, getDefaultRepoHookSettings } from '../../../../shared/constants'
+import {
+  DEFAULT_APP_FONT_FAMILY,
+  DEFAULT_TERMINAL_FONT_FAMILY,
+  getDefaultRepoHookSettings
+} from '../../../../shared/constants'
 import { DESKTOP_TERMINAL_SCROLLBACK_ROW_PRESETS } from '../../../../shared/terminal-scrollback-policy'
 
 export type HookName = keyof OrcaHooks['scripts']
@@ -22,7 +26,15 @@ export function mergeFontSuggestions(
 ): string[] {
   // Why: picker rendering can be capped later, but the source list must keep
   // every installed font searchable/selectable.
-  return Array.from(new Set([DEFAULT_APP_FONT_FAMILY, ...systemFonts, ...previousFonts]))
+  // Why the bundled fonts first: they are not installed system-wide, so listFonts never returns them.
+  return Array.from(
+    new Set([
+      DEFAULT_APP_FONT_FAMILY,
+      DEFAULT_TERMINAL_FONT_FAMILY,
+      ...systemFonts,
+      ...previousFonts
+    ])
+  )
 }
 
 export function getFallbackTerminalFonts(): string[] {

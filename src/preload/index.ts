@@ -2647,6 +2647,8 @@ const api = {
     }): Promise<SiteResult<{ command: string; code: number }>> =>
       ipcRenderer.invoke('extensions:runCommand', args),
     cancelCommand: (): Promise<SiteResult<null>> => ipcRenderer.invoke('extensions:cancelCommand'),
+    syncClaudeAutoUpdate: (args: { ids?: string[] }): Promise<SiteResult<null>> =>
+      ipcRenderer.invoke('extensions:syncClaudeAutoUpdate', args),
     refreshHarnesses: (args: { id: string }): Promise<SiteResult<ExtensionInventory>> =>
       ipcRenderer.invoke('extensions:refreshHarnesses', args),
     setEnabled: (args: { id: string; enabled: boolean }): Promise<SiteResult<ExtensionInventory>> =>

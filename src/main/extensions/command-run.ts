@@ -13,6 +13,7 @@
 
 import { BrowserWindow } from 'electron'
 import type { Store } from '../persistence'
+import { setClaudeMarketplaceAutoUpdate } from './claude-marketplace-auto-update'
 import { streamCommand } from '../lib/stream-command'
 import {
   extensionCommandSpec,
@@ -146,6 +147,9 @@ export async function runExtensionCommandForEntry(
     // Why setup registers nothing: it configures software that is already installed and already
     // wired, so re-running the write would only churn files the user may have edited since.
     const shouldRegister = mode === 'install' && installed && result.code === 0
+    if (shouldRegister && spec?.claudeMarketplace && item.state.autoUpdateSupported) {
+      setClaudeMarketplaceAutoUpdate(spec.claudeMarketplace, item.state.autoUpdateEnabled)
+    }
     if (shouldRegister && item.entry.agentRule?.onInstall) {
       syncAgentRule(id, (entryId) => writeResolvedAgentRule(item.entry, entryId), 'Added')
     } else if (mode === 'uninstall' && result.code === 0) {
