@@ -1,4 +1,4 @@
-// Hosts one chat thread: the engine-drawn transcript with the composer seated
+// Hosts one chat thread: the engine-drawn conversation with the composer docked
 // under it. A Claude process starts only when the user sends (or focuses the
 // composer), and session state shows as one line above the composer.
 
@@ -22,7 +22,9 @@ import {
   ChatThreadStartingNotice
 } from './ChatThreadNotice'
 import { useMissingFolder } from './use-missing-folder'
-import { ChatThreadSurface } from '@/components/chat-thread/ChatThreadSurface'
+import { ChatConversationSurface } from '@/components/chat-conversation/ChatConversationSurface'
+import { ChatConversationHeader } from '@/components/chat-conversation/ChatConversationHeader'
+import { ChatConversationEmpty } from '@/components/chat-conversation/ChatConversationEmpty'
 import { useChatThreadTransport } from './use-chat-thread-transport'
 
 function ChatThreadSessionNotice({
@@ -133,6 +135,9 @@ export function ChatThreadView({
   }, [firstMessage, thread.id, send])
 
   const retry = useCallback((text: string) => void send(text).catch(() => undefined), [send])
+  const displayTitle = isChatWorkspaceBriefTitle(thread.title)
+    ? deriveChatThreadTitle(thread.title)
+    : thread.title
   const activeCollabProjectId =
     workspace?.activeCollabProjects?.[0]?.id ?? workspace?.activeCollabProject?.id ?? null
   return (
@@ -144,9 +149,12 @@ export function ChatThreadView({
         />
       ) : null}
       <div className="min-h-0 flex-1">
-        <ChatThreadSurface
+        <ChatConversationSurface
           threadId={thread.id}
           onRetry={retry}
+          label={displayTitle}
+          header={<ChatConversationHeader thread={thread} workspace={workspace} />}
+          empty={<ChatConversationEmpty workspace={workspace} fallbackName={displayTitle} />}
           footer={
             <ChatThreadComposerSeat
               thread={thread}

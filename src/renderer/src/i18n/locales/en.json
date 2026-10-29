@@ -15257,6 +15257,11 @@
         "failed": "failed",
         "exit": "exit {{code}}"
       }
+    },
+    "chat-conversation": {
+      "emptyPrompt": "Send a message to get started.",
+      "renameTitle": "Chat title",
+      "renameNamed": "Rename {{name}}"
     }
   },
   "dashboardPopout": {
