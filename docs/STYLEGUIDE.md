@@ -91,6 +91,7 @@ This keeps light/dark parity automatic.
   - 12px (sub-text, paths, secondary content)
   - 13px (sidebar items, dense list rows)
   - 14px (default body, button text in `default` size)
+  - 15px (`text-chat`): Chat mode message text only, at 1.75 line height. Nowhere else.
 
 ## Radius
 
@@ -108,7 +109,7 @@ Don't add a fourth level. If something needs more emphasis than "floating," you'
 
 ## Chat surface
 
-The chat surface (`src/renderer/src/components/chat-thread/`, used by Chat mode and by Code mode's agent chat view) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Values follow DeepSeek Harness; see `docs/muster/2026-10-20-chat-dsh-parity-plan.md`.
+The chat surface (`src/renderer/src/components/chat-thread/`, used by Code mode's agent chat view) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Values follow DeepSeek Harness; see `docs/muster/2026-10-20-chat-dsh-parity-plan.md`. Chat mode wears the conversation look instead (`chat-conversation/`, see "Chat mode conversation look" below); it keeps these tokens and adds a few of its own.
 
 | Token                                | Tailwind                                                      | Use it for                                                                                |
 | ------------------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -138,7 +139,7 @@ Rules:
 
 - Primary ink is `foreground`. Hierarchy comes from the four ink levels, not from weight: nothing in the chat surface goes above `font-medium` except markdown headings and `strong`.
 - Process rows are 13px text, `--chat-row-height` tall, with a 16px icon box. They sit at tertiary ink and rise to secondary on hover. Diff counts stay tertiary until the row is hovered or open.
-- The user gets a bubble; the assistant gets bare prose on the page background.
+- The user gets a bubble; the assistant gets bare prose on the page background. Chat mode differs: a chat-line reply gets a card, and only a document-shaped reply stays prose.
 - `shadow-chat-soft` is the chat version of elevation level 2 (subtle lift), not a fourth level. A chat card that has it takes no `border`.
 - Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It paints the text fill only, so an element inside a shimmering label that sets its own text colour shows the sweep colour instead while running. It has a reduced-motion branch; keep it.
 - The turn's running line is the one accent-coloured shimmer: it sets `--chat-shimmer-highlight` to an accent mix so the sweep stays blue.
@@ -160,6 +161,29 @@ Takeovers (`native-chat/chat-seat-takeover-classes.ts`, seat only): the question
 - `--chat-warn-ink` is darker than the border in light (`rgb(163 85 0)`, 5:1 on the tint) because the border amber is 1.8:1 there. In dark it is the border amber itself (8:1 on the dark tint).
 - The approval card answers Enter (allow) and Esc (reject) while focus is inside it, except in a text field, during IME composition, on key repeat or with a modifier held. It takes focus on arrival only when nothing else holds it.
 - Known differences from DSH: approval keeps a "Cancel turn" text button on the left, since the composer's Stop is hidden under the card; it also keeps the Allow split menu (always allow, full access). The state dot is a plain 6px dot that pulses once answered, not DSH's StateDot. The question card has no wait countdown. Discuss on a plan denies it with a note asking the agent to wait, then focuses the composer. ExitPlanMode is still auto-approved under full access, because that verdict lives in the permission store.
+
+### Chat mode conversation look
+
+Chat mode (`src/renderer/src/components/chat-conversation/`) follows the Bots tab's Advanced chat: one centred column, a card for chat-line replies, pills for process, and a header pill that fades into the page. Code mode keeps the document look above. The plan is `docs/muster/2026-10-30-chat-mode-bots-ui-plan.md`. These tokens are for `chat-conversation/` and Chat mode's conversation variants only.
+
+| Token                        | Tailwind                    | Use it for                                                      |
+| ---------------------------- | --------------------------- | --------------------------------------------------------------- |
+| `--chat-column-max` (60rem)  | `max-w-(--chat-column-max)` | Transcript, header and composer column, inside 20px gutters     |
+| `--chat-reply-max`           | `max-w-(--chat-reply-max)`  | User bubble and reply card: 35rem or 80% of the column          |
+| `--chat-prose-max` (44rem)   | `max-w-(--chat-prose-max)`  | Document-shaped replies                                         |
+| `--chat-card-max` (88%)      | `max-w-(--chat-card-max)`   | A reply holding a table, and the table card                     |
+| `--chat-reply`               | `bg-chat-reply`             | Assistant reply card (`--secondary` in light, `--card` in dark) |
+| `--radius-chat-reply` (16px) | `rounded-chat-reply`        | User bubble, reply card, composer card, tool card               |
+| `--text-chat` (15px / 1.75)  | `text-chat`                 | Message text in Chat mode                                       |
+
+Rules:
+
+- A reply with block markdown (a list, heading, code fence, quote or table) is document-shaped and reads as bare prose at `--chat-prose-max`. Anything else is a chat line in a `bg-chat-reply` card. `chat-conversation/chat-reply-shape.ts` decides.
+- A reply with a table widens to `--chat-card-max` so every column shows; its prose stays at the prose width.
+- The weight cap of 500 holds, with markdown headings and `strong` at 600.
+- Pills (activity runs, the turn fold, thinking) use the one `ChatPill` component: 28px tall, full radius, `--sidebar` fill, a `--chat-line-2` hairline, 13px medium, secondary ink. Don't add pill classes.
+- The approval panel and table cards keep `rounded-chat-bubble`; the header pill, jump button and composer take `shadow-chat-soft` with no border.
+- Motion stays at 160ms or less on `ease-chat`, as in the chat surface.
 
 ## Components
 

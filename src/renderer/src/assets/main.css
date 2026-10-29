@@ -167,9 +167,13 @@
   --color-chat-warn: var(--chat-warn);
   --color-chat-warn-tint: var(--chat-warn-tint);
   --color-chat-warn-ink: var(--chat-warn-ink);
+  --color-chat-reply: var(--chat-reply);
   --ease-chat: cubic-bezier(0.4, 0, 0.2, 1);
   --radius-chat-bubble: 20px;
   --radius-chat-composer: 28px;
+  --radius-chat-reply: 16px;
+  --text-chat: 15px;
+  --text-chat--line-height: 1.75;
   --shadow-chat-hairline: var(--chat-hairline);
   --shadow-chat-soft: var(--chat-hairline), var(--chat-ambient);
   --shadow-chat-panel: var(--chat-hairline), var(--chat-panel);
@@ -316,6 +320,13 @@
   /* Takeover card elevation, drawn under the hairline. */
   --chat-panel: 0 3px 8px rgb(0 0 0 / 0.03), 0 0 16px rgb(0 0 0 / 0.02);
   --chat-shimmer-highlight: var(--foreground);
+  /* Chat mode's conversation look (STYLEGUIDE "Chat mode conversation look"). */
+  --chat-column-max: 60rem;
+  --chat-reply-max: min(35rem, 80%);
+  --chat-prose-max: 44rem;
+  --chat-card-max: 88%;
+  /* Assistant reply card: `--card` is white on white in light. */
+  --chat-reply: var(--secondary);
 }
 
 /* ── Dark Mode ───────────────────────────────────────── */
@@ -433,6 +444,7 @@
   --chat-warn: rgb(247 173 49);
   --chat-warn-tint: rgb(39 36 31);
   --chat-warn-ink: rgb(247 173 49);
+  --chat-reply: var(--card);
 }
 
 .linear-priority-bars {
