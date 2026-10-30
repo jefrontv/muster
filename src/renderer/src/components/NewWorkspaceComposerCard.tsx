@@ -1209,7 +1209,7 @@ export default function NewWorkspaceComposerCard({
                     variant="ghost"
                     size="icon-xs"
                     onClick={handleAddRepo}
-                    className="size-5 shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
+                    className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
                     aria-label={translate(
                       'auto.components.NewWorkspaceComposerCard.d6b0a96f32',
                       'Add project'
@@ -1435,7 +1435,7 @@ export default function NewWorkspaceComposerCard({
                   onClick={onOpenAgentSettings}
                   // Why: keep Tab flow Name → Agent; tabIndex=-1 so this settings detour doesn't add a keystroke to every creation.
                   tabIndex={-1}
-                  className="size-5 shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
+                  className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
                   aria-label={translate(
                     'auto.components.NewWorkspaceComposerCard.ab63f25397',
                     'Open agent settings'
@@ -1567,7 +1567,7 @@ export default function NewWorkspaceComposerCard({
                     'Write a note'
                   )}
                   rows={1}
-                  className="w-full min-w-0 resize-none overflow-hidden rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 max-h-40"
+                  className="w-full min-w-0 resize-none overflow-hidden rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-sm transition-[color,box-shadow] placeholder:text-muted-foreground max-h-40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
 

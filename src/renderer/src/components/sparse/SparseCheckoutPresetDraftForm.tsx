@@ -97,7 +97,7 @@ export function SparseCheckoutPresetDraftForm({
             )}
             rows={3}
             spellCheck={false}
-            className="max-h-28 w-full min-w-0 resize-none rounded-md border border-input bg-transparent px-3 py-1.5 font-mono text-xs leading-5 shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="max-h-28 w-full min-w-0 resize-none rounded-xl bg-foreground/[0.05] px-3 py-1.5 font-mono text-xs leading-5 transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>
       </div>

@@ -106,7 +106,7 @@ export function SparsePresetDraftEditor({
             )}
             rows={5}
             spellCheck={false}
-            className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs transition-[color,box-shadow] placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           {parsedDirectories?.error ? (
             <p className="text-xs text-destructive">{parsedDirectories.error}</p>

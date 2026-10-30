@@ -283,7 +283,7 @@ export function SlugDialogBody({
                     autoFocus
                     value={bodyDraft}
                     onChange={(e) => setBodyDraft(e.target.value)}
-                    className="min-h-[140px] w-full rounded border border-border/50 bg-background p-2 text-sm"
+                    className="min-h-[140px] w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => void commitBody()}>

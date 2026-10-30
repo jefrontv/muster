@@ -24,7 +24,7 @@ test.describe('Chat thread on the engine', () => {
       title: 'Header height',
       workspaceName: 'E2E site'
     })
-    await expect(orcaPage.getByText('What should we work on?')).toBeVisible()
+    await expect(orcaPage.getByRole('heading', { name: 'E2E site', level: 2 })).toBeVisible()
 
     const composer = orcaPage.getByRole('textbox').last()
     await composer.fill('Switch the header to dvh')
@@ -54,10 +54,7 @@ test.describe('Chat thread on the engine', () => {
     await expect(orcaPage.getByRole('button', { name: 'Try again' })).toBeVisible()
   })
 
-  test('long history pages in and the rail jumps to the first message', async ({
-    orcaPage,
-    electronApp
-  }) => {
+  test('long history pages in as the reader scrolls up', async ({ orcaPage, electronApp }) => {
     await waitForSessionReady(orcaPage)
     await openSeededChatThread(orcaPage, electronApp, {
       folder: siteFolder(),
@@ -70,20 +67,19 @@ test.describe('Chat thread on the engine', () => {
       timeout: 30_000
     })
     // Paging renders the newest 30; the first turn is not in the DOM yet.
-    await expect(orcaPage.getByText('Turn 1: tighten the spacing in section 1.')).toHaveCount(0)
-
-    const rail = orcaPage.getByRole('navigation', { name: 'Messages' })
-    await expect(rail).toBeVisible()
-    await rail.evaluate((nav) => {
-      const scroller = nav.firstElementChild as HTMLElement
-      scroller.scrollTop = 0
-      scroller.dispatchEvent(new Event('scroll'))
-    })
-    await rail.getByRole('button', { name: 'Go to message 1', exact: true }).click()
-    // Scoped to the transcript: the rail's preview card repeats the prompt.
     const firstTurn = orcaPage
       .locator('section[data-turn-id]')
       .getByText('Turn 1: tighten the spacing in section 1.')
-    await expect(firstTurn).toBeInViewport()
+    await expect(firstTurn).toHaveCount(0)
+
+    const scroller = orcaPage.locator('[data-chat-conversation-scroller]')
+    await expect
+      .poll(async () => {
+        await scroller.evaluate((element) => {
+          element.scrollTop = 0
+        })
+        return firstTurn.count()
+      })
+      .toBe(1)
   })
 })

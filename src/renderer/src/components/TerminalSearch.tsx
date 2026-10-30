@@ -178,7 +178,7 @@ export default function TerminalSearch({
         variant="ghost"
         size="icon-xs"
         onClick={findPrevious}
-        className="flex size-6 shrink-0 items-center justify-center rounded text-zinc-400 hover:text-zinc-200"
+        className="flex size-6 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-200"
         title={translate('auto.components.TerminalSearch.0f3066256e', 'Previous match')}
       >
         <ChevronUp size={14} />
@@ -189,7 +189,7 @@ export default function TerminalSearch({
         variant="ghost"
         size="icon-xs"
         onClick={findNext}
-        className="flex size-6 shrink-0 items-center justify-center rounded text-zinc-400 hover:text-zinc-200"
+        className="flex size-6 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-200"
         title={translate('auto.components.TerminalSearch.7cb40c04eb', 'Next match')}
       >
         <ChevronDown size={14} />
@@ -202,7 +202,7 @@ export default function TerminalSearch({
         variant="ghost"
         size="icon-xs"
         onClick={onClose}
-        className="flex size-6 shrink-0 items-center justify-center rounded text-zinc-400 hover:text-zinc-200"
+        className="flex size-6 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-200"
         title={translate('auto.components.TerminalSearch.db234b7519', 'Close')}
       >
         <X size={14} />

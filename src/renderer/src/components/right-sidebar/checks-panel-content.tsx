@@ -1912,7 +1912,7 @@ function CommentRow({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onClick={(event) => event.stopPropagation()}
-              className="min-h-[60px] w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-[11px] leading-snug text-foreground"
+              className="min-h-[60px] w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-[11px] leading-snug text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
             <div className="flex justify-end gap-1">
               <Button

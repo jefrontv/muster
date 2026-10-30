@@ -1415,7 +1415,7 @@ export default function SmartWorkspaceNameField({
                         variant="ghost"
                         size="icon-xs"
                         onClick={onClearSelectedSource}
-                        className="size-6 shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
+                        className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
                         aria-label={translate(
                           'auto.components.new.workspace.SmartWorkspaceNameField.7199ff19c7',
                           'Clear selected source'

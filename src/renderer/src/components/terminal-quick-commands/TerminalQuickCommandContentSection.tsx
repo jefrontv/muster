@@ -161,7 +161,7 @@ export function TerminalQuickCommandContentSection({
           }
           rows={4}
           className={cn(
-            'min-h-24 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+            'min-h-24 w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-1 focus-visible:ring-ring',
             !isAgentAction && 'font-mono'
           )}
         />

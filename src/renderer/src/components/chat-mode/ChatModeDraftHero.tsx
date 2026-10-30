@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { CHAT_COLUMN_CLASS, CHAT_COMPOSER_COLUMN_CLASS } from '../chat-thread/ChatThreadSurface'
+import { CHAT_CONVERSATION_COLUMN_CLASS } from '../chat-conversation/chat-conversation-column'
 import {
   NativeChatSurfaceProvider,
   type NativeChatSurfaceContextValue
@@ -163,11 +163,11 @@ export function ChatModeDraftHero({
   }
 
   return (
-    // Same column, type and composer box as an empty thread, so sending swaps nothing visually.
-    <div className="flex h-full flex-col items-center justify-center gap-6 pb-8">
+    // Same column and composer width as a thread, so the card keeps its width when it docks.
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-5 pb-8">
       <h1
         className={cn(
-          CHAT_COLUMN_CLASS,
+          CHAT_CONVERSATION_COLUMN_CLASS,
           'text-center text-[26px] font-medium leading-8 text-foreground'
         )}
       >
@@ -179,7 +179,7 @@ export function ChatModeDraftHero({
       </h1>
       <NativeChatSurfaceProvider value={HERO_SURFACE}>
         <div
-          className={cn(CHAT_COMPOSER_COLUMN_CLASS, CHAT_SEAT_CARD_CLASS)}
+          className={cn(CHAT_CONVERSATION_COLUMN_CLASS, CHAT_SEAT_CARD_CLASS)}
           data-contextual-tour-target="chat-thread-composer"
           data-native-file-drop-target={NATIVE_FILE_DROP_TARGET.composer}
         >

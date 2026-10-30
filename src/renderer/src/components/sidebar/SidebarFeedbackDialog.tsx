@@ -247,7 +247,7 @@ export function SidebarFeedbackDialog({
             'What could we improve?'
           )}
           rows={7}
-          className="min-h-32 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="min-h-32 w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
 
         <div className="min-h-9 rounded-md border border-border/70 bg-muted/30 px-3 py-2">

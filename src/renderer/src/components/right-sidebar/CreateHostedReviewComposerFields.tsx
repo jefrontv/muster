@@ -103,7 +103,7 @@ export function CreateHostedReviewComposerFields({
             'auto.components.right.sidebar.SourceControl.a0dc20fc93',
             'Description (optional)'
           )}
-          className="min-h-[7.5rem] w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 scrollbar-sleek"
+          className="min-h-[7.5rem] w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-60 scrollbar-sleek outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
 
         {generating ? (

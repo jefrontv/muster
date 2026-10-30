@@ -159,14 +159,12 @@ const SidebarNav = React.memo(function SidebarNav() {
 
   return (
     <div
-      className="flex flex-col gap-0.5 px-2 pt-2 pb-1"
+      className="flex flex-col gap-0.5 px-3 pt-2 pb-1"
       data-contextual-tour-target="sidebar-navigation"
     >
-      {/* px-1/pt-1 on top of the nav's px-2/pt-2 lands the toggle at the same
-          12px inset the chat sidebar's p-3 gives it — no jump on mode switch.
-          pb-2.5 + the parent's gap-0.5 (2px) makes the gap below 12px too, matching both the
-          inset above and the chat sidebar's gap-3 under its own copy of this toggle. */}
-      <div className="px-1 pt-1 pb-2.5 empty:hidden">
+      {/* px-3/pt-1+pt-2 put the toggle, rows and search on the chat sidebar's 12px inset — no jump
+          on mode switch. pb-2.5 + the parent's gap-0.5 (2px) makes the gap below 12px too. */}
+      <div className="pt-1 pb-2.5 empty:hidden">
         <ChatModeToggle mode="code" />
       </div>
       <SetupGuideSidebarEntry />
@@ -262,12 +260,10 @@ const SidebarNav = React.memo(function SidebarNav() {
           'auto.components.sidebar.SidebarNav.0c3395fd32',
           'Search worktrees and browser tabs'
         )}
-        className="group relative flex h-8 w-full items-center rounded-md border border-worktree-sidebar-border/70 bg-worktree-sidebar-foreground/5 pl-7 pr-1.5 text-left text-[12px] font-medium tracking-tight text-worktree-sidebar-foreground/45 transition-colors hover:border-worktree-sidebar-border hover:bg-worktree-sidebar-foreground/8 hover:text-worktree-sidebar-foreground/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-worktree-sidebar-ring/50"
+        // Same pill as the Bots and chat sidebar search.
+        className="group flex h-8 w-full items-center gap-2 rounded-full bg-card px-3 text-left text-[13px] text-muted-foreground ring-1 ring-inset ring-foreground/[0.07] transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-ring"
       >
-        <Search
-          className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-worktree-sidebar-foreground/30"
-          strokeWidth={1.75}
-        />
+        <Search className="pointer-events-none size-[15px] shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate">
           {translate('auto.components.sidebar.SidebarNav.80611a8b10', 'Search')}
         </span>

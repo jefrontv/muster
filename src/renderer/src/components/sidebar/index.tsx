@@ -170,7 +170,8 @@ function Sidebar({
       <div
         ref={containerRef}
         data-native-file-drop-target={sidebarOpen ? nativeDropTarget : undefined}
-        className="relative min-h-0 flex-shrink-0 bg-worktree-sidebar flex flex-col overflow-hidden scrollbar-sleek-parent"
+        // clip, not hidden: the resize handle overhangs, and a hidden box can be scrolled sideways by focus.
+        className="relative min-h-0 flex-shrink-0 bg-worktree-sidebar flex flex-col overflow-clip scrollbar-sleek-parent"
         style={leftSidebarStyle}
         {...dropHandlers}
       >
