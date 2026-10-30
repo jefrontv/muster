@@ -10,7 +10,6 @@ import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { translate } from '@/i18n/i18n'
 import { CHAT_SIDEBAR_REGION_LABEL } from './chat-sidebar-hierarchy'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
   WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
@@ -88,11 +87,12 @@ export function ChatModeSidebar(): React.JSX.Element {
           <span className="flex-1">{translate('auto.components.chat.sidebar.tasks', 'Tasks')}</span>
           <TaskDueBadge />
         </button>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
+        {/* Same pill as the Bots sidebar search. */}
+        <div className="flex h-8 items-center gap-2 rounded-full bg-card px-3 ring-1 ring-inset ring-foreground/[0.07] focus-within:ring-ring">
+          <Search className="size-[15px] shrink-0 text-muted-foreground" />
+          <input
             value={rawQuery}
-            className="h-8 border-transparent bg-muted/50 pl-7 text-sm shadow-none transition-colors hover:bg-muted/70 focus-visible:bg-background"
+            className="w-full min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none"
             placeholder={translate('auto.components.chat.sidebar.searchPlaceholder', 'Search…')}
             aria-label={translate(
               'auto.components.chat.sidebar.searchLabel',
