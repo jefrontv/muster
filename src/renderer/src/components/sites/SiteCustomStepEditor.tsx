@@ -253,7 +253,7 @@ export function SiteCustomStepEditor({
           </Label>
           <textarea
             ref={setCommandRef}
-            className="min-h-16 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs"
+            className="min-h-16 w-full rounded-xl bg-foreground/[0.05] px-3 py-1.5 font-mono text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
             value={draft.command}
             spellCheck={false}
             placeholder="wp cache flush"

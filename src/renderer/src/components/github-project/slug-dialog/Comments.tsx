@@ -161,7 +161,7 @@ function CommentRow({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="min-h-[80px] w-full rounded border border-border/50 bg-background p-2 text-sm"
+            className="min-h-[80px] w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <div className="flex gap-2">
             <Button
@@ -217,7 +217,7 @@ export function NewCommentForm({
           'auto.components.github.project.slug.dialog.Comments.1c95937c8b',
           'Write a comment…'
         )}
-        className="min-h-[80px] w-full rounded border border-border/50 bg-background p-2 text-sm"
+        className="min-h-[80px] w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
       <div className="flex justify-end">
         <Button

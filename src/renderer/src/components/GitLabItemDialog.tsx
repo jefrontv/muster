@@ -1290,7 +1290,7 @@ export default function GitLabItemDialog({
                           onChange={(event) => setBodyDraft(event.target.value)}
                           rows={8}
                           disabled={detailsSaving}
-                          className="min-h-40 w-full resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-sm shadow-xs focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+                          className="min-h-40 w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
                         />
                       </div>
                       <div>
@@ -1482,7 +1482,7 @@ export default function GitLabItemDialog({
                               'auto.components.GitLabItemDialog.21f8dde18a',
                               'Inline comment'
                             )}
-                            className="mt-2 w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm shadow-xs focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+                            className="mt-2 w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                           />
                           <div className="mt-2 flex justify-end">
                             <Button
@@ -1605,7 +1605,7 @@ export default function GitLabItemDialog({
                   )}
                   rows={2}
                   disabled={commentSubmitting}
-                  className="min-h-9 w-full resize-none rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm shadow-xs focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+                  className="min-h-9 w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                   onKeyDown={(e) => {
                     // Why: this is local textarea submit behavior; Settings
                     // keybindings only cover app commands.

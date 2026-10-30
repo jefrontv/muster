@@ -215,7 +215,7 @@ export function ChatWorkspaceCreateDialog({
               )}
               onChange={(event) => setNotes(event.target.value)}
               className={cn(
-                'w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground/60 dark:bg-input/30',
+                'w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground/60 outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
               )}
             />

@@ -454,7 +454,7 @@ function PendingBrowserAnnotationCard({
             'Describe what the agent should change here...'
           )}
           maxLength={GRAB_BUDGET.annotationCommentMaxLength}
-          className="h-24 w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-24 w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           autoFocus
           onKeyDown={(event) => {
             if (event.key === 'Escape') {

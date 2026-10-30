@@ -708,7 +708,7 @@ function ScriptEditor({
             placeholder={field.placeholder}
             spellCheck={false}
             rows={editorRows}
-            className="w-full min-w-0 resize-y rounded-lg border border-input bg-muted/20 px-3 py-2 font-mono text-[12px] leading-[1.55] shadow-xs transition-[color,box-shadow] outline-none placeholder:italic placeholder:text-muted-foreground/60 focus-visible:border-ring focus-visible:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            className="w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-[12px] leading-[1.55] transition-[color,box-shadow] placeholder:italic placeholder:text-muted-foreground/60 focus-visible:bg-background focus-visible:ring-ring/40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <p className="text-[11px] text-muted-foreground">
             {translate(
@@ -1216,7 +1216,7 @@ export function RepositoryHooksSection({
             )}
             rows={4}
             spellCheck={false}
-            className="w-full min-w-0 resize-y rounded-md border border-input bg-muted/20 px-3 py-2 font-mono text-xs shadow-xs transition-[color,box-shadow] outline-none placeholder:italic placeholder:text-muted-foreground/60 focus-visible:border-ring focus-visible:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            className="w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs transition-[color,box-shadow] placeholder:italic placeholder:text-muted-foreground/60 focus-visible:bg-background focus-visible:ring-ring/40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <p className="text-[11px] text-muted-foreground">
             {translate(
