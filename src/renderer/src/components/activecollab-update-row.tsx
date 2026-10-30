@@ -82,7 +82,7 @@ export function ActiveCollabUpdateRow({
         // Enter or Space reports 0. It is the only signal available on the event itself.
         onClick={(event) => onPick(update, event.detail > 0)}
         data-unread={unread ? 'true' : undefined}
-        className="block w-full px-3 py-2 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+        className="block w-full rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-foreground/[0.06] focus-visible:bg-foreground/[0.06] focus-visible:outline-none"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           {mention === null ? null : (

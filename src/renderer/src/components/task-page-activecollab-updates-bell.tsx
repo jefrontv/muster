@@ -193,7 +193,7 @@ export function ActiveCollabUpdatesBell({
       <PopoverContent
         align="end"
         sideOffset={4}
-        className="w-80 p-0"
+        className="w-80 rounded-[12px] border-border/50 p-1.5"
         aria-label={title}
         onCloseAutoFocus={(event) => {
           if (!restoreFocusOnClose.current) {
@@ -203,7 +203,7 @@ export function ActiveCollabUpdatesBell({
           restoreFocusOnClose.current = true
         }}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1.5">
           <span className="text-[13px] font-semibold text-foreground">{title}</span>
           {/* Null is silent: reporting "no new updates" for a count the instance refused to compute
               would be a claim we cannot make. */}
@@ -248,7 +248,7 @@ export function ActiveCollabUpdatesBell({
         {state.updates.length > 0 ? (
           // Tall enough to scan a working day's worth without scrolling; Radix still clamps the
           // popover to the viewport, so this is a ceiling rather than a fixed height.
-          <ul className="max-h-[32rem] overflow-y-auto scrollbar-sleek">
+          <ul className="flex max-h-[32rem] flex-col gap-0.5 overflow-y-auto scrollbar-sleek">
             {state.updates.map((update) => (
               <ActiveCollabUpdateRow
                 key={`${update.projectId}-${update.taskId}`}
@@ -261,13 +261,13 @@ export function ActiveCollabUpdatesBell({
         ) : null}
 
         {state.hasMore ? (
-          <div className="border-t border-border/50">
+          <div className="mt-1.5 border-t border-border/50 pt-1.5">
             <Button
               variant="ghost"
               size="sm"
               disabled={state.appending}
               onClick={loadMore}
-              className="w-full justify-center rounded-none text-[12px] font-normal"
+              className="w-full justify-center text-[12px] font-normal"
             >
               {state.appending ? (
                 <LoaderCircle className="size-3.5 animate-spin" />
