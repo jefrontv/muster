@@ -15238,7 +15238,25 @@
     "chat-conversation": {
       "emptyPrompt": "Send a message to get started.",
       "renameTitle": "Chat title",
-      "renameNamed": "Rename {{name}}"
+      "renameNamed": "Rename {{name}}",
+      "showFull": "Show full message",
+      "showLess": "Show less",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "table": {
+        "title": "Table",
+        "count": "{{shown}} of {{total}} rows, {{columns}} columns",
+        "search": "Search table",
+        "sort": "Sort by {{column}}",
+        "wrap": "Wrap text",
+        "copy": "Copy as CSV",
+        "copied": "Copied",
+        "copyFailed": "Copy failed",
+        "download": "Download CSV",
+        "expand": "Expand table",
+        "noResults": "No matching rows",
+        "empty": "This table is empty"
+      }
     }
   },
   "dashboardPopout": {

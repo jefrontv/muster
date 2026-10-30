@@ -11,7 +11,6 @@ import {
   ChatThreadContext,
   type ChatThreadContextValue
 } from '@/components/chat-thread/chat-thread-context'
-import { ChatTurnView } from '@/components/chat-thread/ChatTurnView'
 import { useChatTurnPaging } from '@/components/chat-thread/use-chat-turn-paging'
 import {
   useChatScrollFollow,
@@ -24,6 +23,7 @@ import {
   useRetainChatEngineThread
 } from '@/components/chat-thread/use-chat-engine-thread'
 import { CHAT_CONVERSATION_COLUMN_CLASS } from './chat-conversation-column'
+import { ChatConversationTurn } from './ChatConversationTurn'
 
 function JumpToLatest(props: { visible: boolean; onClick: () => void }): React.JSX.Element {
   const label = translate('components.chat-thread.backToBottom', 'Back to latest')
@@ -104,11 +104,17 @@ export function ChatConversationSurface(props: {
             ) : empty ? (
               props.empty
             ) : (
-              paging.visible.map((turnId) => (
-                <ChatTurnView
+              paging.visible.map((turnId, index) => (
+                <ChatConversationTurn
                   key={turnId}
                   threadId={threadId}
                   turnId={turnId}
+                  // The first paged-in turn still needs its real predecessor for the day line.
+                  previousTurnId={
+                    index > 0
+                      ? paging.visible[index - 1]
+                      : (order[order.indexOf(turnId) - 1] ?? null)
+                  }
                   latest={turnId === latest}
                 />
               ))
