@@ -95,15 +95,15 @@ This keeps light/dark parity automatic.
 
 ## Radius
 
-`--radius: 0.625rem` (10px) is the base; the rest are computed (`--radius-sm` = 0.6×, `--radius-md` = 0.8×, `--radius-lg` = 1×, `--radius-xl` = 1.4×, etc.). Buttons and inputs use `rounded-md`; the `Card` primitive uses `rounded-xl`; badges use `rounded-full`. Match the existing primitive's radius rather than introducing a new one.
+`--radius: 0.625rem` (10px) is the base; the rest are computed (`--radius-sm` = 0.6×, `--radius-md` = 0.8×, `--radius-lg` = 1×, `--radius-xl` = 1.4×, etc.). Buttons, single-line inputs, select triggers, badges and chips are pills (`rounded-full`); textareas and the `Card` primitive use `rounded-xl`; menus use 12px and modals 16px (see _Bots look_ below). Match the existing primitive's radius rather than introducing a new one.
 
 ## Elevation & shadows
 
 Muster uses shadows sparingly. Three levels in practice:
 
 1. **Inset hairline** — `border` + `border` token. The default. Almost everything sits at this level.
-2. **Subtle lift** — `shadow-xs` + a single-token border. Outline buttons, embedded cards.
-3. **Floating** — `0 10px 24px rgba(0, 0, 0, 0.18)`. Popovers, popups that escape the editor surface. Reserved.
+2. **Subtle lift** — `shadow-xs` + a single-token border. Embedded cards.
+3. **Floating** — `0 10px 24px rgba(0, 0, 0, 0.18)`. Popovers, menus, modals, popups that escape the editor surface. Reserved.
 
 Don't add a fourth level. If something needs more emphasis than "floating," you're probably reaching for the focus `ring` instead.
 
@@ -207,6 +207,18 @@ Variants in priority order:
 | `destructive` | Delete, discard, irreversible. Never for Cancel.                   |
 
 Sizes: `default` (36px), `sm` (32px), `xs` (24px), `lg` (40px), plus `icon`, `icon-xs`, `icon-sm`, `icon-lg`. Match the size to the surrounding row height — don't drop a `default` button into a 28px toolbar.
+
+### Bots look
+
+Controls and floating surfaces follow the Bots tab's panel look, expressed in Muster tokens so every theme keeps working.
+
+- **Controls are pills.** Every `Button` size, single-line `Input`, `SelectTrigger`, `Badge` and chip is `rounded-full`. Icon buttons are round. Multi-line fields (`textarea`) are `rounded-xl`.
+- **Fills come from `foreground` at low alpha**, never a new colour: secondary buttons `bg-foreground/[0.07]` (hover `/[0.11]`), inputs and select triggers `bg-foreground/[0.05]` with no border and a `ring-1 ring-ring` focus, ghost hover `bg-foreground/[0.07]`. Outline buttons keep a `border-border/60` line on a transparent fill.
+- **Selected chips invert:** `bg-foreground text-background`.
+- **Floating surfaces are opaque.** Menus, popovers, dialogs and sheets use `bg-popover-solid` (or `bg-card-solid`), because the terminal-matched theme gives `--popover` and `--card` an alpha. No glass, no translucent menus.
+- **Modals:** 16px corners, `border-foreground/10`, the Floating shadow tier, 24px padding, a round close button.
+- **Menus:** 12px corners, 14px rows, 1.5px icon strokes (`ui/menu-surface-classes.ts`).
+- A call site that passes `rounded-md`, `rounded-sm` or a `border` to `Button` or `Input` overrides the pill through tailwind-merge. Don't; pick a variant or size instead.
 
 ### Other primitives in this repo
 

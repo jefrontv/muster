@@ -186,6 +186,15 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* The terminal-matched theme gives --popover and --card an alpha; floating surfaces stay opaque. */
+@utility bg-popover-solid {
+  background-color: rgb(from var(--popover) r g b / 1);
+}
+
+@utility bg-card-solid {
+  background-color: rgb(from var(--card) r g b / 1);
+}
+
 /* ── Light Mode ──────────────────────────────────────── */
 
 :root {
