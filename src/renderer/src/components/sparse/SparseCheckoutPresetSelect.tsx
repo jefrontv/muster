@@ -322,7 +322,7 @@ export default function SparseCheckoutPresetSelect({
                           'Edit {{value0}}',
                           { value0: preset.name }
                         )}
-                        className="ml-1 size-6 shrink-0 rounded-md text-muted-foreground hover:bg-background/35 hover:text-foreground"
+                        className="ml-1 size-6 shrink-0 text-muted-foreground hover:bg-background/35 hover:text-foreground"
                         // Why: the pencil opens the edit draft; stop the event so cmdk doesn't
                         // also select the preset row underneath it.
                         onPointerDown={(event) => {

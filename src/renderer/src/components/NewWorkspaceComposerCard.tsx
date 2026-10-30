@@ -1209,7 +1209,7 @@ export default function NewWorkspaceComposerCard({
                     variant="ghost"
                     size="icon-xs"
                     onClick={handleAddRepo}
-                    className="size-5 shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
+                    className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
                     aria-label={translate(
                       'auto.components.NewWorkspaceComposerCard.d6b0a96f32',
                       'Add project'
@@ -1435,7 +1435,7 @@ export default function NewWorkspaceComposerCard({
                   onClick={onOpenAgentSettings}
                   // Why: keep Tab flow Name → Agent; tabIndex=-1 so this settings detour doesn't add a keystroke to every creation.
                   tabIndex={-1}
-                  className="size-5 shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
+                  className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
                   aria-label={translate(
                     'auto.components.NewWorkspaceComposerCard.ab63f25397',
                     'Open agent settings'

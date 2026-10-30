@@ -98,7 +98,7 @@ export function AutomationEditorDialogHeader({
               'auto.components.automations.AutomationEditorDialogHeader.58f56b73d9',
               'Automation name'
             )}
-            className="h-10 max-w-md border-input bg-input/30 px-3 text-lg font-semibold text-foreground shadow-xs placeholder:text-muted-foreground dark:bg-input/30"
+            className="h-10 max-w-md bg-input/30 px-3 text-lg font-semibold text-foreground placeholder:text-muted-foreground dark:bg-input/30"
             onChange={(event) => onDraftNameChange(event.target.value)}
           />
         </div>

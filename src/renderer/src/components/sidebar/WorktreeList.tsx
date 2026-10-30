@@ -4875,7 +4875,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  className="pointer-events-none size-5 shrink-0 rounded-md text-muted-foreground transition-opacity opacity-60"
+                                  className="pointer-events-none size-5 shrink-0 text-muted-foreground transition-opacity opacity-60"
                                   aria-label={createState.ariaLabel}
                                   disabled
                                 >

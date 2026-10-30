@@ -43,7 +43,7 @@ export function FileExplorerNameFilter({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="h-auto w-auto rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+          className="h-auto w-auto p-0.5 text-muted-foreground hover:text-foreground"
           aria-label={translate(
             'auto.components.right.sidebar.FileExplorerNameFilter.4d5a6b2a49',
             'Clear file filter'

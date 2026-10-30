@@ -154,7 +154,7 @@ export default function ImportedWorktreesVisibilityLine({
                 disabled={pending}
                 aria-label={keepHiddenAriaLabel}
                 onClick={onKeepHidden}
-                className="shrink-0 rounded-md text-muted-foreground hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground"
+                className="shrink-0 text-muted-foreground hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground"
               >
                 <X className="size-3" aria-hidden="true" />
               </Button>

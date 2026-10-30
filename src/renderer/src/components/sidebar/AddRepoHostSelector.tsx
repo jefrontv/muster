@@ -61,7 +61,7 @@ export function AddRepoHostSelector({
             variant="ghost"
             role="combobox"
             aria-expanded={open}
-            className="h-7 min-w-0 max-w-[18rem] gap-1.5 rounded-md border border-border bg-muted/30 px-2 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+            className="h-7 min-w-0 max-w-[18rem] gap-1.5 rounded-full bg-foreground/[0.05] px-2 text-xs font-medium text-foreground hover:bg-foreground/[0.08] hover:text-foreground"
           >
             <span className="min-w-0 truncate">{selectedHost.label}</span>
             {selectedHost.health !== 'local' ? (
