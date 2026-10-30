@@ -325,6 +325,7 @@ const Settings = lazy(() => import('./components/settings/Settings'))
 const SkillsPage = lazy(() => import('./components/skills/SkillsPage'))
 const SitesPage = lazy(() => import('./components/sites/SitesPage'))
 const ChatModePage = lazy(() => import('./components/chat-mode/ChatModePage'))
+const BotsPage = lazy(() => import('./components/bots/BotsPage'))
 const SiteSetupHost = lazy(() =>
   import('./components/sites/SiteSetupHost').then((m) => ({ default: m.SiteSetupHost }))
 )
@@ -1500,6 +1501,15 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  // Why stay mounted after the first visit: the Bots webview would otherwise reload its whole UI on every mode switch.
+  const [botsVisited, setBotsVisited] = useState(false)
+  useEffect(() => {
+    if (activeView === 'bots') {
+      setBotsVisited(true)
+    }
+  }, [activeView])
+  const botsMounted = botsVisited && settings?.experimentalBots === true
+
   const hasTabBar = tabCount >= 2
   const showTitlebarExpandButton = workspaceChromeActive && !hasTabBar && effectiveActiveTabExpanded
   // Activity/Space are full-page navigation surfaces (like Settings), so the worktree sidebar is hidden there.
@@ -1508,8 +1518,9 @@ function App(): React.JSX.Element {
     activeView !== 'activity' &&
     activeView !== 'space' &&
     activeView !== 'skills' &&
-    // Chat owns its whole surface, including its own sidebar.
-    activeView !== 'chat'
+    // Chat and Bots own their whole surface, including their own sidebars.
+    activeView !== 'chat' &&
+    activeView !== 'bots'
   // Tasks/Landing show the full titlebar only when the sidebar is collapsed; open, they mirror workspace view (creation suppresses it).
   const stackedSidebarOpen =
     !workspaceChromeActive && !creationLayoutActive && showSidebar && sidebarOpen
@@ -2000,8 +2011,8 @@ function App(): React.JSX.Element {
         ) : (
           <div className="pl-2" />
         )}
-        {/* Chat hides the worktree sidebar but still owns the global titlebar, so it keeps the app name. */}
-        {(showSidebar || activeView === 'chat') && !hasCustomTitleBar && (
+        {/* Chat and Bots hide the worktree sidebar but still own the global titlebar, so they keep the app name. */}
+        {(showSidebar || activeView === 'chat' || activeView === 'bots') && !hasCustomTitleBar && (
           <>
             {settings?.showTitlebarAppName !== false && (
               <ContextMenu>
@@ -2335,6 +2346,7 @@ function App(): React.JSX.Element {
                               {activeView === 'skills' ? <SkillsPage /> : null}
                               {activeView === 'sites' ? <SitesPage /> : null}
                               {activeView === 'chat' ? <ChatModePage /> : null}
+                              {botsMounted ? <BotsPage active={activeView === 'bots'} /> : null}
                               {activeView === 'tasks' ? <TaskPage /> : null}
                               {activeView === 'automations' ? <AutomationsPage /> : null}
                               {activeView === 'activity' ? <ActivityPrototypePage /> : null}

@@ -590,6 +590,7 @@ import type {
   WorkspaceCleanupScanResult
 } from '../shared/workspace-cleanup'
 import type { KeybindingActionId, KeybindingFileSnapshot } from '../shared/keybindings'
+import type { BotsKeySaveResult, BotsKeyStatus, BotsSidecarStatus } from '../shared/bots-types'
 
 type GitLabRepoSelectorArgs = {
   repoPath: string
@@ -989,6 +990,18 @@ export type ChatModeApi = {
   getClaudeSettingsEffort?: () => Promise<string | null>
   /** Fires when main mutated the chat store outside this window's IPC (muster MCP tools). */
   onExternalChange: (callback: () => void) => () => void
+}
+
+/** Muster Bots: the bundled bots server behind the Bots tab. */
+export type BotsApi = {
+  /** Starts the server if needed and resolves once it answers, failed or found missing. */
+  start: () => Promise<BotsSidecarStatus>
+  status: () => Promise<BotsSidecarStatus>
+  restart: () => Promise<BotsSidecarStatus>
+  onStatusChanged: (callback: (status: BotsSidecarStatus) => void) => () => void
+  composioKeyStatus: () => Promise<BotsKeyStatus>
+  /** Empty clears the key. Applies live while the bots server runs. */
+  setComposioKey: (value: string) => Promise<BotsKeySaveResult>
 }
 
 export type ChatConnectorApi = {
@@ -1825,6 +1838,7 @@ export type PreloadApi = {
   siteDbSnapshots: SiteDbSnapshotsApi
   chatMode: ChatModeApi
   chatConnector: ChatConnectorApi
+  bots: BotsApi
   planAnnotation: PlanAnnotationApi
   chatThreadStream: ChatThreadStreamApi
   chatEngine: ChatEngineApi

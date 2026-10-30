@@ -52,6 +52,7 @@ import { registerChatModeHandlers } from './chat-mode'
 import { registerChatConnectorHandlers } from './chat-connector'
 import { registerPlanAnnotationHandlers } from './plan-annotation'
 import { registerChatThreadStreamHandlers } from './chat-thread-stream'
+import { registerBotsHandlers } from './bots'
 import { registerChatEngineHandlers } from './chat-engine'
 import { registerChatThreadTitleHandlers } from './chat-thread-title'
 import { registerSiteRunHandlers } from './site-runs'
@@ -256,6 +257,7 @@ export function registerCoreHandlers(
   registerChatConnectorHandlers()
   registerPlanAnnotationHandlers()
   registerChatThreadStreamHandlers(store, commitMessageAgentEnv)
+  registerBotsHandlers(commitMessageAgentEnv)
   registerChatEngineHandlers()
   registerChatThreadTitleHandlers({
     getSettings: () => store.getSettings(),

@@ -12,6 +12,8 @@ const RIGHT_SIDEBAR_SUPPRESSED_VIEWS = new Set<ActiveView>([
   'skills',
   'mobile',
   'chat',
+  // Why: the Bots tab is its own app; the workspace explorer and site panel don't apply there.
+  'bots',
   // Why: the Sites page is full width; the explorer beside it shows an unrelated workspace.
   'sites'
 ])

@@ -28,6 +28,7 @@ import { CodexUsageStore, initCodexUsagePath } from './codex-usage/store'
 import { OpenCodeUsageStore, initOpenCodeUsagePath } from './opencode-usage/store'
 import { killAllPty } from './ipc/pty'
 import { stopAllChatThreadStreams } from './chat-mode/chat-thread-stream'
+import { stopBotsSidecar } from './bots/bots-sidecar'
 import { initDaemonPtyProvider, disconnectDaemon, shutdownDaemon } from './daemon/daemon-init'
 import { closeAllWatchers } from './ipc/filesystem-watcher'
 import { disposeWorktreeBaseDirectoryWatchers } from './ipc/worktree-base-directory-watcher'
@@ -2614,6 +2615,8 @@ app.on('will-quit', (e) => {
   killAllPty()
   // Why: chat-mode stream children are not PTYs; they'd outlive quit otherwise.
   stopAllChatThreadStreams()
+  // Why: the bots server owns its own agent CLIs; stopping it lets it end them before Muster exits.
+  void stopBotsSidecar()
   const watcherShutdown = shutdownWatchersOnce()
   store?.flush()
 

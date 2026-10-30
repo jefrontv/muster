@@ -279,6 +279,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     experimentalNativeChatDefaultedOnForMuster: true,
     experimentalChatMode: true,
     experimentalChatModeDefaultedOnForMuster: true,
+    experimentalBots: false,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,

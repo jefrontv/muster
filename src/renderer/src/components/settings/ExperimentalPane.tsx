@@ -10,6 +10,8 @@ import { translate } from '@/i18n/i18n'
 import { NativeChatExperimentalSetting } from './NativeChatExperimentalSetting'
 import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { ChatModeExperimentalSetting } from './ChatModeExperimentalSetting'
+import { BotsExperimentalSetting } from './BotsExperimentalSetting'
+import { botsSupported } from '@/lib/bots-platform'
 import { AgentDashboardExperimentalSetting } from './AgentDashboardExperimentalSetting'
 import { EphemeralVmsExperimentalSetting } from './EphemeralVmsExperimentalSetting'
 import {
@@ -49,6 +51,8 @@ export function ExperimentalPane({
   const showChatMode =
     chatModeSupported() &&
     matchesSettingsSearch(searchQuery, [getExperimentalSearchEntry().chatMode])
+  const showBots =
+    botsSupported() && matchesSettingsSearch(searchQuery, [getExperimentalSearchEntry().bots])
   const showTerminalAttention = matchesSettingsSearch(searchQuery, [
     getExperimentalSearchEntry().terminalAttention
   ])
@@ -167,6 +171,10 @@ export function ExperimentalPane({
 
       {showChatMode ? (
         <ChatModeExperimentalSetting settings={settings} updateSettings={updateSettings} />
+      ) : null}
+
+      {showBots ? (
+        <BotsExperimentalSetting settings={settings} updateSettings={updateSettings} />
       ) : null}
 
       {showTerminalAttention ? (

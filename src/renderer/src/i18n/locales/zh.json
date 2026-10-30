@@ -5461,6 +5461,12 @@
             "description": "A dedicated Chat surface with simple workspaces and chat threads, beside the Code view.",
             "copy": "Adds a Chat/Code switch at the top of the sidebar. Chat workspaces are just a name plus folders, with chat threads inside — no branches or worktrees.",
             "toggleLabel": "Toggle Chat mode"
+          },
+          "bots": {
+            "title": "Muster Bots",
+            "description": "A Bots tab beside Chat and Code: AI bots with their own instructions, schedules and connected apps.",
+            "copy": "Adds a Bots tab at the top of the sidebar. Bots run on your Claude and Codex accounts and start when you first open the tab.",
+            "toggleLabel": "Toggle Muster Bots"
           }
         },
         "FloatingWorkspacePane": {
@@ -7566,6 +7572,10 @@
             "chatMode": {
               "title": "Chat mode",
               "description": "A dedicated Chat surface with simple workspaces and chat threads, beside the Code view."
+            },
+            "bots": {
+              "title": "Muster Bots",
+              "description": "A Bots tab beside Chat and Code: AI bots with their own instructions, schedules and connected apps."
             }
           }
         },
@@ -9519,6 +9529,15 @@
           "replaceDescription": "Muster deletes {{value0}} and links its own command there. This cannot be undone.",
           "cancel": "Cancel",
           "replaceConfirm": "Replace"
+        },
+        "BotsComposioKeySetting": {
+          "savedLabel": "Composio API key (saved, ending {{hint}})",
+          "label": "Composio API key",
+          "copy": "Connects bots to apps like Gmail, Slack and Calendar. Stored encrypted on this computer.",
+          "getKey": "Get a key",
+          "save": "Save",
+          "remove": "Remove",
+          "placeholder": "ak_…"
         }
       },
       "right": {
@@ -14650,7 +14669,8 @@
         "mode": {
           "toggleLabel": "App mode",
           "chat": "Chat",
-          "code": "Code"
+          "code": "Code",
+          "bots": "Bots"
         },
         "taskStrip": {
           "reopen": "Reopen task",
@@ -14789,6 +14809,15 @@
         "title": "重新连接 Bitbucket",
         "impact": "重新连接之前，Bitbucket 拉取请求和构建状态将无法加载。",
         "notNow": "以后再说"
+      },
+      "bots": {
+        "BotsPage": {
+          "starting": "Starting Muster Bots…",
+          "missing": "Muster Bots is not included in this build",
+          "missingDetail": "In a development checkout, run pnpm fetch:muster-bots and reopen this tab.",
+          "failed": "Muster Bots stopped",
+          "restart": "Restart"
+        }
       }
     },
     "i18n": {

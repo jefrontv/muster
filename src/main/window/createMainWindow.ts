@@ -50,6 +50,7 @@ import { closeDashboardPopout } from './dashboard-popout-window'
 import { installPrivilegedWindowNavigationPolicy } from './privileged-window-navigation'
 import { isMacosTahoeOrNewer } from './macos-tahoe-release'
 import { reflowRendererViewport } from './renderer-viewport-reflow'
+import { attachBotsGuestPolicies, isBotsGuest, isBotsWebviewAttach } from '../bots/bots-session'
 
 // Why: show/restore/resume can overlap before the size nudge resets; never capture the temporary width as the next baseline.
 const activeRepaintJiggles = new WeakSet<BrowserWindow>()
@@ -457,7 +458,9 @@ export function createMainWindow(
     const partition = typeof webPreferences.partition === 'string' ? webPreferences.partition : ''
 
     // Why: fail closed — deny any src or partition not in the registry allowlist so a renderer bug can't smuggle preload/Node into an unprivileged guest.
-    if (!normalizedSrc || !browserSessionRegistry.isAllowedPartition(partition)) {
+    // The Bots partition is the one exception, and only while pointed at the running bots server.
+    const botsGuest = isBotsWebviewAttach(partition, src)
+    if (!normalizedSrc || (!botsGuest && !browserSessionRegistry.isAllowedPartition(partition))) {
       event.preventDefault()
       return
     }
@@ -481,6 +484,10 @@ export function createMainWindow(
 
   mainWindow.webContents.on('did-attach-webview', (_event, guest) => {
     // Why: attach guest popup/nav policy at creation; waiting for renderer registration races target=_blank/early redirects past it.
+    if (isBotsGuest(guest)) {
+      attachBotsGuestPolicies(guest)
+      return
+    }
     browserManager.attachGuestPolicies(guest)
   })
 

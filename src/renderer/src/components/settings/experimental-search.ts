@@ -5,6 +5,7 @@ import { translateSearchKeyword } from './settings-search-keywords'
 import { getNewWorktreeCardStyleSearchEntry } from './new-worktree-card-style-search-entry'
 import { getNativeChatExperimentalSearchEntry } from './native-chat-experimental-search-entry'
 import { getChatModeExperimentalSearchEntry } from './chat-mode-experimental-search-entry'
+import { getBotsExperimentalSearchEntry } from './bots-experimental-search-entry'
 import { getEphemeralVmsSearchEntry } from './ephemeral-vms-search'
 
 export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
@@ -142,6 +143,7 @@ export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
     },
     getNativeChatExperimentalSearchEntry(),
     getChatModeExperimentalSearchEntry(),
+    getBotsExperimentalSearchEntry(),
     {
       title: translate(
         'auto.components.settings.experimental.search.9e4ddf776d',
@@ -263,6 +265,9 @@ export function getExperimentalSearchEntry() {
     ),
     chatMode: findEntry(
       translate('auto.components.settings.experimental.search.chatMode.title', 'Chat mode')
+    ),
+    bots: findEntry(
+      translate('auto.components.settings.experimental.search.bots.title', 'Muster Bots')
     ),
     terminalAttention: findEntry(
       translate('auto.components.settings.experimental.search.9e4ddf776d', 'Terminal attention')

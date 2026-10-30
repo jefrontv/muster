@@ -141,3 +141,6 @@ tools/benchmarks/results/terminal-pipeline-*.json
 
 # Feedback endpoint credentials; the example file is the only one that belongs in git
 muster-feedback-secrets.php
+
+# Muster Bots core artifact, fetched by pnpm fetch:muster-bots (config/muster-bots.json)
+/resources/muster-bots/

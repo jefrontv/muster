@@ -8,6 +8,7 @@ import {
 import type { AppState } from '../types'
 import { normalizeRightSidebarRoute } from '../right-sidebar-route'
 import { chatModeSupported } from '@/lib/chat-mode-platform'
+import { botsSupported } from '@/lib/bots-platform'
 import {
   findPrevLiveNonTaskStackHistoryIndex,
   findPrevLiveWorktreeHistoryIndex
@@ -496,7 +497,8 @@ function hydratedUIPartialMatchesState(state: AppState, hydrated: Partial<UISlic
 
 function sanitizeHydratedActiveView(
   value: PersistedUIState['activeView'],
-  experimentalActivityEnabled: boolean
+  experimentalActivityEnabled: boolean,
+  experimentalBotsEnabled: boolean
 ): TopLevelView {
   // Why: older data (pre-activeView) or a view a different build doesn't have
   // falls back to terminal rather than rendering nothing.
@@ -505,6 +507,10 @@ function sanitizeHydratedActiveView(
   }
   // Why: activity is hidden when its setting is off, so gate only it (mobile/automations stay functional when hidden).
   if (value === 'activity' && !experimentalActivityEnabled) {
+    return 'terminal'
+  }
+  // Why: Bots has no other entry point than its tab, so a hidden tab must not restore a blank page.
+  if (value === 'bots' && (!experimentalBotsEnabled || !botsSupported())) {
     return 'terminal'
   }
   return value
@@ -612,9 +618,12 @@ export type UISlice = {
   previousViewBeforeSkills: Exclude<TopLevelView, 'skills'>
   previousViewBeforeSites: Exclude<TopLevelView, 'sites'>
   previousViewBeforeMobile: Exclude<TopLevelView, 'mobile'>
-  previousViewBeforeChat: Exclude<TopLevelView, 'chat'>
+  previousViewBeforeChat: Exclude<TopLevelView, 'chat' | 'bots'>
   openChatPage: () => void
   closeChatPage: () => void
+  previousViewBeforeBots: Exclude<TopLevelView, 'chat' | 'bots'>
+  openBotsPage: () => void
+  closeBotsPage: () => void
   setActiveView: (view: UISlice['activeView']) => void
   taskPageData: {
     preselectedRepoId?: string
@@ -1178,6 +1187,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   previousViewBeforeSites: 'terminal',
   previousViewBeforeMobile: 'terminal',
   previousViewBeforeChat: 'terminal',
+  previousViewBeforeBots: 'terminal',
   setActiveView: (view) => set({ activeView: view }),
   taskPageData: {},
   taskResumeState: undefined,
@@ -1462,13 +1472,36 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     }
     set((state) => ({
       activeView: 'chat',
+      // Why: Chat and Bots are sibling modes, so hopping between them keeps the Code view to return to.
       previousViewBeforeChat:
-        state.activeView === 'chat' ? state.previousViewBeforeChat : state.activeView
+        state.activeView === 'chat'
+          ? state.previousViewBeforeChat
+          : state.activeView === 'bots'
+            ? state.previousViewBeforeBots
+            : state.activeView
     }))
   },
   closeChatPage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeChat
+    })),
+  openBotsPage: () => {
+    if (!botsSupported() || get().settings?.experimentalBots !== true) {
+      return
+    }
+    set((state) => ({
+      activeView: 'bots',
+      previousViewBeforeBots:
+        state.activeView === 'bots'
+          ? state.previousViewBeforeBots
+          : state.activeView === 'chat'
+            ? state.previousViewBeforeChat
+            : state.activeView
+    }))
+  },
+  closeBotsPage: () =>
+    set((state) => ({
+      activeView: state.previousViewBeforeBots
     })),
   setNewWorkspaceDraft: (draft) => set({ newWorkspaceDraft: draft }),
   clearNewWorkspaceDraft: () => set({ newWorkspaceDraft: null }),
@@ -1484,11 +1517,13 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   },
   closeSettingsPage: () =>
     set((state) => {
-      const previousView =
+      const hiddenActivity =
         state.previousViewBeforeSettings === 'activity' &&
         state.settings?.experimentalActivity !== true
-          ? 'terminal'
-          : state.previousViewBeforeSettings
+      const hiddenBots =
+        state.previousViewBeforeSettings === 'bots' && state.settings?.experimentalBots !== true
+      const previousView =
+        hiddenActivity || hiddenBots ? 'terminal' : state.previousViewBeforeSettings
       return { activeView: previousView }
     }),
   settingsNavigationTarget: null,
@@ -2486,7 +2521,11 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
         // Why: restore only on startup; on 'sync' broadcasts it would clobber the window's current per-window view.
         activeView:
           source === 'startup'
-            ? sanitizeHydratedActiveView(ui.activeView, s.settings?.experimentalActivity === true)
+            ? sanitizeHydratedActiveView(
+                ui.activeView,
+                s.settings?.experimentalActivity === true,
+                s.settings?.experimentalBots === true
+              )
             : s.activeView,
         persistedUIReady: true
       }

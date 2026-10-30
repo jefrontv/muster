@@ -923,6 +923,22 @@ const api = {
     }
   } satisfies PreloadApi['chatMode'],
 
+  bots: {
+    start: () => ipcRenderer.invoke('bots:start'),
+    status: () => ipcRenderer.invoke('bots:status'),
+    restart: () => ipcRenderer.invoke('bots:restart'),
+    onStatusChanged: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        status: Parameters<typeof callback>[0]
+      ): void => callback(status)
+      ipcRenderer.on('bots:statusChanged', listener)
+      return () => ipcRenderer.removeListener('bots:statusChanged', listener)
+    },
+    composioKeyStatus: () => ipcRenderer.invoke('bots:composioKeyStatus'),
+    setComposioKey: (value) => ipcRenderer.invoke('bots:setComposioKey', value)
+  } satisfies PreloadApi['bots'],
+
   chatConnector: {
     respondConfirm: (args) => ipcRenderer.invoke('chatConnector:respondConfirm', args),
     onConfirmRequest: (callback) => {

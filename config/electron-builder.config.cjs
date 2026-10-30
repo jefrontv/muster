@@ -66,8 +66,15 @@ const extensionCatalogResources = {
   from: 'resources/extensions',
   to: 'extensions'
 }
+// Why: the bots server runs as a utility process from real files, so it ships outside app.asar.
+// Fetched by `pnpm fetch:muster-bots`; a build without it shows the Bots tab's "not included" notice.
+const musterBotsResources = {
+  from: 'resources/muster-bots',
+  to: 'muster-bots'
+}
 const commonExtraResources = [
   relayExtraResource,
+  musterBotsResources,
   skillFreshnessResources,
   skillPackageResources,
   bundledBrowserExtensionResources,
@@ -136,6 +143,7 @@ module.exports = {
     // it from process.resourcesPath; exclude the source copy from app.asar.
     '!resources/onboarding/feature-wall/**',
     '!resources/skills/**',
+    '!resources/muster-bots/**',
     // Why: the Windows CLI shim ships via extraResources to resources/bin/orca.cmd
     // (beside the native resources/bin/orca.exe). Packing the source tree into
     // app.asar too lets asarUnpack:['resources/**'] extract a second copy at
