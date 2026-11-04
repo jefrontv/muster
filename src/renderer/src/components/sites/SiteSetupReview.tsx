@@ -44,6 +44,7 @@ export function SiteSetupReview({
   onChange,
   lockedSteps = NO_LOCKED_STEPS,
   sourceRows,
+  extraRows,
   promptStackChoice = false,
   serveDomainError = ''
 }: {
@@ -58,6 +59,8 @@ export function SiteSetupReview({
   lockedSteps?: SetupRunStepId[]
   /** Rendered in place of the Clone row for a link source (the target radio + credentials rows). */
   sourceRows?: React.ReactNode
+  /** Under the source row: an agent's setup adds its Server details row here. */
+  extraRows?: React.ReactNode
   /** Several stacks and nothing chose one: open the stack choice in the row from the start. */
   promptStackChoice?: boolean
   /** A naming rule or clash for the serve domain; it also opens the editor so the reason shows. */
@@ -128,6 +131,7 @@ export function SiteSetupReview({
             summary={`${source.repo.fullName} → ${joinDisplayPath(source.destinationRoot, repoSlug(source.repo.fullName))}`}
           />
         ) : null)}
+      {extraRows}
 
       {serveReason ? (
         <SiteSetupRow

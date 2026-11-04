@@ -622,8 +622,12 @@ export type UISlice = {
   openChatPage: () => void
   closeChatPage: () => void
   previousViewBeforeBots: Exclude<TopLevelView, 'chat' | 'bots'>
+  /** Bots was opened from Chat, so leaving it returns to Chat rather than the Code view. */
+  botsOpenedFromChat: boolean
   openBotsPage: () => void
   closeBotsPage: () => void
+  /** Back to the mode Bots was opened from: Chat when it came from there and is still on, else Code. */
+  leaveBotsPage: () => void
   setActiveView: (view: UISlice['activeView']) => void
   taskPageData: {
     preselectedRepoId?: string
@@ -1188,6 +1192,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   previousViewBeforeMobile: 'terminal',
   previousViewBeforeChat: 'terminal',
   previousViewBeforeBots: 'terminal',
+  botsOpenedFromChat: false,
   setActiveView: (view) => set({ activeView: view }),
   taskPageData: {},
   taskResumeState: undefined,
@@ -1496,13 +1501,25 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
           ? state.previousViewBeforeBots
           : state.activeView === 'chat'
             ? state.previousViewBeforeChat
-            : state.activeView
+            : state.activeView,
+      botsOpenedFromChat:
+        state.activeView === 'bots' ? state.botsOpenedFromChat : state.activeView === 'chat'
     }))
   },
   closeBotsPage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeBots
     })),
+  leaveBotsPage: () => {
+    const state = get()
+    if (state.botsOpenedFromChat && state.settings?.experimentalChatMode === true) {
+      state.openChatPage()
+    }
+    // openChatPage refuses where Chat isn't supported, so fall back to Code.
+    if (get().activeView === 'bots') {
+      state.closeBotsPage()
+    }
+  },
   setNewWorkspaceDraft: (draft) => set({ newWorkspaceDraft: draft }),
   clearNewWorkspaceDraft: () => set({ newWorkspaceDraft: null }),
   openSettingsPage: () => {

@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react'
 import type { SiteLocalStack } from '../../../shared/site-types'
-import { installWindowVisibilityInterval } from './window-visibility-interval'
+import { installWindowVisibilityInterval, isWindowVisible } from './window-visibility-interval'
 
 /** The trigger is a person installing software; a slow poll still catches it and costs nothing. */
 const POLL_INTERVAL_MS = 30_000
@@ -66,7 +66,11 @@ export function useAvailableSiteStacks(): SiteLocalStack[] | null {
 
     window.addEventListener('focus', probe)
     window.addEventListener(STACKS_CHANGED_EVENT, probe)
-    // Runs once on install and again on becoming visible, so this is also the mount probe.
+    // A dialog opened behind other windows (an agent's setup) still needs an answer to seed from.
+    if (!isWindowVisible()) {
+      probe()
+    }
+    // Runs once on install when visible and again on becoming visible.
     const stopPolling = installWindowVisibilityInterval({
       run: probe,
       intervalMs: POLL_INTERVAL_MS

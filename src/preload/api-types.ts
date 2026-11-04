@@ -43,6 +43,16 @@ import type {
 } from '../shared/chat-mode-types'
 import type { ChatConnectorConfirmRequest } from '../shared/chat-connector-types'
 import type { PlanAnnotationRequest, PlanAnnotationResult } from '../shared/plan-annotation-types'
+import type { SiteSetupAgentReport, SiteSetupAgentRequest } from '../shared/site-setup-agent-types'
+import type {
+  SiteImportLargeFilesAnswer,
+  SiteImportLargeFilesPrompt
+} from '../shared/site-import-file-rules'
+import type {
+  SiteSetupApprovalRequest,
+  SiteSetupClipboardLink,
+  SiteSetupJobUpdate
+} from '../shared/site-setup-approval-types'
 import type {
   ChatThreadSearchRequest,
   ChatThreadSearchResponse
@@ -855,6 +865,7 @@ export type SitesApi = {
         | 'notes'
         | 'searchReplaceTimeoutSeconds'
         | 'customSteps'
+        | 'importFileRules'
       >
     >
   }) => Promise<SiteResult<SiteSummary>>
@@ -1023,6 +1034,52 @@ export type PlanAnnotationApi = {
   onQueued: (callback: (count: number) => void) => () => void
   onResolved: (callback: (requestId: string) => void) => () => void
   onRequest: (callback: (request: PlanAnnotationRequest) => void) => () => void
+}
+
+/** Agent requests to create projects or write site config, answered by the user. */
+export type SiteSetupApprovalApi = {
+  /** Returns false when the request already settled (expired, or another window answered). */
+  respond: (args: {
+    requestId: string
+    decision: 'approved' | 'approved-site' | 'denied'
+    /** Only for a password prompt; main stores it in the keychain and drops it. */
+    secretValue?: string
+    /** SSH password prompt only: take the password and fields from the clipboard's muster:// link. */
+    useClipboardLink?: boolean
+    /** The card's "Always allow" box; main saves it only for an approved, eligible card. */
+    alwaysAllow?: boolean
+  }) => Promise<boolean>
+  listPending: () => Promise<SiteSetupApprovalRequest[]>
+  /** The clipboard's muster:// link, minus its password, when the card can use it. */
+  clipboardLink: (requestId: string) => Promise<SiteSetupClipboardLink | null>
+  onRequest: (callback: (request: SiteSetupApprovalRequest) => void) => () => void
+  onResolved: (callback: (requestId: string) => void) => () => void
+  /** Progress of an agent's clone or local setup job, for the window's toast. */
+  onJobUpdate: (callback: (update: SiteSetupJobUpdate) => void) => () => void
+  /** A muster:// link the user opened went to this waiting password card instead of the bind modal. */
+  onLinkReceived: (callback: (requestId: string) => void) => () => void
+}
+
+export type SiteSetupAgentApi = {
+  /** An agent asked for the Set up dialog. */
+  onOpen: (callback: (request: SiteSetupAgentRequest) => void) => () => void
+  /** Setups opened before this window mounted that are still unfinished. */
+  listOpen: () => Promise<SiteSetupAgentRequest[]>
+  /** What the dialog is doing now, so the agent can wait on it instead of sleeping. */
+  report: (setupId: string, report: SiteSetupAgentReport) => Promise<void>
+  /** The clipboard's muster:// link, minus its password. */
+  clipboardLink: () => Promise<SiteSetupClipboardLink | null>
+  /** Sends the clipboard's link down the same path as clicking it. */
+  useClipboardLink: () => Promise<{ ok: boolean; error: string }>
+}
+
+export type SiteImportLargeFilesApi = {
+  /** An import found unusually large items and is waiting on the user's choice. */
+  onPrompt: (callback: (prompt: SiteImportLargeFilesPrompt) => void) => () => void
+  /** Answered here or elsewhere, or the run was cancelled: the dialog closes. */
+  onResolved: (callback: (promptId: string) => void) => () => void
+  listPending: () => Promise<SiteImportLargeFilesPrompt[]>
+  respond: (promptId: string, answer: SiteImportLargeFilesAnswer) => Promise<boolean>
 }
 
 /** Chat mode's headless stream-json transport: one child process per thread.
@@ -1840,6 +1897,9 @@ export type PreloadApi = {
   chatConnector: ChatConnectorApi
   bots: BotsApi
   planAnnotation: PlanAnnotationApi
+  siteSetupApproval: SiteSetupApprovalApi
+  siteSetupAgent: SiteSetupAgentApi
+  siteImportLargeFiles: SiteImportLargeFilesApi
   chatThreadStream: ChatThreadStreamApi
   chatEngine: ChatEngineApi
   chatThreadTitle: ChatThreadTitleApi

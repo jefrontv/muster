@@ -6,10 +6,14 @@
 import type React from 'react'
 import { AlertTriangle } from 'lucide-react'
 import type { GlobalSettings } from '../../../../shared/types'
-import { isSitesMcpExposedToAgents } from '../../../../shared/agent-capabilities'
+import {
+  isSiteSetupExposedToAgents,
+  isSitesMcpExposedToAgents
+} from '../../../../shared/agent-capabilities'
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsSubsectionHeader, SettingsSwitchRow } from './SettingsFormControls'
 import { SiteMcpInstallCard } from './site-mcp-install-card'
+import { SiteSetupAlwaysAllowList } from './SiteSetupAlwaysAllowList'
 import { getAgentCapabilitiesPaneSearchEntries } from './agent-capabilities-search'
 import { translate } from '@/i18n/i18n'
 
@@ -25,9 +29,10 @@ export function AgentCapabilitiesPane({
   updateSettings
 }: AgentCapabilitiesPaneProps): React.JSX.Element {
   const entries = getAgentCapabilitiesPaneSearchEntries()
-  const [paneEntry, sitesMcpEntry, sitesMcpInstallEntry] = entries
+  const [paneEntry, sitesMcpEntry, siteSetupEntry, sitesMcpInstallEntry, alwaysAllowEntry] = entries
 
   const sitesMcpEnabled = isSitesMcpExposedToAgents(settings)
+  const siteSetupEnabled = isSiteSetupExposedToAgents(settings)
 
   return (
     <div className="space-y-6">
@@ -60,6 +65,25 @@ export function AgentCapabilitiesPane({
             onChange={() => updateSettings({ agentCapabilitySitesMcp: !sitesMcpEnabled })}
           />
         </SearchableSetting>
+        <SearchableSetting {...siteSetupEntry}>
+          <SettingsSwitchRow
+            label={siteSetupEntry.title}
+            description={siteSetupEntry.description}
+            checked={sitesMcpEnabled && siteSetupEnabled}
+            disabled={!sitesMcpEnabled}
+            onChange={() => updateSettings({ agentCapabilitySiteSetup: !siteSetupEnabled })}
+          />
+        </SearchableSetting>
+        {siteSetupEnabled ? (
+          <SearchableSetting {...alwaysAllowEntry}>
+            <SiteSetupAlwaysAllowList
+              settings={settings}
+              updateSettings={updateSettings}
+              title={alwaysAllowEntry.title}
+              description={alwaysAllowEntry.description ?? ''}
+            />
+          </SearchableSetting>
+        ) : null}
         <SearchableSetting {...sitesMcpInstallEntry}>
           <SiteMcpInstallCard enabled={sitesMcpEnabled} />
         </SearchableSetting>

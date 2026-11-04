@@ -42,7 +42,7 @@ import { detectLanguage } from '@/lib/language-detect'
 import { basename, dirname, joinPath } from '@/lib/path'
 import { cn } from '@/lib/utils'
 import { WORKSPACE_FILE_PATH_MIME } from '@/lib/workspace-file-drag'
-import { isFolderRepo } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
@@ -1239,7 +1239,7 @@ function SourceControlInner(): React.JSX.Element {
     []
   )
 
-  const isFolder = activeRepo ? isFolderRepo(activeRepo) : false
+  const isFolder = activeRepo ? !hasGitFeatures(activeRepo) : false
   const worktreePath = activeWorktree?.path ?? null
   const { expandedSubmoduleKeys, submoduleStatusByKey, toggleSubmodule } =
     useSourceControlSubmoduleStatus({

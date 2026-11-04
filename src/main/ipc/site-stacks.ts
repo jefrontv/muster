@@ -13,26 +13,18 @@ import type { AgentLocalDaemonStatus } from '../../shared/site-stack-types'
 import { ipcMain } from 'electron'
 import type { SiteLocalStack } from '../../shared/site-types'
 import type { Store } from '../persistence'
-import {
-  planAgentLocalMigration,
-  resolveAgentLocalDocroot,
-  runAgentLocalMigration
-} from '../sites/agent-local-migration'
+import { planAgentLocalMigration, resolveAgentLocalDocroot } from '../sites/agent-local-migration'
 import { setAgentLocalSiteDomain } from '../sites/agent-local-site-control'
 import path from 'node:path'
-import { previewDdevSetup, runDdevSetup } from '../sites/ddev-project-setup'
+import { previewDdevSetup } from '../sites/ddev-project-setup'
 import { findLocalDomainClash, type LocalDomainClash } from '../sites/local-domain-availability'
 import { notifySiteChanged } from './site-change-notifier'
 import { providerFor, type LocalStackOutcome } from '../sites/local-stack-provider'
 import { startStackWithPortHandover } from '../sites/local-stack-port-handover'
 import { currentSocketIfRunning } from '../sites/localwp-detection'
-import { createLocalWpHost, isLocalWpSupported, LOCALWP_DATABASE_USER } from '../sites/localwp-host'
+import { createLocalWpHost, isLocalWpSupported } from '../sites/localwp-host'
 import type { LocalWpMigrationPlan } from '../sites/localwp-migration-plan'
-import {
-  previewLocalWpMigration,
-  runLocalWpMigration,
-  type LocalWpMigrationResult
-} from '../sites/localwp-migration'
+import { previewLocalWpMigration, type LocalWpMigrationResult } from '../sites/localwp-migration'
 import type { LocalWpControlOutcome } from '../sites/localwp-site-control'
 import {
   buildMigrationRequest,
@@ -42,13 +34,9 @@ import {
   readTargetStack,
   requireId
 } from './site-stack-request'
-import { importMigratedDatabase } from './localwp-migrated-database-import'
 import { createMigrationProgressForwarder } from './site-stack-progress'
-import {
-  adoptServingStack,
-  persistLocalWpDatabasePassword,
-  recordTcpStackSetup
-} from './site-stack-adopt'
+import { runSiteStackMigration } from './site-stack-migration-run'
+import { adoptServingStack } from './site-stack-adopt'
 import { failure, requireSite, type SiteResult } from './sites-result'
 
 const SITE_STACK_CHANNELS = [
@@ -296,53 +284,12 @@ export function registerSiteStackHandlers(store: Store): void {
     'siteStacks:runMigration',
     async (event, args: unknown): Promise<SiteResult<LocalWpMigrationResult>> => {
       try {
-        const stack = readTargetStack(args)
-        const request = buildMigrationRequest(store, args, stack)
-        const site = requireSite(store, requireId(readField(args, 'siteId')))
-        const onStatus = createMigrationProgressForwarder(event.sender, site.id, [
-          request.adminPassword
-        ])
-        if (stack === 'ddev') {
-          const result = await runDdevSetup(request, {
-            docroot: resolveAgentLocalDocroot(site.path, site.localWpRoot),
-            skipCoreDownload: readField(args, 'skipCoreDownload') === true,
-            ...(site.phpVersion ? { phpVersion: site.phpVersion } : {}),
-            onStatus
-          })
-          if (result.ok) {
-            recordTcpStackSetup(store, site.id, 'ddev', result)
-          }
-          return { ok: true, value: result }
+        return {
+          ok: true,
+          value: await runSiteStackMigration(store, args, (siteId, secrets) =>
+            createMigrationProgressForwarder(event.sender, siteId, secrets)
+          )
         }
-        if (stack === 'agent-local') {
-          const result = await runAgentLocalMigration(request, {
-            onStatus,
-            phpVersion: site.phpVersion,
-            // The docroot agent-local should serve, which is not always the stored LocalWP subpath.
-            sourcePath: resolveAgentLocalDocroot(site.path, site.localWpRoot)
-          })
-          if (result.ok) {
-            recordTcpStackSetup(store, site.id, 'agent-local', result)
-          }
-          return { ok: true, value: result }
-        }
-        const result = await runLocalWpMigration(request, {
-          importDatabase: (options) => importMigratedDatabase(store, site.id, options),
-          onStatus
-        })
-        if (result.ok) {
-          store.updateSite(site.id, {
-            localStack: 'localwp',
-            localWpRoot: result.localWpRoot,
-            localDomain: request.domain,
-            dbSocket: result.socketPath,
-            dbUser: LOCALWP_DATABASE_USER,
-            dbPort: null
-          })
-          notifySiteChanged(site.id)
-          persistLocalWpDatabasePassword(store, site.id)
-        }
-        return { ok: true, value: result }
       } catch (error) {
         return failure(error)
       }

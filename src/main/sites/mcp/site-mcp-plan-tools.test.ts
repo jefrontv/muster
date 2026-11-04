@@ -3,7 +3,6 @@ import { basename, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearSiteMcpClientForTests, rememberSiteMcpClient } from './site-mcp-client-identity'
-import type { PlanAnnotationResult } from '../../../shared/plan-annotation-types'
 import type { SiteMcpContext } from './site-mcp-context'
 import { formatPlanFeedback } from '../plan-review-feedback'
 import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
@@ -198,13 +197,27 @@ describe('collect_plan_review', () => {
     expect(collectTool.concurrent).toBe(true)
   })
 
-  it('reports pending without failing, so the agent knows to ask again', async () => {
+  it('reports pending as normal and tells the agent to keep calling', async () => {
     const result = (await collectTool.run(
-      collectContext(() => Promise.resolve({ status: 'pending', openedMs: 42_000 })),
+      collectContext(() =>
+        Promise.resolve({ status: 'pending', openedMs: 50_000, shownMs: 42_000, queuedAhead: 0 })
+      ),
       { review_id: 'r1' }
-    )) as { status: string; open_for_seconds: number }
+    )) as { status: string; user_state: string; open_for_seconds: number; next_step: string }
     expect(result.status).toBe('pending')
+    expect(result.user_state).toBe('reading')
     expect(result.open_for_seconds).toBe(42)
+    expect(result.next_step).toContain('Do not open the plan again')
+  })
+
+  it('says a review is queued rather than unread when another is in front of it', async () => {
+    const result = (await collectTool.run(
+      collectContext(() =>
+        Promise.resolve({ status: 'pending', openedMs: 90_000, shownMs: null, queuedAhead: 1 })
+      ),
+      { review_id: 'r1' }
+    )) as { user_state: string; queued_ahead: number; open_for_seconds: number }
+    expect(result).toMatchObject({ user_state: 'queued', queued_ahead: 1, open_for_seconds: 0 })
   })
 
   it('tells the agent to stop when the id is unknown', async () => {
@@ -216,7 +229,54 @@ describe('collect_plan_review', () => {
     expect(result.message).toContain('do not keep polling')
   })
 
-  it('defaults the wait under a 30s client ceiling when nobody is listening for progress', async () => {
+  function holdingCollect(waits: number[]): SiteMcpContext['collectPlanReview'] {
+    return async (args) => {
+      waits.push(args.waitMs)
+      await new Promise((resolve) => setTimeout(resolve, args.waitMs))
+      return { status: 'pending', openedMs: 0 }
+    }
+  }
+
+  it('holds 25s in 10s slices whether or not the client sends a progress token', async () => {
+    vi.useFakeTimers()
+    for (const progress of [undefined, () => {}]) {
+      const waits: number[] = []
+      const running = collectTool.run(collectContext(holdingCollect(waits), progress), {
+        review_id: 'r1'
+      })
+      await vi.advanceTimersByTimeAsync(26_000)
+      await running
+      // A progress token is no promise of a longer deadline, and no bridge request outlives a slice.
+      expect(waits).toEqual([10_000, 10_000, 5_000])
+    }
+    vi.useRealTimers()
+  })
+
+  it('sends a progress line between slices and stops once answered', async () => {
+    vi.useFakeTimers()
+    const sent: { message: string; progress: number }[] = []
+    let calls = 0
+    const running = collectTool.run(
+      collectContext(
+        async (args) => {
+          calls += 1
+          await new Promise((resolve) => setTimeout(resolve, args.waitMs))
+          return calls < 3
+            ? { status: 'pending', openedMs: 0 }
+            : { status: 'settled', result: { decision: 'approved', annotations: [] } }
+        },
+        (update) => sent.push(update)
+      ),
+      { review_id: 'r1' }
+    )
+    await vi.advanceTimersByTimeAsync(26_000)
+    const result = (await running) as { status: string }
+    expect(result.status).toBe('settled')
+    expect(sent.map((update) => update.progress)).toEqual([1, 2])
+    vi.useRealTimers()
+  })
+
+  it('does not spin on a Muster that answers pending without holding', async () => {
     const waits: number[] = []
     await collectTool.run(
       collectContext((args) => {
@@ -225,54 +285,7 @@ describe('collect_plan_review', () => {
       }),
       { review_id: 'r1' }
     )
-    // Why assert the number: a default above the common ceiling means the call is cancelled
-    // mid-review on most harnesses, which is the whole failure this transport exists to avoid.
-    expect(waits[0]).toBeLessThan(30_000)
-  })
-
-  it('waits far longer for a client that asked to be kept informed', async () => {
-    const waits: number[] = []
-    await collectTool.run(
-      collectContext(
-        (args) => {
-          waits.push(args.waitMs)
-          return Promise.resolve({ status: 'pending', openedMs: 0 })
-        },
-        () => {}
-      ),
-      { review_id: 'r1' }
-    )
-    expect(waits[0]).toBeGreaterThan(30_000)
-  })
-
-  it('emits keepalive progress while the person reads', async () => {
-    vi.useFakeTimers()
-    const sent: { message: string; progress: number }[] = []
-    const { promise, resolve } = Promise.withResolvers<{
-      status: 'settled'
-      result: PlanAnnotationResult
-    }>()
-    const running = collectTool.run(
-      collectContext(
-        () => promise,
-        (update) => sent.push(update)
-      ),
-      { review_id: 'r1' }
-    )
-
-    await vi.advanceTimersByTimeAsync(25_000)
-    // Why this matters: a client that hears nothing assumes a hung server and cancels the call.
-    expect(sent.length).toBeGreaterThanOrEqual(2)
-    expect(sent[0]!.progress).toBeLessThan(sent[1]!.progress)
-
-    resolve({ status: 'settled', result: { decision: 'approved', annotations: [] } })
-    await running
-
-    const before = sent.length
-    await vi.advanceTimersByTimeAsync(60_000)
-    // And it must stop once answered, or the interval outlives the call forever.
-    expect(sent).toHaveLength(before)
-    vi.useRealTimers()
+    expect(waits).toHaveLength(1)
   })
 
   it('formats the verdict for the agent once it lands', async () => {

@@ -17,6 +17,7 @@ import { SiteSecretField } from './SiteSecretField'
 import { SiteLocalStackCard } from './SiteLocalStackCard'
 import { SiteRunActionButton, SiteRunOutput, useSiteRunConsole } from './SiteRunConsole'
 import { SiteDbSnapshotsSection } from './SiteDbSnapshotsSection'
+import { SiteImportRulesSection } from './SiteImportRulesSection'
 import { SiteRunHistory } from './SiteRunHistory'
 
 type SiteDetailPanelProps = {
@@ -267,6 +268,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
 
       <SiteRunOutput console={runConsole} />
       <SiteStepLibrarySection summary={summary} />
+      <SiteImportRulesSection site={site} />
       <SiteDbSnapshotsSection siteId={site.id} />
       <SiteRunHistory siteId={site.id} />
     </div>

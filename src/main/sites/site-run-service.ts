@@ -18,6 +18,7 @@ import type {
   SiteRunProgressEvent,
   SiteRunStatus
 } from '../../shared/site-run-types'
+import type { SiteImportLargeEntry } from '../../shared/site-import-file-rules'
 import type { SiteRunGroup } from '../../shared/site-types'
 import { SiteRunCancelledError, type SiteRunContext } from './pipeline-contract'
 import {
@@ -46,6 +47,12 @@ export type StartSiteRunOptions = {
 export type SiteRunServiceOptions = {
   baseDir: string
   emit: (event: SiteRunEvent) => void
+  /** Puts the large-file choice in front of the user; omitted where no window can answer. */
+  askAboutLargeFiles?: (
+    run: SiteRun,
+    entries: SiteImportLargeEntry[],
+    signal: AbortSignal
+  ) => Promise<string[]>
 }
 
 type InFlightSiteRun = {
@@ -163,7 +170,13 @@ export function createSiteRunService(options: SiteRunServiceOptions): SiteRunSer
         if (entry.controller.signal.aborted) {
           throw new SiteRunCancelledError()
         }
-      }
+      },
+      ...(options.askAboutLargeFiles
+        ? {
+            askAboutLargeFiles: (entries: SiteImportLargeEntry[]) =>
+              options.askAboutLargeFiles!(entry.run, entries, entry.controller.signal)
+          }
+        : {})
     }
 
     const settle = (status: SiteRunStatus, error: string | null): void => {

@@ -51,11 +51,14 @@ import { registerSiteDbSnapshotHandlers } from './site-db-snapshots'
 import { registerChatModeHandlers } from './chat-mode'
 import { registerChatConnectorHandlers } from './chat-connector'
 import { registerPlanAnnotationHandlers } from './plan-annotation'
+import { registerSiteSetupApprovalHandlers } from './site-setup-approval'
+import { registerSiteSetupAgentHandlers } from './site-setup-agent'
 import { registerChatThreadStreamHandlers } from './chat-thread-stream'
 import { registerBotsHandlers } from './bots'
 import { registerChatEngineHandlers } from './chat-engine'
 import { registerChatThreadTitleHandlers } from './chat-thread-title'
 import { registerSiteRunHandlers } from './site-runs'
+import { registerSiteImportLargeFileHandlers } from './site-import-large-files'
 import { registerSiteRootsHandlers } from './site-roots'
 import { registerSiteStackHandlers } from './site-stacks'
 import { registerSiteToolHandlers } from './site-tools'
@@ -252,12 +255,15 @@ export function registerCoreHandlers(
   registerSiteHandlers(store)
   registerCommitPipelinesHandlers(store)
   registerSiteRunHandlers(store)
+  registerSiteImportLargeFileHandlers()
   registerSiteDbSnapshotHandlers(store)
   registerChatModeHandlers()
   registerChatConnectorHandlers()
   registerPlanAnnotationHandlers()
+  registerSiteSetupApprovalHandlers(store)
+  registerSiteSetupAgentHandlers()
   registerChatThreadStreamHandlers(store, commitMessageAgentEnv)
-  registerBotsHandlers(commitMessageAgentEnv)
+  registerBotsHandlers(commitMessageAgentEnv, store)
   registerChatEngineHandlers()
   registerChatThreadTitleHandlers({
     getSettings: () => store.getSettings(),

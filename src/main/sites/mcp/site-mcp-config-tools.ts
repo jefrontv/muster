@@ -126,7 +126,7 @@ function toggleDescriptors(
   return toggles.map((toggle) => ({ key: canonicalKey(toggle.key), description: toggle.label }))
 }
 
-function collectToggleUpdates(raw: Record<string, unknown>): Partial<SiteEnvironment> {
+export function collectToggleUpdates(raw: Record<string, unknown>): Partial<SiteEnvironment> {
   const patch: Partial<SiteEnvironment> = {}
   const unknown: string[] = []
   const invalid: string[] = []
@@ -232,6 +232,7 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
       },
       ['toggles']
     ),
+    requiresSiteSetup: true,
     async run(context, args) {
       const site = resolveMcpSite(context, readString(args, 'site'))
       const environmentName = await resolveTargetEnvironment(context, site, readString(args, 'env'))
@@ -255,6 +256,7 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
       },
       ['fields']
     ),
+    requiresSiteSetup: true,
     async run(context: SiteMcpContext, args: ToolArguments) {
       const site = resolveMcpSite(context, readString(args, 'site'))
       const { sitePatch, environmentPatch } = buildFieldPatches(readRecord(args, 'fields'))

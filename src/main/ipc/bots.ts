@@ -10,8 +10,10 @@ import {
   restartBotsSidecar,
   setBotsAgentResolvers,
   setBotsCredential,
-  startBotsSidecar
+  startBotsSidecar,
+  stopBotsSidecar
 } from '../bots/bots-sidecar'
+import type { Store } from '../persistence'
 import { botsCredentialHint, COMPOSIO_API_KEY_ENV } from '../bots/bots-credentials'
 import type { BotsKeyStatus, BotsKeySaveResult } from '../../shared/bots-types'
 import { installBotsSession } from '../bots/bots-session'
@@ -25,11 +27,24 @@ const CHANNELS = [
   'bots:setComposioKey'
 ] as const
 
-export function registerBotsHandlers(agentEnv?: CommitMessageAgentEnvironmentResolvers): void {
+let stopWhenDisabled: (() => void) | null = null
+
+export function registerBotsHandlers(
+  agentEnv?: CommitMessageAgentEnvironmentResolvers,
+  store?: Pick<Store, 'onSettingsChanged'>
+): void {
   if (agentEnv) {
     setBotsAgentResolvers(agentEnv)
   }
   installBotsSession()
+  stopWhenDisabled?.()
+  // Why: turning Bots off must also stop its routines, which would keep running on the person's AI account.
+  stopWhenDisabled =
+    store?.onSettingsChanged((updates) => {
+      if (updates.experimentalBots === false) {
+        void stopBotsSidecar()
+      }
+    }) ?? null
   for (const channel of CHANNELS) {
     ipcMain.removeHandler(channel)
   }

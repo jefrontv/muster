@@ -5,6 +5,8 @@
 // safeStorage files (src/main/sites/site-secret-store.ts) and only ever cross IPC as boolean
 // "is set" flags, matching ocsites' MCP posture where passwords are never returned.
 
+import type { SiteImportFileRule } from './site-import-file-rules'
+
 /**
  * Import steps pull the server down to local, in pipeline execution order.
  * Upload-rewrite runs before search-replace: the rewrite edits .htaccess (and strips the
@@ -165,6 +167,8 @@ export type Site = {
   searchReplaceTimeoutSeconds: number
   /** User-authored steps. Absent on sites saved before the feature existed. */
   customSteps?: SiteCustomStep[]
+  /** What a file import skips or keeps without asking. Absent until the user sets one. */
+  importFileRules?: SiteImportFileRule[]
 }
 
 /** Which secrets exist for an environment. The values never cross IPC. */

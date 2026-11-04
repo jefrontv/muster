@@ -118,6 +118,25 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   // Muster-native, not an ocsites port — the census covers the whole table, not just the migration.
   annotate_plan: { content: '# Plan\n\nDo the thing.' },
   collect_plan_review: { review_id: 'r1' },
+  collect_setup_approval: { approval_id: 'approval-1', wait_seconds: 0 },
+  list_projects: {},
+  list_clone_sources: {},
+  discover_site_folders: {},
+  get_setup_plan: {},
+  detect_local_stack: {},
+  create_project: { clone_url: 'git@bitbucket.org:efront/acme.git' },
+  update_project: { project: 'acme', name: 'Acme' },
+  remove_project: { project: 'acme' },
+  create_worktree: { project: 'acme', name: 'fix-header' },
+  register_site: { path: '/Sites/new-site' },
+  configure_site: { environments: [{ name: 'main', fields: { hostname: 'acme.example.com' } }] },
+  add_site_root: { path: '/Sites' },
+  request_site_secret: { env: 'main', kind: 'ssh' },
+  open_site_setup: { clone_url: 'git@bitbucket.org:efront/acme.git' },
+  wait_for_site_setup: { setup_id: 'setup-1', wait_seconds: 0 },
+  set_up_local_site: { stack: 'ddev', domain: 'acme.ddev.site' },
+  get_setup_job: { job_id: 'job-1' },
+  import_site_config: { source: 'ocsites' },
   // Absolute paths on both sides: the census invokes every tool, and a relative path is refused.
   upload_files: { files: [{ local: '/tmp/muster-census.txt', remote: '/tmp/muster-census.txt' }] },
   download_files: { files: [{ local: '/tmp/muster-census.txt', remote: '/tmp/muster-census.txt' }] }
@@ -604,5 +623,15 @@ describe('jobs and run history', () => {
     const { payload } = await call(context, 'cancel_job', { job_id: RUN_ID })
     expect(payload).toMatchObject({ ok: true, status: 'cancelling' })
     expect(context.cancelled).toEqual([RUN_ID])
+  })
+})
+
+describe('password guard', () => {
+  it('no tool accepts an argument that looks like a password', () => {
+    for (const tool of SITE_MCP_TOOLS) {
+      for (const key of Object.keys(tool.inputSchema.properties ?? {})) {
+        expect(key, tool.name).not.toMatch(/pass(word|wd)?$|^secret(_value)?$/i)
+      }
+    }
   })
 })

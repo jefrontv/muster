@@ -23,6 +23,7 @@ import { buildSiteSummary } from '../sites/site-summary'
 import { isSiteEnvironmentName } from './sites-payload-validation'
 import { failure, requireSite } from './sites-result'
 import { notifySiteChanged } from './site-change-notifier'
+import { createLargeFilePrompter } from './site-import-large-files'
 
 const SITE_RUN_CHANNELS = [
   'siteRuns:start',
@@ -84,6 +85,7 @@ export function registerSiteRunHandlers(
   const runSites = new Map<string, string>()
   const runs = createSiteRunService({
     baseDir,
+    askAboutLargeFiles: createLargeFilePrompter(store),
     emit: (event: SiteRunEvent) => {
       if (event.type === 'status' && event.status !== 'running') {
         const siteId = runSites.get(event.runId)

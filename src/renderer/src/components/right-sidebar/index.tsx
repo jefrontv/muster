@@ -16,7 +16,7 @@ import { useRepoById } from '@/store/selectors'
 import { cn } from '@/lib/utils'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import type { ActivityBarPosition } from '@/store/slices/editor'
-import { isFolderRepo } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import {
@@ -88,7 +88,7 @@ function RightSidebarInner(): React.JSX.Element {
   const setActivityBarPosition = useAppStore((s) => s.setActivityBarPosition)
   const [topActivityStripWidth, setTopActivityStripWidth] = useState<number | null>(null)
   const activeWorktreeId = useAppStore((s) => (rightSidebarOpen ? s.activeWorktreeId : null))
-  // Why: source control and checks are meaningless for non-git folders.
+  // Why: source control and checks are meaningless for folders without their own git root.
   // Hide those tabs so the activity bar only shows relevant actions.
   const activeWorktree = useAppStore((s) =>
     activeWorktreeId ? (s.getKnownWorktreeById(activeWorktreeId) ?? null) : null
@@ -96,7 +96,7 @@ function RightSidebarInner(): React.JSX.Element {
   const activeRepo = useRepoById(activeWorktree?.repoId ?? null)
   const activeWorkspaceScope = parseWorkspaceKey(activeWorktreeId ?? '')
   const isFolderWorkspace = activeWorkspaceScope?.type === 'folder'
-  const isFolder = isFolderWorkspace || (activeRepo ? isFolderRepo(activeRepo) : false)
+  const isFolder = isFolderWorkspace || (activeRepo ? !hasGitFeatures(activeRepo) : false)
   const isSshRepo = Boolean(activeRepo?.connectionId)
   const activeProjectPath = activeRepo?.path ?? null
   useSiteListRefreshOnProjectChange(activeProjectPath)

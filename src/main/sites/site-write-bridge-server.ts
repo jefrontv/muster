@@ -22,6 +22,11 @@ import type {
   PlanAnnotationOpenInput,
   PlanAnnotationResult
 } from '../../shared/plan-annotation-types'
+import {
+  answerSetupBridgeRoute,
+  isSetupBridgeRoute,
+  type SetupBridgeCallbacks
+} from './site-write-bridge-setup-routes'
 
 /** Discovery file the MCP process reads; absent means "no GUI, write to disk". */
 export const SITE_WRITE_BRIDGE_FILE_NAME = 'site-write-bridge.json'
@@ -38,6 +43,8 @@ export type SiteWriteBridgeStore = {
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
   /** Absent on a store that predates the shared step library. */
   setSiteStepLibrary?: (steps: readonly SiteCustomStep[]) => void
+  /** Saves now: the MCP process reads the store file, and the next call in a batch must see this write. */
+  flush?: () => void
 }
 
 export function siteWriteBridgeFile(userDataPath: string): string {
@@ -67,7 +74,7 @@ type StartArgs = {
     | { status: 'pending'; openedMs: number }
     | { status: 'unknown' }
   >
-}
+} & SetupBridgeCallbacks
 
 export class SiteWriteBridgeServer {
   private server: Server | null = null
@@ -115,12 +122,28 @@ export class SiteWriteBridgeServer {
     const isPlanAnnotate = req.method === 'POST' && req.url === '/plan/annotate'
     const isPlanCollect = req.method === 'POST' && req.url === '/plan/collect'
     const isSecrets = req.method === 'POST' && req.url === '/site/secrets'
-    if (!isSiteUpdate && !isLibraryUpdate && !isPlanAnnotate && !isPlanCollect && !isSecrets) {
+    const setupRoute = req.method === 'POST' && isSetupBridgeRoute(req.url) ? req.url : null
+    if (
+      !isSiteUpdate &&
+      !isLibraryUpdate &&
+      !isPlanAnnotate &&
+      !isPlanCollect &&
+      !isSecrets &&
+      !setupRoute
+    ) {
       reply(404, { error: 'not found' })
       return
     }
     if (req.headers['x-muster-site-bridge-token'] !== this.token) {
       reply(401, { error: 'unauthorized' })
+      return
+    }
+    if (setupRoute) {
+      try {
+        await answerSetupBridgeRoute(setupRoute, await readJsonBody(req), reply, args)
+      } catch (error) {
+        reply(500, { error: error instanceof Error ? error.message : String(error) })
+      }
       return
     }
     if (isSecrets) {
@@ -216,6 +239,7 @@ export class SiteWriteBridgeServer {
           return
         }
         write(body.steps as SiteCustomStep[])
+        args.store.flush?.()
         reply(200, { ok: true })
       } catch (error) {
         reply(500, { error: error instanceof Error ? error.message : String(error) })
@@ -253,6 +277,7 @@ export class SiteWriteBridgeServer {
         reply(404, { error: `no site with id ${siteId}` })
         return
       }
+      args.store.flush?.()
       args.onSiteChanged?.(site)
       reply(200, { site })
     } catch (error) {

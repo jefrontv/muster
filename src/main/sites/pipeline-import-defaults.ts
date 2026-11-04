@@ -17,6 +17,7 @@ import type { SiteImportDependencies } from './pipeline-import'
 import { ensureLocalSiteRunning } from './pipeline-local-stack-start'
 import { dumpAndDownloadRemoteDatabase } from './remote-database-dump'
 import { pullRemoteFileArchives } from './remote-file-archive'
+import { scanLargeImportEntries } from './remote-large-file-scan'
 import { resolveRemoteLayout } from './remote-wordpress-layout'
 import { snapshotSiteDatabase } from './site-db-snapshot'
 import { createSiteSshSession } from './site-ssh-session'
@@ -48,6 +49,7 @@ export function createDefaultSiteImportDependencies(): SiteImportDependencies {
         onStatus: (message) => context.log(message),
         signal: context.signal
       }),
+    scanLargeImportEntries,
     pullRemoteFileArchives,
     extractZipArchive,
     applyWpUploadRewrite,

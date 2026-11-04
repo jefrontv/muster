@@ -7,6 +7,7 @@
 // transferring.
 
 import path from 'node:path'
+import { importPathCovers } from '../../shared/site-import-file-rules'
 import {
   quoteShellArgument,
   type RemoteLayout,
@@ -32,6 +33,62 @@ const BASE_EXCLUDE_GLOBS = ['*.zip', '.gitattributes', '.gitignore']
 const CONTENT_PRUNE_DIRS = ['themes', 'cache', 'uploads', 'webp-express', 'upgrade-temp-backup']
 const CONTENT_EXCLUDE_GLOBS = ['*.zip', '*.tar.gz', 'debug.log']
 
+/** One of the two trees an import copies: where it is walked from and what the walk leaves out. */
+export type ImportArchiveTree = {
+  workDir: string
+  /** What a path inside this tree needs in front to read relative to the webroot. */
+  prefix: string
+  pruneDirs: string[]
+  excludeGlobs: string[]
+}
+
+/** Both trees, with the site's skip rules folded into each prune list. The size check walks these too. */
+export function importArchiveTrees(
+  layout: RemoteLayout,
+  skipPaths: readonly string[]
+): { base: ImportArchiveTree; content: ImportArchiveTree } {
+  const contentPrefix = `${layout.contentDir}/`
+  return {
+    base: {
+      workDir: layout.webroot,
+      prefix: '',
+      // The content tree is pulled separately; pruning it here also keeps base.zip off uploads.
+      pruneDirs: [
+        ...BASE_PRUNE_DIRS,
+        layout.contentDir,
+        ...skipPaths.filter((skip) => !importPathCovers(layout.contentDir, skip))
+      ],
+      excludeGlobs: BASE_EXCLUDE_GLOBS
+    },
+    content: {
+      workDir: `${layout.webroot}/${layout.contentDir}`,
+      prefix: contentPrefix,
+      pruneDirs: [
+        ...CONTENT_PRUNE_DIRS,
+        ...skipPaths
+          .filter((skip) => skip.startsWith(contentPrefix))
+          .map((skip) => skip.slice(contentPrefix.length))
+      ],
+      excludeGlobs: CONTENT_EXCLUDE_GLOBS
+    }
+  }
+}
+
+/** `find -path` reads its argument as a glob, so a literal `*`, `?` or `[` in a path is escaped. */
+export function findPathPattern(relativePath: string): string {
+  return quoteShellArgument(`./${relativePath.replace(/[*?[\\]/g, '\\$&')}`)
+}
+
+/** `\( -path ./a -o -path ./b \) -prune -o -type f ! -name x` — the shared front of every walk. */
+export function findPrunedFiles(
+  pruneDirs: readonly string[],
+  excludeGlobs: readonly string[]
+): string {
+  const prune = pruneDirs.map((dir) => `-path ${findPathPattern(dir)}`).join(' -o ')
+  const names = excludeGlobs.map((glob) => `! -name ${quoteShellArgument(glob)}`).join(' ')
+  return `find . \\( ${prune} \\) -prune -o -type f ${names}`
+}
+
 /**
  * A `find -prune | zip -@` pipeline that never DESCENDS into the excluded top-level directories.
  *
@@ -48,9 +105,7 @@ export function buildPruneZipCommand(
   pruneDirs: string[],
   excludeGlobs: string[]
 ): string {
-  const prune = pruneDirs.map((dir) => `-path ${quoteShellArgument(`./${dir}`)}`).join(' -o ')
-  const names = excludeGlobs.map((glob) => `! -name ${quoteShellArgument(glob)}`).join(' ')
-  const select = `find . \\( ${prune} \\) -prune -o -type f ${names} -print`
+  const select = `${findPrunedFiles(pruneDirs, excludeGlobs)} -print`
   return `cd ${quoteShellArgument(workDir)} && ${select} | zip -q ${quoteShellArgument(zipName)} -@`
 }
 
@@ -77,21 +132,23 @@ export async function pullRemoteFileArchives(
   context: SiteRunContext,
   config: SiteRunConfig,
   session: SiteSshSession,
-  layout: RemoteLayout
+  layout: RemoteLayout,
+  /** Webroot-relative paths the user chose to leave on the server. */
+  skipPaths: readonly string[] = []
 ): Promise<PulledSiteArchives> {
   const contentArchiveName = `${layout.contentDir}.zip`
+  const trees = importArchiveTrees(layout, skipPaths)
   const baseArchivePath = path.join(config.wpDir, BASE_ARCHIVE_NAME)
   const contentArchivePath = path.join(config.wpDir, contentArchiveName)
 
   await createAndDownloadArchive(context, session, {
     step: 'pull-base-archive',
     label: BASE_ARCHIVE_NAME,
-    workDir: layout.webroot,
+    workDir: trees.base.workDir,
     archiveName: BASE_ARCHIVE_NAME,
     localArchivePath: baseArchivePath,
-    // The content tree is pulled separately; pruning it here also keeps base.zip off uploads.
-    pruneDirs: [...BASE_PRUNE_DIRS, layout.contentDir],
-    excludeGlobs: BASE_EXCLUDE_GLOBS
+    pruneDirs: trees.base.pruneDirs,
+    excludeGlobs: trees.base.excludeGlobs
   })
 
   context.throwIfCancelled()
@@ -99,11 +156,11 @@ export async function pullRemoteFileArchives(
   await createAndDownloadArchive(context, session, {
     step: 'pull-content-archive',
     label: contentArchiveName,
-    workDir: `${layout.webroot}/${layout.contentDir}`,
+    workDir: trees.content.workDir,
     archiveName: contentArchiveName,
     localArchivePath: contentArchivePath,
-    pruneDirs: CONTENT_PRUNE_DIRS,
-    excludeGlobs: CONTENT_EXCLUDE_GLOBS
+    pruneDirs: trees.content.pruneDirs,
+    excludeGlobs: trees.content.excludeGlobs
   })
 
   return { baseArchivePath, contentArchivePath, contentDirectoryName: layout.contentDir }

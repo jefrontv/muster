@@ -1,4 +1,5 @@
 import type { GitWorktreeInfo, Repo } from '../shared/types'
+import { readFolderGitHead } from './git/folder-git-head'
 import { listWorktrees } from './git/worktree'
 import { isFolderRepo } from '../shared/repo-kind'
 import { getSshGitProvider } from './providers/ssh-git-dispatch'
@@ -22,8 +23,7 @@ export function isRepoRoot(repos: Repo[], resolvedTarget: string): boolean {
 export function createFolderWorktree(repo: Repo): GitWorktreeInfo {
   return {
     path: repo.path,
-    head: '',
-    branch: '',
+    ...readFolderGitHead(repo),
     isBare: false,
     // Why: folder mode has no linked worktree graph. Treat the folder itself
     // as the single primary worktree so the rest of Orca's worktree-first UI

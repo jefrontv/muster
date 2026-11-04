@@ -8,6 +8,7 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from '../chat-mode/ChatModeToggle'
+import { BotsIntroDialog } from './BotsIntroDialog'
 import { syncBotsHostTheme } from './bots-host-theme'
 import { useBotsStatus } from './use-bots-status'
 
@@ -114,6 +115,8 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
           />
         ) : null}
       </div>
+      {/* Over the starting state on purpose: the server starts while the intro is read. */}
+      <BotsIntroDialog active={active} />
     </div>
   )
 }

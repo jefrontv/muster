@@ -18,6 +18,11 @@ export const getSiteSetupDialogStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteSetupDialog.reviewLinkDescription',
     'A muster:// link wants to configure this site. Nothing is saved until you continue.'
   ),
+  reviewAgentDescription: translate(
+    'auto.components.sites.SiteSetupDialog.reviewAgentDescription',
+    '{{agent}} set this up for you. Check it, then press Set up site. Nothing is written before that.'
+  ),
+  anAgent: translate('auto.components.sites.SiteSetupDialog.anAgent', 'An agent'),
   reviewSiteDescription: translate(
     'auto.components.sites.SiteSetupDialog.reviewSiteDescription',
     'Finish what is not set up yet.'

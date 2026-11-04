@@ -80,6 +80,19 @@ export function createRefreshingSiteMcpStore(
     }
   }
 
+  const readSettingsFromDisk = (): Record<string, unknown> | null => {
+    try {
+      const parsed = JSON.parse(reader.readFileSync(options.dataFile, 'utf-8')) as {
+        settings?: unknown
+      }
+      return parsed.settings && typeof parsed.settings === 'object'
+        ? (parsed.settings as Record<string, unknown>)
+        : null
+    } catch {
+      return null
+    }
+  }
+
   return {
     listSites: () => {
       const sites = readSitesFromDisk()
@@ -107,6 +120,8 @@ export function createRefreshingSiteMcpStore(
     // Same staleness reason as sites: the GUI may have edited the library since this process
     // booted, so read the file rather than the startup snapshot.
     getSiteStepLibrary: () => readLibraryFromDisk() ?? base.getSiteStepLibrary?.() ?? [],
-    ...(base.setSiteStepLibrary ? { setSiteStepLibrary: base.setSiteStepLibrary } : {})
+    ...(base.setSiteStepLibrary ? { setSiteStepLibrary: base.setSiteStepLibrary } : {}),
+    // Fresh for the same reason: the setting is toggled in the GUI while this server runs.
+    getSettings: () => readSettingsFromDisk() ?? base.getSettings?.() ?? null
   }
 }

@@ -16,6 +16,9 @@ import {
 } from '../../../shared/site-types'
 import { applyEnvironmentPatches } from '../site-environment-patches'
 import { createAcfStateStore } from '../wp-acf-state-store'
+import type { SiteSetupApprovalInput } from '../../../shared/site-setup-approval-types'
+import type { SiteSetupReadOp, SiteSetupWriteOp } from '../../../shared/site-setup-bridge-ops'
+import { fakeSetupApproval, type FakeApprovalOptions } from './site-mcp-fake-approval'
 import type { SiteMcpContext, SiteMcpStartRunRequest } from './site-mcp-context'
 import { dispatchSiteMcpTool, findSiteMcpTool } from './site-mcp-tools'
 
@@ -96,6 +99,9 @@ export const PERSISTED_RUN: SiteRun = {
 }
 
 export type FakeContext = SiteMcpContext & {
+  approvalRequests: SiteSetupApprovalInput[]
+  setupReads: { op: SiteSetupReadOp; args: Record<string, unknown> }[]
+  setupWrites: { op: SiteSetupWriteOp; approvalId: string; args: Record<string, unknown> }[]
   started: SiteMcpStartRunRequest[]
   cancelled: string[]
   secretMoves: string[]
@@ -106,7 +112,7 @@ export type FakeOptions = {
   sshEnvironments?: string[]
   pathExists?: boolean
   activeRuns?: SiteActiveRun[]
-}
+} & FakeApprovalOptions
 
 export function createFakeContext(
   sites: Site[] = [siteRecord()],
@@ -119,6 +125,9 @@ export function createFakeContext(
   const started: SiteMcpStartRunRequest[] = []
   const cancelled: string[] = []
   const secretMoves: string[] = []
+  const approvalRequests: SiteSetupApprovalInput[] = []
+  const setupReads: FakeContext['setupReads'] = []
+  const setupWrites: FakeContext['setupWrites'] = []
   let library: SiteCustomStep[] = [
     {
       id: 'library-1',
@@ -166,6 +175,7 @@ export function createFakeContext(
     // The census invokes every tool; a plan review resolves immediately so it never hangs a sweep.
     annotatePlan: () => Promise.resolve({ requestId: 'r1', round: 1 }),
     collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
+    ...fakeSetupApproval(options, approvalRequests, setupReads, setupWrites),
     updateSite: async (siteId, updates, environmentPatches) => {
       const index = records.findIndex((site) => site.id === siteId)
       const existing = records[index]
@@ -275,6 +285,9 @@ export function createFakeContext(
       return true
     },
     shutdownRuns: () => Promise.resolve(),
+    approvalRequests,
+    setupReads,
+    setupWrites,
     started,
     cancelled,
     secretMoves

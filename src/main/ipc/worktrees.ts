@@ -1,5 +1,6 @@
 /* oxlint-disable max-lines */
 import type { BrowserWindow } from 'electron'
+import { readFolderGitHead } from '../git/folder-git-head'
 import { ipcMain } from 'electron'
 import { readFile, stat } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
@@ -822,8 +823,7 @@ function mergeFolderWorkspace(repo: Repo, worktreeId: string, meta: WorktreeMeta
       ? { projectHostSetupId: meta.projectHostSetupId }
       : {}),
     path: repo.path,
-    head: '',
-    branch: '',
+    ...readFolderGitHead(repo),
     isBare: false,
     isMainWorktree: worktreeId === getFolderWorkspaceRootId(repo),
     displayName: meta.displayName || repo.displayName,

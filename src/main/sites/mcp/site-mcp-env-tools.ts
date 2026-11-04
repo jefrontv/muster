@@ -108,6 +108,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       },
       ['name']
     ),
+    requiresSiteSetup: true,
     run: createEnvironment
   },
   {
@@ -122,6 +123,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       },
       ['source', 'new_name']
     ),
+    requiresSiteSetup: true,
     run(context, args) {
       return createEnvironment(context, {
         site: args.site,
@@ -142,6 +144,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       },
       ['old_name', 'new_name']
     ),
+    requiresSiteSetup: true,
     async run(context, args) {
       const site = resolveMcpSite(context, readString(args, 'site'))
       const from = readRequiredString(args, 'old_name')
@@ -196,6 +199,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
       },
       ['name']
     ),
+    requiresSiteSetup: true,
     async run(context, args) {
       const site = resolveMcpSite(context, readString(args, 'site'))
       const name = readRequiredString(args, 'name')

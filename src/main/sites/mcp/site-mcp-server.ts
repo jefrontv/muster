@@ -102,13 +102,13 @@ async function handleRequest(
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: SITE_MCP_SERVER_NAME, version },
         instructions:
-          'WordPress site import/deploy for the checkout you are working in. Omit `site` to target the current directory. Call preview_run before run_import_functions or run_deploy_functions; a deploy off a branch that matches no environment is refused unless you pass env= or confirm=true. Passwords are never returned and cannot be set here.'
+          'WordPress site import/deploy for the checkout you are working in. Omit `site` to target the current directory. Call preview_run before run_import_functions or run_deploy_functions; a deploy off a branch that matches no environment is refused unless you pass env= or confirm=true. Passwords are never returned and cannot be set here. Waiting on the user (collect_plan_review, collect_setup_approval, wait_for_site_setup): each call holds about 25s and answers pending while they work. Pending is normal and can last many minutes, so call again straight away and never sleep, end your turn or ask in chat instead.'
       })
     }
     case 'ping':
       return successResponse(id, {})
     case 'tools/list':
-      return successResponse(id, { tools: listSiteMcpToolDescriptors() })
+      return successResponse(id, { tools: listSiteMcpToolDescriptors(context) })
     case 'tools/call': {
       const name = params.name
       if (typeof name !== 'string' || name.length === 0) {
@@ -117,7 +117,7 @@ async function handleRequest(
       const tool = findSiteMcpTool(name)
       if (!tool) {
         return errorResponse(id, JSON_RPC_INVALID_PARAMS, `Unknown tool: ${name}`, {
-          available_tools: listSiteMcpToolDescriptors().map((descriptor) => descriptor.name)
+          available_tools: listSiteMcpToolDescriptors(context).map((descriptor) => descriptor.name)
         })
       }
       const rawArguments = params.arguments ?? {}

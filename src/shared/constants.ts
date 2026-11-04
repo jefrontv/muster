@@ -279,7 +279,8 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     experimentalNativeChatDefaultedOnForMuster: true,
     experimentalChatMode: true,
     experimentalChatModeDefaultedOnForMuster: true,
-    experimentalBots: false,
+    experimentalBots: true,
+    experimentalBotsDefaultedOnForMuster: true,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,
@@ -348,6 +349,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     // Why true: every install before this toggle exposed the site MCP, so the checkbox has to
     // match what agents already get. Turning it off is the deliberate hardening step.
     agentCapabilitySitesMcp: true,
+    agentCapabilitySiteSetup: false,
     // Why empty: a missing key reads as enabled, so opting out is the only thing ever recorded.
     agentCapabilityBundledSkills: {},
     tabAutoGenerateTitle: false,

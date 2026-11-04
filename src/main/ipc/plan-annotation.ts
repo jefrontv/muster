@@ -6,6 +6,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import { getCanonicalUserDataPath } from '../persistence'
 import { savePlanAttachment } from '../sites/plan-annotation-attachments'
+import { notifyWhenUnfocused } from './muster-window-attention'
 import {
   listPendingPlanAnnotations,
   respondPlanAnnotation,
@@ -28,6 +29,11 @@ function broadcast(request: PlanAnnotationRequest): void {
       window.webContents.send(PLAN_ANNOTATION_REQUEST_CHANNEL, request)
     }
   }
+  // A review behind the terminal is one the agent rightly thinks nobody saw.
+  notifyWhenUnfocused({
+    title: 'A plan is waiting for your review',
+    body: `${request.agent ?? 'An agent'}: ${request.title}`
+  })
 }
 
 function readResult(value: unknown): PlanAnnotationResult {

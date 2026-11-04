@@ -66,6 +66,12 @@ let quitHookInstalled = false
 const AUTO_ADD_DEBOUNCE_MS = 2_000
 let autoAddTimer: ReturnType<typeof setTimeout> | null = null
 let autoAddInFlight = false
+let republishHook: (() => boolean) | null = null
+
+/** Re-scan and push the roots after a write made outside IPC (an agent adding a root). */
+export function republishSiteRoots(): void {
+  republishHook?.()
+}
 
 /**
  * Adopt-and-link every discovered folder, when the user has asked for that to happen on its own.
@@ -215,6 +221,7 @@ export function registerSiteRootsHandlers(store: Store): void {
     }
     return true
   }
+  republishHook = republishRoots
 
   // The window-focus call.
   ipcMain.handle('siteRoots:refresh', (event): SiteResult<boolean> => {

@@ -5,7 +5,7 @@ import type {
   Worktree
 } from '../../../../shared/types'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
-import { isFolderRepo } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import { getWorktreeGitIdentityDisplay } from '@/lib/worktree-git-identity-display'
 import { compareWorktreeDisplayName } from '@/lib/worktree-display-name-order'
 import {
@@ -70,7 +70,7 @@ export function getParentPrChecksRefreshCandidates({
     .map((worktree) => {
       const repo = repoById.get(worktree.repoId)
       const branch = getBranchName(worktree)
-      if (!repo || isFolderRepo(repo) || worktree.isBare || !branch) {
+      if (!repo || !hasGitFeatures(repo) || worktree.isBare || !branch) {
         return null
       }
       const identity = getParentPrChecksRefreshIdentity(worktree, repo, branch)

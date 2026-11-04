@@ -209,7 +209,7 @@ describe('folder repo git upgrade watch', () => {
     expect(store.updateRepo).toHaveBeenCalledWith('folder-repo', { kind: 'git' })
   })
 
-  it('refuses a project that has folder workspaces the git listing would drop', async () => {
+  it('keeps a project with extra folder workspaces as a folder, marked git-backed', async () => {
     // Why: the git listing branch prunes every lineage id under the repo that `git worktree
     // list` does not report, which is all of them — the workspaces would be destroyed.
     const repoPath = join(root, 'notebook')
@@ -228,7 +228,9 @@ describe('folder repo git upgrade watch', () => {
     })
     await tick(2)
 
-    expect(store.updateRepo).not.toHaveBeenCalled()
+    expect(store.updateRepo).toHaveBeenCalledTimes(1)
+    expect(store.updateRepo).toHaveBeenCalledWith('folder-repo', { gitBacked: true })
+    expect(store.getRepos()[0]?.kind).toBe('folder')
   })
 
   it('retries after the last extra folder workspace is removed', async () => {
@@ -247,15 +249,57 @@ describe('folder repo git upgrade watch', () => {
       idlePollIntervalMs: IDLE_POLL_MS
     })
     await tick(2)
-    expect(store.updateRepo).not.toHaveBeenCalled()
+    expect(store.updateRepo).toHaveBeenCalledWith('folder-repo', { gitBacked: true })
 
     delete worktreeMeta[workspaceId]
     await tick(2)
 
     expect(store.updateRepo).toHaveBeenCalledWith(
       'folder-repo',
-      expect.objectContaining({ kind: 'git' })
+      expect.objectContaining({ kind: 'git', gitBacked: false })
     )
+  })
+
+  it('never flips a LocalWP site to git; marks it git-backed once and stops probing', async () => {
+    // Why: Local serves one path, so New workspace must stay a same-path folder workspace.
+    const repoPath = join(root, 'site', 'app', 'public')
+    await mkdir(repoPath, { recursive: true })
+    await writeFile(join(repoPath, 'wp-config.php'), '<?php\n')
+    gitInit(repoPath)
+    const store = makeStore([makeRepo({ id: 'localwp', path: repoPath })])
+
+    startFolderRepoGitUpgradeWatch(store as never, makeWindow() as never, {
+      pollIntervalMs: POLL_MS,
+      idlePollIntervalMs: IDLE_POLL_MS
+    })
+    await tick(3)
+
+    expect(store.updateRepo).toHaveBeenCalledTimes(1)
+    expect(store.updateRepo).toHaveBeenCalledWith('localwp', { gitBacked: true })
+    expect(store.getRepos()[0]?.kind).toBe('folder')
+    expect(gitProbes).toHaveLength(1)
+    expect(notifyReposChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears git-backed once the folder loses its .git', async () => {
+    const repoPath = join(root, 'site', 'app', 'public')
+    await mkdir(repoPath, { recursive: true })
+    await writeFile(join(repoPath, 'wp-config.php'), '<?php\n')
+    gitInit(repoPath)
+    const store = makeStore([makeRepo({ id: 'localwp', path: repoPath })])
+
+    startFolderRepoGitUpgradeWatch(store as never, makeWindow() as never, {
+      pollIntervalMs: POLL_MS,
+      idlePollIntervalMs: IDLE_POLL_MS
+    })
+    await tick(2)
+    expect(store.getRepos()[0]?.gitBacked).toBe(true)
+
+    await rm(join(repoPath, '.git'), { recursive: true, force: true })
+    await tick(2)
+
+    expect(store.updateRepo).toHaveBeenLastCalledWith('localwp', { gitBacked: false })
+    expect(store.getRepos()[0]?.kind).toBe('folder')
   })
 
   it('still upgrades a project that only has its root workspace', async () => {

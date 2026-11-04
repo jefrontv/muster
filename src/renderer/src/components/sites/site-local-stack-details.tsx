@@ -30,7 +30,7 @@ export function siteStackDatabaseLabel(
 
 // Matches a locked SiteEditableField's input, minus the pointer: these values come from the stack.
 const BOX =
-  'flex h-9 min-w-0 items-center rounded-md border border-input px-3 text-sm text-muted-foreground shadow-xs dark:bg-input/30'
+  'flex h-9 min-w-0 items-center rounded-full bg-foreground/[0.05] px-3.5 text-sm text-muted-foreground'
 const SKELETON = 'h-3 animate-pulse rounded bg-muted/60'
 
 export function SiteLocalStackField({

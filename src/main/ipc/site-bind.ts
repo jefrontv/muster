@@ -78,6 +78,13 @@ let intake: SiteBindIntake | null = null
  */
 let bufferedUrl: string | null = null
 
+/** Lets a waiting agent password card take an opened link before the usual bind modal does. */
+let interceptor: ((url: string) => boolean) | null = null
+
+export function setSiteBindUrlInterceptor(next: typeof interceptor): void {
+  interceptor = next
+}
+
 /**
  * Fed by `app.on('open-url')` (macOS) and the `second-instance` argv elsewhere. Returns whether the
  * link was understood — never the link itself, which can carry a plaintext password.
@@ -87,6 +94,9 @@ export function handleSiteBindUrl(url: string): { ok: boolean; error: string } {
   if (!active) {
     bufferedUrl = url
     // Not an error: the link is staged and replayed as soon as the handlers register.
+    return { ok: true, error: '' }
+  }
+  if (interceptor?.(url)) {
     return { ok: true, error: '' }
   }
   const received = active.receive(url)

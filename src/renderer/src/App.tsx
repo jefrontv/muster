@@ -329,6 +329,16 @@ const BotsPage = lazy(() => import('./components/bots/BotsPage'))
 const SiteSetupHost = lazy(() =>
   import('./components/sites/SiteSetupHost').then((m) => ({ default: m.SiteSetupHost }))
 )
+const SiteImportLargeFilesHost = lazy(() =>
+  import('./components/sites/SiteImportLargeFilesDialog').then((m) => ({
+    default: m.SiteImportLargeFilesHost
+  }))
+)
+const SiteSetupApprovalDialog = lazy(() =>
+  import('./components/sites/SiteSetupApprovalDialog').then((m) => ({
+    default: m.SiteSetupApprovalDialog
+  }))
+)
 const PlanAnnotationDialog = lazy(() =>
   import('./components/plan-annotation/PlanAnnotationDialog').then((m) => ({
     default: m.PlanAnnotationDialog
@@ -2762,6 +2772,10 @@ function App(): React.JSX.Element {
         <SiteSetupHost holdLinks={shouldRenderOnboarding} />
         {/* App-wide, not inside a view: an agent in any terminal can ask for a plan review. */}
         <PlanAnnotationDialog />
+        {/* App-wide for the same reason: a bot in the Bots tab can ask to set up a project. */}
+        <SiteSetupApprovalDialog />
+        {/* App-wide: an import paused on large files must reach the user on any view. */}
+        <SiteImportLargeFilesHost />
       </TooltipProvider>
       <Toaster closeButton toastOptions={{ className: 'font-sans text-sm' }} />
       <PinnedTabCloseDialog />

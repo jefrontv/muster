@@ -78,6 +78,16 @@ describe('useAvailableSiteStacks', () => {
     expect(seen).toEqual(['localwp'])
   })
 
+  it('asks on mount while the window is hidden, so a dialog opened behind other windows seeds', async () => {
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+    answer.current = { ok: true, value: ['ddev'] }
+
+    await render()
+
+    expect(seen).toEqual(['ddev'])
+    visibility.mockRestore()
+  })
+
   it('re-asks on focus, so a stack installed meanwhile appears without reopening the panel', async () => {
     answer.current = { ok: true, value: ['localwp'] }
     await render()

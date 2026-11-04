@@ -27,6 +27,13 @@ import {
   updateSiteThroughBridge,
   type SiteWriteBridgeBody
 } from './site-mcp-store-bridge'
+import { isSiteSetupExposedToAgents } from '../../../shared/agent-capabilities'
+import {
+  collectSetupApprovalThroughBridge,
+  openSetupApprovalThroughBridge,
+  readSetupThroughBridge,
+  writeSetupThroughBridge
+} from './site-mcp-approval-bridge'
 import {
   collectPlanAnnotationThroughBridge,
   openPlanAnnotationThroughBridge,
@@ -56,14 +63,17 @@ export type SiteMcpEngineOptions = {
  * Why not degrade: both plan-review calls need the GUI. Opening a review without a window would
  * report a review nobody can see, and collecting one would poll an id that was never issued.
  */
-function requireBridgeFile(bridgeFile: string | undefined): string {
+function requireBridgeFile(
+  bridgeFile: string | undefined,
+  noGui = 'No Muster window is running, so there is nobody to review the plan.'
+): string {
   if (!bridgeFile) {
-    throw new PlanBridgeUnavailableError(
-      'No Muster window is running, so there is nobody to review the plan.'
-    )
+    throw new PlanBridgeUnavailableError(noGui)
   }
   return bridgeFile
 }
+
+const NO_GUI_FOR_SETUP = 'No Muster window is running. Open Muster and try again.'
 
 export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpContext {
   const { store } = options
@@ -142,6 +152,31 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
         bridgeFile: requireBridgeFile(options.bridgeFile),
         reviewId: args.reviewId,
         waitMs: args.waitMs
+      }),
+    siteSetupEnabled: () => isSiteSetupExposedToAgents(store.getSettings?.()),
+    requestSetupApproval: (input) =>
+      openSetupApprovalThroughBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_SETUP),
+        input
+      }),
+    collectSetupApproval: (args) =>
+      collectSetupApprovalThroughBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_SETUP),
+        requestId: args.requestId,
+        waitMs: args.waitMs
+      }),
+    writeSetup: (op, approvalId, args) =>
+      writeSetupThroughBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_SETUP),
+        op,
+        approvalId,
+        args
+      }),
+    readSetup: (op, args) =>
+      readSetupThroughBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_SETUP),
+        op,
+        args
       }),
     // Reads come from the store (the refreshing wrapper re-parses the file); writes take the same
     // bridge-first path as a site write, for the same clobbering reason.

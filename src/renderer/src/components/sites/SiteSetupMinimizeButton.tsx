@@ -24,8 +24,8 @@ export function SiteSetupMinimizeButton({
         <button
           type="button"
           onClick={onMinimize}
-          // Sits left of the dialog's own close button, which is absolutely positioned at right-4.
-          className="absolute top-4 right-10 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:outline-hidden"
+          // Same box as the dialog's close button (size-7 at right-4), one slot to its left.
+          className="absolute top-4 right-12 inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden"
           aria-label={label}
         >
           <Minus className="size-4" />

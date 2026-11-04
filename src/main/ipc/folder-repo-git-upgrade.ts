@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises'
-import { realpathSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { join } from 'node:path'
 import type { BrowserWindow } from 'electron'
 import type { Repo } from '../../shared/types'
@@ -9,6 +9,7 @@ import { isFolderRepo } from '../../shared/repo-kind'
 import { FOLDER_WORKSPACE_INSTANCE_SEPARATOR } from '../../shared/worktree-id'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import { isWslUncPath } from '../../shared/wsl-paths'
+import { isLocalWpWordPressRootPath } from '../../shared/localwp-paths'
 import { getGitRepoRoot, isGitRepo } from '../git/repo'
 import { prepareLocalWorktreeRootForRepo } from '../worktree-root-preparation'
 import { invalidateAuthorizedRootsCache } from './filesystem-auth'
@@ -114,7 +115,19 @@ function resolveUpgrade(repoPath: string): { externalWorktreeVisibility?: 'hide'
     : {}
 }
 
-type UpgradeResult = 'upgraded' | 'blocked' | 'rejected'
+type UpgradeResult = 'upgraded' | 'backed' | 'blocked' | 'rejected'
+
+/** Folder workspaces stay; git panels follow whether the folder is its own git root. */
+function setGitBacked(watch: UpgradeWatch, repo: Repo, gitBacked: boolean): void {
+  if ((repo.gitBacked === true) === gitBacked) {
+    return
+  }
+  if (!watch.store.updateRepo(repo.id, { gitBacked }) || watch.disposed) {
+    return
+  }
+  notifyReposChanged(watch.mainWindow)
+  notifyWorktreesChanged(watch.mainWindow, repo.id)
+}
 
 async function upgradeFolderRepo(watch: UpgradeWatch, repoId: string): Promise<UpgradeResult> {
   // Re-read after the marker stat: the repo can be removed or already upgraded mid-tick.
@@ -122,14 +135,27 @@ async function upgradeFolderRepo(watch: UpgradeWatch, repoId: string): Promise<U
   if (!current || !isUpgradeCandidate(current)) {
     return 'blocked'
   }
-  if (hasExtraFolderWorkspaces(watch.store, current)) {
+  // Why: LocalWP serves one path, so its New workspace must stay a same-path folder workspace.
+  const keepFolder =
+    isLocalWpWordPressRootPath(current.path, existsSync) ||
+    hasExtraFolderWorkspaces(watch.store, current)
+  if (keepFolder && current.gitBacked) {
     return 'blocked'
   }
   const updates = resolveUpgrade(current.path)
   if (!updates) {
+    setGitBacked(watch, current, false)
     return 'rejected'
   }
-  const upgraded = watch.store.updateRepo(repoId, { kind: 'git', ...updates })
+  if (keepFolder) {
+    setGitBacked(watch, current, true)
+    return 'backed'
+  }
+  const upgraded = watch.store.updateRepo(repoId, {
+    kind: 'git',
+    ...(current.gitBacked ? { gitBacked: false } : {}),
+    ...updates
+  })
   if (!upgraded) {
     return 'upgraded'
   }
@@ -162,7 +188,11 @@ async function pollOnce(watch: UpgradeWatch): Promise<void> {
     const key = normalizeRuntimePathForComparison(repo.path)
     liveKeys.add(key)
     const signature = await readGitMarkerSignature(repo.path)
-    if (signature === null || rejectedMarkers.get(key) === signature) {
+    if (signature === null) {
+      setGitBacked(watch, repo, false)
+      continue
+    }
+    if (rejectedMarkers.get(key) === signature) {
       continue
     }
     if ((await upgradeFolderRepo(watch, repo.id)) === 'rejected') {

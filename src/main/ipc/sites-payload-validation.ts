@@ -3,6 +3,7 @@
 // so a compromised renderer cannot push a multi-megabyte string into orca-data.json, and unknown
 // keys are rejected outright rather than merged into a persisted record.
 
+import { isSiteImportFileRuleArray } from '../../shared/site-import-file-rules'
 import {
   ENVIRONMENT_STRING_FIELD_LIMITS,
   SITE_MAX_DB_PORT,
@@ -122,6 +123,12 @@ export function isSitePatch(value: unknown): value is Record<string, unknown> {
     }
     if (key === 'customSteps') {
       if (!isSiteCustomStepArray(entry)) {
+        return false
+      }
+      continue
+    }
+    if (key === 'importFileRules') {
+      if (!isSiteImportFileRuleArray(entry)) {
         return false
       }
       continue

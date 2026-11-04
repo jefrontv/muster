@@ -193,6 +193,7 @@ function createHarness(overrides: Partial<SiteImportDependencies> = {}): Harness
       remoteDbName: 'prod_db'
     }),
     readLocalWpConfigDbName: record('readLocalWpConfigDbName', 'local'),
+    scanLargeImportEntries: vi.fn(async () => []),
     // Writes the archives the pipeline is expected to extract and then delete.
     pullRemoteFileArchives: vi.fn(async () => {
       order.push('pullRemoteFileArchives')

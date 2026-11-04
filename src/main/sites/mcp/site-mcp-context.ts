@@ -14,6 +14,13 @@ import type { SiteRunConfig, SiteSshSession } from '../pipeline-contract'
 import type { AcfStateStore } from '../wp-acf-state-store'
 import type { PlanAnnotationOpenInput } from '../../../shared/plan-annotation-types'
 import type { PlanReviewOutcome } from './site-mcp-plan-bridge'
+import type { GlobalSettings } from '../../../shared/types'
+import type {
+  SiteSetupApprovalDecision,
+  SiteSetupApprovalInput,
+  SiteSetupApprovalOutcome
+} from '../../../shared/site-setup-approval-types'
+import type { SiteSetupReadOp, SiteSetupWriteOp } from '../../../shared/site-setup-bridge-ops'
 
 /** The subset of Store the tools touch. The real Store satisfies this structurally. */
 export type SiteMcpStore = {
@@ -26,6 +33,8 @@ export type SiteMcpStore = {
   /** Shared step library, if this store carries one. The context wraps these for tools. */
   getSiteStepLibrary?: () => SiteCustomStep[]
   setSiteStepLibrary?: (steps: readonly SiteCustomStep[]) => void
+  /** Read fresh, so a toggle in the GUI reaches a server that is already running. */
+  getSettings?: () => Pick<GlobalSettings, 'agentCapabilitySiteSetup'> | null
 }
 
 /** ocsites' get_git_status payload, snake_cased to keep existing agent prompts working. */
@@ -63,6 +72,24 @@ export type SiteMcpContext = {
    */
   progress?: (update: { message: string; progress: number }) => void
   collectPlanReview: SiteMcpCollectPlanReview
+  /** The opt-in "Let agents create and set up projects" setting. Off hides every write tool. */
+  siteSetupEnabled: () => boolean
+  /** Stages an approval card in the GUI. A decision is set when the site is already approved. */
+  requestSetupApproval: (
+    input: SiteSetupApprovalInput
+  ) => Promise<{ requestId: string; decision: SiteSetupApprovalDecision | null }>
+  collectSetupApproval: (args: {
+    requestId: string
+    waitMs: number
+  }) => Promise<SiteSetupApprovalOutcome>
+  /** A read-only setup lookup the GUI answers (projects, clone sources, stacks). Needs Muster open. */
+  readSetup: (op: SiteSetupReadOp, args: Record<string, unknown>) => Promise<unknown>
+  /** Runs an approved setup write in the GUI, which spends `approvalId` before acting. */
+  writeSetup: (
+    op: SiteSetupWriteOp,
+    approvalId: string,
+    args: Record<string, unknown>
+  ) => Promise<unknown>
   /**
    * Applies a site write. Prefer this over `store.updateSite`: when the GUI is
    * running it owns the live state, and a direct disk write here is reverted by
@@ -150,5 +177,7 @@ export type SiteMcpTool = {
    * later call, including read-only ones. Only set this for tools whose latency is a person.
    */
   concurrent?: boolean
+  /** Hidden from agents unless "Let agents create and set up projects" is on. */
+  requiresSiteSetup?: boolean
   run: (context: SiteMcpContext, args: Record<string, unknown>) => Promise<unknown>
 }

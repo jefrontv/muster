@@ -9344,7 +9344,9 @@
           "scopeNote": "These switches govern what your coding agents can reach, not what you can do in Muster.",
           "sitesTitle": "Site tools",
           "sitesWarning": "These tools reach real infrastructure — WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.",
-          "skillsDescription": "Muster installs its bundled skills into your agent skill directories at startup. Turning one off stops future installs; a copy already on disk is left where it is."
+          "skillsDescription": "Muster installs its bundled skills into your agent skill directories at startup. Turning one off stops future installs; a copy already on disk is left where it is.",
+          "alwaysAllowEmpty": "Every setup change asks first.",
+          "alwaysAllowRemove": "Ask again for {{value0}}"
         },
         "BrowserExtensionsSection": {
           "b7419fc2ad": "Configure",
@@ -9417,7 +9419,11 @@
             "bundledSkillsTitle": "Bundled agent skills",
             "bundledSkillsDescription": "Turn off individual skills Muster installs for your agents at startup.",
             "sitesMcpInstallTitle": "muster-sites MCP install",
-            "sitesMcpInstallDescription": "Register the built-in site MCP server with Claude Code, Codex, and Cursor global configs."
+            "sitesMcpInstallDescription": "Register the built-in site MCP server with Claude Code, Codex, and Cursor global configs.",
+            "siteSetupTitle": "Let agents create and set up projects",
+            "siteSetupDescription": "Agents can add projects and change site settings. Muster asks you to approve each change.",
+            "alwaysAllowTitle": "Allowed without asking",
+            "alwaysAllowDescription": "Setup changes you chose to always allow. Remove one to be asked again."
           }
         },
         "confirmations": {
@@ -14233,7 +14239,9 @@
           "stageHttps": "Trusting certificate",
           "stageImport": "Importing",
           "stageDone": "Ready",
-          "stageFailed": "Needs attention"
+          "stageFailed": "Needs attention",
+          "reviewAgentDescription": "{{agent}} set this up for you. Check it, then press Set up site. Nothing is written before that.",
+          "anAgent": "An agent"
         },
         "SiteEditableField": {
           "edit": "Edit {{field}}",
@@ -14294,6 +14302,80 @@
         },
         "useServeDomainCheck": {
           "clash": "{{domain}} is already used by {{name}} ({{path}}). Choose another."
+        },
+        "setupApproval": {
+          "anAgent": "An agent",
+          "secretDescription": "{{value0}} needs this password. It is saved to your keychain and never shown to the agent.",
+          "description": "{{value0}} is asking to make this change. Nothing is written until you approve.",
+          "password": "Password",
+          "queued": "{{value0}} more waiting after this one.",
+          "skip": "Skip",
+          "deny": "Deny",
+          "approveSite": "Approve for {{value0}}",
+          "savePassword": "Save password",
+          "approve": "Approve",
+          "linkRepo": "Repo",
+          "linkHost": "Host",
+          "linkUser": "User",
+          "linkRoot": "Root path",
+          "linkDomain": "Live domain",
+          "linkFound": "Link on your clipboard",
+          "linkOtherEnvironment": "The link is for {{value0}}. Using it fills {{value1}} and saves its password.",
+          "linkFills": "Using it fills {{value0}} and saves the password from the link.",
+          "useLink": "Use this link",
+          "linkOpened": "Link you opened",
+          "alwaysAllow": "Always allow without asking",
+          "alwaysAllowHint": "{{value0}}, by any agent, on any site. Remove it in Settings → Agent Capabilities."
+        },
+        "setupJob": {
+          "working": "Working…",
+          "done": "Done"
+        },
+        "SiteSetupAgentLinkRow": {
+          "failed": "Muster could not read that link.",
+          "title": "Server login",
+          "found": "Link on your clipboard: {{value0}}",
+          "prompt": "Click the site's muster:// link to add its server login, or add it later.",
+          "use": "Use link"
+        },
+        "SiteImportLargeFiles": {
+          "withFolder": "Skipped with its folder",
+          "webroot": "Webroot",
+          "title": "Large files on {{environment}}",
+          "description": "Before copying {{site}}, Muster found these. Anything you skip stays on the server.",
+          "summary": "{{size}} will stay on the server.",
+          "summaryNone": "Nothing ticked, so everything is copied.",
+          "remember": "Remember for future imports of this site",
+          "rememberHint": "Later imports won't ask about these again. Edit the list on the site's page.",
+          "cancel": "Cancel import",
+          "queued": "{{count}} more waiting",
+          "copyAll": "Copy everything",
+          "skip": "Skip {{count}} selected"
+        },
+        "SiteImportRules": {
+          "invalid": "Use a path inside the webroot, like wp-content/ai1wm-backups.",
+          "duplicate": "Already in the list.",
+          "heading": "Import exclusions",
+          "add": "Add path",
+          "caption": "Imports ask before copying files over 100 MB or folders over 500 MB. Skip leaves a path on the server; Copy imports it without asking.",
+          "empty": "Nothing is excluded.",
+          "actionLabel": "What imports do with {{path}}",
+          "skip": "Skip",
+          "keep": "Copy",
+          "remove": "Remove {{path}}",
+          "pathLabel": "Path to skip",
+          "save": "Add",
+          "cancel": "Cancel"
+        },
+        "setupActions": {
+          "createProject": "Creating projects",
+          "updateProject": "Editing projects",
+          "createWorktree": "Creating worktrees",
+          "addSiteRoot": "Adding site folders",
+          "registerSite": "Adding sites",
+          "configureSite": "Changing site settings",
+          "importSiteConfig": "Importing site settings",
+          "setUpLocalSite": "Setting up local sites"
         }
       },
       "activecollab": {
@@ -14840,6 +14922,24 @@
           "missingDetail": "In a development checkout, run pnpm fetch:muster-bots and reopen this tab.",
           "failed": "Muster Bots stopped",
           "restart": "Restart"
+        },
+        "BotsIntro": {
+          "jobTitle": "Give each bot a job",
+          "jobDetail": "Name it, tell it what it's for, and chat with it any time.",
+          "scheduleTitle": "Run on a schedule",
+          "scheduleDetail": "Routines like a morning summary run by themselves.",
+          "appsTitle": "Connect your apps",
+          "appsDetail": "Add a Composio key to let bots use Gmail, Calendar, Slack and more.",
+          "memoryTitle": "Remembers what matters",
+          "memoryDetail": "Each bot keeps notes you can open and edit.",
+          "disabledToast": "Bots is off",
+          "disabledToastDetail": "Turn it back on in Settings → Experimental → Muster Bots.",
+          "badge": "Experimental",
+          "title": "Meet Muster Bots",
+          "lede": "AI helpers that live in Muster. Each bot has its own job, memory and schedule, and keeps working while you do something else.",
+          "note": "Bots use your Claude or Codex account and ask before risky actions.",
+          "disable": "Disable Bots",
+          "explore": "Explore"
         }
       }
     },

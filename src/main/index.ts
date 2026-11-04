@@ -15,6 +15,10 @@ import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
 import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
+import { awaitSiteSetupApproval, openSiteSetupApproval } from './sites/site-setup-approval-requests'
+import { readSiteSetupInfo } from './sites/site-setup-reads'
+import { writeSiteSetup } from './sites/site-setup-writes'
+import { createSiteSetupWriteDeps } from './ipc/site-setup-write-deps'
 import { handlePlanReviewCollect, handlePlanReviewOpen } from './sites/plan-review-hook'
 import { initSessionParseCachePersistence } from './ai-vault/session-parse-cache-persistence'
 import { ensureActiveOrcaProfile, initOrcaProfilePaths } from './orca-profiles/profile-index-store'
@@ -835,6 +839,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
       // runs once the store is up. Non-fatal — a failed bridge leaves MCP writes
       // on the old direct-to-disk path rather than blocking startup.
       if (store) {
+        const bridgeStore = store
         try {
           await siteWriteBridgeServer.start({
             store,
@@ -843,7 +848,18 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
             onSiteChanged: (site) => sendToTrustedUIRenderer('sites:changed', site.id),
             secrets: { copy: copySiteEnvironmentSecrets, remove: deleteSiteEnvironmentSecrets },
             onPlanAnnotationRequested: openPlanAnnotation,
-            onPlanAnnotationCollect: awaitPlanAnnotationResult
+            onPlanAnnotationCollect: awaitPlanAnnotationResult,
+            onSetupApprovalRequested: openSiteSetupApproval,
+            onSetupApprovalCollect: awaitSiteSetupApproval,
+            onSetupRead: (op, readArgs) => readSiteSetupInfo(bridgeStore, op, readArgs),
+            onSetupWrite: (op, approvalId, writeArgs) =>
+              writeSiteSetup(
+                // Runtime read at call time: it comes up after the bridge.
+                createSiteSetupWriteDeps(bridgeStore, () => runtime),
+                op,
+                approvalId,
+                writeArgs
+              )
           })
         } catch (error) {
           console.error('[site-bridge] Failed to start local site write bridge:', error)

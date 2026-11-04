@@ -1,7 +1,7 @@
 import type { PRCheckDetail, Repo, Worktree } from '../../../../shared/types'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
 import { hostedReviewInfoFromGitHubPRInfo } from '../../../../shared/hosted-review-github'
-import { isFolderRepo } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import { getWorktreeCardPrDisplay } from '@/components/sidebar/worktree-card-pr-display'
 import { getWorktreeGitIdentityDisplay } from '@/lib/worktree-git-identity-display'
 import { getGitHubRepoCacheKey } from '@/store/slices/github-cache-key'
@@ -122,7 +122,7 @@ function buildParentPrChecksRow(
   )
   const review = reviewSnapshot.review
   const status = classifyParentPrChecksRowStatus({
-    isUnavailable: !args.repo || isFolderRepo(args.repo) || args.worktree.isBare || !branch,
+    isUnavailable: !args.repo || !hasGitFeatures(args.repo) || args.worktree.isBare || !branch,
     review,
     hasCacheEntry: reviewSnapshot.hasCacheEntry,
     outcome,

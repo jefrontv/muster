@@ -39,6 +39,7 @@ import {
 import { sanitizeActiveCollabProjectSites } from '../shared/activecollab-project-site'
 import { getAutomationLegacyRepoId } from '../shared/automation-run-identity'
 import { normalizeAutomationPrecheck } from '../shared/automation-precheck'
+import { normalizeSiteSetupAlwaysAllow } from '../shared/site-setup-always-allow'
 import type {
   PersistedState,
   Project,
@@ -2970,6 +2971,15 @@ export class Store {
         if (!chatModeDefaultedOnForMuster && parsed.settings?.experimentalChatMode !== true) {
           this.loadNeedsSave = true
         }
+        // Why: Muster turned the Bots tab on for everyone; same one-shot shape so a later opt-out survives reload.
+        const botsDefaultedOnForMuster =
+          parsed.settings?.experimentalBotsDefaultedOnForMuster === true
+        const migratedExperimentalBots = botsDefaultedOnForMuster
+          ? (parsed.settings?.experimentalBots ?? true)
+          : true
+        if (!botsDefaultedOnForMuster) {
+          this.loadNeedsSave = true
+        }
         const floatingTerminalDefaultedForAllUsers =
           parsed.settings?.floatingTerminalDefaultedForAllUsers === true
         // Why: early builds persisted the old off default; flip only unmigrated profiles so a later opt-out survives reload.
@@ -3241,6 +3251,8 @@ export class Store {
             experimentalNativeChatDefaultedOnForMuster: true,
             experimentalChatMode: migratedExperimentalChatMode,
             experimentalChatModeDefaultedOnForMuster: true,
+            experimentalBots: migratedExperimentalBots,
+            experimentalBotsDefaultedOnForMuster: true,
             floatingTerminalEnabled: migratedFloatingTerminalEnabled,
             floatingTerminalDefaultedForAllUsers: true,
             floatingTerminalCwd: migratedFloatingTerminalCwd,
@@ -4588,6 +4600,7 @@ export class Store {
         // Why: LocalWP site-shell → app/public migration rewrites the project root in place.
         | 'path'
         | 'kind'
+        | 'gitBacked'
         | 'executionHostId'
         | 'symlinkPaths'
         | 'issueSourcePreference'
@@ -5548,6 +5561,11 @@ export class Store {
     // Why: coerce to boolean here (not the IPC edge) so every write path is covered and a truthy non-bool can't persist as "tray-minimize on".
     if ('minimizeToTrayOnClose' in updates) {
       sanitizedUpdates.minimizeToTrayOnClose = updates.minimizeToTrayOnClose === true
+    }
+    if ('siteSetupAlwaysAllow' in updates) {
+      sanitizedUpdates.siteSetupAlwaysAllow = normalizeSiteSetupAlwaysAllow(
+        updates.siteSetupAlwaysAllow
+      )
     }
     if ('disabledTuiAgents' in updates) {
       sanitizedUpdates.disabledTuiAgents = normalizeDisabledTuiAgents(updates.disabledTuiAgents)

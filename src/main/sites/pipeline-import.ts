@@ -5,6 +5,8 @@
 // the sequencing rules below — SSH only when a step needs it, cancellation between stages, cleanup
 // in a finally — be tested without a server, a database or a WordPress install.
 
+import type { scanLargeImportEntries } from './remote-large-file-scan'
+import { reviewLargeImportEntries } from './site-import-large-entries'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { Site } from '../../shared/site-types'
@@ -61,11 +63,13 @@ export type SiteImportDependencies = {
     context: SiteRunContext,
     config: SiteRunConfig
   ) => Promise<{ ok: boolean; reason?: string }>
+  scanLargeImportEntries: typeof scanLargeImportEntries
   pullRemoteFileArchives: (
     context: SiteRunContext,
     config: SiteRunConfig,
     session: SiteSshSession,
-    layout: RemoteLayout
+    layout: RemoteLayout,
+    skipPaths?: readonly string[]
   ) => Promise<PulledSiteArchives>
   extractZipArchive: (
     context: SiteRunContext,
@@ -306,7 +310,15 @@ async function importFiles(
   layout: RemoteLayout,
   deps: SiteImportDependencies
 ): Promise<void> {
-  const archives = await deps.pullRemoteFileArchives(context, config, session, layout)
+  const skipPaths = await reviewLargeImportEntries(
+    context,
+    config,
+    session,
+    layout,
+    deps.scanLargeImportEntries
+  )
+  context.throwIfCancelled()
+  const archives = await deps.pullRemoteFileArchives(context, config, session, layout, skipPaths)
 
   context.throwIfCancelled()
   context.status(`Extracting ${path.basename(archives.baseArchivePath)}…`)

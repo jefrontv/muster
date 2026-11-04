@@ -15,6 +15,13 @@ export function isSitesMcpExposedToAgents(
   return settings?.agentCapabilitySitesMcp !== false
 }
 
+/** Opt-in, unlike the readers above: absent means agents cannot create projects or write site config. */
+export function isSiteSetupExposedToAgents(
+  settings: Pick<GlobalSettings, 'agentCapabilitySiteSetup'> | null | undefined
+): boolean {
+  return settings?.agentCapabilitySiteSetup === true
+}
+
 export function isBundledSkillEnabled(
   capabilities: Readonly<Record<string, boolean>> | undefined,
   skillId: string

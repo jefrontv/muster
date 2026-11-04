@@ -3055,6 +3055,26 @@ describe('Store', () => {
     expect(store.getSettings().experimentalChatModeDefaultedOnForMuster).toBe(true)
   })
 
+  it('flips a persisted Bots off default on once, and keeps a later opt-out', async () => {
+    const file = (settings: Record<string, unknown>) => ({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings,
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+    writeDataFile(file({ experimentalBots: false }))
+    const migrated = await createStore()
+    expect(migrated.getSettings().experimentalBots).toBe(true)
+    expect(migrated.getSettings().experimentalBotsDefaultedOnForMuster).toBe(true)
+
+    writeDataFile(file({ experimentalBots: false, experimentalBotsDefaultedOnForMuster: true }))
+    const optedOut = await createStore()
+    expect(optedOut.getSettings().experimentalBots).toBe(false)
+  })
+
   it('migrates the legacy Linux primary-selection default to enabled', async () => {
     await withPlatform('linux', async () => {
       writeDataFile({

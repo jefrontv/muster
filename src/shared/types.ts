@@ -248,6 +248,8 @@ export type Repo = {
   upstream?: GitHubRepositoryIdentity | null
   addedAt: number
   kind?: RepoKind
+  /** Folder project whose folder is its own git root: folder workspaces, git panels. */
+  gitBacked?: boolean
   gitUsername?: string
   worktreeBaseRef?: string
   /** Optional repo-scoped workspace root override. Relative paths resolve from `path`. */
@@ -2876,8 +2878,12 @@ export type GlobalSettings = {
   experimentalChatMode?: boolean
   /** One-shot marker: profile has been flipped to Muster's on-by-default Chat mode. */
   experimentalChatModeDefaultedOnForMuster?: boolean
-  /** Muster Bots: the top-level Bots tab, backed by the bundled bots server. */
+  /** Muster Bots: the top-level Bots tab, backed by the bundled bots server; Muster defaults this on. */
   experimentalBots?: boolean
+  /** One-shot marker: profile has been flipped to Muster's on-by-default Bots tab. */
+  experimentalBotsDefaultedOnForMuster?: boolean
+  /** The Bots tab's first-visit intro has been closed. */
+  botsIntroSeen?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
   nativeChatSessionOptions?: PersistedNativeChatSessionOptions
   /** Chat-thread tool permission default: 'full' auto-approves every tool. */
@@ -3026,6 +3032,13 @@ export type GlobalSettings = {
    *  (WordPress deploys, remote DB queries), so turning it off is a legitimate hardening step.
    *  Absent or true = exposed, matching every install that predates this toggle. */
   agentCapabilitySitesMcp?: boolean
+  /** Why opt-in: lets agents create projects and write site config, each behind an approval card.
+   *  Absent or false = the site write tools are hidden from agents. */
+  agentCapabilitySiteSetup?: boolean
+  /** Why persisted: setup actions the user ticked "Always allow" for on an approval card. Only
+   *  the card's Approve adds one (no agent-reachable route writes settings); Settings removes them.
+   *  Normalised on write to the eligible list, so a password or a removal can never be granted. */
+  siteSetupAlwaysAllow?: string[]
   /** Why: per-bundled-skill opt-out keyed by skill id. A missing key reads as enabled so an
    *  upgrade never silently withdraws a skill an agent already depends on. */
   agentCapabilityBundledSkills?: Record<string, boolean>

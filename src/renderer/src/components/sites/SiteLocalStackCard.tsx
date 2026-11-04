@@ -196,7 +196,7 @@ export function SiteLocalStackCard({
           >
             <SelectTrigger
               aria-label={providerLabel}
-              className="-mx-3 h-9 w-[calc(100%+1.5rem)] border-0 bg-transparent shadow-none dark:bg-transparent"
+              className="-mx-3.5 h-9 w-[calc(100%+1.75rem)] bg-transparent"
             >
               <SelectValue />
             </SelectTrigger>

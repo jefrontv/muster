@@ -82,6 +82,31 @@ export const getAgentCapabilitiesPaneSearchEntries = createLocalizedCatalog(
     },
     {
       title: translate(
+        'auto.components.settings.agentCapabilities.search.siteSetupTitle',
+        'Let agents create and set up projects'
+      ),
+      description: translate(
+        'auto.components.settings.agentCapabilities.search.siteSetupDescription',
+        'Agents can add projects and change site settings. Muster asks you to approve each change.'
+      ),
+      keywords: [
+        ...sharedKeywords(),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.sites',
+          'sites'
+        ),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.projects',
+          'projects'
+        ),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.approval',
+          'approval'
+        )
+      ]
+    },
+    {
+      title: translate(
         'auto.components.settings.agentCapabilities.search.sitesMcpInstallTitle',
         'muster-sites MCP install'
       ),
@@ -117,6 +142,27 @@ export const getAgentCapabilitiesPaneSearchEntries = createLocalizedCatalog(
           'auto.components.settings.agentCapabilities.search.cursor',
           'cursor',
           { englishOnly: true }
+        )
+      ]
+    },
+    {
+      title: translate(
+        'auto.components.settings.agentCapabilities.search.alwaysAllowTitle',
+        'Allowed without asking'
+      ),
+      description: translate(
+        'auto.components.settings.agentCapabilities.search.alwaysAllowDescription',
+        'Setup changes you chose to always allow. Remove one to be asked again.'
+      ),
+      keywords: [
+        ...sharedKeywords(),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.approval',
+          'approval'
+        ),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.alwaysAllow',
+          'always allow'
         )
       ]
     }

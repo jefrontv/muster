@@ -4,6 +4,7 @@
 // and honour an AbortSignal. They never touch Electron, IPC, the Store, or secret storage — that
 // keeps them unit-testable without a running app and keeps secret handling in one place.
 
+import type { SiteImportLargeEntry } from '../../shared/site-import-file-rules'
 import type { Site, SiteEnvironment, SiteRunGroup } from '../../shared/site-types'
 
 export class SiteRunCancelledError extends Error {
@@ -40,6 +41,11 @@ export type SiteRunContext = {
   progress: (progress: SiteRunProgress) => void
   /** Throws SiteRunCancelledError when the run has been aborted. Call between stages. */
   throwIfCancelled: () => void
+  /**
+   * Asks the user which large items to leave on the server and resolves the paths to skip.
+   * Absent where nobody can answer (an agent's run from the MCP process).
+   */
+  askAboutLargeFiles?: (entries: SiteImportLargeEntry[]) => Promise<string[]>
 }
 
 export type SiteExecResult = {

@@ -34,20 +34,34 @@ function readEndpointFile(bridgeFile: string): SiteWriteBridgeEndpoint | null {
 const NO_GUI =
   'No Muster window is running, so there is nobody to review the plan. Open Muster and try again.'
 
+const LOST_CONTACT =
+  'Muster did not answer this request in time. Nothing was lost: call the same tool again with the same id.'
+
+/** Only a refused connection means nothing is listening; a dropped or slow one is a live Muster. */
+function connectionRefused(error: unknown): boolean {
+  const cause = (error as { cause?: { code?: unknown } } | null)?.cause
+  return cause?.code === 'ECONNREFUSED'
+}
+
 export type PlanReviewOutcome =
   | { status: 'settled'; result: PlanAnnotationResult }
-  | { status: 'pending'; openedMs: number }
+  // shownMs and queuedAhead are absent from an older Muster.
+  | { status: 'pending'; openedMs: number; shownMs?: number | null; queuedAhead?: number }
   | { status: 'unknown' }
 
-async function post(args: {
+/** POSTs to a GUI-only bridge route. `noGui` is the message when no window can answer. */
+export async function postToGuiBridge(args: {
   bridgeFile: string
   path: string
   body: unknown
   fetchImpl?: typeof fetch
+  noGui?: string
+  refusedLabel?: string
 }): Promise<unknown> {
+  const noGui = args.noGui ?? NO_GUI
   const endpoint = readEndpointFile(args.bridgeFile)
   if (!endpoint) {
-    throw new PlanBridgeUnavailableError(NO_GUI)
+    throw new PlanBridgeUnavailableError(noGui)
   }
   const doFetch = args.fetchImpl ?? fetch
   let response: Response
@@ -60,13 +74,18 @@ async function post(args: {
       },
       body: JSON.stringify(args.body)
     })
-  } catch {
+  } catch (error) {
     // A stale endpoint file pointing at a dead port reads the same as no GUI to the caller.
-    throw new PlanBridgeUnavailableError(NO_GUI)
+    throw new PlanBridgeUnavailableError(connectionRefused(error) ? noGui : LOST_CONTACT)
   }
   if (!response.ok) {
+    // Pass the route's own reason through, so an agent can fix a bad argument.
+    const reason = await response
+      .json()
+      .then((body: { error?: unknown }) => (typeof body?.error === 'string' ? body.error : ''))
+      .catch(() => '')
     throw new PlanBridgeUnavailableError(
-      `Muster refused the plan review (HTTP ${response.status}).`
+      `Muster refused the ${args.refusedLabel ?? 'plan review'} (HTTP ${response.status})${reason ? `: ${reason}` : ''}.`
     )
   }
   return await response.json()
@@ -78,7 +97,7 @@ export async function openPlanAnnotationThroughBridge(args: {
   request: PlanBridgeRequest
   fetchImpl?: typeof fetch
 }): Promise<{ requestId: string; round: number }> {
-  const answer = (await post({
+  const answer = (await postToGuiBridge({
     bridgeFile: args.bridgeFile,
     path: '/plan/annotate',
     body: args.request,
@@ -101,7 +120,7 @@ export async function collectPlanAnnotationThroughBridge(args: {
   waitMs: number
   fetchImpl?: typeof fetch
 }): Promise<PlanReviewOutcome> {
-  return (await post({
+  return (await postToGuiBridge({
     bridgeFile: args.bridgeFile,
     path: '/plan/collect',
     body: { reviewId: args.reviewId, waitMs: args.waitMs },

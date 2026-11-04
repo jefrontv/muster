@@ -26,13 +26,22 @@ type PendingReview = {
   /** Only running once this review reaches the front — see startFront(). */
   timer: ReturnType<typeof setTimeout> | null
   openedAt: number
+  /** When it reached the front and was sent to a window; null while queued behind another. */
+  shownAt: number | null
+}
+
+/** A review still open: how long since it was sent, and whether it has reached the screen. */
+export type PlanAnnotationPending = {
+  status: 'pending'
+  openedMs: number
+  /** Null while queued behind another review. */
+  shownMs: number | null
+  queuedAhead: number
 }
 
 type Waiter = {
   resolve: (
-    outcome:
-      | { status: 'settled'; result: PlanAnnotationResult }
-      | { status: 'pending'; openedMs: number }
+    outcome: { status: 'settled'; result: PlanAnnotationResult } | PlanAnnotationPending
   ) => void
   timer: ReturnType<typeof setTimeout>
 }
@@ -180,6 +189,7 @@ function startFront(): void {
     startFront()
   }, PLAN_ANNOTATION_TIMEOUT_MS)
   entry.timer.unref?.()
+  entry.shownAt = Date.now()
   try {
     sendRequest?.(entry.request)
   } catch {
@@ -217,7 +227,7 @@ export function openPlanAnnotation(
   // Everything already queued settles first (FIFO), so the current depth is what is ahead of us.
   const queuedAhead = queue.size
   const request: PlanAnnotationRequest = { ...input, requestId, round, previousContent }
-  queue.set(requestId, { request, timer: null, openedAt: Date.now() })
+  queue.set(requestId, { request, timer: null, openedAt: Date.now(), shownAt: null })
   startFront()
   // After startFront, so a review that went straight to the front reports a depth of zero.
   notifyQueued()
@@ -236,7 +246,7 @@ export function awaitPlanAnnotationResult(
   timeoutMs: number
 ): Promise<
   | { status: 'settled'; result: PlanAnnotationResult }
-  | { status: 'pending'; openedMs: number }
+  | PlanAnnotationPending
   | { status: 'unknown' }
 > {
   const done = settled.get(requestId)
@@ -247,16 +257,15 @@ export function awaitPlanAnnotationResult(
   if (!entry) {
     return Promise.resolve({ status: 'unknown' as const })
   }
-  const openedAt = entry.openedAt
   const { promise, resolve } = Promise.withResolvers<
-    { status: 'settled'; result: PlanAnnotationResult } | { status: 'pending'; openedMs: number }
+    { status: 'settled'; result: PlanAnnotationResult } | PlanAnnotationPending
   >()
   const waiter: Waiter = {
     resolve,
     timer: setTimeout(
       () => {
         waiters.get(requestId)?.delete(waiter)
-        resolve({ status: 'pending', openedMs: Date.now() - openedAt })
+        resolve(pendingFor(requestId, entry))
       },
       Math.max(0, timeoutMs)
     )
@@ -266,6 +275,16 @@ export function awaitPlanAnnotationResult(
   forId.add(waiter)
   waiters.set(requestId, forId)
   return promise
+}
+
+function pendingFor(requestId: string, entry: PendingReview): PlanAnnotationPending {
+  const now = Date.now()
+  return {
+    status: 'pending',
+    openedMs: now - entry.openedAt,
+    shownMs: entry.shownAt === null ? null : now - entry.shownAt,
+    queuedAhead: Math.max(0, [...queue.keys()].indexOf(requestId))
+  }
 }
 
 export function respondPlanAnnotation(requestId: string, result: PlanAnnotationResult): boolean {

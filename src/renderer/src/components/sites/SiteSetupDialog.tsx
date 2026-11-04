@@ -13,6 +13,7 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { PendingSiteBind } from '../../../../shared/site-bind-types'
+import type { SiteSetupAgentHints } from '../../../../shared/site-setup-agent-types'
 import type { CloneSourceRepo } from '../../../../shared/site-clone-source-types'
 import { repoSlug } from '../../../../shared/site-local-domain'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,8 @@ import type { SetupRunStepId, SiteSetupSource } from './site-setup-choices'
 import { SiteSetupDone } from './SiteSetupDone'
 import { openSiteProject } from './open-site-project'
 import { SiteSetupLinkTargetRows } from './SiteSetupLinkTargetRows'
+import { SiteSetupAgentLinkRow } from './SiteSetupAgentLinkRow'
+import { useAgentSetupSync } from './use-agent-setup-sync'
 import { SiteSetupMinimizeButton } from './SiteSetupMinimizeButton'
 import { SiteSetupReview } from './SiteSetupReview'
 import { AddSiteEnvironmentDialog } from './AddSiteEnvironmentDialog'
@@ -40,19 +43,30 @@ import { useSiteSetupReviewData } from './use-site-setup-review-data'
 import { useServeDomainCheck } from './use-serve-domain-check'
 import { useSiteSetupRunner } from './use-site-setup-runner'
 
+/** Set when an agent opened this setup: the dialog reports to it and shows who asked. */
+export type SiteSetupAgentContext = {
+  setupId: string
+  name: string | null
+  hints: SiteSetupAgentHints
+}
+
 export type SiteSetupRequest =
-  | { kind: 'repo' }
-  | { kind: 'link'; pending: PendingSiteBind }
-  | { kind: 'site'; siteId: string; label: string }
+  /** `repo` already chosen (by an agent) skips the picker. */
+  | { kind: 'repo'; repo?: CloneSourceRepo; agent?: SiteSetupAgentContext }
+  | { kind: 'link'; pending: PendingSiteBind; agent?: SiteSetupAgentContext }
+  | { kind: 'site'; siteId: string; label: string; agent?: SiteSetupAgentContext }
 
 type Screen = 'source' | 'review' | 'running' | 'done'
 
 export function SiteSetupDialog({
   request,
   onClose,
-  onSiteReady
+  onSiteReady,
+  onStarted
 }: {
   request: SiteSetupRequest
+  /** The run began: an agent's review can no longer be swapped for a link's. */
+  onStarted?: () => void
   /** `dismissed` while nothing was written; `finished` once the run started, whatever its outcome. */
   onClose: (reason: 'dismissed' | 'finished') => void
   /** Fires once the Site record exists, so the sites list can select it behind the dialog. */
@@ -60,8 +74,12 @@ export function SiteSetupDialog({
 }): React.JSX.Element {
   const strings = getSiteSetupDialogStrings()
   const { runner, snapshot } = useSiteSetupRunner()
-  const [screen, setScreen] = useState<Screen>(request.kind === 'repo' ? 'source' : 'review')
-  const [repo, setRepo] = useState<CloneSourceRepo | null>(null)
+  const [screen, setScreen] = useState<Screen>(
+    request.kind === 'repo' && !request.repo ? 'source' : 'review'
+  )
+  const [repo, setRepo] = useState<CloneSourceRepo | null>(
+    request.kind === 'repo' ? (request.repo ?? null) : null
+  )
   const [lockedSteps, setLockedSteps] = useState<SetupRunStepId[]>([])
   const readyReportedRef = useRef(false)
   const {
@@ -175,12 +193,23 @@ export function SiteSetupDialog({
       return
     }
     setScreen('running')
+    onStarted?.()
     if (snapshot.phase === 'failed') {
       void runner.retry(choices)
       return
     }
     void runner.start(built, choices)
   }
+
+  useAgentSetupSync({
+    agent: request.agent ?? null,
+    usingLink: request.kind === 'link',
+    screen,
+    snapshot,
+    choices,
+    setChoices,
+    availableStacks
+  })
 
   const running = snapshot.phase === 'running'
   const started = snapshot.phase !== 'idle'
@@ -219,11 +248,16 @@ export function SiteSetupDialog({
     screen === 'source'
       ? strings.sourceDescription
       : screen === 'review'
-        ? request.kind === 'repo'
-          ? strings.reviewRepoDescription.replace('{{repo}}', repo?.fullName ?? '')
-          : request.kind === 'link'
-            ? strings.reviewLinkDescription
-            : strings.reviewSiteDescription
+        ? request.agent
+          ? strings.reviewAgentDescription.replace(
+              '{{agent}}',
+              request.agent.name ?? strings.anAgent
+            )
+          : request.kind === 'repo'
+            ? strings.reviewRepoDescription.replace('{{repo}}', repo?.fullName ?? '')
+            : request.kind === 'link'
+              ? strings.reviewLinkDescription
+              : strings.reviewSiteDescription
         : null
 
   return (
@@ -290,6 +324,11 @@ export function SiteSetupDialog({
                   lockedSteps={lockedSteps}
                   promptStackChoice={promptStackChoice}
                   serveDomainError={serveDomainError}
+                  extraRows={
+                    request.agent && request.kind !== 'link' && !started ? (
+                      <SiteSetupAgentLinkRow />
+                    ) : undefined
+                  }
                   sourceRows={
                     request.kind === 'link' ? (
                       <SiteSetupLinkTargetRows

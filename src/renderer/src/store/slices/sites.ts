@@ -25,6 +25,7 @@ type SiteFieldPatch = Partial<
     | 'notes'
     | 'searchReplaceTimeoutSeconds'
     | 'customSteps'
+    | 'importFileRules'
   >
 >
 

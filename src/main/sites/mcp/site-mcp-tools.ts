@@ -8,6 +8,7 @@
 // working after the Python daemon is decommissioned.
 
 import { SiteMcpToolError } from './site-mcp-arguments'
+import { SITE_MCP_APPROVAL_TOOLS } from './site-mcp-approval-tools'
 import { SITE_MCP_CONFIG_TOOLS } from './site-mcp-config-tools'
 import type { SiteMcpContext, SiteMcpJsonSchema, SiteMcpTool } from './site-mcp-context'
 import { SITE_MCP_CUSTOM_STEP_TOOLS } from './site-mcp-custom-step-tools'
@@ -17,6 +18,11 @@ import { SITE_MCP_ENV_TOOLS } from './site-mcp-env-tools'
 import { SITE_MCP_JOB_TOOLS } from './site-mcp-job-tools'
 import { SITE_MCP_PIPELINE_TOOLS } from './site-mcp-pipeline-tools'
 import { SITE_MCP_RUN_TOOLS } from './site-mcp-run-tools'
+import { SITE_MCP_LOCAL_SETUP_TOOLS } from './site-mcp-local-setup-tools'
+import { SITE_MCP_SITE_SETUP_TOOLS } from './site-mcp-site-setup-tools'
+import { SITE_MCP_PROJECT_WRITE_TOOLS } from './site-mcp-project-write-tools'
+import { SITE_MCP_SETUP_READ_TOOLS } from './site-mcp-setup-read-tools'
+import { SITE_MCP_SITE_WRITE_TOOLS } from './site-mcp-site-write-tools'
 import { SITE_MCP_SSH_TOOLS } from './site-mcp-ssh-tools'
 import { SITE_MCP_TRANSFER_TOOLS } from './site-mcp-transfer-tools'
 import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
@@ -40,7 +46,13 @@ export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_TRANSFER_TOOLS,
   ...SITE_MCP_JOB_TOOLS,
   ...SITE_MCP_PIPELINE_TOOLS,
-  ...SITE_MCP_PLAN_TOOLS
+  ...SITE_MCP_PLAN_TOOLS,
+  ...SITE_MCP_SETUP_READ_TOOLS,
+  ...SITE_MCP_PROJECT_WRITE_TOOLS,
+  ...SITE_MCP_SITE_WRITE_TOOLS,
+  ...SITE_MCP_SITE_SETUP_TOOLS,
+  ...SITE_MCP_LOCAL_SETUP_TOOLS,
+  ...SITE_MCP_APPROVAL_TOOLS
 ]
 
 export type SiteMcpToolDescriptor = {
@@ -49,9 +61,16 @@ export type SiteMcpToolDescriptor = {
   inputSchema: SiteMcpJsonSchema
 }
 
-/** The `tools/list` payload: descriptors only, never the handlers. */
-export function listSiteMcpToolDescriptors(): SiteMcpToolDescriptor[] {
-  return SITE_MCP_TOOLS.map((tool) => ({
+/** Hidden rather than refused when the setting is off, so a model does not try other spellings. */
+function isToolAvailable(tool: SiteMcpTool, context?: Pick<SiteMcpContext, 'siteSetupEnabled'>) {
+  return !tool.requiresSiteSetup || !context || context.siteSetupEnabled()
+}
+
+/** The `tools/list` payload: descriptors only, never the handlers. No context lists every tool. */
+export function listSiteMcpToolDescriptors(
+  context?: Pick<SiteMcpContext, 'siteSetupEnabled'>
+): SiteMcpToolDescriptor[] {
+  return SITE_MCP_TOOLS.filter((tool) => isToolAvailable(tool, context)).map((tool) => ({
     name: tool.name,
     description: tool.description,
     inputSchema: tool.inputSchema
@@ -95,6 +114,15 @@ export async function dispatchSiteMcpTool(
   tool: SiteMcpTool,
   args: Record<string, unknown>
 ): Promise<SiteMcpToolResult> {
+  if (!isToolAvailable(tool, context)) {
+    return toolResult(
+      {
+        ok: false,
+        error: `${tool.name} is off. The user can turn on "Let agents create and set up projects" in Muster's Agent Capabilities settings. Nothing was run.`
+      },
+      true
+    )
+  }
   const unknown = unknownArgumentKeys(tool, args)
   if (unknown.length > 0) {
     // A misspelled `environment` on a deploy used to be dropped and the branch's env deployed.

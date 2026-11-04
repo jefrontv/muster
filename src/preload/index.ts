@@ -976,6 +976,75 @@ const api = {
     }
   } satisfies PreloadApi['planAnnotation'],
 
+  siteSetupApproval: {
+    respond: (args) => ipcRenderer.invoke('siteSetupApproval:respond', args),
+    listPending: () => ipcRenderer.invoke('siteSetupApproval:listPending'),
+    clipboardLink: (requestId) => ipcRenderer.invoke('siteSetupApproval:clipboardLink', requestId),
+    onRequest: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        request: Parameters<typeof callback>[0]
+      ): void => callback(request)
+      ipcRenderer.on('siteSetupApproval:request', listener)
+      return () => ipcRenderer.removeListener('siteSetupApproval:request', listener)
+    },
+    onResolved: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, requestId: string): void =>
+        callback(requestId)
+      ipcRenderer.on('siteSetupApproval:resolved', listener)
+      return () => ipcRenderer.removeListener('siteSetupApproval:resolved', listener)
+    },
+    onJobUpdate: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        update: Parameters<typeof callback>[0]
+      ): void => callback(update)
+      ipcRenderer.on('siteSetupApproval:jobUpdate', listener)
+      return () => ipcRenderer.removeListener('siteSetupApproval:jobUpdate', listener)
+    },
+    onLinkReceived: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, requestId: string): void =>
+        callback(requestId)
+      ipcRenderer.on('siteSetupApproval:linkReceived', listener)
+      return () => ipcRenderer.removeListener('siteSetupApproval:linkReceived', listener)
+    }
+  } satisfies PreloadApi['siteSetupApproval'],
+
+  siteSetupAgent: {
+    onOpen: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        request: Parameters<typeof callback>[0]
+      ): void => callback(request)
+      ipcRenderer.on('siteSetupAgent:open', listener)
+      return () => ipcRenderer.removeListener('siteSetupAgent:open', listener)
+    },
+    listOpen: () => ipcRenderer.invoke('siteSetupAgent:listOpen'),
+    report: (setupId, report) => ipcRenderer.invoke('siteSetupAgent:report', setupId, report),
+    clipboardLink: () => ipcRenderer.invoke('siteSetupAgent:clipboardLink'),
+    useClipboardLink: () => ipcRenderer.invoke('siteSetupAgent:useClipboardLink')
+  } satisfies PreloadApi['siteSetupAgent'],
+
+  siteImportLargeFiles: {
+    onPrompt: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        prompt: Parameters<typeof callback>[0]
+      ): void => callback(prompt)
+      ipcRenderer.on('siteImportLargeFiles:prompt', listener)
+      return () => ipcRenderer.removeListener('siteImportLargeFiles:prompt', listener)
+    },
+    onResolved: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, promptId: string): void =>
+        callback(promptId)
+      ipcRenderer.on('siteImportLargeFiles:resolved', listener)
+      return () => ipcRenderer.removeListener('siteImportLargeFiles:resolved', listener)
+    },
+    listPending: () => ipcRenderer.invoke('siteImportLargeFiles:listPending'),
+    respond: (promptId, answer) =>
+      ipcRenderer.invoke('siteImportLargeFiles:respond', { promptId, answer })
+  } satisfies PreloadApi['siteImportLargeFiles'],
+
   chatThreadStream: {
     start: (args) => ipcRenderer.invoke('chatThreadStream:start', args),
     send: (threadId, text, imagePaths, mode) =>

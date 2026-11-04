@@ -37,7 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { isFolderRepo } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import { githubProjectHost } from '../../../../shared/github-project-identity'
 import HostedReviewActions from './HostedReviewActions'
 import {
@@ -682,7 +682,7 @@ export default function ChecksPanel(): React.JSX.Element {
     }
   }
 
-  const isFolder = repo ? isFolderRepo(repo) : false
+  const isFolder = repo ? !hasGitFeatures(repo) : false
   const prCacheKey =
     repo && branch
       ? getGitHubPRCacheKey(

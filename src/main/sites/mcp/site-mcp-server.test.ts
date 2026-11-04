@@ -55,6 +55,11 @@ function createContext(): SiteMcpContext {
     cwd: '/Sites/acme',
     annotatePlan: () => Promise.resolve({ requestId: 'r1', round: 1 }),
     collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
+    siteSetupEnabled: () => true,
+    requestSetupApproval: async () => ({ requestId: 'approval-1', decision: null }),
+    collectSetupApproval: async () => ({ status: 'unknown' as const }),
+    readSetup: async () => null,
+    writeSetup: async () => null,
     updateSite: async () => null,
     openSshSession: async () => ({
       exec: async () => ({ code: 0, stdout: 'remote-ok', stderr: '' }),

@@ -78,6 +78,7 @@ import {
   AGENT_PROMPT_SUBMIT_DELAY_MS,
   buildAgentPromptPasteBytes
 } from '../../shared/agent-prompt-injection'
+import { readFolderGitHead } from '../git/folder-git-head'
 import { gitExecFileAsync, gitSpawn, nonInteractiveGitEnv } from '../git/runner'
 import { runWithGitReadCacheInvalidation } from '../git/status'
 import { wakeFolderRepoGitUpgradeWatch } from '../ipc/folder-repo-git-upgrade-wake'
@@ -179,6 +180,7 @@ import {
   type ExecutionHostId
 } from '../../shared/execution-host'
 import { getRegisteredSshState } from '../ipc/ssh'
+import { createCloneProgressTracker, type CloneProgress } from '../ipc/git-clone-progress'
 import type {
   AgentProviderSessionMetadata,
   SleepingAgentLaunchConfig
@@ -1907,8 +1909,7 @@ function mergeRuntimeFolderWorkspace(repo: Repo, worktreeId: string, meta: Workt
       ? { projectHostSetupId: meta.projectHostSetupId }
       : {}),
     path: repo.path,
-    head: '',
-    branch: '',
+    ...readFolderGitHead(repo),
     isBare: false,
     isMainWorktree: worktreeId === getRuntimeFolderWorkspaceRootId(repo),
     displayName: meta.displayName || repo.displayName,
@@ -15876,7 +15877,8 @@ export class OrcaRuntimeService {
   async cloneRepo(
     url: string,
     destination: string,
-    executionHostId?: ExecutionHostId | null
+    executionHostId?: ExecutionHostId | null,
+    onProgress?: (progress: CloneProgress) => void
   ): Promise<Repo> {
     if (!this.store) {
       throw new Error('runtime_unavailable')
@@ -15907,7 +15909,8 @@ export class OrcaRuntimeService {
           trimmedDestination,
           clonePath,
           clonePathKey,
-          executionHostId
+          executionHostId,
+          onProgress
         )
       )
     } finally {
@@ -15923,7 +15926,8 @@ export class OrcaRuntimeService {
     trimmedDestination: string,
     clonePath: string,
     clonePathKey: string,
-    executionHostId?: ExecutionHostId | null
+    executionHostId?: ExecutionHostId | null,
+    onProgress?: (progress: CloneProgress) => void
   ): Promise<Repo> {
     if (!this.store) {
       throw new Error('runtime_unavailable')
@@ -15963,8 +15967,11 @@ export class OrcaRuntimeService {
       }
       let stderrTail = ''
       let settled = false
+      const tracker = onProgress ? createCloneProgressTracker() : null
       proc.stderr?.on('data', (chunk: Buffer) => {
-        stderrTail = (stderrTail + chunk.toString()).slice(-4096)
+        const text = chunk.toString()
+        stderrTail = (stderrTail + text).slice(-4096)
+        tracker?.push(text).updates.forEach((update) => onProgress?.(update))
       })
       const finishClone = async (
         code: number | null,

@@ -61,6 +61,7 @@ async function startServer(args: {
   userDataPath: string
   updateSite: (siteId: string, updates: Partial<Omit<Site, 'id'>>) => Site | null
   getSite?: (siteId: string) => Site | null
+  flush?: () => void
   secrets?: {
     copy: (siteId: string, from: string, to: string) => void
     remove: (siteId: string, environment: string) => void
@@ -69,7 +70,11 @@ async function startServer(args: {
   const server = new SiteWriteBridgeServer()
   servers.push(server)
   await server.start({
-    store: { updateSite: args.updateSite, getSite: args.getSite ?? (() => site()) },
+    store: {
+      updateSite: args.updateSite,
+      getSite: args.getSite ?? (() => site()),
+      ...(args.flush ? { flush: args.flush } : {})
+    },
     userDataPath: args.userDataPath,
     ...(args.secrets ? { secrets: args.secrets } : {})
   })
@@ -80,8 +85,10 @@ describe('SiteWriteBridgeServer', () => {
   it('applies a write through the store it was given', async () => {
     const userDataPath = newUserData()
     const applied: { siteId: string; updates: unknown }[] = []
+    let flushes = 0
     await startServer({
       userDataPath,
+      flush: () => flushes++,
       updateSite: (siteId, updates) => {
         applied.push({ siteId, updates })
         return site({ displayName: 'Renamed' })
@@ -94,6 +101,8 @@ describe('SiteWriteBridgeServer', () => {
     expect(result.status).toBe(200)
     expect((result.payload.site as Site).displayName).toBe('Renamed')
     expect(applied).toEqual([{ siteId: 's1', updates: { displayName: 'Renamed' } }])
+    // Saved before replying, so the agent's next call reads the write from disk.
+    expect(flushes).toBe(1)
   })
 
   it('merges environment patches into the live record, not a stale copy', async () => {
