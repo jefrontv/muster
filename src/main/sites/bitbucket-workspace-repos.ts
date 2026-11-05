@@ -125,13 +125,9 @@ export function pickBitbucketCloneUrl(links: unknown): string {
   const entries = Array.isArray(links) ? links.map(asRecord) : []
   const byName = (name: string): string =>
     asText(entries.find((entry) => asText(entry.name) === name)?.href)
-  const ssh = byName('ssh')
-  // The API now hands out ssh.bitbucket.org, which known_hosts rarely has; clone runs BatchMode, so
-  // an unknown host fails outright. Same key as bitbucket.org, which users already trust.
-  if (ssh) {
-    return ssh.replace(/^((?:ssh:\/\/)?[^@/]+@)ssh\.bitbucket\.org(?=[:/])/i, '$1bitbucket.org')
-  }
-  return byName('https') || asText(entries[0]?.href)
+  // ssh.bitbucket.org is kept as-is: bitbucket.org stops serving SSH on 12 Nov 2026, and
+  // remoteGitEnv accepts the new host's key on first clone.
+  return byName('ssh') || byName('https') || asText(entries[0]?.href)
 }
 
 function pageSize(body: unknown): number {

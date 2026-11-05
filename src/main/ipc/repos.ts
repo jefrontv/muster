@@ -43,7 +43,8 @@ import { invalidateAuthorizedRootsCache } from './filesystem-auth'
 import type { ChildProcess } from 'node:child_process'
 import { access, mkdir, readdir, rm } from 'node:fs/promises'
 import { withPathMissing } from './repo-path-missing'
-import { gitExecFileAsync, gitSpawn, nonInteractiveGitEnv } from '../git/runner'
+import { gitExecFileAsync, gitSpawn } from '../git/runner'
+import { remoteGitEnv } from '../git/bitbucket-ssh-trust'
 
 /** A ref probe is a metadata round trip; anything slower than this is a network problem, not an answer. */
 const REMOTE_BRANCH_PROBE_TIMEOUT_MS = 15_000
@@ -2233,7 +2234,7 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
         // '--' is not accepted here; ls-remote takes the ref pattern positionally after the URL.
         ['ls-remote', '--heads', url, `refs/heads/${branch}`],
         // cwd only decides which git binary/host the runner picks; the probe itself is remote-only.
-        { cwd: tmpdir(), env: nonInteractiveGitEnv(), timeout: REMOTE_BRANCH_PROBE_TIMEOUT_MS }
+        { cwd: tmpdir(), env: remoteGitEnv(url), timeout: REMOTE_BRANCH_PROBE_TIMEOUT_MS }
       )
       return stdout.trim().length > 0
     } catch {
@@ -2296,7 +2297,7 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
               {
                 cwd: args.destination,
                 // Why: without this, an auth-needing clone pops Git Credential Manager's OAuth window on Windows, unclosable in a restricted env (issue #7652).
-                env: nonInteractiveGitEnv(),
+                env: remoteGitEnv(args.url),
                 stdio: ['ignore', 'ignore', 'pipe']
               }
             )
