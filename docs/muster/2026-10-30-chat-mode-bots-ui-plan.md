@@ -359,3 +359,46 @@ Live check in `pnpm dev`, light and dark, with the Code pane at about 360px and 
 
 1. The turn navigator rail leaves the Code panel too, so both views match. Recommended; it is one line to remount if missed.
 2. Work continues on `feature/muster-bots` once the uncommitted UX round 5 changes are committed, rather than on a new branch.
+
+## 12. Amendment, 2026-11-05 (second): subagent focus, composer row, Bots voice
+
+Phases 0 to 4 have landed (`32f1b34480` tool cards and pills, `74b5deaf93` turn presence).
+
+### Phase 5 grows: the Bots composer row (adds 0.5 day, 2.5 days total)
+
+The Chat composer takes the Bots row: attach, approval mode, a third chip, and voice with an options chevron.
+
+1. Attach and approval mode as already planned (`ChatComposerPlusMenu.tsx`, live `setPermissionMode`).
+2. Voice uses Muster's own dictation, not a call. The waveform button starts and stops `DictationController` into the composer, the way `native-chat/NativeChatMicButton.tsx` does in the Code panel today. Without a speech model it opens Settings, Voice. The chevron menu holds the dictation options that already exist (toggle or hold, speech model).
+3. The globe slot. Bots uses it for where the bot works, which has no Chat-mode equivalent. See the point to confirm.
+
+### Phase 7b: subagent focus (1.5 days)
+
+The user can see every subagent, open one to watch its work, and get back to the main agent.
+
+1. **Agents list.** The subagent tab above the composer (`NativeChatSubagentTab`, already shared by Chat and the Code panel) gets clickable rows, and each subagent pill in the transcript gets an Open action. Rows keep the roster's live state (working, waiting, needs approval, idle) and timer.
+2. **Focus view.** Opening a subagent swaps the transcript for that agent's own steps: its tool cards, pills and narration from the engine's agent item (`items`, keyed by the Task call id), followed live with the same scroll-follow as the main thread. A header shows "Back to main agent", the agent's name, type, state and timer. Nested subagents get a breadcrumb, and Back goes up one level.
+3. **Return.** Back button, Esc, or the main agent's name in the breadcrumb. When the focused agent finishes, the header shows "Finished" with its summary for about 2 seconds, then the view returns to the main agent, scrolled to that agent's pill. A user who scrolled or clicked inside the focus view in that window stays put and sees a "Return to main agent" pill instead.
+4. **Matching.** Roster rows come from hook events with their own ids; transcript agents come from the engine. Rows match by description and type among agents still running, oldest first. A background agent whose steps never reach the parent session's stream opens to its status and description with a note that its steps are not streamed; the live check confirms which agents fall in that case.
+5. State lives in the renderer per thread and is not persisted.
+
+Tests: matching roster rows to engine agents, including duplicates and background agents; Back, Esc and breadcrumb; auto-return on finish, held when the user interacted; timers cleaned up.
+Live check: Chat mode in "UX scratch", and the Code panel on the AIDC project (`~/Sites/aidc`) after phase 9, using light read-only prompts (list files, read a file, a subagent that summarises a folder). No prompt edits or deletes AIDC files.
+
+### Phase 10: Bots voice on Muster dictation (1.5 days, muster-bots and muster-ui)
+
+1. The Bots composer's Call button becomes a dictation button with the same look as Chat mode's. Pressing it asks the host over the existing Bots bridge to start dictation; the host runs `DictationController` and sends final segments back, and Bots inserts them at the caret.
+2. Electron's `webview.insertText` is the fallback if a segment arrives while the Bots composer has focus but the bridge is busy.
+3. No speech model: the button opens Muster's Settings, Voice, the same as Chat.
+4. The Apple speech helper path stays in the fork for the standalone Bots build, behind its existing capability check, and is not used inside Muster.
+
+Tests: bridge message round trip, insertion at caret, setup redirect. Live check: dictate into a Bots chat with a local model and with OpenAI transcription.
+
+### Order and estimate
+
+Phases 5 (2.5 days), 6, 7, 7b (1.5), 8, 9, then 10 (1.5): about 13.5 working days left.
+
+### Points to confirm in review
+
+1. Call's spoken replies go away inside Muster, since Muster has no text-to-speech. Dictation only.
+2. The globe slot in Chat mode: recommended is "Web access", a toggle that allows or blocks WebSearch and WebFetch for the thread. The alternative is to leave the slot out.
